@@ -1,13 +1,14 @@
-version: '3.8'
 services:
-  foliotrackerAPI:
+  foliotrack:
     build: .
+    container_name: foliotrack
+    restart: unless-stopped
     ports:
       - "3000:3000"
     volumes:
-      - ./src:/app/src
-      - ./public:/app/public
+      - ./foliotrack.db:/app/foliotrack.db
+      - ./foliotrack.db-shm:/app/foliotrack.db-shm
+      - ./foliotrack.db-wal:/app/foliotrack.db-wal
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - PORT=3000
-    command: npm run dev

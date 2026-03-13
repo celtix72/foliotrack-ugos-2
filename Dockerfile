@@ -1,21 +1,20 @@
 # Use the official Node.js image as base
-FROM node:18-alpine
+FROM node:22-alpine
 
 # Set working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json first to leverage Docker cache
+# Copy package.json and package-lock.json
 COPY package*.json ./
 
-# Install dependencies (ignoring scripts & using clean install for reliability)
-RUN npm install
+# Install production dependencies
+RUN npm install --omit=dev
 
-# Copy the rest of the application code
-COPY src/ ./src/
-COPY public/ ./public/
+# Copy the rest of the application
+COPY . .
 
 # Expose the application port
 EXPOSE 3000
 
 # Start the application
-CMD ["npm", "start"]
+CMD ["node", "src/server.js"]
