@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>FolioTrack - History</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["var(--app-font-family, 'JetBrains Mono')", "monospace"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+    </style>
+    <script src="/theme.js"></script>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex">
+    <!-- Sidebar -->
+    <aside class="w-72 border-r border-slate-200 dark:border-slate-800 flex flex-col h-screen sticky top-0 bg-white dark:bg-[#111722]">
+        <div class="p-6 flex items-center gap-3">
+            <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white">
+                <span class="material-symbols-outlined">query_stats</span>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold tracking-tight">FolioTrack</h1>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Premium Terminal</p>
+            </div>
+        </div>
+        <nav class="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
+            <div class="pb-4">
+                <p class="px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Main</p>
+                <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/dashboard">
+                    <span class="material-symbols-outlined text-[20px]">dashboard</span>
+                    <span>Dashboard</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/portfolio">
+                    <span class="material-symbols-outlined text-[20px]">work</span>
+                    <span>Portfolio</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/market">
+                    <span class="material-symbols-outlined text-[20px]">trending_up</span>
+                    <span>Market</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/reports">
+                    <span class="material-symbols-outlined text-[20px]">pie_chart</span>
+                    <span>Reports</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary font-medium" href="/history">
+                    <span class="material-symbols-outlined text-[20px]">history</span>
+                    <span>History</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/dividend">
+                    <span class="material-symbols-outlined text-[20px]">payments</span>
+                    <span>Dividend</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/settings">
+                    <span class="material-symbols-outlined text-[20px]">settings</span>
+                    <span>Settings</span>
+                </a>
+            </div>
+            <div class="pt-4 border-t border-slate-200 dark:border-slate-800">
+                <p class="px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Quick Access</p>
+                <div class="space-y-1" id="sidebar-portfolios"></div>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+        <header class="h-16 flex items-center justify-between px-8 bg-white dark:bg-[#111722] border-b border-slate-200 dark:border-slate-800">
+            <h2 class="text-xl font-black">History</h2>
+            <div class="flex items-center gap-4">
+                <p class="text-[10px] text-slate-500 font-bold uppercase">Realized Gains Tracking</p>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-8 space-y-8">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div>
+                    <h1 class="text-3xl font-black tracking-tight">Closed Positions</h1>
+                    <p class="text-slate-500 dark:text-slate-400 text-sm">Historical performance and realized gains across all portolios.</p>
+                </div>
+                <!-- Filters & Grouping -->
+                <div class="flex flex-wrap items-center gap-4 bg-white dark:bg-[#111722] p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+                        <input type="text" id="history-search" placeholder="Filter by asset..." 
+                            class="pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-900/50 border-none rounded-lg text-xs w-48 focus:ring-2 focus:ring-primary/20 transition-all"
+                            oninput="renderHistory()">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Group By</span>
+                        <select id="history-group-by" onchange="renderHistory()" 
+                            class="bg-slate-50 dark:bg-slate-900/50 border-none rounded-lg text-xs py-2 pl-3 pr-8 focus:ring-2 focus:ring-primary/20 transition-all font-bold">
+                            <option value="year">Year</option>
+                            <option value="portfolioName">Portfolio</option>
+                            <option value="none">None (Linear List)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overflow-hidden bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
+                            <th class="px-6 py-4">Asset</th>
+                            <th class="px-6 py-4">Portfolio</th>
+                            <th class="px-6 py-4">Year</th>
+                            <th class="px-6 py-4">Proceeds</th>
+                            <th class="px-6 py-4">Cost Basis</th>
+                            <th class="px-6 py-4 text-right">Realized Gain</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-table-body" class="divide-y divide-slate-100 dark:divide-slate-800">
+                        <!-- Content injected by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let rawHistoryData = [];
+        let collapsedGroups = new Set();
+        let currentGroupBy = 'year';
+
+        function formatCurrency(val, currency = 'EUR') {
+            const value = parseFloat(val || 0);
+            return new Intl.NumberFormat('de-DE', { 
+                style: 'currency', 
+                currency: currency,
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(value);
+        }
+
+        function formatNumber(val, decimals = 2) {
+            const value = parseFloat(val || 0);
+            return new Intl.NumberFormat('de-DE', {
+                minimumFractionDigits: decimals,
+                maximumFractionDigits: decimals
+            }).format(value);
+        }
+
+        async function loadHistory() {
+            try {
+                const res = await fetch('/api/analytics/history');
+                rawHistoryData = await res.json();
+                
+                // Set default collapsed state: collapse all initial years
+                const years = [...new Set(rawHistoryData.map(d => d.year))];
+                collapsedGroups = new Set(years);
+                
+                renderHistory();
+            } catch (err) { console.error('Error loading history:', err); }
+        }
+
+        function toggleGroup(key) {
+            if (collapsedGroups.has(key)) {
+                collapsedGroups.delete(key);
+            } else {
+                collapsedGroups.add(key);
+            }
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const body = document.getElementById('history-table-body');
+            const searchTerm = document.getElementById('history-search').value.toLowerCase();
+            const groupBy = document.getElementById('history-group-by').value;
+
+            // Reset collapsed if group type changes
+            if (groupBy !== currentGroupBy) {
+                collapsedGroups = new Set();
+                currentGroupBy = groupBy;
+                if (groupBy === 'year') {
+                    const years = [...new Set(rawHistoryData.map(d => d.year))];
+                    collapsedGroups = new Set(years);
+                }
+            }
+
+            // 1. Filter
+            let filtered = rawHistoryData.filter(pos => {
+                return (pos.name || '').toLowerCase().includes(searchTerm) || 
+                       (pos.ticker || '').toLowerCase().includes(searchTerm);
+            });
+
+            if (filtered.length === 0) {
+                body.innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-slate-500 italic">No historical data matching filters.</td></tr>';
+                return;
+            }
+
+            // 2. Grouping & Sorting
+            if (groupBy === 'none') {
+                body.innerHTML = filtered.map(pos => renderRow(pos)).join('');
+            } else {
+                // Group the data
+                const groups = {};
+                filtered.forEach(pos => {
+                    const key = pos[groupBy];
+                    if (!groups[key]) {
+                        groups[key] = {
+                            items: [],
+                            totalProceeds: 0,
+                            totalCostBasis: 0,
+                            totalGain: 0
+                        };
+                    }
+                    groups[key].items.push(pos);
+                    groups[key].totalProceeds += pos.totalProceeds;
+                    groups[key].totalCostBasis += pos.totalCostBasis;
+                    groups[key].totalGain += pos.realizedGain;
+                });
+
+                // Sort keys (desc if year, asc if portfolio)
+                const keys = Object.keys(groups).sort((a, b) => {
+                    if (groupBy === 'year') return b - a; // Desc year
+                    return a.localeCompare(b); // Asc portfolio
+                });
+
+                let html = '';
+                keys.forEach(key => {
+                    const group = groups[key];
+                    const isCollapsed = collapsedGroups.has(key);
+                    const icon = isCollapsed ? 'chevron_right' : 'expand_more';
+                    const gainColor = group.totalGain >= 0 ? 'emerald' : 'rose';
+                    const sign = group.totalGain >= 0 ? '+' : '';
+
+                    html += `
+                        <tr class="bg-slate-50/80 dark:bg-slate-900/60 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" onclick="toggleGroup('${key}')">
+                            <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-slate-400 text-lg">${icon}</span>
+                                    <span class="text-xs font-black uppercase tracking-widest text-primary">${key}</span>
+                                    <span class="text-[10px] text-slate-500 font-bold ml-1">(${group.items.length} positions)</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800"></td>
+                            <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800"></td>
+                            <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800 font-mono text-[11px] font-bold text-slate-500">
+                                ${formatCurrency(group.totalProceeds, 'EUR')}
+                            </td>
+                            <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800 font-mono text-[11px] font-bold text-slate-400">
+                                ${formatCurrency(group.totalCostBasis, 'EUR')}
+                            </td>
+                            <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800 text-right font-mono text-xs font-black text-${gainColor}-500">
+                                ${sign}${formatCurrency(group.totalGain, 'EUR')}
+                            </td>
+                        </tr>
+                    `;
+                    
+                    if (!isCollapsed) {
+                        group.items.forEach(pos => {
+                            html += renderRow(pos);
+                        });
+                    }
+                });
+                body.innerHTML = html;
+            }
+        }
+
+        function renderRow(pos) {
+            const color = pos.realizedGain >= 0 ? 'emerald' : 'rose';
+            const sign = pos.realizedGain >= 0 ? '+' : '';
+            return `
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                <td class="px-6 py-4 pl-12">
+                    <p class="font-bold text-xs">${pos.name}</p>
+                    <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tight">${pos.ticker}</p>
+                </td>
+                <td class="px-6 py-4">
+                    <span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-bold">${pos.portfolioName}</span>
+                </td>
+                <td class="px-6 py-4 font-bold text-slate-400 text-xs">${pos.year}</td>
+                <td class="px-6 py-4 font-mono text-xs">${formatCurrency(pos.totalProceeds, 'EUR')}</td>
+                <td class="px-6 py-4 font-mono text-xs">${formatCurrency(pos.totalCostBasis, 'EUR')}</td>
+                <td class="px-6 py-4 text-right">
+                    <p class="font-bold text-${color}-500 font-mono text-xs">${sign}${formatCurrency(pos.realizedGain, 'EUR')}</p>
+                    <p class="text-[9px] font-bold text-${color}-500/80 font-mono">${sign}${formatNumber(pos.gainPct, 2)}%</p>
+                </td>
+            </tr>
+            `;
+        }
+
+        async function loadSidebarPortfolios() {
+            try {
+                const res = await fetch('/api/portfolios');
+                const p = await res.json();
+                document.getElementById('sidebar-portfolios').innerHTML = p.map(port => `
+                    <a href="/portfolio?id=${port.id}" class="flex items-center justify-between px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                        <div class="flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            <span class="text-xs font-medium">${port.name}</span>
+                        </div>
+                        <span class="text-[10px] font-bold uppercase text-slate-400">${port.currency}</span>
+                    </a>
+                `).join('') || '<div class="px-3 py-2 text-xs text-slate-500 italic">No portfolios.</div>';
+            } catch (err) { console.error(err); }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadHistory();
+            loadSidebarPortfolios();
+        });
+    </script>
+</body>
+</html>

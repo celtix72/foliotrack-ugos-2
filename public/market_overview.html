@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FolioTrack - Market</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                colors: { "primary": "#135bec", "background-light": "#f6f6f8", "background-dark": "#101622" },
+                fontFamily: { "display": ["var(--app-font-family, 'JetBrains Mono')", "monospace"] },
+                borderRadius: {"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},
+            },
+        },
+    }
+</script>
+<style>
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+    .tab-active { background: white; color: #135bec; font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .dark .tab-active { background: #1e293b; color: #135bec; }
+</style>
+<script src="/theme.js"></script>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display min-h-screen flex">
+
+<!-- Sidebar -->
+<aside class="w-72 border-r border-slate-200 dark:border-slate-800 flex flex-col h-screen sticky top-0 bg-white dark:bg-[#111722] shrink-0">
+<div class="p-6 flex items-center gap-3">
+<div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white">
+<span class="material-symbols-outlined">query_stats</span>
+</div>
+<div>
+<h1 class="text-lg font-bold tracking-tight">FolioTrack</h1>
+<p class="text-xs text-slate-500 dark:text-slate-400">Premium Terminal</p>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
+<div class="pb-4">
+<p class="px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Main</p>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/dashboard">
+<span class="material-symbols-outlined text-[20px]">dashboard</span><span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/portfolio">
+<span class="material-symbols-outlined text-[20px]">work</span><span>Portfolio</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary font-medium" href="/market">
+<span class="material-symbols-outlined text-[20px]">trending_up</span><span>Market</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/reports">
+<span class="material-symbols-outlined text-[20px]">pie_chart</span><span>Reports</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/history">
+<span class="material-symbols-outlined text-[20px]">history</span>
+<span>History</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/dividend">
+<span class="material-symbols-outlined text-[20px]">payments</span>
+<span>Dividend</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/settings">
+<span class="material-symbols-outlined text-[20px]">settings</span><span>Settings</span>
+</a>
+</div>
+<div class="pt-4 border-t border-slate-200 dark:border-slate-800">
+<div class="flex items-center justify-between px-3 mb-2">
+<p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Quick Access</p>
+<span class="material-symbols-outlined text-sm cursor-pointer hover:text-primary" onclick="window.location.href='/portfolio'">add_circle</span>
+</div>
+<div class="space-y-1" id="sidebar-portfolios">
+<div class="px-3 py-2 text-xs text-slate-400 italic">Loading...</div>
+</div>
+</div>
+</nav>
+<div class="p-4 border-t border-slate-200 dark:border-slate-800">
+<div class="flex items-center gap-3 p-2 rounded-xl bg-slate-100 dark:bg-slate-900">
+<div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-400 font-bold text-xs">UN</div>
+<div class="flex-1 overflow-hidden">
+<p class="text-sm font-bold truncate">User</p>
+<p class="text-xs text-slate-500 truncate">user@foliotrack.io</p>
+</div>
+<span class="material-symbols-outlined text-slate-400 text-sm cursor-pointer">logout</span>
+</div>
+</div>
+</aside>
+
+<!-- Main Content -->
+<main class="flex-1 flex flex-col overflow-y-auto bg-slate-50 dark:bg-[#0a0f1a]">
+
+<!-- Header -->
+<header class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark flex items-center justify-between px-8 sticky top-0 z-10">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20">
+<span class="size-2 rounded-full bg-green-500 animate-pulse"></span>
+<span class="text-xs font-bold text-green-500 uppercase tracking-wider">Live</span>
+</div>
+<span class="text-xs text-slate-500 ml-2" id="last-update-label">Last Update: --</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="text-right">
+<p class="text-xs font-bold">User</p>
+<p class="text-[10px] text-slate-500 uppercase tracking-widest">Free Plan</p>
+</div>
+<div class="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-400">
+<span class="material-symbols-outlined text-sm">person</span>
+</div>
+</div>
+</header>
+
+<div class="p-8 space-y-6">
+
+<!-- Page Title + Tab Switcher -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<h1 class="text-3xl font-black tracking-tight">Market</h1>
+<p class="text-slate-500 dark:text-slate-400 mt-1 text-sm">Monitor global markets and manage your watchlist.</p>
+</div>
+<!-- Tab Switcher -->
+<div class="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl gap-1">
+<button id="tab-overview" onclick="switchTab('overview')" class="tab-btn px-5 py-2 rounded-lg text-sm transition-all tab-active">
+<span class="flex items-center gap-2"><span class="material-symbols-outlined text-sm">show_chart</span>Overview</span>
+</button>
+<button id="tab-watchlist" onclick="switchTab('watchlist')" class="tab-btn px-5 py-2 rounded-lg text-sm text-slate-500 transition-all hover:text-slate-700 dark:hover:text-slate-300">
+<span class="flex items-center gap-2"><span class="material-symbols-outlined text-sm">star</span>Watchlist</span>
+</button>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- TAB: OVERVIEW                                                   -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div id="panel-overview" class="space-y-6">
+
+<!-- Index Cards -->
+<div id="index-cards-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+<p class="col-span-full text-slate-500 text-center py-4 italic text-sm">Add assets to your watchlist to see market performance.</p>
+</div>
+
+<!-- Main Assets Table -->
+<div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
+<div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+<h2 class="text-lg font-bold">Monitored Assets</h2>
+<span class="text-xs font-bold text-slate-400 uppercase tracking-widest" id="overview-asset-count">—</span>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-slate-50 dark:bg-slate-800/30 border-b border-slate-200 dark:border-slate-800">
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Asset</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Exchange</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Price</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">24h Change</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">P/E</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm" id="overview-table-body"></tbody>
+</table>
+</div>
+</div>
+
+<!-- Top Movers (derived from watchlist) -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-8">
+<div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-xl p-6">
+<h3 class="text-base font-bold mb-4">Best Performers</h3>
+<div class="space-y-3" id="best-movers"></div>
+</div>
+<div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-xl p-6">
+<h3 class="text-base font-bold mb-4">Worst Performers</h3>
+<div class="space-y-3" id="worst-movers"></div>
+</div>
+</div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- TAB: WATCHLIST                                                  -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div id="panel-watchlist" class="space-y-6 hidden">
+
+<!-- Add Asset Card -->
+<div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
+<div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">add_circle</span>
+<h3 class="font-bold text-base">Add Asset to Watchlist</h3>
+</div>
+<div class="p-6">
+<form id="add-asset-form" class="space-y-4">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+
+<div class="space-y-2 relative lg:col-span-1">
+<label class="text-sm font-medium">Ticker / Search</label>
+<div class="relative">
+<input id="asset-search-input" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg py-2.5 px-4 text-sm focus:ring-1 focus:ring-primary focus:border-primary" placeholder="e.g. AAPL, BTC-USD, TIT.MI" type="text" autocomplete="off"/>
+<div id="search-results" class="absolute left-0 right-0 mt-1 bg-white dark:bg-[#1a2332] border border-slate-200 dark:border-slate-700 rounded-lg shadow-2xl z-50 hidden max-h-64 overflow-y-auto"></div>
+</div>
+<input type="hidden" id="asset-ticker"/>
+</div>
+
+<div class="space-y-2">
+<label class="text-sm font-medium">Asset Name</label>
+<input id="asset-name" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg py-2.5 px-4 text-sm" placeholder="Company / Token name" type="text"/>
+</div>
+
+<div class="space-y-2">
+<label class="text-sm font-medium">Type</label>
+<select id="asset-type" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg py-2.5 px-4 text-sm">
+<option value="Stock">Stock</option>
+<option value="Bond">Bond</option>
+<option value="ETF">ETF</option>
+<option value="Crypto">Crypto</option>
+<option value="Index">Index</option>
+<option value="Other">Other</option>
+</select>
+</div>
+
+<div class="space-y-2">
+<label class="text-sm font-medium">Exchange / Market</label>
+<input id="asset-exchange" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg py-2.5 px-4 text-sm" placeholder="e.g. NASDAQ, Borsa Italiana" type="text"/>
+</div>
+
+<div class="space-y-2">
+<label class="text-sm font-medium">P/E Ratio <span class="text-slate-400">(optional)</span></label>
+<input id="asset-pe" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg py-2.5 px-4 text-sm" placeholder="25.4" type="number" step="any"/>
+</div>
+
+<div class="space-y-2">
+<label class="text-sm font-medium">Currency</label>
+<div class="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+<button id="currency-usd" type="button" onclick="setCurrency('USD')" class="flex-1 py-2 rounded-md bg-white dark:bg-slate-700 text-primary shadow-sm font-bold text-sm transition-all">USD</button>
+<button id="currency-eur" type="button" onclick="setCurrency('EUR')" class="flex-1 py-2 rounded-md text-slate-500 font-medium text-sm hover:text-slate-700 dark:hover:text-slate-200 transition-all">EUR</button>
+</div>
+<input type="hidden" id="asset-currency" value="USD"/>
+</div>
+
+</div>
+<div class="flex justify-end gap-3 pt-2">
+<button type="reset" class="px-5 py-2.5 rounded-lg font-bold text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" onclick="resetForm()">Clear</button>
+<button type="submit" class="px-7 py-2.5 rounded-lg bg-primary hover:bg-primary/90 text-white font-bold text-sm shadow-lg shadow-primary/20 transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">visibility</span> Start Monitoring
+</button>
+</div>
+</form>
+</div>
+</div>
+
+<!-- Watchlist Table -->
+<div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
+<div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+<h3 class="font-bold text-base">Your Watchlist</h3>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+<input id="table-search" type="text" placeholder="Filter assets..." class="pl-9 pr-4 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm w-52" oninput="filterTable(this.value)"/>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-slate-50 dark:bg-slate-800/30 border-b border-slate-200 dark:border-slate-800">
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Asset</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Exchange</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-center">Currency</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">P/E</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Price</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Day Chg%</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-center">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm" id="watchlist-table-body"></tbody>
+</table>
+</div>
+<div class="px-6 py-3 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-200 dark:border-slate-800">
+<p id="watchlist-count-label" class="text-xs font-medium text-slate-500 uppercase tracking-wider">Loading...</p>
+</div>
+</div>
+
+</div><!-- /panel-watchlist -->
+
+</div><!-- /p-8 -->
+</main>
+
+<script>
+// ─── Tab state ────────────────────────────────────────────────────────────────
+let currentTab = 'overview';
+let allAssets  = [];
+
+function switchTab(tab) {
+    currentTab = tab;
+    const panels = ['overview','watchlist'];
+    panels.forEach(p => {
+        document.getElementById(`panel-${p}`).classList.toggle('hidden', p !== tab);
+        const btn = document.getElementById(`tab-${p}`);
+        btn.classList.toggle('tab-active', p === tab);
+        if (p !== tab) btn.classList.add('text-slate-500');
+        else btn.classList.remove('text-slate-500');
+    });
+    if (tab === 'overview')   renderOverview();
+    if (tab === 'watchlist')  renderWatchlist();
+}
+
+// ─── Data loading ─────────────────────────────────────────────────────────────
+async function loadAssets() {
+    try {
+        const res = await fetch('/api/assets');
+        allAssets = await res.json();
+        if (currentTab === 'overview')  renderOverview();
+        if (currentTab === 'watchlist') renderWatchlist();
+        // Update last update label
+        document.getElementById('last-update-label').textContent = 'Last Update: ' + new Date().toLocaleTimeString('it-IT');
+    } catch (err) { console.error('Error loading assets:', err); }
+}
+
+// ─── Overview Tab ─────────────────────────────────────────────────────────────
+function renderOverview() {
+    const tBody = document.getElementById('overview-table-body');
+    const countEl = document.getElementById('overview-asset-count');
+
+    if (!allAssets.length) {
+        countEl.textContent = '0 assets';
+        tBody.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-slate-500 italic">No assets monitored yet. Add some in the Watchlist tab.</td></tr>`;
+        renderMovers([],[]);
+        return;
+    }
+
+    countEl.textContent = `${allAssets.length} asset${allAssets.length > 1 ? 's' : ''}`;
+
+    tBody.innerHTML = allAssets.map(a => {
+        const price  = a.currentPrice  || 0;
+        const change = a.changePercent || 0;
+        const icon   = a.type === 'Crypto' ? 'currency_bitcoin' : (a.type === 'ETF' ? 'donut_small' : 'trending_up');
+        const chgClass = change >= 0 ? 'text-emerald-500' : 'text-red-500';
+        return `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+            <td class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-sm">${icon}</span>
+                    </div>
+                    <div>
+                        <p class="font-bold text-sm">${a.name}</p>
+                        <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">${a.ticker}</p>
+                    </div>
+                </div>
+            </td>
+            <td class="px-6 py-4"><p class="text-xs text-slate-500 font-bold uppercase">${a.exchange || '—'}</p></td>
+            <td class="px-6 py-4 text-right"><p class="text-sm font-bold">${formatCurrency(price, a.currency)}</p></td>
+            <td class="px-6 py-4 text-right"><span class="text-sm font-bold ${chgClass}">${change >= 0 ? '+' : ''}${formatNumber(change, 2)}%</span></td>
+            <td class="px-6 py-4 text-right"><p class="text-sm font-bold text-slate-600 dark:text-slate-300">${a.pe ? formatNumber(a.pe, 1) : '—'}</p></td>
+        </tr>`;
+    }).join('');
+
+    // Build index cards from top assets by absolute change
+    const cards = [...allAssets].sort((a,b) => Math.abs(b.changePercent||0) - Math.abs(a.changePercent||0)).slice(0,5);
+    const cardsEl = document.getElementById('index-cards-container');
+    cardsEl.innerHTML = cards.map(a => {
+        const ch = a.changePercent || 0;
+        const chClass = ch >= 0 ? 'text-emerald-500' : 'text-red-500';
+        const bgClass = ch >= 0 ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-red-500/20 bg-red-500/5';
+        return `<div class="border ${bgClass} rounded-xl p-4">
+            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500">${a.ticker}</p>
+            <p class="text-lg font-black mt-1">${formatCurrency(a.currentPrice||0, a.currency)}</p>
+            <p class="text-sm font-bold ${chClass} mt-0.5">${ch>=0?'+':''}${formatNumber(ch, 2)}%</p>
+            <p class="text-[10px] text-slate-400 mt-2 truncate">${a.name}</p>
+        </div>`;
+    }).join('');
+
+    // Movers
+    const sorted = [...allAssets].sort((a,b) => (b.changePercent||0) - (a.changePercent||0));
+    renderMovers(sorted.slice(0,5), [...sorted].reverse().slice(0,5));
+}
+
+function renderMovers(best, worst) {
+    const moverCard = (a, el) => {
+        if (!a) return;
+        const ch = a.changePercent || 0;
+        const isPos = ch >= 0;
+        el.innerHTML += `<div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg ${isPos?'bg-emerald-500/10 text-emerald-500':'bg-red-500/10 text-red-500'} flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-sm">${isPos?'trending_up':'trending_down'}</span>
+                </div>
+                <div>
+                    <p class="text-sm font-bold">${a.name}</p>
+                    <p class="text-[10px] text-slate-500 uppercase">${a.ticker}</p>
+                </div>
+            </div>
+            <span class="text-sm font-bold ${isPos?'text-emerald-500':'text-red-500'}">${ch>=0?'+':''}${formatNumber(ch, 2)}%</span>
+        </div>`;
+    };
+
+    const bestEl  = document.getElementById('best-movers');
+    const worstEl = document.getElementById('worst-movers');
+    bestEl.innerHTML  = '';
+    worstEl.innerHTML = '';
+
+    if (!best.length) {
+        bestEl.innerHTML  = '<p class="text-sm text-slate-500 italic">No data yet.</p>';
+        worstEl.innerHTML = '<p class="text-sm text-slate-500 italic">No data yet.</p>';
+        return;
+    }
+    best.forEach(a  => moverCard(a, bestEl));
+    worst.forEach(a => moverCard(a, worstEl));
+}
+
+// ─── Watchlist Tab ────────────────────────────────────────────────────────────
+function renderWatchlist(filter = '') {
+    const tBody    = document.getElementById('watchlist-table-body');
+    const countEl  = document.getElementById('watchlist-count-label');
+    const filtered = filter
+        ? allAssets.filter(a => (a.name+a.ticker+a.exchange).toLowerCase().includes(filter.toLowerCase()))
+        : allAssets;
+
+    countEl.textContent = `Monitoring ${filtered.length} asset${filtered.length !== 1 ? 's' : ''}`;
+
+    if (!filtered.length) {
+        tBody.innerHTML = `<tr><td colspan="7" class="px-6 py-8 text-center text-slate-500 italic">${filter ? 'No assets match the filter.' : 'Add an asset above to start monitoring live data.'}</td></tr>`;
+        return;
+    }
+
+    tBody.innerHTML = filtered.map(a => {
+        const price  = a.currentPrice  || 0;
+        const change = a.changePercent || 0;
+        const pe     = a.pe ? Number(a.pe).toFixed(1) : '—';
+        const chgClass = change > 0 ? 'text-emerald-500' : change < 0 ? 'text-red-500' : 'text-slate-500';
+        const chgIcon  = change >= 0 ? 'trending_up' : 'trending_down';
+        const tickerColor = a.type === 'Crypto' ? 'orange' : (a.type === 'ETF' ? 'emerald' : 'blue');
+
+        return `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors group">
+            <td class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-${tickerColor}-500/10 text-${tickerColor}-500 flex items-center justify-center font-bold text-[9px] shrink-0 uppercase">${(a.ticker||'??').substring(0,4)}</div>
+                    <div>
+                        <p class="font-bold text-sm">${a.name}</p>
+                        <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">${a.ticker}</p>
+                    </div>
+                </div>
+            </td>
+            <td class="px-6 py-4"><p class="text-xs text-slate-500">${a.exchange || '—'}</p></td>
+            <td class="px-6 py-4 text-center"><span class="text-xs font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">${a.currency}</span></td>
+            <td class="px-6 py-4 text-right"><span class="text-sm font-bold text-slate-600 dark:text-slate-300">${pe}</span></td>
+            <td class="px-6 py-4 text-right"><span class="text-sm font-black text-primary">${formatCurrency(price, a.currency)}</span></td>
+            <td class="px-6 py-4 text-right">
+                <p class="text-sm ${chgClass} font-bold flex items-center justify-end gap-1">
+                    ${change >= 0 ? '+' : ''}${formatNumber(change, 2)}%
+                    <span class="material-symbols-outlined text-sm">${chgIcon}</span>
+                </p>
+            </td>
+            <td class="px-6 py-4 text-center">
+                <button onclick="deleteAsset('${a.id}')" class="w-8 h-8 rounded-lg flex items-center justify-center mx-auto text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-colors">
+                    <span class="material-symbols-outlined text-lg">delete</span>
+                </button>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function filterTable(val) {
+    renderWatchlist(val);
+}
+
+// ─── Actions ──────────────────────────────────────────────────────────────────
+async function deleteAsset(id) {
+    if (!confirm('Stop monitoring this asset?')) return;
+    try {
+        await fetch(`/api/assets/${id}`, { method: 'DELETE' });
+        await loadAssets();
+    } catch (err) { console.error('Delete error:', err); }
+}
+
+function setCurrency(curr) {
+    document.getElementById('asset-currency').value = curr;
+    ['USD','EUR'].forEach(c => {
+        const btn = document.getElementById(`currency-${c.toLowerCase()}`);
+        const active = c === curr;
+        btn.classList.toggle('bg-white',     active);
+        btn.classList.toggle('dark:bg-slate-700', active);
+        btn.classList.toggle('text-primary', active);
+        btn.classList.toggle('shadow-sm',    active);
+        btn.classList.toggle('font-bold',    active);
+        btn.classList.toggle('text-slate-500', !active);
+        btn.classList.toggle('font-medium',  !active);
+    });
+}
+
+function resetForm() {
+    document.getElementById('asset-ticker').value = '';
+    document.getElementById('asset-search-input').value = '';
+    setCurrency('USD');
+}
+
+// ─── Asset Search ─────────────────────────────────────────────────────────────
+const searchInput = document.getElementById('asset-search-input');
+const resultsContainer = document.getElementById('search-results');
+let searchTimeout;
+
+searchInput.addEventListener('input', () => {
+    clearTimeout(searchTimeout);
+    const q = searchInput.value.trim();
+    if (q.length < 2) { resultsContainer.classList.add('hidden'); return; }
+
+    searchTimeout = setTimeout(async () => {
+        try {
+            const res = await fetch(`/api/asset-search?query=${encodeURIComponent(q)}`);
+            const quotes = await res.json();
+            if (quotes && quotes.length > 0) {
+                resultsContainer.innerHTML = quotes.filter(q => q.symbol).map(q => {
+                    const sym  = (q.symbol      || '').replace(/'/g, "\\'");
+                    const nm   = (q.shortname || q.longname || q.symbol || '').replace(/'/g, "\\'");
+                    const tp   = (q.quoteType   || '').replace(/'/g, "\\'");
+                    const cur  = (q.currency    || '').replace(/'/g, "\\'");
+                    const exch = (q.exchange    || '').replace(/'/g, "\\'");
+                    return `<div class="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer border-b border-slate-100 dark:border-slate-800 last:border-0"
+                         onclick="selectAsset('${sym}','${nm}','${tp}','${cur}','${exch}')">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-primary text-sm">${q.symbol}</span>
+                            <span class="text-[10px] bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded font-bold text-slate-500">${q.quoteType||'Asset'}</span>
+                        </div>
+                        <p class="text-xs text-slate-500 truncate mt-0.5">${q.shortname||q.longname||q.symbol}</p>
+                        <div class="flex justify-between mt-1">
+                            <span class="text-[10px] text-slate-400 uppercase">${q.exchange||''}</span>
+                            <span class="text-[10px] text-primary font-bold">${q.currency||''}</span>
+                        </div>
+                    </div>`;
+                }).join('');
+                resultsContainer.classList.remove('hidden');
+            } else {
+                resultsContainer.innerHTML = '<div class="px-4 py-3 text-sm text-slate-500">No results found</div>';
+                resultsContainer.classList.remove('hidden');
+            }
+        } catch (err) { console.error(err); }
+    }, 300);
+});
+
+function selectAsset(symbol, name, type, currency, exchange) {
+    document.getElementById('asset-ticker').value = symbol;
+    document.getElementById('asset-name').value   = name;
+    document.getElementById('asset-search-input').value = symbol;
+    document.getElementById('asset-exchange').value = exchange;
+    const typeMap = { EQUITY:'Stock', CRYPTOCURRENCY:'Crypto', ETF:'ETF', INDEX:'Index', MUTUALFUND:'ETF' };
+    const sel = document.getElementById('asset-type');
+    if (typeMap[type]) sel.value = typeMap[type];
+    if (currency) setCurrency(['EUR','GBP','CHF','JPY'].includes(currency) ? currency : (currency === 'EUR' ? 'EUR' : 'USD'));
+    else setCurrency('USD');
+    // More currencies: just set the hidden field
+    document.getElementById('asset-currency').value = currency || 'USD';
+    resultsContainer.classList.add('hidden');
+}
+
+document.addEventListener('click', e => {
+    if (!searchInput.contains(e.target) && !resultsContainer.contains(e.target))
+        resultsContainer.classList.add('hidden');
+});
+
+// ─── Form Submit ──────────────────────────────────────────────────────────────
+document.getElementById('add-asset-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const ticker = document.getElementById('asset-ticker').value || document.getElementById('asset-search-input').value.trim();
+    if (!ticker) { alert('Please select or enter a ticker symbol.'); return; }
+
+    const data = {
+        ticker,
+        name:     document.getElementById('asset-name').value,
+        type:     document.getElementById('asset-type').value,
+        exchange: document.getElementById('asset-exchange').value,
+        currency: document.getElementById('asset-currency').value,
+        pe:       document.getElementById('asset-pe').value || null
+    };
+
+    try {
+        const res = await fetch('/api/assets', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (res.ok) {
+            document.getElementById('add-asset-form').reset();
+            resetForm();
+            await loadAssets();
+        } else {
+            alert('Error: ' + await res.text());
+        }
+    } catch (err) { console.error(err); alert('Failed to add asset: ' + err.message); }
+});
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function formatCurrency(val, currency = 'USD') {
+    const value = parseFloat(val || 0);
+    return new Intl.NumberFormat('de-DE', {
+        style: 'currency',
+        currency: currency,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(value);
+}
+
+function formatNumber(val, decimals = 2) {
+    const value = parseFloat(val || 0);
+    return new Intl.NumberFormat('de-DE', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+    }).format(value);
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    // Open Watchlist tab if URL has ?tab=watchlist
+    const urlTab = new URLSearchParams(window.location.search).get('tab');
+    if (urlTab === 'watchlist') switchTab('watchlist');
+    loadAssets();
+    // Refresh every 60s
+    setInterval(loadAssets, 60000);
+});
+</script>
+</body>
+</html>

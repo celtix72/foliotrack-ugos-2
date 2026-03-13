@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FolioTrack - Tech Growth Portfolio</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["var(--app-font-family, 'JetBrains Mono')", "monospace"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 10px;
+        }
+    </style>
+    <script src="/theme.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex">
+<!-- Sidebar -->
+<aside class="w-72 border-r border-slate-200 dark:border-slate-800 flex flex-col h-screen sticky top-0 bg-white dark:bg-[#111722]">
+<div class="p-6 flex items-center gap-3">
+<div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white">
+<span class="material-symbols-outlined">query_stats</span>
+</div>
+<div>
+<h1 class="text-lg font-bold tracking-tight">FolioTrack</h1>
+<p class="text-xs text-slate-500 dark:text-slate-400">Premium Terminal</p>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
+<div class="pb-4">
+<p class="px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Main</p>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/dashboard">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary font-medium" href="/portfolio">
+<span class="material-symbols-outlined text-[20px]">work</span>
+<span>Portfolio</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/market">
+<span class="material-symbols-outlined text-[20px]">trending_up</span>
+<span>Market</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/reports">
+<span class="material-symbols-outlined text-[20px]">pie_chart</span>
+<span>Reports</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/history">
+<span class="material-symbols-outlined text-[20px]">history</span>
+<span>History</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/dividend">
+<span class="material-symbols-outlined text-[20px]">payments</span>
+<span>Dividend</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/settings">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span>Settings</span>
+</a>
+</div>
+<div class="pt-4 border-t border-slate-200 dark:border-slate-800">
+<div class="flex items-center justify-between px-3 mb-2">
+<p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Quick Access</p>
+<span class="material-symbols-outlined text-sm cursor-pointer hover:text-primary">add_circle</span>
+</div>
+<!-- Portfolio List -->
+<div class="space-y-1" id="sidebar-portfolios">
+    <div class="px-3 py-2 text-xs text-slate-400 italic"> Loading...</div>
+</div>
+</div>
+</nav>
+<div class="p-4 border-t border-slate-200 dark:border-slate-800">
+<div class="flex items-center gap-3 p-2 rounded-xl bg-slate-100 dark:bg-slate-900">
+<div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-400 font-bold text-xs">
+    UN
+</div>
+<div class="flex-1 overflow-hidden">
+<p class="text-sm font-bold truncate">User</p>
+<p class="text-xs text-slate-500 truncate">user@foliotrack.io</p>
+</div>
+<span class="material-symbols-outlined text-slate-400 text-sm cursor-pointer">logout</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col h-screen overflow-y-auto">
+<!-- Top Header Row -->
+<header class="h-16 flex items-center justify-between px-8 bg-white/50 dark:bg-background-dark/50 backdrop-blur-md sticky top-0 z-20 border-b border-slate-200 dark:border-slate-800 shrink-0">
+<div class="flex items-center gap-2 text-xs text-slate-500">
+<span class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    Live
+                </span>
+<span class="mx-2">•</span>
+<span>Last Update: 2m ago</span>
+</div>
+<div class="flex items-center gap-6">
+<button class="text-slate-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">search</span>
+</button>
+<div class="relative">
+<button class="text-slate-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-background-dark"></span>
+</button>
+</div>
+<div class="w-px h-6 bg-slate-200 dark:bg-slate-800"></div>
+<div class="flex items-center gap-3">
+<div class="text-right">
+<p class="text-xs font-bold">User</p>
+<p class="text-[10px] text-slate-500">Free Plan</p>
+</div>
+<div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-400">
+<span class="material-symbols-outlined text-lg">person</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Portfolio List Section (shown if no ID) -->
+<div id="portfolio-list-view" class="p-8 space-y-8 hidden">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-black tracking-tight">Your Portfolios</h1>
+            <p class="text-slate-500 dark:text-slate-400">Manage multiple investment strategies.</p>
+        </div>
+        <button onclick="openPortfolioModal()" class="px-6 py-2.5 bg-primary text-white font-bold rounded-lg shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all flex items-center gap-2">
+            <span class="material-symbols-outlined">add</span> New Portfolio
+        </button>
+    </div>
+    <div id="portfolios-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Portfolios will be injected here -->
+    </div>
+</div>
+
+<!-- Portfolio Detail Section (shown if ID present) -->
+<div id="portfolio-detail-view" class="p-8 space-y-8 hidden">
+    <!-- Portfolio Header Section -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div class="space-y-1">
+            <div class="flex items-center gap-2 text-slate-500 text-sm font-medium">
+                <a class="hover:text-primary transition-colors cursor-pointer" onclick="navigateToList()">Portfolios</a>
+                <span class="material-symbols-outlined text-xs">chevron_right</span>
+                <span id="header-portfolio-name" class="text-slate-900 dark:text-slate-100 italic">Loading...</span>
+            </div>
+            <h1 id="title-portfolio-name" class="text-4xl font-black">---</h1>
+            <div class="flex items-baseline gap-4">
+                <p class="text-3xl font-black tracking-tight"><span id="total-value-label">0.00</span> <span id="portfolio-currency-code" class="text-sm text-slate-400 font-bold">EUR</span></p>
+                <p class="text-sm font-bold text-slate-500">Cash: <span id="cash-balance-label">0.00</span></p>
+            </div>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+            <button onclick="openTransactionModal()" title="New Transaction" class="w-11 h-11 rounded-lg bg-emerald-600 text-white flex items-center justify-center hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-500/20">
+                <span class="material-symbols-outlined">add_circle</span>
+            </button>
+            <button onclick="openImportModal()" title="Import (Copy/Paste)" class="w-11 h-11 rounded-lg bg-primary text-white flex items-center justify-center hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">
+                <span class="material-symbols-outlined">upload_file</span>
+            </button>
+            <button onclick="editPortfolio()" title="Edit Portfolio" class="w-11 h-11 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+                <span class="material-symbols-outlined">edit</span>
+            </button>
+        </div>
+    </div>
+<!-- Performance Chart -->
+<div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+<div class="flex items-center justify-between mb-8">
+<h3 class="text-lg font-bold">Performance Over Time</h3>
+<div class="flex bg-slate-100 dark:bg-slate-900 rounded-lg p-1" id="chart-range-buttons">
+<button data-range="1M" onclick="setChartRange('1M')" class="range-btn px-4 py-1.5 text-xs font-bold rounded-md bg-white dark:bg-slate-800 shadow-sm transition-all">1M</button>
+<button data-range="3M" onclick="setChartRange('3M')" class="range-btn px-4 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">3M</button>
+<button data-range="6M" onclick="setChartRange('6M')" class="range-btn px-4 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">6M</button>
+<button data-range="1Y" onclick="setChartRange('1Y')" class="range-btn px-4 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">1Y</button>
+<button data-range="ALL" onclick="setChartRange('ALL')" class="range-btn px-4 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">ALL</button>
+</div>
+</div>
+<div class="h-64 w-full relative">
+    <canvas id="performanceChart"></canvas>
+</div>
+</div>
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+<!-- Assets Table (Left) -->
+<div class="xl:col-span-2 space-y-4">
+<div class="flex items-center justify-between">
+<h3 class="text-xl font-bold">Assets</h3>
+<button class="text-primary text-sm font-bold flex items-center gap-1.5 hover:underline">
+                            View Allocation <span class="material-symbols-outlined text-sm">pie_chart</span>
+</button>
+</div>
+<div class="overflow-hidden bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
+<th class="px-6 py-4">Asset</th>
+<th class="px-6 py-4">Quantity</th>
+<th class="px-6 py-4">Avg Cost</th>
+<th class="px-6 py-4">Current</th>
+<th class="px-6 py-4 text-right">Value</th>
+<th class="px-6 py-4 text-right">P/L</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm" id="assets-table-body">
+<!-- Assets calculated from transactions -->
+</tbody>
+</table>
+</div>
+            <!-- Right Side Info -->
+            <div class="space-y-6">
+                <div id="transaction-list" class="space-y-4">
+                    <!-- Transactions will be injected here -->
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+            <h3 class="font-bold mb-6">Asset Allocation</h3>
+            <div id="allocation-list" class="space-y-5">
+                <!-- Dynamic allocation bars -->
+                <p class="text-sm text-slate-500 italic">No assets held.</p>
+            </div>
+        </div>
+    </div>
+<footer class="mt-auto py-8 border-t border-slate-200 dark:border-slate-800 px-8">
+<div class="flex flex-col md:flex-row justify-between items-center gap-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+<p>© 2024 FolioTrack Financial Services. All prices 15m delayed.</p>
+<div class="flex gap-8">
+<a class="hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="hover:text-primary transition-colors" href="#">Contact Support</a>
+</div>
+</div>
+</footer>
+</main>
+
+<!-- Confirm Modal -->
+<div id="general-confirm-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-[#111722] border border-rose-500/30 rounded-2xl w-full max-w-sm shadow-2xl p-8 space-y-6">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-rose-500 text-2xl">warning</span>
+            </div>
+            <div>
+                <p id="confirm-modal-title" class="font-bold text-rose-500">Confirm Action</p>
+                <p id="confirm-modal-body" class="text-sm text-slate-500 dark:text-slate-400 mt-1">Are you sure you want to proceed?</p>
+            </div>
+        </div>
+        <div class="flex gap-3">
+            <button onclick="closeConfirmModal()" class="flex-1 py-2.5 rounded-lg font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors">Cancel</button>
+            <button id="confirm-modal-btn" class="flex-1 py-2.5 bg-rose-600 text-white rounded-lg font-bold hover:bg-rose-700 transition-all shadow-lg shadow-rose-600/20">Delete</button>
+        </div>
+    </div>
+</div>
+
+<!-- Portfolio Modal -->
+<div id="portfolio-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <h3 id="portfolio-modal-title" class="font-bold text-lg">New Portfolio</h3>
+            <button onclick="closePortfolioModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <form id="portfolio-form" class="p-6 space-y-4">
+            <input type="hidden" id="p-id"/>
+            <div class="space-y-2">
+                <label class="text-sm font-medium">Portfolio Name</label>
+                <input id="p-name" required class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3" placeholder="e.g. Retirement"/>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <label class="text-sm font-medium">Currency</label>
+                    <select id="p-currency" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3">
+                        <option value="EUR">EUR</option>
+                        <option value="USD">USD</option>
+                        <option value="GBP">GBP</option>
+                    </select>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-medium">Start Date</label>
+                    <input id="p-date" type="date" required class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3"/>
+                </div>
+            </div>
+            <div class="space-y-2">
+                <label class="text-sm font-medium">Initial Cash</label>
+                <input id="p-cash" type="number" step="any" required class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3" placeholder="0.00"/>
+            </div>
+            <div class="pt-4 flex gap-3">
+                <button type="button" id="delete-portfolio-btn" onclick="deletePortfolio()" class="px-4 py-2 text-rose-500 font-bold hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg hidden transition-colors">Delete</button>
+                <div class="flex-1"></div>
+                <button type="button" onclick="closePortfolioModal()" class="px-5 py-2 rounded-lg font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Cancel</button>
+                <button type="submit" class="px-5 py-2 bg-primary text-white rounded-lg font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">Save Portfolio</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Transaction Modal -->
+<div id="transaction-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <h3 class="font-bold text-lg">New Transaction</h3>
+            <button onclick="closeTransactionModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <form id="transaction-form" class="p-6 space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-2">
+                    <label class="text-sm font-medium">Type</label>
+                    <select id="t-type" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-4" onchange="toggleTransactionFields()">
+                        <option value="BUY">BUY</option>
+                        <option value="SELL">SELL</option>
+                        <option value="DIVIDEND">DIVIDEND</option>
+                        <option value="DEPOSIT">DEPOSIT</option>
+                        <option value="WITHDRAWAL">WITHDRAWAL</option>
+                        <option value="TAX">TAX</option>
+                    </select>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-medium">Date</label>
+                    <input id="t-date" type="date" required class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-4"/>
+                </div>
+                <div id="t-asset-field" class="space-y-2 relative md:col-span-2">
+                    <label class="text-sm font-medium">Asset (Search)</label>
+                    <input id="t-asset-search" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-4" placeholder="Ticker..." autocomplete="off"/>
+                    <div id="t-search-results" class="absolute left-0 right-0 mt-1 bg-white dark:bg-[#1a2332] border rounded-lg shadow-xl z-50 hidden max-h-48 overflow-y-auto"></div>
+                    <input type="hidden" id="t-asset-ticker"/>
+                    <input type="hidden" id="t-asset-currency"/>
+                </div>
+                <div id="t-amount-field" class="space-y-2 hidden">
+                    <label class="text-sm font-medium">Amount</label>
+                    <input id="t-amount" type="number" step="any" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-4"/>
+                </div>
+                <div id="t-stock-fields" class="contents">
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium">Quantity</label>
+                        <input id="t-qty" type="number" step="any" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-4"/>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium">Price</label>
+                        <input id="t-price" type="number" step="any" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-4" onchange="checkFX()"/>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-medium">Comm</label>
+                    <input id="t-comm" type="number" step="any" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-4" value="0"/>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-medium">Tax</label>
+                    <input id="t-tax" type="number" step="any" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-4" value="0"/>
+                </div>
+                <div id="t-fx-field" class="space-y-2 md:col-span-2 hidden">
+                    <div class="p-4 bg-primary/5 border rounded-xl flex items-center justify-between">
+                        <span class="text-xs text-slate-500">Asset: <span id="asset-curr-label">?</span> • Portfolio: <span id="p-curr-label">?</span></span>
+                        <input id="t-fx" type="number" step="any" class="w-24 text-right bg-white dark:bg-slate-800 border-slate-200 rounded py-1 px-2 font-bold text-sm" value="1"/>
+                    </div>
+                </div>
+            </div>
+            <div class="pt-4 flex gap-4">
+                <button type="button" onclick="closeTransactionModal()" class="flex-1 py-3 rounded-lg font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">Abort</button>
+                <button type="submit" class="flex-1 py-3 bg-emerald-600 text-white rounded-lg font-bold shadow-lg hover:bg-emerald-700">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div id="import-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-start justify-center pt-8 pb-8 px-4 overflow-y-auto">
+  <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-6xl shadow-2xl flex flex-col">
+    <div class="px-6 py-4 border-b flex items-center justify-between">
+      <h3 class="font-bold text-lg">Import</h3>
+      <button onclick="closeImportModal()"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div id="import-step-1" class="p-6 space-y-4">
+      <textarea id="import-paste-area" rows="12" class="w-full bg-slate-50 dark:bg-slate-900 rounded-xl p-4 font-mono text-xs" placeholder="Paste tab-separated data..."></textarea>
+      <div class="flex justify-end gap-3">
+        <button onclick="parseImportData()" class="px-7 py-2.5 bg-primary text-white rounded-lg font-bold">Parse</button>
+      </div>
+    </div>
+    <div id="import-step-2" class="hidden p-6 space-y-4">
+      <div class="overflow-x-auto rounded-xl border">
+        <table class="w-full text-xs text-left">
+          <thead class="bg-slate-50 dark:bg-slate-800/40">
+            <tr>
+              <th class="px-3 py-3">Status</th>
+              <th class="px-3 py-3">Date</th>
+              <th class="px-3 py-3">Type</th>
+              <th class="px-3 py-3">Ticker</th>
+              <th class="px-3 py-3">Name</th>
+              <th class="px-3 py-3">Curr</th>
+              <th class="px-3 py-3 text-right">FX</th>
+              <th class="px-3 py-3 text-right">Price</th>
+              <th class="px-3 py-3 text-right">Qty</th>
+            </tr>
+          </thead>
+          <tbody id="import-preview-body"></tbody>
+        </table>
+      </div>
+      <div class="flex gap-3 justify-end">
+        <button onclick="confirmImport()" class="px-7 py-2.5 bg-emerald-600 text-white rounded-lg font-bold">Confirm</button>
+      </div>
+    </div>
+    <div id="import-step-3" class="hidden p-12 text-center">
+      <p id="import-progress-label">Processing...</p>
+    </div>
+  </div>
+</div>
+</main>
+
+<script>
+    let currentPortfolioId = null;
+    let portfolioCurrency = 'EUR';
+
+    window.openPortfolioModal = function(id = null) {
+        if (!id) {
+            document.getElementById('p-id').value = '';
+            document.getElementById('portfolio-form').reset();
+            document.getElementById('portfolio-modal-title').innerText = "New Portfolio";
+            document.getElementById('delete-portfolio-btn').classList.add('hidden');
+        }
+        const modal = document.getElementById('portfolio-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+        }
+        document.getElementById('p-date').value = new Date().toISOString().split('T')[0];
+    };
+
+    window.closePortfolioModal = function() {
+        document.getElementById('portfolio-modal').classList.add('hidden');
+        document.getElementById('portfolio-form').reset();
+    };
+
+    window.navigateToList = function() {
+        window.history.pushState({}, '', '/portfolio');
+        init();
+    };
+
+    function getParam(name) {
+        return new URLSearchParams(window.location.search).get(name);
+    }
+
+    function formatCurrency(val, currency = 'USD') {
+        const value = parseFloat(val || 0);
+        return new Intl.NumberFormat('de-DE', { 
+            style: 'currency', 
+            currency: currency,
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(value);
+    }
+
+    function formatNumber(val, decimals = 2) {
+        const value = parseFloat(val || 0);
+        return new Intl.NumberFormat('de-DE', {
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals
+        }).format(value);
+    }
+
+    async function init() {
+        console.log("INIT CALLED");
+        currentPortfolioId = getParam('id');
+        console.log("currentPortfolioId:", currentPortfolioId);
+        if (currentPortfolioId) {
+            console.log("SHOWING DETAIL VIEW");
+            document.getElementById('portfolio-detail-view').classList.remove('hidden');
+            document.getElementById('portfolio-list-view').classList.add('hidden');
+            loadPortfolioDetails();
+            initPerformanceChart();
+        } else {
+            console.log("SHOWING LIST VIEW");
+            const listView = document.getElementById('portfolio-list-view');
+            console.log("listView element:", listView);
+            if (listView) {
+                listView.classList.remove('hidden');
+                console.log("HIDDEN CLASS REMOVED FROM LIST VIEW");
+            } else {
+                console.error("listView element NOT FOUND");
+            }
+            document.getElementById('portfolio-detail-view').classList.add('hidden');
+            loadAllPortfolios();
+        }
+    }
+
+    async function loadAllPortfolios() {
+        try {
+            const res = await fetch('/api/portfolios');
+            const portfolios = await res.json();
+            const grid = document.getElementById('portfolios-grid');
+            grid.innerHTML = portfolios.map(p => `
+                <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 hover:shadow-xl transition-all cursor-pointer group" onclick="window.location.href='/portfolio?id=${p.id}'">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold">
+                            <span class="material-symbols-outlined">folder</span>
+                        </div>
+                        <span class="text-[10px] font-black bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-slate-500">${p.currency}</span>
+                    </div>
+                    <h3 class="text-xl font-bold group-hover:text-primary transition-colors">${p.name}</h3>
+                    <p class="text-slate-500 text-sm mt-1">Started on ${p.startDate}</p>
+                    <div class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Value</p>
+                            <p class="text-lg font-black">${formatCurrency(p.totalValue, p.currency)}</p>
+                        </div>
+                        <div class="text-right">
+                             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Holdings</p>
+                             <p class="text-sm font-bold">${p.assetCount} Assets</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } catch (err) { console.error(err); }
+    }
+
+    async function loadPortfolioDetails() {
+        try {
+            const res = await fetch(`/api/portfolios/${currentPortfolioId}`);
+            if (!res.ok) {
+                console.error("Portfolio fetch failed");
+                return navigateToList();
+            }
+            const p = await res.json();
+            if (!p) return navigateToList();
+            
+            portfolioCurrency = p.currency || 'EUR';
+            document.getElementById('header-portfolio-name').innerText = p.name || 'Untitled';
+            document.getElementById('title-portfolio-name').innerText = p.name || 'Untitled';
+            document.getElementById('total-value-label').innerText = formatCurrency(p.totalValue, p.currency);
+            document.getElementById('portfolio-currency-code').innerText = p.currency;
+            document.getElementById('cash-balance-label').innerText = formatCurrency(p.currentCash, p.currency);
+
+            // Render Assets
+            const tBody = document.getElementById('assets-table-body');
+            const holdings = p.holdings || [];
+            tBody.innerHTML = holdings.map(h => {
+                const color = h.unrealizedGain >= 0 ? 'emerald' : 'rose';
+                const sign = h.unrealizedGain >= 0 ? '+' : '';
+                return `
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded bg-primary/5 text-primary flex items-center justify-center font-bold text-[10px]">${h.ticker.substring(0,3)}</div>
+                            <div>
+                                <p class="font-bold">${h.name}</p>
+                                <p class="text-[10px] text-slate-500 uppercase font-bold">${h.ticker}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 font-bold text-slate-600 dark:text-slate-300 font-mono">${formatNumber(h.shares, 2)}</td>
+                    <td class="px-6 py-4 text-slate-500 font-mono">${formatCurrency(h.avgCost, p.currency)}</td>
+                    <td class="px-6 py-4 font-bold font-mono">${formatCurrency(h.currentPriceInPCurr, p.currency)}</td>
+                    <td class="px-6 py-4 text-right font-black font-mono">${formatCurrency(h.currentValue, p.currency)}</td>
+                    <td class="px-6 py-4 text-right">
+                        <p class="font-bold text-${color}-500 font-mono">${sign}${formatCurrency(h.unrealizedGain, p.currency)}</p>
+                        <p class="text-[10px] font-bold text-${color}-500/80 font-mono">${sign}${formatNumber(h.unrealizedGainPct, 2)}%</p>
+                    </td>
+                </tr>
+                `;
+            }).join('') || '<tr><td colspan="6" class="px-6 py-4 text-center text-slate-500">No active holdings.</td></tr>';
+
+            // Render Allocation
+            renderAllocation(p.allocation);
+
+            // Render Transactions
+            const transList = document.getElementById('transaction-list');
+            transList.innerHTML = p.transactions.sort((a,b) => new Date(b.date) - new Date(a.date)).map(t => {
+                const isDebit = ['BUY', 'WITHDRAWAL', 'TAX'].includes(t.type);
+                const color = isDebit ? 'rose' : 'emerald';
+                const icon = t.type === 'BUY' ? 'shopping_cart' : (t.type === 'SELL' ? 'sell' : 'account_balance_wallet');
+                const val = t.type === 'BUY' || t.type === 'SELL' ? (t.quantity * t.price) : t.amount;
+                
+                return `
+                <div class="flex gap-4 group">
+                    <div class="w-10 h-10 rounded-full bg-${color}-500/10 text-${color}-500 flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-xl">${icon}</span>
+                    </div>
+                    <div class="flex-1 overflow-hidden">
+                        <div class="flex justify-between items-start">
+                             <p class="text-sm font-bold capitalize">${t.type} ${t.assetTicker || ''}</p>
+                             <button onclick="deleteTransaction('${t.id}')" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-opacity">
+                                <span class="material-symbols-outlined text-sm">delete</span>
+                             </button>
+                        </div>
+                        <p class="text-xs text-slate-500 font-mono">${t.date} • ${t.quantity ? t.quantity : ''} ${t.quantity ? ' units' : 'Action'}</p>
+                        <p class="text-xs font-bold ${isDebit ? 'text-slate-900 dark:text-white' : 'text-emerald-500'} mt-1 font-mono">
+                            ${isDebit ? '-' : '+'}${formatCurrency(val, t.currency || p.currency)}
+                        </p>
+                    </div>
+                </div>
+                `;
+            }).join('') || '<p class="text-center text-slate-500 py-8 text-sm">No transactions yet.</p>';
+
+        } catch (err) { 
+            console.error("Error loading portfolio details:", err);
+            navigateToList();
+        }
+    }
+    function renderAllocation(allocation) {
+        const list = document.getElementById('allocation-list');
+        if (!list) return; // Safety check
+        if (!allocation || allocation.length === 0) {
+            list.innerHTML = '<p class="text-sm text-slate-500 italic">No assets held.</p>';
+            return;
+        }
+
+        const colors = ['bg-primary', 'bg-emerald-500', 'bg-orange-500', 'bg-purple-500', 'bg-pink-500', 'bg-cyan-500'];
+        list.innerHTML = allocation.map((a, idx) => {
+            const color = colors[idx % colors.length];
+            return `
+            <div class="space-y-2">
+                <div class="flex justify-between text-xs font-bold">
+                    <span class="text-slate-500">${a.type}</span>
+                    <div class="flex gap-3">
+                        <span class="text-slate-400">${formatCurrency(a.value, portfolioCurrency)}</span>
+                        <span>${a.percent}%</span>
+                    </div>
+                </div>
+                <div class="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <div class="h-full ${color} rounded-full" style="width: ${a.percent}%"></div>
+                </div>
+            </div>
+            `;
+        }).join('');
+    }
+
+
+
+    function _wirePortfolioForm() {
+        const form = document.getElementById('portfolio-form');
+        if (!form) return;
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const data = {
+                name: document.getElementById('p-name').value,
+                currency: document.getElementById('p-currency').value,
+                startDate: document.getElementById('p-date').value,
+                initialCash: parseFloat(document.getElementById('p-cash').value)
+            };
+            const id = document.getElementById('p-id').value;
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? `/api/portfolios/${id}` : '/api/portfolios';
+            try {
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    closePortfolioModal();
+                    window.dispatchEvent(new CustomEvent('portfolios-updated'));
+                    init();
+                } else {
+                    const errText = await res.text();
+                    alert('Failed to save portfolio: ' + errText);
+                }
+            } catch (err) { 
+                console.error(err);
+                alert('Error saving portfolio: ' + err.message);
+            }
+        };
+    }
+
+    function openTransactionModal() {
+        document.getElementById('transaction-modal').classList.remove('hidden');
+        document.getElementById('t-date').value = new Date().toISOString().split('T')[0];
+        toggleTransactionFields();
+    }
+    function closeTransactionModal() {
+        document.getElementById('transaction-modal').classList.add('hidden');
+        document.getElementById('transaction-form').reset();
+        document.getElementById('t-fx-field').classList.add('hidden');
+    }
+
+    function toggleTransactionFields() {
+        const type = document.getElementById('t-type').value;
+        const isTrade = ['BUY', 'SELL'].includes(type);
+        const isCash = ['DEPOSIT', 'WITHDRAWAL', 'TAX', 'DIVIDEND'].includes(type);
+        
+        document.getElementById('t-asset-field').style.display = (isTrade || type === 'DIVIDEND') ? 'block' : 'none';
+        document.getElementById('t-stock-fields').style.display = isTrade ? 'contents' : 'none';
+        document.getElementById('t-amount-field').style.display = isCash ? 'block' : 'none';
+    }
+
+    // Asset Search (Shared with asset_management.html)
+    const tSearchInput = document.getElementById('t-asset-search');
+    const tResults = document.getElementById('t-search-results');
+    let tTimeout;
+
+    if (tSearchInput) {
+        tSearchInput.addEventListener('input', () => {
+            clearTimeout(tTimeout);
+            const q = tSearchInput.value.trim();
+            if (q.length < 2) return tResults.classList.add('hidden');
+
+            tTimeout = setTimeout(async () => {
+                const res = await fetch(`/api/asset-search?query=${q}`);
+                const data = await res.json();
+                tResults.innerHTML = data.filter(i => i.symbol).map(i => `
+                    <div class="px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-sm" onclick="selectTAsset('${i.symbol}', '${i.currency}')">
+                        <span class="font-bold">${i.symbol}</span> - ${i.shortname || i.symbol} 
+                        <span class="text-[10px] text-primary italic ml-2">${i.currency}</span>
+                    </div>
+                `).join('');
+                tResults.classList.remove('hidden');
+            }, 300);
+        });
+    }
+
+    function selectTAsset(ticker, currency) {
+        document.getElementById('t-asset-ticker').value = ticker;
+        document.getElementById('t-asset-currency').value = currency;
+        document.getElementById('t-asset-search').value = ticker;
+        tResults.classList.add('hidden');
+        checkFX();
+    }
+
+    async function checkFX() {
+        const assetCurr = document.getElementById('t-asset-currency').value;
+        if (!assetCurr || assetCurr === portfolioCurrency) {
+            document.getElementById('t-fx-field').classList.add('hidden');
+            document.getElementById('t-fx').value = 1;
+            return;
+        }
+
+        document.getElementById('asset-curr-label').innerText = assetCurr;
+        document.getElementById('p-curr-label').innerText = portfolioCurrency;
+        document.getElementById('t-fx-field').classList.remove('hidden');
+
+        try {
+            const res = await fetch(`/api/fx-rate?from=${portfolioCurrency}&to=${assetCurr}`);
+            const data = await res.json();
+            document.getElementById('t-fx').value = data.rate;
+        } catch (err) { console.error(err); }
+    }
+
+    function _wireTransactionForm() {
+        const form = document.getElementById('transaction-form');
+        if (!form) return;
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const data = {
+                portfolioId: currentPortfolioId,
+                type: document.getElementById('t-type').value,
+                assetTicker: document.getElementById('t-asset-ticker').value,
+                date: document.getElementById('t-date').value,
+                quantity: document.getElementById('t-qty').value,
+                price: document.getElementById('t-price').value,
+                commission: document.getElementById('t-comm').value,
+                tax: document.getElementById('t-tax').value,
+                exchangeRate: document.getElementById('t-fx').value,
+                amount: document.getElementById('t-amount').value
+            };
+            try {
+                await fetch('/api/transactions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                closeTransactionModal();
+                loadPortfolioDetails();
+            } catch (err) { console.error(err); }
+        };
+    }
+
+    let pendingDeleteAction = null;
+
+    function openConfirmModal(title, body, action) {
+        document.getElementById('confirm-modal-title').innerText = title;
+        document.getElementById('confirm-modal-body').innerText = body;
+        pendingDeleteAction = action;
+        document.getElementById('general-confirm-modal').classList.remove('hidden');
+    }
+
+    function closeConfirmModal() {
+        document.getElementById('general-confirm-modal').classList.add('hidden');
+        pendingDeleteAction = null;
+    }
+
+    function _wireConfirmModal() {
+        const btn = document.getElementById('confirm-modal-btn');
+        if (!btn) return;
+        btn.onclick = async () => {
+            if (pendingDeleteAction) {
+                await pendingDeleteAction();
+                closeConfirmModal();
+            }
+        };
+    }
+
+    async function deleteTransaction(id) {
+        openConfirmModal(
+            'Delete Transaction',
+            'Are you sure you want to delete this transaction?',
+            async () => {
+                await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
+                loadPortfolioDetails();
+            }
+        );
+    }
+
+    async function deletePortfolio() {
+        const id = document.getElementById('p-id').value;
+        if (!id) return;
+        
+        openConfirmModal(
+            'Delete Portfolio',
+            'Are you sure you want to delete this portfolio and all its transactions? This action cannot be undone.',
+            async () => {
+                try {
+                    await fetch(`/api/portfolios/${id}`, { method: 'DELETE' });
+                    closePortfolioModal();
+                    window.dispatchEvent(new CustomEvent('portfolios-updated'));
+                    navigateToList();
+                } catch (err) { console.error(err); }
+            }
+        );
+    }
+
+    // ─── Performance Chart Logic ───────────────────────────────────────────────
+    let performanceChart = null;
+    let currentChartRange = '1M';
+
+    function initPerformanceChart() {
+        if (performanceChart) performanceChart.destroy();
+        const ctx = document.getElementById('performanceChart')?.getContext('2d');
+        if (!ctx) return;
+        
+        const isDark = document.documentElement.classList.contains('dark');
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+        const textColor = isDark ? '#94a3b8' : '#64748b';
+
+        performanceChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Portfolio Value',
+                    data: [],
+                    borderColor: '#135bec',
+                    backgroundColor: 'rgba(19, 91, 236, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                    pointHoverBackgroundColor: '#135bec',
+                    pointHoverBorderColor: '#fff',
+                    pointHoverBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: isDark ? '#1e293b' : '#fff',
+                        titleColor: isDark ? '#f1f5f9' : '#1e293b',
+                        bodyColor: isDark ? '#f1f5f9' : '#1e293b',
+                        borderColor: isDark ? '#334155' : '#e2e8f0',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: false,
+                        callbacks: {
+                            label: (context) => `Value: ${formatCurrency(context.parsed.y)}`
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: textColor, font: { size: 10 } },
+                        grid: { display: false }
+                    },
+                    y: {
+                        ticks: { 
+                            color: textColor, 
+                            font: { size: 10 },
+                            callback: (val) => formatCurrency(val).split(',')[0] // Short format
+                        },
+                        grid: { color: gridColor }
+                    }
+                }
+            }
+        });
+        updatePerformanceChart();
+    }
+
+    async function setChartRange(range) {
+        currentChartRange = range;
+        
+        // Update UI
+        document.querySelectorAll('.range-btn').forEach(btn => {
+            if (btn.dataset.range === range) {
+                btn.classList.add('bg-white', 'dark:bg-slate-800', 'shadow-sm', 'text-slate-900', 'dark:text-white');
+                btn.classList.remove('text-slate-400');
+            } else {
+                btn.classList.remove('bg-white', 'dark:bg-slate-800', 'shadow-sm', 'text-slate-900', 'dark:text-white');
+                btn.classList.add('text-slate-400');
+            }
+        });
+
+        updatePerformanceChart();
+    }
+
+    async function updatePerformanceChart() {
+        if (!currentPortfolioId || !performanceChart) return;
+        try {
+            const res = await fetch(`/api/analytics/portfolio-performance/${currentPortfolioId}?range=${currentChartRange}`);
+            const data = await res.json();
+            
+            performanceChart.data.labels = data.map(d => {
+                const date = new Date(d.date);
+                return date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
+            });
+            performanceChart.data.datasets[0].data = data.map(d => d.value);
+            performanceChart.update();
+        } catch (err) {
+            console.error('Failed to update chart:', err);
+        }
+    }
+
+    async function editPortfolio() {
+        const res = await fetch(`/api/portfolios/${currentPortfolioId}`);
+        const p = await res.json();
+        document.getElementById('p-id').value = p.id;
+        document.getElementById('p-name').value = p.name;
+        document.getElementById('p-currency').value = p.currency;
+        document.getElementById('p-date').value = p.startDate;
+        document.getElementById('p-cash').value = p.initialCash;
+        document.getElementById('portfolio-modal-title').innerText = "Edit Portfolio";
+        document.getElementById('delete-portfolio-btn').classList.remove('hidden');
+        document.getElementById('portfolio-modal').classList.remove('hidden');
+    }
+
+    window.init = init;
+
+    function wireEvents() {
+        _wirePortfolioForm();
+        _wireTransactionForm();
+        _wireConfirmModal();
+        init();
+    }
+
+    // Initialize on load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', wireEvents);
+    } else {
+        wireEvents();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // BULK IMPORT LOGIC
+    // ═══════════════════════════════════════════════════════════════════════
+
+    let importRows = []; // parsed + validated rows
+
+    function openImportModal() {
+        document.getElementById('import-modal').classList.remove('hidden');
+        document.getElementById('import-step-1').classList.remove('hidden');
+        document.getElementById('import-step-2').classList.add('hidden');
+        document.getElementById('import-step-3').classList.add('hidden');
+        document.getElementById('import-paste-area').value = '';
+        importRows = [];
+    }
+
+    function closeImportModal() {
+        document.getElementById('import-modal').classList.add('hidden');
+    }
+
+    function goBackToStep1() {
+        document.getElementById('import-step-1').classList.remove('hidden');
+        document.getElementById('import-step-2').classList.add('hidden');
+    }
+
+    // ─── Parse paste text into row objects ───────────────────────────────────
+    function parseNum(str) {
+        if (!str) return 0;
+        const cleaned = str.replace(/[€$£\s]/g,'').replace(/\./g,'').replace(',','.');
+        return parseFloat(cleaned) || 0;
+    }
+
+    function parseDate_IT(str) {
+        const parts = str.trim().split('/');
+        if (parts.length === 3) return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+        return str.trim();
+    }
+
+    async function parseImportData() {
+        const raw = document.getElementById('import-paste-area').value.trim();
+        if (!raw) { alert('Please paste some data first.'); return; }
+
+        const lines = raw.split('\n').map(l => l.trim()).filter(l => l);
+        const headerKeywords = ['data','operazione','portfolio','ticker','val','price','qta'];
+        const parsed = [];
+        for (const line of lines) {
+            const cols = line.split(/\t/).map(c => c.trim());
+            if (cols.length < 8) continue;
+            if (headerKeywords.some(k => cols[0].toLowerCase().includes(k))) continue;
+
+            let type = (cols[1] || 'BUY').toUpperCase();
+            if (type === 'DIV') type = 'DIVIDEND';
+            const validTypes = ['BUY','SELL','DIVIDEND','DEPOSIT','WITHDRAWAL','TAX'];
+            if (!validTypes.includes(type)) continue;
+
+            parsed.push({
+                dateRaw:      cols[0],
+                date:         parseDate_IT(cols[0]),
+                type,
+                portfolio:    cols[2] || '',
+                tickerRaw:    cols[3] || '',
+                ticker:       cols[3] || '',
+                currency:     cols[4] || 'USD',
+                exchangeRate: parseNum(cols[5]) || 1,
+                price:        parseNum(cols[6]),
+                quantity:     parseNum(cols[7]),
+                commission:   parseNum(cols[8]),
+                valEur:       parseNum(cols[9]),
+                tax:          parseNum(cols[10]),
+                status:       'pending',
+                yfName:       '',
+                yfCurrency:   '',
+                yfExchange:   '',
+                yfType:       '',
+                yfPrice:      0,
+                yfPe:         null,
+                suggestions:  []
+            });
+        }
+
+        if (!parsed.length) {
+            alert('No valid rows found.');
+            return;
+        }
+
+        document.getElementById('import-step-1').classList.add('hidden');
+        document.getElementById('import-step-3').classList.remove('hidden');
+        const progressLabel = document.getElementById('import-progress-label');
+
+        const uniqueTickers = [...new Set(parsed.map(r => r.tickerRaw).filter(Boolean))];
+        const tickerCache = {};
+
+        for (let i = 0; i < uniqueTickers.length; i++) {
+            const tk = uniqueTickers[i];
+            progressLabel.textContent = `Validating ${tk} (${i+1}/${uniqueTickers.length})...`;
+            try {
+                const res = await fetch(`/api/validate-ticker?ticker=${encodeURIComponent(tk)}`);
+                tickerCache[tk] = await res.json();
+            } catch {
+                tickerCache[tk] = { valid: false, suggestions: [] };
+            }
+        }
+
+        for (const row of parsed) {
+            const result = tickerCache[row.tickerRaw];
+            if (!result) { row.status = 'manual'; continue; }
+            if (result.valid) {
+                row.status     = 'ok';
+                row.ticker     = result.ticker;
+                row.yfName     = result.name;
+                row.yfCurrency = result.currency;
+                row.yfExchange = result.exchange;
+                row.yfType     = result.type;
+                row.yfPrice    = result.currentPrice;
+                row.yfPe       = result.pe;
+            } else if (result.suggestions && result.suggestions.length) {
+                row.status      = 'suggestions';
+                row.suggestions = result.suggestions;
+            } else {
+                row.status = 'manual';
+            }
+        }
+
+        importRows = parsed;
+        document.getElementById('import-step-3').classList.add('hidden');
+        document.getElementById('import-step-2').classList.remove('hidden');
+        renderImportPreview();
+    }
+
+    function renderImportPreview() {
+        const tbody = document.getElementById('import-preview-body');
+        let okCount   = 0;
+        let warnCount = 0;
+
+        tbody.innerHTML = importRows.map((r, idx) => {
+            let statusHtml;
+            let tickerCell;
+
+            if (r.status === 'ok') {
+                okCount++;
+                statusHtml = `<span title="Valid" class="text-emerald-500 text-base">🟢</span>`;
+                tickerCell = `<div class="font-bold text-primary">${r.ticker}</div><div class="text-[10px] text-slate-400">${r.yfName || ''}</div>`;
+            } else if (r.status === 'suggestions') {
+                warnCount++;
+                statusHtml = `<span title="Suggestions" class="text-base">🟡</span>`;
+                const opts = r.suggestions.map(s => `<option value="${s.symbol}" data-name="${s.name}" data-exch="${s.exchange}">${s.symbol} — ${s.name}</option>`).join('');
+                tickerCell = `<div>
+                    <input id="ticker-edit-${idx}" value="${r.ticker}" class="w-28 bg-amber-50 rounded px-2 py-1 font-bold text-xs" />
+                    <select onchange="applySuggestion(${idx}, this)" class="block w-full text-[10px] mt-1">
+                        <option value="">— Pick suggestion —</option>${opts}
+                    </select>
+                </div>`;
+            } else {
+                warnCount++;
+                statusHtml = `<span title="Not found" class="text-base">🔴</span>`;
+                tickerCell = `<input id="ticker-edit-${idx}" value="${r.ticker}" class="w-28 bg-red-50 rounded px-2 py-1 font-bold text-xs" oninput="importRows[${idx}].ticker=this.value" />`;
+            }
+
+            return `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                <td class="px-3 py-2.5 text-center">${statusHtml}</td>
+                <td class="px-3 py-2.5 font-mono">${r.dateRaw}</td>
+                <td class="px-3 py-2.5">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold ${ r.type==='BUY'?'bg-emerald-100 text-emerald-600':(r.type==='SELL'?'bg-red-100 text-red-500':(r.type==='DIVIDEND'?'bg-blue-100 text-blue-500':'bg-slate-100 text-slate-500')) }">${r.type}</span>
+                </td>
+                <td class="px-3 py-2.5">${tickerCell}</td>
+                <td class="px-3 py-2.5 truncate max-w-[120px]">${r.yfName || r.tickerRaw}</td>
+                <td class="px-3 py-2.5 font-bold">${r.yfCurrency || r.currency}</td>
+                <td class="px-3 py-2.5 text-right font-mono">${formatNumber(r.price, 2)}</td>
+                <td class="px-3 py-2.5 text-right font-mono">${formatNumber(r.quantity, 2)}</td>
+                <td class="px-3 py-2.5 text-right text-slate-500">${r.commission}</td>
+                <td class="px-3 py-2.5 text-right text-slate-500">${r.tax}</td>
+            </tr>`;
+        }).join('');
+
+        document.getElementById('import-ok-count').textContent   = `${okCount} OK`;
+        document.getElementById('import-warn-count').textContent = `${warnCount} Need Review`;
+    }
+
+    function applySuggestion(idx, selectEl) {
+        const symbol = selectEl.value;
+        if (!symbol) return;
+        importRows[idx].ticker = symbol;
+        importRows[idx].status = 'ok';
+        const opt = selectEl.options[selectEl.selectedIndex];
+        importRows[idx].yfName     = opt.dataset.name || symbol;
+        importRows[idx].yfExchange = opt.dataset.exch || '';
+        const input = document.getElementById(`ticker-edit-${idx}`);
+        if (input) input.value = symbol;
+        renderImportPreview();
+    }
+
+    async function confirmImport() {
+        importRows.forEach((r, idx) => {
+            const el = document.getElementById(`ticker-edit-${idx}`);
+            if (el) r.ticker = el.value.trim() || r.tickerRaw;
+        });
+
+        const toImport = importRows.map(r => ({
+            type:         r.type,
+            assetTicker:  r.ticker,
+            assetName:    r.yfName || r.ticker,
+            assetCurrency:r.yfCurrency || r.currency,
+            assetExchange:r.yfExchange || '',
+            assetType:    r.yfType || 'Stock',
+            assetPrice:   r.yfPrice || 0,
+            assetPe:      r.yfPe || null,
+            date:         r.date,
+            quantity:     r.quantity,
+            price:        r.price,
+            commission:   r.commission,
+            tax:          r.tax,
+            exchangeRate: r.exchangeRate,
+            amount:       r.valEur
+        }));
+
+        document.getElementById('import-step-2').classList.add('hidden');
+        document.getElementById('import-step-3').classList.remove('hidden');
+        document.getElementById('import-progress-label').textContent = `Importing ${toImport.length} transactions...`;
+
+        try {
+            const res = await fetch('/api/transactions/bulk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ portfolioId: currentPortfolioId, transactions: toImport })
+            });
+            const result = await res.json();
+            closeImportModal();
+            alert(`✅ Imported ${result.imported} transactions.`);
+            loadPortfolioDetails();
+        } catch (err) {
+            alert('Import failed: ' + err.message);
+            goBackToStep1();
+        }
+    }
+</script>
+</body></html>

@@ -1,0 +1,13 @@
+version: '3.8'
+services:
+  foliotrackerAPI:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+    command: npm run dev

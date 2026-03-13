@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FolioTrack - Settings</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["var(--app-font-family, 'JetBrains Mono')", "monospace"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 10px;
+        }
+    </style>
+    <script src="/theme.js"></script>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex">
+<!-- Sidebar -->
+<aside class="w-72 border-r border-slate-200 dark:border-slate-800 flex flex-col h-screen sticky top-0 bg-white dark:bg-[#111722]">
+<div class="p-6 flex items-center gap-3">
+<div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white">
+<span class="material-symbols-outlined">query_stats</span>
+</div>
+<div>
+<h1 class="text-lg font-bold tracking-tight">FolioTrack</h1>
+<p class="text-xs text-slate-500 dark:text-slate-400">Premium Terminal</p>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
+<div class="pb-4">
+<p class="px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Main</p>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors font-medium" href="/dashboard">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/portfolio">
+<span class="material-symbols-outlined text-[20px]">work</span>
+<span>Portfolio</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/market">
+<span class="material-symbols-outlined text-[20px]">trending_up</span>
+<span>Market</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/reports">
+<span class="material-symbols-outlined text-[20px]">pie_chart</span>
+<span>Reports</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/history">
+<span class="material-symbols-outlined text-[20px]">history</span>
+<span>History</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/dividend">
+<span class="material-symbols-outlined text-[20px]">payments</span>
+<span>Dividend</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary font-medium" href="/settings">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span>Settings</span>
+</a>
+</div>
+<div class="pt-4 border-t border-slate-200 dark:border-slate-800">
+<div class="flex items-center justify-between px-3 mb-2">
+<p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Quick Access</p>
+<span class="material-symbols-outlined text-sm cursor-pointer hover:text-primary">add_circle</span>
+</div>
+<!-- Portfolio List -->
+<div class="space-y-1" id="sidebar-portfolios">
+    <div class="px-3 py-2 text-xs text-slate-400 italic"> Loading...</div>
+</div>
+</div>
+</nav>
+<div class="p-4 border-t border-slate-200 dark:border-slate-800">
+<div class="flex items-center gap-3 p-2 rounded-xl bg-slate-100 dark:bg-slate-900">
+<div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-400 font-bold text-xs">
+    UN
+</div>
+<div class="flex-1 overflow-hidden">
+<p class="text-sm font-bold truncate">User</p>
+<p class="text-xs text-slate-500 truncate">user@foliotrack.io</p>
+</div>
+<span class="material-symbols-outlined text-slate-400 text-sm">logout</span>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col h-screen overflow-y-auto">
+<!-- Header Row -->
+<header class="h-20 flex items-center justify-between px-8 bg-white/50 dark:bg-background-dark/50 backdrop-blur-md sticky top-0 z-10 border-b border-slate-200 dark:border-slate-800">
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-2 text-xs text-slate-500 font-bold uppercase tracking-widest">
+<span>Last Update: 2m ago</span>
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+<span class="text-emerald-500">Live</span>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-4">
+<button class="text-slate-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">search</span>
+</button>
+<div class="relative">
+<button class="text-slate-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full ring-2 ring-white dark:ring-background-dark"></span>
+</button>
+</div>
+</div>
+<div class="w-[1px] h-8 bg-slate-200 dark:bg-slate-800"></div>
+<div class="flex items-center gap-3">
+<div class="text-right hidden sm:block">
+<p class="text-sm font-bold">User</p>
+<p class="text-[10px] text-slate-500 font-medium">Standard Account</p>
+</div>
+<div class="w-10 h-10 rounded-full border-2 border-primary/20 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-400">
+    <span class="material-symbols-outlined">person</span>
+</div>
+</div>
+</div>
+</header>
+<div class="p-8 max-w-5xl mx-auto w-full space-y-8">
+<div>
+<h1 class="text-3xl font-black tracking-tight mb-2">Settings</h1>
+<p class="text-slate-500 dark:text-slate-400">Manage your account and portfolio preferences</p>
+</div>
+<!-- Account Settings -->
+<section class="space-y-4">
+<h2 class="text-lg font-bold border-l-4 border-primary pl-3">Account Settings</h2>
+<div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 flex flex-col md:flex-row items-center gap-6">
+<div class="w-20 h-20 rounded-full bg-slate-200 dark:bg-slate-800 ring-4 ring-slate-100 dark:ring-slate-800 flex items-center justify-center text-slate-400">
+    <span class="material-symbols-outlined text-4xl">person</span>
+</div>
+<div class="flex-1 text-center md:text-left">
+<h3 class="font-bold text-lg">User</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400">user@foliotrack.io</p>
+<div class="mt-4 flex flex-wrap gap-2 justify-center md:justify-start">
+<button class="px-5 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">Change Password</button>
+<button class="px-5 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-transparent dark:border-slate-700">Update Email</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Appearance Settings -->
+<section class="space-y-4">
+<h2 class="text-lg font-bold border-l-4 border-primary pl-3">Appearance Settings</h2>
+<div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div>
+        <label class="block font-bold text-sm mb-2">Font Family</label>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Choose the typography for the application.</p>
+        <select id="font-family-select" class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/50">
+            <option value="'JetBrains Mono', monospace">JetBrains Mono (Compact)</option>
+            <option value="'Fira Code', monospace">Fira Code (Coding)</option>
+            <option value="'Roboto Mono', monospace">Roboto Mono (Classic)</option>
+            <option value="'Inter', sans-serif">Inter (Sans Serif)</option>
+        </select>
+    </div>
+    <div>
+        <label class="block font-bold text-sm mb-2">Font Size</label>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Adjust the global text size.</p>
+        <select id="font-size-select" class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/50">
+            <option value="12">12px (Small)</option>
+            <option value="14">14px (Medium/Default)</option>
+            <option value="16">16px (Large)</option>
+            <option value="18">18px (Extra Large)</option>
+        </select>
+    </div>
+</div>
+</section>
+<!-- Portfolio Preferences -->
+<section class="space-y-4">
+<h2 class="text-lg font-bold border-l-4 border-primary pl-3">Portfolio Preferences</h2>
+<div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-6">
+    <div class="flex items-center justify-between">
+        <div>
+        <p class="font-bold text-sm">Default Currency</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Choose the currency for all your portfolio calculations</p>
+        </div>
+        <div class="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-lg">
+        <button class="px-5 py-2 text-sm font-bold bg-white dark:bg-slate-800 rounded-md shadow-sm">EUR</button>
+        <button class="px-5 py-2 text-sm font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors">USD</button>
+        </div>
+    </div>
+    <div class="h-px bg-slate-100 dark:bg-slate-800 w-full"></div>
+    <div class="flex items-center justify-between">
+        <div>
+        <p class="font-bold text-sm">Update Frequency</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400">How often to fetch live quotes (active markets only)</p>
+        </div>
+        <select id="update-frequency-select" class="bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/50">
+            <option value="1">1 Minute (Live)</option>
+            <option value="5">5 Minutes (Standard)</option>
+            <option value="15">15 Minutes</option>
+            <option value="60">1 hour</option>
+            <option value="0">Manual Only</option>
+        </select>
+    </div>
+</div>
+</section>
+<!-- Data Sources -->
+<section class="space-y-4">
+<h2 class="text-lg font-bold border-l-4 border-primary pl-3">Data Sources</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Yahoo Finance -->
+<div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-500">
+<span class="material-symbols-outlined">finance</span>
+</div>
+<span class="font-bold">Yahoo Finance API</span>
+</div>
+<span class="text-[10px] font-bold px-2 py-1 rounded bg-emerald-500/10 text-emerald-500 uppercase tracking-wider">Connected</span>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-bold text-slate-500 uppercase tracking-widest">API Key</label>
+<input class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2.5 text-sm px-4 focus:ring-primary focus:border-primary" type="password" value="••••••••••••••••"/>
+</div>
+<button class="w-full py-2.5 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Disconnect</button>
+</div>
+<!-- Google Sheets -->
+<div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+<span class="material-symbols-outlined">table_view</span>
+</div>
+<span class="font-bold">Google Sheets</span>
+</div>
+<span class="text-[10px] font-bold px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 uppercase tracking-wider">Disconnected</span>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Spreadsheet ID</label>
+<input class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2.5 text-sm px-4 focus:ring-primary focus:border-primary" placeholder="Enter ID..." type="text"/>
+</div>
+<button class="w-full py-2.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all">Connect Account</button>
+</div>
+</div>
+</section>
+<!-- Danger Zone -->
+<section class="space-y-4 pb-12">
+<h2 class="text-lg font-bold border-l-4 border-rose-500 pl-3 text-rose-500">Danger Zone</h2>
+<div class="bg-rose-500/5 border border-rose-500/20 rounded-2xl p-6 space-y-6">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div>
+<p class="font-bold text-rose-500">Reset All Data</p>
+<p class="text-xs text-slate-500 dark:text-slate-400">Permanently delete all your portfolio history and assets. This cannot be undone.</p>
+</div>
+        <button id="reset-data-btn" class="px-6 py-2 border border-rose-500/30 text-rose-500 rounded-lg text-sm font-bold hover:bg-rose-500/10 transition-all">Reset Data</button>
+</div>
+<div class="h-px bg-slate-200 dark:bg-slate-800 w-full"></div>
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div>
+<p class="font-bold text-rose-500">Delete Account</p>
+<p class="text-xs text-slate-500 dark:text-slate-400">This will immediately delete your account and all associated data.</p>
+</div>
+<button class="px-6 py-2 bg-rose-600 text-white rounded-lg text-sm font-bold hover:bg-rose-700 transition-all shadow-lg shadow-rose-600/20">Delete Account</button>
+</div>
+</div>
+</section>
+</div>
+</main>
+
+<!-- Custom Confirm Modal -->
+<div id="confirm-reset-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white dark:bg-[#111722] border border-rose-500/30 rounded-2xl w-full max-w-sm shadow-2xl p-8 space-y-6">
+    <div class="flex items-center gap-4">
+      <div class="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center shrink-0">
+        <span class="material-symbols-outlined text-rose-500 text-2xl">warning</span>
+      </div>
+      <div>
+        <p class="font-bold text-rose-500">Confirm Reset</p>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">This will permanently delete all portfolios, transactions, and assets. This action cannot be undone.</p>
+      </div>
+    </div>
+    <div class="flex gap-3">
+      <button id="confirm-cancel-btn" class="flex-1 py-2.5 rounded-lg font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors">Cancel</button>
+      <button id="confirm-reset-btn" class="flex-1 py-2.5 bg-rose-600 text-white rounded-lg font-bold hover:bg-rose-700 transition-all shadow-lg shadow-rose-600/20">Yes, Delete All</button>
+    </div>
+  </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const fontSelect = document.getElementById('font-family-select');
+        const sizeSelect = document.getElementById('font-size-select');
+        const freqSelect = document.getElementById('update-frequency-select');
+        
+        // Initial setup from window global settings if available or local cache
+        const updateUI = (settings) => {
+            if (fontSelect && settings.fontFamily) fontSelect.value = settings.fontFamily;
+            if (sizeSelect && settings.fontSize) sizeSelect.value = settings.fontSize;
+            if (freqSelect && settings.updateFrequency) freqSelect.value = settings.updateFrequency;
+        };
+
+        // Sync with backend if changed
+        window.addEventListener('settings-updated', (e) => {
+            updateUI(e.detail);
+        });
+
+        // Handle changes
+        const saveSettings = () => {
+            if (window.updateAppSettings) {
+                window.updateAppSettings({
+                    fontFamily: fontSelect.value,
+                    fontSize: sizeSelect.value,
+                    updateFrequency: freqSelect.value
+                });
+            }
+        };
+
+        if (fontSelect) fontSelect.addEventListener('change', saveSettings);
+        if (sizeSelect) sizeSelect.addEventListener('change', saveSettings);
+        if (freqSelect) freqSelect.addEventListener('change', saveSettings);
+        
+        // Reset Data logic
+        const resetBtn        = document.getElementById('reset-data-btn');
+        const resetModal      = document.getElementById('confirm-reset-modal');
+        const confirmResetBtn = document.getElementById('confirm-reset-btn');
+        const confirmCancelBtn= document.getElementById('confirm-cancel-btn');
+
+        if (resetBtn && resetModal) {
+            resetBtn.addEventListener('click', () => {
+                resetModal.classList.remove('hidden');
+            });
+            confirmCancelBtn.addEventListener('click', () => {
+                resetModal.classList.add('hidden');
+            });
+            confirmResetBtn.addEventListener('click', async () => {
+                confirmResetBtn.disabled = true;
+                confirmResetBtn.textContent = 'Deleting...';
+                try {
+                    const res = await fetch('/api/reset-data', { method: 'POST' });
+                    if (!res.ok) throw new Error('Server error');
+                    resetModal.classList.add('hidden');
+                    window.location.href = '/dashboard';
+                } catch (err) {
+                    console.error(err);
+                    confirmResetBtn.disabled = false;
+                    confirmResetBtn.textContent = 'Yes, Delete All';
+                    alert('Reset failed: ' + err.message);
+                }
+            });
+        }
+        
+        // Initial fetch to populate UI
+        fetch('/api/settings').then(res => res.json()).then(updateUI);
+    });
+</script>
+</body></html>

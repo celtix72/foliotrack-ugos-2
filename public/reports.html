@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FolioTrack - Reports &amp; Analytics</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["var(--app-font-family, 'JetBrains Mono')", "monospace"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 10px;
+        }
+    </style>
+    <script src="/theme.js"></script>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex">
+<!-- Sidebar -->
+<aside class="w-72 border-r border-slate-200 dark:border-slate-800 flex flex-col h-screen sticky top-0 bg-white dark:bg-[#111722]">
+<div class="p-6 flex items-center gap-3">
+<div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white">
+<span class="material-symbols-outlined">query_stats</span>
+</div>
+<div>
+<h1 class="text-lg font-bold tracking-tight">FolioTrack</h1>
+<p class="text-xs text-slate-500 dark:text-slate-400">Premium Terminal</p>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
+<div class="pb-4">
+<p class="px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Main</p>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/dashboard">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/portfolio">
+<span class="material-symbols-outlined text-[20px]">work</span>
+<span>Portfolio</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/market">
+<span class="material-symbols-outlined text-[20px]">trending_up</span>
+<span>Market</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary font-medium" href="/reports">
+<span class="material-symbols-outlined text-[20px]">pie_chart</span>
+<span>Reports</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/history">
+<span class="material-symbols-outlined text-[20px]">history</span>
+<span>History</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/dividend">
+<span class="material-symbols-outlined text-[20px]">payments</span>
+<span>Dividend</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/settings">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span>Settings</span>
+</a>
+</div>
+<div class="pt-4 border-t border-slate-200 dark:border-slate-800">
+<div class="flex items-center justify-between px-3 mb-2">
+<p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Quick Access</p>
+<span class="material-symbols-outlined text-sm cursor-pointer hover:text-primary">add_circle</span>
+</div>
+<!-- Portfolio List -->
+<div class="space-y-1" id="sidebar-portfolios">
+    <div class="px-3 py-2 text-xs text-slate-400 italic"> Loading...</div>
+</div>
+</div>
+</nav>
+<div class="p-4 border-t border-slate-200 dark:border-slate-800">
+<div class="flex items-center gap-3 p-2 rounded-xl bg-slate-100 dark:bg-slate-900">
+<div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-400 font-bold text-xs">
+    UN
+</div>
+<div class="flex-1 overflow-hidden">
+<p class="text-sm font-bold truncate">User</p>
+<p class="text-xs text-slate-500 truncate">user@foliotrack.io</p>
+</div>
+<span class="material-symbols-outlined text-slate-400 text-sm cursor-pointer">logout</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col h-screen overflow-hidden">
+<!-- Top Header Row -->
+<header class="h-16 flex items-center justify-between px-8 bg-white dark:bg-[#111722] border-b border-slate-200 dark:border-slate-800">
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-2 text-xs font-medium text-slate-500">
+<span class="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+<span>Last Update: 2m ago • Live</span>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-4">
+<button class="text-slate-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">search</span>
+</button>
+<div class="relative">
+<button class="text-slate-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-primary rounded-full ring-2 ring-white dark:ring-[#111722]"></span>
+</button>
+</div>
+</div>
+<div class="w-[1px] h-6 bg-slate-200 dark:bg-slate-800"></div>
+<div class="flex items-center gap-3 group cursor-pointer">
+<div class="text-right">
+<p class="text-xs font-bold text-slate-900 dark:text-slate-100">User</p>
+<p class="text-[10px] text-slate-500 uppercase tracking-widest">Free Plan</p>
+</div>
+<div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-400 text-xs">
+    UN
+</div>
+</div>
+</div>
+</header>
+<!-- Reports Scrollable Area -->
+<main class="flex-1 overflow-y-auto custom-scrollbar p-8">
+<!-- Reports Header Section -->
+<div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+<div>
+<h2 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Reports &amp; Analytics</h2>
+<p class="text-sm text-slate-500 dark:text-slate-400">Analysis for Fiscal Year 2024</p>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex items-center bg-slate-100 dark:bg-slate-900 rounded-lg px-4 py-2 gap-3 border border-slate-200 dark:border-slate-800">
+<span class="material-symbols-outlined text-sm">calendar_today</span>
+<span class="text-sm font-semibold">Oct 01, 2023 - Oct 31, 2023</span>
+<span class="material-symbols-outlined text-sm">expand_more</span>
+</div>
+<button class="bg-primary hover:bg-primary/90 text-white px-5 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-all shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-sm">download</span>
+                    Export Report
+                </button>
+</div>
+</div>
+<div class="space-y-8 max-w-7xl mx-auto">
+<!-- Key Metrics Grid -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<div class="bg-white dark:bg-[#111722] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-primary/50 transition-colors shadow-sm">
+<div class="flex justify-between items-start mb-4 text-slate-500">
+<p class="text-xs font-bold uppercase tracking-widest">Total ROI</p>
+<span class="material-symbols-outlined text-primary">trending_up</span>
+</div>
+<h3 class="text-3xl font-black">0.0%</h3>
+<p class="text-xs text-slate-500 font-bold mt-2">No data yet</p>
+</div>
+<div class="bg-white dark:bg-[#111722] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-primary/50 transition-colors shadow-sm">
+<div class="flex justify-between items-start mb-4 text-slate-500">
+<p class="text-xs font-bold uppercase tracking-widest">Annualized Return</p>
+<span class="material-symbols-outlined text-primary">analytics</span>
+</div>
+<h3 class="text-3xl font-black">0.0%</h3>
+<p class="text-xs text-slate-500 font-bold mt-2">No data yet</p>
+</div>
+<div class="bg-white dark:bg-[#111722] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-primary/50 transition-colors shadow-sm">
+<div class="flex justify-between items-start mb-4 text-slate-500">
+<p class="text-xs font-bold uppercase tracking-widest">Sharpe Ratio</p>
+<span class="material-symbols-outlined text-primary">monitoring</span>
+</div>
+<h3 class="text-3xl font-black">0.00</h3>
+<p class="text-xs text-slate-500 font-bold mt-2">No data yet</p>
+</div>
+<div class="bg-white dark:bg-[#111722] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-primary/50 transition-colors shadow-sm">
+<div class="flex justify-between items-start mb-4 text-slate-500">
+<p class="text-xs font-bold uppercase tracking-widest">Best Asset</p>
+<span class="material-symbols-outlined text-primary">workspace_premium</span>
+</div>
+<h3 class="text-3xl font-black">-</h3>
+<p class="text-xs text-slate-500 font-bold mt-2">No data yet</p>
+</div>
+</section>
+<!-- Performance Chart Section -->
+<section class="bg-white dark:bg-[#111722] p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+<div>
+<h3 class="text-xl font-bold">Performance Comparison</h3>
+<p class="text-sm text-slate-500">Portfolios vs Benchmark Indices</p>
+</div>
+<div class="flex flex-wrap gap-4">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-primary"></span>
+<span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Your Portfolio</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+<span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">S&amp;P 500</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-amber-500"></span>
+<span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">MSCI World</span>
+</div>
+</div>
+</div>
+<div class="h-80 w-full relative">
+<svg class="w-full h-full overflow-visible" preserveaspectratio="none" viewbox="0 0 1000 300">
+<!-- Grid Lines -->
+<line class="text-slate-100 dark:text-slate-800" stroke="currentColor" stroke-width="1" x1="0" x2="1000" y1="0" y2="0"></line>
+<line class="text-slate-100 dark:text-slate-800" stroke="currentColor" stroke-width="1" x1="0" x2="1000" y1="75" y2="75"></line>
+<line class="text-slate-100 dark:text-slate-800" stroke="currentColor" stroke-width="1" x1="0" x2="1000" y1="150" y2="150"></line>
+<line class="text-slate-100 dark:text-slate-800" stroke="currentColor" stroke-width="1" x1="0" x2="1000" y1="225" y2="225"></line>
+<line class="text-slate-100 dark:text-slate-800" stroke="currentColor" stroke-width="1" x1="0" x2="1000" y1="300" y2="300"></line>
+<!-- Gradient -->
+<defs>
+<lineargradient id="area-grad" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#135bec" stop-opacity="0.3"></stop>
+<stop offset="100%" stop-color="#135bec" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+<path d="M0 250 Q125 220 250 180 T500 120 T750 140 T1000 60 V300 H0 Z" fill="url(#area-grad)"></path>
+<!-- Main Portfolio Line -->
+<path d="M0 250 Q125 220 250 180 T500 120 T750 140 T1000 60" fill="none" stroke="#135bec" stroke-linecap="round" stroke-width="3"></path>
+<!-- Benchmark Lines -->
+<path d="M0 260 Q125 240 250 210 T500 180 T750 190 T1000 140" fill="none" stroke="#10b981" stroke-dasharray="8 4" stroke-width="2"></path>
+<path d="M0 270 Q125 260 250 230 T500 210 T750 220 T1000 180" fill="none" stroke="#f59e0b" stroke-dasharray="8 4" stroke-width="2"></path>
+</svg>
+<div class="flex justify-between mt-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+<span>Oct 2023</span>
+<span>Nov 2023</span>
+<span>Dec 2023</span>
+<span>Jan 2024</span>
+<span>Feb 2024</span>
+<span>Mar 2024</span>
+<span>Apr 2024</span>
+<span>May 2024</span>
+</div>
+</div>
+</section>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-8">
+<!-- Diversification -->
+<section class="bg-white dark:bg-[#111722] p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="mb-8">
+<h3 class="text-xl font-bold">Diversification</h3>
+<p class="text-sm text-slate-500">Sector and Geography exposure</p>
+</div>
+<div class="flex flex-col md:flex-row items-center gap-10">
+<div class="relative w-44 h-44">
+<svg class="w-full h-full -rotate-90" viewbox="0 0 100 100">
+<circle cx="50" cy="50" fill="transparent" r="25" stroke="#135bec" stroke-dasharray="100 157.1" stroke-width="20"></circle>
+<circle cx="50" cy="50" fill="transparent" r="25" stroke="#3b82f6" stroke-dasharray="35 157.1" stroke-dashoffset="-100" stroke-width="20"></circle>
+<circle cx="50" cy="50" fill="transparent" r="40" stroke="#135bec" stroke-dasharray="100 251.3" stroke-width="8"></circle>
+<circle cx="50" cy="50" fill="transparent" r="40" stroke="#8b5cf6" stroke-dasharray="60 251.3" stroke-dashoffset="-100" stroke-width="8"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-[10px] font-bold text-slate-400 uppercase">Global</span>
+<span class="text-lg font-black">100%</span>
+</div>
+</div>
+<div class="flex-1 space-y-4">
+<div>
+<p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Geography</p>
+<div class="flex items-center justify-between text-sm">
+<div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-primary"></span><span>USA</span></div>
+<span class="font-bold">64%</span>
+</div>
+<div class="flex items-center justify-between text-sm mt-1">
+<div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-blue-500"></span><span>Europe</span></div>
+<span class="font-bold">22%</span>
+</div>
+</div>
+<div>
+<p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Sector</p>
+<div class="flex items-center justify-between text-sm">
+<div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-primary"></span><span>Tech</span></div>
+<span class="font-bold">40%</span>
+</div>
+<div class="flex items-center justify-between text-sm mt-1">
+<div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-purple-500"></span><span>Finance</span></div>
+<span class="font-bold">24%</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Dividends -->
+<section class="bg-white dark:bg-[#111722] p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="flex justify-between items-start mb-8">
+<div>
+<h3 class="text-xl font-bold">Dividends</h3>
+<p class="text-sm text-slate-500">12-Month Projection</p>
+</div>
+<div class="text-right">
+<p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Yield</p>
+<p class="text-xl font-black text-emerald-500">$0.00</p>
+</div>
+</div>
+<div class="flex items-end gap-1.5 h-32 mb-8">
+<div class="flex-1 bg-primary/20 rounded-t-sm h-[30%] hover:bg-primary transition-colors cursor-pointer"></div>
+<div class="flex-1 bg-primary/20 rounded-t-sm h-[45%] hover:bg-primary transition-colors cursor-pointer"></div>
+<div class="flex-1 bg-primary/20 rounded-t-sm h-[85%] hover:bg-primary transition-colors cursor-pointer"></div>
+<div class="flex-1 bg-primary/20 rounded-t-sm h-[40%] hover:bg-primary transition-colors cursor-pointer"></div>
+<div class="flex-1 bg-primary/20 rounded-t-sm h-[35%] hover:bg-primary transition-colors cursor-pointer"></div>
+<div class="flex-1 bg-primary/20 rounded-t-sm h-[90%] hover:bg-primary transition-colors cursor-pointer"></div>
+<div class="flex-1 bg-primary/20 rounded-t-sm h-[32%] hover:bg-primary transition-colors cursor-pointer"></div>
+<div class="flex-1 bg-primary/20 rounded-t-sm h-[38%] hover:bg-primary transition-colors cursor-pointer"></div>
+<div class="flex-1 bg-primary/20 rounded-t-sm h-[75%] hover:bg-primary transition-colors cursor-pointer"></div>
+<div class="flex-1 bg-primary/20 rounded-t-sm h-[30%] hover:bg-primary transition-colors cursor-pointer"></div>
+<div class="flex-1 bg-primary/20 rounded-t-sm h-[28%] hover:bg-primary transition-colors cursor-pointer"></div>
+<div class="flex-1 bg-primary/20 rounded-t-sm h-[95%] hover:bg-primary transition-colors cursor-pointer"></div>
+</div>
+<div class="space-y-3">
+<div class="py-12 text-center">
+<p class="text-sm text-slate-500 italic">No dividends recorded for this period.</p>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+</div>
+</body></html>
