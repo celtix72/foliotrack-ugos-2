@@ -14,6 +14,18 @@ const { db, getSettings, setSetting, recalculatePortfolio, recalculateAll } = re
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
+// ─── CACHING LAYER ──────────────────────────────────────────────────────────
+const historicalPricesCache = {}; // { ticker: { date: price } }
+let performanceResultsCache = {}; // { cacheKey: { data, timestamp } }
+
+function clearPerformanceCache() {
+    performanceResultsCache = {};
+    console.log('Performance result cache invalidated.');
+}
+
+const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+// ────────────────────────────────────────────────────────────────────────────
+
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -259,6 +271,7 @@ app.post('/api/portfolios', (req, res) => {
 
     const created = db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(result.lastInsertRowid);
     console.log('Created portfolio:', created);
+    clearPerformanceCache();
     res.status(201).json(created);
 });
 
@@ -278,6 +291,7 @@ app.put('/api/portfolios/:id', (req, res) => {
     );
 
     recalculatePortfolio(req.params.id);
+    clearPerformanceCache();
     res.json(db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(req.params.id));
 });
 
@@ -287,6 +301,7 @@ app.delete('/api/portfolios/:id', (req, res) => {
     // ON DELETE CASCADE removes transactions automatically
     db.prepare(`DELETE FROM portfolios WHERE id = ?`).run(req.params.id);
     console.log(`Deleted portfolio ${req.params.id}`);
+    clearPerformanceCache();
     res.json(row);
 });
 
@@ -319,6 +334,7 @@ app.post('/api/transactions', (req, res) => {
     );
 
     recalculatePortfolio(portfolioId);
+    clearPerformanceCache();
 
     res.status(201).json(db.prepare(`SELECT * FROM transactions WHERE id = ?`).get(result.lastInsertRowid));
 });
@@ -328,6 +344,7 @@ app.delete('/api/transactions/:id', (req, res) => {
     if (!row) return res.status(404).send('Transaction not found');
     db.prepare(`DELETE FROM transactions WHERE id = ?`).run(req.params.id);
     recalculatePortfolio(row.portfolioId);
+    clearPerformanceCache();
     res.json(row);
 });
 
@@ -425,6 +442,7 @@ app.post('/api/transactions/bulk', (req, res) => {
 
     importMany(transactions);
     recalculatePortfolio(portfolioId);
+    clearPerformanceCache();
     res.json({ imported: results.filter(r => r.ok).length, results });
 });
 
@@ -485,6 +503,14 @@ app.get('/api/analytics/portfolio-performance/:id', async (req, res) => {
         const { range } = req.query; // 1M, 3M, 6M, 1Y, ALL
         const portfolioId = req.params.id;
 
+        const cacheKey = `portfolio_${portfolioId}_${range}`;
+        const cached = performanceResultsCache[cacheKey];
+        if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
+            console.log(`Cache hit for ${cacheKey}`);
+            return res.json(cached.data);
+        }
+        console.log(`Cache miss for ${cacheKey}. Calculating...`);
+
         const portfolio = db.prepare('SELECT * FROM portfolios WHERE id = ?').get(portfolioId);
         if (!portfolio) return res.status(404).send('Portfolio not found');
 
@@ -507,16 +533,24 @@ app.get('/api/analytics/portfolio-performance/:id', async (req, res) => {
         // Fetch historical data for all tickers
         for (const ticker of uniqueTickers) {
             try {
-                // Fetch from the earliest possible date to ensure we have data for the requested range
+                if (historicalPricesCache[ticker]) {
+                    historicalPrices[ticker] = historicalPricesCache[ticker];
+                    continue;
+                }
+
                 const qStart = (transactions.find(t => t.assetTicker === ticker)?.date) || startDate.toISOString().split('T')[0];
                 const hist = await yahooFinance.historical(ticker, {
                     period1: qStart,
                     period2: today.toISOString().split('T')[0],
                     interval: '1d'
                 });
+                
                 historicalPrices[ticker] = Object.fromEntries(
                     hist.map(h => [new Date(h.date).toISOString().split('T')[0], h.adjClose || h.close])
                 );
+                // Save to global market cache
+                historicalPricesCache[ticker] = historicalPrices[ticker];
+
             } catch (err) {
                 console.warn(`Failed to fetch history for ${ticker}:`, err.message);
                 historicalPrices[ticker] = {};
@@ -590,9 +624,147 @@ app.get('/api/analytics/portfolio-performance/:id', async (req, res) => {
             currentDate.setDate(currentDate.getDate() + 1);
         }
 
+        // Save to performance cache
+        performanceResultsCache[cacheKey] = {
+            data: dataPoints,
+            timestamp: Date.now()
+        };
+
         res.json(dataPoints);
     } catch (err) {
         console.error('Portfolio performance error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/analytics/global-performance', async (req, res) => {
+    try {
+        const { range } = req.query; // 1W, 1M, 3M, 1Y, ALL
+
+        const cacheKey = `global_${range}`;
+        const cached = performanceResultsCache[cacheKey];
+        if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
+            console.log(`Cache hit for ${cacheKey}`);
+            return res.json(cached.data);
+        }
+        console.log(`Cache miss for ${cacheKey}. Calculating...`);
+
+        const portfolios = db.prepare('SELECT * FROM portfolios').all();
+        if (portfolios.length === 0) return res.json([]);
+
+        const allTransactions = db.prepare('SELECT * FROM transactions ORDER BY date ASC').all();
+        const today = new Date();
+        let startDate;
+
+        switch (range) {
+            case '1W': startDate = new Date(today); startDate.setDate(today.getDate() - 7); break;
+            case '1M': startDate = new Date(today); startDate.setMonth(today.getMonth() - 1); break;
+            case '3M': startDate = new Date(today); startDate.setMonth(today.getMonth() - 3); break;
+            case '1Y': startDate = new Date(today); startDate.setFullYear(today.getFullYear() - 1); break;
+            default:   startDate = new Date(allTransactions.length > 0 ? allTransactions[0].date : today);
+        }
+
+        const uniqueTickers = [...new Set(allTransactions.map(t => t.assetTicker).filter(Boolean))];
+        const historicalPrices = {};
+
+        // Fetch historical data for all unique tickers
+        for (const ticker of uniqueTickers) {
+            try {
+                if (historicalPricesCache[ticker]) {
+                    historicalPrices[ticker] = historicalPricesCache[ticker];
+                    continue;
+                }
+
+                const qStart = (allTransactions.find(t => t.assetTicker === ticker)?.date) || startDate.toISOString().split('T')[0];
+                const hist = await yahooFinance.historical(ticker, {
+                    period1: qStart,
+                    period2: today.toISOString().split('T')[0],
+                    interval: '1d'
+                });
+                historicalPrices[ticker] = Object.fromEntries(
+                    hist.map(h => [new Date(h.date).toISOString().split('T')[0], h.adjClose || h.close])
+                );
+                historicalPricesCache[ticker] = historicalPrices[ticker];
+            } catch (err) {
+                console.warn(`Failed to fetch history for ${ticker}:`, err.message);
+                historicalPrices[ticker] = {};
+            }
+        }
+
+        const dataPoints = [];
+        let currentDate = new Date(startDate);
+
+        while (currentDate <= today) {
+            const dateStr = currentDate.toISOString().split('T')[0];
+            let globalTotal = 0;
+
+            for (const p of portfolios) {
+                let cash = p.initialCash;
+                const holdings = {};
+                const pTransactions = allTransactions.filter(t => t.portfolioId === p.id && t.date <= dateStr);
+
+                for (const t of pTransactions) {
+                    const qty    = t.quantity     || 0;
+                    const price  = t.price        || 0;
+                    const comm   = t.commission   || 0;
+                    const tax    = t.tax          || 0;
+                    const fx     = t.exchangeRate || 1;
+                    const amount = t.amount       || 0;
+
+                    switch (t.type) {
+                        case 'DEPOSIT':    cash += amount; break;
+                        case 'WITHDRAWAL': cash -= amount; break;
+                        case 'TAX':        cash -= amount; break;
+                        case 'DIVIDEND':   cash += (amount || (qty * price - comm - tax)) / fx; break;
+                        case 'BUY':
+                            cash -= (qty * price + comm + tax) / fx;
+                            holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) + qty;
+                            break;
+                        case 'SELL':
+                            cash += (qty * price - comm - tax) / fx;
+                            holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) - qty;
+                            break;
+                    }
+                }
+
+                let assetValue = 0;
+                for (const [ticker, shares] of Object.entries(holdings)) {
+                    if (shares <= 0.0001) continue;
+                    let price = historicalPrices[ticker][dateStr];
+                    if (price === undefined) {
+                        const availableDates = Object.keys(historicalPrices[ticker]).filter(d => d < dateStr).sort();
+                        if (availableDates.length > 0) {
+                            price = historicalPrices[ticker][availableDates[availableDates.length - 1]];
+                        } else {
+                            const asset = db.prepare('SELECT currentPrice FROM assets WHERE ticker = ?').get(ticker);
+                            price = asset ? asset.currentPrice : 0;
+                        }
+                    }
+                    const lastFxTx = pTransactions.filter(t => t.assetTicker === ticker && t.exchangeRate).at(-1);
+                    const rate = lastFxTx ? lastFxTx.exchangeRate : 1;
+                    assetValue += shares * (price / rate);
+                }
+
+                globalTotal += (cash + assetValue);
+            }
+
+            dataPoints.push({
+                date: dateStr,
+                value: Math.round(globalTotal * 100) / 100
+            });
+
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+
+        // Save to performance cache
+        performanceResultsCache[cacheKey] = {
+            data: dataPoints,
+            timestamp: Date.now()
+        };
+
+        res.json(dataPoints);
+    } catch (err) {
+        console.error('Global performance error:', err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -607,50 +779,55 @@ app.get('/api/analytics/history', (req, res) => {
             const assets = db.prepare('SELECT * FROM assets').all();
             const assetMap = Object.fromEntries(assets.map(a => [a.ticker, a]));
 
-            let lots = {};
+            let holdingsMap = {}; // Tracks running shares and costBasis for WAC
             let closed = [];
 
             for (const t of trans) {
                 if (!t.assetTicker) continue;
                 
                 if (t.type === 'BUY') {
-                    if (!lots[t.assetTicker]) lots[t.assetTicker] = [];
-                    // Cost basis per share including fees and tax in portfolio currency
+                    if (!holdingsMap[t.assetTicker]) holdingsMap[t.assetTicker] = { shares: 0, costBasis: 0 };
+                    // Cost basis includes fees and tax in portfolio currency
                     const totalCost = (t.quantity * t.price + t.commission + t.tax) / t.exchangeRate;
-                    const costPerShare = t.quantity > 0 ? totalCost / t.quantity : 0;
-                    lots[t.assetTicker].push({ q: t.quantity, cps: costPerShare });
+                    holdingsMap[t.assetTicker].shares += t.quantity;
+                    holdingsMap[t.assetTicker].costBasis += totalCost;
+
                 } else if (t.type === 'SELL') {
-                    let sellQty = t.quantity;
+                    const sellQty = t.quantity;
+                    const h = holdingsMap[t.assetTicker] || { shares: 0, costBasis: 0 };
+                    
+                    // PMC is the weighted average price of current holdings
+                    const pmc = h.shares > 0 ? h.costBasis / h.shares : 0;
+                    const sellCostBasis = sellQty * pmc;
+                    
                     // Proceeds net of fees and tax in portfolio currency
                     const proceeds = (t.quantity * t.price - t.commission - t.tax) / t.exchangeRate;
-                    let costBasis = 0;
                     const year = t.date.split('-')[0];
-
-                    const currentLots = lots[t.assetTicker] || [];
-                    while (sellQty > 0 && currentLots.length > 0) {
-                        let lot = currentLots[0];
-                        let taken = Math.min(lot.q, sellQty);
-                        costBasis += taken * lot.cps;
-                        lot.q -= taken;
-                        sellQty -= taken;
-                        if (lot.q <= 0.0001) currentLots.shift();
-                    }
-                    lots[t.assetTicker] = currentLots;
-
-                    const gain = proceeds - costBasis;
-                    const gainPct = costBasis > 0 ? ((gain / costBasis) * 100).toFixed(2) : 0;
+                    const gain = proceeds - sellCostBasis;
+                    const gainPct = sellCostBasis > 0 ? ((gain / sellCostBasis) * 100).toFixed(2) : 0;
                     const asset = assetMap[t.assetTicker] || { name: t.assetTicker };
 
                     closed.push({
                         ticker: t.assetTicker,
                         name: asset.name,
                         year,
+                        quantity: sellQty,
+                        pmc: Math.round(pmc * 100) / 100,
                         totalProceeds: Math.round(proceeds * 100) / 100,
-                        totalCostBasis: Math.round(costBasis * 100) / 100,
+                        totalCostBasis: Math.round(sellCostBasis * 100) / 100,
                         realizedGain: Math.round(gain * 100) / 100,
                         gainPct,
                         portfolioName: p.name
                     });
+
+                    // Update running holdings for future sells
+                    if (holdingsMap[t.assetTicker]) {
+                        holdingsMap[t.assetTicker].shares -= sellQty;
+                        holdingsMap[t.assetTicker].costBasis -= sellCostBasis;
+                        if (holdingsMap[t.assetTicker].shares <= 0.0001) {
+                            delete holdingsMap[t.assetTicker];
+                        }
+                    }
                 }
             }
             allClosed = allClosed.concat(closed);
@@ -695,6 +872,7 @@ app.post('/api/reset-data', (req, res) => {
     db.prepare(`DELETE FROM portfolios`).run();
     db.prepare(`DELETE FROM assets`).run();
     console.log('All application data has been reset.');
+    clearPerformanceCache();
     res.json({ success: true });
 });
 

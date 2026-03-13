@@ -43,6 +43,7 @@
         }
     </style>
     <script src="/theme.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-background-light dark:bg-[#0b0f1a] text-slate-900 dark:text-slate-100 min-h-screen flex">
 <!-- Sidebar -->
@@ -178,16 +179,16 @@
 <h3 class="text-lg font-bold">Performance History</h3>
 <p class="text-xs text-slate-500">Aggregated net worth across all connected platforms</p>
 </div>
-<div class="flex gap-1 bg-slate-50 dark:bg-slate-900/50 p-1 rounded-lg border border-slate-100 dark:border-slate-800">
-<button class="px-3 py-1.5 text-[11px] font-bold rounded-md text-slate-500 hover:text-primary">1W</button>
-<button class="px-3 py-1.5 text-[11px] font-bold rounded-md bg-primary text-white shadow-md">1M</button>
-<button class="px-3 py-1.5 text-[11px] font-bold rounded-md text-slate-500 hover:text-primary">3M</button>
-<button class="px-3 py-1.5 text-[11px] font-bold rounded-md text-slate-500 hover:text-primary">1Y</button>
-<button class="px-3 py-1.5 text-[11px] font-bold rounded-md text-slate-500 hover:text-primary">ALL</button>
+<div class="flex gap-1 bg-slate-50 dark:bg-slate-900/50 p-1 rounded-lg border border-slate-100 dark:border-slate-800" id="chart-range-buttons">
+<button data-range="1W" onclick="setChartRange('1W')" class="range-btn px-3 py-1.5 text-[11px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">1W</button>
+<button data-range="1M" onclick="setChartRange('1M')" class="range-btn px-3 py-1.5 text-[11px] font-bold rounded-md bg-primary text-white shadow-md transition-all">1M</button>
+<button data-range="3M" onclick="setChartRange('3M')" class="range-btn px-3 py-1.5 text-[11px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">3M</button>
+<button data-range="1Y" onclick="setChartRange('1Y')" class="range-btn px-3 py-1.5 text-[11px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">1Y</button>
+<button data-range="ALL" onclick="setChartRange('ALL')" class="range-btn px-3 py-1.5 text-[11px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">ALL</button>
 </div>
 </div>
-<div id="dashboard-chart-container" class="h-[280px] w-full flex items-center justify-center">
-    <p class="text-slate-500 text-sm italic">Add transactions to see performance history.</p>
+<div id="dashboard-chart-container" class="h-[280px] w-full relative">
+    <canvas id="dashboardPerformanceChart"></canvas>
 </div>
 </section>
 <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
@@ -305,6 +306,9 @@
                 totalValue += p.totalValue;
             });
             document.getElementById('total-net-worth').innerText = formatCurrency(totalValue, 'EUR');
+            
+            // Initial chart load
+            initDashboardChart();
 
             // Render Portfolios
             const pContainer = document.getElementById('portfolio-container');
@@ -342,6 +346,110 @@
             `).join('');
 
         } catch (err) { console.error(err); }
+    }
+
+    // ─── Dashboard Chart Logic ────────────────────────────────────────────────
+    let dashboardChart = null;
+    let currentChartRange = '1M';
+
+    function initDashboardChart() {
+        if (dashboardChart) dashboardChart.destroy();
+        const ctx = document.getElementById('dashboardPerformanceChart')?.getContext('2d');
+        if (!ctx) return;
+
+        const isDark = document.documentElement.classList.contains('dark');
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+        const textColor = isDark ? '#94a3b8' : '#64748b';
+
+        dashboardChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Net Worth',
+                    data: [],
+                    borderColor: '#135bec',
+                    backgroundColor: 'rgba(19, 91, 236, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                    pointHoverBackgroundColor: '#135bec',
+                    pointHoverBorderColor: '#fff',
+                    pointHoverBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: isDark ? '#1e293b' : '#fff',
+                        titleColor: isDark ? '#f1f5f9' : '#1e293b',
+                        bodyColor: isDark ? '#f1f5f9' : '#1e293b',
+                        borderColor: isDark ? '#334155' : '#e2e8f0',
+                        borderWidth: 1,
+                        padding: 12,
+                        callbacks: {
+                            label: (context) => `Total: ${formatCurrency(context.parsed.y)}`
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: textColor, font: { size: 10 } },
+                        grid: { display: false }
+                    },
+                    y: {
+                        ticks: { 
+                            color: textColor, 
+                            font: { size: 10 },
+                            callback: (val) => formatCurrency(val).split(',')[0] // Short format
+                        },
+                        grid: { color: gridColor }
+                    }
+                }
+            }
+        });
+        updateDashboardChart();
+    }
+
+    async function setChartRange(range) {
+        currentChartRange = range;
+        
+        // Update UI
+        document.querySelectorAll('.range-btn').forEach(btn => {
+            if (btn.dataset.range === range) {
+                btn.classList.add('bg-primary', 'text-white', 'shadow-md');
+                btn.classList.remove('text-slate-500');
+            } else {
+                btn.classList.remove('bg-primary', 'text-white', 'shadow-md');
+                btn.classList.add('text-slate-500');
+            }
+        });
+
+        updateDashboardChart();
+    }
+
+    async function updateDashboardChart() {
+        if (!dashboardChart) return;
+        try {
+            const res = await fetch(`/api/analytics/global-performance?range=${currentChartRange}`);
+            const data = await res.json();
+            
+            dashboardChart.data.labels = data.map(d => {
+                const date = new Date(d.date);
+                return date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
+            });
+            dashboardChart.data.datasets[0].data = data.map(d => d.value);
+            dashboardChart.update();
+        } catch (err) {
+            console.error('Failed to update dashboard chart:', err);
+        }
     }
 
     document.addEventListener('DOMContentLoaded', loadDashboard);
