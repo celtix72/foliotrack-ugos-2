@@ -17,6 +17,24 @@ const PORT = process.env.PORT || 3000;
 // ─── CACHING LAYER ──────────────────────────────────────────────────────────
 const historicalPricesCache = {}; // { ticker: { date: price } }
 let performanceResultsCache = {}; // { cacheKey: { data, timestamp } }
+let eurUsdCache = { rate: 1.08, timestamp: 0 };
+const EUR_USD_TTL = 5 * 60 * 1000; // 5 minutes
+
+async function getEurUsdRate() {
+    if (Date.now() - eurUsdCache.timestamp < EUR_USD_TTL) {
+        return eurUsdCache.rate;
+    }
+    try {
+        const quote = await yahooFinance.quote('EURUSD=X');
+        if (quote && quote.regularMarketPrice) {
+            eurUsdCache = { rate: quote.regularMarketPrice, timestamp: Date.now() };
+            return eurUsdCache.rate;
+        }
+    } catch (err) {
+        console.warn('Failed to fetch EUR/USD rate:', err.message);
+    }
+    return eurUsdCache.rate; // Return last known rate on failure
+}
 
 function clearPerformanceCache() {
     performanceResultsCache = {};
@@ -127,17 +145,19 @@ app.get('/api/portfolios', (req, res) => {
     res.json(rows);
 });
 
-app.get('/api/portfolios/:id', (req, res) => {
+app.get('/api/portfolios/:id', async (req, res) => {
     const portfolio = db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(req.params.id);
-    if (!portfolio) return res.status(404).send('Portfolio not found');
+    if (!portfolio) return res.status(404).json({ error: 'Portfolio non trovato' });
 
-    const transactions = db.prepare(
-        `SELECT * FROM transactions WHERE portfolioId = ? ORDER BY date ASC`
-    ).all(req.params.id);
+    const liveRate = await getEurUsdRate();
+
+    const transactions = db.prepare(`
+        SELECT * FROM transactions WHERE portfolioId = ? ORDER BY date ASC
+    `).all(req.params.id);
 
     // FIFO lots per ticker
-    const lots        = {};   // { ticker: [{qty, costPerShare}] }
-    const openMap     = {};   // { ticker: {shares, totalCostInPCurr} }
+    const lots        = {};   // { ticker: [{qty, costPerShare, costPerShareAssetCurr}] }
+    const openMap     = {};   // { ticker: {shares, totalCostInPCurr, totalCostInAssetCurr} }
     const closedByKey = {};   // key = ticker|year
     const dividends   = [];
 
@@ -154,29 +174,37 @@ app.get('/api/portfolios/:id', (req, res) => {
             const totalCost    = (qty * price + comm + tax) / fx;
             const costPerShare = qty > 0 ? totalCost / qty : 0;
             if (!lots[t.assetTicker])    lots[t.assetTicker] = [];
-            if (!openMap[t.assetTicker]) openMap[t.assetTicker] = { shares: 0, totalCostInPCurr: 0 };
-            lots[t.assetTicker].push({ qty, costPerShare });
-            openMap[t.assetTicker].shares           += qty;
-            openMap[t.assetTicker].totalCostInPCurr += totalCost;
+            if (!openMap[t.assetTicker]) openMap[t.assetTicker] = { shares: 0, totalCostInPCurr: 0, totalCostInAssetCurr: 0 };
+            
+            const totalCostAssetCurr = (qty * price + comm + tax);
+            const costPerShareAsset  = qty > 0 ? totalCostAssetCurr / qty : 0;
+            
+            lots[t.assetTicker].push({ qty, costPerShare, costPerShareAssetCurr: costPerShareAsset });
+            openMap[t.assetTicker].shares              += qty;
+            openMap[t.assetTicker].totalCostInPCurr    += totalCost;
+            openMap[t.assetTicker].totalCostInAssetCurr += totalCostAssetCurr;
         }
 
         if (t.type === 'SELL' && t.assetTicker) {
             let remaining  = qty;
             const proceeds = (qty * price - comm - tax) / fx;
             const lotsCopy = lots[t.assetTicker] || [];
-            let costBasis  = 0;
+            let costBasis          = 0;
+            let costBasisAssetCurr = 0;
             while (remaining > 0 && lotsCopy.length > 0) {
                 const lot  = lotsCopy[0];
                 const used = Math.min(lot.qty, remaining);
-                costBasis += used * lot.costPerShare;
+                costBasis          += used * lot.costPerShare;
+                costBasisAssetCurr += used * (lot.costPerShareAssetCurr || 0);
                 lot.qty   -= used;
                 remaining -= used;
                 if (lot.qty <= 0) lotsCopy.shift();
             }
             lots[t.assetTicker] = lotsCopy;
             if (openMap[t.assetTicker]) {
-                openMap[t.assetTicker].shares           -= qty;
-                openMap[t.assetTicker].totalCostInPCurr -= costBasis;
+                openMap[t.assetTicker].shares              -= qty;
+                openMap[t.assetTicker].totalCostInPCurr    -= costBasis;
+                openMap[t.assetTicker].totalCostInAssetCurr -= costBasisAssetCurr;
                 if (openMap[t.assetTicker].shares <= 0.0001) delete openMap[t.assetTicker];
             }
             const rGain = proceeds - costBasis;
@@ -200,11 +228,14 @@ app.get('/api/portfolios/:id', (req, res) => {
         .map(([ticker, h]) => {
             const asset  = db.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(ticker);
             const curPx  = asset ? asset.currentPrice : 0;
-            const lastFx = transactions.filter(t => t.assetTicker === ticker && t.exchangeRate).at(-1);
-            const rate   = lastFx ? lastFx.exchangeRate : 1;
+            
+            // Use live rate for USD conversion if the portfolio is in EUR
+            const rate = (asset && asset.currency === 'USD' && portfolio.currency === 'EUR') ? liveRate : 1;
+            
             const curPxP = (asset && asset.currency !== portfolio.currency) ? curPx / rate : curPx;
             const curVal = h.shares * curPxP;
             const avgCost = h.shares > 0 ? h.totalCostInPCurr / h.shares : 0;
+            const avgCostAsset = h.shares > 0 ? h.totalCostInAssetCurr / h.shares : 0;
             const uGain  = curVal - h.totalCostInPCurr;
             const uGainPct = h.totalCostInPCurr > 0 ? (uGain / h.totalCostInPCurr) * 100 : 0;
             return {
@@ -215,6 +246,7 @@ app.get('/api/portfolios/:id', (req, res) => {
                 type: asset ? asset.type : 'Stock',
                 totalCostInPCurr: Math.round(h.totalCostInPCurr * 100) / 100,
                 avgCost: Math.round(avgCost * 10000) / 10000,
+                avgCostAssetCurr: Math.round(avgCostAsset * 10000) / 10000,
                 currentValue: Math.round(curVal * 100) / 100,
                 unrealizedGain: Math.round(uGain * 100) / 100,
                 unrealizedGainPct: Math.round(uGainPct * 100) / 100
@@ -491,6 +523,15 @@ app.get('/api/asset-search', async (req, res) => {
     } catch (err) {
         console.error('Search error:', err);
         res.status(500).send('Search failed');
+    }
+});
+
+app.get('/api/market/exchange-rate', async (req, res) => {
+    try {
+        const rate = await getEurUsdRate();
+        res.json({ pair: 'EURUSD', rate, timestamp: eurUsdCache.timestamp });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch rate' });
     }
 });
 

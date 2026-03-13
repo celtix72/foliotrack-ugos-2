@@ -560,23 +560,67 @@
                 const color = h.unrealizedGain >= 0 ? 'emerald' : 'rose';
                 const sign = h.unrealizedGain >= 0 ? '+' : '';
                 return `
-                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer group/row" onclick="toggleAssetTransactions('${h.ticker}')">
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded bg-primary/5 text-primary flex items-center justify-center font-bold text-[10px]">${h.ticker.substring(0,3)}</div>
+                            <div class="w-8 h-8 rounded bg-primary/5 text-primary flex items-center justify-center font-bold text-[10px] group-hover/row:bg-primary group-hover/row:text-white transition-colors">
+                                <span class="material-symbols-outlined text-sm" id="expand-icon-${h.ticker}">chevron_right</span>
+                            </div>
                             <div>
-                                <p class="font-bold">${h.name}</p>
+                                <p class="font-bold flex items-center gap-2">
+                                    ${h.name}
+                                </p>
                                 <p class="text-[10px] text-slate-500 uppercase font-bold">${h.ticker}</p>
                             </div>
                         </div>
                     </td>
-                    <td class="px-6 py-4 font-bold text-slate-600 dark:text-slate-300 font-mono">${formatNumber(h.shares, 2)}</td>
-                    <td class="px-6 py-4 text-slate-500 font-mono">${formatCurrency(h.avgCost, p.currency)}</td>
-                    <td class="px-6 py-4 font-bold font-mono">${formatCurrency(h.currentPriceInPCurr, p.currency)}</td>
-                    <td class="px-6 py-4 text-right font-black font-mono">${formatCurrency(h.currentValue, p.currency)}</td>
+                    <td class="px-6 py-4 font-bold text-slate-600 dark:text-slate-300 font-mono text-sm">${formatNumber(h.shares, 2)}</td>
+                    <td class="px-6 py-4 text-slate-500 font-mono text-sm">${formatCurrency(h.avgCostAssetCurr, h.currency)}</td>
+                    <td class="px-6 py-4 font-bold font-mono text-sm">${formatCurrency(h.currentPrice, h.currency)}</td>
+                    <td class="px-6 py-4 text-right font-black font-mono text-sm">${formatCurrency(h.currentValue, p.currency)}</td>
                     <td class="px-6 py-4 text-right">
-                        <p class="font-bold text-${color}-500 font-mono">${sign}${formatCurrency(h.unrealizedGain, p.currency)}</p>
+                        <p class="font-bold text-${color}-500 font-mono text-sm">${sign}${formatCurrency(h.unrealizedGain, p.currency)}</p>
                         <p class="text-[10px] font-bold text-${color}-500/80 font-mono">${sign}${formatNumber(h.unrealizedGainPct, 2)}%</p>
+                    </td>
+                </tr>
+                <tr id="transactions-${h.ticker}" class="hidden bg-slate-50/50 dark:bg-slate-900/30">
+                    <td colspan="6" class="px-6 py-0">
+                        <div class="overflow-hidden mb-4 mt-2 border border-slate-200 dark:border-slate-800 rounded-xl">
+                            <table class="w-full text-xs">
+                                <thead class="bg-slate-100/50 dark:bg-slate-800/50 text-[9px] uppercase tracking-widest font-bold text-slate-400">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left">Date</th>
+                                        <th class="px-4 py-2 text-left">Type</th>
+                                        <th class="px-4 py-2 text-right">Qty</th>
+                                        <th class="px-4 py-2 text-right">Price</th>
+                                        <th class="px-4 py-2 text-right">FX</th>
+                                        <th class="px-4 py-2 text-right">Comm/Tax</th>
+                                        <th class="px-4 py-2 text-right">Total (${p.currency})</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200 dark:divide-slate-800/50">
+                                    ${p.transactions.filter(t => t.assetTicker === h.ticker).sort((a,b) => new Date(b.date) - new Date(a.date)).map(t => {
+                                        const isDebit = ['BUY', 'TAX'].includes(t.type);
+                                        const tColor = isDebit ? 'rose' : 'emerald';
+                                        const tSign = isDebit ? '-' : '+';
+                                        const total = t.amount || (t.quantity * t.price + t.commission + t.tax) / t.exchangeRate;
+                                        return `
+                                            <tr class="text-slate-600 dark:text-slate-400">
+                                                <td class="px-4 py-2 font-mono">${t.date}</td>
+                                                <td class="px-4 py-2">
+                                                    <span class="px-2 py-0.5 rounded-[4px] font-bold text-[9px] bg-${tColor}-500/10 text-${tColor}-500 border border-${tColor}-500/20">${t.type}</span>
+                                                </td>
+                                                <td class="px-4 py-2 text-right font-mono">${t.quantity ? formatNumber(t.quantity, 2) : '—'}</td>
+                                                <td class="px-4 py-2 text-right font-mono">${t.price ? formatCurrency(t.price, h.currency) : '—'}</td>
+                                                <td class="px-4 py-2 text-right font-mono text-slate-400">${t.exchangeRate !== 1 ? formatNumber(t.exchangeRate, 4) : '—'}</td>
+                                                <td class="px-4 py-2 text-right font-mono text-slate-400">${t.commission + t.tax > 0 ? formatNumber(t.commission + t.tax, 2) : '0,00'}</td>
+                                                <td class="px-4 py-2 text-right font-bold font-mono text-slate-700 dark:text-slate-200">${tSign}${formatCurrency(total, p.currency)}</td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
                     </td>
                 </tr>
                 `;
@@ -619,6 +663,22 @@
             navigateToList();
         }
     }
+
+    window.toggleAssetTransactions = function(ticker) {
+        const detailRow = document.getElementById(`transactions-${ticker}`);
+        const icon = document.getElementById(`expand-icon-${ticker}`);
+        if (!detailRow) return;
+
+        const isHidden = detailRow.classList.contains('hidden');
+        if (isHidden) {
+            detailRow.classList.remove('hidden');
+            if (icon) icon.style.transform = 'rotate(90deg)';
+        } else {
+            detailRow.classList.add('hidden');
+            if (icon) icon.style.transform = 'rotate(0deg)';
+        }
+    }
+
     function renderAllocation(allocation) {
         const list = document.getElementById('allocation-list');
         if (!list) return; // Safety check

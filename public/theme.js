@@ -75,13 +75,33 @@
 
         fetch(`/api/portfolios?t=${Date.now()}`)
             .then(res => res.json())
-            .then(portfolios => {
+            .then(async portfolios => {
+                let html = '';
+                
+                // Try to fetch exchange rate
+                try {
+                    const exRes = await fetch(`/api/market/exchange-rate?t=${Date.now()}`);
+                    const exData = await exRes.json();
+                    if (exData && exData.rate) {
+                        html += `
+                        <div class="px-3 py-2 mb-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800/60 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-xs text-primary">currency_exchange</span>
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">EUR / USD</span>
+                            </div>
+                            <span class="text-[11px] font-bold font-mono text-primary">${parseFloat(exData.rate).toFixed(4)}</span>
+                        </div>
+                        <div class="h-[1px] bg-slate-100 dark:bg-slate-800 mx-3 mb-2"></div>
+                        `;
+                    }
+                } catch (e) { console.warn("Could not load exchange rate in sidebar"); }
+
                 _sidebarLoading = false;
                 if (!portfolios || portfolios.length === 0) {
-                    container.innerHTML = `<div class="px-3 py-2 text-xs text-slate-400 italic">No portfolios yet.</div>`;
+                    container.innerHTML = html + `<div class="px-3 py-2 text-xs text-slate-400 italic">No portfolios yet.</div>`;
                     return;
                 }
-                container.innerHTML = portfolios.map(p => {
+                html += portfolios.map(p => {
                     const color = p.currency === 'EUR' ? 'emerald' : 'blue';
                     return `
                     <a href="/portfolio?id=${p.id}" class="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer group transition-colors">
@@ -93,6 +113,7 @@
                     </a>
                     `;
                 }).join('');
+                container.innerHTML = html;
             })
             .catch(err => {
                 _sidebarLoading = false;
