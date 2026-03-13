@@ -1,0 +1,6 @@
+node_modules
+foliotrack.db
+foliotrack.db-shm
+foliotrack.db-wal
+.DS_Store
+.env
