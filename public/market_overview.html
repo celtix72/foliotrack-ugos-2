@@ -279,6 +279,33 @@
 </div>
 </div>
 
+    <!-- Manual Update Modal -->
+    <div id="manual-update-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center hidden">
+        <div class="bg-white dark:bg-[#111722] w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform transition-all">
+            <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
+                <h3 class="font-black text-lg">Manual Price Update</h3>
+                <button onclick="closeManualModal()" class="text-slate-400 hover:text-rose-500 transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <input type="hidden" id="manual-ticker"/>
+                <div class="space-y-2">
+                    <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">New Price (<span id="manual-currency-label">EUR</span>)</label>
+                    <input id="manual-price" type="number" step="any" placeholder="0.00" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold text-lg"/>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Effective Date</label>
+                    <input id="manual-date" type="date" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold"/>
+                </div>
+                <div class="pt-2 flex gap-3">
+                    <button onclick="closeManualModal()" class="flex-1 py-3 rounded-xl font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Cancel</button>
+                    <button onclick="saveManualUpdate()" class="flex-1 py-3 rounded-xl font-bold bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">Apply Price</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div><!-- /panel-watchlist -->
 
 </div><!-- /p-8 -->
@@ -429,12 +456,25 @@ function renderWatchlist(filter = '') {
         const chgIcon  = change >= 0 ? 'trending_up' : 'trending_down';
         const tickerColor = a.type === 'Crypto' ? 'orange' : (a.type === 'ETF' ? 'emerald' : 'blue');
 
+        const statusBadge = a.isManual ?
+            `<span class="ml-2 px-1.5 py-0.5 rounded-[4px] font-black text-[7px] bg-rose-500/10 text-rose-500 border border-rose-500/20 uppercase tracking-widest">Manual</span>` :
+            `<span class="ml-2 px-1.5 py-0.5 rounded-[4px] font-black text-[7px] bg-primary/10 text-primary border border-primary/20 uppercase tracking-widest">Auto (YF)</span>`;
+
+        const manualBtn = a.isManual ? `
+            <button onclick="openManualModal('${a.ticker}', '${a.currency}', ${a.currentPrice})" class="w-7 h-7 rounded-lg flex items-center justify-center text-primary bg-primary/10 hover:bg-primary/20 transition-colors" title="Update Price Manually">
+                <span class="material-symbols-outlined text-[16px]">edit</span>
+            </button>
+        ` : '';
+
         return `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors group">
             <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-lg bg-${tickerColor}-500/10 text-${tickerColor}-500 flex items-center justify-center font-bold text-[9px] shrink-0 uppercase">${(a.ticker||'??').substring(0,4)}</div>
                     <div>
-                        <p class="font-bold text-sm">${a.name}</p>
+                        <div class="flex items-center">
+                            <p class="font-bold text-sm">${a.name}</p>
+                            ${statusBadge}
+                        </div>
                         <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">${a.ticker}</p>
                     </div>
                 </div>
@@ -442,7 +482,12 @@ function renderWatchlist(filter = '') {
             <td class="px-6 py-4"><p class="text-xs text-slate-500">${a.exchange || '—'}</p></td>
             <td class="px-6 py-4 text-center"><span class="text-xs font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">${a.currency}</span></td>
             <td class="px-6 py-4 text-right"><span class="text-sm font-bold text-slate-600 dark:text-slate-300">${pe}</span></td>
-            <td class="px-6 py-4 text-right"><span class="text-sm font-black text-primary">${formatCurrency(price, a.currency)}</span></td>
+            <td class="px-6 py-4 text-right">
+                <div class="flex items-center justify-end gap-2">
+                    ${manualBtn}
+                    <span class="text-sm font-black text-primary">${formatCurrency(price, a.currency)}</span>
+                </div>
+            </td>
             <td class="px-6 py-4 text-right">
                 <p class="text-sm ${chgClass} font-bold flex items-center justify-end gap-1">
                     ${change >= 0 ? '+' : ''}${formatNumber(change, 2)}%
@@ -450,9 +495,14 @@ function renderWatchlist(filter = '') {
                 </p>
             </td>
             <td class="px-6 py-4 text-center">
-                <button onclick="deleteAsset('${a.id}')" class="w-8 h-8 rounded-lg flex items-center justify-center mx-auto text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-colors">
-                    <span class="material-symbols-outlined text-lg">delete</span>
-                </button>
+                <div class="flex items-center justify-center gap-2">
+                    <button onclick="toggleManualMode('${a.ticker}', ${a.isManual ? 0 : 1})" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors" title="${a.isManual ? 'Switch to Auto' : 'Switch to Manual'}">
+                        <span class="material-symbols-outlined text-lg">${a.isManual ? 'sync' : 'sync_disabled'}</span>
+                    </button>
+                    <button onclick="deleteAsset('${a.id}')" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-colors" title="Delete">
+                        <span class="material-symbols-outlined text-lg">delete</span>
+                    </button>
+                </div>
             </td>
         </tr>`;
     }).join('');
@@ -463,13 +513,56 @@ function filterTable(val) {
 }
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
-async function deleteAsset(id) {
-    if (!confirm('Stop monitoring this asset?')) return;
-    try {
-        await fetch(`/api/assets/${id}`, { method: 'DELETE' });
-        await loadAssets();
-    } catch (err) { console.error('Delete error:', err); }
-}
+    async function deleteAsset(id) {
+        if (!confirm('Stop monitoring this asset?')) return;
+        try {
+            await fetch(`/api/assets/${id}`, { method: 'DELETE' });
+            await loadAssets();
+        } catch (err) { console.error('Delete error:', err); }
+    }
+
+    async function toggleManualMode(ticker, isManual) {
+        try {
+            await fetch('/api/assets/toggle-manual', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ticker, isManual })
+            });
+            await loadAssets();
+        } catch (err) { console.error('Toggle manual error:', err); }
+    }
+
+    window.openManualModal = function(ticker, currency, currentPrice) {
+        document.getElementById('manual-ticker').value = ticker;
+        document.getElementById('manual-price').value = currentPrice;
+        document.getElementById('manual-currency-label').innerText = currency;
+        document.getElementById('manual-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('manual-update-modal').classList.remove('hidden');
+    }
+
+    window.closeManualModal = function() {
+        document.getElementById('manual-update-modal').classList.add('hidden');
+    }
+
+    window.saveManualUpdate = async function() {
+        const ticker = document.getElementById('manual-ticker').value;
+        const price = document.getElementById('manual-price').value;
+        const date = document.getElementById('manual-date').value;
+
+        try {
+            const res = await fetch('/api/assets/manual-update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ticker, price, date })
+            });
+            if (res.ok) {
+                closeManualModal();
+                await loadAssets();
+            } else {
+                alert('Update failed');
+            }
+        } catch (err) { console.error('Manual update error:', err); }
+    }
 
 function setCurrency(curr) {
     document.getElementById('asset-currency').value = curr;
@@ -536,6 +629,17 @@ searchInput.addEventListener('input', () => {
 });
 
 function selectAsset(symbol, name, type, currency, exchange) {
+    if (symbol === 'CASH') {
+        document.getElementById('asset-ticker').value = 'CASH';
+        document.getElementById('asset-name').value   = 'Asset Cash';
+        document.getElementById('asset-search-input').value = 'CASH';
+        document.getElementById('asset-exchange').value = 'CASH';
+        document.getElementById('asset-type').value = 'Other';
+        setCurrency('EUR');
+        document.getElementById('asset-currency').value = 'EUR';
+        resultsContainer.classList.add('hidden');
+        return;
+    }
     document.getElementById('asset-ticker').value = symbol;
     document.getElementById('asset-name').value   = name;
     document.getElementById('asset-search-input').value = symbol;

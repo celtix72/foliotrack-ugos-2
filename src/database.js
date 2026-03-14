@@ -54,6 +54,7 @@ db.exec(`
     changePercent REAL    NOT NULL DEFAULT 0,
     pe            REAL,
     country       TEXT,
+    isManual      INTEGER NOT NULL DEFAULT 0,
     updatedAt     TEXT    NOT NULL DEFAULT (datetime('now'))
   );
 
@@ -67,7 +68,13 @@ db.exec(`
 try {
     db.prepare(`ALTER TABLE assets ADD COLUMN country TEXT`).run();
 } catch (e) {
-    // Column already exists or table doesn't exist (if fresh)
+    // Column already exists
+}
+
+try {
+    db.prepare(`ALTER TABLE assets ADD COLUMN isManual INTEGER NOT NULL DEFAULT 0`).run();
+} catch (e) {
+    // Column already exists or table doesn't exist
 }
 
 // ─── Default settings ────────────────────────────────────────────────────────

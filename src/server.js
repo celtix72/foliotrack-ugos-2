@@ -53,8 +53,29 @@ app.use(express.urlencoded({ extended: true }));
 // ════════════════════════════════════════════════════════════════════════════
 
 app.get('/api/assets', (req, res) => {
-    const rows = db.prepare(`SELECT * FROM assets ORDER BY name ASC`).all();
-    res.json(rows);
+    res.json(db.prepare('SELECT * FROM assets ORDER BY ticker ASC').all());
+});
+
+app.post('/api/assets/manual-update', (req, res) => {
+    const { ticker, price, date } = req.body;
+    if (!ticker) return res.status(400).send('Ticker is required');
+    
+    // Calculate daily change if possible? For now just update price.
+    db.prepare(`
+        UPDATE assets 
+        SET currentPrice = ?, updatedAt = ?, isManual = 1, changePercent = 0
+        WHERE ticker = ?
+    `).run(parseFloat(price), date || new Date().toISOString().split('T')[0], ticker);
+    
+    recalculateAll();
+    clearPerformanceCache();
+    res.json({ success: true });
+});
+
+app.post('/api/assets/toggle-manual', (req, res) => {
+    const { ticker, isManual } = req.body;
+    db.prepare(`UPDATE assets SET isManual = ? WHERE ticker = ?`).run(isManual ? 1 : 0, ticker);
+    res.json({ success: true });
 });
 
 app.get('/api/assets/:id', (req, res) => {
@@ -549,13 +570,23 @@ app.post('/api/transactions/bulk', (req, res) => {
     const importMany = db.transaction((txs) => {
         for (const t of txs) {
             try {
-                // Auto-add asset to watchlist if not already there and we have data
-                if (t.assetTicker && t.assetName) {
-                    insertAsset.run(
-                        t.assetTicker, t.assetTicker, t.assetName,
-                        t.assetType || 'Stock', t.assetExchange || '',
-                        t.assetCurrency || 'USD', t.assetPrice || 0,
-                        0, t.assetPe || null
+                // Auto-add asset to watchlist if not already there
+                if (t.assetTicker) {
+                    db.prepare(`
+                        INSERT OR IGNORE INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, country, isManual, updatedAt)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                    `).run(
+                        t.assetTicker, 
+                        t.assetTicker, 
+                        t.assetName || t.assetTicker,
+                        t.assetType || 'Stock', 
+                        t.assetExchange || '',
+                        t.assetCurrency || 'USD', 
+                        t.assetPrice || 0,
+                        0, 
+                        t.assetPe || null,
+                        t.assetCountry || 'N/A',
+                        0
                     );
                 }
 
@@ -625,7 +656,9 @@ app.get('/api/asset-search', async (req, res) => {
     if (!query) return res.status(400).send('query is required');
     try {
         const results = await yahooFinance.search(query);
-        res.json(results.quotes);
+        // Filter out any result that has "CASH" as symbol to avoid confusion
+        const filtered = (results.quotes || []).filter(q => q.symbol !== 'CASH');
+        res.json(filtered);
     } catch (err) {
         console.error('Search error:', err);
         res.status(500).send('Search failed');
@@ -1084,10 +1117,14 @@ async function updateMarketData() {
     console.log(`Updating market data for ${assets.length} assets...`);
 
     for (const asset of assets) {
-        if (!asset.ticker) continue;
+        if (!asset.ticker || asset.ticker === 'CASH' || asset.isManual === 1) continue;
         try {
             const quote = await yahooFinance.quote(asset.ticker);
-            if (!quote) continue;
+            if (!quote) {
+                console.warn(`No quote for ${asset.ticker}, marking as manual.`);
+                db.prepare(`UPDATE assets SET isManual=1 WHERE ticker=?`).run(asset.ticker);
+                continue;
+            }
 
             let country = asset.country;
             if (!country) {
@@ -1097,8 +1134,6 @@ async function updateMarketData() {
                 } catch (e) { /* ignore summaryProfile errors */ }
             }
 
-            // Always update metadata. Only price/change might be "stale" if closed, 
-            // but for a portfolio view, last close is fine.
             db.prepare(`
                 UPDATE assets
                 SET currentPrice=?, changePercent=?, pe=?, name=?, currency=?, exchange=?, country=?, updatedAt=datetime('now')
@@ -1115,6 +1150,9 @@ async function updateMarketData() {
             );
         } catch (err) {
             console.error(`Failed to update ${asset.ticker}:`, err.message);
+            if (err.message.includes('Not Found') || err.message.includes('404')) {
+                db.prepare(`UPDATE assets SET isManual=1 WHERE ticker=?`).run(asset.ticker);
+            }
         }
     }
     recalculateAll();
