@@ -1437,9 +1437,10 @@ app.get('/api/analytics/reports', async (req, res) => {
             assetHistories[t] = Object.fromEntries(histories[i+2].map(h => [h.date, h.price]));
         });
 
-        // Calculate Portfolio Monthly Performance (Global)
-        // For efficiency, we reuse some logic but simplified for monthly steps
+        // Calculate Portfolio Monthly Performance (Global and Individual)
         const portfolioPerformance = [];
+        const individualPortfolios = Object.fromEntries(portfolios.map(p => [p.id, { id: p.id, name: p.name, history: [], metrics: {} }]));
+        
         let tempDate = new Date(startDate);
         tempDate.setDate(1); // Start of month
 
@@ -1483,8 +1484,10 @@ app.get('/api/analytics/reports', async (req, res) => {
                         assetVal += shares * (histPrice / rate);
                     }
                 }
-                totalVal += (cash + assetVal);
+                const pVal = cash + assetVal;
+                totalVal += pVal;
                 netDep += pNetDep;
+                individualPortfolios[p.id].history.push({ date: currentMonthStr, value: pVal, netDeposits: pNetDep });
             }
 
             portfolioPerformance.push({ date: currentMonthStr, value: totalVal, netDeposits: netDep });
@@ -1492,16 +1495,47 @@ app.get('/api/analytics/reports', async (req, res) => {
         }
 
         // Normalize portfolio performance using ROI-based Index (100 base)
-        const normalizedPortfolio = portfolioPerformance.map(p => {
+        const normalizeHistory = (history) => history.map(p => {
             const roi = p.netDeposits > 0 ? (p.value / p.netDeposits) - 1 : 0;
             return {
                 date: p.date,
-                value: (1 + roi) * 100, // This ensures it starts at 100 and scales with ROI
+                value: (1 + roi) * 100,
                 absoluteValue: p.value,
                 profit: p.value - p.netDeposits,
                 netDeposits: p.netDeposits
             };
         });
+
+        const normalizedGlobal = normalizeHistory(portfolioPerformance);
+        
+        // Normalize each individual portfolio and calculate its metrics
+        const riskFreeMonthly = 0.002;
+        for (const pid in individualPortfolios) {
+            const p = individualPortfolios[pid];
+            p.history = normalizeHistory(p.history);
+            
+            const last = p.history[p.history.length - 1];
+            const roi = last.netDeposits > 0 ? (last.absoluteValue / last.netDeposits) - 1 : 0;
+            
+            p.metrics = {
+                totalROI: roi,
+                currentValue: last.absoluteValue,
+                contribution: normalizedGlobal[normalizedGlobal.length-1].absoluteValue > 0 ? 
+                    (last.absoluteValue / normalizedGlobal[normalizedGlobal.length-1].absoluteValue) : 0,
+                sharpeRatio: (() => {
+                    const returns = [];
+                    for (let i = 1; i < p.history.length; i++) {
+                        const pVal = p.history[i-1].value;
+                        const cVal = p.history[i].value;
+                        if (pVal > 0) returns.push((cVal / pVal) - 1);
+                    }
+                    if (returns.length < 2) return 0;
+                    const m = returns.reduce((a, b) => a + b, 0) / returns.length;
+                    const s = Math.sqrt(returns.map(x => Math.pow(x - m, 2)).reduce((a, b) => a + b, 0) / returns.length);
+                    return s > 0 ? (m - riskFreeMonthly) / s : 0;
+                })()
+            };
+        }
 
         // 2. Diversification
         const diversification = {
@@ -1541,8 +1575,8 @@ app.get('/api/analytics/reports', async (req, res) => {
         }
 
         // 4. Metrics
-        const currentTotalValue = normalizedPortfolio[normalizedPortfolio.length - 1]?.absoluteValue || 0;
-        const currentNetDeposits = normalizedPortfolio[normalizedPortfolio.length - 1]?.netDeposits || 0;
+        const currentTotalValue = normalizedGlobal[normalizedGlobal.length - 1]?.absoluteValue || 0;
+        const currentNetDeposits = normalizedGlobal[normalizedGlobal.length - 1]?.netDeposits || 0;
         const totalROI = currentNetDeposits > 0 ? (currentTotalValue / currentNetDeposits) - 1 : 0;
 
         // Best Asset (by absolute profit)
@@ -1575,7 +1609,8 @@ app.get('/api/analytics/reports', async (req, res) => {
 
         res.json({
             performance: {
-                portfolio: normalizedPortfolio,
+                portfolio: normalizedGlobal,
+                individual: individualPortfolios,
                 sp500,
                 msci
             },
@@ -1588,9 +1623,9 @@ app.get('/api/analytics/reports', async (req, res) => {
                 sharpeRatio: (() => {
                     // Monthly returns for Sharpe Ratio based on ROI Index
                     const returns = [];
-                    for (let i = 1; i < normalizedPortfolio.length; i++) {
-                        const prev = normalizedPortfolio[i-1].value;
-                        const curr = normalizedPortfolio[i].value;
+                    for (let i = 1; i < normalizedGlobal.length; i++) {
+                        const prev = normalizedGlobal[i-1].value;
+                        const curr = normalizedGlobal[i].value;
                         if (prev > 0) {
                             returns.push((curr / prev) - 1);
                         }
@@ -1598,7 +1633,6 @@ app.get('/api/analytics/reports', async (req, res) => {
                     if (returns.length < 2) return 0;
                     const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
                     const stdDev = Math.sqrt(returns.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b, 0) / returns.length);
-                    const riskFreeMonthly = 0.002; // ~2.4% annual
                     return stdDev > 0 ? (mean - riskFreeMonthly) / stdDev : 0;
                 })()
             }
