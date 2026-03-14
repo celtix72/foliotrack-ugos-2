@@ -795,6 +795,7 @@ app.get('/api/analytics/portfolio-performance/:id', async (req, res) => {
             
             // 1. Reconstruct state on this date
             let cash = portfolio.initialCash;
+            let netDeposits = portfolio.initialCash;
             const holdings = {};
 
             for (const t of transactions) {
@@ -808,8 +809,14 @@ app.get('/api/analytics/portfolio-performance/:id', async (req, res) => {
                 const amount = t.amount       || 0;
 
                 switch (t.type) {
-                    case 'DEPOSIT':    cash += amount; break;
-                    case 'WITHDRAWAL': cash -= amount; break;
+                    case 'DEPOSIT':    
+                        cash += amount; 
+                        netDeposits += amount;
+                        break;
+                    case 'WITHDRAWAL': 
+                        cash -= amount; 
+                        netDeposits -= amount;
+                        break;
                     case 'TAX':        cash -= amount; break;
                     case 'DIVIDEND':   cash += (amount || (qty * price - comm - tax)) / fx; break;
                     case 'BUY':
@@ -850,6 +857,7 @@ app.get('/api/analytics/portfolio-performance/:id', async (req, res) => {
             dataPoints.push({
                 date: dateStr,
                 value: Math.round((cash + assetValue) * 100) / 100,
+                profit: Math.round((cash + assetValue - netDeposits) * 100) / 100,
                 cash: Math.round(cash * 100) / 100,
                 assets: Math.round(assetValue * 100) / 100
             });

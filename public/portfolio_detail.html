@@ -1161,7 +1161,7 @@
             data: {
                 labels: [],
                 datasets: [{
-                    label: 'Portfolio Value',
+                    label: 'Total Value',
                     data: [],
                     borderColor: '#135bec',
                     backgroundColor: 'rgba(19, 91, 236, 0.1)',
@@ -1171,6 +1171,20 @@
                     pointRadius: 0,
                     pointHoverRadius: 6,
                     pointHoverBackgroundColor: '#135bec',
+                    pointHoverBorderColor: '#fff',
+                    pointHoverBorderWidth: 2
+                }, {
+                    label: 'Net Profit/Loss',
+                    data: [],
+                    borderColor: '#10b981',
+                    backgroundColor: 'transparent',
+                    fill: false,
+                    tension: 0.4,
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                    pointHoverBackgroundColor: '#10b981',
                     pointHoverBorderColor: '#fff',
                     pointHoverBorderWidth: 2
                 }]
@@ -1189,9 +1203,12 @@
                         borderColor: isDark ? '#334155' : '#e2e8f0',
                         borderWidth: 1,
                         padding: 12,
-                        displayColors: false,
+                        displayColors: true,
                         callbacks: {
-                            label: (context) => `Value: ${formatCurrency(context.parsed.y)}`
+                            label: (context) => {
+                                const label = context.dataset.label || '';
+                                return `${label}: ${formatCurrency(context.parsed.y)}`;
+                            }
                         }
                     }
                 },
@@ -1242,6 +1259,7 @@
                 return date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
             });
             performanceChart.data.datasets[0].data = data.map(d => d.value);
+            performanceChart.data.datasets[1].data = data.map(d => d.profit);
             performanceChart.update();
         } catch (err) {
             console.error('Failed to update chart:', err);
