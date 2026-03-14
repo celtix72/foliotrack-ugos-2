@@ -80,6 +80,10 @@ function initDb() {
         dbConnection.prepare(`ALTER TABLE assets ADD COLUMN isManual INTEGER NOT NULL DEFAULT 0`).run();
     } catch (e) {}
 
+    try {
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN inWatchlist INTEGER NOT NULL DEFAULT 0`).run();
+    } catch (e) {}
+
     // ─── Default settings ────────────────────────────────────────────────────────
     const defaultSettings = {
         fontFamily: "'JetBrains Mono', monospace",

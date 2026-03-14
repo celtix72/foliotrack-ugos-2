@@ -165,6 +165,79 @@ app.put('/api/assets/:id', (req, res) => {
     res.json(database.db.prepare(`SELECT * FROM assets WHERE id = ?`).get(req.params.id));
 });
 
+// ─── WATCHLIST API ──────────────────────────────────────────────────────────
+
+app.get('/api/watchlist', (req, res) => {
+    try {
+        const rows = database.db.prepare(`
+            SELECT * FROM assets 
+            WHERE inWatchlist = 1 
+            ORDER BY ticker ASC
+        `).all();
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/watchlist', async (req, res) => {
+    const { ticker } = req.body;
+    if (!ticker) return res.status(400).send('Ticker is required');
+
+    try {
+        const normalizedTicker = ticker.trim().toUpperCase();
+        
+        // 1. Check if asset already exists in DB
+        let asset = database.db.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(normalizedTicker);
+        
+        if (!asset) {
+            // 2. Fetch from Yahoo Finance if not in DB
+            try {
+                const quote = await yahooFinance.quote(normalizedTicker);
+                if (quote) {
+                    database.db.prepare(`
+                        INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, updatedAt, inWatchlist)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), 1)
+                    `).run(
+                        normalizedTicker,
+                        normalizedTicker,
+                        quote.shortName || quote.longName || normalizedTicker,
+                        quote.quoteType === 'EQUITY' ? 'Stock' : quote.quoteType || 'Other',
+                        quote.fullExchangeName || quote.exchange || 'Unknown',
+                        quote.currency || 'USD',
+                        quote.regularMarketPrice || 0,
+                        quote.regularMarketChangePercent || 0,
+                        quote.trailingPE || null
+                    );
+                    asset = database.db.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(normalizedTicker);
+                } else {
+                    return res.status(404).send('Ticker not found on Yahoo Finance');
+                }
+            } catch (yfErr) {
+                return res.status(404).send('Ticker not found on Yahoo Finance');
+            }
+        } else {
+            // 3. Mark existing asset as inWatchlist
+            database.db.prepare(`UPDATE assets SET inWatchlist = 1 WHERE ticker = ?`).run(normalizedTicker);
+            asset.inWatchlist = 1;
+        }
+
+        res.json(asset);
+    } catch (err) {
+        console.error('Watchlist add error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/watchlist/:ticker', (req, res) => {
+    try {
+        database.db.prepare(`UPDATE assets SET inWatchlist = 0 WHERE ticker = ?`).run(req.params.ticker.toUpperCase());
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.delete('/api/assets/:id', (req, res) => {
     const row = database.db.prepare(`SELECT * FROM assets WHERE id = ?`).get(req.params.id);
     if (!row) return res.status(404).send('Asset not found');
