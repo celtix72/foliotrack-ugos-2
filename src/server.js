@@ -401,6 +401,49 @@ app.delete('/api/portfolios/:id', (req, res) => {
     res.json(row);
 });
 
+app.post('/api/portfolios/:id/reconcile', (req, res) => {
+    const { actualCash, date } = req.body;
+    const portfolioId = req.params.id;
+
+    if (actualCash == null) return res.status(400).send('actualCash is required');
+
+    // 1. Ensure current data is accurate
+    const { recalculatePortfolio, clearPerformanceCache } = require('./database');
+    recalculatePortfolio(portfolioId);
+    
+    const portfolio = db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(portfolioId);
+    if (!portfolio) return res.status(404).send('Portfolio not found');
+
+    const diff = parseFloat(actualCash) - portfolio.currentCash;
+
+    if (Math.abs(diff) < 0.01) {
+        return res.json({ message: 'Balance already reconciled', diff: 0 });
+    }
+
+    const type = diff > 0 ? 'DEPOSIT' : 'WITHDRAWAL';
+    const amount = Math.abs(diff);
+
+    // 2. Insert reconciliation transaction
+    db.prepare(`
+        INSERT INTO transactions (portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+        parseInt(portfolioId), type, 'CASH',
+        date || new Date().toISOString().split('T')[0],
+        0, 0, 0, 0, 1, amount
+    );
+
+    // 3. Final recalculation
+    recalculatePortfolio(portfolioId);
+    if (typeof clearPerformanceCache === 'function') clearPerformanceCache();
+
+    res.json({ 
+        message: 'Reconciliation successful', 
+        diff, 
+        newCash: actualCash 
+    });
+});
+
 // ════════════════════════════════════════════════════════════════════════════
 // TRANSACTIONS API
 // ════════════════════════════════════════════════════════════════════════════

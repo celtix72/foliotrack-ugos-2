@@ -241,7 +241,13 @@
     <div class="space-y-4 mt-8">
         <div class="flex items-center justify-between">
             <h3 class="text-lg font-bold">Cash History</h3>
-            <button onclick="toggleCashHistory()" class="text-xs font-bold text-primary hover:underline">Show/Hide</button>
+            <div class="flex items-center gap-4">
+                <button onclick="openReconcileModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-all text-[10px] font-black uppercase tracking-widest">
+                    <span class="material-symbols-outlined text-sm">balance</span>
+                    Reconcile Cash
+                </button>
+                <button onclick="toggleCashHistory()" class="text-xs font-bold text-slate-400 hover:text-primary transition-colors">Show/Hide</button>
+            </div>
         </div>
         <div id="cash-history-container" class="hidden overflow-hidden bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
             <table class="w-full text-left border-collapse text-xs">
@@ -269,6 +275,37 @@
 </div>
 </footer>
 </main>
+
+<!-- Reconcile Modal -->
+<div id="reconcile-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center hidden">
+    <div class="bg-white dark:bg-[#111722] w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform transition-all">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
+            <h3 class="font-black text-lg">Cash Reconciliation</h3>
+            <button onclick="closeReconcileModal()" class="text-slate-400 hover:text-rose-500 transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="p-6 space-y-4">
+            <div class="p-4 bg-primary/5 border border-primary/20 rounded-xl space-y-1">
+                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">System Calculated Balance</p>
+                <p id="reconcile-current-cash" class="text-xl font-black text-primary">€ 0.00</p>
+            </div>
+            <div class="space-y-2">
+                <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Actual Balance (<span id="reconcile-currency-label">EUR</span>)</label>
+                <input id="reconcile-actual-cash" type="number" step="any" placeholder="0.00" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold text-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"/>
+                <p class="text-[10px] text-slate-400 italic">Enter the current cash balance from your broker/bank.</p>
+            </div>
+            <div class="space-y-2">
+                <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Adjustment Date</label>
+                <input id="reconcile-date" type="date" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold outline-none"/>
+            </div>
+            <div class="pt-2 flex gap-3">
+                <button onclick="closeReconcileModal()" class="flex-1 py-3 rounded-xl font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Cancel</button>
+                <button onclick="saveReconcile()" class="flex-1 py-3 rounded-xl font-bold bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">Reconcile Now</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Confirm Modal -->
 <div id="general-confirm-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
@@ -1521,6 +1558,45 @@
                 alert('Update failed');
             }
         } catch (err) { console.error('Manual update error:', err); }
+    }
+
+    window.openReconcileModal = function() {
+        const currentCashText = document.getElementById('hero-cash').innerText;
+        document.getElementById('reconcile-current-cash').innerText = currentCashText;
+        document.getElementById('reconcile-actual-cash').value = '';
+        document.getElementById('reconcile-currency-label').innerText = portfolioCurrency;
+        document.getElementById('reconcile-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('reconcile-modal').classList.remove('hidden');
+    }
+
+    window.closeReconcileModal = function() {
+        document.getElementById('reconcile-modal').classList.add('hidden');
+    }
+
+    window.saveReconcile = async function() {
+        const actualCash = document.getElementById('reconcile-actual-cash').value;
+        const date = document.getElementById('reconcile-date').value;
+
+        if (!actualCash) return alert('Please enter actual cash balance');
+
+        try {
+            const res = await fetch(`/api/portfolios/${currentPortfolioId}/reconcile`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ actualCash: parseFloat(actualCash), date })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                closeReconcileModal();
+                loadPortfolioDetails();
+                alert(`✅ Reconciliation processed! adjustment: ${data.diff.toFixed(2)} ${portfolioCurrency}`);
+            } else {
+                alert('Reconciliation failed: ' + (data.error || data.message || 'Unknown error'));
+            }
+        } catch (err) { 
+            console.error('Reconciliation error:', err);
+            alert('Error during reconciliation');
+        }
     }
 </script>
 </body></html>
