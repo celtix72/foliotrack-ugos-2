@@ -10,6 +10,7 @@ dotenv.config();
 
 const yahooFinance = new YahooFinance({ suppressNotices: ['ripHistorical'] });
 const { db, getSettings, setSetting, recalculatePortfolio, recalculateAll } = require('./database');
+const backupManager = require('./backup_manager');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -1239,6 +1240,45 @@ app.get('/api/analytics/dividends', (req, res) => {
 });
 
 // ════════════════════════════════════════════════════════════════════════════
+// BACKUP API
+// ════════════════════════════════════════════════════════════════════════════
+
+app.get('/api/backups', (req, res) => {
+    res.json(backupManager.listBackups());
+});
+
+app.post('/api/backups/manual', async (req, res) => {
+    try {
+        const metadata = await backupManager.createBackup(false);
+        res.json(metadata);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/backups/restore', async (req, res) => {
+    try {
+        const { filename } = req.body;
+        if (!filename) return res.status(400).send('Filename required');
+        
+        // This will restart the app
+        await backupManager.restoreBackup(filename);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/backups/:filename', (req, res) => {
+    try {
+        backupManager.deleteBackup(req.params.filename);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ════════════════════════════════════════════════════════════════════════════
 // RESET DATA
 // ════════════════════════════════════════════════════════════════════════════
 
@@ -1272,6 +1312,10 @@ app.get('/assets', (req, res) => res.redirect('/market'));
 // Default → dashboard
 app.get('/', (req, res) => res.redirect('/dashboard'));
 app.use((req, res) => res.redirect('/dashboard'));
+
+// ════════════════════════════════════════════════════════════════════════════
+// RESET DATA
+// ════════════════════════════════════════════════════════════════════════════
 
 // ════════════════════════════════════════════════════════════════════════════
 // MARKET DATA UPDATE  (runs on interval)
@@ -1324,13 +1368,43 @@ async function updateMarketData() {
     recalculateAll();
 }
 
+// ─── Scheduler ──────────────────────────────────────────────────────────────
 let lastUpdateTime = Date.now();
-setInterval(() => {
+let lastBackupDate = ''; // 'YYYY-MM-DD'
+
+setInterval(async () => {
     const settings = getSettings();
-    const freqMs   = parseInt(settings.updateFrequency || 5) * 60 * 1000;
-    if (Date.now() - lastUpdateTime >= freqMs) {
+    const now = new Date();
+    
+    // 1. Market Data Update
+    const freqMs = parseInt(settings.updateFrequency || 5) * 60 * 1000;
+    if (freqMs > 0 && Date.now() - lastUpdateTime >= freqMs) {
         updateMarketData();
         lastUpdateTime = Date.now();
+    }
+
+    // 2. Scheduled Backups
+    const backupFreq = settings.backupFrequency; // 'Daily', 'Weekly', 'None'
+    const todayStr = now.toISOString().split('T')[0];
+    
+    if (backupFreq && backupFreq !== 'None' && lastBackupDate !== todayStr) {
+        let shouldBackup = false;
+        if (backupFreq === 'Daily') {
+            shouldBackup = true;
+        } else if (backupFreq === 'Weekly') {
+            // Sunday backup
+            if (now.getDay() === 0) shouldBackup = true;
+        }
+
+        if (shouldBackup) {
+            console.log(`Starting scheduled backup (${backupFreq})...`);
+            try {
+                await backupManager.createBackup(true);
+                lastBackupDate = todayStr;
+            } catch (e) {
+                console.error('Scheduled backup failed:', e);
+            }
+        }
     }
 }, 60_000);
 

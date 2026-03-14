@@ -82,7 +82,8 @@ try {
 const defaultSettings = {
     fontFamily: "'JetBrains Mono', monospace",
     fontSize:   '14',
-    updateFrequency: '5'
+    updateFrequency: '5',
+    schemaVersion: '1.0'
 };
 
 const insertSetting = db.prepare(
