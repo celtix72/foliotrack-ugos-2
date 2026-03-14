@@ -53,6 +53,7 @@ db.exec(`
     currentPrice  REAL    NOT NULL DEFAULT 0,
     changePercent REAL    NOT NULL DEFAULT 0,
     pe            REAL,
+    country       TEXT,
     updatedAt     TEXT    NOT NULL DEFAULT (datetime('now'))
   );
 
@@ -61,6 +62,13 @@ db.exec(`
     value TEXT NOT NULL
   );
 `);
+
+// Migration: Add country to assets if it doesn't exist
+try {
+    db.prepare(`ALTER TABLE assets ADD COLUMN country TEXT`).run();
+} catch (e) {
+    // Column already exists or table doesn't exist (if fresh)
+}
 
 // ─── Default settings ────────────────────────────────────────────────────────
 

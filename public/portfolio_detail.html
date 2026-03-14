@@ -186,62 +186,55 @@
             </button>
         </div>
     </div>
-<!-- Performance Chart -->
-<div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-<div class="flex items-center justify-between mb-8">
-<h3 class="text-lg font-bold">Performance Over Time</h3>
-<div class="flex bg-slate-100 dark:bg-slate-900 rounded-lg p-1" id="chart-range-buttons">
-<button data-range="1M" onclick="setChartRange('1M')" class="range-btn px-4 py-1.5 text-xs font-bold rounded-md bg-white dark:bg-slate-800 shadow-sm transition-all">1M</button>
-<button data-range="3M" onclick="setChartRange('3M')" class="range-btn px-4 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">3M</button>
-<button data-range="6M" onclick="setChartRange('6M')" class="range-btn px-4 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">6M</button>
-<button data-range="1Y" onclick="setChartRange('1Y')" class="range-btn px-4 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">1Y</button>
-<button data-range="ALL" onclick="setChartRange('ALL')" class="range-btn px-4 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">ALL</button>
-</div>
-</div>
-<div class="h-64 w-full relative">
-    <canvas id="performanceChart"></canvas>
-</div>
-</div>
-<div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
-<!-- Assets Table (Left) -->
-<div class="xl:col-span-2 space-y-4">
-<div class="flex items-center justify-between">
-<h3 class="text-xl font-bold">Assets</h3>
-<button class="text-primary text-sm font-bold flex items-center gap-1.5 hover:underline">
-                            View Allocation <span class="material-symbols-outlined text-sm">pie_chart</span>
-</button>
-</div>
-<div class="overflow-hidden bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
-<table class="w-full text-left border-collapse">
-<thead>
-<tr class="text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
-<th class="px-6 py-4">Asset</th>
-<th class="px-6 py-4">Quantity</th>
-<th class="px-6 py-4">Avg Cost</th>
-<th class="px-6 py-4">Current</th>
-<th class="px-6 py-4 text-right">Value</th>
-<th class="px-6 py-4 text-right">P/L</th>
-</tr>
-</thead>
-<tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm" id="assets-table-body">
-<!-- Assets calculated from transactions -->
-</tbody>
-</table>
-</div>
-            <!-- Right Side Info -->
-            <div class="space-y-6">
-                <div id="transaction-list" class="space-y-4">
-                    <!-- Transactions will be injected here -->
+    <!-- Charts Row: Performance + Allocation -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Performance Chart (Left) -->
+        <div class="lg:col-span-2 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+            <div class="flex items-center justify-between mb-8">
+                <h3 class="text-lg font-bold">Performance Over Time</h3>
+                <div class="flex bg-slate-100 dark:bg-slate-900 rounded-lg p-1" id="chart-range-buttons">
+                    <button data-range="1M" onclick="setChartRange('1M')" class="range-btn px-4 py-1.5 text-xs font-bold rounded-md bg-white dark:bg-slate-800 shadow-sm transition-all">1M</button>
+                    <button data-range="3M" onclick="setChartRange('3M')" class="range-btn px-4 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">3M</button>
+                    <button data-range="6M" onclick="setChartRange('6M')" class="range-btn px-4 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">6M</button>
+                    <button data-range="1Y" onclick="setChartRange('1Y')" class="range-btn px-4 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">1Y</button>
+                    <button data-range="ALL" onclick="setChartRange('ALL')" class="range-btn px-4 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">ALL</button>
                 </div>
+            </div>
+            <div class="h-64 w-full relative">
+                <canvas id="performanceChart"></canvas>
             </div>
         </div>
 
+        <!-- Asset Allocation (Right) -->
         <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-            <h3 class="font-bold mb-6">Asset Allocation</h3>
+            <h3 class="text-lg font-bold mb-6">Asset Allocation</h3>
             <div id="allocation-list" class="space-y-5">
                 <!-- Dynamic allocation bars -->
                 <p class="text-sm text-slate-500 italic">No assets held.</p>
             </div>
+        </div>
+    </div>
+
+    <!-- Assets Section (Full Width) -->
+    <div class="space-y-4">
+        <div class="flex items-center justify-between">
+            <h3 class="text-xl font-bold">Assets</h3>
+            <div id="transaction-list" class="hidden"></div>
+        </div>
+        <div class="overflow-hidden bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
+                        <th class="px-6 py-4">Asset Info</th>
+                        <th class="px-6 py-4">Quantity & Avg Cost</th>
+                        <th class="px-6 py-4">Market Price</th>
+                        <th class="px-6 py-4 text-right">Portfolio Impact</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm" id="assets-table-body">
+                    <!-- Assets calculated from transactions -->
+                </tbody>
+            </table>
         </div>
     </div>
 <footer class="mt-auto py-8 border-t border-slate-200 dark:border-slate-800 px-8">
@@ -348,6 +341,23 @@
                     <label class="text-sm font-medium">Asset (Search)</label>
                     <input id="t-asset-search" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-4" placeholder="Ticker..." autocomplete="off"/>
                     <div id="t-search-results" class="absolute left-0 right-0 mt-1 bg-white dark:bg-[#1a2332] border rounded-lg shadow-xl z-50 hidden max-h-48 overflow-y-auto"></div>
+                    
+                    <!-- Metadata Display Block -->
+                    <div id="t-asset-metadata" class="hidden mt-3 p-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl grid grid-cols-3 gap-4">
+                        <div>
+                            <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">Mercato</p>
+                            <p id="t-meta-exchange" class="text-xs font-bold truncate">-</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">Tipologia</p>
+                            <p id="t-meta-type" class="text-xs font-bold truncate">-</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">Area Geog.</p>
+                            <p id="t-meta-country" class="text-xs font-bold truncate">-</p>
+                        </div>
+                    </div>
+
                     <input type="hidden" id="t-asset-ticker"/>
                     <input type="hidden" id="t-asset-currency"/>
                 </div>
@@ -567,35 +577,37 @@
                                 <span class="material-symbols-outlined text-sm" id="expand-icon-${h.ticker}">chevron_right</span>
                             </div>
                             <div>
-                                <p class="font-bold flex items-center gap-2">
-                                    ${h.name}
-                                </p>
-                                <p class="text-[10px] text-slate-500 uppercase font-bold">${h.ticker}</p>
+                                <p class="font-bold text-slate-900 dark:text-white leading-tight">${h.name}</p>
+                                <p class="text-[10px] text-slate-500 uppercase font-black tracking-widest mt-0.5">${h.ticker} • ${h.currency}</p>
                             </div>
                         </div>
                     </td>
-                    <td class="px-6 py-4 font-bold text-slate-600 dark:text-slate-300 font-mono text-sm">${formatNumber(h.shares, 2)}</td>
-                    <td class="px-6 py-4 text-slate-500 font-mono text-sm">${formatCurrency(h.avgCostAssetCurr, h.currency)}</td>
-                    <td class="px-6 py-4 font-bold font-mono text-sm">${formatCurrency(h.currentPrice, h.currency)}</td>
-                    <td class="px-6 py-4 text-right font-black font-mono text-sm">${formatCurrency(h.currentValue, p.currency)}</td>
+                    <td class="px-6 py-4">
+                        <p class="font-bold text-slate-700 dark:text-slate-200 font-mono text-sm leading-tight">${formatNumber(h.shares, 0)}</p>
+                        <p class="text-[10px] text-slate-500 font-bold font-mono mt-0.5">${formatCurrency(h.avgCostAssetCurr, h.currency)} <span class="text-[9px] opacity-70">Avg</span></p>
+                    </td>
+                    <td class="px-6 py-4">
+                        <p class="font-bold text-slate-900 dark:text-white font-mono text-sm leading-tight">${formatCurrency(h.currentPrice, h.currency)}</p>
+                        <p class="text-[10px] font-bold text-${color}-500/80 font-mono mt-0.5">${sign}${formatNumber(h.unrealizedGainPct, 2)}%</p>
+                    </td>
                     <td class="px-6 py-4 text-right">
-                        <p class="font-bold text-${color}-500 font-mono text-sm">${sign}${formatCurrency(h.unrealizedGain, p.currency)}</p>
-                        <p class="text-[10px] font-bold text-${color}-500/80 font-mono">${sign}${formatNumber(h.unrealizedGainPct, 2)}%</p>
+                        <p class="font-black text-slate-900 dark:text-white font-mono text-sm leading-tight">${formatCurrency(h.currentValue, p.currency)}</p>
+                        <p class="text-[10px] font-bold text-${color}-500 font-mono mt-0.5">${sign}${formatCurrency(h.unrealizedGain, p.currency)}</p>
                     </td>
                 </tr>
                 <tr id="transactions-${h.ticker}" class="hidden bg-slate-50/50 dark:bg-slate-900/30">
-                    <td colspan="6" class="px-6 py-0">
-                        <div class="overflow-hidden mb-4 mt-2 border border-slate-200 dark:border-slate-800 rounded-xl">
+                    <td colspan="4" class="px-6 py-0">
+                        <div class="overflow-hidden mb-6 mt-2 border border-slate-200 dark:border-slate-800 rounded-xl shadow-inner bg-white dark:bg-black/20">
                             <table class="w-full text-xs">
                                 <thead class="bg-slate-100/50 dark:bg-slate-800/50 text-[9px] uppercase tracking-widest font-bold text-slate-400">
                                     <tr>
                                         <th class="px-4 py-2 text-left">Date</th>
                                         <th class="px-4 py-2 text-left">Type</th>
                                         <th class="px-4 py-2 text-right">Qty</th>
-                                        <th class="px-4 py-2 text-right">Price</th>
-                                        <th class="px-4 py-2 text-right">FX</th>
-                                        <th class="px-4 py-2 text-right">Comm/Tax</th>
-                                        <th class="px-4 py-2 text-right">Total (${p.currency})</th>
+                                        <th class="px-4 py-1 text-right">Price</th>
+                                        <th class="px-4 py-1 text-right">FX</th>
+                                        <th class="px-4 py-1 text-right">Comm/Tax</th>
+                                        <th class="px-4 py-1 text-right">Total (${p.currency})</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-200 dark:divide-slate-800/50">
@@ -606,14 +618,14 @@
                                         const total = t.amount || (t.quantity * t.price + t.commission + t.tax) / t.exchangeRate;
                                         return `
                                             <tr class="text-slate-600 dark:text-slate-400">
-                                                <td class="px-4 py-2 font-mono">${t.date}</td>
+                                                <td class="px-4 py-2 font-mono text-[10px]">${t.date}</td>
                                                 <td class="px-4 py-2">
-                                                    <span class="px-2 py-0.5 rounded-[4px] font-bold text-[9px] bg-${tColor}-500/10 text-${tColor}-500 border border-${tColor}-500/20">${t.type}</span>
+                                                    <span class="px-1.5 py-0.5 rounded-[4px] font-black text-[8px] bg-${tColor}-500/10 text-${tColor}-500 border border-${tColor}-500/20">${t.type}</span>
                                                 </td>
-                                                <td class="px-4 py-2 text-right font-mono">${t.quantity ? formatNumber(t.quantity, 2) : '—'}</td>
+                                                <td class="px-4 py-2 text-right font-mono font-bold">${t.quantity ? formatNumber(t.quantity, 0) : '—'}</td>
                                                 <td class="px-4 py-2 text-right font-mono">${t.price ? formatCurrency(t.price, h.currency) : '—'}</td>
-                                                <td class="px-4 py-2 text-right font-mono text-slate-400">${t.exchangeRate !== 1 ? formatNumber(t.exchangeRate, 4) : '—'}</td>
-                                                <td class="px-4 py-2 text-right font-mono text-slate-400">${t.commission + t.tax > 0 ? formatNumber(t.commission + t.tax, 2) : '0,00'}</td>
+                                                <td class="px-4 py-2 text-right font-mono text-slate-400 opacity-60">${t.exchangeRate !== 1 ? formatNumber(t.exchangeRate, 4) : '—'}</td>
+                                                <td class="px-4 py-2 text-right font-mono text-slate-400 opacity-60">${t.commission + t.tax > 0 ? formatNumber(t.commission + t.tax, 2) : '—'}</td>
                                                 <td class="px-4 py-2 text-right font-bold font-mono text-slate-700 dark:text-slate-200">${tSign}${formatCurrency(total, p.currency)}</td>
                                             </tr>
                                         `;
@@ -624,39 +636,18 @@
                     </td>
                 </tr>
                 `;
-            }).join('') || '<tr><td colspan="6" class="px-6 py-4 text-center text-slate-500">No active holdings.</td></tr>';
+            }).join('') || '<tr><td colspan="4" class="px-6 py-4 text-center text-slate-500 italic">No active holdings.</td></tr>';
 
             // Render Allocation
-            renderAllocation(p.allocation);
+            renderAllocation({
+                type: p.allocation,
+                currency: p.currencyAllocation,
+                country: p.countryAllocation
+            });
 
-            // Render Transactions
+            // Transactions injection (removed carousel as requested)
             const transList = document.getElementById('transaction-list');
-            transList.innerHTML = p.transactions.sort((a,b) => new Date(b.date) - new Date(a.date)).map(t => {
-                const isDebit = ['BUY', 'WITHDRAWAL', 'TAX'].includes(t.type);
-                const color = isDebit ? 'rose' : 'emerald';
-                const icon = t.type === 'BUY' ? 'shopping_cart' : (t.type === 'SELL' ? 'sell' : 'account_balance_wallet');
-                const val = t.type === 'BUY' || t.type === 'SELL' ? (t.quantity * t.price) : t.amount;
-                
-                return `
-                <div class="flex gap-4 group">
-                    <div class="w-10 h-10 rounded-full bg-${color}-500/10 text-${color}-500 flex items-center justify-center shrink-0">
-                        <span class="material-symbols-outlined text-xl">${icon}</span>
-                    </div>
-                    <div class="flex-1 overflow-hidden">
-                        <div class="flex justify-between items-start">
-                             <p class="text-sm font-bold capitalize">${t.type} ${t.assetTicker || ''}</p>
-                             <button onclick="deleteTransaction('${t.id}')" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-opacity">
-                                <span class="material-symbols-outlined text-sm">delete</span>
-                             </button>
-                        </div>
-                        <p class="text-xs text-slate-500 font-mono">${t.date} • ${t.quantity ? t.quantity : ''} ${t.quantity ? ' units' : 'Action'}</p>
-                        <p class="text-xs font-bold ${isDebit ? 'text-slate-900 dark:text-white' : 'text-emerald-500'} mt-1 font-mono">
-                            ${isDebit ? '-' : '+'}${formatCurrency(val, t.currency || p.currency)}
-                        </p>
-                    </div>
-                </div>
-                `;
-            }).join('') || '<p class="text-center text-slate-500 py-8 text-sm">No transactions yet.</p>';
+            if (transList) transList.innerHTML = ''; 
 
         } catch (err) { 
             console.error("Error loading portfolio details:", err);
@@ -679,32 +670,43 @@
         }
     }
 
-    function renderAllocation(allocation) {
-        const list = document.getElementById('allocation-list');
-        if (!list) return; // Safety check
-        if (!allocation || allocation.length === 0) {
-            list.innerHTML = '<p class="text-sm text-slate-500 italic">No assets held.</p>';
-            return;
-        }
+    function renderAllocation(allocations) {
+        const container = document.getElementById('allocation-list');
+        if (!container) return;
+
+        const sections = [
+            { label: 'Asset Class', data: allocations.type },
+            { label: 'Currency', data: allocations.currency },
+            { label: 'Geographic / Region', data: allocations.country }
+        ];
 
         const colors = ['bg-primary', 'bg-emerald-500', 'bg-orange-500', 'bg-purple-500', 'bg-pink-500', 'bg-cyan-500'];
-        list.innerHTML = allocation.map((a, idx) => {
-            const color = colors[idx % colors.length];
+
+        container.innerHTML = sections.map(section => {
+            if (!section.data || section.data.length === 0) return '';
+            
             return `
-            <div class="space-y-2">
-                <div class="flex justify-between text-xs font-bold">
-                    <span class="text-slate-500">${a.type}</span>
-                    <div class="flex gap-3">
-                        <span class="text-slate-400">${formatCurrency(a.value, portfolioCurrency)}</span>
-                        <span>${a.percent}%</span>
-                    </div>
-                </div>
-                <div class="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                    <div class="h-full ${color} rounded-full" style="width: ${a.percent}%"></div>
+            <div class="space-y-4">
+                <h4 class="text-[10px] uppercase tracking-widest font-black text-slate-400 border-b border-slate-100 dark:border-slate-800 pb-2">${section.label}</h4>
+                <div class="space-y-3">
+                    ${section.data.map((a, idx) => {
+                        const color = colors[idx % colors.length];
+                        return `
+                        <div class="space-y-1.5">
+                            <div class="flex justify-between text-[11px] font-bold">
+                                <span class="text-slate-600 dark:text-slate-300">${a.type}</span>
+                                <span class="text-primary">${a.percent}%</span>
+                            </div>
+                            <div class="h-1 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                <div class="h-full ${color} rounded-full" style="width: ${a.percent}%"></div>
+                            </div>
+                        </div>
+                        `;
+                    }).join('')}
                 </div>
             </div>
             `;
-        }).join('');
+        }).join('<div class="py-2"></div>') || '<p class="text-sm text-slate-500 italic">No assets held.</p>';
     }
 
 
@@ -753,6 +755,9 @@
         document.getElementById('transaction-modal').classList.add('hidden');
         document.getElementById('transaction-form').reset();
         document.getElementById('t-fx-field').classList.add('hidden');
+        if (document.getElementById('t-asset-metadata')) {
+            document.getElementById('t-asset-metadata').classList.add('hidden');
+        }
     }
 
     function toggleTransactionFields() {
@@ -790,11 +795,40 @@
         });
     }
 
-    function selectTAsset(ticker, currency) {
+    async function selectTAsset(ticker, currency) {
+        // Fallback for search result currency
+        let finalCurrency = currency && currency !== 'undefined' ? currency : 'USD';
+        
         document.getElementById('t-asset-ticker').value = ticker;
-        document.getElementById('t-asset-currency').value = currency;
+        document.getElementById('t-asset-currency').value = finalCurrency;
         document.getElementById('t-asset-search').value = ticker;
         tResults.classList.add('hidden');
+        
+        // Show metadata block
+        const metaBox = document.getElementById('t-asset-metadata');
+        if (metaBox) {
+            metaBox.classList.remove('hidden');
+            document.getElementById('t-meta-exchange').innerText = 'Loading...';
+            document.getElementById('t-meta-type').innerText = 'Loading...';
+            document.getElementById('t-meta-country').innerText = 'Loading...';
+
+            try {
+                const res = await fetch(`/api/validate-ticker?ticker=${ticker}`);
+                const data = await res.json();
+                if (data.valid) {
+                    document.getElementById('t-meta-exchange').innerText = data.exchange || 'N/A';
+                    document.getElementById('t-meta-type').innerText = data.type || 'N/A';
+                    document.getElementById('t-meta-country').innerText = data.country || 'N/A';
+                    
+                    // Update to the most accurate currency from quote
+                    if (data.currency) {
+                        finalCurrency = data.currency;
+                        document.getElementById('t-asset-currency').value = finalCurrency;
+                    }
+                }
+            } catch (err) { console.error(err); }
+        }
+
         checkFX();
     }
 

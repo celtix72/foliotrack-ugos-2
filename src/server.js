@@ -81,6 +81,12 @@ app.post('/api/assets', async (req, res) => {
 
         if (ticker) {
             const quote = await yahooFinance.quote(ticker).catch(() => null);
+            let country = null;
+            try {
+                const summary = await yahooFinance.quoteSummary(ticker, { modules: ["summaryProfile"] });
+                country = summary.summaryProfile ? summary.summaryProfile.country : null;
+            } catch (e) { console.warn(`Could not fetch summaryProfile for ${ticker}`); }
+
             if (quote) {
                 assetData = {
                     id:           ticker,
@@ -91,7 +97,8 @@ app.post('/api/assets', async (req, res) => {
                     currency:     currency || quote.currency || 'USD',
                     currentPrice: parseFloat(currentPrice || quote.regularMarketPrice || 0),
                     changePercent:parseFloat(changePercent || quote.regularMarketChangePercent || 0),
-                    pe:           pe ? parseFloat(pe) : (quote.trailingPE || quote.forwardPE || null)
+                    pe:           pe ? parseFloat(pe) : (quote.trailingPE || quote.forwardPE || null),
+                    country:      country
                 };
             }
         }
@@ -100,12 +107,12 @@ app.post('/api/assets', async (req, res) => {
         if (existing && assetData.ticker) return res.status(400).send('Asset already in monitoring list');
 
         db.prepare(`
-            INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, updatedAt)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, country, updatedAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
         `).run(
             assetData.id, assetData.ticker, assetData.name, assetData.type,
             assetData.exchange, assetData.currency, assetData.currentPrice,
-            assetData.changePercent, assetData.pe
+            assetData.changePercent, assetData.pe, assetData.country
         );
 
         res.status(201).json(assetData);
@@ -253,11 +260,36 @@ app.get('/api/portfolios/:id', async (req, res) => {
             };
         });
 
-    // Asset allocation by type
+    // Asset allocation by type, currency, and country
     const totalAssetsValue = holdings.reduce((s, h) => s + h.currentValue, 0);
-    const allocMap = {};
-    for (const h of holdings) { const tp = h.type || 'Other'; allocMap[tp] = (allocMap[tp] || 0) + h.currentValue; }
-    const allocation = Object.entries(allocMap).map(([type, value]) => ({
+    
+    const typeMap = {};
+    const currMap = {};
+    const counMap = {};
+
+    for (const h of holdings) { 
+        const tp = h.type || 'Other'; 
+        typeMap[tp] = (typeMap[tp] || 0) + h.currentValue; 
+        
+        const cr = h.currency || 'Unknown';
+        currMap[cr] = (currMap[cr] || 0) + h.currentValue;
+
+        const asset = db.prepare(`SELECT country FROM assets WHERE ticker = ?`).get(h.ticker);
+        const co = (asset && asset.country) ? asset.country : 'Unknown';
+        counMap[co] = (counMap[co] || 0) + h.currentValue;
+    }
+
+    const allocation = Object.entries(typeMap).map(([type, value]) => ({
+        type, value: Math.round(value * 100) / 100,
+        percent: totalAssetsValue > 0 ? Math.round((value / totalAssetsValue) * 1000) / 10 : 0
+    })).sort((a, b) => b.value - a.value);
+
+    const currencyAllocation = Object.entries(currMap).map(([type, value]) => ({
+        type, value: Math.round(value * 100) / 100,
+        percent: totalAssetsValue > 0 ? Math.round((value / totalAssetsValue) * 1000) / 10 : 0
+    })).sort((a, b) => b.value - a.value);
+
+    const countryAllocation = Object.entries(counMap).map(([type, value]) => ({
         type, value: Math.round(value * 100) / 100,
         percent: totalAssetsValue > 0 ? Math.round((value / totalAssetsValue) * 1000) / 10 : 0
     })).sort((a, b) => b.value - a.value);
@@ -283,7 +315,17 @@ app.get('/api/portfolios/:id', async (req, res) => {
     }
     const dividendGroups = Object.values(divYearMap).sort((a, b) => parseInt(b.year) - parseInt(a.year));
 
-    res.json({ ...portfolio, transactions, holdings, allocation, closedPositions, dividendGroups, totalDividends: Math.round(totalDividends * 100) / 100 });
+    res.json({ 
+        ...portfolio, 
+        transactions, 
+        holdings, 
+        allocation, 
+        currencyAllocation,
+        countryAllocation,
+        closedPositions, 
+        dividendGroups, 
+        totalDividends: Math.round(totalDividends * 100) / 100 
+    });
 });
 
 
@@ -387,13 +429,49 @@ app.get('/api/validate-ticker', async (req, res) => {
     try {
         const quote = await yahooFinance.quote(ticker);
         if (!quote) return res.json({ valid: false });
+
+        let country = null;
+        let detailedType = quote.quoteType === 'EQUITY' ? 'Azionario' : (quote.quoteType || 'Altro');
+
+        try {
+            const summary = await yahooFinance.quoteSummary(ticker, { 
+                modules: ["summaryProfile", "assetProfile", "fundProfile"] 
+            });
+
+            if (summary.summaryProfile && summary.summaryProfile.country) {
+                country = summary.summaryProfile.country;
+            } else if (summary.assetProfile && summary.assetProfile.country) {
+                country = summary.assetProfile.country;
+            }
+
+            if (quote.quoteType === 'ETF') {
+                const fp = summary.fundProfile;
+                const nameStr = (quote.longName || quote.shortName || "").toLowerCase();
+                
+                if (fp && fp.categoryName) {
+                    detailedType = `ETF ${fp.categoryName}`;
+                } else if (nameStr.includes('bond') || nameStr.includes('obbligazion')) {
+                    detailedType = 'ETF Obbligazionario';
+                } else if (nameStr.includes('equity') || nameStr.includes('azionario') || nameStr.includes('world') || nameStr.includes('stock')) {
+                    detailedType = 'ETF Azionario';
+                } else if (nameStr.includes('monetary') || nameStr.includes('monetario') || nameStr.includes('cash') || nameStr.includes('rate')) {
+                    detailedType = 'ETF Monetario';
+                } else {
+                    detailedType = 'ETF';
+                }
+            }
+        } catch (e) {
+            console.error("Metadata fetch failed for", ticker, e.message);
+        }
+
         res.json({
             valid: true,
             ticker,
             name: quote.shortName || quote.longName || ticker,
             currency: quote.currency || 'USD',
             exchange: quote.fullExchangeName || quote.exchange || '',
-            type: quote.quoteType === 'EQUITY' ? 'Stock' : (quote.quoteType || 'Other'),
+            type: detailedType,
+            country: country || 'N/A',
             currentPrice: quote.regularMarketPrice || 0,
             changePercent: quote.regularMarketChangePercent || 0,
             pe: quote.trailingPE || quote.forwardPE || null
@@ -954,14 +1032,19 @@ async function updateMarketData() {
             const quote = await yahooFinance.quote(asset.ticker);
             if (!quote) continue;
 
-            const isOpen = quote.marketState === 'REGULAR'
-                        || asset.type === 'Crypto'
-                        || asset.type === 'CRYPTOCURRENCY';
-            if (!isOpen) continue;
+            let country = asset.country;
+            if (!country) {
+                try {
+                    const summary = await yahooFinance.quoteSummary(asset.ticker, { modules: ["summaryProfile"] });
+                    country = summary.summaryProfile ? summary.summaryProfile.country : null;
+                } catch (e) { /* ignore summaryProfile errors */ }
+            }
 
+            // Always update metadata. Only price/change might be "stale" if closed, 
+            // but for a portfolio view, last close is fine.
             db.prepare(`
                 UPDATE assets
-                SET currentPrice=?, changePercent=?, pe=?, name=?, currency=?, exchange=?, updatedAt=datetime('now')
+                SET currentPrice=?, changePercent=?, pe=?, name=?, currency=?, exchange=?, country=?, updatedAt=datetime('now')
                 WHERE ticker=?
             `).run(
                 quote.regularMarketPrice      || asset.currentPrice,
@@ -970,6 +1053,7 @@ async function updateMarketData() {
                 quote.shortName  || quote.longName  || asset.name,
                 quote.currency   || asset.currency,
                 quote.fullExchangeName || quote.exchange || asset.exchange,
+                country,
                 asset.ticker
             );
         } catch (err) {
