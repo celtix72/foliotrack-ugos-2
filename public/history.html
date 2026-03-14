@@ -265,7 +265,7 @@
                                 ${formatCurrency(group.totalCostBasis, 'EUR')}
                             </td>
                             <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800 text-right font-mono text-xs font-black text-${gainColor}-500">
-                                ${sign}${formatCurrency(group.totalGain, 'EUR')}
+                                ${group.totalGain !== 0 ? sign + formatCurrency(group.totalGain, 'EUR') : '—'}
                             </td>
                         </tr>
                     `;
@@ -281,25 +281,38 @@
         }
 
         function renderRow(pos) {
+            const isTrade = ['BUY', 'SELL'].includes(pos.type);
             const color = pos.realizedGain >= 0 ? 'emerald' : 'rose';
             const sign = pos.realizedGain >= 0 ? '+' : '';
+            
+            // For non-trades, we show the amount in proceeds
+            const isCashDebit = ['WITHDRAWAL', 'TAX', 'TRANSFER'].includes(pos.type);
+            const cashColor = isCashDebit ? 'rose' : 'emerald';
+            const cashSign = isCashDebit ? '-' : '+';
+
             return `
             <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                 <td class="px-6 py-4 pl-12">
                     <p class="font-bold text-xs">${pos.name}</p>
-                    <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tight">${pos.ticker}</p>
+                    <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tight">${pos.ticker || 'CASH'}</p>
                 </td>
                 <td class="px-6 py-4">
                     <span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-bold">${pos.portfolioName}</span>
                 </td>
                 <td class="px-6 py-4 font-bold text-slate-400 text-xs">${pos.year}</td>
-                <td class="px-6 py-4 font-bold text-xs">${formatNumber(pos.quantity, 2)}</td>
-                <td class="px-6 py-4 font-mono text-[11px] text-slate-500">${formatCurrency(pos.pmc, 'EUR')}</td>
-                <td class="px-6 py-4 font-mono text-xs">${formatCurrency(pos.totalProceeds, 'EUR')}</td>
-                <td class="px-6 py-4 font-mono text-xs">${formatCurrency(pos.totalCostBasis, 'EUR')}</td>
+                <td class="px-6 py-4 font-bold text-xs">${isTrade ? formatNumber(pos.quantity, 2) : '—'}</td>
+                <td class="px-6 py-4 font-mono text-[11px] text-slate-500">${isTrade ? formatCurrency(pos.pmc, 'EUR') : '—'}</td>
+                <td class="px-6 py-4 font-mono text-xs ${!isTrade ? 'text-' + cashColor + '-600 font-bold' : ''}">
+                    ${!isTrade ? cashSign : ''}${formatCurrency(pos.totalProceeds, 'EUR')}
+                </td>
+                <td class="px-6 py-4 font-mono text-xs">${isTrade ? formatCurrency(pos.totalCostBasis, 'EUR') : '—'}</td>
                 <td class="px-6 py-4 text-right">
-                    <p class="font-bold text-${color}-500 font-mono text-xs">${sign}${formatCurrency(pos.realizedGain, 'EUR')}</p>
-                    <p class="text-[9px] font-bold text-${color}-500/80 font-mono">${sign}${formatNumber(pos.gainPct, 2)}%</p>
+                    ${isTrade ? `
+                        <p class="font-bold text-${color}-500 font-mono text-xs">${sign}${formatCurrency(pos.realizedGain, 'EUR')}</p>
+                        <p class="text-[9px] font-bold text-${color}-500/80 font-mono">${sign}${formatNumber(pos.gainPct, 2)}%</p>
+                    ` : `
+                        <span class="px-1.5 py-0.5 rounded-[4px] font-black text-[8px] bg-${cashColor}-500/10 text-${cashColor}-500 border border-${cashColor}-500/20">${pos.type}</span>
+                    `}
                 </td>
             </tr>
             `;

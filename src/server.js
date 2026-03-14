@@ -392,7 +392,7 @@ app.get('/api/transactions', (req, res) => {
 });
 
 app.post('/api/transactions', (req, res) => {
-    const { portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount } = req.body;
+    const { portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount, destinationPortfolioId } = req.body;
 
     if (!portfolioId) return res.status(400).send('portfolioId is required');
 
@@ -406,6 +406,19 @@ app.post('/api/transactions', (req, res) => {
         parseFloat(commission || 0), parseFloat(tax || 0),
         parseFloat(exchangeRate || 1), parseFloat(amount || 0)
     );
+
+    // Automation for TRANSFER: Create a DEPOSIT in the destination portfolio
+    if (type === 'TRANSFER' && destinationPortfolioId) {
+        db.prepare(`
+            INSERT INTO transactions (portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+            parseInt(destinationPortfolioId), 'DEPOSIT', 'CASH',
+            date || new Date().toISOString().split('T')[0],
+            0, 0, 0, 0, 1, parseFloat(amount || 0)
+        );
+        recalculatePortfolio(destinationPortfolioId);
+    }
 
     recalculatePortfolio(portfolioId);
     clearPerformanceCache();
@@ -935,33 +948,29 @@ app.get('/api/analytics/history', (req, res) => {
             let closed = [];
 
             for (const t of trans) {
-                if (!t.assetTicker) continue;
-                
-                if (t.type === 'BUY') {
+                const year = t.date.split('-')[0];
+                const asset = assetMap[t.assetTicker] || { name: t.assetTicker || 'Liquidità' };
+
+                if (t.type === 'BUY' && t.assetTicker) {
                     if (!holdingsMap[t.assetTicker]) holdingsMap[t.assetTicker] = { shares: 0, costBasis: 0 };
-                    // Cost basis includes fees and tax in portfolio currency
                     const totalCost = (t.quantity * t.price + t.commission + t.tax) / t.exchangeRate;
                     holdingsMap[t.assetTicker].shares += t.quantity;
                     holdingsMap[t.assetTicker].costBasis += totalCost;
 
-                } else if (t.type === 'SELL') {
+                } else if (t.type === 'SELL' && t.assetTicker) {
                     const sellQty = t.quantity;
                     const h = holdingsMap[t.assetTicker] || { shares: 0, costBasis: 0 };
-                    
-                    // PMC is the weighted average price of current holdings
                     const pmc = h.shares > 0 ? h.costBasis / h.shares : 0;
                     const sellCostBasis = sellQty * pmc;
-                    
-                    // Proceeds net of fees and tax in portfolio currency
                     const proceeds = (t.quantity * t.price - t.commission - t.tax) / t.exchangeRate;
-                    const year = t.date.split('-')[0];
                     const gain = proceeds - sellCostBasis;
                     const gainPct = sellCostBasis > 0 ? ((gain / sellCostBasis) * 100).toFixed(2) : 0;
-                    const asset = assetMap[t.assetTicker] || { name: t.assetTicker };
 
                     closed.push({
+                        id: t.id,
                         ticker: t.assetTicker,
                         name: asset.name,
+                        type: t.type,
                         year,
                         quantity: sellQty,
                         pmc: Math.round(pmc * 100) / 100,
@@ -969,17 +978,32 @@ app.get('/api/analytics/history', (req, res) => {
                         totalCostBasis: Math.round(sellCostBasis * 100) / 100,
                         realizedGain: Math.round(gain * 100) / 100,
                         gainPct,
-                        portfolioName: p.name
+                        portfolioName: p.name,
+                        date: t.date
                     });
 
-                    // Update running holdings for future sells
                     if (holdingsMap[t.assetTicker]) {
                         holdingsMap[t.assetTicker].shares -= sellQty;
                         holdingsMap[t.assetTicker].costBasis -= sellCostBasis;
-                        if (holdingsMap[t.assetTicker].shares <= 0.0001) {
-                            delete holdingsMap[t.assetTicker];
-                        }
+                        if (holdingsMap[t.assetTicker].shares <= 0.0001) delete holdingsMap[t.assetTicker];
                     }
+                } else if (['DEPOSIT', 'WITHDRAWAL', 'TAX', 'TRANSFER'].includes(t.type)) {
+                    // Include cash movements in the history
+                    closed.push({
+                        id: t.id,
+                        ticker: t.assetTicker || 'CASH',
+                        name: t.type === 'TAX' ? 'Tasse' : (t.type === 'TRANSFER' ? 'Trasferimento' : 'Movimento Cassa'),
+                        type: t.type,
+                        year,
+                        quantity: 0,
+                        pmc: 0,
+                        totalProceeds: t.amount,
+                        totalCostBasis: 0,
+                        realizedGain: 0,
+                        gainPct: 0,
+                        portfolioName: p.name,
+                        date: t.date
+                    });
                 }
             }
             allClosed = allClosed.concat(closed);

@@ -219,7 +219,6 @@
     <div class="space-y-4">
         <div class="flex items-center justify-between">
             <h3 class="text-xl font-bold">Assets</h3>
-            <div id="transaction-list" class="hidden"></div>
         </div>
         <div class="overflow-hidden bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
             <table class="w-full text-left border-collapse">
@@ -233,6 +232,28 @@
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm" id="assets-table-body">
                     <!-- Assets calculated from transactions -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Cash History Section -->
+    <div class="space-y-4 mt-8">
+        <div class="flex items-center justify-between">
+            <h3 class="text-lg font-bold">Cash History</h3>
+            <button onclick="toggleCashHistory()" class="text-xs font-bold text-primary hover:underline">Show/Hide</button>
+        </div>
+        <div id="cash-history-container" class="hidden overflow-hidden bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="text-[9px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
+                        <th class="px-6 py-3">Date</th>
+                        <th class="px-6 py-3">Type</th>
+                        <th class="px-6 py-3 text-right">Amount</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800" id="cash-history-body">
+                    <!-- Cash movements will be injected here -->
                 </tbody>
             </table>
         </div>
@@ -337,6 +358,12 @@
                 <div class="space-y-2">
                     <label class="text-sm font-medium">Date</label>
                     <input id="t-date" type="date" required class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-4"/>
+                </div>
+                <div id="t-dest-portfolio-field" class="space-y-2 hidden md:col-span-2">
+                    <label class="text-sm font-medium">Destination Portfolio (for Transfer)</label>
+                    <select id="t-dest-portfolio" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-4">
+                        <option value="">— Select Target —</option>
+                    </select>
                 </div>
                 <div id="t-asset-field" class="space-y-2 relative md:col-span-2">
                     <label class="text-sm font-medium">Asset (Search)</label>
@@ -649,9 +676,23 @@
                 country: p.countryAllocation
             });
 
-            // Transactions injection (removed carousel as requested)
-            const transList = document.getElementById('transaction-list');
-            if (transList) transList.innerHTML = ''; 
+            // Render Cash History
+            const cashHistoryBody = document.getElementById('cash-history-body');
+            const cashTxs = p.transactions.filter(t => ['DEPOSIT', 'WITHDRAWAL', 'TAX', 'TRANSFER'].includes(t.type)).sort((a,b) => new Date(b.date) - new Date(a.date));
+            cashHistoryBody.innerHTML = cashTxs.length ? cashTxs.map(t => {
+                const isDebit = ['WITHDRAWAL', 'TAX', 'TRANSFER'].includes(t.type);
+                const color = isDebit ? 'rose' : 'emerald';
+                const sign = isDebit ? '-' : '+';
+                return `
+                    <tr class="text-slate-600 dark:text-slate-400">
+                        <td class="px-6 py-3 font-mono">${t.date}</td>
+                        <td class="px-6 py-3">
+                            <span class="px-1.5 py-0.5 rounded-[4px] font-black text-[8px] bg-${color}-500/10 text-${color}-500 border border-${color}-500/20">${t.type}</span>
+                        </td>
+                        <td class="px-6 py-3 text-right font-bold font-mono text-${color}-600">${sign}${formatCurrency(t.amount, p.currency)}</td>
+                    </tr>
+                `;
+            }).join('') : '<tr><td colspan="3" class="px-6 py-4 text-center text-slate-500 italic">No cash movements found.</td></tr>';
 
         } catch (err) { 
             console.error("Error loading portfolio details:", err);
@@ -679,9 +720,9 @@
         if (!container) return;
 
         const sections = [
-            { label: 'Asset Class', data: allocations.type },
-            { label: 'Currency', data: allocations.currency },
-            { label: 'Geographic / Region', data: allocations.country }
+            { label: 'Asset Class', data: allocations.type, id: 'alloc-type', expanded: true },
+            { label: 'Currency', data: allocations.currency, id: 'alloc-curr', expanded: false },
+            { label: 'Geographic / Region', data: allocations.country, id: 'alloc-coun', expanded: false }
         ];
 
         const colors = ['bg-primary', 'bg-emerald-500', 'bg-orange-500', 'bg-purple-500', 'bg-pink-500', 'bg-cyan-500'];
@@ -689,10 +730,16 @@
         container.innerHTML = sections.map(section => {
             if (!section.data || section.data.length === 0) return '';
             
+            const isHidden = !section.expanded;
+            const icon = isHidden ? 'add_circle' : 'do_not_disturb_on';
+
             return `
             <div class="space-y-4">
-                <h4 class="text-[10px] uppercase tracking-widest font-black text-slate-400 border-b border-slate-100 dark:border-slate-800 pb-2">${section.label}</h4>
-                <div class="space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2 cursor-pointer group" onclick="toggleAllocationSection('${section.id}')">
+                    <h4 class="text-[10px] uppercase tracking-widest font-black text-slate-400 group-hover:text-primary transition-colors">${section.label}</h4>
+                    <span class="material-symbols-outlined text-slate-400 text-sm group-hover:text-primary transition-colors" id="icon-${section.id}">${icon}</span>
+                </div>
+                <div class="space-y-3 ${isHidden ? 'hidden' : ''}" id="content-${section.id}">
                     ${section.data.map((a, idx) => {
                         const color = colors[idx % colors.length];
                         return `
@@ -711,6 +758,21 @@
             </div>
             `;
         }).join('<div class="py-2"></div>') || '<p class="text-sm text-slate-500 italic">No assets held.</p>';
+    }
+
+    window.toggleAllocationSection = function(id) {
+        const content = document.getElementById(`content-${id}`);
+        const icon = document.getElementById(`icon-${id}`);
+        if (!content || !icon) return;
+
+        const isHidden = content.classList.contains('hidden');
+        if (isHidden) {
+            content.classList.remove('hidden');
+            icon.innerText = 'do_not_disturb_on';
+        } else {
+            content.classList.add('hidden');
+            icon.innerText = 'add_circle';
+        }
     }
 
 
@@ -789,6 +851,28 @@
         if (amountLabel) {
             amountLabel.textContent = isDividend ? 'Net Dividend' : 'Amount';
         }
+
+        // Show/Hide destination portfolio for transfers
+        document.getElementById('t-dest-portfolio-field').classList.toggle('hidden', type !== 'TRANSFER');
+        if (type === 'TRANSFER' && document.getElementById('t-dest-portfolio').children.length <= 1) {
+            loadAllPortfoliosForSelect();
+        }
+    }
+
+    async function loadAllPortfoliosForSelect() {
+        try {
+            const res = await fetch('/api/portfolios');
+            const portfolios = await res.json();
+            const select = document.getElementById('t-dest-portfolio');
+            // Keep first option, add others
+            select.innerHTML = '<option value="">— Select Target —</option>' + 
+                portfolios.filter(p => p.id != currentPortfolioId).map(p => `<option value="${p.id}">${p.name} (${p.currency})</option>`).join('');
+        } catch (err) { console.error('Failed to load portfolios for select', err); }
+    }
+
+    window.toggleCashHistory = function() {
+        const container = document.getElementById('cash-history-container');
+        container.classList.toggle('hidden');
     }
 
     // Auto-calculate Net Dividend
@@ -849,9 +933,15 @@
         document.getElementById('t-asset-search').value = ticker;
         tResults.classList.add('hidden');
         
-        // Show metadata block
+        // Show metadata block only for non-CASH assets
         const metaBox = document.getElementById('t-asset-metadata');
         if (metaBox) {
+            if (ticker === 'CASH') {
+                metaBox.classList.add('hidden');
+                checkFX();
+                return;
+            }
+            
             metaBox.classList.remove('hidden');
             document.getElementById('t-meta-exchange').innerText = 'Loading...';
             document.getElementById('t-meta-type').innerText = 'Loading...';
@@ -911,7 +1001,8 @@
                 commission: document.getElementById('t-comm').value,
                 tax: document.getElementById('t-tax').value,
                 exchangeRate: document.getElementById('t-fx').value,
-                amount: document.getElementById('t-amount').value
+                amount: document.getElementById('t-amount').value,
+                destinationPortfolioId: document.getElementById('t-dest-portfolio').value
             };
             try {
                 await fetch('/api/transactions', {
