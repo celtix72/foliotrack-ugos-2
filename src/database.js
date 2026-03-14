@@ -2,113 +2,119 @@
 
 const Database = require('better-sqlite3');
 const path = require('path');
+const fs = require('fs');
 
 // Store DB file next to src/, in the project root, or via ENV
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'foliotrack.db');
 
-const db = new Database(DB_PATH);
+let dbConnection;
 
-// Enable WAL mode for better performance
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+function initDb() {
+    if (dbConnection) {
+        try { dbConnection.close(); } catch (e) {}
+    }
+    
+    dbConnection = new Database(DB_PATH);
+    
+    // Enable WAL mode for better performance
+    dbConnection.pragma('journal_mode = WAL');
+    dbConnection.pragma('foreign_keys = ON');
 
-// ─── Schema initialization ───────────────────────────────────────────────────
+    // ─── Schema initialization ───────────────────────────────────────────────────
+    dbConnection.exec(`
+      CREATE TABLE IF NOT EXISTS portfolios (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        name        TEXT    NOT NULL,
+        currency    TEXT    NOT NULL DEFAULT 'EUR',
+        startDate   TEXT    NOT NULL,
+        initialCash REAL    NOT NULL DEFAULT 0,
+        currentCash REAL    NOT NULL DEFAULT 0,
+        totalValue  REAL    NOT NULL DEFAULT 0,
+        performance1D REAL  NOT NULL DEFAULT 0,
+        assetCount  INTEGER NOT NULL DEFAULT 0,
+        createdAt   TEXT    NOT NULL DEFAULT (datetime('now'))
+      );
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS portfolios (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    name        TEXT    NOT NULL,
-    currency    TEXT    NOT NULL DEFAULT 'EUR',
-    startDate   TEXT    NOT NULL,
-    initialCash REAL    NOT NULL DEFAULT 0,
-    currentCash REAL    NOT NULL DEFAULT 0,
-    totalValue  REAL    NOT NULL DEFAULT 0,
-    performance1D REAL  NOT NULL DEFAULT 0,
-    assetCount  INTEGER NOT NULL DEFAULT 0,
-    createdAt   TEXT    NOT NULL DEFAULT (datetime('now'))
-  );
+      CREATE TABLE IF NOT EXISTS transactions (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        portfolioId  INTEGER NOT NULL REFERENCES portfolios(id) ON DELETE CASCADE,
+        type         TEXT    NOT NULL,
+        assetTicker  TEXT,
+        date         TEXT    NOT NULL,
+        quantity     REAL    NOT NULL DEFAULT 0,
+        price        REAL    NOT NULL DEFAULT 0,
+        commission   REAL    NOT NULL DEFAULT 0,
+        tax          REAL    NOT NULL DEFAULT 0,
+        exchangeRate REAL    NOT NULL DEFAULT 1,
+        amount       REAL    NOT NULL DEFAULT 0,
+        createdAt    TEXT    NOT NULL DEFAULT (datetime('now'))
+      );
 
-  CREATE TABLE IF NOT EXISTS transactions (
-    id           INTEGER PRIMARY KEY AUTOINCREMENT,
-    portfolioId  INTEGER NOT NULL REFERENCES portfolios(id) ON DELETE CASCADE,
-    type         TEXT    NOT NULL,
-    assetTicker  TEXT,
-    date         TEXT    NOT NULL,
-    quantity     REAL    NOT NULL DEFAULT 0,
-    price        REAL    NOT NULL DEFAULT 0,
-    commission   REAL    NOT NULL DEFAULT 0,
-    tax          REAL    NOT NULL DEFAULT 0,
-    exchangeRate REAL    NOT NULL DEFAULT 1,
-    amount       REAL    NOT NULL DEFAULT 0,
-    createdAt    TEXT    NOT NULL DEFAULT (datetime('now'))
-  );
+      CREATE TABLE IF NOT EXISTS assets (
+        id            TEXT    PRIMARY KEY,
+        ticker        TEXT    NOT NULL UNIQUE,
+        name          TEXT    NOT NULL,
+        type          TEXT,
+        exchange      TEXT,
+        currency      TEXT    NOT NULL DEFAULT 'USD',
+        currentPrice  REAL    NOT NULL DEFAULT 0,
+        changePercent REAL    NOT NULL DEFAULT 0,
+        pe            REAL,
+        country       TEXT,
+        isManual      INTEGER NOT NULL DEFAULT 0,
+        updatedAt     TEXT    NOT NULL DEFAULT (datetime('now'))
+      );
 
-  CREATE TABLE IF NOT EXISTS assets (
-    id            TEXT    PRIMARY KEY,
-    ticker        TEXT    NOT NULL UNIQUE,
-    name          TEXT    NOT NULL,
-    type          TEXT,
-    exchange      TEXT,
-    currency      TEXT    NOT NULL DEFAULT 'USD',
-    currentPrice  REAL    NOT NULL DEFAULT 0,
-    changePercent REAL    NOT NULL DEFAULT 0,
-    pe            REAL,
-    country       TEXT,
-    isManual      INTEGER NOT NULL DEFAULT 0,
-    updatedAt     TEXT    NOT NULL DEFAULT (datetime('now'))
-  );
+      CREATE TABLE IF NOT EXISTS settings (
+        key   TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      );
+    `);
 
-  CREATE TABLE IF NOT EXISTS settings (
-    key   TEXT PRIMARY KEY,
-    value TEXT NOT NULL
-  );
-`);
+    // Migration: Add country to assets if it doesn't exist
+    try {
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN country TEXT`).run();
+    } catch (e) {}
 
-// Migration: Add country to assets if it doesn't exist
-try {
-    db.prepare(`ALTER TABLE assets ADD COLUMN country TEXT`).run();
-} catch (e) {
-    // Column already exists
+    try {
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN isManual INTEGER NOT NULL DEFAULT 0`).run();
+    } catch (e) {}
+
+    // ─── Default settings ────────────────────────────────────────────────────────
+    const defaultSettings = {
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize:   '14',
+        updateFrequency: '5',
+        schemaVersion: '1.0'
+    };
+
+    const insertSetting = dbConnection.prepare(
+        `INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`
+    );
+    for (const [key, value] of Object.entries(defaultSettings)) {
+        insertSetting.run(key, value);
+    }
 }
 
-try {
-    db.prepare(`ALTER TABLE assets ADD COLUMN isManual INTEGER NOT NULL DEFAULT 0`).run();
-} catch (e) {
-    // Column already exists or table doesn't exist
-}
-
-// ─── Default settings ────────────────────────────────────────────────────────
-
-const defaultSettings = {
-    fontFamily: "'JetBrains Mono', monospace",
-    fontSize:   '14',
-    updateFrequency: '5',
-    schemaVersion: '1.0'
-};
-
-const insertSetting = db.prepare(
-    `INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`
-);
-for (const [key, value] of Object.entries(defaultSettings)) {
-    insertSetting.run(key, value);
-}
+// Initial connection
+initDb();
 
 // ─── Helper functions ────────────────────────────────────────────────────────
 
 function getSettings() {
-    const rows = db.prepare(`SELECT key, value FROM settings`).all();
+    const rows = dbConnection.prepare(`SELECT key, value FROM settings`).all();
     return Object.fromEntries(rows.map(r => [r.key, r.value]));
 }
 
 function setSetting(key, value) {
-    db.prepare(`INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)`).run(key, String(value));
+    dbConnection.prepare(`INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)`).run(key, String(value));
 }
 
 function recalculatePortfolio(portfolioId) {
-    const portfolio = db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(portfolioId);
+    const portfolio = dbConnection.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(portfolioId);
     if (!portfolio) return;
 
-    const transactions = db.prepare(
+    const transactions = dbConnection.prepare(
         `SELECT * FROM transactions WHERE portfolioId = ? ORDER BY date ASC`
     ).all(portfolioId);
 
@@ -129,7 +135,6 @@ function recalculatePortfolio(portfolioId) {
             case 'TAX':        cash -= amount; break;
             case 'TRANSFER':   cash -= amount; break;
             case 'DIVIDEND': {
-                // Bulk import might not have 'amount' pre-calculated, use qty*price-comm-tax if amount is 0
                 const dividendAmount = amount || (qty * price - comm - tax);
                 cash += (dividendAmount / fx); 
                 break;
@@ -149,15 +154,13 @@ function recalculatePortfolio(portfolioId) {
         }
     }
 
-    // Calculate asset value
     let assetValue = 0;
     let assetCount = 0;
     for (const [ticker, shares] of Object.entries(holdings)) {
         if (shares <= 0) continue;
         assetCount++;
-        const asset = db.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(ticker);
+        const asset = dbConnection.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(ticker);
         if (asset && asset.currentPrice) {
-            // Simple: use last known FX or 1:1
             const lastFxTx = transactions
                 .filter(t => t.assetTicker === ticker && t.exchangeRate)
                 .at(-1);
@@ -171,7 +174,7 @@ function recalculatePortfolio(portfolioId) {
 
     const totalValue = cash + assetValue;
 
-    db.prepare(`
+    dbConnection.prepare(`
         UPDATE portfolios
         SET currentCash = ?, totalValue = ?, assetCount = ?, performance1D = 0
         WHERE id = ?
@@ -179,8 +182,15 @@ function recalculatePortfolio(portfolioId) {
 }
 
 function recalculateAll() {
-    const ids = db.prepare(`SELECT id FROM portfolios`).all();
+    const ids = dbConnection.prepare(`SELECT id FROM portfolios`).all();
     for (const { id } of ids) recalculatePortfolio(id);
 }
 
-module.exports = { db, getSettings, setSetting, recalculatePortfolio, recalculateAll };
+module.exports = { 
+    get db() { return dbConnection; }, 
+    initDb, 
+    getSettings, 
+    setSetting, 
+    recalculatePortfolio, 
+    recalculateAll 
+};

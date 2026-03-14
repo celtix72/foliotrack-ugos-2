@@ -127,25 +127,27 @@ async function restoreBackup(filename) {
 
     console.log(`Restoring from ${filename}...`);
 
-    // In better-sqlite3, we can't easily "hot swap" the main file while open
-    // without potentially corrupting other queries. 
-    // The safest way is to close the current DB, swap files, and let the caller restart the app.
-    // However, for this implementation, we will use the backup API in reverse if possible,
-    // or just copy the file. copying is easier if we manage the process.
+    const dbStore = require('./database');
     
-    // Actually, SQLite backup() can also be used to RESTORE (dest to source)
-    // but better-sqlite3 backup() only goes source -> dest.
+    // 1. Close current connection via dbStore.initDb (it handles closing)
+    // Actually, we must close it first to release the file lock on Windows/Mac
+    dbStore.db.close();
     
-    // Safer approach: 
-    // 1. Close DB
-    // 2. Copy backup to DB_PATH
-    // 3. Exit process (shell/docker will restart)
-    
-    db.close();
-    fs.copyFileSync(backupPath, DB_PATH);
-    
-    console.log('Restore complete. Restarting application...');
-    process.exit(0);
+    try {
+        // 2. Overwrite live DB with backup
+        fs.copyFileSync(backupPath, DB_PATH);
+        
+        // 3. Re-initialize DB connection
+        dbStore.initDb();
+        
+        console.log('Hot Restore complete. Database re-initialized.');
+        return true;
+    } catch (err) {
+        console.error('File swap failed during restore:', err);
+        // Try to recover connection to old state if copy failed
+        dbStore.initDb();
+        throw err;
+    }
 }
 
 module.exports = {

@@ -9,7 +9,7 @@ const YahooFinance = require('yahoo-finance2').default;
 dotenv.config();
 
 const yahooFinance = new YahooFinance({ suppressNotices: ['ripHistorical'] });
-const { db, getSettings, setSetting, recalculatePortfolio, recalculateAll } = require('./database');
+const database = require('./database');
 const backupManager = require('./backup_manager');
 
 const app  = express();
@@ -55,14 +55,14 @@ app.use(express.urlencoded({ extended: true }));
 
 app.get('/api/assets', (req, res) => {
     // We don't want to show the pseudo 'CASH' asset in monitored lists or watchlist
-    res.json(db.prepare("SELECT * FROM assets WHERE ticker != 'CASH' AND (type != 'Cash' OR type IS NULL) ORDER BY ticker ASC").all());
+    res.json(database.db.prepare("SELECT * FROM assets WHERE ticker != 'CASH' AND (type != 'Cash' OR type IS NULL) ORDER BY ticker ASC").all());
 });
 
 app.post('/api/assets/manual-update', (req, res) => {
     const { ticker, price, date, type, country } = req.body;
     if (!ticker) return res.status(400).send('Ticker is required');
     
-    db.prepare(`
+    database.db.prepare(`
         UPDATE assets 
         SET currentPrice = ?, updatedAt = ?, isManual = 1, changePercent = 0,
             type = COALESCE(?, type), country = COALESCE(?, country)
@@ -75,19 +75,19 @@ app.post('/api/assets/manual-update', (req, res) => {
         ticker
     );
     
-    recalculateAll();
+    database.recalculateAll();
     clearPerformanceCache();
     res.json({ success: true });
 });
 
 app.post('/api/assets/toggle-manual', (req, res) => {
     const { ticker, isManual } = req.body;
-    db.prepare(`UPDATE assets SET isManual = ? WHERE ticker = ?`).run(isManual ? 1 : 0, ticker);
+    database.db.prepare(`UPDATE assets SET isManual = ? WHERE ticker = ?`).run(isManual ? 1 : 0, ticker);
     res.json({ success: true });
 });
 
 app.get('/api/assets/:id', (req, res) => {
-    const row = db.prepare(`SELECT * FROM assets WHERE id = ?`).get(req.params.id);
+    const row = database.db.prepare(`SELECT * FROM assets WHERE id = ?`).get(req.params.id);
     if (!row) return res.status(404).send('Asset not found');
     res.json(row);
 });
@@ -132,10 +132,10 @@ app.post('/api/assets', async (req, res) => {
             }
         }
 
-        const existing = db.prepare(`SELECT id FROM assets WHERE ticker = ?`).get(assetData.ticker);
+        const existing = database.db.prepare(`SELECT id FROM assets WHERE ticker = ?`).get(assetData.ticker);
         if (existing && assetData.ticker) return res.status(400).send('Asset already in monitoring list');
 
-        db.prepare(`
+        database.db.prepare(`
             INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, country, updatedAt)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
         `).run(
@@ -152,23 +152,23 @@ app.post('/api/assets', async (req, res) => {
 });
 
 app.put('/api/assets/:id', (req, res) => {
-    const existing = db.prepare(`SELECT * FROM assets WHERE id = ?`).get(req.params.id);
+    const existing = database.db.prepare(`SELECT * FROM assets WHERE id = ?`).get(req.params.id);
     if (!existing) return res.status(404).send('Asset not found');
 
     const updated = { ...existing, ...req.body };
-    db.prepare(`
+    database.db.prepare(`
         UPDATE assets SET name=?, type=?, exchange=?, currency=?, currentPrice=?, changePercent=?, pe=?, updatedAt=datetime('now')
         WHERE id=?
     `).run(updated.name, updated.type, updated.exchange, updated.currency,
            updated.currentPrice, updated.changePercent, updated.pe, req.params.id);
 
-    res.json(db.prepare(`SELECT * FROM assets WHERE id = ?`).get(req.params.id));
+    res.json(database.db.prepare(`SELECT * FROM assets WHERE id = ?`).get(req.params.id));
 });
 
 app.delete('/api/assets/:id', (req, res) => {
-    const row = db.prepare(`SELECT * FROM assets WHERE id = ?`).get(req.params.id);
+    const row = database.db.prepare(`SELECT * FROM assets WHERE id = ?`).get(req.params.id);
     if (!row) return res.status(404).send('Asset not found');
-    db.prepare(`DELETE FROM assets WHERE id = ?`).run(req.params.id);
+    database.db.prepare(`DELETE FROM assets WHERE id = ?`).run(req.params.id);
     res.json(row);
 });
 
@@ -177,7 +177,7 @@ app.delete('/api/assets/:id', (req, res) => {
 // ════════════════════════════════════════════════════════════════════════════
 
 app.get('/api/portfolios', (req, res) => {
-    const rows = db.prepare(`SELECT * FROM portfolios ORDER BY createdAt ASC`).all();
+    const rows = database.db.prepare(`SELECT * FROM portfolios ORDER BY createdAt ASC`).all();
     res.json(rows);
 });
 
@@ -228,7 +228,7 @@ async function calculateHoldings(portfolio, transactions, liveRate) {
     const holdings = Object.entries(openMap)
         .filter(([, h]) => h.shares > 0.0001)
         .map(([ticker, h]) => {
-            const asset  = db.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(ticker);
+            const asset  = database.db.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(ticker);
             const curPx  = asset ? asset.currentPrice : 0;
             const rate = (asset && asset.currency === 'USD' && portfolio.currency === 'EUR') ? liveRate : 1;
             const curPxP = (asset && asset.currency !== portfolio.currency) ? curPx / rate : curPx;
@@ -246,13 +246,13 @@ async function calculateHoldings(portfolio, transactions, liveRate) {
 
 app.get('/api/analytics/global-allocation', async (req, res) => {
     try {
-        const portfolios = db.prepare('SELECT * FROM portfolios').all();
+        const portfolios = database.db.prepare('SELECT * FROM portfolios').all();
         const liveRate = await getEurUsdRate();
         const typeMap = {};
         let totalValue = 0;
 
         for (const p of portfolios) {
-            const transactions = db.prepare('SELECT * FROM transactions WHERE portfolioId = ?').all(p.id);
+            const transactions = database.db.prepare('SELECT * FROM transactions WHERE portfolioId = ?').all(p.id);
             const holdings = await calculateHoldings(p, transactions, liveRate);
             
             // For global, we assume all portfolios are in the same base for visualization (e.g. EUR)
@@ -279,12 +279,12 @@ app.get('/api/analytics/global-allocation', async (req, res) => {
 });
 
 app.get('/api/portfolios/:id', async (req, res) => {
-    const portfolio = db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(req.params.id);
+    const portfolio = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(req.params.id);
     if (!portfolio) return res.status(404).json({ error: 'Portfolio non trovato' });
 
     const liveRate = await getEurUsdRate();
 
-    const transactions = db.prepare(`
+    const transactions = database.db.prepare(`
         SELECT * FROM transactions WHERE portfolioId = ? ORDER BY date ASC
     `).all(req.params.id);
 
@@ -359,7 +359,7 @@ app.get('/api/portfolios/:id', async (req, res) => {
     const holdings = Object.entries(openMap)
         .filter(([, h]) => h.shares > 0.0001)
         .map(([ticker, h]) => {
-            const asset  = db.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(ticker);
+            const asset  = database.db.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(ticker);
             const curPx  = asset ? asset.currentPrice : 0;
             
             // Use live rate for USD conversion if the portfolio is in EUR
@@ -401,7 +401,7 @@ app.get('/api/portfolios/:id', async (req, res) => {
         const cr = h.currency || 'Unknown';
         currMap[cr] = (currMap[cr] || 0) + h.currentValue;
 
-        const asset = db.prepare(`SELECT country FROM assets WHERE ticker = ?`).get(h.ticker);
+        const asset = database.db.prepare(`SELECT country FROM assets WHERE ticker = ?`).get(h.ticker);
         const co = (asset && asset.country) ? asset.country : 'Unknown';
         counMap[co] = (counMap[co] || 0) + h.currentValue;
     }
@@ -423,7 +423,7 @@ app.get('/api/portfolios/:id', async (req, res) => {
 
     // Closed positions
     const closedPositions = Object.values(closedByKey).map(c => {
-        const asset = db.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(c.ticker);
+        const asset = database.db.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(c.ticker);
         const gPct = c.totalCostBasis > 0 ? Math.round((c.realizedGain / c.totalCostBasis) * 10000) / 100 : 0;
         return { ...c, name: asset ? asset.name : c.ticker, gainPct: gPct,
             totalProceeds: Math.round(c.totalProceeds * 100) / 100,
@@ -465,23 +465,23 @@ app.post('/api/portfolios', (req, res) => {
     const cash  = parseFloat(initialCash || 0);
     const start = startDate || new Date().toISOString().split('T')[0];
 
-    const result = db.prepare(`
+    const result = database.db.prepare(`
         INSERT INTO portfolios (name, currency, startDate, initialCash, currentCash, totalValue)
         VALUES (?, ?, ?, ?, ?, ?)
     `).run(name, currency || 'EUR', start, cash, cash, cash);
 
-    const created = db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(result.lastInsertRowid);
+    const created = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(result.lastInsertRowid);
     console.log('Created portfolio:', created);
     clearPerformanceCache();
     res.status(201).json(created);
 });
 
 app.put('/api/portfolios/:id', (req, res) => {
-    const existing = db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(req.params.id);
+    const existing = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(req.params.id);
     if (!existing) return res.status(404).send('Portfolio not found');
 
     const { name, currency, startDate, initialCash } = req.body;
-    db.prepare(`
+    database.db.prepare(`
         UPDATE portfolios SET name=?, currency=?, startDate=?, initialCash=? WHERE id=?
     `).run(
         name       || existing.name,
@@ -491,16 +491,16 @@ app.put('/api/portfolios/:id', (req, res) => {
         req.params.id
     );
 
-    recalculatePortfolio(req.params.id);
+    database.recalculatePortfolio(req.params.id);
     clearPerformanceCache();
-    res.json(db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(req.params.id));
+    res.json(database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(req.params.id));
 });
 
 app.delete('/api/portfolios/:id', (req, res) => {
-    const row = db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(req.params.id);
+    const row = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(req.params.id);
     if (!row) return res.status(404).send('Portfolio not found');
     // ON DELETE CASCADE removes transactions automatically
-    db.prepare(`DELETE FROM portfolios WHERE id = ?`).run(req.params.id);
+    database.db.prepare(`DELETE FROM portfolios WHERE id = ?`).run(req.params.id);
     console.log(`Deleted portfolio ${req.params.id}`);
     clearPerformanceCache();
     res.json(row);
@@ -513,10 +513,9 @@ app.post('/api/portfolios/:id/reconcile', (req, res) => {
     if (actualCash == null) return res.status(400).send('actualCash is required');
 
     // 1. Ensure current data is accurate
-    const { recalculatePortfolio, clearPerformanceCache } = require('./database');
-    recalculatePortfolio(portfolioId);
+    database.recalculatePortfolio(portfolioId);
     
-    const portfolio = db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(portfolioId);
+    const portfolio = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(portfolioId);
     if (!portfolio) return res.status(404).send('Portfolio not found');
 
     const diff = parseFloat(actualCash) - portfolio.currentCash;
@@ -529,7 +528,7 @@ app.post('/api/portfolios/:id/reconcile', (req, res) => {
     const amount = Math.abs(diff);
 
     // 2. Insert reconciliation transaction
-    db.prepare(`
+    database.db.prepare(`
         INSERT INTO transactions (portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
@@ -539,7 +538,7 @@ app.post('/api/portfolios/:id/reconcile', (req, res) => {
     );
 
     // 3. Final recalculation
-    recalculatePortfolio(portfolioId);
+    database.recalculatePortfolio(portfolioId);
     if (typeof clearPerformanceCache === 'function') clearPerformanceCache();
 
     res.json({ 
@@ -556,9 +555,9 @@ app.post('/api/portfolios/:id/reconcile', (req, res) => {
 app.get('/api/transactions', (req, res) => {
     const { portfolioId } = req.query;
     if (portfolioId) {
-        return res.json(db.prepare(`SELECT * FROM transactions WHERE portfolioId = ? ORDER BY date ASC`).all(portfolioId));
+        return res.json(database.db.prepare(`SELECT * FROM transactions WHERE portfolioId = ? ORDER BY date ASC`).all(portfolioId));
     }
-    res.json(db.prepare(`SELECT * FROM transactions ORDER BY date ASC`).all());
+    res.json(database.db.prepare(`SELECT * FROM transactions ORDER BY date ASC`).all());
 });
 
 app.post('/api/transactions', (req, res) => {
@@ -566,7 +565,7 @@ app.post('/api/transactions', (req, res) => {
 
     if (!portfolioId) return res.status(400).send('portfolioId is required');
 
-    const result = db.prepare(`
+    const result = database.db.prepare(`
         INSERT INTO transactions (portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
@@ -579,7 +578,7 @@ app.post('/api/transactions', (req, res) => {
 
     // Automation for TRANSFER: Create a DEPOSIT in the destination portfolio
     if (type === 'TRANSFER' && destinationPortfolioId) {
-        db.prepare(`
+        database.db.prepare(`
             INSERT INTO transactions (portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
@@ -587,20 +586,20 @@ app.post('/api/transactions', (req, res) => {
             date || new Date().toISOString().split('T')[0],
             0, 0, 0, 0, 1, parseFloat(amount || 0)
         );
-        recalculatePortfolio(destinationPortfolioId);
+        database.recalculatePortfolio(destinationPortfolioId);
     }
 
-    recalculatePortfolio(portfolioId);
+    database.recalculatePortfolio(portfolioId);
     clearPerformanceCache();
 
-    res.status(201).json(db.prepare(`SELECT * FROM transactions WHERE id = ?`).get(result.lastInsertRowid));
+    res.status(201).json(database.db.prepare(`SELECT * FROM transactions WHERE id = ?`).get(result.lastInsertRowid));
 });
 
 app.delete('/api/transactions/:id', (req, res) => {
-    const row = db.prepare(`SELECT * FROM transactions WHERE id = ?`).get(req.params.id);
+    const row = database.db.prepare(`SELECT * FROM transactions WHERE id = ?`).get(req.params.id);
     if (!row) return res.status(404).send('Transaction not found');
-    db.prepare(`DELETE FROM transactions WHERE id = ?`).run(req.params.id);
-    recalculatePortfolio(row.portfolioId);
+    database.db.prepare(`DELETE FROM transactions WHERE id = ?`).run(req.params.id);
+    database.recalculatePortfolio(row.portfolioId);
     clearPerformanceCache();
     res.json(row);
 });
@@ -702,26 +701,26 @@ app.post('/api/transactions/bulk', (req, res) => {
         return res.status(400).send('portfolioId and transactions[] required');
     }
 
-    const portfolio = db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(portfolioId);
+    const portfolio = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(portfolioId);
     if (!portfolio) return res.status(404).send('Portfolio not found');
 
-    const insertTx = db.prepare(`
+    const insertTx = database.db.prepare(`
         INSERT INTO transactions (portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
-    const insertAsset = db.prepare(`
+    const insertAsset = database.db.prepare(`
         INSERT OR IGNORE INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, updatedAt)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
     `);
 
     const results = [];
-    const importMany = db.transaction((txs) => {
+    const importMany = database.db.transaction((txs) => {
         for (const t of txs) {
             try {
                 // Auto-add asset to watchlist if not already there
                 if (t.assetTicker) {
-                    db.prepare(`
+                    database.db.prepare(`
                         INSERT OR IGNORE INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, country, isManual, updatedAt)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
                     `).run(
@@ -759,7 +758,7 @@ app.post('/api/transactions/bulk', (req, res) => {
     });
 
     importMany(transactions);
-    recalculatePortfolio(portfolioId);
+    database.recalculatePortfolio(portfolioId);
     clearPerformanceCache();
     res.json({ imported: results.filter(r => r.ok).length, results });
 });
@@ -786,14 +785,14 @@ app.get('/api/fx-rate', async (req, res) => {
 // ════════════════════════════════════════════════════════════════════════════
 
 app.get('/api/settings', (req, res) => {
-    res.json(getSettings());
+    res.json(database.getSettings());
 });
 
 app.put('/api/settings', (req, res) => {
     for (const [key, value] of Object.entries(req.body)) {
-        setSetting(key, value);
+        database.setSetting(key, value);
     }
-    res.json(getSettings());
+    res.json(database.getSettings());
 });
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -840,10 +839,10 @@ app.get('/api/analytics/portfolio-performance/:id', async (req, res) => {
         }
         console.log(`Cache miss for ${cacheKey}. Calculating...`);
 
-        const portfolio = db.prepare('SELECT * FROM portfolios WHERE id = ?').get(portfolioId);
+        const portfolio = database.db.prepare('SELECT * FROM portfolios WHERE id = ?').get(portfolioId);
         if (!portfolio) return res.status(404).send('Portfolio not found');
 
-        const transactions = db.prepare('SELECT * FROM transactions WHERE portfolioId = ? ORDER BY date ASC').all(portfolioId);
+        const transactions = database.db.prepare('SELECT * FROM transactions WHERE portfolioId = ? ORDER BY date ASC').all(portfolioId);
         
         const today = new Date();
         let startDate;
@@ -949,7 +948,7 @@ app.get('/api/analytics/portfolio-performance/:id', async (req, res) => {
                     if (availableDates.length > 0) {
                         price = historicalPrices[ticker][availableDates[availableDates.length - 1]];
                     } else {
-                        const asset = db.prepare('SELECT currentPrice FROM assets WHERE ticker = ?').get(ticker);
+                        const asset = database.db.prepare('SELECT currentPrice FROM assets WHERE ticker = ?').get(ticker);
                         price = asset ? asset.currentPrice : 0;
                     }
                 }
@@ -995,10 +994,10 @@ app.get('/api/analytics/global-performance', async (req, res) => {
         }
         console.log(`Cache miss for ${cacheKey}. Calculating...`);
 
-        const portfolios = db.prepare('SELECT * FROM portfolios').all();
+        const portfolios = database.db.prepare('SELECT * FROM portfolios').all();
         if (portfolios.length === 0) return res.json([]);
 
-        const allTransactions = db.prepare('SELECT * FROM transactions ORDER BY date ASC').all();
+        const allTransactions = database.db.prepare('SELECT * FROM transactions ORDER BY date ASC').all();
         const today = new Date();
         let startDate;
 
@@ -1099,7 +1098,7 @@ app.get('/api/analytics/global-performance', async (req, res) => {
                         if (availableDates.length > 0) {
                             price = historicalPrices[ticker][availableDates[availableDates.length - 1]];
                         } else {
-                            const asset = db.prepare('SELECT currentPrice FROM assets WHERE ticker = ?').get(ticker);
+                            const asset = database.db.prepare('SELECT currentPrice FROM assets WHERE ticker = ?').get(ticker);
                             price = asset ? asset.currentPrice : 0;
                         }
                     }
@@ -1136,12 +1135,12 @@ app.get('/api/analytics/global-performance', async (req, res) => {
 
 app.get('/api/analytics/history', (req, res) => {
     try {
-        const portfolios = db.prepare('SELECT id, name, currency FROM portfolios').all();
+        const portfolios = database.db.prepare('SELECT id, name, currency FROM portfolios').all();
         let allClosed = [];
 
         for (const p of portfolios) {
-            const trans = db.prepare('SELECT * FROM transactions WHERE portfolioId = ? ORDER BY date ASC').all(p.id);
-            const assets = db.prepare('SELECT * FROM assets').all();
+            const trans = database.db.prepare('SELECT * FROM transactions WHERE portfolioId = ? ORDER BY date ASC').all(p.id);
+            const assets = database.db.prepare('SELECT * FROM assets').all();
             const assetMap = Object.fromEntries(assets.map(a => [a.ticker, a]));
 
             let holdingsMap = {}; // Tracks running shares and costBasis for WAC
@@ -1220,11 +1219,11 @@ app.get('/api/analytics/history', (req, res) => {
 
 app.get('/api/analytics/dividends', (req, res) => {
     try {
-        const portfolios = db.prepare('SELECT id, name, currency FROM portfolios').all();
+        const portfolios = database.db.prepare('SELECT id, name, currency FROM portfolios').all();
         let allDividends = [];
 
         for (const p of portfolios) {
-            const divs = db.prepare("SELECT * FROM transactions WHERE portfolioId = ? AND type = 'DIVIDEND'").all(p.id);
+            const divs = database.db.prepare("SELECT * FROM transactions WHERE portfolioId = ? AND type = 'DIVIDEND'").all(p.id);
             allDividends = allDividends.concat(divs.map(d => ({
                 ...d,
                 portfolioName: p.name
@@ -1283,9 +1282,9 @@ app.delete('/api/backups/:filename', (req, res) => {
 // ════════════════════════════════════════════════════════════════════════════
 
 app.post('/api/reset-data', (req, res) => {
-    db.prepare(`DELETE FROM transactions`).run();
-    db.prepare(`DELETE FROM portfolios`).run();
-    db.prepare(`DELETE FROM assets`).run();
+    database.db.prepare(`DELETE FROM transactions`).run();
+    database.db.prepare(`DELETE FROM portfolios`).run();
+    database.db.prepare(`DELETE FROM assets`).run();
     console.log('All application data has been reset.');
     clearPerformanceCache();
     res.json({ success: true });
@@ -1322,7 +1321,7 @@ app.use((req, res) => res.redirect('/dashboard'));
 // ════════════════════════════════════════════════════════════════════════════
 
 async function updateMarketData() {
-    const assets = db.prepare(`SELECT * FROM assets`).all();
+    const assets = database.db.prepare(`SELECT * FROM assets`).all();
     if (assets.length === 0) return;
     console.log(`Updating market data for ${assets.length} assets...`);
 
@@ -1332,7 +1331,7 @@ async function updateMarketData() {
             const quote = await yahooFinance.quote(asset.ticker);
             if (!quote) {
                 console.warn(`No quote for ${asset.ticker}, marking as manual.`);
-                db.prepare(`UPDATE assets SET isManual=1 WHERE ticker=?`).run(asset.ticker);
+                database.db.prepare(`UPDATE assets SET isManual=1 WHERE ticker=?`).run(asset.ticker);
                 continue;
             }
 
@@ -1344,7 +1343,7 @@ async function updateMarketData() {
                 } catch (e) { /* ignore summaryProfile errors */ }
             }
 
-            db.prepare(`
+            database.db.prepare(`
                 UPDATE assets
                 SET currentPrice=?, changePercent=?, pe=?, name=?, currency=?, exchange=?, country=?, updatedAt=datetime('now')
                 WHERE ticker=?
@@ -1361,11 +1360,11 @@ async function updateMarketData() {
         } catch (err) {
             console.error(`Failed to update ${asset.ticker}:`, err.message);
             if (err.message.includes('Not Found') || err.message.includes('404')) {
-                db.prepare(`UPDATE assets SET isManual=1 WHERE ticker=?`).run(asset.ticker);
+                database.db.prepare(`UPDATE assets SET isManual=1 WHERE ticker=?`).run(asset.ticker);
             }
         }
     }
-    recalculateAll();
+    database.recalculateAll();
 }
 
 // ─── Scheduler ──────────────────────────────────────────────────────────────
@@ -1373,7 +1372,7 @@ let lastUpdateTime = Date.now();
 let lastBackupDate = ''; // 'YYYY-MM-DD'
 
 setInterval(async () => {
-    const settings = getSettings();
+    const settings = database.getSettings();
     const now = new Date();
     
     // 1. Market Data Update
