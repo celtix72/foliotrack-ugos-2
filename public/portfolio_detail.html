@@ -331,6 +331,7 @@
                         <option value="DEPOSIT">DEPOSIT</option>
                         <option value="WITHDRAWAL">WITHDRAWAL</option>
                         <option value="TAX">TAX</option>
+                        <option value="TRANSFER">TRANSFER</option>
                     </select>
                 </div>
                 <div class="space-y-2">
@@ -425,6 +426,9 @@
               <th class="px-3 py-3 text-right">FX</th>
               <th class="px-3 py-3 text-right">Price</th>
               <th class="px-3 py-3 text-right">Qty</th>
+              <th class="px-3 py-3 text-right">Comm</th>
+              <th class="px-3 py-3 text-right">Tax</th>
+              <th class="px-3 py-3 text-right">Total (Net)</th>
             </tr>
           </thead>
           <tbody id="import-preview-body"></tbody>
@@ -763,12 +767,53 @@
     function toggleTransactionFields() {
         const type = document.getElementById('t-type').value;
         const isTrade = ['BUY', 'SELL'].includes(type);
-        const isCash = ['DEPOSIT', 'WITHDRAWAL', 'TAX', 'DIVIDEND'].includes(type);
+        const isDividend = type === 'DIVIDEND';
+        const isCash = ['DEPOSIT', 'WITHDRAWAL', 'TAX', 'DIVIDEND', 'TRANSFER'].includes(type);
         
-        document.getElementById('t-asset-field').style.display = (isTrade || type === 'DIVIDEND') ? 'block' : 'none';
-        document.getElementById('t-stock-fields').style.display = isTrade ? 'contents' : 'none';
+        document.getElementById('t-asset-field').style.display = (isTrade || isDividend || isCash) ? 'block' : 'none';
+        document.getElementById('t-stock-fields').style.display = (isTrade || isDividend) ? 'contents' : 'none';
         document.getElementById('t-amount-field').style.display = isCash ? 'block' : 'none';
+        
+        if (isDividend) calculateNetDividend();
+
+        // Auto-set CASH ticker for cash-only movements
+        const assetSearch = document.getElementById('t-asset-search');
+        const assetTicker = document.getElementById('t-asset-ticker');
+        if (['DEPOSIT', 'WITHDRAWAL', 'TAX', 'TRANSFER'].includes(type) && !assetTicker.value) {
+            assetSearch.value = 'CASH';
+            selectTAsset('CASH', portfolioCurrency);
+        }
+        
+        // Update label for Amount when dividend is selected
+        const amountLabel = document.querySelector('#t-amount-field label');
+        if (amountLabel) {
+            amountLabel.textContent = isDividend ? 'Net Dividend' : 'Amount';
+        }
     }
+
+    // Auto-calculate Net Dividend
+    function calculateNetDividend() {
+        const type = document.getElementById('t-type').value;
+        if (type !== 'DIVIDEND') return;
+
+        const qty = parseFloat(document.getElementById('t-qty').value) || 0;
+        const price = parseFloat(document.getElementById('t-price').value) || 0;
+        const tax = parseFloat(document.getElementById('t-tax').value) || 0;
+        const fx = parseFloat(document.getElementById('t-fx').value) || 1;
+
+        // Dividend amount in portfolio currency
+        const gross = (qty * price) / fx;
+        const net = gross - (tax / fx);
+        document.getElementById('t-amount').value = net.toFixed(2);
+    }
+
+    // Add listeners for auto-calc
+    document.addEventListener('DOMContentLoaded', () => {
+        ['t-qty', 't-price', 't-tax', 't-fx'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', calculateNetDividend);
+        });
+    });
 
     // Asset Search (Shared with asset_management.html)
     const tSearchInput = document.getElementById('t-asset-search');
@@ -1114,13 +1159,28 @@
         const parsed = [];
         for (const line of lines) {
             const cols = line.split(/\t/).map(c => c.trim());
-            if (cols.length < 8) continue;
+            if (cols.length < 7) continue; // Support 7 columns for basic cash movements
             if (headerKeywords.some(k => cols[0].toLowerCase().includes(k))) continue;
 
             let type = (cols[1] || 'BUY').toUpperCase();
             if (type === 'DIV') type = 'DIVIDEND';
-            const validTypes = ['BUY','SELL','DIVIDEND','DEPOSIT','WITHDRAWAL','TAX'];
+            if (['CASH', 'DEPOSITO'].includes(type)) type = 'DEPOSIT';
+            if (type === 'PRELIEVO') type = 'WITHDRAWAL';
+            if (type === 'TRASFERIMENTO') type = 'TRANSFER';
+
+            const validTypes = ['BUY','SELL','DIVIDEND','DEPOSIT','WITHDRAWAL','TAX', 'TRANSFER'];
             if (!validTypes.includes(type)) continue;
+
+            const qty   = parseNum(cols[7]);
+            const price = parseNum(cols[6]);
+            const comm  = parseNum(cols[8]);
+            const tax   = parseNum(cols[10]);
+            
+            // For simple 7-column cash rows, use Price (cols[6]) as the amount
+            let amount = 0;
+            if (['DEPOSIT', 'WITHDRAWAL', 'TAX', 'TRANSFER'].includes(type)) {
+                amount = cols.length <= 7 ? price : (cols[9] ? parseNum(cols[9]) : price);
+            }
 
             parsed.push({
                 dateRaw:      cols[0],
@@ -1131,11 +1191,11 @@
                 ticker:       cols[3] || '',
                 currency:     cols[4] || 'USD',
                 exchangeRate: parseNum(cols[5]) || 1,
-                price:        parseNum(cols[6]),
-                quantity:     parseNum(cols[7]),
-                commission:   parseNum(cols[8]),
-                valEur:       parseNum(cols[9]),
-                tax:          parseNum(cols[10]),
+                price:        price,
+                quantity:     qty,
+                commission:   comm,
+                valEur:       (type === 'DIVIDEND' && cols[12]) ? parseNum(cols[12]) : (amount || parseNum(cols[9])),
+                tax:          tax,
                 status:       'pending',
                 yfName:       '',
                 yfCurrency:   '',
@@ -1234,10 +1294,12 @@
                 <td class="px-3 py-2.5">${tickerCell}</td>
                 <td class="px-3 py-2.5 truncate max-w-[120px]">${r.yfName || r.tickerRaw}</td>
                 <td class="px-3 py-2.5 font-bold">${r.yfCurrency || r.currency}</td>
+                <td class="px-3 py-2.5 text-right font-mono">${formatNumber(r.exchangeRate, 4)}</td>
                 <td class="px-3 py-2.5 text-right font-mono">${formatNumber(r.price, 2)}</td>
                 <td class="px-3 py-2.5 text-right font-mono">${formatNumber(r.quantity, 2)}</td>
                 <td class="px-3 py-2.5 text-right text-slate-500">${r.commission}</td>
                 <td class="px-3 py-2.5 text-right text-slate-500">${r.tax}</td>
+                <td class="px-3 py-2.5 text-right font-bold text-emerald-600">${formatNumber(r.valEur, 2)}</td>
             </tr>`;
         }).join('');
 

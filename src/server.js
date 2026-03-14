@@ -8,7 +8,7 @@ const YahooFinance = require('yahoo-finance2').default;
 
 dotenv.config();
 
-const yahooFinance = new YahooFinance();
+const yahooFinance = new YahooFinance({ suppressNotices: ['ripHistorical'] });
 const { db, getSettings, setSetting, recalculatePortfolio, recalculateAll } = require('./database');
 
 const app  = express();
@@ -424,8 +424,23 @@ app.delete('/api/transactions/:id', (req, res) => {
 
 // Validate a ticker against Yahoo Finance (used by bulk import)
 app.get('/api/validate-ticker', async (req, res) => {
-    const { ticker } = req.query;
-    if (!ticker) return res.status(400).send('ticker required');
+    const ticker = (req.query.ticker || "").toUpperCase();
+    if (!ticker) return res.status(400).send('Ticker required');
+
+    if (ticker === 'CASH') {
+        return res.json({
+            valid: true,
+            ticker: 'CASH',
+            name: 'Asset Cash',
+            currency: 'EUR',
+            exchange: 'CASH',
+            type: 'Cash',
+            currentPrice: 1,
+            pe: null,
+            country: 'Global'
+        });
+    }
+
     try {
         const quote = await yahooFinance.quote(ticker);
         if (!quote) return res.json({ valid: false });
@@ -658,15 +673,21 @@ app.get('/api/analytics/portfolio-performance/:id', async (req, res) => {
                 }
 
                 const qStart = (transactions.find(t => t.assetTicker === ticker)?.date) || startDate.toISOString().split('T')[0];
-                const hist = await yahooFinance.historical(ticker, {
+                const chartResult = await yahooFinance.chart(ticker, {
                     period1: qStart,
                     period2: today.toISOString().split('T')[0],
                     interval: '1d'
                 });
                 
-                historicalPrices[ticker] = Object.fromEntries(
-                    hist.map(h => [new Date(h.date).toISOString().split('T')[0], h.adjClose || h.close])
-                );
+                if (chartResult && chartResult.quotes) {
+                    historicalPrices[ticker] = Object.fromEntries(
+                        chartResult.quotes
+                            .filter(h => h.date)
+                            .map(h => [new Date(h.date).toISOString().split('T')[0], h.adjclose || h.close || 0])
+                    );
+                } else {
+                    historicalPrices[ticker] = {};
+                }
                 // Save to global market cache
                 historicalPricesCache[ticker] = historicalPrices[ticker];
 
@@ -717,9 +738,12 @@ app.get('/api/analytics/portfolio-performance/:id', async (req, res) => {
             for (const [ticker, shares] of Object.entries(holdings)) {
                 if (shares <= 0.0001) continue;
                 
-                let price = historicalPrices[ticker][dateStr];
+                let price = 0;
+                const tickerPrices = historicalPrices[ticker] || {};
+                price = tickerPrices[dateStr];
+
                 if (price === undefined) {
-                    const availableDates = Object.keys(historicalPrices[ticker]).filter(d => d < dateStr).sort();
+                    const availableDates = Object.keys(tickerPrices).filter(d => d < dateStr).sort();
                     if (availableDates.length > 0) {
                         price = historicalPrices[ticker][availableDates[availableDates.length - 1]];
                     } else {
@@ -795,14 +819,20 @@ app.get('/api/analytics/global-performance', async (req, res) => {
                 }
 
                 const qStart = (allTransactions.find(t => t.assetTicker === ticker)?.date) || startDate.toISOString().split('T')[0];
-                const hist = await yahooFinance.historical(ticker, {
+                const chartResult = await yahooFinance.chart(ticker, {
                     period1: qStart,
                     period2: today.toISOString().split('T')[0],
                     interval: '1d'
                 });
-                historicalPrices[ticker] = Object.fromEntries(
-                    hist.map(h => [new Date(h.date).toISOString().split('T')[0], h.adjClose || h.close])
-                );
+                if (chartResult && chartResult.quotes) {
+                    historicalPrices[ticker] = Object.fromEntries(
+                        chartResult.quotes
+                            .filter(h => h.date)
+                            .map(h => [new Date(h.date).toISOString().split('T')[0], h.adjclose || h.close || 0])
+                    );
+                } else {
+                    historicalPrices[ticker] = {};
+                }
                 historicalPricesCache[ticker] = historicalPrices[ticker];
             } catch (err) {
                 console.warn(`Failed to fetch history for ${ticker}:`, err.message);
@@ -849,9 +879,12 @@ app.get('/api/analytics/global-performance', async (req, res) => {
                 let assetValue = 0;
                 for (const [ticker, shares] of Object.entries(holdings)) {
                     if (shares <= 0.0001) continue;
-                    let price = historicalPrices[ticker][dateStr];
+                    let price = 0;
+                    const tickerPrices = historicalPrices[ticker] || {};
+                    price = tickerPrices[dateStr];
+
                     if (price === undefined) {
-                        const availableDates = Object.keys(historicalPrices[ticker]).filter(d => d < dateStr).sort();
+                        const availableDates = Object.keys(tickerPrices).filter(d => d < dateStr).sort();
                         if (availableDates.length > 0) {
                             price = historicalPrices[ticker][availableDates[availableDates.length - 1]];
                         } else {

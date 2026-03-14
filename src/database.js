@@ -119,6 +119,7 @@ function recalculatePortfolio(portfolioId) {
             case 'DEPOSIT':    cash += amount; break;
             case 'WITHDRAWAL': cash -= amount; break;
             case 'TAX':        cash -= amount; break;
+            case 'TRANSFER':   cash -= amount; break;
             case 'DIVIDEND': {
                 // Bulk import might not have 'amount' pre-calculated, use qty*price-comm-tax if amount is 0
                 const dividendAmount = amount || (qty * price - comm - tax);
