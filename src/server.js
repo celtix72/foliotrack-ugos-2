@@ -1371,9 +1371,200 @@ app.get('/api/analytics/dividends', (req, res) => {
                 portfolioName: p.name
             })));
         }
-
         // Return flat list for frontend to group/sort
         res.json(allDividends);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/analytics/reports', async (req, res) => {
+    try {
+        const portfolios = database.db.prepare('SELECT * FROM portfolios').all();
+        if (portfolios.length === 0) return res.json({ error: 'No portfolios found' });
+
+        const allTransactions = database.db.prepare('SELECT * FROM transactions ORDER BY date ASC').all();
+        const assets = database.db.prepare('SELECT * FROM assets').all();
+        const assetMap = Object.fromEntries(assets.map(a => [a.ticker, a]));
+
+        const today = new Date();
+        const oneYearAgo = new Date(today);
+        oneYearAgo.setFullYear(today.getFullYear() - 1);
+        const startDate = allTransactions.length > 0 ? new Date(allTransactions[0].date) : oneYearAgo;
+        const dateStrStart = startDate.toISOString().split('T')[0];
+        const dateStrEnd = today.toISOString().split('T')[0];
+
+        // 1. Performance Comparison (Normalized to 100)
+        const benchmarks = ['^GSPC', 'URTH']; // S&P 500, MSCI World
+        const historicalData = {};
+
+        // Helper to fetch normalized history
+        const fetchHistory = async (ticker) => {
+            try {
+                const chart = await yahooFinance.chart(ticker, {
+                    period1: dateStrStart,
+                    period2: dateStrEnd,
+                    interval: '1mo'
+                });
+                if (chart && chart.quotes && chart.quotes.length > 0) {
+                    const firstPrice = chart.quotes[0].adjclose || chart.quotes[0].close;
+                    return chart.quotes.map(h => ({
+                        date: new Date(h.date).toISOString().split('T')[0].substring(0, 7), // YYYY-MM
+                        value: ((h.adjclose || h.close) / firstPrice) * 100
+                    }));
+                }
+            } catch (e) {
+                console.warn(`Failed benchmark ${ticker}:`, e.message);
+            }
+            return [];
+        };
+
+        const [sp500, msci] = await Promise.all([fetchHistory('^GSPC'), fetchHistory('URTH')]);
+
+        // Calculate Portfolio Monthly Performance (Global)
+        // For efficiency, we reuse some logic but simplified for monthly steps
+        const portfolioPerformance = [];
+        let tempDate = new Date(startDate);
+        tempDate.setDate(1); // Start of month
+
+        while (tempDate <= today) {
+            const currentMonthStr = tempDate.toISOString().substring(0, 7);
+            const lastDayOfMonth = new Date(tempDate.getFullYear(), tempDate.getMonth() + 1, 0).toISOString().split('T')[0];
+            
+            // Calculate value at last day of month
+            let totalVal = 0;
+            let netDep = 0;
+
+            for (const p of portfolios) {
+                let cash = p.initialCash;
+                let pNetDep = p.initialCash;
+                const holdings = {};
+                const pTxs = allTransactions.filter(t => t.portfolioId === p.id && t.date <= lastDayOfMonth);
+
+                for (const t of pTxs) {
+                    const qty = t.quantity || 0;
+                    const amount = t.amount || 0;
+                    const fx = t.exchangeRate || 1;
+                    switch (t.type) {
+                        case 'DEPOSIT': cash += amount; pNetDep += amount; break;
+                        case 'WITHDRAWAL': cash -= amount; pNetDep -= amount; break;
+                        case 'TAX': cash -= amount; break;
+                        case 'DIVIDEND': cash += (amount || (qty * (t.price || 0) - (t.commission || 0) - (t.tax || 0))) / fx; break;
+                        case 'BUY': cash -= (qty * (t.price || 0) + (t.commission || 0) + (t.tax || 0)) / fx; holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) + qty; break;
+                        case 'SELL': cash += (qty * (t.price || 0) - (t.commission || 0) - (t.tax || 0)) / fx; holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) - qty; break;
+                    }
+                }
+
+                let assetVal = 0;
+                for (const [ticker, shares] of Object.entries(holdings)) {
+                    if (shares <= 0.0001) continue;
+                    const a = assetMap[ticker];
+                    if (a) assetVal += shares * (a.currentPrice / (pTxs.filter(tx => tx.assetTicker === ticker && tx.exchangeRate).at(-1)?.exchangeRate || 1));
+                }
+                totalVal += (cash + assetVal);
+                netDep += pNetDep;
+            }
+
+            portfolioPerformance.push({ date: currentMonthStr, value: totalVal, netDeposits: netDep });
+            tempDate.setMonth(tempDate.getMonth() + 1);
+        }
+
+        // Normalize portfolio performance
+        const firstPVal = portfolioPerformance[0]?.value || 1;
+        const normalizedPortfolio = portfolioPerformance.map(p => ({
+            date: p.date,
+            value: (p.value / firstPVal) * 100,
+            absoluteValue: p.value,
+            profit: p.value - p.netDeposits
+        }));
+
+        // 2. Diversification
+        const diversification = {
+            geography: {},
+            assetType: {}
+        };
+
+        for (const p of portfolios) {
+            const holdings = {};
+            const pTxs = allTransactions.filter(t => t.portfolioId === p.id);
+            for (const t of pTxs) {
+                if (t.type === 'BUY') holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) + t.quantity;
+                if (t.type === 'SELL') holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) - t.quantity;
+            }
+            for (const [ticker, shares] of Object.entries(holdings)) {
+                if (shares <= 0.0001) continue;
+                const a = assetMap[ticker];
+                if (!a) continue;
+                const value = shares * (a.currentPrice / (pTxs.filter(tx => tx.assetTicker === ticker && tx.exchangeRate).at(-1)?.exchangeRate || 1));
+
+                const geo = a.country || 'Unknown';
+                const type = a.type || 'Other';
+                diversification.geography[geo] = (diversification.geography[geo] || 0) + value;
+                diversification.assetType[type] = (diversification.assetType[type] || 0) + value;
+            }
+        }
+
+        // 3. Dividends (Last 12 Months)
+        const dividends = [];
+        for (let i = 11; i >= 0; i--) {
+            const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+            const mStr = d.toISOString().substring(0, 7);
+            const monthlyDiv = allTransactions
+                .filter(t => t.type === 'DIVIDEND' && t.date.startsWith(mStr))
+                .reduce((sum, t) => sum + (t.amount || (t.quantity * t.price - t.commission - t.tax)) / (t.exchangeRate || 1), 0);
+            dividends.push({ date: mStr, amount: monthlyDiv });
+        }
+
+        // 4. Metrics
+        const currentTotalValue = normalizedPortfolio[normalizedPortfolio.length - 1]?.absoluteValue || 0;
+        const currentNetDeposits = normalizedPortfolio[normalizedPortfolio.length - 1]?.netDeposits || 0;
+        const totalROI = currentNetDeposits > 0 ? (currentTotalValue / currentNetDeposits) - 1 : 0;
+
+        // Best Asset (by absolute profit)
+        let bestAsset = { ticker: '-', profit: -Infinity };
+        for (const [ticker, a] of Object.entries(assetMap)) {
+            if (ticker === 'CASH') continue;
+            let unrealized = 0;
+            let realized = 0;
+            let qty = 0;
+            let costBasis = 0;
+            const tks = allTransactions.filter(t => t.assetTicker === ticker);
+            for (const t of tks) {
+                const total = (t.quantity * t.price + (t.type==='BUY'?1:-1)*(t.commission+t.tax)) / (t.exchangeRate||1);
+                if (t.type === 'BUY') {
+                    qty += t.quantity;
+                    costBasis += total;
+                } else if (t.type === 'SELL') {
+                    const avgCost = qty > 0 ? costBasis / qty : 0;
+                    realized += total - (t.quantity * avgCost);
+                    qty -= t.quantity;
+                    costBasis -= (t.quantity * avgCost);
+                } else if (t.type === 'DIVIDEND') {
+                    realized += (t.amount || (t.quantity * t.price - t.commission - t.tax)) / (t.exchangeRate || 1);
+                }
+            }
+            unrealized = qty * (a.currentPrice / (tks.filter(tx=>tx.exchangeRate).at(-1)?.exchangeRate||1)) - costBasis;
+            const totalProfit = realized + unrealized;
+            if (totalProfit > bestAsset.profit) bestAsset = { ticker, profit: totalProfit, name: a.name };
+        }
+
+        res.json({
+            performance: {
+                portfolio: normalizedPortfolio,
+                sp500,
+                msci
+            },
+            diversification,
+            dividends,
+            metrics: {
+                totalROI,
+                annualizedROI: Math.pow(1 + totalROI, 1 / (portfolioPerformance.length / 12)) - 1,
+                bestAsset: bestAsset.ticker === '-' ? '-' : `${bestAsset.name} (${bestAsset.ticker})`,
+                sharpeRatio: 0 // Placeholder or actual calculation if needed
+            }
+        });
+
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: err.message });
