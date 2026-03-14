@@ -332,6 +332,33 @@
     </div>
 </div>
 
+<!-- Manual Update Modal -->
+<div id="manual-update-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center hidden">
+    <div class="bg-white dark:bg-[#111722] w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform transition-all">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
+            <h3 class="font-black text-lg">Manual Price Update</h3>
+            <button onclick="closeManualModal()" class="text-slate-400 hover:text-rose-500 transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="p-6 space-y-4">
+            <input type="hidden" id="manual-ticker"/>
+            <div class="space-y-2">
+                <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">New Price (<span id="manual-currency-label">EUR</span>)</label>
+                <input id="manual-price" type="number" step="any" placeholder="0.00" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold text-lg"/>
+            </div>
+            <div class="space-y-2">
+                <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Effective Date</label>
+                <input id="manual-date" type="date" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold"/>
+            </div>
+            <div class="pt-2 flex gap-3">
+                <button onclick="closeManualModal()" class="flex-1 py-3 rounded-xl font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Cancel</button>
+                <button onclick="saveManualUpdate()" class="flex-1 py-3 rounded-xl font-bold bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">Apply Price</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Transaction Modal -->
 <div id="transaction-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl">
@@ -600,6 +627,12 @@
             tBody.innerHTML = holdings.map(h => {
                 const color = h.unrealizedGain >= 0 ? 'emerald' : 'rose';
                 const sign = h.unrealizedGain >= 0 ? '+' : '';
+                const manualBtn = h.isManual ? `
+                    <button onclick="event.stopPropagation(); openManualModal('${h.ticker}', '${h.currency}', ${h.currentPrice})" class="w-6 h-6 rounded bg-amber-500/10 text-amber-500 flex items-center justify-center hover:bg-amber-500/20 transition-colors ml-2" title="Update Price Manually">
+                        <span class="material-symbols-outlined text-[14px]">edit_note</span>
+                    </button>
+                ` : `<span class="ml-2 text-primary material-symbols-outlined text-[16px]" title="Yahoo Finance">bolt</span>`;
+
                 return `
                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer group/row" onclick="toggleAssetTransactions('${h.ticker}')">
                     <td class="px-6 py-4">
@@ -608,7 +641,10 @@
                                 <span class="material-symbols-outlined text-sm" id="expand-icon-${h.ticker}">chevron_right</span>
                             </div>
                             <div>
-                                <p class="font-bold text-slate-900 dark:text-white leading-tight">${h.name}</p>
+                                <div class="flex items-center">
+                                    <p class="font-bold text-slate-900 dark:text-white leading-tight">${h.name}</p>
+                                    ${manualBtn}
+                                </div>
                                 <p class="text-[10px] text-slate-500 uppercase font-black tracking-widest mt-0.5">${h.ticker} • ${h.currency}</p>
                             </div>
                         </div>
@@ -1453,6 +1489,38 @@
             alert('Import failed: ' + err.message);
             goBackToStep1();
         }
+    }
+
+    window.openManualModal = function(ticker, currency, currentPrice) {
+        document.getElementById('manual-ticker').value = ticker;
+        document.getElementById('manual-price').value = currentPrice;
+        document.getElementById('manual-currency-label').innerText = currency;
+        document.getElementById('manual-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('manual-update-modal').classList.remove('hidden');
+    }
+
+    window.closeManualModal = function() {
+        document.getElementById('manual-update-modal').classList.add('hidden');
+    }
+
+    window.saveManualUpdate = async function() {
+        const ticker = document.getElementById('manual-ticker').value;
+        const price = document.getElementById('manual-price').value;
+        const date = document.getElementById('manual-date').value;
+
+        try {
+            const res = await fetch('/api/assets/manual-update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ticker, price, date })
+            });
+            if (res.ok) {
+                closeManualModal();
+                loadPortfolioDetails();
+            } else {
+                alert('Update failed');
+            }
+        } catch (err) { console.error('Manual update error:', err); }
     }
 </script>
 </body></html>

@@ -269,6 +269,7 @@ app.get('/api/portfolios/:id', async (req, res) => {
             return {
                 ticker, shares: Math.round(h.shares * 10000) / 10000,
                 name: asset ? asset.name : ticker,
+                isManual: asset ? asset.isManual : 0,
                 currentPrice: curPx, currentPriceInPCurr: curPxP,
                 currency: asset ? asset.currency : portfolio.currency,
                 type: asset ? asset.type : 'Stock',

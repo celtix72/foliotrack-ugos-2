@@ -354,9 +354,10 @@ function renderOverview() {
         return;
     }
 
-    countEl.textContent = `${allAssets.length} asset${allAssets.length > 1 ? 's' : ''}`;
+    const visibleAssets = allAssets.filter(a => a.ticker !== 'CASH');
+    countEl.textContent = `${visibleAssets.length} asset${visibleAssets.length !== 1 ? 's' : ''}`;
 
-    tBody.innerHTML = allAssets.map(a => {
+    tBody.innerHTML = visibleAssets.map(a => {
         const price  = a.currentPrice  || 0;
         const change = a.changePercent || 0;
         const icon   = a.type === 'Crypto' ? 'currency_bitcoin' : (a.type === 'ETF' ? 'donut_small' : 'trending_up');
@@ -380,8 +381,8 @@ function renderOverview() {
         </tr>`;
     }).join('');
 
-    // Build index cards from top assets by absolute change
-    const cards = [...allAssets].sort((a,b) => Math.abs(b.changePercent||0) - Math.abs(a.changePercent||0)).slice(0,5);
+    // Build index cards from top assets by absolute change (excluding CASH)
+    const cards = [...allAssets].filter(a => a.ticker !== 'CASH').sort((a,b) => Math.abs(b.changePercent||0) - Math.abs(a.changePercent||0)).slice(0,5);
     const cardsEl = document.getElementById('index-cards-container');
     cardsEl.innerHTML = cards.map(a => {
         const ch = a.changePercent || 0;
@@ -395,8 +396,8 @@ function renderOverview() {
         </div>`;
     }).join('');
 
-    // Movers
-    const sorted = [...allAssets].sort((a,b) => (b.changePercent||0) - (a.changePercent||0));
+    // Movers (excluding CASH)
+    const sorted = [...allAssets].filter(a => a.ticker !== 'CASH').sort((a,b) => (b.changePercent||0) - (a.changePercent||0));
     renderMovers(sorted.slice(0,5), [...sorted].reverse().slice(0,5));
 }
 
@@ -437,9 +438,9 @@ function renderMovers(best, worst) {
 function renderWatchlist(filter = '') {
     const tBody    = document.getElementById('watchlist-table-body');
     const countEl  = document.getElementById('watchlist-count-label');
-    const filtered = filter
+    const filtered = (filter
         ? allAssets.filter(a => (a.name+a.ticker+a.exchange).toLowerCase().includes(filter.toLowerCase()))
-        : allAssets;
+        : allAssets).filter(a => a.ticker !== 'CASH');
 
     countEl.textContent = `Monitoring ${filtered.length} asset${filtered.length !== 1 ? 's' : ''}`;
 
@@ -457,8 +458,8 @@ function renderWatchlist(filter = '') {
         const tickerColor = a.type === 'Crypto' ? 'orange' : (a.type === 'ETF' ? 'emerald' : 'blue');
 
         const statusBadge = a.isManual ?
-            `<span class="ml-2 px-1.5 py-0.5 rounded-[4px] font-black text-[7px] bg-rose-500/10 text-rose-500 border border-rose-500/20 uppercase tracking-widest">Manual</span>` :
-            `<span class="ml-2 px-1.5 py-0.5 rounded-[4px] font-black text-[7px] bg-primary/10 text-primary border border-primary/20 uppercase tracking-widest">Auto (YF)</span>`;
+            `<span class="ml-2 text-rose-500 material-symbols-outlined text-[18px]" title="Manuale">edit_note</span>` :
+            `<span class="ml-2 text-primary material-symbols-outlined text-[18px]" title="Yahoo Finance">bolt</span>`;
 
         const manualBtn = a.isManual ? `
             <button onclick="openManualModal('${a.ticker}', '${a.currency}', ${a.currentPrice})" class="w-7 h-7 rounded-lg flex items-center justify-center text-primary bg-primary/10 hover:bg-primary/20 transition-colors" title="Update Price Manually">
