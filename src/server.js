@@ -740,10 +740,51 @@ app.post('/api/transactions', (req, res) => {
 app.delete('/api/transactions/:id', (req, res) => {
     const row = database.db.prepare(`SELECT * FROM transactions WHERE id = ?`).get(req.params.id);
     if (!row) return res.status(404).send('Transaction not found');
+    
     database.db.prepare(`DELETE FROM transactions WHERE id = ?`).run(req.params.id);
     database.recalculatePortfolio(row.portfolioId);
+    
+    // Check if the ticker has any remaining transactions globally
+    if (row.assetTicker && row.assetTicker !== 'CASH') {
+        const remainingTxs = database.db.prepare(`SELECT COUNT(*) as count FROM transactions WHERE assetTicker = ?`).get(row.assetTicker);
+        if (remainingTxs.count === 0) {
+            // Check if it's on the watchlist
+            const asset = database.db.prepare(`SELECT inWatchlist FROM assets WHERE ticker = ?`).get(row.assetTicker);
+            if (asset && asset.inWatchlist === 0) {
+                database.db.prepare(`DELETE FROM assets WHERE ticker = ?`).run(row.assetTicker);
+            }
+        }
+    }
+
     clearPerformanceCache();
     res.json(row);
+});
+
+app.put('/api/transactions/:id', (req, res) => {
+    const { type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount } = req.body;
+    const existing = database.db.prepare(`SELECT * FROM transactions WHERE id = ?`).get(req.params.id);
+    if (!existing) return res.status(404).send('Transaction not found');
+
+    database.db.prepare(`
+        UPDATE transactions 
+        SET type = ?, assetTicker = ?, date = ?, quantity = ?, price = ?, commission = ?, tax = ?, exchangeRate = ?, amount = ?
+        WHERE id = ?
+    `).run(
+        type || existing.type,
+        assetTicker || existing.assetTicker,
+        date || existing.date,
+        parseFloat(quantity || 0),
+        parseFloat(price || 0),
+        parseFloat(commission || 0),
+        parseFloat(tax || 0),
+        parseFloat(exchangeRate || 1),
+        parseFloat(amount || 0),
+        req.params.id
+    );
+
+    database.recalculatePortfolio(existing.portfolioId);
+    clearPerformanceCache();
+    res.json({ success: true });
 });
 
 // Validate a ticker against Yahoo Finance (used by bulk import)
@@ -1389,9 +1430,33 @@ app.get('/api/analytics/reports', async (req, res) => {
         const assetMap = Object.fromEntries(assets.map(a => [a.ticker, a]));
 
         const today = new Date();
-        const oneYearAgo = new Date(today);
-        oneYearAgo.setFullYear(today.getFullYear() - 1);
-        const startDate = allTransactions.length > 0 ? new Date(allTransactions[0].date) : oneYearAgo;
+        const range = req.query.range || '1Y'; // Default to 1 Year
+
+        let startDate;
+        switch (range) {
+            case '1M':
+                startDate = new Date(today);
+                startDate.setMonth(today.getMonth() - 1);
+                break;
+            case '6M':
+                startDate = new Date(today);
+                startDate.setMonth(today.getMonth() - 6);
+                break;
+            case '1Y':
+                startDate = new Date(today);
+                startDate.setFullYear(today.getFullYear() - 1);
+                break;
+            case 'YTD':
+                startDate = new Date(today.getFullYear(), 0, 1);
+                break;
+            case 'ALL':
+                startDate = allTransactions.length > 0 ? new Date(allTransactions[0].date) : new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+                break;
+            default:
+                startDate = new Date(today);
+                startDate.setFullYear(today.getFullYear() - 1);
+        }
+
         const dateStrStart = startDate.toISOString().split('T')[0];
         const dateStrEnd = today.toISOString().split('T')[0];
 
