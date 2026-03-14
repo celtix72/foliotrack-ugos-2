@@ -180,6 +180,103 @@ app.get('/api/portfolios', (req, res) => {
     res.json(rows);
 });
 
+// Helper to calculate holdings for a portfolio
+async function calculateHoldings(portfolio, transactions, liveRate) {
+    const lots        = {};   
+    const openMap     = {};   
+
+    for (const t of transactions) {
+        const qty    = t.quantity     || 0;
+        const price  = t.price        || 0;
+        const comm   = t.commission   || 0;
+        const tax    = t.tax          || 0;
+        const fx     = t.exchangeRate || 1;
+
+        if (t.type === 'BUY' && t.assetTicker) {
+            const totalCost    = (qty * price + comm + tax) / fx;
+            const costPerShare = qty > 0 ? totalCost / qty : 0;
+            if (!lots[t.assetTicker])    lots[t.assetTicker] = [];
+            if (!openMap[t.assetTicker]) openMap[t.assetTicker] = { shares: 0, totalCostInPCurr: 0 };
+            
+            lots[t.assetTicker].push({ qty, costPerShare });
+            openMap[t.assetTicker].shares           += qty;
+            openMap[t.assetTicker].totalCostInPCurr += totalCost;
+        }
+
+        if (t.type === 'SELL' && t.assetTicker) {
+            let remaining  = qty;
+            const lotsCopy = lots[t.assetTicker] || [];
+            let costBasis  = 0;
+            while (remaining > 0 && lotsCopy.length > 0) {
+                const lot  = lotsCopy[0];
+                const used = Math.min(lot.qty, remaining);
+                costBasis  += used * lot.costPerShare;
+                lot.qty    -= used;
+                remaining  -= used;
+                if (lot.qty <= 0) lotsCopy.shift();
+            }
+            lots[t.assetTicker] = lotsCopy;
+            if (openMap[t.assetTicker]) {
+                openMap[t.assetTicker].shares           -= qty;
+                openMap[t.assetTicker].totalCostInPCurr -= costBasis;
+                if (openMap[t.assetTicker].shares <= 0.0001) delete openMap[t.assetTicker];
+            }
+        }
+    }
+
+    const holdings = Object.entries(openMap)
+        .filter(([, h]) => h.shares > 0.0001)
+        .map(([ticker, h]) => {
+            const asset  = db.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(ticker);
+            const curPx  = asset ? asset.currentPrice : 0;
+            const rate = (asset && asset.currency === 'USD' && portfolio.currency === 'EUR') ? liveRate : 1;
+            const curPxP = (asset && asset.currency !== portfolio.currency) ? curPx / rate : curPx;
+            const curVal = h.shares * curPxP;
+            return {
+                ticker, 
+                shares: h.shares,
+                type: asset ? asset.type : 'Stock',
+                currentValue: curVal,
+                currency: portfolio.currency
+            };
+        });
+    return holdings;
+}
+
+app.get('/api/analytics/global-allocation', async (req, res) => {
+    try {
+        const portfolios = db.prepare('SELECT * FROM portfolios').all();
+        const liveRate = await getEurUsdRate();
+        const typeMap = {};
+        let totalValue = 0;
+
+        for (const p of portfolios) {
+            const transactions = db.prepare('SELECT * FROM transactions WHERE portfolioId = ?').all(p.id);
+            const holdings = await calculateHoldings(p, transactions, liveRate);
+            
+            // For global, we assume all portfolios are in the same base for visualization (e.g. EUR)
+            // If they are in different currencies, we'd need FX conversion here.
+            // For now, most users use the same base or we assume EUR as default.
+            for (const h of holdings) {
+                const tp = h.type || 'Other';
+                typeMap[tp] = (typeMap[tp] || 0) + h.currentValue;
+                totalValue += h.currentValue;
+            }
+        }
+
+        const allocation = Object.entries(typeMap).map(([type, value]) => ({
+            type,
+            value: Math.round(value * 100) / 100,
+            percent: totalValue > 0 ? Math.round((value / totalValue) * 1000) / 10 : 0
+        })).sort((a, b) => b.value - a.value);
+
+        res.json(allocation);
+    } catch (err) {
+        console.error('Global allocation error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.get('/api/portfolios/:id', async (req, res) => {
     const portfolio = db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(req.params.id);
     if (!portfolio) return res.status(404).json({ error: 'Portfolio non trovato' });

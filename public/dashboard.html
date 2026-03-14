@@ -172,25 +172,43 @@
 </div>
 </div>
 <div class="p-8 space-y-8">
-<!-- Performance Chart Section -->
-<section class="bg-white dark:bg-[#111722] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-<div class="flex items-center justify-between mb-8">
-<div>
-<h3 class="text-lg font-bold">Performance History</h3>
-<p class="text-xs text-slate-500">Aggregated net worth across all connected platforms</p>
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+    <!-- Performance Chart (75%) -->
+    <section class="lg:col-span-3 bg-white dark:bg-[#111722] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h3 class="text-lg font-bold">Performance History</h3>
+                <p class="text-xs text-slate-500">Aggregated net worth across all connected platforms</p>
+            </div>
+            <div class="flex gap-1 bg-slate-50 dark:bg-slate-900/50 p-1 rounded-lg border border-slate-100 dark:border-slate-800" id="chart-range-buttons">
+                <button data-range="1W" onclick="setChartRange('1W')" class="range-btn px-3 py-1.5 text-[11px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">1W</button>
+                <button data-range="1M" onclick="setChartRange('1M')" class="range-btn px-3 py-1.5 text-[11px] font-bold rounded-md bg-primary text-white shadow-md transition-all">1M</button>
+                <button data-range="3M" onclick="setChartRange('3M')" class="range-btn px-3 py-1.5 text-[11px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">3M</button>
+                <button data-range="1Y" onclick="setChartRange('1Y')" class="range-btn px-3 py-1.5 text-[11px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">1Y</button>
+                <button data-range="ALL" onclick="setChartRange('ALL')" class="range-btn px-3 py-1.5 text-[11px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">ALL</button>
+            </div>
+        </div>
+        <div id="dashboard-chart-container" class="h-[280px] w-full relative">
+            <canvas id="dashboardPerformanceChart"></canvas>
+        </div>
+    </section>
+
+    <!-- Asset Allocation (25%) -->
+    <section class="lg:col-span-1 bg-white dark:bg-[#111722] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
+        <div class="mb-4">
+            <h3 class="text-lg font-bold">Asset Allocation</h3>
+            <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">ByType</p>
+        </div>
+        <div class="flex-1 flex flex-col items-center justify-center min-h-[300px]">
+             <div class="w-full h-40 relative flex items-center justify-center mb-6">
+                 <canvas id="allocationChart"></canvas>
+             </div>
+             <div id="allocation-legend" class="w-full space-y-2 mt-4 custom-scrollbar overflow-y-auto max-h-[150px] px-2">
+                 <!-- Legend items will be injected here -->
+             </div>
+        </div>
+    </section>
 </div>
-<div class="flex gap-1 bg-slate-50 dark:bg-slate-900/50 p-1 rounded-lg border border-slate-100 dark:border-slate-800" id="chart-range-buttons">
-<button data-range="1W" onclick="setChartRange('1W')" class="range-btn px-3 py-1.5 text-[11px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">1W</button>
-<button data-range="1M" onclick="setChartRange('1M')" class="range-btn px-3 py-1.5 text-[11px] font-bold rounded-md bg-primary text-white shadow-md transition-all">1M</button>
-<button data-range="3M" onclick="setChartRange('3M')" class="range-btn px-3 py-1.5 text-[11px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">3M</button>
-<button data-range="1Y" onclick="setChartRange('1Y')" class="range-btn px-3 py-1.5 text-[11px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">1Y</button>
-<button data-range="ALL" onclick="setChartRange('ALL')" class="range-btn px-3 py-1.5 text-[11px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">ALL</button>
-</div>
-</div>
-<div id="dashboard-chart-container" class="h-[280px] w-full relative">
-    <canvas id="dashboardPerformanceChart"></canvas>
-</div>
-</section>
 <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
 <!-- Portfolio Summary -->
 <div class="xl:col-span-2 space-y-4">
@@ -202,57 +220,6 @@
 </div>
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="portfolio-container">
 <!-- Cards will be injected here -->
-</div>
-</div>
-<!-- Asset Allocation -->
-<div class="space-y-4">
-<h3 class="text-lg font-bold">Asset Allocation</h3>
-<div class="bg-white dark:bg-[#111722] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 h-full flex flex-col">
-<div class="relative w-44 h-44 mx-auto my-6">
-<svg class="w-full h-full transform -rotate-90" viewbox="0 0 36 36">
-<circle cx="18" cy="18" fill="transparent" r="15.915" stroke="#135bec" stroke-dasharray="45 55" stroke-dashoffset="0" stroke-width="4.5"></circle>
-<circle cx="18" cy="18" fill="transparent" r="15.915" stroke="#10b981" stroke-dasharray="25 75" stroke-dashoffset="-45" stroke-width="4.5"></circle>
-<circle cx="18" cy="18" fill="transparent" r="15.915" stroke="#f59e0b" stroke-dasharray="20 80" stroke-dashoffset="-70" stroke-width="4.5"></circle>
-<circle cx="18" cy="18" fill="transparent" r="15.915" stroke="#6366f1" stroke-dasharray="10 90" stroke-dashoffset="-90" stroke-width="4.5"></circle>
-</svg>
-<div class="absolute inset-0 flex flex-col items-center justify-center">
-<span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Diversified</span>
-<span class="text-2xl font-black">92%</span>
-</div>
-</div>
-<div class="flex-1 space-y-3.5 mt-2">
-<div class="flex items-center justify-between">
-<div class="flex items-center gap-2.5">
-<div class="w-2.5 h-2.5 rounded-full bg-primary"></div>
-<span class="text-[13px] font-medium text-slate-500 dark:text-slate-400">Stocks</span>
-</div>
-<span class="text-[13px] font-bold">45%</span>
-</div>
-<div class="flex items-center justify-between">
-<div class="flex items-center gap-2.5">
-<div class="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
-<span class="text-[13px] font-medium text-slate-500 dark:text-slate-400">Bonds</span>
-</div>
-<span class="text-[13px] font-bold">25%</span>
-</div>
-<div class="flex items-center justify-between">
-<div class="flex items-center gap-2.5">
-<div class="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
-<span class="text-[13px] font-medium text-slate-500 dark:text-slate-400">ETFs</span>
-</div>
-<span class="text-[13px] font-bold">20%</span>
-</div>
-<div class="flex items-center justify-between">
-<div class="flex items-center gap-2.5">
-<div class="w-2.5 h-2.5 rounded-full bg-indigo-500"></div>
-<span class="text-[13px] font-medium text-slate-500 dark:text-slate-400">Cash</span>
-</div>
-<span class="text-[13px] font-bold">10%</span>
-</div>
-</div>
-<button class="w-full mt-8 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 text-[11px] font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase tracking-widest">
-                                Rebalance Portfolio
-                            </button>
 </div>
 </div>
 </div>
@@ -350,6 +317,7 @@
 
     // ─── Dashboard Chart Logic ────────────────────────────────────────────────
     let dashboardChart = null;
+    let allocationChart = null;
     let currentChartRange = '1M';
 
     function initDashboardChart() {
@@ -476,6 +444,81 @@
         }
     }
 
-    document.addEventListener('DOMContentLoaded', loadDashboard);
+    function initAllocationChart() {
+        if (allocationChart) allocationChart.destroy();
+        const ctx = document.getElementById('allocationChart')?.getContext('2d');
+        if (!ctx) return;
+
+        const isDark = document.documentElement.classList.contains('dark');
+        
+        allocationChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    backgroundColor: [
+                        '#135bec', '#10b981', '#f59e0b', '#6366f1', '#ec4899', '#8b5cf6', '#06b6d4'
+                    ],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        enabled: true,
+                        callbacks: {
+                            label: (context) => {
+                                const label = context.label || '';
+                                const value = context.parsed || 0;
+                                return ` ${label}: ${value.toFixed(1)}%`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        updateAllocationChart();
+    }
+
+    async function updateAllocationChart() {
+        if (!allocationChart) return;
+        try {
+            const res = await fetch('/api/analytics/global-allocation');
+            const data = await res.json();
+            
+            allocationChart.data.labels = data.map(d => d.type);
+            allocationChart.data.datasets[0].data = data.map(d => d.percent);
+            allocationChart.update();
+
+            // Update custom legend
+            const legendContainer = document.getElementById('allocation-legend');
+            if (legendContainer) {
+                const colors = allocationChart.data.datasets[0].backgroundColor;
+                legendContainer.innerHTML = data.map((d, i) => `
+                    <div class="flex items-center justify-between group cursor-default">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 rounded-full" style="background-color: ${colors[i % colors.length]}"></div>
+                            <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400 group-hover:text-primary transition-colors">${d.type}</span>
+                        </div>
+                        <span class="text-[11px] font-bold">${d.percent}%</span>
+                    </div>
+                `).join('');
+            }
+        } catch (err) {
+            console.error('Failed to update allocation chart:', err);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadDashboard();
+        initDashboardChart();
+        initAllocationChart();
+    });
 </script>
 </body></html>
