@@ -3,8 +3,8 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 
-// Store DB file next to src/, in the project root
-const DB_PATH = path.join(__dirname, '..', 'foliotrack.db');
+// Store DB file next to src/, in the project root, or via ENV
+const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'foliotrack.db');
 
 const db = new Database(DB_PATH);
 

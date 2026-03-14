@@ -13,6 +13,9 @@ RUN npm install --omit=dev
 # Copy the rest of the application
 COPY . .
 
+# Create data directory for persistent SQLite storage
+RUN mkdir -p /app/data
+
 # Expose the application port
 EXPOSE 3000
 
