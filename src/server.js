@@ -1397,8 +1397,7 @@ app.get('/api/analytics/reports', async (req, res) => {
 
         // 1. Performance Comparison (Normalized to 100)
         const benchmarks = ['^GSPC', 'URTH']; // S&P 500, MSCI World
-        const historicalData = {};
-
+        
         // Helper to fetch normalized history
         const fetchHistory = async (ticker) => {
             try {
@@ -1411,16 +1410,32 @@ app.get('/api/analytics/reports', async (req, res) => {
                     const firstPrice = chart.quotes[0].adjclose || chart.quotes[0].close;
                     return chart.quotes.map(h => ({
                         date: new Date(h.date).toISOString().split('T')[0].substring(0, 7), // YYYY-MM
-                        value: ((h.adjclose || h.close) / firstPrice) * 100
+                        value: ((h.adjclose || h.close) / firstPrice) * 100,
+                        price: h.adjclose || h.close
                     }));
                 }
             } catch (e) {
-                console.warn(`Failed benchmark ${ticker}:`, e.message);
+                console.warn(`Failed benchmark/asset fetch for ${ticker}:`, e.message);
             }
             return [];
         };
 
-        const [sp500, msci] = await Promise.all([fetchHistory('^GSPC'), fetchHistory('URTH')]);
+        // Identify all unique tickers needed for historical valuation
+        const uniqueTickers = [...new Set(allTransactions.filter(t => t.assetTicker).map(t => t.assetTicker))];
+        
+        // Fetch benchmark and asset histories in parallel
+        const histories = await Promise.all([
+            fetchHistory('^GSPC'),
+            fetchHistory('URTH'),
+            ...uniqueTickers.map(t => fetchHistory(t))
+        ]);
+
+        const sp500 = histories[0];
+        const msci = histories[1];
+        const assetHistories = {};
+        uniqueTickers.forEach((t, i) => {
+            assetHistories[t] = Object.fromEntries(histories[i+2].map(h => [h.date, h.price]));
+        });
 
         // Calculate Portfolio Monthly Performance (Global)
         // For efficiency, we reuse some logic but simplified for monthly steps
@@ -1460,7 +1475,13 @@ app.get('/api/analytics/reports', async (req, res) => {
                 for (const [ticker, shares] of Object.entries(holdings)) {
                     if (shares <= 0.0001) continue;
                     const a = assetMap[ticker];
-                    if (a) assetVal += shares * (a.currentPrice / (pTxs.filter(tx => tx.assetTicker === ticker && tx.exchangeRate).at(-1)?.exchangeRate || 1));
+                    if (a) {
+                        // Use historical price if available, otherwise fallback to current price
+                        const histPrice = assetHistories[ticker]?.[currentMonthStr] || a.currentPrice;
+                        const lastFxTx = pTxs.filter(tx => tx.assetTicker === ticker && tx.exchangeRate).at(-1);
+                        const rate = lastFxTx ? lastFxTx.exchangeRate : 1;
+                        assetVal += shares * (histPrice / rate);
+                    }
                 }
                 totalVal += (cash + assetVal);
                 netDep += pNetDep;
@@ -1470,15 +1491,17 @@ app.get('/api/analytics/reports', async (req, res) => {
             tempDate.setMonth(tempDate.getMonth() + 1);
         }
 
-        // Normalize portfolio performance
-        const firstPVal = portfolioPerformance[0]?.value || 1;
-        const normalizedPortfolio = portfolioPerformance.map(p => ({
-            date: p.date,
-            value: (p.value / firstPVal) * 100,
-            absoluteValue: p.value,
-            profit: p.value - p.netDeposits,
-            netDeposits: p.netDeposits
-        }));
+        // Normalize portfolio performance using ROI-based Index (100 base)
+        const normalizedPortfolio = portfolioPerformance.map(p => {
+            const roi = p.netDeposits > 0 ? (p.value / p.netDeposits) - 1 : 0;
+            return {
+                date: p.date,
+                value: (1 + roi) * 100, // This ensures it starts at 100 and scales with ROI
+                absoluteValue: p.value,
+                profit: p.value - p.netDeposits,
+                netDeposits: p.netDeposits
+            };
+        });
 
         // 2. Diversification
         const diversification = {
@@ -1562,7 +1585,22 @@ app.get('/api/analytics/reports', async (req, res) => {
                 totalROI,
                 annualizedROI: Math.pow(1 + totalROI, 1 / (portfolioPerformance.length / 12)) - 1,
                 bestAsset: bestAsset.ticker === '-' ? '-' : `${bestAsset.name} (${bestAsset.ticker})`,
-                sharpeRatio: 0 // Placeholder or actual calculation if needed
+                sharpeRatio: (() => {
+                    // Monthly returns for Sharpe Ratio based on ROI Index
+                    const returns = [];
+                    for (let i = 1; i < normalizedPortfolio.length; i++) {
+                        const prev = normalizedPortfolio[i-1].value;
+                        const curr = normalizedPortfolio[i].value;
+                        if (prev > 0) {
+                            returns.push((curr / prev) - 1);
+                        }
+                    }
+                    if (returns.length < 2) return 0;
+                    const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
+                    const stdDev = Math.sqrt(returns.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b, 0) / returns.length);
+                    const riskFreeMonthly = 0.002; // ~2.4% annual
+                    return stdDev > 0 ? (mean - riskFreeMonthly) / stdDev : 0;
+                })()
             }
         });
 
