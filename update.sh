@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# FolioTracker Auto-Update Script
-# This script checks for remote changes, pulls them, updates dependencies, and restarts the app.
+# FolioTracker Auto-Update Script (Docker version)
+# This script checks for remote changes, pulls them, and restarts the Docker containers.
 
 echo "--- Starting Update Check at $(date) ---"
 
@@ -21,19 +21,20 @@ elif [ $LOCAL = $BASE ]; then
     # 3. Pull changes
     git pull
     
-    # 4. Update dependencies
-    echo "📦 Updating dependencies..."
-    npm install
+    # 4. Determine docker command (docker compose vs docker-compose)
+    if docker compose version >/dev/null 2>&1; then
+        DOCKER_CMD="docker compose"
+    else
+        DOCKER_CMD="docker-compose"
+    fi
+
+    # 5. Restart the application using Docker
+    echo "🔄 Restarting FolioTracker containers using $DOCKER_CMD..."
     
-    # 5. Restart the application
-    echo "🔄 Restarting FolioTracker server..."
-    # Kill any running instance of the server
-    pkill -f "node src/server.js" || true
+    $DOCKER_CMD down
+    $DOCKER_CMD up --build -d
     
-    # Start the server in background
-    nohup npm start > server.log 2>&1 &
-    
-    echo "✅ Update complete and server restarted."
+    echo "✅ Update complete and Docker containers restarted."
 else
     echo "⚠️ Local and remote branches have diverged. Manual intervention required."
 fi
