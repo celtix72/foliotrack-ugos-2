@@ -388,6 +388,25 @@
                 <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Effective Date</label>
                 <input id="manual-date" type="date" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold"/>
             </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Asset Type</label>
+                    <select id="manual-type" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold">
+                        <option value="">No Change</option>
+                        <option value="Equity">Equity</option>
+                        <option value="ETF">ETF</option>
+                        <option value="Bond">Bond</option>
+                        <option value="Crypto">Crypto</option>
+                        <option value="Commodity">Commodity</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Area/Country</label>
+                    <input id="manual-country" type="text" placeholder="e.g. US, Europe" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold"/>
+                </div>
+            </div>
             <div class="pt-2 flex gap-3">
                 <button onclick="closeManualModal()" class="flex-1 py-3 rounded-xl font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Cancel</button>
                 <button onclick="saveManualUpdate()" class="flex-1 py-3 rounded-xl font-bold bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">Apply Price</button>
@@ -665,7 +684,7 @@
                 const color = h.unrealizedGain >= 0 ? 'emerald' : 'rose';
                 const sign = h.unrealizedGain >= 0 ? '+' : '';
                 const manualBtn = h.isManual ? `
-                    <button onclick="event.stopPropagation(); openManualModal('${h.ticker}', '${h.currency}', ${h.currentPrice})" class="w-6 h-6 rounded bg-amber-500/10 text-amber-500 flex items-center justify-center hover:bg-amber-500/20 transition-colors ml-2" title="Update Price Manually">
+                    <button onclick="event.stopPropagation(); openManualModal('${h.ticker}', '${h.currency}', ${h.currentPrice}, '${h.type || ''}', '${h.country || ''}')" class="w-6 h-6 rounded bg-amber-500/10 text-amber-500 flex items-center justify-center hover:bg-amber-500/20 transition-colors ml-2" title="Update Price Manually">
                         <span class="material-symbols-outlined text-[14px]">edit_note</span>
                     </button>
                 ` : `<span class="ml-2 text-primary material-symbols-outlined text-[16px]" title="Yahoo Finance">bolt</span>`;
@@ -1172,7 +1191,8 @@
                     pointHoverRadius: 6,
                     pointHoverBackgroundColor: '#135bec',
                     pointHoverBorderColor: '#fff',
-                    pointHoverBorderWidth: 2
+                    pointHoverBorderWidth: 2,
+                    yAxisID: 'y'
                 }, {
                     label: 'Net Profit/Loss',
                     data: [],
@@ -1186,7 +1206,8 @@
                     pointHoverRadius: 6,
                     pointHoverBackgroundColor: '#10b981',
                     pointHoverBorderColor: '#fff',
-                    pointHoverBorderWidth: 2
+                    pointHoverBorderWidth: 2,
+                    yAxisID: 'y1'
                 }]
             },
             options: {
@@ -1218,12 +1239,16 @@
                         grid: { display: false }
                     },
                     y: {
-                        ticks: { 
-                            color: textColor, 
-                            font: { size: 10 },
-                            callback: (val) => formatCurrency(val).split(',')[0] // Short format
-                        },
                         grid: { color: gridColor }
+                    },
+                    y1: {
+                        position: 'right',
+                        ticks: {
+                            color: '#10b981',
+                            font: { size: 10 },
+                            callback: (val) => formatCurrency(val).split(',')[0]
+                        },
+                        grid: { drawOnChartArea: false }
                     }
                 }
             }
@@ -1546,11 +1571,13 @@
         }
     }
 
-    window.openManualModal = function(ticker, currency, currentPrice) {
+    window.openManualModal = function(ticker, currency, currentPrice, type, country) {
         document.getElementById('manual-ticker').value = ticker;
         document.getElementById('manual-price').value = currentPrice;
         document.getElementById('manual-currency-label').innerText = currency;
         document.getElementById('manual-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('manual-type').value = type || '';
+        document.getElementById('manual-country').value = country || '';
         document.getElementById('manual-update-modal').classList.remove('hidden');
     }
 
@@ -1562,12 +1589,14 @@
         const ticker = document.getElementById('manual-ticker').value;
         const price = document.getElementById('manual-price').value;
         const date = document.getElementById('manual-date').value;
+        const type = document.getElementById('manual-type').value;
+        const country = document.getElementById('manual-country').value;
 
         try {
             const res = await fetch('/api/assets/manual-update', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ticker, price, date })
+                body: JSON.stringify({ ticker, price, date, type, country })
             });
             if (res.ok) {
                 closeManualModal();

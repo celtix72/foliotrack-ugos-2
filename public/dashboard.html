@@ -377,7 +377,23 @@
                     pointHoverRadius: 6,
                     pointHoverBackgroundColor: '#135bec',
                     pointHoverBorderColor: '#fff',
-                    pointHoverBorderWidth: 2
+                    pointHoverBorderWidth: 2,
+                    yAxisID: 'y'
+                }, {
+                    label: 'Net Profit/Loss',
+                    data: [],
+                    borderColor: '#10b981',
+                    backgroundColor: 'transparent',
+                    fill: false,
+                    tension: 0.4,
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                    pointHoverBackgroundColor: '#10b981',
+                    pointHoverBorderColor: '#fff',
+                    pointHoverBorderWidth: 2,
+                    yAxisID: 'y1'
                 }]
             },
             options: {
@@ -395,7 +411,10 @@
                         borderWidth: 1,
                         padding: 12,
                         callbacks: {
-                            label: (context) => `Total: ${formatCurrency(context.parsed.y)}`
+                            label: (context) => {
+                                const label = context.dataset.label || '';
+                                return `${label}: ${formatCurrency(context.parsed.y)}`;
+                            }
                         }
                     }
                 },
@@ -405,12 +424,16 @@
                         grid: { display: false }
                     },
                     y: {
-                        ticks: { 
-                            color: textColor, 
-                            font: { size: 10 },
-                            callback: (val) => formatCurrency(val).split(',')[0] // Short format
-                        },
                         grid: { color: gridColor }
+                    },
+                    y1: {
+                        position: 'right',
+                        ticks: {
+                            color: '#10b981',
+                            font: { size: 10 },
+                            callback: (val) => formatCurrency(val).split(',')[0]
+                        },
+                        grid: { drawOnChartArea: false }
                     }
                 }
             }
@@ -446,6 +469,7 @@
                 return date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
             });
             dashboardChart.data.datasets[0].data = data.map(d => d.value);
+            dashboardChart.data.datasets[1].data = data.map(d => d.profit);
             dashboardChart.update();
         } catch (err) {
             console.error('Failed to update dashboard chart:', err);

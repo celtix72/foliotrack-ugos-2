@@ -53,19 +53,26 @@ app.use(express.urlencoded({ extended: true }));
 // ════════════════════════════════════════════════════════════════════════════
 
 app.get('/api/assets', (req, res) => {
-    res.json(db.prepare('SELECT * FROM assets ORDER BY ticker ASC').all());
+    // We don't want to show the pseudo 'CASH' asset in monitored lists or watchlist
+    res.json(db.prepare("SELECT * FROM assets WHERE ticker != 'CASH' AND (type != 'Cash' OR type IS NULL) ORDER BY ticker ASC").all());
 });
 
 app.post('/api/assets/manual-update', (req, res) => {
-    const { ticker, price, date } = req.body;
+    const { ticker, price, date, type, country } = req.body;
     if (!ticker) return res.status(400).send('Ticker is required');
     
-    // Calculate daily change if possible? For now just update price.
     db.prepare(`
         UPDATE assets 
-        SET currentPrice = ?, updatedAt = ?, isManual = 1, changePercent = 0
+        SET currentPrice = ?, updatedAt = ?, isManual = 1, changePercent = 0,
+            type = COALESCE(?, type), country = COALESCE(?, country)
         WHERE ticker = ?
-    `).run(parseFloat(price), date || new Date().toISOString().split('T')[0], ticker);
+    `).run(
+        parseFloat(price), 
+        date || new Date().toISOString().split('T')[0], 
+        type || null,
+        country || null,
+        ticker
+    );
     
     recalculateAll();
     clearPerformanceCache();
@@ -943,10 +950,12 @@ app.get('/api/analytics/global-performance', async (req, res) => {
 
         while (currentDate <= today) {
             const dateStr = currentDate.toISOString().split('T')[0];
-            let globalTotal = 0;
+            let globalTotalValue = 0;
+            let globalNetDeposits = 0;
 
             for (const p of portfolios) {
                 let cash = p.initialCash;
+                let pNetDeposits = p.initialCash;
                 const holdings = {};
                 const pTransactions = allTransactions.filter(t => t.portfolioId === p.id && t.date <= dateStr);
 
@@ -959,8 +968,14 @@ app.get('/api/analytics/global-performance', async (req, res) => {
                     const amount = t.amount       || 0;
 
                     switch (t.type) {
-                        case 'DEPOSIT':    cash += amount; break;
-                        case 'WITHDRAWAL': cash -= amount; break;
+                    case 'DEPOSIT':    
+                        cash += amount; 
+                        pNetDeposits += amount;
+                        break;
+                    case 'WITHDRAWAL': 
+                        cash -= amount; 
+                        pNetDeposits -= amount;
+                        break;
                         case 'TAX':        cash -= amount; break;
                         case 'DIVIDEND':   cash += (amount || (qty * price - comm - tax)) / fx; break;
                         case 'BUY':
@@ -995,12 +1010,14 @@ app.get('/api/analytics/global-performance', async (req, res) => {
                     assetValue += shares * (price / rate);
                 }
 
-                globalTotal += (cash + assetValue);
+                globalTotalValue += (cash + assetValue);
+                globalNetDeposits += pNetDeposits;
             }
 
             dataPoints.push({
                 date: dateStr,
-                value: Math.round(globalTotal * 100) / 100
+                value: Math.round(globalTotalValue * 100) / 100,
+                profit: Math.round((globalTotalValue - globalNetDeposits) * 100) / 100
             });
 
             currentDate.setDate(currentDate.getDate() + 1);
