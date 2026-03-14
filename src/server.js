@@ -1476,7 +1476,8 @@ app.get('/api/analytics/reports', async (req, res) => {
             date: p.date,
             value: (p.value / firstPVal) * 100,
             absoluteValue: p.value,
-            profit: p.value - p.netDeposits
+            profit: p.value - p.netDeposits,
+            netDeposits: p.netDeposits
         }));
 
         // 2. Diversification
