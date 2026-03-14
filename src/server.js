@@ -157,10 +157,11 @@ app.put('/api/assets/:id', (req, res) => {
 
     const updated = { ...existing, ...req.body };
     database.db.prepare(`
-        UPDATE assets SET name=?, type=?, exchange=?, currency=?, currentPrice=?, changePercent=?, pe=?, updatedAt=datetime('now')
+        UPDATE assets SET name=?, type=?, exchange=?, currency=?, currentPrice=?, changePercent=?, pe=?, targetPrice=?, stopLoss=?, updatedAt=datetime('now')
         WHERE id=?
     `).run(updated.name, updated.type, updated.exchange, updated.currency,
-           updated.currentPrice, updated.changePercent, updated.pe, req.params.id);
+           updated.currentPrice, updated.changePercent, updated.pe, 
+           updated.targetPrice || null, updated.stopLoss || null, req.params.id);
 
     res.json(database.db.prepare(`SELECT * FROM assets WHERE id = ?`).get(req.params.id));
 });
@@ -239,10 +240,78 @@ app.delete('/api/watchlist/:ticker', (req, res) => {
 });
 
 app.delete('/api/assets/:id', (req, res) => {
-    const row = database.db.prepare(`SELECT * FROM assets WHERE id = ?`).get(req.params.id);
-    if (!row) return res.status(404).send('Asset not found');
-    database.db.prepare(`DELETE FROM assets WHERE id = ?`).run(req.params.id);
-    res.json(row);
+    const asset = database.db.prepare(`SELECT * FROM assets WHERE id = ?`).get(req.params.id);
+    if (!asset) return res.status(404).send('Asset not found');
+
+    // 1. Check for transactions/positions
+    // We check if it's used in any transaction
+    const txCount = database.db.prepare(`SELECT COUNT(*) as count FROM transactions WHERE assetTicker = ?`).get(asset.ticker).count;
+    
+    // 2. Check for open positions (simplified: if sum(qty) > 0 in any portfolio)
+    // Actually, if we just check if it's used in any transaction, we might want to keep it as "referenced".
+    // But the user specifically asked for "remove from monitoring if NO OPEN POSITIONS".
+    
+    let hasOpenPosition = false;
+    const portfolios = database.db.prepare(`SELECT id FROM portfolios`).all();
+    for (const p of portfolios) {
+        const txs = database.db.prepare(`SELECT type, quantity FROM transactions WHERE portfolioId = ? AND assetTicker = ?`).all(p.id, asset.ticker);
+        let qty = 0;
+        for (const t of txs) {
+            if (t.type === 'BUY') qty += t.quantity;
+            if (t.type === 'SELL') qty -= t.quantity;
+        }
+        if (Math.abs(qty) > 0.000001) {
+            hasOpenPosition = true;
+            break;
+        }
+    }
+
+    if (hasOpenPosition) {
+        return res.status(400).send('Cannot stop monitoring an asset with active positions.');
+    }
+
+    if (txCount > 0) {
+        // Just hide from monitoring, keep for historical records
+        database.db.prepare(`UPDATE assets SET isMonitored = 0 WHERE id = ?`).run(req.params.id);
+        res.json({ ...asset, isMonitored: 0 });
+    } else {
+        // No transactions at all, safe to hard delete
+        database.db.prepare(`DELETE FROM assets WHERE id = ?`).run(req.params.id);
+        res.json({ ...asset, deleted: true });
+    }
+});
+
+// ─── NOTIFICATIONS API ──────────────────────────────────────────────────────
+
+app.get('/api/notifications', (req, res) => {
+    try {
+        const rows = database.db.prepare(`
+            SELECT * FROM notifications 
+            ORDER BY date DESC 
+            LIMIT 50
+        `).all();
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/notifications/:id/read', (req, res) => {
+    try {
+        database.db.prepare(`UPDATE notifications SET isRead = 1 WHERE id = ?`).run(req.params.id);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/notifications/read-all', (req, res) => {
+    try {
+        database.db.prepare(`UPDATE notifications SET isRead = 1`).run();
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -1430,6 +1499,34 @@ async function updateMarketData() {
                 country,
                 asset.ticker
             );
+
+            // Alert Checks
+            const newPrice = quote.regularMarketPrice || asset.currentPrice;
+            if (asset.targetPrice > 0 && newPrice >= asset.targetPrice) {
+                // Check if already notified in last 24h
+                const existing = database.db.prepare(`
+                    SELECT id FROM notifications 
+                    WHERE ticker = ? AND type = 'TARGET' AND date > datetime('now','-1 day')
+                `).get(asset.ticker);
+                if (!existing) {
+                    database.db.prepare(`
+                        INSERT INTO notifications (type, title, message, ticker)
+                        VALUES (?, ?, ?, ?)
+                    `).run('TARGET', 'Target Price Reached', `${asset.ticker} has reached your target of ${asset.targetPrice} (Price: ${newPrice})`, asset.ticker);
+                }
+            }
+            if (asset.stopLoss > 0 && newPrice <= asset.stopLoss) {
+                const existing = database.db.prepare(`
+                    SELECT id FROM notifications 
+                    WHERE ticker = ? AND type = 'STOP' AND date > datetime('now','-1 day')
+                `).get(asset.ticker);
+                if (!existing) {
+                    database.db.prepare(`
+                        INSERT INTO notifications (type, title, message, ticker)
+                        VALUES (?, ?, ?, ?)
+                    `).run('STOP', 'Stop Loss Triggered', `${asset.ticker} has dropped to your stop loss of ${asset.stopLoss} (Price: ${newPrice})`, asset.ticker);
+                }
+            }
         } catch (err) {
             console.error(`Failed to update ${asset.ticker}:`, err.message);
             if (err.message.includes('Not Found') || err.message.includes('404')) {

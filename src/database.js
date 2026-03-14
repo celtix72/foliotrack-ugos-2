@@ -84,6 +84,31 @@ function initDb() {
         dbConnection.prepare(`ALTER TABLE assets ADD COLUMN inWatchlist INTEGER NOT NULL DEFAULT 0`).run();
     } catch (e) {}
 
+    try {
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN isMonitored INTEGER NOT NULL DEFAULT 1`).run();
+    } catch (e) {}
+
+    try {
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN targetPrice REAL`).run();
+    } catch (e) {}
+
+    try {
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN stopLoss REAL`).run();
+    } catch (e) {}
+
+    // ─── Notifications Table ──────────────────────────────────────────────────
+    dbConnection.exec(`
+      CREATE TABLE IF NOT EXISTS notifications (
+        id      INTEGER PRIMARY KEY AUTOINCREMENT,
+        type    TEXT    NOT NULL,
+        title   TEXT    NOT NULL,
+        message TEXT    NOT NULL,
+        ticker  TEXT,
+        date    TEXT    NOT NULL DEFAULT (datetime('now')),
+        isRead  INTEGER NOT NULL DEFAULT 0
+      );
+    `);
+
     // ─── Default settings ────────────────────────────────────────────────────────
     const defaultSettings = {
         fontFamily: "'JetBrains Mono', monospace",

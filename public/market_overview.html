@@ -127,7 +127,7 @@
 <span class="flex items-center gap-2"><span class="material-symbols-outlined text-sm">show_chart</span>Overview</span>
 </button>
 <button id="tab-watchlist" onclick="switchTab('watchlist')" class="tab-btn px-5 py-2 rounded-lg text-sm text-slate-500 transition-all hover:text-slate-700 dark:hover:text-slate-300">
-<span class="flex items-center gap-2"><span class="material-symbols-outlined text-sm">star</span>Watchlist</span>
+<span class="flex items-center gap-2"><span class="material-symbols-outlined text-sm">notifications_active</span>Alerts & List</span>
 </button>
 </div>
 </div>
@@ -153,10 +153,10 @@
 <thead>
 <tr class="bg-slate-50 dark:bg-slate-800/30 border-b border-slate-200 dark:border-slate-800">
 <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Asset</th>
-<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Exchange</th>
 <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Price</th>
 <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">24h Change</th>
-<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">P/E</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Target Price</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Stop Loss</th>
 </tr>
 </thead>
 <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm" id="overview-table-body"></tbody>
@@ -179,7 +179,7 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════ -->
-<!-- TAB: WATCHLIST                                                  -->
+<!-- TAB: WATCHLIST & ALERTS                                         -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <div id="panel-watchlist" class="space-y-6 hidden">
 
@@ -187,7 +187,7 @@
 <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2">
 <span class="material-symbols-outlined text-primary">add_circle</span>
-<h3 class="font-bold text-base">Add Asset to Watchlist</h3>
+<h3 class="font-bold text-base">Add Asset to Monitoring</h3>
 </div>
 <div class="p-6">
 <form id="add-asset-form" class="space-y-4">
@@ -219,25 +219,6 @@
 </select>
 </div>
 
-<div class="space-y-2">
-<label class="text-sm font-medium">Exchange / Market</label>
-<input id="asset-exchange" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg py-2.5 px-4 text-sm" placeholder="e.g. NASDAQ, Borsa Italiana" type="text"/>
-</div>
-
-<div class="space-y-2">
-<label class="text-sm font-medium">P/E Ratio <span class="text-slate-400">(optional)</span></label>
-<input id="asset-pe" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg py-2.5 px-4 text-sm" placeholder="25.4" type="number" step="any"/>
-</div>
-
-<div class="space-y-2">
-<label class="text-sm font-medium">Currency</label>
-<div class="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
-<button id="currency-usd" type="button" onclick="setCurrency('USD')" class="flex-1 py-2 rounded-md bg-white dark:bg-slate-700 text-primary shadow-sm font-bold text-sm transition-all">USD</button>
-<button id="currency-eur" type="button" onclick="setCurrency('EUR')" class="flex-1 py-2 rounded-md text-slate-500 font-medium text-sm hover:text-slate-700 dark:hover:text-slate-200 transition-all">EUR</button>
-</div>
-<input type="hidden" id="asset-currency" value="USD"/>
-</div>
-
 </div>
 <div class="flex justify-end gap-3 pt-2">
 <button type="reset" class="px-5 py-2.5 rounded-lg font-bold text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" onclick="resetForm()">Clear</button>
@@ -252,7 +233,7 @@
 <!-- Watchlist Table -->
 <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-<h3 class="font-bold text-base">Your Watchlist</h3>
+<h3 class="font-bold text-base">Monitored Assets & Alerts</h3>
 <div class="relative">
 <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
 <input id="table-search" type="text" placeholder="Filter assets..." class="pl-9 pr-4 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm w-52" oninput="filterTable(this.value)"/>
@@ -263,11 +244,9 @@
 <thead>
 <tr class="bg-slate-50 dark:bg-slate-800/30 border-b border-slate-200 dark:border-slate-800">
 <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Asset</th>
-<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Exchange</th>
-<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-center">Currency</th>
-<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">P/E</th>
 <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Price</th>
-<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Day Chg%</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Target Price</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Stop Loss</th>
 <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-center">Action</th>
 </tr>
 </thead>
@@ -279,28 +258,34 @@
 </div>
 </div>
 
-    <!-- Manual Update Modal -->
-    <div id="manual-update-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center hidden">
-        <div class="bg-white dark:bg-[#111722] w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform transition-all">
-            <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
-                <h3 class="font-black text-lg">Manual Price Update</h3>
-                <button onclick="closeManualModal()" class="text-slate-400 hover:text-rose-500 transition-colors">
+    <!-- Alert Edit Modal -->
+    <div id="alert-edit-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center hidden">
+        <div class="bg-white dark:bg-[#111722] w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <h3 class="font-black text-lg">Edit Asset Monitoring</h3>
+                <button onclick="closeAlertModal()" class="text-slate-400 hover:text-rose-500 transition-colors">
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </div>
             <div class="p-6 space-y-4">
-                <input type="hidden" id="manual-ticker"/>
+                <input type="hidden" id="edit-asset-id"/>
                 <div class="space-y-2">
-                    <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">New Price (<span id="manual-currency-label">EUR</span>)</label>
-                    <input id="manual-price" type="number" step="any" placeholder="0.00" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold text-lg"/>
+                    <label class="text-sm font-bold text-slate-500 uppercase">Asset: <span id="edit-asset-name" class="text-slate-900 dark:text-white">--</span></label>
                 </div>
-                <div class="space-y-2">
-                    <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Effective Date</label>
-                    <input id="manual-date" type="date" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold"/>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-widest">Target Price</label>
+                        <input id="edit-target-price" type="number" step="any" placeholder="0.00" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 text-sm font-bold"/>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-widest">Stop Loss</label>
+                        <input id="edit-stop-loss" type="number" step="any" placeholder="0.00" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 text-sm font-bold"/>
+                    </div>
                 </div>
+                <p class="text-[10px] text-slate-500 italic">Leave at 0 to disable the alert.</p>
                 <div class="pt-2 flex gap-3">
-                    <button onclick="closeManualModal()" class="flex-1 py-3 rounded-xl font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Cancel</button>
-                    <button onclick="saveManualUpdate()" class="flex-1 py-3 rounded-xl font-bold bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">Apply Price</button>
+                    <button onclick="closeAlertModal()" class="flex-1 py-3 rounded-xl font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Cancel</button>
+                    <button onclick="saveAlertSettings()" class="flex-1 py-3 rounded-xl font-bold bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">Save Changes</button>
                 </div>
             </div>
         </div>
@@ -337,7 +322,6 @@ async function loadAssets() {
         allAssets = await res.json();
         if (currentTab === 'overview')  renderOverview();
         if (currentTab === 'watchlist') renderWatchlist();
-        // Update last update label
         document.getElementById('last-update-label').textContent = 'Last Update: ' + new Date().toLocaleTimeString('it-IT');
     } catch (err) { console.error('Error loading assets:', err); }
 }
@@ -347,14 +331,16 @@ function renderOverview() {
     const tBody = document.getElementById('overview-table-body');
     const countEl = document.getElementById('overview-asset-count');
 
-    if (!allAssets.length) {
+    // Only show monitored assets in overview
+    const visibleAssets = allAssets.filter(a => a.ticker !== 'CASH' && a.isMonitored === 1);
+    
+    if (!visibleAssets.length) {
         countEl.textContent = '0 assets';
-        tBody.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-slate-500 italic">No assets monitored yet. Add some in the Watchlist tab.</td></tr>`;
+        tBody.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-slate-500 italic">No assets monitored yet. Add some in the Alerts & List tab.</td></tr>`;
         renderMovers([],[]);
         return;
     }
 
-    const visibleAssets = allAssets.filter(a => a.ticker !== 'CASH');
     countEl.textContent = `${visibleAssets.length} asset${visibleAssets.length !== 1 ? 's' : ''}`;
 
     tBody.innerHTML = visibleAssets.map(a => {
@@ -374,17 +360,16 @@ function renderOverview() {
                     </div>
                 </div>
             </td>
-            <td class="px-6 py-4"><p class="text-xs text-slate-500 font-bold uppercase">${a.exchange || '—'}</p></td>
             <td class="px-6 py-4 text-right"><p class="text-sm font-bold">${formatCurrency(price, a.currency)}</p></td>
             <td class="px-6 py-4 text-right"><span class="text-sm font-bold ${chgClass}">${change >= 0 ? '+' : ''}${formatNumber(change, 2)}%</span></td>
-            <td class="px-6 py-4 text-right"><p class="text-sm font-bold text-slate-600 dark:text-slate-300">${a.pe ? formatNumber(a.pe, 1) : '—'}</p></td>
+            <td class="px-6 py-4 text-right"><p class="text-sm font-bold text-primary">${a.targetPrice ? formatCurrency(a.targetPrice, a.currency) : '—'}</p></td>
+            <td class="px-6 py-4 text-right"><p class="text-sm font-bold text-rose-500">${a.stopLoss ? formatCurrency(a.stopLoss, a.currency) : '—'}</p></td>
         </tr>`;
     }).join('');
 
-    // Build index cards from top assets by absolute change (excluding CASH)
-    const cards = [...allAssets].filter(a => a.ticker !== 'CASH').sort((a,b) => Math.abs(b.changePercent||0) - Math.abs(a.changePercent||0)).slice(0,5);
+    const indexAssets = visibleAssets.sort((a,b) => Math.abs(b.changePercent||0) - Math.abs(a.changePercent||0)).slice(0,5);
     const cardsEl = document.getElementById('index-cards-container');
-    cardsEl.innerHTML = cards.map(a => {
+    cardsEl.innerHTML = indexAssets.map(a => {
         const ch = a.changePercent || 0;
         const chClass = ch >= 0 ? 'text-emerald-500' : 'text-red-500';
         const bgClass = ch >= 0 ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-red-500/20 bg-red-500/5';
@@ -396,8 +381,7 @@ function renderOverview() {
         </div>`;
     }).join('');
 
-    // Movers (excluding CASH)
-    const sorted = [...allAssets].filter(a => a.ticker !== 'CASH').sort((a,b) => (b.changePercent||0) - (a.changePercent||0));
+    const sorted = [...visibleAssets].sort((a,b) => (b.changePercent||0) - (a.changePercent||0));
     renderMovers(sorted.slice(0,5), [...sorted].reverse().slice(0,5));
 }
 
@@ -406,31 +390,21 @@ function renderMovers(best, worst) {
         if (!a) return;
         const ch = a.changePercent || 0;
         const isPos = ch >= 0;
-        el.innerHTML += `<div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
+        el.innerHTML += `<div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50">
             <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded-lg ${isPos?'bg-emerald-500/10 text-emerald-500':'bg-red-500/10 text-red-500'} flex items-center justify-center shrink-0">
                     <span class="material-symbols-outlined text-sm">${isPos?'trending_up':'trending_down'}</span>
                 </div>
-                <div>
-                    <p class="text-sm font-bold">${a.name}</p>
-                    <p class="text-[10px] text-slate-500 uppercase">${a.ticker}</p>
-                </div>
+                <div><p class="text-sm font-bold">${a.name}</p></div>
             </div>
             <span class="text-sm font-bold ${isPos?'text-emerald-500':'text-red-500'}">${ch>=0?'+':''}${formatNumber(ch, 2)}%</span>
         </div>`;
     };
-
     const bestEl  = document.getElementById('best-movers');
     const worstEl = document.getElementById('worst-movers');
-    bestEl.innerHTML  = '';
-    worstEl.innerHTML = '';
-
-    if (!best.length) {
-        bestEl.innerHTML  = '<p class="text-sm text-slate-500 italic">No data yet.</p>';
-        worstEl.innerHTML = '<p class="text-sm text-slate-500 italic">No data yet.</p>';
-        return;
-    }
-    best.forEach(a  => moverCard(a, bestEl));
+    bestEl.innerHTML = ''; worstEl.innerHTML = '';
+    if (!best.length) { bestEl.innerHTML = '<p class="text-sm text-slate-500 italic">No data.</p>'; worstEl.innerHTML = '<p class="text-sm text-slate-500 italic">No data.</p>'; return; }
+    best.forEach(a => moverCard(a, bestEl));
     worst.forEach(a => moverCard(a, worstEl));
 }
 
@@ -438,155 +412,121 @@ function renderMovers(best, worst) {
 function renderWatchlist(filter = '') {
     const tBody    = document.getElementById('watchlist-table-body');
     const countEl  = document.getElementById('watchlist-count-label');
+    
+    // In watchlist, show all assets (even unmonitored ones) so they can be reactivated
     const filtered = (filter
-        ? allAssets.filter(a => (a.name+a.ticker+a.exchange).toLowerCase().includes(filter.toLowerCase()))
+        ? allAssets.filter(a => (a.name+a.ticker).toLowerCase().includes(filter.toLowerCase()))
         : allAssets).filter(a => a.ticker !== 'CASH');
 
-    countEl.textContent = `Monitoring ${filtered.length} asset${filtered.length !== 1 ? 's' : ''}`;
+    countEl.textContent = `List contains ${filtered.length} assets`;
 
     if (!filtered.length) {
-        tBody.innerHTML = `<tr><td colspan="7" class="px-6 py-8 text-center text-slate-500 italic">${filter ? 'No assets match the filter.' : 'Add an asset above to start monitoring live data.'}</td></tr>`;
+        tBody.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-slate-500 italic">No assets found.</td></tr>`;
         return;
     }
 
     tBody.innerHTML = filtered.map(a => {
         const price  = a.currentPrice  || 0;
-        const change = a.changePercent || 0;
-        const pe     = a.pe ? Number(a.pe).toFixed(1) : '—';
-        const chgClass = change > 0 ? 'text-emerald-500' : change < 0 ? 'text-red-500' : 'text-slate-500';
-        const chgIcon  = change >= 0 ? 'trending_up' : 'trending_down';
-        const tickerColor = a.type === 'Crypto' ? 'orange' : (a.type === 'ETF' ? 'emerald' : 'blue');
+        const tickerColor = a.isMonitored ? 'primary' : 'slate';
+        const opacity = a.isMonitored ? '' : 'opacity-50';
 
-        const statusBadge = a.isManual ?
-            `<span class="ml-2 text-rose-500 material-symbols-outlined text-[18px]" title="Manuale">edit_note</span>` :
-            `<span class="ml-2 text-primary material-symbols-outlined text-[18px]" title="Yahoo Finance">bolt</span>`;
-
-        const manualBtn = a.isManual ? `
-            <button onclick="openManualModal('${a.ticker}', '${a.currency}', ${a.currentPrice})" class="w-7 h-7 rounded-lg flex items-center justify-center text-primary bg-primary/10 hover:bg-primary/20 transition-colors" title="Update Price Manually">
-                <span class="material-symbols-outlined text-[16px]">edit</span>
-            </button>
-        ` : '';
-
-        return `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors group">
+        return `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors ${opacity}">
             <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-lg bg-${tickerColor}-500/10 text-${tickerColor}-500 flex items-center justify-center font-bold text-[9px] shrink-0 uppercase">${(a.ticker||'??').substring(0,4)}</div>
+                    <div class="w-10 h-10 rounded-lg bg-${tickerColor}-500/10 text-${tickerColor}-500 flex items-center justify-center font-bold text-[9px] shrink-0 uppercase">${a.ticker.substring(0,4)}</div>
                     <div>
-                        <div class="flex items-center">
-                            <p class="font-bold text-sm">${a.name}</p>
-                            ${statusBadge}
-                        </div>
-                        <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">${a.ticker}</p>
+                        <p class="font-bold text-sm">${a.name} ${!a.isMonitored ? '<span class="text-[9px] bg-slate-200 dark:bg-slate-800 px-1 rounded ml-1">UNMONITORED</span>' : ''}</p>
+                        <p class="text-[10px] text-slate-500 uppercase font-bold">${a.ticker}</p>
                     </div>
                 </div>
             </td>
-            <td class="px-6 py-4"><p class="text-xs text-slate-500">${a.exchange || '—'}</p></td>
-            <td class="px-6 py-4 text-center"><span class="text-xs font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">${a.currency}</span></td>
-            <td class="px-6 py-4 text-right"><span class="text-sm font-bold text-slate-600 dark:text-slate-300">${pe}</span></td>
-            <td class="px-6 py-4 text-right">
-                <div class="flex items-center justify-end gap-2">
-                    ${manualBtn}
-                    <span class="text-sm font-black text-primary">${formatCurrency(price, a.currency)}</span>
-                </div>
-            </td>
-            <td class="px-6 py-4 text-right">
-                <p class="text-sm ${chgClass} font-bold flex items-center justify-end gap-1">
-                    ${change >= 0 ? '+' : ''}${formatNumber(change, 2)}%
-                    <span class="material-symbols-outlined text-sm">${chgIcon}</span>
-                </p>
-            </td>
+            <td class="px-6 py-4 text-right"><span class="text-sm font-black text-primary">${formatCurrency(price, a.currency)}</span></td>
+            <td class="px-6 py-4 text-right"><span class="text-sm font-bold text-emerald-500">${a.targetPrice ? formatCurrency(a.targetPrice, a.currency) : '—'}</span></td>
+            <td class="px-6 py-4 text-right"><span class="text-sm font-bold text-rose-500">${a.stopLoss ? formatCurrency(a.stopLoss, a.currency) : '—'}</span></td>
             <td class="px-6 py-4 text-center">
                 <div class="flex items-center justify-center gap-2">
-                    <button onclick="toggleManualMode('${a.ticker}', ${a.isManual ? 0 : 1})" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors" title="${a.isManual ? 'Switch to Auto' : 'Switch to Manual'}">
-                        <span class="material-symbols-outlined text-lg">${a.isManual ? 'sync' : 'sync_disabled'}</span>
+                    <button onclick="openAlertModal('${a.id}')" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors" title="Settings & Alerts">
+                        <span class="material-symbols-outlined text-lg">settings_alert</span>
                     </button>
-                    <button onclick="deleteAsset('${a.id}')" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-colors" title="Delete">
-                        <span class="material-symbols-outlined text-lg">delete</span>
+                    ${a.isMonitored ? `
+                    <button onclick="unmonitorAsset('${a.id}')" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-colors" title="Stop Monitoring">
+                        <span class="material-symbols-outlined text-lg">visibility_off</span>
+                    </button>` : `
+                    <button onclick="restoreMonitoring('${a.id}')" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-emerald-500 hover:bg-emerald-500/10 transition-colors" title="Restore Monitoring">
+                        <span class="material-symbols-outlined text-lg">visibility</span>
                     </button>
+                    `}
                 </div>
             </td>
         </tr>`;
     }).join('');
 }
 
-function filterTable(val) {
-    renderWatchlist(val);
-}
+function filterTable(val) { renderWatchlist(val); }
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
-    async function deleteAsset(id) {
-        if (!confirm('Stop monitoring this asset?')) return;
-        try {
-            await fetch(`/api/assets/${id}`, { method: 'DELETE' });
-            await loadAssets();
-        } catch (err) { console.error('Delete error:', err); }
-    }
+async function unmonitorAsset(id) {
+    if (!confirm('Stop monitoring this asset? (Historical data will be kept)')) return;
+    try {
+        const res = await fetch(`/api/assets/${id}`, { method: 'DELETE' });
+        if (!res.ok) {
+            const msg = await res.text();
+            alert(msg);
+        } else {
+            loadAssets();
+        }
+    } catch (err) { console.error(err); }
+}
 
-    async function toggleManualMode(ticker, isManual) {
-        try {
-            await fetch('/api/assets/toggle-manual', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ticker, isManual })
-            });
-            await loadAssets();
-        } catch (err) { console.error('Toggle manual error:', err); }
-    }
+async function restoreMonitoring(id) {
+    try {
+        await fetch(`/api/assets/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ isMonitored: 1 })
+        });
+        loadAssets();
+    } catch (err) { console.error(err); }
+}
 
-    window.openManualModal = function(ticker, currency, currentPrice) {
-        document.getElementById('manual-ticker').value = ticker;
-        document.getElementById('manual-price').value = currentPrice;
-        document.getElementById('manual-currency-label').innerText = currency;
-        document.getElementById('manual-date').value = new Date().toISOString().split('T')[0];
-        document.getElementById('manual-update-modal').classList.remove('hidden');
-    }
+window.openAlertModal = function(id) {
+    const a = allAssets.find(x => x.id === id);
+    if (!a) return;
+    document.getElementById('edit-asset-id').value = a.id;
+    document.getElementById('edit-asset-name').innerText = `${a.name} (${a.ticker})`;
+    document.getElementById('edit-target-price').value = a.targetPrice || 0;
+    document.getElementById('edit-stop-loss').value = a.stopLoss || 0;
+    document.getElementById('alert-edit-modal').classList.remove('hidden');
+}
 
-    window.closeManualModal = function() {
-        document.getElementById('manual-update-modal').classList.add('hidden');
-    }
+window.closeAlertModal = function() {
+    document.getElementById('alert-edit-modal').classList.add('hidden');
+}
 
-    window.saveManualUpdate = async function() {
-        const ticker = document.getElementById('manual-ticker').value;
-        const price = document.getElementById('manual-price').value;
-        const date = document.getElementById('manual-date').value;
+window.saveAlertSettings = async function() {
+    const id = document.getElementById('edit-asset-id').value;
+    const targetPrice = parseFloat(document.getElementById('edit-target-price').value || 0);
+    const stopLoss = parseFloat(document.getElementById('edit-stop-loss').value || 0);
 
-        try {
-            const res = await fetch('/api/assets/manual-update', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ticker, price, date })
-            });
-            if (res.ok) {
-                closeManualModal();
-                await loadAssets();
-            } else {
-                alert('Update failed');
-            }
-        } catch (err) { console.error('Manual update error:', err); }
-    }
-
-function setCurrency(curr) {
-    document.getElementById('asset-currency').value = curr;
-    ['USD','EUR'].forEach(c => {
-        const btn = document.getElementById(`currency-${c.toLowerCase()}`);
-        const active = c === curr;
-        btn.classList.toggle('bg-white',     active);
-        btn.classList.toggle('dark:bg-slate-700', active);
-        btn.classList.toggle('text-primary', active);
-        btn.classList.toggle('shadow-sm',    active);
-        btn.classList.toggle('font-bold',    active);
-        btn.classList.toggle('text-slate-500', !active);
-        btn.classList.toggle('font-medium',  !active);
-    });
+    try {
+        const res = await fetch(`/api/assets/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ targetPrice, stopLoss, isMonitored: 1 })
+        });
+        if (res.ok) {
+            closeAlertModal();
+            loadAssets();
+        }
+    } catch (err) { console.error(err); }
 }
 
 function resetForm() {
     document.getElementById('asset-ticker').value = '';
     document.getElementById('asset-search-input').value = '';
-    setCurrency('USD');
 }
 
-// ─── Asset Search ─────────────────────────────────────────────────────────────
+// ─── Search Logic ─────────────────────────────────────────────────────────────
 const searchInput = document.getElementById('asset-search-input');
 const resultsContainer = document.getElementById('search-results');
 let searchTimeout;
@@ -595,34 +535,19 @@ searchInput.addEventListener('input', () => {
     clearTimeout(searchTimeout);
     const q = searchInput.value.trim();
     if (q.length < 2) { resultsContainer.classList.add('hidden'); return; }
-
     searchTimeout = setTimeout(async () => {
         try {
             const res = await fetch(`/api/asset-search?query=${encodeURIComponent(q)}`);
             const quotes = await res.json();
             if (quotes && quotes.length > 0) {
                 resultsContainer.innerHTML = quotes.filter(q => q.symbol).map(q => {
-                    const sym  = (q.symbol      || '').replace(/'/g, "\\'");
-                    const nm   = (q.shortname || q.longname || q.symbol || '').replace(/'/g, "\\'");
-                    const tp   = (q.quoteType   || '').replace(/'/g, "\\'");
-                    const cur  = (q.currency    || '').replace(/'/g, "\\'");
-                    const exch = (q.exchange    || '').replace(/'/g, "\\'");
-                    return `<div class="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer border-b border-slate-100 dark:border-slate-800 last:border-0"
-                         onclick="selectAsset('${sym}','${nm}','${tp}','${cur}','${exch}')">
-                        <div class="flex justify-between items-center">
-                            <span class="font-bold text-primary text-sm">${q.symbol}</span>
-                            <span class="text-[10px] bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded font-bold text-slate-500">${q.quoteType||'Asset'}</span>
-                        </div>
-                        <p class="text-xs text-slate-500 truncate mt-0.5">${q.shortname||q.longname||q.symbol}</p>
-                        <div class="flex justify-between mt-1">
-                            <span class="text-[10px] text-slate-400 uppercase">${q.exchange||''}</span>
-                            <span class="text-[10px] text-primary font-bold">${q.currency||''}</span>
-                        </div>
+                    const sym = q.symbol.replace(/'/g, "\\'");
+                    const nm = (q.shortname || q.longname || q.symbol).replace(/'/g, "\\'");
+                    return `<div class="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer border-b border-slate-100 dark:border-slate-800" onclick="selectAsset('${sym}','${nm}','${q.quoteType}','${q.currency}','${q.exchange}')">
+                        <div class="flex justify-between items-center"><span class="font-bold text-primary text-sm">${q.symbol}</span></div>
+                        <p class="text-xs text-slate-500 truncate">${q.shortname||q.longname}</p>
                     </div>`;
                 }).join('');
-                resultsContainer.classList.remove('hidden');
-            } else {
-                resultsContainer.innerHTML = '<div class="px-4 py-3 text-sm text-slate-500">No results found</div>';
                 resultsContainer.classList.remove('hidden');
             }
         } catch (err) { console.error(err); }
@@ -630,95 +555,34 @@ searchInput.addEventListener('input', () => {
 });
 
 function selectAsset(symbol, name, type, currency, exchange) {
-    if (symbol === 'CASH') {
-        document.getElementById('asset-ticker').value = 'CASH';
-        document.getElementById('asset-name').value   = 'Asset Cash';
-        document.getElementById('asset-search-input').value = 'CASH';
-        document.getElementById('asset-exchange').value = 'CASH';
-        document.getElementById('asset-type').value = 'Other';
-        setCurrency('EUR');
-        document.getElementById('asset-currency').value = 'EUR';
-        resultsContainer.classList.add('hidden');
-        return;
-    }
     document.getElementById('asset-ticker').value = symbol;
     document.getElementById('asset-name').value   = name;
     document.getElementById('asset-search-input').value = symbol;
-    document.getElementById('asset-exchange').value = exchange;
-    const typeMap = { EQUITY:'Stock', CRYPTOCURRENCY:'Crypto', ETF:'ETF', INDEX:'Index', MUTUALFUND:'ETF' };
-    const sel = document.getElementById('asset-type');
-    if (typeMap[type]) sel.value = typeMap[type];
-    if (currency) setCurrency(['EUR','GBP','CHF','JPY'].includes(currency) ? currency : (currency === 'EUR' ? 'EUR' : 'USD'));
-    else setCurrency('USD');
-    // More currencies: just set the hidden field
-    document.getElementById('asset-currency').value = currency || 'USD';
     resultsContainer.classList.add('hidden');
 }
 
-document.addEventListener('click', e => {
-    if (!searchInput.contains(e.target) && !resultsContainer.contains(e.target))
-        resultsContainer.classList.add('hidden');
-});
-
-// ─── Form Submit ──────────────────────────────────────────────────────────────
 document.getElementById('add-asset-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const ticker = document.getElementById('asset-ticker').value || document.getElementById('asset-search-input').value.trim();
-    if (!ticker) { alert('Please select or enter a ticker symbol.'); return; }
-
-    const data = {
-        ticker,
-        name:     document.getElementById('asset-name').value,
-        type:     document.getElementById('asset-type').value,
-        exchange: document.getElementById('asset-exchange').value,
-        currency: document.getElementById('asset-currency').value,
-        pe:       document.getElementById('asset-pe').value || null
-    };
-
+    if (!ticker) return;
     try {
         const res = await fetch('/api/assets', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+            body: JSON.stringify({ ticker, name: document.getElementById('asset-name').value })
         });
-        if (res.ok) {
-            document.getElementById('add-asset-form').reset();
-            resetForm();
-            await loadAssets();
-        } else {
-            alert('Error: ' + await res.text());
-        }
-    } catch (err) { console.error(err); alert('Failed to add asset: ' + err.message); }
+        if (res.ok) { loadAssets(); resetForm(); }
+    } catch (err) { console.error(err); }
 });
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatCurrency(val, currency = 'USD') {
-    const value = parseFloat(val || 0);
-    return new Intl.NumberFormat('de-DE', {
-        style: 'currency',
-        currency: currency,
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    }).format(value);
+    return new Intl.NumberFormat('de-DE', { style: 'currency', currency: currency }).format(val);
 }
-
 function formatNumber(val, decimals = 2) {
-    const value = parseFloat(val || 0);
-    return new Intl.NumberFormat('de-DE', {
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals
-    }).format(value);
+    return new Intl.NumberFormat('de-DE', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(val);
 }
 
-// ─── Init ─────────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-    // Open Watchlist tab if URL has ?tab=watchlist
-    const urlTab = new URLSearchParams(window.location.search).get('tab');
-    if (urlTab === 'watchlist') switchTab('watchlist');
-    loadAssets();
-    // Refresh every 60s
-    setInterval(loadAssets, 60000);
-});
+document.addEventListener('DOMContentLoaded', () => { loadAssets(); setInterval(loadAssets, 60000); });
 </script>
 </body>
 </html>
