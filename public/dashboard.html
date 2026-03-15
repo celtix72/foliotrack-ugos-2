@@ -427,15 +427,28 @@
         if (!dashboardChart) return;
         try {
             const res = await fetch(`/api/analytics/global-performance?range=${currentChartRange}`);
-            const data = await res.json();
+            const result = await res.json();
+            const dataPoints = result.dataPoints || [];
+            const changePercent = result.changePercent || 0;
             
-            dashboardChart.data.labels = data.map(d => {
+            dashboardChart.data.labels = dataPoints.map(d => {
                 const date = new Date(d.date);
                 return date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
             });
-            dashboardChart.data.datasets[0].data = data.map(d => d.value);
-            dashboardChart.data.datasets[1].data = data.map(d => d.profit);
+            dashboardChart.data.datasets[0].data = dataPoints.map(d => d.value);
+            dashboardChart.data.datasets[1].data = dataPoints.map(d => d.profit);
             dashboardChart.update();
+
+            // Update Total Performance Badge
+            const totalPerfEl = document.getElementById('total-perf');
+            if (totalPerfEl) {
+                const isPos = changePercent >= 0;
+                totalPerfEl.className = `${isPos ? 'text-emerald-500' : 'text-rose-500'} text-sm font-bold flex items-center gap-1`;
+                totalPerfEl.innerHTML = `
+                    <span class="material-symbols-outlined text-[18px]">${isPos ? 'trending_up' : 'trending_down'}</span>
+                    ${isPos ? '+' : ''}${changePercent.toFixed(2)}%
+                `;
+            }
         } catch (err) {
             console.error('Failed to update dashboard chart:', err);
         }

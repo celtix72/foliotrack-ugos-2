@@ -1594,16 +1594,30 @@
         if (!currentPortfolioId || !performanceChart) return;
         try {
             const res = await fetch(`/api/analytics/portfolio-performance/${currentPortfolioId}?range=${currentChartRange}`);
-            const data = await res.json();
-            currentPerformanceData = data; // Keep raw data for points/tooltips
+            const result = await res.json();
+            const dataPoints = result.dataPoints || [];
+            const changePercent = result.changePercent || 0;
+            currentPerformanceData = dataPoints; // Keep raw data for points/tooltips
             
-            performanceChart.data.labels = data.map(d => {
+            performanceChart.data.labels = dataPoints.map(d => {
                 const date = new Date(d.date);
                 return date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
             });
-            performanceChart.data.datasets[0].data = data.map(d => d.value);
-            performanceChart.data.datasets[1].data = data.map(d => d.profit);
+            performanceChart.data.datasets[0].data = dataPoints.map(d => d.value);
+            performanceChart.data.datasets[1].data = dataPoints.map(d => d.profit);
             performanceChart.update();
+
+            // Update Header Performance Badge
+            const perfBadge = document.getElementById('header-perf-badge');
+            if (perfBadge) {
+                const isPos = changePercent >= 0;
+                perfBadge.className = `flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold text-xs ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`;
+                perfBadge.innerHTML = `
+                    <span class="material-symbols-outlined text-sm font-bold">${isPos ? 'trending_up' : 'trending_down'}</span>
+                    ${isPos ? '+' : ''}${changePercent.toFixed(2)}%
+                `;
+                perfBadge.classList.remove('hidden');
+            }
         } catch (err) {
             console.error('Failed to update chart:', err);
         }

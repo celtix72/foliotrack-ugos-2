@@ -638,11 +638,13 @@ app.get('/api/analytics/global-allocation', async (req, res) => {
             }
         }
 
-        const allocation = Object.entries(typeMap).map(([type, value]) => ({
-            type,
-            value: Math.round(value * 100) / 100,
-            percent: totalValue > 0 ? Math.round((value / totalValue) * 1000) / 10 : 0
-        })).sort((a, b) => b.value - a.value);
+        const allocation = Object.entries(typeMap)
+            .filter(([type]) => type.toUpperCase() !== 'STOCK')
+            .map(([type, value]) => ({
+                type,
+                value: Math.round(value * 100) / 100,
+                percent: totalValue > 0 ? Math.round((value / totalValue) * 1000) / 10 : 0
+            })).sort((a, b) => b.value - a.value);
 
         res.json(allocation);
     } catch (err) {
@@ -1302,260 +1304,76 @@ app.get('/api/market/exchange-rate', async (req, res) => {
 // ANALYTICS & GLOBAL DATA
 // ══════════════════════════════════════════════════════════════════════════════
 
-app.get('/api/analytics/portfolio-performance/:id', async (req, res) => {
-    try {
-        const { range } = req.query; // 1M, 3M, 6M, 1Y, ALL
-        const portfolioId = req.params.id;
+/**
+ * Shared helper to calculate performance data points for one or more portfolios.
+ */
+async function calculatePerformanceHistory(portfolioIds, range) {
+    const isGlobal = !portfolioIds || portfolioIds.length === 0;
+    const portfolios = isGlobal 
+        ? database.db.prepare('SELECT * FROM portfolios').all()
+        : database.db.prepare(`SELECT * FROM portfolios WHERE id IN (${portfolioIds.join(',')})`).all();
 
-        const cacheKey = `portfolio_${portfolioId}_${range}`;
-        const cached = performanceResultsCache[cacheKey];
-        if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
-            console.log(`Cache hit for ${cacheKey}`);
-            return res.json(cached.data);
+    if (portfolios.length === 0) return [];
+
+    const pIds = portfolios.map(p => p.id);
+    const allTransactions = database.db.prepare(`
+        SELECT * FROM transactions 
+        WHERE portfolioId IN (${pIds.join(',')}) 
+        ORDER BY date ASC
+    `).all();
+
+    const today = new Date();
+    let startDate;
+    
+    switch (range) {
+        case '1W':  startDate = new Date(today); startDate.setDate(today.getDate() - 7); break;
+        case '1M':  startDate = new Date(today); startDate.setMonth(today.getMonth() - 1); break;
+        case '3M':  startDate = new Date(today); startDate.setMonth(today.getMonth() - 3); break;
+        case '6M':  startDate = new Date(today); startDate.setMonth(today.getMonth() - 6); break;
+        case '1Y':  startDate = new Date(today); startDate.setFullYear(today.getFullYear() - 1); break;
+        case 'YTD': startDate = new Date(today.getFullYear(), 0, 1); break;
+        default: {
+            const firstDate = allTransactions.length > 0 ? allTransactions[0].date : null;
+            startDate = firstDate ? new Date(firstDate) : new Date(today);
+            if (startDate > today) startDate = new Date(today);
         }
-        console.log(`Cache miss for ${cacheKey}. Calculating...`);
+    }
 
-        const portfolio = database.db.prepare('SELECT * FROM portfolios WHERE id = ?').get(portfolioId);
-        if (!portfolio) return res.status(404).send('Portfolio not found');
+    const uniqueTickers = [...new Set(allTransactions.map(t => t.assetTicker).filter(Boolean))];
+    const historicalPrices = {};
+    const fxRates = {};
 
-        const transactions = database.db.prepare('SELECT * FROM transactions WHERE portfolioId = ? ORDER BY date ASC').all(portfolioId);
-        
-        const today = new Date();
-        let startDate;
-        
-        switch (range) {
-            case '1M': startDate = new Date(today); startDate.setMonth(today.getMonth() - 1); break;
-            case '3M': startDate = new Date(today); startDate.setMonth(today.getMonth() - 3); break;
-            case '6M': startDate = new Date(today); startDate.setMonth(today.getMonth() - 6); break;
-            case '1Y': startDate = new Date(today); startDate.setFullYear(today.getFullYear() - 1); break;
-            default:   startDate = new Date(portfolio.startDate || (transactions.length > 0 ? transactions[0].date : today));
-        }
-
-        const uniqueTickers = [...new Set(transactions.map(t => t.assetTicker).filter(Boolean))];
-        const historicalPrices = {}; 
-        const fxRates = {};
-
-        // Fetch historical EUR/USD if portfolio is EUR
-        if (portfolio.currency === 'EUR') {
-            try {
-                const fxCacheKey = `EURUSD_history_${startDate.toISOString().split('T')[0]}`;
-                if (historicalPricesCache[fxCacheKey]) {
-                    fxRates['USD'] = historicalPricesCache[fxCacheKey];
-                } else {
-                    const fxResult = await yahooFinance.chart('EURUSD=X', {
-                        period1: startDate.toISOString().split('T')[0],
-                        period2: today.toISOString().split('T')[0],
-                        interval: '1d'
-                    });
-                    if (fxResult && fxResult.quotes) {
-                        fxRates['USD'] = Object.fromEntries(
-                            fxResult.quotes
-                                .filter(h => h.date)
-                                .map(h => [new Date(h.date).toISOString().split('T')[0], h.adjclose || h.close || 1])
-                        );
-                        historicalPricesCache[fxCacheKey] = fxRates['USD'];
-                    }
-                }
-            } catch (err) { console.warn("Failed to fetch EURUSD history", err); }
-        }
-
-        // Fetch historical data for all tickers
-        for (const ticker of uniqueTickers) {
-            try {
-                if (historicalPricesCache[ticker]) {
-                    historicalPrices[ticker] = historicalPricesCache[ticker];
-                    continue;
-                }
-
-                const qStart = (transactions.find(t => t.assetTicker === ticker)?.date) || startDate.toISOString().split('T')[0];
-                const chartResult = await yahooFinance.chart(ticker, {
-                    period1: qStart,
+    // 1. Fetch historical EUR/USD if any portfolio is EUR
+    const hasEurPortfolio = portfolios.some(p => p.currency === 'EUR');
+    if (hasEurPortfolio) {
+        try {
+            const fxCacheKey = `EUR_USD_history_${startDate.toISOString().split('T')[0]}_${today.toISOString().split('T')[0]}`;
+            if (historicalPricesCache[fxCacheKey]) {
+                fxRates['USD'] = historicalPricesCache[fxCacheKey];
+            } else {
+                const fxResult = await yahooFinance.chart('EURUSD=X', {
+                    period1: startDate.toISOString().split('T')[0],
                     period2: today.toISOString().split('T')[0],
                     interval: '1d'
                 });
-                
-                if (chartResult && chartResult.quotes) {
-                    historicalPrices[ticker] = Object.fromEntries(
-                        chartResult.quotes
+                if (fxResult && fxResult.quotes) {
+                    fxRates['USD'] = Object.fromEntries(
+                        fxResult.quotes
                             .filter(h => h.date)
-                            .map(h => [new Date(h.date).toISOString().split('T')[0], h.adjclose || h.close || 0])
+                            .map(h => [new Date(h.date).toISOString().split('T')[0], h.adjclose || h.close || 1])
                     );
-                } else {
-                    historicalPrices[ticker] = {};
-                }
-                // Save to global market cache
-                historicalPricesCache[ticker] = historicalPrices[ticker];
-
-            } catch (err) {
-                console.warn(`Failed to fetch history for ${ticker}:`, err.message);
-                historicalPrices[ticker] = {};
-            }
-        }
-
-        const dataPoints = [];
-        let currentDate = new Date(startDate);
-        
-        while (currentDate <= today) {
-            const dateStr = currentDate.toISOString().split('T')[0];
-            
-            // 1. Reconstruct state on this date
-            let cash = portfolio.initialCash;
-            let netDeposits = portfolio.initialCash;
-            const holdings = {};
-            const events = [];
-
-            for (const t of transactions) {
-                if (t.date > dateStr) break;
-
-                const qty    = t.quantity     || 0;
-                const price  = t.price        || 0;
-                const comm   = t.commission   || 0;
-                const tax    = t.tax          || 0;
-                const fx     = t.exchangeRate || 1;
-                const amount = t.amount       || 0;
-
-                if (t.date === dateStr && ['BUY', 'SELL', 'DIVIDEND'].includes(t.type)) {
-                    events.push({
-                        type: t.type,
-                        ticker: t.assetTicker,
-                        amount: amount || (qty * price) // fallback for buy/sell
-                    });
-                }
-
-                switch (t.type) {
-                    case 'DEPOSIT':    
-                        cash += amount; 
-                        netDeposits += amount;
-                        break;
-                    case 'WITHDRAWAL': 
-                        cash -= amount; 
-                        netDeposits -= amount;
-                        break;
-                    case 'TAX':        cash -= amount; break;
-                    case 'DIVIDEND':   cash += (amount || (qty * price - comm - tax)) / fx; break;
-                    case 'BUY':
-                        cash -= (qty * price + comm + tax) / fx;
-                        holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) + qty;
-                        break;
-                    case 'SELL':
-                        cash += (qty * price - comm - tax) / fx;
-                        holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) - qty;
-                        break;
+                    historicalPricesCache[fxCacheKey] = fxRates['USD'];
                 }
             }
-
-            // 2. Calculate asset value on this date
-            let assetValue = 0;
-            for (const [ticker, shares] of Object.entries(holdings)) {
-                if (shares <= 0.0001) continue;
-                
-                let price = 0;
-                const tickerPrices = historicalPrices[ticker] || {};
-                price = tickerPrices[dateStr];
-
-                if (price === undefined) {
-                    const availableDates = Object.keys(tickerPrices).sort();
-                    const pastDates = availableDates.filter(d => d < dateStr);
-                    if (pastDates.length > 0) {
-                        price = tickerPrices[pastDates.at(-1)];
-                    } else if (availableDates.length > 0) {
-                        price = tickerPrices[availableDates[0]];
-                    } else {
-                        const asset = database.db.prepare('SELECT currentPrice FROM assets WHERE ticker = ?').get(ticker);
-                        price = asset ? asset.currentPrice : 0;
-                    }
-                }
-
-                // Determine currency and rate
-                const asset = database.db.prepare('SELECT currency FROM assets WHERE ticker = ?').get(ticker);
-                const aCurr = asset ? asset.currency : 'EUR';
-                let rate = 1;
-
-                if (aCurr === 'USD' && portfolio.currency === 'EUR') {
-                    // Try historical FX first
-                    rate = fxRates['USD']?.[dateStr];
-                    if (rate === undefined) {
-                        const pastFxDates = Object.keys(fxRates['USD'] || {}).filter(d => d < dateStr).sort();
-                        if (pastFxDates.length > 0) {
-                            rate = fxRates['USD'][pastFxDates.at(-1)];
-                        } else {
-                            // Fallback to transaction rate or 1
-                            const lastFxTx = transactions.filter(t => t.assetTicker === ticker && t.date <= dateStr && t.exchangeRate).at(-1);
-                            rate = lastFxTx ? lastFxTx.exchangeRate : 1;
-                        }
-                    }
-                } else {
-                    // Non-USD or same currency
-                    const lastFxTx = transactions.filter(t => t.assetTicker === ticker && t.date <= dateStr && t.exchangeRate).at(-1);
-                    rate = lastFxTx ? lastFxTx.exchangeRate : 1;
-                }
-
-                assetValue += shares * (price / rate);
-            }
-
-            dataPoints.push({
-                date: dateStr,
-                value: Math.round((cash + assetValue) * 100) / 100,
-                profit: Math.round((cash + assetValue - netDeposits) * 100) / 100,
-                cash: Math.round(cash * 100) / 100,
-                assets: Math.round(assetValue * 100) / 100,
-                events: events
-            });
-
-            currentDate.setDate(currentDate.getDate() + 1);
-        }
-
-        // Save to performance cache
-        performanceResultsCache[cacheKey] = {
-            data: dataPoints,
-            timestamp: Date.now()
-        };
-
-        res.json(dataPoints);
-    } catch (err) {
-        console.error('Portfolio performance error:', err);
-        res.status(500).json({ error: err.message });
+        } catch (err) { console.warn("Failed to fetch EURUSD history", err); }
     }
-});
 
-app.get('/api/analytics/global-performance', async (req, res) => {
-    try {
-        const { range } = req.query; // 1W, 1M, 3M, 1Y, ALL
-
-        const cacheKey = `global_${range}`;
-        const cached = performanceResultsCache[cacheKey];
-        if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
-            console.log(`Cache hit for ${cacheKey}`);
-            return res.json(cached.data);
-        }
-        console.log(`Cache miss for ${cacheKey}. Calculating...`);
-
-        const portfolios = database.db.prepare('SELECT * FROM portfolios').all();
-        if (portfolios.length === 0) return res.json([]);
-
-        const allTransactions = database.db.prepare('SELECT * FROM transactions ORDER BY date ASC').all();
-        const today = new Date();
-        let startDate;
-
-        switch (range) {
-            case '1W': startDate = new Date(today); startDate.setDate(today.getDate() - 7); break;
-            case '1M': startDate = new Date(today); startDate.setMonth(today.getMonth() - 1); break;
-            case '3M': startDate = new Date(today); startDate.setMonth(today.getMonth() - 3); break;
-            case '1Y': startDate = new Date(today); startDate.setFullYear(today.getFullYear() - 1); break;
-            default:   startDate = new Date(allTransactions.length > 0 ? allTransactions[0].date : today);
-        }
-
-        const uniqueTickers = [...new Set(allTransactions.map(t => t.assetTicker).filter(Boolean))];
-        const historicalPrices = {};
-
-        // Fetch historical data for all unique tickers
-        for (const ticker of uniqueTickers) {
-            try {
-                if (historicalPricesCache[ticker]) {
-                    historicalPrices[ticker] = historicalPricesCache[ticker];
-                    continue;
-                }
-
+    // 2. Fetch historical data for all involved tickers
+    for (const ticker of uniqueTickers) {
+        try {
+            if (historicalPricesCache[ticker]) {
+                historicalPrices[ticker] = historicalPricesCache[ticker];
+            } else {
                 const qStart = (allTransactions.find(t => t.assetTicker === ticker)?.date) || startDate.toISOString().split('T')[0];
                 const chartResult = await yahooFinance.chart(ticker, {
                     period1: qStart,
@@ -1568,106 +1386,232 @@ app.get('/api/analytics/global-performance', async (req, res) => {
                             .filter(h => h.date)
                             .map(h => [new Date(h.date).toISOString().split('T')[0], h.adjclose || h.close || 0])
                     );
+                    historicalPricesCache[ticker] = historicalPrices[ticker];
                 } else {
                     historicalPrices[ticker] = {};
                 }
-                historicalPricesCache[ticker] = historicalPrices[ticker];
-            } catch (err) {
-                console.warn(`Failed to fetch history for ${ticker}:`, err.message);
-                historicalPrices[ticker] = {};
+            }
+        } catch (err) {
+            console.warn(`Failed to fetch history for ${ticker}:`, err.message);
+            historicalPrices[ticker] = {};
+        }
+    }
+
+    const dataPoints = [];
+    let currentDate = new Date(startDate);
+
+    // Initial state per portfolio
+    const portfolioStates = {};
+    for (const p of portfolios) {
+        portfolioStates[p.id] = {
+            cash: p.initialCash || 0,
+            netDeposits: p.initialCash || 0,
+            holdings: {}
+        };
+        
+        // Fast-forward initial state to startDate
+        const initialTx = allTransactions.filter(t => t.portfolioId === p.id && t.date < startDate.toISOString().split('T')[0]);
+        for (const t of initialTx) {
+            const qty = t.quantity || 0, price = t.price || 0, comm = t.commission || 0, tax = t.tax || 0, fx = t.exchangeRate || 1, amount = t.amount || 0;
+            switch (t.type) {
+                case 'DEPOSIT':    portfolioStates[p.id].cash += amount; portfolioStates[p.id].netDeposits += amount; break;
+                case 'WITHDRAWAL': portfolioStates[p.id].cash -= amount; portfolioStates[p.id].netDeposits -= amount; break;
+                case 'TAX':        portfolioStates[p.id].cash -= amount; break;
+                case 'DIVIDEND':   portfolioStates[p.id].cash += (amount || (qty * price - comm - tax)) / fx; break;
+                case 'BUY':
+                    portfolioStates[p.id].cash -= (qty * price + comm + tax) / fx;
+                    portfolioStates[p.id].holdings[t.assetTicker] = (portfolioStates[p.id].holdings[t.assetTicker] || 0) + qty;
+                    break;
+                case 'SELL':
+                    portfolioStates[p.id].cash += (qty * price - comm - tax) / fx;
+                    portfolioStates[p.id].holdings[t.assetTicker] = (portfolioStates[p.id].holdings[t.assetTicker] || 0) - qty;
+                    break;
             }
         }
+    }
 
-        const dataPoints = [];
-        let currentDate = new Date(startDate);
+    while (currentDate <= today) {
+        const dateStr = currentDate.toISOString().split('T')[0];
+        let dayValue = 0, dayProfit = 0, dayCash = 0, dayAssets = 0;
+        const dayEvents = [];
 
-        while (currentDate <= today) {
-            const dateStr = currentDate.toISOString().split('T')[0];
-            let globalTotalValue = 0;
-            let globalNetDeposits = 0;
+        // Check for manual overrides for this specific date
+        const manualTotal = isGlobal 
+            ? database.db.prepare('SELECT totalValue, cashValue, assetValue FROM portfolio_history WHERE portfolioId IS NULL AND date = ?').get(dateStr)
+            : database.db.prepare(`SELECT SUM(totalValue) as totalValue, SUM(cashValue) as cashValue, SUM(assetValue) as assetValue FROM portfolio_history WHERE portfolioId IN (${pIds.join(',')}) AND date = ?`).get(dateStr);
 
+        if (manualTotal && manualTotal.totalValue !== null) {
+            dayValue = manualTotal.totalValue;
+            dayCash = manualTotal.cashValue || 0;
+            dayAssets = manualTotal.assetValue || 0;
+            // For profit, we still need netDeposits calculation to keep track of state
             for (const p of portfolios) {
-                let cash = p.initialCash;
-                let pNetDeposits = p.initialCash;
-                const holdings = {};
-                const pTransactions = allTransactions.filter(t => t.portfolioId === p.id && t.date <= dateStr);
-
-                for (const t of pTransactions) {
-                    const qty    = t.quantity     || 0;
-                    const price  = t.price        || 0;
-                    const comm   = t.commission   || 0;
-                    const tax    = t.tax          || 0;
-                    const fx     = t.exchangeRate || 1;
-                    const amount = t.amount       || 0;
-
+                const state = portfolioStates[p.id];
+                const dayTx = allTransactions.filter(t => t.portfolioId === p.id && t.date === dateStr);
+                for (const t of dayTx) {
+                    const amount = t.amount || 0;
+                    if (t.type === 'DEPOSIT') state.netDeposits += amount;
+                    else if (t.type === 'WITHDRAWAL') state.netDeposits -= amount;
+                    
+                    if (['BUY', 'SELL', 'DIVIDEND'].includes(t.type)) {
+                        dayEvents.push({ type: t.type, ticker: t.assetTicker, portfolioName: p.name, amount: amount || ((t.quantity || 0) * (t.price || 0)) });
+                    }
+                    // We still need to update holdings state to keep it consistent if manual record missing for next day
+                    const qty = t.quantity || 0, price = t.price || 0, comm = t.commission || 0, tax = t.tax || 0, fx = t.exchangeRate || 1;
                     switch (t.type) {
-                    case 'DEPOSIT':    
-                        cash += amount; 
-                        pNetDeposits += amount;
-                        break;
-                    case 'WITHDRAWAL': 
-                        cash -= amount; 
-                        pNetDeposits -= amount;
-                        break;
-                        case 'TAX':        cash -= amount; break;
-                        case 'DIVIDEND':   cash += (amount || (qty * price - comm - tax)) / fx; break;
+                        case 'DEPOSIT':    state.cash += amount; break;
+                        case 'WITHDRAWAL': state.cash -= amount; break;
+                        case 'TAX':        state.cash -= amount; break;
+                        case 'DIVIDEND':   state.cash += (amount || (qty * price - comm - tax)) / fx; break;
                         case 'BUY':
-                            cash -= (qty * price + comm + tax) / fx;
-                            holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) + qty;
+                            state.cash -= (qty * price + comm + tax) / fx;
+                            state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) + qty;
                             break;
                         case 'SELL':
-                            cash += (qty * price - comm - tax) / fx;
-                            holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) - qty;
+                            state.cash += (qty * price - comm - tax) / fx;
+                            state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) - qty;
+                            break;
+                    }
+                }
+            }
+            let totalNetDeps = 0;
+            for (const p of portfolios) totalNetDeps += portfolioStates[p.id].netDeposits;
+            dayProfit = dayValue - totalNetDeps;
+        } else {
+            for (const p of portfolios) {
+                const state = portfolioStates[p.id];
+                const dayTx = allTransactions.filter(t => t.portfolioId === p.id && t.date === dateStr);
+
+                for (const t of dayTx) {
+                    const qty = t.quantity || 0, price = t.price || 0, comm = t.commission || 0, tax = t.tax || 0, fx = t.exchangeRate || 1, amount = t.amount || 0;
+                    if (['BUY', 'SELL', 'DIVIDEND'].includes(t.type)) {
+                        dayEvents.push({ type: t.type, ticker: t.assetTicker, portfolioName: p.name, amount: amount || (qty * price) });
+                    }
+                    switch (t.type) {
+                        case 'DEPOSIT':    state.cash += amount; state.netDeposits += amount; break;
+                        case 'WITHDRAWAL': state.cash -= amount; state.netDeposits -= amount; break;
+                        case 'TAX':        state.cash -= amount; break;
+                        case 'DIVIDEND':   state.cash += (amount || (qty * price - comm - tax)) / fx; break;
+                        case 'BUY':
+                            state.cash -= (qty * price + comm + tax) / fx;
+                            state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) + qty;
+                            break;
+                        case 'SELL':
+                            state.cash += (qty * price - comm - tax) / fx;
+                            state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) - qty;
                             break;
                     }
                 }
 
-                let assetValue = 0;
-                for (const [ticker, shares] of Object.entries(holdings)) {
+                let pAssets = 0;
+                for (const [ticker, shares] of Object.entries(state.holdings)) {
                     if (shares <= 0.0001) continue;
-                    let price = 0;
-                    const tickerPrices = historicalPrices[ticker] || {};
-                    price = tickerPrices[dateStr];
-
+                    let price = historicalPrices[ticker]?.[dateStr];
                     if (price === undefined) {
-                        const availableDates = Object.keys(tickerPrices).filter(d => d < dateStr).sort();
-                        if (availableDates.length > 0) {
-                            price = historicalPrices[ticker][availableDates[availableDates.length - 1]];
-                        } else {
+                        const availableDates = Object.keys(historicalPrices[ticker] || {}).sort();
+                        const pastDates = availableDates.filter(d => d < dateStr);
+                        if (pastDates.length > 0) price = historicalPrices[ticker][pastDates.at(-1)];
+                        else if (availableDates.length > 0) price = historicalPrices[ticker][availableDates[0]];
+                        else {
                             const asset = database.db.prepare('SELECT currentPrice FROM assets WHERE ticker = ?').get(ticker);
                             price = asset ? asset.currentPrice : 0;
                         }
                     }
-                    const lastFxTx = pTransactions.filter(t => t.assetTicker === ticker && t.exchangeRate).at(-1);
-                    const rate = lastFxTx ? lastFxTx.exchangeRate : 1;
-                    assetValue += shares * (price / rate);
+
+                    const asset = database.db.prepare('SELECT currency FROM assets WHERE ticker = ?').get(ticker);
+                    const aCurr = asset ? asset.currency : 'EUR';
+                    let rate = 1;
+                    if (aCurr === 'USD' && p.currency === 'EUR') {
+                        rate = fxRates['USD']?.[dateStr];
+                        if (rate === undefined) {
+                            const pastFx = Object.keys(fxRates['USD'] || {}).filter(d => d < dateStr).sort();
+                            rate = pastFx.length > 0 ? fxRates['USD'][pastFx.at(-1)] : 1;
+                        }
+                    } else if (aCurr !== p.currency) {
+                        const lastFx = allTransactions.filter(t => t.assetTicker === ticker && t.date <= dateStr && t.exchangeRate).at(-1);
+                        rate = lastFx ? lastFx.exchangeRate : 1;
+                    }
+                    pAssets += shares * (price / rate);
                 }
-
-                globalTotalValue += (cash + assetValue);
-                globalNetDeposits += pNetDeposits;
+                dayValue += (state.cash + pAssets);
+                dayProfit += (state.cash + pAssets - state.netDeposits);
+                dayCash += state.cash;
+                dayAssets += pAssets;
             }
-
-            dataPoints.push({
-                date: dateStr,
-                value: Math.round(globalTotalValue * 100) / 100,
-                profit: Math.round((globalTotalValue - globalNetDeposits) * 100) / 100
-            });
-
-            currentDate.setDate(currentDate.getDate() + 1);
         }
 
-        // Save to performance cache
-        performanceResultsCache[cacheKey] = {
-            data: dataPoints,
-            timestamp: Date.now()
-        };
+        dataPoints.push({
+            date: dateStr,
+            value: Math.round(dayValue * 100) / 100,
+            profit: Math.round(dayProfit * 100) / 100,
+            cash: Math.round(dayCash * 100) / 100,
+            assets: Math.round(dayAssets * 100) / 100,
+            events: dayEvents
+        });
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+    return dataPoints;
+}
 
-        res.json(dataPoints);
+// ─── ANALYTICS ENDPOINTS ──────────────────────────────────────────────────────
+
+app.get('/api/analytics/portfolio-performance/:id', async (req, res) => {
+    try {
+        const { range } = req.query;
+        const portfolioId = req.params.id;
+        const cacheKey = `portfolio_perf_${portfolioId}_${range || 'ALL'}`;
+
+        if (performanceResultsCache[cacheKey] && (Date.now() - performanceResultsCache[cacheKey].timestamp < CACHE_TTL)) {
+            return res.json(performanceResultsCache[cacheKey].data);
+        }
+
+        const dataPoints = await calculatePerformanceHistory([portfolioId], range);
+        
+        let changePercent = 0;
+        if (dataPoints.length > 1) {
+            const startVal = dataPoints[0].value;
+            const endVal = dataPoints[dataPoints.length - 1].value;
+            if (startVal > 0) changePercent = ((endVal - startVal) / startVal) * 100;
+        }
+
+        const result = { dataPoints, changePercent };
+        performanceResultsCache[cacheKey] = { data: result, timestamp: Date.now() };
+        res.json(result);
+    } catch (err) {
+        console.error('Portfolio performance error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/analytics/global-performance', async (req, res) => {
+    try {
+        const { range } = req.query;
+        const cacheKey = `global_perf_${range || 'ALL'}`;
+
+        if (performanceResultsCache[cacheKey] && (Date.now() - performanceResultsCache[cacheKey].timestamp < CACHE_TTL)) {
+            return res.json(performanceResultsCache[cacheKey].data);
+        }
+
+        const dataPoints = await calculatePerformanceHistory(null, range);
+
+        let changePercent = 0;
+        if (dataPoints.length > 1) {
+            const startVal = dataPoints[0].value;
+            const endVal = dataPoints[dataPoints.length - 1].value;
+            if (startVal > 0) changePercent = ((endVal - startVal) / startVal) * 100;
+        }
+
+        const result = { dataPoints, changePercent };
+        performanceResultsCache[cacheKey] = { data: result, timestamp: Date.now() };
+        res.json(result);
     } catch (err) {
         console.error('Global performance error:', err);
         res.status(500).json({ error: err.message });
     }
 });
+
+// ─── HISTORY ENDPOINT ──────────────────────────────────────────────────────────
+
 
 app.get('/api/analytics/history', (req, res) => {
     try {
