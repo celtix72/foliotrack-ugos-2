@@ -588,24 +588,7 @@
     function getParam(name) {
         return new URLSearchParams(window.location.search).get(name);
     }
-
-    function formatCurrency(val, currency = 'USD') {
-        const value = parseFloat(val || 0);
-        return new Intl.NumberFormat('de-DE', { 
-            style: 'currency', 
-            currency: currency,
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        }).format(value);
-    }
-
-    function formatNumber(val, decimals = 2) {
-        const value = parseFloat(val || 0);
-        return new Intl.NumberFormat('de-DE', {
-            minimumFractionDigits: decimals,
-            maximumFractionDigits: decimals
-        }).format(value);
-    }
+    // Using global formatting functions from theme.js
 
     async function init() {
         console.log("INIT CALLED");

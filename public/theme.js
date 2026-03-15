@@ -181,4 +181,25 @@
     setInterval(updateNotifications, 30000); // 30s notifications sync
 
     window.refreshSidebarPortfolios = () => { _sidebarLoading = false; updateSidebarContents(); };
+
+    // ─── Global Formatting ────────────────────────────────────────────────────
+    window.formatCurrency = function(val, currency = 'USD', decimals = 2) {
+        if (val === null || val === undefined) return '—';
+        const value = parseFloat(val);
+        return new Intl.NumberFormat('de-DE', { 
+            style: 'currency', 
+            currency: currency,
+            minimumFractionDigits: 0,
+            maximumFractionDigits: decimals
+        }).format(value).replace(',00', '');
+    };
+
+    window.formatNumber = function(val, decimals = 2) {
+        if (val === null || val === undefined) return '—';
+        const value = parseFloat(val);
+        return new Intl.NumberFormat('de-DE', { 
+            minimumFractionDigits: 0,
+            maximumFractionDigits: decimals
+        }).format(value).replace(',00', '');
+    };
 })();

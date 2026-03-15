@@ -143,23 +143,7 @@
         let collapsedGroups = new Set();
         let currentGroupBy = 'year';
 
-        function formatCurrency(val, currency = 'EUR') {
-            const value = parseFloat(val || 0);
-            return new Intl.NumberFormat('de-DE', { 
-                style: 'currency', 
-                currency: currency,
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            }).format(value);
-        }
-
-        function formatNumber(val, decimals = 2) {
-            const value = parseFloat(val || 0);
-            return new Intl.NumberFormat('de-DE', {
-                minimumFractionDigits: decimals,
-                maximumFractionDigits: decimals
-            }).format(value);
-        }
+        // Global formatting from theme.js
 
         async function loadHistory() {
             try {

@@ -330,9 +330,9 @@
     }
 
     function renderMetrics(m) {
-        document.getElementById('metric-roi').textContent = (m.totalROI * 100).toFixed(2) + '%';
-        document.getElementById('metric-cagr').textContent = (m.annualizedROI * 100).toFixed(2) + '%';
-        document.getElementById('metric-sharpe').textContent = m.sharpeRatio.toFixed(2);
+        document.getElementById('metric-roi').textContent = formatNumber(m.totalROI * 100, 2) + '%';
+        document.getElementById('metric-cagr').textContent = formatNumber(m.annualizedROI * 100, 2) + '%';
+        document.getElementById('metric-sharpe').textContent = formatNumber(m.sharpeRatio, 2);
         document.getElementById('metric-best').textContent = m.bestAsset;
         document.getElementById('metric-roi').classList.toggle('text-emerald-500', m.totalROI >= 0);
         document.getElementById('metric-roi').classList.toggle('text-rose-500', m.totalROI < 0);
@@ -446,15 +446,15 @@
                         <span class="font-bold text-sm">${p.name}</span>
                     </div>
                 </td>
-                <td class="py-4 text-right font-black text-sm">€${m.currentValue.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</td>
-                <td class="py-4 text-right font-black text-sm ${roiColor}">${(m.totalROI * 100).toFixed(2)}%</td>
-                <td class="py-4 text-right font-bold text-sm text-slate-500">${m.sharpeRatio.toFixed(2)}</td>
+                <td class="py-4 text-right font-black text-sm">${formatCurrency(m.currentValue, 'EUR')}</td>
+                <td class="py-4 text-right font-black text-sm ${roiColor}">${formatNumber(m.totalROI * 100, 2)}%</td>
+                <td class="py-4 text-right font-bold text-sm text-slate-500">${formatNumber(m.sharpeRatio, 2)}</td>
                 <td class="py-4 text-right">
                     <div class="flex items-center justify-end gap-2">
                         <div class="w-16 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                             <div class="h-full bg-primary" style="width: ${m.contribution * 100}%"></div>
                         </div>
-                        <span class="text-[10px] font-black text-slate-400">${(m.contribution * 100).toFixed(1)}%</span>
+                        <span class="text-[10px] font-black text-slate-400">${formatNumber(m.contribution * 100, 1)}%</span>
                     </div>
                 </td>
             `;
@@ -514,7 +514,7 @@
                                 <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background:${colors[i]}"></span>
                                 <span class="truncate font-bold">${x[0]}</span>
                             </div>
-                            <span class="font-black text-primary">${((x[1]/totalValue)*100).toFixed(1)}%</span>
+                            <span class="font-black text-primary">${formatNumber((x[1]/totalValue)*100, 1)}%</span>
                         </div>
                     `).join('')}
                 </div>
@@ -528,7 +528,7 @@
         if (divChart) divChart.destroy();
 
         const totalIncome = divs.reduce((s, x) => s + x.amount, 0);
-        document.getElementById('dividend-total-income').textContent = '$' + totalIncome.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        document.getElementById('dividend-total-income').textContent = formatCurrency(totalIncome, 'USD');
 
         divChart = new Chart(ctx, {
             type: 'bar',
