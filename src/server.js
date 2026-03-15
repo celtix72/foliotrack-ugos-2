@@ -652,14 +652,15 @@ app.get('/api/analytics/global-allocation', async (req, res) => {
 });
 
 app.get('/api/portfolios/:id', async (req, res) => {
-    const portfolio = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(req.params.id);
+    const portfolioId = req.params.id;
+    const portfolio = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(portfolioId);
     if (!portfolio) return res.status(404).json({ error: 'Portfolio non trovato' });
 
     const liveRate = await getEurUsdRate();
 
     const transactions = database.db.prepare(`
         SELECT * FROM transactions WHERE portfolioId = ? ORDER BY date ASC
-    `).all(req.params.id);
+    `).all(portfolioId);
 
     // FIFO lots per ticker
     const lots        = {};   // { ticker: [{qty, costPerShare, costPerShareAssetCurr}] }
