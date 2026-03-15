@@ -1326,6 +1326,7 @@ async function calculatePerformanceHistory(portfolioIds, range) {
     let startDate;
     
     switch (range) {
+        case '1D':  startDate = new Date(today); startDate.setDate(today.getDate() - 1); break;
         case '1W':  startDate = new Date(today); startDate.setDate(today.getDate() - 7); break;
         case '1M':  startDate = new Date(today); startDate.setMonth(today.getMonth() - 1); break;
         case '3M':  startDate = new Date(today); startDate.setMonth(today.getMonth() - 3); break;

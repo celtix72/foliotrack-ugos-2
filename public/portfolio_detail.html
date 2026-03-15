@@ -39,6 +39,9 @@
     </style>
     <script src="/theme.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
 </head>
 <body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex">
 <!-- Sidebar -->
@@ -205,9 +208,11 @@
             <div class="flex items-center justify-between mb-8">
                 <h3 class="text-lg font-bold">Performance Over Time</h3>
                 <div class="flex bg-slate-100 dark:bg-slate-900 rounded-lg p-1" id="chart-range-buttons">
+                    <button data-range="1D" onclick="setChartRange('1D')" class="range-btn px-4 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">1D</button>
                     <button data-range="1M" onclick="setChartRange('1M')" class="range-btn px-4 py-1.5 text-xs font-bold rounded-md bg-white dark:bg-slate-800 shadow-sm transition-all">1M</button>
                     <button data-range="3M" onclick="setChartRange('3M')" class="range-btn px-4 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">3M</button>
                     <button data-range="6M" onclick="setChartRange('6M')" class="range-btn px-4 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">6M</button>
+                    <button data-range="YTD" onclick="setChartRange('YTD')" class="range-btn px-4 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">YTD</button>
                     <button data-range="1Y" onclick="setChartRange('1Y')" class="range-btn px-4 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">1Y</button>
                     <button data-range="ALL" onclick="setChartRange('ALL')" class="range-btn px-4 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">ALL</button>
                 </div>
@@ -1548,6 +1553,20 @@
                                 return text;
                             }
                         }
+                    },
+                    zoom: {
+                        zoom: {
+                            wheel: { enabled: true },
+                            pinch: { enabled: true },
+                            mode: 'x',
+                        },
+                        pan: {
+                            enabled: true,
+                            mode: 'x',
+                        }
+                    },
+                    annotation: {
+                        annotations: {}
                     }
                 },
                 scales: {
@@ -1576,6 +1595,9 @@
     async function setChartRange(range) {
         currentChartRange = range;
         
+        // Reset zoom when range changes
+        if (performanceChart) performanceChart.resetZoom();
+
         // Update UI
         document.querySelectorAll('.range-btn').forEach(btn => {
             if (btn.dataset.range === range) {
@@ -1605,6 +1627,34 @@
             });
             performanceChart.data.datasets[0].data = dataPoints.map(d => d.value);
             performanceChart.data.datasets[1].data = dataPoints.map(d => d.profit);
+
+            // Year Markers (Vertical dashed lines)
+            const annotations = {};
+            let lastYear = null;
+            dataPoints.forEach((d, index) => {
+                const year = new Date(d.date).getFullYear();
+                if (lastYear !== null && year !== lastYear) {
+                    annotations[`line${year}`] = {
+                        type: 'line',
+                        xMin: index,
+                        xMax: index,
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)',
+                        borderWidth: 1,
+                        borderDash: [5, 5],
+                        label: {
+                            display: true,
+                            content: year.toString(),
+                            position: 'start',
+                            backgroundColor: isDark ? 'rgba(15, 23, 42, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+                            color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
+                            font: { size: 10, weight: 'bold' }
+                        }
+                    };
+                }
+                lastYear = year;
+            });
+            performanceChart.options.plugins.annotation.annotations = annotations;
+
             performanceChart.update();
 
             // Update Header Performance Badge
