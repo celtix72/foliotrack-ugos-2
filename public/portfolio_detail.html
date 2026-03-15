@@ -627,7 +627,11 @@
           <tbody id="import-preview-body"></tbody>
         </table>
       </div>
-      <div class="flex gap-3 justify-end">
+      <div class="flex gap-3 justify-end items-center">
+        <div class="flex-1 text-[10px] font-bold flex gap-4">
+          <span id="import-ok-count" class="text-emerald-500">0 OK</span>
+          <span id="import-warn-count" class="text-amber-500">0 Need Review</span>
+        </div>
         <button onclick="confirmImport()" class="px-7 py-2.5 bg-emerald-600 text-white rounded-lg font-bold">Confirm</button>
       </div>
     </div>

@@ -51,6 +51,76 @@ const MARKET_HOURS = {
     USA: { open: '15:30', close: '22:00', name: 'NYSE/NASDAQ' }
 };
 
+/**
+ * Fetches robust metadata from Yahoo Finance, including Country/Area and Type improvements.
+ */
+async function fetchAssetMetadata(ticker) {
+    try {
+        const quote = await yahooFinance.quote(ticker).catch(() => null);
+        if (!quote) return null;
+
+        let country = 'N/A';
+        let detailedType = quote.quoteType === 'EQUITY' ? 'Azionario' : (quote.quoteType || 'Altro');
+
+        const summary = await yahooFinance.quoteSummary(ticker, { 
+            modules: ["summaryProfile", "assetProfile", "fundProfile"] 
+        }).catch(() => ({}));
+
+        if (summary.summaryProfile && summary.summaryProfile.country) {
+            country = summary.summaryProfile.country;
+        } else if (summary.assetProfile && summary.assetProfile.country) {
+            country = summary.assetProfile.country;
+        }
+
+        if (quote.quoteType === 'ETF' || quote.quoteType === 'MUTUALFUND') {
+            const fp = summary.fundProfile;
+            const nameStr = (quote.longName || quote.shortName || "").toLowerCase();
+            
+            if (country === 'N/A' || !country) {
+                if (fp && fp.categoryName) {
+                    const cat = fp.categoryName;
+                    if (cat.includes('World') || cat.includes('Global')) country = 'Global';
+                    else if (cat.includes('Europe')) country = 'Europe';
+                    else if (cat.includes('Emerging')) country = 'Emerging Markets';
+                    else if (cat.includes('Asia')) country = 'Asia';
+                    else if (cat.includes('US') || cat.includes('America')) country = 'USA';
+                    else country = cat;
+                } else {
+                    if (nameStr.includes('world') || nameStr.includes('global') || nameStr.includes('acwi')) country = 'Global';
+                    else if (nameStr.includes('europe') || nameStr.includes('stoxx')) country = 'Europe';
+                    else if (nameStr.includes('usa') || nameStr.includes('sp500') || nameStr.includes('s&p 500')) country = 'USA';
+                    else if (nameStr.includes('emerging')) country = 'Emerging Markets';
+                }
+            }
+
+            if (fp && fp.categoryName) {
+                detailedType = `${quote.quoteType === 'ETF' ? 'ETF' : 'Fondo'} ${fp.categoryName}`;
+            } else if (nameStr.includes('bond') || nameStr.includes('obbligazion')) {
+                detailedType = `${quote.quoteType === 'ETF' ? 'ETF' : 'Fondo'} Obbligazionario`;
+            } else if (nameStr.includes('equity') || nameStr.includes('azionario') || nameStr.includes('world') || nameStr.includes('stock')) {
+                detailedType = `${quote.quoteType === 'ETF' ? 'ETF' : 'Fondo'} Azionario`;
+            } else if (nameStr.includes('monetary') || nameStr.includes('monetario') || nameStr.includes('cash') || nameStr.includes('rate')) {
+                detailedType = `${quote.quoteType === 'ETF' ? 'ETF' : 'Fondo'} Monetario`;
+            }
+        }
+
+        return {
+            ticker: ticker,
+            name: quote.shortName || quote.longName || ticker,
+            currency: quote.currency || 'USD',
+            exchange: quote.fullExchangeName || quote.exchange || '',
+            type: detailedType,
+            country: country,
+            currentPrice: quote.regularMarketPrice || 0,
+            changePercent: quote.regularMarketChangePercent || 0,
+            pe: quote.trailingPE || quote.forwardPE || null
+        };
+    } catch (e) {
+        console.error(`Metadata fetch error for ${ticker}:`, e.message);
+        return null;
+    }
+}
+
 function getMarketStatus() {
     const now = new Date();
     const day = now.getUTCDay(); // 0=Sun, 6=Sat
@@ -285,25 +355,19 @@ app.post('/api/assets', async (req, res) => {
         };
 
         if (ticker) {
-            const quote = await yahooFinance.quote(ticker).catch(() => null);
-            let country = null;
-            try {
-                const summary = await yahooFinance.quoteSummary(ticker, { modules: ["summaryProfile"] });
-                country = summary.summaryProfile ? summary.summaryProfile.country : null;
-            } catch (e) { console.warn(`Could not fetch summaryProfile for ${ticker}`); }
-
-            if (quote) {
+            const metadata = await fetchAssetMetadata(ticker);
+            if (metadata) {
                 assetData = {
                     id:           ticker,
                     ticker,
-                    name:         name || quote.shortName || quote.longName || ticker,
-                    type:         type || (quote.quoteType === 'EQUITY' ? 'Stock' : quote.quoteType || 'Other'),
-                    exchange:     exchange || quote.fullExchangeName || quote.exchange || 'Unknown',
-                    currency:     currency || quote.currency || 'USD',
-                    currentPrice: parseFloat(currentPrice || quote.regularMarketPrice || 0),
-                    changePercent:parseFloat(changePercent || quote.regularMarketChangePercent || 0),
-                    pe:           pe ? parseFloat(pe) : (quote.trailingPE || quote.forwardPE || null),
-                    country:      country
+                    name:         name || metadata.name,
+                    type:         type || metadata.type,
+                    exchange:     exchange || metadata.exchange,
+                    currency:     currency || metadata.currency,
+                    currentPrice: parseFloat(currentPrice || metadata.currentPrice),
+                    changePercent:parseFloat(changePercent || metadata.changePercent),
+                    pe:           pe ? parseFloat(pe) : metadata.pe,
+                    country:      metadata.country
                 };
             }
         }
@@ -1107,54 +1171,12 @@ app.get('/api/validate-ticker', async (req, res) => {
     }
 
     try {
-        const quote = await yahooFinance.quote(ticker);
-        if (!quote) return res.json({ valid: false });
-
-        let country = null;
-        let detailedType = quote.quoteType === 'EQUITY' ? 'Azionario' : (quote.quoteType || 'Altro');
-
-        try {
-            const summary = await yahooFinance.quoteSummary(ticker, { 
-                modules: ["summaryProfile", "assetProfile", "fundProfile"] 
-            });
-
-            if (summary.summaryProfile && summary.summaryProfile.country) {
-                country = summary.summaryProfile.country;
-            } else if (summary.assetProfile && summary.assetProfile.country) {
-                country = summary.assetProfile.country;
-            }
-
-            if (quote.quoteType === 'ETF') {
-                const fp = summary.fundProfile;
-                const nameStr = (quote.longName || quote.shortName || "").toLowerCase();
-                
-                if (fp && fp.categoryName) {
-                    detailedType = `ETF ${fp.categoryName}`;
-                } else if (nameStr.includes('bond') || nameStr.includes('obbligazion')) {
-                    detailedType = 'ETF Obbligazionario';
-                } else if (nameStr.includes('equity') || nameStr.includes('azionario') || nameStr.includes('world') || nameStr.includes('stock')) {
-                    detailedType = 'ETF Azionario';
-                } else if (nameStr.includes('monetary') || nameStr.includes('monetario') || nameStr.includes('cash') || nameStr.includes('rate')) {
-                    detailedType = 'ETF Monetario';
-                } else {
-                    detailedType = 'ETF';
-                }
-            }
-        } catch (e) {
-            console.error("Metadata fetch failed for", ticker, e.message);
-        }
+        const metadata = await fetchAssetMetadata(ticker);
+        if (!metadata) return res.json({ valid: false });
 
         res.json({
             valid: true,
-            ticker,
-            name: quote.shortName || quote.longName || ticker,
-            currency: quote.currency || 'USD',
-            exchange: quote.fullExchangeName || quote.exchange || '',
-            type: detailedType,
-            country: country || 'N/A',
-            currentPrice: quote.regularMarketPrice || 0,
-            changePercent: quote.regularMarketChangePercent || 0,
-            pe: quote.trailingPE || quote.forwardPE || null
+            ...metadata
         });
     } catch {
         // Try search fallback
@@ -2173,27 +2195,19 @@ async function updateMarketData(force = false) {
                 }
             } else {
                 // Default Yahoo Finance
-                const quote = await yahooFinance.quote(asset.ticker);
-                if (!quote) {
-                    throw new Error(`No quote found for ${asset.ticker}`);
+                const metadata = await fetchAssetMetadata(asset.ticker);
+                if (!metadata) {
+                    throw new Error(`No metadata found for ${asset.ticker}`);
                 }
                 
-                let country = asset.country;
-                if (!country) {
-                    try {
-                        const summary = await yahooFinance.quoteSummary(asset.ticker, { modules: ["summaryProfile"] });
-                        country = summary.summaryProfile ? summary.summaryProfile.country : null;
-                    } catch (e) { /* ignore summaryProfile errors */ }
-                }
-
                 updateData = {
-                    price: quote.regularMarketPrice || asset.currentPrice,
-                    change: quote.regularMarketChangePercent || asset.changePercent,
-                    pe: quote.trailingPE || quote.forwardPE || asset.pe,
-                    name: quote.shortName || quote.longName || asset.name,
-                    currency: quote.currency || asset.currency,
-                    exchange: quote.fullExchangeName || quote.exchange || asset.exchange,
-                    country: country
+                    price: metadata.currentPrice || asset.currentPrice,
+                    change: metadata.changePercent || asset.changePercent,
+                    pe: metadata.pe || asset.pe,
+                    name: metadata.name || asset.name,
+                    currency: metadata.currency || asset.currency,
+                    exchange: metadata.exchange || asset.exchange,
+                    country: metadata.country || asset.country
                 };
             }
 
