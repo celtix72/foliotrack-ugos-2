@@ -1061,6 +1061,53 @@ app.post('/api/portfolios/:id/reconcile', async (req, res) => {
     });
 });
 
+app.post('/api/admin/rebuild-history', async (req, res) => {
+    try {
+        logger.info('Rebuilding performance history starting...');
+        
+        // 1. Clear database table and cache
+        database.db.prepare('DELETE FROM portfolio_history').run();
+        performanceResultsCache = {};
+        
+        // 2. Recalculate for ALL portfolios
+        const portfolios = database.db.prepare('SELECT id FROM portfolios').all();
+        logger.info(`Found ${portfolios.length} portfolios to rebuild.`);
+        
+        for (const p of portfolios) {
+            const dataPoints = await calculatePerformanceHistory(p.id, 'ALL');
+            const insert = database.db.prepare(`
+                INSERT INTO portfolio_history (portfolioId, date, totalValue, cashValue, assetValue)
+                VALUES (?, ?, ?, ?, ?)
+            `);
+            
+            database.db.transaction(() => {
+                for (const pt of dataPoints) {
+                    insert.run(p.id, pt.date, pt.value, pt.cash || 0, pt.assets || 0);
+                }
+            })();
+        }
+        
+        // 3. Recalculate Global
+        const globalPoints = await calculatePerformanceHistory(null, 'ALL');
+        const insertGlobal = database.db.prepare(`
+            INSERT INTO portfolio_history (portfolioId, date, totalValue, cashValue, assetValue)
+            VALUES (NULL, ?, ?, ?, ?)
+        `);
+        
+        database.db.transaction(() => {
+            for (const pt of globalPoints) {
+                insertGlobal.run(pt.date, pt.value, pt.cash || 0, pt.assets || 0);
+            }
+        })();
+
+        logger.info('Performance history rebuilt successfully.');
+        res.json({ success: true, message: 'History rebuilt successfully' });
+    } catch (err) {
+        logger.error('Failed to rebuild history', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ════════════════════════════════════════════════════════════════════════════
 // TRANSACTIONS API
 // ════════════════════════════════════════════════════════════════════════════
