@@ -1081,7 +1081,7 @@ app.get('/api/validate-ticker', async (req, res) => {
 });
 
 // Bulk import: save multiple validated transactions at once
-app.post('/api/transactions/bulk', (req, res) => {
+app.post('/api/transactions/bulk', async (req, res) => {
     const { portfolioId, transactions } = req.body;
     if (!portfolioId || !transactions || !transactions.length) {
         return res.status(400).send('portfolioId and transactions[] required');
@@ -1095,11 +1095,6 @@ app.post('/api/transactions/bulk', (req, res) => {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
-    const insertAsset = database.db.prepare(`
-        INSERT OR IGNORE INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, updatedAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
-    `);
-
     const results = [];
     const importMany = database.db.transaction((txs) => {
         for (const t of txs) {
@@ -1110,11 +1105,11 @@ app.post('/api/transactions/bulk', (req, res) => {
                         INSERT OR IGNORE INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, country, isManual, updatedAt)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
                     `).run(
+                        t.assetId || null, 
                         t.assetTicker, 
-                        t.assetTicker, 
-                        t.assetName || t.assetTicker,
+                        t.assetName || t.assetTicker, 
                         t.assetType || 'Stock', 
-                        t.assetExchange || '',
+                        t.assetExchange || 'N/A', 
                         t.assetCurrency || 'USD', 
                         t.assetPrice || 0,
                         0, 
@@ -2145,7 +2140,8 @@ async function updateMarketData(force = false) {
             }
         }
     }
-    database.recalculateAll();
+    const liveRate = await getEurUsdRate();
+    database.recalculateAll(liveRate);
     logger.info(`Market data update cycle completed.`);
 }
 
