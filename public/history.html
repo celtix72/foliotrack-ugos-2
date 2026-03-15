@@ -305,7 +305,8 @@
         async function loadSidebarPortfolios() {
             try {
                 const res = await fetch('/api/portfolios');
-                const p = await res.json();
+                const data = await res.json();
+                const p = data.portfolios || [];
                 document.getElementById('sidebar-portfolios').innerHTML = p.map(port => `
                     <a href="/portfolio?id=${port.id}" class="flex items-center justify-between px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
                         <div class="flex items-center gap-2">

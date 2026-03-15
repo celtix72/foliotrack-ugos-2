@@ -60,7 +60,8 @@
             const exRes = await fetch(`/api/market/exchange-rate?t=${Date.now()}`);
             const exData = await exRes.json();
             const pRes = await fetch(`/api/portfolios?t=${Date.now()}`);
-            const portfolios = await pRes.json();
+            const pData = await pRes.json();
+            const portfolios = pData.portfolios || [];
             const wRes = await fetch(`/api/watchlist?t=${Date.now()}`);
             const watchlist = await wRes.json();
 

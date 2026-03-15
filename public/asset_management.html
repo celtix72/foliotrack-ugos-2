@@ -301,7 +301,8 @@
     async function loadPortfolios() {
         try {
             const res = await fetch('/api/portfolios');
-            const portfolios = await res.json();
+            const data = await res.json();
+            const portfolios = data.portfolios || [];
             const select = document.getElementById('portfolio-selection');
             select.innerHTML = portfolios.map(p => `<option value="${p.id}">${p.name} (${p.currency})</option>`).join('');
         } catch (err) {

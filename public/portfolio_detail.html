@@ -691,7 +691,8 @@
     async function loadPortfolios() {
         try {
             const res = await fetch('/api/portfolios');
-            const portfolios = await res.json();
+            const data = await res.json();
+            const portfolios = data.portfolios || [];
             const grid = document.getElementById('portfolios-grid');
             if (grid) {
                 grid.innerHTML = portfolios.map(p => `
