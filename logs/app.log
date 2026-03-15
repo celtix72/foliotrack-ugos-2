@@ -24,3 +24,9 @@
 2026-03-15T15:48:29.814Z [INFO] Skipping automatic market update: all markets are closed.
 2026-03-15T15:48:29.819Z [INFO] FolioTrack server running on port 3000
 2026-03-15T15:48:29.819Z [INFO] Database: /Users/mauro/Documents/Progetto_FolioTracker2/foliotrack.db
+2026-03-15T15:49:29.810Z [INFO] Recording daily snapshots for portfolios and dashboard...
+2026-03-15T15:49:29.821Z [INFO] Daily snapshots completed.
+2026-03-15T15:53:29.811Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-15T16:30:18.334Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-15T17:21:55.171Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-15T17:27:55.180Z [INFO] Skipping automatic market update: all markets are closed.
