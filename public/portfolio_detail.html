@@ -1822,6 +1822,7 @@
                 row.yfType     = result.type;
                 row.yfPrice    = result.currentPrice;
                 row.yfPe       = result.pe;
+                row.yfCountry  = result.country;
             } else if (result.suggestions && result.suggestions.length) {
                 row.status      = 'suggestions';
                 row.suggestions = result.suggestions;
@@ -1915,6 +1916,7 @@
             assetType:    r.yfType || 'Stock',
             assetPrice:   r.yfPrice || 0,
             assetPe:      r.yfPe || null,
+            assetCountry: r.yfCountry || 'Global',
             date:         r.date,
             quantity:     r.quantity,
             price:        r.price,
