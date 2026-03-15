@@ -416,6 +416,19 @@
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-2">
+                    <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Data Source</label>
+                    <select id="manual-source" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold" onchange="toggleManualISIN()">
+                        <option value="YF">Yahoo Finance</option>
+                        <option value="B_ITA">Borsa Italiana</option>
+                    </select>
+                </div>
+                <div id="manual-isin-field" class="space-y-2 hidden">
+                    <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">ISIN</label>
+                    <input id="manual-isin" type="text" placeholder="e.g. IT000..." class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold"/>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
                     <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Asset Type</label>
                     <select id="manual-type" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold">
                         <option value="">No Change</option>
@@ -714,11 +727,21 @@
             tBody.innerHTML = holdings.map(h => {
                 const color = h.unrealizedGain >= 0 ? 'emerald' : 'rose';
                 const sign = h.unrealizedGain >= 0 ? '+' : '';
-                const manualBtn = h.isManual ? `
-                    <button onclick="event.stopPropagation(); openManualModal('${h.ticker}', '${h.currency}', ${h.currentPrice}, '${h.type || ''}', '${h.country || ''}')" class="w-6 h-6 rounded bg-amber-500/10 text-amber-500 flex items-center justify-center hover:bg-amber-500/20 transition-colors ml-2" title="Update Price Manually">
+                const errorTag = h.lastUpdateError ? `
+                    <span class="ml-2 px-1.5 py-0.5 rounded-full bg-rose-500 text-[8px] font-black text-white uppercase tracking-tighter" title="${h.lastUpdateError.replace(/"/g, '&quot;')}">Err</span>
+                ` : '';
+
+                const manualBtn = (h.isManual || h.dataSource !== 'YF') ? `
+                    <button onclick="event.stopPropagation(); openManualModal('${h.ticker}', '${h.currency}', ${h.currentPrice}, '${h.type || ''}', '${h.country || ''}', '${h.dataSource || 'YF'}', '${h.isin || ''}')" class="w-6 h-6 rounded bg-amber-500/10 text-amber-500 flex items-center justify-center hover:bg-amber-500/20 transition-colors ml-2" title="Update Price / Source">
                         <span class="material-symbols-outlined text-[14px]">edit_note</span>
                     </button>
-                ` : `<span class="ml-2 text-primary material-symbols-outlined text-[16px]" title="Yahoo Finance">bolt</span>`;
+                    ${errorTag}
+                ` : `
+                    <div class="flex items-center">
+                        <span class="ml-2 text-primary material-symbols-outlined text-[16px]" title="Yahoo Finance">bolt</span>
+                        ${errorTag}
+                    </div>
+                `;
 
                 return `
                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer group/row" onclick="toggleAssetTransactions('${h.ticker}')">
@@ -1713,26 +1736,41 @@
         }
     }
 
-    window.openManualModal = function(ticker, currency, currentPrice, type, country) {
+    window.openManualModal = function(ticker, currency, currentPrice, type = '', country = '', dataSource = 'YF', isin = '') {
+        const modal = document.getElementById('manual-update-modal');
         document.getElementById('manual-ticker').value = ticker;
-        document.getElementById('manual-price').value = currentPrice;
         document.getElementById('manual-currency-label').innerText = currency;
+        document.getElementById('manual-price').value = currentPrice;
         document.getElementById('manual-date').value = new Date().toISOString().split('T')[0];
-        document.getElementById('manual-type').value = type || '';
-        document.getElementById('manual-country').value = country || '';
-        document.getElementById('manual-update-modal').classList.remove('hidden');
+        document.getElementById('manual-type').value = type;
+        document.getElementById('manual-country').value = country;
+        document.getElementById('manual-source').value = dataSource;
+        document.getElementById('manual-isin').value = isin;
+        
+        toggleManualISIN();
+        modal.classList.remove('hidden');
     }
 
-    window.closeManualModal = function() {
-        document.getElementById('manual-update-modal').classList.add('hidden');
+    window.toggleManualISIN = function() {
+        const source = document.getElementById('manual-source').value;
+        const field = document.getElementById('manual-isin-field');
+        if (source === 'B_ITA') {
+            field.classList.remove('hidden');
+        } else {
+            field.classList.add('hidden');
+        }
     }
 
     window.saveManualUpdate = async function() {
-        const ticker = document.getElementById('manual-ticker').value;
-        const price = document.getElementById('manual-price').value;
-        const date = document.getElementById('manual-date').value;
-        const type = document.getElementById('manual-type').value;
-        const country = document.getElementById('manual-country').value;
+        const data = {
+            ticker: document.getElementById('manual-ticker').value,
+            price: document.getElementById('manual-price').value,
+            date: document.getElementById('manual-date').value,
+            type: document.getElementById('manual-type').value,
+            country: document.getElementById('manual-country').value,
+            dataSource: document.getElementById('manual-source').value,
+            isin: document.getElementById('manual-isin').value
+        };
 
         try {
             const res = await fetch('/api/assets/manual-update', {

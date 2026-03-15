@@ -62,6 +62,9 @@ function initDb() {
         pe            REAL,
         country       TEXT,
         isManual      INTEGER NOT NULL DEFAULT 0,
+        dataSource    TEXT    NOT NULL DEFAULT 'YF',
+        isin          TEXT,
+        lastUpdateError TEXT,
         updatedAt     TEXT    NOT NULL DEFAULT (datetime('now'))
       );
 
@@ -94,6 +97,18 @@ function initDb() {
 
     try {
         dbConnection.prepare(`ALTER TABLE assets ADD COLUMN stopLoss REAL`).run();
+    } catch (e) {}
+
+    try {
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN dataSource TEXT NOT NULL DEFAULT 'YF'`).run();
+    } catch (e) {}
+
+    try {
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN isin TEXT`).run();
+    } catch (e) {}
+
+    try {
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN lastUpdateError TEXT`).run();
     } catch (e) {}
 
     // ─── Notifications Table ──────────────────────────────────────────────────

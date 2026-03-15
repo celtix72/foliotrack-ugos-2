@@ -186,6 +186,19 @@
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-widest">Data Source</label>
+                        <select id="edit-data-source" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 text-sm font-bold" onchange="toggleEditISIN()">
+                            <option value="YF">Yahoo Finance</option>
+                            <option value="B_ITA">Borsa Italiana</option>
+                        </select>
+                    </div>
+                    <div id="edit-isin-field" class="space-y-2 hidden">
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-widest">ISIN</label>
+                        <input id="edit-isin" type="text" placeholder="e.g. IT000..." class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 text-sm font-bold"/>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
                         <label class="text-xs font-bold text-slate-400 uppercase tracking-widest">Target Price</label>
                         <input id="edit-target-price" type="number" step="any" placeholder="0.00" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 text-sm font-bold"/>
                     </div>
@@ -194,7 +207,7 @@
                         <input id="edit-stop-loss" type="number" step="any" placeholder="0.00" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 text-sm font-bold"/>
                     </div>
                 </div>
-                <p class="text-[10px] text-slate-500 italic">Leave at 0 to disable the alert.</p>
+                <p class="text-[10px] text-slate-500 italic">Leave at 0 to disable alerts. Choose B_ITA for Borsa Italiana data.</p>
                 <div class="pt-2 flex gap-3">
                     <button onclick="closeAlertModal()" class="flex-1 py-3 rounded-xl font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Cancel</button>
                     <button onclick="saveAlertSettings()" class="flex-1 py-3 rounded-xl font-bold bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">Save Changes</button>
@@ -261,6 +274,7 @@ function renderAssets(filter = '') {
                         <div class="flex items-center gap-2">
                             <p class="font-black text-lg text-slate-900 dark:text-white leading-none">${a.name}</p>
                             ${!a.isMonitored ? '<span class="text-[8px] font-black bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-500 tracking-tighter uppercase">Inactive</span>' : ''}
+                            ${a.lastUpdateError ? `<span class="px-1.5 py-0.5 rounded-full bg-rose-500 text-[8px] font-black text-white uppercase tracking-tighter" title="${a.lastUpdateError.replace(/"/g, '&quot;')}">Err</span>` : ''}
                         </div>
                         <p class="text-[10px] text-slate-400 uppercase font-black tracking-[0.2em] mt-1.5">${a.ticker} • ${a.exchange || 'Market'}</p>
                     </div>
@@ -338,7 +352,21 @@ window.openAlertModal = function(id) {
     document.getElementById('edit-asset-name').innerText = `${a.name} (${a.ticker})`;
     document.getElementById('edit-target-price').value = a.targetPrice || 0;
     document.getElementById('edit-stop-loss').value = a.stopLoss || 0;
+    document.getElementById('edit-data-source').value = a.dataSource || 'YF';
+    document.getElementById('edit-isin').value = a.isin || '';
+    
+    toggleEditISIN();
     document.getElementById('alert-edit-modal').classList.remove('hidden');
+}
+
+window.toggleEditISIN = function() {
+    const source = document.getElementById('edit-data-source').value;
+    const field = document.getElementById('edit-isin-field');
+    if (source === 'B_ITA') {
+        field.classList.remove('hidden');
+    } else {
+        field.classList.add('hidden');
+    }
 }
 
 window.closeAlertModal = function() {
@@ -349,12 +377,14 @@ window.saveAlertSettings = async function() {
     const id = document.getElementById('edit-asset-id').value;
     const targetPrice = parseFloat(document.getElementById('edit-target-price').value || 0);
     const stopLoss = parseFloat(document.getElementById('edit-stop-loss').value || 0);
+    const dataSource = document.getElementById('edit-data-source').value;
+    const isin = document.getElementById('edit-isin').value;
 
     try {
         const res = await fetch(`/api/assets/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ targetPrice, stopLoss, isMonitored: 1 })
+            body: JSON.stringify({ targetPrice, stopLoss, isMonitored: 1, dataSource, isin })
         });
         if (res.ok) {
             closeAlertModal();

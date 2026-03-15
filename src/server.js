@@ -115,19 +115,23 @@ app.get('/api/assets', (req, res) => {
 });
 
 app.post('/api/assets/manual-update', (req, res) => {
-    const { ticker, price, date, type, country } = req.body;
+    const { ticker, price, date, type, country, dataSource, isin } = req.body;
     if (!ticker) return res.status(400).send('Ticker is required');
     
     database.db.prepare(`
         UPDATE assets 
         SET currentPrice = ?, updatedAt = ?, isManual = 1, changePercent = 0,
-            type = COALESCE(?, type), country = COALESCE(?, country)
+            type = COALESCE(?, type), country = COALESCE(?, country),
+            dataSource = COALESCE(?, dataSource), isin = COALESCE(?, isin),
+            lastUpdateError = NULL
         WHERE ticker = ?
     `).run(
         parseFloat(price), 
         date || new Date().toISOString().split('T')[0], 
         type || null,
         country || null,
+        dataSource || 'YF',
+        isin || null,
         ticker
     );
     
@@ -169,7 +173,9 @@ app.post('/api/assets', async (req, res) => {
             currency:     currency || 'USD',
             currentPrice: parseFloat(currentPrice || 0),
             changePercent:parseFloat(changePercent || 0),
-            pe:           pe ? parseFloat(pe) : null
+            pe:           pe ? parseFloat(pe) : null,
+            dataSource:   req.body.dataSource || 'YF',
+            isin:         req.body.isin || null
         };
 
         if (ticker) {
@@ -200,12 +206,13 @@ app.post('/api/assets', async (req, res) => {
         if (existing && assetData.ticker) return res.status(400).send('Asset already in monitoring list');
 
         database.db.prepare(`
-            INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, country, updatedAt)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, country, dataSource, isin, updatedAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
         `).run(
             assetData.id, assetData.ticker, assetData.name, assetData.type,
             assetData.exchange, assetData.currency, assetData.currentPrice,
-            assetData.changePercent, assetData.pe, assetData.country
+            assetData.changePercent, assetData.pe, assetData.country,
+            assetData.dataSource || 'YF', assetData.isin || null
         );
 
         res.status(201).json(assetData);
@@ -216,17 +223,34 @@ app.post('/api/assets', async (req, res) => {
 });
 
 app.put('/api/assets/:id', (req, res) => {
-    const existing = database.db.prepare(`SELECT * FROM assets WHERE id = ?`).get(req.params.id);
-    if (!existing) return res.status(404).send('Asset not found');
+    const { targetPrice, stopLoss, isMonitored, dataSource, isin, name, type, exchange, currency, currentPrice, changePercent, pe } = req.body;
+    const updates = [];
+    const params = [];
 
-    const updated = { ...existing, ...req.body };
-    database.db.prepare(`
-        UPDATE assets SET name=?, type=?, exchange=?, currency=?, currentPrice=?, changePercent=?, pe=?, targetPrice=?, stopLoss=?, updatedAt=datetime('now')
-        WHERE id=?
-    `).run(updated.name, updated.type, updated.exchange, updated.currency,
-           updated.currentPrice, updated.changePercent, updated.pe, 
-           updated.targetPrice || null, updated.stopLoss || null, req.params.id);
+    if (name !== undefined) { updates.push("name = ?"); params.push(name); }
+    if (type !== undefined) { updates.push("type = ?"); params.push(type); }
+    if (exchange !== undefined) { updates.push("exchange = ?"); params.push(exchange); }
+    if (currency !== undefined) { updates.push("currency = ?"); params.push(currency); }
+    if (currentPrice !== undefined) { updates.push("currentPrice = ?"); params.push(currentPrice); }
+    if (changePercent !== undefined) { updates.push("changePercent = ?"); params.push(changePercent); }
+    if (pe !== undefined) { updates.push("pe = ?"); params.push(pe); }
+    if (targetPrice !== undefined) { updates.push("targetPrice = ?"); params.push(targetPrice); }
+    if (stopLoss !== undefined) { updates.push("stopLoss = ?"); params.push(stopLoss); }
+    if (isMonitored !== undefined) { updates.push("isMonitored = ?"); params.push(isMonitored); }
+    if (dataSource !== undefined) { updates.push("dataSource = ?"); params.push(dataSource); }
+    if (isin !== undefined) { updates.push("isin = ?"); params.push(isin); }
 
+    // Clear error if data source or ISIN is changed
+    if (dataSource !== undefined || isin !== undefined) {
+        updates.push("lastUpdateError = NULL");
+        updates.push("updatedAt = datetime('now')");
+    }
+
+    if (updates.length > 0) {
+        params.push(req.params.id);
+        const sql = `UPDATE assets SET ${updates.join(', ')} WHERE id = ?`;
+        database.db.prepare(sql).run(...params);
+    }
     res.json(database.db.prepare(`SELECT * FROM assets WHERE id = ?`).get(req.params.id));
 });
 
@@ -1871,68 +1895,101 @@ async function updateMarketData() {
     console.log(`Updating market data for ${assets.length} assets...`);
 
     for (const asset of assets) {
-        if (!asset.ticker || asset.ticker === 'CASH' || asset.isManual === 1) continue;
+        if (!asset.ticker || asset.ticker === 'CASH') continue;
+        if (asset.isManual === 1 && (!asset.dataSource || asset.dataSource === 'YF')) continue;
+        
         try {
-            const quote = await yahooFinance.quote(asset.ticker);
-            if (!quote) {
-                console.warn(`No quote for ${asset.ticker}, marking as manual.`);
-                database.db.prepare(`UPDATE assets SET isManual=1 WHERE ticker=?`).run(asset.ticker);
-                continue;
-            }
+            let updateData = null;
 
-            let country = asset.country;
-            if (!country) {
-                try {
-                    const summary = await yahooFinance.quoteSummary(asset.ticker, { modules: ["summaryProfile"] });
-                    country = summary.summaryProfile ? summary.summaryProfile.country : null;
-                } catch (e) { /* ignore summaryProfile errors */ }
-            }
-
-            database.db.prepare(`
-                UPDATE assets
-                SET currentPrice=?, changePercent=?, pe=?, name=?, currency=?, exchange=?, country=?, updatedAt=datetime('now')
-                WHERE ticker=?
-            `).run(
-                quote.regularMarketPrice      || asset.currentPrice,
-                quote.regularMarketChangePercent || asset.changePercent,
-                quote.trailingPE || quote.forwardPE || asset.pe,
-                quote.shortName  || quote.longName  || asset.name,
-                quote.currency   || asset.currency,
-                quote.fullExchangeName || quote.exchange || asset.exchange,
-                country,
-                asset.ticker
-            );
-
-            // Alert Checks
-            const newPrice = quote.regularMarketPrice || asset.currentPrice;
-            if (asset.targetPrice > 0 && newPrice >= asset.targetPrice) {
-                // Check if already notified in last 24h
-                const existing = database.db.prepare(`
-                    SELECT id FROM notifications 
-                    WHERE ticker = ? AND type = 'TARGET' AND date > datetime('now','-1 day')
-                `).get(asset.ticker);
-                if (!existing) {
-                    database.db.prepare(`
-                        INSERT INTO notifications (type, title, message, ticker)
-                        VALUES (?, ?, ?, ?)
-                    `).run('TARGET', 'Target Price Reached', `${asset.ticker} has reached your target of ${asset.targetPrice} (Price: ${newPrice})`, asset.ticker);
+            if (asset.dataSource === 'B_ITA' && asset.isin) {
+                const result = await B_ITA(asset.isin);
+                if (result.success) {
+                    updateData = {
+                        price: result.price,
+                        change: result.variation,
+                        pe: asset.pe,
+                        name: asset.name,
+                        currency: asset.currency,
+                        exchange: asset.exchange,
+                        country: asset.country
+                    };
+                } else {
+                    throw new Error(`B_ITA failed: ${result.error || 'Unknown error'}`);
                 }
+            } else {
+                // Default Yahoo Finance
+                const quote = await yahooFinance.quote(asset.ticker);
+                if (!quote) {
+                    throw new Error(`No quote found for ${asset.ticker}`);
+                }
+                
+                let country = asset.country;
+                if (!country) {
+                    try {
+                        const summary = await yahooFinance.quoteSummary(asset.ticker, { modules: ["summaryProfile"] });
+                        country = summary.summaryProfile ? summary.summaryProfile.country : null;
+                    } catch (e) { /* ignore summaryProfile errors */ }
+                }
+
+                updateData = {
+                    price: quote.regularMarketPrice || asset.currentPrice,
+                    change: quote.regularMarketChangePercent || asset.changePercent,
+                    pe: quote.trailingPE || quote.forwardPE || asset.pe,
+                    name: quote.shortName || quote.longName || asset.name,
+                    currency: quote.currency || asset.currency,
+                    exchange: quote.fullExchangeName || quote.exchange || asset.exchange,
+                    country: country
+                };
             }
-            if (asset.stopLoss > 0 && newPrice <= asset.stopLoss) {
-                const existing = database.db.prepare(`
-                    SELECT id FROM notifications 
-                    WHERE ticker = ? AND type = 'STOP' AND date > datetime('now','-1 day')
-                `).get(asset.ticker);
-                if (!existing) {
-                    database.db.prepare(`
-                        INSERT INTO notifications (type, title, message, ticker)
-                        VALUES (?, ?, ?, ?)
-                    `).run('STOP', 'Stop Loss Triggered', `${asset.ticker} has dropped to your stop loss of ${asset.stopLoss} (Price: ${newPrice})`, asset.ticker);
+
+            if (updateData) {
+                database.db.prepare(`
+                    UPDATE assets
+                    SET currentPrice=?, changePercent=?, pe=?, name=?, currency=?, exchange=?, country=?, lastUpdateError=NULL, updatedAt=datetime('now')
+                    WHERE ticker=?
+                `).run(
+                    updateData.price,
+                    updateData.change,
+                    updateData.pe,
+                    updateData.name,
+                    updateData.currency,
+                    updateData.exchange,
+                    updateData.country,
+                    asset.ticker
+                );
+
+                // Alert Checks
+                const newPrice = updateData.price;
+                if (asset.targetPrice > 0 && newPrice >= asset.targetPrice) {
+                    const existing = database.db.prepare(`
+                        SELECT id FROM notifications 
+                        WHERE ticker = ? AND type = 'TARGET' AND date > datetime('now','-1 day')
+                    `).get(asset.ticker);
+                    if (!existing) {
+                        database.db.prepare(`
+                            INSERT INTO notifications (type, title, message, ticker)
+                            VALUES (?, ?, ?, ?)
+                        `).run('TARGET', 'Target Price Reached', `${asset.ticker} has reached your target of ${asset.targetPrice} (Price: ${newPrice})`, asset.ticker);
+                    }
+                }
+                if (asset.stopLoss > 0 && newPrice <= asset.stopLoss) {
+                    const existing = database.db.prepare(`
+                        SELECT id FROM notifications 
+                        WHERE ticker = ? AND type = 'STOP' AND date > datetime('now','-1 day')
+                    `).get(asset.ticker);
+                    if (!existing) {
+                        database.db.prepare(`
+                            INSERT INTO notifications (type, title, message, ticker)
+                            VALUES (?, ?, ?, ?)
+                        `).run('STOP', 'Stop Loss Triggered', `${asset.ticker} has dropped to your stop loss of ${asset.stopLoss} (Price: ${newPrice})`, asset.ticker);
+                    }
                 }
             }
         } catch (err) {
             console.error(`Failed to update ${asset.ticker}:`, err.message);
-            if (err.message.includes('Not Found') || err.message.includes('404')) {
+            database.db.prepare(`UPDATE assets SET lastUpdateError=? WHERE ticker=?`).run(err.message, asset.ticker);
+            // If it's a 404/Not Found on YF, mark as manual to stop hammering
+            if (asset.dataSource === 'YF' && (err.message.includes('Not Found') || err.message.includes('404'))) {
                 database.db.prepare(`UPDATE assets SET isManual=1 WHERE ticker=?`).run(asset.ticker);
             }
         }
