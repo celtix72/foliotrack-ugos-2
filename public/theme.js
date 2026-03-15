@@ -186,12 +186,19 @@
     window.formatCurrency = function(val, currency = 'USD', decimals = 2) {
         if (val === null || val === undefined) return '—';
         const value = parseFloat(val);
-        return new Intl.NumberFormat('de-DE', { 
-            style: 'currency', 
-            currency: currency,
-            minimumFractionDigits: 0,
-            maximumFractionDigits: decimals
-        }).format(value).replace(',00', '');
+        if (!currency || currency.length !== 3) {
+            return formatNumber(val, decimals);
+        }
+        try {
+            return new Intl.NumberFormat('de-DE', { 
+                style: 'currency', 
+                currency: currency,
+                minimumFractionDigits: 0,
+                maximumFractionDigits: decimals
+            }).format(value).replace(',00', '');
+        } catch (e) {
+            return formatNumber(val, decimals) + ' ' + currency;
+        }
     };
 
     window.formatNumber = function(val, decimals = 2) {

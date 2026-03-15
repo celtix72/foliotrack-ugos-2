@@ -617,24 +617,16 @@
     // Using global formatting functions from theme.js
 
     async function init() {
-        console.log("INIT CALLED");
         currentPortfolioId = getParam('id');
-        console.log("currentPortfolioId:", currentPortfolioId);
         if (currentPortfolioId) {
-            console.log("SHOWING DETAIL VIEW");
             document.getElementById('portfolio-detail-view').classList.remove('hidden');
             document.getElementById('portfolio-list-view').classList.add('hidden');
             loadPortfolioDetails();
             initPerformanceChart();
         } else {
-            console.log("SHOWING LIST VIEW");
             const listView = document.getElementById('portfolio-list-view');
-            console.log("listView element:", listView);
             if (listView) {
                 listView.classList.remove('hidden');
-                console.log("HIDDEN CLASS REMOVED FROM LIST VIEW");
-            } else {
-                console.error("listView element NOT FOUND");
             }
             document.getElementById('portfolio-detail-view').classList.add('hidden');
             loadPortfolios();
@@ -860,7 +852,7 @@
                         </td>
                         <td class="px-6 py-4 text-right">
                             ${!isCash ? `
-                                <div class="font-mono text-xs font-bold">${formatNumber(t.quantity, 0)} @ ${formatCurrency(t.price, t.assetTicker === 'CASH' ? p.currency : '')}</div>
+                                <div class="font-mono text-xs font-bold">${formatNumber(t.quantity, 0)} @ ${formatCurrency(t.price, (t.assetTicker === 'CASH' || !t.assetTicker) ? p.currency : (h ? h.currency : p.currency))}</div>
                                 <div class="text-[9px] text-slate-400">FX: ${t.exchangeRate !== 1 ? t.exchangeRate : '1:1'}</div>
                             ` : '—'}
                         </td>
