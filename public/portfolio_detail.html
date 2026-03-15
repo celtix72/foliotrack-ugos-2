@@ -843,6 +843,9 @@
                     total = (t.quantity * t.price + t.commission + t.tax) / t.exchangeRate;
                 }
 
+                const asset = p.holdings?.find(hold => hold.ticker === t.assetTicker);
+                const displayCurr = (t.assetTicker === 'CASH' || !t.assetTicker) ? p.currency : (asset ? asset.currency : p.currency);
+
                 return `
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                         <td class="px-6 py-4 font-mono text-xs text-slate-500">${t.date}</td>
@@ -852,7 +855,7 @@
                         </td>
                         <td class="px-6 py-4 text-right">
                             ${!isCash ? `
-                                <div class="font-mono text-xs font-bold">${formatNumber(t.quantity, 0)} @ ${formatCurrency(t.price, (t.assetTicker === 'CASH' || !t.assetTicker) ? p.currency : (h ? h.currency : p.currency))}</div>
+                                <div class="font-mono text-xs font-bold">${formatNumber(t.quantity, 0)} @ ${formatCurrency(t.price, displayCurr)}</div>
                                 <div class="text-[9px] text-slate-400">FX: ${t.exchangeRate !== 1 ? t.exchangeRate : '1:1'}</div>
                             ` : '—'}
                         </td>
