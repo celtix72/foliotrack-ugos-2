@@ -1190,6 +1190,7 @@
     // ─── Performance Chart Logic ───────────────────────────────────────────────
     let performanceChart = null;
     let currentChartRange = '1M';
+    let currentPerformanceData = []; // Store raw API records
 
     function initPerformanceChart() {
         if (performanceChart) performanceChart.destroy();
@@ -1212,11 +1213,24 @@
                     fill: true,
                     tension: 0.4,
                     borderWidth: 2,
-                    pointRadius: 0,
-                    pointHoverRadius: 6,
-                    pointHoverBackgroundColor: '#135bec',
-                    pointHoverBorderColor: '#fff',
-                    pointHoverBorderWidth: 2,
+                    pointRadius: (context) => {
+                        const idx = context.dataIndex;
+                        const data = currentPerformanceData[idx];
+                        return (data && data.events && data.events.length > 0) ? 6 : 0;
+                    },
+                    pointBackgroundColor: (context) => {
+                        const idx = context.dataIndex;
+                        const data = currentPerformanceData[idx];
+                        if (!data || !data.events || data.events.length === 0) return '#135bec';
+                        const firstType = data.events[0].type;
+                        if (firstType === 'BUY') return '#10b981';
+                        if (firstType === 'SELL') return '#ef4444';
+                        if (firstType === 'DIVIDEND') return '#3b82f6';
+                        return '#135bec';
+                    },
+                    pointBorderWidth: 2,
+                    pointBorderColor: '#fff',
+                    pointHoverRadius: 8,
                     yAxisID: 'y'
                 }, {
                     label: 'Net Profit/Loss',
@@ -1253,7 +1267,16 @@
                         callbacks: {
                             label: (context) => {
                                 const label = context.dataset.label || '';
-                                return `${label}: ${formatCurrency(context.parsed.y)}`;
+                                let text = `${label}: ${formatCurrency(context.parsed.y)}`;
+                                
+                                // Add transaction info if present
+                                const data = currentPerformanceData[context.dataIndex];
+                                if (data && data.events && data.events.length > 0) {
+                                    data.events.forEach(e => {
+                                        text += `\n✦ ${e.type}: ${e.ticker} (${formatCurrency(e.amount)})`;
+                                    });
+                                }
+                                return text;
                             }
                         }
                     }
@@ -1303,6 +1326,7 @@
         try {
             const res = await fetch(`/api/analytics/portfolio-performance/${currentPortfolioId}?range=${currentChartRange}`);
             const data = await res.json();
+            currentPerformanceData = data; // Keep raw data for points/tooltips
             
             performanceChart.data.labels = data.map(d => {
                 const date = new Date(d.date);

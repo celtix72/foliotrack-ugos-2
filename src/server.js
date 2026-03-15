@@ -1084,6 +1084,7 @@ app.get('/api/analytics/portfolio-performance/:id', async (req, res) => {
             let cash = portfolio.initialCash;
             let netDeposits = portfolio.initialCash;
             const holdings = {};
+            const events = [];
 
             for (const t of transactions) {
                 if (t.date > dateStr) break;
@@ -1094,6 +1095,14 @@ app.get('/api/analytics/portfolio-performance/:id', async (req, res) => {
                 const tax    = t.tax          || 0;
                 const fx     = t.exchangeRate || 1;
                 const amount = t.amount       || 0;
+
+                if (t.date === dateStr && ['BUY', 'SELL', 'DIVIDEND'].includes(t.type)) {
+                    events.push({
+                        type: t.type,
+                        ticker: t.assetTicker,
+                        amount: amount || (qty * price) // fallback for buy/sell
+                    });
+                }
 
                 switch (t.type) {
                     case 'DEPOSIT':    
@@ -1146,7 +1155,8 @@ app.get('/api/analytics/portfolio-performance/:id', async (req, res) => {
                 value: Math.round((cash + assetValue) * 100) / 100,
                 profit: Math.round((cash + assetValue - netDeposits) * 100) / 100,
                 cash: Math.round(cash * 100) / 100,
-                assets: Math.round(assetValue * 100) / 100
+                assets: Math.round(assetValue * 100) / 100,
+                events: events
             });
 
             currentDate.setDate(currentDate.getDate() + 1);
