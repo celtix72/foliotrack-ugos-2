@@ -5,6 +5,7 @@ const cors       = require('cors');
 const path       = require('path');
 const dotenv     = require('dotenv');
 const YahooFinance = require('yahoo-finance2').default;
+const axios      = require('axios');
 
 dotenv.config();
 
@@ -41,6 +42,54 @@ function clearPerformanceCache() {
     performanceResultsCache = {};
     console.log('Performance result cache invalidated.');
 }
+
+// ─── BORSA ITALIANA SCRAPER ──────────────────────────────────────────────────
+async function B_ITA(isin, assetType = '') {
+    const searchUrl = `https://www.borsaitaliana.it/borsa/search/scheda.html?code=${isin}&lang=it`;
+    try {
+        const response = await axios.get(searchUrl, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            },
+            timeout: 10000
+        });
+        const html = response.data;
+        const finalUrl = response.request.res.responseUrl || searchUrl;
+
+        // Scraping Logic using robust Regex
+        let price = null;
+        // Primary pattern: span with -formatPrice class
+        const priceMatch = html.match(/-formatPrice\">\s*<strong>\s*([\d,.]+)\s*<\/strong>/i);
+        if (priceMatch && priceMatch[1]) {
+            price = parseFloat(priceMatch[1].replace(/\./g, '').replace(',', '.'));
+        } else {
+            // Secondary fallback pattern
+            const priceMatchAlt = html.match(/<strong>\s*([\d,.]+)\s*<\/span>\s*<\/strong>/i);
+            if (priceMatchAlt && priceMatchAlt[1]) {
+                price = parseFloat(priceMatchAlt[1].replace(/\./g, '').replace(',', '.'));
+            }
+        }
+
+        // Variation: look for percentage pattern
+        let variation = null;
+        const varMatch = html.match(/([+-]?[\d,.]+)\s*%\s*<\/span>/i);
+        if (varMatch && varMatch[1]) {
+            variation = parseFloat(varMatch[1].replace(',', '.'));
+        }
+
+        return { 
+            success: !!price, 
+            price, 
+            variation, 
+            url: finalUrl,
+            isin
+        };
+    } catch (err) {
+        console.error(`B_ITA Scraper error for ${isin}:`, err.message);
+        return { success: false, error: err.message, url: searchUrl, isin };
+    }
+}
+// ────────────────────────────────────────────────────────────────────────────
 
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 // ────────────────────────────────────────────────────────────────────────────
@@ -90,6 +139,14 @@ app.get('/api/assets/:id', (req, res) => {
     const row = database.db.prepare(`SELECT * FROM assets WHERE id = ?`).get(req.params.id);
     if (!row) return res.status(404).send('Asset not found');
     res.json(row);
+});
+
+// Borsa Italiana Debug Endpoint
+app.post('/api/debug/borsa-italiana', async (req, res) => {
+    const { isin, assetType } = req.body;
+    if (!isin) return res.status(400).send('ISIN is required');
+    const result = await B_ITA(isin, assetType);
+    res.json(result);
 });
 
 app.post('/api/assets', async (req, res) => {

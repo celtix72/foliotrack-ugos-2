@@ -306,6 +306,58 @@
     </div>
 </div>
 </section>
+<!-- Scraper Debug (B_ITA) -->
+<section class="space-y-4">
+<h2 class="text-lg font-bold border-l-4 border-amber-500 pl-3">Diagnostic Tools</h2>
+<div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-6">
+    <div>
+        <h3 class="font-bold text-sm mb-1">Borsa Italiana Scraper Test</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Verify data extraction for ISINs not covered by Yahoo Finance.</p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-1.5">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ISIN Code</label>
+                <input id="debug-isin" type="text" placeholder="e.g. IT0004532559" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 text-sm px-4 focus:ring-amber-500/50 focus:border-amber-500"/>
+            </div>
+            <div class="space-y-1.5">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Asset Category</label>
+                <select id="debug-type" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 text-sm px-4 focus:ring-amber-500/50">
+                    <option value="obbligazioni">Obbligazioni (Bonds)</option>
+                    <option value="azioni">Azioni (Stocks)</option>
+                    <option value="etf">ETF</option>
+                </select>
+            </div>
+        </div>
+        
+        <button id="test-scraper-btn" class="mt-4 px-6 py-2.5 bg-amber-500 text-white rounded-lg text-sm font-bold hover:bg-amber-600 transition-all shadow-lg shadow-amber-500/20 flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm">search_check</span> Run Diagnostic
+        </button>
+    </div>
+
+    <div id="scraper-result" class="hidden animate-in fade-in slide-in-from-top-2 duration-300">
+        <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 space-y-3">
+            <div class="flex items-center justify-between">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Result</p>
+                <span id="debug-status" class="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter">SUCCESS</span>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <p class="text-xs text-slate-500">Last Price</p>
+                    <p id="debug-price" class="text-xl font-mono font-black text-slate-900 dark:text-white">--</p>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500">Variation</p>
+                    <p id="debug-variation" class="text-xl font-mono font-black">--</p>
+                </div>
+            </div>
+            <div class="pt-2 border-t border-slate-100 dark:border-slate-800">
+                <p class="text-[9px] text-slate-400 truncate">Source URL: <a id="debug-url" href="#" target="_blank" class="text-amber-500 hover:underline">--</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+
 <!-- Danger Zone -->
 <section class="space-y-4 pb-12">
 <h2 class="text-lg font-bold border-l-4 border-rose-500 pl-3 text-rose-500">Danger Zone</h2>
@@ -533,6 +585,53 @@
                     confirmResetBtn.disabled = false;
                     confirmResetBtn.textContent = 'Yes, Delete All';
                     alert('Reset failed: ' + err.message);
+                }
+            });
+        }
+
+        // B_ITA Scraper Debug logic
+        const testBtn = document.getElementById('test-scraper-btn');
+        const resultArea = document.getElementById('scraper-result');
+        if (testBtn) {
+            testBtn.addEventListener('click', async () => {
+                const isin = document.getElementById('debug-isin').value.trim();
+                const type = document.getElementById('debug-type').value;
+                if (!isin) return alert('Please enter an ISIN');
+
+                testBtn.disabled = true;
+                testBtn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">sync</span> Running...';
+                resultArea.classList.add('hidden');
+
+                try {
+                    const res = await fetch('/api/debug/borsa-italiana', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ isin, assetType: type })
+                    });
+                    const data = await res.json();
+                    
+                    const statusEl = document.getElementById('debug-status');
+                    if (data.success) {
+                        statusEl.innerText = 'SUCCESS';
+                        statusEl.className = 'px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter bg-emerald-500/10 text-emerald-500';
+                        document.getElementById('debug-price').innerText = data.price;
+                        document.getElementById('debug-variation').innerText = (data.variation >= 0 ? '+' : '') + data.variation + '%';
+                        document.getElementById('debug-variation').className = 'text-xl font-mono font-black ' + (data.variation >= 0 ? 'text-emerald-500' : 'text-rose-500');
+                    } else {
+                        statusEl.innerText = 'FAILED';
+                        statusEl.className = 'px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter bg-rose-500/10 text-rose-500';
+                        document.getElementById('debug-price').innerText = 'Err';
+                        document.getElementById('debug-variation').innerText = '--';
+                        document.getElementById('debug-variation').className = 'text-xl font-mono font-black text-slate-400';
+                    }
+                    document.getElementById('debug-url').innerText = data.url;
+                    document.getElementById('debug-url').href = data.url;
+                    resultArea.classList.remove('hidden');
+                } catch (err) {
+                    alert('Error: ' + err.message);
+                } finally {
+                    testBtn.disabled = false;
+                    testBtn.innerHTML = '<span class="material-symbols-outlined text-sm">search_check</span> Run Diagnostic';
                 }
             });
         }
