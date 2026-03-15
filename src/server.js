@@ -1333,6 +1333,31 @@ app.get('/api/analytics/portfolio-performance/:id', async (req, res) => {
 
         const uniqueTickers = [...new Set(transactions.map(t => t.assetTicker).filter(Boolean))];
         const historicalPrices = {}; 
+        const fxRates = {};
+
+        // Fetch historical EUR/USD if portfolio is EUR
+        if (portfolio.currency === 'EUR') {
+            try {
+                const fxCacheKey = `EURUSD_history_${startDate.toISOString().split('T')[0]}`;
+                if (historicalPricesCache[fxCacheKey]) {
+                    fxRates['USD'] = historicalPricesCache[fxCacheKey];
+                } else {
+                    const fxResult = await yahooFinance.chart('EURUSD=X', {
+                        period1: startDate.toISOString().split('T')[0],
+                        period2: today.toISOString().split('T')[0],
+                        interval: '1d'
+                    });
+                    if (fxResult && fxResult.quotes) {
+                        fxRates['USD'] = Object.fromEntries(
+                            fxResult.quotes
+                                .filter(h => h.date)
+                                .map(h => [new Date(h.date).toISOString().split('T')[0], h.adjclose || h.close || 1])
+                        );
+                        historicalPricesCache[fxCacheKey] = fxRates['USD'];
+                    }
+                }
+            } catch (err) { console.warn("Failed to fetch EURUSD history", err); }
+        }
 
         // Fetch historical data for all tickers
         for (const ticker of uniqueTickers) {
@@ -1429,17 +1454,42 @@ app.get('/api/analytics/portfolio-performance/:id', async (req, res) => {
                 price = tickerPrices[dateStr];
 
                 if (price === undefined) {
-                    const availableDates = Object.keys(tickerPrices).filter(d => d < dateStr).sort();
-                    if (availableDates.length > 0) {
-                        price = historicalPrices[ticker][availableDates[availableDates.length - 1]];
+                    const availableDates = Object.keys(tickerPrices).sort();
+                    const pastDates = availableDates.filter(d => d < dateStr);
+                    if (pastDates.length > 0) {
+                        price = tickerPrices[pastDates.at(-1)];
+                    } else if (availableDates.length > 0) {
+                        price = tickerPrices[availableDates[0]];
                     } else {
                         const asset = database.db.prepare('SELECT currentPrice FROM assets WHERE ticker = ?').get(ticker);
                         price = asset ? asset.currentPrice : 0;
                     }
                 }
 
-                const lastFxTx = transactions.filter(t => t.assetTicker === ticker && t.date <= dateStr && t.exchangeRate).at(-1);
-                const rate = lastFxTx ? lastFxTx.exchangeRate : 1;
+                // Determine currency and rate
+                const asset = database.db.prepare('SELECT currency FROM assets WHERE ticker = ?').get(ticker);
+                const aCurr = asset ? asset.currency : 'EUR';
+                let rate = 1;
+
+                if (aCurr === 'USD' && portfolio.currency === 'EUR') {
+                    // Try historical FX first
+                    rate = fxRates['USD']?.[dateStr];
+                    if (rate === undefined) {
+                        const pastFxDates = Object.keys(fxRates['USD'] || {}).filter(d => d < dateStr).sort();
+                        if (pastFxDates.length > 0) {
+                            rate = fxRates['USD'][pastFxDates.at(-1)];
+                        } else {
+                            // Fallback to transaction rate or 1
+                            const lastFxTx = transactions.filter(t => t.assetTicker === ticker && t.date <= dateStr && t.exchangeRate).at(-1);
+                            rate = lastFxTx ? lastFxTx.exchangeRate : 1;
+                        }
+                    }
+                } else {
+                    // Non-USD or same currency
+                    const lastFxTx = transactions.filter(t => t.assetTicker === ticker && t.date <= dateStr && t.exchangeRate).at(-1);
+                    rate = lastFxTx ? lastFxTx.exchangeRate : 1;
+                }
+
                 assetValue += shares * (price / rate);
             }
 
