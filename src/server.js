@@ -157,6 +157,55 @@ async function B_ITA(isin, assetType = '') {
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 // ────────────────────────────────────────────────────────────────────────────
 
+// ════════════════════════════════════════════════════════════════════════════
+// HISTORY API
+// ════════════════════════════════════════════════════════════════════════════
+
+app.get('/api/history', (req, res) => {
+    const { portfolioId } = req.query;
+    let query = `SELECT * FROM portfolio_history `;
+    let params = [];
+    if (portfolioId === 'null' || portfolioId === '') {
+        query += `WHERE portfolioId IS NULL `;
+    } else if (portfolioId) {
+        query += `WHERE portfolioId = ? `;
+        params.push(portfolioId);
+    }
+    query += `ORDER BY date DESC LIMIT 100`;
+    res.json(database.db.prepare(query).all(...params));
+});
+
+app.post('/api/history', (req, res) => {
+    const { id, portfolioId, date, totalValue, cashValue, assetValue } = req.body;
+    try {
+        if (id) {
+            database.db.prepare(`
+                UPDATE portfolio_history 
+                SET date = ?, totalValue = ?, cashValue = ?, assetValue = ? 
+                WHERE id = ?
+            `).run(date, totalValue, cashValue, assetValue, id);
+        } else {
+            const pid = portfolioId === 'null' ? null : portfolioId;
+            database.db.prepare(`
+                INSERT INTO portfolio_history (portfolioId, date, totalValue, cashValue, assetValue)
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(portfolioId, date) DO UPDATE SET
+                    totalValue = excluded.totalValue,
+                    cashValue = excluded.cashValue,
+                    assetValue = excluded.assetValue
+            `).run(pid, date, totalValue, cashValue, assetValue);
+        }
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+app.delete('/api/history/:id', (req, res) => {
+    database.db.prepare(`DELETE FROM portfolio_history WHERE id = ?`).run(req.params.id);
+    res.json({ success: true });
+});
+
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -468,7 +517,38 @@ app.get('/api/portfolios', async (req, res) => {
         const liveRate = await getEurUsdRate();
         database.recalculateAll(liveRate);
         const rows = database.db.prepare(`SELECT * FROM portfolios ORDER BY createdAt ASC`).all();
-        res.json(rows);
+        
+        let totalVal = 0;
+        for (const p of rows) {
+            totalVal += p.totalValue;
+            const history = database.db.prepare(`
+                SELECT totalValue FROM portfolio_history 
+                WHERE portfolioId = ? 
+                ORDER BY date DESC LIMIT 1
+            `).get(p.id);
+            if (history && history.totalValue > 0) {
+                p.changePercent = ((p.totalValue - history.totalValue) / history.totalValue) * 100;
+            } else {
+                p.changePercent = 0;
+            }
+        }
+
+        const globalHistory = database.db.prepare(`
+            SELECT totalValue FROM portfolio_history 
+            WHERE portfolioId IS NULL 
+            ORDER BY date DESC LIMIT 1
+        `).get();
+        const globalChangePct = (globalHistory && globalHistory.totalValue > 0)
+            ? ((totalVal - globalHistory.totalValue) / globalHistory.totalValue) * 100
+            : 0;
+
+        res.json({
+            portfolios: rows,
+            global: {
+                totalValue: totalVal,
+                changePercent: globalChangePct
+            }
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -741,9 +821,19 @@ app.get('/api/portfolios/:id', async (req, res) => {
     // This allows the header to match the sum of holdings exactly
     const liveTotalValue = Math.round((portfolio.currentCash + totalAssetsValue) * 100) / 100;
 
+    const history = database.db.prepare(`
+        SELECT totalValue FROM portfolio_history 
+        WHERE portfolioId = ? 
+        ORDER BY date DESC LIMIT 1
+    `).get(portfolioId);
+    const changePercent = (history && history.totalValue > 0) 
+        ? ((liveTotalValue - history.totalValue) / history.totalValue) * 100 
+        : 0;
+
     res.json({ 
         ...portfolio, 
         totalValue: liveTotalValue,
+        changePercent,
         transactions, 
         holdings, 
         allocation, 
@@ -2152,6 +2242,7 @@ async function updateMarketData(force = false) {
 // ─── Scheduler ──────────────────────────────────────────────────────────────
 let lastUpdateTime = Date.now();
 let lastBackupDate = ''; // 'YYYY-MM-DD'
+let lastSnapshotDate = ''; // 'YYYY-MM-DD'
 
 setInterval(async () => {
     const settings = database.getSettings();
@@ -2186,6 +2277,19 @@ setInterval(async () => {
             } catch (e) {
                 logger.error('Scheduled backup failed', e);
             }
+        }
+    }
+    // 3. Daily History Snapshots
+    if (lastSnapshotDate !== todayStr) {
+        logger.info(`Recording daily snapshots for portfolios and dashboard...`);
+        try {
+            const portfolios = database.db.prepare(`SELECT id FROM portfolios`).all();
+            portfolios.forEach(p => database.savePortfolioSnapshot(p.id));
+            database.savePortfolioSnapshot(null); // Global snapshot
+            lastSnapshotDate = todayStr;
+            logger.info(`Daily snapshots completed.`);
+        } catch (e) {
+            logger.error('Daily snapshot failed', e);
         }
     }
 }, 60_000);

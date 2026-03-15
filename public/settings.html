@@ -374,6 +374,40 @@
 </div>
 </section>
 
+<!-- History Management -->
+<section class="space-y-4">
+    <div class="flex items-center justify-between">
+        <h2 class="text-lg font-bold border-l-4 border-primary pl-3">History Management</h2>
+        <button onclick="addHistoryEntry()" class="px-4 py-2 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary/20 transition-all flex items-center gap-2">
+            <span class="material-symbols-outlined text-[18px]">add</span> Add Record
+        </button>
+    </div>
+    <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-6">
+        <div class="flex items-center gap-4">
+            <div class="flex-1">
+                <label class="block font-bold text-sm mb-2">Select Portfolio</label>
+                <select id="history-portfolio-select" onchange="loadHistoryData()" class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    <option value="null">Total Net Worth (Global)</option>
+                </select>
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead>
+                    <tr class="text-[11px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
+                        <th class="pb-3 px-2">Date</th>
+                        <th class="pb-3 px-2">Total Value</th>
+                        <th class="pb-3 px-2 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="history-table-body" class="divide-y divide-slate-50 dark:divide-slate-800/50">
+                    <!-- History rows will be injected here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
 <!-- Danger Zone -->
 <section class="space-y-4 pb-12">
 <h2 class="text-lg font-bold border-l-4 border-rose-500 pl-3 text-rose-500">Danger Zone</h2>
@@ -652,6 +686,86 @@
             });
         }
         
+        // History Management logic
+        const historyTableBody = document.getElementById('history-table-body');
+        const historyPortfolioSelect = document.getElementById('history-portfolio-select');
+
+        window.loadHistoryData = async function() {
+            if (!historyTableBody) return;
+            const pid = historyPortfolioSelect.value;
+            const url = `/api/history?portfolioId=${pid === 'null' ? 'null' : pid}`;
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                historyTableBody.innerHTML = data.map(h => `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                        <td class="py-3 px-2 font-mono text-xs">${h.date}</td>
+                        <td class="py-3 px-2">
+                            <input type="number" step="0.01" value="${h.totalValue}" 
+                                   onchange="updateHistoryEntry(${h.id}, '${h.date}', this.value)"
+                                   class="w-32 bg-transparent border-none p-0 focus:ring-0 font-bold text-sm">
+                        </td>
+                        <td class="py-3 px-2 text-right">
+                            <button onclick="deleteHistoryEntry(${h.id})" class="text-rose-500 hover:text-rose-600">
+                                <span class="material-symbols-outlined text-sm">delete</span>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('') || '<tr><td colspan="3" class="py-12 text-center text-slate-500 italic">No historical records found.</td></tr>';
+            } catch (err) { console.error(err); }
+        }
+
+        window.updateHistoryEntry = async function(id, date, value) {
+            try {
+                await fetch('/api/history', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, date, totalValue: parseFloat(value), cashValue: 0, assetValue: parseFloat(value) })
+                });
+            } catch (err) { alert('Update failed: ' + err.message); }
+        }
+
+        window.deleteHistoryEntry = async function(id) {
+            if (!confirm('Delete this record?')) return;
+            try {
+                await fetch(`/api/history/${id}`, { method: 'DELETE' });
+                loadHistoryData();
+            } catch (err) { alert('Delete failed: ' + err.message); }
+        }
+
+        window.addHistoryEntry = async function() {
+            const date = prompt('Enter date (YYYY-MM-DD)', new Date().toISOString().split('T')[0]);
+            if (!date) return;
+            const val = prompt('Enter Total Value');
+            if (!val) return;
+            const pid = historyPortfolioSelect.value;
+            try {
+                await fetch('/api/history', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ portfolioId: pid, date, totalValue: parseFloat(val), cashValue: 0, assetValue: parseFloat(val) })
+                });
+                loadHistoryData();
+            } catch (err) { alert('Add failed: ' + err.message); }
+        }
+
+        async function populateHistorySelectors() {
+            try {
+                const res = await fetch('/api/portfolios');
+                const data = await res.json();
+                const portfolios = data.portfolios || [];
+                portfolios.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.innerText = p.name;
+                    historyPortfolioSelect.appendChild(opt);
+                });
+                loadHistoryData();
+            } catch (err) { console.error(err); }
+        }
+
+        populateHistorySelectors();
+
         // Initial fetch to populate UI
         fetch('/api/settings').then(res => res.json()).then(updateUI);
 

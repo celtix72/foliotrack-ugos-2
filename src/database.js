@@ -130,6 +130,17 @@ function initDb() {
         date    TEXT    NOT NULL DEFAULT (datetime('now')),
         isRead  INTEGER NOT NULL DEFAULT 0
       );
+
+      CREATE TABLE IF NOT EXISTS portfolio_history (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        portfolioId  INTEGER REFERENCES portfolios(id) ON DELETE CASCADE,
+        date         TEXT    NOT NULL,
+        totalValue   REAL    NOT NULL,
+        cashValue    REAL    NOT NULL,
+        assetValue   REAL    NOT NULL,
+        createdAt    TEXT    NOT NULL DEFAULT (datetime('now')),
+        UNIQUE(portfolioId, date)
+      );
     `);
 
     // ─── Default settings ────────────────────────────────────────────────────────
@@ -250,11 +261,43 @@ function recalculateAll(liveEurUsdRate = null) {
     for (const { id } of ids) recalculatePortfolio(id, liveEurUsdRate);
 }
 
+function savePortfolioSnapshot(portfolioId = null) {
+    let totalValue = 0, cashValue = 0, assetValue = 0;
+    const date = new Date().toISOString().split('T')[0];
+
+    if (portfolioId) {
+        const p = dbConnection.prepare(`SELECT totalValue, currentCash FROM portfolios WHERE id = ?`).get(portfolioId);
+        if (p) {
+            totalValue = p.totalValue || 0;
+            cashValue = p.currentCash || 0;
+            assetValue = totalValue - cashValue;
+        } else return;
+    } else {
+        // Global Dashboard Snapshot
+        const portfolios = dbConnection.prepare(`SELECT totalValue, currentCash FROM portfolios`).all();
+        portfolios.forEach(p => {
+            totalValue += (p.totalValue || 0);
+            cashValue += (p.currentCash || 0);
+        });
+        assetValue = totalValue - cashValue;
+    }
+
+    dbConnection.prepare(`
+        INSERT INTO portfolio_history (portfolioId, date, totalValue, cashValue, assetValue)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(portfolioId, date) DO UPDATE SET
+            totalValue = excluded.totalValue,
+            cashValue = excluded.cashValue,
+            assetValue = excluded.assetValue
+    `).run(portfolioId, date, totalValue, cashValue, assetValue);
+}
+
 module.exports = { 
     get db() { return dbConnection; }, 
     initDb, 
     getSettings, 
     setSetting, 
     recalculatePortfolio, 
-    recalculateAll 
+    recalculateAll,
+    savePortfolioSnapshot
 };

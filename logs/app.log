@@ -5,3 +5,8 @@
 2026-03-15T09:51:39.237Z [INFO] Successfully updated NEXI.MI: 2.983 EUR
 2026-03-15T09:51:39.333Z [INFO] Successfully updated SRG.MI: 6.614 EUR
 2026-03-15T09:51:39.334Z [INFO] Market data update cycle completed.
+2026-03-15T15:13:07.144Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-15T15:13:07.148Z [INFO] FolioTrack server running on port 3000
+2026-03-15T15:13:07.148Z [INFO] Database: /Users/mauro/Documents/Progetto_FolioTracker2/foliotrack.db
+2026-03-15T15:14:07.114Z [INFO] Recording daily snapshots for portfolios and dashboard...
+2026-03-15T15:14:07.121Z [INFO] Daily snapshots completed.

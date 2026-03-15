@@ -249,36 +249,50 @@
     async function loadDashboard() {
         try {
             const res = await fetch('/api/portfolios');
-            const portfolios = await res.json();
+            const data = await res.json();
+            const portfolios = data.portfolios || [];
+            const global = data.global || { totalValue: 0, changePercent: 0 };
             
-            let totalValue = 0;
-            portfolios.forEach(p => {
-                totalValue += p.totalValue;
-            });
-            document.getElementById('total-net-worth').innerText = formatCurrency(totalValue, 'EUR', 0);
+            document.getElementById('total-net-worth').innerText = formatCurrency(global.totalValue, 'EUR', 0);
             
+            const totalPerfEl = document.getElementById('total-perf');
+            if (totalPerfEl) {
+                const isPos = global.changePercent >= 0;
+                totalPerfEl.className = `${isPos ? 'text-emerald-500' : 'text-rose-500'} text-sm font-bold flex items-center gap-1`;
+                totalPerfEl.innerHTML = `
+                    <span class="material-symbols-outlined text-[18px]">${isPos ? 'trending_up' : 'trending_down'}</span>
+                    ${isPos ? '+' : ''}${global.changePercent.toFixed(2)}%
+                `;
+            }
+
             // Initial chart load
             initDashboardChart();
 
             // Render Portfolios
             const pContainer = document.getElementById('portfolio-container');
             if (portfolios && portfolios.length > 0) {
-                pContainer.innerHTML = portfolios.map(p => `
-                    <div class="bg-white dark:bg-[#111722] p-5 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between group hover:border-primary transition-all cursor-pointer" onclick="window.location.href='/portfolio?id=${p.id}'">
-                        <div class="flex items-center gap-4">
-                            <div class="w-11 h-11 rounded-lg flex items-center justify-center text-white" style="background-color: ${p.color || '#6366f1'}">
-                                <span class="material-symbols-outlined text-[20px]">work</span>
+                pContainer.innerHTML = portfolios.map(p => {
+                    const isPos = p.changePercent >= 0;
+                    return `
+                        <div class="bg-white dark:bg-[#111722] p-5 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between group hover:border-primary transition-all cursor-pointer" onclick="window.location.href='/portfolio?id=${p.id}'">
+                            <div class="flex items-center gap-4">
+                                <div class="w-11 h-11 rounded-lg flex items-center justify-center text-white" style="background-color: ${p.color || '#6366f1'}">
+                                    <span class="material-symbols-outlined text-[20px]">work</span>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold">${p.name}</p>
+                                    <p class="text-[11px] text-slate-500">${p.assetCount} Assets • ${p.currency}</p>
+                                </div>
                             </div>
-                            <div>
-                                <p class="text-sm font-bold">${p.name}</p>
-                                <p class="text-[11px] text-slate-500">${p.assetCount} Assets • ${p.currency}</p>
+                            <div class="text-right">
+                                <p class="text-sm font-bold">${formatCurrency(p.totalValue, p.currency, 0)}</p>
+                                <p class="${isPos ? 'text-emerald-500' : 'text-rose-500'} text-[10px] font-bold">
+                                    ${isPos ? '▲' : '▼'} ${Math.abs(p.changePercent).toFixed(2)}%
+                                </p>
                             </div>
                         </div>
-                        <div class="text-right">
-                            <p class="text-sm font-bold">${formatCurrency(p.totalValue, p.currency, 0)}</p>
-                        </div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
             } else {
                 pContainer.innerHTML = '<p class="text-sm text-slate-500 col-span-2">No portfolios found.</p>';
             }
