@@ -172,15 +172,41 @@
     }
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => { updateSidebarContents(); updateNotifications(); });
+        document.addEventListener('DOMContentLoaded', () => { 
+            updateSidebarContents(); 
+            updateNotifications(); 
+            updateMarketStatusUI(); 
+        });
     } else {
         updateSidebarContents();
         updateNotifications();
+        updateMarketStatusUI();
     }
 
     setInterval(updateNotifications, 30000); // 30s notifications sync
+    setInterval(updateMarketStatusUI, 60000); // 60s market status sync
 
     window.refreshSidebarPortfolios = () => { _sidebarLoading = false; updateSidebarContents(); };
+
+    async function updateMarketStatusUI() {
+        const indicator = document.getElementById('market-status-indicator');
+        if (!indicator) return;
+        try {
+            const res = await fetch('/api/market-status');
+            const status = await res.json();
+            
+            let html = '';
+            if (status.isWeekend) {
+                html = '<span class="text-rose-500 font-black">Markets Closed (Weekend)</span>';
+            } else {
+                const mil = status.MIL ? '<span class="text-emerald-500">MIL: OPEN</span>' : '<span class="text-slate-500">MIL: CLOSED</span>';
+                const ger = status.GER ? '<span class="text-emerald-500">GER: OPEN</span>' : '<span class="text-slate-500">GER: CLOSED</span>';
+                const usa = status.USA ? '<span class="text-emerald-500">USA: OPEN</span>' : '<span class="text-slate-500">USA: CLOSED</span>';
+                html = `${mil} • ${ger} • ${usa}`;
+            }
+            indicator.innerHTML = html;
+        } catch (err) { console.error("Market status update error:", err); }
+    }
 
     // ─── Global Formatting ────────────────────────────────────────────────────
     window.formatCurrency = function(val, currency = 'USD', decimals = 2) {

@@ -44,6 +44,40 @@ let performanceResultsCache = {}; // { cacheKey: { data, timestamp } }
 let eurUsdCache = { rate: 1.08, timestamp: 0 };
 const EUR_USD_TTL = 5 * 60 * 1000; // 5 minutes
 
+// ─── MARKET STATUS LOGIC ─────────────────────────────────────────────────────
+const MARKET_HOURS = {
+    MIL: { open: '09:00', close: '17:30', name: 'Borsa Italiana' },
+    GER: { open: '09:00', close: '17:30', name: 'XETRA' },
+    USA: { open: '15:30', close: '22:00', name: 'NYSE/NASDAQ' }
+};
+
+function getMarketStatus() {
+    const now = new Date();
+    const day = now.getUTCDay(); // 0=Sun, 6=Sat
+    const isWeekend = (day === 0 || day === 6);
+    
+    // Convert current time to CET/CEST (Italy/Germany time)
+    const cetNow = new Intl.DateTimeFormat('it-IT', {
+        timeZone: 'Europe/Rome',
+        hour: '2-digit', minute: '2-digit', hour12: false
+    }).format(now);
+
+    const checkOpen = (hours) => {
+        if (isWeekend) return false;
+        return cetNow >= hours.open && cetNow <= hours.close;
+    };
+
+    const status = {
+        MIL: checkOpen(MARKET_HOURS.MIL),
+        GER: checkOpen(MARKET_HOURS.GER),
+        USA: checkOpen(MARKET_HOURS.USA),
+        isWeekend
+    };
+
+    status.anyOpen = status.MIL || status.GER || status.USA;
+    return status;
+}
+
 async function getEurUsdRate() {
     if (Date.now() - eurUsdCache.timestamp < EUR_USD_TTL) {
         return eurUsdCache.rate;
@@ -1862,6 +1896,20 @@ app.get('/api/logs', (req, res) => {
     }
 });
 
+app.get('/api/market-status', (req, res) => {
+    res.json(getMarketStatus());
+});
+
+app.post('/api/market-sync', async (req, res) => {
+    try {
+        logger.info('Manual market sync triggered.');
+        updateMarketData(true); // force = true
+        res.json({ success: true, message: 'Sync started' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/backups/restore', async (req, res) => {
     try {
         const { filename } = req.body;
@@ -1927,7 +1975,12 @@ app.use((req, res) => res.redirect('/dashboard'));
 // MARKET DATA UPDATE  (runs on interval)
 // ════════════════════════════════════════════════════════════════════════════
 
-async function updateMarketData() {
+async function updateMarketData(force = false) {
+    const status = getMarketStatus();
+    if (!force && !status.anyOpen) {
+        logger.info('Skipping automatic market update: all markets are closed.');
+        return;
+    }
     const assets = database.db.prepare(`SELECT * FROM assets`).all();
     if (assets.length === 0) return;
     logger.info(`Updating market data for ${assets.length} assets...`);

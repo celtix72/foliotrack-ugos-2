@@ -101,6 +101,7 @@
 <span class="text-xs font-bold text-green-500 uppercase tracking-wider">Live</span>
 </div>
 <span class="text-xs text-slate-500 ml-2" id="last-update-label">Last Update: --</span>
+<span id="market-status-indicator" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-4"></span>
 </div>
 <div class="flex items-center gap-3">
 <div class="text-right">
@@ -143,6 +144,14 @@
     <input type="hidden" id="asset-ticker"/>
     <input type="hidden" id="asset-name"/>
     <button onclick="quickAddAsset()" class="px-6 py-2.5 rounded-xl bg-primary text-white font-bold text-sm hover:shadow-lg hover:shadow-primary/20 transition-all">Add</button>
+</div>
+
+<!-- Force Sync -->
+<div class="flex justify-end">
+    <button id="force-sync-btn" onclick="forceSync()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-all text-xs font-black uppercase tracking-widest">
+        <span class="material-symbols-outlined text-sm" id="sync-icon">sync</span>
+        <span>Force Market Sync</span>
+    </button>
 </div>
 
 <!-- Unified List -->
@@ -443,6 +452,31 @@ async function quickAddAsset() {
             document.getElementById('asset-search-input').value = '';
         }
     } catch (err) { console.error(err); }
+}
+
+async function forceSync() {
+    const btn = document.getElementById('force-sync-btn');
+    const icon = document.getElementById('sync-icon');
+    if (!btn || !icon) return;
+    
+    btn.disabled = true;
+    icon.classList.add('animate-spin');
+    
+    try {
+        const res = await fetch('/api/market-sync', { method: 'POST' });
+        if (res.ok) {
+            // Wait a bit for the backend update to start/progress
+            setTimeout(loadAssets, 2000);
+        } else {
+            alert('Error triggering sync');
+        }
+    } catch (err) { console.error(err); }
+    finally {
+        setTimeout(() => {
+            btn.disabled = false;
+            icon.classList.remove('animate-spin');
+        }, 1000);
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => { 
