@@ -235,8 +235,8 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
         }
     }
 
-    // Total value = Cash + Assets - Dividends
-    const totalValue = cash + assetValue - totalDividends;
+    // Total value = Cash + Assets (Dividends are already in Cash)
+    const totalValue = cash + assetValue;
 
     dbConnection.prepare(`
         UPDATE portfolios

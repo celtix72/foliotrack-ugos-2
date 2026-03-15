@@ -737,9 +737,9 @@ app.get('/api/portfolios/:id', async (req, res) => {
     }
     const dividendGroups = Object.values(divYearMap).sort((a, b) => parseInt(b.year) - parseInt(a.year));
 
-    // Total value = Cash + Assets - Dividends
+    // Total value = Cash + Assets
     // This allows the header to match the sum of holdings exactly
-    const liveTotalValue = Math.round((portfolio.currentCash + totalAssetsValue - totalDividends) * 100) / 100;
+    const liveTotalValue = Math.round((portfolio.currentCash + totalAssetsValue) * 100) / 100;
 
     res.json({ 
         ...portfolio, 
