@@ -2083,6 +2083,8 @@ app.post('/api/reset-data', (req, res) => {
     database.db.prepare(`DELETE FROM transactions`).run();
     database.db.prepare(`DELETE FROM portfolios`).run();
     database.db.prepare(`DELETE FROM assets`).run();
+    database.db.prepare(`DELETE FROM notifications`).run();
+    database.db.prepare(`DELETE FROM portfolio_history`).run();
     console.log('All application data has been reset.');
     clearPerformanceCache();
     res.json({ success: true });
