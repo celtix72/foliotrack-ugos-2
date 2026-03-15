@@ -111,6 +111,10 @@ function initDb() {
         dbConnection.prepare(`ALTER TABLE assets ADD COLUMN lastUpdateError TEXT`).run();
     } catch (e) {}
 
+    try {
+        dbConnection.prepare(`ALTER TABLE portfolios ADD COLUMN totalDividends REAL NOT NULL DEFAULT 0`).run();
+    } catch (e) {}
+
     // ─── Notifications Table ──────────────────────────────────────────────────
     dbConnection.exec(`
       CREATE TABLE IF NOT EXISTS notifications (
@@ -163,6 +167,7 @@ function recalculatePortfolio(portfolioId) {
     ).all(portfolioId);
 
     let cash = portfolio.initialCash || 0;
+    let totalDividends = 0;
     const holdings = {};
 
     for (const t of transactions) {
@@ -180,7 +185,9 @@ function recalculatePortfolio(portfolioId) {
             case 'TRANSFER':   cash -= amount; break;
             case 'DIVIDEND': {
                 const dividendAmount = amount || (qty * price - comm - tax);
-                cash += (dividendAmount / fx); 
+                const dividendInPCurr = dividendAmount / fx;
+                cash += dividendInPCurr; 
+                totalDividends += dividendInPCurr;
                 break;
             }
             case 'BUY': {
@@ -216,13 +223,14 @@ function recalculatePortfolio(portfolioId) {
         }
     }
 
-    const totalValue = cash + assetValue;
+    // Total value = Cash + Assets - Dividends
+    const totalValue = cash + assetValue - totalDividends;
 
     dbConnection.prepare(`
         UPDATE portfolios
-        SET currentCash = ?, totalValue = ?, assetCount = ?, performance1D = 0
+        SET currentCash = ?, totalValue = ?, totalDividends = ?, assetCount = ?, performance1D = 0
         WHERE id = ?
-    `).run(cash, totalValue, assetCount, portfolioId);
+    `).run(cash, totalValue, totalDividends, assetCount, portfolioId);
 }
 
 function recalculateAll() {

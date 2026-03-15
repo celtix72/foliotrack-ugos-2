@@ -172,7 +172,10 @@
             <h1 id="title-portfolio-name" class="text-4xl font-black">---</h1>
             <div class="flex items-baseline gap-4">
                 <p class="text-3xl font-black tracking-tight"><span id="total-value-label">0.00</span> <span id="portfolio-currency-code" class="text-sm text-slate-400 font-bold">EUR</span></p>
-                <p class="text-sm font-bold text-slate-500">Cash: <span id="cash-balance-label">0.00</span></p>
+                <div class="flex flex-col">
+                    <p class="text-sm font-bold text-slate-500">Cash: <span id="cash-balance-label">0.00</span></p>
+                    <p class="text-sm font-bold text-indigo-500">Dividends: <span id="dividends-label">0.00</span></p>
+                </div>
             </div>
         </div>
         <div class="flex gap-2 flex-wrap">
@@ -743,6 +746,7 @@
             document.getElementById('total-value-label').innerText = formatCurrency(p.totalValue, p.currency, 0);
             document.getElementById('portfolio-currency-code').innerText = p.currency;
             document.getElementById('cash-balance-label').innerText = formatCurrency(p.currentCash, p.currency, 0);
+            document.getElementById('dividends-label').innerText = formatCurrency(p.totalDividends || 0, p.currency, 0);
             
             document.querySelectorAll('.log-currency-label').forEach(el => el.innerText = p.currency);
 
