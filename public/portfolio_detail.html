@@ -599,6 +599,7 @@
     let currentPortfolioId = null;
     let portfolioCurrency = 'EUR';
     let currentTransactions = [];
+    let currentHoldings = [];
 
     window.openPortfolioModal = function(id = null) {
         if (!id) {
@@ -711,6 +712,7 @@
             const p = await res.json();
             if (!p) return navigateToList();
             currentTransactions = p.transactions || [];
+            currentHoldings = p.holdings || [];
             
             portfolioCurrency = p.currency || 'EUR';
             document.getElementById('header-portfolio-name').innerText = p.name || 'Untitled';
@@ -1175,7 +1177,7 @@
         checkFX();
     }
 
-    async function checkFX() {
+    async function checkFX(isEdit = false) {
         const assetCurr = document.getElementById('t-asset-currency').value;
         if (!assetCurr || assetCurr === portfolioCurrency) {
             document.getElementById('t-fx-field').classList.add('hidden');
@@ -1186,6 +1188,8 @@
         document.getElementById('asset-curr-label').innerText = assetCurr;
         document.getElementById('p-curr-label').innerText = portfolioCurrency;
         document.getElementById('t-fx-field').classList.remove('hidden');
+
+        if (isEdit) return; // Don't auto-fetch if we are editing an existing record
 
         try {
             const res = await fetch(`/api/fx-rate?from=${portfolioCurrency}&to=${assetCurr}`);
@@ -1279,10 +1283,21 @@
         document.getElementById('t-amount').value = t.amount || 0;
         document.getElementById('t-asset-ticker').value = t.assetTicker || '';
         document.getElementById('t-asset-search').value = t.assetTicker || '';
+
+        // Determine asset currency for FX display
+        let assetCurr = portfolioCurrency;
+        if (t.assetTicker === 'CASH' || !t.assetTicker) {
+            assetCurr = portfolioCurrency;
+        } else {
+            const h = currentHoldings.find(hold => hold.ticker === t.assetTicker);
+            if (h) assetCurr = h.currency;
+        }
+        document.getElementById('t-asset-currency').value = assetCurr;
         
         document.getElementById('t-modal-title').innerText = "Edit Transaction";
         document.getElementById('transaction-modal').classList.remove('hidden');
         toggleTransactionFields();
+        checkFX(true); // Pass true to avoid overwriting existing FX rate
     }
 
     async function deletePortfolio() {
@@ -1761,28 +1776,31 @@
         }
     }
 
+    window.closeManualModal = function() {
+        document.getElementById('manual-update-modal').classList.add('hidden');
+    }
+
     window.saveManualUpdate = async function() {
-        const data = {
-            ticker: document.getElementById('manual-ticker').value,
-            price: document.getElementById('manual-price').value,
-            date: document.getElementById('manual-date').value,
-            type: document.getElementById('manual-type').value,
-            country: document.getElementById('manual-country').value,
-            dataSource: document.getElementById('manual-source').value,
-            isin: document.getElementById('manual-isin').value
-        };
+        const ticker = document.getElementById('manual-ticker').value;
+        const price = document.getElementById('manual-price').value;
+        const date = document.getElementById('manual-date').value;
+        const type = document.getElementById('manual-type').value;
+        const country = document.getElementById('manual-country').value;
+        const dataSource = document.getElementById('manual-source').value;
+        const isin = document.getElementById('manual-isin').value;
 
         try {
             const res = await fetch('/api/assets/manual-update', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ticker, price, date, type, country })
+                body: JSON.stringify({ ticker, price, date, type, country, dataSource, isin })
             });
             if (res.ok) {
                 closeManualModal();
                 loadPortfolioDetails();
             } else {
-                alert('Update failed');
+                const errData = await res.json();
+                alert('Update failed: ' + (errData.error || errData.message || 'Unknown error'));
             }
         } catch (err) { console.error('Manual update error:', err); }
     }
