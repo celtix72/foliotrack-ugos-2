@@ -1450,6 +1450,7 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                 case 'DEPOSIT':    portfolioStates[p.id].cash += amount; portfolioStates[p.id].netDeposits += amount; break;
                 case 'WITHDRAWAL': portfolioStates[p.id].cash -= amount; portfolioStates[p.id].netDeposits -= amount; break;
                 case 'TAX':        portfolioStates[p.id].cash -= amount; break;
+                case 'TRANSFER':   portfolioStates[p.id].cash -= amount; break;
                 case 'DIVIDEND':   portfolioStates[p.id].cash += (amount || (qty * price - comm - tax)) / fx; break;
                 case 'BUY':
                     portfolioStates[p.id].cash -= (qty * price + comm + tax) / fx;
@@ -1468,10 +1469,15 @@ async function calculatePerformanceHistory(portfolioIds, range) {
         let dayValue = 0, dayProfit = 0, dayCash = 0, dayAssets = 0;
         const dayEvents = [];
 
+        const todayStr = today.toISOString().split('T')[0];
+        const isToday = dateStr === todayStr;
+
         // Check for manual overrides for this specific date
-        const manualTotal = isGlobal 
+        // CRITICAL FIX: For the CURRENT day, we skip the snapshot and use live calculation 
+        // to avoid discrepancies between outdated snapshots and new transactions.
+        const manualTotal = (!isToday && (isGlobal 
             ? database.db.prepare('SELECT totalValue, cashValue, assetValue FROM portfolio_history WHERE portfolioId IS NULL AND date = ?').get(dateStr)
-            : database.db.prepare(`SELECT SUM(totalValue) as totalValue, SUM(cashValue) as cashValue, SUM(assetValue) as assetValue FROM portfolio_history WHERE portfolioId IN (${pIds.join(',')}) AND date = ?`).get(dateStr);
+            : database.db.prepare(`SELECT SUM(totalValue) as totalValue, SUM(cashValue) as cashValue, SUM(assetValue) as assetValue FROM portfolio_history WHERE portfolioId IN (${pIds.join(',')}) AND date = ?`).get(dateStr)));
 
         if (manualTotal && manualTotal.totalValue !== null) {
             dayValue = manualTotal.totalValue;
@@ -1495,6 +1501,7 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                         case 'DEPOSIT':    state.cash += amount; break;
                         case 'WITHDRAWAL': state.cash -= amount; break;
                         case 'TAX':        state.cash -= amount; break;
+                        case 'TRANSFER':   state.cash -= amount; break;
                         case 'DIVIDEND':   state.cash += (amount || (qty * price - comm - tax)) / fx; break;
                         case 'BUY':
                             state.cash -= (qty * price + comm + tax) / fx;
@@ -1524,6 +1531,7 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                         case 'DEPOSIT':    state.cash += amount; state.netDeposits += amount; break;
                         case 'WITHDRAWAL': state.cash -= amount; state.netDeposits -= amount; break;
                         case 'TAX':        state.cash -= amount; break;
+                        case 'TRANSFER':   state.cash -= amount; break;
                         case 'DIVIDEND':   state.cash += (amount || (qty * price - comm - tax)) / fx; break;
                         case 'BUY':
                             state.cash -= (qty * price + comm + tax) / fx;
