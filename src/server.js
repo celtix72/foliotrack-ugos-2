@@ -70,11 +70,18 @@ async function B_ITA(isin, assetType = '') {
             }
         }
 
-        // Variation: look for percentage pattern
+        // Variation: look for percentage pattern specifically in the -percPrice span
         let variation = null;
-        const varMatch = html.match(/([+-]?[\d,.]+)\s*%\s*<\/span>/i);
+        // Primary pattern for variation: span with -percPrice class
+        const varMatch = html.match(/-percPrice\">\s*<strong>\s*([+-]?[\d,.]+)\s*%\s*<\/strong>/i);
         if (varMatch && varMatch[1]) {
             variation = parseFloat(varMatch[1].replace(',', '.'));
+        } else {
+            // Fallback for variation
+            const varMatchAlt = html.match(/([+-]?[\d,.]+)\s*%\s*<\/span>/i);
+            if (varMatchAlt && varMatchAlt[1]) {
+                variation = parseFloat(varMatchAlt[1].replace(',', '.'));
+            }
         }
 
         return { 
