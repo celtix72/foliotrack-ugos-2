@@ -1040,7 +1040,17 @@ app.post('/api/portfolios/:id/reconcile', async (req, res) => {
         0, 0, 0, 0, 1, amount
     );
 
-    // 3. Final recalculation
+    // 3. Update historical snapshots from this date onwards
+    const reconciliationDate = date || new Date().toISOString().split('T')[0];
+    database.db.prepare(`
+        UPDATE portfolio_history 
+        SET totalValue = totalValue + ?, 
+            cashValue = cashValue + ? 
+        WHERE (portfolioId = ? OR portfolioId IS NULL) 
+          AND date >= ?
+    `).run(diff, diff, parseInt(portfolioId), reconciliationDate);
+
+    // 4. Final recalculation and cache cleanup
     database.recalculatePortfolio(portfolioId, liveRate);
     if (typeof clearPerformanceCache === 'function') clearPerformanceCache();
 
