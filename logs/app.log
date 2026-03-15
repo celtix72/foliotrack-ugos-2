@@ -1,0 +1,7 @@
+2026-03-15T09:51:37.527Z [INFO] Updating market data for 10 assets...
+2026-03-15T09:51:37.539Z [INFO] FolioTrack server running on port 3000
+2026-03-15T09:51:37.540Z [INFO] Database: /Users/mauro/Documents/Progetto_FolioTracker2/foliotrack.db
+2026-03-15T09:51:39.151Z [INFO] Successfully updated TIT.MI: 0.593 EUR
+2026-03-15T09:51:39.237Z [INFO] Successfully updated NEXI.MI: 2.983 EUR
+2026-03-15T09:51:39.333Z [INFO] Successfully updated SRG.MI: 6.614 EUR
+2026-03-15T09:51:39.334Z [INFO] Market data update cycle completed.

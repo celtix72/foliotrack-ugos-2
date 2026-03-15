@@ -358,6 +358,22 @@
 </div>
 </section>
 
+<!-- System Logs -->
+<section class="space-y-4">
+<h2 class="text-lg font-bold border-l-4 border-slate-500 pl-3">System Logs</h2>
+<div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-4">
+    <div class="flex items-center justify-between">
+        <p class="text-xs text-slate-500 dark:text-slate-400">Recent application events and background activities.</p>
+        <button id="refresh-logs-btn" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-primary" title="Refresh Logs">
+            <span class="material-symbols-outlined text-sm">refresh</span>
+        </button>
+    </div>
+    <div id="logs-container" class="h-80 bg-slate-50 dark:bg-black/40 rounded-xl border border-slate-100 dark:border-slate-800 p-4 font-mono text-[10px] overflow-y-auto custom-scrollbar whitespace-pre-wrap">
+        <p class="text-slate-500 italic">Loading logs...</p>
+    </div>
+</div>
+</section>
+
 <!-- Danger Zone -->
 <section class="space-y-4 pb-12">
 <h2 class="text-lg font-bold border-l-4 border-rose-500 pl-3 text-rose-500">Danger Zone</h2>
@@ -638,6 +654,40 @@
         
         // Initial fetch to populate UI
         fetch('/api/settings').then(res => res.json()).then(updateUI);
+
+        // Logs logic
+        async function loadLogs() {
+            const container = document.getElementById('logs-container');
+            if (!container) return;
+            try {
+                const res = await fetch('/api/logs');
+                const lines = await res.json();
+                if (lines.length === 0) {
+                    container.innerHTML = '<p class="text-slate-500 italic">No logs found.</p>';
+                    return;
+                }
+                
+                // Colorize log levels
+                container.innerHTML = lines.map(line => {
+                    let colorClass = 'text-slate-400';
+                    if (line.includes('[INFO]')) colorClass = 'text-slate-300';
+                    if (line.includes('[WARN]')) colorClass = 'text-amber-500';
+                    if (line.includes('[ERROR]')) colorClass = 'text-rose-500 font-bold';
+                    
+                    // Highlight timestamps and headers
+                    const formatted = line
+                        .replace(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)/, '<span class="text-slate-500">$1</span>')
+                        .replace(/\[(INFO|WARN|ERROR)\]/, `<span class="${colorClass}">[$1]</span>`);
+                    
+                    return `<div>${formatted}</div>`;
+                }).join('');
+            } catch (err) { console.error(err); }
+        }
+
+        const refreshBtn = document.getElementById('refresh-logs-btn');
+        if (refreshBtn) refreshBtn.addEventListener('click', loadLogs);
+        loadLogs();
+        setInterval(loadLogs, 10000);
     });
 </script>
 </body></html>

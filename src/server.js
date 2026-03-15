@@ -6,6 +6,28 @@ const path       = require('path');
 const dotenv     = require('dotenv');
 const YahooFinance = require('yahoo-finance2').default;
 const axios      = require('axios');
+const fs         = require('fs');
+
+const LOG_FILE = path.join(__dirname, '../logs/app.log');
+
+const logger = {
+    info: (msg) => {
+        const line = `${new Date().toISOString()} [INFO] ${msg}\n`;
+        process.stdout.write(line);
+        fs.appendFileSync(LOG_FILE, line);
+    },
+    error: (msg, err) => {
+        const errMsg = err ? ` - Error: ${err.message || err}` : '';
+        const line = `${new Date().toISOString()} [ERROR] ${msg}${errMsg}\n`;
+        process.stderr.write(line);
+        fs.appendFileSync(LOG_FILE, line);
+    },
+    warn: (msg) => {
+        const line = `${new Date().toISOString()} [WARN] ${msg}\n`;
+        process.stdout.write(line);
+        fs.appendFileSync(LOG_FILE, line);
+    }
+};
 
 dotenv.config();
 
@@ -1824,6 +1846,22 @@ app.post('/api/backups/manual', async (req, res) => {
     }
 });
 
+// ════════════════════════════════════════════════════════════════════════════
+// LOGS API
+// ════════════════════════════════════════════════════════════════════════════
+
+app.get('/api/logs', (req, res) => {
+    try {
+        if (!fs.existsSync(LOG_FILE)) return res.json([]);
+        const content = fs.readFileSync(LOG_FILE, 'utf8');
+        const lines = content.trim().split('\n');
+        // Return last 100 lines
+        res.json(lines.slice(-100).reverse());
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/backups/restore', async (req, res) => {
     try {
         const { filename } = req.body;
@@ -1892,7 +1930,7 @@ app.use((req, res) => res.redirect('/dashboard'));
 async function updateMarketData() {
     const assets = database.db.prepare(`SELECT * FROM assets`).all();
     if (assets.length === 0) return;
-    console.log(`Updating market data for ${assets.length} assets...`);
+    logger.info(`Updating market data for ${assets.length} assets...`);
 
     for (const asset of assets) {
         if (!asset.ticker || asset.ticker === 'CASH') continue;
@@ -1957,6 +1995,7 @@ async function updateMarketData() {
                     updateData.country,
                     asset.ticker
                 );
+                logger.info(`Successfully updated ${asset.ticker}: ${updateData.price} ${updateData.currency}`);
 
                 // Alert Checks
                 const newPrice = updateData.price;
@@ -1986,7 +2025,7 @@ async function updateMarketData() {
                 }
             }
         } catch (err) {
-            console.error(`Failed to update ${asset.ticker}:`, err.message);
+            logger.error(`Failed to update ${asset.ticker}`, err);
             database.db.prepare(`UPDATE assets SET lastUpdateError=? WHERE ticker=?`).run(err.message, asset.ticker);
             // If it's a 404/Not Found on YF, mark as manual to stop hammering
             if (asset.dataSource === 'YF' && (err.message.includes('Not Found') || err.message.includes('404'))) {
@@ -1995,6 +2034,7 @@ async function updateMarketData() {
         }
     }
     database.recalculateAll();
+    logger.info(`Market data update cycle completed.`);
 }
 
 // ─── Scheduler ──────────────────────────────────────────────────────────────
@@ -2026,12 +2066,13 @@ setInterval(async () => {
         }
 
         if (shouldBackup) {
-            console.log(`Starting scheduled backup (${backupFreq})...`);
+            logger.info(`Starting scheduled backup (${backupFreq})...`);
             try {
                 await backupManager.createBackup(true);
+                logger.info(`Scheduled backup completed successfully.`);
                 lastBackupDate = todayStr;
             } catch (e) {
-                console.error('Scheduled backup failed:', e);
+                logger.error('Scheduled backup failed', e);
             }
         }
     }
@@ -2043,6 +2084,6 @@ updateMarketData();
 // ─── Start ──────────────────────────────────────────────────────────────────
 
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`FolioTrack server running on port ${PORT}`);
-    console.log(`Database: ${require('./database').db.name}`);
+    logger.info(`FolioTrack server running on port ${PORT}`);
+    logger.info(`Database: ${require('./database').db.name}`);
 });
