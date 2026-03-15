@@ -340,6 +340,22 @@
 </div>
 </section>
 
+<!-- System Maintenance -->
+<section class="space-y-4">
+<h2 class="text-lg font-bold border-l-4 border-rose-500 pl-3">System Maintenance</h2>
+<div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <p class="font-bold text-sm">Rebuild Performance History</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Recalculate all historical performance points. Useful for fixing data anomalies or peaks.</p>
+        </div>
+        <button id="rebuild-history-btn" class="px-5 py-2 bg-rose-500 text-white rounded-lg text-sm font-bold hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/20 flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm">history_toggle_off</span> Rebuild Now
+        </button>
+    </div>
+</div>
+</section>
+
 <!-- System Logs -->
 <section class="space-y-4">
 <h2 class="text-lg font-bold border-l-4 border-slate-500 pl-3">System Logs</h2>
@@ -778,6 +794,31 @@
                     return `<div>${formatted}</div>`;
                 }).join('');
             } catch (err) { console.error(err); }
+        }
+
+        const rebuildHistoryBtn = document.getElementById('rebuild-history-btn');
+        if (rebuildHistoryBtn) {
+            rebuildHistoryBtn.addEventListener('click', async () => {
+                if (!confirm('This will delete all saved performance history and recalculate it from the beginning. This process may take a minute. Continue?')) return;
+                
+                rebuildHistoryBtn.disabled = true;
+                rebuildHistoryBtn.innerText = 'Rebuilding...';
+                
+                try {
+                    const res = await fetch('/api/admin/rebuild-history', { method: 'POST' });
+                    const data = await res.json();
+                    if (data.success) {
+                        alert('Performance history has been rebuilt successfully!');
+                    } else {
+                        alert('Failed: ' + data.error);
+                    }
+                } catch (err) {
+                    alert('Error: ' + err.message);
+                } finally {
+                    rebuildHistoryBtn.disabled = false;
+                    rebuildHistoryBtn.innerHTML = '<span class="material-symbols-outlined text-sm">history_toggle_off</span> Rebuild Now';
+                }
+            });
         }
 
         const refreshBtn = document.getElementById('refresh-logs-btn');
