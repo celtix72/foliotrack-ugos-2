@@ -1614,6 +1614,7 @@
 
     async function updatePerformanceChart() {
         if (!currentPortfolioId || !performanceChart) return;
+        const isDark = document.documentElement.classList.contains('dark');
         try {
             const res = await fetch(`/api/analytics/portfolio-performance/${currentPortfolioId}?range=${currentChartRange}`);
             const result = await res.json();

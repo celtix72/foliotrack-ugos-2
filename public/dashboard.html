@@ -447,6 +447,7 @@
 
     async function updateDashboardChart() {
         if (!dashboardChart) return;
+        const isDark = document.documentElement.classList.contains('dark');
         try {
             const res = await fetch(`/api/analytics/global-performance?range=${currentChartRange}`);
             const result = await res.json();
