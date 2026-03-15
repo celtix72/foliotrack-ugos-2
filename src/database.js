@@ -158,7 +158,7 @@ function setSetting(key, value) {
     dbConnection.prepare(`INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)`).run(key, String(value));
 }
 
-function recalculatePortfolio(portfolioId) {
+function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
     const portfolio = dbConnection.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(portfolioId);
     if (!portfolio) return;
 
@@ -208,14 +208,22 @@ function recalculatePortfolio(portfolioId) {
     let assetValue = 0;
     let assetCount = 0;
     for (const [ticker, shares] of Object.entries(holdings)) {
-        if (shares <= 0) continue;
+        if (shares <= 0.0001) continue;
         assetCount++;
         const asset = dbConnection.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(ticker);
         if (asset && asset.currentPrice) {
-            const lastFxTx = transactions
-                .filter(t => t.assetTicker === ticker && t.exchangeRate)
-                .at(-1);
-            const rate = lastFxTx ? lastFxTx.exchangeRate : 1;
+            let rate = 1;
+            if (asset.currency !== portfolio.currency) {
+                if (asset.currency === 'USD' && portfolio.currency === 'EUR' && liveEurUsdRate) {
+                    rate = liveEurUsdRate;
+                } else {
+                    const lastFxTx = transactions
+                        .filter(t => t.assetTicker === ticker && t.exchangeRate)
+                        .at(-1);
+                    rate = lastFxTx ? lastFxTx.exchangeRate : 1;
+                }
+            }
+            
             const priceInPCurr = asset.currency !== portfolio.currency
                 ? asset.currentPrice / rate
                 : asset.currentPrice;
@@ -233,9 +241,9 @@ function recalculatePortfolio(portfolioId) {
     `).run(cash, totalValue, totalDividends, assetCount, portfolioId);
 }
 
-function recalculateAll() {
+function recalculateAll(liveEurUsdRate = null) {
     const ids = dbConnection.prepare(`SELECT id FROM portfolios`).all();
-    for (const { id } of ids) recalculatePortfolio(id);
+    for (const { id } of ids) recalculatePortfolio(id, liveEurUsdRate);
 }
 
 module.exports = { 

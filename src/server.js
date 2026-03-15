@@ -170,7 +170,7 @@ app.get('/api/assets', (req, res) => {
     res.json(database.db.prepare("SELECT * FROM assets WHERE ticker != 'CASH' AND (type != 'Cash' OR type IS NULL) ORDER BY ticker ASC").all());
 });
 
-app.post('/api/assets/manual-update', (req, res) => {
+app.post('/api/assets/manual-update', async (req, res) => {
     const { ticker, price, date, type, country, dataSource, isin } = req.body;
     if (!ticker) return res.status(400).send('Ticker is required');
     
@@ -191,7 +191,8 @@ app.post('/api/assets/manual-update', (req, res) => {
         ticker
     );
     
-    database.recalculateAll();
+    const liveRate = await getEurUsdRate();
+    database.recalculateAll(liveRate);
     clearPerformanceCache();
     res.json({ success: true });
 });
@@ -462,9 +463,15 @@ app.post('/api/notifications/read-all', (req, res) => {
 // PORTFOLIOS API
 // ════════════════════════════════════════════════════════════════════════════
 
-app.get('/api/portfolios', (req, res) => {
-    const rows = database.db.prepare(`SELECT * FROM portfolios ORDER BY createdAt ASC`).all();
-    res.json(rows);
+app.get('/api/portfolios', async (req, res) => {
+    try {
+        const liveRate = await getEurUsdRate();
+        database.recalculateAll(liveRate);
+        const rows = database.db.prepare(`SELECT * FROM portfolios ORDER BY createdAt ASC`).all();
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Helper to calculate holdings for a portfolio
@@ -728,8 +735,13 @@ app.get('/api/portfolios/:id', async (req, res) => {
     }
     const dividendGroups = Object.values(divYearMap).sort((a, b) => parseInt(b.year) - parseInt(a.year));
 
+    // Total value = Cash + Assets - Dividends
+    // This allows the header to match the sum of holdings exactly
+    const liveTotalValue = Math.round((portfolio.currentCash + totalAssetsValue - totalDividends) * 100) / 100;
+
     res.json({ 
         ...portfolio, 
+        totalValue: liveTotalValue,
         transactions, 
         holdings, 
         allocation, 
@@ -804,7 +816,7 @@ app.post('/api/portfolios', (req, res) => {
     res.status(201).json(created);
 });
 
-app.put('/api/portfolios/:id', (req, res) => {
+app.put('/api/portfolios/:id', async (req, res) => {
     const existing = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(req.params.id);
     if (!existing) return res.status(404).send('Portfolio not found');
 
@@ -819,7 +831,8 @@ app.put('/api/portfolios/:id', (req, res) => {
         req.params.id
     );
 
-    database.recalculatePortfolio(req.params.id);
+    const liveRate = await getEurUsdRate();
+    database.recalculatePortfolio(req.params.id, liveRate);
     clearPerformanceCache();
     res.json(database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(req.params.id));
 });
@@ -834,14 +847,15 @@ app.delete('/api/portfolios/:id', (req, res) => {
     res.json(row);
 });
 
-app.post('/api/portfolios/:id/reconcile', (req, res) => {
+app.post('/api/portfolios/:id/reconcile', async (req, res) => {
     const { actualCash, date } = req.body;
     const portfolioId = req.params.id;
 
     if (actualCash == null) return res.status(400).send('actualCash is required');
 
     // 1. Ensure current data is accurate
-    database.recalculatePortfolio(portfolioId);
+    const liveRate = await getEurUsdRate();
+    database.recalculatePortfolio(portfolioId, liveRate);
     
     const portfolio = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(portfolioId);
     if (!portfolio) return res.status(404).send('Portfolio not found');
@@ -866,7 +880,7 @@ app.post('/api/portfolios/:id/reconcile', (req, res) => {
     );
 
     // 3. Final recalculation
-    database.recalculatePortfolio(portfolioId);
+    database.recalculatePortfolio(portfolioId, liveRate);
     if (typeof clearPerformanceCache === 'function') clearPerformanceCache();
 
     res.json({ 
@@ -888,7 +902,7 @@ app.get('/api/transactions', (req, res) => {
     res.json(database.db.prepare(`SELECT * FROM transactions ORDER BY date ASC`).all());
 });
 
-app.post('/api/transactions', (req, res) => {
+app.post('/api/transactions', async (req, res) => {
     const { portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount, destinationPortfolioId } = req.body;
 
     if (!portfolioId) return res.status(400).send('portfolioId is required');
@@ -904,6 +918,8 @@ app.post('/api/transactions', (req, res) => {
         parseFloat(exchangeRate || 1), parseFloat(amount || 0)
     );
 
+    const liveRate = await getEurUsdRate();
+
     // Automation for TRANSFER: Create a DEPOSIT in the destination portfolio
     if (type === 'TRANSFER' && destinationPortfolioId) {
         database.db.prepare(`
@@ -914,21 +930,22 @@ app.post('/api/transactions', (req, res) => {
             date || new Date().toISOString().split('T')[0],
             0, 0, 0, 0, 1, parseFloat(amount || 0)
         );
-        database.recalculatePortfolio(destinationPortfolioId);
+        database.recalculatePortfolio(destinationPortfolioId, liveRate);
     }
 
-    database.recalculatePortfolio(portfolioId);
+    database.recalculatePortfolio(portfolioId, liveRate);
     clearPerformanceCache();
 
     res.status(201).json(database.db.prepare(`SELECT * FROM transactions WHERE id = ?`).get(result.lastInsertRowid));
 });
 
-app.delete('/api/transactions/:id', (req, res) => {
+app.delete('/api/transactions/:id', async (req, res) => {
     const row = database.db.prepare(`SELECT * FROM transactions WHERE id = ?`).get(req.params.id);
     if (!row) return res.status(404).send('Transaction not found');
     
     database.db.prepare(`DELETE FROM transactions WHERE id = ?`).run(req.params.id);
-    database.recalculatePortfolio(row.portfolioId);
+    const liveRate = await getEurUsdRate();
+    database.recalculatePortfolio(row.portfolioId, liveRate);
     
     // Check if the ticker has any remaining transactions globally
     if (row.assetTicker && row.assetTicker !== 'CASH') {
