@@ -115,6 +115,10 @@ function initDb() {
         dbConnection.prepare(`ALTER TABLE portfolios ADD COLUMN totalDividends REAL NOT NULL DEFAULT 0`).run();
     } catch (e) {}
 
+    try {
+        dbConnection.prepare(`ALTER TABLE portfolios ADD COLUMN color TEXT DEFAULT '#6366f1'`).run();
+    } catch (e) {}
+
     // ─── Notifications Table ──────────────────────────────────────────────────
     dbConnection.exec(`
       CREATE TABLE IF NOT EXISTS notifications (

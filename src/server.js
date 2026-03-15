@@ -699,10 +699,12 @@ app.get('/api/portfolios/:id', async (req, res) => {
         counMap[co] = (counMap[co] || 0) + h.currentValue;
     }
 
-    const allocation = Object.entries(typeMap).map(([type, value]) => ({
-        type, value: Math.round(value * 100) / 100,
-        percent: totalAssetsValue > 0 ? Math.round((value / totalAssetsValue) * 1000) / 10 : 0
-    })).sort((a, b) => b.value - a.value);
+    const allocation = Object.entries(typeMap)
+        .filter(([type]) => type.toUpperCase() !== 'STOCK')
+        .map(([type, value]) => ({
+            type, value: Math.round(value * 100) / 100,
+            percent: totalAssetsValue > 0 ? Math.round((value / totalAssetsValue) * 1000) / 10 : 0
+        })).sort((a, b) => b.value - a.value);
 
     const currencyAllocation = Object.entries(currMap).map(([type, value]) => ({
         type, value: Math.round(value * 100) / 100,
@@ -798,17 +800,18 @@ app.get('/api/portfolios/:id/export', (req, res) => {
 
 app.post('/api/portfolios', (req, res) => {
     console.log('POST /api/portfolios:', req.body);
-    const { name, currency, startDate, initialCash } = req.body;
+    const { name, currency, startDate, initialCash, color } = req.body;
 
     if (!name) return res.status(400).json({ error: 'Portfolio name is required' });
 
     const cash  = parseFloat(initialCash || 0);
     const start = startDate || new Date().toISOString().split('T')[0];
+    const pColor = color || '#6366f1';
 
     const result = database.db.prepare(`
-        INSERT INTO portfolios (name, currency, startDate, initialCash, currentCash, totalValue)
-        VALUES (?, ?, ?, ?, ?, ?)
-    `).run(name, currency || 'EUR', start, cash, cash, cash);
+        INSERT INTO portfolios (name, currency, startDate, initialCash, currentCash, totalValue, color)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(name, currency || 'EUR', start, cash, cash, cash, pColor);
 
     const created = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(result.lastInsertRowid);
     console.log('Created portfolio:', created);
@@ -820,14 +823,15 @@ app.put('/api/portfolios/:id', async (req, res) => {
     const existing = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(req.params.id);
     if (!existing) return res.status(404).send('Portfolio not found');
 
-    const { name, currency, startDate, initialCash } = req.body;
+    const { name, currency, startDate, initialCash, color } = req.body;
     database.db.prepare(`
-        UPDATE portfolios SET name=?, currency=?, startDate=?, initialCash=? WHERE id=?
+        UPDATE portfolios SET name=?, currency=?, startDate=?, initialCash=?, color=? WHERE id=?
     `).run(
         name       || existing.name,
         currency   || existing.currency,
         startDate  || existing.startDate,
         parseFloat(initialCash != null ? initialCash : existing.initialCash),
+        color      || existing.color || '#6366f1',
         req.params.id
     );
 

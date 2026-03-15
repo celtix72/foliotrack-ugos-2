@@ -169,12 +169,16 @@
                 <span class="material-symbols-outlined text-xs">chevron_right</span>
                 <span id="header-portfolio-name" class="text-slate-900 dark:text-slate-100 italic">Loading...</span>
             </div>
-            <h1 id="title-portfolio-name" class="text-4xl font-black">---</h1>
+            <div class="flex items-center gap-3">
+                <div id="title-portfolio-icon-bg" class="w-10 h-10 rounded-xl flex items-center justify-center text-white" style="background-color: #6366f1">
+                    <span class="material-symbols-outlined">work</span>
+                </div>
+                <h1 id="title-portfolio-name" class="text-4xl font-black">---</h1>
+            </div>
             <div class="flex items-baseline gap-4">
                 <p class="text-3xl font-black tracking-tight"><span id="total-value-label">0.00</span> <span id="portfolio-currency-code" class="text-sm text-slate-400 font-bold">EUR</span></p>
                 <div class="flex flex-col">
                     <p class="text-sm font-bold text-slate-500">Cash: <span id="cash-balance-label">0.00</span></p>
-                    <p class="text-sm font-bold text-indigo-500">Dividends: <span id="dividends-label">0.00</span></p>
                 </div>
             </div>
         </div>
@@ -408,9 +412,15 @@
                     <input id="p-date" type="date" required class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3"/>
                 </div>
             </div>
-            <div class="space-y-2">
-                <label class="text-sm font-medium">Initial Cash</label>
-                <input id="p-cash" type="number" step="any" required class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3" placeholder="0.00"/>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <label class="text-sm font-medium">Initial Cash</label>
+                    <input id="p-cash" type="number" step="any" required class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3" placeholder="0.00"/>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-medium">Brand Color</label>
+                    <input id="p-color" type="color" class="w-full h-[42px] bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-1 px-1 cursor-pointer" value="#6366f1"/>
+                </div>
             </div>
             <div class="pt-4 flex gap-3">
                 <button type="button" id="delete-portfolio-btn" onclick="deletePortfolio()" class="px-4 py-2 text-rose-500 font-bold hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg hidden transition-colors">Delete</button>
@@ -625,6 +635,7 @@
 <script>
     let currentPortfolioId = null;
     let portfolioCurrency = 'EUR';
+    let portfolioColor = '#6366f1';
     let currentTransactions = [];
     let currentHoldings = [];
     let holdingsSort = { col: 'impact', dir: 'desc' };
@@ -744,12 +755,14 @@
             currentHoldings = p.holdings || [];
             
             portfolioCurrency = p.currency || 'EUR';
+            portfolioColor = p.color || '#6366f1';
+            
             document.getElementById('header-portfolio-name').innerText = p.name || 'Untitled';
             document.getElementById('title-portfolio-name').innerText = p.name || 'Untitled';
+            document.getElementById('title-portfolio-icon-bg').style.backgroundColor = portfolioColor;
             document.getElementById('total-value-label').innerText = formatCurrency(p.totalValue, p.currency, 0);
             document.getElementById('portfolio-currency-code').innerText = p.currency;
             document.getElementById('cash-balance-label').innerText = formatCurrency(p.currentCash, p.currency, 0);
-            document.getElementById('dividends-label').innerText = formatCurrency(p.totalDividends || 0, p.currency, 0);
             
             document.querySelectorAll('.log-currency-label').forEach(el => el.innerText = p.currency);
 
@@ -1097,7 +1110,8 @@
                 name: document.getElementById('p-name').value,
                 currency: document.getElementById('p-currency').value,
                 startDate: document.getElementById('p-date').value,
-                initialCash: parseFloat(document.getElementById('p-cash').value)
+                initialCash: parseFloat(document.getElementById('p-cash').value),
+                color: document.getElementById('p-color').value
             };
             const id = document.getElementById('p-id').value;
             const method = id ? 'PUT' : 'POST';
@@ -1449,8 +1463,8 @@
                 datasets: [{
                     label: 'Total Value',
                     data: [],
-                    borderColor: '#135bec',
-                    backgroundColor: 'rgba(19, 91, 236, 0.1)',
+                    borderColor: portfolioColor || '#135bec',
+                    backgroundColor: (portfolioColor || '#135bec') + '1A', // 10% opacity
                     fill: true,
                     tension: 0.4,
                     borderWidth: 2,
@@ -1582,16 +1596,20 @@
     }
 
     async function editPortfolio() {
-        const res = await fetch(`/api/portfolios/${currentPortfolioId}`);
-        const p = await res.json();
-        document.getElementById('p-id').value = p.id;
-        document.getElementById('p-name').value = p.name;
-        document.getElementById('p-currency').value = p.currency;
-        document.getElementById('p-date').value = p.startDate;
-        document.getElementById('p-cash').value = p.initialCash;
-        document.getElementById('portfolio-modal-title').innerText = "Edit Portfolio";
-        document.getElementById('delete-portfolio-btn').classList.remove('hidden');
-        document.getElementById('portfolio-modal').classList.remove('hidden');
+        try {
+            const res = await fetch(`/api/portfolios/${currentPortfolioId}`);
+            const p = await res.json();
+            document.getElementById('p-id').value = p.id;
+            document.getElementById('p-name').value = p.name;
+            document.getElementById('p-currency').value = p.currency;
+            document.getElementById('p-date').value = p.startDate;
+            document.getElementById('p-cash').value = p.initialCash;
+            document.getElementById('p-color').value = p.color || '#6366f1';
+            
+            document.getElementById('portfolio-modal-title').innerText = "Edit Portfolio";
+            document.getElementById('delete-portfolio-btn').classList.remove('hidden');
+            document.getElementById('portfolio-modal').classList.remove('hidden');
+        } catch (err) { console.error(err); }
     }
 
     window.init = init;
