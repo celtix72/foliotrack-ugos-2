@@ -228,10 +228,20 @@
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
-                            <th class="px-6 py-4">Asset Info</th>
+                            <th class="px-6 py-4 cursor-pointer hover:text-primary transition-all group" onclick="toggleSort('holdings', 'info')">
+                                <div class="flex items-center gap-1">
+                                    Asset Info
+                                    <span id="h-sort-info" class="material-symbols-outlined text-[14px]">unfold_more</span>
+                                </div>
+                            </th>
                             <th class="px-6 py-4">Quantity & Avg Cost</th>
                             <th class="px-6 py-4">Market Price</th>
-                            <th class="px-6 py-4 text-right">Portfolio Impact</th>
+                            <th class="px-6 py-4 cursor-pointer hover:text-primary transition-all group" onclick="toggleSort('holdings', 'impact')">
+                                <div class="flex items-center gap-1 justify-end">
+                                    Portfolio Impact
+                                    <span id="h-sort-impact" class="material-symbols-outlined text-[14px]">unfold_more</span>
+                                </div>
+                            </th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm" id="assets-table-body">
@@ -247,11 +257,21 @@
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
-                            <th class="px-6 py-4">Date</th>
+                            <th class="px-6 py-4 cursor-pointer hover:text-primary transition-all group" onclick="toggleSort('transactions', 'date')">
+                                <div class="flex items-center gap-1">
+                                    Date
+                                    <span id="t-sort-date" class="material-symbols-outlined text-[14px]">unfold_more</span>
+                                </div>
+                            </th>
                             <th class="px-6 py-4">Asset</th>
                             <th class="px-6 py-4">Type</th>
                             <th class="px-6 py-4 text-right">Qty / Price</th>
-                            <th class="px-6 py-4 text-right">Total (<span class="log-currency-label">---</span>)</th>
+                            <th class="px-6 py-4 cursor-pointer hover:text-primary transition-all group" onclick="toggleSort('transactions', 'total')">
+                                <div class="flex items-center gap-1 justify-end">
+                                    Total (<span class="log-currency-label">---</span>)
+                                    <span id="t-sort-total" class="material-symbols-outlined text-[14px]">unfold_more</span>
+                                </div>
+                            </th>
                             <th class="px-6 py-4 text-center">Actions</th>
                         </tr>
                     </thead>
@@ -600,6 +620,8 @@
     let portfolioCurrency = 'EUR';
     let currentTransactions = [];
     let currentHoldings = [];
+    let holdingsSort = { col: 'impact', dir: 'desc' };
+    let transactionsSort = { col: 'date', dir: 'desc' };
 
     window.openPortfolioModal = function(id = null) {
         if (!id) {
@@ -724,109 +746,7 @@
             document.querySelectorAll('.log-currency-label').forEach(el => el.innerText = p.currency);
 
             // Render Assets
-            const tBody = document.getElementById('assets-table-body');
-            const holdings = p.holdings || [];
-            tBody.innerHTML = holdings.map(h => {
-                const color = h.unrealizedGain >= 0 ? 'emerald' : 'rose';
-                const sign = h.unrealizedGain >= 0 ? '+' : '';
-                const errorTag = h.lastUpdateError ? `
-                    <span class="ml-2 px-1.5 py-0.5 rounded-full bg-rose-500 text-[8px] font-black text-white uppercase tracking-tighter" title="${h.lastUpdateError.replace(/"/g, '&quot;')}">Err</span>
-                ` : '';
-
-                const manualBtn = (h.isManual || h.dataSource !== 'YF') ? `
-                    <button onclick="event.stopPropagation(); openManualModal('${h.ticker}', '${h.currency}', ${h.currentPrice}, '${h.type || ''}', '${h.country || ''}', '${h.dataSource || 'YF'}', '${h.isin || ''}')" class="w-6 h-6 rounded bg-amber-500/10 text-amber-500 flex items-center justify-center hover:bg-amber-500/20 transition-colors ml-2" title="Update Price / Source">
-                        <span class="material-symbols-outlined text-[14px]">edit_note</span>
-                    </button>
-                    ${errorTag}
-                ` : `
-                    <div class="flex items-center">
-                        <span class="ml-2 text-primary material-symbols-outlined text-[16px]" title="Yahoo Finance">bolt</span>
-                        ${errorTag}
-                    </div>
-                `;
-
-                return `
-                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer group/row" onclick="toggleAssetTransactions('${h.ticker}')">
-                    <td class="px-6 py-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded bg-primary/5 text-primary flex items-center justify-center font-bold text-[10px] group-hover/row:bg-primary group-hover/row:text-white transition-colors">
-                                <span class="material-symbols-outlined text-sm" id="expand-icon-${h.ticker}">chevron_right</span>
-                            </div>
-                            <div>
-                                <div class="flex items-center">
-                                    <p class="font-bold text-slate-900 dark:text-white leading-tight">${h.name}</p>
-                                    ${manualBtn}
-                                </div>
-                                <p class="text-[10px] text-slate-500 uppercase font-black tracking-widest mt-0.5">${h.ticker} • ${h.currency}</p>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="px-6 py-4">
-                        <p class="font-bold text-slate-700 dark:text-slate-200 font-mono text-sm leading-tight">${formatNumber(h.shares, 0)}</p>
-                        <p class="text-[10px] text-slate-500 font-bold font-mono mt-0.5">${formatCurrency(h.avgCostAssetCurr, h.currency)} <span class="text-[9px] opacity-70">Avg</span></p>
-                    </td>
-                    <td class="px-6 py-4">
-                        <p class="font-bold text-slate-900 dark:text-white font-mono text-sm leading-tight">${formatCurrency(h.currentPrice, h.currency)}</p>
-                        <p class="text-[10px] font-bold text-${color}-500/80 font-mono mt-0.5">${sign}${formatNumber(h.unrealizedGainPct, 2)}%</p>
-                    </td>
-                    <td class="px-6 py-4 text-right">
-                        <p class="font-black text-slate-900 dark:text-white font-mono text-sm leading-tight">${formatCurrency(h.currentValue, p.currency)}</p>
-                        <p class="text-[10px] font-bold text-${color}-500 font-mono mt-0.5">${sign}${formatCurrency(h.unrealizedGain, p.currency)}</p>
-                    </td>
-                </tr>
-                <tr id="transactions-${h.ticker}" class="hidden bg-slate-50/50 dark:bg-slate-900/30">
-                    <td colspan="4" class="px-6 py-0">
-                        <div class="overflow-hidden mb-6 mt-2 border border-slate-200 dark:border-slate-800 rounded-xl shadow-inner bg-white dark:bg-black/20">
-                            <table class="w-full text-xs">
-                                <thead class="bg-slate-100/50 dark:bg-slate-800/50 text-[9px] uppercase tracking-widest font-bold text-slate-400">
-                                    <tr>
-                                        <th class="px-4 py-2 text-left">Date</th>
-                                        <th class="px-4 py-2 text-left">Type</th>
-                                        <th class="px-4 py-2 text-right">Qty</th>
-                                        <th class="px-4 py-1 text-right">Price</th>
-                                        <th class="px-4 py-1 text-right">FX</th>
-                                        <th class="px-4 py-1 text-right">Comm/Tax</th>
-                                        <th class="px-4 py-1 text-right">Total (${p.currency})</th>
-                                        <th class="px-4 py-2 text-center">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-slate-200 dark:divide-slate-800/50">
-                                    ${p.transactions.filter(t => t.assetTicker === h.ticker).sort((a,b) => new Date(b.date) - new Date(a.date)).map(t => {
-                                        const isDebit = ['BUY', 'TAX'].includes(t.type);
-                                        const tColor = isDebit ? 'rose' : 'emerald';
-                                        const tSign = isDebit ? '-' : '+';
-                                        const total = t.amount || (t.quantity * t.price + t.commission + t.tax) / t.exchangeRate;
-                                        return `
-                                            <tr class="text-slate-600 dark:text-slate-400">
-                                                <td class="px-4 py-2 font-mono text-[10px]">${t.date}</td>
-                                                <td class="px-4 py-2">
-                                                    <span class="px-1.5 py-0.5 rounded-[4px] font-black text-[8px] bg-${tColor}-500/10 text-${tColor}-500 border border-${tColor}-500/20">${t.type}</span>
-                                                </td>
-                                                <td class="px-4 py-2 text-right font-mono font-bold">${t.quantity ? formatNumber(t.quantity, 0) : '—'}</td>
-                                                <td class="px-4 py-2 text-right font-mono">${t.price ? formatCurrency(t.price, h.currency) : '—'}</td>
-                                                <td class="px-4 py-2 text-right font-mono text-slate-400 opacity-60">${t.exchangeRate !== 1 ? formatNumber(t.exchangeRate, 4) : '—'}</td>
-                                                <td class="px-4 py-2 text-right font-mono text-slate-400 opacity-60">${t.commission + t.tax > 0 ? formatNumber(t.commission + t.tax, 2) : '—'}</td>
-                                                <td class="px-4 py-2 text-right font-bold font-mono text-slate-700 dark:text-slate-200">${tSign}${formatCurrency(total, p.currency)}</td>
-                                                <td class="px-4 py-2 text-center">
-                                                    <div class="flex items-center justify-center gap-1">
-                                                        <button onclick="event.stopPropagation(); editTransaction(${t.id})" class="p-1 text-slate-400 hover:text-primary transition-colors">
-                                                            <span class="material-symbols-outlined text-[16px]">edit</span>
-                                                        </button>
-                                                        <button onclick="event.stopPropagation(); confirmDeleteTransaction(${t.id})" class="p-1 text-slate-400 hover:text-rose-500 transition-colors">
-                                                            <span class="material-symbols-outlined text-[16px]">delete</span>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        `;
-                                    }).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    </td>
-                </tr>
-                `;
-            }).join('') || '<tr><td colspan="4" class="px-6 py-4 text-center text-slate-500 italic">No active holdings.</td></tr>';
+            renderAssetsTable(p.holdings || [], p.transactions || [], p.currency);
 
             // Render Allocation
             renderAllocation({
@@ -836,74 +756,250 @@
             });
 
             // Render Cash History
-            const cashHistoryBody = document.getElementById('cash-history-body');
-            const sortedTxs = [...p.transactions].sort((a,b) => new Date(b.date) - new Date(a.date));
-            const cashTxs = sortedTxs.filter(t => ['DEPOSIT', 'WITHDRAWAL', 'TAX', 'TRANSFER'].includes(t.type));
-            
-            cashHistoryBody.innerHTML = cashTxs.length ? cashTxs.map(t => {
-                const isDebit = ['WITHDRAWAL', 'TAX', 'TRANSFER'].includes(t.type);
-                const color = isDebit ? 'rose' : 'emerald';
-                const sign = isDebit ? '-' : '+';
-                return `
-                    <tr class="text-slate-600 dark:text-slate-400 border-b border-slate-50 dark:border-slate-800/50 last:border-0">
-                        <td class="px-6 py-3 font-mono">${t.date}</td>
-                        <td class="px-6 py-3">
-                            <span class="px-1.5 py-0.5 rounded-[4px] font-black text-[8px] bg-${color}-500/10 text-${color}-500 border border-${color}-500/20">${t.type}</span>
-                        </td>
-                        <td class="px-6 py-3 text-right font-bold font-mono text-${color}-600">${sign}${formatCurrency(t.amount, p.currency)}</td>
-                    </tr>
-                `;
-            }).join('') : '<tr><td colspan="3" class="px-6 py-4 text-center text-slate-500 italic">No cash movements found.</td></tr>';
+            renderCashHistory(p.transactions || [], p.currency);
 
             // Render Chronological Transaction Log
-            const fullLogBody = document.getElementById('full-transactions-body');
-            fullLogBody.innerHTML = sortedTxs.length ? sortedTxs.map(t => {
-                const isDebit = ['BUY', 'WITHDRAWAL', 'TAX', 'TRANSFER'].includes(t.type);
-                const color = isDebit ? 'rose' : 'emerald';
-                const sign = isDebit ? '-' : '+';
-                const isCash = ['DEPOSIT', 'WITHDRAWAL', 'TAX', 'TRANSFER'].includes(t.type);
-                
-                let total = t.amount;
-                if (!isCash) {
-                    total = (t.quantity * t.price + t.commission + t.tax) / t.exchangeRate;
-                }
-
-                const asset = p.holdings?.find(hold => hold.ticker === t.assetTicker);
-                const displayCurr = (t.assetTicker === 'CASH' || !t.assetTicker) ? p.currency : (asset ? asset.currency : p.currency);
-
-                return `
-                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                        <td class="px-6 py-4 font-mono text-xs text-slate-500">${t.date}</td>
-                        <td class="px-6 py-4 font-bold text-slate-900 dark:text-white capitalize">${t.assetTicker || 'Portfolio Cash'}</td>
-                        <td class="px-6 py-4">
-                            <span class="px-2 py-0.5 rounded font-black text-[8px] bg-${color}-500/10 text-${color}-500 border border-${color}-500/20">${t.type}</span>
-                        </td>
-                        <td class="px-6 py-4 text-right">
-                            ${!isCash ? `
-                                <div class="font-mono text-xs font-bold">${formatNumber(t.quantity, 0)} @ ${formatCurrency(t.price, displayCurr)}</div>
-                                <div class="text-[9px] text-slate-400">FX: ${t.exchangeRate !== 1 ? t.exchangeRate : '1:1'}</div>
-                            ` : '—'}
-                        </td>
-                        <td class="px-6 py-4 text-right font-black font-mono text-sm text-${color}-600">
-                            ${sign}${formatCurrency(total, p.currency)}
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="flex items-center justify-center gap-2">
-                                <button onclick="editTransaction(${t.id})" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-primary transition-colors">
-                                    <span class="material-symbols-outlined text-sm">edit</span>
-                                </button>
-                                <button onclick="confirmDeleteTransaction(${t.id})" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-500 transition-colors">
-                                    <span class="material-symbols-outlined text-sm">delete</span>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join('') : '<tr><td colspan="6" class="px-6 py-12 text-center text-slate-500 italic">No transactions recorded yet.</td></tr>';
+            renderTransactionsTable(p.transactions || [], p.holdings || [], p.currency);
 
         } catch (err) { 
             console.error("Error loading portfolio details:", err);
             navigateToList();
+        }
+    }
+
+    function renderAssetsTable(holdings, transactions, currency) {
+        const tBody = document.getElementById('assets-table-body');
+        if (!tBody) return;
+
+        const sorted = [...holdings].sort((a, b) => {
+            let valA, valB;
+            if (holdingsSort.col === 'info') {
+                valA = a.name.toLowerCase();
+                valB = b.name.toLowerCase();
+            } else {
+                valA = a.currentValue;
+                valB = b.currentValue;
+            }
+            if (holdingsSort.dir === 'asc') return valA > valB ? 1 : -1;
+            return valA < valB ? 1 : -1;
+        });
+
+        tBody.innerHTML = sorted.map(h => {
+            const color = h.unrealizedGain >= 0 ? 'emerald' : 'rose';
+            const sign = h.unrealizedGain >= 0 ? '+' : '';
+            const errorTag = h.lastUpdateError ? `
+                <span class="ml-2 px-1.5 py-0.5 rounded-full bg-rose-500 text-[8px] font-black text-white uppercase tracking-tighter" title="${h.lastUpdateError.replace(/"/g, '&quot;')}">Err</span>
+            ` : '';
+
+            const manualBtn = (h.isManual || h.dataSource !== 'YF') ? `
+                <button onclick="event.stopPropagation(); openManualModal('${h.ticker}', '${h.currency}', ${h.currentPrice}, '${h.type || ''}', '${h.country || ''}', '${h.dataSource || 'YF'}', '${h.isin || ''}')" class="w-6 h-6 rounded bg-amber-500/10 text-amber-500 flex items-center justify-center hover:bg-amber-500/20 transition-colors ml-2" title="Update Price / Source">
+                    <span class="material-symbols-outlined text-[14px]">edit_note</span>
+                </button>
+                ${errorTag}
+            ` : `
+                <div class="flex items-center">
+                    <span class="ml-2 text-primary material-symbols-outlined text-[16px]" title="Yahoo Finance">bolt</span>
+                    ${errorTag}
+                </div>
+            `;
+
+            return `
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer group/row" onclick="toggleAssetTransactions('${h.ticker}')">
+                <td class="px-6 py-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded bg-primary/5 text-primary flex items-center justify-center font-bold text-[10px] group-hover/row:bg-primary group-hover/row:text-white transition-colors">
+                            <span class="material-symbols-outlined text-sm" id="expand-icon-${h.ticker}">chevron_right</span>
+                        </div>
+                        <div>
+                            <div class="flex items-center">
+                                <p class="font-bold text-slate-900 dark:text-white leading-tight">${h.name}</p>
+                                ${manualBtn}
+                            </div>
+                            <p class="text-[10px] text-slate-500 uppercase font-black tracking-widest mt-0.5">${h.ticker} • ${h.currency}</p>
+                        </div>
+                    </div>
+                </td>
+                <td class="px-6 py-4">
+                    <p class="font-bold text-slate-700 dark:text-slate-200 font-mono text-sm leading-tight">${formatNumber(h.shares, 0)}</p>
+                    <p class="text-[10px] text-slate-500 font-bold font-mono mt-0.5">${formatCurrency(h.avgCostAssetCurr, h.currency)} <span class="text-[9px] opacity-70">Avg</span></p>
+                </td>
+                <td class="px-6 py-4">
+                    <p class="font-bold text-slate-900 dark:text-white font-mono text-sm leading-tight">${formatCurrency(h.currentPrice, h.currency)}</p>
+                    <p class="text-[10px] font-bold text-${color}-500/80 font-mono mt-0.5">${sign}${formatNumber(h.unrealizedGainPct, 2)}%</p>
+                </td>
+                <td class="px-6 py-4 text-right">
+                    <p class="font-black text-slate-900 dark:text-white font-mono text-sm leading-tight">${formatCurrency(h.currentValue, currency)}</p>
+                    <p class="text-[10px] font-bold text-${color}-500 font-mono mt-0.5">${sign}${formatCurrency(h.unrealizedGain, currency)}</p>
+                </td>
+            </tr>
+            <tr id="transactions-${h.ticker}" class="hidden bg-slate-50/50 dark:bg-slate-900/30">
+                <td colspan="4" class="px-6 py-0">
+                    <div class="overflow-hidden mb-6 mt-2 border border-slate-200 dark:border-slate-800 rounded-xl shadow-inner bg-white dark:bg-black/20">
+                        <table class="w-full text-xs">
+                            <thead class="bg-slate-100/50 dark:bg-slate-800/50 text-[9px] uppercase tracking-widest font-bold text-slate-400">
+                                <tr>
+                                    <th class="px-4 py-2 text-left">Date</th>
+                                    <th class="px-4 py-2 text-left">Type</th>
+                                    <th class="px-4 py-2 text-right">Qty</th>
+                                    <th class="px-4 py-1 text-right">Price</th>
+                                    <th class="px-4 py-1 text-right">FX</th>
+                                    <th class="px-4 py-1 text-right">Comm/Tax</th>
+                                    <th class="px-4 py-1 text-right">Total (${currency})</th>
+                                    <th class="px-4 py-2 text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200 dark:divide-slate-800/50">
+                                ${transactions.filter(t => t.assetTicker === h.ticker).sort((a,b) => new Date(b.date) - new Date(a.date)).map(t => {
+                                    const isDebit = ['BUY', 'TAX'].includes(t.type);
+                                    const tColor = isDebit ? 'rose' : 'emerald';
+                                    const tSign = isDebit ? '-' : '+';
+                                    const total = t.amount || (t.quantity * t.price + t.commission + t.tax) / t.exchangeRate;
+                                    return `
+                                        <tr class="text-slate-600 dark:text-slate-400">
+                                            <td class="px-4 py-2 font-mono text-[10px]">${t.date}</td>
+                                            <td class="px-4 py-2">
+                                                <span class="px-1.5 py-0.5 rounded-[4px] font-black text-[8px] bg-${tColor}-500/10 text-${tColor}-500 border border-${tColor}-500/20">${t.type}</span>
+                                            </td>
+                                            <td class="px-4 py-2 text-right font-mono font-bold">${t.quantity ? formatNumber(t.quantity, 0) : '—'}</td>
+                                            <td class="px-4 py-2 text-right font-mono">${t.price ? formatCurrency(t.price, h.currency) : '—'}</td>
+                                            <td class="px-4 py-2 text-right font-mono text-slate-400 opacity-60">${t.exchangeRate !== 1 ? formatNumber(t.exchangeRate, 4) : '—'}</td>
+                                            <td class="px-4 py-2 text-right font-mono text-slate-400 opacity-60">${t.commission + t.tax > 0 ? formatNumber(t.commission + t.tax, 2) : '—'}</td>
+                                            <td class="px-4 py-2 text-right font-bold font-mono text-slate-700 dark:text-slate-200">${tSign}${formatCurrency(total, currency)}</td>
+                                            <td class="px-4 py-2 text-center">
+                                                <div class="flex items-center justify-center gap-1">
+                                                    <button onclick="event.stopPropagation(); editTransaction(${t.id})" class="p-1 text-slate-400 hover:text-primary transition-colors">
+                                                        <span class="material-symbols-outlined text-[16px]">edit</span>
+                                                    </button>
+                                                    <button onclick="event.stopPropagation(); confirmDeleteTransaction(${t.id})" class="p-1 text-slate-400 hover:text-rose-500 transition-colors">
+                                                        <span class="material-symbols-outlined text-[16px]">delete</span>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </td>
+            </tr>
+            `;
+        }).join('') || '<tr><td colspan="4" class="px-6 py-4 text-center text-slate-500 italic">No active holdings.</td></tr>';
+        
+        updateSortIndicators('holdings', holdingsSort);
+    }
+
+    function renderCashHistory(transactions, currency) {
+        const cashHistoryBody = document.getElementById('cash-history-body');
+        if (!cashHistoryBody) return;
+        const sortedTxs = [...transactions].sort((a,b) => new Date(b.date) - new Date(a.date));
+        const cashTxs = sortedTxs.filter(t => ['DEPOSIT', 'WITHDRAWAL', 'TAX', 'TRANSFER'].includes(t.type));
+        
+        cashHistoryBody.innerHTML = cashTxs.length ? cashTxs.map(t => {
+            const isDebit = ['WITHDRAWAL', 'TAX', 'TRANSFER'].includes(t.type);
+            const color = isDebit ? 'rose' : 'emerald';
+            const sign = isDebit ? '-' : '+';
+            return `
+                <tr class="text-slate-600 dark:text-slate-400 border-b border-slate-50 dark:border-slate-800/50 last:border-0">
+                    <td class="px-6 py-3 font-mono">${t.date}</td>
+                    <td class="px-6 py-3">
+                        <span class="px-1.5 py-0.5 rounded-[4px] font-black text-[8px] bg-${color}-500/10 text-${color}-500 border border-${color}-500/20">${t.type}</span>
+                    </td>
+                    <td class="px-6 py-3 text-right font-bold font-mono text-${color}-600">${sign}${formatCurrency(t.amount, currency)}</td>
+                </tr>
+            `;
+        }).join('') : '<tr><td colspan="3" class="px-6 py-4 text-center text-slate-500 italic">No cash movements found.</td></tr>';
+    }
+
+    function renderTransactionsTable(transactions, holdings, currency) {
+        const fullLogBody = document.getElementById('full-transactions-body');
+        if (!fullLogBody) return;
+
+        const sorted = [...transactions].sort((a, b) => {
+            let valA, valB;
+            if (transactionsSort.col === 'date') {
+                valA = new Date(a.date);
+                valB = new Date(b.date);
+            } else {
+                valA = a.amount || (a.quantity * a.price + a.commission + a.tax) / a.exchangeRate;
+                valB = b.amount || (b.quantity * b.price + b.commission + b.tax) / b.exchangeRate;
+            }
+            if (transactionsSort.dir === 'asc') return valA > valB ? 1 : -1;
+            return valA < valB ? 1 : -1;
+        });
+
+        fullLogBody.innerHTML = sorted.length ? sorted.map(t => {
+            const isDebit = ['BUY', 'WITHDRAWAL', 'TAX', 'TRANSFER'].includes(t.type);
+            const color = isDebit ? 'rose' : 'emerald';
+            const sign = isDebit ? '-' : '+';
+            const isCash = ['DEPOSIT', 'WITHDRAWAL', 'TAX', 'TRANSFER'].includes(t.type);
+            
+            let total = t.amount;
+            if (!isCash) {
+                total = (t.quantity * t.price + t.commission + t.tax) / t.exchangeRate;
+            }
+
+            const asset = holdings?.find(hold => hold.ticker === t.assetTicker);
+            const displayCurr = (t.assetTicker === 'CASH' || !t.assetTicker) ? currency : (asset ? asset.currency : currency);
+
+            return `
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                    <td class="px-6 py-4 font-mono text-xs text-slate-500">${t.date}</td>
+                    <td class="px-6 py-4 font-bold text-slate-900 dark:text-white capitalize">${t.assetTicker || 'Portfolio Cash'}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-0.5 rounded font-black text-[8px] bg-${color}-500/10 text-${color}-500 border border-${color}-500/20">${t.type}</span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        ${!isCash ? `
+                            <div class="font-mono text-xs font-bold">${formatNumber(t.quantity, 0)} @ ${formatCurrency(t.price, displayCurr)}</div>
+                            <div class="text-[9px] text-slate-400">FX: ${t.exchangeRate !== 1 ? t.exchangeRate : '1:1'}</div>
+                        ` : '—'}
+                    </td>
+                    <td class="px-6 py-4 text-right font-black font-mono text-sm text-${color}-600">
+                        ${sign}${formatCurrency(total, currency)}
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center justify-center gap-2">
+                            <button onclick="editTransaction(${t.id})" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-primary transition-colors">
+                                <span class="material-symbols-outlined text-sm">edit</span>
+                            </button>
+                            <button onclick="confirmDeleteTransaction(${t.id})" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-500 transition-colors">
+                                <span class="material-symbols-outlined text-sm">delete</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('') : '<tr><td colspan="6" class="px-6 py-12 text-center text-slate-500 italic">No transactions recorded yet.</td></tr>';
+
+        updateSortIndicators('transactions', transactionsSort);
+    }
+
+    function updateSortIndicators(type, state) {
+        const prefix = type === 'holdings' ? 'h-sort' : 't-sort';
+        document.querySelectorAll(`[id^="${prefix}-"]`).forEach(el => {
+            el.innerText = 'unfold_more';
+            el.classList.remove('text-primary');
+        });
+        const activeIcon = document.getElementById(`${prefix}-${state.col}`);
+        if (activeIcon) {
+            activeIcon.innerText = state.dir === 'asc' ? 'expand_less' : 'expand_more';
+            activeIcon.classList.add('text-primary');
+        }
+    }
+
+    window.toggleSort = function(type, col) {
+        const state = type === 'holdings' ? holdingsSort : transactionsSort;
+        if (state.col === col) {
+            state.dir = state.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+            state.col = col;
+            state.dir = 'desc';
+        }
+        if (type === 'holdings') {
+            renderAssetsTable(currentHoldings, currentTransactions, portfolioCurrency);
+        } else {
+            renderTransactionsTable(currentTransactions, currentHoldings, portfolioCurrency);
         }
     }
 
