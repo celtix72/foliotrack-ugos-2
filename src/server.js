@@ -1507,13 +1507,31 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                 let pAssets = 0;
                 for (const [ticker, shares] of Object.entries(state.holdings)) {
                     if (shares <= 0.0001) continue;
+                    
                     let price = historicalPrices[ticker]?.[dateStr];
-                    if (price === undefined) {
-                        const availableDates = Object.keys(historicalPrices[ticker] || {}).sort();
-                        const pastDates = availableDates.filter(d => d < dateStr);
-                        if (pastDates.length > 0) price = historicalPrices[ticker][pastDates.at(-1)];
-                        else if (availableDates.length > 0) price = historicalPrices[ticker][availableDates[0]];
-                        else {
+                    const isToday = dateStr === today.toISOString().split('T')[0];
+
+                    // If price is missing (undefined, null, or 0), try to find a fallback
+                    if (!price || price === 0) {
+                        // Priority 1: For today, try live price from database
+                        if (isToday) {
+                            const asset = database.db.prepare('SELECT currentPrice FROM assets WHERE ticker = ?').get(ticker);
+                            if (asset && asset.currentPrice > 0) price = asset.currentPrice;
+                        }
+
+                        // Priority 2: Try most recent historical price
+                        if (!price || price === 0) {
+                            const availableDates = Object.keys(historicalPrices[ticker] || {}).sort();
+                            const pastDates = availableDates.filter(d => d < dateStr);
+                            if (pastDates.length > 0) {
+                                price = historicalPrices[ticker][pastDates.at(-1)];
+                            } else if (availableDates.length > 0) {
+                                price = historicalPrices[ticker][availableDates[0]];
+                            }
+                        }
+
+                        // Priority 3: Final fallback to asset table for any date if still no price
+                        if (!price || price === 0) {
                             const asset = database.db.prepare('SELECT currentPrice FROM assets WHERE ticker = ?').get(ticker);
                             price = asset ? asset.currentPrice : 0;
                         }
