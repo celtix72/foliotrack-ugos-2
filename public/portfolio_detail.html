@@ -215,25 +215,51 @@
         </div>
     </div>
 
-    <!-- Assets Section (Full Width) -->
-    <div class="space-y-4">
-        <div class="flex items-center justify-between">
-            <h3 class="text-xl font-bold">Assets</h3>
+    <!-- Tabs Section -->
+    <div class="space-y-6">
+        <div class="flex items-center gap-4 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl w-fit">
+            <button onclick="switchView('holdings')" id="tab-holdings" class="px-6 py-2 rounded-lg text-sm font-black transition-all bg-white dark:bg-slate-800 shadow-sm text-primary">Holdings</button>
+            <button onclick="switchView('transactions')" id="tab-transactions" class="px-6 py-2 rounded-lg text-sm font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-all">Transactions</button>
         </div>
-        <div class="overflow-hidden bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
-                        <th class="px-6 py-4">Asset Info</th>
-                        <th class="px-6 py-4">Quantity & Avg Cost</th>
-                        <th class="px-6 py-4">Market Price</th>
-                        <th class="px-6 py-4 text-right">Portfolio Impact</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm" id="assets-table-body">
-                    <!-- Assets calculated from transactions -->
-                </tbody>
-            </table>
+
+        <!-- Holdings View (Grouped) -->
+        <div id="view-holdings" class="space-y-4">
+            <div class="overflow-hidden bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
+                            <th class="px-6 py-4">Asset Info</th>
+                            <th class="px-6 py-4">Quantity & Avg Cost</th>
+                            <th class="px-6 py-4">Market Price</th>
+                            <th class="px-6 py-4 text-right">Portfolio Impact</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm" id="assets-table-body">
+                        <!-- Assets calculated from transactions -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Transactions View (Chronological) -->
+        <div id="view-transactions" class="space-y-4 hidden">
+            <div class="overflow-hidden bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
+                            <th class="px-6 py-4">Date</th>
+                            <th class="px-6 py-4">Asset</th>
+                            <th class="px-6 py-4">Type</th>
+                            <th class="px-6 py-4 text-right">Qty / Price</th>
+                            <th class="px-6 py-4 text-right">Total (<span class="log-currency-label">---</span>)</th>
+                            <th class="px-6 py-4 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm" id="full-transactions-body">
+                        <!-- Chronological transactions -->
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -611,38 +637,63 @@
                 console.error("listView element NOT FOUND");
             }
             document.getElementById('portfolio-detail-view').classList.add('hidden');
-            loadAllPortfolios();
+            loadPortfolios();
         }
     }
 
-    async function loadAllPortfolios() {
+    async function loadPortfolios() {
         try {
             const res = await fetch('/api/portfolios');
             const portfolios = await res.json();
             const grid = document.getElementById('portfolios-grid');
-            grid.innerHTML = portfolios.map(p => `
-                <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 hover:shadow-xl transition-all cursor-pointer group" onclick="window.location.href='/portfolio?id=${p.id}'">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold">
-                            <span class="material-symbols-outlined">folder</span>
+            if (grid) {
+                grid.innerHTML = portfolios.map(p => `
+                    <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 hover:shadow-xl transition-all cursor-pointer group" onclick="window.location.href='/portfolio?id=${p.id}'">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold">
+                                <span class="material-symbols-outlined">folder</span>
+                            </div>
+                            <span class="text-[10px] font-black bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-slate-500">${p.currency}</span>
                         </div>
-                        <span class="text-[10px] font-black bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-slate-500">${p.currency}</span>
+                        <h3 class="text-xl font-bold group-hover:text-primary transition-colors">${p.name}</h3>
+                        <p class="text-slate-500 text-sm mt-1">Started on ${p.startDate}</p>
+                        <div class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Value</p>
+                                <p class="text-lg font-black">${formatCurrency(p.totalValue, p.currency, 0)}</p>
+                            </div>
+                            <div class="text-right">
+                                 <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Holdings</p>
+                                 <p class="text-sm font-bold">${p.assetCount} Assets</p>
+                            </div>
+                        </div>
                     </div>
-                    <h3 class="text-xl font-bold group-hover:text-primary transition-colors">${p.name}</h3>
-                    <p class="text-slate-500 text-sm mt-1">Started on ${p.startDate}</p>
-                    <div class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                        <div>
-                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Value</p>
-                            <p class="text-lg font-black">${formatCurrency(p.totalValue, p.currency, 0)}</p>
-                        </div>
-                        <div class="text-right">
-                             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Holdings</p>
-                             <p class="text-sm font-bold">${p.assetCount} Assets</p>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
+                `).join('') || '<div class="col-span-full py-12 text-center text-slate-500 italic">No portfolios found. Create your first one above!</div>';
+            }
         } catch (err) { console.error(err); }
+    }
+
+    window.switchView = function(view) {
+        const holdingsTab = document.getElementById('tab-holdings');
+        const transactionsTab = document.getElementById('tab-transactions');
+        const holdingsView = document.getElementById('view-holdings');
+        const transactionsView = document.getElementById('view-transactions');
+
+        if (view === 'holdings') {
+            holdingsView.classList.remove('hidden');
+            transactionsView.classList.add('hidden');
+            holdingsTab.classList.add('bg-white', 'dark:bg-slate-800', 'shadow-sm', 'text-primary');
+            holdingsTab.classList.remove('text-slate-500');
+            transactionsTab.classList.remove('bg-white', 'dark:bg-slate-800', 'shadow-sm', 'text-primary');
+            transactionsTab.classList.add('text-slate-500');
+        } else {
+            holdingsView.classList.add('hidden');
+            transactionsView.classList.remove('hidden');
+            transactionsTab.classList.add('bg-white', 'dark:bg-slate-800', 'shadow-sm', 'text-primary');
+            transactionsTab.classList.remove('text-slate-500');
+            holdingsTab.classList.remove('bg-white', 'dark:bg-slate-800', 'shadow-sm', 'text-primary');
+            holdingsTab.classList.add('text-slate-500');
+        }
     }
 
     async function loadPortfolioDetails() {
@@ -662,6 +713,8 @@
             document.getElementById('total-value-label').innerText = formatCurrency(p.totalValue, p.currency, 0);
             document.getElementById('portfolio-currency-code').innerText = p.currency;
             document.getElementById('cash-balance-label').innerText = formatCurrency(p.currentCash, p.currency, 0);
+            
+            document.querySelectorAll('.log-currency-label').forEach(el => el.innerText = p.currency);
 
             // Render Assets
             const tBody = document.getElementById('assets-table-body');
@@ -767,13 +820,15 @@
 
             // Render Cash History
             const cashHistoryBody = document.getElementById('cash-history-body');
-            const cashTxs = p.transactions.filter(t => ['DEPOSIT', 'WITHDRAWAL', 'TAX', 'TRANSFER'].includes(t.type)).sort((a,b) => new Date(b.date) - new Date(a.date));
+            const sortedTxs = [...p.transactions].sort((a,b) => new Date(b.date) - new Date(a.date));
+            const cashTxs = sortedTxs.filter(t => ['DEPOSIT', 'WITHDRAWAL', 'TAX', 'TRANSFER'].includes(t.type));
+            
             cashHistoryBody.innerHTML = cashTxs.length ? cashTxs.map(t => {
                 const isDebit = ['WITHDRAWAL', 'TAX', 'TRANSFER'].includes(t.type);
                 const color = isDebit ? 'rose' : 'emerald';
                 const sign = isDebit ? '-' : '+';
                 return `
-                    <tr class="text-slate-600 dark:text-slate-400">
+                    <tr class="text-slate-600 dark:text-slate-400 border-b border-slate-50 dark:border-slate-800/50 last:border-0">
                         <td class="px-6 py-3 font-mono">${t.date}</td>
                         <td class="px-6 py-3">
                             <span class="px-1.5 py-0.5 rounded-[4px] font-black text-[8px] bg-${color}-500/10 text-${color}-500 border border-${color}-500/20">${t.type}</span>
@@ -782,6 +837,49 @@
                     </tr>
                 `;
             }).join('') : '<tr><td colspan="3" class="px-6 py-4 text-center text-slate-500 italic">No cash movements found.</td></tr>';
+
+            // Render Chronological Transaction Log
+            const fullLogBody = document.getElementById('full-transactions-body');
+            fullLogBody.innerHTML = sortedTxs.length ? sortedTxs.map(t => {
+                const isDebit = ['BUY', 'WITHDRAWAL', 'TAX', 'TRANSFER'].includes(t.type);
+                const color = isDebit ? 'rose' : 'emerald';
+                const sign = isDebit ? '-' : '+';
+                const isCash = ['DEPOSIT', 'WITHDRAWAL', 'TAX', 'TRANSFER'].includes(t.type);
+                
+                let total = t.amount;
+                if (!isCash) {
+                    total = (t.quantity * t.price + t.commission + t.tax) / t.exchangeRate;
+                }
+
+                return `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                        <td class="px-6 py-4 font-mono text-xs text-slate-500">${t.date}</td>
+                        <td class="px-6 py-4 font-bold text-slate-900 dark:text-white capitalize">${t.assetTicker || 'Portfolio Cash'}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-0.5 rounded font-black text-[8px] bg-${color}-500/10 text-${color}-500 border border-${color}-500/20">${t.type}</span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            ${!isCash ? `
+                                <div class="font-mono text-xs font-bold">${formatNumber(t.quantity, 0)} @ ${formatCurrency(t.price, t.assetTicker === 'CASH' ? p.currency : '')}</div>
+                                <div class="text-[9px] text-slate-400">FX: ${t.exchangeRate !== 1 ? t.exchangeRate : '1:1'}</div>
+                            ` : '—'}
+                        </td>
+                        <td class="px-6 py-4 text-right font-black font-mono text-sm text-${color}-600">
+                            ${sign}${formatCurrency(total, p.currency)}
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="editTransaction(${t.id})" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-primary transition-colors">
+                                    <span class="material-symbols-outlined text-sm">edit</span>
+                                </button>
+                                <button onclick="confirmDeleteTransaction(${t.id})" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-500 transition-colors">
+                                    <span class="material-symbols-outlined text-sm">delete</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('') : '<tr><td colspan="6" class="px-6 py-12 text-center text-slate-500 italic">No transactions recorded yet.</td></tr>';
 
         } catch (err) { 
             console.error("Error loading portfolio details:", err);
