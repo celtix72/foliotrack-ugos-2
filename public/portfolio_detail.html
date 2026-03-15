@@ -188,6 +188,9 @@
             <button onclick="editPortfolio()" title="Edit Portfolio" class="w-11 h-11 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
                 <span class="material-symbols-outlined">edit</span>
             </button>
+            <button onclick="exportToCSV()" title="Export CSV" class="w-11 h-11 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-indigo-500">
+                <span class="material-symbols-outlined">download</span>
+            </button>
         </div>
     </div>
     <!-- Charts Row: Performance + Allocation -->
@@ -1419,7 +1422,13 @@
         );
     }
 
-    // ─── Performance Chart Logic ───────────────────────────────────────────────
+    // ─── Export CSV ──────────────────────────────────────────────────────────
+    function exportToCSV() {
+        if (!currentPortfolioId) return;
+        window.location.href = `/api/portfolios/${currentPortfolioId}/export`;
+    }
+
+    // ─── Chart Management ───────────────────────────────────────────────────
     let performanceChart = null;
     let currentChartRange = '1M';
     let currentPerformanceData = []; // Store raw API records

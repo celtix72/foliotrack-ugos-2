@@ -741,6 +741,48 @@ app.get('/api/portfolios/:id', async (req, res) => {
     });
 });
 
+app.get('/api/portfolios/:id/export', (req, res) => {
+    const portfolioId = req.params.id;
+    const portfolio = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(portfolioId);
+    if (!portfolio) return res.status(404).send('Portfolio not found');
+
+    const transactions = database.db.prepare(
+        `SELECT * FROM transactions WHERE portfolioId = ? ORDER BY date ASC`
+    ).all(portfolioId);
+
+    if (transactions.length === 0) {
+        return res.status(400).send('No transactions to export');
+    }
+
+    const headers = ['ID', 'Type', 'Asset', 'Date', 'Quantity', 'Price', 'Commission', 'Tax', 'FX Rate', 'Amount'];
+    const rows = transactions.map(t => [
+        t.id,
+        t.type,
+        t.assetTicker || '',
+        t.date,
+        t.quantity,
+        t.price,
+        t.commission,
+        t.tax,
+        t.exchangeRate,
+        t.amount
+    ]);
+
+    let csvContent = headers.join(',') + '\n';
+    rows.forEach(row => {
+        csvContent += row.map(value => {
+            if (typeof value === 'string') {
+                return `"${value.replace(/"/g, '""')}"`;
+            }
+            return value;
+        }).join(',') + '\n';
+    });
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=transactions_${portfolio.name.replace(/\s+/g, '_')}.csv`);
+    res.status(200).send(csvContent);
+});
+
 
 app.post('/api/portfolios', (req, res) => {
     console.log('POST /api/portfolios:', req.body);
