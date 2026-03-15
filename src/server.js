@@ -1570,10 +1570,13 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                             }
                         }
 
-                        // Priority 3: Final fallback to asset table for any date if still no price
+                        // Priority 3: Final fallback to asset table ONLY if no historical data at all
                         if (!price || price === 0) {
-                            const asset = database.db.prepare('SELECT currentPrice FROM assets WHERE ticker = ?').get(ticker);
-                            price = asset ? asset.currentPrice : 0;
+                            const availableDates = Object.keys(historicalPrices[ticker] || {});
+                            if (availableDates.length === 0) {
+                                const asset = database.db.prepare('SELECT currentPrice FROM assets WHERE ticker = ?').get(ticker);
+                                price = asset ? asset.currentPrice : 0;
+                            }
                         }
                     }
 
@@ -1583,8 +1586,16 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                     if (aCurr === 'USD' && p.currency === 'EUR') {
                         rate = fxRates['USD']?.[dateStr];
                         if (rate === undefined) {
-                            const pastFx = Object.keys(fxRates['USD'] || {}).filter(d => d < dateStr).sort();
-                            rate = pastFx.length > 0 ? fxRates['USD'][pastFx.at(-1)] : 1;
+                            // Robust fallback: find nearest PAST date, then nearest FUTURE date
+                            const availableFxDates = Object.keys(fxRates['USD'] || {}).sort();
+                            const pastFx = availableFxDates.filter(d => d < dateStr);
+                            if (pastFx.length > 0) {
+                                rate = fxRates['USD'][pastFx.at(-1)];
+                            } else if (availableFxDates.length > 0) {
+                                rate = fxRates['USD'][availableFxDates[0]];
+                            } else {
+                                rate = 1;
+                            }
                         }
                     } else if (aCurr !== p.currency) {
                         const lastFx = allTransactions.filter(t => t.assetTicker === ticker && t.date <= dateStr && t.exchangeRate).at(-1);

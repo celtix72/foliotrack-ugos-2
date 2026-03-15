@@ -428,7 +428,9 @@
         try {
             const res = await fetch(`/api/analytics/global-performance?range=${currentChartRange}`);
             const result = await res.json();
-            const dataPoints = result.dataPoints || [];
+            
+            // Handle both { dataPoints: [...] } and direct array [...] responses for robustness
+            const dataPoints = result.dataPoints || (Array.isArray(result) ? result : []);
             const changePercent = result.changePercent || 0;
             
             dashboardChart.data.labels = dataPoints.map(d => {
