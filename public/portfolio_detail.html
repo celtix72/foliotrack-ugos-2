@@ -1639,6 +1639,42 @@
                 }
                 lastYear = year;
             });
+            // Transaction Markers Logic
+            const pointStyles = [];
+            const pointColors = [];
+            const pointRadii = [];
+
+            dataPoints.forEach(d => {
+                const events = d.events || [];
+                if (events.some(e => e.type === 'SELL')) {
+                    pointStyles.push('circle');
+                    pointColors.push('#f43f5e'); // rose-500
+                    pointRadii.push(5);
+                } else if (events.some(e => e.type === 'BUY')) {
+                    pointStyles.push('circle');
+                    pointColors.push('#10b981'); // emerald-500
+                    pointRadii.push(5);
+                } else if (events.some(e => e.type === 'WITHDRAWAL')) {
+                    pointStyles.push('triangle');
+                    pointColors.push('#f59e0b'); // amber-500
+                    pointRadii.push(6);
+                } else if (events.some(e => e.type === 'DEPOSIT')) {
+                    pointStyles.push('triangle');
+                    pointColors.push('#10b981'); // emerald-500
+                    pointRadii.push(6);
+                } else {
+                    pointStyles.push('circle');
+                    pointColors.push('#6366f1');
+                    pointRadii.push(0);
+                }
+            });
+
+            performanceChart.data.datasets[0].pointStyle = pointStyles;
+            performanceChart.data.datasets[0].pointBackgroundColor = pointColors;
+            performanceChart.data.datasets[0].pointRadius = pointRadii;
+            performanceChart.data.datasets[0].pointBorderColor = '#fff';
+            performanceChart.data.datasets[0].pointBorderWidth = 1;
+
             performanceChart.options.plugins.annotation.annotations = annotations;
 
             performanceChart.update();
