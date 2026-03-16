@@ -624,14 +624,15 @@ app.get('/api/portfolios', async (req, res) => {
         database.recalculateAll(liveRate);
         const rows = database.db.prepare(`SELECT * FROM portfolios ORDER BY createdAt ASC`).all();
         
+        const todayStr = new Date().toISOString().split('T')[0];
         let totalVal = 0;
         for (const p of rows) {
             totalVal += p.totalValue;
             const history = database.db.prepare(`
                 SELECT totalValue FROM portfolio_history 
-                WHERE portfolioId = ? 
+                WHERE portfolioId = ? AND date < ?
                 ORDER BY date DESC LIMIT 1
-            `).get(p.id);
+            `).get(p.id, todayStr);
             if (history && history.totalValue > 0) {
                 p.changePercent = ((p.totalValue - history.totalValue) / history.totalValue) * 100;
             } else {
@@ -641,9 +642,9 @@ app.get('/api/portfolios', async (req, res) => {
 
         const globalHistory = database.db.prepare(`
             SELECT totalValue FROM portfolio_history 
-            WHERE portfolioId IS NULL 
+            WHERE portfolioId IS NULL AND date < ?
             ORDER BY date DESC LIMIT 1
-        `).get();
+        `).get(todayStr);
         const globalChangePct = (globalHistory && globalHistory.totalValue > 0)
             ? ((totalVal - globalHistory.totalValue) / globalHistory.totalValue) * 100
             : 0;
