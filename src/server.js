@@ -41,6 +41,7 @@ const PORT = process.env.PORT || 3000;
 // ─── CACHING LAYER ──────────────────────────────────────────────────────────
 const historicalPricesCache = {}; // { ticker: { date: price } }
 let performanceResultsCache = {}; // { cacheKey: { data, timestamp } }
+performanceResultsCache = {}; // Clear cache to apply date fix immediately
 let eurUsdCache = { rate: 1.08, timestamp: 0 };
 const EUR_USD_TTL = 5 * 60 * 1000; // 5 minutes
 
@@ -1670,7 +1671,8 @@ async function calculatePerformanceHistory(portfolioIds, range) {
         };
         
         // Fast-forward initial state to startDate
-        const initialTx = allTransactions.filter(t => t.portfolioId === p.id && t.date < startDate.toISOString().split('T')[0]);
+        const startDateStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
+        const initialTx = allTransactions.filter(t => t.portfolioId === p.id && t.date < startDateStr);
         for (const t of initialTx) {
             const qty = t.quantity || 0, price = t.price || 0, comm = t.commission || 0, tax = t.tax || 0, fx = t.exchangeRate || 1, amount = t.amount || 0;
             switch (t.type) {
@@ -1691,8 +1693,13 @@ async function calculatePerformanceHistory(portfolioIds, range) {
         }
     }
 
+    const formatDate = (date) => {
+        const d = new Date(date);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    };
+
     while (currentDate <= today) {
-        const dateStr = currentDate.toISOString().split('T')[0];
+        const dateStr = formatDate(currentDate);
         let dayValue = 0, dayProfit = 0, dayCash = 0, dayAssets = 0;
         const dayEvents = [];
 
