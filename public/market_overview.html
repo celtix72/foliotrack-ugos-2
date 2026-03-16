@@ -521,9 +521,9 @@ async function loadMovers() {
             const isPos = m.changePercent >= 0;
             const color = isPos ? 'emerald' : 'rose';
             return `
-                <div class="snap-start shrink-0 w-36 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 p-4 rounded-xl hover:border-primary transition-all cursor-pointer flex flex-col items-center justify-center text-center space-y-1" onclick="window.location.href='/portfolio?ticker=${m.ticker}'">
-                    <span class="text-lg font-black tracking-tighter truncate w-full uppercase">${m.ticker}</span>
-                    <span class="text-xl font-black text-${color}-500">${isPos ? '+' : ''}${m.changePercent.toFixed(2)}%</span>
+                <div class="snap-start shrink-0 w-32 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 p-3 rounded-xl hover:border-primary transition-all cursor-pointer flex flex-col items-center justify-center text-center group" onclick="window.location.href='/portfolio?ticker=${m.ticker}'">
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 group-hover:text-primary transition-colors">${m.ticker}</span>
+                    <span class="text-xl font-black text-${color}-500 leading-none">${isPos ? '+' : ''}${formatNumber(m.changePercent, 2)}%</span>
                 </div>
             `;
         }).join('');

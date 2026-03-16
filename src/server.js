@@ -167,12 +167,39 @@ async function getEurUsdRate() {
         const quote = await yahooFinance.quote('EURUSD=X');
         if (quote && quote.regularMarketPrice) {
             eurUsdCache = { rate: quote.regularMarketPrice, timestamp: Date.now() };
+            
+            // Persist to database as a reliable fallback
+            try {
+                database.db.prepare(`
+                    INSERT INTO assets (id, ticker, name, currency, currentPrice, dataSource, updatedAt)
+                    VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+                    ON CONFLICT(ticker) DO UPDATE SET 
+                        currentPrice = excluded.currentPrice,
+                        updatedAt = excluded.updatedAt
+                `).run('EURUSD=X', 'EURUSD=X', 'EUR/USD Rate', 'USD', quote.regularMarketPrice, 'YF');
+            } catch (dbErr) {
+                console.warn('Failed to persist EUR/USD rate to DB:', dbErr.message);
+            }
+
             return eurUsdCache.rate;
         }
     } catch (err) {
-        console.warn('Failed to fetch EUR/USD rate:', err.message);
+        console.warn('Failed to fetch EUR/USD rate from YF:', err.message);
     }
-    return eurUsdCache.rate; // Return last known rate on failure
+
+    // Fallback 1: Last known in-memory rate
+    if (eurUsdCache.rate > 0) return eurUsdCache.rate;
+
+    // Fallback 2: Last known database rate
+    try {
+        const saved = database.db.prepare("SELECT currentPrice FROM assets WHERE ticker = 'EURUSD=X'").get();
+        if (saved && saved.currentPrice > 0) {
+            eurUsdCache.rate = saved.currentPrice;
+            return saved.currentPrice;
+        }
+    } catch (e) {}
+
+    return 1.0; // Ultimate fallback
 }
 
 function clearPerformanceCache() {
@@ -1221,6 +1248,34 @@ app.put('/api/transactions/:id', (req, res) => {
     database.recalculatePortfolio(existing.portfolioId);
     clearPerformanceCache();
     res.json({ success: true });
+});
+
+// Get market movers (assets with today's quotes, sorted by % change)
+app.get('/api/market/movers', async (req, res) => {
+    try {
+        const todayStr = new Date().toISOString().split('T')[0];
+        // Only return assets that have open positions (assetCount from portfolios or based on transactions)
+        // or just all monitored assets that updated today. 
+        // User requested: "riporta solo gli ASSET che hanno posizioni aperte"
+        
+        const rows = database.db.prepare(`
+            SELECT a.* 
+            FROM assets a
+            JOIN (
+                SELECT assetTicker, SUM(quantity) as balance 
+                FROM transactions 
+                GROUP BY assetTicker 
+                HAVING balance > 0.0001
+            ) t ON a.ticker = t.assetTicker
+            WHERE a.quoteDate = ?
+            ORDER BY ABS(a.changePercent) DESC
+            LIMIT 10
+        `).all(todayStr);
+
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Validate a ticker against Yahoo Finance (used by bulk import)

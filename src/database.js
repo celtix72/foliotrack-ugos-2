@@ -233,8 +233,22 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
         if (asset && asset.currentPrice) {
             let rate = 1;
             if (asset.currency !== portfolio.currency) {
-                if (asset.currency === 'USD' && portfolio.currency === 'EUR' && liveEurUsdRate) {
-                    rate = liveEurUsdRate;
+                if (asset.currency === 'USD' && portfolio.currency === 'EUR') {
+                    if (liveEurUsdRate) {
+                        rate = liveEurUsdRate;
+                    } else {
+                        // Fallback 1: Look for persisted EURUSD=X in assets table
+                        const savedFx = dbConnection.prepare("SELECT currentPrice FROM assets WHERE ticker = 'EURUSD=X'").get();
+                        if (savedFx && savedFx.currentPrice > 0) {
+                            rate = savedFx.currentPrice;
+                        } else {
+                            // Fallback 2: Use last transaction FX rate
+                            const lastFxTx = transactions
+                                .filter(t => t.assetTicker === ticker && t.exchangeRate)
+                                .at(-1);
+                            rate = lastFxTx ? lastFxTx.exchangeRate : 1;
+                        }
+                    }
                 } else {
                     const lastFxTx = transactions
                         .filter(t => t.assetTicker === ticker && t.exchangeRate)

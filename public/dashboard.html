@@ -125,9 +125,12 @@
 <main class="flex-1 overflow-y-auto custom-scrollbar bg-slate-50/50 dark:bg-[#0b0f1a]">
 <div class="px-8 pt-8 pb-4">
 <div>
-<p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-1">Total Net Worth</p>
-<div class="flex items-center gap-3">
+<div class="flex items-end gap-4 mb-1">
     <h2 id="total-net-worth" class="text-3xl font-black">€0.00</h2>
+    <div id="total-perf-container" class="flex items-center gap-2 mb-1.5 opacity-0 transition-opacity duration-500">
+        <div id="total-perf"></div>
+        <div id="total-change-val"></div>
+    </div>
 </div>
 </div>
 <div class="flex items-center gap-3">
@@ -241,8 +244,10 @@
             if (totalChangeValEl) {
                 const isPos = global.changeValue >= 0;
                 totalChangeValEl.className = `text-[10px] font-bold ${isPos ? 'text-emerald-500/80' : 'text-rose-500/80'}`;
-                totalChangeValEl.innerText = `${isPos ? '+' : ''}${formatCurrency(global.changeValue, 'EUR', 2)} today`;
+                totalChangeValEl.innerText = `${isPos ? '+' : ''}${formatCurrency(global.changeValue, 'EUR', 2)} last check`;
             }
+
+            document.getElementById('total-perf-container').classList.remove('opacity-0');
 
             // Initial chart load
             initDashboardChart();
