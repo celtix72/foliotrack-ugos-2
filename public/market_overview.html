@@ -84,24 +84,40 @@
 <main class="flex-1 flex flex-col overflow-y-auto bg-slate-50 dark:bg-[#0a0f1a]">
 
 <!-- Header -->
-<header class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark flex items-center justify-between px-8 sticky top-0 z-10">
-<div class="flex items-center gap-4">
-<div class="flex items-center gap-2 bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20">
-<span class="size-2 rounded-full bg-green-500 animate-pulse"></span>
-<span class="text-xs font-bold text-green-500 uppercase tracking-wider">Live</span>
-</div>
-<span class="text-xs text-slate-500 ml-2" id="last-update-label">Last Update: --</span>
-<span id="market-status-indicator" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-4"></span>
-</div>
-<div class="flex items-center gap-3">
-<div class="text-right">
-<p class="text-xs font-bold">User</p>
-<p class="text-[10px] text-slate-500 uppercase tracking-widest">Free Plan</p>
-</div>
-<div class="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-400">
-<span class="material-symbols-outlined text-sm">person</span>
-</div>
-</div>
+<header class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-50">
+    <div class="flex items-center gap-6">
+        <!-- Live Status -->
+        <div id="header-live-indicator" class="flex items-center gap-2 bg-slate-100 dark:bg-slate-900 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-800">
+            <span class="header-live-dot w-2 h-2 rounded-full bg-slate-400"></span>
+            <span class="header-live-text text-[10px] font-black uppercase tracking-widest text-slate-500">Connecting...</span>
+        </div>
+        
+        <!-- Last Update & Markets -->
+        <div class="flex items-center gap-4 border-l border-slate-200 dark:border-slate-800 pl-6">
+            <span id="header-last-update" class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Upd: --:--</span>
+            <div id="header-market-status" class="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest">
+                <!-- Injected via theme.js -->
+            </div>
+        </div>
+
+        <!-- Portfolio Variation -->
+        <div class="flex items-center gap-2 border-l border-slate-200 dark:border-slate-800 pl-6">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Day Var:</span>
+            <div id="header-portfolio-var" class="text-xs font-bold">
+                <!-- Injected via theme.js -->
+            </div>
+        </div>
+    </div>
+
+    <div class="flex items-center gap-4">
+        <div class="text-right hidden sm:block">
+            <p class="text-xs font-bold">User</p>
+            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">Premium Terminal</p>
+        </div>
+        <div class="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-400">
+            <span class="material-symbols-outlined text-sm">person</span>
+        </div>
+    </div>
 </header>
 
 <div class="p-8 space-y-6">

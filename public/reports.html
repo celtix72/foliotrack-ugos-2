@@ -92,36 +92,30 @@
 <!-- Main Content Area -->
 <div class="flex-1 flex flex-col h-screen overflow-hidden">
 <!-- Top Header Row -->
-<header class="h-16 flex items-center justify-between px-8 bg-white dark:bg-[#111722] border-b border-slate-200 dark:border-slate-800">
-<div class="flex items-center gap-3">
-<div class="flex items-center gap-2 text-xs font-medium text-slate-500">
-<span class="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-<span id="last-update-label">Last Update: --</span>
-</div>
-</div>
-<div class="flex items-center gap-6">
-<div class="flex items-center gap-4">
-<button class="text-slate-500 hover:text-primary transition-colors">
-<span class="material-symbols-outlined text-[20px]">search</span>
-</button>
-<div class="relative">
-<button class="text-slate-500 hover:text-primary transition-colors">
-<span class="material-symbols-outlined text-[20px]">notifications</span>
-<span class="absolute top-0 right-0 w-2 h-2 bg-primary rounded-full ring-2 ring-white dark:ring-[#111722]"></span>
-</button>
-</div>
-</div>
-<div class="w-[1px] h-6 bg-slate-200 dark:bg-slate-800"></div>
-<div class="flex items-center gap-3 group cursor-pointer">
-<div class="text-right">
-<p class="text-xs font-bold text-slate-900 dark:text-slate-100">User</p>
-<p class="text-[10px] text-slate-500 uppercase tracking-widest">Free Plan</p>
-</div>
-<div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-400 text-xs text-[20px]">
-    person
-</div>
-</div>
-</div>
+<header class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-50">
+    <div class="flex items-center gap-6">
+        <div id="header-live-indicator" class="flex items-center gap-2 bg-slate-100 dark:bg-slate-900 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-800">
+            <span class="header-live-dot w-2 h-2 rounded-full bg-slate-400"></span>
+            <span class="header-live-text text-[10px] font-black uppercase tracking-widest text-slate-500">Connecting...</span>
+        </div>
+        <div class="flex items-center gap-4 border-l border-slate-200 dark:border-slate-800 pl-6">
+            <span id="header-last-update" class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Upd: --:--</span>
+            <div id="header-market-status" class="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest"></div>
+        </div>
+        <div class="flex items-center gap-2 border-l border-slate-200 dark:border-slate-800 pl-6">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Day Var:</span>
+            <div id="header-portfolio-var" class="text-xs font-bold"></div>
+        </div>
+    </div>
+    <div class="flex items-center gap-4">
+        <div class="text-right hidden sm:block">
+            <p class="text-xs font-bold">User</p>
+            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">Premium Terminal</p>
+        </div>
+        <div class="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-400">
+            <span class="material-symbols-outlined text-sm">person</span>
+        </div>
+    </div>
 </header>
 <!-- Reports Scrollable Area -->
 <main class="flex-1 overflow-y-auto custom-scrollbar p-8 bg-slate-50 dark:bg-background-dark">

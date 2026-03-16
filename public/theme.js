@@ -199,23 +199,63 @@
     window.refreshSidebarPortfolios = () => { _sidebarLoading = false; updateSidebarContents(); };
 
     async function updateMarketStatusUI() {
-        const indicator = document.getElementById('market-status-indicator');
-        if (!indicator) return;
+        const liveIndicator = document.getElementById('header-live-indicator');
+        const updateLabel   = document.getElementById('header-last-update');
+        const marketStatus  = document.getElementById('header-market-status');
+        const portfolioVar  = document.getElementById('header-portfolio-var');
+        
+        if (!liveIndicator && !updateLabel && !marketStatus && !portfolioVar) return;
+
         try {
-            const res = await fetch('/api/market-status');
-            const status = await res.json();
+            // 1. Market Status
+            const statusRes = await fetch('/api/market-status');
+            const status = await statusRes.json();
             
-            let html = '';
-            if (status.isWeekend) {
-                html = '<span class="text-rose-500 font-black">Markets Closed (Weekend)</span>';
-            } else {
-                const mil = status.MIL ? '<span class="text-emerald-500">MIL: OPEN</span>' : '<span class="text-slate-500">MIL: CLOSED</span>';
-                const ger = status.GER ? '<span class="text-emerald-500">GER: OPEN</span>' : '<span class="text-slate-500">GER: CLOSED</span>';
-                const usa = status.USA ? '<span class="text-emerald-500">USA: OPEN</span>' : '<span class="text-slate-500">USA: CLOSED</span>';
-                html = `${mil} • ${ger} • ${usa}`;
+            if (liveIndicator) {
+                const dot = liveIndicator.querySelector('.header-live-dot');
+                const text = liveIndicator.querySelector('.header-live-text');
+                if (status.isAnyOpen) {
+                    dot?.classList.add('bg-emerald-500', 'animate-pulse');
+                    dot?.classList.remove('bg-slate-400');
+                    if (text) text.textContent = 'Live';
+                } else {
+                    dot?.classList.remove('bg-emerald-500', 'animate-pulse');
+                    dot?.classList.add('bg-slate-400');
+                    if (text) text.textContent = 'Closed';
+                }
             }
-            indicator.innerHTML = html;
-        } catch (err) { console.error("Market status update error:", err); }
+
+            if (updateLabel) {
+                const now = new Date();
+                const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+                updateLabel.textContent = `Upd: ${timeStr}`;
+            }
+
+            if (marketStatus) {
+                const euColor = status.EU ? 'text-emerald-500' : 'text-slate-400';
+                const usColor = status.US ? 'text-emerald-500' : 'text-slate-400';
+                marketStatus.innerHTML = `
+                    <span class="${euColor} flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full ${status.EU ? 'bg-emerald-500' : 'bg-slate-400'}"></span>EU</span>
+                    <span class="text-slate-700 dark:text-slate-300 mx-1">•</span>
+                    <span class="${usColor} flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full ${status.US ? 'bg-emerald-500' : 'bg-slate-400'}"></span>US</span>
+                `;
+            }
+
+            // 2. Portfolio Variation
+            if (portfolioVar) {
+                const pRes = await fetch('/api/portfolios');
+                const pData = await pRes.json();
+                const change = pData.global.changeValue || 0;
+                const isPos = change >= 0;
+                portfolioVar.innerHTML = `
+                    <span class="flex items-center gap-1 ${isPos ? 'text-emerald-500' : 'text-rose-500'} font-bold">
+                        <span class="material-symbols-outlined text-sm">${isPos ? 'trending_up' : 'trending_down'}</span>
+                        ${isPos ? '+' : ''}${formatCurrency(change, 'EUR')}
+                    </span>
+                `;
+            }
+
+        } catch (err) { console.error("Header update error:", err); }
     }
 
     // ─── Global Formatting ────────────────────────────────────────────────────
