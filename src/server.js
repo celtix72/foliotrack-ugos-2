@@ -340,7 +340,19 @@ app.get('/api/assets', (req, res) => {
         WHERE a.ticker != 'CASH' AND (a.type != 'Cash' OR a.type IS NULL) 
         ORDER BY a.name ASC
     `).all();
-    res.json(rows);
+
+    // Add sparkline data (last 7 days from cache)
+    const result = rows.map(a => {
+        let sparkline = [];
+        if (historicalPricesCache[a.ticker]) {
+            const history = historicalPricesCache[a.ticker];
+            const dates = Object.keys(history).sort();
+            sparkline = dates.slice(-7).map(d => history[d]);
+        }
+        return { ...a, sparkline };
+    });
+
+    res.json(result);
 });
 
 app.post('/api/assets/manual-update', async (req, res) => {
