@@ -256,7 +256,7 @@
                 portfolioVar.innerHTML = `
                     <span class="flex items-center gap-1 ${isPos ? 'text-emerald-500' : 'text-rose-500'} font-bold">
                         <span class="material-symbols-outlined text-sm">${isPos ? 'trending_up' : 'trending_down'}</span>
-                        ${isPos ? '+' : ''}${formatCurrency(change, 'EUR')}
+                        ${isPos ? '+' : ''}${formatCurrency(change, 'EUR', 0)}
                     </span>
                 `;
             }

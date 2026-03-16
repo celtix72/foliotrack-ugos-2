@@ -107,7 +107,7 @@
             <div id="header-market-status" class="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest"></div>
         </div>
         <div class="flex items-center gap-2 border-l border-slate-200 dark:border-slate-800 pl-6">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Day Var:</span>
+            <span class="text-sm font-bold text-slate-400 uppercase tracking-widest">Day Var:</span>
             <div id="header-portfolio-var" class="text-xs font-bold"></div>
         </div>
     </div>
@@ -129,19 +129,14 @@
     <h2 id="total-net-worth" class="text-3xl font-black">€0.00</h2>
     <div id="total-perf-container" class="flex items-center gap-2 mb-1.5 opacity-0 transition-opacity duration-500">
         <div id="total-perf"></div>
-        <div id="total-change-val"></div>
     </div>
 </div>
 </div>
-<div class="flex items-center gap-3">
-<div class="flex bg-slate-100 dark:bg-slate-900 rounded-lg p-1 border border-slate-200 dark:border-slate-800">
-<button class="px-4 py-1.5 rounded-md bg-white dark:bg-slate-800 text-xs font-bold shadow-sm">EUR</button>
-<button class="px-4 py-1.5 rounded-md text-xs font-medium text-slate-500 hover:text-slate-900 dark:hover:text-slate-300">USD</button>
-</div>
-<button onclick="window.location.href='/portfolio'" class="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-lg font-bold text-sm transition-all shadow-lg shadow-primary/20">
-<span class="material-symbols-outlined text-[18px]">add</span>
-                        New Portfolio
-                    </button>
+<div class="flex items-center justify-between w-full">
+    <div></div> <!-- Spacer to push button to the right if needed, but flex-1 would be better -->
+    <button onclick="window.location.href='/portfolio'" class="flex items-center justify-center bg-primary hover:bg-primary/90 text-white w-10 h-10 rounded-lg font-bold transition-all shadow-lg shadow-primary/20" title="New Portfolio">
+        <span class="material-symbols-outlined text-[20px]">add</span>
+    </button>
 </div>
 </div>
 <div class="p-8 space-y-8">
@@ -154,12 +149,12 @@
                 <p class="text-xs text-slate-500">Aggregated net worth across all connected platforms</p>
             </div>
             <div class="flex gap-1 bg-slate-50 dark:bg-slate-900/50 p-1 rounded-lg border border-slate-100 dark:border-slate-800" id="chart-range-buttons">
-                <button data-range="1D" onclick="setChartRange('1D')" class="range-btn px-3 py-1.5 text-[11px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">1D</button>
                 <button data-range="1W" onclick="setChartRange('1W')" class="range-btn px-3 py-1.5 text-[11px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">1W</button>
                 <button data-range="1M" onclick="setChartRange('1M')" class="range-btn px-3 py-1.5 text-[11px] font-bold rounded-md bg-primary text-white shadow-md transition-all">1M</button>
                 <button data-range="3M" onclick="setChartRange('3M')" class="range-btn px-3 py-1.5 text-[11px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">3M</button>
                 <button data-range="YTD" onclick="setChartRange('YTD')" class="range-btn px-3 py-1.5 text-[11px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">YTD</button>
                 <button data-range="1Y" onclick="setChartRange('1Y')" class="range-btn px-3 py-1.5 text-[11px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">1Y</button>
+                <button data-range="2Y" onclick="setChartRange('2Y')" class="range-btn px-3 py-1.5 text-[11px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">2Y</button>
                 <button data-range="ALL" onclick="setChartRange('ALL')" class="range-btn px-3 py-1.5 text-[11px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">ALL</button>
             </div>
         </div>
@@ -230,7 +225,6 @@
             document.getElementById('total-net-worth').innerText = formatCurrency(global.totalValue, 'EUR', 0);
             
             const totalPerfEl = document.getElementById('total-perf');
-            const totalChangeValEl = document.getElementById('total-change-val');
             
             if (totalPerfEl) {
                 const isPos = global.changePercent >= 0;
@@ -241,11 +235,6 @@
                 `;
             }
 
-            if (totalChangeValEl) {
-                const isPos = global.changeValue >= 0;
-                totalChangeValEl.className = `text-[10px] font-bold ${isPos ? 'text-emerald-500/80' : 'text-rose-500/80'}`;
-                totalChangeValEl.innerText = `${isPos ? '+' : ''}${formatCurrency(global.changeValue, 'EUR', 2)} last check`;
-            }
 
             document.getElementById('total-perf-container').classList.remove('opacity-0');
 

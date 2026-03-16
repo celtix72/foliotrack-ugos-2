@@ -1529,6 +1529,7 @@ async function calculatePerformanceHistory(portfolioIds, range) {
         case '3M':  startDate = new Date(today); startDate.setMonth(today.getMonth() - 3); break;
         case '6M':  startDate = new Date(today); startDate.setMonth(today.getMonth() - 6); break;
         case '1Y':  startDate = new Date(today); startDate.setFullYear(today.getFullYear() - 1); break;
+        case '2Y':  startDate = new Date(today); startDate.setFullYear(today.getFullYear() - 2); break;
         case 'YTD': startDate = new Date(today.getFullYear(), 0, 1); break;
         default: {
             const firstDate = allTransactions.length > 0 ? allTransactions[0].date : null;
