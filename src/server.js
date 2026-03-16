@@ -1440,11 +1440,31 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                     interval: '1d'
                 });
                 if (fxResult && fxResult.quotes) {
-                    fxRates['USD'] = Object.fromEntries(
-                        fxResult.quotes
-                            .filter(h => h.date)
-                            .map(h => [new Date(h.date).toISOString().split('T')[0], h.adjclose || h.close || 1])
-                    );
+                    const sanitizedRates = {};
+                    let lastValidRate = 1.0;
+                    
+                    // Sort quotes by date to ensure proper forward-filling
+                    const sortedQuotes = fxResult.quotes
+                        .filter(h => h.date)
+                        .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                    for (const h of sortedQuotes) {
+                        const dateStr = new Date(h.date).toISOString().split('T')[0];
+                        let currentRate = h.adjclose || h.close || 1;
+                        
+                        // SANITIZATION: Yahoo Finance often returns 1.0 for EURUSD=X on holidays (like 25/12, 1/1)
+                        // This is clearly an error as the real rate is ~1.08-1.10. 
+                        // If it's exactly 1.0 and we have a better previous rate, use that instead.
+                        if (currentRate === 1.0 && lastValidRate !== 1.0) {
+                            currentRate = lastValidRate;
+                        } else if (currentRate !== 1.0) {
+                            lastValidRate = currentRate;
+                        }
+                        
+                        sanitizedRates[dateStr] = currentRate;
+                    }
+                    
+                    fxRates['USD'] = sanitizedRates;
                     historicalPricesCache[fxCacheKey] = fxRates['USD'];
                 }
             }
