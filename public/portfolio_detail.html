@@ -1934,12 +1934,28 @@
             const res = await fetch('/api/transactions/bulk', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ portfolioId: currentPortfolioId, transactions: toImport })
+                body: JSON.stringify({ portfolioId: currentPortfolioId || 'all', transactions: toImport })
             });
+            
+            if (!res.ok) {
+                const text = await res.text();
+                let errMsg = text;
+                try {
+                    const errJson = JSON.parse(text);
+                    errMsg = errJson.error || errJson.message || text;
+                } catch(e) {}
+                throw new Error(errMsg);
+            }
+
             const result = await res.json();
             closeImportModal();
             alert(`✅ Imported ${result.imported} transactions.`);
-            loadPortfolioDetails();
+            if (currentPortfolioId) {
+                loadPortfolioDetails();
+            } else {
+                window.dispatchEvent(new CustomEvent('portfolios-updated'));
+                loadPortfolios();
+            }
         } catch (err) {
             alert('Import failed: ' + err.message);
             goBackToStep1();

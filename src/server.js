@@ -1380,12 +1380,12 @@ app.get('/api/validate-ticker', async (req, res) => {
 app.post('/api/transactions/bulk', async (req, res) => {
     const { portfolioId, transactions } = req.body;
     if (!portfolioId || !transactions || !transactions.length) {
-        return res.status(400).send('portfolioId and transactions[] required');
+        return res.status(400).json({ error: 'portfolioId and transactions[] required' });
     }
     // If portfolioId is provided, check if it exists (unless it's a dummy value for multi-import)
     const portfolio = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(portfolioId);
     if (!portfolio && portfolioId !== 'all' && portfolioId !== 0 && portfolioId !== '0') {
-        return res.status(404).send('Portfolio not found');
+        return res.status(404).json({ error: 'Portfolio not found' });
     }
 
     const insertTx = database.db.prepare(`
