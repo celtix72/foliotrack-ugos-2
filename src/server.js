@@ -1382,9 +1382,11 @@ app.post('/api/transactions/bulk', async (req, res) => {
     if (!portfolioId || !transactions || !transactions.length) {
         return res.status(400).send('portfolioId and transactions[] required');
     }
-
+    // If portfolioId is provided, check if it exists (unless it's a dummy value for multi-import)
     const portfolio = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(portfolioId);
-    if (!portfolio) return res.status(404).send('Portfolio not found');
+    if (!portfolio && portfolioId !== 'all' && portfolioId !== 0 && portfolioId !== '0') {
+        return res.status(404).send('Portfolio not found');
+    }
 
     const insertTx = database.db.prepare(`
         INSERT INTO transactions (portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount)
@@ -1392,9 +1394,33 @@ app.post('/api/transactions/bulk', async (req, res) => {
     `);
 
     const results = [];
+    const affectedPortfolios = new Set();
+    if (portfolioId !== 'all') affectedPortfolios.add(parseInt(portfolioId));
+
     const importMany = database.db.transaction((txs) => {
         for (const t of txs) {
             try {
+                let targetId = parseInt(portfolioId);
+                
+                // Multi-portfolio logic: resolve or create by name
+                if (t.portfolioName && t.portfolioName.trim()) {
+                    const pName = t.portfolioName.trim();
+                    let p = database.db.prepare(`SELECT id FROM portfolios WHERE name = ?`).get(pName);
+                    if (!p) {
+                        const info = database.db.prepare(`
+                            INSERT INTO portfolios (name, currency, startDate, initialCash)
+                            VALUES (?, 'EUR', ?, 0)
+                        `).run(pName, t.date || new Date().toISOString().split('T')[0]);
+                        targetId = info.lastInsertRowid;
+                        logger.info(`Auto-created portfolio: ${pName} (ID: ${targetId})`);
+                    } else {
+                        targetId = p.id;
+                    }
+                }
+                
+                if (isNaN(targetId)) throw new Error('Invalid portfolio mapping');
+                affectedPortfolios.add(targetId);
+
                 // Auto-add asset to watchlist if not already there
                 if (t.assetTicker) {
                     database.db.prepare(`
@@ -1416,7 +1442,7 @@ app.post('/api/transactions/bulk', async (req, res) => {
                 }
 
                 insertTx.run(
-                    parseInt(portfolioId),
+                    targetId,
                     t.type,
                     t.assetTicker || '',
                     t.date,
@@ -1427,7 +1453,7 @@ app.post('/api/transactions/bulk', async (req, res) => {
                     parseFloat(t.exchangeRate || 1),
                     parseFloat(t.amount || 0)
                 );
-                results.push({ ok: true, ticker: t.assetTicker, date: t.date });
+                results.push({ ok: true, ticker: t.assetTicker, date: t.date, portfolioId: targetId });
             } catch (err) {
                 results.push({ ok: false, ticker: t.assetTicker, error: err.message });
             }
@@ -1435,7 +1461,12 @@ app.post('/api/transactions/bulk', async (req, res) => {
     });
 
     importMany(transactions);
-    database.recalculatePortfolio(portfolioId);
+    
+    // Recalculate ALL affected portfolios
+    for (const pid of affectedPortfolios) {
+        database.recalculatePortfolio(pid);
+    }
+    
     clearPerformanceCache();
     res.json({ imported: results.filter(r => r.ok).length, results });
 });

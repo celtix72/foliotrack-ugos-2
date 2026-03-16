@@ -1739,7 +1739,7 @@
             let type = (cols[1] || 'BUY').toUpperCase();
             if (type === 'DIV') type = 'DIVIDEND';
             if (['CASH', 'DEPOSITO'].includes(type)) type = 'DEPOSIT';
-            if (type === 'PRELIEVO') type = 'WITHDRAWAL';
+            if (type === 'PRELIEVO' || type === 'MINUS') type = 'WITHDRAWAL';
             if (type === 'TRASFERIMENTO') type = 'TRANSFER';
 
             const validTypes = ['BUY','SELL','DIVIDEND','DEPOSIT','WITHDRAWAL','TAX', 'TRANSFER'];
@@ -1917,7 +1917,8 @@
             commission:   r.commission,
             tax:          r.tax,
             exchangeRate: r.exchangeRate,
-            amount:       r.valEur
+            amount:       r.valEur,
+            portfolioName:r.portfolio
         }));
 
         document.getElementById('import-step-2').classList.add('hidden');
