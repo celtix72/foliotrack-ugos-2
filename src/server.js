@@ -148,14 +148,17 @@ function getMarketStatus() {
         return cetNow >= hours.open && cetNow <= hours.close;
     };
 
+    const milOpen = checkOpen(MARKET_HOURS.MIL);
+    const gerOpen = checkOpen(MARKET_HOURS.GER);
+    const usOpen  = checkOpen(MARKET_HOURS.USA);
+
     const status = {
-        MIL: checkOpen(MARKET_HOURS.MIL),
-        GER: checkOpen(MARKET_HOURS.GER),
-        USA: checkOpen(MARKET_HOURS.USA),
-        isWeekend
+        EU: milOpen || gerOpen,
+        US: usOpen,
+        isWeekend,
+        anyOpen: milOpen || gerOpen || usOpen
     };
 
-    status.anyOpen = status.MIL || status.GER || status.USA;
     return status;
 }
 

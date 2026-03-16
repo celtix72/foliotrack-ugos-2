@@ -214,9 +214,9 @@
             if (liveIndicator) {
                 const dot = liveIndicator.querySelector('.header-live-dot');
                 const text = liveIndicator.querySelector('.header-live-text');
-                if (status.isAnyOpen) {
+                if (status.anyOpen) {
                     dot?.classList.add('bg-emerald-500', 'animate-pulse');
-                    dot?.classList.remove('bg-slate-400');
+                    dot?.classList.remove('bg-slate-400', 'bg-rose-500');
                     if (text) text.textContent = 'Live';
                 } else {
                     dot?.classList.remove('bg-emerald-500', 'animate-pulse');
@@ -232,12 +232,18 @@
             }
 
             if (marketStatus) {
-                const euColor = status.EU ? 'text-emerald-500' : 'text-slate-400';
-                const usColor = status.US ? 'text-emerald-500' : 'text-slate-400';
+                const euOpen = status.EU;
+                const usOpen = status.US;
                 marketStatus.innerHTML = `
-                    <span class="${euColor} flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full ${status.EU ? 'bg-emerald-500' : 'bg-slate-400'}"></span>EU</span>
-                    <span class="text-slate-700 dark:text-slate-300 mx-1">•</span>
-                    <span class="${usColor} flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full ${status.US ? 'bg-emerald-500' : 'bg-slate-400'}"></span>US</span>
+                    <div class="flex items-center gap-1.5 ${euOpen ? 'text-emerald-500' : 'text-slate-400'}">
+                        <span class="w-2 h-2 rounded-full ${euOpen ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-500'}"></span>
+                        <span class="font-black">EU</span>
+                    </div>
+                    <span class="text-slate-300 dark:text-slate-700 font-light mx-1">|</span>
+                    <div class="flex items-center gap-1.5 ${usOpen ? 'text-emerald-500' : 'text-slate-400'}">
+                        <span class="w-2 h-2 rounded-full ${usOpen ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-500'}"></span>
+                        <span class="font-black">US</span>
+                    </div>
                 `;
             }
 
