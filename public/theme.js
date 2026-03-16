@@ -254,8 +254,8 @@
                 const change = pData.global.changeValue || 0;
                 const isPos = change >= 0;
                 portfolioVar.innerHTML = `
-                    <span class="flex items-center gap-1 ${isPos ? 'text-emerald-500' : 'text-rose-500'} font-bold">
-                        <span class="material-symbols-outlined text-sm">${isPos ? 'trending_up' : 'trending_down'}</span>
+                    <span class="flex items-center gap-1.5 ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'} font-bold px-3 py-1 rounded-full border ${isPos ? 'border-emerald-500/20' : 'border-rose-500/20'}">
+                        <span class="material-symbols-outlined text-[16px]">${isPos ? 'trending_up' : 'trending_down'}</span>
                         ${isPos ? '+' : ''}${formatCurrency(change, 'EUR', 0)}
                     </span>
                 `;

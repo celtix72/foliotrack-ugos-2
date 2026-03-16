@@ -149,6 +149,13 @@ function initDb() {
         createdAt    TEXT    NOT NULL DEFAULT (datetime('now')),
         UNIQUE(portfolioId, date)
       );
+
+      CREATE TABLE IF NOT EXISTS asset_quotes (
+        ticker TEXT NOT NULL,
+        date   TEXT NOT NULL,
+        price  REAL NOT NULL,
+        UNIQUE(ticker, date)
+      );
     `);
 
     // ─── Default settings ────────────────────────────────────────────────────────

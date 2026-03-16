@@ -1590,42 +1590,74 @@ async function calculatePerformanceHistory(portfolioIds, range) {
         } catch (err) { console.warn("Failed to fetch EURUSD history", err); }
     }
 
-    // 2. Fetch historical data for all involved tickers
-    for (const ticker of uniqueTickers) {
+    // 2. Fetch historical data for all involved tickers (with parallelization and DB cache)
+    const fetchTickerData = async (ticker) => {
         try {
+            // Check In-Memory Cache first
             if (historicalPricesCache[ticker]) {
                 historicalPrices[ticker] = historicalPricesCache[ticker];
-            } else {
-                const qStart = (allTransactions.find(t => t.assetTicker === ticker)?.date) || startDate.toISOString().split('T')[0];
-                const chartResult = await yahooFinance.chart(ticker, {
-                    period1: qStart,
-                    period2: today.toISOString().split('T')[0],
-                    interval: '1d'
+                return;
+            }
+
+            // Check Persistent DB Cache
+            const dbQuotes = database.db.prepare(`SELECT date, price FROM asset_quotes WHERE ticker = ? AND date >= ?`).all(ticker, startDate.toISOString().split('T')[0]);
+            if (dbQuotes.length > 0) {
+                historicalPrices[ticker] = Object.fromEntries(dbQuotes.map(q => [q.date, q.price]));
+                historicalPricesCache[ticker] = historicalPrices[ticker];
+                // Note: If the DB is missing recent days, we might want to refresh from YF. 
+                // For simplicity, if we have data, we use it. But for robustness, check if latest quote matches today.
+                const latestDate = dbQuotes.map(q => q.date).sort().at(-1);
+                const todayStr = new Date().toISOString().split('T')[0];
+                if (latestDate >= todayStr) return; 
+            }
+
+            // Fetch from Yahoo Finance
+            const qStart = (allTransactions.find(t => t.assetTicker === ticker)?.date) || startDate.toISOString().split('T')[0];
+            const chartResult = await yahooFinance.chart(ticker, {
+                period1: qStart,
+                period2: today.toISOString().split('T')[0],
+                interval: '1d'
+            });
+
+            if (chartResult && chartResult.quotes) {
+                const validQuotes = chartResult.quotes
+                    .filter(h => h.date && (h.adjclose || h.close) && (h.adjclose || h.close) > 0);
+                
+                const pricesMap = Object.fromEntries(
+                    validQuotes.map(h => [new Date(h.date).toISOString().split('T')[0], h.adjclose || h.close])
+                );
+
+                historicalPrices[ticker] = pricesMap;
+                historicalPricesCache[ticker] = pricesMap;
+
+                // Save to DB Cache (UPSERT)
+                const insertQuote = database.db.prepare(`INSERT OR REPLACE INTO asset_quotes (ticker, date, price) VALUES (?, ?, ?)`);
+                const saveQuotes = database.db.transaction((quotes) => {
+                    for (const [date, price] of Object.entries(pricesMap)) {
+                        insertQuote.run(ticker, date, price);
+                    }
                 });
-                if (chartResult && chartResult.quotes) {
-                    // Filter out invalid/null prices immediately so fallback logic can jump over gaps
-                    const validQuotes = chartResult.quotes
-                        .filter(h => h.date && (h.adjclose || h.close) && (h.adjclose || h.close) > 0);
-                    
-                    historicalPrices[ticker] = Object.fromEntries(
-                        validQuotes.map(h => [new Date(h.date).toISOString().split('T')[0], h.adjclose || h.close])
-                    );
-                    historicalPricesCache[ticker] = historicalPrices[ticker];
-                } else {
-                    historicalPrices[ticker] = {};
-                }
+                saveQuotes(null); // The mapping is already done, just trigger the transaction
+            } else {
+                historicalPrices[ticker] = {};
             }
         } catch (err) {
             console.warn(`Failed to fetch history for ${ticker}:`, err.message);
             historicalPrices[ticker] = {};
         }
-    }
+    };
+
+    await Promise.all(uniqueTickers.map(ticker => fetchTickerData(ticker)));
 
     const dataPoints = [];
     let currentDate = new Date(startDate);
 
-    // Initial state per portfolio
+    // Initial state and metadata caching per portfolio
     const portfolioStates = {};
+    const assetMetadataCache = {}; // Cache to avoid DB queries inside the date loop
+    const allAssets = database.db.prepare('SELECT ticker, currency, currentPrice FROM assets').all();
+    for (const a of allAssets) assetMetadataCache[a.ticker] = a;
+
     for (const p of portfolios) {
         portfolioStates[p.id] = {
             cash: p.initialCash || 0,
@@ -1744,11 +1776,9 @@ async function calculatePerformanceHistory(portfolioIds, range) {
 
                     // If price is missing (undefined, null, or 0), try to find a fallback
                     if (!price || price === 0) {
-                        // Priority 1: For today, try live price from database
-                        if (isToday) {
-                            const asset = database.db.prepare('SELECT currentPrice FROM assets WHERE ticker = ?').get(ticker);
-                            if (asset && asset.currentPrice > 0) price = asset.currentPrice;
-                        }
+                        // Priority 1: For today or missing historical, use live price from persistent asset data
+                        const assetMeta = assetMetadataCache[ticker];
+                        if (assetMeta && assetMeta.currentPrice > 0) price = assetMeta.currentPrice;
 
                         // Priority 2: Try most recent historical price
                         if (!price || price === 0) {
@@ -1761,18 +1791,14 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                             }
                         }
 
-                        // Priority 3: Final fallback to asset table ONLY if no historical data at all
+                        // Priority 3: Final fallback (already tried in Priority 1 via assetMetadataCache)
                         if (!price || price === 0) {
-                            const availableDates = Object.keys(historicalPrices[ticker] || {});
-                            if (availableDates.length === 0) {
-                                const asset = database.db.prepare('SELECT currentPrice FROM assets WHERE ticker = ?').get(ticker);
-                                price = asset ? asset.currentPrice : 0;
-                            }
+                            price = 0;
                         }
                     }
 
-                    const asset = database.db.prepare('SELECT currency FROM assets WHERE ticker = ?').get(ticker);
-                    const aCurr = asset ? asset.currency : 'EUR';
+                    const assetMeta = assetMetadataCache[ticker];
+                    const aCurr = assetMeta ? assetMeta.currency : 'EUR';
                     let rate = 1;
                     if (aCurr === 'USD' && p.currency === 'EUR') {
                         rate = fxRates['USD']?.[dateStr];
