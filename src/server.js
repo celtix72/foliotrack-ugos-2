@@ -2093,6 +2093,18 @@ app.get('/api/analytics/reports', async (req, res) => {
                 startDate = new Date(today);
                 startDate.setFullYear(today.getFullYear() - 1);
                 break;
+            case '2Y':
+                startDate = new Date(today);
+                startDate.setFullYear(today.getFullYear() - 2);
+                break;
+            case '3Y':
+                startDate = new Date(today);
+                startDate.setFullYear(today.getFullYear() - 3);
+                break;
+            case '5Y':
+                startDate = new Date(today);
+                startDate.setFullYear(today.getFullYear() - 5);
+                break;
             case 'YTD':
                 startDate = new Date(today.getFullYear(), 0, 1);
                 break;
