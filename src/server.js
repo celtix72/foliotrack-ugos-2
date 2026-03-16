@@ -327,8 +327,19 @@ app.use(express.urlencoded({ extended: true }));
 // ════════════════════════════════════════════════════════════════════════════
 
 app.get('/api/assets', (req, res) => {
-    // We don't want to show the pseudo 'CASH' asset in monitored lists or watchlist
-    res.json(database.db.prepare("SELECT * FROM assets WHERE ticker != 'CASH' AND (type != 'Cash' OR type IS NULL) ORDER BY ticker ASC").all());
+    // Return all assets except CASH, with a flag indicating if they have an active position
+    const rows = database.db.prepare(`
+        SELECT a.*, CASE WHEN t.balance IS NOT NULL AND t.balance > 0.0001 THEN 1 ELSE 0 END as hasPosition
+        FROM assets a
+        LEFT JOIN (
+            SELECT assetTicker, SUM(quantity) as balance 
+            FROM transactions 
+            GROUP BY assetTicker
+        ) t ON a.ticker = t.assetTicker
+        WHERE a.ticker != 'CASH' AND (a.type != 'Cash' OR a.type IS NULL) 
+        ORDER BY a.name ASC
+    `).all();
+    res.json(rows);
 });
 
 app.post('/api/assets/manual-update', async (req, res) => {

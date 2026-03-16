@@ -179,10 +179,31 @@
 </div>
 
 <!-- Unified List -->
-<div class="grid grid-cols-1 gap-4" id="unified-monitoring-list">
-    <!-- Assets will be rendered here -->
-    <div class="px-6 py-12 text-center text-slate-400 italic bg-white dark:bg-[#111722] rounded-2xl border border-slate-200 dark:border-slate-800">
-        Loading monitored assets...
+<div class="space-y-8">
+    <!-- Section 1: Open Positions -->
+    <div id="section-positions" class="space-y-4">
+        <div class="flex items-center justify-between px-2">
+            <h3 class="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Open Positions</h3>
+        </div>
+        <div class="grid grid-cols-1 gap-4" id="list-positions">
+            <!-- Open positions will be rendered here -->
+        </div>
+    </div>
+
+    <!-- Section 2: Watchlist -->
+    <div id="section-watchlist" class="space-y-4">
+        <div class="flex items-center justify-between px-2 group cursor-pointer" onclick="toggleWatchlist()">
+            <div class="flex items-center gap-2">
+                <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-slate-600 transition-colors">Watchlist / Monitoring</h3>
+                <span id="watchlist-toggle-icon" class="material-symbols-outlined text-sm text-slate-400 transition-transform group-hover:text-slate-600">expand_more</span>
+            </div>
+            <p id="watchlist-count" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">0 Assets</p>
+        </div>
+        <div id="watchlist-container" class="hidden">
+            <div class="grid grid-cols-1 gap-4" id="list-watchlist">
+                <!-- Watchlist assets will be rendered here -->
+            </div>
+        </div>
     </div>
 </div>
 
@@ -269,21 +290,23 @@ async function loadAssets() {
 
 // ─── Unified List Rendering ──────────────────────────────────────────────────
 function renderAssets(filter = '') {
-    const listEl = document.getElementById('unified-monitoring-list');
-    const countEl = document.getElementById('asset-count-label');
+    const listPos = document.getElementById('list-positions');
+    const listWatch = document.getElementById('list-watchlist');
+    const countLabel = document.getElementById('asset-count-label');
+    const watchCountEl = document.getElementById('watchlist-count');
 
     const filtered = (filter
         ? allAssets.filter(a => (a.name + a.ticker).toLowerCase().includes(filter.toLowerCase()))
         : allAssets).filter(a => a.ticker !== 'CASH');
 
-    countEl.textContent = `${filtered.length} ASSETS MONITORED`;
+    if (countLabel) countLabel.textContent = `${filtered.length} ASSETS MONITORED`;
 
-    if (!filtered.length) {
-        listEl.innerHTML = `<div class="px-6 py-12 text-center text-slate-500 italic bg-white dark:bg-[#111722] rounded-2xl border border-slate-200 dark:border-slate-800">No monitored assets found. Add some using the search above.</div>`;
-        return;
-    }
+    const openPositions = filtered.filter(a => a.hasPosition);
+    const watchlist = filtered.filter(a => !a.hasPosition);
 
-    listEl.innerHTML = filtered.map(a => {
+    if (watchCountEl) watchCountEl.textContent = `${watchlist.length} ASSETS`;
+
+    const renderCard = (a) => {
         const price = a.currentPrice || 0;
         const change = a.changePercent || 0;
         const color = change >= 0 ? 'emerald' : 'rose';
@@ -297,7 +320,6 @@ function renderAssets(filter = '') {
 
         return `
         <div class="group border ${alertClass} rounded-2xl p-5 shadow-sm hover:shadow-md transition-all ${opacity}">
-            <!-- Row 1: Asset Info & Main Metrics -->
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-4">
                     <div class="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-xs shrink-0 uppercase border border-primary/20 shadow-inner">
@@ -320,8 +342,6 @@ function renderAssets(filter = '') {
                     </div>
                 </div>
             </div>
-
-            <!-- Row 2: Secondary Info & Actions -->
             <div class="pt-4 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between">
                 <div class="flex items-center gap-6">
                     <div class="space-y-0.5">
@@ -352,7 +372,33 @@ function renderAssets(filter = '') {
                 </div>
             </div>
         </div>`;
-    }).join('');
+    };
+
+    if (openPositions.length) {
+        listPos.innerHTML = openPositions.map(renderCard).join('');
+    } else {
+        listPos.innerHTML = `<div class="px-6 py-8 text-center text-slate-500 italic bg-white dark:bg-[#111722] rounded-2xl border border-slate-200 dark:border-slate-800">No open positions.</div>`;
+    }
+
+    if (watchlist.length) {
+        listWatch.innerHTML = watchlist.map(renderCard).join('');
+    } else {
+        listWatch.innerHTML = `<div class="px-6 py-8 text-center text-slate-500 italic bg-white dark:bg-[#111722] rounded-2xl border border-slate-200 dark:border-slate-800">Watchlist is empty.</div>`;
+    }
+}
+
+function toggleWatchlist() {
+    const container = document.getElementById('watchlist-container');
+    const icon = document.getElementById('watchlist-toggle-icon');
+    const isHidden = container.classList.contains('hidden');
+    
+    if (isHidden) {
+        container.classList.remove('hidden');
+        icon.style.transform = 'rotate(180deg)';
+    } else {
+        container.classList.add('hidden');
+        icon.style.transform = 'rotate(0deg)';
+    }
 }
 
 function filterAssets(val) { renderAssets(val); }
@@ -510,20 +556,20 @@ async function loadMovers() {
         const movers = await res.json();
         const section = document.getElementById('movers-section');
         const carousel = document.getElementById('movers-carousel');
-        
+
         if (!movers || movers.length === 0) {
             section.classList.add('hidden');
             return;
         }
-        
+
         section.classList.remove('hidden');
         carousel.innerHTML = movers.map(m => {
             const isPos = m.changePercent >= 0;
             const color = isPos ? 'emerald' : 'rose';
             return `
-                <div class="snap-start shrink-0 w-32 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 p-3 rounded-xl hover:border-primary transition-all cursor-pointer flex flex-col items-center justify-center text-center group" onclick="window.location.href='/portfolio?ticker=${m.ticker}'">
-                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 group-hover:text-primary transition-colors">${m.ticker}</span>
-                    <span class="text-xl font-black text-${color}-500 leading-none">${isPos ? '+' : ''}${formatNumber(m.changePercent, 2)}%</span>
+                <div class="snap-start shrink-0 w-36 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 p-4 rounded-xl hover:border-primary transition-all cursor-pointer flex flex-col items-center justify-center text-center group shadow-sm" onclick="window.location.href='/portfolio_detail.html?ticker=${m.ticker}'">
+                    <span class="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 group-hover:text-primary transition-colors">${m.ticker}</span>
+                    <span class="text-2xl font-black text-${color}-500 leading-none">${isPos ? '+' : ''}${formatNumber(m.changePercent, 2)}%</span>
                 </div>
             `;
         }).join('');
