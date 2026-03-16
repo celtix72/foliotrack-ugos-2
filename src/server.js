@@ -1387,10 +1387,13 @@ app.get('/api/market/exchange-rate', async (req, res) => {
  * Shared helper to calculate performance data points for one or more portfolios.
  */
 async function calculatePerformanceHistory(portfolioIds, range) {
-    const isGlobal = !portfolioIds || portfolioIds.length === 0;
+    // Standardize input: null, single ID, or array
+    const pIdsInput = portfolioIds === null ? null : (Array.isArray(portfolioIds) ? portfolioIds : [portfolioIds]);
+    
+    const isGlobal = !pIdsInput || pIdsInput.length === 0;
     const portfolios = isGlobal 
         ? database.db.prepare('SELECT * FROM portfolios').all()
-        : database.db.prepare(`SELECT * FROM portfolios WHERE id IN (${portfolioIds.join(',')})`).all();
+        : database.db.prepare(`SELECT * FROM portfolios WHERE id IN (${pIdsInput.join(',')})`).all();
 
     if (portfolios.length === 0) return [];
 
