@@ -1292,6 +1292,11 @@
                         finalCurrency = data.currency;
                         document.getElementById('t-asset-currency').value = finalCurrency;
                     }
+
+                    // Auto-populate price
+                    if (data.currentPrice) {
+                        document.getElementById('t-price').value = data.currentPrice;
+                    }
                 }
             } catch (err) { console.error(err); }
         }
