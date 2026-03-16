@@ -352,6 +352,22 @@
                             label: (context) => {
                                 const label = context.dataset.label || '';
                                 return `${label}: ${formatCurrency(context.parsed.y)}`;
+                            },
+                            footer: (tooltipItems) => {
+                                const index = tooltipItems[0].dataIndex;
+                                const d = dashboardChart.rawPoints ? dashboardChart.rawPoints[index] : null;
+                                if (d && d.events && d.events.length > 0) {
+                                    let lines = ['\nTransactions:'];
+                                    d.events.forEach(ev => {
+                                        const type = ev.type;
+                                        const ticker = ev.ticker && ev.ticker !== 'CASH' ? `${ev.ticker}` : '';
+                                        const amount = formatCurrency(ev.amount);
+                                        const prefix = (type === 'DEPOSIT' || type === 'BUY' || type === 'DIVIDEND') ? '+' : '-';
+                                        lines.push(`${type}${ticker ? ' (' + ticker + ')' : ''}: ${prefix}${amount}`);
+                                    });
+                                    return lines.join('\n');
+                                }
+                                return '';
                             }
                         }
                     },
@@ -424,6 +440,7 @@
             const dataPoints = result.dataPoints || (Array.isArray(result) ? result : []);
             const changePercent = result.changePercent || 0;
             
+            dashboardChart.rawPoints = dataPoints; // Store raw points for tooltip access
             dashboardChart.data.labels = dataPoints.map(d => {
                 const date = new Date(d.date);
                 return date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });

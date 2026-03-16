@@ -1719,8 +1719,8 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                     if (t.type === 'DEPOSIT') state.netDeposits += amount;
                     else if (t.type === 'WITHDRAWAL') state.netDeposits -= amount;
                     
-                    if (['BUY', 'SELL', 'DIVIDEND'].includes(t.type)) {
-                        dayEvents.push({ type: t.type, ticker: t.assetTicker, portfolioName: p.name, amount: amount || ((t.quantity || 0) * (t.price || 0)) });
+                    if (['BUY', 'SELL', 'DIVIDEND', 'DEPOSIT', 'WITHDRAWAL'].includes(t.type)) {
+                        dayEvents.push({ type: t.type, ticker: t.assetTicker || 'CASH', portfolioName: p.name, amount: amount || ((t.quantity || 0) * (t.price || 0)) });
                     }
                     // We still need to update holdings state to keep it consistent if manual record missing for next day
                     const qty = t.quantity || 0, price = t.price || 0, comm = t.commission || 0, tax = t.tax || 0, fx = t.exchangeRate || 1;
@@ -1751,8 +1751,8 @@ async function calculatePerformanceHistory(portfolioIds, range) {
 
                 for (const t of dayTx) {
                     const qty = t.quantity || 0, price = t.price || 0, comm = t.commission || 0, tax = t.tax || 0, fx = t.exchangeRate || 1, amount = t.amount || 0;
-                    if (['BUY', 'SELL', 'DIVIDEND'].includes(t.type)) {
-                        dayEvents.push({ type: t.type, ticker: t.assetTicker, portfolioName: p.name, amount: amount || (qty * price) });
+                    if (['BUY', 'SELL', 'DIVIDEND', 'DEPOSIT', 'WITHDRAWAL'].includes(t.type)) {
+                        dayEvents.push({ type: t.type, ticker: t.assetTicker || 'CASH', portfolioName: p.name, amount: amount || (qty * price) });
                     }
                     switch (t.type) {
                         case 'DEPOSIT':    state.cash += amount; state.netDeposits += amount; break;
