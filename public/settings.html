@@ -383,34 +383,42 @@
 
 <!-- History Management -->
 <section class="space-y-4">
-    <div class="flex items-center justify-between">
-        <h2 class="text-lg font-bold border-l-4 border-primary pl-3">History Management</h2>
-        <button onclick="addHistoryEntry()" class="px-4 py-2 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary/20 transition-all flex items-center gap-2">
+    <div class="flex items-center justify-between cursor-pointer group" onclick="toggleSection('history-management-content')">
+        <div class="flex items-center gap-3">
+            <h2 class="text-lg font-bold border-l-4 border-primary pl-3">History Management</h2>
+            <span id="history-management-content-icon" class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-transform">expand_more</span>
+        </div>
+        <button onclick="event.stopPropagation(); addHistoryEntry()" class="px-4 py-2 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary/20 transition-all flex items-center gap-2">
             <span class="material-symbols-outlined text-[18px]">add</span> Add Record
         </button>
     </div>
-    <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-6">
-        <div class="flex items-center gap-4">
-            <div class="flex-1">
-                <label class="block font-bold text-sm mb-2">Select Portfolio</label>
-                <select id="history-portfolio-select" onchange="loadHistoryData()" class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/50">
-                    <option value="null">Total Net Worth (Global)</option>
-                </select>
+    
+    <div id="history-management-content" class="hidden transition-all duration-300">
+        <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-4">
+            <div class="flex items-center gap-4">
+                <div class="flex-1">
+                    <label class="block font-bold text-xs mb-1.5 text-slate-500 uppercase tracking-widest">Select Portfolio</label>
+                    <select id="history-portfolio-select" onchange="loadHistoryData()" class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/50">
+                        <option value="null">Total Net Worth (Global)</option>
+                    </select>
+                </div>
             </div>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm">
-                <thead>
-                    <tr class="text-[11px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
-                        <th class="pb-3 px-2">Date</th>
-                        <th class="pb-3 px-2">Total Value</th>
-                        <th class="pb-3 px-2 text-right">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="history-table-body" class="divide-y divide-slate-50 dark:divide-slate-800/50">
-                    <!-- History rows will be injected here -->
-                </tbody>
-            </table>
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-full text-left text-[10px]">
+                    <thead>
+                        <tr class="font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
+                            <th class="py-2 px-1">Date</th>
+                            <th class="py-2 px-1">Total Val</th>
+                            <th class="py-2 px-1">Cash</th>
+                            <th class="py-2 px-1">Assets</th>
+                            <th class="py-2 px-1 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-table-body" class="divide-y divide-slate-50 dark:divide-slate-800/50">
+                        <!-- History rows will be injected here -->
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </section>
@@ -720,6 +728,19 @@
             });
         }
         
+        window.toggleSection = function(id) {
+            const content = document.getElementById(id);
+            const icon = document.getElementById(id + '-icon');
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                if (icon) icon.style.transform = 'rotate(180deg)';
+                if (id === 'history-management-content') loadHistoryData();
+            } else {
+                content.classList.add('hidden');
+                if (icon) icon.style.transform = 'rotate(0deg)';
+            }
+        };
+
         // History Management logic
         const historyTableBody = document.getElementById('history-table-body');
         const historyPortfolioSelect = document.getElementById('history-portfolio-select');
@@ -732,29 +753,59 @@
                 const res = await fetch(url);
                 const data = await res.json();
                 historyTableBody.innerHTML = data.map(h => `
-                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                        <td class="py-3 px-2 font-mono text-xs">${h.date}</td>
-                        <td class="py-3 px-2">
-                            <input type="number" step="0.01" value="${h.totalValue}" 
-                                   onchange="updateHistoryEntry(${h.id}, '${h.date}', this.value)"
-                                   class="w-32 bg-transparent border-none p-0 focus:ring-0 font-bold text-sm">
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
+                        <td class="py-1 px-1">
+                            <input type="text" value="${h.date}" 
+                                   onchange="updateHistoryRow(${h.id}, this.value, null, null, null)"
+                                   class="w-full bg-transparent border-none p-0 focus:ring-0 font-mono text-[10px] text-slate-500">
                         </td>
-                        <td class="py-3 px-2 text-right">
-                            <button onclick="deleteHistoryEntry(${h.id})" class="text-rose-500 hover:text-rose-600">
-                                <span class="material-symbols-outlined text-sm">delete</span>
-                            </button>
+                        <td class="py-1 px-1">
+                            <input type="number" step="0.01" value="${h.totalValue}" 
+                                   onchange="updateHistoryRow(${h.id}, null, this.value, null, null)"
+                                   class="w-full bg-transparent border-none p-0 focus:ring-0 font-bold text-[10px]">
+                        </td>
+                        <td class="py-1 px-1">
+                            <input type="number" step="0.01" value="${h.cashValue || 0}" 
+                                   onchange="updateHistoryRow(${h.id}, null, null, this.value, null)"
+                                   class="w-full bg-transparent border-none p-0 focus:ring-0 text-[10px] text-slate-500">
+                        </td>
+                        <td class="py-1 px-1">
+                            <input type="number" step="0.01" value="${h.assetValue || 0}" 
+                                   onchange="updateHistoryRow(${h.id}, null, null, null, this.value)"
+                                   class="w-full bg-transparent border-none p-0 focus:ring-0 text-[10px] text-slate-500">
+                        </td>
+                        <td class="py-1 px-1 text-right">
+                            <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onclick="deleteHistoryEntry(${h.id})" class="p-1 text-rose-500 hover:bg-rose-500/10 rounded transition-colors" title="Delete">
+                                    <span class="material-symbols-outlined text-xs">delete</span>
+                                </button>
+                            </div>
                         </td>
                     </tr>
-                `).join('') || '<tr><td colspan="3" class="py-12 text-center text-slate-500 italic">No historical records found.</td></tr>';
+                `).join('') || '<tr><td colspan="5" class="py-8 text-center text-slate-500 italic text-[10px]">No historical records found.</td></tr>';
             } catch (err) { console.error(err); }
         }
 
-        window.updateHistoryEntry = async function(id, date, value) {
+        window.updateHistoryRow = async function(id, date, total, cash, asset) {
             try {
+                // Get current values from the row to ensure we don't zero out anything
+                const pid = historyPortfolioSelect.value;
+                const rows = await (await fetch(`/api/history?portfolioId=${pid === 'null' ? 'null' : pid}`)).json();
+                const existing = rows.find(r => r.id === id);
+                if (!existing) return;
+
+                const payload = {
+                    id,
+                    date: date || existing.date,
+                    totalValue: total !== null ? parseFloat(total) : existing.totalValue,
+                    cashValue: cash !== null ? parseFloat(cash) : existing.cashValue,
+                    assetValue: asset !== null ? parseFloat(asset) : existing.assetValue
+                };
+
                 await fetch('/api/history', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id, date, totalValue: parseFloat(value), cashValue: 0, assetValue: parseFloat(value) })
+                    body: JSON.stringify(payload)
                 });
             } catch (err) { alert('Update failed: ' + err.message); }
         }
@@ -777,7 +828,13 @@
                 await fetch('/api/history', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ portfolioId: pid, date, totalValue: parseFloat(val), cashValue: 0, assetValue: parseFloat(val) })
+                    body: JSON.stringify({ 
+                        portfolioId: pid === 'null' ? null : pid, 
+                        date, 
+                        totalValue: parseFloat(val), 
+                        cashValue: 0, 
+                        assetValue: parseFloat(val) 
+                    })
                 });
                 loadHistoryData();
             } catch (err) { alert('Add failed: ' + err.message); }
