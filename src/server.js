@@ -1167,7 +1167,7 @@ app.post('/api/admin/rebuild-history', async (req, res) => {
         for (const p of portfolios) {
             const dataPoints = await calculatePerformanceHistory(p.id, 'ALL');
             const insert = database.db.prepare(`
-                INSERT INTO portfolio_history (portfolioId, date, totalValue, cashValue, assetValue)
+                INSERT OR REPLACE INTO portfolio_history (portfolioId, date, totalValue, cashValue, assetValue)
                 VALUES (?, ?, ?, ?, ?)
             `);
             
@@ -1181,7 +1181,7 @@ app.post('/api/admin/rebuild-history', async (req, res) => {
         // 3. Recalculate Global
         const globalPoints = await calculatePerformanceHistory(null, 'ALL');
         const insertGlobal = database.db.prepare(`
-            INSERT INTO portfolio_history (portfolioId, date, totalValue, cashValue, assetValue)
+            INSERT OR REPLACE INTO portfolio_history (portfolioId, date, totalValue, cashValue, assetValue)
             VALUES (NULL, ?, ?, ?, ?)
         `);
         
