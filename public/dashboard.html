@@ -135,10 +135,15 @@
 <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-1">Total Net Worth</p>
 <div class="flex items-center gap-3">
     <h2 id="total-net-worth" class="text-3xl font-black">€0.00</h2>
-    <span id="total-perf" class="text-emerald-500 text-sm font-bold flex items-center gap-1">
-        <span class="material-symbols-outlined text-[18px]">trending_up</span>
-        0.00%
-    </span>
+    <div class="flex flex-col">
+        <span id="total-perf" class="text-emerald-500 text-sm font-bold flex items-center gap-1">
+            <span class="material-symbols-outlined text-[18px]">trending_up</span>
+            0.00%
+        </span>
+        <span id="total-change-val" class="text-[10px] font-bold text-slate-400">
+            +€0.00 today
+        </span>
+    </div>
 </div>
 </div>
 <div class="flex items-center gap-3">
@@ -238,6 +243,8 @@
             document.getElementById('total-net-worth').innerText = formatCurrency(global.totalValue, 'EUR', 0);
             
             const totalPerfEl = document.getElementById('total-perf');
+            const totalChangeValEl = document.getElementById('total-change-val');
+            
             if (totalPerfEl) {
                 const isPos = global.changePercent >= 0;
                 totalPerfEl.className = `${isPos ? 'text-emerald-500' : 'text-rose-500'} text-sm font-bold flex items-center gap-1`;
@@ -245,6 +252,12 @@
                     <span class="material-symbols-outlined text-[18px]">${isPos ? 'trending_up' : 'trending_down'}</span>
                     ${isPos ? '+' : ''}${global.changePercent.toFixed(2)}%
                 `;
+            }
+
+            if (totalChangeValEl) {
+                const isPos = global.changeValue >= 0;
+                totalChangeValEl.className = `text-[10px] font-bold ${isPos ? 'text-emerald-500/80' : 'text-rose-500/80'}`;
+                totalChangeValEl.innerText = `${isPos ? '+' : ''}${formatCurrency(global.changeValue, 'EUR', 2)} today`;
             }
 
             // Initial chart load

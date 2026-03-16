@@ -606,12 +606,15 @@ app.get('/api/portfolios', async (req, res) => {
         const globalChangePct = (globalHistory && globalHistory.totalValue > 0)
             ? ((totalVal - globalHistory.totalValue) / globalHistory.totalValue) * 100
             : 0;
+        
+        const globalChangeValue = globalHistory ? (totalVal - globalHistory.totalValue) : 0;
 
         res.json({
             portfolios: rows,
             global: {
                 totalValue: totalVal,
-                changePercent: globalChangePct
+                changePercent: globalChangePct,
+                changeValue: globalChangeValue
             }
         });
     } catch (err) {
@@ -2182,6 +2185,25 @@ app.get('/api/logs', (req, res) => {
 
 app.get('/api/market-status', (req, res) => {
     res.json(getMarketStatus());
+});
+
+app.get('/api/market/movers', (req, res) => {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        // Assets that were updated today and have a non-zero current price
+        // Order by absolute changePercent descending
+        const rows = database.db.prepare(`
+            SELECT * FROM assets 
+            WHERE ticker != 'CASH' 
+            AND updatedAt LIKE ? 
+            AND currentPrice > 0
+            ORDER BY ABS(changePercent) DESC
+            LIMIT 10
+        `).all(`${today}%`);
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 app.post('/api/market-sync', async (req, res) => {

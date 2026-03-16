@@ -13,6 +13,8 @@
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
     .tab-active { background: white; color: #135bec; font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     .dark .tab-active { background: #1e293b; color: #135bec; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 </style>
 <script src="/theme.js"></script>
 </head>
@@ -116,6 +118,24 @@
 <input id="table-search" type="text" placeholder="Filter assets..." class="pl-9 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm w-64 shadow-sm" oninput="filterAssets(this.value)"/>
 </div>
 </div>
+
+<!-- Movers Carousel Section -->
+<section id="movers-section" class="hidden space-y-3">
+    <div class="flex items-center justify-between px-2">
+        <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Today's Top Movers</h3>
+        <div class="flex gap-1">
+            <button onclick="scrollMovers(-1)" class="w-6 h-6 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-400 hover:text-primary transition-colors">
+                <span class="material-symbols-outlined text-sm">chevron_left</span>
+            </button>
+            <button onclick="scrollMovers(1)" class="w-6 h-6 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-400 hover:text-primary transition-colors">
+                <span class="material-symbols-outlined text-sm">chevron_right</span>
+            </button>
+        </div>
+    </div>
+    <div id="movers-carousel" class="flex gap-4 overflow-x-auto pb-4 custom-scrollbar snap-x no-scrollbar">
+        <!-- Movers will be injected here -->
+    </div>
+</section>
 
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <!-- UNIFIED MONITORING VIEW                                         -->
@@ -467,9 +487,49 @@ async function forceSync() {
     }
 }
 
+// ─── Movers Carousel Logic ──────────────────────────────────────────────────
+async function loadMovers() {
+    try {
+        const res = await fetch('/api/market/movers');
+        const movers = await res.json();
+        const section = document.getElementById('movers-section');
+        const carousel = document.getElementById('movers-carousel');
+        
+        if (!movers || movers.length === 0) {
+            section.classList.add('hidden');
+            return;
+        }
+        
+        section.classList.remove('hidden');
+        carousel.innerHTML = movers.map(m => {
+            const isPos = m.changePercent >= 0;
+            const color = isPos ? 'emerald' : 'rose';
+            return `
+                <div class="snap-start shrink-0 w-48 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 p-3 rounded-xl hover:border-primary transition-all cursor-pointer" onclick="window.location.href='/portfolio?ticker=${m.ticker}'">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[10px] font-black bg-primary/10 text-primary px-1.5 py-0.5 rounded uppercase tracking-tighter">${m.ticker}</span>
+                        <span class="text-[10px] font-black text-${color}-500">${isPos ? '+' : ''}${m.changePercent.toFixed(2)}%</span>
+                    </div>
+                    <p class="text-xs font-bold text-slate-900 dark:text-white truncate mb-1">${m.name}</p>
+                    <p class="text-[11px] font-black font-mono text-slate-500">${formatCurrency(m.currentPrice, m.currency)}</p>
+                </div>
+            `;
+        }).join('');
+    } catch (err) { console.error('Error loading movers:', err); }
+}
+
+function scrollMovers(dir) {
+    const carousel = document.getElementById('movers-carousel');
+    carousel.scrollBy({ left: dir * 200, behavior: 'smooth' });
+}
+
 document.addEventListener('DOMContentLoaded', () => { 
     loadAssets(); 
-    setInterval(loadAssets, 60000); 
+    loadMovers();
+    setInterval(() => {
+        loadAssets();
+        loadMovers();
+    }, 60000); 
 });
 </script>
 </body>
