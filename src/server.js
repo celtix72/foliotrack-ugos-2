@@ -56,7 +56,12 @@ const MARKET_HOURS = {
  */
 async function fetchAssetMetadata(ticker) {
     try {
-        const quote = await yahooFinance.quote(ticker).catch(() => null);
+        const quote = await yahooFinance.quote(ticker).catch(err => {
+            if (err.message.includes('429') || err.message.includes('Too Many Requests')) {
+                throw new Error('YF_RATE_LIMIT');
+            }
+            return null;
+        });
         if (!quote) return null;
 
         let country = 'N/A';
@@ -64,7 +69,12 @@ async function fetchAssetMetadata(ticker) {
 
         const summary = await yahooFinance.quoteSummary(ticker, { 
             modules: ["summaryProfile", "assetProfile", "fundProfile"] 
-        }).catch(() => ({}));
+        }).catch(err => {
+            if (err.message.includes('429') || err.message.includes('Too Many Requests')) {
+                throw new Error('YF_RATE_LIMIT');
+            }
+            return {};
+        });
 
         if (summary.summaryProfile && summary.summaryProfile.country) {
             country = summary.summaryProfile.country;
@@ -2383,6 +2393,10 @@ async function updateMarketData(force = false) {
                 }
             }
         } catch (err) {
+            if (err.message === 'YF_RATE_LIMIT') {
+                logger.warn('Yahoo Finance API Rate Limit Reached. Suspending current update batch to avoid further blocks.');
+                return; // BREAK the loop and stop the entire update batch
+            }
             logger.error(`Failed to update ${asset.ticker}`, err);
             database.db.prepare(`UPDATE assets SET lastUpdateError=? WHERE ticker=?`).run(err.message, asset.ticker);
             // If it's a 404/Not Found on YF, mark as manual to stop hammering
