@@ -1520,15 +1520,18 @@ async function calculatePerformanceHistory(portfolioIds, range) {
 
                     for (const h of sortedQuotes) {
                         const dateStr = new Date(h.date).toISOString().split('T')[0];
-                        let currentRate = h.adjclose || h.close || 1;
+                        let currentRate = h.adjclose || h.close;
                         
-                        // SANITIZATION: Yahoo Finance often returns 1.0 for EURUSD=X on holidays (like 25/12, 1/1)
-                        // This is clearly an error as the real rate is ~1.08-1.10. 
-                        // If it's exactly 1.0 and we have a better previous rate, use that instead.
-                        if (currentRate === 1.0 && lastValidRate !== 1.0) {
+                        // SANITIZATION: Yahoo Finance often returns 1.0 for EURUSD=X on holidays or gaps.
+                        // Also handle occasional null/zero values.
+                        if ((!currentRate || currentRate <= 0 || currentRate === 1.0) && lastValidRate > 0 && lastValidRate !== 1.0) {
                             currentRate = lastValidRate;
-                        } else if (currentRate !== 1.0) {
+                        } else if (currentRate && currentRate > 0 && currentRate !== 1.0) {
                             lastValidRate = currentRate;
+                        } else if (!currentRate || currentRate <= 0) {
+                            // If we have no lastValidRate yet, we'll have to skip this date 
+                            // to let the fallback logic handle it later
+                            continue;
                         }
                         
                         sanitizedRates[dateStr] = currentRate;
@@ -1554,10 +1557,12 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                     interval: '1d'
                 });
                 if (chartResult && chartResult.quotes) {
+                    // Filter out invalid/null prices immediately so fallback logic can jump over gaps
+                    const validQuotes = chartResult.quotes
+                        .filter(h => h.date && (h.adjclose || h.close) && (h.adjclose || h.close) > 0);
+                    
                     historicalPrices[ticker] = Object.fromEntries(
-                        chartResult.quotes
-                            .filter(h => h.date)
-                            .map(h => [new Date(h.date).toISOString().split('T')[0], h.adjclose || h.close || 0])
+                        validQuotes.map(h => [new Date(h.date).toISOString().split('T')[0], h.adjclose || h.close])
                     );
                     historicalPricesCache[ticker] = historicalPrices[ticker];
                 } else {
