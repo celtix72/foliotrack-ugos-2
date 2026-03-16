@@ -113,7 +113,8 @@ async function fetchAssetMetadata(ticker) {
             country: country,
             currentPrice: quote.regularMarketPrice || 0,
             changePercent: quote.regularMarketChangePercent || 0,
-            pe: quote.trailingPE || quote.forwardPE || null
+            pe: quote.trailingPE || quote.forwardPE || null,
+            quoteDate: quote.regularMarketTime ? new Date(quote.regularMarketTime).toISOString().split('T')[0] : null
         };
     } catch (e) {
         console.error(`Metadata fetch error for ${ticker}:`, e.message);
@@ -2190,16 +2191,16 @@ app.get('/api/market-status', (req, res) => {
 app.get('/api/market/movers', (req, res) => {
     try {
         const today = new Date().toISOString().split('T')[0];
-        // Assets that were updated today and have a non-zero current price
+        // Assets that have a quote from today and have a non-zero current price
         // Order by absolute changePercent descending
         const rows = database.db.prepare(`
             SELECT * FROM assets 
             WHERE ticker != 'CASH' 
-            AND updatedAt LIKE ? 
+            AND quoteDate = ? 
             AND currentPrice > 0
             ORDER BY ABS(changePercent) DESC
             LIMIT 10
-        `).all(`${today}%`);
+        `).all(today);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -2310,7 +2311,8 @@ async function updateMarketData(force = false) {
                         name: asset.name,
                         currency: asset.currency,
                         exchange: asset.exchange,
-                        country: asset.country
+                        country: asset.country,
+                        quoteDate: new Date().toISOString().split('T')[0]
                     };
                 } else {
                     throw new Error(`B_ITA failed: ${result.error || 'Unknown error'}`);
@@ -2329,14 +2331,15 @@ async function updateMarketData(force = false) {
                     name: metadata.name || asset.name,
                     currency: metadata.currency || asset.currency,
                     exchange: metadata.exchange || asset.exchange,
-                    country: metadata.country || asset.country
+                    country: metadata.country || asset.country,
+                    quoteDate: metadata.quoteDate || new Date().toISOString().split('T')[0]
                 };
             }
 
             if (updateData) {
                 database.db.prepare(`
                     UPDATE assets
-                    SET currentPrice=?, changePercent=?, pe=?, name=?, currency=?, exchange=?, country=?, lastUpdateError=NULL, updatedAt=datetime('now')
+                    SET currentPrice=?, changePercent=?, pe=?, name=?, currency=?, exchange=?, country=?, quoteDate=?, lastUpdateError=NULL, updatedAt=datetime('now')
                     WHERE ticker=?
                 `).run(
                     updateData.price,
@@ -2346,6 +2349,7 @@ async function updateMarketData(force = false) {
                     updateData.currency,
                     updateData.exchange,
                     updateData.country,
+                    updateData.quoteDate,
                     asset.ticker
                 );
                 logger.info(`Successfully updated ${asset.ticker}: ${updateData.price} ${updateData.currency}`);
