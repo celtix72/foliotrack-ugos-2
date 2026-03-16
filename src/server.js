@@ -123,6 +123,7 @@ async function fetchAssetMetadata(ticker) {
             country: country,
             currentPrice: quote.regularMarketPrice || 0,
             changePercent: quote.regularMarketChangePercent || 0,
+            changeValue: quote.regularMarketChange || 0,
             pe: quote.trailingPE || quote.forwardPE || null,
             quoteDate: quote.regularMarketTime ? new Date(quote.regularMarketTime).toISOString().split('T')[0] : null
         };
@@ -626,18 +627,54 @@ app.get('/api/portfolios', async (req, res) => {
         
         const todayStr = new Date().toISOString().split('T')[0];
         let totalVal = 0;
+        let globalChangeValue = 0;
+
         for (const p of rows) {
             totalVal += p.totalValue;
+            
+            // Calculate change value by summing asset price movements
+            const holdingsRows = database.db.prepare(`
+                SELECT t.assetTicker, SUM(t.quantity) as qty, a.changeValue, a.currency as assetCurr
+                FROM transactions t
+                JOIN assets a ON t.assetTicker = a.ticker
+                WHERE t.portfolioId = ?
+                GROUP BY t.assetTicker
+                HAVING qty > 0.0001
+            `).all(p.id);
+
+            let pChangeValue = 0;
+            for (const h of holdingsRows) {
+                let rate = 1;
+                if (h.assetCurr !== p.currency) {
+                    if (h.assetCurr === 'USD' && p.currency === 'EUR') {
+                        rate = liveRate;
+                    } else {
+                        const lastFxTx = database.db.prepare(`
+                            SELECT exchangeRate FROM transactions 
+                            WHERE portfolioId = ? AND assetTicker = ? AND exchangeRate IS NOT NULL
+                            ORDER BY date DESC LIMIT 1
+                        `).get(p.id, h.assetTicker);
+                        rate = lastFxTx ? lastFxTx.exchangeRate : 1;
+                    }
+                }
+                const changeInPCurr = h.assetCurr !== p.currency ? h.changeValue / rate : h.changeValue;
+                pChangeValue += h.qty * changeInPCurr;
+            }
+
+            p.changeValue = pChangeValue;
             const history = database.db.prepare(`
                 SELECT totalValue FROM portfolio_history 
                 WHERE portfolioId = ? AND date < ?
                 ORDER BY date DESC LIMIT 1
             `).get(p.id, todayStr);
+            
             if (history && history.totalValue > 0) {
-                p.changePercent = ((p.totalValue - history.totalValue) / history.totalValue) * 100;
+                // Variation % is still based on previous close for consistency
+                p.changePercent = (pChangeValue / history.totalValue) * 100;
             } else {
                 p.changePercent = 0;
             }
+            globalChangeValue += (p.currency === 'EUR' ? pChangeValue : pChangeValue / liveRate);
         }
 
         const globalHistory = database.db.prepare(`
@@ -645,11 +682,10 @@ app.get('/api/portfolios', async (req, res) => {
             WHERE portfolioId IS NULL AND date < ?
             ORDER BY date DESC LIMIT 1
         `).get(todayStr);
+
         const globalChangePct = (globalHistory && globalHistory.totalValue > 0)
-            ? ((totalVal - globalHistory.totalValue) / globalHistory.totalValue) * 100
+            ? (globalChangeValue / globalHistory.totalValue) * 100
             : 0;
-        
-        const globalChangeValue = globalHistory ? (totalVal - globalHistory.totalValue) : 0;
 
         res.json({
             portfolios: rows,
@@ -2379,9 +2415,11 @@ async function updateMarketData(force = false) {
             if (asset.dataSource === 'B_ITA' && asset.isin) {
                 const result = await B_ITA(asset.isin);
                 if (result.success) {
+                const changeVal = result.variation !== null ? (result.price * (result.variation / (100 + result.variation))) : 0;
                     updateData = {
                         price: result.price,
                         change: result.variation,
+                        changeValue: changeVal,
                         pe: asset.pe,
                         name: asset.name,
                         currency: asset.currency,
@@ -2389,8 +2427,6 @@ async function updateMarketData(force = false) {
                         country: asset.country,
                         quoteDate: new Date().toISOString().split('T')[0]
                     };
-                } else {
-                    throw new Error(`B_ITA failed: ${result.error || 'Unknown error'}`);
                 }
             } else {
                 // Default Yahoo Finance
@@ -2402,6 +2438,7 @@ async function updateMarketData(force = false) {
                 updateData = {
                     price: metadata.currentPrice || asset.currentPrice,
                     change: metadata.changePercent || asset.changePercent,
+                    changeValue: metadata.changeValue || 0,
                     pe: metadata.pe || asset.pe,
                     name: metadata.name || asset.name,
                     currency: metadata.currency || asset.currency,
@@ -2414,11 +2451,12 @@ async function updateMarketData(force = false) {
             if (updateData) {
                 database.db.prepare(`
                     UPDATE assets
-                    SET currentPrice=?, changePercent=?, pe=?, name=?, currency=?, exchange=?, country=?, quoteDate=?, lastUpdateError=NULL, updatedAt=datetime('now')
+                    SET currentPrice=?, changePercent=?, changeValue=?, pe=?, name=?, currency=?, exchange=?, country=?, quoteDate=?, lastUpdateError=NULL, updatedAt=datetime('now')
                     WHERE ticker=?
                 `).run(
                     updateData.price,
                     updateData.change,
+                    updateData.changeValue,
                     updateData.pe,
                     updateData.name,
                     updateData.currency,
