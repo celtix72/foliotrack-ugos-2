@@ -123,18 +123,26 @@
 </header>
 <!-- Main Content Scroll Area -->
 <main class="flex-1 overflow-y-auto custom-scrollbar bg-slate-50/50 dark:bg-[#0b0f1a]">
-<div class="px-8 pt-8 pb-4">
-<div>
-<div class="flex items-end gap-4 mb-1">
-    <h2 id="total-net-worth" class="text-3xl font-black">€0.00</h2>
-    <div id="total-perf-container" class="flex items-center gap-2 mb-1.5 opacity-0 transition-opacity duration-500">
-        <div id="total-perf"></div>
+    <div class="px-8 pt-8 pb-4">
+        <div class="flex items-center justify-between">
+            <div class="space-y-1">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-primary"></span> Global Summary
+                </p>
+                <div class="flex items-end gap-4">
+                    <h2 id="total-net-worth" class="text-4xl font-black tracking-tight">€0.00</h2>
+                </div>
+            </div>
+            <div id="total-perf-container" class="opacity-0 transition-opacity duration-500">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 text-right">Day Var</p>
+                <div id="info-day-var" class="flex items-center gap-2">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
     </div>
-</div>
-</div>
-</div>
-</div>
-<div class="p-8 space-y-8">
+
+    <div class="p-8 space-y-8">
 <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
     <!-- Performance Chart (75%) -->
     <section class="lg:col-span-3 bg-white dark:bg-[#111722] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
@@ -178,10 +186,7 @@
 <!-- Portfolio Summary -->
 <div class="xl:col-span-2 space-y-4">
 <div class="flex items-center justify-between mb-2">
-<h3 class="text-lg font-bold">Portfolio Performance</h3>
-<a class="text-xs font-bold text-primary hover:underline flex items-center gap-1" href="#">
-                                View All Portfolios <span class="material-symbols-outlined text-sm">arrow_forward</span>
-</a>
+    <h3 class="text-lg font-bold">Portfolio Performance</h3>
 </div>
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="portfolio-container">
 <!-- Cards will be injected here -->
@@ -219,17 +224,16 @@
             
             document.getElementById('total-net-worth').innerText = formatCurrency(global.totalValue, 'EUR', 0);
             
-            const totalPerfEl = document.getElementById('total-perf');
-            
-            if (totalPerfEl) {
-                const isPos = global.changePercent >= 0;
-                totalPerfEl.className = `${isPos ? 'text-emerald-500' : 'text-rose-500'} text-sm font-bold flex items-center gap-1`;
-                totalPerfEl.innerHTML = `
-                    <span class="material-symbols-outlined text-[18px]">${isPos ? 'trending_up' : 'trending_down'}</span>
-                    ${isPos ? '+' : ''}${global.changePercent.toFixed(2)}%
+            const infoDayVar = document.getElementById('info-day-var');
+            if (infoDayVar) {
+                const change = global.changeValue || 0;
+                const isPos = change >= 0;
+                infoDayVar.className = `px-5 py-2 rounded-2xl border font-black text-xl transition-all shadow-sm ${isPos ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border-rose-500/20'}`;
+                infoDayVar.innerHTML = `
+                    <span class="material-symbols-outlined text-[24px]">${isPos ? 'trending_up' : 'trending_down'}</span>
+                    ${isPos ? '+' : ''}${formatCurrency(change, 'EUR', 0)}
                 `;
             }
-
 
             document.getElementById('total-perf-container').classList.remove('opacity-0');
 
