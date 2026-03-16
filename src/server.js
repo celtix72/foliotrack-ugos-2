@@ -332,7 +332,8 @@ app.get('/api/assets', (req, res) => {
         SELECT a.*, CASE WHEN t.balance IS NOT NULL AND t.balance > 0.0001 THEN 1 ELSE 0 END as hasPosition
         FROM assets a
         LEFT JOIN (
-            SELECT assetTicker, SUM(quantity) as balance 
+            SELECT assetTicker, 
+                   SUM(CASE WHEN type = 'BUY' THEN quantity WHEN type = 'SELL' THEN -quantity ELSE 0 END) as balance 
             FROM transactions 
             GROUP BY assetTicker
         ) t ON a.ticker = t.assetTicker
@@ -1293,7 +1294,8 @@ app.get('/api/market/movers', async (req, res) => {
             SELECT a.* 
             FROM assets a
             JOIN (
-                SELECT assetTicker, SUM(quantity) as balance 
+                SELECT assetTicker, 
+                       SUM(CASE WHEN type = 'BUY' THEN quantity WHEN type = 'SELL' THEN -quantity ELSE 0 END) as balance 
                 FROM transactions 
                 GROUP BY assetTicker 
                 HAVING balance > 0.0001
