@@ -1780,11 +1780,15 @@ async function calculatePerformanceHistory(portfolioIds, range) {
 
                     // If price is missing (undefined, null, or 0), try to find a fallback
                     if (!price || price === 0) {
-                        // Priority 1: For today or missing historical, use live price from persistent asset data
+                        const isToday = dateStr === today.toISOString().split('T')[0];
                         const assetMeta = assetMetadataCache[ticker];
-                        if (assetMeta && assetMeta.currentPrice > 0) price = assetMeta.currentPrice;
 
-                        // Priority 2: Try most recent historical price
+                        // Priority 1: If it's today, try live price from cache
+                        if (isToday && assetMeta && assetMeta.currentPrice > 0) {
+                            price = assetMeta.currentPrice;
+                        }
+
+                        // Priority 2: Try most recent historical price (critical for weekends/holidays)
                         if (!price || price === 0) {
                             const availableDates = Object.keys(historicalPrices[ticker] || {}).sort();
                             const pastDates = availableDates.filter(d => d < dateStr);
@@ -1795,9 +1799,10 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                             }
                         }
 
-                        // Priority 3: Final fallback (already tried in Priority 1 via assetMetadataCache)
+                        // Priority 3: Final fallback to current asset price ONLY if no historical data at all
                         if (!price || price === 0) {
-                            price = 0;
+                            if (assetMeta && assetMeta.currentPrice > 0) price = assetMeta.currentPrice;
+                            else price = 0;
                         }
                     }
 
