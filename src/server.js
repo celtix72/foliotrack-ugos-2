@@ -1154,15 +1154,15 @@ app.post('/api/portfolios/:id/reconcile', async (req, res) => {
 
 app.post('/api/admin/rebuild-history', async (req, res) => {
     try {
-        logger.info('Rebuilding performance history starting...');
+        logger.info('Rebuilding performance history: Step 1/4 - Updating market quotes...');
+        await updateMarketData();
         
-        // 1. Clear database table and cache
+        logger.info('Rebuilding performance history: Step 2/4 - Clearing history tables...');
         database.db.prepare('DELETE FROM portfolio_history').run();
         performanceResultsCache = {};
         
-        // 2. Recalculate for ALL portfolios
         const portfolios = database.db.prepare('SELECT id FROM portfolios').all();
-        logger.info(`Found ${portfolios.length} portfolios to rebuild.`);
+        logger.info(`Rebuilding performance history: Step 3/4 - Recalculating for ${portfolios.length} portfolios...`);
         
         for (const p of portfolios) {
             const dataPoints = await calculatePerformanceHistory(p.id, 'ALL');
@@ -1178,7 +1178,7 @@ app.post('/api/admin/rebuild-history', async (req, res) => {
             })();
         }
         
-        // 3. Recalculate Global
+        logger.info('Rebuilding performance history: Step 4/4 - Recalculating Global...');
         const globalPoints = await calculatePerformanceHistory(null, 'ALL');
         const insertGlobal = database.db.prepare(`
             INSERT OR REPLACE INTO portfolio_history (portfolioId, date, totalValue, cashValue, assetValue)
@@ -1876,10 +1876,10 @@ async function calculatePerformanceHistory(portfolioIds, range) {
 
         dataPoints.push({
             date: dateStr,
-            value: Math.round(dayValue * 100) / 100,
-            profit: Math.round(dayProfit * 100) / 100,
-            cash: Math.round(dayCash * 100) / 100,
-            assets: Math.round(dayAssets * 100) / 100,
+            value: Math.round(dayValue),
+            profit: Math.round(dayProfit),
+            cash: Math.round(dayCash),
+            assets: Math.round(dayAssets),
             events: dayEvents
         });
         currentDate.setDate(currentDate.getDate() + 1);
