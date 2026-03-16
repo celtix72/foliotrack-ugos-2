@@ -289,13 +289,17 @@ app.get('/api/history', (req, res) => {
 
 app.post('/api/history', (req, res) => {
     const { id, portfolioId, date, totalValue, cashValue, assetValue } = req.body;
+    const rTotal = Math.round(totalValue || 0);
+    const rCash  = Math.round(cashValue || 0);
+    const rAsset = Math.round(assetValue || 0);
+
     try {
         if (id) {
             database.db.prepare(`
                 UPDATE portfolio_history 
                 SET date = ?, totalValue = ?, cashValue = ?, assetValue = ? 
                 WHERE id = ?
-            `).run(date, totalValue, cashValue, assetValue, id);
+            `).run(date, rTotal, rCash, rAsset, id);
         } else {
             const pid = portfolioId === 'null' ? null : portfolioId;
             database.db.prepare(`
@@ -305,7 +309,7 @@ app.post('/api/history', (req, res) => {
                     totalValue = excluded.totalValue,
                     cashValue = excluded.cashValue,
                     assetValue = excluded.assetValue
-            `).run(pid, date, totalValue, cashValue, assetValue);
+            `).run(pid, date, rTotal, rCash, rAsset);
         }
         res.json({ success: true });
     } catch (err) {

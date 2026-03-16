@@ -318,7 +318,7 @@ function savePortfolioSnapshot(portfolioId = null) {
             totalValue = excluded.totalValue,
             cashValue = excluded.cashValue,
             assetValue = excluded.assetValue
-    `).run(portfolioId, date, totalValue, cashValue, assetValue);
+    `).run(portfolioId, date, Math.round(totalValue), Math.round(cashValue), Math.round(assetValue));
 }
 
 module.exports = { 
