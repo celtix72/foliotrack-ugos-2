@@ -1,8 +1,9 @@
 (function() {
     const defaultFont = "'JetBrains Mono', monospace";
     const defaultSize = "14";
+    const defaultTheme = "dark";
     
-    function applyTheme(font, size) {
+    function applyTheme(font, size, theme = "dark") {
         const fonts = {
             "'JetBrains Mono', monospace": "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap",
             "'Fira Code', monospace": "https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&display=swap",
@@ -31,19 +32,27 @@
                 transition: font-size 0.2s ease;
             }
         `;
+
+        if (theme === 'light') {
+            document.documentElement.classList.remove('dark');
+        } else {
+            document.documentElement.classList.add('dark');
+        }
     }
 
     const localFont = localStorage.getItem('app-font') || defaultFont;
     const localSize = localStorage.getItem('app-font-size') || defaultSize;
-    applyTheme(localFont, localSize);
+    const localTheme = localStorage.getItem('app-theme') || defaultTheme;
+    applyTheme(localFont, localSize, localTheme);
 
     fetch(`/api/settings?t=${Date.now()}`)
         .then(res => res.json())
         .then(settings => {
-            if (settings.fontFamily !== localFont || settings.fontSize !== localSize) {
-                localStorage.setItem('app-font', settings.fontFamily);
-                localStorage.setItem('app-font-size', settings.fontSize);
-                applyTheme(settings.fontFamily, settings.fontSize);
+            if (settings.fontFamily !== localFont || settings.fontSize !== localSize || settings.theme !== localTheme) {
+                localStorage.setItem('app-font', settings.fontFamily || defaultFont);
+                localStorage.setItem('app-font-size', settings.fontSize || defaultSize);
+                localStorage.setItem('app-theme', settings.theme || defaultTheme);
+                applyTheme(settings.fontFamily || defaultFont, settings.fontSize || defaultSize, settings.theme || defaultTheme);
             }
             window.dispatchEvent(new CustomEvent('settings-updated', { detail: settings }));
         })
@@ -235,5 +244,22 @@
             minimumFractionDigits: 0,
             maximumFractionDigits: decimals
         }).format(value).replace(',00', '');
+    };
+
+    window.updateAppSettings = async (payload) => {
+        try {
+            const res = await fetch('/api/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const settings = await res.json();
+            localStorage.setItem('app-theme', settings.theme || 'dark');
+            // Re-apply theme immediately
+            const font = settings.fontFamily || localStorage.getItem('app-font');
+            const size = settings.fontSize || localStorage.getItem('app-font-size');
+            applyTheme(font, size, settings.theme);
+            window.dispatchEvent(new CustomEvent('settings-updated', { detail: settings }));
+        } catch (e) { console.error("Error updating settings:", e); }
     };
 })();

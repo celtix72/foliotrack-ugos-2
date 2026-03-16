@@ -2194,11 +2194,12 @@ app.get('/api/market/movers', (req, res) => {
         // Assets that have a quote from today and have a non-zero current price
         // Order by absolute changePercent descending
         const rows = database.db.prepare(`
-            SELECT * FROM assets 
-            WHERE ticker != 'CASH' 
-            AND quoteDate = ? 
-            AND currentPrice > 0
-            ORDER BY ABS(changePercent) DESC
+            SELECT DISTINCT a.* FROM assets a
+            JOIN transactions t ON a.ticker = t.ticker
+            WHERE a.ticker != 'CASH' 
+            AND a.quoteDate = ? 
+            AND a.currentPrice > 0
+            ORDER BY ABS(a.changePercent) DESC
             LIMIT 10
         `).all(today);
         res.json(rows);

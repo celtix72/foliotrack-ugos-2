@@ -505,13 +505,9 @@ async function loadMovers() {
             const isPos = m.changePercent >= 0;
             const color = isPos ? 'emerald' : 'rose';
             return `
-                <div class="snap-start shrink-0 w-48 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 p-3 rounded-xl hover:border-primary transition-all cursor-pointer" onclick="window.location.href='/portfolio?ticker=${m.ticker}'">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-[10px] font-black bg-primary/10 text-primary px-1.5 py-0.5 rounded uppercase tracking-tighter">${m.ticker}</span>
-                        <span class="text-[10px] font-black text-${color}-500">${isPos ? '+' : ''}${m.changePercent.toFixed(2)}%</span>
-                    </div>
-                    <p class="text-xs font-bold text-slate-900 dark:text-white truncate mb-1">${m.name}</p>
-                    <p class="text-[11px] font-black font-mono text-slate-500">${formatCurrency(m.currentPrice, m.currency)}</p>
+                <div class="snap-start shrink-0 w-36 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 p-4 rounded-xl hover:border-primary transition-all cursor-pointer flex flex-col items-center justify-center text-center space-y-1" onclick="window.location.href='/portfolio?ticker=${m.ticker}'">
+                    <span class="text-lg font-black tracking-tighter truncate w-full uppercase">${m.ticker}</span>
+                    <span class="text-xl font-black text-${color}-500">${isPos ? '+' : ''}${m.changePercent.toFixed(2)}%</span>
                 </div>
             `;
         }).join('');
