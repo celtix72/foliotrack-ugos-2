@@ -626,72 +626,52 @@ app.get('/api/portfolios', async (req, res) => {
         const rows = database.db.prepare(`SELECT * FROM portfolios ORDER BY createdAt ASC`).all();
         
         const todayStr = new Date().toISOString().split('T')[0];
-        let totalVal = 0;
+        
+        // 1. Calculate Global Variation using Chart Engine
+        const globalPoints = await calculatePerformanceHistory(null, '1W');
         let globalChangeValue = 0;
+        let globalChangePercent = 0;
+        let globalTotalValue = 0;
 
-        for (const p of rows) {
-            totalVal += p.totalValue;
+        if (globalPoints.length > 0) {
+            const lastPoint = globalPoints[globalPoints.length - 1];
+            globalTotalValue = lastPoint.value;
             
-            // Calculate change value by summing asset price movements
-            const holdingsRows = database.db.prepare(`
-                SELECT t.assetTicker, SUM(t.quantity) as qty, a.changeValue, a.currency as assetCurr
-                FROM transactions t
-                JOIN assets a ON t.assetTicker = a.ticker
-                WHERE t.portfolioId = ?
-                GROUP BY t.assetTicker
-                HAVING qty > 0.0001
-            `).all(p.id);
-
-            let pChangeValue = 0;
-            for (const h of holdingsRows) {
-                let rate = 1;
-                if (h.assetCurr !== p.currency) {
-                    if (h.assetCurr === 'USD' && p.currency === 'EUR') {
-                        rate = liveRate;
-                    } else {
-                        const lastFxTx = database.db.prepare(`
-                            SELECT exchangeRate FROM transactions 
-                            WHERE portfolioId = ? AND assetTicker = ? AND exchangeRate IS NOT NULL
-                            ORDER BY date DESC LIMIT 1
-                        `).get(p.id, h.assetTicker);
-                        rate = lastFxTx ? lastFxTx.exchangeRate : 1;
-                    }
+            if (globalPoints.length > 1) {
+                const prevPoint = globalPoints[globalPoints.length - 2];
+                globalChangeValue = lastPoint.value - prevPoint.value;
+                if (prevPoint.value > 0) {
+                    globalChangePercent = (globalChangeValue / prevPoint.value) * 100;
                 }
-                const changeInPCurr = h.assetCurr !== p.currency ? h.changeValue / rate : h.changeValue;
-                pChangeValue += h.qty * changeInPCurr;
             }
-
-            p.changeValue = pChangeValue;
-            const history = database.db.prepare(`
-                SELECT totalValue FROM portfolio_history 
-                WHERE portfolioId = ? AND date < ?
-                ORDER BY date DESC LIMIT 1
-            `).get(p.id, todayStr);
-            
-            if (history && history.totalValue > 0) {
-                // Variation % is still based on previous close for consistency
-                p.changePercent = (pChangeValue / history.totalValue) * 100;
-            } else {
-                p.changePercent = 0;
-            }
-            globalChangeValue += (p.currency === 'EUR' ? pChangeValue : pChangeValue / liveRate);
         }
 
-        const globalHistory = database.db.prepare(`
-            SELECT totalValue FROM portfolio_history 
-            WHERE portfolioId IS NULL AND date < ?
-            ORDER BY date DESC LIMIT 1
-        `).get(todayStr);
-
-        const globalChangePct = (globalHistory && globalHistory.totalValue > 0)
-            ? (globalChangeValue / globalHistory.totalValue) * 100
-            : 0;
+        // 2. Calculate Per-Portfolio Variation
+        for (const p of rows) {
+            const pPoints = await calculatePerformanceHistory([p.id], '1W');
+            if (pPoints.length > 0) {
+                const lastP = pPoints[pPoints.length - 1];
+                p.totalValue = lastP.value; // Updates to latest calculated value
+                
+                if (pPoints.length > 1) {
+                    const prevP = pPoints[pPoints.length - 2];
+                    p.changeValue = lastP.value - prevP.value;
+                    p.changePercent = prevP.value > 0 ? (p.changeValue / prevP.value) * 100 : 0;
+                } else {
+                    p.changeValue = 0;
+                    p.changePercent = 0;
+                }
+            } else {
+                p.changeValue = 0;
+                p.changePercent = 0;
+            }
+        }
 
         res.json({
             portfolios: rows,
             global: {
-                totalValue: totalVal,
-                changePercent: globalChangePct,
+                totalValue: globalTotalValue,
+                changePercent: globalChangePercent,
                 changeValue: globalChangeValue
             }
         });
