@@ -52,7 +52,7 @@
 <span class="material-symbols-outlined text-[20px]">payments</span>
 <span>Dividend</span>
 </a>
-<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer" onclick="window.location.href='/settings'">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer" href="/settings" onclick="window.location.href='/settings'">
 <span class="material-symbols-outlined text-[20px]">settings</span><span>Settings</span>
 </a>
 </div>
@@ -302,14 +302,14 @@ function renderAssets(filter = '') {
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button onclick="openAlertModal('${a.id}')" class="h-9 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
+                    <button onclick="openAlertModal('${a.ticker}')" class="h-9 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
                         <span class="material-symbols-outlined text-sm">settings_alert</span> Settings
                     </button>
                     ${a.isMonitored ? `
-                    <button onclick="unmonitorAsset('${a.id}')" class="h-9 w-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-rose-500/10 hover:text-rose-500 transition-all flex items-center justify-center">
+                    <button onclick="unmonitorAsset('${a.ticker}')" class="h-9 w-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-rose-500/10 hover:text-rose-500 transition-all flex items-center justify-center">
                         <span class="material-symbols-outlined text-lg">visibility_off</span>
                     </button>` : `
-                    <button onclick="restoreMonitoring('${a.id}')" class="h-9 w-9 rounded-xl bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all flex items-center justify-center">
+                    <button onclick="restoreMonitoring('${a.ticker}')" class="h-9 w-9 rounded-xl bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all flex items-center justify-center">
                         <span class="material-symbols-outlined text-lg">visibility</span>
                     </button>
                     `}
@@ -322,18 +322,18 @@ function renderAssets(filter = '') {
 function filterAssets(val) { renderAssets(val); }
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
-async function unmonitorAsset(id) {
+async function unmonitorAsset(ticker) {
     if (!confirm('Stop monitoring this asset? (Historical data will be kept)')) return;
     try {
-        const res = await fetch(`/api/assets/${id}`, { method: 'DELETE' });
+        const res = await fetch(`/api/assets/${ticker}`, { method: 'DELETE' });
         if (!res.ok) alert(await res.text());
         else loadAssets();
     } catch (err) { console.error(err); }
 }
 
-async function restoreMonitoring(id) {
+async function restoreMonitoring(ticker) {
     try {
-        await fetch(`/api/assets/${id}`, {
+        await fetch(`/api/assets/${ticker}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ isMonitored: 1 })
@@ -342,10 +342,10 @@ async function restoreMonitoring(id) {
     } catch (err) { console.error(err); }
 }
 
-window.openAlertModal = function(id) {
-    const a = allAssets.find(x => x.id === id);
+window.openAlertModal = function(ticker) {
+    const a = allAssets.find(x => x.ticker === ticker);
     if (!a) return;
-    document.getElementById('edit-asset-id').value = a.id;
+    document.getElementById('edit-asset-id').value = a.ticker;
     document.getElementById('edit-asset-name').innerText = `${a.name} (${a.ticker})`;
     document.getElementById('edit-target-price').value = a.targetPrice || 0;
     document.getElementById('edit-stop-loss').value = a.stopLoss || 0;
@@ -371,14 +371,14 @@ window.closeAlertModal = function() {
 }
 
 window.saveAlertSettings = async function() {
-    const id = document.getElementById('edit-asset-id').value;
+    const ticker = document.getElementById('edit-asset-id').value;
     const targetPrice = parseFloat(document.getElementById('edit-target-price').value || 0);
     const stopLoss = parseFloat(document.getElementById('edit-stop-loss').value || 0);
     const dataSource = document.getElementById('edit-data-source').value;
     const isin = document.getElementById('edit-isin').value;
 
     try {
-        const res = await fetch(`/api/assets/${id}`, {
+        const res = await fetch(`/api/assets/${ticker}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ targetPrice, stopLoss, isMonitored: 1, dataSource, isin })

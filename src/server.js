@@ -418,10 +418,11 @@ app.put('/api/assets/:id', (req, res) => {
 
     if (updates.length > 0) {
         params.push(req.params.id);
-        const sql = `UPDATE assets SET ${updates.join(', ')} WHERE id = ?`;
+        params.push(req.params.id);
+        const sql = `UPDATE assets SET ${updates.join(', ')} WHERE id = ? OR ticker = ?`;
         database.db.prepare(sql).run(...params);
     }
-    res.json(database.db.prepare(`SELECT * FROM assets WHERE id = ?`).get(req.params.id));
+    res.json(database.db.prepare(`SELECT * FROM assets WHERE id = ? OR ticker = ?`).get(req.params.id, req.params.id));
 });
 
 // ─── WATCHLIST API ──────────────────────────────────────────────────────────
@@ -498,7 +499,7 @@ app.delete('/api/watchlist/:ticker', (req, res) => {
 });
 
 app.delete('/api/assets/:id', (req, res) => {
-    const asset = database.db.prepare(`SELECT * FROM assets WHERE id = ?`).get(req.params.id);
+    const asset = database.db.prepare(`SELECT * FROM assets WHERE id = ? OR ticker = ?`).get(req.params.id, req.params.id);
     if (!asset) return res.status(404).send('Asset not found');
 
     // 1. Check for transactions/positions
