@@ -1526,16 +1526,32 @@
                         callbacks: {
                             label: (context) => {
                                 const label = context.dataset.label || '';
-                                let text = `${label}: ${formatCurrency(context.parsed.y)}`;
+                                let results = [`${label}: ${formatCurrency(context.parsed.y)}`];
                                 
                                 // Add transaction info if present
                                 const data = currentPerformanceData[context.dataIndex];
                                 if (data && data.events && data.events.length > 0) {
+                                    const labels = {
+                                        'BUY': 'ACQUISTO',
+                                        'SELL': 'VENDITA',
+                                        'DEPOSIT': 'DEPOSITO',
+                                        'WITHDRAWAL': 'PRELIEVO',
+                                        'DIVIDEND': 'DIVIDENDO'
+                                    };
                                     data.events.forEach(e => {
-                                        text += `\n✦ ${e.type}: ${e.ticker} (${formatCurrency(e.amount)})`;
+                                        const typeLabel = labels[e.type] || e.type;
+                                        const prefix = (e.type === 'DEPOSIT' || e.type === 'BUY' || e.type === 'DIVIDEND') ? '+' : '-';
+                                        
+                                        if (e.type === 'BUY' || e.type === 'SELL') {
+                                            results.push(`✦ ${typeLabel}: ${e.assetName || e.ticker}`);
+                                        } else if (e.type === 'DEPOSIT' || e.type === 'WITHDRAWAL') {
+                                            results.push(`✦ ${typeLabel}: ${prefix}${formatCurrency(e.amount, 'EUR', 0)}`);
+                                        } else {
+                                            results.push(`✦ ${typeLabel}: ${e.ticker} ${prefix}${formatCurrency(e.amount, 'EUR', 0)}`);
+                                        }
                                     });
                                 }
-                                return text;
+                                return results;
                             }
                         }
                     },

@@ -356,13 +356,25 @@
                                 const index = tooltipItems[0].dataIndex;
                                 const d = dashboardChart.rawPoints ? dashboardChart.rawPoints[index] : null;
                                 if (d && d.events && d.events.length > 0) {
-                                    let lines = ['\nTransactions:'];
+                                    let lines = ['\nTransazioni:'];
+                                    const labels = {
+                                        'BUY': 'ACQUISTO',
+                                        'SELL': 'VENDITA',
+                                        'DEPOSIT': 'DEPOSITO',
+                                        'WITHDRAWAL': 'PRELIEVO',
+                                        'DIVIDEND': 'DIVIDENDO'
+                                    };
                                     d.events.forEach(ev => {
-                                        const type = ev.type;
-                                        const ticker = ev.ticker && ev.ticker !== 'CASH' ? `${ev.ticker}` : '';
-                                        const amount = formatCurrency(ev.amount);
-                                        const prefix = (type === 'DEPOSIT' || type === 'BUY' || type === 'DIVIDEND') ? '+' : '-';
-                                        lines.push(`${type}${ticker ? ' (' + ticker + ')' : ''}: ${prefix}${amount}`);
+                                        const typeLabel = labels[ev.type] || ev.type;
+                                        const prefix = (ev.type === 'DEPOSIT' || ev.type === 'BUY' || ev.type === 'DIVIDEND') ? '+' : '-';
+                                        
+                                        if (ev.type === 'BUY' || ev.type === 'SELL') {
+                                            lines.push(`${typeLabel}: ${ev.assetName || ev.ticker}`);
+                                        } else if (ev.type === 'DEPOSIT' || ev.type === 'WITHDRAWAL') {
+                                            lines.push(`${typeLabel}: ${prefix}${formatCurrency(ev.amount, 'EUR', 0)}`);
+                                        } else {
+                                            lines.push(`${typeLabel}: ${ev.ticker} ${prefix}${formatCurrency(ev.amount, 'EUR', 0)}`);
+                                        }
                                     });
                                     return lines.join('\n');
                                 }
