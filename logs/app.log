@@ -1156,3 +1156,1567 @@
 2026-03-17T11:32:39.648Z [INFO] Successfully updated EURUSD=X: 1.1516757 USD
 2026-03-17T11:32:40.054Z [INFO] Successfully updated AAPL: 252.82 USD
 2026-03-17T11:32:40.054Z [INFO] Market data update cycle completed.
+2026-03-17T11:37:19.927Z [INFO] Updating market data for 45 assets...
+2026-03-17T11:37:30.421Z [ERROR] Failed to update ELV - Error: No metadata found for ELV
+2026-03-17T11:37:44.919Z [ERROR] Failed to update TDIV.AS - Error: No metadata found for TDIV.AS
+2026-03-17T11:37:55.427Z [ERROR] Failed to update NOMD - Error: No metadata found for NOMD
+2026-03-17T11:38:05.941Z [ERROR] Failed to update MSF.DE - Error: No metadata found for MSF.DE
+2026-03-17T11:38:26.931Z [ERROR] Failed to update CRM - Error: No metadata found for CRM
+2026-03-17T11:38:53.928Z [ERROR] Failed to update META - Error: No metadata found for META
+2026-03-17T11:39:08.935Z [ERROR] Failed to update ADBE - Error: No metadata found for ADBE
+2026-03-17T11:39:25.428Z [ERROR] Failed to update UNH - Error: No metadata found for UNH
+2026-03-17T11:39:53.928Z [ERROR] Failed to update PYPL - Error: No metadata found for PYPL
+2026-03-17T11:40:11.936Z [ERROR] Failed to update BABA - Error: No metadata found for BABA
+2026-03-17T11:40:25.455Z [ERROR] Failed to update JD - Error: No metadata found for JD
+2026-03-17T11:40:53.996Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T11:41:10.520Z [ERROR] Failed to update NOV.DE - Error: No metadata found for NOV.DE
+2026-03-17T11:41:25.534Z [ERROR] Failed to update ABNB - Error: No metadata found for ABNB
+2026-03-17T11:41:42.062Z [ERROR] Failed to update 1ASML.MI - Error: No metadata found for 1ASML.MI
+2026-03-17T11:42:10.608Z [ERROR] Failed to update FISV - Error: No metadata found for FISV
+2026-03-17T11:42:19.935Z [INFO] Updating market data for 45 assets...
+2026-03-17T11:42:21.121Z [ERROR] Failed to update GOOGL - Error: No metadata found for GOOGL
+2026-03-17T11:42:34.642Z [ERROR] Failed to update ELV - Error: No metadata found for ELV
+2026-03-17T11:42:42.153Z [ERROR] Failed to update MARA - Error: No metadata found for MARA
+2026-03-17T11:42:45.157Z [ERROR] Failed to update TDIV.AS - Error: No metadata found for TDIV.AS
+2026-03-17T11:43:13.684Z [ERROR] Failed to update MELI - Error: No metadata found for MELI
+2026-03-17T11:43:16.686Z [ERROR] Failed to update NOMD - Error: No metadata found for NOMD
+2026-03-17T11:43:34.719Z [ERROR] Failed to update LULU - Error: No metadata found for LULU
+2026-03-17T11:43:37.722Z [ERROR] Failed to update MSF.DE - Error: No metadata found for MSF.DE
+2026-03-17T11:43:55.739Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T11:43:58.740Z [ERROR] Failed to update CRM - Error: No metadata found for CRM
+2026-03-17T11:44:27.278Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T11:44:30.287Z [ERROR] Failed to update META - Error: No metadata found for META
+2026-03-17T11:44:48.315Z [ERROR] Failed to update XEON.DE - Error: No metadata found for XEON.DE
+2026-03-17T11:44:51.323Z [ERROR] Failed to update ADBE - Error: No metadata found for ADBE
+2026-03-17T11:45:12.339Z [ERROR] Failed to update NU - Error: No metadata found for NU
+2026-03-17T11:45:12.342Z [ERROR] Failed to update UNH - Error: No metadata found for UNH
+2026-03-17T11:45:54.395Z [ERROR] Failed to update PYPL - Error: No metadata found for PYPL
+2026-03-17T11:45:54.407Z [ERROR] Failed to update AMD.DE - Error: No metadata found for AMD.DE
+2026-03-17T11:46:15.432Z [ERROR] Failed to update BABA - Error: No metadata found for BABA
+2026-03-17T11:46:33.452Z [ERROR] Failed to update SPM.MI - Error: No metadata found for SPM.MI
+2026-03-17T11:46:46.973Z [ERROR] Failed to update JD - Error: No metadata found for JD
+2026-03-17T11:46:57.491Z [ERROR] Failed to update HIMS - Error: No metadata found for HIMS
+2026-03-17T11:47:07.998Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T11:47:19.945Z [INFO] Updating market data for 45 assets...
+2026-03-17T11:47:39.570Z [ERROR] Failed to update NEXI.MI - Error: No metadata found for NEXI.MI
+2026-03-17T11:47:47.067Z [ERROR] Failed to update NOV.DE - Error: No metadata found for NOV.DE
+2026-03-17T11:48:00.601Z [ERROR] Failed to update ELV - Error: No metadata found for ELV
+2026-03-17T11:48:32.135Z [ERROR] Failed to update ABNB - Error: No metadata found for ABNB
+2026-03-17T11:48:32.145Z [ERROR] Failed to update FCT.MI - Error: No metadata found for FCT.MI
+2026-03-17T11:48:53.162Z [ERROR] Failed to update TDIV.AS - Error: No metadata found for TDIV.AS
+2026-03-17T11:49:11.182Z [ERROR] Failed to update 1ASML.MI - Error: No metadata found for 1ASML.MI
+2026-03-17T11:49:14.193Z [ERROR] Failed to update VERE.DE - Error: No metadata found for VERE.DE
+2026-03-17T11:49:32.218Z [ERROR] Failed to update NOMD - Error: No metadata found for NOMD
+2026-03-17T11:49:45.735Z [ERROR] Failed to update FISV - Error: No metadata found for FISV
+2026-03-17T11:49:53.250Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T11:50:06.777Z [ERROR] Failed to update MSF.DE - Error: No metadata found for MSF.DE
+2026-03-17T11:50:14.280Z [ERROR] Failed to update GOOGL - Error: No metadata found for GOOGL
+2026-03-17T11:50:38.306Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T11:51:09.853Z [ERROR] Failed to update CRM - Error: No metadata found for CRM
+2026-03-17T11:51:17.367Z [ERROR] Failed to update MARA - Error: No metadata found for MARA
+2026-03-17T11:51:20.381Z [ERROR] Failed to update ASPN - Error: No metadata found for ASPN
+2026-03-17T11:52:02.435Z [ERROR] Failed to update META - Error: No metadata found for META
+2026-03-17T11:52:12.953Z [ERROR] Failed to update MELI - Error: No metadata found for MELI
+2026-03-17T11:52:19.954Z [INFO] Updating market data for 45 assets...
+2026-03-17T11:52:23.470Z [ERROR] Failed to update ZTS - Error: No metadata found for ZTS
+2026-03-17T11:52:44.504Z [ERROR] Failed to update ADBE - Error: No metadata found for ADBE
+2026-03-17T11:53:16.044Z [ERROR] Failed to update PLTR - Error: No metadata found for PLTR
+2026-03-17T11:53:16.050Z [ERROR] Failed to update LULU - Error: No metadata found for LULU
+2026-03-17T11:53:16.052Z [ERROR] Failed to update ELV - Error: No metadata found for ELV
+2026-03-17T11:53:47.585Z [ERROR] Failed to update UNH - Error: No metadata found for UNH
+2026-03-17T11:54:19.121Z [ERROR] Failed to update STMMI.MI - Error: No metadata found for STMMI.MI
+2026-03-17T11:54:26.629Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T11:54:29.633Z [ERROR] Failed to update TDIV.AS - Error: No metadata found for TDIV.AS
+2026-03-17T11:54:40.143Z [ERROR] Failed to update PYPL - Error: No metadata found for PYPL
+2026-03-17T11:55:19.193Z [ERROR] Failed to update SRG.MI - Error: No metadata found for SRG.MI
+2026-03-17T11:55:22.196Z [ERROR] Failed to update NOMD - Error: No metadata found for NOMD
+2026-03-17T11:55:22.205Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T11:55:29.708Z [ERROR] Failed to update BABA - Error: No metadata found for BABA
+2026-03-17T11:56:25.286Z [ERROR] Failed to update MSF.DE - Error: No metadata found for MSF.DE
+2026-03-17T11:56:25.296Z [ERROR] Failed to update TSLA - Error: No metadata found for TSLA
+2026-03-17T11:56:46.323Z [ERROR] Failed to update XEON.DE - Error: No metadata found for XEON.DE
+2026-03-17T11:56:46.327Z [ERROR] Failed to update JD - Error: No metadata found for JD
+2026-03-17T11:57:17.865Z [ERROR] Failed to update CRM - Error: No metadata found for CRM
+2026-03-17T11:57:19.963Z [INFO] Updating market data for 45 assets...
+2026-03-17T11:57:35.880Z [ERROR] Failed to update AHLA.DE - Error: No metadata found for AHLA.DE
+2026-03-17T11:58:07.411Z [ERROR] Failed to update NU - Error: No metadata found for NU
+2026-03-17T11:58:10.414Z [ERROR] Failed to update META - Error: No metadata found for META
+2026-03-17T11:58:10.417Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T11:58:20.928Z [ERROR] Failed to update ELV - Error: No metadata found for ELV
+2026-03-17T11:58:31.443Z [ERROR] Failed to update MFEA.MI - Error: No metadata found for MFEA.MI
+2026-03-17T11:59:02.969Z [ERROR] Failed to update AMD.DE - Error: No metadata found for AMD.DE
+2026-03-17T11:59:10.480Z [ERROR] Failed to update ADBE - Error: No metadata found for ADBE
+2026-03-17T11:59:13.488Z [ERROR] Failed to update NOV.DE - Error: No metadata found for NOV.DE
+2026-03-17T11:59:42.012Z [ERROR] Failed to update TDIV.AS - Error: No metadata found for TDIV.AS
+2026-03-17T11:59:45.022Z [ERROR] Failed to update MSFT - Error: No metadata found for MSFT
+2026-03-17T12:00:16.563Z [ERROR] Failed to update ABNB - Error: No metadata found for ABNB
+2026-03-17T12:00:16.567Z [ERROR] Failed to update SPM.MI - Error: No metadata found for SPM.MI
+2026-03-17T12:00:16.568Z [ERROR] Failed to update UNH - Error: No metadata found for UNH
+2026-03-17T12:00:48.095Z [ERROR] Failed to update NOMD - Error: No metadata found for NOMD
+2026-03-17T12:00:55.602Z [ERROR] Failed to update XCHA.DE - Error: No metadata found for XCHA.DE
+2026-03-17T12:01:27.145Z [ERROR] Failed to update 1ASML.MI - Error: No metadata found for 1ASML.MI
+2026-03-17T12:01:30.152Z [ERROR] Failed to update HIMS - Error: No metadata found for HIMS
+2026-03-17T12:01:30.154Z [ERROR] Failed to update PYPL - Error: No metadata found for PYPL
+2026-03-17T12:01:51.193Z [ERROR] Failed to update MSF.DE - Error: No metadata found for MSF.DE
+2026-03-17T12:01:51.196Z [ERROR] Failed to update EURUSD=X - Error: No metadata found for EURUSD=X
+2026-03-17T12:02:19.975Z [INFO] Updating market data for 45 assets...
+2026-03-17T12:02:22.721Z [ERROR] Failed to update FISV - Error: No metadata found for FISV
+2026-03-17T12:02:30.234Z [ERROR] Failed to update NEXI.MI - Error: No metadata found for NEXI.MI
+2026-03-17T12:02:33.242Z [ERROR] Failed to update BABA - Error: No metadata found for BABA
+2026-03-17T12:03:15.306Z [ERROR] Failed to update CRM - Error: No metadata found for CRM
+2026-03-17T12:03:15.310Z [ERROR] Failed to update AAPL - Error: No metadata found for AAPL
+2026-03-17T12:03:22.807Z [ERROR] Failed to update ELV - Error: No metadata found for ELV
+2026-03-17T12:03:25.812Z [ERROR] Failed to update GOOGL - Error: No metadata found for GOOGL
+2026-03-17T12:03:54.355Z [ERROR] Failed to update FCT.MI - Error: No metadata found for FCT.MI
+2026-03-17T12:03:57.360Z [ERROR] Failed to update JD - Error: No metadata found for JD
+2026-03-17T12:04:39.415Z [INFO] Market data update cycle completed.
+2026-03-17T12:04:39.426Z [ERROR] Failed to update META - Error: No metadata found for META
+2026-03-17T12:04:46.924Z [ERROR] Failed to update TDIV.AS - Error: No metadata found for TDIV.AS
+2026-03-17T12:04:49.933Z [ERROR] Failed to update MARA - Error: No metadata found for MARA
+2026-03-17T12:05:07.949Z [ERROR] Failed to update VERE.DE - Error: No metadata found for VERE.DE
+2026-03-17T12:05:10.953Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T12:20:32.816Z [INFO] Updating market data for 45 assets...
+2026-03-17T12:20:40.825Z [ERROR] Failed to update NOMD - Error: No metadata found for NOMD
+2026-03-17T12:20:40.833Z [ERROR] Failed to update ADBE - Error: No metadata found for ADBE
+2026-03-17T12:20:48.343Z [ERROR] Failed to update MELI - Error: No metadata found for MELI
+2026-03-17T12:21:01.864Z [ERROR] Failed to update NOV.DE - Error: No metadata found for NOV.DE
+2026-03-17T12:21:01.874Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T12:23:15.077Z [ERROR] Failed to update ELV - Error: No metadata found for ELV
+2026-03-17T12:34:17.399Z [INFO] Updating market data for 45 assets...
+2026-03-17T12:34:18.902Z [ERROR] Failed to update LULU - Error: No metadata found for LULU
+2026-03-17T12:34:18.904Z [ERROR] Failed to update MSF.DE - Error: No metadata found for MSF.DE
+2026-03-17T12:34:18.906Z [ERROR] Failed to update UNH - Error: No metadata found for UNH
+2026-03-17T12:34:29.422Z [ERROR] Failed to update ABNB - Error: No metadata found for ABNB
+2026-03-17T12:34:39.942Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T12:39:14.394Z [ERROR] Failed to update TDIV.AS - Error: No metadata found for TDIV.AS
+2026-03-17T12:39:23.381Z [INFO] Updating market data for 45 assets...
+2026-03-17T12:39:42.890Z [ERROR] Failed to update ELV - Error: No metadata found for ELV
+2026-03-17T12:39:45.890Z [ERROR] Failed to update PYPL - Error: No metadata found for PYPL
+2026-03-17T12:39:45.893Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T12:39:45.895Z [ERROR] Failed to update CRM - Error: No metadata found for CRM
+2026-03-17T12:40:06.895Z [ERROR] Failed to update 1ASML.MI - Error: No metadata found for 1ASML.MI
+2026-03-17T12:40:06.897Z [ERROR] Failed to update ASPN - Error: No metadata found for ASPN
+2026-03-17T12:40:59.396Z [ERROR] Failed to update NOMD - Error: No metadata found for NOMD
+2026-03-17T12:41:06.896Z [ERROR] Failed to update ELV - Error: No metadata found for ELV
+2026-03-17T12:41:20.396Z [ERROR] Failed to update BABA - Error: No metadata found for BABA
+2026-03-17T12:41:20.405Z [ERROR] Failed to update TDIV.AS - Error: No metadata found for TDIV.AS
+2026-03-17T12:41:27.897Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T12:41:30.900Z [ERROR] Failed to update META - Error: No metadata found for META
+2026-03-17T12:41:41.396Z [ERROR] Failed to update FISV - Error: No metadata found for FISV
+2026-03-17T12:41:48.896Z [ERROR] Failed to update ZTS - Error: No metadata found for ZTS
+2026-03-17T12:41:59.396Z [ERROR] Failed to update MSF.DE - Error: No metadata found for MSF.DE
+2026-03-17T12:42:02.398Z [ERROR] Failed to update JD - Error: No metadata found for JD
+2026-03-17T12:42:02.405Z [ERROR] Failed to update TDIV.AS - Error: No metadata found for TDIV.AS
+2026-03-17T12:42:09.898Z [ERROR] Failed to update NOMD - Error: No metadata found for NOMD
+2026-03-17T12:42:12.897Z [ERROR] Failed to update ADBE - Error: No metadata found for ADBE
+2026-03-17T12:42:12.906Z [ERROR] Failed to update XEON.DE - Error: No metadata found for XEON.DE
+2026-03-17T12:42:20.409Z [ERROR] Failed to update GOOGL - Error: No metadata found for GOOGL
+2026-03-17T12:42:23.424Z [ERROR] Failed to update PLTR - Error: No metadata found for PLTR
+2026-03-17T12:43:05.411Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T12:43:05.423Z [ERROR] Failed to update CRM - Error: No metadata found for CRM
+2026-03-17T12:43:26.414Z [ERROR] Failed to update UNH - Error: No metadata found for UNH
+2026-03-17T12:43:26.418Z [ERROR] Failed to update NOMD - Error: No metadata found for NOMD
+2026-03-17T12:43:26.420Z [ERROR] Failed to update MSF.DE - Error: No metadata found for MSF.DE
+2026-03-17T12:43:47.419Z [ERROR] Failed to update NU - Error: No metadata found for NU
+2026-03-17T12:43:47.422Z [ERROR] Failed to update MARA - Error: No metadata found for MARA
+2026-03-17T12:44:05.417Z [ERROR] Failed to update STMMI.MI - Error: No metadata found for STMMI.MI
+2026-03-17T12:44:23.390Z [INFO] Updating market data for 45 assets...
+2026-03-17T12:44:29.417Z [ERROR] Failed to update NOV.DE - Error: No metadata found for NOV.DE
+2026-03-17T12:44:50.420Z [ERROR] Failed to update META - Error: No metadata found for META
+2026-03-17T12:45:00.918Z [ERROR] Failed to update PYPL - Error: No metadata found for PYPL
+2026-03-17T12:45:08.415Z [ERROR] Failed to update MSF.DE - Error: No metadata found for MSF.DE
+2026-03-17T12:45:11.416Z [ERROR] Failed to update CRM - Error: No metadata found for CRM
+2026-03-17T12:45:21.915Z [ERROR] Failed to update AMD.DE - Error: No metadata found for AMD.DE
+2026-03-17T12:45:29.414Z [ERROR] Failed to update MELI - Error: No metadata found for MELI
+2026-03-17T12:45:42.925Z [ERROR] Failed to update SRG.MI - Error: No metadata found for SRG.MI
+2026-03-17T12:45:50.422Z [ERROR] Failed to update ELV - Error: No metadata found for ELV
+2026-03-17T12:45:53.433Z [ERROR] Failed to update ABNB - Error: No metadata found for ABNB
+2026-03-17T12:46:00.922Z [ERROR] Failed to update ADBE - Error: No metadata found for ADBE
+2026-03-17T12:46:03.922Z [ERROR] Failed to update CRM - Error: No metadata found for CRM
+2026-03-17T12:46:03.925Z [ERROR] Failed to update BABA - Error: No metadata found for BABA
+2026-03-17T12:46:11.424Z [ERROR] Failed to update META - Error: No metadata found for META
+2026-03-17T12:46:14.424Z [ERROR] Failed to update LULU - Error: No metadata found for LULU
+2026-03-17T12:46:14.427Z [ERROR] Failed to update SPM.MI - Error: No metadata found for SPM.MI
+2026-03-17T12:46:35.427Z [ERROR] Failed to update TDIV.AS - Error: No metadata found for TDIV.AS
+2026-03-17T12:46:35.432Z [ERROR] Failed to update TSLA - Error: No metadata found for TSLA
+2026-03-17T12:46:56.430Z [ERROR] Failed to update 1ASML.MI - Error: No metadata found for 1ASML.MI
+2026-03-17T12:47:06.934Z [ERROR] Failed to update UNH - Error: No metadata found for UNH
+2026-03-17T12:47:14.433Z [ERROR] Failed to update META - Error: No metadata found for META
+2026-03-17T12:47:17.434Z [ERROR] Failed to update JD - Error: No metadata found for JD
+2026-03-17T12:47:27.932Z [ERROR] Failed to update ADBE - Error: No metadata found for ADBE
+2026-03-17T12:47:35.432Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T12:47:38.432Z [ERROR] Failed to update HIMS - Error: No metadata found for HIMS
+2026-03-17T12:48:06.932Z [ERROR] Failed to update NOMD - Error: No metadata found for NOMD
+2026-03-17T12:48:09.934Z [ERROR] Failed to update AHLA.DE - Error: No metadata found for AHLA.DE
+2026-03-17T12:48:38.454Z [ERROR] Failed to update FISV - Error: No metadata found for FISV
+2026-03-17T12:48:41.462Z [ERROR] Failed to update PYPL - Error: No metadata found for PYPL
+2026-03-17T12:48:51.972Z [ERROR] Failed to update ADBE - Error: No metadata found for ADBE
+2026-03-17T12:48:59.484Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T12:49:02.487Z [ERROR] Failed to update UNH - Error: No metadata found for UNH
+2026-03-17T12:49:13.000Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T12:49:20.507Z [ERROR] Failed to update NEXI.MI - Error: No metadata found for NEXI.MI
+2026-03-17T12:49:23.400Z [INFO] Updating market data for 45 assets...
+2026-03-17T12:49:34.022Z [ERROR] Failed to update MSF.DE - Error: No metadata found for MSF.DE
+2026-03-17T12:49:41.529Z [ERROR] Failed to update MFEA.MI - Error: No metadata found for MFEA.MI
+2026-03-17T12:49:55.064Z [ERROR] Failed to update GOOGL - Error: No metadata found for GOOGL
+2026-03-17T12:50:02.569Z [ERROR] Failed to update BABA - Error: No metadata found for BABA
+2026-03-17T12:50:05.570Z [ERROR] Failed to update NOV.DE - Error: No metadata found for NOV.DE
+2026-03-17T12:50:05.576Z [ERROR] Failed to update UNH - Error: No metadata found for UNH
+2026-03-17T12:50:13.080Z [ERROR] Failed to update PYPL - Error: No metadata found for PYPL
+2026-03-17T12:50:16.085Z [ERROR] Failed to update FCT.MI - Error: No metadata found for FCT.MI
+2026-03-17T12:50:16.088Z [ERROR] Failed to update XEON.DE - Error: No metadata found for XEON.DE
+2026-03-17T12:50:23.590Z [ERROR] Failed to update ELV - Error: No metadata found for ELV
+2026-03-17T12:50:26.598Z [ERROR] Failed to update CRM - Error: No metadata found for CRM
+2026-03-17T12:50:44.620Z [ERROR] Failed to update MSFT - Error: No metadata found for MSFT
+2026-03-17T12:50:47.626Z [ERROR] Failed to update MARA - Error: No metadata found for MARA
+2026-03-17T12:51:05.640Z [ERROR] Failed to update JD - Error: No metadata found for JD
+2026-03-17T12:51:08.647Z [ERROR] Failed to update ABNB - Error: No metadata found for ABNB
+2026-03-17T12:51:08.650Z [ERROR] Failed to update PYPL - Error: No metadata found for PYPL
+2026-03-17T12:51:26.663Z [ERROR] Failed to update BABA - Error: No metadata found for BABA
+2026-03-17T12:51:29.670Z [ERROR] Failed to update VERE.DE - Error: No metadata found for VERE.DE
+2026-03-17T12:51:29.672Z [ERROR] Failed to update NU - Error: No metadata found for NU
+2026-03-17T12:51:47.684Z [ERROR] Failed to update TDIV.AS - Error: No metadata found for TDIV.AS
+2026-03-17T12:51:50.687Z [ERROR] Failed to update META - Error: No metadata found for META
+2026-03-17T12:52:19.223Z [ERROR] Failed to update XCHA.DE - Error: No metadata found for XCHA.DE
+2026-03-17T12:52:22.230Z [ERROR] Failed to update MELI - Error: No metadata found for MELI
+2026-03-17T12:52:50.758Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T12:52:53.765Z [ERROR] Failed to update 1ASML.MI - Error: No metadata found for 1ASML.MI
+2026-03-17T12:52:53.768Z [ERROR] Failed to update BABA - Error: No metadata found for BABA
+2026-03-17T12:53:11.786Z [ERROR] Failed to update JD - Error: No metadata found for JD
+2026-03-17T12:53:14.793Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T12:53:14.795Z [ERROR] Failed to update AMD.DE - Error: No metadata found for AMD.DE
+2026-03-17T12:53:32.817Z [ERROR] Failed to update NOMD - Error: No metadata found for NOMD
+2026-03-17T12:53:35.823Z [ERROR] Failed to update ADBE - Error: No metadata found for ADBE
+2026-03-17T12:53:53.848Z [ERROR] Failed to update EURUSD=X - Error: No metadata found for EURUSD=X
+2026-03-17T12:53:56.854Z [ERROR] Failed to update LULU - Error: No metadata found for LULU
+2026-03-17T12:54:14.868Z [ERROR] Failed to update NOV.DE - Error: No metadata found for NOV.DE
+2026-03-17T12:54:17.880Z [ERROR] Failed to update FISV - Error: No metadata found for FISV
+2026-03-17T12:54:17.883Z [ERROR] Failed to update JD - Error: No metadata found for JD
+2026-03-17T12:54:23.413Z [INFO] Updating market data for 45 assets...
+2026-03-17T12:54:25.397Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T12:54:28.410Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T12:54:28.412Z [ERROR] Failed to update SPM.MI - Error: No metadata found for SPM.MI
+2026-03-17T12:54:35.902Z [ERROR] Failed to update MSF.DE - Error: No metadata found for MSF.DE
+2026-03-17T12:54:38.905Z [ERROR] Failed to update UNH - Error: No metadata found for UNH
+2026-03-17T12:54:56.919Z [ERROR] Failed to update AAPL - Error: No metadata found for AAPL
+2026-03-17T12:54:59.926Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T12:55:17.945Z [ERROR] Failed to update ABNB - Error: No metadata found for ABNB
+2026-03-17T12:55:31.461Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T12:55:31.471Z [ERROR] Failed to update GOOGL - Error: No metadata found for GOOGL
+2026-03-17T12:55:38.967Z [ERROR] Failed to update ELV - Error: No metadata found for ELV
+2026-03-17T12:55:41.972Z [ERROR] Failed to update NOV.DE - Error: No metadata found for NOV.DE
+2026-03-17T12:55:52.480Z [ERROR] Failed to update ASPN - Error: No metadata found for ASPN
+2026-03-17T12:55:59.994Z [ERROR] Failed to update HIMS - Error: No metadata found for HIMS
+2026-03-17T12:56:02.997Z [ERROR] Failed to update CRM - Error: No metadata found for CRM
+2026-03-17T12:56:02.999Z [ERROR] Failed to update PYPL - Error: No metadata found for PYPL
+2026-03-17T12:56:34.533Z [INFO] Market data update cycle completed.
+2026-03-17T12:56:34.537Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T12:57:06.073Z [ERROR] Failed to update 1ASML.MI - Error: No metadata found for 1ASML.MI
+2026-03-17T12:57:06.077Z [ERROR] Failed to update NOV.DE - Error: No metadata found for NOV.DE
+2026-03-17T12:57:24.087Z [ERROR] Failed to update MARA - Error: No metadata found for MARA
+2026-03-17T12:57:27.091Z [ERROR] Failed to update ZTS - Error: No metadata found for ZTS
+2026-03-17T12:57:27.093Z [ERROR] Failed to update TDIV.AS - Error: No metadata found for TDIV.AS
+2026-03-17T12:57:27.095Z [ERROR] Failed to update ABNB - Error: No metadata found for ABNB
+2026-03-17T12:57:48.123Z [ERROR] Failed to update BABA - Error: No metadata found for BABA
+2026-03-17T12:57:48.127Z [ERROR] Failed to update NEXI.MI - Error: No metadata found for NEXI.MI
+2026-03-17T12:57:48.129Z [ERROR] Failed to update META - Error: No metadata found for META
+2026-03-17T12:58:09.158Z [ERROR] Failed to update XEON.DE - Error: No metadata found for XEON.DE
+2026-03-17T12:58:30.181Z [ERROR] Failed to update FISV - Error: No metadata found for FISV
+2026-03-17T12:58:30.184Z [ERROR] Failed to update ABNB - Error: No metadata found for ABNB
+2026-03-17T12:58:37.678Z [ERROR] Failed to update MELI - Error: No metadata found for MELI
+2026-03-17T12:58:40.680Z [ERROR] Failed to update 1ASML.MI - Error: No metadata found for 1ASML.MI
+2026-03-17T12:58:40.683Z [ERROR] Failed to update PLTR - Error: No metadata found for PLTR
+2026-03-17T12:58:40.685Z [ERROR] Failed to update NOMD - Error: No metadata found for NOMD
+2026-03-17T12:58:51.189Z [ERROR] Failed to update ADBE - Error: No metadata found for ADBE
+2026-03-17T12:58:51.191Z [ERROR] Failed to update JD - Error: No metadata found for JD
+2026-03-17T12:58:51.193Z [ERROR] Failed to update FCT.MI - Error: No metadata found for FCT.MI
+2026-03-17T12:59:12.237Z [ERROR] Failed to update NU - Error: No metadata found for NU
+2026-03-17T12:59:23.424Z [INFO] Updating market data for 45 assets...
+2026-03-17T12:59:43.746Z [ERROR] Failed to update 1ASML.MI - Error: No metadata found for 1ASML.MI
+2026-03-17T12:59:43.757Z [ERROR] Failed to update GOOGL - Error: No metadata found for GOOGL
+2026-03-17T12:59:51.251Z [ERROR] Failed to update LULU - Error: No metadata found for LULU
+2026-03-17T12:59:54.254Z [ERROR] Failed to update MSF.DE - Error: No metadata found for MSF.DE
+2026-03-17T12:59:54.258Z [ERROR] Failed to update FISV - Error: No metadata found for FISV
+2026-03-17T12:59:54.260Z [ERROR] Failed to update STMMI.MI - Error: No metadata found for STMMI.MI
+2026-03-17T13:00:15.270Z [ERROR] Failed to update VERE.DE - Error: No metadata found for VERE.DE
+2026-03-17T13:00:15.275Z [ERROR] Failed to update UNH - Error: No metadata found for UNH
+2026-03-17T13:00:15.277Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T13:00:57.308Z [ERROR] Failed to update AMD.DE - Error: No metadata found for AMD.DE
+2026-03-17T13:01:04.814Z [ERROR] Failed to update ELV - Error: No metadata found for ELV
+2026-03-17T13:01:18.337Z [ERROR] Failed to update FISV - Error: No metadata found for FISV
+2026-03-17T13:01:36.356Z [ERROR] Failed to update MARA - Error: No metadata found for MARA
+2026-03-17T13:01:39.358Z [ERROR] Failed to update GOOGL - Error: No metadata found for GOOGL
+2026-03-17T13:01:39.363Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T13:01:39.364Z [ERROR] Failed to update CRM - Error: No metadata found for CRM
+2026-03-17T13:01:46.864Z [ERROR] Failed to update SRG.MI - Error: No metadata found for SRG.MI
+2026-03-17T13:02:00.376Z [ERROR] Failed to update PYPL - Error: No metadata found for PYPL
+2026-03-17T13:02:00.388Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T13:02:07.878Z [ERROR] Failed to update NOV.DE - Error: No metadata found for NOV.DE
+2026-03-17T13:02:31.916Z [ERROR] Failed to update SPM.MI - Error: No metadata found for SPM.MI
+2026-03-17T13:02:42.430Z [ERROR] Failed to update TDIV.AS - Error: No metadata found for TDIV.AS
+2026-03-17T13:02:42.432Z [ERROR] Failed to update GOOGL - Error: No metadata found for GOOGL
+2026-03-17T13:02:52.940Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T13:02:52.942Z [ERROR] Failed to update MELI - Error: No metadata found for MELI
+2026-03-17T13:02:52.943Z [ERROR] Failed to update MARA - Error: No metadata found for MARA
+2026-03-17T13:03:00.449Z [ERROR] Failed to update META - Error: No metadata found for META
+2026-03-17T13:03:03.456Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T13:03:03.457Z [ERROR] Failed to update TSLA - Error: No metadata found for TSLA
+2026-03-17T13:03:03.458Z [ERROR] Failed to update BABA - Error: No metadata found for BABA
+2026-03-17T13:03:13.967Z [ERROR] Failed to update HIMS - Error: No metadata found for HIMS
+2026-03-17T13:03:13.968Z [ERROR] Failed to update ABNB - Error: No metadata found for ABNB
+2026-03-17T13:03:45.515Z [ERROR] Failed to update NOMD - Error: No metadata found for NOMD
+2026-03-17T13:03:53.026Z [ERROR] Failed to update MARA - Error: No metadata found for MARA
+2026-03-17T13:04:06.538Z [ERROR] Failed to update LULU - Error: No metadata found for LULU
+2026-03-17T13:04:06.546Z [ERROR] Failed to update XEON.DE - Error: No metadata found for XEON.DE
+2026-03-17T13:04:14.050Z [ERROR] Failed to update MELI - Error: No metadata found for MELI
+2026-03-17T13:04:17.051Z [ERROR] Failed to update AHLA.DE - Error: No metadata found for AHLA.DE
+2026-03-17T13:04:17.054Z [ERROR] Failed to update ADBE - Error: No metadata found for ADBE
+2026-03-17T13:04:17.056Z [ERROR] Failed to update ASPN - Error: No metadata found for ASPN
+2026-03-17T13:04:23.447Z [INFO] Updating market data for 45 assets...
+2026-03-17T13:04:24.562Z [ERROR] Failed to update JD - Error: No metadata found for JD
+2026-03-17T13:04:38.086Z [ERROR] Failed to update 1ASML.MI - Error: No metadata found for 1ASML.MI
+2026-03-17T13:04:38.099Z [ERROR] Failed to update NEXI.MI - Error: No metadata found for NEXI.MI
+2026-03-17T13:05:20.151Z [ERROR] Failed to update MSF.DE - Error: No metadata found for MSF.DE
+2026-03-17T13:05:41.182Z [ERROR] Failed to update MELI - Error: No metadata found for MELI
+2026-03-17T13:05:41.186Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T13:05:59.202Z [ERROR] Failed to update NU - Error: No metadata found for NU
+2026-03-17T13:06:02.226Z [ERROR] Failed to update UNH - Error: No metadata found for UNH
+2026-03-17T13:06:02.237Z [ERROR] Failed to update LULU - Error: No metadata found for LULU
+2026-03-17T13:06:02.241Z [ERROR] Failed to update MFEA.MI - Error: No metadata found for MFEA.MI
+2026-03-17T13:06:09.715Z [ERROR] Failed to update ZTS - Error: No metadata found for ZTS
+2026-03-17T13:06:12.717Z [ERROR] Failed to update FISV - Error: No metadata found for FISV
+2026-03-17T13:06:12.720Z [ERROR] Failed to update ELV - Error: No metadata found for ELV
+2026-03-17T13:06:12.727Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T13:06:33.746Z [ERROR] Failed to update FCT.MI - Error: No metadata found for FCT.MI
+2026-03-17T13:07:02.286Z [ERROR] Failed to update CRM - Error: No metadata found for CRM
+2026-03-17T13:07:05.288Z [ERROR] Failed to update LULU - Error: No metadata found for LULU
+2026-03-17T13:07:12.799Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T13:07:15.803Z [ERROR] Failed to update PYPL - Error: No metadata found for PYPL
+2026-03-17T13:07:15.811Z [ERROR] Failed to update AMD.DE - Error: No metadata found for AMD.DE
+2026-03-17T13:07:23.312Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T13:07:26.314Z [ERROR] Failed to update GOOGL - Error: No metadata found for GOOGL
+2026-03-17T13:07:26.316Z [ERROR] Failed to update MSFT - Error: No metadata found for MSFT
+2026-03-17T13:07:26.318Z [ERROR] Failed to update PLTR - Error: No metadata found for PLTR
+2026-03-17T13:07:33.828Z [ERROR] Failed to update TDIV.AS - Error: No metadata found for TDIV.AS
+2026-03-17T13:07:36.830Z [ERROR] Failed to update VERE.DE - Error: No metadata found for VERE.DE
+2026-03-17T13:07:36.832Z [ERROR] Failed to update NOV.DE - Error: No metadata found for NOV.DE
+2026-03-17T13:07:47.346Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T13:07:47.353Z [ERROR] Failed to update META - Error: No metadata found for META
+2026-03-17T13:08:18.890Z [ERROR] Failed to update BABA - Error: No metadata found for BABA
+2026-03-17T13:08:18.896Z [ERROR] Failed to update XEON.DE - Error: No metadata found for XEON.DE
+2026-03-17T13:08:39.917Z [ERROR] Failed to update MARA - Error: No metadata found for MARA
+2026-03-17T13:08:39.920Z [ERROR] Failed to update SPM.MI - Error: No metadata found for SPM.MI
+2026-03-17T13:08:39.922Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T13:08:47.433Z [ERROR] Failed to update XCHA.DE - Error: No metadata found for XCHA.DE
+2026-03-17T13:08:50.435Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T13:08:50.438Z [ERROR] Failed to update STMMI.MI - Error: No metadata found for STMMI.MI
+2026-03-17T13:08:50.440Z [ERROR] Failed to update NOMD - Error: No metadata found for NOMD
+2026-03-17T13:08:57.945Z [ERROR] Failed to update ABNB - Error: No metadata found for ABNB
+2026-03-17T13:09:21.970Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T13:09:43.003Z [ERROR] Failed to update ADBE - Error: No metadata found for ADBE
+2026-03-17T13:09:53.515Z [ERROR] Failed to update JD - Error: No metadata found for JD
+2026-03-17T13:10:14.538Z [ERROR] Failed to update NU - Error: No metadata found for NU
+2026-03-17T13:10:23.441Z [INFO] Updating market data for 45 assets...
+2026-03-17T13:10:25.049Z [ERROR] Failed to update MELI - Error: No metadata found for MELI
+2026-03-17T13:10:32.557Z [ERROR] Failed to update HIMS - Error: No metadata found for HIMS
+2026-03-17T13:10:35.564Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T13:10:35.566Z [ERROR] Failed to update XEON.DE - Error: No metadata found for XEON.DE
+2026-03-17T13:10:35.568Z [ERROR] Failed to update EURUSD=X - Error: No metadata found for EURUSD=X
+2026-03-17T13:10:43.073Z [ERROR] Failed to update SRG.MI - Error: No metadata found for SRG.MI
+2026-03-17T13:10:46.076Z [ERROR] Failed to update MSF.DE - Error: No metadata found for MSF.DE
+2026-03-17T13:10:46.078Z [ERROR] Failed to update 1ASML.MI - Error: No metadata found for 1ASML.MI
+2026-03-17T13:11:04.091Z [ERROR] Failed to update XEON.DE - Error: No metadata found for XEON.DE
+2026-03-17T13:11:28.109Z [ERROR] Failed to update UNH - Error: No metadata found for UNH
+2026-03-17T13:11:35.620Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T13:11:38.623Z [ERROR] Failed to update AMD.DE - Error: No metadata found for AMD.DE
+2026-03-17T13:11:46.140Z [ERROR] Failed to update ELV - Error: No metadata found for ELV
+2026-03-17T13:11:49.141Z [ERROR] Failed to update NEXI.MI - Error: No metadata found for NEXI.MI
+2026-03-17T13:11:49.143Z [ERROR] Failed to update LULU - Error: No metadata found for LULU
+2026-03-17T13:11:56.646Z [ERROR] Failed to update ASPN - Error: No metadata found for ASPN
+2026-03-17T13:11:59.651Z [ERROR] Failed to update TSLA - Error: No metadata found for TSLA
+2026-03-17T13:11:59.654Z [ERROR] Failed to update NU - Error: No metadata found for NU
+2026-03-17T13:11:59.655Z [ERROR] Failed to update AAPL - Error: No metadata found for AAPL
+2026-03-17T13:12:07.161Z [ERROR] Failed to update CRM - Error: No metadata found for CRM
+2026-03-17T13:12:10.165Z [ERROR] Failed to update NU - Error: No metadata found for NU
+2026-03-17T13:12:10.168Z [ERROR] Failed to update FISV - Error: No metadata found for FISV
+2026-03-17T13:12:20.674Z [ERROR] Failed to update NOV.DE - Error: No metadata found for NOV.DE
+2026-03-17T13:12:20.677Z [ERROR] Failed to update PYPL - Error: No metadata found for PYPL
+2026-03-17T13:12:28.182Z [ERROR] Failed to update SPM.MI - Error: No metadata found for SPM.MI
+2026-03-17T13:12:52.211Z [ERROR] Failed to update TDIV.AS - Error: No metadata found for TDIV.AS
+2026-03-17T13:12:59.722Z [ERROR] Failed to update FCT.MI - Error: No metadata found for FCT.MI
+2026-03-17T13:13:02.726Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T13:13:13.243Z [ERROR] Failed to update ZTS - Error: No metadata found for ZTS
+2026-03-17T13:13:20.755Z [ERROR] Failed to update AHLA.DE - Error: No metadata found for AHLA.DE
+2026-03-17T13:13:23.756Z [ERROR] Failed to update META - Error: No metadata found for META
+2026-03-17T13:13:23.759Z [ERROR] Failed to update AMD.DE - Error: No metadata found for AMD.DE
+2026-03-17T13:13:23.763Z [INFO] Market data update cycle completed.
+2026-03-17T13:13:31.270Z [ERROR] Failed to update AMD.DE - Error: No metadata found for AMD.DE
+2026-03-17T13:16:21.521Z [INFO] Updating market data for 45 assets...
+2026-03-17T13:16:22.544Z [ERROR] Failed to update GOOGL - Error: No metadata found for GOOGL
+2026-03-17T13:16:51.082Z [ERROR] Failed to update ABNB - Error: No metadata found for ABNB
+2026-03-17T13:16:54.089Z [ERROR] Failed to update BABA - Error: No metadata found for BABA
+2026-03-17T13:17:04.597Z [ERROR] Failed to update HIMS - Error: No metadata found for HIMS
+2026-03-17T13:21:21.744Z [INFO] Updating market data for 45 assets...
+2026-03-17T13:21:40.289Z [ERROR] Failed to update NOMD - Error: No metadata found for NOMD
+2026-03-17T13:21:50.807Z [ERROR] Failed to update VERE.DE - Error: No metadata found for VERE.DE
+2026-03-17T13:21:58.322Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T13:22:01.331Z [ERROR] Failed to update PLTR - Error: No metadata found for PLTR
+2026-03-17T13:25:00.743Z [ERROR] Failed to update MFEA.MI - Error: No metadata found for MFEA.MI
+2026-03-17T13:25:08.256Z [ERROR] Failed to update ADBE - Error: No metadata found for ADBE
+2026-03-17T13:25:11.250Z [ERROR] Failed to update SPM.MI - Error: No metadata found for SPM.MI
+2026-03-17T13:25:11.255Z [ERROR] Failed to update SPM.MI - Error: No metadata found for SPM.MI
+2026-03-17T13:25:18.751Z [ERROR] Failed to update ELV - Error: No metadata found for ELV
+2026-03-17T13:25:21.753Z [ERROR] Failed to update MARA - Error: No metadata found for MARA
+2026-03-17T13:25:53.253Z [ERROR] Failed to update NEXI.MI - Error: No metadata found for NEXI.MI
+2026-03-17T13:25:53.255Z [ERROR] Failed to update 1ASML.MI - Error: No metadata found for 1ASML.MI
+2026-03-17T13:25:53.256Z [ERROR] Failed to update JD - Error: No metadata found for JD
+2026-03-17T13:26:14.257Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T13:26:14.258Z [ERROR] Failed to update ELV - Error: No metadata found for ELV
+2026-03-17T13:26:14.259Z [ERROR] Failed to update MSF.DE - Error: No metadata found for MSF.DE
+2026-03-17T13:26:24.757Z [ERROR] Failed to update STMMI.MI - Error: No metadata found for STMMI.MI
+2026-03-17T13:26:24.762Z [ERROR] Failed to update XEON.DE - Error: No metadata found for XEON.DE
+2026-03-17T13:26:32.316Z [ERROR] Failed to update MSFT - Error: No metadata found for MSFT
+2026-03-17T13:26:35.265Z [ERROR] Failed to update HIMS - Error: No metadata found for HIMS
+2026-03-17T13:26:35.268Z [ERROR] Failed to update UNH - Error: No metadata found for UNH
+2026-03-17T13:26:35.269Z [ERROR] Failed to update HIMS - Error: No metadata found for HIMS
+2026-03-17T13:26:38.976Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T13:26:39.001Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T13:26:40.063Z [INFO] Successfully updated MELI: 1732.33 USD
+2026-03-17T13:26:40.297Z [INFO] Successfully updated TDIV.AS: 52.46 EUR
+2026-03-17T13:26:40.977Z [INFO] Successfully updated FCT.MI: 13.1 EUR
+2026-03-17T13:26:41.032Z [INFO] Successfully updated FISV: 57.57 USD
+2026-03-17T13:26:41.178Z [INFO] Successfully updated TDIV.AS: 52.46 EUR
+2026-03-17T13:26:41.557Z [INFO] Successfully updated SRG.MI: 6.556 EUR
+2026-03-17T13:26:41.707Z [INFO] Successfully updated CRM: 198.34 USD
+2026-03-17T13:26:42.072Z [INFO] Successfully updated XCHA.DE: 17.514 EUR
+2026-03-17T13:26:42.073Z [INFO] Successfully updated NU: 14.27 USD
+2026-03-17T13:26:42.091Z [INFO] Successfully updated NEXI.MI: 2.805 EUR
+2026-03-17T13:26:42.300Z [INFO] Successfully updated PYPL: 45.42 USD
+2026-03-17T13:26:42.389Z [INFO] Successfully updated NEXI.MI: 2.805 EUR
+2026-03-17T13:26:43.040Z [INFO] Successfully updated ASPN: 3.39 USD
+2026-03-17T13:26:43.084Z [INFO] Successfully updated NOV.DE: 33.435 EUR
+2026-03-17T13:26:43.504Z [INFO] Successfully updated LULU: 159.91 USD
+2026-03-17T13:26:43.574Z [INFO] Successfully updated NOMD: 9.76 USD
+2026-03-17T13:26:43.635Z [INFO] Successfully updated VERE.DE: 55.01 EUR
+2026-03-17T13:26:43.775Z [INFO] Successfully updated NOMD: 9.76 USD
+2026-03-17T13:26:43.843Z [INFO] Successfully updated GOOGL: 305.56 USD
+2026-03-17T13:26:43.897Z [INFO] Successfully updated META: 627.45 USD
+2026-03-17T13:26:43.994Z [INFO] Successfully updated EURUSD=X: 1.1542013 USD
+2026-03-17T13:26:44.081Z [INFO] Successfully updated TSLA: 395.56 USD
+2026-03-17T13:26:44.234Z [INFO] Successfully updated FCT.MI: 13.1 EUR
+2026-03-17T13:26:44.235Z [INFO] Successfully updated BABA: 136.71 USD
+2026-03-17T13:26:44.300Z [INFO] Successfully updated FCT.MI: 13.1 EUR
+2026-03-17T13:26:44.367Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T13:26:44.483Z [INFO] Successfully updated AMD.DE: 171.9 EUR
+2026-03-17T13:26:44.510Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T13:26:44.540Z [INFO] Successfully updated ZTS: 118.15 USD
+2026-03-17T13:26:44.736Z [INFO] Successfully updated ABNB: 128.32 USD
+2026-03-17T13:26:45.122Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T13:26:45.253Z [INFO] Successfully updated MSF.DE: 347.3 EUR
+2026-03-17T13:26:45.294Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T13:26:45.427Z [INFO] Successfully updated MSF.DE: 347.3 EUR
+2026-03-17T13:26:45.518Z [INFO] Successfully updated ADBE: 251.86 USD
+2026-03-17T13:26:45.651Z [INFO] Successfully updated AAPL: 252.82 USD
+2026-03-17T13:26:45.652Z [INFO] Market data update cycle completed.
+2026-03-17T13:26:45.697Z [INFO] Successfully updated AHLA.DE: 120 EUR
+2026-03-17T13:26:45.733Z [INFO] Successfully updated VERE.DE: 55.01 EUR
+2026-03-17T13:26:45.860Z [INFO] Successfully updated JD: 28.49 USD
+2026-03-17T13:26:45.885Z [INFO] Successfully updated VERE.DE: 55.01 EUR
+2026-03-17T13:26:45.909Z [INFO] Successfully updated MARA: 9.23 USD
+2026-03-17T13:26:46.210Z [INFO] Successfully updated PLTR: 152.72 USD
+2026-03-17T13:26:46.402Z [INFO] Successfully updated 1ASML.MI: 1202.8 EUR
+2026-03-17T13:26:46.536Z [INFO] Successfully updated SPM.MI: 3.405 EUR
+2026-03-17T13:26:46.677Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T13:26:46.779Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T13:26:46.877Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T13:26:46.974Z [INFO] Successfully updated XEON.DE: 148.637 EUR
+2026-03-17T13:26:47.152Z [INFO] Successfully updated CRM: 198.34 USD
+2026-03-17T13:26:47.153Z [INFO] Successfully updated ASPN: 3.39 USD
+2026-03-17T13:26:47.329Z [INFO] Successfully updated CRM: 198.34 USD
+2026-03-17T13:26:47.506Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T13:26:47.507Z [INFO] Successfully updated UNH: 285.49 USD
+2026-03-17T13:26:47.508Z [INFO] Successfully updated MFEA.MI: 2.464 EUR
+2026-03-17T13:26:47.842Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T13:26:47.845Z [INFO] Successfully updated MELI: 1732.33 USD
+2026-03-17T13:26:48.233Z [INFO] Successfully updated STMMI.MI: 29.63 EUR
+2026-03-17T13:26:48.729Z [INFO] Successfully updated FISV: 57.57 USD
+2026-03-17T13:26:48.883Z [INFO] Successfully updated HIMS: 24.88 USD
+2026-03-17T13:26:49.009Z [INFO] Successfully updated NOV.DE: 33.435 EUR
+2026-03-17T13:26:49.150Z [INFO] Successfully updated ZTS: 118.15 USD
+2026-03-17T13:26:49.275Z [INFO] Successfully updated META: 627.45 USD
+2026-03-17T13:26:49.299Z [INFO] Successfully updated META: 627.45 USD
+2026-03-17T13:26:49.310Z [INFO] Successfully updated NU: 14.27 USD
+2026-03-17T13:26:49.491Z [INFO] Successfully updated MSFT: 399.95 USD
+2026-03-17T13:26:49.511Z [INFO] Successfully updated ASPN: 3.39 USD
+2026-03-17T13:26:49.554Z [INFO] Successfully updated PYPL: 45.42 USD
+2026-03-17T13:26:49.659Z [INFO] Successfully updated ASPN: 3.39 USD
+2026-03-17T13:26:49.770Z [INFO] Successfully updated LULU: 159.91 USD
+2026-03-17T13:26:49.886Z [INFO] Successfully updated SRG.MI: 6.556 EUR
+2026-03-17T13:26:50.033Z [INFO] Successfully updated GOOGL: 305.56 USD
+2026-03-17T13:26:50.223Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T13:26:50.248Z [INFO] Successfully updated NEXI.MI: 2.808 EUR
+2026-03-17T13:26:50.287Z [INFO] Successfully updated ABNB: 128.32 USD
+2026-03-17T13:26:50.476Z [INFO] Successfully updated ADBE: 251.86 USD
+2026-03-17T13:26:50.511Z [INFO] Successfully updated PLTR: 152.72 USD
+2026-03-17T13:26:50.571Z [INFO] Successfully updated AMD.DE: 171.9 EUR
+2026-03-17T13:26:50.662Z [INFO] Successfully updated ADBE: 251.86 USD
+2026-03-17T13:26:50.845Z [INFO] Successfully updated ZTS: 118.15 USD
+2026-03-17T13:26:50.870Z [INFO] Successfully updated BABA: 136.71 USD
+2026-03-17T13:26:50.957Z [INFO] Successfully updated ZTS: 118.15 USD
+2026-03-17T13:26:50.963Z [INFO] Successfully updated XCHA.DE: 17.514 EUR
+2026-03-17T13:26:51.096Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T13:26:51.230Z [INFO] Successfully updated TSLA: 395.56 USD
+2026-03-17T13:26:51.448Z [INFO] Successfully updated MARA: 9.23 USD
+2026-03-17T13:26:52.009Z [INFO] Successfully updated 1ASML.MI: 1202.8 EUR
+2026-03-17T13:26:52.009Z [INFO] Successfully updated FCT.MI: 13.1 EUR
+2026-03-17T13:26:52.333Z [INFO] Successfully updated STMMI.MI: 29.63 EUR
+2026-03-17T13:26:52.334Z [INFO] Successfully updated SPM.MI: 3.405 EUR
+2026-03-17T13:26:52.511Z [INFO] Successfully updated PLTR: 152.72 USD
+2026-03-17T13:26:52.689Z [INFO] Successfully updated UNH: 285.49 USD
+2026-03-17T13:26:52.690Z [INFO] Successfully updated JD: 28.49 USD
+2026-03-17T13:26:52.841Z [INFO] Successfully updated PLTR: 152.72 USD
+2026-03-17T13:26:53.018Z [INFO] Successfully updated EURUSD=X: 1.153935 USD
+2026-03-17T13:26:53.198Z [INFO] Successfully updated UNH: 285.49 USD
+2026-03-17T13:26:53.352Z [INFO] Successfully updated AHLA.DE: 120 EUR
+2026-03-17T13:26:53.428Z [INFO] Successfully updated MELI: 1732.33 USD
+2026-03-17T13:26:53.745Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T13:26:54.024Z [INFO] Successfully updated VERE.DE: 55.01 EUR
+2026-03-17T13:26:54.043Z [INFO] Successfully updated FISV: 57.57 USD
+2026-03-17T13:26:54.248Z [INFO] Successfully updated SRG.MI: 6.556 EUR
+2026-03-17T13:26:54.495Z [INFO] Successfully updated HIMS: 24.88 USD
+2026-03-17T13:26:54.496Z [INFO] Successfully updated STMMI.MI: 29.63 EUR
+2026-03-17T13:26:54.671Z [INFO] Successfully updated PYPL: 45.42 USD
+2026-03-17T13:26:54.702Z [INFO] Successfully updated STMMI.MI: 29.63 EUR
+2026-03-17T13:26:54.847Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T13:26:54.881Z [INFO] Successfully updated AAPL: 252.82 USD
+2026-03-17T13:26:54.883Z [INFO] Market data update cycle completed.
+2026-03-17T13:26:55.123Z [INFO] Successfully updated MFEA.MI: 2.46 EUR
+2026-03-17T13:26:55.124Z [INFO] Successfully updated PYPL: 45.42 USD
+2026-03-17T13:26:55.359Z [INFO] Successfully updated LULU: 159.91 USD
+2026-03-17T13:26:55.560Z [INFO] Successfully updated NOV.DE: 33.505 EUR
+2026-03-17T13:26:55.615Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T13:26:55.795Z [INFO] Successfully updated XEON.DE: 148.637 EUR
+2026-03-17T13:26:55.796Z [INFO] Successfully updated GOOGL: 305.56 USD
+2026-03-17T13:26:56.038Z [INFO] Successfully updated TSLA: 395.56 USD
+2026-03-17T13:26:56.102Z [INFO] Successfully updated NEXI.MI: 2.808 EUR
+2026-03-17T13:26:56.279Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T13:26:56.279Z [INFO] Successfully updated BABA: 136.71 USD
+2026-03-17T13:26:56.294Z [INFO] Successfully updated SRG.MI: 6.556 EUR
+2026-03-17T13:26:56.319Z [INFO] Updating market data for 45 assets...
+2026-03-17T13:26:56.373Z [INFO] Successfully updated SRG.MI: 6.556 EUR
+2026-03-17T13:26:56.835Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T13:26:56.836Z [INFO] Successfully updated BABA: 136.71 USD
+2026-03-17T13:26:56.837Z [INFO] Successfully updated MSFT: 399.95 USD
+2026-03-17T13:26:57.164Z [INFO] Successfully updated ABNB: 128.32 USD
+2026-03-17T13:26:57.515Z [INFO] Successfully updated MARA: 9.23 USD
+2026-03-17T13:26:57.516Z [INFO] Successfully updated ASPN: 3.39 USD
+2026-03-17T13:26:57.517Z [INFO] Successfully updated AHLA.DE: 120 EUR
+2026-03-17T13:26:57.539Z [INFO] Successfully updated NU: 14.27 USD
+2026-03-17T13:26:57.868Z [INFO] Successfully updated JD: 28.49 USD
+2026-03-17T13:26:57.871Z [INFO] Successfully updated FCT.MI: 13.1 EUR
+2026-03-17T13:26:58.206Z [INFO] Successfully updated TSLA: 395.56 USD
+2026-03-17T13:26:58.206Z [INFO] Successfully updated ELV: 292.07 USD
+2026-03-17T13:26:58.206Z [INFO] Successfully updated TSLA: 395.56 USD
+2026-03-17T13:26:58.523Z [INFO] Successfully updated JD: 28.49 USD
+2026-03-17T13:26:58.529Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T13:26:58.605Z [INFO] Successfully updated XEON.DE: 148.637 EUR
+2026-03-17T13:26:58.632Z [INFO] Successfully updated XCHA.DE: 17.514 EUR
+2026-03-17T13:26:58.749Z [INFO] Successfully updated 1ASML.MI: 1202.8 EUR
+2026-03-17T13:26:58.967Z [INFO] Successfully updated MFEA.MI: 2.46 EUR
+2026-03-17T13:26:58.982Z [INFO] Successfully updated AMD.DE: 171.9 EUR
+2026-03-17T13:26:59.028Z [INFO] Successfully updated MELI: 1732.33 USD
+2026-03-17T13:26:59.041Z [INFO] Successfully updated ZTS: 118.15 USD
+2026-03-17T13:26:59.095Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T13:26:59.323Z [INFO] Successfully updated VERE.DE: 55.01 EUR
+2026-03-17T13:26:59.381Z [INFO] Successfully updated TDIV.AS: 52.46 EUR
+2026-03-17T13:26:59.415Z [INFO] Successfully updated AHLA.DE: 120 EUR
+2026-03-17T13:26:59.508Z [INFO] Successfully updated AHLA.DE: 120 EUR
+2026-03-17T13:26:59.745Z [INFO] Successfully updated NU: 14.27 USD
+2026-03-17T13:26:59.769Z [INFO] Successfully updated EURUSD=X: 1.153935 USD
+2026-03-17T13:26:59.779Z [INFO] Successfully updated NOV.DE: 33.505 EUR
+2026-03-17T13:26:59.849Z [INFO] Successfully updated FISV: 57.57 USD
+2026-03-17T13:26:59.860Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T13:27:00.085Z [INFO] Successfully updated MSFT: 399.95 USD
+2026-03-17T13:27:00.113Z [INFO] Successfully updated SPM.MI: 3.405 EUR
+2026-03-17T13:27:00.183Z [INFO] Successfully updated LULU: 159.91 USD
+2026-03-17T13:27:00.283Z [INFO] Successfully updated NOV.DE: 33.505 EUR
+2026-03-17T13:27:00.312Z [INFO] Successfully updated PLTR: 152.72 USD
+2026-03-17T13:27:00.451Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T13:27:00.586Z [INFO] Successfully updated MFEA.MI: 2.46 EUR
+2026-03-17T13:27:00.643Z [INFO] Successfully updated NOMD: 9.76 USD
+2026-03-17T13:27:00.671Z [INFO] Successfully updated MFEA.MI: 2.46 EUR
+2026-03-17T13:27:00.839Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T13:27:00.887Z [INFO] Successfully updated AMD.DE: 171.9 EUR
+2026-03-17T13:27:00.984Z [INFO] Successfully updated AAPL: 252.82 USD
+2026-03-17T13:27:00.985Z [INFO] Market data update cycle completed.
+2026-03-17T13:27:01.065Z [INFO] Successfully updated ABNB: 128.32 USD
+2026-03-17T13:27:01.273Z [INFO] Successfully updated GOOGL: 305.56 USD
+2026-03-17T13:27:01.378Z [INFO] Successfully updated XCHA.DE: 17.514 EUR
+2026-03-17T13:27:01.444Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T13:27:01.476Z [INFO] Successfully updated ABNB: 128.32 USD
+2026-03-17T13:27:01.503Z [INFO] Successfully updated HIMS: 24.88 USD
+2026-03-17T13:27:01.730Z [INFO] Successfully updated ASPN: 3.39 USD
+2026-03-17T13:27:01.734Z [INFO] Successfully updated MSF.DE: 347.05 EUR
+2026-03-17T13:27:01.850Z [INFO] Successfully updated MSFT: 399.95 USD
+2026-03-17T13:27:01.883Z [INFO] Successfully updated MSFT: 399.95 USD
+2026-03-17T13:27:01.909Z [INFO] Successfully updated STMMI.MI: 29.645 EUR
+2026-03-17T13:27:02.246Z [INFO] Successfully updated SPM.MI: 3.405 EUR
+2026-03-17T13:27:02.309Z [INFO] Successfully updated 1ASML.MI: 1202.8 EUR
+2026-03-17T13:27:02.413Z [INFO] Successfully updated 1ASML.MI: 1202.8 EUR
+2026-03-17T13:27:02.607Z [INFO] Successfully updated EURUSD=X: 1.153935 USD
+2026-03-17T13:27:02.677Z [INFO] Successfully updated NEXI.MI: 2.808 EUR
+2026-03-17T13:27:02.719Z [INFO] Successfully updated MARA: 9.23 USD
+2026-03-17T13:27:02.737Z [INFO] Successfully updated XEON.DE: 148.637 EUR
+2026-03-17T13:27:02.884Z [INFO] Successfully updated ZTS: 118.15 USD
+2026-03-17T13:27:02.951Z [INFO] Successfully updated CRM: 198.34 USD
+2026-03-17T13:27:03.133Z [INFO] Successfully updated XCHA.DE: 17.514 EUR
+2026-03-17T13:27:03.153Z [INFO] Successfully updated SRG.MI: 6.558 EUR
+2026-03-17T13:27:03.331Z [INFO] Successfully updated XCHA.DE: 17.514 EUR
+2026-03-17T13:27:03.531Z [INFO] Successfully updated FISV: 57.57 USD
+2026-03-17T13:27:03.577Z [INFO] Successfully updated HIMS: 24.88 USD
+2026-03-17T13:27:03.709Z [INFO] Successfully updated FISV: 57.57 USD
+2026-03-17T13:27:03.766Z [INFO] Successfully updated AAPL: 252.82 USD
+2026-03-17T13:27:03.767Z [INFO] Market data update cycle completed.
+2026-03-17T13:27:03.870Z [INFO] Successfully updated FCT.MI: 13.1 EUR
+2026-03-17T13:27:03.914Z [INFO] Successfully updated MELI: 1732.33 USD
+2026-03-17T13:27:04.017Z [INFO] Successfully updated NU: 14.27 USD
+2026-03-17T13:27:04.083Z [INFO] Successfully updated META: 627.45 USD
+2026-03-17T13:27:04.118Z [INFO] Successfully updated PLTR: 152.72 USD
+2026-03-17T13:27:04.246Z [INFO] Successfully updated EURUSD=X: 1.153935 USD
+2026-03-17T13:27:04.359Z [INFO] Successfully updated TSLA: 395.56 USD
+2026-03-17T13:27:04.454Z [INFO] Successfully updated EURUSD=X: 1.153935 USD
+2026-03-17T13:27:04.493Z [INFO] Successfully updated GOOGL: 305.56 USD
+2026-03-17T13:27:04.619Z [INFO] Successfully updated GOOGL: 305.56 USD
+2026-03-17T13:27:04.743Z [INFO] Successfully updated NEXI.MI: 2.806 EUR
+2026-03-17T13:27:04.793Z [INFO] Successfully updated VERE.DE: 55.01 EUR
+2026-03-17T13:27:04.821Z [INFO] Successfully updated LULU: 159.91 USD
+2026-03-17T13:27:04.980Z [INFO] Successfully updated AMD.DE: 171.9 EUR
+2026-03-17T13:27:05.064Z [INFO] Successfully updated ADBE: 251.86 USD
+2026-03-17T13:27:05.092Z [INFO] Successfully updated STMMI.MI: 29.65 EUR
+2026-03-17T13:27:05.215Z [INFO] Successfully updated AAPL: 252.82 USD
+2026-03-17T13:27:05.216Z [INFO] Market data update cycle completed.
+2026-03-17T13:27:05.290Z [INFO] Successfully updated AHLA.DE: 120 EUR
+2026-03-17T13:27:05.360Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T13:27:05.360Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T13:27:05.467Z [INFO] Successfully updated AAPL: 252.82 USD
+2026-03-17T13:27:05.473Z [INFO] Market data update cycle completed.
+2026-03-17T13:27:05.630Z [INFO] Successfully updated MARA: 9.23 USD
+2026-03-17T13:27:05.734Z [INFO] Successfully updated MARA: 9.23 USD
+2026-03-17T13:27:05.738Z [INFO] Successfully updated FCT.MI: 13.1 EUR
+2026-03-17T13:27:06.030Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T13:27:06.031Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T13:27:06.208Z [INFO] Successfully updated SPM.MI: 3.405 EUR
+2026-03-17T13:27:06.209Z [INFO] Successfully updated UNH: 285.49 USD
+2026-03-17T13:27:06.489Z [INFO] Successfully updated SRG.MI: 6.558 EUR
+2026-03-17T13:27:06.502Z [INFO] Successfully updated MFEA.MI: 2.46 EUR
+2026-03-17T13:27:07.015Z [INFO] Successfully updated VERE.DE: 55.01 EUR
+2026-03-17T13:27:07.017Z [INFO] Successfully updated MELI: 1732.33 USD
+2026-03-17T13:27:07.368Z [INFO] Successfully updated XEON.DE: 148.637 EUR
+2026-03-17T13:27:07.522Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T13:27:07.523Z [INFO] Successfully updated MELI: 1732.33 USD
+2026-03-17T13:27:07.523Z [INFO] Successfully updated ASPN: 3.39 USD
+2026-03-17T13:27:07.523Z [INFO] Successfully updated HIMS: 24.88 USD
+2026-03-17T13:27:07.845Z [INFO] Successfully updated PYPL: 45.42 USD
+2026-03-17T13:27:07.865Z [INFO] Successfully updated TSLA: 395.56 USD
+2026-03-17T13:27:07.914Z [INFO] Successfully updated MSFT: 399.95 USD
+2026-03-17T13:27:07.966Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T13:27:08.182Z [INFO] Successfully updated LULU: 159.91 USD
+2026-03-17T13:27:08.338Z [INFO] Successfully updated NU: 14.27 USD
+2026-03-17T13:27:08.479Z [INFO] Successfully updated ZTS: 118.15 USD
+2026-03-17T13:27:08.485Z [INFO] Successfully updated NEXI.MI: 2.806 EUR
+2026-03-17T13:27:08.528Z [INFO] Successfully updated LULU: 159.91 USD
+2026-03-17T13:27:08.553Z [INFO] Successfully updated BABA: 136.71 USD
+2026-03-17T13:27:08.628Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T13:27:08.753Z [INFO] Successfully updated AHLA.DE: 120 EUR
+2026-03-17T13:27:08.776Z [INFO] Successfully updated XCHA.DE: 17.514 EUR
+2026-03-17T13:27:08.778Z [INFO] Successfully updated ASPN: 3.39 USD
+2026-03-17T13:27:08.913Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T13:27:09.019Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T13:27:09.180Z [INFO] Successfully updated AMD.DE: 171.9 EUR
+2026-03-17T13:27:09.288Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T13:27:09.293Z [INFO] Successfully updated FCT.MI: 13.1 EUR
+2026-03-17T13:27:09.392Z [INFO] Successfully updated JD: 28.49 USD
+2026-03-17T13:27:09.525Z [INFO] Successfully updated EURUSD=X: 1.153935 USD
+2026-03-17T13:27:09.585Z [INFO] Successfully updated PLTR: 152.72 USD
+2026-03-17T13:27:09.604Z [INFO] Successfully updated MFEA.MI: 2.46 EUR
+2026-03-17T13:27:09.625Z [INFO] Successfully updated ZTS: 118.15 USD
+2026-03-17T13:27:09.764Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T13:27:09.950Z [INFO] Successfully updated XEON.DE: 148.637 EUR
+2026-03-17T13:27:10.134Z [INFO] Successfully updated VERE.DE: 55.01 EUR
+2026-03-17T13:27:10.165Z [INFO] Successfully updated SPM.MI: 3.405 EUR
+2026-03-17T13:27:10.246Z [INFO] Successfully updated XEON.DE: 148.637 EUR
+2026-03-17T13:27:10.304Z [INFO] Successfully updated AAPL: 252.82 USD
+2026-03-17T13:27:10.306Z [INFO] Market data update cycle completed.
+2026-03-17T13:27:10.329Z [INFO] Successfully updated MSFT: 399.95 USD
+2026-03-17T13:27:10.463Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T13:27:10.473Z [INFO] Successfully updated STMMI.MI: 29.65 EUR
+2026-03-17T13:27:10.568Z [INFO] Successfully updated PLTR: 152.72 USD
+2026-03-17T13:27:10.569Z [INFO] Successfully updated NOV.DE: 33.505 EUR
+2026-03-17T13:27:10.716Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T13:27:10.758Z [INFO] Successfully updated NU: 14.27 USD
+2026-03-17T13:27:10.950Z [INFO] Successfully updated NU: 14.27 USD
+2026-03-17T13:27:10.962Z [INFO] Successfully updated HIMS: 24.88 USD
+2026-03-17T13:27:11.056Z [INFO] Successfully updated XCHA.DE: 17.514 EUR
+2026-03-17T13:27:11.205Z [INFO] Successfully updated STMMI.MI: 29.65 EUR
+2026-03-17T13:27:11.276Z [INFO] Successfully updated ABNB: 128.32 USD
+2026-03-17T13:27:11.333Z [INFO] Successfully updated SRG.MI: 6.558 EUR
+2026-03-17T13:27:11.459Z [INFO] Successfully updated ASPN: 3.39 USD
+2026-03-17T13:27:11.736Z [INFO] Successfully updated AMD.DE: 171.9 EUR
+2026-03-17T13:27:11.788Z [INFO] Successfully updated AMD.DE: 171.9 EUR
+2026-03-17T13:27:11.993Z [INFO] Successfully updated EURUSD=X: 1.153935 USD
+2026-03-17T13:27:12.017Z [INFO] Successfully updated NEXI.MI: 2.806 EUR
+2026-03-17T13:27:12.301Z [INFO] Successfully updated 1ASML.MI: 1202.8 EUR
+2026-03-17T13:27:12.349Z [INFO] Successfully updated SRG.MI: 6.558 EUR
+2026-03-17T13:27:12.455Z [INFO] Successfully updated TSLA: 395.56 USD
+2026-03-17T13:27:12.484Z [INFO] Successfully updated ZTS: 118.15 USD
+2026-03-17T13:27:12.617Z [INFO] Successfully updated SPM.MI: 3.405 EUR
+2026-03-17T13:27:12.835Z [INFO] Successfully updated SPM.MI: 3.405 EUR
+2026-03-17T13:27:12.848Z [INFO] Successfully updated AAPL: 252.82 USD
+2026-03-17T13:27:12.848Z [INFO] Market data update cycle completed.
+2026-03-17T13:27:12.911Z [INFO] Successfully updated TSLA: 395.56 USD
+2026-03-17T13:27:12.976Z [INFO] Successfully updated FCT.MI: 13.1 EUR
+2026-03-17T13:27:13.045Z [INFO] Successfully updated FISV: 57.57 USD
+2026-03-17T13:27:13.131Z [INFO] Successfully updated AHLA.DE: 120 EUR
+2026-03-17T13:27:13.187Z [INFO] Successfully updated PLTR: 152.72 USD
+2026-03-17T13:27:13.349Z [INFO] Successfully updated HIMS: 24.88 USD
+2026-03-17T13:27:13.397Z [INFO] Successfully updated HIMS: 24.88 USD
+2026-03-17T13:27:13.497Z [INFO] Successfully updated AHLA.DE: 120 EUR
+2026-03-17T13:27:13.673Z [INFO] Successfully updated VERE.DE: 55.01 EUR
+2026-03-17T13:27:13.744Z [INFO] Successfully updated MFEA.MI: 2.46 EUR
+2026-03-17T13:27:13.767Z [INFO] Successfully updated GOOGL: 305.56 USD
+2026-03-17T13:27:13.815Z [INFO] Successfully updated STMMI.MI: 29.65 EUR
+2026-03-17T13:27:13.909Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T13:27:13.963Z [INFO] Successfully updated NEXI.MI: 2.806 EUR
+2026-03-17T13:27:14.097Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T13:27:14.113Z [INFO] Successfully updated NEXI.MI: 2.806 EUR
+2026-03-17T13:27:14.202Z [INFO] Successfully updated MFEA.MI: 2.46 EUR
+2026-03-17T13:27:14.309Z [INFO] Successfully updated MARA: 9.23 USD
+2026-03-17T13:27:14.325Z [INFO] Successfully updated MSFT: 399.95 USD
+2026-03-17T13:27:14.450Z [INFO] Successfully updated SRG.MI: 6.558 EUR
+2026-03-17T13:27:14.728Z [INFO] Successfully updated FCT.MI: 13.1 EUR
+2026-03-17T13:27:15.062Z [INFO] Successfully updated FCT.MI: 13.1 EUR
+2026-03-17T13:27:15.063Z [INFO] Successfully updated MSFT: 399.95 USD
+2026-03-17T13:27:15.064Z [INFO] Successfully updated ASPN: 3.39 USD
+2026-03-17T13:27:15.421Z [INFO] Successfully updated MELI: 1732.33 USD
+2026-03-17T13:27:15.521Z [INFO] Successfully updated TSLA: 395.56 USD
+2026-03-17T13:27:15.690Z [INFO] Successfully updated XCHA.DE: 17.514 EUR
+2026-03-17T13:27:15.900Z [INFO] Successfully updated VERE.DE: 55.01 EUR
+2026-03-17T13:27:16.043Z [INFO] Successfully updated VERE.DE: 55.01 EUR
+2026-03-17T13:27:16.221Z [INFO] Successfully updated XCHA.DE: 17.514 EUR
+2026-03-17T13:27:16.399Z [INFO] Successfully updated LULU: 159.91 USD
+2026-03-17T13:27:16.576Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T13:27:16.577Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T13:27:16.730Z [INFO] Successfully updated ZTS: 118.15 USD
+2026-03-17T13:27:16.837Z [INFO] Successfully updated EURUSD=X: 1.153935 USD
+2026-03-17T13:27:16.838Z [INFO] Successfully updated AHLA.DE: 120 EUR
+2026-03-17T13:27:17.183Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T13:27:17.184Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T13:27:17.185Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T13:27:17.455Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T13:27:17.531Z [INFO] Successfully updated EURUSD=X: 1.153935 USD
+2026-03-17T13:27:17.762Z [INFO] Successfully updated AAPL: 252.82 USD
+2026-03-17T13:27:17.764Z [INFO] Market data update cycle completed.
+2026-03-17T13:27:17.827Z [INFO] Successfully updated PLTR: 152.72 USD
+2026-03-17T13:27:17.913Z [INFO] Successfully updated MFEA.MI: 2.46 EUR
+2026-03-17T13:27:17.947Z [INFO] Successfully updated ASPN: 3.39 USD
+2026-03-17T13:27:17.958Z [INFO] Successfully updated ASPN: 3.39 USD
+2026-03-17T13:27:18.039Z [INFO] Successfully updated AAPL: 252.82 USD
+2026-03-17T13:27:18.040Z [INFO] Market data update cycle completed.
+2026-03-17T13:27:18.130Z [INFO] Successfully updated XEON.DE: 148.636 EUR
+2026-03-17T13:27:18.367Z [INFO] Successfully updated MSFT: 399.95 USD
+2026-03-17T13:27:18.399Z [INFO] Successfully updated STMMI.MI: 29.66 EUR
+2026-03-17T13:27:18.424Z [INFO] Successfully updated ZTS: 118.15 USD
+2026-03-17T13:27:18.523Z [INFO] Successfully updated ZTS: 118.15 USD
+2026-03-17T13:27:18.584Z [INFO] Successfully updated NU: 14.27 USD
+2026-03-17T13:27:18.786Z [INFO] Successfully updated XCHA.DE: 17.514 EUR
+2026-03-17T13:27:18.911Z [INFO] Successfully updated SRG.MI: 6.558 EUR
+2026-03-17T13:27:18.921Z [INFO] Successfully updated PLTR: 152.72 USD
+2026-03-17T13:27:18.983Z [INFO] Successfully updated PLTR: 152.72 USD
+2026-03-17T13:27:19.139Z [INFO] Successfully updated AMD.DE: 171.9 EUR
+2026-03-17T13:27:19.322Z [INFO] Successfully updated EURUSD=X: 1.153935 USD
+2026-03-17T13:27:19.346Z [INFO] Successfully updated TSLA: 395.56 USD
+2026-03-17T13:27:19.357Z [INFO] Successfully updated STMMI.MI: 29.66 EUR
+2026-03-17T13:27:19.882Z [INFO] Successfully updated STMMI.MI: 29.66 EUR
+2026-03-17T13:27:20.104Z [INFO] Successfully updated SRG.MI: 6.558 EUR
+2026-03-17T13:27:20.109Z [INFO] Successfully updated AAPL: 252.82 USD
+2026-03-17T13:27:20.111Z [INFO] Market data update cycle completed.
+2026-03-17T13:27:20.111Z [INFO] Successfully updated SPM.MI: 3.405 EUR
+2026-03-17T13:27:20.229Z [INFO] Successfully updated AHLA.DE: 120 EUR
+2026-03-17T13:27:20.307Z [INFO] Successfully updated SRG.MI: 6.558 EUR
+2026-03-17T13:27:20.439Z [INFO] Successfully updated HIMS: 24.88 USD
+2026-03-17T13:27:20.467Z [INFO] Successfully updated TSLA: 395.56 USD
+2026-03-17T13:27:20.468Z [INFO] Successfully updated TSLA: 395.56 USD
+2026-03-17T13:27:20.586Z [INFO] Successfully updated MFEA.MI: 2.46 EUR
+2026-03-17T13:27:20.834Z [INFO] Successfully updated NEXI.MI: 2.806 EUR
+2026-03-17T13:27:20.954Z [INFO] Successfully updated MSFT: 399.95 USD
+2026-03-17T13:27:20.989Z [INFO] Successfully updated AHLA.DE: 120 EUR
+2026-03-17T13:27:21.013Z [INFO] Successfully updated AHLA.DE: 120 EUR
+2026-03-17T13:27:21.185Z [INFO] Successfully updated FCT.MI: 13.1 EUR
+2026-03-17T13:27:21.235Z [INFO] Successfully updated MFEA.MI: 2.46 EUR
+2026-03-17T13:27:21.324Z [INFO] Successfully updated MFEA.MI: 2.46 EUR
+2026-03-17T13:27:21.328Z [INFO] Successfully updated XCHA.DE: 17.514 EUR
+2026-03-17T13:27:21.431Z [INFO] Successfully updated MSFT: 399.95 USD
+2026-03-17T13:27:21.632Z [INFO] Successfully updated VERE.DE: 55.01 EUR
+2026-03-17T13:27:21.662Z [INFO] Successfully updated EURUSD=X: 1.153935 USD
+2026-03-17T13:27:21.668Z [INFO] Successfully updated MSFT: 399.95 USD
+2026-03-17T13:27:21.723Z [INFO] Successfully updated XCHA.DE: 17.514 EUR
+2026-03-17T13:27:21.771Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T13:27:21.896Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T13:27:22.006Z [INFO] Successfully updated AAPL: 252.82 USD
+2026-03-17T13:27:22.007Z [INFO] Market data update cycle completed.
+2026-03-17T13:27:22.011Z [INFO] Successfully updated XCHA.DE: 17.514 EUR
+2026-03-17T13:27:22.133Z [INFO] Successfully updated EURUSD=X: 1.153935 USD
+2026-03-17T13:27:22.389Z [INFO] Successfully updated EURUSD=X: 1.153935 USD
+2026-03-17T13:27:22.429Z [INFO] Successfully updated ASPN: 3.39 USD
+2026-03-17T13:27:22.485Z [INFO] Successfully updated AAPL: 252.82 USD
+2026-03-17T13:27:22.486Z [INFO] Market data update cycle completed.
+2026-03-17T13:27:22.683Z [INFO] Successfully updated AAPL: 252.82 USD
+2026-03-17T13:27:22.684Z [INFO] Market data update cycle completed.
+2026-03-17T13:27:22.771Z [INFO] Successfully updated ZTS: 118.15 USD
+2026-03-17T13:27:23.189Z [INFO] Successfully updated PLTR: 152.72 USD
+2026-03-17T13:27:23.668Z [INFO] Successfully updated STMMI.MI: 29.705 EUR
+2026-03-17T13:27:24.057Z [INFO] Successfully updated SRG.MI: 6.558 EUR
+2026-03-17T13:27:24.732Z [INFO] Successfully updated TSLA: 395.56 USD
+2026-03-17T13:27:25.423Z [INFO] Successfully updated AHLA.DE: 120 EUR
+2026-03-17T13:27:26.108Z [INFO] Successfully updated MFEA.MI: 2.46 EUR
+2026-03-17T13:27:26.450Z [INFO] Successfully updated MSFT: 399.95 USD
+2026-03-17T13:27:26.860Z [INFO] Successfully updated XCHA.DE: 17.514 EUR
+2026-03-17T13:27:27.428Z [INFO] Successfully updated EURUSD=X: 1.153935 USD
+2026-03-17T13:27:27.798Z [INFO] Successfully updated AAPL: 252.82 USD
+2026-03-17T13:27:27.800Z [INFO] Market data update cycle completed.
+2026-03-17T13:31:56.322Z [INFO] Updating market data for 45 assets...
+2026-03-17T13:31:57.473Z [INFO] Successfully updated ELV: 294.59 USD
+2026-03-17T13:31:57.992Z [INFO] Successfully updated TDIV.AS: 52.43 EUR
+2026-03-17T13:31:58.584Z [INFO] Successfully updated NOMD: 9.855 USD
+2026-03-17T13:31:59.058Z [INFO] Successfully updated MSF.DE: 347 EUR
+2026-03-17T13:32:02.003Z [INFO] Successfully updated CRM: 198.46 USD
+2026-03-17T13:32:02.644Z [INFO] Successfully updated META: 632.2283 USD
+2026-03-17T13:32:03.031Z [INFO] Successfully updated ADBE: 253.99 USD
+2026-03-17T13:32:03.400Z [INFO] Successfully updated UNH: 287.325 USD
+2026-03-17T13:32:03.815Z [INFO] Successfully updated PYPL: 46.45 USD
+2026-03-17T13:32:04.205Z [INFO] Successfully updated BABA: 137.8 USD
+2026-03-17T13:32:04.694Z [INFO] Successfully updated JD: 28.58 USD
+2026-03-17T13:32:04.845Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T13:32:05.393Z [INFO] Successfully updated NOV.DE: 33.535 EUR
+2026-03-17T13:32:06.465Z [INFO] Successfully updated ABNB: 130.93 USD
+2026-03-17T13:32:09.030Z [INFO] Successfully updated 1ASML.MI: 1202.8 EUR
+2026-03-17T13:32:09.452Z [INFO] Successfully updated FISV: 58.81 USD
+2026-03-17T13:32:10.868Z [INFO] Successfully updated GOOGL: 307.17 USD
+2026-03-17T13:32:11.313Z [INFO] Successfully updated MARA: 9.19 USD
+2026-03-17T13:32:11.754Z [INFO] Successfully updated MELI: 1732 USD
+2026-03-17T13:32:12.144Z [INFO] Successfully updated LULU: 162.67 USD
+2026-03-17T13:32:12.291Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T13:32:12.437Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T13:32:12.853Z [INFO] Successfully updated XEON.DE: 148.647 EUR
+2026-03-17T13:32:13.357Z [INFO] Successfully updated NU: 14.365 USD
+2026-03-17T13:32:13.903Z [INFO] Successfully updated AMD.DE: 171.76 EUR
+2026-03-17T13:32:14.477Z [INFO] Successfully updated SPM.MI: 3.408 EUR
+2026-03-17T13:32:14.961Z [INFO] Successfully updated HIMS: 24.4379 USD
+2026-03-17T13:32:15.377Z [INFO] Successfully updated NEXI.MI: 2.813 EUR
+2026-03-17T13:32:15.795Z [INFO] Successfully updated FCT.MI: 13.11 EUR
+2026-03-17T13:32:16.195Z [INFO] Successfully updated VERE.DE: 55.01 EUR
+2026-03-17T13:32:16.467Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T13:32:16.602Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T13:32:17.001Z [INFO] Successfully updated ASPN: 3.41 USD
+2026-03-17T13:32:17.387Z [INFO] Successfully updated ZTS: 119.86 USD
+2026-03-17T13:32:18.036Z [INFO] Successfully updated PLTR: 153.1701 USD
+2026-03-17T13:32:19.013Z [INFO] Successfully updated STMMI.MI: 29.725 EUR
+2026-03-17T13:32:19.403Z [INFO] Successfully updated SRG.MI: 6.566 EUR
+2026-03-17T13:32:19.838Z [INFO] Successfully updated TSLA: 393.945 USD
+2026-03-17T13:32:20.203Z [INFO] Successfully updated AHLA.DE: 120 EUR
+2026-03-17T13:32:20.598Z [INFO] Successfully updated MFEA.MI: 2.454 EUR
+2026-03-17T13:32:21.069Z [INFO] Successfully updated MSFT: 401.17 USD
+2026-03-17T13:32:22.568Z [INFO] Successfully updated XCHA.DE: 17.52 EUR
+2026-03-17T13:32:22.953Z [INFO] Successfully updated EURUSD=X: 1.1538018 USD
+2026-03-17T13:32:23.348Z [INFO] Successfully updated AAPL: 252.95 USD
+2026-03-17T13:32:23.350Z [INFO] Market data update cycle completed.
+2026-03-17T13:36:56.337Z [INFO] Updating market data for 45 assets...
+2026-03-17T13:36:56.954Z [INFO] Successfully updated ELV: 295.94 USD
+2026-03-17T13:36:57.669Z [INFO] Successfully updated TDIV.AS: 52.49 EUR
+2026-03-17T13:36:58.002Z [INFO] Successfully updated NOMD: 9.93 USD
+2026-03-17T13:36:58.405Z [INFO] Successfully updated MSF.DE: 347.15 EUR
+2026-03-17T13:36:58.799Z [INFO] Successfully updated CRM: 200.83 USD
+2026-03-17T13:36:59.343Z [INFO] Successfully updated META: 635.175 USD
+2026-03-17T13:37:00.129Z [INFO] Successfully updated ADBE: 255.68 USD
+2026-03-17T13:37:00.609Z [INFO] Successfully updated UNH: 287.665 USD
+2026-03-17T13:37:00.983Z [INFO] Successfully updated PYPL: 46.53 USD
+2026-03-17T13:37:01.423Z [INFO] Successfully updated BABA: 137.505 USD
+2026-03-17T13:37:01.769Z [INFO] Successfully updated JD: 28.73 USD
+2026-03-17T13:37:01.903Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T13:37:02.439Z [INFO] Successfully updated NOV.DE: 33.495 EUR
+2026-03-17T13:37:02.792Z [INFO] Successfully updated ABNB: 132.075 USD
+2026-03-17T13:37:03.152Z [INFO] Successfully updated 1ASML.MI: 1202.8 EUR
+2026-03-17T13:37:03.614Z [INFO] Successfully updated FISV: 58.845 USD
+2026-03-17T13:37:03.982Z [INFO] Successfully updated GOOGL: 306.78 USD
+2026-03-17T13:37:04.496Z [INFO] Successfully updated MARA: 9.19 USD
+2026-03-17T13:37:05.150Z [INFO] Successfully updated MELI: 1744.21 USD
+2026-03-17T13:37:05.586Z [INFO] Successfully updated LULU: 163.4746 USD
+2026-03-17T13:37:05.703Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T13:37:05.929Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T13:37:06.356Z [INFO] Successfully updated XEON.DE: 148.63 EUR
+2026-03-17T13:37:06.789Z [INFO] Successfully updated NU: 14.42 USD
+2026-03-17T13:37:07.163Z [INFO] Successfully updated AMD.DE: 171.92 EUR
+2026-03-17T13:37:07.526Z [INFO] Successfully updated SPM.MI: 3.406 EUR
+2026-03-17T13:37:07.921Z [INFO] Successfully updated HIMS: 24.755 USD
+2026-03-17T13:37:08.322Z [INFO] Successfully updated NEXI.MI: 2.807 EUR
+2026-03-17T13:37:08.681Z [INFO] Successfully updated FCT.MI: 13.13 EUR
+2026-03-17T13:37:09.088Z [INFO] Successfully updated VERE.DE: 55.01 EUR
+2026-03-17T13:37:09.217Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T13:37:09.447Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T13:37:09.870Z [INFO] Successfully updated ASPN: 3.4 USD
+2026-03-17T13:37:10.283Z [INFO] Successfully updated ZTS: 120.36 USD
+2026-03-17T13:37:10.701Z [INFO] Successfully updated PLTR: 152.4101 USD
+2026-03-17T13:37:11.168Z [INFO] Successfully updated STMMI.MI: 29.66 EUR
+2026-03-17T13:37:11.591Z [INFO] Successfully updated SRG.MI: 6.566 EUR
+2026-03-17T13:37:12.087Z [INFO] Successfully updated TSLA: 394.7599 USD
+2026-03-17T13:37:12.748Z [INFO] Successfully updated AHLA.DE: 120 EUR
+2026-03-17T13:37:13.460Z [INFO] Successfully updated MFEA.MI: 2.456 EUR
+2026-03-17T13:37:13.963Z [INFO] Successfully updated MSFT: 401.41 USD
+2026-03-17T13:37:14.685Z [INFO] Successfully updated XCHA.DE: 17.522 EUR
+2026-03-17T13:37:15.080Z [INFO] Successfully updated EURUSD=X: 1.1544678 USD
+2026-03-17T13:37:15.603Z [INFO] Successfully updated AAPL: 253.7258 USD
+2026-03-17T13:37:15.608Z [INFO] Market data update cycle completed.
+2026-03-17T13:42:56.272Z [INFO] Updating market data for 45 assets...
+2026-03-17T13:42:57.042Z [INFO] Successfully updated ELV: 298.33 USD
+2026-03-17T13:42:58.152Z [INFO] Successfully updated TDIV.AS: 52.49 EUR
+2026-03-17T13:42:58.565Z [INFO] Successfully updated NOMD: 9.92 USD
+2026-03-17T13:42:58.943Z [INFO] Successfully updated MSF.DE: 346.9 EUR
+2026-03-17T13:42:59.378Z [INFO] Successfully updated CRM: 201.12 USD
+2026-03-17T13:42:59.868Z [INFO] Successfully updated META: 635.88 USD
+2026-03-17T13:43:00.268Z [INFO] Successfully updated ADBE: 256.41 USD
+2026-03-17T13:43:00.631Z [INFO] Successfully updated UNH: 288.2 USD
+2026-03-17T13:43:01.119Z [INFO] Successfully updated PYPL: 46.71 USD
+2026-03-17T13:43:01.567Z [INFO] Successfully updated BABA: 137.97 USD
+2026-03-17T13:43:01.967Z [INFO] Successfully updated JD: 28.725 USD
+2026-03-17T13:43:02.196Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T13:43:02.834Z [INFO] Successfully updated NOV.DE: 33.47 EUR
+2026-03-17T13:43:03.266Z [INFO] Successfully updated ABNB: 132.55 USD
+2026-03-17T13:43:03.808Z [INFO] Successfully updated 1ASML.MI: 1200.2 EUR
+2026-03-17T13:43:04.253Z [INFO] Successfully updated FISV: 58.9501 USD
+2026-03-17T13:43:04.678Z [INFO] Successfully updated GOOGL: 306.15 USD
+2026-03-17T13:43:05.079Z [INFO] Successfully updated MARA: 9.18 USD
+2026-03-17T13:43:05.469Z [INFO] Successfully updated MELI: 1743.325 USD
+2026-03-17T13:43:05.958Z [INFO] Successfully updated LULU: 163.12 USD
+2026-03-17T13:43:06.195Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T13:43:06.357Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T13:43:06.770Z [INFO] Successfully updated XEON.DE: 148.628 EUR
+2026-03-17T13:43:07.157Z [INFO] Successfully updated NU: 14.435 USD
+2026-03-17T13:43:07.626Z [INFO] Successfully updated AMD.DE: 170.94 EUR
+2026-03-17T13:43:08.004Z [INFO] Successfully updated SPM.MI: 3.396 EUR
+2026-03-17T13:43:08.413Z [INFO] Successfully updated HIMS: 24.91 USD
+2026-03-17T13:43:08.869Z [INFO] Successfully updated NEXI.MI: 2.807 EUR
+2026-03-17T13:43:09.296Z [INFO] Successfully updated FCT.MI: 13.13 EUR
+2026-03-17T13:43:09.685Z [INFO] Successfully updated VERE.DE: 55.01 EUR
+2026-03-17T13:43:09.838Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T13:43:10.000Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T13:43:10.532Z [INFO] Successfully updated ASPN: 3.38 USD
+2026-03-17T13:43:10.916Z [INFO] Successfully updated ZTS: 121.01 USD
+2026-03-17T13:43:11.405Z [INFO] Successfully updated PLTR: 155 USD
+2026-03-17T13:43:11.767Z [INFO] Successfully updated STMMI.MI: 29.59 EUR
+2026-03-17T13:43:12.405Z [INFO] Successfully updated SRG.MI: 6.57 EUR
+2026-03-17T13:43:12.758Z [INFO] Successfully updated TSLA: 396.66 USD
+2026-03-17T13:43:13.208Z [INFO] Successfully updated AHLA.DE: 120 EUR
+2026-03-17T13:43:13.598Z [INFO] Successfully updated MFEA.MI: 2.45 EUR
+2026-03-17T13:43:14.145Z [INFO] Successfully updated MSFT: 402.515 USD
+2026-03-17T13:43:14.725Z [INFO] Successfully updated XCHA.DE: 17.522 EUR
+2026-03-17T13:43:15.241Z [INFO] Successfully updated EURUSD=X: 1.153935 USD
+2026-03-17T13:43:15.724Z [INFO] Successfully updated AAPL: 254.31 USD
+2026-03-17T13:43:15.727Z [INFO] Market data update cycle completed.
+2026-03-17T13:47:56.278Z [INFO] Updating market data for 45 assets...
+2026-03-17T13:47:56.886Z [INFO] Successfully updated ELV: 298.99 USD
+2026-03-17T13:47:57.405Z [INFO] Successfully updated TDIV.AS: 52.5 EUR
+2026-03-17T13:47:57.897Z [INFO] Successfully updated NOMD: 9.985 USD
+2026-03-17T13:47:58.356Z [INFO] Successfully updated MSF.DE: 348.1 EUR
+2026-03-17T13:47:58.775Z [INFO] Successfully updated CRM: 200.4201 USD
+2026-03-17T13:47:59.160Z [INFO] Successfully updated META: 634.135 USD
+2026-03-17T13:47:59.536Z [INFO] Successfully updated ADBE: 255.545 USD
+2026-03-17T13:48:00.170Z [INFO] Successfully updated UNH: 288.145 USD
+2026-03-17T13:48:00.602Z [INFO] Successfully updated PYPL: 46.86 USD
+2026-03-17T13:48:01.011Z [INFO] Successfully updated BABA: 137.81 USD
+2026-03-17T13:48:01.666Z [INFO] Successfully updated JD: 28.75 USD
+2026-03-17T13:48:01.782Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T13:48:02.444Z [INFO] Successfully updated NOV.DE: 33.545 EUR
+2026-03-17T13:48:02.801Z [INFO] Successfully updated ABNB: 132.86 USD
+2026-03-17T13:48:03.160Z [INFO] Successfully updated 1ASML.MI: 1199.4 EUR
+2026-03-17T13:48:03.603Z [INFO] Successfully updated FISV: 59.165 USD
+2026-03-17T13:48:03.955Z [INFO] Successfully updated GOOGL: 306.5 USD
+2026-03-17T13:48:04.364Z [INFO] Successfully updated MARA: 9.1812 USD
+2026-03-17T13:48:04.707Z [INFO] Successfully updated MELI: 1738.28 USD
+2026-03-17T13:48:05.069Z [INFO] Successfully updated LULU: 163.49 USD
+2026-03-17T13:48:05.214Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T13:48:05.338Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T13:48:05.792Z [INFO] Successfully updated XEON.DE: 148.638 EUR
+2026-03-17T13:48:06.271Z [INFO] Successfully updated NU: 14.455 USD
+2026-03-17T13:48:06.629Z [INFO] Successfully updated AMD.DE: 171.38 EUR
+2026-03-17T13:48:06.995Z [INFO] Successfully updated SPM.MI: 3.39 EUR
+2026-03-17T13:48:07.418Z [INFO] Successfully updated HIMS: 25 USD
+2026-03-17T13:48:07.828Z [INFO] Successfully updated NEXI.MI: 2.823 EUR
+2026-03-17T13:48:08.151Z [INFO] Successfully updated FCT.MI: 13.13 EUR
+2026-03-17T13:48:08.483Z [INFO] Successfully updated VERE.DE: 55.01 EUR
+2026-03-17T13:48:08.640Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T13:48:08.910Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T13:48:09.369Z [INFO] Successfully updated ASPN: 3.41 USD
+2026-03-17T13:48:09.733Z [INFO] Successfully updated ZTS: 121.045 USD
+2026-03-17T13:48:10.070Z [INFO] Successfully updated PLTR: 155.1906 USD
+2026-03-17T13:48:10.603Z [INFO] Successfully updated STMMI.MI: 29.505 EUR
+2026-03-17T13:48:10.980Z [INFO] Successfully updated SRG.MI: 6.56 EUR
+2026-03-17T13:48:11.348Z [INFO] Successfully updated TSLA: 396.33 USD
+2026-03-17T13:48:11.887Z [INFO] Successfully updated AHLA.DE: 119.2 EUR
+2026-03-17T13:48:12.244Z [INFO] Successfully updated MFEA.MI: 2.462 EUR
+2026-03-17T13:48:12.586Z [INFO] Successfully updated MSFT: 403.28 USD
+2026-03-17T13:48:12.924Z [INFO] Successfully updated XCHA.DE: 17.522 EUR
+2026-03-17T13:48:13.294Z [INFO] Successfully updated EURUSD=X: 1.1542013 USD
+2026-03-17T13:48:13.646Z [INFO] Successfully updated AAPL: 254.56 USD
+2026-03-17T13:48:13.649Z [INFO] Market data update cycle completed.
+2026-03-17T13:52:56.283Z [INFO] Updating market data for 45 assets...
+2026-03-17T13:52:57.145Z [INFO] Successfully updated ELV: 299.35 USD
+2026-03-17T13:52:57.646Z [INFO] Successfully updated TDIV.AS: 52.46 EUR
+2026-03-17T13:52:58.081Z [INFO] Successfully updated NOMD: 9.99 USD
+2026-03-17T13:52:58.481Z [INFO] Successfully updated MSF.DE: 348.1 EUR
+2026-03-17T13:52:58.898Z [INFO] Successfully updated CRM: 201.87 USD
+2026-03-17T13:52:59.275Z [INFO] Successfully updated META: 634.0301 USD
+2026-03-17T13:52:59.722Z [INFO] Successfully updated ADBE: 255.88 USD
+2026-03-17T13:53:00.095Z [INFO] Successfully updated UNH: 288.15 USD
+2026-03-17T13:53:00.481Z [INFO] Successfully updated PYPL: 46.75 USD
+2026-03-17T13:53:00.891Z [INFO] Successfully updated BABA: 137.83 USD
+2026-03-17T13:53:01.274Z [INFO] Successfully updated JD: 28.735 USD
+2026-03-17T13:53:01.511Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T13:53:02.039Z [INFO] Successfully updated NOV.DE: 33.635 EUR
+2026-03-17T13:53:02.558Z [INFO] Successfully updated ABNB: 133.29 USD
+2026-03-17T13:53:02.951Z [INFO] Successfully updated 1ASML.MI: 1199.4 EUR
+2026-03-17T13:53:03.335Z [INFO] Successfully updated FISV: 59.415 USD
+2026-03-17T13:53:03.736Z [INFO] Successfully updated GOOGL: 307.04 USD
+2026-03-17T13:53:04.240Z [INFO] Successfully updated MARA: 9.185 USD
+2026-03-17T13:53:04.641Z [INFO] Successfully updated MELI: 1738.1803 USD
+2026-03-17T13:53:05.107Z [INFO] Successfully updated LULU: 163.6396 USD
+2026-03-17T13:53:05.358Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T13:53:05.559Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T13:53:06.003Z [INFO] Successfully updated XEON.DE: 148.624 EUR
+2026-03-17T13:53:06.396Z [INFO] Successfully updated NU: 14.495 USD
+2026-03-17T13:53:06.793Z [INFO] Successfully updated AMD.DE: 171.14 EUR
+2026-03-17T13:53:07.204Z [INFO] Successfully updated SPM.MI: 3.391 EUR
+2026-03-17T13:53:07.608Z [INFO] Successfully updated HIMS: 25.12 USD
+2026-03-17T13:53:07.996Z [INFO] Successfully updated NEXI.MI: 2.833 EUR
+2026-03-17T13:53:08.431Z [INFO] Successfully updated FCT.MI: 13.16 EUR
+2026-03-17T13:53:08.786Z [INFO] Successfully updated VERE.DE: 55.01 EUR
+2026-03-17T13:53:08.945Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T13:53:09.070Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T13:53:09.514Z [INFO] Successfully updated ASPN: 3.42 USD
+2026-03-17T13:53:10.219Z [INFO] Successfully updated ZTS: 121.12 USD
+2026-03-17T13:53:10.834Z [INFO] Successfully updated PLTR: 155.1342 USD
+2026-03-17T13:53:11.322Z [INFO] Successfully updated STMMI.MI: 29.49 EUR
+2026-03-17T13:53:11.696Z [INFO] Successfully updated SRG.MI: 6.55 EUR
+2026-03-17T13:53:12.267Z [INFO] Successfully updated TSLA: 396.555 USD
+2026-03-17T13:53:12.722Z [INFO] Successfully updated AHLA.DE: 119.2 EUR
+2026-03-17T13:53:13.115Z [INFO] Successfully updated MFEA.MI: 2.47 EUR
+2026-03-17T13:53:13.561Z [INFO] Successfully updated MSFT: 403.56 USD
+2026-03-17T13:53:14.163Z [INFO] Successfully updated XCHA.DE: 17.522 EUR
+2026-03-17T13:53:14.793Z [INFO] Successfully updated EURUSD=X: 1.1534026 USD
+2026-03-17T13:53:15.199Z [INFO] Successfully updated AAPL: 254.66 USD
+2026-03-17T13:53:15.202Z [INFO] Market data update cycle completed.
+2026-03-17T13:57:56.333Z [INFO] Updating market data for 45 assets...
+2026-03-17T13:57:56.887Z [INFO] Successfully updated ELV: 299.27 USD
+2026-03-17T13:57:57.427Z [INFO] Successfully updated TDIV.AS: 52.48 EUR
+2026-03-17T13:57:57.781Z [INFO] Successfully updated NOMD: 9.99 USD
+2026-03-17T13:57:58.132Z [INFO] Successfully updated MSF.DE: 348.2 EUR
+2026-03-17T13:57:58.484Z [INFO] Successfully updated CRM: 200.49 USD
+2026-03-17T13:57:58.924Z [INFO] Successfully updated META: 632.93 USD
+2026-03-17T13:57:59.438Z [INFO] Successfully updated ADBE: 255.65 USD
+2026-03-17T13:57:59.927Z [INFO] Successfully updated UNH: 287.94 USD
+2026-03-17T13:58:00.363Z [INFO] Successfully updated PYPL: 46.71 USD
+2026-03-17T13:58:00.752Z [INFO] Successfully updated BABA: 137.71 USD
+2026-03-17T13:58:01.105Z [INFO] Successfully updated JD: 28.695 USD
+2026-03-17T13:58:01.242Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T13:58:01.570Z [INFO] Successfully updated NOV.DE: 33.6 EUR
+2026-03-17T13:58:01.925Z [INFO] Successfully updated ABNB: 133.05 USD
+2026-03-17T13:58:02.368Z [INFO] Successfully updated 1ASML.MI: 1198.2 EUR
+2026-03-17T13:58:02.708Z [INFO] Successfully updated FISV: 59.33 USD
+2026-03-17T13:58:03.078Z [INFO] Successfully updated GOOGL: 306.54 USD
+2026-03-17T13:58:03.483Z [INFO] Successfully updated MARA: 9.23 USD
+2026-03-17T13:58:03.959Z [INFO] Successfully updated MELI: 1736.9999 USD
+2026-03-17T13:58:04.405Z [INFO] Successfully updated LULU: 163.05 USD
+2026-03-17T13:58:04.584Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T13:58:04.727Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T13:58:05.203Z [INFO] Successfully updated XEON.DE: 148.639 EUR
+2026-03-17T13:58:05.605Z [INFO] Successfully updated NU: 14.475 USD
+2026-03-17T13:58:06.044Z [INFO] Successfully updated AMD.DE: 170.5 EUR
+2026-03-17T13:58:06.444Z [INFO] Successfully updated SPM.MI: 3.388 EUR
+2026-03-17T13:58:06.806Z [INFO] Successfully updated HIMS: 24.86 USD
+2026-03-17T13:58:07.206Z [INFO] Successfully updated NEXI.MI: 2.833 EUR
+2026-03-17T13:58:07.684Z [INFO] Successfully updated FCT.MI: 13.15 EUR
+2026-03-17T13:58:08.159Z [INFO] Successfully updated VERE.DE: 55.13 EUR
+2026-03-17T13:58:08.291Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T13:58:08.429Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T13:58:08.806Z [INFO] Successfully updated ASPN: 3.4199 USD
+2026-03-17T13:58:09.187Z [INFO] Successfully updated ZTS: 121.43 USD
+2026-03-17T13:58:09.564Z [INFO] Successfully updated PLTR: 154.7483 USD
+2026-03-17T13:58:10.000Z [INFO] Successfully updated STMMI.MI: 29.32 EUR
+2026-03-17T13:58:10.364Z [INFO] Successfully updated SRG.MI: 6.55 EUR
+2026-03-17T13:58:10.892Z [INFO] Successfully updated TSLA: 397.595 USD
+2026-03-17T13:58:11.318Z [INFO] Successfully updated AHLA.DE: 119.6 EUR
+2026-03-17T13:58:11.688Z [INFO] Successfully updated MFEA.MI: 2.474 EUR
+2026-03-17T13:58:12.062Z [INFO] Successfully updated MSFT: 401.975 USD
+2026-03-17T13:58:12.440Z [INFO] Successfully updated XCHA.DE: 17.522 EUR
+2026-03-17T13:58:12.841Z [INFO] Successfully updated EURUSD=X: 1.1532695 USD
+2026-03-17T13:58:13.340Z [INFO] Successfully updated AAPL: 254.82 USD
+2026-03-17T13:58:13.344Z [INFO] Market data update cycle completed.
+2026-03-17T14:02:56.344Z [INFO] Updating market data for 45 assets...
+2026-03-17T14:02:57.032Z [INFO] Successfully updated ELV: 299.77 USD
+2026-03-17T14:02:57.756Z [INFO] Successfully updated TDIV.AS: 52.48 EUR
+2026-03-17T14:02:58.085Z [INFO] Successfully updated NOMD: 9.98 USD
+2026-03-17T14:02:58.732Z [INFO] Successfully updated MSF.DE: 349.35 EUR
+2026-03-17T14:02:59.281Z [INFO] Successfully updated CRM: 200.051 USD
+2026-03-17T14:02:59.774Z [INFO] Successfully updated META: 631.11 USD
+2026-03-17T14:03:00.176Z [INFO] Successfully updated ADBE: 255.08 USD
+2026-03-17T14:03:00.701Z [INFO] Successfully updated UNH: 288.31 USD
+2026-03-17T14:03:01.416Z [INFO] Successfully updated PYPL: 46.66 USD
+2026-03-17T14:03:01.842Z [INFO] Successfully updated BABA: 137.77 USD
+2026-03-17T14:03:02.337Z [INFO] Successfully updated JD: 28.695 USD
+2026-03-17T14:03:02.482Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T14:03:03.259Z [INFO] Successfully updated NOV.DE: 33.8 EUR
+2026-03-17T14:03:03.631Z [INFO] Successfully updated ABNB: 132.51 USD
+2026-03-17T14:03:04.148Z [INFO] Successfully updated 1ASML.MI: 1201 EUR
+2026-03-17T14:03:04.508Z [INFO] Successfully updated FISV: 59.33 USD
+2026-03-17T14:03:04.969Z [INFO] Successfully updated GOOGL: 306.73 USD
+2026-03-17T14:03:05.352Z [INFO] Successfully updated MARA: 9.2057 USD
+2026-03-17T14:03:05.721Z [INFO] Successfully updated MELI: 1729.98 USD
+2026-03-17T14:03:06.170Z [INFO] Successfully updated LULU: 162.64 USD
+2026-03-17T14:03:06.324Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T14:03:06.468Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T14:03:06.946Z [INFO] Successfully updated XEON.DE: 148.639 EUR
+2026-03-17T14:03:07.362Z [INFO] Successfully updated NU: 14.48 USD
+2026-03-17T14:03:07.718Z [INFO] Successfully updated AMD.DE: 171.62 EUR
+2026-03-17T14:03:08.063Z [INFO] Successfully updated SPM.MI: 3.391 EUR
+2026-03-17T14:03:08.510Z [INFO] Successfully updated HIMS: 24.3524 USD
+2026-03-17T14:03:08.983Z [INFO] Successfully updated NEXI.MI: 2.834 EUR
+2026-03-17T14:03:09.362Z [INFO] Successfully updated FCT.MI: 13.16 EUR
+2026-03-17T14:03:10.200Z [INFO] Successfully updated VERE.DE: 55.13 EUR
+2026-03-17T14:03:10.354Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T14:03:10.510Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T14:03:10.892Z [INFO] Successfully updated ASPN: 3.425 USD
+2026-03-17T14:03:11.430Z [INFO] Successfully updated ZTS: 121.33 USD
+2026-03-17T14:03:11.929Z [INFO] Successfully updated PLTR: 154.97 USD
+2026-03-17T14:03:12.348Z [INFO] Successfully updated STMMI.MI: 29.5 EUR
+2026-03-17T14:03:12.804Z [INFO] Successfully updated SRG.MI: 6.546 EUR
+2026-03-17T14:03:13.241Z [INFO] Successfully updated TSLA: 397.145 USD
+2026-03-17T14:03:13.641Z [INFO] Successfully updated AHLA.DE: 119.6 EUR
+2026-03-17T14:03:14.084Z [INFO] Successfully updated MFEA.MI: 2.472 EUR
+2026-03-17T14:03:14.480Z [INFO] Successfully updated MSFT: 401.405 USD
+2026-03-17T14:03:14.964Z [INFO] Successfully updated XCHA.DE: 17.526 EUR
+2026-03-17T14:03:15.444Z [INFO] Successfully updated EURUSD=X: 1.1530036 USD
+2026-03-17T14:03:15.858Z [INFO] Successfully updated AAPL: 254.57 USD
+2026-03-17T14:03:15.861Z [INFO] Market data update cycle completed.
+2026-03-17T14:07:56.351Z [INFO] Updating market data for 45 assets...
+2026-03-17T14:07:57.046Z [INFO] Successfully updated ELV: 300.51 USD
+2026-03-17T14:07:57.774Z [INFO] Successfully updated TDIV.AS: 52.48 EUR
+2026-03-17T14:07:58.166Z [INFO] Successfully updated NOMD: 9.974 USD
+2026-03-17T14:07:58.932Z [INFO] Successfully updated MSF.DE: 350 EUR
+2026-03-17T14:07:59.345Z [INFO] Successfully updated CRM: 200.415 USD
+2026-03-17T14:07:59.849Z [INFO] Successfully updated META: 630.35 USD
+2026-03-17T14:08:00.529Z [INFO] Successfully updated ADBE: 257.74 USD
+2026-03-17T14:08:00.899Z [INFO] Successfully updated UNH: 288.5 USD
+2026-03-17T14:08:01.327Z [INFO] Successfully updated PYPL: 46.9 USD
+2026-03-17T14:08:01.694Z [INFO] Successfully updated BABA: 137.7 USD
+2026-03-17T14:08:02.157Z [INFO] Successfully updated JD: 28.73 USD
+2026-03-17T14:08:02.305Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T14:08:02.925Z [INFO] Successfully updated NOV.DE: 33.835 EUR
+2026-03-17T14:08:03.600Z [INFO] Successfully updated ABNB: 132.35 USD
+2026-03-17T14:08:04.215Z [INFO] Successfully updated 1ASML.MI: 1199 EUR
+2026-03-17T14:08:04.636Z [INFO] Successfully updated FISV: 59.45 USD
+2026-03-17T14:08:05.120Z [INFO] Successfully updated GOOGL: 306.795 USD
+2026-03-17T14:08:05.610Z [INFO] Successfully updated MARA: 9.2115 USD
+2026-03-17T14:08:05.982Z [INFO] Successfully updated MELI: 1729.195 USD
+2026-03-17T14:08:06.396Z [INFO] Successfully updated LULU: 162.66 USD
+2026-03-17T14:08:06.644Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T14:08:06.849Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T14:08:07.284Z [INFO] Successfully updated XEON.DE: 148.639 EUR
+2026-03-17T14:08:07.801Z [INFO] Successfully updated NU: 14.465 USD
+2026-03-17T14:08:08.363Z [INFO] Successfully updated AMD.DE: 172.38 EUR
+2026-03-17T14:08:08.972Z [INFO] Successfully updated SPM.MI: 3.399 EUR
+2026-03-17T14:08:09.531Z [INFO] Successfully updated HIMS: 24.39 USD
+2026-03-17T14:08:10.155Z [INFO] Successfully updated NEXI.MI: 2.831 EUR
+2026-03-17T14:08:10.597Z [INFO] Successfully updated FCT.MI: 13.17 EUR
+2026-03-17T14:08:11.046Z [INFO] Successfully updated VERE.DE: 55.13 EUR
+2026-03-17T14:08:11.274Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T14:08:11.524Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T14:08:11.977Z [INFO] Successfully updated ASPN: 3.44 USD
+2026-03-17T14:08:12.438Z [INFO] Successfully updated ZTS: 121.175 USD
+2026-03-17T14:08:12.953Z [INFO] Successfully updated PLTR: 154.87 USD
+2026-03-17T14:08:13.367Z [INFO] Successfully updated STMMI.MI: 29.51 EUR
+2026-03-17T14:08:13.844Z [INFO] Successfully updated SRG.MI: 6.542 EUR
+2026-03-17T14:08:14.244Z [INFO] Successfully updated TSLA: 397.79 USD
+2026-03-17T14:08:14.666Z [INFO] Successfully updated AHLA.DE: 119.6 EUR
+2026-03-17T14:08:15.082Z [INFO] Successfully updated MFEA.MI: 2.466 EUR
+2026-03-17T14:08:15.453Z [INFO] Successfully updated MSFT: 400.97 USD
+2026-03-17T14:08:16.287Z [INFO] Successfully updated XCHA.DE: 17.526 EUR
+2026-03-17T14:08:16.653Z [INFO] Successfully updated EURUSD=X: 1.1538018 USD
+2026-03-17T14:08:17.104Z [INFO] Successfully updated AAPL: 254.58 USD
+2026-03-17T14:08:17.106Z [INFO] Market data update cycle completed.
+2026-03-17T14:13:56.314Z [INFO] Updating market data for 45 assets...
+2026-03-17T14:13:56.885Z [INFO] Successfully updated ELV: 300.291 USD
+2026-03-17T14:13:57.483Z [INFO] Successfully updated TDIV.AS: 52.57 EUR
+2026-03-17T14:13:57.854Z [INFO] Successfully updated NOMD: 9.965 USD
+2026-03-17T14:13:58.204Z [INFO] Successfully updated MSF.DE: 349.05 EUR
+2026-03-17T14:13:58.767Z [INFO] Successfully updated CRM: 199.29 USD
+2026-03-17T14:13:59.211Z [INFO] Successfully updated META: 629.8006 USD
+2026-03-17T14:13:59.718Z [INFO] Successfully updated ADBE: 257.43 USD
+2026-03-17T14:14:00.057Z [INFO] Successfully updated UNH: 287.995 USD
+2026-03-17T14:14:00.408Z [INFO] Successfully updated PYPL: 46.77 USD
+2026-03-17T14:14:00.749Z [INFO] Successfully updated BABA: 137.8386 USD
+2026-03-17T14:14:01.115Z [INFO] Successfully updated JD: 28.725 USD
+2026-03-17T14:14:01.290Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T14:14:01.676Z [INFO] Successfully updated NOV.DE: 33.685 EUR
+2026-03-17T14:14:02.153Z [INFO] Successfully updated ABNB: 131.92 USD
+2026-03-17T14:14:02.598Z [INFO] Successfully updated 1ASML.MI: 1200.6 EUR
+2026-03-17T14:14:02.960Z [INFO] Successfully updated FISV: 59.1 USD
+2026-03-17T14:14:03.489Z [INFO] Successfully updated GOOGL: 306.46 USD
+2026-03-17T14:14:03.869Z [INFO] Successfully updated MARA: 9.245 USD
+2026-03-17T14:14:04.411Z [INFO] Successfully updated MELI: 1724.28 USD
+2026-03-17T14:14:04.837Z [INFO] Successfully updated LULU: 162.17 USD
+2026-03-17T14:14:04.991Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T14:14:05.145Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T14:14:05.507Z [INFO] Successfully updated XEON.DE: 148.642 EUR
+2026-03-17T14:14:05.864Z [INFO] Successfully updated NU: 14.424 USD
+2026-03-17T14:14:06.356Z [INFO] Successfully updated AMD.DE: 172.42 EUR
+2026-03-17T14:14:06.796Z [INFO] Successfully updated SPM.MI: 3.405 EUR
+2026-03-17T14:14:07.196Z [INFO] Successfully updated HIMS: 24.5 USD
+2026-03-17T14:14:07.556Z [INFO] Successfully updated NEXI.MI: 2.822 EUR
+2026-03-17T14:14:08.075Z [INFO] Successfully updated FCT.MI: 13.2 EUR
+2026-03-17T14:14:08.608Z [INFO] Successfully updated VERE.DE: 55.13 EUR
+2026-03-17T14:14:08.767Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T14:14:08.912Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T14:14:09.238Z [INFO] Successfully updated ASPN: 3.43 USD
+2026-03-17T14:14:09.722Z [INFO] Successfully updated ZTS: 121.2 USD
+2026-03-17T14:14:10.103Z [INFO] Successfully updated PLTR: 154.82 USD
+2026-03-17T14:14:10.715Z [INFO] Successfully updated STMMI.MI: 29.555 EUR
+2026-03-17T14:14:11.078Z [INFO] Successfully updated SRG.MI: 6.548 EUR
+2026-03-17T14:14:11.477Z [INFO] Successfully updated TSLA: 397.77 USD
+2026-03-17T14:14:11.917Z [INFO] Successfully updated AHLA.DE: 119.4 EUR
+2026-03-17T14:14:12.279Z [INFO] Successfully updated MFEA.MI: 2.466 EUR
+2026-03-17T14:14:12.750Z [INFO] Successfully updated MSFT: 399.84 USD
+2026-03-17T14:14:13.118Z [INFO] Successfully updated XCHA.DE: 17.514 EUR
+2026-03-17T14:14:13.547Z [INFO] Successfully updated EURUSD=X: 1.1534026 USD
+2026-03-17T14:14:13.904Z [INFO] Successfully updated AAPL: 254.225 USD
+2026-03-17T14:14:13.991Z [INFO] Market data update cycle completed.
+2026-03-17T14:18:56.323Z [INFO] Updating market data for 45 assets...
+2026-03-17T14:18:57.177Z [INFO] Successfully updated ELV: 299.805 USD
+2026-03-17T14:18:57.782Z [INFO] Successfully updated TDIV.AS: 52.6 EUR
+2026-03-17T14:18:58.157Z [INFO] Successfully updated NOMD: 9.935 USD
+2026-03-17T14:18:58.519Z [INFO] Successfully updated MSF.DE: 348.25 EUR
+2026-03-17T14:18:59.070Z [INFO] Successfully updated CRM: 198.18 USD
+2026-03-17T14:18:59.511Z [INFO] Successfully updated META: 629.87 USD
+2026-03-17T14:18:59.902Z [INFO] Successfully updated ADBE: 257.315 USD
+2026-03-17T14:19:00.371Z [INFO] Successfully updated UNH: 287.23 USD
+2026-03-17T14:19:00.782Z [INFO] Successfully updated PYPL: 46.89 USD
+2026-03-17T14:19:01.233Z [INFO] Successfully updated BABA: 137.7024 USD
+2026-03-17T14:19:01.672Z [INFO] Successfully updated JD: 28.68 USD
+2026-03-17T14:19:01.800Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T14:19:02.403Z [INFO] Successfully updated NOV.DE: 33.75 EUR
+2026-03-17T14:19:02.753Z [INFO] Successfully updated ABNB: 132.05 USD
+2026-03-17T14:19:03.178Z [INFO] Successfully updated 1ASML.MI: 1200.6 EUR
+2026-03-17T14:19:03.720Z [INFO] Successfully updated FISV: 58.68 USD
+2026-03-17T14:19:04.113Z [INFO] Successfully updated GOOGL: 306.56 USD
+2026-03-17T14:19:04.600Z [INFO] Successfully updated MARA: 9.21 USD
+2026-03-17T14:19:05.095Z [INFO] Successfully updated MELI: 1721.74 USD
+2026-03-17T14:19:05.471Z [INFO] Successfully updated LULU: 162.16 USD
+2026-03-17T14:19:05.643Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T14:19:05.869Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T14:19:06.366Z [INFO] Successfully updated XEON.DE: 148.636 EUR
+2026-03-17T14:19:06.789Z [INFO] Successfully updated NU: 14.36 USD
+2026-03-17T14:19:07.149Z [INFO] Successfully updated AMD.DE: 172.62 EUR
+2026-03-17T14:19:07.515Z [INFO] Successfully updated SPM.MI: 3.409 EUR
+2026-03-17T14:19:07.942Z [INFO] Successfully updated HIMS: 24.3758 USD
+2026-03-17T14:19:08.308Z [INFO] Successfully updated NEXI.MI: 2.824 EUR
+2026-03-17T14:19:08.706Z [INFO] Successfully updated FCT.MI: 13.19 EUR
+2026-03-17T14:19:09.166Z [INFO] Successfully updated VERE.DE: 55.13 EUR
+2026-03-17T14:19:09.314Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T14:19:09.485Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T14:19:09.868Z [INFO] Successfully updated ASPN: 3.395 USD
+2026-03-17T14:19:10.448Z [INFO] Successfully updated ZTS: 120.885 USD
+2026-03-17T14:19:10.795Z [INFO] Successfully updated PLTR: 154.78 USD
+2026-03-17T14:19:11.163Z [INFO] Successfully updated STMMI.MI: 29.51 EUR
+2026-03-17T14:19:11.532Z [INFO] Successfully updated SRG.MI: 6.548 EUR
+2026-03-17T14:19:11.951Z [INFO] Successfully updated TSLA: 397.1 USD
+2026-03-17T14:19:12.386Z [INFO] Successfully updated AHLA.DE: 119.4 EUR
+2026-03-17T14:19:12.912Z [INFO] Successfully updated MFEA.MI: 2.46 EUR
+2026-03-17T14:19:13.327Z [INFO] Successfully updated MSFT: 399.43 USD
+2026-03-17T14:19:13.748Z [INFO] Successfully updated XCHA.DE: 17.514 EUR
+2026-03-17T14:19:14.272Z [INFO] Successfully updated EURUSD=X: 1.1530036 USD
+2026-03-17T14:19:14.686Z [INFO] Successfully updated AAPL: 254.208 USD
+2026-03-17T14:19:14.797Z [INFO] Market data update cycle completed.
+2026-03-17T14:23:56.328Z [INFO] Updating market data for 45 assets...
+2026-03-17T14:23:56.884Z [INFO] Successfully updated ELV: 298.985 USD
+2026-03-17T14:23:57.428Z [INFO] Successfully updated TDIV.AS: 52.64 EUR
+2026-03-17T14:23:57.900Z [INFO] Successfully updated NOMD: 9.935 USD
+2026-03-17T14:23:58.316Z [INFO] Successfully updated MSF.DE: 347.8 EUR
+2026-03-17T14:23:58.655Z [INFO] Successfully updated CRM: 198.32 USD
+2026-03-17T14:23:59.061Z [INFO] Successfully updated META: 629.9 USD
+2026-03-17T14:23:59.432Z [INFO] Successfully updated ADBE: 258.75 USD
+2026-03-17T14:23:59.822Z [INFO] Successfully updated UNH: 287.15 USD
+2026-03-17T14:24:00.179Z [INFO] Successfully updated PYPL: 46.63 USD
+2026-03-17T14:24:00.532Z [INFO] Successfully updated BABA: 137.576 USD
+2026-03-17T14:24:00.851Z [INFO] Successfully updated JD: 28.67 USD
+2026-03-17T14:24:01.051Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T14:24:01.403Z [INFO] Successfully updated NOV.DE: 33.97 EUR
+2026-03-17T14:24:01.745Z [INFO] Successfully updated ABNB: 132.19 USD
+2026-03-17T14:24:02.124Z [INFO] Successfully updated 1ASML.MI: 1203.4 EUR
+2026-03-17T14:24:02.508Z [INFO] Successfully updated FISV: 58.795 USD
+2026-03-17T14:24:03.075Z [INFO] Successfully updated GOOGL: 307.05 USD
+2026-03-17T14:24:03.546Z [INFO] Successfully updated MARA: 9.21 USD
+2026-03-17T14:24:03.935Z [INFO] Successfully updated MELI: 1728.27 USD
+2026-03-17T14:24:04.308Z [INFO] Successfully updated LULU: 162.09 USD
+2026-03-17T14:24:04.418Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T14:24:04.560Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T14:24:05.192Z [INFO] Successfully updated XEON.DE: 148.647 EUR
+2026-03-17T14:24:05.551Z [INFO] Successfully updated NU: 14.38 USD
+2026-03-17T14:24:05.930Z [INFO] Successfully updated AMD.DE: 171.44 EUR
+2026-03-17T14:24:06.277Z [INFO] Successfully updated SPM.MI: 3.418 EUR
+2026-03-17T14:24:06.830Z [INFO] Successfully updated HIMS: 24.38 USD
+2026-03-17T14:24:07.237Z [INFO] Successfully updated NEXI.MI: 2.827 EUR
+2026-03-17T14:24:07.596Z [INFO] Successfully updated FCT.MI: 13.17 EUR
+2026-03-17T14:24:08.084Z [INFO] Successfully updated VERE.DE: 55.13 EUR
+2026-03-17T14:24:08.224Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T14:24:08.348Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T14:24:08.787Z [INFO] Successfully updated ASPN: 3.415 USD
+2026-03-17T14:24:09.324Z [INFO] Successfully updated ZTS: 121.03 USD
+2026-03-17T14:24:09.716Z [INFO] Successfully updated PLTR: 155.22 USD
+2026-03-17T14:24:10.061Z [INFO] Successfully updated STMMI.MI: 29.58 EUR
+2026-03-17T14:24:10.390Z [INFO] Successfully updated SRG.MI: 6.558 EUR
+2026-03-17T14:24:10.770Z [INFO] Successfully updated TSLA: 397.31 USD
+2026-03-17T14:24:11.117Z [INFO] Successfully updated AHLA.DE: 119.4 EUR
+2026-03-17T14:24:11.517Z [INFO] Successfully updated MFEA.MI: 2.452 EUR
+2026-03-17T14:24:11.877Z [INFO] Successfully updated MSFT: 400.23 USD
+2026-03-17T14:24:12.357Z [INFO] Successfully updated XCHA.DE: 17.514 EUR
+2026-03-17T14:24:12.709Z [INFO] Successfully updated EURUSD=X: 1.1527377 USD
+2026-03-17T14:24:13.139Z [INFO] Successfully updated AAPL: 254.295 USD
+2026-03-17T14:24:13.142Z [INFO] Market data update cycle completed.
+2026-03-17T14:28:56.343Z [INFO] Updating market data for 45 assets...
+2026-03-17T14:28:56.996Z [INFO] Successfully updated ELV: 299.45 USD
+2026-03-17T14:28:57.600Z [INFO] Successfully updated TDIV.AS: 52.65 EUR
+2026-03-17T14:28:57.989Z [INFO] Successfully updated NOMD: 9.975 USD
+2026-03-17T14:28:58.359Z [INFO] Successfully updated MSF.DE: 346.9 EUR
+2026-03-17T14:28:58.991Z [INFO] Successfully updated CRM: 198.53 USD
+2026-03-17T14:28:59.370Z [INFO] Successfully updated META: 630.41 USD
+2026-03-17T14:28:59.756Z [INFO] Successfully updated ADBE: 258.7301 USD
+2026-03-17T14:29:00.144Z [INFO] Successfully updated UNH: 287.08 USD
+2026-03-17T14:29:00.503Z [INFO] Successfully updated PYPL: 46.635 USD
+2026-03-17T14:29:00.907Z [INFO] Successfully updated BABA: 137.5796 USD
+2026-03-17T14:29:01.284Z [INFO] Successfully updated JD: 28.675 USD
+2026-03-17T14:29:01.558Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T14:29:02.002Z [INFO] Successfully updated NOV.DE: 33.95 EUR
+2026-03-17T14:29:02.452Z [INFO] Successfully updated ABNB: 132.01 USD
+2026-03-17T14:29:02.912Z [INFO] Successfully updated 1ASML.MI: 1204.6 EUR
+2026-03-17T14:29:03.431Z [INFO] Successfully updated FISV: 58.81 USD
+2026-03-17T14:29:03.828Z [INFO] Successfully updated GOOGL: 307.29 USD
+2026-03-17T14:29:04.364Z [INFO] Successfully updated MARA: 9.2199 USD
+2026-03-17T14:29:05.159Z [INFO] Successfully updated MELI: 1728.515 USD
+2026-03-17T14:29:05.677Z [INFO] Successfully updated LULU: 162.1 USD
+2026-03-17T14:29:05.848Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T14:29:06.066Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T14:29:06.425Z [INFO] Successfully updated XEON.DE: 148.639 EUR
+2026-03-17T14:29:06.842Z [INFO] Successfully updated NU: 14.39 USD
+2026-03-17T14:29:07.244Z [INFO] Successfully updated AMD.DE: 171 EUR
+2026-03-17T14:29:07.670Z [INFO] Successfully updated SPM.MI: 3.417 EUR
+2026-03-17T14:29:08.066Z [INFO] Successfully updated HIMS: 24.445 USD
+2026-03-17T14:29:08.559Z [INFO] Successfully updated NEXI.MI: 2.834 EUR
+2026-03-17T14:29:08.998Z [INFO] Successfully updated FCT.MI: 13.17 EUR
+2026-03-17T14:29:09.408Z [INFO] Successfully updated VERE.DE: 55.13 EUR
+2026-03-17T14:29:09.550Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T14:29:09.736Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T14:29:10.122Z [INFO] Successfully updated ASPN: 3.435 USD
+2026-03-17T14:29:10.561Z [INFO] Successfully updated ZTS: 120.9 USD
+2026-03-17T14:29:10.974Z [INFO] Successfully updated PLTR: 155.11 USD
+2026-03-17T14:29:11.442Z [INFO] Successfully updated STMMI.MI: 29.525 EUR
+2026-03-17T14:29:11.836Z [INFO] Successfully updated SRG.MI: 6.554 EUR
+2026-03-17T14:29:12.237Z [INFO] Successfully updated TSLA: 397.65 USD
+2026-03-17T14:29:12.652Z [INFO] Successfully updated AHLA.DE: 119.4 EUR
+2026-03-17T14:29:13.159Z [INFO] Successfully updated MFEA.MI: 2.45 EUR
+2026-03-17T14:29:13.595Z [INFO] Successfully updated MSFT: 400.47 USD
+2026-03-17T14:29:14.308Z [INFO] Successfully updated XCHA.DE: 17.514 EUR
+2026-03-17T14:29:14.717Z [INFO] Successfully updated EURUSD=X: 1.1528707 USD
+2026-03-17T14:29:15.115Z [INFO] Successfully updated AAPL: 254.235 USD
+2026-03-17T14:29:15.118Z [INFO] Market data update cycle completed.
+2026-03-17T14:33:56.350Z [INFO] Updating market data for 45 assets...
+2026-03-17T14:33:57.240Z [INFO] Successfully updated ELV: 299.79 USD
+2026-03-17T14:33:57.951Z [INFO] Successfully updated TDIV.AS: 52.61 EUR
+2026-03-17T14:33:58.495Z [INFO] Successfully updated NOMD: 9.98 USD
+2026-03-17T14:33:58.928Z [INFO] Successfully updated MSF.DE: 346.65 EUR
+2026-03-17T14:33:59.626Z [INFO] Successfully updated CRM: 198.35 USD
+2026-03-17T14:34:00.318Z [INFO] Successfully updated META: 629.76 USD
+2026-03-17T14:34:00.758Z [INFO] Successfully updated ADBE: 258.03 USD
+2026-03-17T14:34:01.140Z [INFO] Successfully updated UNH: 287.25 USD
+2026-03-17T14:34:01.493Z [INFO] Successfully updated PYPL: 46.615 USD
+2026-03-17T14:34:01.958Z [INFO] Successfully updated BABA: 137.77 USD
+2026-03-17T14:34:02.391Z [INFO] Successfully updated JD: 28.685 USD
+2026-03-17T14:34:02.536Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T14:34:03.163Z [INFO] Successfully updated NOV.DE: 33.9 EUR
+2026-03-17T14:34:03.615Z [INFO] Successfully updated ABNB: 132.27 USD
+2026-03-17T14:34:04.043Z [INFO] Successfully updated 1ASML.MI: 1204.2 EUR
+2026-03-17T14:34:04.577Z [INFO] Successfully updated FISV: 59.11 USD
+2026-03-17T14:34:04.955Z [INFO] Successfully updated GOOGL: 307.61 USD
+2026-03-17T14:34:05.318Z [INFO] Successfully updated MARA: 9.245 USD
+2026-03-17T14:34:05.659Z [INFO] Successfully updated MELI: 1726.15 USD
+2026-03-17T14:34:06.032Z [INFO] Successfully updated LULU: 162.28 USD
+2026-03-17T14:34:06.249Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T14:34:06.401Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T14:34:06.757Z [INFO] Successfully updated XEON.DE: 148.64 EUR
+2026-03-17T14:34:07.150Z [INFO] Successfully updated NU: 14.35 USD
+2026-03-17T14:34:07.491Z [INFO] Successfully updated AMD.DE: 171.54 EUR
+2026-03-17T14:34:07.944Z [INFO] Successfully updated SPM.MI: 3.416 EUR
+2026-03-17T14:34:08.340Z [INFO] Successfully updated HIMS: 24.7601 USD
+2026-03-17T14:34:08.709Z [INFO] Successfully updated NEXI.MI: 2.825 EUR
+2026-03-17T14:34:09.162Z [INFO] Successfully updated FCT.MI: 13.15 EUR
+2026-03-17T14:34:09.547Z [INFO] Successfully updated VERE.DE: 55.13 EUR
+2026-03-17T14:34:09.706Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T14:34:09.871Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T14:34:10.363Z [INFO] Successfully updated ASPN: 3.46 USD
+2026-03-17T14:34:10.803Z [INFO] Successfully updated ZTS: 121.32 USD
+2026-03-17T14:34:11.240Z [INFO] Successfully updated PLTR: 155.175 USD
+2026-03-17T14:34:11.637Z [INFO] Successfully updated STMMI.MI: 29.585 EUR
+2026-03-17T14:34:12.095Z [INFO] Successfully updated SRG.MI: 6.554 EUR
+2026-03-17T14:34:12.551Z [INFO] Successfully updated TSLA: 398.5299 USD
+2026-03-17T14:34:13.144Z [INFO] Successfully updated AHLA.DE: 119.4 EUR
+2026-03-17T14:34:13.803Z [INFO] Successfully updated MFEA.MI: 2.458 EUR
+2026-03-17T14:34:14.286Z [INFO] Successfully updated MSFT: 400.2224 USD
+2026-03-17T14:34:14.835Z [INFO] Successfully updated XCHA.DE: 17.514 EUR
+2026-03-17T14:34:15.426Z [INFO] Successfully updated EURUSD=X: 1.1528707 USD
+2026-03-17T14:34:15.829Z [INFO] Successfully updated AAPL: 254.805 USD
+2026-03-17T14:34:15.831Z [INFO] Market data update cycle completed.
+2026-03-17T14:38:56.358Z [INFO] Updating market data for 45 assets...
+2026-03-17T14:38:57.079Z [INFO] Successfully updated ELV: 299.53 USD
+2026-03-17T14:38:57.740Z [INFO] Successfully updated TDIV.AS: 52.62 EUR
+2026-03-17T14:38:58.132Z [INFO] Successfully updated NOMD: 10 USD
+2026-03-17T14:38:58.448Z [INFO] Successfully updated MSF.DE: 346.9 EUR
+2026-03-17T14:38:58.802Z [INFO] Successfully updated CRM: 197.52 USD
+2026-03-17T14:38:59.193Z [INFO] Successfully updated META: 629.215 USD
+2026-03-17T14:38:59.554Z [INFO] Successfully updated ADBE: 256.595 USD
+2026-03-17T14:38:59.900Z [INFO] Successfully updated UNH: 286.55 USD
+2026-03-17T14:39:00.218Z [INFO] Successfully updated PYPL: 46.335 USD
+2026-03-17T14:39:00.778Z [INFO] Successfully updated BABA: 137.8 USD
+2026-03-17T14:39:01.185Z [INFO] Successfully updated JD: 28.645 USD
+2026-03-17T14:39:01.304Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T14:39:01.648Z [INFO] Successfully updated NOV.DE: 33.93 EUR
+2026-03-17T14:39:02.002Z [INFO] Successfully updated ABNB: 131.88 USD
+2026-03-17T14:39:02.346Z [INFO] Successfully updated 1ASML.MI: 1205.4 EUR
+2026-03-17T14:39:02.675Z [INFO] Successfully updated FISV: 58.855 USD
+2026-03-17T14:39:03.049Z [INFO] Successfully updated GOOGL: 307.18 USD
+2026-03-17T14:39:04.422Z [INFO] Successfully updated MARA: 9.2399 USD
+2026-03-17T14:39:04.847Z [INFO] Successfully updated MELI: 1720.85 USD
+2026-03-17T14:39:05.315Z [INFO] Successfully updated LULU: 162.02 USD
+2026-03-17T14:39:05.450Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T14:39:05.666Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T14:39:06.034Z [INFO] Successfully updated XEON.DE: 148.64 EUR
+2026-03-17T14:39:06.474Z [INFO] Successfully updated NU: 14.335 USD
+2026-03-17T14:39:06.827Z [INFO] Successfully updated AMD.DE: 171.76 EUR
+2026-03-17T14:39:07.273Z [INFO] Successfully updated SPM.MI: 3.416 EUR
+2026-03-17T14:39:07.627Z [INFO] Successfully updated HIMS: 24.7001 USD
+2026-03-17T14:39:08.031Z [INFO] Successfully updated NEXI.MI: 2.819 EUR
+2026-03-17T14:39:08.384Z [INFO] Successfully updated FCT.MI: 13.12 EUR
+2026-03-17T14:39:08.748Z [INFO] Successfully updated VERE.DE: 55.13 EUR
+2026-03-17T14:39:08.897Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T14:39:09.020Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T14:39:09.520Z [INFO] Successfully updated ASPN: 3.475 USD
+2026-03-17T14:39:09.858Z [INFO] Successfully updated ZTS: 121.2 USD
+2026-03-17T14:39:10.238Z [INFO] Successfully updated PLTR: 155.178 USD
+2026-03-17T14:39:10.671Z [INFO] Successfully updated STMMI.MI: 29.57 EUR
+2026-03-17T14:39:10.984Z [INFO] Successfully updated SRG.MI: 6.554 EUR
+2026-03-17T14:39:11.312Z [INFO] Successfully updated TSLA: 398.32 USD
+2026-03-17T14:39:11.707Z [INFO] Successfully updated AHLA.DE: 119.6 EUR
+2026-03-17T14:39:12.073Z [INFO] Successfully updated MFEA.MI: 2.462 EUR
+2026-03-17T14:39:12.428Z [INFO] Successfully updated MSFT: 399.37 USD
+2026-03-17T14:39:12.983Z [INFO] Successfully updated XCHA.DE: 17.514 EUR
+2026-03-17T14:39:13.565Z [INFO] Successfully updated EURUSD=X: 1.1528707 USD
+2026-03-17T14:39:13.896Z [INFO] Successfully updated AAPL: 254.46 USD
+2026-03-17T14:39:13.898Z [INFO] Market data update cycle completed.
+2026-03-17T14:43:56.387Z [INFO] Updating market data for 45 assets...
+2026-03-17T14:43:57.147Z [INFO] Successfully updated ELV: 299.63 USD
+2026-03-17T14:43:57.671Z [INFO] Successfully updated TDIV.AS: 52.58 EUR
+2026-03-17T14:43:58.028Z [INFO] Successfully updated NOMD: 10.025 USD
+2026-03-17T14:43:58.417Z [INFO] Successfully updated MSF.DE: 347.4 EUR
+2026-03-17T14:43:58.799Z [INFO] Successfully updated CRM: 197.825 USD
+2026-03-17T14:43:59.243Z [INFO] Successfully updated META: 630.41 USD
+2026-03-17T14:43:59.728Z [INFO] Successfully updated ADBE: 255.92 USD
+2026-03-17T14:44:00.218Z [INFO] Successfully updated UNH: 287.655 USD
+2026-03-17T14:44:00.570Z [INFO] Successfully updated PYPL: 46.245 USD
+2026-03-17T14:44:01.591Z [INFO] Successfully updated BABA: 138.2 USD
+2026-03-17T14:44:02.532Z [INFO] Successfully updated JD: 28.706 USD
+2026-03-17T14:44:02.689Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T14:44:03.204Z [INFO] Successfully updated NOV.DE: 33.92 EUR
+2026-03-17T14:44:03.803Z [INFO] Successfully updated ABNB: 132.225 USD
+2026-03-17T14:44:04.387Z [INFO] Successfully updated 1ASML.MI: 1204.6 EUR
+2026-03-17T14:44:04.758Z [INFO] Successfully updated FISV: 58.95 USD
+2026-03-17T14:44:05.139Z [INFO] Successfully updated GOOGL: 307.33 USD
+2026-03-17T14:44:05.748Z [INFO] Successfully updated MARA: 9.235 USD
+2026-03-17T14:44:06.170Z [INFO] Successfully updated MELI: 1719.93 USD
+2026-03-17T14:44:06.574Z [INFO] Successfully updated LULU: 162.43 USD
+2026-03-17T14:44:06.782Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T14:44:06.931Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T14:44:07.466Z [INFO] Successfully updated XEON.DE: 148.651 EUR
+2026-03-17T14:44:07.808Z [INFO] Successfully updated NU: 14.3901 USD
+2026-03-17T14:44:08.180Z [INFO] Successfully updated AMD.DE: 172.04 EUR
+2026-03-17T14:44:08.613Z [INFO] Successfully updated SPM.MI: 3.412 EUR
+2026-03-17T14:44:09.041Z [INFO] Successfully updated HIMS: 24.77 USD
+2026-03-17T14:44:09.421Z [INFO] Successfully updated NEXI.MI: 2.824 EUR
+2026-03-17T14:44:09.854Z [INFO] Successfully updated FCT.MI: 13.1 EUR
+2026-03-17T14:44:10.329Z [INFO] Successfully updated VERE.DE: 55.13 EUR
+2026-03-17T14:44:10.478Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T14:44:10.608Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T14:44:10.998Z [INFO] Successfully updated ASPN: 3.465 USD
+2026-03-17T14:44:11.424Z [INFO] Successfully updated ZTS: 121.32 USD
+2026-03-17T14:44:11.894Z [INFO] Successfully updated PLTR: 155.82 USD
+2026-03-17T14:44:12.251Z [INFO] Successfully updated STMMI.MI: 29.52 EUR
+2026-03-17T14:44:12.734Z [INFO] Successfully updated SRG.MI: 6.56 EUR
+2026-03-17T14:44:13.083Z [INFO] Successfully updated TSLA: 399.5 USD
+2026-03-17T14:44:13.447Z [INFO] Successfully updated AHLA.DE: 119.6 EUR
+2026-03-17T14:44:15.093Z [INFO] Successfully updated MFEA.MI: 2.462 EUR
+2026-03-17T14:44:15.576Z [INFO] Successfully updated MSFT: 399.21 USD
+2026-03-17T14:44:16.083Z [INFO] Successfully updated XCHA.DE: 17.524 EUR
+2026-03-17T14:44:16.456Z [INFO] Successfully updated EURUSD=X: 1.1534026 USD
+2026-03-17T14:44:16.857Z [INFO] Successfully updated AAPL: 254.48 USD
+2026-03-17T14:44:16.859Z [INFO] Market data update cycle completed.
+2026-03-17T14:48:56.394Z [INFO] Updating market data for 45 assets...
+2026-03-17T14:48:56.978Z [INFO] Successfully updated ELV: 299.82 USD
+2026-03-17T14:48:57.650Z [INFO] Successfully updated TDIV.AS: 52.66 EUR
+2026-03-17T14:48:58.087Z [INFO] Successfully updated NOMD: 10 USD
+2026-03-17T14:48:58.613Z [INFO] Successfully updated MSF.DE: 347.4 EUR
+2026-03-17T14:48:59.011Z [INFO] Successfully updated CRM: 197.84 USD
+2026-03-17T14:48:59.455Z [INFO] Successfully updated META: 630.55 USD
+2026-03-17T14:48:59.820Z [INFO] Successfully updated ADBE: 256.005 USD
+2026-03-17T14:49:00.212Z [INFO] Successfully updated UNH: 287.855 USD
+2026-03-17T14:49:00.609Z [INFO] Successfully updated PYPL: 46.335 USD
+2026-03-17T14:49:01.365Z [INFO] Successfully updated BABA: 137.99 USD
+2026-03-17T14:49:01.723Z [INFO] Successfully updated JD: 28.705 USD
+2026-03-17T14:49:01.931Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-17T14:49:02.431Z [INFO] Successfully updated NOV.DE: 33.895 EUR
+2026-03-17T14:49:02.801Z [INFO] Successfully updated ABNB: 132.14 USD
+2026-03-17T14:49:03.205Z [INFO] Successfully updated 1ASML.MI: 1204.6 EUR
+2026-03-17T14:49:03.645Z [INFO] Successfully updated FISV: 59.0549 USD
+2026-03-17T14:49:04.046Z [INFO] Successfully updated GOOGL: 307.23 USD
+2026-03-17T14:49:04.538Z [INFO] Successfully updated MARA: 9.265 USD
+2026-03-17T14:49:04.925Z [INFO] Successfully updated MELI: 1715.42 USD
+2026-03-17T14:49:05.281Z [INFO] Successfully updated LULU: 162.62 USD
+2026-03-17T14:49:05.401Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-17T14:49:05.527Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-17T14:49:05.953Z [INFO] Successfully updated XEON.DE: 148.638 EUR
+2026-03-17T14:49:06.322Z [INFO] Successfully updated NU: 14.395 USD
+2026-03-17T14:49:06.695Z [INFO] Successfully updated AMD.DE: 171.7 EUR
+2026-03-17T14:49:07.338Z [INFO] Successfully updated SPM.MI: 3.41 EUR
+2026-03-17T14:49:07.841Z [INFO] Successfully updated HIMS: 24.76 USD
+2026-03-17T14:49:08.241Z [INFO] Successfully updated NEXI.MI: 2.833 EUR
+2026-03-17T14:49:08.955Z [INFO] Successfully updated FCT.MI: 13.09 EUR
+2026-03-17T14:49:09.293Z [INFO] Successfully updated VERE.DE: 55.13 EUR
+2026-03-17T14:49:09.413Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-17T14:49:09.630Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-17T14:49:09.997Z [INFO] Successfully updated ASPN: 3.485 USD
+2026-03-17T14:49:10.414Z [INFO] Successfully updated ZTS: 121.555 USD
+2026-03-17T14:49:10.875Z [INFO] Successfully updated PLTR: 156.185 USD
+2026-03-17T14:49:11.442Z [INFO] Successfully updated STMMI.MI: 29.58 EUR
+2026-03-17T14:49:11.814Z [INFO] Successfully updated SRG.MI: 6.564 EUR
+2026-03-17T14:49:12.286Z [INFO] Successfully updated TSLA: 399.895 USD
+2026-03-17T14:49:12.765Z [INFO] Successfully updated AHLA.DE: 119.4 EUR
+2026-03-17T14:49:13.134Z [INFO] Successfully updated MFEA.MI: 2.464 EUR
+2026-03-17T14:49:13.466Z [INFO] Successfully updated MSFT: 399.43 USD
+2026-03-17T14:49:14.036Z [INFO] Successfully updated XCHA.DE: 17.524 EUR
+2026-03-17T14:49:14.525Z [INFO] Successfully updated EURUSD=X: 1.153935 USD
+2026-03-17T14:49:15.039Z [INFO] Successfully updated AAPL: 254.6251 USD
+2026-03-17T14:49:15.042Z [INFO] Market data update cycle completed.

@@ -74,38 +74,44 @@
             const wRes = await fetch(`/api/watchlist?t=${Date.now()}`);
             const watchlist = await wRes.json();
 
-            let html = '<div class="px-2 pt-2 pb-4 space-y-6">';
+            let html = '<div class="px-2 pt-2 pb-4 space-y-5">';
 
-            // 1. Compact Row: EUR/USD + Portfolio Icons
-            html += `<div class="flex items-center gap-3">
-                ${exData && exData.rate ? `
-                <div class="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800/60 shrink-0 shadow-sm">
-                    <span class="text-[8px] font-black text-slate-400 uppercase tracking-tighter">€/$</span>
-                    <span class="text-[10px] font-black font-mono text-primary">${parseFloat(exData.rate).toFixed(4)}</span>
-                </div>` : ''}
-
-                <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-                    ${portfolios.map(p => {
-                        const bg = p.currency === 'EUR' ? 'bg-emerald-500' : 'bg-blue-500';
-                        return `
-                        <a href="/portfolio?id=${p.id}" 
-                           title="${p.name} (${p.currency})"
-                           class="w-7 h-7 rounded-lg ${bg} flex items-center justify-center text-[11px] font-black text-white transition-all transform hover:scale-110 shadow-sm hover:shadow-lg shrink-0">
-                            ${p.name.charAt(0).toUpperCase()}
-                        </a>`;
-                    }).join('')}
-                    <button onclick="window.location.href='/portfolio'" 
-                            title="Manage Portfolios"
-                            class="w-7 h-7 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center text-slate-400 hover:border-primary hover:text-primary transition-all hover:bg-primary/5 shrink-0">
-                        <span class="material-symbols-outlined text-sm">add</span>
-                    </button>
-                </div>
+            // 1. Portfolio Icons Row (Dedicated Top Row)
+            html += `
+            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+                ${portfolios.map(p => {
+                    const bgColor = p.color || (p.currency === 'EUR' ? '#10b981' : '#3b82f6');
+                    return `
+                    <a href="/portfolio?id=${p.id}" 
+                       title="${p.name} (${p.currency})"
+                       style="background-color: ${bgColor}"
+                       class="w-8 h-8 rounded-lg flex items-center justify-center text-[12px] font-black text-white transition-all transform hover:scale-110 shadow-sm hover:shadow-lg shrink-0">
+                        ${p.name.charAt(0).toUpperCase()}
+                    </a>`;
+                }).join('')}
+                <button onclick="window.location.href='/portfolio'" 
+                        title="Manage Portfolios"
+                        class="w-8 h-8 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center text-slate-400 hover:border-primary hover:text-primary transition-all hover:bg-primary/5 shrink-0">
+                    <span class="material-symbols-outlined text-sm">add</span>
+                </button>
             </div>`;
 
-            // 2. Watchlist Section
+            // 2. EUR/USD Row (Restored Standalone Style)
+            if (exData && exData.rate) {
+                html += `
+                <div class="px-3 py-2 rounded-xl bg-slate-100/50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800/60 flex items-center justify-between shadow-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-xs text-primary">currency_exchange</span>
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">EUR / USD</span>
+                    </div>
+                    <span class="text-[11px] font-black font-mono text-primary">${parseFloat(exData.rate).toFixed(4)}</span>
+                </div>`;
+            }
+
+            // 3. Watchlist Section
             if (watchlist && watchlist.length >= 0) {
                 html += `
-                <div class="space-y-4">
+                <div class="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800/60">
                     <div class="flex items-center justify-between px-1">
                         <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400/80">Watchlist</p>
                         <button onclick="toggleWatchlistSearch()" class="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-primary transition-colors">
