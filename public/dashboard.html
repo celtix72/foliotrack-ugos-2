@@ -119,18 +119,47 @@
 <!-- Main Content Scroll Area -->
 <main class="flex-1 overflow-y-auto custom-scrollbar bg-slate-50/50 dark:bg-[#0b0f1a]">
     <div class="px-8 pt-8 pb-4">
-        <div class="flex items-center justify-between">
-            <div class="space-y-1">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <span class="w-1.5 h-1.5 rounded-full bg-primary"></span> Global Summary
-                </p>
-                <div class="flex items-center gap-4">
-                    <h2 id="total-net-worth" class="text-4xl font-black tracking-tight">€0.00</h2>
-                    <div id="networth-privacy-toggle"></div>
+        <div class="flex flex-col xl:flex-row items-start xl:items-end justify-between gap-6">
+            <div class="flex flex-wrap items-center gap-8 lg:gap-12">
+                <!-- NETTO -->
+                <div class="space-y-1">
+                    <p class="text-[10px] font-bold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-primary"></span> NETTO
+                    </p>
+                    <div class="flex items-center gap-3">
+                        <h2 id="total-net-worth" class="text-4xl font-black tracking-tight text-slate-900 dark:text-white">€0</h2>
+                        <div id="networth-privacy-toggle"></div>
+                    </div>
+                </div>
+                
+                <!-- divider -->
+                <div class="hidden xl:block w-px h-12 bg-slate-200 dark:bg-slate-800"></div>
+
+                <!-- LORDO -->
+                <div class="space-y-1">
+                    <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        LORDO
+                    </p>
+                    <div class="flex items-center gap-2">
+                        <h3 id="total-gross-worth" class="text-xl font-bold tracking-tight text-slate-600 dark:text-slate-400">€0</h3>
+                        <div id="gross-privacy-toggle"></div>
+                    </div>
+                </div>
+
+                <!-- TAX -->
+                <div class="space-y-1">
+                    <p class="text-[10px] font-bold text-rose-500/80 uppercase tracking-widest flex items-center gap-2">
+                        TAX (Est.)
+                    </p>
+                    <div class="flex items-center gap-2">
+                        <h3 id="total-tax-amount" class="text-xl font-bold tracking-tight text-rose-500/80">€0</h3>
+                        <div id="tax-privacy-toggle"></div>
+                    </div>
                 </div>
             </div>
+
             <div id="total-perf-container" class="opacity-0 transition-opacity duration-500">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 text-right">Day Var</p>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 xl:text-right">Day Var</p>
                 <div id="info-day-var" class="flex items-center gap-2">
                     <!-- Populated by JS -->
                 </div>
@@ -216,11 +245,17 @@
             const res = await fetch('/api/portfolios');
             const data = await res.json();
             const portfolios = data.portfolios || [];
-            const globalData = data.global || { totalValue: 0, changePercent: 0 };
+            const globalData = data.global || { totalValue: 0, totalNetValue: 0, totalTax: 0, changePercent: 0 };
             window._dashboardData = data; // Cache data for privacy toggles
             
-            document.getElementById('total-net-worth').innerText = formatPrivacy(globalData.totalValue, 'EUR', 'networth');
+            document.getElementById('total-net-worth').innerText = formatPrivacy(globalData.totalNetValue, 'EUR', 'networth');
             document.getElementById('networth-privacy-toggle').innerHTML = getPrivacyIcon('networth');
+
+            document.getElementById('total-gross-worth').innerText = formatPrivacy(globalData.totalValue, 'EUR', 'gross');
+            document.getElementById('gross-privacy-toggle').innerHTML = getPrivacyIcon('gross');
+
+            document.getElementById('total-tax-amount').innerText = formatPrivacy(globalData.totalTax, 'EUR', 'tax');
+            document.getElementById('tax-privacy-toggle').innerHTML = getPrivacyIcon('tax');
             
             const infoDayVar = document.getElementById('info-day-var');
             if (infoDayVar) {
@@ -256,7 +291,8 @@
                             </div>
                              <div class="text-right flex items-center gap-3">
                                 <div>
-                                    <p class="text-sm font-bold">${formatPrivacy(p.totalValue, p.currency, 'p-' + p.id)}</p>
+                                    <p class="text-sm font-black text-primary">${formatPrivacy(p.netValue || p.totalValue, p.currency, 'p-' + p.id)}</p>
+                                    <p class="text-[10px] text-slate-500 font-bold">Lordo: ${formatPrivacy(p.totalValue, p.currency, 'p-' + p.id)}</p>
                                     <p class="${isPos ? 'text-emerald-500' : 'text-rose-500'} text-[10px] font-bold">
                                         ${isPos ? '▲' : '▼'} ${Math.abs(p.changePercent).toFixed(2)}%
                                     </p>

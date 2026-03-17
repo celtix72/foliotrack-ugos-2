@@ -696,13 +696,15 @@ app.get('/api/portfolios', async (req, res) => {
             }
         }
 
-        // 2. Calculate Per-Portfolio Variation
+        // 2. Calculate Totals including Taxes
+        let totalGrossValue = 0;
+        let totalTax = 0;
+
         for (const p of rows) {
             const pPoints = await calculatePerformanceHistory([p.id], '1W');
             if (pPoints.length > 0) {
                 const lastP = pPoints[pPoints.length - 1];
-                p.totalValue = lastP.value; // Updates to latest calculated value
-                
+                p.totalValue = lastP.value;
                 if (pPoints.length > 1) {
                     const prevP = pPoints[pPoints.length - 2];
                     p.changeValue = lastP.value - prevP.value;
@@ -715,12 +717,22 @@ app.get('/api/portfolios', async (req, res) => {
                 p.changeValue = 0;
                 p.changePercent = 0;
             }
+
+            // Calculate tax for this portfolio
+            const details = await getPortfolioDetails(p, liveRate);
+            p.totalTax = details.totalLatentTax;
+            p.netValue = p.totalValue - p.totalTax;
+            
+            totalGrossValue += p.totalValue;
+            totalTax += p.totalTax;
         }
 
         res.json({
             portfolios: rows,
             global: {
-                totalValue: globalTotalValue,
+                totalValue: totalGrossValue,
+                totalNetValue: totalGrossValue - totalTax,
+                totalTax: totalTax,
                 changePercent: globalChangePercent,
                 changeValue: globalChangeValue
             }
@@ -731,10 +743,16 @@ app.get('/api/portfolios', async (req, res) => {
 });
 
 // Helper to calculate holdings for a portfolio
-async function calculateHoldings(portfolio, transactions, liveRate) {
+async function getPortfolioDetails(portfolio, liveRate) {
+    const portfolioId = portfolio.id;
+    const transactions = database.db.prepare(`
+        SELECT * FROM transactions WHERE portfolioId = ? ORDER BY date ASC
+    `).all(portfolioId);
+
+    // FIFO lots per ticker
     const lots        = {};   
     const openMap     = {};   
-
+    
     for (const t of transactions) {
         const qty    = t.quantity     || 0;
         const price  = t.price        || 0;
@@ -782,15 +800,57 @@ async function calculateHoldings(portfolio, transactions, liveRate) {
             const rate = (asset && asset.currency === 'USD' && portfolio.currency === 'EUR') ? liveRate : 1;
             const curPxP = (asset && asset.currency !== portfolio.currency) ? curPx / rate : curPx;
             const curVal = h.shares * curPxP;
+            const uGain  = curVal - h.totalCostInPCurr;
             return {
-                ticker, 
-                shares: h.shares,
+                ticker, shares: h.shares,
                 type: asset ? asset.type : 'Stock',
                 currentValue: curVal,
+                unrealizedGain: uGain,
                 currency: portfolio.currency
             };
         });
-    return holdings;
+
+    const taxRates = database.db.prepare(`SELECT asset_type, rate FROM tax_rates`).all();
+    const trMap = {};
+    taxRates.forEach(r => trMap[r.asset_type] = r.rate);
+
+    const losses = database.db.prepare(`SELECT asset_type, amount FROM portfolio_losses WHERE portfolioId = ?`).all(portfolioId);
+    const lossMap = {};
+    losses.forEach(l => lossMap[l.asset_type] = l.amount);
+
+    const aggregateGains = {};
+    holdings.forEach(h => {
+        if (!aggregateGains[h.type]) aggregateGains[h.type] = { unrealized: 0 };
+        aggregateGains[h.type].unrealized += h.unrealizedGain;
+    });
+
+    let totalLatentTax = 0;
+    const taxBreakdown = Object.entries(aggregateGains).map(([type, gains]) => {
+        const grossGain = gains.unrealized;
+        const minusvalenze = lossMap[type] || 0;
+        const taxableGain = Math.max(0, grossGain - minusvalenze);
+        const rate = trMap[type] || 26;
+        const tax = (taxableGain * rate) / 100;
+        const netGain = grossGain - tax;
+        totalLatentTax += tax;
+        return {
+            type,
+            grossGain: Math.round(grossGain * 100) / 100,
+            minusvalenze: Math.round(minusvalenze * 100) / 100,
+            taxableGain: Math.round(taxableGain * 100) / 100,
+            rate,
+            tax: Math.round(tax * 100) / 100,
+            netGain: Math.round(netGain * 100) / 100
+        };
+    }).filter(b => b.grossGain !== 0 || b.minusvalenze !== 0);
+
+    return {
+        holdings,
+        totalLatentTax,
+        taxBreakdown,
+        totalValue: portfolio.totalValue,
+        netValue: portfolio.totalValue - totalLatentTax
+    };
 }
 
 app.get('/api/analytics/global-allocation', async (req, res) => {
@@ -801,8 +861,8 @@ app.get('/api/analytics/global-allocation', async (req, res) => {
         let totalValue = 0;
 
         for (const p of portfolios) {
-            const transactions = database.db.prepare('SELECT * FROM transactions WHERE portfolioId = ?').all(p.id);
-            const holdings = await calculateHoldings(p, transactions, liveRate);
+            const details = await getPortfolioDetails(p, liveRate);
+            const holdings = details.holdings;
             
             // For global, we assume all portfolios are in the same base for visualization (e.g. EUR)
             // If they are in different currencies, we'd need FX conversion here.
