@@ -761,7 +761,7 @@ async function getPortfolioDetails(portfolio, liveRate) {
         const fx     = t.exchangeRate || 1;
 
         if (t.type === 'BUY' && t.assetTicker) {
-            const totalCost    = (qty * price + comm + tax) / fx;
+            const totalCost    = (t.amount || (qty * price + comm + tax)) / fx;
             const costPerShare = qty > 0 ? totalCost / qty : 0;
             if (!lots[t.assetTicker])    lots[t.assetTicker] = [];
             if (!openMap[t.assetTicker]) openMap[t.assetTicker] = { shares: 0, totalCostInPCurr: 0 };
@@ -1936,7 +1936,7 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                             ticker: ticker, 
                             assetName: assetMeta ? assetMeta.name : ticker,
                             portfolioName: p.name, 
-                            amount: amount || ((t.quantity || 0) * (t.price || 0)) 
+                            amount: t.amount || ((t.quantity || 0) * (t.price || 0)) 
                         });
                     }
                     // We still need to update holdings state to keep it consistent if manual record missing for next day
@@ -1946,13 +1946,17 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                         case 'WITHDRAWAL': state.cash -= amount; break;
                         case 'TAX':        state.cash -= amount; break;
                         case 'TRANSFER':   state.cash -= amount; break;
-                        case 'DIVIDEND':   state.cash += (amount || (qty * price - comm - tax)) / fx; break;
+                        case 'DIVIDEND': {
+                            const divAmt = (t.amount || (qty * price - comm - tax)) / fx;
+                            state.cash += divAmt; 
+                            break;
+                        }
                         case 'BUY':
-                            state.cash -= (qty * price + comm + tax) / fx;
+                            state.cash -= (t.amount || (qty * price + comm + tax)) / fx;
                             state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) + qty;
                             break;
                         case 'SELL':
-                            state.cash += (qty * price - comm - tax) / fx;
+                            state.cash += (t.amount || (qty * price - comm - tax)) / fx;
                             state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) - qty;
                             break;
                     }
@@ -1979,7 +1983,7 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                             ticker: ticker, 
                             assetName: assetMeta ? assetMeta.name : ticker,
                             portfolioName: p.name, 
-                            amount: amount || (qty * price) 
+                            amount: t.amount || (qty * price) 
                         });
                     }
                     switch (t.type) {
@@ -2057,7 +2061,9 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                             } else if (availableFxDates.length > 0) {
                                 rate = fxRates['USD'][availableFxDates[0]];
                             } else {
-                                rate = 1;
+                                // Last resort fallback to live rate or 1
+                                const live = await getEurUsdRate();
+                                rate = live || 1;
                             }
                         }
                     } else if (aCurr !== p.currency) {
