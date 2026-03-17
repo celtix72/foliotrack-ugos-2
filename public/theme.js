@@ -74,59 +74,69 @@
             const wRes = await fetch(`/api/watchlist?t=${Date.now()}`);
             const watchlist = await wRes.json();
 
-            let html = '';
-            if (exData && exData.rate) {
-                html += `<div class="px-3 py-2 mb-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800/60 flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <span class="material-symbols-outlined text-xs text-primary">currency_exchange</span>
-                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">EUR / USD</span>
-                    </div>
-                    <span class="text-[11px] font-bold font-mono text-primary">${parseFloat(exData.rate).toFixed(4)}</span>
-                </div><div class="h-[1px] bg-slate-100 dark:bg-slate-800 mx-3 mb-2"></div>`;
-            }
-            html += portfolios.map(p => `
-                <a href="/portfolio?id=${p.id}" class="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group">
-                    <div class="flex items-center gap-3">
-                        <div class="w-1.5 h-1.5 rounded-full bg-${p.currency === 'EUR' ? 'emerald' : 'blue'}-500"></div>
-                        <span class="text-sm font-medium text-slate-700 dark:text-slate-300 truncate max-w-[140px]">${p.name}</span>
-                    </div>
-                    <span class="text-[10px] text-slate-500 group-hover:text-slate-400 font-bold uppercase transition-colors shrink-0">${p.currency}</span>
-                </a>`).join('');
+            let html = '<div class="px-2 pt-2 pb-4 space-y-6">';
 
+            // 1. Compact Row: EUR/USD + Portfolio Icons
+            html += `<div class="flex items-center gap-3">
+                ${exData && exData.rate ? `
+                <div class="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800/60 shrink-0 shadow-sm">
+                    <span class="text-[8px] font-black text-slate-400 uppercase tracking-tighter">€/$</span>
+                    <span class="text-[10px] font-black font-mono text-primary">${parseFloat(exData.rate).toFixed(4)}</span>
+                </div>` : ''}
+
+                <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                    ${portfolios.map(p => {
+                        const bg = p.currency === 'EUR' ? 'bg-emerald-500' : 'bg-blue-500';
+                        return `
+                        <a href="/portfolio?id=${p.id}" 
+                           title="${p.name} (${p.currency})"
+                           class="w-7 h-7 rounded-lg ${bg} flex items-center justify-center text-[11px] font-black text-white transition-all transform hover:scale-110 shadow-sm hover:shadow-lg shrink-0">
+                            ${p.name.charAt(0).toUpperCase()}
+                        </a>`;
+                    }).join('')}
+                    <button onclick="window.location.href='/portfolio'" 
+                            title="Manage Portfolios"
+                            class="w-7 h-7 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center text-slate-400 hover:border-primary hover:text-primary transition-all hover:bg-primary/5 shrink-0">
+                        <span class="material-symbols-outlined text-sm">add</span>
+                    </button>
+                </div>
+            </div>`;
+
+            // 2. Watchlist Section
             if (watchlist && watchlist.length >= 0) {
                 html += `
-                <div class="mt-6 pt-4 border-t border-slate-200 dark:border-slate-800">
-                    <div class="flex items-center justify-between px-3 mb-3">
-                        <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Watchlist</p>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between px-1">
+                        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400/80">Watchlist</p>
                         <button onclick="toggleWatchlistSearch()" class="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-primary transition-colors">
                             <span class="material-symbols-outlined text-sm">add</span>
                         </button>
                     </div>
                     
                     <!-- Search Container -->
-                    <div id="watchlist-search-container" class="hidden px-3 mb-4 space-y-2">
+                    <div id="watchlist-search-container" class="hidden space-y-2">
                         <div class="relative">
                             <input type="text" id="watchlist-search-input" 
-                                   placeholder="Search ticker or name..." 
-                                   class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-[10px] focus:outline-none focus:ring-1 focus:ring-primary/50"
+                                   placeholder="Ticker or Name..." 
+                                   class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-[10px] focus:outline-none focus:ring-2 focus:ring-primary/20"
                                    onkeyup="searchAssetsWatchlist(this.value)">
                             <button onclick="toggleWatchlistSearch()" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-rose-500">
                                 <span class="material-symbols-outlined text-xs">close</span>
                             </button>
                         </div>
-                        <div id="watchlist-search-results" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden hidden shadow-xl max-h-48 overflow-y-auto custom-scrollbar"></div>
+                        <div id="watchlist-search-results" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden hidden shadow-2xl max-h-48 overflow-y-auto custom-scrollbar"></div>
                     </div>
 
                     <div class="space-y-1">`
-                + (watchlist.length === 0 ? `<p class="px-3 text-[10px] text-slate-500 italic">No assets pinned.</p>` : watchlist.map(a => `
-                    <div class="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 group relative transition-colors">
+                + (watchlist.length === 0 ? `<p class="px-1 text-[10px] text-slate-500 italic">No assets pinned.</p>` : watchlist.map(a => `
+                    <div class="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/60 group relative transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-800 shadow-sm hover:shadow-md">
                         <div class="flex flex-col overflow-hidden">
-                            <span class="text-xs font-bold leading-tight truncate max-w-[100px]">${a.ticker}</span>
-                            <span class="text-[9px] text-slate-500 truncate max-w-[100px]">${a.name}</span>
+                            <span class="text-[11px] font-black leading-tight truncate max-w-[80px] text-slate-900 dark:text-white">${a.ticker}</span>
+                            <span class="text-[9px] text-slate-500 truncate max-w-[80px] font-bold">${a.name}</span>
                         </div>
                         <div class="text-right flex flex-col items-end">
-                            <p class="text-[11px] font-bold">${formatCurrency(a.currentPrice, a.currency || 'USD')}</p>
-                            <p class="text-[10px] font-bold ${a.changePercent >= 0 ? 'text-emerald-500' : 'text-rose-500'}">
+                            <p class="text-[11px] font-black font-mono leading-none mb-1">${formatCurrency(a.currentPrice, a.currency || 'USD')}</p>
+                            <p class="text-[10px] font-black font-mono ${a.changePercent >= 0 ? 'text-emerald-500' : 'text-rose-500'}">
                                 ${a.changePercent >= 0 ? '+' : ''}${a.changePercent.toFixed(2)}%
                             </p>
                         </div>
@@ -135,6 +145,7 @@
                         </button>
                     </div>`).join('')) + `</div></div>`;
             }
+            html += '</div>';
             container.innerHTML = html;
         } finally { _sidebarLoading = false; }
     }
