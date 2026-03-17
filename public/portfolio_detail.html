@@ -183,6 +183,27 @@
             </button>
         </div>
     </div>
+    <!-- Latent Taxation Summary -->
+    <div id="latent-taxation-section" class="hidden">
+        <div class="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-6 shadow-sm">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                        <span class="material-symbols-outlined text-2xl">account_balance_wallet</span>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600/60 mb-1">Estimated Latent Taxation</p>
+                        <p class="text-2xl font-black text-emerald-600"><span id="total-latent-tax-label">0.00</span> <span class="text-sm font-bold opacity-60" id="tax-currency-label">EUR</span></p>
+                    </div>
+                </div>
+                <div id="tax-breakdown-container" class="flex flex-wrap gap-4 md:border-l border-emerald-500/10 md:pl-8">
+                    <!-- Tax items will be injected here -->
+                </div>
+            </div>
+            <p class="mt-4 text-[9px] text-slate-400 italic">Estimated tax calculated on positive unrealized gains based on configured asset type rates.</p>
+        </div>
+    </div>
+
     <!-- Charts Row: Performance + Allocation -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Performance Chart (Left) -->
@@ -780,6 +801,24 @@
 
             // Render Assets
             renderAssetsTable(p.holdings || [], p.transactions || [], p.currency);
+
+            // Render Taxation
+            const taxSection = document.getElementById('latent-taxation-section');
+            const taxBreakdownContainer = document.getElementById('tax-breakdown-container');
+            if (p.totalLatentTax > 0) {
+                taxSection.classList.remove('hidden');
+                document.getElementById('total-latent-tax-label').innerText = formatPrivacy(p.totalLatentTax, p.currency, 'p-total');
+                document.getElementById('tax-currency-label').innerText = p.currency;
+                
+                taxBreakdownContainer.innerHTML = p.taxBreakdown.map(b => `
+                    <div class="flex flex-col">
+                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">${b.type} (${b.rate}%)</p>
+                        <p class="text-xs font-black text-slate-700 dark:text-slate-300">${formatCurrency(b.tax, p.currency, 2)}</p>
+                    </div>
+                `).join('');
+            } else {
+                taxSection.classList.add('hidden');
+            }
 
             // Render Allocation
             renderAllocation({

@@ -939,6 +939,26 @@ app.get('/api/portfolios/:id', async (req, res) => {
             };
         });
 
+    // ─── Latent Taxation Calculation ─────────────────────────────────────────────
+    const taxRates = database.db.prepare(`SELECT asset_type, rate FROM tax_rates`).all();
+    const trMap = {};
+    taxRates.forEach(r => trMap[r.asset_type] = r.rate);
+
+    let totalLatentTax = 0;
+    const taxBreakdown = {};
+
+    holdings.forEach(h => {
+        if (h.unrealizedGain > 0) {
+            const tr = trMap[h.type] || 26; // Default to 26% if type not mapped
+            const taxAmount = (h.unrealizedGain * tr) / 100;
+            totalLatentTax += taxAmount;
+            
+            if (!taxBreakdown[h.type]) taxBreakdown[h.type] = { type: h.type, gain: 0, tax: 0, rate: tr };
+            taxBreakdown[h.type].gain += h.unrealizedGain;
+            taxBreakdown[h.type].tax  += taxAmount;
+        }
+    });
+
     // Asset allocation by type, currency, and country
     const totalAssetsValue = holdings.reduce((s, h) => s + h.currentValue, 0);
     
@@ -1020,7 +1040,9 @@ app.get('/api/portfolios/:id', async (req, res) => {
         countryAllocation,
         closedPositions, 
         dividendGroups, 
-        totalDividends: Math.round(totalDividends * 100) / 100 
+        totalDividends: Math.round(totalDividends * 100) / 100,
+        totalLatentTax: Math.round(totalLatentTax * 100) / 100,
+        taxBreakdown: Object.values(taxBreakdown).map(b => ({ ...b, tax: Math.round(b.tax * 100) / 100, gain: Math.round(b.gain * 100) / 100 }))
     });
 });
 
@@ -1512,6 +1534,28 @@ app.get('/api/fx-rate', async (req, res) => {
 // ════════════════════════════════════════════════════════════════════════════
 // SETTINGS API
 // ════════════════════════════════════════════════════════════════════════════
+
+// ─── Taxation Rates API ──────────────────────────────────────────────────
+app.get('/api/tax-rates', (req, res) => {
+    try {
+        const rates = database.db.prepare(`SELECT * FROM tax_rates ORDER BY asset_type ASC`).all();
+        res.json(rates);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/tax-rates', (req, res) => {
+    try {
+        const { rates } = req.body;
+        if (!Array.isArray(rates)) return res.status(400).json({ error: 'Formato non valido' });
+        
+        database.db.transaction(() => {
+            database.db.prepare(`DELETE FROM tax_rates`).run();
+            const stmt = database.db.prepare(`INSERT INTO tax_rates (asset_type, rate) VALUES (?, ?)`);
+            for (const r of rates) if (r.asset_type) stmt.run(r.asset_type, parseFloat(r.rate) || 0);
+        })();
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
 
 app.get('/api/settings', (req, res) => {
     res.json(database.getSettings());

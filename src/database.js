@@ -156,7 +156,28 @@ function initDb() {
         price  REAL NOT NULL,
         UNIQUE(ticker, date)
       );
+
+      CREATE TABLE IF NOT EXISTS tax_rates (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        asset_type TEXT    NOT NULL UNIQUE,
+        rate       REAL    NOT NULL
+      );
     `);
+
+    // Default tax rates
+    const defaultTaxRates = [
+        { type: 'Bond', rate: 12.5 },
+        { type: 'Azionario', rate: 26.0 },
+        { type: 'ETF Azionario', rate: 26.0 },
+        { type: 'ETF Monetario', rate: 12.5 },
+        { type: 'Stock', rate: 26.0 },
+        { type: 'Cash', rate: 0.0 }
+    ];
+
+    const insertTaxRate = dbConnection.prepare(
+        `INSERT OR IGNORE INTO tax_rates (asset_type, rate) VALUES (?, ?)`
+    );
+    defaultTaxRates.forEach(tr => insertTaxRate.run(tr.type, tr.rate));
 
     // ─── Default settings ────────────────────────────────────────────────────────
     const defaultSettings = {
