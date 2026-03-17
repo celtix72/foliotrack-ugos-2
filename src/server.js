@@ -496,6 +496,29 @@ app.put('/api/assets/:id', (req, res) => {
     res.json(database.db.prepare(`SELECT * FROM assets WHERE id = ? OR ticker = ?`).get(req.params.id, req.params.id));
 });
 
+// ─── MARKET SEARCH API ───────────────────────────────────────────────────────
+
+app.get('/api/market/search', async (req, res) => {
+    const { q } = req.query;
+    if (!q || q.length < 2) return res.json([]);
+
+    try {
+        const results = await yahooFinance.search(q);
+        const suggestions = results.quotes
+            .filter(quote => quote.isYahooFinance)
+            .map(quote => ({
+                ticker: quote.symbol,
+                name: quote.shortname || quote.longname || quote.symbol,
+                exchange: quote.exchDisp || quote.exch,
+                type: quote.quoteType || 'Equity'
+            }));
+        res.json(suggestions);
+    } catch (err) {
+        console.error('Search error:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ─── WATCHLIST API ──────────────────────────────────────────────────────────
 
 app.get('/api/watchlist', (req, res) => {
@@ -522,29 +545,27 @@ app.post('/api/watchlist', async (req, res) => {
         let asset = database.db.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(normalizedTicker);
         
         if (!asset) {
-            // 2. Fetch from Yahoo Finance if not in DB
-            try {
-                const quote = await yahooFinance.quote(normalizedTicker);
-                if (quote) {
-                    database.db.prepare(`
-                        INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, updatedAt, inWatchlist)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), 1)
-                    `).run(
-                        normalizedTicker,
-                        normalizedTicker,
-                        quote.shortName || quote.longName || normalizedTicker,
-                        quote.quoteType === 'EQUITY' ? 'Stock' : quote.quoteType || 'Other',
-                        quote.fullExchangeName || quote.exchange || 'Unknown',
-                        quote.currency || 'USD',
-                        quote.regularMarketPrice || 0,
-                        quote.regularMarketChangePercent || 0,
-                        quote.trailingPE || null
-                    );
-                    asset = database.db.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(normalizedTicker);
-                } else {
-                    return res.status(404).send('Ticker not found on Yahoo Finance');
-                }
-            } catch (yfErr) {
+            // 2. Fetch robust metadata
+            const metadata = await fetchAssetMetadata(normalizedTicker);
+            if (metadata) {
+                database.db.prepare(`
+                    INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, changeValue, pe, country, updatedAt, inWatchlist)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), 1)
+                `).run(
+                    normalizedTicker,
+                    normalizedTicker,
+                    metadata.name,
+                    metadata.type,
+                    metadata.exchange,
+                    metadata.currency,
+                    metadata.currentPrice,
+                    metadata.changePercent,
+                    metadata.changeValue || 0,
+                    metadata.pe,
+                    metadata.country
+                );
+                asset = database.db.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(normalizedTicker);
+            } else {
                 return res.status(404).send('Ticker not found on Yahoo Finance');
             }
         } else {

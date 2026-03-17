@@ -93,21 +93,110 @@
                     <span class="text-[10px] text-slate-500 group-hover:text-slate-400 font-bold uppercase transition-colors shrink-0">${p.currency}</span>
                 </a>`).join('');
 
-            if (watchlist && watchlist.length > 0) {
-                html += `<div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800"><p class="px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Watchlist</p><div class="space-y-1">`
-                + watchlist.map(a => `<div class="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 group relative transition-colors">
-                    <div class="flex flex-col overflow-hidden"><span class="text-xs font-bold leading-tight truncate max-w-[100px]">${a.ticker}</span><span class="text-[9px] text-slate-500 truncate max-w-[100px]">${a.name}</span></div>
-                    <div class="text-right flex flex-col items-end"><p class="text-[11px] font-bold">${a.currentPrice.toLocaleString('en-US', { style: 'currency', currency: a.currency || 'USD'})}</p>
-                    <p class="text-[10px] font-bold ${a.changePercent >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${a.changePercent >= 0 ? '+' : ''}${a.changePercent.toFixed(2)}%</p></div>
-                    <button onclick="removeFromWatchlist('${a.ticker}')" class="absolute -right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-500 transition-all"><span class="material-symbols-outlined text-xs">close</span></button>
-                    </div>`).join('') + `</div></div>`;
+            if (watchlist && watchlist.length >= 0) {
+                html += `
+                <div class="mt-6 pt-4 border-t border-slate-200 dark:border-slate-800">
+                    <div class="flex items-center justify-between px-3 mb-3">
+                        <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Watchlist</p>
+                        <button onclick="toggleWatchlistSearch()" class="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-primary transition-colors">
+                            <span class="material-symbols-outlined text-sm">add</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Search Container -->
+                    <div id="watchlist-search-container" class="hidden px-3 mb-4 space-y-2">
+                        <div class="relative">
+                            <input type="text" id="watchlist-search-input" 
+                                   placeholder="Search ticker or name..." 
+                                   class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-[10px] focus:outline-none focus:ring-1 focus:ring-primary/50"
+                                   onkeyup="searchAssetsWatchlist(this.value)">
+                            <button onclick="toggleWatchlistSearch()" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-rose-500">
+                                <span class="material-symbols-outlined text-xs">close</span>
+                            </button>
+                        </div>
+                        <div id="watchlist-search-results" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden hidden shadow-xl max-h-48 overflow-y-auto custom-scrollbar"></div>
+                    </div>
+
+                    <div class="space-y-1">`
+                + (watchlist.length === 0 ? `<p class="px-3 text-[10px] text-slate-500 italic">No assets pinned.</p>` : watchlist.map(a => `
+                    <div class="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 group relative transition-colors">
+                        <div class="flex flex-col overflow-hidden">
+                            <span class="text-xs font-bold leading-tight truncate max-w-[100px]">${a.ticker}</span>
+                            <span class="text-[9px] text-slate-500 truncate max-w-[100px]">${a.name}</span>
+                        </div>
+                        <div class="text-right flex flex-col items-end">
+                            <p class="text-[11px] font-bold">${formatCurrency(a.currentPrice, a.currency || 'USD')}</p>
+                            <p class="text-[10px] font-bold ${a.changePercent >= 0 ? 'text-emerald-500' : 'text-rose-500'}">
+                                ${a.changePercent >= 0 ? '+' : ''}${a.changePercent.toFixed(2)}%
+                            </p>
+                        </div>
+                        <button onclick="removeFromWatchlist('${a.ticker}')" class="absolute -right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-500 transition-all">
+                            <span class="material-symbols-outlined text-xs">close</span>
+                        </button>
+                    </div>`).join('')) + `</div></div>`;
             }
             container.innerHTML = html;
         } finally { _sidebarLoading = false; }
     }
 
+    window.toggleWatchlistSearch = function() {
+        const container = document.getElementById('watchlist-search-container');
+        if (!container) return;
+        container.classList.toggle('hidden');
+        if (!container.classList.contains('hidden')) {
+            document.getElementById('watchlist-search-input')?.focus();
+        }
+    }
+
+    let _searchDebounce = null;
+    window.searchAssetsWatchlist = async function(q) {
+        const resultsDiv = document.getElementById('watchlist-search-results');
+        if (!resultsDiv) return;
+        if (!q || q.length < 2) {
+            resultsDiv.classList.add('hidden');
+            return;
+        }
+
+        clearTimeout(_searchDebounce);
+        _searchDebounce = setTimeout(async () => {
+            try {
+                const res = await fetch(`/api/market/search?q=${encodeURIComponent(q)}`);
+                const data = await res.json();
+                if (data.length === 0) {
+                    resultsDiv.innerHTML = '<p class="p-3 text-[10px] text-slate-500 italic">No matches found.</p>';
+                } else {
+                    resultsDiv.innerHTML = data.map(item => `
+                        <div class="p-2 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer border-b border-slate-100 dark:border-slate-800 last:border-0" 
+                             onclick="addToWatchlist('${item.ticker}')">
+                            <p class="text-[11px] font-bold leading-none mb-1">${item.ticker}</p>
+                            <p class="text-[9px] text-slate-500 truncate">${item.name}</p>
+                        </div>
+                    `).join('');
+                }
+                resultsDiv.classList.remove('hidden');
+            } catch (err) { console.error("Search error:", err); }
+        }, 300);
+    }
+
+    window.addToWatchlist = async function(ticker) {
+        try {
+            const res = await fetch('/api/watchlist', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ticker })
+            });
+            if (res.ok) {
+                document.getElementById('watchlist-search-container')?.classList.add('hidden');
+                document.getElementById('watchlist-search-input').value = '';
+                updateSidebarContents();
+            } else {
+                const msg = await res.text();
+                alert('Failed to add: ' + msg);
+            }
+        } catch (err) { alert('Error: ' + err.message); }
+    }
+
     window.removeFromWatchlist = async function(ticker) {
-        if (!confirm(`Remove ${ticker}?`)) return;
         const res = await fetch(`/api/watchlist/${ticker}`, { method: 'DELETE' });
         if (res.ok) updateSidebarContents();
     }
