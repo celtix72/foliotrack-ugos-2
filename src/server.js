@@ -948,23 +948,15 @@ app.get('/api/portfolios/:id', async (req, res) => {
     const lossMap = {};
     losses.forEach(l => lossMap[l.asset_type] = l.amount);
 
-    const aggregateGains = {}; // { type: { unrealized: 0, realized: 0 } }
-
+    const aggregateGains = {}; // { type: { unrealized: 0 } }
     holdings.forEach(h => {
-        if (!aggregateGains[h.type]) aggregateGains[h.type] = { unrealized: 0, realized: 0 };
+        if (!aggregateGains[h.type]) aggregateGains[h.type] = { unrealized: 0 };
         aggregateGains[h.type].unrealized += h.unrealizedGain;
-    });
-
-    Object.values(closedByKey).forEach(c => {
-        const asset = database.db.prepare(`SELECT type FROM assets WHERE ticker = ?`).get(c.ticker);
-        const type = asset ? asset.type : 'Stock';
-        if (!aggregateGains[type]) aggregateGains[type] = { unrealized: 0, realized: 0 };
-        aggregateGains[type].realized += c.realizedGain;
     });
 
     let totalLatentTax = 0;
     const taxBreakdown = Object.entries(aggregateGains).map(([type, gains]) => {
-        const grossGain = gains.unrealized + gains.realized;
+        const grossGain = gains.unrealized; // Only latent gains are taxed per user request
         const minusvalenze = lossMap[type] || 0;
         const taxableGain = Math.max(0, grossGain - minusvalenze);
         const rate = trMap[type] || 26;
@@ -977,7 +969,7 @@ app.get('/api/portfolios/:id', async (req, res) => {
             type,
             grossGain: Math.round(grossGain * 100) / 100,
             unrealized: Math.round(gains.unrealized * 100) / 100,
-            realized: Math.round(gains.realized * 100) / 100,
+            realized: 0, 
             minusvalenze: Math.round(minusvalenze * 100) / 100,
             taxableGain: Math.round(taxableGain * 100) / 100,
             rate,
