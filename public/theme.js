@@ -372,7 +372,7 @@
     }
 
     // ─── Global Formatting ────────────────────────────────────────────────────
-    window.formatCurrency = function(val, currency = 'USD', decimals = 2) {
+    window.formatCurrency = function(val, currency = 'USD', decimals = 0) {
         if (val === null || val === undefined) return '—';
         const value = parseFloat(val);
         if (!currency || currency.length !== 3) {
@@ -390,7 +390,7 @@
         }
     };
 
-    window.formatNumber = function(val, decimals = 2) {
+    window.formatNumber = function(val, decimals = 0) {
         if (val === null || val === undefined) return '—';
         const value = parseFloat(val);
         return new Intl.NumberFormat('de-DE', { 

@@ -901,18 +901,18 @@
                 const totalGross = p.taxBreakdown.reduce((s, b) => s + b.grossGain, 0);
                 const totalNet = p.taxBreakdown.reduce((s, b) => s + b.netGain, 0);
                 
-                document.getElementById('taxation-gross-gain').innerText = formatCurrency(totalGross, p.currency, 2);
-                document.getElementById('total-latent-tax-label').innerText = formatCurrency(p.totalLatentTax, p.currency, 2);
-                document.getElementById('taxation-net-gain').innerText = formatCurrency(totalNet, p.currency, 2);
+                document.getElementById('taxation-gross-gain').innerText = formatCurrency(totalGross, p.currency, 0);
+                document.getElementById('total-latent-tax-label').innerText = formatCurrency(p.totalLatentTax, p.currency, 0);
+                document.getElementById('taxation-net-gain').innerText = formatCurrency(totalNet, p.currency, 0);
 
                 taxTableBody.innerHTML = p.taxBreakdown.map(b => `
                     <tr class="border-b border-slate-50 dark:border-slate-800/50 hover:bg-amber-100/30 transition-colors">
                         <td class="py-3 font-bold text-slate-700 dark:text-slate-300">${b.type} <span class="text-[10px] text-slate-400 font-normal ml-1">(${b.rate}%)</span></td>
-                        <td class="py-3 text-right font-medium">${formatCurrency(b.grossGain, p.currency, 2)}</td>
-                        <td class="py-3 text-right text-amber-600 font-bold">${formatCurrency(b.minusvalenze, p.currency, 2)}</td>
-                        <td class="py-3 text-right font-bold">${formatCurrency(b.taxableGain, p.currency, 2)}</td>
-                        <td class="py-3 text-right text-rose-500 font-black">${formatCurrency(b.tax, p.currency, 2)}</td>
-                        <td class="py-3 text-right text-emerald-600 font-black">${formatCurrency(b.netGain, p.currency, 2)}</td>
+                        <td class="py-3 text-right font-medium">${formatCurrency(b.grossGain, p.currency, 0)}</td>
+                        <td class="py-3 text-right text-amber-600 font-bold">${formatCurrency(b.minusvalenze, p.currency, 0)}</td>
+                        <td class="py-3 text-right font-bold">${formatCurrency(b.taxableGain, p.currency, 0)}</td>
+                        <td class="py-3 text-right text-rose-500 font-black">${formatCurrency(b.tax, p.currency, 0)}</td>
+                        <td class="py-3 text-right text-emerald-600 font-black">${formatCurrency(b.netGain, p.currency, 0)}</td>
                     </tr>
                 `).join('');
             } else {
@@ -2101,11 +2101,11 @@
                 <td class="px-3 py-2.5 truncate max-w-[120px]">${r.yfName || r.tickerRaw}</td>
                 <td class="px-3 py-2.5 font-bold">${r.yfCurrency || r.currency}</td>
                 <td class="px-3 py-2.5 text-right font-mono">${formatNumber(r.exchangeRate, 4)}</td>
-                <td class="px-3 py-2.5 text-right font-mono">${formatNumber(r.price, 2)}</td>
-                <td class="px-3 py-2.5 text-right font-mono">${formatNumber(r.quantity, 2)}</td>
+                <td class="px-3 py-2.5 text-right font-mono">${formatNumber(r.price, 0)}</td>
+                <td class="px-3 py-2.5 text-right font-mono">${formatNumber(r.quantity, 0)}</td>
                 <td class="px-3 py-2.5 text-right text-slate-500">${r.commission}</td>
                 <td class="px-3 py-2.5 text-right text-slate-500">${r.tax}</td>
-                <td class="px-3 py-2.5 text-right font-bold text-emerald-600">${formatNumber(r.valEur, 2)}</td>
+                <td class="px-3 py-2.5 text-right font-bold text-emerald-600">${formatNumber(r.valEur, 0)}</td>
             </tr>`;
         }).join('');
 
