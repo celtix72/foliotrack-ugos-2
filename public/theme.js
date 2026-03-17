@@ -197,6 +197,7 @@
     }
 
     window.removeFromWatchlist = async function(ticker) {
+        if (!confirm(`Remove ${ticker}?`)) return;
         const res = await fetch(`/api/watchlist/${ticker}`, { method: 'DELETE' });
         if (res.ok) updateSidebarContents();
     }
