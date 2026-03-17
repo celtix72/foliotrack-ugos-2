@@ -124,21 +124,21 @@
 </div>
 <!-- Account Settings -->
 <section class="space-y-4">
-    <div class="flex items-center justify-between cursor-pointer group" onclick="toggleSection('account-settings-content')">
+    <div class="flex items-center justify-between cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-900/50 p-2 -mx-2 rounded-xl transition-colors" onclick="toggleSection('account-settings-content')">
         <h2 class="text-lg font-bold border-l-4 border-primary pl-3">Account Settings</h2>
         <span id="account-settings-content-icon" class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-transform">expand_more</span>
     </div>
     <div id="account-settings-content" class="hidden">
         <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 flex flex-col md:flex-row items-center gap-6">
-            <div class="w-20 h-20 rounded-full bg-slate-200 dark:bg-slate-800 ring-4 ring-slate-100 dark:ring-slate-800 flex items-center justify-center text-slate-400">
-                <span class="material-symbols-outlined text-4xl">person</span>
+            <div class="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+                <span class="material-symbols-outlined text-3xl">person</span>
             </div>
             <div class="flex-1 text-center md:text-left">
                 <h3 class="font-bold text-lg">User</h3>
                 <p class="text-sm text-slate-500 dark:text-slate-400">user@foliotrack.io</p>
                 <div class="mt-4 flex flex-wrap gap-2 justify-center md:justify-start">
-                    <button class="px-5 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">Change Password</button>
-                    <button class="px-5 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-transparent dark:border-slate-700">Update Email</button>
+                    <button class="px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90 transition-all shadow-sm shadow-primary/20">Change Password</button>
+                    <button class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700">Update Email</button>
                 </div>
             </div>
         </div>
@@ -146,42 +146,45 @@
 </section>
 <!-- Appearance Settings -->
 <section class="space-y-4">
-    <div class="flex items-center justify-between cursor-pointer group" onclick="toggleSection('appearance-settings-content')">
+    <div class="flex items-center justify-between cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-900/50 p-2 -mx-2 rounded-xl transition-colors" onclick="toggleSection('appearance-settings-content')">
         <h2 class="text-lg font-bold border-l-4 border-primary pl-3">Appearance Settings</h2>
         <span id="appearance-settings-content-icon" class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-transform">expand_more</span>
     </div>
     <div id="appearance-settings-content" class="hidden">
-        <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <label class="block font-bold text-sm mb-2">Font Family</label>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Choose the typography for the application.</p>
-                <select id="font-family-select" class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/50">
-                    <option value="'JetBrains Mono', monospace">JetBrains Mono (Compact)</option>
-                    <option value="'Fira Code', monospace">Fira Code (Coding)</option>
-                    <option value="'Roboto Mono', monospace">Roboto Mono (Classic)</option>
-                    <option value="'Inter', sans-serif">Inter (Sans Serif)</option>
-                </select>
-            </div>
-            <div>
-                <label class="block font-bold text-sm mb-2">Font Size</label>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Adjust the global text size.</p>
-                <select id="font-size-select" class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/50">
-                    <option value="12">12px (Small)</option>
-                    <option value="14">14px (Medium/Default)</option>
-                    <option value="16">16px (Large)</option>
-                    <option value="18">18px (Extra Large)</option>
-                </select>
-            </div>
+        <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1.5">Font Family</label>
+                    <p class="text-[10px] text-slate-400 mb-3">Choose the typography for the application.</p>
+                    <select id="font-family-select" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30">
+                        <option value="'JetBrains Mono', monospace">JetBrains Mono (Compact)</option>
+                        <option value="'Fira Code', monospace">Fira Code (Coding)</option>
+                        <option value="'Roboto Mono', monospace">Roboto Mono (Classic)</option>
+                        <option value="'Inter', sans-serif">Inter (Sans Serif)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1.5">Font Size</label>
+                    <p class="text-[10px] text-slate-400 mb-3">Adjust the global text size.</p>
+                    <select id="font-size-select" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30">
+                        <option value="12">12px (Small)</option>
+                        <option value="14">14px (Medium/Default)</option>
+                        <option value="16">16px (Large)</option>
+                        <option value="18">18px (Extra Large)</option>
+                    </select>
                 </div>
             </div>
-            <div class="md:col-span-2">
-                <label class="block font-bold text-sm mb-2">Privacy Mode</label>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Hide total amounts on Dashboard and Portfolio pages by default.</p>
+            
+            <div class="h-px bg-slate-100 dark:bg-slate-800 w-full"></div>
+            
+            <div>
+                <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1.5">Privacy Mode</label>
+                <p class="text-[10px] text-slate-400 mb-3">Hide total amounts on Dashboard and Portfolio pages by default.</p>
                 <div class="flex items-center gap-3">
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" id="privacy-mode-checkbox" class="sr-only peer">
-                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
-                        <span class="ml-3 text-sm font-medium text-slate-600 dark:text-slate-400">Enable Privacy Mode</span>
+                        <div class="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+                        <span class="ml-3 text-sm font-medium text-slate-600 dark:text-slate-400">Enable Primary Visibility Protection</span>
                     </label>
                 </div>
             </div>
@@ -190,49 +193,46 @@
 </section>
 <!-- Portfolio Preferences -->
 <section class="space-y-4">
-    <div class="flex items-center justify-between cursor-pointer group" onclick="toggleSection('portfolio-preferences-content')">
+    <div class="flex items-center justify-between cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-900/50 p-2 -mx-2 rounded-xl transition-colors" onclick="toggleSection('portfolio-preferences-content')">
         <h2 class="text-lg font-bold border-l-4 border-primary pl-3">Portfolio Preferences</h2>
         <span id="portfolio-preferences-content-icon" class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-transform">expand_more</span>
     </div>
-    <div id="portfolio-preferences-content" class="hidden space-y-4">
+    <div id="portfolio-preferences-content" class="hidden">
         <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="font-bold text-sm">Default Currency</p>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Choose the currency for all your portfolio calculations</p>
+                    <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1">Default Currency</label>
+                    <p class="text-[10px] text-slate-400">Currency for all your portfolio calculations</p>
                 </div>
                 <div class="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-lg">
-                    <button class="px-5 py-2 text-sm font-bold bg-white dark:bg-slate-800 rounded-md shadow-sm">EUR</button>
-                    <button class="px-5 py-2 text-sm font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors">USD</button>
+                    <button class="px-4 py-1.5 text-xs font-bold bg-white dark:bg-slate-800 rounded-md shadow-sm">EUR</button>
+                    <button class="px-4 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">USD</button>
                 </div>
             </div>
             <div class="h-px bg-slate-100 dark:bg-slate-800 w-full"></div>
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="font-bold text-sm">Update Frequency</p>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">How often to fetch live quotes (active markets only)</p>
+                    <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1">Update Frequency</label>
+                    <p class="text-[10px] text-slate-400">How often to fetch live quotes</p>
                 </div>
-                <select id="update-frequency-select" class="bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/50">
-                    <option value="1">1 Minute (Live)</option>
-                    <option value="5">5 Minutes (Standard)</option>
-                    <option value="15">15 Minutes</option>
-                    <option value="60">1 hour</option>
-                    <option value="0">Manual Only</option>
+                <select id="update-frequency-select" class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30">
+                    <option value="1">1 Min</option>
+                    <option value="5">5 Min</option>
+                    <option value="15">15 Min</option>
+                    <option value="60">1 Hour</option>
+                    <option value="0">Manual</option>
                 </select>
             </div>
         </div>
     </div>
 </section>
 <!-- Data Sources -->
-</section>
-
-<!-- Data Sources -->
 <section class="space-y-4">
-    <div class="flex items-center justify-between cursor-pointer group" onclick="toggleSection('data-sources-content')">
+    <div class="flex items-center justify-between cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-900/50 p-2 -mx-2 rounded-xl transition-colors" onclick="toggleSection('data-sources-content')">
         <h2 class="text-lg font-bold border-l-4 border-primary pl-3">Data Sources</h2>
         <span id="data-sources-content-icon" class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-transform">expand_more</span>
     </div>
-    <div id="data-sources-content" class="hidden space-y-4">
+    <div id="data-sources-content" class="hidden">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Yahoo Finance -->
             <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-5">
@@ -246,10 +246,10 @@
                     <span class="text-[10px] font-bold px-2 py-1 rounded bg-emerald-500/10 text-emerald-500 uppercase tracking-wider">Connected</span>
                 </div>
                 <div class="space-y-1.5">
-                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">API Key</label>
-                    <input class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2.5 text-sm px-4 focus:ring-primary focus:border-primary" type="password" value="••••••••••••••••"/>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">API Key</label>
+                    <input class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2.5 text-sm px-4 focus:ring-primary/30 focus:border-primary" type="password" value="••••••••••••••••"/>
                 </div>
-                <button class="w-full py-2.5 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Disconnect</button>
+                <button class="w-full py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Disconnect Service</button>
             </div>
             <!-- Google Sheets -->
             <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-5">
@@ -263,10 +263,10 @@
                     <span class="text-[10px] font-bold px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 uppercase tracking-wider">Disconnected</span>
                 </div>
                 <div class="space-y-1.5">
-                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Spreadsheet ID</label>
-                    <input class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2.5 text-sm px-4 focus:ring-primary focus:border-primary" placeholder="Enter ID..." type="text"/>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Spreadsheet ID</label>
+                    <input class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2.5 text-sm px-4 focus:ring-primary/30 focus:border-primary" placeholder="Enter ID..." type="text"/>
                 </div>
-                <button class="w-full py-2.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all">Connect Account</button>
+                <button class="w-full py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90 shadow-sm shadow-primary/20 transition-all">Connect Sheets</button>
             </div>
         </div>
     </div>
@@ -274,26 +274,26 @@
 
 <!-- Backup & Restore -->
 <section class="space-y-4">
-    <div class="flex items-center justify-between cursor-pointer group" onclick="toggleSection('backup-restore-content')">
+    <div class="flex items-center justify-between cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-900/50 p-2 -mx-2 rounded-xl transition-colors" onclick="toggleSection('backup-restore-content')">
         <h2 class="text-lg font-bold border-l-4 border-indigo-500 pl-3">Backup &amp; Restore</h2>
         <span id="backup-restore-content-icon" class="material-symbols-outlined text-slate-400 group-hover:text-indigo-500 transition-transform">expand_more</span>
     </div>
-    <div id="backup-restore-content" class="hidden space-y-6">
+    <div id="backup-restore-content" class="hidden">
         <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                    <label class="block font-bold text-sm mb-2">Backup Frequency</label>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Automatic database backup schedule.</p>
-                    <select id="backup-frequency-select" class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/50">
-                        <option value="None">None (Manual Only)</option>
+                    <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1.5">Backup Frequency</label>
+                    <p class="text-[10px] text-slate-400 mb-3">Automatic database backup schedule.</p>
+                    <select id="backup-frequency-select" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
+                        <option value="None">Manual Only</option>
                         <option value="Daily">Daily</option>
-                        <option value="Weekly">Weekly (Sundays)</option>
+                        <option value="Weekly">Weekly</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block font-bold text-sm mb-2">Retention Limit</label>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Number of automatic backups to keep.</p>
-                    <input id="backup-retention-input" type="number" min="1" max="50" class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/50" placeholder="e.g. 5"/>
+                    <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1.5">Retention</label>
+                    <p class="text-[10px] text-slate-400 mb-3">Backups to keep.</p>
+                    <input id="backup-retention-input" type="number" min="1" max="50" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/30" placeholder="e.g. 5"/>
                 </div>
             </div>
             
@@ -301,10 +301,10 @@
             
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="font-bold text-sm">Manual Backup</p>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Trigger a full database backup immediately.</p>
+                    <p class="font-bold text-sm">Create Backup</p>
+                    <p class="text-[10px] text-slate-400">Trigger immediate local backup</p>
                 </div>
-                <button id="run-backup-btn" class="px-5 py-2 bg-indigo-500 text-white rounded-lg text-sm font-bold hover:bg-indigo-600 transition-all shadow-lg shadow-indigo-500/20 flex items-center gap-2">
+                <button id="run-backup-btn" class="px-4 py-2 bg-indigo-500 text-white rounded-lg text-xs font-bold hover:bg-indigo-600 transition-all shadow-sm shadow-indigo-500/20 flex items-center gap-2">
                     <span class="material-symbols-outlined text-sm">backup</span> Run Now
                 </button>
             </div>
@@ -312,8 +312,7 @@
             <div class="space-y-3">
                 <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest">Available Backups</label>
                 <div id="backups-list" class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-2">
-                    <!-- Backups will be injected here -->
-                    <p class="text-xs text-slate-400 italic">Checking for backups...</p>
+                    <p class="text-xs text-slate-400 italic">Checking...</p>
                 </div>
             </div>
         </div>
@@ -321,37 +320,37 @@
 </section>
 <!-- Diagnostic Tools -->
 <section class="space-y-4">
-    <div class="flex items-center justify-between cursor-pointer group" onclick="toggleSection('diagnostic-tools-content')">
+    <div class="flex items-center justify-between cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-900/50 p-2 -mx-2 rounded-xl transition-colors" onclick="toggleSection('diagnostic-tools-content')">
         <h2 class="text-lg font-bold border-l-4 border-amber-500 pl-3">Diagnostic Tools</h2>
         <span id="diagnostic-tools-content-icon" class="material-symbols-outlined text-slate-400 group-hover:text-amber-500 transition-transform">expand_more</span>
     </div>
-    <div id="diagnostic-tools-content" class="hidden space-y-6">
+    <div id="diagnostic-tools-content" class="hidden">
         <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-6">
             <div>
-                <h3 class="font-bold text-sm mb-1">Borsa Italiana Scraper Test</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Verify data extraction for ISINs not covered by Yahoo Finance.</p>
+                <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1.5">Borsa Italiana Scraper Test</label>
+                <p class="text-[10px] text-slate-400 mb-4">Verify data extraction for ISINs not covered by Yahoo Finance.</p>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-1.5">
                         <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ISIN Code</label>
-                        <input id="debug-isin" type="text" placeholder="e.g. IT0004532559" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 text-sm px-4 focus:ring-amber-500/50 focus:border-amber-500"/>
+                        <input id="debug-isin" type="text" placeholder="e.g. IT0004532559" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 text-sm px-4 focus:ring-amber-500/30 focus:border-amber-500"/>
                     </div>
                     <div class="space-y-1.5">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Asset Category</label>
-                        <select id="debug-type" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 text-sm px-4 focus:ring-amber-500/50">
-                            <option value="obbligazioni">Obbligazioni (Bonds)</option>
-                            <option value="azioni">Azioni (Stocks)</option>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Type</label>
+                        <select id="debug-type" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 text-sm px-4 focus:ring-amber-500/30">
+                            <option value="obbligazioni">Bonds</option>
+                            <option value="azioni">Stocks</option>
                             <option value="etf">ETF</option>
                         </select>
                     </div>
                 </div>
                 
-                <button id="test-scraper-btn" class="mt-4 px-6 py-2.5 bg-amber-500 text-white rounded-lg text-sm font-bold hover:bg-amber-600 transition-all shadow-lg shadow-amber-500/20 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-sm">search_check</span> Run Diagnostic
+                <button id="test-scraper-btn" class="mt-4 px-4 py-2 bg-amber-500 text-white rounded-lg text-xs font-bold hover:bg-amber-600 transition-all shadow-sm shadow-amber-500/20 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-xs">search_check</span> Run Diagnostic
                 </button>
             </div>
 
-            <div id="scraper-result" class="hidden animate-in fade-in slide-in-from-top-2 duration-300">
+            <div id="scraper-result" class="hidden">
                 <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 space-y-3">
                     <div class="flex items-center justify-between">
                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Result</p>
@@ -359,16 +358,13 @@
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <p class="text-xs text-slate-500">Last Price</p>
-                            <p id="debug-price" class="text-xl font-mono font-black text-slate-900 dark:text-white">--</p>
+                            <p class="text-[10px] text-slate-500">Last Price</p>
+                            <p id="debug-price" class="text-lg font-mono font-black text-slate-900 dark:text-white">--</p>
                         </div>
                         <div>
-                            <p class="text-xs text-slate-500">Variation</p>
-                            <p id="debug-variation" class="text-xl font-mono font-black">--</p>
+                            <p class="text-[10px] text-slate-500">Variation</p>
+                            <p id="debug-variation" class="text-lg font-mono font-black">--</p>
                         </div>
-                    </div>
-                    <div class="pt-2 border-t border-slate-100 dark:border-slate-800">
-                        <p class="text-[9px] text-slate-400 truncate">Source URL: <a id="debug-url" href="#" target="_blank" class="text-amber-500 hover:underline">--</a></p>
                     </div>
                 </div>
             </div>
@@ -378,7 +374,7 @@
 
 <!-- System Maintenance -->
 <section class="space-y-4">
-    <div class="flex items-center justify-between cursor-pointer group" onclick="toggleSection('system-maintenance-content')">
+    <div class="flex items-center justify-between cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-900/50 p-2 -mx-2 rounded-xl transition-colors" onclick="toggleSection('system-maintenance-content')">
         <h2 class="text-lg font-bold border-l-4 border-rose-500 pl-3">System Maintenance</h2>
         <span id="system-maintenance-content-icon" class="material-symbols-outlined text-slate-400 group-hover:text-rose-500 transition-transform">expand_more</span>
     </div>
@@ -386,10 +382,10 @@
         <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="font-bold text-sm">Rebuild Performance History</p>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Recalculate all historical performance points. Useful for fixing data anomalies or peaks.</p>
+                    <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1">Performance Index</label>
+                    <p class="text-[10px] text-slate-400">Recalculate historical data points</p>
                 </div>
-                <button id="rebuild-history-btn" class="px-5 py-2 bg-rose-500 text-white rounded-lg text-sm font-bold hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/20 flex items-center gap-2">
+                <button id="rebuild-history-btn" class="px-4 py-2 bg-rose-500 text-white rounded-lg text-xs font-bold hover:bg-rose-600 transition-all shadow-sm shadow-rose-500/20 flex items-center gap-2">
                     <span class="material-symbols-outlined text-sm">history_toggle_off</span> Rebuild Now
                 </button>
             </div>
@@ -399,20 +395,20 @@
 
 <!-- System Logs -->
 <section class="space-y-4">
-    <div class="flex items-center justify-between cursor-pointer group" onclick="toggleSection('system-logs-content')">
+    <div class="flex items-center justify-between cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-900/50 p-2 -mx-2 rounded-xl transition-colors" onclick="toggleSection('system-logs-content')">
         <h2 class="text-lg font-bold border-l-4 border-slate-500 pl-3">System Logs</h2>
         <span id="system-logs-content-icon" class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-transform">expand_more</span>
     </div>
     <div id="system-logs-content" class="hidden">
         <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-4">
             <div class="flex items-center justify-between">
-                <p class="text-xs text-slate-500 dark:text-slate-400">Recent application events and background activities.</p>
-                <button id="refresh-logs-btn" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-primary" title="Refresh Logs">
+                <p class="text-[10px] text-slate-400 uppercase font-black tracking-widest">Active Runtime Registry</p>
+                <button id="refresh-logs-btn" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-primary">
                     <span class="material-symbols-outlined text-sm">refresh</span>
                 </button>
             </div>
-            <div id="logs-container" class="h-80 bg-slate-50 dark:bg-black/40 rounded-xl border border-slate-100 dark:border-slate-800 p-4 font-mono text-[10px] overflow-y-auto custom-scrollbar whitespace-pre-wrap">
-                <p class="text-slate-500 italic">Loading logs...</p>
+            <div id="logs-container" class="h-64 bg-slate-50 dark:bg-black/40 rounded-xl border border-slate-100 dark:border-slate-800 p-4 font-mono text-[10px] overflow-y-auto custom-scrollbar whitespace-pre-wrap">
+                <p class="text-slate-500 italic">Syncing...</p>
             </div>
         </div>
     </div>
@@ -420,13 +416,13 @@
 
 <!-- History Management -->
 <section class="space-y-4">
-    <div class="flex items-center justify-between cursor-pointer group" onclick="toggleSection('history-management-content')">
+    <div class="flex items-center justify-between cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-900/50 p-2 -mx-2 rounded-xl transition-colors" onclick="toggleSection('history-management-content')">
         <div class="flex items-center gap-3">
             <h2 class="text-lg font-bold border-l-4 border-primary pl-3">History Management</h2>
             <span id="history-management-content-icon" class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-transform">expand_more</span>
         </div>
-        <button onclick="event.stopPropagation(); addHistoryEntry()" class="px-4 py-2 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary/20 transition-all flex items-center gap-2">
-            <span class="material-symbols-outlined text-[18px]">add</span> Add Record
+        <button onclick="event.stopPropagation(); addHistoryEntry()" class="px-4 py-1.5 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-primary/90 transition-all flex items-center gap-1.5 shadow-sm shadow-primary/20">
+            <span class="material-symbols-outlined text-[16px]">add</span> Add Entry
         </button>
     </div>
     
@@ -462,26 +458,26 @@
 
 <!-- Danger Zone -->
 <section class="space-y-4 pb-12">
-    <div class="flex items-center justify-between cursor-pointer group" onclick="toggleSection('danger-zone-content')">
+    <div class="flex items-center justify-between cursor-pointer group hover:bg-rose-50/10 p-2 -mx-2 rounded-xl transition-colors" onclick="toggleSection('danger-zone-content')">
         <h2 class="text-lg font-bold border-l-4 border-rose-500 pl-3 text-rose-500">Danger Zone</h2>
-        <span id="danger-zone-content-icon" class="material-symbols-outlined text-rose-500 group-hover:text-rose-600 transition-transform">expand_more</span>
+        <span id="danger-zone-content-icon" class="material-symbols-outlined text-rose-500 group-hover:scale-110 transition-transform">expand_more</span>
     </div>
     <div id="danger-zone-content" class="hidden">
         <div class="bg-rose-500/5 border border-rose-500/20 rounded-2xl p-6 space-y-6">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <p class="font-bold text-rose-500">Reset All Data</p>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Permanently delete all your portfolio history and assets. This cannot be undone.</p>
+                    <p class="font-bold text-rose-500 text-sm">Purge Performance Data</p>
+                    <p class="text-[10px] text-slate-500">Remove all historical tracking points.</p>
                 </div>
-                <button id="reset-data-btn" class="px-6 py-2 border border-rose-500/30 text-rose-500 rounded-lg text-sm font-bold hover:bg-rose-500/10 transition-all">Reset Data</button>
+                <button id="reset-data-btn" class="px-4 py-2 border border-rose-500/30 text-rose-500 rounded-lg text-xs font-bold hover:bg-rose-500/10 transition-all">Execute Purge</button>
             </div>
-            <div class="h-px bg-slate-200 dark:bg-slate-800 w-full"></div>
+            <div class="h-px bg-rose-500/10 w-full"></div>
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <p class="font-bold text-rose-500">Delete Account</p>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">This will immediately delete your account and all associated data.</p>
+                    <p class="font-bold text-rose-500 text-sm">Terminate Account</p>
+                    <p class="text-[10px] text-slate-500">Immediate and irreversible account deletion.</p>
                 </div>
-                <button class="px-6 py-2 bg-rose-600 text-white rounded-lg text-sm font-bold hover:bg-rose-700 transition-all shadow-lg shadow-rose-600/20">Delete Account</button>
+                <button class="px-4 py-2 bg-rose-600 text-white rounded-lg text-xs font-bold hover:bg-rose-700 transition-all shadow-sm shadow-rose-600/20">Delete Forever</button>
             </div>
         </div>
     </div>
