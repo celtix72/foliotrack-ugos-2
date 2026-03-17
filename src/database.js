@@ -163,6 +163,7 @@ function initDb() {
         fontFamily: "'JetBrains Mono', monospace",
         fontSize:   '14',
         updateFrequency: '5',
+        privacyMode: 'false',
         schemaVersion: '1.0'
     };
 

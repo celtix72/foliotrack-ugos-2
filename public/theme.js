@@ -292,6 +292,38 @@
         }).format(value).replace(',00', '');
     };
 
+    // ─── Privacy Mode ────────────────────────────────────────────────────────
+    window.privacyState = {
+        enabled: false,
+        overrides: new Set()
+    };
+
+    window.togglePrivacyOverlay = function(id) {
+        if (window.privacyState.overrides.has(id)) {
+            window.privacyState.overrides.delete(id);
+        } else {
+            window.privacyState.overrides.add(id);
+        }
+        // Trigger a re-render of the specific element if possible, or just refresh the page data
+        // For simplicity, most pages will just call their load function again or we can trigger a custom event
+        window.dispatchEvent(new CustomEvent('privacy-changed', { detail: { id } }));
+    };
+
+    window.formatPrivacy = function(val, currency = 'EUR', id = null) {
+        if (window.privacyState.enabled && (!id || !window.privacyState.overrides.has(id))) {
+            return '****';
+        }
+        return formatCurrency(val, currency);
+    };
+
+    window.getPrivacyIcon = function(id) {
+        const isHidden = window.privacyState.enabled && !window.privacyState.overrides.has(id);
+        return `<span class="material-symbols-outlined text-[16px] cursor-pointer hover:text-primary transition-colors ml-2" 
+                      onclick="event.stopPropagation(); togglePrivacyOverlay('${id}')">
+                    ${isHidden ? 'visibility_off' : 'visibility'}
+                </span>`;
+    };
+
     window.updateAppSettings = async (payload) => {
         try {
             const res = await fetch('/api/settings', {
@@ -305,6 +337,10 @@
             const font = settings.fontFamily || localStorage.getItem('app-font');
             const size = settings.fontSize || localStorage.getItem('app-font-size');
             applyTheme(font, size, settings.theme);
+            
+            // Update Privacy Mode state
+            window.privacyState.enabled = settings.privacyMode === 'true';
+            
             window.dispatchEvent(new CustomEvent('settings-updated', { detail: settings }));
         } catch (e) { console.error("Error updating settings:", e); }
     };

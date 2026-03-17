@@ -160,10 +160,16 @@
                 <h1 id="title-portfolio-name" class="text-4xl font-black">---</h1>
             </div>
             <div class="flex items-center gap-4">
-                <p class="text-3xl font-black tracking-tight"><span id="total-value-label">0.00</span> <span id="portfolio-currency-code" class="text-sm text-slate-400 font-bold">EUR</span></p>
+                <div class="flex items-center gap-2">
+                    <p class="text-3xl font-black tracking-tight"><span id="total-value-label">0.00</span> <span id="portfolio-currency-code" class="text-sm text-slate-400 font-bold">EUR</span></p>
+                    <div id="p-total-privacy-toggle"></div>
+                </div>
                 <div id="header-perf-badge" class="hidden"></div>
                 <div class="flex flex-col">
-                    <p class="text-sm font-bold text-slate-500">Cash: <span id="cash-balance-label">0.00</span></p>
+                    <div class="flex items-center gap-2">
+                        <p class="text-sm font-bold text-slate-500">Cash: <span id="cash-balance-label">0.00</span></p>
+                        <div id="p-cash-privacy-toggle"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -749,12 +755,19 @@
             portfolioCurrency = p.currency || 'EUR';
             portfolioColor = p.color || '#6366f1';
             
+            window._portfolioData = p; // Cache data for privacy toggles
+            
             document.getElementById('header-portfolio-name').innerText = p.name || 'Untitled';
             document.getElementById('title-portfolio-name').innerText = p.name || 'Untitled';
             document.getElementById('title-portfolio-icon-bg').style.backgroundColor = portfolioColor;
-            document.getElementById('total-value-label').innerText = formatCurrency(p.totalValue, p.currency, 0);
+            
+            document.getElementById('total-value-label').innerText = formatPrivacy(p.totalValue, p.currency, 'p-total');
+            document.getElementById('p-total-privacy-toggle').innerHTML = getPrivacyIcon('p-total');
+            
             document.getElementById('portfolio-currency-code').innerText = p.currency;
-            document.getElementById('cash-balance-label').innerText = formatCurrency(p.currentCash, p.currency, 0);
+            
+            document.getElementById('cash-balance-label').innerText = formatPrivacy(p.currentCash, p.currency, 'p-cash');
+            document.getElementById('p-cash-privacy-toggle').innerHTML = getPrivacyIcon('p-cash');
 
             const perfBadge = document.getElementById('header-perf-badge');
             if (perfBadge) {
@@ -846,15 +859,15 @@
                 </td>
                 <td class="px-6 py-4">
                     <p class="font-bold text-slate-700 dark:text-slate-200 font-mono text-sm leading-tight">${formatNumber(h.shares, 0)}</p>
-                    <p class="text-[10px] text-slate-500 font-bold font-mono mt-0.5">${formatCurrency(h.avgCostAssetCurr, h.currency)} <span class="text-[9px] opacity-70">Avg</span></p>
+                    <p class="text-[10px] text-slate-500 font-bold font-mono mt-0.5">${formatPrivacy(h.avgCostAssetCurr, h.currency, 'a-avg-' + h.ticker)} <span class="text-[9px] opacity-70">Avg</span></p>
                 </td>
                 <td class="px-6 py-4">
-                    <p class="font-bold text-slate-900 dark:text-white font-mono text-sm leading-tight">${formatCurrency(h.currentPrice, h.currency)}</p>
-                    <p class="text-[10px] font-bold text-${color}-500/80 font-mono mt-0.5">${sign}${formatNumber(h.unrealizedGainPct, 2)}%</p>
+                    <p class="font-bold text-slate-900 dark:text-white font-mono text-sm leading-tight">${formatPrivacy(h.currentPrice, h.currency, 'a-price-' + h.ticker)}</p>
+                    <p class="text-[10px] font-bold text-${color}-500/80 font-mono mt-0.5">${sign}${formatPrivacy(h.unrealizedGainPct, 2, 'a-gainpct-' + h.ticker)}%</p>
                 </td>
                 <td class="px-6 py-4 text-right">
-                    <p class="font-black text-slate-900 dark:text-white font-mono text-sm leading-tight">${formatCurrency(h.currentValue, currency)}</p>
-                    <p class="text-[10px] font-bold text-${color}-500 font-mono mt-0.5">${sign}${formatCurrency(h.unrealizedGain, currency)}</p>
+                    <p class="font-black text-slate-900 dark:text-white font-mono text-sm leading-tight">${formatPrivacy(h.currentValue, currency, 'a-value-' + h.ticker)}</p>
+                    <p class="text-[10px] font-bold text-${color}-500 font-mono mt-0.5">${sign}${formatPrivacy(h.unrealizedGain, currency, 'a-gain-' + h.ticker)}</p>
                 </td>
             </tr>
             <tr id="transactions-${h.ticker}" class="hidden bg-slate-50/50 dark:bg-slate-900/30">
@@ -886,10 +899,10 @@
                                                 <span class="px-1.5 py-0.5 rounded-[4px] font-black text-[8px] bg-${tColor}-500/10 text-${tColor}-500 border border-${tColor}-500/20">${t.type}</span>
                                             </td>
                                             <td class="px-4 py-2 text-right font-mono font-bold">${t.quantity ? formatNumber(t.quantity, 0) : '—'}</td>
-                                            <td class="px-4 py-2 text-right font-mono">${t.price ? formatCurrency(t.price, h.currency) : '—'}</td>
-                                            <td class="px-4 py-2 text-right font-mono text-slate-400 opacity-60">${t.exchangeRate !== 1 ? formatNumber(t.exchangeRate, 4) : '—'}</td>
-                                            <td class="px-4 py-2 text-right font-mono text-slate-400 opacity-60">${t.commission + t.tax > 0 ? formatNumber(t.commission + t.tax, 2) : '—'}</td>
-                                            <td class="px-4 py-2 text-right font-bold font-mono text-slate-700 dark:text-slate-200">${tSign}${formatCurrency(total, currency)}</td>
+                                            <td class="px-4 py-2 text-right font-mono">${t.price ? formatPrivacy(t.price, h.currency, 't-price-' + t.id) : '—'}</td>
+                                            <td class="px-4 py-2 text-right font-mono text-slate-400 opacity-60">${t.exchangeRate !== 1 ? formatPrivacy(t.exchangeRate, 4, 't-fx-' + t.id) : '—'}</td>
+                                            <td class="px-4 py-2 text-right font-mono text-slate-400 opacity-60">${t.commission + t.tax > 0 ? formatPrivacy(t.commission + t.tax, 2, 't-ct-' + t.id) : '—'}</td>
+                                            <td class="px-4 py-2 text-right font-bold font-mono text-slate-700 dark:text-slate-200">${tSign}${formatPrivacy(total, currency, 't-total-' + t.id)}</td>
                                             <td class="px-4 py-2 text-center">
                                                 <div class="flex items-center justify-center gap-1">
                                                     <button onclick="event.stopPropagation(); editTransaction(${t.id})" class="p-1 text-slate-400 hover:text-primary transition-colors">
@@ -930,7 +943,7 @@
                     <td class="px-6 py-3">
                         <span class="px-1.5 py-0.5 rounded-[4px] font-black text-[8px] bg-${color}-500/10 text-${color}-500 border border-${color}-500/20">${t.type}</span>
                     </td>
-                    <td class="px-6 py-3 text-right font-bold font-mono text-${color}-600">${sign}${formatCurrency(t.amount, currency)}</td>
+                    <td class="px-6 py-3 text-right font-bold font-mono text-${color}-600">${sign}${formatPrivacy(t.amount, currency, 'ch-amount-' + t.id)}</td>
                 </tr>
             `;
         }).join('') : '<tr><td colspan="3" class="px-6 py-4 text-center text-slate-500 italic">No cash movements found.</td></tr>';
@@ -976,12 +989,12 @@
                     </td>
                     <td class="px-6 py-4 text-right">
                         ${!isCash ? `
-                            <div class="font-mono text-xs font-bold">${formatNumber(t.quantity, 0)} @ ${formatCurrency(t.price, displayCurr)}</div>
-                            <div class="text-[9px] text-slate-400">FX: ${t.exchangeRate !== 1 ? t.exchangeRate : '1:1'}</div>
+                            <div class="font-mono text-xs font-bold">${formatNumber(t.quantity, 0)} @ ${formatPrivacy(t.price, displayCurr, 'ft-price-' + t.id)}</div>
+                            <div class="text-[9px] text-slate-400">FX: ${t.exchangeRate !== 1 ? formatPrivacy(t.exchangeRate, 4, 'ft-fx-' + t.id) : '1:1'}</div>
                         ` : '—'}
                     </td>
                     <td class="px-6 py-4 text-right font-black font-mono text-sm text-${color}-600">
-                        ${sign}${formatCurrency(total, currency)}
+                        ${sign}${formatPrivacy(total, currency, 'ft-total-' + t.id)}
                     </td>
                     <td class="px-6 py-4">
                         <div class="flex items-center justify-center gap-2">
@@ -1744,7 +1757,31 @@
 
     // Initialize on load
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', wireEvents);
+        document.addEventListener('DOMContentLoaded', () => {
+        wireEvents();
+        
+        window.addEventListener('privacy-changed', () => {
+            if (window._portfolioData) {
+                const p = window._portfolioData;
+                document.getElementById('total-value-label').innerText = formatPrivacy(p.totalValue, p.currency, 'p-total');
+                document.getElementById('p-total-privacy-toggle').innerHTML = getPrivacyIcon('p-total');
+                document.getElementById('cash-balance-label').innerText = formatPrivacy(p.currentCash, p.currency, 'p-cash');
+                document.getElementById('p-cash-privacy-toggle').innerHTML = getPrivacyIcon('p-cash');
+                
+                // Re-render tables to apply privacy to rows
+                renderAssetsTable(p.holdings || [], p.transactions || [], p.currency);
+                renderTransactionsTable(p.transactions || [], p.holdings || [], p.currency);
+                renderCashHistory(p.transactions || [], p.currency);
+            }
+        });
+
+        window.addEventListener('settings-updated', (e) => {
+            if (e.detail.privacyMode !== undefined) {
+                window.privacyState.enabled = e.detail.privacyMode === 'true';
+                window.dispatchEvent(new CustomEvent('privacy-changed'));
+            }
+        });
+    });
     } else {
         wireEvents();
     }
