@@ -1861,7 +1861,8 @@ async function calculatePerformanceHistory(portfolioIds, range) {
         portfolioStates[p.id] = {
             cash: p.initialCash || 0,
             netDeposits: p.initialCash || 0,
-            holdings: {}
+            holdings: {},
+            lastTxPrices: {} 
         };
         
         // Fast-forward initial state to startDate
@@ -1869,6 +1870,9 @@ async function calculatePerformanceHistory(portfolioIds, range) {
         const initialTx = allTransactions.filter(t => t.portfolioId === p.id && t.date < startDateStr);
         for (const t of initialTx) {
             const qty = t.quantity || 0, price = t.price || 0, comm = t.commission || 0, tax = t.tax || 0, fx = t.exchangeRate || 1, amount = t.amount || 0;
+            if (t.assetTicker && price > 0) {
+                portfolioStates[p.id].lastTxPrices[t.assetTicker] = price;
+            }
             switch (t.type) {
                 case 'DEPOSIT':    portfolioStates[p.id].cash += amount; portfolioStates[p.id].netDeposits += amount; break;
                 case 'WITHDRAWAL': portfolioStates[p.id].cash -= amount; portfolioStates[p.id].netDeposits -= amount; break;
@@ -1960,6 +1964,9 @@ async function calculatePerformanceHistory(portfolioIds, range) {
 
                 for (const t of dayTx) {
                     const qty = t.quantity || 0, price = t.price || 0, comm = t.commission || 0, tax = t.tax || 0, fx = t.exchangeRate || 1, amount = t.amount || 0;
+                    if (t.assetTicker && price > 0) {
+                        state.lastTxPrices[t.assetTicker] = price;
+                    }
                     if (['BUY', 'SELL', 'DIVIDEND', 'DEPOSIT', 'WITHDRAWAL'].includes(t.type)) {
                         const ticker = t.assetTicker || 'CASH';
                         const assetMeta = assetMetadataCache[ticker];
@@ -2016,7 +2023,12 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                             }
                         }
 
-                        // Priority 3: Final fallback to current asset price ONLY if no historical data at all
+                        // Priority 3: Try most recent transaction price from this portfolio
+                        if (!price || price === 0) {
+                            price = state.lastTxPrices[ticker];
+                        }
+
+                        // Priority 4: Final fallback to current asset price ONLY if no historical data at all
                         if (!price || price === 0) {
                             if (assetMeta && assetMeta.currentPrice > 0) price = assetMeta.currentPrice;
                             else price = 0;
