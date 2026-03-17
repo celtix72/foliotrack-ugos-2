@@ -162,6 +162,14 @@ function initDb() {
         asset_type TEXT    NOT NULL UNIQUE,
         rate       REAL    NOT NULL
       );
+
+      CREATE TABLE IF NOT EXISTS portfolio_losses (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        portfolioId  INTEGER NOT NULL REFERENCES portfolios(id) ON DELETE CASCADE,
+        asset_type   TEXT    NOT NULL,
+        amount       REAL    NOT NULL DEFAULT 0,
+        UNIQUE(portfolioId, asset_type)
+      );
     `);
 
     // Default tax rates

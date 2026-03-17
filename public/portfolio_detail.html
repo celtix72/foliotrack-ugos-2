@@ -183,24 +183,61 @@
             </button>
         </div>
     </div>
-    <!-- Latent Taxation Summary -->
-    <div id="latent-taxation-section" class="hidden">
-        <div class="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-6 shadow-sm">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <!-- Detailed Taxation Summary -->
+    <div id="latent-taxation-section" class="hidden mb-8">
+        <div class="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/50 rounded-2xl overflow-hidden shadow-sm">
+            <!-- Header (Always Visible) -->
+            <div class="p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 cursor-pointer" onclick="document.getElementById('tax-detail-body').classList.toggle('hidden')">
                 <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                    <div class="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-500">
                         <span class="material-symbols-outlined text-2xl">account_balance_wallet</span>
                     </div>
                     <div>
-                        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600/60 mb-1">Estimated Latent Taxation</p>
-                        <p class="text-2xl font-black text-emerald-600"><span id="total-latent-tax-label">0.00</span> <span class="text-sm font-bold opacity-60" id="tax-currency-label">EUR</span></p>
+                        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-amber-700/60 dark:text-amber-500/60 mb-1">Fiscal Summary (Realized + Latent)</p>
+                        <div class="flex items-baseline gap-3">
+                            <span class="text-2xl font-black text-amber-700 dark:text-amber-500" id="taxation-net-gain">0.00 EUR</span>
+                            <span class="text-xs font-bold text-slate-400">Net Gain</span>
+                        </div>
                     </div>
                 </div>
-                <div id="tax-breakdown-container" class="flex flex-wrap gap-4 md:border-l border-emerald-500/10 md:pl-8">
-                    <!-- Tax items will be injected here -->
+                <div class="flex gap-8">
+                    <div class="text-right">
+                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Gross Gain</p>
+                        <p class="text-sm font-black text-slate-700 dark:text-slate-300" id="taxation-gross-gain">0.00 EUR</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Total Tax</p>
+                        <p class="text-sm font-black text-rose-500" id="total-latent-tax-label">0.00 EUR</p>
+                    </div>
+                    <div class="flex items-center text-slate-400">
+                        <span class="material-symbols-outlined">expand_more</span>
+                    </div>
                 </div>
             </div>
-            <p class="mt-4 text-[9px] text-slate-400 italic">Estimated tax calculated on positive unrealized gains based on configured asset type rates.</p>
+
+            <!-- Detail Body (Collapsible) -->
+            <div id="tax-detail-body" class="hidden border-t border-amber-200 dark:border-amber-800/50 bg-white/50 dark:bg-black/20 p-6">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
+                                <th class="pb-3 text-amber-600 dark:text-amber-500">Asset Category</th>
+                                <th class="pb-3 text-right">Gross Gain</th>
+                                <th class="pb-3 text-right">Realized</th>
+                                <th class="pb-3 text-right">Latent</th>
+                                <th class="pb-3 text-right">Minusvalenze</th>
+                                <th class="pb-3 text-right">Taxable</th>
+                                <th class="pb-3 text-right text-rose-500">Tax</th>
+                                <th class="pb-3 text-right text-emerald-500">Net Gain</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tax-breakdown-table-body" class="text-sm">
+                            <!-- Injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <p class="mt-4 text-[9px] text-slate-400 italic">Taxes are calculated per asset type by offsetting the sum of realized and unrealized gains with manually entered capital losses (minusvalenze).</p>
+            </div>
         </div>
     </div>
 
@@ -431,6 +468,20 @@
                     <input id="p-color" type="color" class="w-full h-[42px] bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-1 px-1 cursor-pointer" value="#6366f1"/>
                 </div>
             </div>
+
+            <!-- Fiscal Management (Minusvalenze) -->
+            <div class="border-t border-slate-200 dark:border-slate-800 pt-4 mt-2">
+                <button type="button" onclick="document.getElementById('fiscal-management').classList.toggle('hidden')" class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-primary transition-colors mb-4">
+                    <span class="material-symbols-outlined text-sm">account_balance_wallet</span>
+                    Fiscal Management (Minusvalenze)
+                    <span class="material-symbols-outlined text-sm">expand_more</span>
+                </button>
+                <div id="fiscal-management" class="hidden space-y-3 pb-2">
+                    <div id="minusvalenze-list" class="space-y-3">
+                        <!-- Dynamic losses inputs will be injected here -->
+                    </div>
+                </div>
+            </div>
             <div class="pt-4 flex gap-3">
                 <button type="button" id="delete-portfolio-btn" onclick="deletePortfolio()" class="px-4 py-2 text-rose-500 font-bold hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg hidden transition-colors">Delete</button>
                 <div class="flex-1"></div>
@@ -654,18 +705,57 @@
     let holdingsSort = { col: 'impact', dir: 'desc' };
     let transactionsSort = { col: 'date', dir: 'desc' };
 
-    window.openPortfolioModal = function(id = null) {
+    window.openPortfolioModal = async function(id = null) {
+        const listContainer = document.getElementById('minusvalenze-list');
+        listContainer.innerHTML = '<p class="text-[10px] text-slate-400 italic">Fetching categories...</p>';
+        
+        // Fetch all possible tax categories from settings
+        let categories = [];
+        try {
+            const res = await fetch('/api/tax-rates');
+            categories = await res.json();
+        } catch (err) { console.error(err); }
+
         if (!id) {
             document.getElementById('p-id').value = '';
             document.getElementById('portfolio-form').reset();
             document.getElementById('portfolio-modal-title').innerText = "New Portfolio";
             document.getElementById('delete-portfolio-btn').classList.add('hidden');
+            
+            // Empty losses for new portfolio
+            listContainer.innerHTML = categories.map(c => `
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">${c.asset_type}</label>
+                    <input data-type="${c.asset_type}" type="number" step="any" class="minusvalenza-input w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-1.5 px-3 text-sm" placeholder="0.00"/>
+                </div>
+            `).join('') || '<p class="text-[10px] text-slate-400 italic">No categories defined in Settings.</p>';
+        } else {
+            // Fetch existing portfolio data to get current losses
+            try {
+                const res = await fetch(`/api/portfolios/${id}`);
+                const p = await res.json();
+                
+                document.getElementById('p-id').value = p.id;
+                document.getElementById('p-name').value = p.name;
+                document.getElementById('p-currency').value = p.currency;
+                document.getElementById('p-date').value = p.startDate;
+                document.getElementById('p-cash').value = p.initialCash;
+                document.getElementById('p-color').value = p.color || '#6366f1';
+                document.getElementById('portfolio-modal-title').innerText = "Edit Portfolio";
+                document.getElementById('delete-portfolio-btn').classList.remove('hidden');
+
+                const currentLosses = p.losses || {};
+                listContainer.innerHTML = categories.map(c => `
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${c.asset_type}</label>
+                        <input data-type="${c.asset_type}" type="number" step="any" value="${currentLosses[c.asset_type] || 0}" class="minusvalenza-input w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-1.5 px-3 text-sm" placeholder="0.00"/>
+                    </div>
+                `).join('');
+            } catch (err) { console.error(err); }
         }
+        
         const modal = document.getElementById('portfolio-modal');
-        if (modal) {
-            modal.classList.remove('hidden');
-        }
-        document.getElementById('p-date').value = new Date().toISOString().split('T')[0];
+        if (modal) modal.classList.remove('hidden');
     };
 
     window.closePortfolioModal = function() {
@@ -804,17 +894,30 @@
 
             // Render Taxation
             const taxSection = document.getElementById('latent-taxation-section');
-            const taxBreakdownContainer = document.getElementById('tax-breakdown-container');
-            if (p.totalLatentTax > 0) {
+            const taxTableBody = document.getElementById('tax-breakdown-table-body');
+            
+            if (p.taxBreakdown && p.taxBreakdown.length > 0) {
                 taxSection.classList.remove('hidden');
-                document.getElementById('total-latent-tax-label').innerText = formatPrivacy(p.totalLatentTax, p.currency, 'p-total');
-                document.getElementById('tax-currency-label').innerText = p.currency;
                 
-                taxBreakdownContainer.innerHTML = p.taxBreakdown.map(b => `
-                    <div class="flex flex-col">
-                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">${b.type} (${b.rate}%)</p>
-                        <p class="text-xs font-black text-slate-700 dark:text-slate-300">${formatCurrency(b.tax, p.currency, 2)}</p>
-                    </div>
+                // Header values
+                const totalGross = p.taxBreakdown.reduce((s, b) => s + b.grossGain, 0);
+                const totalNet = p.taxBreakdown.reduce((s, b) => s + b.netGain, 0);
+                
+                document.getElementById('taxation-gross-gain').innerText = formatCurrency(totalGross, p.currency, 2);
+                document.getElementById('total-latent-tax-label').innerText = formatCurrency(p.totalLatentTax, p.currency, 2);
+                document.getElementById('taxation-net-gain').innerText = formatCurrency(totalNet, p.currency, 2);
+
+                taxTableBody.innerHTML = p.taxBreakdown.map(b => `
+                    <tr class="border-b border-slate-50 dark:border-slate-800/50 hover:bg-amber-100/30 transition-colors">
+                        <td class="py-3 font-bold text-slate-700 dark:text-slate-300">${b.type} <span class="text-[10px] text-slate-400 font-normal ml-1">(${b.rate}%)</span></td>
+                        <td class="py-3 text-right font-medium">${formatCurrency(b.grossGain, p.currency, 2)}</td>
+                        <td class="py-3 text-right text-slate-500">${formatCurrency(b.realized, p.currency, 2)}</td>
+                        <td class="py-3 text-right text-slate-500">${formatCurrency(b.unrealized, p.currency, 2)}</td>
+                        <td class="py-3 text-right text-amber-600 font-bold">${formatCurrency(b.minusvalenze, p.currency, 2)}</td>
+                        <td class="py-3 text-right font-bold">${formatCurrency(b.taxableGain, p.currency, 2)}</td>
+                        <td class="py-3 text-right text-rose-500 font-black">${formatCurrency(b.tax, p.currency, 2)}</td>
+                        <td class="py-3 text-right text-emerald-600 font-black">${formatCurrency(b.netGain, p.currency, 2)}</td>
+                    </tr>
                 `).join('');
             } else {
                 taxSection.classList.add('hidden');
@@ -1157,12 +1260,22 @@
         if (!form) return;
         form.onsubmit = async (e) => {
             e.preventDefault();
+            
+            // Collect losses
+            const losses = {};
+            document.querySelectorAll('.minusvalenza-input').forEach(input => {
+                const type = input.getAttribute('data-type');
+                const val = parseFloat(input.value) || 0;
+                if (type) losses[type] = val;
+            });
+
             const data = {
                 name: document.getElementById('p-name').value,
                 currency: document.getElementById('p-currency').value,
                 startDate: document.getElementById('p-date').value,
                 initialCash: parseFloat(document.getElementById('p-cash').value),
-                color: document.getElementById('p-color').value
+                color: document.getElementById('p-color').value,
+                losses: losses
             };
             const id = document.getElementById('p-id').value;
             const method = id ? 'PUT' : 'POST';
@@ -1764,20 +1877,9 @@
     }
 
     async function editPortfolio() {
-        try {
-            const res = await fetch(`/api/portfolios/${currentPortfolioId}`);
-            const p = await res.json();
-            document.getElementById('p-id').value = p.id;
-            document.getElementById('p-name').value = p.name;
-            document.getElementById('p-currency').value = p.currency;
-            document.getElementById('p-date').value = p.startDate;
-            document.getElementById('p-cash').value = p.initialCash;
-            document.getElementById('p-color').value = p.color || '#6366f1';
-            
-            document.getElementById('portfolio-modal-title').innerText = "Edit Portfolio";
-            document.getElementById('delete-portfolio-btn').classList.remove('hidden');
-            document.getElementById('portfolio-modal').classList.remove('hidden');
-        } catch (err) { console.error(err); }
+        if (typeof openPortfolioModal === 'function') {
+            await openPortfolioModal(currentPortfolioId);
+        }
     }
 
     window.init = init;

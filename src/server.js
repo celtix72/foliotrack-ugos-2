@@ -939,25 +939,52 @@ app.get('/api/portfolios/:id', async (req, res) => {
             };
         });
 
-    // ─── Latent Taxation Calculation ─────────────────────────────────────────────
+    // ─── Taxation Calculation (Latent + Realized) ────────────────────────────────
     const taxRates = database.db.prepare(`SELECT asset_type, rate FROM tax_rates`).all();
     const trMap = {};
     taxRates.forEach(r => trMap[r.asset_type] = r.rate);
 
-    let totalLatentTax = 0;
-    const taxBreakdown = {};
+    const losses = database.db.prepare(`SELECT asset_type, amount FROM portfolio_losses WHERE portfolioId = ?`).all(portfolioId);
+    const lossMap = {};
+    losses.forEach(l => lossMap[l.asset_type] = l.amount);
+
+    const aggregateGains = {}; // { type: { unrealized: 0, realized: 0 } }
 
     holdings.forEach(h => {
-        if (h.unrealizedGain > 0) {
-            const tr = trMap[h.type] || 26; // Default to 26% if type not mapped
-            const taxAmount = (h.unrealizedGain * tr) / 100;
-            totalLatentTax += taxAmount;
-            
-            if (!taxBreakdown[h.type]) taxBreakdown[h.type] = { type: h.type, gain: 0, tax: 0, rate: tr };
-            taxBreakdown[h.type].gain += h.unrealizedGain;
-            taxBreakdown[h.type].tax  += taxAmount;
-        }
+        if (!aggregateGains[h.type]) aggregateGains[h.type] = { unrealized: 0, realized: 0 };
+        aggregateGains[h.type].unrealized += h.unrealizedGain;
     });
+
+    Object.values(closedByKey).forEach(c => {
+        const asset = database.db.prepare(`SELECT type FROM assets WHERE ticker = ?`).get(c.ticker);
+        const type = asset ? asset.type : 'Stock';
+        if (!aggregateGains[type]) aggregateGains[type] = { unrealized: 0, realized: 0 };
+        aggregateGains[type].realized += c.realizedGain;
+    });
+
+    let totalLatentTax = 0;
+    const taxBreakdown = Object.entries(aggregateGains).map(([type, gains]) => {
+        const grossGain = gains.unrealized + gains.realized;
+        const minusvalenze = lossMap[type] || 0;
+        const taxableGain = Math.max(0, grossGain - minusvalenze);
+        const rate = trMap[type] || 26;
+        const tax = (taxableGain * rate) / 100;
+        const netGain = grossGain - tax;
+        
+        totalLatentTax += tax;
+
+        return {
+            type,
+            grossGain: Math.round(grossGain * 100) / 100,
+            unrealized: Math.round(gains.unrealized * 100) / 100,
+            realized: Math.round(gains.realized * 100) / 100,
+            minusvalenze: Math.round(minusvalenze * 100) / 100,
+            taxableGain: Math.round(taxableGain * 100) / 100,
+            rate,
+            tax: Math.round(tax * 100) / 100,
+            netGain: Math.round(netGain * 100) / 100
+        };
+    }).filter(b => b.grossGain !== 0 || b.minusvalenze !== 0);
 
     // Asset allocation by type, currency, and country
     const totalAssetsValue = holdings.reduce((s, h) => s + h.currentValue, 0);
@@ -1042,7 +1069,8 @@ app.get('/api/portfolios/:id', async (req, res) => {
         dividendGroups, 
         totalDividends: Math.round(totalDividends * 100) / 100,
         totalLatentTax: Math.round(totalLatentTax * 100) / 100,
-        taxBreakdown: Object.values(taxBreakdown).map(b => ({ ...b, tax: Math.round(b.tax * 100) / 100, gain: Math.round(b.gain * 100) / 100 }))
+        taxBreakdown,
+        losses: lossMap
     });
 });
 
@@ -1091,7 +1119,7 @@ app.get('/api/portfolios/:id/export', (req, res) => {
 
 app.post('/api/portfolios', (req, res) => {
     console.log('POST /api/portfolios:', req.body);
-    const { name, currency, startDate, initialCash, color } = req.body;
+    const { name, currency, startDate, initialCash, color, losses } = req.body;
 
     if (!name) return res.status(400).json({ error: 'Portfolio name is required' });
 
@@ -1104,7 +1132,17 @@ app.post('/api/portfolios', (req, res) => {
         VALUES (?, ?, ?, ?, ?, ?, ?)
     `).run(name, currency || 'EUR', start, cash, cash, cash, pColor);
 
-    const created = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(result.lastInsertRowid);
+    const portfolioId = result.lastInsertRowid;
+
+    // Handle initial losses if provided
+    if (losses && typeof losses === 'object') {
+        const stmt = database.db.prepare(`INSERT OR REPLACE INTO portfolio_losses (portfolioId, asset_type, amount) VALUES (?, ?, ?)`);
+        for (const [type, amount] of Object.entries(losses)) {
+            stmt.run(portfolioId, type, parseFloat(amount) || 0);
+        }
+    }
+
+    const created = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(portfolioId);
     console.log('Created portfolio:', created);
     clearPerformanceCache();
     res.status(201).json(created);
@@ -1114,7 +1152,7 @@ app.put('/api/portfolios/:id', async (req, res) => {
     const existing = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(req.params.id);
     if (!existing) return res.status(404).send('Portfolio not found');
 
-    const { name, currency, startDate, initialCash, color } = req.body;
+    const { name, currency, startDate, initialCash, color, losses } = req.body;
     database.db.prepare(`
         UPDATE portfolios SET name=?, currency=?, startDate=?, initialCash=?, color=? WHERE id=?
     `).run(
@@ -1125,6 +1163,14 @@ app.put('/api/portfolios/:id', async (req, res) => {
         color      || existing.color || '#6366f1',
         req.params.id
     );
+
+    // Update losses
+    if (losses && typeof losses === 'object') {
+        const stmt = database.db.prepare(`INSERT OR REPLACE INTO portfolio_losses (portfolioId, asset_type, amount) VALUES (?, ?, ?)`);
+        for (const [type, amount] of Object.entries(losses)) {
+            stmt.run(req.params.id, type, parseFloat(amount) || 0);
+        }
+    }
 
     const liveRate = await getEurUsdRate();
     database.recalculatePortfolio(req.params.id, liveRate);
