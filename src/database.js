@@ -251,13 +251,13 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
                 break;
             }
             case 'BUY': {
-                const cost = (qty * price + comm + tax) / fx;
+                const cost = (t.amount || (qty * price + comm + tax)) / fx;
                 cash -= cost;
                 holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) + qty;
                 break;
             }
             case 'SELL': {
-                const proceeds = (qty * price - comm - tax) / fx;
+                const proceeds = (t.amount || (qty * price - comm - tax)) / fx;
                 cash += proceeds;
                 holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) - qty;
                 break;

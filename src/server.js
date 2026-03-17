@@ -1878,13 +1878,17 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                 case 'WITHDRAWAL': portfolioStates[p.id].cash -= amount; portfolioStates[p.id].netDeposits -= amount; break;
                 case 'TAX':        portfolioStates[p.id].cash -= amount; break;
                 case 'TRANSFER':   portfolioStates[p.id].cash -= amount; break;
-                case 'DIVIDEND':   portfolioStates[p.id].cash += (amount || (qty * price - comm - tax)) / fx; break;
+                case 'DIVIDEND': {
+                    const divAmt = (t.amount || (qty * price - comm - tax)) / fx;
+                    portfolioStates[p.id].cash += divAmt; 
+                    break;
+                }
                 case 'BUY':
-                    portfolioStates[p.id].cash -= (qty * price + comm + tax) / fx;
+                    portfolioStates[p.id].cash -= (t.amount || (qty * price + comm + tax)) / fx;
                     portfolioStates[p.id].holdings[t.assetTicker] = (portfolioStates[p.id].holdings[t.assetTicker] || 0) + qty;
                     break;
                 case 'SELL':
-                    portfolioStates[p.id].cash += (qty * price - comm - tax) / fx;
+                    portfolioStates[p.id].cash += (t.amount || (qty * price - comm - tax)) / fx;
                     portfolioStates[p.id].holdings[t.assetTicker] = (portfolioStates[p.id].holdings[t.assetTicker] || 0) - qty;
                     break;
             }
@@ -1983,13 +1987,17 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                         case 'WITHDRAWAL': state.cash -= amount; state.netDeposits -= amount; break;
                         case 'TAX':        state.cash -= amount; break;
                         case 'TRANSFER':   state.cash -= amount; break;
-                        case 'DIVIDEND':   state.cash += (amount || (qty * price - comm - tax)) / fx; break;
+                        case 'DIVIDEND': {
+                            const divAmt = (t.amount || (qty * price - comm - tax)) / fx;
+                            state.cash += divAmt; 
+                            break;
+                        }
                         case 'BUY':
-                            state.cash -= (qty * price + comm + tax) / fx;
+                            state.cash -= (t.amount || (qty * price + comm + tax)) / fx;
                             state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) + qty;
                             break;
                         case 'SELL':
-                            state.cash += (qty * price - comm - tax) / fx;
+                            state.cash += (t.amount || (qty * price - comm - tax)) / fx;
                             state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) - qty;
                             break;
                     }
