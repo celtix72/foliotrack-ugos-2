@@ -141,7 +141,7 @@
                             <span class="text-[9px] text-slate-500 truncate max-w-[80px] font-bold">${a.name}</span>
                         </div>
                         <div class="text-right flex flex-col items-end">
-                            <p class="text-[11px] font-black font-mono leading-none mb-1">${formatCurrency(a.currentPrice, a.currency || 'USD')}</p>
+                            <p class="text-[11px] font-black font-mono leading-none mb-1">${formatCurrency(a.currentPrice, a.currency || 'USD', 2)}</p>
                             <p class="text-[10px] font-black font-mono ${a.changePercent >= 0 ? 'text-emerald-500' : 'text-rose-500'}">
                                 ${a.changePercent >= 0 ? '+' : ''}${a.changePercent.toFixed(2)}%
                             </p>
@@ -382,9 +382,9 @@
             return new Intl.NumberFormat('de-DE', { 
                 style: 'currency', 
                 currency: currency,
-                minimumFractionDigits: 0,
+                minimumFractionDigits: decimals,
                 maximumFractionDigits: decimals
-            }).format(value).replace(',00', '');
+            }).format(value);
         } catch (e) {
             return formatNumber(val, decimals) + ' ' + currency;
         }
@@ -394,9 +394,9 @@
         if (val === null || val === undefined) return '—';
         const value = parseFloat(val);
         return new Intl.NumberFormat('de-DE', { 
-            minimumFractionDigits: 0,
+            minimumFractionDigits: decimals,
             maximumFractionDigits: decimals
-        }).format(value).replace(',00', '');
+        }).format(value);
     };
 
     // ─── Privacy Mode ────────────────────────────────────────────────────────
@@ -416,11 +416,11 @@
         window.dispatchEvent(new CustomEvent('privacy-changed', { detail: { id } }));
     };
 
-    window.formatPrivacy = function(val, currency = 'EUR', id = null) {
+    window.formatPrivacy = function(val, currency = 'EUR', id = null, decimals = 0) {
         if (window.privacyState.enabled && (!id || !window.privacyState.overrides.has(id))) {
             return '****';
         }
-        return formatCurrency(val, currency);
+        return formatCurrency(val, currency, decimals);
     };
 
     window.getPrivacyIcon = function(id) {

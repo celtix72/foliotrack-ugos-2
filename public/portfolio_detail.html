@@ -992,11 +992,11 @@
                 </td>
                 <td class="px-6 py-4">
                     <p class="font-bold text-slate-700 dark:text-slate-200 font-mono text-sm leading-tight">${formatNumber(h.shares, 0)}</p>
-                    <p class="text-[10px] text-slate-500 font-bold font-mono mt-0.5">${formatPrivacy(h.avgCostAssetCurr, h.currency, 'a-avg-' + h.ticker)} <span class="text-[9px] opacity-70">Avg</span></p>
+                    <p class="text-[10px] text-slate-500 font-bold font-mono mt-0.5">${formatPrivacy(h.avgCostAssetCurr, h.currency, 'a-avg-' + h.ticker, 2)} <span class="text-[9px] opacity-70">Avg</span></p>
                 </td>
                 <td class="px-6 py-4">
-                    <p class="font-bold text-slate-900 dark:text-white font-mono text-sm leading-tight">${formatPrivacy(h.currentPrice, h.currency, 'a-price-' + h.ticker)}</p>
-                    <p class="text-[10px] font-bold text-${color}-500/80 font-mono mt-0.5">${sign}${formatPrivacy(h.unrealizedGainPct, 2, 'a-gainpct-' + h.ticker)}%</p>
+                    <p class="font-bold text-slate-900 dark:text-white font-mono text-sm leading-tight">${formatPrivacy(h.currentPrice, h.currency, 'a-price-' + h.ticker, 2)}</p>
+                    <p class="text-[10px] font-bold text-${color}-500/80 font-mono mt-0.5">${sign}${formatPrivacy(h.unrealizedGainPct, 'num', 'a-gainpct-' + h.ticker, 2)}%</p>
                 </td>
                 <td class="px-6 py-4 text-right">
                     <p class="font-black text-slate-900 dark:text-white font-mono text-sm leading-tight">${formatPrivacy(h.currentValue, currency, 'a-value-' + h.ticker)}</p>
@@ -1032,9 +1032,9 @@
                                                 <span class="px-1.5 py-0.5 rounded-[4px] font-black text-[8px] bg-${tColor}-500/10 text-${tColor}-500 border border-${tColor}-500/20">${t.type}</span>
                                             </td>
                                             <td class="px-4 py-2 text-right font-mono font-bold">${t.quantity ? formatNumber(t.quantity, 0) : '—'}</td>
-                                            <td class="px-4 py-2 text-right font-mono">${t.price ? formatPrivacy(t.price, h.currency, 't-price-' + t.id) : '—'}</td>
-                                            <td class="px-4 py-2 text-right font-mono text-slate-400 opacity-60">${t.exchangeRate !== 1 ? formatPrivacy(t.exchangeRate, 4, 't-fx-' + t.id) : '—'}</td>
-                                            <td class="px-4 py-2 text-right font-mono text-slate-400 opacity-60">${t.commission + t.tax > 0 ? formatPrivacy(t.commission + t.tax, 2, 't-ct-' + t.id) : '—'}</td>
+                                            <td class="px-4 py-2 text-right font-mono">${t.price ? formatPrivacy(t.price, h.currency, 't-price-' + t.id, 2) : '—'}</td>
+                                            <td class="px-4 py-2 text-right font-mono text-slate-400 opacity-60">${t.exchangeRate !== 1 ? formatPrivacy(t.exchangeRate, 'num', 't-fx-' + t.id, 4) : '—'}</td>
+                                            <td class="px-4 py-2 text-right font-mono text-slate-400 opacity-60">${t.commission + t.tax > 0 ? formatPrivacy(t.commission + t.tax, h.currency, 't-ct-' + t.id, 2) : '—'}</td>
                                             <td class="px-4 py-2 text-right font-bold font-mono text-slate-700 dark:text-slate-200">${tSign}${formatPrivacy(total, currency, 't-total-' + t.id)}</td>
                                             <td class="px-4 py-2 text-center">
                                                 <div class="flex items-center justify-center gap-1">
@@ -1122,8 +1122,8 @@
                     </td>
                     <td class="px-6 py-4 text-right">
                         ${!isCash ? `
-                            <div class="font-mono text-xs font-bold">${formatNumber(t.quantity, 0)} @ ${formatPrivacy(t.price, displayCurr, 'ft-price-' + t.id)}</div>
-                            <div class="text-[9px] text-slate-400">FX: ${t.exchangeRate !== 1 ? formatPrivacy(t.exchangeRate, 4, 'ft-fx-' + t.id) : '1:1'}</div>
+                            <div class="font-mono text-xs font-bold">${formatNumber(t.quantity, 0)} @ ${formatPrivacy(t.price, displayCurr, 'ft-price-' + t.id, 2)}</div>
+                            <div class="text-[9px] text-slate-400">FX: ${t.exchangeRate !== 1 ? formatPrivacy(t.exchangeRate, 'num', 'ft-fx-' + t.id, 4) : '1:1'}</div>
                         ` : '—'}
                     </td>
                     <td class="px-6 py-4 text-right font-black font-mono text-sm text-${color}-600">
@@ -2101,7 +2101,7 @@
                 <td class="px-3 py-2.5 truncate max-w-[120px]">${r.yfName || r.tickerRaw}</td>
                 <td class="px-3 py-2.5 font-bold">${r.yfCurrency || r.currency}</td>
                 <td class="px-3 py-2.5 text-right font-mono">${formatNumber(r.exchangeRate, 4)}</td>
-                <td class="px-3 py-2.5 text-right font-mono">${formatNumber(r.price, 0)}</td>
+                <td class="px-3 py-2.5 text-right font-mono">${formatNumber(r.price, 2)}</td>
                 <td class="px-3 py-2.5 text-right font-mono">${formatNumber(r.quantity, 0)}</td>
                 <td class="px-3 py-2.5 text-right text-slate-500">${r.commission}</td>
                 <td class="px-3 py-2.5 text-right text-slate-500">${r.tax}</td>
