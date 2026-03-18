@@ -723,7 +723,7 @@ app.get('/api/portfolios', async (req, res) => {
             }
 
             // Calculate tax for this portfolio
-            const details = await getPortfolioDetails(p, liveRate);
+            const details = await getPortfolioDetails(p.id, liveRate);
             p.totalTax = details.totalLatentTax;
             p.netValue = p.totalValue - p.totalTax;
             
@@ -747,162 +747,21 @@ app.get('/api/portfolios', async (req, res) => {
 });
 
 // Helper to calculate holdings for a portfolio
-async function getPortfolioDetails(portfolio, liveRate) {
-    const portfolioId = portfolio.id;
-    const transactions = database.db.prepare(`
-        SELECT * FROM transactions WHERE portfolioId = ? ORDER BY date ASC
-    `).all(portfolioId);
-
-    // FIFO lots per ticker
-    const lots        = {};   
-    const openMap     = {};   
-    
-    for (const t of transactions) {
-        const qty    = t.quantity     || 0;
-        const price  = t.price        || 0;
-        const comm   = t.commission   || 0;
-        const tax    = t.tax          || 0;
-        const fx     = t.exchangeRate || 1;
-
-        if (t.type === 'BUY' && t.assetTicker) {
-            const totalCost    = (t.amount || (qty * price + comm + tax)) / fx;
-            const costPerShare = qty > 0 ? totalCost / qty : 0;
-            if (!lots[t.assetTicker])    lots[t.assetTicker] = [];
-            if (!openMap[t.assetTicker]) openMap[t.assetTicker] = { shares: 0, totalCostInPCurr: 0 };
-            
-            lots[t.assetTicker].push({ qty, costPerShare });
-            openMap[t.assetTicker].shares           += qty;
-            openMap[t.assetTicker].totalCostInPCurr += totalCost;
-        }
-
-        if (t.type === 'SELL' && t.assetTicker) {
-            let remaining  = qty;
-            const lotsCopy = lots[t.assetTicker] || [];
-            let costBasis  = 0;
-            while (remaining > 0 && lotsCopy.length > 0) {
-                const lot  = lotsCopy[0];
-                const used = Math.min(lot.qty, remaining);
-                costBasis  += used * lot.costPerShare;
-                lot.qty    -= used;
-                remaining  -= used;
-                if (lot.qty <= 0) lotsCopy.shift();
-            }
-            lots[t.assetTicker] = lotsCopy;
-            if (openMap[t.assetTicker]) {
-                openMap[t.assetTicker].shares           -= qty;
-                openMap[t.assetTicker].totalCostInPCurr -= costBasis;
-                if (openMap[t.assetTicker].shares <= 0.0001) delete openMap[t.assetTicker];
-            }
-        }
-    }
-
-    const holdings = Object.entries(openMap)
-        .filter(([, h]) => h.shares > 0.0001)
-        .map(([ticker, h]) => {
-            const asset  = database.db.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(ticker);
-            const curPx  = asset ? asset.currentPrice : 0;
-            const rate = (asset && asset.currency === 'USD' && portfolio.currency === 'EUR') ? liveRate : 1;
-            const curPxP = (asset && asset.currency !== portfolio.currency) ? curPx / rate : curPx;
-            const curVal = h.shares * curPxP;
-            const uGain  = curVal - h.totalCostInPCurr;
-            return {
-                ticker, shares: h.shares,
-                type: asset ? asset.type : 'Stock',
-                currentValue: curVal,
-                unrealizedGain: uGain,
-                currency: portfolio.currency
-            };
-        });
-
-    const taxRates = database.db.prepare(`SELECT asset_type, rate FROM tax_rates`).all();
-    const trMap = {};
-    taxRates.forEach(r => trMap[r.asset_type] = r.rate);
-
-    const losses = database.db.prepare(`SELECT asset_type, amount FROM portfolio_losses WHERE portfolioId = ?`).all(portfolioId);
-    const lossMap = {};
-    losses.forEach(l => lossMap[l.asset_type] = l.amount);
-
-    const aggregateGains = {};
-    holdings.forEach(h => {
-        if (!aggregateGains[h.type]) aggregateGains[h.type] = { unrealized: 0 };
-        aggregateGains[h.type].unrealized += h.unrealizedGain;
-    });
-
-    let totalLatentTax = 0;
-    const taxBreakdown = Object.entries(aggregateGains).map(([type, gains]) => {
-        const grossGain = gains.unrealized;
-        const minusvalenze = lossMap[type] || 0;
-        const taxableGain = Math.max(0, grossGain - minusvalenze);
-        const rate = trMap[type] || 26;
-        const tax = (taxableGain * rate) / 100;
-        const netGain = grossGain - tax;
-        totalLatentTax += tax;
-        return {
-            type,
-            grossGain: Math.round(grossGain * 100) / 100,
-            minusvalenze: Math.round(minusvalenze * 100) / 100,
-            taxableGain: Math.round(taxableGain * 100) / 100,
-            rate,
-            tax: Math.round(tax * 100) / 100,
-            netGain: Math.round(netGain * 100) / 100
-        };
-    }).filter(b => b.grossGain !== 0 || b.minusvalenze !== 0);
-
-    return {
-        holdings,
-        totalLatentTax,
-        taxBreakdown,
-        totalValue: portfolio.totalValue,
-        netValue: portfolio.totalValue - totalLatentTax
-    };
-}
-
-app.get('/api/analytics/global-allocation', async (req, res) => {
-    try {
-        const portfolios = database.db.prepare('SELECT * FROM portfolios').all();
-        const liveRate = await getEurUsdRate();
-        const typeMap = {};
-        let totalValue = 0;
-
-        for (const p of portfolios) {
-            const details = await getPortfolioDetails(p, liveRate);
-            const holdings = details.holdings;
-            
-            // For global, we assume all portfolios are in the same base for visualization (e.g. EUR)
-            // If they are in different currencies, we'd need FX conversion here.
-            // For now, most users use the same base or we assume EUR as default.
-            for (const h of holdings) {
-                const tp = h.type || 'Other';
-                typeMap[tp] = (typeMap[tp] || 0) + h.currentValue;
-                totalValue += h.currentValue;
-            }
-        }
-
-        const allocation = Object.entries(typeMap)
-            .filter(([type]) => type.toUpperCase() !== 'STOCK')
-            .map(([type, value]) => ({
-                type,
-                value: Math.round(value * 100) / 100,
-                percent: totalValue > 0 ? Math.round((value / totalValue) * 1000) / 10 : 0
-            })).sort((a, b) => b.value - a.value);
-
-        res.json(allocation);
-    } catch (err) {
-        console.error('Global allocation error:', err);
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.get('/api/portfolios/:id', async (req, res) => {
-    const portfolioId = req.params.id;
+/**
+ * Helper to calculate ALL details for a portfolio (holdings, taxes, allocation, dividends, etc.)
+ * This is the SINGLE SOURCE OF TRUTH for portfolio content.
+ */
+async function getPortfolioDetails(portfolioId, liveRate = null) {
     const portfolio = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(portfolioId);
-    if (!portfolio) return res.status(404).json({ error: 'Portfolio non trovato' });
-
-    const liveRate = await getEurUsdRate();
+    if (!portfolio) throw new Error('Portfolio non trovato');
 
     const transactions = database.db.prepare(`
         SELECT * FROM transactions WHERE portfolioId = ? ORDER BY date ASC
     `).all(portfolioId);
+
+    if (!liveRate) {
+        liveRate = await getEurUsdRate();
+    }
 
     // FIFO lots per ticker
     const lots        = {};   // { ticker: [{qty, costPerShare, costPerShareAssetCurr}] }
@@ -920,12 +779,12 @@ app.get('/api/portfolios/:id', async (req, res) => {
         const year   = (t.date || '').substring(0, 4);
 
         if (t.type === 'BUY' && t.assetTicker) {
-            const totalCost    = (qty * price + comm + tax) / fx;
+            const totalCost    = (t.amount || (qty * price + comm + tax)) / fx;
             const costPerShare = qty > 0 ? totalCost / qty : 0;
             if (!lots[t.assetTicker])    lots[t.assetTicker] = [];
             if (!openMap[t.assetTicker]) openMap[t.assetTicker] = { shares: 0, totalCostInPCurr: 0, totalCostInAssetCurr: 0 };
             
-            const totalCostAssetCurr = (qty * price + comm + tax);
+            const totalCostAssetCurr = (t.amount || (qty * price + comm + tax));
             const costPerShareAsset  = qty > 0 ? totalCostAssetCurr / qty : 0;
             
             lots[t.assetTicker].push({ qty, costPerShare, costPerShareAssetCurr: costPerShareAsset });
@@ -936,7 +795,7 @@ app.get('/api/portfolios/:id', async (req, res) => {
 
         if (t.type === 'SELL' && t.assetTicker) {
             let remaining  = qty;
-            const proceeds = (qty * price - comm - tax) / fx;
+            const proceeds = (t.amount || (qty * price - comm - tax)) / fx;
             const lotsCopy = lots[t.assetTicker] || [];
             let costBasis          = 0;
             let costBasisAssetCurr = 0;
@@ -966,7 +825,7 @@ app.get('/api/portfolios/:id', async (req, res) => {
         }
 
         if (t.type === 'DIVIDEND' && t.assetTicker) {
-            const net = (qty && price) ? ((qty * price - comm - tax) / fx) : (amount / fx);
+            const net = (qty && price && t.type !== 'DIVIDEND_MANUAL') ? ((qty * price - comm - tax) / fx) : (amount / fx);
             dividends.push({ ticker: t.assetTicker, date: t.date, year, amount: net, tax: tax / fx });
         }
     }
@@ -978,7 +837,7 @@ app.get('/api/portfolios/:id', async (req, res) => {
             const asset  = database.db.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(ticker);
             const curPx  = asset ? asset.currentPrice : 0;
             
-            // Use live rate for USD conversion if the portfolio is in EUR
+            // FX rate for this specific asset conversion
             const rate = (asset && asset.currency === 'USD' && portfolio.currency === 'EUR') ? liveRate : 1;
             
             const curPxP = (asset && asset.currency !== portfolio.currency) ? curPx / rate : curPx;
@@ -1003,7 +862,6 @@ app.get('/api/portfolios/:id', async (req, res) => {
             };
         });
 
-    // ─── Taxation Calculation (Latent + Realized) ────────────────────────────────
     const taxRates = database.db.prepare(`SELECT asset_type, rate FROM tax_rates`).all();
     const trMap = {};
     taxRates.forEach(r => trMap[r.asset_type] = r.rate);
@@ -1020,31 +878,20 @@ app.get('/api/portfolios/:id', async (req, res) => {
 
     let totalLatentTax = 0;
     const taxBreakdown = Object.entries(aggregateGains).map(([type, gains]) => {
-        const grossGain = gains.unrealized; // Only latent gains are taxed per user request
+        const grossGain = gains.unrealized;
         const minusvalenze = lossMap[type] || 0;
         const taxableGain = Math.max(0, grossGain - minusvalenze);
         const rate = trMap[type] || 26;
         const tax = (taxableGain * rate) / 100;
         const netGain = grossGain - tax;
-        
         totalLatentTax += tax;
-
         return {
-            type,
-            grossGain: Math.round(grossGain * 100) / 100,
-            unrealized: Math.round(gains.unrealized * 100) / 100,
-            realized: 0, 
-            minusvalenze: Math.round(minusvalenze * 100) / 100,
-            taxableGain: Math.round(taxableGain * 100) / 100,
-            rate,
-            tax: Math.round(tax * 100) / 100,
-            netGain: Math.round(netGain * 100) / 100
+            type, grossGain, unrealized: gains.unrealized, realized: 0,
+            minusvalenze, taxableGain, rate, tax, netGain
         };
     }).filter(b => b.grossGain !== 0 || b.minusvalenze !== 0);
 
-    // Asset allocation by type, currency, and country
     const totalAssetsValue = holdings.reduce((s, h) => s + h.currentValue, 0);
-    
     const typeMap = {};
     const currMap = {};
     const counMap = {};
@@ -1052,43 +899,24 @@ app.get('/api/portfolios/:id', async (req, res) => {
     for (const h of holdings) { 
         const tp = h.type || 'Other'; 
         typeMap[tp] = (typeMap[tp] || 0) + h.currentValue; 
-        
         const cr = h.currency || 'Unknown';
         currMap[cr] = (currMap[cr] || 0) + h.currentValue;
-
         const asset = database.db.prepare(`SELECT country FROM assets WHERE ticker = ?`).get(h.ticker);
         const co = (asset && asset.country) ? asset.country : 'Unknown';
         counMap[co] = (counMap[co] || 0) + h.currentValue;
     }
 
-    const allocation = Object.entries(typeMap)
-        .filter(([type]) => type.toUpperCase() !== 'STOCK')
-        .map(([type, value]) => ({
-            type, value: Math.round(value * 100) / 100,
-            percent: totalAssetsValue > 0 ? Math.round((value / totalAssetsValue) * 1000) / 10 : 0
-        })).sort((a, b) => b.value - a.value);
-
-    const currencyAllocation = Object.entries(currMap).map(([type, value]) => ({
-        type, value: Math.round(value * 100) / 100,
-        percent: totalAssetsValue > 0 ? Math.round((value / totalAssetsValue) * 1000) / 10 : 0
-    })).sort((a, b) => b.value - a.value);
-
-    const countryAllocation = Object.entries(counMap).map(([type, value]) => ({
-        type, value: Math.round(value * 100) / 100,
-        percent: totalAssetsValue > 0 ? Math.round((value / totalAssetsValue) * 1000) / 10 : 0
+    const allocation = Object.entries(typeMap).map(([type, value]) => ({
+        type, value, percent: totalAssetsValue > 0 ? (value / totalAssetsValue) * 100 : 0
     })).sort((a, b) => b.value - a.value);
 
     // Closed positions
     const closedPositions = Object.values(closedByKey).map(c => {
-        const asset = database.db.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(c.ticker);
-        const gPct = c.totalCostBasis > 0 ? Math.round((c.realizedGain / c.totalCostBasis) * 10000) / 100 : 0;
-        return { ...c, name: asset ? asset.name : c.ticker, gainPct: gPct,
-            totalProceeds: Math.round(c.totalProceeds * 100) / 100,
-            totalCostBasis: Math.round(c.totalCostBasis * 100) / 100,
-            realizedGain: Math.round(c.realizedGain * 100) / 100 };
+        const asset = database.db.prepare(`SELECT name FROM assets WHERE ticker = ?`).get(c.ticker);
+        const gPct = c.totalCostBasis > 0 ? (c.realizedGain / c.totalCostBasis) * 100 : 0;
+        return { ...c, name: asset ? asset.name : c.ticker, gainPct: gPct };
     }).sort((a, b) => parseInt(b.year) - parseInt(a.year) || b.realizedGain - a.realizedGain);
 
-    // Dividends by year
     const divYearMap = {};
     let totalDividends = 0;
     for (const d of dividends) {
@@ -1097,37 +925,77 @@ app.get('/api/portfolios/:id', async (req, res) => {
         divYearMap[d.year].items.push(d);
         totalDividends += d.amount;
     }
-    const dividendGroups = Object.values(divYearMap).sort((a, b) => parseInt(b.year) - parseInt(a.year));
 
-    // Total value = Cash + Assets
-    // This allows the header to match the sum of holdings exactly
     const liveTotalValue = Math.round((portfolio.currentCash + totalAssetsValue) * 100) / 100;
 
-    const history = database.db.prepare(`
-        SELECT totalValue FROM portfolio_history 
-        WHERE portfolioId = ? 
-        ORDER BY date DESC LIMIT 1
-    `).get(portfolioId);
-    const changePercent = (history && history.totalValue > 0) 
-        ? ((liveTotalValue - history.totalValue) / history.totalValue) * 100 
-        : 0;
+    // PROFIT-BASED VARIATION (Excluding capital moves)
+    const history = await calculatePerformanceHistory([portfolioId], '1W');
+    let changePercent = 0;
+    if (history.length > 1) {
+        const last = history[history.length - 1];
+        const prev = history[history.length - 2];
+        const profitChange = last.profit - prev.profit;
+        if (prev.value > 0) {
+            changePercent = (profitChange / prev.value) * 100;
+        }
+    }
 
-    res.json({ 
-        ...portfolio, 
+    return {
+        ...portfolio,
         totalValue: liveTotalValue,
         changePercent,
-        transactions, 
-        holdings, 
-        allocation, 
-        currencyAllocation,
-        countryAllocation,
-        closedPositions, 
-        dividendGroups, 
-        totalDividends: Math.round(totalDividends * 100) / 100,
+        transactions,
+        holdings,
+        allocation,
+        currencyAllocation: Object.entries(currMap).map(([type, value]) => ({ type, value })),
+        countryAllocation: Object.entries(counMap).map(([type, value]) => ({ type, value })),
+        closedPositions,
+        dividendGroups: Object.values(divYearMap).sort((a, b) => b.year - a.year),
+        totalDividends,
         totalLatentTax: Math.round(totalLatentTax * 100) / 100,
         taxBreakdown,
         losses: lossMap
-    });
+    };
+}
+
+app.get('/api/portfolios/:id', async (req, res) => {
+    try {
+        const data = await getPortfolioDetails(req.params.id);
+        res.json(data);
+    } catch (err) {
+        res.status(err.message === 'Portfolio non trovato' ? 404 : 500).json({ error: err.message });
+    }
+});
+
+app.get('/api/analytics/global-allocation', async (req, res) => {
+    try {
+        const portfolios = database.db.prepare('SELECT id FROM portfolios').all();
+        const liveRate = await getEurUsdRate();
+        const typeMap = {};
+        let totalValue = 0;
+
+        for (const { id } of portfolios) {
+            const details = await getPortfolioDetails(id, liveRate);
+            const holdings = details.holdings;
+            for (const h of holdings) {
+                const tp = h.type || 'Other';
+                typeMap[tp] = (typeMap[tp] || 0) + h.currentValue;
+                totalValue += h.currentValue;
+            }
+        }
+
+        const allocation = Object.entries(typeMap)
+            .map(([type, value]) => ({
+                type,
+                value: Math.round(value * 100) / 100,
+                percent: totalValue > 0 ? Math.round((value / totalValue) * 1000) / 10 : 0
+            })).sort((a, b) => b.value - a.value);
+
+        res.json(allocation);
+    } catch (err) {
+        console.error('Global allocation error:', err);
+        res.status(500).json({ error: err.message });
+    }
 });
 
 app.get('/api/portfolios/:id/export', (req, res) => {
