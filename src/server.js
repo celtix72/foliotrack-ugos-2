@@ -1662,6 +1662,36 @@ async function calculatePerformanceHistory(portfolioIds, range) {
     }
 
     // 2. Fetch historical data for all involved tickers (with parallelization and DB cache)
+    // 2. Fetch historical data for all involved tickers (with parallelization and DB cache)
+    const fetchBorsaItalianaHistory = async (ticker, isin) => {
+        try {
+            const url = `https://grafici.borsaitaliana.it/api/instruments/${isin},XMIL,ISIN/history/period?period=5Y&adjustment=true&add-last-price=true`;
+            const resp = await axios.get(url, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Referer': 'https://www.borsaitaliana.it/',
+                    'Accept': 'application/json, text/plain, */*',
+                    'Accept-Language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7'
+                },
+                timeout: 5000
+            });
+            if (resp.data && resp.data.history && resp.data.history.historyDt) {
+                const map = {};
+                resp.data.history.historyDt.forEach(h => {
+                    if (h.dt && h.closePx) {
+                        const d = h.dt.toString();
+                        const dateStr = `${d.substring(0, 4)}-${d.substring(4, 6)}-${d.substring(6, 8)}`;
+                        map[dateStr] = h.closePx;
+                    }
+                });
+                return map;
+            }
+        } catch (err) {
+            console.warn(`B_ITA history failed for ${ticker} (${isin}):`, err.message);
+        }
+        return null;
+    };
+
     const fetchTickerData = async (ticker) => {
         try {
             // Check In-Memory Cache first
@@ -1675,29 +1705,41 @@ async function calculatePerformanceHistory(portfolioIds, range) {
             if (dbQuotes.length > 0) {
                 historicalPrices[ticker] = Object.fromEntries(dbQuotes.map(q => [q.date, q.price]));
                 historicalPricesCache[ticker] = historicalPrices[ticker];
-                // Note: If the DB is missing recent days, we might want to refresh from YF. 
-                // For simplicity, if we have data, we use it. But for robustness, check if latest quote matches today.
                 const latestDate = dbQuotes.map(q => q.date).sort().at(-1);
                 const todayStr = new Date().toISOString().split('T')[0];
                 if (latestDate >= todayStr) return; 
             }
 
-            // Fetch from Yahoo Finance
-            const qStart = (allTransactions.find(t => t.assetTicker === ticker)?.date) || startDate.toISOString().split('T')[0];
-            const chartResult = await yahooFinance.chart(ticker, {
-                period1: qStart,
-                period2: today.toISOString().split('T')[0],
-                interval: '1d'
-            });
+            // Determine if we should use Borsa Italiana
+            const assetMeta = assetMetadataCache[ticker];
+            const isItIsin = assetMeta && assetMeta.isin && /^IT[0-9A-Z]{10}$/.test(assetMeta.isin);
+            let pricesMap = null;
 
-            if (chartResult && chartResult.quotes) {
-                const validQuotes = chartResult.quotes
-                    .filter(h => h.date && (h.adjclose || h.close) && (h.adjclose || h.close) > 0);
-                
-                const pricesMap = Object.fromEntries(
-                    validQuotes.map(h => [new Date(h.date).toISOString().split('T')[0], h.adjclose || h.close])
-                );
+            if (isItIsin || (assetMeta && assetMeta.dataSource === 'B_ITA')) {
+                const searchIsin = (assetMeta && assetMeta.isin) || ticker;
+                pricesMap = await fetchBorsaItalianaHistory(ticker, searchIsin);
+            }
 
+            // Fallback to Yahoo Finance
+            if (!pricesMap) {
+                const qStart = (allTransactions.find(t => t.assetTicker === ticker)?.date) || startDate.toISOString().split('T')[0];
+                const chartResult = await yahooFinance.chart(ticker, {
+                    period1: qStart,
+                    period2: today.toISOString().split('T')[0],
+                    interval: '1d'
+                }).catch(() => null);
+
+                if (chartResult && chartResult.quotes) {
+                    const validQuotes = chartResult.quotes
+                        .filter(h => h.date && (h.adjclose || h.close) && (h.adjclose || h.close) > 0);
+                    
+                    pricesMap = Object.fromEntries(
+                        validQuotes.map(h => [new Date(h.date).toISOString().split('T')[0], h.adjclose || h.close])
+                    );
+                }
+            }
+
+            if (pricesMap && Object.keys(pricesMap).length > 0) {
                 historicalPrices[ticker] = pricesMap;
                 historicalPricesCache[ticker] = pricesMap;
 
@@ -1708,7 +1750,7 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                         insertQuote.run(ticker, date, price);
                     }
                 });
-                saveQuotes(null); // The mapping is already done, just trigger the transaction
+                saveQuotes(null);
             } else {
                 historicalPrices[ticker] = {};
             }
@@ -1726,7 +1768,7 @@ async function calculatePerformanceHistory(portfolioIds, range) {
     // Initial state and metadata caching per portfolio
     const portfolioStates = {};
     const assetMetadataCache = {}; // Cache to avoid DB queries inside the date loop
-    const allAssets = database.db.prepare('SELECT ticker, currency, currentPrice FROM assets').all();
+    const allAssets = database.db.prepare('SELECT ticker, currency, currentPrice, type, isin, dataSource FROM assets').all();
     for (const a of allAssets) assetMetadataCache[a.ticker] = a;
 
     for (const p of portfolios) {
@@ -1915,6 +1957,7 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                         // Priority 4: Final fallback to current asset price ONLY if no historical data at all
                         if (!price || price === 0) {
                             if (assetMeta && assetMeta.currentPrice > 0) price = assetMeta.currentPrice;
+                            else if (assetMeta && assetMeta.type === 'Bond') price = 100.0; // Simulated par value for bonds
                             else price = 0;
                         }
                     }
