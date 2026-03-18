@@ -922,6 +922,18 @@
         const historyTableBody = document.getElementById('history-table-body');
         const historyPortfolioSelect = document.getElementById('history-portfolio-select');
 
+        window.toggleYearGroup = function(year) {
+            const rows = document.querySelectorAll(`.year-row-${year}`);
+            const icon = document.getElementById(`year-icon-${year}`);
+            if (rows.length === 0) return;
+            const isHidden = rows[0].classList.contains('hidden');
+            rows.forEach(r => {
+                if (isHidden) r.classList.remove('hidden');
+                else r.classList.add('hidden');
+            });
+            if (icon) icon.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
+        };
+
         window.loadHistoryData = async function() {
             if (!historyTableBody) return;
             const pid = historyPortfolioSelect.value;
@@ -929,37 +941,63 @@
             try {
                 const res = await fetch(url);
                 const data = await res.json();
-                historyTableBody.innerHTML = data.map(h => `
-                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
-                        <td class="py-1 px-1">
-                            <input type="text" value="${h.date}" 
-                                   onchange="updateHistoryRow(${h.id}, this.value, null, null, null)"
-                                   class="w-full bg-transparent border-none p-0 focus:ring-0 font-mono text-[10px] text-slate-500">
-                        </td>
-                        <td class="py-1 px-1">
-                            <input type="number" step="0.01" value="${h.totalValue}" 
-                                   onchange="updateHistoryRow(${h.id}, null, this.value, null, null)"
-                                   class="w-full bg-transparent border-none p-0 focus:ring-0 font-bold text-[10px]">
-                        </td>
-                        <td class="py-1 px-1">
-                            <input type="number" step="0.01" value="${h.cashValue || 0}" 
-                                   onchange="updateHistoryRow(${h.id}, null, null, this.value, null)"
-                                   class="w-full bg-transparent border-none p-0 focus:ring-0 text-[10px] text-slate-500">
-                        </td>
-                        <td class="py-1 px-1">
-                            <input type="number" step="0.01" value="${h.assetValue || 0}" 
-                                   onchange="updateHistoryRow(${h.id}, null, null, null, this.value)"
-                                   class="w-full bg-transparent border-none p-0 focus:ring-0 text-[10px] text-slate-500">
-                        </td>
-                        <td class="py-1 px-1 text-right">
-                            <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onclick="deleteHistoryEntry(${h.id})" class="p-1 text-rose-500 hover:bg-rose-500/10 rounded transition-colors" title="Delete">
-                                    <span class="material-symbols-outlined text-xs">delete</span>
-                                </button>
+                
+                if (data.length === 0) {
+                    historyTableBody.innerHTML = '<tr><td colspan="5" class="py-8 text-center text-slate-500 italic text-[10px]">No historical records found.</td></tr>';
+                    return;
+                }
+
+                // Group by year
+                const groups = {};
+                data.forEach(h => {
+                    const year = h.date.substring(0, 4);
+                    if (!groups[year]) groups[year] = [];
+                    groups[year].push(h);
+                });
+
+                const years = Object.keys(groups).sort((a, b) => b - a);
+                
+                historyTableBody.innerHTML = years.map(year => `
+                    <tr class="bg-slate-50/50 dark:bg-slate-900/30 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" onclick="toggleYearGroup('${year}')">
+                        <td colspan="5" class="py-2 px-3 font-black text-primary">
+                            <div class="flex items-center gap-2">
+                                <span id="year-icon-${year}" class="material-symbols-outlined text-sm transition-transform" style="transform: rotate(0deg)">expand_more</span>
+                                Year ${year} <span class="text-[10px] text-slate-400 font-bold ml-2">(${groups[year].length} entries)</span>
                             </div>
                         </td>
                     </tr>
-                `).join('') || '<tr><td colspan="5" class="py-8 text-center text-slate-500 italic text-[10px]">No historical records found.</td></tr>';
+                    ${groups[year].map(h => `
+                        <tr class="year-row-${year} hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
+                            <td class="py-1 px-1">
+                                <input type="text" value="${h.date}" 
+                                       onchange="updateHistoryRow(${h.id}, this.value, null, null, null)"
+                                       class="w-full bg-transparent border-none p-0 focus:ring-0 font-mono text-[10px] text-slate-500">
+                            </td>
+                            <td class="py-1 px-1">
+                                <input type="number" step="0.01" value="${h.totalValue}" 
+                                       onchange="updateHistoryRow(${h.id}, null, this.value, null, null)"
+                                       class="w-full bg-transparent border-none p-0 focus:ring-0 font-bold text-[10px]">
+                            </td>
+                            <td class="py-1 px-1">
+                                <input type="number" step="0.01" value="${h.cashValue || 0}" 
+                                       onchange="updateHistoryRow(${h.id}, null, null, this.value, null)"
+                                       class="w-full bg-transparent border-none p-0 focus:ring-0 text-[10px] text-slate-500">
+                            </td>
+                            <td class="py-1 px-1">
+                                <input type="number" step="0.01" value="${h.assetValue || 0}" 
+                                       onchange="updateHistoryRow(${h.id}, null, null, null, this.value)"
+                                       class="w-full bg-transparent border-none p-0 focus:ring-0 text-[10px] text-slate-500">
+                            </td>
+                            <td class="py-1 px-1 text-right">
+                                <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onclick="deleteHistoryEntry(${h.id})" class="p-1 text-rose-500 hover:bg-rose-500/10 rounded transition-colors" title="Delete">
+                                        <span class="material-symbols-outlined text-xs">delete</span>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('')}
+                `).join('');
             } catch (err) { console.error(err); }
         }
 

@@ -284,7 +284,7 @@ app.get('/api/history', (req, res) => {
         query += `WHERE portfolioId = ? `;
         params.push(portfolioId);
     }
-    query += `ORDER BY date DESC LIMIT 100`;
+    query += `ORDER BY date DESC`;
     res.json(database.db.prepare(query).all(...params));
 });
 
@@ -688,8 +688,10 @@ app.get('/api/portfolios', async (req, res) => {
             globalTotalValue = lastPoint.value;
             
             if (globalPoints.length > 1) {
+                const lastPoint = globalPoints[globalPoints.length - 1];
                 const prevPoint = globalPoints[globalPoints.length - 2];
-                globalChangeValue = lastPoint.value - prevPoint.value;
+                // Profit-based variation (Independent of capital movements)
+                globalChangeValue = lastPoint.profit - prevPoint.profit;
                 if (prevPoint.value > 0) {
                     globalChangePercent = (globalChangeValue / prevPoint.value) * 100;
                 }
@@ -706,8 +708,10 @@ app.get('/api/portfolios', async (req, res) => {
                 const lastP = pPoints[pPoints.length - 1];
                 p.totalValue = lastP.value;
                 if (pPoints.length > 1) {
+                    const lastP = pPoints[pPoints.length - 1];
                     const prevP = pPoints[pPoints.length - 2];
-                    p.changeValue = lastP.value - prevP.value;
+                    // Profit-based variation
+                    p.changeValue = lastP.profit - prevP.profit;
                     p.changePercent = prevP.value > 0 ? (p.changeValue / prevP.value) * 100 : 0;
                 } else {
                     p.changeValue = 0;
@@ -2379,9 +2383,9 @@ app.get('/api/analytics/reports', async (req, res) => {
                         case 'DEPOSIT': cash += amount; pNetDep += amount; break;
                         case 'WITHDRAWAL': cash -= amount; pNetDep -= amount; break;
                         case 'TAX': cash -= amount; break;
-                        case 'DIVIDEND': cash += (amount || (qty * (t.price || 0) - (t.commission || 0) - (t.tax || 0))) / fx; break;
-                        case 'BUY': cash -= (qty * (t.price || 0) + (t.commission || 0) + (t.tax || 0)) / fx; holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) + qty; break;
-                        case 'SELL': cash += (qty * (t.price || 0) - (t.commission || 0) - (t.tax || 0)) / fx; holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) - qty; break;
+                        case 'DIVIDEND': cash += (t.amount || (qty * (t.price || 0) - (t.commission || 0) - (t.tax || 0))) / fx; break;
+                        case 'BUY': cash -= (t.amount || (qty * (t.price || 0) + (t.commission || 0) + (t.tax || 0))) / fx; holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) + qty; break;
+                        case 'SELL': cash += (t.amount || (qty * (t.price || 0) - (t.commission || 0) - (t.tax || 0))) / fx; holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) - qty; break;
                     }
                 }
 
