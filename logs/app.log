@@ -8900,3 +8900,9 @@
 2026-03-18T15:29:17.844Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
 2026-03-18T15:29:21.341Z [ERROR] Failed to update AAPL - Error: No metadata found for AAPL
 2026-03-18T15:29:24.423Z [INFO] Updating market data for 45 assets...
+2026-03-18T22:42:26.026Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-18T22:42:26.030Z [INFO] FolioTrack server running on port 3000
+2026-03-18T22:42:26.031Z [INFO] Database: /Users/mauro/Documents/Progetto_FolioTracker2/foliotrack.db
+2026-03-18T22:42:34.245Z [INFO] Imported 2 historical quotes for TEST_BOND
+2026-03-18T22:43:25.995Z [INFO] Recording daily snapshots for portfolios and dashboard...
+2026-03-18T22:43:26.003Z [INFO] Daily snapshots completed.

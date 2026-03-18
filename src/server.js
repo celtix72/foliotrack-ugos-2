@@ -407,6 +407,38 @@ app.post('/api/debug/borsa-italiana', async (req, res) => {
     res.json(result);
 });
 
+// Import historical data (usually from frontend scraper)
+app.post('/api/assets/import-history', (req, res) => {
+    const { ticker, history } = req.body; // history: [{dt, closePx}, ...]
+    if (!ticker || !history || !Array.isArray(history)) {
+        return res.status(400).send('Ticker and history array are required');
+    }
+
+    try {
+        const insert = database.db.prepare('INSERT OR REPLACE INTO asset_quotes (ticker, date, price) VALUES (?, ?, ?)');
+        database.db.transaction(() => {
+            for (const entry of history) {
+                // Handle different date formats (YYYYMMDD from Bitaly or YYYY-MM-DD)
+                let dateStr = entry.dt || entry.date;
+                if (dateStr.length === 8 && !dateStr.includes('-')) {
+                    dateStr = `${dateStr.substring(0,4)}-${dateStr.substring(4,6)}-${dateStr.substring(6,8)}`;
+                }
+                const price = parseFloat(entry.closePx || entry.price);
+                if (dateStr && !isNaN(price)) {
+                    insert.run(ticker, dateStr, price);
+                }
+            }
+        })();
+        
+        logger.info(`Imported ${history.length} historical quotes for ${ticker}`);
+        clearPerformanceCache();
+        res.json({ success: true, count: history.length });
+    } catch (err) {
+        logger.error(`Failed to import history for ${ticker}`, err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/assets', async (req, res) => {
     try {
         const { ticker, name, type, currency, exchange, pe, currentPrice, changePercent } = req.body;

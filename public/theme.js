@@ -451,4 +451,63 @@
             window.dispatchEvent(new CustomEvent('settings-updated', { detail: settings }));
         } catch (e) { console.error("Error updating settings:", e); }
     };
+
+    // ─── Borsa Italiana History Recovery ──────────────────────────────────────
+    window.fetchBorsaItalianaHistory = async function(ticker, isin) {
+        console.log(`[B_ITA] Fetching history: ${ticker} (${isin})`);
+        try {
+            // QuantHouse API (Borsa Italiana) - 5 Years
+            const url = `https://grafici.borsaitaliana.it/api/instruments/${isin},XMIL,ISIN/history/period?period=5Y&adjustment=true&add-last-price=true`;
+            
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`B_ITA API failed (${response.status})`);
+            
+            const data = await response.json();
+            if (data && data.history && data.history.historyDt) {
+                const history = data.history.historyDt;
+                
+                const importRes = await fetch('/api/assets/import-history', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ticker, history })
+                });
+                
+                if (importRes.ok) {
+                    window.showNotification(`Successfully restored ${history.length} price points for ${ticker}`, 'success');
+                    window.dispatchEvent(new CustomEvent('asset-history-updated', { detail: { ticker } }));
+                    return true;
+                }
+            }
+            return false;
+        } catch (err) {
+            console.error(`[B_ITA] Error:`, err);
+            window.showNotification(`Failed to recover history for ${ticker}.`, 'error');
+            return false;
+        }
+    };
+
+    window.showNotification = function(message, type = 'info') {
+        // Create a temporary toast if no container exists
+        let toast = document.getElementById('global-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'global-toast';
+            toast.className = 'fixed bottom-8 left-1/2 -translate-x-1/2 z-[9999] px-6 py-3 rounded-2xl shadow-2xl font-bold text-sm transition-all transform translate-y-20 opacity-0 border';
+            document.body.appendChild(toast);
+        }
+        
+        const colors = {
+            success: 'bg-emerald-500 text-white border-emerald-400',
+            error: 'bg-rose-500 text-white border-rose-400',
+            info: 'bg-primary text-white border-primary-light',
+            warn: 'bg-amber-500 text-white border-amber-400'
+        };
+        
+        toast.className = `fixed bottom-8 left-1/2 -translate-x-1/2 z-[9999] px-6 py-3 rounded-2xl shadow-2xl font-bold text-sm transition-all transform translate-y-0 opacity-100 border ${colors[type] || colors.info}`;
+        toast.textContent = message;
+        
+        setTimeout(() => {
+            toast.classList.add('translate-y-20', 'opacity-0');
+        }, 4000);
+    };
 })();

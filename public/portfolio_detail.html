@@ -962,10 +962,17 @@
                 <span class="ml-2 px-1.5 py-0.5 rounded-full bg-rose-500 text-[8px] font-black text-white uppercase tracking-tighter" title="${h.lastUpdateError.replace(/"/g, '&quot;')}">Err</span>
             ` : '';
 
+            const restoreBtn = (h.dataSource === 'B_ITA' && h.isin) ? `
+                <button onclick="event.stopPropagation(); window.fetchBorsaItalianaHistory('${h.ticker}', '${h.isin}')" class="w-6 h-6 rounded bg-emerald-500/10 text-emerald-500 flex items-center justify-center hover:bg-emerald-500/20 transition-colors ml-1" title="Restore History from Borsa Italiana">
+                    <span class="material-symbols-outlined text-[14px]">history</span>
+                </button>
+            ` : '';
+
             const manualBtn = (h.isManual || h.dataSource !== 'YF') ? `
                 <button onclick="event.stopPropagation(); openManualModal('${h.ticker}', '${h.currency}', ${h.currentPrice}, '${h.type || ''}', '${h.country || ''}', '${h.dataSource || 'YF'}', '${h.isin || ''}')" class="w-6 h-6 rounded bg-amber-500/10 text-amber-500 flex items-center justify-center hover:bg-amber-500/20 transition-colors ml-2" title="Update Price / Source">
                     <span class="material-symbols-outlined text-[14px]">edit_note</span>
                 </button>
+                ${restoreBtn}
                 ${errorTag}
             ` : `
                 <div class="flex items-center">
@@ -1913,9 +1920,18 @@
                 window.dispatchEvent(new CustomEvent('privacy-changed'));
             }
         });
+
+        window.addEventListener('asset-history-updated', (e) => {
+            console.log(`History updated for ${e.detail.ticker}, reloading details...`);
+            loadPortfolioDetails();
+        });
     });
     } else {
         wireEvents();
+        window.addEventListener('asset-history-updated', (e) => {
+            console.log(`History updated for ${e.detail.ticker}, reloading details...`);
+            loadPortfolioDetails();
+        });
     }
 
     // ═══════════════════════════════════════════════════════════════════════

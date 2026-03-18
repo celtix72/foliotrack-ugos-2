@@ -517,8 +517,18 @@ window.saveAlertSettings = async function() {
         if (res.ok) {
             closeAlertModal();
             loadAssets();
+            // If B_ITA is selected, trigger historical fetch
+            if (dataSource === 'B_ITA' && isin) {
+                fetchBorsaItalianaHistory(ticker, isin);
+            }
         }
     } catch (err) { console.error(err); }
+}
+
+async function fetchBorsaItalianaHistory(ticker, isin) {
+    if (window.fetchBorsaItalianaHistory) {
+        await window.fetchBorsaItalianaHistory(ticker, isin);
+    }
 }
 
 // ─── Search Logic ─────────────────────────────────────────────────────────────
