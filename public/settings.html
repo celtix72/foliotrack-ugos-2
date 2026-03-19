@@ -103,6 +103,16 @@
         </div>
     </div>
     <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2">
+            <!-- Privacy Toggle -->
+            <button onclick="togglePrivacy()" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all shadow-sm" title="Toggle Privacy">
+                <span class="material-symbols-outlined text-sm" id="header-privacy-icon">visibility</span>
+            </button>
+            <!-- Theme Toggle -->
+            <button onclick="toggleTheme()" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all shadow-sm" title="Toggle Theme">
+                <span class="material-symbols-outlined text-sm" id="header-theme-icon">dark_mode</span>
+            </button>
+        </div>
         <div class="text-right hidden sm:block">
             <p class="text-xs font-bold">User</p>
             <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">Premium Terminal</p>
@@ -170,19 +180,6 @@
                 </div>
             </div>
             
-            <div class="h-px bg-slate-100 dark:bg-slate-800 w-full"></div>
-            
-            <div>
-                <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1.5">Privacy Mode</label>
-                <p class="text-[10px] text-slate-400 mb-3">Hide total amounts on Dashboard and Portfolio pages by default.</p>
-                <div class="flex items-center gap-3">
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="privacy-mode-checkbox" class="sr-only peer">
-                        <div class="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
-                        <span class="ml-3 text-sm font-medium text-slate-600 dark:text-slate-400">Enable Primary Visibility Protection</span>
-                    </label>
-                </div>
-            </div>
         </div>
     </div>
 </section>
@@ -566,7 +563,7 @@
         const freqSelect = document.getElementById('update-frequency-select');
         const backupFreqSelect = document.getElementById('backup-frequency-select');
         const backupRetentionInput = document.getElementById('backup-retention-input');
-        const privacyCheckbox = document.getElementById('privacy-mode-checkbox');
+        // const privacyCheckbox = document.getElementById('privacy-mode-checkbox');
         
         // Initial setup from window global settings if available or local cache
         const updateUI = (settings) => {
@@ -575,7 +572,7 @@
             if (freqSelect && settings.updateFrequency) freqSelect.value = settings.updateFrequency;
             if (backupFreqSelect && settings.backupFrequency) backupFreqSelect.value = settings.backupFrequency;
             if (backupRetentionInput && settings.backupRetention) backupRetentionInput.value = settings.backupRetention;
-            if (privacyCheckbox) privacyCheckbox.checked = settings.privacyMode === 'true';
+            // if (privacyCheckbox) privacyCheckbox.checked = settings.privacyMode === 'true';
             
             const lightBtn = document.getElementById('theme-light-btn');
             const darkBtn = document.getElementById('theme-dark-btn');
@@ -601,7 +598,7 @@
                     updateFrequency: freqSelect.value,
                     backupFrequency: backupFreqSelect.value,
                     backupRetention: backupRetentionInput.value,
-                    privacyMode: String(privacyCheckbox.checked),
+                    // privacyMode: String(privacyCheckbox.checked),
                     theme: theme
                 });
             }
@@ -621,7 +618,7 @@
                     updateFrequency: freqSelect.value,
                     backupFrequency: backupFreqSelect.value,
                     backupRetention: backupRetentionInput.value,
-                    privacyMode: String(privacyCheckbox.checked)
+                    // privacyMode: String(privacyCheckbox.checked)
                 });
             }
         };
@@ -631,7 +628,7 @@
         if (freqSelect) freqSelect.addEventListener('change', saveSettings);
         if (backupFreqSelect) backupFreqSelect.addEventListener('change', saveSettings);
         if (backupRetentionInput) backupRetentionInput.addEventListener('change', saveSettings);
-        if (privacyCheckbox) privacyCheckbox.addEventListener('change', saveSettings);
+        // if (privacyCheckbox) privacyCheckbox.addEventListener('change', saveSettings);
         
         // Backup logic
         async function loadBackups() {

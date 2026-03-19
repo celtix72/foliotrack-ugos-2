@@ -38,6 +38,10 @@ const backupManager = require('./backup_manager');
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 // ─── CACHING LAYER ──────────────────────────────────────────────────────────
 const historicalPricesCache = {}; // { ticker: { date: price } }
 let performanceResultsCache = {}; // { cacheKey: { data, timestamp } }
@@ -213,57 +217,85 @@ function clearPerformanceCache() {
 }
 
 // ─── BORSA ITALIANA SCRAPER ──────────────────────────────────────────────────
-async function B_ITA(isin, assetType = '') {
+ async function B_ITA(isin, assetType = '') {
     const searchUrl = `https://www.borsaitaliana.it/borsa/search/scheda.html?code=${isin}&lang=it`;
-    try {
-        const response = await axios.get(searchUrl, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-            },
-            timeout: 10000
-        });
-        const html = response.data;
-        const finalUrl = response.request.res.responseUrl || searchUrl;
+    let attempts = 0;
+    const maxAttempts = 3;
 
-        // Scraping Logic using robust Regex
-        let price = null;
-        // Primary pattern: span with -formatPrice class
-        const priceMatch = html.match(/-formatPrice\">\s*<strong>\s*([\d,.]+)\s*<\/strong>/i);
-        if (priceMatch && priceMatch[1]) {
-            price = parseFloat(priceMatch[1].replace(/\./g, '').replace(',', '.'));
-        } else {
-            // Secondary fallback pattern
-            const priceMatchAlt = html.match(/<strong>\s*([\d,.]+)\s*<\/span>\s*<\/strong>/i);
-            if (priceMatchAlt && priceMatchAlt[1]) {
-                price = parseFloat(priceMatchAlt[1].replace(/\./g, '').replace(',', '.'));
+    while (attempts < maxAttempts) {
+        attempts++;
+        try {
+            const response = await axios.get(searchUrl, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                },
+                timeout: 20000 // Increased to 20s
+            });
+            const html = response.data;
+            const finalUrl = response.request.res.responseUrl || searchUrl;
+
+            // Scraping Logic using robust Regex
+            let price = null;
+            // Primary pattern: span with -formatPrice class
+            const priceMatch = html.match(/-formatPrice\">\s*<strong>\s*([\d,.]+)\s*<\/strong>/i);
+            if (priceMatch && priceMatch[1]) {
+                price = parseFloat(priceMatch[1].replace(/\./g, '').replace(',', '.'));
+            } else {
+                // Secondary fallback pattern
+                const priceMatchAlt = html.match(/<strong>\s*([\d,.]+)\s*<\/span>\s*<\/strong>/i);
+                if (priceMatchAlt && priceMatchAlt[1]) {
+                    price = parseFloat(priceMatchAlt[1].replace(/\./g, '').replace(',', '.'));
+                }
             }
-        }
 
-        // Variation: look for percentage pattern specifically in the -percPrice span
-        let variation = null;
-        // Primary pattern for variation: span with -percPrice class
-        const varMatch = html.match(/-percPrice\">\s*<strong>\s*([+-]?[\d,.]+)\s*%\s*<\/strong>/i);
-        if (varMatch && varMatch[1]) {
-            variation = parseFloat(varMatch[1].replace(',', '.'));
-        } else {
-            // Fallback for variation
-            const varMatchAlt = html.match(/([+-]?[\d,.]+)\s*%\s*<\/span>/i);
-            if (varMatchAlt && varMatchAlt[1]) {
-                variation = parseFloat(varMatchAlt[1].replace(',', '.'));
+            // Variation: look for percentage pattern specifically in the -percPrice span
+            let variation = null;
+            // Primary pattern for variation: span with -percPrice class
+            const varMatch = html.match(/-percPrice\">\s*<strong>\s*([+-]?[\d,.]+)\s*%\s*<\/strong>/i);
+            if (varMatch && varMatch[1]) {
+                variation = parseFloat(varMatch[1].replace(',', '.'));
+            } else {
+                // Fallback for variation
+                const varMatchAlt = html.match(/([+-]?[\d,.]+)\s*%\s*<\/span>/i);
+                if (varMatchAlt && varMatchAlt[1]) {
+                    variation = parseFloat(varMatchAlt[1].replace(',', '.'));
+                }
             }
-        }
 
-        return { 
-            success: !!price, 
-            price, 
-            variation, 
-            url: finalUrl,
-            isin
-        };
-    } catch (err) {
-        console.error(`B_ITA Scraper error for ${isin}:`, err.message);
-        return { success: false, error: err.message, url: searchUrl, isin };
+            if (!price && attempts < maxAttempts) {
+                logger.warn(`B_ITA Scraper: No price found for ${isin} on attempt ${attempts}. Retrying...`);
+                await new Promise(r => setTimeout(r, 2000));
+                continue;
+            }
+
+            return { 
+                success: !!price, 
+                price, 
+                variation, 
+                url: finalUrl,
+                isin
+            };
+        } catch (err) {
+            if (attempts < maxAttempts) {
+                logger.warn(`B_ITA Scraper attempt ${attempts} failed for ${isin}: ${err.message}. Retrying...`);
+                await new Promise(r => setTimeout(r, 2000 * attempts));
+                continue;
+            }
+            console.error(`B_ITA Scraper error for ${isin} after ${maxAttempts} attempts:`, err.message);
+            return { success: false, error: err.message, url: searchUrl, isin };
+        }
     }
+}
+// ─── VALIDATION HELPERS ───────────────────────────────────────────────────
+function isValidISIN(isin) {
+    if (!isin) return true; // Optional field
+    return /^[A-Z]{2}[A-Z0-9]{10}$/.test(isin);
+}
+
+function sanitizeTicker(ticker) {
+    if (!ticker) return '';
+    // Remove encoded characters and restrict to common ticker symbols
+    return ticker.replace(/%[0-9A-F]{2}/gi, '').replace(/[^A-Z0-9.\-_:=]/gi, '').toUpperCase();
 }
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -323,9 +355,9 @@ app.delete('/api/history/:id', (req, res) => {
     res.json({ success: true });
 });
 
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// app.use(cors()); // Moved to top
+// app.use(express.json()); // Moved to top
+// app.use(express.urlencoded({ extended: true })); // Moved to top
 
 // ════════════════════════════════════════════════════════════════════════════
 // ASSETS API
@@ -363,7 +395,9 @@ app.get('/api/assets', (req, res) => {
 app.post('/api/assets/manual-update', async (req, res) => {
     const { ticker, price, date, type, country, dataSource, isin } = req.body;
     if (!ticker) return res.status(400).send('Ticker is required');
-    
+    const sanitizedTicker = sanitizeTicker(ticker);
+    if (!isValidISIN(isin)) return res.status(400).send('Invalid ISIN format (must be 12 chars e.g. IT000...)');
+
     database.db.prepare(`
         UPDATE assets 
         SET currentPrice = ?, updatedAt = ?, isManual = 1, changePercent = 0,
@@ -377,8 +411,8 @@ app.post('/api/assets/manual-update', async (req, res) => {
         type || null,
         country || null,
         dataSource || 'YF',
-        isin || null,
-        ticker
+        isin ? isin.toUpperCase().trim() : null,
+        sanitizedTicker
     );
     
     const liveRate = await getEurUsdRate();
@@ -441,7 +475,10 @@ app.post('/api/assets/import-history', (req, res) => {
 
 app.post('/api/assets', async (req, res) => {
     try {
-        const { ticker, name, type, currency, exchange, pe, currentPrice, changePercent } = req.body;
+        let { ticker, name, type, currency, exchange, pe, currentPrice, changePercent, isin, dataSource } = req.body;
+        ticker = sanitizeTicker(ticker);
+        if (!ticker) return res.status(400).send('Invalid Ticker');
+        if (!isValidISIN(isin)) return res.status(400).send('Invalid ISIN format');
 
         let assetData = {
             id:           ticker || `MANUAL-${Date.now()}`,
@@ -470,7 +507,9 @@ app.post('/api/assets', async (req, res) => {
                     currentPrice: parseFloat(currentPrice || metadata.currentPrice),
                     changePercent:parseFloat(changePercent || metadata.changePercent),
                     pe:           pe ? parseFloat(pe) : metadata.pe,
-                    country:      metadata.country
+                    country:      metadata.country,
+                    dataSource:   dataSource || 'YF',
+                    isin:         isin || null
                 };
             }
         }
@@ -890,7 +929,11 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
                 avgCostAssetCurr: Math.round(avgCostAsset * 10000) / 10000,
                 currentValue: Math.round(curVal * 100) / 100,
                 unrealizedGain: Math.round(uGain * 100) / 100,
-                unrealizedGainPct: Math.round(uGainPct * 100) / 100
+                unrealizedGainPct: Math.round(uGainPct * 100) / 100,
+                isin: asset ? asset.isin : null,
+                dataSource: asset ? asset.dataSource : 'YF',
+                country: asset ? asset.country : 'Global',
+                lastUpdateError: asset ? asset.lastUpdateError : null
             };
         });
 
@@ -1257,15 +1300,36 @@ app.get('/api/transactions', (req, res) => {
 });
 
 app.post('/api/transactions', async (req, res) => {
-    const { portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount, destinationPortfolioId } = req.body;
+    const { portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount, destinationPortfolioId, isin, dataSource } = req.body;
 
     if (!portfolioId) return res.status(400).send('portfolioId is required');
+
+    const sanitizedTicker = sanitizeTicker(assetTicker);
+
+    // Auto-create/update asset with ISIN and Data Source
+    if (sanitizedTicker && sanitizedTicker !== 'CASH') {
+        const existingAsset = database.db.prepare(`SELECT id FROM assets WHERE ticker = ?`).get(sanitizedTicker);
+        if (existingAsset) {
+            database.db.prepare(`UPDATE assets SET isin = COALESCE(?, isin), dataSource = COALESCE(?, dataSource) WHERE ticker = ?`)
+                .run(isin || null, dataSource || null, sanitizedTicker);
+        } else {
+            const metadata = await fetchAssetMetadata(sanitizedTicker).catch(() => null) || {};
+            database.db.prepare(`
+                INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, country, isManual, dataSource, isin, updatedAt)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            `).run(
+                sanitizedTicker, sanitizedTicker, metadata.name || sanitizedTicker, metadata.type || 'Stock', metadata.exchange || 'N/A', 
+                metadata.currency || 'USD', metadata.currentPrice || 0, metadata.changePercent || 0, metadata.pe || null, metadata.country || 'N/A', 0,
+                dataSource || 'YF', isin || null
+            );
+        }
+    }
 
     const result = database.db.prepare(`
         INSERT INTO transactions (portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
-        parseInt(portfolioId), type, assetTicker || '',
+        parseInt(portfolioId), type, sanitizedTicker || '',
         date || new Date().toISOString().split('T')[0],
         parseFloat(quantity || 0), parseFloat(price || 0),
         parseFloat(commission || 0), parseFloat(tax || 0),
@@ -1466,24 +1530,33 @@ app.post('/api/transactions/bulk', async (req, res) => {
                 if (isNaN(targetId)) throw new Error('Invalid portfolio mapping');
                 affectedPortfolios.add(targetId);
 
-                // Auto-add asset to watchlist if not already there
+                // Auto-add or update asset with ISIN/DataSource
                 if (t.assetTicker) {
-                    database.db.prepare(`
-                        INSERT OR IGNORE INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, country, isManual, updatedAt)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
-                    `).run(
-                        t.assetId || null, 
-                        t.assetTicker, 
-                        t.assetName || t.assetTicker, 
-                        t.assetType || 'Stock', 
-                        t.assetExchange || 'N/A', 
-                        t.assetCurrency || 'USD', 
-                        t.assetPrice || 0,
-                        0, 
-                        t.assetPe || null,
-                        t.assetCountry || 'N/A',
-                        0
-                    );
+                    const sanitizedTicker = sanitizeTicker(t.assetTicker);
+                    const existingAsset = database.db.prepare(`SELECT id FROM assets WHERE ticker = ?`).get(sanitizedTicker);
+                    if (existingAsset) {
+                        database.db.prepare(`UPDATE assets SET isin = COALESCE(?, isin), dataSource = COALESCE(?, dataSource) WHERE ticker = ?`)
+                            .run(t.isin || null, t.dataSource || null, sanitizedTicker);
+                    } else {
+                        database.db.prepare(`
+                            INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, country, isManual, dataSource, isin, updatedAt)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                        `).run(
+                            t.assetId || null, 
+                            sanitizedTicker, 
+                            t.assetName || sanitizedTicker, 
+                            t.assetType || 'Stock', 
+                            t.assetExchange || 'N/A', 
+                            t.assetCurrency || 'USD', 
+                            t.assetPrice || 0,
+                            0, 
+                            t.assetPe || null,
+                            t.assetCountry || 'N/A',
+                            0,
+                            t.dataSource || 'YF',
+                            t.isin || null
+                        );
+                    }
                 }
 
                 insertTx.run(
@@ -1696,30 +1769,45 @@ async function calculatePerformanceHistory(portfolioIds, range) {
     // 2. Fetch historical data for all involved tickers (with parallelization and DB cache)
     // 2. Fetch historical data for all involved tickers (with parallelization and DB cache)
     const fetchBorsaItalianaHistory = async (ticker, isin) => {
-        try {
-            const url = `https://grafici.borsaitaliana.it/api/instruments/${isin},XMIL,ISIN/history/period?period=5Y&adjustment=true&add-last-price=true`;
-            const resp = await axios.get(url, {
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    'Referer': 'https://www.borsaitaliana.it/',
-                    'Accept': 'application/json, text/plain, */*',
-                    'Accept-Language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7'
-                },
-                timeout: 5000
-            });
-            if (resp.data && resp.data.history && resp.data.history.historyDt) {
-                const map = {};
-                resp.data.history.historyDt.forEach(h => {
-                    if (h.dt && h.closePx) {
-                        const d = h.dt.toString();
-                        const dateStr = `${d.substring(0, 4)}-${d.substring(4, 6)}-${d.substring(6, 8)}`;
-                        map[dateStr] = h.closePx;
-                    }
+        let attempts = 0;
+        const maxAttempts = 2;
+        console.log(`[DEBUG] fetchBorsaItalianaHistory called for ${ticker} with ISIN ${isin}`);
+        while (attempts < maxAttempts) {
+            attempts++;
+            try {
+                const url = `https://grafici.borsaitaliana.it/api/instruments/${isin},XMIL,ISIN/history/period?period=5Y&adjustment=true&add-last-price=true`;
+                console.log(`[DEBUG] B_ITA History URL: ${url}`);
+                const resp = await axios.get(url, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        'Referer': 'https://www.borsaitaliana.it/',
+                        'Accept': 'application/json, text/plain, */*',
+                        'Accept-Language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7'
+                    },
+                    timeout: 10000 // Increased from 5s to 10s
                 });
-                return map;
+                if (resp.data && resp.data.history && resp.data.history.historyDt) {
+                    const map = {};
+                    resp.data.history.historyDt.forEach(h => {
+                        if (h.dt && h.closePx) {
+                            const d = h.dt.toString();
+                            const dateStr = `${d.substring(0, 4)}-${d.substring(4, 6)}-${d.substring(6, 8)}`;
+                            map[dateStr] = h.closePx;
+                        }
+                    });
+                    console.log(`[DEBUG] fetchBorsaItalianaHistory SUCCESS for ${ticker}: ${Object.keys(map).length} quotes`);
+                    return map;
+                } else {
+                    console.log(`[DEBUG] fetchBorsaItalianaHistory INVALID DATA for ${ticker}:`, Object.keys(resp.data));
+                }
+            } catch (err) {
+                if (attempts < maxAttempts) {
+                    logger.warn(`B_ITA history fetch attempt ${attempts} failed for ${isin}: ${err.message}. Retrying...`);
+                    await new Promise(r => setTimeout(r, 1000));
+                    continue;
+                }
+                console.warn(`B_ITA history failed for ${ticker} (${isin}) after ${maxAttempts} attempts:`, err.message);
             }
-        } catch (err) {
-            console.warn(`B_ITA history failed for ${ticker} (${isin}):`, err.message);
         }
         return null;
     };
@@ -1749,7 +1837,10 @@ async function calculatePerformanceHistory(portfolioIds, range) {
 
             if (isItIsin || (assetMeta && assetMeta.dataSource === 'B_ITA')) {
                 const searchIsin = (assetMeta && assetMeta.isin) || ticker;
+                console.log(`[DEBUG] fetchTickerData: Treating ${ticker} as B_ITA, searching ISIN: ${searchIsin}`);
                 pricesMap = await fetchBorsaItalianaHistory(ticker, searchIsin);
+            } else {
+                if (ticker === 'IT0004532559') console.log(`[DEBUG] IT0004532559 NOT treated as B_ITA. isItIsin=${isItIsin}, dataSource=${assetMeta?.dataSource}`);
             }
 
             // Fallback to Yahoo Finance
@@ -1792,6 +1883,11 @@ async function calculatePerformanceHistory(portfolioIds, range) {
         }
     };
 
+    // Move assetMetadataCache creation HERE, BEFORE fetchTickerData uses it!
+    const assetMetadataCache = {}; // Cache to avoid DB queries inside the date loop
+    const allAssets = database.db.prepare('SELECT ticker, currency, currentPrice, type, isin, dataSource FROM assets').all();
+    for (const a of allAssets) assetMetadataCache[a.ticker] = a;
+
     await Promise.all(uniqueTickers.map(ticker => fetchTickerData(ticker)));
 
     const dataPoints = [];
@@ -1799,9 +1895,6 @@ async function calculatePerformanceHistory(portfolioIds, range) {
 
     // Initial state and metadata caching per portfolio
     const portfolioStates = {};
-    const assetMetadataCache = {}; // Cache to avoid DB queries inside the date loop
-    const allAssets = database.db.prepare('SELECT ticker, currency, currentPrice, type, isin, dataSource FROM assets').all();
-    for (const a of allAssets) assetMetadataCache[a.ticker] = a;
 
     for (const p of portfolios) {
         portfolioStates[p.id] = {

@@ -38,6 +38,12 @@
         } else {
             document.documentElement.classList.add('dark');
         }
+
+        // Update Header Icons if they exist
+        const themeIcon = document.getElementById('header-theme-icon');
+        if (themeIcon) {
+            themeIcon.innerText = (theme === 'light') ? 'dark_mode' : 'light_mode';
+        }
     }
 
     const localFont = localStorage.getItem('app-font') || defaultFont;
@@ -360,10 +366,12 @@
                 const pData = await pRes.json();
                 const change = pData.global.changeValue || 0;
                 const isPos = change >= 0;
+                const formatted = window.formatPrivacy(change, 'EUR', 'h-var', 0);
+                const sign = (formatted !== '****' && isPos) ? '+' : '';
                 portfolioVar.innerHTML = `
                     <span class="flex items-center gap-1.5 ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'} font-bold px-3 py-1 rounded-full border ${isPos ? 'border-emerald-500/20' : 'border-rose-500/20'}">
                         <span class="material-symbols-outlined text-[16px]">${isPos ? 'trending_up' : 'trending_down'}</span>
-                        ${isPos ? '+' : ''}${formatCurrency(change, 'EUR', 0)}
+                        ${sign}${formatted}
                     </span>
                 `;
             }
@@ -401,35 +409,17 @@
 
     // ─── Privacy Mode ────────────────────────────────────────────────────────
     window.privacyState = {
-        enabled: false,
-        overrides: new Set()
+        enabled: false
     };
 
-    window.togglePrivacyOverlay = function(id) {
-        if (window.privacyState.overrides.has(id)) {
-            window.privacyState.overrides.delete(id);
-        } else {
-            window.privacyState.overrides.add(id);
-        }
-        // Trigger a re-render of the specific element if possible, or just refresh the page data
-        // For simplicity, most pages will just call their load function again or we can trigger a custom event
-        window.dispatchEvent(new CustomEvent('privacy-changed', { detail: { id } }));
-    };
 
     window.formatPrivacy = function(val, currency = 'EUR', id = null, decimals = 0) {
-        if (window.privacyState.enabled && (!id || !window.privacyState.overrides.has(id))) {
+        if (window.privacyState.enabled) {
             return '****';
         }
         return formatCurrency(val, currency, decimals);
     };
 
-    window.getPrivacyIcon = function(id) {
-        const isHidden = window.privacyState.enabled && !window.privacyState.overrides.has(id);
-        return `<span class="material-symbols-outlined text-[16px] cursor-pointer hover:text-primary transition-colors ml-2" 
-                      onclick="event.stopPropagation(); togglePrivacyOverlay('${id}')">
-                    ${isHidden ? 'visibility_off' : 'visibility'}
-                </span>`;
-    };
 
     window.updateAppSettings = async (payload) => {
         try {
@@ -448,8 +438,24 @@
             // Update Privacy Mode state
             window.privacyState.enabled = settings.privacyMode === 'true';
             
+            const privacyIcon = document.getElementById('header-privacy-icon');
+            if (privacyIcon) {
+                privacyIcon.innerText = window.privacyState.enabled ? 'visibility_off' : 'visibility';
+            }
+
             window.dispatchEvent(new CustomEvent('settings-updated', { detail: settings }));
         } catch (e) { console.error("Error updating settings:", e); }
+    };
+
+    window.toggleTheme = function() {
+        const currentTheme = localStorage.getItem('app-theme') || 'dark';
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        window.updateAppSettings({ theme: newTheme });
+    };
+
+    window.togglePrivacy = function() {
+        const newPrivacy = !window.privacyState.enabled;
+        window.updateAppSettings({ privacyMode: String(newPrivacy) });
     };
 
     // ─── Borsa Italiana History Recovery ──────────────────────────────────────

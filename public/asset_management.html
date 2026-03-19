@@ -202,6 +202,19 @@
         </div>
         <input type="hidden" id="asset-currency" value="USD"/>
         </div>
+
+        <div class="space-y-2">
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Data Source</label>
+            <select id="asset-data-source" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-4 font-bold" onchange="toggleAddISIN()">
+                <option value="YF">Yahoo Finance</option>
+                <option value="B_ITA">Borsa Italiana</option>
+            </select>
+        </div>
+
+        <div id="add-isin-field" class="space-y-2 hidden">
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300">ISIN (for B_ITA)</label>
+            <input id="asset-isin" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-4" placeholder="e.g. IT000..." type="text"/>
+        </div>
         
     </div>
     <div class="lg:col-span-3 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-800 pt-6">
@@ -253,6 +266,65 @@
 </section>
 </div>
 </main>
+
+<!-- Manual Update Modal -->
+<div id="manual-update-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center hidden">
+    <div class="bg-white dark:bg-[#111722] w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform transition-all">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
+            <h3 class="font-black text-lg">Update Asset Source</h3>
+            <button onclick="closeManualModal()" class="text-slate-400 hover:text-rose-500 transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="p-6 space-y-4">
+            <input type="hidden" id="manual-ticker"/>
+            <div class="space-y-2">
+                <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">New Price (<span id="manual-currency-label">EUR</span>)</label>
+                <input id="manual-price" type="number" step="any" placeholder="0.00" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold text-lg"/>
+            </div>
+            <div class="space-y-2">
+                <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Effective Date</label>
+                <input id="manual-date" type="date" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold"/>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Data Source</label>
+                    <select id="manual-source" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold" onchange="toggleManualISIN()">
+                        <option value="YF">Yahoo Finance</option>
+                        <option value="B_ITA">Borsa Italiana</option>
+                    </select>
+                </div>
+                <div id="manual-isin-field" class="space-y-2 hidden">
+                    <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">ISIN</label>
+                    <input id="manual-isin" type="text" placeholder="e.g. IT000..." class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold"/>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Asset Type</label>
+                    <select id="manual-type" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold">
+                        <option value="">No Change</option>
+                        <option value="Equity">Equity</option>
+                        <option value="ETF">ETF</option>
+                        <option value="Bond">Bond</option>
+                        <option value="Crypto">Crypto</option>
+                        <option value="Commodity">Commodity</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Area/Country</label>
+                    <input id="manual-country" type="text" placeholder="e.g. US, Europe" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold"/>
+                </div>
+            </div>
+            <div class="pt-2 flex gap-3">
+                <button onclick="closeManualModal()" class="flex-1 py-3 rounded-xl font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Cancel</button>
+                <button onclick="saveManualUpdate()" class="flex-1 py-3 rounded-xl font-bold bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">Apply Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
     // Global formatting from theme.js
@@ -337,6 +409,9 @@
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center justify-center gap-2">
+                                <button class="w-8 h-8 flex items-center justify-center rounded-lg text-amber-500 bg-amber-500/10 hover:bg-amber-500/20 transition-colors" title="Edit Source/Price" onclick="openManualModal('${a.ticker}', '${a.currency}', ${a.currentPrice}, '${a.type || ''}', '${a.country || ''}', '${a.dataSource || 'YF'}', '${a.isin || ''}')">
+                                    <span class="material-symbols-outlined text-xl">edit_note</span>
+                                </button>
                                 <button class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-colors" onclick="deleteAsset('${a.id}')">
                                     <span class="material-symbols-outlined text-xl">delete</span>
                                 </button>
@@ -452,7 +527,9 @@
             exchange: document.getElementById('asset-exchange').value,
             currency: document.getElementById('asset-currency').value,
             pe: document.getElementById('asset-pe').value ? parseFloat(document.getElementById('asset-pe').value) : null,
-            country: document.getElementById('asset-country').value
+            country: document.getElementById('asset-country').value,
+            dataSource: document.getElementById('asset-data-source').value,
+            isin: document.getElementById('asset-isin').value
         };
 
         if (!data.ticker) {
@@ -479,6 +556,69 @@
             console.error('Form submission error:', err);
         }
     });
+
+    window.toggleAddISIN = function() {
+        const source = document.getElementById('asset-data-source').value;
+        const field = document.getElementById('add-isin-field');
+        if (source === 'B_ITA') field.classList.remove('hidden');
+        else field.classList.add('hidden');
+    }
+
+    window.openManualModal = function(ticker, currency, currentPrice, type = '', country = '', dataSource = 'YF', isin = '') {
+        const modal = document.getElementById('manual-update-modal');
+        document.getElementById('manual-ticker').value = ticker;
+        document.getElementById('manual-currency-label').innerText = currency;
+        document.getElementById('manual-price').value = currentPrice;
+        document.getElementById('manual-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('manual-type').value = type;
+        document.getElementById('manual-country').value = country;
+        
+        const sourceEl = document.getElementById('manual-source');
+        sourceEl.value = dataSource || 'YF';
+        
+        document.getElementById('manual-isin').value = isin || '';
+        
+        toggleManualISIN();
+        modal.classList.remove('hidden');
+    }
+
+    window.toggleManualISIN = function() {
+        const source = document.getElementById('manual-source').value;
+        const field = document.getElementById('manual-isin-field');
+        if (source === 'B_ITA') {
+            field.classList.remove('hidden');
+        } else {
+            field.classList.add('hidden');
+        }
+    }
+
+    window.closeManualModal = function() {
+        document.getElementById('manual-update-modal').classList.add('hidden');
+    }
+
+    window.saveManualUpdate = async function() {
+        const ticker = document.getElementById('manual-ticker').value;
+        const price = document.getElementById('manual-price').value;
+        const date = document.getElementById('manual-date').value;
+        const type = document.getElementById('manual-type').value;
+        const country = document.getElementById('manual-country').value;
+        const dataSource = document.getElementById('manual-source').value;
+        const isin = document.getElementById('manual-isin').value;
+
+        try {
+            const res = await fetch('/api/assets/manual-update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ticker, price, date, type, country, dataSource, isin })
+            });
+            if (res.ok) {
+                closeManualModal();
+                loadAssets();
+            } else {
+                alert(await res.text());
+            }
+        } catch (err) { console.error(err); }
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
         loadAssets();
