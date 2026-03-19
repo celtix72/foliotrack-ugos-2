@@ -16882,3 +16882,304 @@ Performance result cache invalidated.
 2026-03-19T18:48:02.359Z [INFO] Successfully updated BTP5%40: 110.47 USD
 2026-03-19T18:48:02.415Z [INFO] Market data update cycle completed.
 Performance result cache invalidated.
+2026-03-19T19:03:01.113Z [INFO] Updating market data for 2 assets...
+2026-03-19T19:03:01.665Z [INFO] Successfully updated EURUSD=X: 1.1594203 USD
+2026-03-19T19:03:02.152Z [INFO] Successfully updated BTP5%40: 110.47 USD
+2026-03-19T19:03:02.153Z [INFO] Market data update cycle completed.
+Deleted portfolio 16
+Performance result cache invalidated.
+All application data has been reset.
+Performance result cache invalidated.
+2026-03-19T19:18:01.134Z [INFO] Updating market data for 1 assets...
+2026-03-19T19:18:01.672Z [INFO] Successfully updated EURUSD=X: 1.1613053 USD
+2026-03-19T19:18:01.672Z [INFO] Market data update cycle completed.
+POST /api/portfolios: {
+  name: 'WIDIBA',
+  currency: 'EUR',
+  startDate: '2023-11-01',
+  initialCash: 100000,
+  color: '#6366f1',
+  losses: {
+    Azionario: 0,
+    Bond: 0,
+    Cash: 0,
+    Crypto: 0,
+    'ETF Azionario': 0,
+    'ETF Monetario': 0,
+    Stock: 0
+  }
+}
+Created portfolio: {
+  id: 17,
+  name: 'WIDIBA',
+  currency: 'EUR',
+  startDate: '2023-11-01',
+  initialCash: 100000,
+  currentCash: 100000,
+  totalValue: 100000,
+  performance1D: 0,
+  assetCount: 0,
+  createdAt: '2026-03-19 19:20:42',
+  totalDividends: 0,
+  color: '#6366f1'
+}
+Performance result cache invalidated.
+Performance result cache invalidated.
+Performance result cache invalidated.
+Performance result cache invalidated.
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+MARKER: /api/assets CALLED { ticker: 'BTP5%40', name: '' }
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+MARKER: /api/assets CALLED { ticker: 'IT0004532559', name: '' }
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+2026-03-19T19:33:01.148Z [INFO] Updating market data for 3 assets...
+2026-03-19T19:33:01.626Z [INFO] Successfully updated EURUSD=X: 1.1587486 USD
+2026-03-19T19:33:01.801Z [ERROR] Failed to update BTP5 - Error: No metadata found for BTP5
+2026-03-19T19:33:01.900Z [ERROR] Failed to update IT0004532559 - Error: No metadata found for IT0004532559
+2026-03-19T19:33:01.901Z [INFO] Market data update cycle completed.
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+2026-03-19T19:33:52.607Z [INFO] Manual market sync triggered.
+2026-03-19T19:33:52.609Z [INFO] Updating market data for 3 assets...
+2026-03-19T19:33:53.163Z [INFO] Successfully updated EURUSD=X: 1.1591516 USD
+2026-03-19T19:33:53.749Z [ERROR] Failed to update BTP5 - Error: No metadata found for BTP5
+2026-03-19T19:33:54.317Z [ERROR] Failed to update IT0004532559 - Error: No metadata found for IT0004532559
+2026-03-19T19:33:54.318Z [INFO] Market data update cycle completed.
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for AAPL260717C00280000: Cannot access 'assetMetadataCache' before initialization

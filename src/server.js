@@ -392,6 +392,27 @@ app.get('/api/assets', (req, res) => {
     res.json(result);
 });
 
+// Historical quotes for a specific asset (for chart popup)
+app.get('/api/asset-quotes/:ticker', (req, res) => {
+    const { ticker } = req.params;
+    const { from, to } = req.query;
+    try {
+        let sql = `SELECT date, price FROM asset_quotes WHERE UPPER(ticker) = UPPER(?) ORDER BY date ASC`;
+        const params = [ticker];
+        if (from && to) {
+            sql = `SELECT date, price FROM asset_quotes WHERE UPPER(ticker) = UPPER(?) AND date >= ? AND date <= ? ORDER BY date ASC`;
+            params.push(from, to);
+        }
+        const rows = database.db.prepare(sql).all(...params);
+        res.json(rows);
+    } catch (err) {
+        logger.error('Error fetching asset quotes', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
+
 app.post('/api/assets/manual-update', async (req, res) => {
     const { ticker, price, date, type, country, dataSource, isin } = req.body;
     if (!ticker) return res.status(400).send('Ticker is required');
@@ -1456,6 +1477,24 @@ app.get('/api/validate-ticker', async (req, res) => {
         });
     }
 
+    // BTP* tickers are virtual Italian bond labels — not searchable directly on YF or Borsa Italiana.
+    // They are always treated as B_ITA bonds, identified only by their ISIN.
+    if (ticker.startsWith('BTP')) {
+        return res.json({
+            valid: true,
+            isBTP: true,
+            ticker,
+            name: ticker,
+            currency: 'EUR',
+            exchange: 'XMIL',
+            type: 'Bond',
+            currentPrice: 0,
+            pe: null,
+            country: 'Italy',
+            dataSource: 'B_ITA'
+        });
+    }
+
     try {
         const metadata = await fetchAssetMetadata(ticker);
         if (!metadata) return res.json({ valid: false });
@@ -1533,11 +1572,23 @@ app.post('/api/transactions/bulk', async (req, res) => {
                 // Auto-add or update asset with ISIN/DataSource
                 if (t.assetTicker) {
                     const sanitizedTicker = sanitizeTicker(t.assetTicker);
-                    const existingAsset = database.db.prepare(`SELECT id FROM assets WHERE ticker = ?`).get(sanitizedTicker);
+                    // Use case-insensitive match to find an existing asset
+                    const existingAsset = database.db.prepare(
+                        `SELECT id, ticker FROM assets WHERE UPPER(ticker) = UPPER(?)`
+                    ).get(sanitizedTicker);
                     if (existingAsset) {
-                        database.db.prepare(`UPDATE assets SET isin = COALESCE(?, isin), dataSource = COALESCE(?, dataSource) WHERE ticker = ?`)
-                            .run(t.isin || null, t.dataSource || null, sanitizedTicker);
+                        // Force-override isin and dataSource when provided, don't keep old YF value
+                        const newIsin = t.isin || null;
+                        const newSource = t.isin ? 'B_ITA' : (t.dataSource || null);
+                        database.db.prepare(
+                            `UPDATE assets SET 
+                                isin = CASE WHEN ? IS NOT NULL THEN ? ELSE isin END,
+                                dataSource = CASE WHEN ? IS NOT NULL THEN ? ELSE dataSource END
+                             WHERE UPPER(ticker) = UPPER(?)`
+                        ).run(newIsin, newIsin, newSource, newSource, sanitizedTicker);
                     } else {
+                        const newIsin = t.isin || null;
+                        const newSource = t.isin ? 'B_ITA' : (t.dataSource || 'YF');
                         database.db.prepare(`
                             INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, country, isManual, dataSource, isin, updatedAt)
                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
@@ -1553,8 +1604,8 @@ app.post('/api/transactions/bulk', async (req, res) => {
                             t.assetPe || null,
                             t.assetCountry || 'N/A',
                             0,
-                            t.dataSource || 'YF',
-                            t.isin || null
+                            newSource,
+                            newIsin
                         );
                     }
                 }

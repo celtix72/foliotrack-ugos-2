@@ -498,7 +498,48 @@
     </div>
 </div>
 
+<!-- Asset Historical Chart Modal -->
+<div id="asset-chart-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[150] flex items-center justify-center hidden p-4">
+    <div class="bg-white dark:bg-[#111722] w-full max-w-3xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col" style="max-height:90vh">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 shrink-0">
+            <div>
+                <h3 class="font-black text-lg" id="chart-modal-title">Asset History</h3>
+                <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold" id="chart-modal-subtitle"></p>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="flex gap-1 text-[10px] font-black" id="chart-range-btns">
+                    <button onclick="loadAssetChart(null, '1m')" data-range="1m" class="chart-range-btn px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-violet-500 hover:text-white transition-colors">1M</button>
+                    <button onclick="loadAssetChart(null, '6m')" data-range="6m" class="chart-range-btn px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-violet-500 hover:text-white transition-colors">6M</button>
+                    <button onclick="loadAssetChart(null, '1y')" data-range="1y" class="chart-range-btn px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-violet-500 hover:text-white transition-colors">1Y</button>
+                    <button onclick="loadAssetChart(null, 'all')" data-range="all" class="chart-range-btn px-2 py-1 rounded-lg bg-violet-500 text-white transition-colors">All</button>
+                </div>
+                <button onclick="closeAssetChartModal()" class="text-slate-400 hover:text-rose-500 transition-colors ml-2">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+        </div>
+        <div class="p-4 flex-1 overflow-hidden flex flex-col" style="min-height:360px">
+            <div id="chart-modal-loading" class="flex-1 flex items-center justify-center hidden">
+                <span class="material-symbols-outlined animate-spin text-violet-400 text-4xl">progress_activity</span>
+            </div>
+            <div id="chart-modal-empty" class="flex-1 flex flex-col items-center justify-center hidden text-slate-400 gap-2">
+                <span class="material-symbols-outlined text-4xl">bar_chart_off</span>
+                <p class="text-sm font-bold">No historical data available for this asset.</p>
+                <p class="text-xs">Trigger a history rebuild from the Dashboard to populate data.</p>
+            </div>
+            <div id="chart-modal-content" class="flex-1 hidden">
+                <canvas id="asset-history-chart" class="w-full h-full"></canvas>
+            </div>
+        </div>
+        <div class="px-6 py-3 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between shrink-0">
+            <p class="text-[10px] text-slate-400 font-bold" id="chart-modal-points">—</p>
+            <p class="text-[11px] font-black" id="chart-modal-range-label"></p>
+        </div>
+    </div>
+</div>
+
 <!-- Manual Update Modal -->
+
 <div id="manual-update-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center hidden">
     <div class="bg-white dark:bg-[#111722] w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform transition-all">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
@@ -1001,6 +1042,9 @@
             const manualBtn = `
                 <button onclick="event.stopPropagation(); openManualModal('${h.ticker}', '${h.currency}', ${h.currentPrice}, '${h.type || ''}', '${h.country || ''}', '${h.dataSource || 'YF'}', '${h.isin || ''}')" class="w-6 h-6 rounded bg-amber-500/10 text-amber-500 flex items-center justify-center hover:bg-amber-500/20 transition-colors ml-2" title="Update Price / Source">
                     <span class="material-symbols-outlined text-[14px]">edit_note</span>
+                </button>
+                <button onclick="event.stopPropagation(); openAssetChartModal('${h.ticker}', '${h.name}', '${h.currency}')" class="w-6 h-6 rounded bg-violet-500/10 text-violet-500 flex items-center justify-center hover:bg-violet-500/20 transition-colors ml-1" title="Historical Chart">
+                    <span class="material-symbols-outlined text-[14px]">show_chart</span>
                 </button>
                 ${restoreBtn}
                 ${errorTag}
@@ -2105,7 +2149,8 @@
                 tickerRaw:    cols[3] || '',
                 ticker:       cols[3] || '',
                 isin:         isinValue,
-                dataSource:   isinValue ? 'B_ITA' : 'YF',
+                // BTP* tickers are virtual: they always use B_ITA + ISIN regardless of whether ISIN is empty
+                dataSource:   (isinValue || (cols[3] || '').toUpperCase().startsWith('BTP')) ? 'B_ITA' : 'YF',
                 currency:     currencyVal || 'USD',
                 exchangeRate: parseNum(cols[6]) || 1,
                 price:        price,
@@ -2138,6 +2183,13 @@
 
         for (let i = 0; i < uniqueTickers.length; i++) {
             const tk = uniqueTickers[i];
+            // BTP* tickers are virtual — they don't exist on YF or Borsa Italiana directly;
+            // only their ISIN is searchable. Skip YF validation and auto-resolve as B_ITA.
+            if (tk.toUpperCase().startsWith('BTP')) {
+                tickerCache[tk] = { valid: true, isBTP: true };
+                progressLabel.textContent = `BTP virtual asset: ${tk} → B_ITA (${i+1}/${uniqueTickers.length})`;
+                continue;
+            }
             progressLabel.textContent = `Validating ${tk} (${i+1}/${uniqueTickers.length})...`;
             try {
                 const res = await fetch(`/api/validate-ticker?ticker=${encodeURIComponent(tk)}`);
@@ -2150,7 +2202,16 @@
         for (const row of parsed) {
             const result = tickerCache[row.tickerRaw];
             if (!result) { row.status = 'manual'; continue; }
-            if (result.valid) {
+            if (result.isBTP) {
+                // Virtual BTP ticker — keep original ticker label, use ISIN for B_ITA pricing
+                row.status     = 'ok';
+                row.yfName     = row.ticker + (row.isin ? ` (${row.isin})` : '');
+                row.yfCurrency = row.currency || 'EUR';
+                row.yfExchange = 'XMIL';
+                row.yfType     = 'Bond';
+                row.dataSource = 'B_ITA';
+                // ticker stays as original (BTPMz30, BTP5%40, etc.)
+            } else if (result.valid) {
                 row.status     = 'ok';
                 row.ticker     = result.ticker;
                 row.yfName     = result.name;
@@ -2186,7 +2247,8 @@
             if (r.status === 'ok') {
                 okCount++;
                 statusHtml = `<span title="Valid" class="text-emerald-500 text-base">🟢</span>`;
-                tickerCell = `<div class="font-bold text-primary">${r.ticker}</div><div class="text-[10px] text-slate-400">${r.yfName || ''}</div>`;
+                const isBTP = r.ticker && r.ticker.toUpperCase().startsWith('BTP');
+                tickerCell = `<div class="font-bold text-primary">${r.ticker}${isBTP ? ' <span class="inline-block px-1 py-0.5 rounded text-[8px] font-black bg-orange-100 text-orange-600">BI</span>' : ''}</div><div class="text-[10px] text-slate-400">${isBTP && r.isin ? r.isin : (r.yfName || '')}</div>`;
             } else if (r.status === 'suggestions') {
                 warnCount++;
                 statusHtml = `<span title="Suggestions" class="text-base">🟡</span>`;
@@ -2397,5 +2459,146 @@
             alert('Error during reconciliation');
         }
     }
+
+    // ─── Asset Historical Chart Modal ──────────────────────────────────────────
+    let _chartTicker = null;
+    let _chartCurrency = 'EUR';
+    let _assetChartInstance = null;
+    let _allChartData = [];
+
+    window.openAssetChartModal = async function(ticker, name, currency) {
+        _chartTicker = ticker;
+        _chartCurrency = currency || 'EUR';
+        document.getElementById('chart-modal-title').textContent = name || ticker;
+        document.getElementById('chart-modal-subtitle').textContent = ticker + ' • Historical Price';
+        document.getElementById('asset-chart-modal').classList.remove('hidden');
+        await loadAssetChart(ticker, 'all');
+    };
+
+    window.closeAssetChartModal = function() {
+        document.getElementById('asset-chart-modal').classList.add('hidden');
+        if (_assetChartInstance) { _assetChartInstance.destroy(); _assetChartInstance = null; }
+    };
+
+    window.loadAssetChart = async function(ticker, range) {
+        if (ticker) _chartTicker = ticker;
+        if (!_chartTicker) return;
+
+        // Update active range button
+        document.querySelectorAll('.chart-range-btn').forEach(b => {
+            b.classList.toggle('bg-violet-500', b.dataset.range === range);
+            b.classList.toggle('text-white', b.dataset.range === range);
+            b.classList.remove('bg-slate-100', 'dark:bg-slate-800');
+            if (b.dataset.range !== range) b.classList.add('bg-slate-100', 'dark:bg-slate-800');
+        });
+
+        // Show loading
+        document.getElementById('chart-modal-loading').classList.remove('hidden');
+        document.getElementById('chart-modal-empty').classList.add('hidden');
+        document.getElementById('chart-modal-content').classList.add('hidden');
+        document.getElementById('chart-modal-points').textContent = '—';
+
+        try {
+            // Fetch if not already loaded or fetching all
+            if (!_allChartData.length || range === 'all' || !ticker) {
+                const res = await fetch(`/api/asset-quotes/${encodeURIComponent(_chartTicker)}`);
+                _allChartData = await res.json();
+            }
+
+            if (!_allChartData.length) {
+                document.getElementById('chart-modal-loading').classList.add('hidden');
+                document.getElementById('chart-modal-empty').classList.remove('hidden');
+                return;
+            }
+
+            // Filter by range
+            const now = new Date();
+            const fromDate = new Date(now);
+            if (range === '1m') fromDate.setMonth(fromDate.getMonth() - 1);
+            else if (range === '6m') fromDate.setMonth(fromDate.getMonth() - 6);
+            else if (range === '1y') fromDate.setFullYear(fromDate.getFullYear() - 1);
+            else fromDate.setFullYear(fromDate.getFullYear() - 20); // 'all'
+
+            const filtered = _allChartData.filter(d => new Date(d.date) >= fromDate);
+            const data = filtered.length > 0 ? filtered : _allChartData;
+
+            const labels = data.map(d => d.date);
+            const prices = data.map(d => d.price);
+            const minP = Math.min(...prices);
+            const maxP = Math.max(...prices);
+            const lastP = prices[prices.length - 1];
+            const firstP = prices[0];
+            const isUp = lastP >= firstP;
+            const lineColor = isUp ? 'rgb(16,185,129)' : 'rgb(239,68,68)';
+            const fillColor = isUp ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)';
+
+            document.getElementById('chart-modal-loading').classList.add('hidden');
+            document.getElementById('chart-modal-content').classList.remove('hidden');
+            document.getElementById('chart-modal-points').textContent = `${data.length} data points`;
+            document.getElementById('chart-modal-range-label').textContent =
+                `${data[0]?.date} → ${data[data.length-1]?.date}`;
+            document.getElementById('chart-modal-range-label').style.color = isUp ? 'rgb(16,185,129)' : 'rgb(239,68,68)';
+
+            if (_assetChartInstance) _assetChartInstance.destroy();
+            const ctx = document.getElementById('asset-history-chart').getContext('2d');
+            _assetChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: _chartTicker,
+                        data: prices,
+                        borderColor: lineColor,
+                        backgroundColor: fillColor,
+                        borderWidth: 2,
+                        pointRadius: data.length > 100 ? 0 : 2,
+                        pointHoverRadius: 4,
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ` ${ctx.parsed.y.toFixed(2)} ${_chartCurrency}`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { maxTicksLimit: 8, maxRotation: 0, font: { size: 10 }, color: '#94a3b8' },
+                            grid: { color: 'rgba(148,163,184,0.1)' }
+                        },
+                        y: {
+                            ticks: {
+                                callback: v => v.toFixed(2),
+                                color: '#94a3b8',
+                                font: { size: 10 }
+                            },
+                            grid: { color: 'rgba(148,163,184,0.1)' },
+                            min: minP * 0.99,
+                            max: maxP * 1.01
+                        }
+                    }
+                }
+            });
+        } catch (err) {
+            console.error('Chart load error:', err);
+            document.getElementById('chart-modal-loading').classList.add('hidden');
+            document.getElementById('chart-modal-empty').classList.remove('hidden');
+        }
+    };
+
+    // close on backdrop click
+    document.getElementById('asset-chart-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeAssetChartModal();
+    });
+
 </script>
+
 </body></html>
