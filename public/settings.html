@@ -393,18 +393,45 @@
     </div>
     <div id="system-logs-content" class="hidden">
         <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-4">
-            <div class="flex items-center justify-between">
-                <p class="text-[10px] text-slate-400 uppercase font-black tracking-widest">Active Runtime Registry</p>
-                <button id="refresh-logs-btn" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-primary">
-                    <span class="material-symbols-outlined text-sm">refresh</span>
-                </button>
+            <!-- Toolbar -->
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="flex items-center gap-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</label>
+                    <select id="log-date-select" onchange="loadLogs()" class="bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2 py-1 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/50">
+                        <option value="">Today</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Level</label>
+                    <select id="log-level-filter" onchange="loadLogs()" class="bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2 py-1 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/50">
+                        <option value="">All</option>
+                        <option value="INFO">INFO</option>
+                        <option value="WARN">WARN</option>
+                        <option value="ERROR">ERROR</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Lines</label>
+                    <select id="log-lines-select" onchange="loadLogs()" class="bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2 py-1 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/50">
+                        <option value="500">500</option>
+                        <option value="2000" selected>2000</option>
+                        <option value="5000">5000</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-2 ml-auto">
+                    <span id="log-count-label" class="text-[10px] text-slate-400 font-bold">—</span>
+                    <button id="refresh-logs-btn" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-primary" title="Refresh">
+                        <span class="material-symbols-outlined text-sm">refresh</span>
+                    </button>
+                </div>
             </div>
-            <div id="logs-container" class="h-64 bg-slate-50 dark:bg-black/40 rounded-xl border border-slate-100 dark:border-slate-800 p-4 font-mono text-[10px] overflow-y-auto custom-scrollbar whitespace-pre-wrap">
+            <div id="logs-container" class="h-[480px] bg-slate-50 dark:bg-black/40 rounded-xl border border-slate-100 dark:border-slate-800 p-4 font-mono text-[10px] overflow-y-auto custom-scrollbar whitespace-pre-wrap leading-relaxed">
                 <p class="text-slate-500 italic">Syncing...</p>
             </div>
         </div>
     </div>
 </section>
+
 
 <!-- History Management -->
 <section class="space-y-4">
@@ -1073,30 +1100,61 @@
         fetch('/api/settings').then(res => res.json()).then(updateUI);
 
         // Logs logic
+        async function populateLogDates() {
+            try {
+                const res = await fetch('/api/logs/dates');
+                const dates = await res.json();
+                const sel = document.getElementById('log-date-select');
+                if (!sel) return;
+                // Keep the default 'Today' option and add past days
+                const today = new Date().toISOString().split('T')[0];
+                dates.forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d;
+                    opt.textContent = d === today ? `Today (${d})` : d;
+                    if (d === today) opt.selected = true;
+                    sel.appendChild(opt);
+                });
+            } catch(e) { console.warn('Could not load log dates', e); }
+        }
+
         async function loadLogs() {
             const container = document.getElementById('logs-container');
             if (!container) return;
+            const levelFilter = (document.getElementById('log-level-filter')?.value || '').toUpperCase();
+            const linesN = parseInt(document.getElementById('log-lines-select')?.value) || 2000;
+            const dateVal = document.getElementById('log-date-select')?.value || '';
+
+            let url = `/api/logs?lines=${linesN}`;
+            if (dateVal) url += `&date=${dateVal}`;
+
             try {
-                const res = await fetch('/api/logs');
-                const lines = await res.json();
+                const res = await fetch(url);
+                let lines = await res.json();
+
+                if (levelFilter) {
+                    lines = lines.filter(l => l.includes(`[${levelFilter}]`));
+                }
+
+                document.getElementById('log-count-label').textContent = `${lines.length} entries`;
+
                 if (lines.length === 0) {
                     container.innerHTML = '<p class="text-slate-500 italic">No logs found.</p>';
                     return;
                 }
-                
-                // Colorize log levels
+
                 container.innerHTML = lines.map(line => {
-                    let colorClass = 'text-slate-400';
-                    if (line.includes('[INFO]')) colorClass = 'text-slate-300';
-                    if (line.includes('[WARN]')) colorClass = 'text-amber-500';
-                    if (line.includes('[ERROR]')) colorClass = 'text-rose-500 font-bold';
-                    
-                    // Highlight timestamps and headers
+                    let rowClass = 'text-slate-400';
+                    let badgeClass = 'text-slate-500';
+                    if (line.includes('[WARN]'))  { rowClass = 'text-amber-400';  badgeClass = 'text-amber-500'; }
+                    if (line.includes('[ERROR]')) { rowClass = 'text-rose-400 font-bold'; badgeClass = 'text-rose-500'; }
+                    if (line.includes('✓') || line.includes('Successfully')) rowClass = 'text-emerald-400';
+
                     const formatted = line
-                        .replace(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)/, '<span class="text-slate-500">$1</span>')
-                        .replace(/\[(INFO|WARN|ERROR)\]/, `<span class="${colorClass}">[$1]</span>`);
-                    
-                    return `<div>${formatted}</div>`;
+                        .replace(/^(\d{4}-\d{2}-\d{2}T)(\d{2}:\d{2}:\d{2})/, '<span class="text-slate-600">$1</span><span class="text-slate-400">$2</span>')
+                        .replace(/\[(INFO|WARN|ERROR)\]/, `<span class="${badgeClass} font-black">[$1]</span>`);
+
+                    return `<div class="${rowClass} border-b border-slate-900/20 py-0.5">${formatted}</div>`;
                 }).join('');
             } catch (err) { console.error(err); }
         }
@@ -1128,8 +1186,9 @@
 
         const refreshBtn = document.getElementById('refresh-logs-btn');
         if (refreshBtn) refreshBtn.addEventListener('click', loadLogs);
+        populateLogDates();
         loadLogs();
-        setInterval(loadLogs, 10000);
+        setInterval(loadLogs, 15000);
     });
 </script>
 </body></html>

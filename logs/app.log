@@ -13479,3 +13479,6 @@
 2026-03-19T19:52:40.759Z [INFO] Bulk: BTP5%40 → B_ITA / IT0004532559 (inserted)
 2026-03-19T19:53:36.609Z [INFO] Recording daily snapshots for portfolios and dashboard...
 2026-03-19T19:53:36.616Z [INFO] Daily snapshots completed.
+2026-03-19T21:12:23.934Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-19T21:12:46.030Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-19T21:13:18.725Z [INFO] Skipping automatic market update: all markets are closed.

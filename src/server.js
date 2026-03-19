@@ -8,24 +8,51 @@ const YahooFinance = require('yahoo-finance2').default;
 const axios      = require('axios');
 const fs         = require('fs');
 
-const LOG_FILE = path.join(__dirname, '../logs/app.log');
+const LOGS_DIR = path.join(__dirname, '../logs');
+const LOG_FILE = path.join(LOGS_DIR, 'app.log');
+
+// Daily-rotating log helper
+function getRotatedLogFile(date) {
+    const d = date || new Date();
+    const key = d.toISOString().split('T')[0]; // YYYY-MM-DD
+    return path.join(LOGS_DIR, `app-${key}.log`);
+}
+
+function writeLog(level, msg) {
+    const ts = new Date();
+    const line = `${ts.toISOString()} [${level}] ${msg}\n`;
+    // Write to today's rotated file
+    try {
+        if (!fs.existsSync(LOGS_DIR)) fs.mkdirSync(LOGS_DIR, { recursive: true });
+        fs.appendFileSync(getRotatedLogFile(ts), line);
+        fs.appendFileSync(LOG_FILE, line); // keep master log too
+        // Trim master log to last 50000 lines to avoid unbounded growth
+        try {
+            const raw = fs.readFileSync(LOG_FILE, 'utf8');
+            const lines = raw.split('\n');
+            if (lines.length > 50000) {
+                fs.writeFileSync(LOG_FILE, lines.slice(-40000).join('\n') + '\n');
+            }
+        } catch(_) {}
+    } catch(e) { /* ignore if fs not available */ }
+}
 
 const logger = {
     info: (msg) => {
         const line = `${new Date().toISOString()} [INFO] ${msg}\n`;
         process.stdout.write(line);
-        fs.appendFileSync(LOG_FILE, line);
+        writeLog('INFO', msg);
     },
     error: (msg, err) => {
-        const errMsg = err ? ` - Error: ${err.message || err}` : '';
+        const errMsg = err ? ` - ${err.message || err}` : '';
         const line = `${new Date().toISOString()} [ERROR] ${msg}${errMsg}\n`;
         process.stderr.write(line);
-        fs.appendFileSync(LOG_FILE, line);
+        writeLog('ERROR', `${msg}${errMsg}`);
     },
     warn: (msg) => {
         const line = `${new Date().toISOString()} [WARN] ${msg}\n`;
         process.stdout.write(line);
-        fs.appendFileSync(LOG_FILE, line);
+        writeLog('WARN', msg);
     }
 };
 
@@ -2702,11 +2729,39 @@ app.post('/api/backups/manual', async (req, res) => {
 
 app.get('/api/logs', (req, res) => {
     try {
-        if (!fs.existsSync(LOG_FILE)) return res.json([]);
-        const content = fs.readFileSync(LOG_FILE, 'utf8');
-        const lines = content.trim().split('\n');
-        // Return last 100 lines
-        res.json(lines.slice(-100).reverse());
+        const maxLines = parseInt(req.query.lines) || 2000;
+        const dateParam = req.query.date; // YYYY-MM-DD
+
+        let content = '';
+        if (dateParam) {
+            // Return a specific day's rotated log file
+            const rotatedFile = getRotatedLogFile(new Date(dateParam));
+            if (fs.existsSync(rotatedFile)) {
+                content = fs.readFileSync(rotatedFile, 'utf8');
+            }
+        } else {
+            // Return master log (all days)
+            if (fs.existsSync(LOG_FILE)) {
+                content = fs.readFileSync(LOG_FILE, 'utf8');
+            }
+        }
+        if (!content) return res.json([]);
+        const lines = content.trim().split('\n').filter(Boolean);
+        res.json(lines.slice(-maxLines).reverse());
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// List available log dates
+app.get('/api/logs/dates', (req, res) => {
+    try {
+        if (!fs.existsSync(LOGS_DIR)) return res.json([]);
+        const files = fs.readdirSync(LOGS_DIR)
+            .filter(f => f.match(/^app-\d{4}-\d{2}-\d{2}\.log$/))
+            .map(f => f.replace('app-', '').replace('.log', ''))
+            .sort().reverse();
+        res.json(files);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -2853,9 +2908,11 @@ async function updateMarketData(force = false) {
                 // Default Yahoo Finance
                 const metadata = await fetchAssetMetadata(asset.ticker);
                 if (!metadata) {
-                    throw new Error(`No metadata found for ${asset.ticker}`);
+                    throw new Error(`YF: no quote data returned for '${asset.ticker}' (check ticker spelling or try manual update)`);
                 }
-                
+                if (!metadata.currentPrice || metadata.currentPrice === 0) {
+                    logger.warn(`YF: price is 0 for ${asset.ticker} — data may be stale or market closed`);
+                }
                 updateData = {
                     price: metadata.currentPrice || asset.currentPrice,
                     change: metadata.changePercent || asset.changePercent,
@@ -2867,6 +2924,7 @@ async function updateMarketData(force = false) {
                     country: metadata.country || asset.country,
                     quoteDate: metadata.quoteDate || new Date().toISOString().split('T')[0]
                 };
+                logger.info(`YF ✓ ${asset.ticker}: price=${updateData.price} ${updateData.currency} chg=${updateData.change?.toFixed ? updateData.change.toFixed(2) : updateData.change}%`);
             }
 
             if (updateData) {
