@@ -13449,3 +13449,33 @@
 2026-03-19T19:33:53.749Z [ERROR] Failed to update BTP5 - Error: No metadata found for BTP5
 2026-03-19T19:33:54.317Z [ERROR] Failed to update IT0004532559 - Error: No metadata found for IT0004532559
 2026-03-19T19:33:54.318Z [INFO] Market data update cycle completed.
+2026-03-19T19:46:58.697Z [INFO] Updating market data for 3 assets...
+2026-03-19T19:46:58.704Z [INFO] Updating [EURUSD=X] using [YF]...
+2026-03-19T19:46:59.288Z [INFO] Successfully updated EURUSD=X: 1.1587486 USD
+2026-03-19T19:46:59.289Z [INFO] Updating [BTP5] using [YF]...
+2026-03-19T19:46:59.379Z [ERROR] Failed to update BTP5 - Error: No metadata found for BTP5
+2026-03-19T19:46:59.380Z [INFO] Updating [IT0004532559] using [YF]...
+2026-03-19T19:46:59.482Z [ERROR] Failed to update IT0004532559 - Error: No metadata found for IT0004532559
+2026-03-19T19:46:59.530Z [INFO] Market data update cycle completed.
+2026-03-19T19:47:23.195Z [INFO] Auto-created portfolio: WIDIBA (ID: 18)
+2026-03-19T19:48:01.185Z [INFO] Updating market data for 6 assets...
+2026-03-19T19:48:01.666Z [INFO] Successfully updated EURUSD=X: 1.1587486 USD
+2026-03-19T19:48:01.757Z [ERROR] Failed to update BTP5 - Error: No metadata found for BTP5
+2026-03-19T19:48:01.853Z [ERROR] Failed to update IT0004532559 - Error: No metadata found for IT0004532559
+2026-03-19T19:48:01.997Z [ERROR] Failed to update BTPMz30 - Error: No metadata found for BTPMz30
+2026-03-19T19:48:02.171Z [ERROR] Failed to update BTPMg30 - Error: No metadata found for BTPMg30
+2026-03-19T19:48:02.255Z [ERROR] Failed to update BTP5%40 - Error: No metadata found for BTP5%40
+2026-03-19T19:48:02.256Z [INFO] Market data update cycle completed.
+2026-03-19T19:52:36.641Z [INFO] Updating market data for 2 assets...
+2026-03-19T19:52:36.643Z [INFO] Updating [EURUSD=X] using [YF]...
+2026-03-19T19:52:36.652Z [INFO] FolioTrack server running on port 3001
+2026-03-19T19:52:36.652Z [INFO] Database: /Users/mauro/Documents/Progetto_FolioTracker2/foliotrack.db
+2026-03-19T19:52:38.462Z [INFO] Successfully updated EURUSD=X: 1.1583458 USD
+2026-03-19T19:52:38.462Z [INFO] Updating [IT0004532559] using [YF]...
+2026-03-19T19:52:38.557Z [ERROR] Failed to update IT0004532559 - Error: No metadata found for IT0004532559
+2026-03-19T19:52:38.602Z [INFO] Market data update cycle completed.
+2026-03-19T19:52:40.759Z [INFO] Bulk: BTPMZ30 → B_ITA / IT0005594483 (inserted)
+2026-03-19T19:52:40.759Z [INFO] Bulk: BTPMG30 → B_ITA / IT0005583486 (inserted)
+2026-03-19T19:52:40.759Z [INFO] Bulk: BTP5%40 → B_ITA / IT0004532559 (inserted)
+2026-03-19T19:53:36.609Z [INFO] Recording daily snapshots for portfolios and dashboard...
+2026-03-19T19:53:36.616Z [INFO] Daily snapshots completed.
