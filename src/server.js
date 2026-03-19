@@ -853,7 +853,7 @@ app.get('/api/portfolios', async (req, res) => {
         // Compute global invested capital = sum of BUY amounts (absolute) minus SELL amounts
         const investedCapitalRows = database.db.prepare(`
             SELECT type, SUM(ABS(amount)) AS total FROM transactions 
-            WHERE type IN ('BUY', 'SELL') AND ticker != 'CASH' 
+            WHERE type IN ('BUY', 'SELL') AND assetTicker != 'CASH' 
             GROUP BY type
         `).all();
         let totalBuys = 0, totalSells = 0;
