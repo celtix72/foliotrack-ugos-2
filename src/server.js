@@ -865,7 +865,6 @@ app.get('/api/portfolios', async (req, res) => {
                 totalNetValue,
                 totalTax: totalTax,
                 totalGain,
-                investedCapital,
                 changePercent: globalChangePercent,
                 changeValue: globalChangeValue
             }
