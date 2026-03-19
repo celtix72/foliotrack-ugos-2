@@ -820,6 +820,7 @@ app.get('/api/portfolios', async (req, res) => {
         // 2. Calculate Totals including Taxes
         let totalGrossValue = 0;
         let totalTax = 0;
+        let totalUnrealizedGain = 0;
 
         for (const p of rows) {
             const pPoints = await calculatePerformanceHistory([p.id], '1W');
@@ -841,29 +842,21 @@ app.get('/api/portfolios', async (req, res) => {
                 p.changePercent = 0;
             }
 
-            // Calculate tax for this portfolio
+            // Calculate tax and gain for this portfolio
             const details = await getPortfolioDetails(p.id, liveRate);
             p.totalTax = details.totalLatentTax;
             p.netValue = p.totalValue - p.totalTax;
+            p.totalGrossLatentGain = details.totalGrossLatentGain || 0;
             
             totalGrossValue += p.totalValue;
             totalTax += p.totalTax;
+            totalUnrealizedGain += p.totalGrossLatentGain;
         }
 
-        // Compute global invested capital = sum of BUY amounts (absolute) minus SELL amounts
-        const investedCapitalRows = database.db.prepare(`
-            SELECT type, SUM(ABS(amount)) AS total FROM transactions 
-            WHERE type IN ('BUY', 'SELL') AND assetTicker != 'CASH' 
-            GROUP BY type
-        `).all();
-        let totalBuys = 0, totalSells = 0;
-        for (const r of investedCapitalRows) {
-            if (r.type === 'BUY')  totalBuys  = r.total || 0;
-            if (r.type === 'SELL') totalSells = r.total || 0;
-        }
-        const investedCapital = totalBuys - totalSells;
         const totalNetValue   = totalGrossValue - totalTax;
-        const totalGain       = totalNetValue - investedCapital;
+        
+        // Dashboard GAIN Totale is now sum of Gross Latent Gains
+        const totalGain = totalUnrealizedGain;
 
         res.json({
             portfolios: rows,
@@ -1010,6 +1003,8 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
     const lossMap = {};
     losses.forEach(l => lossMap[l.asset_type] = l.amount);
 
+    const totalGrossLatentGain = holdings.reduce((s, h) => s + (h.unrealizedGain || 0), 0);
+
     const aggregateGains = {}; // { type: { unrealized: 0 } }
     holdings.forEach(h => {
         if (!aggregateGains[h.type]) aggregateGains[h.type] = { unrealized: 0 };
@@ -1032,9 +1027,14 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
     }).filter(b => b.grossGain !== 0 || b.minusvalenze !== 0);
 
     const totalAssetsValue = holdings.reduce((s, h) => s + h.currentValue, 0);
-    const typeMap = {};
+    const totalNetValueForAllocation = Math.round((portfolio.currentCash + totalAssetsValue) * 100) / 100;
+    
+    const typeMap = { 'Liquidity': portfolio.currentCash };
     const currMap = {};
-    const counMap = {};
+    if (portfolio.currentCash !== 0) {
+        currMap[portfolio.currency || 'EUR'] = portfolio.currentCash;
+    }
+    const counMap = { 'Liquidity': portfolio.currentCash };
 
     for (const h of holdings) { 
         const tp = h.type || 'Other'; 
@@ -1047,7 +1047,7 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
     }
 
     const allocation = Object.entries(typeMap).map(([type, value]) => ({
-        type, value, percent: totalAssetsValue > 0 ? (value / totalAssetsValue) * 100 : 0
+        type, value, percent: totalNetValueForAllocation > 0 ? (value / totalNetValueForAllocation) * 100 : 0
     })).sort((a, b) => b.value - a.value);
 
     // Closed positions
@@ -1092,6 +1092,7 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
         closedPositions,
         dividendGroups: Object.values(divYearMap).sort((a, b) => b.year - a.year),
         totalDividends,
+        totalGrossLatentGain: Math.round(totalGrossLatentGain * 100) / 100,
         totalLatentTax: Math.round(totalLatentTax * 100) / 100,
         taxBreakdown,
         losses: lossMap
@@ -1121,6 +1122,11 @@ app.get('/api/analytics/global-allocation', async (req, res) => {
                 const tp = h.type || 'Other';
                 typeMap[tp] = (typeMap[tp] || 0) + h.currentValue;
                 totalValue += h.currentValue;
+            }
+            // Inclusion of Cash
+            if (details.currentCash) {
+                typeMap['Liquidity'] = (typeMap['Liquidity'] || 0) + details.currentCash;
+                totalValue += details.currentCash;
             }
         }
 
