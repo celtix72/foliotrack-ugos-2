@@ -32,7 +32,7 @@ const logger = {
 dotenv.config();
 
 const yahooFinance = new YahooFinance({ suppressNotices: ['ripHistorical'] });
-const database = require('./database');
+const database = require('./db');
 const backupManager = require('./backup_manager');
 
 const app  = express();
@@ -2939,5 +2939,5 @@ updateMarketData();
 
 app.listen(PORT, '0.0.0.0', () => {
     logger.info(`FolioTrack server running on port ${PORT}`);
-    logger.info(`Database: ${require('./database').db.name}`);
+    logger.info(`Database: ${require('./db').db.name}`);
 });

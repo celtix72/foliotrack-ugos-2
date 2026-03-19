@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { db } = require('./database');
+const { db } = require('./db');
 
 const BACKUP_DIR = path.join(__dirname, '..', 'backups');
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'foliotrack.db');
@@ -86,7 +86,7 @@ function deleteBackup(filename) {
  * Prunes old automatic backups based on retention setting.
  */
 async function applyRetention() {
-    const settings = require('./database').getSettings();
+    const settings = require('./db').getSettings();
     const limit = parseInt(settings.backupRetention || 5);
     
     const backups = listBackups()
@@ -127,7 +127,7 @@ async function restoreBackup(filename) {
 
     console.log(`Restoring from ${filename}...`);
 
-    const dbStore = require('./database');
+    const dbStore = require('./db');
     
     // 1. Close current connection via dbStore.initDb (it handles closing)
     // Actually, we must close it first to release the file lock on Windows/Mac
