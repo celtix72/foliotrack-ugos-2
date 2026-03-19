@@ -17552,3 +17552,5 @@ Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before i
 All application data has been reset.
 Performance result cache invalidated.
 2026-03-19T21:13:18.725Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-19T21:28:18.762Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-19T21:43:18.781Z [INFO] Skipping automatic market update: all markets are closed.

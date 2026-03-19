@@ -850,12 +850,29 @@ app.get('/api/portfolios', async (req, res) => {
             totalTax += p.totalTax;
         }
 
+        // Compute global invested capital = sum of BUY amounts (absolute) minus SELL amounts
+        const investedCapitalRows = database.db.prepare(`
+            SELECT type, SUM(ABS(amount)) AS total FROM transactions 
+            WHERE type IN ('BUY', 'SELL') AND ticker != 'CASH' 
+            GROUP BY type
+        `).all();
+        let totalBuys = 0, totalSells = 0;
+        for (const r of investedCapitalRows) {
+            if (r.type === 'BUY')  totalBuys  = r.total || 0;
+            if (r.type === 'SELL') totalSells = r.total || 0;
+        }
+        const investedCapital = totalBuys - totalSells;
+        const totalNetValue   = totalGrossValue - totalTax;
+        const totalGain       = totalNetValue - investedCapital;
+
         res.json({
             portfolios: rows,
             global: {
                 totalValue: totalGrossValue,
-                totalNetValue: totalGrossValue - totalTax,
+                totalNetValue,
                 totalTax: totalTax,
+                totalGain,
+                investedCapital,
                 changePercent: globalChangePercent,
                 changeValue: globalChangeValue
             }
@@ -1923,24 +1940,34 @@ async function calculatePerformanceHistory(portfolioIds, range) {
     };
 
     const fetchTickerData = async (ticker) => {
-        logger.info(`Fetching historical data for ${ticker}...`);
-        try {
-            // Check In-Memory Cache first
-            if (historicalPricesCache[ticker]) {
-                historicalPrices[ticker] = historicalPricesCache[ticker];
+        const todayStr = new Date().toISOString().split('T')[0];
+
+        // --- EOD Throttle: in-memory cache ---
+        // Cache entry: { data: {...}, fetchedDate: 'YYYY-MM-DD' }
+        if (historicalPricesCache[ticker]) {
+            const cached = historicalPricesCache[ticker];
+            // If we already fetched today (or data is fresh from DB), skip remote call
+            if (cached._fetchedDate === todayStr) {
+                historicalPrices[ticker] = cached;
                 return;
             }
+        }
 
-            // Check Persistent DB Cache
-            const dbQuotes = database.db.prepare(`SELECT date, price FROM asset_quotes WHERE ticker = ? AND date >= ?`).all(ticker, startDate.toISOString().split('T')[0]);
-            if (dbQuotes.length > 0) {
-                historicalPrices[ticker] = Object.fromEntries(dbQuotes.map(q => [q.date, q.price]));
-                historicalPricesCache[ticker] = historicalPrices[ticker];
-                const latestDate = dbQuotes.map(q => q.date).sort().at(-1);
-                const todayStr = new Date().toISOString().split('T')[0];
-                if (latestDate >= todayStr) return; 
+        // --- DB Cache check ---
+        const dbQuotes = database.db.prepare(`SELECT date, price FROM asset_quotes WHERE ticker = ? AND date >= ?`).all(ticker, startDate.toISOString().split('T')[0]);
+        if (dbQuotes.length > 0) {
+            const latestDate = dbQuotes.map(q => q.date).sort().at(-1);
+            historicalPrices[ticker] = Object.fromEntries(dbQuotes.map(q => [q.date, q.price]));
+            historicalPricesCache[ticker] = { ...historicalPrices[ticker], _fetchedDate: todayStr };
+            if (latestDate >= todayStr) {
+                // DB already has today's data — no remote fetch needed
+                return;
             }
+        }
 
+        // --- Remote Fetch (only if DB doesn't have today's data) ---
+        logger.info(`Fetching EOD history for ${ticker} (not in DB for today)...`);
+        try {
             // Determine if we should use Borsa Italiana
             const assetMeta = assetMetadataCache[ticker];
             const isItIsin = assetMeta && assetMeta.isin && /^IT[0-9A-Z]{10}$/.test(assetMeta.isin);
@@ -1956,7 +1983,7 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                 const qStart = (allTransactions.find(t => t.assetTicker === ticker)?.date) || startDate.toISOString().split('T')[0];
                 const chartResult = await yahooFinance.chart(ticker, {
                     period1: qStart,
-                    period2: today.toISOString().split('T')[0],
+                    period2: todayStr,
                     interval: '1d'
                 }).catch(() => null);
 
@@ -1971,8 +1998,10 @@ async function calculatePerformanceHistory(portfolioIds, range) {
             }
 
             if (pricesMap && Object.keys(pricesMap).length > 0) {
-                historicalPrices[ticker] = pricesMap;
-                historicalPricesCache[ticker] = pricesMap;
+                // Merge with existing DB data
+                const merged = { ...historicalPrices[ticker], ...pricesMap };
+                historicalPrices[ticker] = merged;
+                historicalPricesCache[ticker] = { ...merged, _fetchedDate: todayStr };
 
                 // Save to DB Cache (UPSERT)
                 const insertQuote = database.db.prepare(`INSERT OR REPLACE INTO asset_quotes (ticker, date, price) VALUES (?, ?, ?)`);
@@ -1982,12 +2011,14 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                     }
                 });
                 saveQuotes(null);
+                logger.info(`EOD history saved for ${ticker}: ${Object.keys(pricesMap).length} new points`);
             } else {
-                historicalPrices[ticker] = {};
+                historicalPrices[ticker] = historicalPrices[ticker] || {};
+                historicalPricesCache[ticker] = { ...historicalPrices[ticker], _fetchedDate: todayStr };
             }
         } catch (err) {
-            console.warn(`Failed to fetch history for ${ticker}:`, err.message);
-            historicalPrices[ticker] = {};
+            logger.warn(`Failed to fetch EOD history for ${ticker}: ${err.message}`);
+            historicalPrices[ticker] = historicalPrices[ticker] || {};
         }
     };
 
