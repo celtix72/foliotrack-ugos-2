@@ -1678,6 +1678,7 @@ app.get('/api/market/exchange-rate', async (req, res) => {
  * Shared helper to calculate performance data points for one or more portfolios.
  */
 async function calculatePerformanceHistory(portfolioIds, range) {
+    fs.appendFileSync('/Users/mauro/Documents/Progetto_FolioTracker2/logs/debug.log', `[DEBUG] calculatePerformanceHistory called with portfolioIds=${JSON.stringify(portfolioIds)}, range=${range}\n`);
     // Standardize input: null, single ID, or array
     const pIdsInput = portfolioIds === null ? null : (Array.isArray(portfolioIds) ? portfolioIds : [portfolioIds]);
     
@@ -1713,6 +1714,7 @@ async function calculatePerformanceHistory(portfolioIds, range) {
             if (startDate > today) startDate = new Date(today);
         }
     }
+    logger.info(`[DEBUG] calculatePerformanceHistory: range=${range}, startDate=${startDate.toISOString()}, tickersCount=${[...new Set(allTransactions.map(t => t.assetTicker).filter(Boolean))].length}`);
 
     const uniqueTickers = [...new Set(allTransactions.map(t => t.assetTicker).filter(Boolean))];
     const historicalPrices = {};
@@ -1771,21 +1773,37 @@ async function calculatePerformanceHistory(portfolioIds, range) {
     const fetchBorsaItalianaHistory = async (ticker, isin) => {
         let attempts = 0;
         const maxAttempts = 2;
-        console.log(`[DEBUG] fetchBorsaItalianaHistory called for ${ticker} with ISIN ${isin}`);
+        const mainUrl = `https://www.borsaitaliana.it/borsa/search/scheda.html?code=${isin}&lang=it`;
+        const apiUrl = `https://grafici.borsaitaliana.it/api/instruments/${isin},XMIL,ISIN/history/period?period=5Y&adjustment=true&add-last-price=true`;
+        
+        const headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+            'Accept-Language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7'
+        };
+
         while (attempts < maxAttempts) {
             attempts++;
             try {
-                const url = `https://grafici.borsaitaliana.it/api/instruments/${isin},XMIL,ISIN/history/period?period=5Y&adjustment=true&add-last-price=true`;
-                console.log(`[DEBUG] B_ITA History URL: ${url}`);
-                const resp = await axios.get(url, {
+                // Step 1: Get Cookies from the main page
+                const mainResp = await axios.get(mainUrl, { headers, timeout: 15000 });
+                const cookies = mainResp.headers['set-cookie'];
+                let cookieStr = '';
+                if (cookies) {
+                    cookieStr = cookies.map(c => c.split(';')[0]).join('; ');
+                }
+
+                // Step 2: Get History using the cookies
+                const resp = await axios.get(apiUrl, {
                     headers: {
-                        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                        'Referer': 'https://www.borsaitaliana.it/',
-                        'Accept': 'application/json, text/plain, */*',
-                        'Accept-Language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7'
+                        ...headers,
+                        'Cookie': cookieStr,
+                        'Referer': mainUrl,
+                        'Accept': 'application/json, text/plain, */*'
                     },
-                    timeout: 10000 // Increased from 5s to 10s
+                    timeout: 15000
                 });
+
                 if (resp.data && resp.data.history && resp.data.history.historyDt) {
                     const map = {};
                     resp.data.history.historyDt.forEach(h => {
@@ -1795,24 +1813,23 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                             map[dateStr] = h.closePx;
                         }
                     });
-                    console.log(`[DEBUG] fetchBorsaItalianaHistory SUCCESS for ${ticker}: ${Object.keys(map).length} quotes`);
+                    logger.info(`Successfully scraped B_ITA history for ${ticker}: ${Object.keys(map).length} points`);
                     return map;
-                } else {
-                    console.log(`[DEBUG] fetchBorsaItalianaHistory INVALID DATA for ${ticker}:`, Object.keys(resp.data));
                 }
             } catch (err) {
                 if (attempts < maxAttempts) {
                     logger.warn(`B_ITA history fetch attempt ${attempts} failed for ${isin}: ${err.message}. Retrying...`);
-                    await new Promise(r => setTimeout(r, 1000));
+                    await new Promise(r => setTimeout(r, 2000));
                     continue;
                 }
-                console.warn(`B_ITA history failed for ${ticker} (${isin}) after ${maxAttempts} attempts:`, err.message);
+                logger.error(`B_ITA history fetch failed for ${ticker} (${isin}) after ${maxAttempts} attempts: ${err.message}`);
             }
         }
         return null;
     };
 
     const fetchTickerData = async (ticker) => {
+        logger.info(`[DEBUG] fetchTickerData: Starting for ${ticker}`);
         try {
             // Check In-Memory Cache first
             if (historicalPricesCache[ticker]) {
@@ -1837,10 +1854,7 @@ async function calculatePerformanceHistory(portfolioIds, range) {
 
             if (isItIsin || (assetMeta && assetMeta.dataSource === 'B_ITA')) {
                 const searchIsin = (assetMeta && assetMeta.isin) || ticker;
-                console.log(`[DEBUG] fetchTickerData: Treating ${ticker} as B_ITA, searching ISIN: ${searchIsin}`);
                 pricesMap = await fetchBorsaItalianaHistory(ticker, searchIsin);
-            } else {
-                if (ticker === 'IT0004532559') console.log(`[DEBUG] IT0004532559 NOT treated as B_ITA. isItIsin=${isItIsin}, dataSource=${assetMeta?.dataSource}`);
             }
 
             // Fallback to Yahoo Finance
