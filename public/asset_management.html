@@ -385,7 +385,10 @@
                                 <div class="w-10 h-10 rounded-lg bg-${tickerColor === 'primary' ? 'primary' : tickerColor + '-500'}/10 text-${tickerColor === 'primary' ? 'primary' : tickerColor + '-500'} flex items-center justify-center font-bold text-[10px] shrink-0 uppercase">${(a.ticker || '??').substring(0,4)}</div>
                                 <div class="min-w-0">
                                     <p class="font-bold text-sm truncate">${a.name}</p>
-                                    <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">${a.ticker}</p>
+                                    <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
+                                        ${a.ticker}
+                                        <span class="inline-block ml-1 px-1.5 py-0.5 rounded text-[9px] font-black leading-none ${a.dataSource === 'B_ITA' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400'}" title="${a.dataSource === 'B_ITA' ? 'Borsa Italiana' : 'Yahoo Finance'}">${a.dataSource === 'B_ITA' ? 'BI' : 'YF'}</span>
+                                    </p>
                                 </div>
                             </div>
                         </td>

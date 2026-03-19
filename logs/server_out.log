@@ -16877,3 +16877,8 @@ Performance result cache invalidated.
 2026-03-19T18:32:01.953Z [INFO] Successfully updated EURUSD=X: 1.1564704 USD
 2026-03-19T18:32:02.475Z [INFO] Successfully updated BTP5%40: 110.47 USD
 2026-03-19T18:32:02.544Z [INFO] Market data update cycle completed.
+2026-03-19T18:48:01.097Z [INFO] Updating market data for 2 assets...
+2026-03-19T18:48:01.581Z [INFO] Successfully updated EURUSD=X: 1.1560694 USD
+2026-03-19T18:48:02.359Z [INFO] Successfully updated BTP5%40: 110.47 USD
+2026-03-19T18:48:02.415Z [INFO] Market data update cycle completed.
+Performance result cache invalidated.

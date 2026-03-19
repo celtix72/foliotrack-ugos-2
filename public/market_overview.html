@@ -336,7 +336,10 @@ function renderAssets(filter = '') {
                             ${!a.isMonitored ? '<span class="text-[8px] font-black bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-500 tracking-tighter uppercase">Inactive</span>' : ''}
                             ${a.lastUpdateError ? `<span class="px-1.5 py-0.5 rounded-full bg-rose-500 text-[8px] font-black text-white uppercase tracking-tighter" title="${a.lastUpdateError.replace(/"/g, '&quot;')}">Err</span>` : ''}
                         </div>
-                        <p class="text-[10px] text-slate-400 uppercase font-black tracking-[0.2em] mt-1.5">${a.ticker} • ${a.exchange || 'Market'}</p>
+                        <p class="text-[10px] text-slate-400 uppercase font-black tracking-[0.2em] mt-1.5">
+                            ${a.ticker} • ${a.exchange || 'Market'}
+                            <span class="inline-block ml-1 px-1.5 py-0.5 rounded text-[9px] font-black leading-none ${a.dataSource === 'B_ITA' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400'}" title="${a.dataSource === 'B_ITA' ? 'Borsa Italiana' : 'Yahoo Finance'}">${a.dataSource === 'B_ITA' ? 'BI' : 'YF'}</span>
+                        </p>
                     </div>
                 </div>
                 <div class="text-right flex items-center gap-4">
