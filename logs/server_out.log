@@ -16213,3 +16213,667 @@ Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before i
 Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
 Deleted portfolio 11
 Performance result cache invalidated.
+2026-03-19T17:47:01.010Z [INFO] Updating market data for 52 assets...
+2026-03-19T17:47:01.446Z [INFO] Successfully updated ISP.MI: 5.078 EUR
+2026-03-19T17:47:01.734Z [INFO] Successfully updated ELV: 295.565 USD
+2026-03-19T17:47:02.101Z [INFO] Successfully updated TDIV.AS: 51.62 EUR
+2026-03-19T17:47:02.309Z [INFO] Successfully updated BTP5%40: 110.47 EUR
+2026-03-19T17:47:02.668Z [INFO] Successfully updated NOMD: 9.74 USD
+2026-03-19T17:47:02.985Z [INFO] Successfully updated MSF.DE: 337.05 EUR
+2026-03-19T17:47:03.435Z [INFO] Successfully updated CRM: 193.61 USD
+2026-03-19T17:47:03.550Z [ERROR] Failed to update CD_IFIS - Error: No metadata found for CD_IFIS
+2026-03-19T17:47:03.844Z [INFO] Successfully updated META: 604.04 USD
+2026-03-19T17:47:04.219Z [INFO] Successfully updated ADBE: 245.02 USD
+2026-03-19T17:47:04.516Z [INFO] Successfully updated UNH: 282.325 USD
+2026-03-19T17:47:04.788Z [INFO] Successfully updated PYPL: 44.11 USD
+2026-03-19T17:47:05.107Z [INFO] Successfully updated BABA: 125.585 USD
+2026-03-19T17:47:05.385Z [INFO] Successfully updated JD: 27.925 USD
+2026-03-19T17:47:05.484Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-19T17:47:05.754Z [INFO] Successfully updated NOV.DE: 31.77 EUR
+2026-03-19T17:47:06.057Z [INFO] Successfully updated ABNB: 129.25 USD
+2026-03-19T17:47:06.341Z [INFO] Successfully updated 1ASML.MI: 1163.2 EUR
+2026-03-19T17:47:06.436Z [ERROR] Failed to update BTPMg30 - Error: No metadata found for BTPMg30
+2026-03-19T17:47:06.739Z [INFO] Successfully updated FISV: 56.17 USD
+2026-03-19T17:47:07.032Z [INFO] Successfully updated GOOGL: 305.6401 USD
+2026-03-19T17:47:07.317Z [INFO] Successfully updated TIT.MI: 0.589 EUR
+2026-03-19T17:47:07.598Z [INFO] Successfully updated MARA: 8.98 USD
+2026-03-19T17:47:07.878Z [INFO] Successfully updated MELI: 1662.45 USD
+2026-03-19T17:47:08.154Z [INFO] Successfully updated LULU: 163.76 USD
+2026-03-19T17:47:08.255Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-19T17:47:08.413Z [ERROR] Failed to update BTPMz30 - Error: No metadata found for BTPMz30
+2026-03-19T17:47:08.512Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-19T17:47:08.617Z [ERROR] Failed to update CD_WID - Error: No metadata found for CD_WID
+2026-03-19T17:47:08.915Z [INFO] Successfully updated XEON.DE: 148.656 EUR
+2026-03-19T17:47:09.228Z [INFO] Successfully updated NU: 14.05 USD
+2026-03-19T17:47:09.530Z [INFO] Successfully updated AMD.DE: 174.02 EUR
+2026-03-19T17:47:09.887Z [INFO] Successfully updated SPM.MI: 3.411 EUR
+2026-03-19T17:47:10.198Z [INFO] Successfully updated HIMS: 23.43 USD
+2026-03-19T17:47:10.478Z [INFO] Successfully updated NEXI.MI: 2.875 EUR
+2026-03-19T17:47:10.764Z [INFO] Successfully updated FCT.MI: 12.64 EUR
+2026-03-19T17:47:11.121Z [INFO] Successfully updated VERE.DE: 53.1 EUR
+2026-03-19T17:47:11.220Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-19T17:47:11.313Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-19T17:47:11.606Z [INFO] Successfully updated SRG.MI: 6.382 EUR
+2026-03-19T17:47:11.888Z [INFO] Successfully updated ASPN: 3.185 USD
+2026-03-19T17:47:12.352Z [INFO] Successfully updated ZTS: 116.235 USD
+2026-03-19T17:47:12.636Z [INFO] Successfully updated PLTR: 153.29 USD
+2026-03-19T17:47:12.989Z [INFO] Successfully updated STMMI.MI: 27.79 EUR
+2026-03-19T17:47:13.299Z [INFO] Successfully updated TSLA: 380.84 USD
+2026-03-19T17:47:13.584Z [INFO] Successfully updated AHLA.DE: 108.4 EUR
+2026-03-19T17:47:13.885Z [INFO] Successfully updated MFEA.MI: 2.532 EUR
+2026-03-19T17:47:14.212Z [INFO] Successfully updated MSFT: 387.605 USD
+2026-03-19T17:47:14.507Z [INFO] Successfully updated XCHA.DE: 17.126 EUR
+2026-03-19T17:47:14.602Z [ERROR] Failed to update SPM.MI_w - Error: No metadata found for SPM.MI_w
+2026-03-19T17:47:14.886Z [INFO] Successfully updated EURUSD=X: 1.1563368 USD
+2026-03-19T17:47:14.887Z [INFO] Market data update cycle completed.
+2026-03-19T18:00:21.214Z [INFO] Auto-created portfolio: WIDIBA (ID: 12)
+2026-03-19T18:00:21.216Z [INFO] Auto-created portfolio: DIRECTA (ID: 13)
+2026-03-19T18:00:21.217Z [INFO] Auto-created portfolio: IFIS (ID: 14)
+2026-03-19T18:00:21.226Z [INFO] Auto-created portfolio: TELEMACO (ID: 15)
+Performance result cache invalidated.
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for SPM.MI_w: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMg30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BTPMz30: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_WID: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for Rom39: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for ISP.MI: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:X25E: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for TIT.MI_d: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3NLV: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:3GOO: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for BIT:NGAS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for DBXT.DE: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+Failed to fetch history for CD_IFIS: Cannot access 'assetMetadataCache' before initialization
+All application data has been reset.
+Performance result cache invalidated.
+2026-03-19T18:17:01.065Z [INFO] Updating market data for 2 assets...
+2026-03-19T18:17:01.583Z [INFO] Successfully updated EURUSD=X: 1.1556685 USD
+2026-03-19T18:17:01.807Z [INFO] Successfully updated BTP5%40: 110.47 USD
+2026-03-19T18:17:01.864Z [INFO] Market data update cycle completed.
+2026-03-19T18:32:01.103Z [INFO] Updating market data for 2 assets...
+2026-03-19T18:32:01.953Z [INFO] Successfully updated EURUSD=X: 1.1564704 USD
+2026-03-19T18:32:02.475Z [INFO] Successfully updated BTP5%40: 110.47 USD
+2026-03-19T18:32:02.544Z [INFO] Market data update cycle completed.

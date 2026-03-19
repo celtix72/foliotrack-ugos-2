@@ -294,8 +294,8 @@ function isValidISIN(isin) {
 
 function sanitizeTicker(ticker) {
     if (!ticker) return '';
-    // Remove encoded characters and restrict to common ticker symbols
-    return ticker.replace(/%[0-9A-F]{2}/gi, '').replace(/[^A-Z0-9.\-_:=]/gi, '').toUpperCase();
+    // Allow common ticker symbols and % for encoded characters
+    return ticker.replace(/[^A-Z0-9.\-_:=%]/gi, '').toUpperCase();
 }
 // ────────────────────────────────────────────────────────────────────────────
 
