@@ -1713,9 +1713,9 @@ async function calculatePerformanceHistory(portfolioIds, range) {
             if (startDate > today) startDate = new Date(today);
         }
     }
-    logger.info(`[DEBUG] calculatePerformanceHistory: range=${range}, startDate=${startDate.toISOString()}, tickersCount=${[...new Set(allTransactions.map(t => t.assetTicker).filter(Boolean))].length}`);
-
     const uniqueTickers = [...new Set(allTransactions.map(t => t.assetTicker).filter(Boolean))];
+    logger.info(`Calculating performance history (range: ${range}, start: ${startDate.toISOString().split('T')[0]}) for ${uniqueTickers.length} tickers...`);
+
     const historicalPrices = {};
     const fxRates = {};
 
@@ -1840,7 +1840,7 @@ async function calculatePerformanceHistory(portfolioIds, range) {
     };
 
     const fetchTickerData = async (ticker) => {
-        logger.info(`[DEBUG] fetchTickerData: Starting for ${ticker}`);
+        logger.info(`Fetching historical data for ${ticker}...`);
         try {
             // Check In-Memory Cache first
             if (historicalPricesCache[ticker]) {
@@ -1922,6 +1922,7 @@ async function calculatePerformanceHistory(portfolioIds, range) {
     const portfolioStates = {};
 
     for (const p of portfolios) {
+        logger.info(`Recalculating history for Portfolio: ${p.id} (${p.name})...`);
         portfolioStates[p.id] = {
             cash: p.initialCash || 0,
             netDeposits: p.initialCash || 0,
@@ -2770,24 +2771,27 @@ async function updateMarketData(force = false) {
         if (!asset.ticker || asset.ticker === 'CASH') continue;
         if (asset.isManual === 1 && (!asset.dataSource || asset.dataSource === 'YF')) continue;
         
+        logger.info(`Updating [${asset.ticker}] using [${asset.dataSource || 'YF'}]...`);
         try {
             let updateData = null;
 
             if (asset.dataSource === 'B_ITA' && asset.isin) {
                 const result = await B_ITA(asset.isin);
                 if (result.success) {
-                const changeVal = result.variation !== null ? (result.price * (result.variation / (100 + result.variation))) : 0;
+                    const changeVal = result.variation !== null ? (result.price * (result.variation / (100 + result.variation))) : 0;
                     updateData = {
                         price: result.price,
                         change: result.variation,
                         changeValue: changeVal,
                         pe: asset.pe,
                         name: asset.name,
-                        currency: asset.currency,
+                        currency: asset.currency || 'EUR',
                         exchange: asset.exchange,
                         country: asset.country,
                         quoteDate: new Date().toISOString().split('T')[0]
                     };
+                } else {
+                    logger.warn(`B_ITA scraping failed for ${asset.ticker} (${asset.isin})`);
                 }
             } else {
                 // Default Yahoo Finance
