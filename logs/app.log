@@ -11956,3 +11956,332 @@
 2026-03-19T16:31:02.166Z [INFO] [DEBUG] fetchTickerData: Starting for JD
 2026-03-19T16:31:02.166Z [INFO] [DEBUG] fetchTickerData: Starting for MSF.DE
 2026-03-19T16:31:02.460Z [WARN] B_ITA history fetch attempt 1 failed for IT0004532559: Request failed with status code 401. Retrying...
+2026-03-19T16:31:04.681Z [ERROR] B_ITA history fetch failed for IT0004532559 (IT0004532559) after 2 attempts: Request failed with status code 401
+2026-03-19T16:31:04.882Z [INFO] [DEBUG] calculatePerformanceHistory: range=ALL, startDate=2023-11-06T00:00:00.000Z, tickersCount=1
+2026-03-19T16:31:05.040Z [INFO] [DEBUG] fetchTickerData: Starting for IT0004532559
+2026-03-19T16:31:08.120Z [WARN] B_ITA history fetch attempt 1 failed for IT0004532559: Request failed with status code 401. Retrying...
+2026-03-19T16:31:10.766Z [ERROR] B_ITA history fetch failed for IT0004532559 (IT0004532559) after 2 attempts: Request failed with status code 401
+2026-03-19T16:31:10.997Z [INFO] Rebuilding performance history: Step 4/4 - Recalculating Global...
+2026-03-19T16:31:10.998Z [INFO] [DEBUG] calculatePerformanceHistory: range=ALL, startDate=2022-01-01T00:00:00.000Z, tickersCount=44
+2026-03-19T16:31:10.998Z [INFO] [DEBUG] fetchTickerData: Starting for CASH
+2026-03-19T16:31:10.998Z [INFO] [DEBUG] fetchTickerData: Starting for IT0004532559
+2026-03-19T16:31:10.999Z [INFO] [DEBUG] fetchTickerData: Starting for BIT:X25E
+2026-03-19T16:31:10.999Z [INFO] [DEBUG] fetchTickerData: Starting for SPM.MI
+2026-03-19T16:31:10.999Z [INFO] [DEBUG] fetchTickerData: Starting for AHLA.DE
+2026-03-19T16:31:10.999Z [INFO] [DEBUG] fetchTickerData: Starting for MSFT
+2026-03-19T16:31:10.999Z [INFO] [DEBUG] fetchTickerData: Starting for TSLA
+2026-03-19T16:31:10.999Z [INFO] [DEBUG] fetchTickerData: Starting for MFEA.MI
+2026-03-19T16:31:10.999Z [INFO] [DEBUG] fetchTickerData: Starting for XCHA.DE
+2026-03-19T16:31:10.999Z [INFO] [DEBUG] fetchTickerData: Starting for TDIV.AS
+2026-03-19T16:31:10.999Z [INFO] [DEBUG] fetchTickerData: Starting for TIT.MI_d
+2026-03-19T16:31:10.999Z [INFO] [DEBUG] fetchTickerData: Starting for 1ASML.MI
+2026-03-19T16:31:10.999Z [INFO] [DEBUG] fetchTickerData: Starting for STMMI.MI
+2026-03-19T16:31:11.000Z [INFO] [DEBUG] fetchTickerData: Starting for ASPN
+2026-03-19T16:31:11.000Z [INFO] [DEBUG] fetchTickerData: Starting for PLTR
+2026-03-19T16:31:11.000Z [INFO] [DEBUG] fetchTickerData: Starting for SRG.MI
+2026-03-19T16:31:11.000Z [INFO] [DEBUG] fetchTickerData: Starting for NOV.DE
+2026-03-19T16:31:11.000Z [INFO] [DEBUG] fetchTickerData: Starting for ZTS
+2026-03-19T16:31:11.000Z [INFO] [DEBUG] fetchTickerData: Starting for FCT.MI
+2026-03-19T16:31:11.000Z [INFO] [DEBUG] fetchTickerData: Starting for BIT:3NLV
+2026-03-19T16:31:11.000Z [INFO] [DEBUG] fetchTickerData: Starting for BABA
+2026-03-19T16:31:11.000Z [INFO] [DEBUG] fetchTickerData: Starting for META
+2026-03-19T16:31:11.000Z [INFO] [DEBUG] fetchTickerData: Starting for AMD.DE
+2026-03-19T16:31:11.000Z [INFO] [DEBUG] fetchTickerData: Starting for BIT:3GOO
+2026-03-19T16:31:11.000Z [INFO] [DEBUG] fetchTickerData: Starting for VERE.DE
+2026-03-19T16:31:11.000Z [INFO] [DEBUG] fetchTickerData: Starting for NEXI.MI
+2026-03-19T16:31:11.000Z [INFO] [DEBUG] fetchTickerData: Starting for LULU
+2026-03-19T16:31:11.000Z [INFO] [DEBUG] fetchTickerData: Starting for HIMS
+2026-03-19T16:31:11.000Z [INFO] [DEBUG] fetchTickerData: Starting for CRM
+2026-03-19T16:31:11.000Z [INFO] [DEBUG] fetchTickerData: Starting for FISV
+2026-03-19T16:31:11.001Z [INFO] [DEBUG] fetchTickerData: Starting for MARA
+2026-03-19T16:31:11.001Z [INFO] [DEBUG] fetchTickerData: Starting for BIT:NGAS
+2026-03-19T16:31:11.001Z [INFO] [DEBUG] fetchTickerData: Starting for GOOGL
+2026-03-19T16:31:11.001Z [INFO] [DEBUG] fetchTickerData: Starting for UNH
+2026-03-19T16:31:11.001Z [INFO] [DEBUG] fetchTickerData: Starting for NU
+2026-03-19T16:31:11.001Z [INFO] [DEBUG] fetchTickerData: Starting for PYPL
+2026-03-19T16:31:11.001Z [INFO] [DEBUG] fetchTickerData: Starting for XEON.DE
+2026-03-19T16:31:11.001Z [INFO] [DEBUG] fetchTickerData: Starting for ADBE
+2026-03-19T16:31:11.001Z [INFO] [DEBUG] fetchTickerData: Starting for ELV
+2026-03-19T16:31:11.001Z [INFO] [DEBUG] fetchTickerData: Starting for MELI
+2026-03-19T16:31:11.001Z [INFO] [DEBUG] fetchTickerData: Starting for NOMD
+2026-03-19T16:31:11.001Z [INFO] [DEBUG] fetchTickerData: Starting for ABNB
+2026-03-19T16:31:11.001Z [INFO] [DEBUG] fetchTickerData: Starting for JD
+2026-03-19T16:31:11.001Z [INFO] [DEBUG] fetchTickerData: Starting for MSF.DE
+2026-03-19T16:31:13.369Z [WARN] B_ITA history fetch attempt 1 failed for IT0004532559: Request failed with status code 401. Retrying...
+2026-03-19T16:31:15.585Z [ERROR] B_ITA history fetch failed for IT0004532559 (IT0004532559) after 2 attempts: Request failed with status code 401
+2026-03-19T16:31:15.873Z [INFO] Performance history rebuilt successfully.
+2026-03-19T16:31:22.158Z [INFO] Recording daily snapshots for portfolios and dashboard...
+2026-03-19T16:31:22.160Z [INFO] Daily snapshots completed.
+2026-03-19T16:31:22.891Z [INFO] Updating market data for 46 assets...
+2026-03-19T16:31:23.270Z [INFO] Successfully updated ELV: 296.365 USD
+2026-03-19T16:31:23.641Z [INFO] Successfully updated TDIV.AS: 51.64 EUR
+2026-03-19T16:31:23.902Z [INFO] Successfully updated NOMD: 9.76 USD
+2026-03-19T16:31:24.403Z [INFO] Successfully updated MSF.DE: 337.9 EUR
+2026-03-19T16:31:24.681Z [INFO] Successfully updated CRM: 194.34 USD
+2026-03-19T16:31:25.029Z [INFO] Successfully updated META: 606.29 USD
+2026-03-19T16:31:25.300Z [INFO] Successfully updated ADBE: 246.6 USD
+2026-03-19T16:31:25.596Z [INFO] Successfully updated UNH: 282.7 USD
+2026-03-19T16:31:26.046Z [INFO] Successfully updated PYPL: 44.22 USD
+2026-03-19T16:31:26.394Z [INFO] Successfully updated BABA: 125.235 USD
+2026-03-19T16:31:26.682Z [INFO] Successfully updated JD: 27.87 USD
+2026-03-19T16:31:26.812Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-19T16:31:27.097Z [INFO] Successfully updated NOV.DE: 31.83 EUR
+2026-03-19T16:31:27.383Z [INFO] Successfully updated ABNB: 129.54 USD
+2026-03-19T16:31:27.763Z [INFO] Successfully updated 1ASML.MI: 1170.6 EUR
+2026-03-19T16:31:28.053Z [INFO] Successfully updated FISV: 56.15 USD
+2026-03-19T16:31:28.325Z [INFO] Successfully updated GOOGL: 305.46 USD
+2026-03-19T16:31:28.610Z [INFO] Successfully updated MARA: 8.953 USD
+2026-03-19T16:31:28.883Z [INFO] Successfully updated MELI: 1660.53 USD
+2026-03-19T16:31:29.323Z [INFO] Successfully updated LULU: 162.555 USD
+2026-03-19T16:31:29.414Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-19T16:31:29.519Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-19T16:31:29.795Z [INFO] Successfully updated XEON.DE: 148.664 EUR
+2026-03-19T16:31:30.084Z [INFO] Successfully updated NU: 14.0893 USD
+2026-03-19T16:31:30.358Z [INFO] Successfully updated AMD.DE: 173.66 EUR
+2026-03-19T16:31:30.644Z [INFO] Successfully updated SPM.MI: 3.41 EUR
+2026-03-19T16:31:30.998Z [INFO] Successfully updated HIMS: 23.5729 USD
+2026-03-19T16:31:31.284Z [INFO] Successfully updated NEXI.MI: 2.868 EUR
+2026-03-19T16:31:31.557Z [INFO] Successfully updated FCT.MI: 12.7 EUR
+2026-03-19T16:31:31.835Z [INFO] Successfully updated VERE.DE: 53.21 EUR
+2026-03-19T16:31:31.925Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-19T16:31:32.048Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-19T16:31:32.493Z [INFO] Successfully updated ASPN: 3.17 USD
+2026-03-19T16:31:32.787Z [INFO] Successfully updated ZTS: 116.455 USD
+2026-03-19T16:31:33.062Z [INFO] Successfully updated PLTR: 153.988 USD
+2026-03-19T16:31:33.419Z [INFO] Successfully updated STMMI.MI: 27.95 EUR
+2026-03-19T16:31:33.694Z [INFO] Successfully updated SRG.MI: 6.392 EUR
+2026-03-19T16:31:33.979Z [INFO] Successfully updated TSLA: 381.765 USD
+2026-03-19T16:31:34.268Z [INFO] Successfully updated AHLA.DE: 108.4 EUR
+2026-03-19T16:31:34.539Z [INFO] Successfully updated MFEA.MI: 2.528 EUR
+2026-03-19T16:31:34.822Z [INFO] Successfully updated MSFT: 388.8999 USD
+2026-03-19T16:31:35.094Z [INFO] Successfully updated XCHA.DE: 17.128 EUR
+2026-03-19T16:31:35.453Z [INFO] Successfully updated EURUSD=X: 1.1535356 USD
+2026-03-19T16:31:35.813Z [INFO] Successfully updated AAPL: 249.025 USD
+2026-03-19T16:31:36.239Z [INFO] Successfully updated IT0004532559: 110.47 EUR
+2026-03-19T16:31:36.240Z [INFO] Market data update cycle completed.
+2026-03-19T16:37:14.331Z [INFO] Updating market data for 46 assets...
+2026-03-19T16:37:14.340Z [INFO] FolioTrack server running on port 3001
+2026-03-19T16:37:14.340Z [INFO] Database: /Users/mauro/Documents/Progetto_FolioTracker2/foliotrack.db
+2026-03-19T16:37:16.581Z [INFO] Successfully updated ELV: 296.185 USD
+2026-03-19T16:37:16.959Z [INFO] Successfully updated TDIV.AS: 51.7 EUR
+2026-03-19T16:37:17.249Z [INFO] Successfully updated NOMD: 9.745 USD
+2026-03-19T16:37:17.528Z [INFO] Successfully updated MSF.DE: 337.8 EUR
+2026-03-19T16:37:17.799Z [INFO] Successfully updated CRM: 194.21 USD
+2026-03-19T16:37:18.188Z [INFO] Successfully updated META: 606.015 USD
+2026-03-19T16:37:18.611Z [INFO] Successfully updated ADBE: 245.545 USD
+2026-03-19T16:37:18.878Z [INFO] Successfully updated UNH: 282.725 USD
+2026-03-19T16:37:19.152Z [INFO] Successfully updated PYPL: 44.13 USD
+2026-03-19T16:37:19.441Z [INFO] Successfully updated BABA: 125.14 USD
+2026-03-19T16:37:19.717Z [INFO] Successfully updated JD: 27.84 USD
+2026-03-19T16:37:19.807Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-19T16:37:20.149Z [INFO] Successfully updated NOV.DE: 31.83 EUR
+2026-03-19T16:37:20.431Z [INFO] Successfully updated ABNB: 129.43 USD
+2026-03-19T16:37:20.725Z [INFO] Successfully updated 1ASML.MI: 1168.6 EUR
+2026-03-19T16:37:21.008Z [INFO] Successfully updated FISV: 56.24 USD
+2026-03-19T16:37:21.275Z [INFO] Successfully updated GOOGL: 305.03 USD
+2026-03-19T16:37:21.621Z [INFO] Successfully updated MARA: 8.92 USD
+2026-03-19T16:37:21.897Z [INFO] Successfully updated MELI: 1662.314 USD
+2026-03-19T16:37:22.177Z [INFO] Successfully updated LULU: 162.17 USD
+2026-03-19T16:37:22.285Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-19T16:37:22.382Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-19T16:37:22.661Z [INFO] Successfully updated XEON.DE: 148.663 EUR
+2026-03-19T16:37:22.942Z [INFO] Successfully updated NU: 14.0885 USD
+2026-03-19T16:37:23.215Z [INFO] Successfully updated AMD.DE: 173.8 EUR
+2026-03-19T16:37:23.498Z [INFO] Successfully updated SPM.MI: 3.408 EUR
+2026-03-19T16:37:23.971Z [INFO] Successfully updated HIMS: 23.58 USD
+2026-03-19T16:37:24.335Z [INFO] Successfully updated NEXI.MI: 2.879 EUR
+2026-03-19T16:37:24.629Z [INFO] Successfully updated FCT.MI: 12.68 EUR
+2026-03-19T16:37:24.935Z [INFO] Successfully updated VERE.DE: 53.21 EUR
+2026-03-19T16:37:25.029Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-19T16:37:25.124Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-19T16:37:25.392Z [INFO] Successfully updated ASPN: 3.175 USD
+2026-03-19T16:37:25.679Z [INFO] Successfully updated ZTS: 116.14 USD
+2026-03-19T16:37:25.958Z [INFO] Successfully updated PLTR: 153.84 USD
+2026-03-19T16:37:26.246Z [INFO] Successfully updated STMMI.MI: 27.855 EUR
+2026-03-19T16:37:26.536Z [INFO] Successfully updated SRG.MI: 6.398 EUR
+2026-03-19T16:37:26.820Z [INFO] Successfully updated TSLA: 381.205 USD
+2026-03-19T16:37:27.091Z [INFO] Successfully updated AHLA.DE: 108.6 EUR
+2026-03-19T16:37:27.380Z [INFO] Successfully updated MFEA.MI: 2.545 EUR
+2026-03-19T16:37:27.654Z [INFO] Successfully updated MSFT: 388.79 USD
+2026-03-19T16:37:28.009Z [INFO] Successfully updated XCHA.DE: 17.128 EUR
+2026-03-19T16:37:28.288Z [INFO] Successfully updated EURUSD=X: 1.1534026 USD
+2026-03-19T16:37:28.575Z [INFO] Successfully updated AAPL: 248.57 USD
+2026-03-19T16:37:28.787Z [INFO] Successfully updated IT0004532559: 110.47 EUR
+2026-03-19T16:37:28.839Z [INFO] Market data update cycle completed.
+2026-03-19T16:37:40.245Z [INFO] Rebuilding performance history: Step 1/4 - Updating market quotes...
+2026-03-19T16:37:40.245Z [INFO] Updating market data for 46 assets...
+2026-03-19T16:37:40.709Z [INFO] Successfully updated ELV: 296.185 USD
+2026-03-19T16:37:41.054Z [INFO] Successfully updated TDIV.AS: 51.7 EUR
+2026-03-19T16:37:41.345Z [INFO] Successfully updated NOMD: 9.7448 USD
+2026-03-19T16:37:41.899Z [INFO] Successfully updated MSF.DE: 337.8 EUR
+2026-03-19T16:37:42.185Z [INFO] Successfully updated CRM: 194.18 USD
+2026-03-19T16:37:42.484Z [INFO] Successfully updated META: 605.8 USD
+2026-03-19T16:37:42.787Z [INFO] Successfully updated ADBE: 245.445 USD
+2026-03-19T16:37:43.086Z [INFO] Successfully updated UNH: 282.72 USD
+2026-03-19T16:37:43.459Z [INFO] Successfully updated PYPL: 44.105 USD
+2026-03-19T16:37:43.808Z [INFO] Successfully updated BABA: 125.18 USD
+2026-03-19T16:37:44.098Z [INFO] Successfully updated JD: 27.85 USD
+2026-03-19T16:37:44.198Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-19T16:37:44.537Z [INFO] Successfully updated NOV.DE: 31.83 EUR
+2026-03-19T16:37:44.853Z [INFO] Successfully updated ABNB: 129.47 USD
+2026-03-19T16:37:45.153Z [INFO] Successfully updated 1ASML.MI: 1168.6 EUR
+2026-03-19T16:37:45.449Z [INFO] Successfully updated FISV: 56.2464 USD
+2026-03-19T16:37:45.724Z [INFO] Successfully updated GOOGL: 305.18 USD
+2026-03-19T16:37:46.004Z [INFO] Successfully updated MARA: 8.935 USD
+2026-03-19T16:37:46.360Z [INFO] Successfully updated MELI: 1662.045 USD
+2026-03-19T16:37:46.657Z [INFO] Successfully updated LULU: 162.3 USD
+2026-03-19T16:37:46.756Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-19T16:37:46.849Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-19T16:37:47.122Z [INFO] Successfully updated XEON.DE: 148.66 EUR
+2026-03-19T16:37:47.491Z [INFO] Successfully updated NU: 14.0901 USD
+2026-03-19T16:37:47.857Z [INFO] Successfully updated AMD.DE: 173.8 EUR
+2026-03-19T16:37:48.143Z [INFO] Successfully updated SPM.MI: 3.406 EUR
+2026-03-19T16:37:48.457Z [INFO] Successfully updated HIMS: 23.59 USD
+2026-03-19T16:37:48.780Z [INFO] Successfully updated NEXI.MI: 2.871 EUR
+2026-03-19T16:37:49.148Z [INFO] Successfully updated FCT.MI: 12.67 EUR
+2026-03-19T16:37:49.426Z [INFO] Successfully updated VERE.DE: 53.21 EUR
+2026-03-19T16:37:49.523Z [ERROR] Failed to update TIT.MI_d - Error: No metadata found for TIT.MI_d
+2026-03-19T16:37:49.622Z [ERROR] Failed to update BIT:3NLV - Error: No metadata found for BIT:3NLV
+2026-03-19T16:37:49.900Z [INFO] Successfully updated ASPN: 3.175 USD
+2026-03-19T16:37:50.187Z [INFO] Successfully updated ZTS: 116.11 USD
+2026-03-19T16:37:50.477Z [INFO] Successfully updated PLTR: 153.82 USD
+2026-03-19T16:37:50.769Z [INFO] Successfully updated STMMI.MI: 27.805 EUR
+2026-03-19T16:37:51.124Z [INFO] Successfully updated SRG.MI: 6.398 EUR
+2026-03-19T16:37:51.424Z [INFO] Successfully updated TSLA: 381.28 USD
+2026-03-19T16:37:51.710Z [INFO] Successfully updated AHLA.DE: 108.6 EUR
+2026-03-19T16:37:51.996Z [INFO] Successfully updated MFEA.MI: 2.545 EUR
+2026-03-19T16:37:52.302Z [INFO] Successfully updated MSFT: 388.78 USD
+2026-03-19T16:37:52.646Z [INFO] Successfully updated XCHA.DE: 17.128 EUR
+2026-03-19T16:37:52.914Z [INFO] Successfully updated EURUSD=X: 1.1532695 USD
+2026-03-19T16:37:53.202Z [INFO] Successfully updated AAPL: 248.55 USD
+2026-03-19T16:37:53.622Z [INFO] Successfully updated IT0004532559: 110.47 EUR
+2026-03-19T16:37:53.625Z [INFO] Market data update cycle completed.
+2026-03-19T16:37:53.626Z [INFO] Rebuilding performance history: Step 2/4 - Clearing history tables...
+2026-03-19T16:37:53.641Z [INFO] Rebuilding performance history: Step 3/4 - Recalculating for 2 portfolios...
+2026-03-19T16:37:53.642Z [INFO] [DEBUG] calculatePerformanceHistory: range=ALL, startDate=2022-01-01T00:00:00.000Z, tickersCount=44
+2026-03-19T16:37:53.821Z [INFO] [DEBUG] fetchTickerData: Starting for CASH
+2026-03-19T16:37:53.828Z [INFO] [DEBUG] fetchTickerData: Starting for BIT:X25E
+2026-03-19T16:37:53.828Z [INFO] [DEBUG] fetchTickerData: Starting for SPM.MI
+2026-03-19T16:37:53.829Z [INFO] [DEBUG] fetchTickerData: Starting for IT0004532559
+2026-03-19T16:37:53.830Z [INFO] [DEBUG] fetchTickerData: Starting for AHLA.DE
+2026-03-19T16:37:53.832Z [INFO] [DEBUG] fetchTickerData: Starting for MSFT
+2026-03-19T16:37:53.833Z [INFO] [DEBUG] fetchTickerData: Starting for TSLA
+2026-03-19T16:37:53.834Z [INFO] [DEBUG] fetchTickerData: Starting for MFEA.MI
+2026-03-19T16:37:53.835Z [INFO] [DEBUG] fetchTickerData: Starting for XCHA.DE
+2026-03-19T16:37:53.836Z [INFO] [DEBUG] fetchTickerData: Starting for TDIV.AS
+2026-03-19T16:37:53.837Z [INFO] [DEBUG] fetchTickerData: Starting for TIT.MI_d
+2026-03-19T16:37:53.837Z [INFO] [DEBUG] fetchTickerData: Starting for 1ASML.MI
+2026-03-19T16:37:53.838Z [INFO] [DEBUG] fetchTickerData: Starting for STMMI.MI
+2026-03-19T16:37:53.839Z [INFO] [DEBUG] fetchTickerData: Starting for ASPN
+2026-03-19T16:37:53.839Z [INFO] [DEBUG] fetchTickerData: Starting for PLTR
+2026-03-19T16:37:53.840Z [INFO] [DEBUG] fetchTickerData: Starting for SRG.MI
+2026-03-19T16:37:53.840Z [INFO] [DEBUG] fetchTickerData: Starting for NOV.DE
+2026-03-19T16:37:53.841Z [INFO] [DEBUG] fetchTickerData: Starting for ZTS
+2026-03-19T16:37:53.841Z [INFO] [DEBUG] fetchTickerData: Starting for FCT.MI
+2026-03-19T16:37:53.842Z [INFO] [DEBUG] fetchTickerData: Starting for BIT:3NLV
+2026-03-19T16:37:53.842Z [INFO] [DEBUG] fetchTickerData: Starting for BABA
+2026-03-19T16:37:53.842Z [INFO] [DEBUG] fetchTickerData: Starting for META
+2026-03-19T16:37:53.842Z [INFO] [DEBUG] fetchTickerData: Starting for AMD.DE
+2026-03-19T16:37:53.843Z [INFO] [DEBUG] fetchTickerData: Starting for BIT:3GOO
+2026-03-19T16:37:53.843Z [INFO] [DEBUG] fetchTickerData: Starting for VERE.DE
+2026-03-19T16:37:53.843Z [INFO] [DEBUG] fetchTickerData: Starting for NEXI.MI
+2026-03-19T16:37:53.843Z [INFO] [DEBUG] fetchTickerData: Starting for LULU
+2026-03-19T16:37:53.844Z [INFO] [DEBUG] fetchTickerData: Starting for HIMS
+2026-03-19T16:37:53.844Z [INFO] [DEBUG] fetchTickerData: Starting for CRM
+2026-03-19T16:37:53.844Z [INFO] [DEBUG] fetchTickerData: Starting for FISV
+2026-03-19T16:37:53.845Z [INFO] [DEBUG] fetchTickerData: Starting for MARA
+2026-03-19T16:37:53.845Z [INFO] [DEBUG] fetchTickerData: Starting for BIT:NGAS
+2026-03-19T16:37:53.845Z [INFO] [DEBUG] fetchTickerData: Starting for GOOGL
+2026-03-19T16:37:53.845Z [INFO] [DEBUG] fetchTickerData: Starting for UNH
+2026-03-19T16:37:53.846Z [INFO] [DEBUG] fetchTickerData: Starting for NU
+2026-03-19T16:37:53.846Z [INFO] [DEBUG] fetchTickerData: Starting for PYPL
+2026-03-19T16:37:53.846Z [INFO] [DEBUG] fetchTickerData: Starting for XEON.DE
+2026-03-19T16:37:53.846Z [INFO] [DEBUG] fetchTickerData: Starting for ADBE
+2026-03-19T16:37:53.847Z [INFO] [DEBUG] fetchTickerData: Starting for ELV
+2026-03-19T16:37:53.847Z [INFO] [DEBUG] fetchTickerData: Starting for MELI
+2026-03-19T16:37:53.847Z [INFO] [DEBUG] fetchTickerData: Starting for NOMD
+2026-03-19T16:37:53.847Z [INFO] [DEBUG] fetchTickerData: Starting for ABNB
+2026-03-19T16:37:53.847Z [INFO] [DEBUG] fetchTickerData: Starting for JD
+2026-03-19T16:37:53.848Z [INFO] [DEBUG] fetchTickerData: Starting for MSF.DE
+2026-03-19T16:37:53.979Z [INFO] Successfully scraped B_ITA history for IT0004532559: 1271 points
+2026-03-19T16:37:55.589Z [INFO] [DEBUG] calculatePerformanceHistory: range=ALL, startDate=2023-11-06T00:00:00.000Z, tickersCount=1
+2026-03-19T16:37:55.707Z [INFO] [DEBUG] fetchTickerData: Starting for IT0004532559
+2026-03-19T16:37:55.739Z [INFO] Rebuilding performance history: Step 4/4 - Recalculating Global...
+2026-03-19T16:37:55.740Z [INFO] [DEBUG] calculatePerformanceHistory: range=ALL, startDate=2022-01-01T00:00:00.000Z, tickersCount=44
+2026-03-19T16:37:55.740Z [INFO] [DEBUG] fetchTickerData: Starting for CASH
+2026-03-19T16:37:55.740Z [INFO] [DEBUG] fetchTickerData: Starting for IT0004532559
+2026-03-19T16:37:55.740Z [INFO] [DEBUG] fetchTickerData: Starting for BIT:X25E
+2026-03-19T16:37:55.740Z [INFO] [DEBUG] fetchTickerData: Starting for SPM.MI
+2026-03-19T16:37:55.741Z [INFO] [DEBUG] fetchTickerData: Starting for AHLA.DE
+2026-03-19T16:37:55.741Z [INFO] [DEBUG] fetchTickerData: Starting for MSFT
+2026-03-19T16:37:55.741Z [INFO] [DEBUG] fetchTickerData: Starting for TSLA
+2026-03-19T16:37:55.741Z [INFO] [DEBUG] fetchTickerData: Starting for MFEA.MI
+2026-03-19T16:37:55.741Z [INFO] [DEBUG] fetchTickerData: Starting for XCHA.DE
+2026-03-19T16:37:55.741Z [INFO] [DEBUG] fetchTickerData: Starting for TDIV.AS
+2026-03-19T16:37:55.741Z [INFO] [DEBUG] fetchTickerData: Starting for TIT.MI_d
+2026-03-19T16:37:55.741Z [INFO] [DEBUG] fetchTickerData: Starting for 1ASML.MI
+2026-03-19T16:37:55.741Z [INFO] [DEBUG] fetchTickerData: Starting for STMMI.MI
+2026-03-19T16:37:55.741Z [INFO] [DEBUG] fetchTickerData: Starting for ASPN
+2026-03-19T16:37:55.741Z [INFO] [DEBUG] fetchTickerData: Starting for PLTR
+2026-03-19T16:37:55.741Z [INFO] [DEBUG] fetchTickerData: Starting for SRG.MI
+2026-03-19T16:37:55.741Z [INFO] [DEBUG] fetchTickerData: Starting for NOV.DE
+2026-03-19T16:37:55.741Z [INFO] [DEBUG] fetchTickerData: Starting for ZTS
+2026-03-19T16:37:55.741Z [INFO] [DEBUG] fetchTickerData: Starting for FCT.MI
+2026-03-19T16:37:55.741Z [INFO] [DEBUG] fetchTickerData: Starting for BIT:3NLV
+2026-03-19T16:37:55.742Z [INFO] [DEBUG] fetchTickerData: Starting for BABA
+2026-03-19T16:37:55.742Z [INFO] [DEBUG] fetchTickerData: Starting for META
+2026-03-19T16:37:55.742Z [INFO] [DEBUG] fetchTickerData: Starting for AMD.DE
+2026-03-19T16:37:55.742Z [INFO] [DEBUG] fetchTickerData: Starting for BIT:3GOO
+2026-03-19T16:37:55.742Z [INFO] [DEBUG] fetchTickerData: Starting for VERE.DE
+2026-03-19T16:37:55.742Z [INFO] [DEBUG] fetchTickerData: Starting for NEXI.MI
+2026-03-19T16:37:55.742Z [INFO] [DEBUG] fetchTickerData: Starting for LULU
+2026-03-19T16:37:55.742Z [INFO] [DEBUG] fetchTickerData: Starting for HIMS
+2026-03-19T16:37:55.742Z [INFO] [DEBUG] fetchTickerData: Starting for CRM
+2026-03-19T16:37:55.742Z [INFO] [DEBUG] fetchTickerData: Starting for FISV
+2026-03-19T16:37:55.742Z [INFO] [DEBUG] fetchTickerData: Starting for MARA
+2026-03-19T16:37:55.742Z [INFO] [DEBUG] fetchTickerData: Starting for BIT:NGAS
+2026-03-19T16:37:55.742Z [INFO] [DEBUG] fetchTickerData: Starting for GOOGL
+2026-03-19T16:37:55.742Z [INFO] [DEBUG] fetchTickerData: Starting for UNH
+2026-03-19T16:37:55.742Z [INFO] [DEBUG] fetchTickerData: Starting for NU
+2026-03-19T16:37:55.742Z [INFO] [DEBUG] fetchTickerData: Starting for PYPL
+2026-03-19T16:37:55.742Z [INFO] [DEBUG] fetchTickerData: Starting for XEON.DE
+2026-03-19T16:37:55.742Z [INFO] [DEBUG] fetchTickerData: Starting for ADBE
+2026-03-19T16:37:55.742Z [INFO] [DEBUG] fetchTickerData: Starting for ELV
+2026-03-19T16:37:55.742Z [INFO] [DEBUG] fetchTickerData: Starting for MELI
+2026-03-19T16:37:55.743Z [INFO] [DEBUG] fetchTickerData: Starting for NOMD
+2026-03-19T16:37:55.743Z [INFO] [DEBUG] fetchTickerData: Starting for ABNB
+2026-03-19T16:37:55.743Z [INFO] [DEBUG] fetchTickerData: Starting for JD
+2026-03-19T16:37:55.743Z [INFO] [DEBUG] fetchTickerData: Starting for MSF.DE
+2026-03-19T16:37:56.070Z [INFO] Performance history rebuilt successfully.
+2026-03-19T16:38:14.294Z [INFO] Recording daily snapshots for portfolios and dashboard...
+2026-03-19T16:38:14.300Z [INFO] Daily snapshots completed.
+2026-03-19T16:40:05.148Z [INFO] Updating market data for 46 assets...
+2026-03-19T16:40:05.155Z [INFO] FolioTrack server running on port 3000
+2026-03-19T16:40:05.155Z [INFO] Database: /Users/mauro/Documents/Progetto_FolioTracker2/foliotrack.db
+2026-03-19T16:40:07.422Z [INFO] Successfully updated ELV: 296.405 USD
+2026-03-19T16:40:07.796Z [INFO] Successfully updated TDIV.AS: 51.64 EUR
+2026-03-19T16:40:08.087Z [INFO] Successfully updated NOMD: 9.755 USD
+2026-03-19T16:40:08.406Z [INFO] Successfully updated MSF.DE: 337.6 EUR
+2026-03-19T16:40:08.690Z [INFO] Successfully updated CRM: 194.21 USD
+2026-03-19T16:40:08.988Z [INFO] Successfully updated META: 606.375 USD
+2026-03-19T16:40:09.281Z [INFO] Successfully updated ADBE: 245.535 USD
+2026-03-19T16:40:09.633Z [INFO] Successfully updated UNH: 282.93 USD
+2026-03-19T16:40:09.923Z [INFO] Successfully updated PYPL: 44.215 USD
+2026-03-19T16:40:10.216Z [INFO] Successfully updated BABA: 125.14 USD
+2026-03-19T16:40:10.566Z [INFO] Successfully updated JD: 27.865 USD
+2026-03-19T16:40:10.665Z [ERROR] Failed to update BIT:NGAS - Error: No metadata found for BIT:NGAS
+2026-03-19T16:40:10.937Z [INFO] Successfully updated NOV.DE: 31.82 EUR
+2026-03-19T16:40:11.327Z [INFO] Successfully updated ABNB: 129.535 USD
+2026-03-19T16:40:11.675Z [INFO] Successfully updated 1ASML.MI: 1167.8 EUR
+2026-03-19T16:40:11.965Z [INFO] Successfully updated FISV: 56.32 USD
+2026-03-19T16:40:12.319Z [INFO] Successfully updated GOOGL: 305.51 USD
+2026-03-19T16:40:12.587Z [INFO] Successfully updated MARA: 8.955 USD
+2026-03-19T16:40:12.882Z [INFO] Successfully updated MELI: 1664.125 USD
+2026-03-19T16:40:13.162Z [INFO] Successfully updated LULU: 162.345 USD
+2026-03-19T16:40:13.260Z [ERROR] Failed to update BIT:X25E - Error: No metadata found for BIT:X25E
+2026-03-19T16:40:13.348Z [ERROR] Failed to update BIT:3GOO - Error: No metadata found for BIT:3GOO
+2026-03-19T16:40:13.614Z [INFO] Successfully updated XEON.DE: 148.66 EUR
+2026-03-19T16:40:13.911Z [INFO] Successfully updated NU: 14.085 USD
+2026-03-19T16:40:14.189Z [INFO] Successfully updated AMD.DE: 173.68 EUR
+2026-03-19T16:40:14.478Z [INFO] Successfully updated SPM.MI: 3.406 EUR
+2026-03-19T16:40:14.762Z [INFO] Successfully updated HIMS: 23.695 USD

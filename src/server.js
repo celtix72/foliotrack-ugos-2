@@ -1678,7 +1678,6 @@ app.get('/api/market/exchange-rate', async (req, res) => {
  * Shared helper to calculate performance data points for one or more portfolios.
  */
 async function calculatePerformanceHistory(portfolioIds, range) {
-    fs.appendFileSync('/Users/mauro/Documents/Progetto_FolioTracker2/logs/debug.log', `[DEBUG] calculatePerformanceHistory called with portfolioIds=${JSON.stringify(portfolioIds)}, range=${range}\n`);
     // Standardize input: null, single ID, or array
     const pIdsInput = portfolioIds === null ? null : (Array.isArray(portfolioIds) ? portfolioIds : [portfolioIds]);
     
@@ -1773,32 +1772,44 @@ async function calculatePerformanceHistory(portfolioIds, range) {
     const fetchBorsaItalianaHistory = async (ticker, isin) => {
         let attempts = 0;
         const maxAttempts = 2;
-        const mainUrl = `https://www.borsaitaliana.it/borsa/search/scheda.html?code=${isin}&lang=it`;
+        
+        // Dynamic Token Extraction Strategy
+        // We fetch the summary-chart component which contains the JWT token for the session
+        // Suffix -MOTX is common for bonds on MOT, while -MTAI or similar is for stocks.
+        // We'll try with and without suffix if needed, but for now we'll stick to a robust derivation.
+        let summaryUrl = `https://grafici.borsaitaliana.it/summary-chart/${isin}-MOTX?lang=it`;
         const apiUrl = `https://grafici.borsaitaliana.it/api/instruments/${isin},XMIL,ISIN/history/period?period=5Y&adjustment=true&add-last-price=true`;
         
         const headers = {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
             'Accept-Language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7'
         };
 
         while (attempts < maxAttempts) {
             attempts++;
             try {
-                // Step 1: Get Cookies from the main page
-                const mainResp = await axios.get(mainUrl, { headers, timeout: 15000 });
-                const cookies = mainResp.headers['set-cookie'];
-                let cookieStr = '';
-                if (cookies) {
-                    cookieStr = cookies.map(c => c.split(';')[0]).join('; ');
+                // Step 1: Get the Token from the summary-chart page
+                let summaryResp;
+                try {
+                    summaryResp = await axios.get(summaryUrl, { headers, timeout: 10000 });
+                } catch (e) {
+                    // Try fallback without -MOTX suffix
+                    summaryUrl = `https://grafici.borsaitaliana.it/summary-chart/${isin}?lang=it`;
+                    summaryResp = await axios.get(summaryUrl, { headers, timeout: 10000 });
                 }
 
-                // Step 2: Get History using the cookies
+                const tokenMatch = summaryResp.data.match(/token="([^"]+)"/);
+                if (!tokenMatch) {
+                    throw new Error("Token not found in B_ITA summary-chart HTML");
+                }
+                const token = tokenMatch[1];
+
+                // Step 2: Get History using the dynamic token
                 const resp = await axios.get(apiUrl, {
                     headers: {
                         ...headers,
-                        'Cookie': cookieStr,
-                        'Referer': mainUrl,
+                        'Authorization': `Bearer ${token}`,
+                        'Referer': summaryUrl,
                         'Accept': 'application/json, text/plain, */*'
                     },
                     timeout: 15000
