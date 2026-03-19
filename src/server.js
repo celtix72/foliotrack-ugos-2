@@ -1028,12 +1028,13 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
     const totalAssetsValue = holdings.reduce((s, h) => s + h.currentValue, 0);
     const totalNetValueForAllocation = Math.round((portfolio.currentCash + totalAssetsValue) * 100) / 100;
     
-    const typeMap = { 'Liquidity': portfolio.currentCash };
+    const roundedCash = Math.round((portfolio.currentCash || 0) * 100) / 100;
+    const typeMap = { 'Liquidity': roundedCash };
     const currMap = {};
-    if (portfolio.currentCash !== 0) {
-        currMap[portfolio.currency || 'EUR'] = portfolio.currentCash;
+    if (roundedCash !== 0) {
+        currMap[portfolio.currency || 'EUR'] = roundedCash;
     }
-    const counMap = { 'Liquidity': portfolio.currentCash };
+    const counMap = { 'Liquidity': roundedCash };
 
     for (const h of holdings) { 
         const tp = h.type || 'Other'; 
@@ -1086,8 +1087,12 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
         transactions,
         holdings,
         allocation,
-        currencyAllocation: Object.entries(currMap).map(([type, value]) => ({ type, value })),
-        countryAllocation: Object.entries(counMap).map(([type, value]) => ({ type, value })),
+        currencyAllocation: Object.entries(currMap).map(([type, value]) => ({ 
+            type, value, percent: totalNetValueForAllocation > 0 ? (value / totalNetValueForAllocation) * 100 : 0 
+        })),
+        countryAllocation: Object.entries(counMap).map(([type, value]) => ({ 
+            type, value, percent: totalNetValueForAllocation > 0 ? (value / totalNetValueForAllocation) * 100 : 0 
+        })),
         closedPositions,
         dividendGroups: Object.values(divYearMap).sort((a, b) => b.year - a.year),
         totalDividends,
