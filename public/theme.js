@@ -120,11 +120,11 @@
             .dark .sidebar-toggle-tab { background: #1e293b; border-color: #334155; color: #94a3b8; }
             .sidebar-toggle-tab:hover { transform: scale(1.1); color: #135bec; border-color: #135bec; }
             
-            /* Mobile Var Day Pill */
-            .mob-var-pill {
-                display: flex; align-items: center; gap: 4px; padding: 4px 10px;
-                border-radius: 999px; font-size: 10px; font-weight: 800;
-                background: var(--mob-surface-2); border: 1px solid var(--mob-border);
+            /* Mobile Var Day Header Style */
+            .mob-header-var {
+                display: flex; align-items: center; gap: 4px;
+                font-size: 15px; font-weight: 900; letter-spacing: -0.5px;
+                margin-right: 12px;
             }
         `;
     }
@@ -509,14 +509,13 @@
                 if (!mobVar) {
                     mobVar = document.createElement('div');
                     mobVar.id = 'mob-header-var-day';
-                    mobVar.className = 'mob-var-pill';
+                    mobVar.className = 'mob-header-var';
                     mobActions.insertBefore(mobVar, mobActions.firstChild);
                 }
                 const color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
                 mobVar.style.color = color;
-                mobVar.style.borderColor = color + '44';
                 mobVar.innerHTML = `
-                    <span class="material-symbols-outlined" style="font-size:12px">${isPos ? 'trending_up' : 'trending_down'}</span>
+                    <span class="material-symbols-outlined" style="font-size:14px">${isPos ? 'trending_up' : 'trending_down'}</span>
                     <span>${sign}${formatted}</span>
                 `;
             }
