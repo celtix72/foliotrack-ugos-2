@@ -2622,7 +2622,7 @@
       <span class="material-symbols-outlined" style="font-size:18px">query_stats</span>
     </div>
     <div style="flex:1">
-      <div class="mob-header-title" id="mob-page-header-title">Portafogli</div>
+      <div class="mob-header-title" id="mob-page-header-title">PT</div>
       <span class="mob-header-subtitle">FolioTrack</span>
     </div>
     <div class="mob-header-actions">
@@ -2852,7 +2852,7 @@
     document.getElementById('mob-portfolio-list-view').style.display = 'none';
     const dv = document.getElementById('mob-portfolio-detail-view');
     dv.style.display = 'flex';
-    document.getElementById('mob-page-header-title').textContent = 'Portafoglio';
+    document.getElementById('mob-page-header-title').textContent = 'PT';
     mobLoadPortfolioDetail(id);
     // Sync desktop view too
     currentPortfolioId = id;
@@ -2861,7 +2861,7 @@
   window.mobShowPortfolioList = function() {
     document.getElementById('mob-portfolio-detail-view').style.display = 'none';
     document.getElementById('mob-portfolio-list-view').style.display = '';
-    document.getElementById('mob-page-header-title').textContent = 'Portafogli';
+    document.getElementById('mob-page-header-title').textContent = 'PT';
     mobCurrentPortfolioId = null;
   };
 
@@ -3038,7 +3038,7 @@
       const dv = document.getElementById('mob-portfolio-detail-view');
       dv.style.display = 'flex';
       document.getElementById('mob-portfolio-list-view').style.display = 'none';
-      document.getElementById('mob-page-header-title').textContent = 'Portafoglio';
+      document.getElementById('mob-page-header-title').textContent = 'PT';
       mobLoadPortfolioDetail(mobCurrentPortfolioId);
     } else {
       mobLoadPortfolioList();
