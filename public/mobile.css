@@ -36,15 +36,27 @@ html:not(.dark) .mobile-view-active #mobile-ui {
   --mob-text: #0f172a;
   --mob-text-muted: #64748b;
   --mob-text-caption: #94a3b8;
+  --mob-header-bg: rgba(255, 255, 255, 0.85);
+  --mob-hero-bg: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+  --mob-tab-bg: rgba(255, 255, 255, 0.92);
+}
+
+/* Default Dark values */
+:root {
+  --mob-header-bg: rgba(17, 23, 34, 0.85);
+  --mob-hero-bg: linear-gradient(135deg, #1a2235 0%, #0e1929 100%);
+  --mob-tab-bg: rgba(17, 23, 34, 0.92);
 }
 
 /* ─── Activation: hide desktop, show mobile ─────────────────────────────── */
 body.mobile-view-active > aside,
-body.mobile-view-active > div.flex-1 > header {
+body.mobile-view-active .flex-1 > header,
+body.mobile-view-active main > header {
   display: none !important;
 }
 
-body.mobile-view-active > div.flex-1 {
+body.mobile-view-active .flex-1,
+body.mobile-view-active main {
   overflow: hidden !important;
   height: 100dvh !important;
 }
@@ -72,7 +84,7 @@ body.mobile-view-active #mobile-ui {
   flex-shrink: 0;
   height: calc(var(--mob-header-h) + var(--mob-safe-top));
   padding-top: var(--mob-safe-top);
-  background: rgba(17, 23, 34, 0.85);
+  background: var(--mob-header-bg);
   -webkit-backdrop-filter: var(--mob-blur);
   backdrop-filter: var(--mob-blur);
   border-bottom: 1px solid var(--mob-border);
@@ -179,7 +191,7 @@ body.mobile-view-active #mobile-ui {
 /* ─── Hero Card ─────────────────────────────────────────────────────────── */
 .mob-hero {
   margin: 16px 16px 8px;
-  background: linear-gradient(135deg, #1a2235 0%, #0e1929 100%);
+  background: var(--mob-hero-bg);
   border: 1px solid var(--mob-border);
   border-radius: var(--mob-radius-card);
   padding: 24px 20px 20px;
@@ -499,7 +511,7 @@ body.mobile-view-active #mobile-ui {
   right: 0;
   height: calc(var(--mob-tab-h) + var(--mob-safe-bottom));
   padding-bottom: var(--mob-safe-bottom);
-  background: rgba(17, 23, 34, 0.92);
+  background: var(--mob-tab-bg);
   -webkit-backdrop-filter: var(--mob-blur);
   backdrop-filter: var(--mob-blur);
   border-top: 1px solid var(--mob-border);

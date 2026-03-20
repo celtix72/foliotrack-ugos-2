@@ -2814,18 +2814,15 @@ app.get('/api/market-status', (req, res) => {
 
 app.get('/api/market/movers', (req, res) => {
     try {
-        const today = new Date().toISOString().split('T')[0];
-        // Assets that have a quote from today and have a non-zero current price
-        // Order by absolute changePercent descending
+        // Get assets with non-zero price, ordered by absolute change percent
+        // We filter out CASH and assets without a price.
         const rows = database.db.prepare(`
             SELECT DISTINCT a.* FROM assets a
-            JOIN transactions t ON a.ticker = t.ticker
             WHERE a.ticker != 'CASH' 
-            AND a.quoteDate = ? 
             AND a.currentPrice > 0
             ORDER BY ABS(a.changePercent) DESC
             LIMIT 10
-        `).all(today);
+        `).all();
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });

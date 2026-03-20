@@ -2895,21 +2895,18 @@
         gainEl.textContent = (gain >= 0 ? '+' : '') + formatCurrency(gain, currency, 0);
       }
 
-      // Load holdings
-      mobLoadHoldings(id, currency);
-      mobLoadTransactions(id, currency);
+      // Load holdings and transactions from the already fetched portfolio data
+      mobLoadHoldings(p.holdings || [], currency);
+      mobLoadTransactions(p.transactions || [], currency);
       // Init chart
       mobInitDetailChart(id);
     } catch(e) { console.error('[MOB] Portfolio detail error:', e); }
   }
 
-  async function mobLoadHoldings(portfolioId, currency) {
+  async function mobLoadHoldings(holdings, currency) {
     const container = document.getElementById('mob-holdings-list');
     if (!container) return;
     try {
-      const res = await fetch(`/api/portfolios/${portfolioId}/holdings`);
-      const data = await res.json();
-      const holdings = data.holdings || [];
 
       if (holdings.length === 0) {
         container.innerHTML = '<div class="mob-empty"><span class="material-symbols-outlined">inbox</span><div class="mob-empty-title">Nessun asset</div></div>';
@@ -2939,13 +2936,10 @@
     }
   }
 
-  async function mobLoadTransactions(portfolioId, currency) {
+  async function mobLoadTransactions(txs, currency) {
     const container = document.getElementById('mob-transactions-list');
     if (!container) return;
     try {
-      const res = await fetch(`/api/portfolios/${portfolioId}/transactions`);
-      const data = await res.json();
-      const txs = data.transactions || [];
 
       const typeColors = { BUY:'var(--mob-emerald)', SELL:'var(--mob-rose)', DEPOSIT:'var(--mob-emerald)', WITHDRAWAL:'var(--mob-rose)', DIVIDEND:'var(--mob-amber)', TAX:'var(--mob-rose)', TRANSFER:'var(--mob-text-muted)' };
       const typeIcons = { BUY:'shopping_cart', SELL:'sell', DEPOSIT:'arrow_downward', WITHDRAWAL:'arrow_upward', DIVIDEND:'payments', TAX:'account_balance', TRANSFER:'swap_horiz' };
@@ -3013,7 +3007,7 @@
     if (!mobDetailChart) return;
     const r = range || mobDetailRange;
     try {
-      const res = await fetch(`/api/portfolios/${portfolioId}/performance?range=${r}`);
+      const res = await fetch(`/api/analytics/portfolio-performance/${portfolioId}?range=${r}`);
       const result = await res.json();
       const pts = result.dataPoints || (Array.isArray(result) ? result : []);
       mobDetailChart.data.labels = pts.map(d => new Date(d.date).toLocaleDateString('it-IT', {day:'2-digit',month:'2-digit'}));

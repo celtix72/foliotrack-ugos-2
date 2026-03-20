@@ -2,9 +2,10 @@
 <html class="dark" lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
 <title>FolioTrack - Market</title>
 <link rel="stylesheet" href="/dist/output.css">
+<link rel="stylesheet" href="/mobile.css">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <style>
     .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
@@ -289,7 +290,8 @@ async function loadAssets() {
         const res = await fetch('/api/assets');
         allAssets = await res.json();
         renderAssets();
-        document.getElementById('last-update-label').textContent = 'Last Update: ' + new Date().toLocaleTimeString('it-IT');
+        const lastUpd = document.getElementById('header-last-update') || document.getElementById('last-update-label');
+        if (lastUpd) lastUpd.textContent = 'Upd: ' + new Date().toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'});
     } catch (err) { console.error('Error loading assets:', err); }
 }
 
@@ -388,16 +390,20 @@ function renderAssets(filter = '') {
         </div>`;
     };
 
-    if (openPositions.length) {
-        listPos.innerHTML = openPositions.map(renderCard).join('');
-    } else {
-        listPos.innerHTML = `<div class="px-6 py-8 text-center text-slate-500 italic bg-white dark:bg-[#111722] rounded-2xl border border-slate-200 dark:border-slate-800">No open positions.</div>`;
+    if (listPos) {
+        if (openPositions.length) {
+            listPos.innerHTML = openPositions.map(renderCard).join('');
+        } else {
+            listPos.innerHTML = `<div class="px-6 py-8 text-center text-slate-500 italic bg-white dark:bg-[#111722] rounded-2xl border border-slate-200 dark:border-slate-800">No open positions.</div>`;
+        }
     }
 
-    if (watchlist.length) {
-        listWatch.innerHTML = watchlist.map(renderCard).join('');
-    } else {
-        listWatch.innerHTML = `<div class="px-6 py-8 text-center text-slate-500 italic bg-white dark:bg-[#111722] rounded-2xl border border-slate-200 dark:border-slate-800">Watchlist is empty.</div>`;
+    if (listWatch) {
+        if (watchlist.length) {
+            listWatch.innerHTML = watchlist.map(renderCard).join('');
+        } else {
+            listWatch.innerHTML = `<div class="px-6 py-8 text-center text-slate-500 italic bg-white dark:bg-[#111722] rounded-2xl border border-slate-200 dark:border-slate-800">Watchlist is empty.</div>`;
+        }
     }
 
     // Draw sparklines after rendering
@@ -634,8 +640,8 @@ async function loadMovers() {
             return;
         }
 
-        section.classList.remove('hidden');
-        carousel.innerHTML = movers.map(m => {
+        if (section) section.classList.remove('hidden');
+        if (carousel) carousel.innerHTML = movers.map(m => {
             const isPos = m.changePercent >= 0;
             const color = isPos ? 'emerald' : 'rose';
             return `
@@ -661,6 +667,269 @@ document.addEventListener('DOMContentLoaded', () => {
         loadMovers();
     }, 60000); 
 });
+</script>
+<!-- ═══════════════════════════════════════════════
+     MOBILE GUI OVERLAY (iOS Style) — Market Page
+     Shown when body.mobile-view-active is set
+════════════════════════════════════════════════ -->
+<div id="mobile-ui">
+  <!-- ── Mobile Header ── -->
+  <div class="mob-header">
+    <div class="mob-header-logo">
+      <span class="material-symbols-outlined" style="font-size:18px">query_stats</span>
+    </div>
+    <div style="flex:1">
+      <div class="mob-header-title">Mercato</div>
+      <span class="mob-header-subtitle">FolioTrack</span>
+    </div>
+    <div class="mob-header-actions">
+      <div id="mob-status-pill" class="mob-status-pill">
+        <span class="mob-status-dot" id="mob-live-dot"></span>
+        <span id="mob-live-text">--</span>
+      </div>
+      <div class="mob-icon-btn" onclick="togglePrivacy()" title="Privacy">
+        <span class="material-symbols-outlined" id="mob-privacy-icon">visibility</span>
+      </div>
+      <div class="mob-icon-btn" onclick="toggleMobileView()" title="Desktop View" style="color: var(--mob-primary)">
+        <span class="material-symbols-outlined">computer</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Scrollable Content Area ── -->
+  <div class="mob-scroll" id="mob-market-scroll">
+    
+    <!-- Top Movers Carousel -->
+    <div id="mob-movers-section">
+      <div class="mob-section-header">
+        <span class="mob-section-title">Top Movers</span>
+      </div>
+      <div id="mob-movers-carousel" class="flex gap-4 overflow-x-auto px-4 pb-4 no-scrollbar">
+        <!-- Movers cards by JS -->
+      </div>
+    </div>
+
+    <!-- Quick Add Section -->
+    <div style="padding: 0 16px 16px">
+      <div class="mob-card mob-card-padded" style="border-style: dashed; background: transparent; border-color: var(--mob-primary)">
+        <div style="display:flex; gap:10px; align-items:center">
+          <div class="flex-1 relative">
+            <input type="text" id="mob-asset-search" 
+                   class="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-xl py-2 px-3 text-xs font-bold" 
+                   placeholder="Cerca ticker (es. AAPL)..."
+                   onkeyup="mobSearchAssets(this.value)">
+            <div id="mob-search-results" class="absolute left-0 right-0 mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl z-50 hidden max-h-48 overflow-y-auto"></div>
+          </div>
+          <button onclick="mobQuickAdd()" class="bg-primary text-white font-bold text-xs px-4 py-2 rounded-xl">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 1: Open Positions -->
+    <div class="mob-section-header">
+      <span class="mob-section-title">Posizioni Aperte</span>
+      <span id="mob-pos-count" class="mob-header-subtitle">0 Assets</span>
+    </div>
+    <div class="mob-holdings-list" id="mob-list-positions"></div>
+
+    <!-- Section 2: Watchlist -->
+    <div class="mob-section-header">
+      <span class="mob-section-title">Watchlist / Monitor</span>
+      <span id="mob-watch-count" class="mob-header-subtitle">0 Assets</span>
+    </div>
+    <div class="mob-holdings-list" id="mob-list-watchlist"></div>
+
+    <div style="height:32px"></div>
+  </div>
+
+  <!-- ── Bottom Tab Bar ── -->
+  <div class="mob-tab-bar">
+    <a class="mob-tab" href="/dashboard">
+      <div class="mob-tab-indicator"></div>
+      <span class="material-symbols-outlined">dashboard</span>
+      <span class="mob-tab-label">Dashboard</span>
+    </a>
+    <a class="mob-tab" href="/portfolio">
+      <div class="mob-tab-indicator"></div>
+      <span class="material-symbols-outlined">work</span>
+      <span class="mob-tab-label">Portafogli</span>
+    </a>
+    <a class="mob-tab active" href="/market">
+      <div class="mob-tab-indicator"></div>
+      <span class="material-symbols-outlined">trending_up</span>
+      <span class="mob-tab-label">Mercato</span>
+    </a>
+    <a class="mob-tab" href="/reports">
+      <div class="mob-tab-indicator"></div>
+      <span class="material-symbols-outlined">pie_chart</span>
+      <span class="mob-tab-label">Report</span>
+    </a>
+    <a class="mob-tab" href="/settings">
+      <div class="mob-tab-indicator"></div>
+      <span class="material-symbols-outlined">settings</span>
+      <span class="mob-tab-label">Settings</span>
+    </a>
+  </div>
+</div>
+
+<!-- Mobile Market JS -->
+<script>
+(function() {
+  function mobSyncPrivacyIcon() {
+    const icon = document.getElementById('mob-privacy-icon');
+    if (icon) icon.innerText = window.privacyState?.enabled ? 'visibility_off' : 'visibility';
+  }
+
+  async function mobSyncMarketStatus() {
+    try {
+      const res = await fetch('/api/market-status');
+      const s = await res.json();
+      const dot = document.getElementById('mob-live-dot');
+      const txt = document.getElementById('mob-live-text');
+      if (dot) dot.className = 'mob-status-dot' + (s.anyOpen ? ' live' : '');
+      if (txt) txt.textContent = s.anyOpen ? 'Live' : 'Closed';
+    } catch(e) {}
+  }
+
+  async function mobLoadMovers() {
+    try {
+      const res = await fetch('/api/market/movers');
+      const movers = await res.json();
+      const container = document.getElementById('mob-movers-carousel');
+      const section = document.getElementById('mob-movers-section');
+      if (!container || !section) return;
+      if (!movers || movers.length === 0) {
+        section.style.display = 'none';
+        return;
+      }
+      section.style.display = '';
+      container.innerHTML = movers.map(m => {
+        const isPos = m.changePercent >= 0;
+        const color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        return `
+          <div class="snap-start shrink-0 w-32 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 p-4 rounded-xl flex flex-col items-center justify-center text-center shadow-sm"
+               onclick="window.location.href='/portfolio_detail.html?ticker=${m.ticker}'">
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">${m.ticker}</span>
+            <span class="text-xl font-black" style="color:${color}">${isPos?'+':''}${m.changePercent.toFixed(2)}%</span>
+          </div>`;
+      }).join('');
+    } catch(e) {}
+  }
+
+  async function mobLoadAssets() {
+    try {
+      const res = await fetch('/api/assets');
+      const assets = (await res.json()).filter(a => a.ticker !== 'CASH');
+      
+      const posContainer = document.getElementById('mob-list-positions');
+      const watchContainer = document.getElementById('mob-list-watchlist');
+      const posCountEl = document.getElementById('mob-pos-count');
+      const watchCountEl = document.getElementById('mob-watch-count');
+
+      const openPos = assets.filter(a => a.hasPosition);
+      const watchlist = assets.filter(a => !a.hasPosition);
+
+      if (posCountEl) posCountEl.textContent = `${openPos.length} Assets`;
+      if (watchCountEl) watchCountEl.textContent = `${watchlist.length} Assets`;
+
+      const renderCard = (a) => {
+        const price = a.currentPrice || 0;
+        const change = a.changePercent || 0;
+        const isPos = change >= 0;
+        const color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        
+        // Alert state
+        const targetReached = a.targetPrice > 0 && price >= a.targetPrice;
+        const stopLossHit = a.stopLoss > 0 && price <= a.stopLoss;
+        const alertBorder = targetReached ? 'border: 1px solid var(--mob-emerald)' : (stopLossHit ? 'border: 1px solid var(--mob-rose)' : '');
+
+        return `
+          <div class="mob-holding-item" style="${alertBorder}" onclick="window.location.href='/portfolio_detail.html?ticker=${a.ticker}'">
+            <div class="mob-holding-logo">${a.ticker.substring(0,3)}</div>
+            <div class="mob-holding-info">
+              <div class="mob-holding-ticker">${a.ticker}</div>
+              <div class="mob-holding-name">${a.name || ''}</div>
+              <div class="mob-status-pill" style="margin-top:4px">
+                <span class="mob-status-dot" style="background:${a.dataSource==='B_ITA'?'#f59e0b':'#3b82f6'}"></span>
+                <span style="font-size:8px">${a.dataSource==='B_ITA'?'B_ITA':'Yahoo'}</span>
+              </div>
+            </div>
+            <div class="mob-holding-values">
+              <div class="mob-holding-value">${formatCurrency(price, a.currency, 2)}</div>
+              <div class="mob-holding-gain" style="color:${color}">${isPos?'+':''}${change.toFixed(2)}%</div>
+            </div>
+          </div>`;
+      };
+
+      if (posContainer) posContainer.innerHTML = openPos.map(renderCard).join('') || '<div class="mob-empty">Nessuna posizione</div>';
+      if (watchContainer) watchContainer.innerHTML = watchlist.map(renderCard).join('') || '<div class="mob-empty">Watchlist vuota</div>';
+
+    } catch(e) { console.error('[MOB] Market load error:', e); }
+  }
+
+  let _searchDebounce;
+  window.mobSearchAssets = function(q) {
+    const results = document.getElementById('mob-search-results');
+    if (!q || q.length < 2) { results.classList.add('hidden'); return; }
+    clearTimeout(_searchDebounce);
+    _searchDebounce = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/asset-search?query=${encodeURIComponent(q)}`);
+        const quotes = await res.json();
+        if (quotes && quotes.length > 0) {
+          results.innerHTML = quotes.map(q => `
+            <div class="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer border-b border-slate-100 dark:border-slate-800"
+                 onclick="mobSelectAsset('${q.symbol}','${(q.shortname||q.longname||'').replace(/'/g,"\\'")}')">
+              <div class="font-bold text-primary text-xs">${q.symbol}</div>
+              <div class="text-[10px] text-slate-500 truncate">${q.shortname||q.longname}</div>
+            </div>`).join('');
+          results.classList.remove('hidden');
+        }
+      } catch(e) {}
+    }, 300);
+  };
+
+  let _selectedTicker = '';
+  let _selectedName = '';
+  window.mobSelectAsset = function(ticker, name) {
+    _selectedTicker = ticker;
+    _selectedName = name;
+    document.getElementById('mob-asset-search').value = ticker;
+    document.getElementById('mob-search-results').classList.add('hidden');
+  };
+
+  window.mobQuickAdd = async function() {
+    const ticker = _selectedTicker || document.getElementById('mob-asset-search').value.trim();
+    if (!ticker) return;
+    try {
+      const res = await fetch('/api/assets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticker, name: _selectedName })
+      });
+      if (res.ok) {
+        document.getElementById('mob-asset-search').value = '';
+        _selectedTicker = ''; _selectedName = '';
+        mobLoadAssets();
+      }
+    } catch(e) {}
+  };
+
+  function mobInit() {
+    if (!window._mobileViewActive) return;
+    mobSyncPrivacyIcon();
+    mobSyncMarketStatus();
+    mobLoadMovers();
+    mobLoadAssets();
+  }
+
+  window.addEventListener('mobile-view-activated', mobInit);
+  document.addEventListener('DOMContentLoaded', () => { if (window._mobileViewActive) mobInit(); });
+  window.addEventListener('privacy-changed', () => {
+    mobSyncPrivacyIcon();
+    if (window._mobileViewActive) mobLoadAssets();
+  });
+})();
 </script>
 </body>
 </html>
