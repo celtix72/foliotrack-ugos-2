@@ -766,8 +766,12 @@
             // if (privacyCheckbox) privacyCheckbox.checked = settings.privacyMode === 'true';
 
             // Mobile binds
-            if (mobFontSelect && settings.fontFamily) mobFontSelect.value = settings.fontFamily;
-            if (mobSizeSelect && settings.fontSize) mobSizeSelect.value = settings.fontSize;
+            if (mobFontSelect && settings.mobFont) mobFontSelect.value = settings.mobFont;
+            else if (mobFontSelect && settings.fontFamily) mobFontSelect.value = settings.fontFamily;
+            
+            if (mobSizeSelect && settings.mobSize) mobSizeSelect.value = settings.mobSize;
+            else if (mobSizeSelect && settings.fontSize) mobSizeSelect.value = settings.fontSize;
+            
             if (mobFreqSelect && settings.updateFrequency) mobFreqSelect.value = settings.updateFrequency;
             
             const lightBtn = document.getElementById('theme-light-btn');
@@ -830,8 +834,9 @@
         const saveMobSettings = () => {
             if (window.updateAppSettings) {
                 window.updateAppSettings({
-                    fontFamily: mobFontSelect ? mobFontSelect.value : fontSelect.value,
-                    fontSize: mobSizeSelect ? mobSizeSelect.value : sizeSelect.value,
+                    // Only update mobile-specific font properties
+                    mobFont: mobFontSelect ? mobFontSelect.value : fontSelect.value,
+                    mobSize: mobSizeSelect ? mobSizeSelect.value : sizeSelect.value,
                     updateFrequency: mobFreqSelect ? mobFreqSelect.value : freqSelect.value,
                     backupFrequency: backupFreqSelect ? backupFreqSelect.value : 'None',
                     backupRetention: backupRetentionInput ? backupRetentionInput.value : 5

@@ -1,9 +1,11 @@
 (function() {
     const defaultFont = "'JetBrains Mono', monospace";
     const defaultSize = "14";
+    const defaultMobFont = "'Inter', sans-serif";
+    const defaultMobSize = "14";
     const defaultTheme = "dark";
     
-    function applyTheme(font, size, theme = "dark") {
+    function applyTheme(font, size, theme = "dark", mobFont = defaultMobFont, mobSize = defaultMobSize) {
         const fonts = {
             "'JetBrains Mono', monospace": "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap",
             "'Fira Code', monospace": "https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&display=swap",
@@ -18,19 +20,47 @@
             document.head.appendChild(link);
         }
         if (fonts[font]) link.href = fonts[font];
+        
+        let mobLink = document.getElementById('theme-font-mob');
+        if (!mobLink) {
+            mobLink = document.createElement('link');
+            mobLink.id = 'theme-font-mob';
+            mobLink.rel = 'stylesheet';
+            document.head.appendChild(mobLink);
+        }
+        if (fonts[mobFont] && mobFont !== font) mobLink.href = fonts[mobFont];
+
         document.documentElement.style.setProperty('--app-font-family', font);
         document.documentElement.style.setProperty('font-size', size + 'px', 'important');
+        
         let styleTag = document.getElementById('theme-style');
         if (!styleTag) {
             styleTag = document.createElement('style');
             styleTag.id = 'theme-style';
             document.head.appendChild(styleTag);
         }
+        
+        // Scale factor for mobile absolute px classes
+        const scale = mobSize / 14;
+        
         styleTag.innerHTML = `
             html, body, body *:not(.material-symbols-outlined) { 
                 font-family: ${font} !important; 
                 transition: font-size 0.2s ease;
             }
+            body.mobile-view-active #mobile-ui, 
+            body.mobile-view-active #mobile-ui *:not(.material-symbols-outlined) {
+                font-family: ${mobFont} !important;
+            }
+            body.mobile-view-active #mobile-ui {
+                font-size: ${mobSize}px !important;
+            }
+            /* Scale absolute pixel classes in mobile view based on selected size */
+            body.mobile-view-active #mobile-ui .text-\\[10px\\] { font-size: calc(10px * ${scale}) !important; }
+            body.mobile-view-active #mobile-ui .text-\\[11px\\] { font-size: calc(11px * ${scale}) !important; }
+            body.mobile-view-active #mobile-ui .text-\\[12px\\] { font-size: calc(12px * ${scale}) !important; }
+            body.mobile-view-active #mobile-ui .text-xs { font-size: calc(0.75rem * ${scale}) !important; }
+            body.mobile-view-active #mobile-ui .text-sm { font-size: calc(0.875rem * ${scale}) !important; }
         `;
 
         if (theme === 'light') {
@@ -43,6 +73,12 @@
         const themeIcon = document.getElementById('header-theme-icon');
         if (themeIcon) {
             themeIcon.innerText = (theme === 'light') ? 'dark_mode' : 'light_mode';
+        }
+
+        // Update mobile icon as well
+        const mobThemeIcon = document.getElementById('mob-theme-icon');
+        if (mobThemeIcon) {
+            mobThemeIcon.innerText = (theme === 'light') ? 'dark_mode' : 'light_mode';
         }
 
         // --- Sidebar Collapsed Style (Dynamic injection) ---
@@ -88,17 +124,31 @@
 
     const localFont = localStorage.getItem('app-font') || defaultFont;
     const localSize = localStorage.getItem('app-font-size') || defaultSize;
+    const localMobFont = localStorage.getItem('app-mob-font') || defaultMobFont;
+    const localMobSize = localStorage.getItem('app-mob-size') || defaultMobSize;
     const localTheme = localStorage.getItem('app-theme') || defaultTheme;
-    applyTheme(localFont, localSize, localTheme);
+    applyTheme(localFont, localSize, localTheme, localMobFont, localMobSize);
 
     fetch(`/api/settings?t=${Date.now()}`)
         .then(res => res.json())
         .then(settings => {
-            if (settings.fontFamily !== localFont || settings.fontSize !== localSize || settings.theme !== localTheme) {
+            if (settings.fontFamily !== localFont || settings.fontSize !== localSize || 
+                settings.theme !== localTheme || settings.mobFont !== localMobFont || 
+                settings.mobSize !== localMobSize) {
+                
                 localStorage.setItem('app-font', settings.fontFamily || defaultFont);
                 localStorage.setItem('app-font-size', settings.fontSize || defaultSize);
                 localStorage.setItem('app-theme', settings.theme || defaultTheme);
-                applyTheme(settings.fontFamily || defaultFont, settings.fontSize || defaultSize, settings.theme || defaultTheme);
+                localStorage.setItem('app-mob-font', settings.mobFont || defaultMobFont);
+                localStorage.setItem('app-mob-size', settings.mobSize || defaultMobSize);
+                
+                applyTheme(
+                    settings.fontFamily || defaultFont, 
+                    settings.fontSize || defaultSize, 
+                    settings.theme || defaultTheme,
+                    settings.mobFont || defaultMobFont,
+                    settings.mobSize || defaultMobSize
+                );
             }
             window.dispatchEvent(new CustomEvent('settings-updated', { detail: settings }));
         })
