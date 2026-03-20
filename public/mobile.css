@@ -231,10 +231,12 @@ body.mobile-view-active #mobile-ui {
 
 /* ─── Hero Card ─────────────────────────────────────────────────────────── */
 .mob-hero {
-  margin: 16px 16px 8px;
+  margin: 16px 0 8px !important;
   background: var(--mob-hero-bg);
   border: 1px solid var(--mob-border);
-  border-radius: var(--mob-radius-card);
+  border-left: none !important;
+  border-right: none !important;
+  border-radius: 0 !important;
   padding: 24px 20px 20px;
   position: relative;
   overflow: hidden;
@@ -343,10 +345,12 @@ body.mobile-view-active #mobile-ui {
 
 /* ─── Chart Container ───────────────────────────────────────────────────── */
 .mob-chart-card {
-  margin: 8px 16px;
+  margin: 8px 0 !important;
   background: var(--mob-surface);
   border: 1px solid var(--mob-border);
-  border-radius: var(--mob-radius-card);
+  border-left: none !important;
+  border-right: none !important;
+  border-radius: 0 !important;
   padding: 16px;
 }
 
@@ -400,7 +404,7 @@ body.mobile-view-active #mobile-ui {
 
 /* ─── Portfolio Cards List ──────────────────────────────────────────────── */
 .mob-portfolio-list {
-  padding: 4px 16px 8px;
+  padding: 4px 0 8px !important;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -409,8 +413,10 @@ body.mobile-view-active #mobile-ui {
 .mob-portfolio-card {
   background: var(--mob-surface);
   border: 1px solid var(--mob-border);
-  border-radius: 18px;
-  padding: 16px;
+  border-left: none !important;
+  border-right: none !important;
+  border-radius: 0 !important;
+  padding: 16px 20px;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -491,11 +497,13 @@ body.mobile-view-active #mobile-ui {
 
 /* ─── Allocation Donut ───────────────────────────────────────────────────── */
 .mob-allocation-card {
-  margin: 8px 16px;
+  margin: 8px 0 !important;
   background: var(--mob-surface);
   border: 1px solid var(--mob-border);
-  border-radius: var(--mob-radius-card);
-  padding: 16px;
+  border-left: none !important;
+  border-right: none !important;
+  border-radius: 0 !important;
+  padding: 16px 20px;
   display: flex;
   gap: 16px;
   align-items: center;
