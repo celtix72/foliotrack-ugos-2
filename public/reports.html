@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="FolioTrack">
 <link rel="manifest" href="/manifest.json">
 <link rel="stylesheet" href="/dist/output.css">
+<link rel="stylesheet" href="/mobile.css">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <style>
         .custom-scrollbar::-webkit-scrollbar {
@@ -421,19 +422,26 @@
             renderDiversification(data.diversification);
             renderDividendChart(data.dividends);
 
-            document.getElementById('last-update-label').textContent = 'Last Update: ' + new Date().toLocaleTimeString('it-IT');
+            // document.getElementById('last-update-label').textContent = 'Last Update: ' + new Date().toLocaleTimeString('it-IT');
         } catch (err) {
             console.error('Report loading error:', err);
         }
     }
 
     function renderMetrics(m) {
-        document.getElementById('metric-roi').textContent = formatNumber(m.totalROI * 100, 2) + '%';
-        document.getElementById('metric-cagr').textContent = formatNumber(m.annualizedROI * 100, 2) + '%';
-        document.getElementById('metric-sharpe').textContent = formatNumber(m.sharpeRatio, 2);
-        document.getElementById('metric-best').textContent = m.bestAsset;
-        document.getElementById('metric-roi').classList.toggle('text-emerald-500', m.totalROI >= 0);
-        document.getElementById('metric-roi').classList.toggle('text-rose-500', m.totalROI < 0);
+        const roiEl = document.getElementById('metric-roi');
+        const cagrEl = document.getElementById('metric-cagr');
+        const sharpeEl = document.getElementById('metric-sharpe');
+        const bestEl = document.getElementById('metric-best');
+
+        if (roiEl) {
+            roiEl.textContent = formatNumber(m.totalROI * 100, 2) + '%';
+            roiEl.classList.toggle('text-emerald-500', m.totalROI >= 0);
+            roiEl.classList.toggle('text-rose-500', m.totalROI < 0);
+        }
+        if (cagrEl) cagrEl.textContent = formatNumber(m.annualizedROI * 100, 2) + '%';
+        if (sharpeEl) sharpeEl.textContent = formatNumber(m.sharpeRatio, 2);
+        if (bestEl) bestEl.textContent = m.bestAsset;
     }
 
     function renderPerformanceChart(p) {
