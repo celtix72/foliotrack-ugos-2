@@ -67,7 +67,6 @@
             #mobile-ui .mob-header .material-symbols-outlined,
             #mobile-ui .mob-tab-bar .material-symbols-outlined {
                 font-family: 'Material Symbols Outlined' !important;
-                font-size: revert !important; 
             }
         `;
 
