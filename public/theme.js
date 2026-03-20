@@ -516,4 +516,73 @@
             toast.classList.add('translate-y-20', 'opacity-0');
         }, 4000);
     };
+
+    // ─── Mobile View Management ───────────────────────────────────────────────
+    window._mobileViewActive = false;
+
+    window.isMobileDevice = function() {
+        return /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+            || window.innerWidth < 768;
+    };
+
+    window.activateMobileView = function() {
+        window._mobileViewActive = true;
+        document.body.classList.add('mobile-view-active');
+        const btn = document.getElementById('mobile-view-toggle-btn');
+        if (btn) btn.classList.add('mob-active');
+        // Store preference (not for real mobiles where it's auto)
+        if (!window.isMobileDevice()) {
+            localStorage.setItem('mobile-view-forced', 'true');
+        }
+        // Reinit charts if they exist (chart canvases move between views)
+        setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('mobile-view-activated'));
+        }, 50);
+    };
+
+    window.deactivateMobileView = function() {
+        window._mobileViewActive = false;
+        document.body.classList.remove('mobile-view-active');
+        const btn = document.getElementById('mobile-view-toggle-btn');
+        if (btn) btn.classList.remove('mob-active');
+        localStorage.removeItem('mobile-view-forced');
+        setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('mobile-view-deactivated'));
+        }, 50);
+    };
+
+    window.toggleMobileView = function() {
+        if (window._mobileViewActive) {
+            window.deactivateMobileView();
+        } else {
+            window.activateMobileView();
+        }
+    };
+
+    // Auto-activate: real mobile device OR previously forced on desktop
+    function _initMobileView() {
+        if (window.isMobileDevice() || localStorage.getItem('mobile-view-forced') === 'true') {
+            window.activateMobileView();
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', _initMobileView);
+    } else {
+        _initMobileView();
+    }
+
+    // Re-check on resize
+    let _resizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(_resizeTimer);
+        _resizeTimer = setTimeout(() => {
+            const isNowMobile = window.isMobileDevice();
+            if (isNowMobile && !window._mobileViewActive) {
+                window.activateMobileView();
+            }
+        }, 200);
+    });
+
 })();
+

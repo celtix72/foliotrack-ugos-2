@@ -13494,3 +13494,46 @@
 2026-03-19T22:12:24.111Z [INFO] Skipping automatic market update: all markets are closed.
 2026-03-19T22:12:46.252Z [INFO] Skipping automatic market update: all markets are closed.
 2026-03-19T22:13:18.896Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-19T22:27:24.165Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-19T22:28:18.954Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-19T22:52:35.876Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-19T23:11:44.679Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-19T23:59:40.433Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-20T00:36:52.578Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-20T00:36:52.579Z [INFO] Recording daily snapshots for portfolios and dashboard...
+2026-03-20T00:36:52.595Z [INFO] Daily snapshots completed.
+2026-03-20T02:01:45.593Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-20T03:24:26.156Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-20T04:41:55.601Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-20T06:00:04.155Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-20T06:33:59.997Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-20T06:51:49.628Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-20T07:26:55.060Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-20T08:03:35.825Z [INFO] Updating market data for 1 assets...
+2026-03-20T08:03:35.874Z [ERROR] Failed to update EURUSD=X - Error: No metadata found for EURUSD=X
+2026-03-20T08:03:35.881Z [INFO] Market data update cycle completed.
+2026-03-20T11:31:04.820Z [INFO] Updating market data for 1 assets...
+2026-03-20T11:31:04.825Z [INFO] Updating [EURUSD=X] using [YF]...
+2026-03-20T11:31:04.834Z [INFO] FolioTrack server running on port 3000
+2026-03-20T11:31:04.836Z [INFO] Database: /Users/mauro/Documents/Progetto_FolioTracker2/foliotrack.db
+2026-03-20T11:31:07.833Z [INFO] YF ✓ EURUSD=X: price=1.1572735 USD chg=-0.14%
+2026-03-20T11:31:07.836Z [INFO] Successfully updated EURUSD=X: 1.1572735 USD
+2026-03-20T11:31:07.961Z [INFO] Market data update cycle completed.
+2026-03-20T11:32:04.771Z [INFO] Recording daily snapshots for portfolios and dashboard...
+2026-03-20T11:32:04.779Z [INFO] Daily snapshots completed.
+2026-03-20T11:46:04.788Z [INFO] Updating market data for 1 assets...
+2026-03-20T11:46:04.797Z [INFO] Updating [EURUSD=X] using [YF]...
+2026-03-20T11:46:04.806Z [ERROR] Failed to update EURUSD=X - YF: no quote data returned for 'EURUSD=X' (check ticker spelling or try manual update)
+2026-03-20T11:46:04.812Z [INFO] Market data update cycle completed.
+2026-03-20T12:01:04.820Z [INFO] Updating market data for 1 assets...
+2026-03-20T12:01:04.831Z [INFO] Updating [EURUSD=X] using [YF]...
+2026-03-20T12:01:04.839Z [ERROR] Failed to update EURUSD=X - YF: no quote data returned for 'EURUSD=X' (check ticker spelling or try manual update)
+2026-03-20T12:01:04.846Z [INFO] Market data update cycle completed.
+2026-03-20T12:16:04.844Z [INFO] Updating market data for 1 assets...
+2026-03-20T12:16:04.855Z [INFO] Updating [EURUSD=X] using [YF]...
+2026-03-20T12:16:04.864Z [ERROR] Failed to update EURUSD=X - YF: no quote data returned for 'EURUSD=X' (check ticker spelling or try manual update)
+2026-03-20T12:16:04.872Z [INFO] Market data update cycle completed.
+2026-03-20T12:31:04.872Z [INFO] Updating market data for 1 assets...
+2026-03-20T12:31:04.884Z [INFO] Updating [EURUSD=X] using [YF]...
+2026-03-20T12:31:04.893Z [ERROR] Failed to update EURUSD=X - YF: no quote data returned for 'EURUSD=X' (check ticker spelling or try manual update)
+2026-03-20T12:31:04.901Z [INFO] Market data update cycle completed.

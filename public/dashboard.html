@@ -5,6 +5,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>FolioTrack - Dashboard</title>
 <link rel="stylesheet" href="/dist/output.css">
+<link rel="stylesheet" href="/mobile.css">
 
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <style>
@@ -115,6 +116,10 @@
             <!-- Theme Toggle -->
             <button onclick="toggleTheme()" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all shadow-sm" title="Toggle Theme">
                 <span class="material-symbols-outlined text-sm" id="header-theme-icon">dark_mode</span>
+            </button>
+            <!-- Mobile View Toggle -->
+            <button onclick="toggleMobileView()" id="mobile-view-toggle-btn" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all shadow-sm" title="Toggle Mobile View">
+                <span class="material-symbols-outlined text-sm">smartphone</span>
             </button>
         </div>
         <div class="text-right hidden sm:block">
@@ -718,5 +723,352 @@
             }
         });
     });
+</script>
+
+<!-- ═══════════════════════════════════════════════
+     MOBILE GUI OVERLAY (iOS Style)
+     Shown when body.mobile-view-active is set
+════════════════════════════════════════════════ -->
+<div id="mobile-ui">
+  <!-- ── Top Header ── -->
+  <div class="mob-header">
+    <div class="mob-header-logo">
+      <span class="material-symbols-outlined" style="font-size:18px">query_stats</span>
+    </div>
+    <div style="flex:1">
+      <div class="mob-header-title">FolioTrack</div>
+      <span class="mob-header-subtitle">Premium Terminal</span>
+    </div>
+    <div class="mob-header-actions">
+      <div id="mob-status-pill" class="mob-status-pill">
+        <span class="mob-status-dot" id="mob-live-dot"></span>
+        <span id="mob-live-text">--</span>
+      </div>
+      <div class="mob-icon-btn" onclick="togglePrivacy()" title="Privacy">
+        <span class="material-symbols-outlined" id="mob-privacy-icon">visibility</span>
+      </div>
+      <!-- Switch back to Desktop -->
+      <div class="mob-icon-btn" onclick="toggleMobileView()" title="Desktop View" style="color: var(--mob-primary)">
+        <span class="material-symbols-outlined">computer</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Scrollable Content ── -->
+  <div class="mob-scroll" id="mob-dashboard-scroll">
+
+    <!-- Hero Card -->
+    <div class="mob-hero">
+      <div class="mob-hero-label">Portfolio Netto</div>
+      <div class="mob-hero-value" id="mob-total-net">€ 0</div>
+      <div class="mob-hero-stats">
+        <div class="mob-hero-stat-item">
+          <span class="mob-hero-stat-label">Lordo</span>
+          <span class="mob-hero-stat-value" id="mob-total-gross">€ 0</span>
+        </div>
+        <div class="mob-hero-stat-item">
+          <span class="mob-hero-stat-label">Gain Totale</span>
+          <span class="mob-hero-stat-value" id="mob-total-gain">€ 0</span>
+        </div>
+        <div class="mob-hero-stat-item">
+          <span class="mob-hero-stat-label">Day Var</span>
+          <span class="mob-hero-stat-value" id="mob-day-var">--</span>
+        </div>
+        <div class="mob-hero-stat-item">
+          <span class="mob-hero-stat-label">Mercato EU/US</span>
+          <span class="mob-hero-stat-value" id="mob-market-status">--</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Performance Chart -->
+    <div class="mob-chart-card">
+      <div class="mob-chart-title">Performance History</div>
+      <div class="mob-chart-subtitle">Net worth aggregato</div>
+      <div class="mob-chart-range-bar" id="mob-range-bar">
+        <div class="mob-range-btn" onclick="mobSetRange('1W')" data-range="1W">1W</div>
+        <div class="mob-range-btn active" onclick="mobSetRange('1M')" data-range="1M">1M</div>
+        <div class="mob-range-btn" onclick="mobSetRange('3M')" data-range="3M">3M</div>
+        <div class="mob-range-btn" onclick="mobSetRange('YTD')" data-range="YTD">YTD</div>
+        <div class="mob-range-btn" onclick="mobSetRange('1Y')" data-range="1Y">1Y</div>
+        <div class="mob-range-btn" onclick="mobSetRange('ALL')" data-range="ALL">ALL</div>
+      </div>
+      <div class="mob-chart-canvas-wrapper">
+        <canvas id="mob-perf-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- Asset Allocation -->
+    <div class="mob-allocation-card">
+      <div class="mob-allocation-chart">
+        <canvas id="mob-alloc-chart"></canvas>
+      </div>
+      <div class="mob-allocation-legend" id="mob-alloc-legend">
+        <!-- filled by JS -->
+      </div>
+    </div>
+
+    <!-- Portfolio List -->
+    <div class="mob-section-header">
+      <span class="mob-section-title">I Tuoi Portafogli</span>
+      <span class="mob-section-link" onclick="window.location.href='/portfolio'">Vedi tutti →</span>
+    </div>
+    <div class="mob-portfolio-list" id="mob-portfolio-list">
+      <div style="text-align:center;padding:24px">
+        <div class="mob-spinner" style="margin:0 auto"></div>
+      </div>
+    </div>
+
+    <!-- Bottom spacer -->
+    <div style="height: 20px"></div>
+  </div>
+
+  <!-- ── Bottom Tab Bar ── -->
+  <div class="mob-tab-bar">
+    <a class="mob-tab active" href="/dashboard">
+      <div class="mob-tab-indicator"></div>
+      <span class="material-symbols-outlined">dashboard</span>
+      <span class="mob-tab-label">Dashboard</span>
+    </a>
+    <a class="mob-tab" href="/portfolio">
+      <div class="mob-tab-indicator"></div>
+      <span class="material-symbols-outlined">work</span>
+      <span class="mob-tab-label">Portafogli</span>
+    </a>
+    <a class="mob-tab" href="/market">
+      <div class="mob-tab-indicator"></div>
+      <span class="material-symbols-outlined">trending_up</span>
+      <span class="mob-tab-label">Mercato</span>
+    </a>
+    <a class="mob-tab" href="/reports">
+      <div class="mob-tab-indicator"></div>
+      <span class="material-symbols-outlined">pie_chart</span>
+      <span class="mob-tab-label">Report</span>
+    </a>
+    <a class="mob-tab" href="/settings">
+      <div class="mob-tab-indicator"></div>
+      <span class="material-symbols-outlined">settings</span>
+      <span class="mob-tab-label">Settings</span>
+    </a>
+  </div>
+</div>
+
+<!-- Mobile Dashboard JS -->
+<script>
+(function() {
+  let mobPerfChart = null;
+  let mobAllocChart = null;
+  let mobCurrentRange = '1M';
+
+  function mobSyncPrivacyIcon() {
+    const icon = document.getElementById('mob-privacy-icon');
+    if (icon) icon.innerText = window.privacyState?.enabled ? 'visibility_off' : 'visibility';
+  }
+
+  async function mobUpdateDashboard() {
+    try {
+      const res = await fetch('/api/portfolios');
+      const data = await res.json();
+      const g = data.global || {};
+      const portfolios = data.portfolios || [];
+
+      // Hero numbers
+      const mobNet = document.getElementById('mob-total-net');
+      const mobGross = document.getElementById('mob-total-gross');
+      const mobGain = document.getElementById('mob-total-gain');
+      const mobDayVar = document.getElementById('mob-day-var');
+
+      if (mobNet) mobNet.textContent = formatPrivacy(g.totalNetValue, 'EUR', 'mob-net');
+      if (mobGross) mobGross.textContent = formatPrivacy(g.totalValue, 'EUR', 'mob-gross');
+
+      const gainAmt = g.totalGain || (g.totalNetValue - g.investedCapital) || 0;
+      if (mobGain) {
+        const isPos = gainAmt >= 0;
+        mobGain.style.color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        mobGain.textContent = (isPos ? '+' : '') + formatPrivacy(gainAmt, 'EUR', 'mob-gain', 0);
+      }
+
+      const change = g.changeValue || 0;
+      if (mobDayVar) {
+        const isPos = change >= 0;
+        mobDayVar.style.color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        const formatted = formatPrivacy(change, 'EUR', 'mob-dayvar', 0);
+        mobDayVar.textContent = (formatted !== '****' && isPos ? '+' : '') + formatted;
+      }
+
+      // Portfolios
+      const pList = document.getElementById('mob-portfolio-list');
+      if (pList) {
+        if (portfolios.length === 0) {
+          pList.innerHTML = '<div class="mob-empty"><span class="material-symbols-outlined">work_off</span><div class="mob-empty-title">Nessun portafoglio</div></div>';
+        } else {
+          pList.innerHTML = portfolios.map(p => {
+            const isPos = p.changePercent >= 0;
+            return `
+              <div class="mob-portfolio-card" onclick="window.location.href='/portfolio?id=${p.id}'">
+                <div class="mob-portfolio-icon" style="background-color:${p.color||'#6366f1'}">
+                  <span class="material-symbols-outlined">work</span>
+                </div>
+                <div class="mob-portfolio-info">
+                  <div class="mob-portfolio-name">${p.name}</div>
+                  <div class="mob-portfolio-meta">${p.assetCount} Assets · ${p.currency}</div>
+                </div>
+                <div class="mob-portfolio-values">
+                  <div class="mob-portfolio-net">${formatPrivacy(p.netValue||p.totalValue, p.currency, 'mob-p-'+p.id)}</div>
+                  <div class="mob-portfolio-gross">Lordo: ${formatPrivacy(p.totalValue, p.currency, 'mob-pg-'+p.id)}</div>
+                  <div class="mob-portfolio-change" style="color:${isPos?'var(--mob-emerald)':'var(--mob-rose)'}">${isPos?'▲':'▼'} ${Math.abs(p.changePercent).toFixed(2)}%</div>
+                </div>
+              </div>`;
+          }).join('');
+        }
+      }
+
+      // Sync header dot
+      mobSyncMarketStatus();
+    } catch(e) { console.error('[MOB] Dashboard update error:', e); }
+  }
+
+  async function mobSyncMarketStatus() {
+    try {
+      const res = await fetch('/api/market-status');
+      const s = await res.json();
+      const dot = document.getElementById('mob-live-dot');
+      const txt = document.getElementById('mob-live-text');
+      const ms = document.getElementById('mob-market-status');
+      if (dot) { dot.className = 'mob-status-dot' + (s.anyOpen ? ' live' : ''); }
+      if (txt) txt.textContent = s.anyOpen ? 'Live' : 'Closed';
+      if (ms) ms.textContent = `EU:${s.EU?'🟢':'🔴'} US:${s.US?'🟢':'🔴'}`;
+    } catch(e) {}
+  }
+
+  function mobInitPerfChart() {
+    if (mobPerfChart) { mobPerfChart.destroy(); mobPerfChart = null; }
+    const ctx = document.getElementById('mob-perf-chart')?.getContext('2d');
+    if (!ctx) return;
+    const isDark = document.documentElement.classList.contains('dark');
+    mobPerfChart = new Chart(ctx, {
+      type: 'line',
+      data: { labels: [], datasets: [{
+        label: 'Net Worth', data: [],
+        borderColor: '#135bec', backgroundColor: 'rgba(19,91,236,0.12)',
+        fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0, pointHoverRadius: 5,
+        pointHoverBackgroundColor: '#135bec', pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2
+      }]},
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            mode: 'index', intersect: false,
+            backgroundColor: isDark ? '#1e293b' : '#fff',
+            titleColor: isDark ? '#f1f5f9' : '#1e293b',
+            bodyColor: isDark ? '#f1f5f9' : '#1e293b',
+            borderColor: isDark ? '#334155' : '#e2e8f0',
+            borderWidth: 1, padding: 10,
+            callbacks: { label: (ctx) => `${formatCurrency(ctx.parsed.y, 'EUR', 0)}` }
+          },
+          zoom: { zoom: { wheel:{enabled:false}, pinch:{enabled:true}, mode:'x' }, pan:{enabled:true, mode:'x'} }
+        },
+        scales: {
+          x: { ticks: { color: isDark?'#64748b':'#94a3b8', font:{size:9}, maxTicksLimit: 5 }, grid: { display: false } },
+          y: { ticks: { color: isDark?'#64748b':'#94a3b8', font:{size:9}, callback: v => '€'+Math.round(v/1000)+'k' }, grid: { color: isDark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.04)' } }
+        }
+      }
+    });
+    mobUpdatePerfChart();
+  }
+
+  async function mobUpdatePerfChart() {
+    if (!mobPerfChart) return;
+    try {
+      const res = await fetch(`/api/analytics/global-performance?range=${mobCurrentRange}`);
+      const result = await res.json();
+      const dataPoints = result.dataPoints || (Array.isArray(result) ? result : []);
+      mobPerfChart.data.labels = dataPoints.map(d => {
+        const dt = new Date(d.date);
+        return dt.toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit' });
+      });
+      mobPerfChart.data.datasets[0].data = dataPoints.map(d => d.value);
+      mobPerfChart.update();
+    } catch(e) { console.error('[MOB] Perf chart error:', e); }
+  }
+
+  function mobInitAllocChart() {
+    if (mobAllocChart) { mobAllocChart.destroy(); mobAllocChart = null; }
+    const ctx = document.getElementById('mob-alloc-chart')?.getContext('2d');
+    if (!ctx) return;
+    mobAllocChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: { labels: [], datasets: [{ data: [],
+        backgroundColor: ['#135bec','#10b981','#f59e0b','#6366f1','#ec4899','#8b5cf6','#06b6d4'],
+        borderWidth: 0, hoverOffset: 4
+      }]},
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '72%',
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toFixed(1)}%` } } }
+      }
+    });
+    mobUpdateAllocChart();
+  }
+
+  async function mobUpdateAllocChart() {
+    if (!mobAllocChart) return;
+    try {
+      const res = await fetch('/api/analytics/global-allocation');
+      const data = await res.json();
+      mobAllocChart.data.labels = data.map(d => d.type);
+      mobAllocChart.data.datasets[0].data = data.map(d => d.percent);
+      mobAllocChart.update();
+      const legend = document.getElementById('mob-alloc-legend');
+      if (legend) {
+        const colors = mobAllocChart.data.datasets[0].backgroundColor;
+        legend.innerHTML = data.slice(0,5).map((d,i) => `
+          <div class="mob-alloc-item">
+            <div class="mob-alloc-dot" style="background:${colors[i%colors.length]}"></div>
+            <span class="mob-alloc-type">${d.type}</span>
+            <span class="mob-alloc-pct">${d.percent}%</span>
+          </div>`).join('');
+        if (data.length > 5) legend.innerHTML += `<div class="mob-alloc-item"><span class="mob-alloc-type" style="color:var(--mob-text-caption)">+${data.length-5} altri</span></div>`;
+      }
+    } catch(e) { console.error('[MOB] Alloc chart error:', e); }
+  }
+
+  window.mobSetRange = function(range) {
+    mobCurrentRange = range;
+    document.querySelectorAll('#mob-range-bar .mob-range-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.range === range);
+    });
+    mobUpdatePerfChart();
+  };
+
+  function mobInit() {
+    if (!window._mobileViewActive) return;
+    mobUpdateDashboard();
+    mobInitPerfChart();
+    mobInitAllocChart();
+    mobSyncPrivacyIcon();
+  }
+
+  // Init when mobile view is activated
+  window.addEventListener('mobile-view-activated', mobInit);
+  // If already active when DOM ready
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window._mobileViewActive) mobInit();
+  });
+
+  // Re-init charts after activation (canvas may need redraw)
+  window.addEventListener('mobile-view-activated', () => {
+    setTimeout(() => {
+      if (mobPerfChart) { mobPerfChart.resize(); }
+      if (mobAllocChart) { mobAllocChart.resize(); }
+    }, 100);
+  });
+
+  // Privacy sync
+  window.addEventListener('privacy-changed', () => {
+    mobSyncPrivacyIcon();
+    if (window._mobileViewActive) mobUpdateDashboard();
+  });
+})();
 </script>
 </body></html>

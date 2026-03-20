@@ -17556,3 +17556,21 @@ Performance result cache invalidated.
 2026-03-19T21:43:18.781Z [INFO] Skipping automatic market update: all markets are closed.
 2026-03-19T21:58:18.825Z [INFO] Skipping automatic market update: all markets are closed.
 2026-03-19T22:13:18.896Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-19T22:28:18.954Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-19T22:52:35.876Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-19T23:11:44.679Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-19T23:59:40.433Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-20T00:36:52.578Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-20T00:36:52.579Z [INFO] Recording daily snapshots for portfolios and dashboard...
+2026-03-20T00:36:52.595Z [INFO] Daily snapshots completed.
+2026-03-20T02:01:45.593Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-20T03:24:26.156Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-20T04:41:55.601Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-20T06:00:04.155Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-20T06:33:59.997Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-20T06:51:49.628Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-20T07:26:55.060Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-20T08:03:35.825Z [INFO] Updating market data for 1 assets...
+2026-03-20T08:03:35.874Z [ERROR] Failed to update EURUSD=X - Error: No metadata found for EURUSD=X
+Failed to fetch EUR/USD rate from YF: fetch failed
+2026-03-20T08:03:35.881Z [INFO] Market data update cycle completed.

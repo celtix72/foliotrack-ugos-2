@@ -5,6 +5,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>FolioTrack - Tech Growth Portfolio</title>
 <link rel="stylesheet" href="/dist/output.css">
+<link rel="stylesheet" href="/mobile.css">
 
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <style>
@@ -115,6 +116,10 @@
             <!-- Theme Toggle -->
             <button onclick="toggleTheme()" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all shadow-sm" title="Toggle Theme">
                 <span class="material-symbols-outlined text-sm" id="header-theme-icon">dark_mode</span>
+            </button>
+            <!-- Mobile View Toggle -->
+            <button onclick="toggleMobileView()" id="mobile-view-toggle-btn" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all shadow-sm" title="Toggle Mobile View">
+                <span class="material-symbols-outlined text-sm">smartphone</span>
             </button>
         </div>
         <div class="text-right hidden sm:block">
@@ -2599,6 +2604,476 @@
         if (e.target === this) closeAssetChartModal();
     });
 
+</script>
+
+<!-- ═══════════════════════════════════════════════
+     MOBILE GUI OVERLAY (iOS Style) — Portfolio Page
+     Shown when body.mobile-view-active is set
+════════════════════════════════════════════════ -->
+<div id="mobile-ui">
+
+  <!-- ── Mobile Header ── -->
+  <div class="mob-header">
+    <div class="mob-header-logo">
+      <span class="material-symbols-outlined" style="font-size:18px">query_stats</span>
+    </div>
+    <div style="flex:1">
+      <div class="mob-header-title" id="mob-page-header-title">Portafogli</div>
+      <span class="mob-header-subtitle">FolioTrack</span>
+    </div>
+    <div class="mob-header-actions">
+      <div class="mob-icon-btn" onclick="togglePrivacy()" title="Privacy">
+        <span class="material-symbols-outlined" id="mob-privacy-icon">visibility</span>
+      </div>
+      <div class="mob-icon-btn" onclick="toggleMobileView()" title="Desktop View" style="color: var(--mob-primary)">
+        <span class="material-symbols-outlined">computer</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       VIEW A: Portfolio List
+  ══════════════════════════════ -->
+  <div id="mob-portfolio-list-view" class="mob-scroll">
+
+    <!-- Hero Stats Row -->
+    <div class="mob-stats-row" id="mob-global-stats-row">
+      <div class="mob-stat-box">
+        <span class="mob-stat-box-label">Netto Tot.</span>
+        <span class="mob-stat-box-value" id="mob-global-net">--</span>
+      </div>
+      <div class="mob-stat-box">
+        <span class="mob-stat-box-label">Gain</span>
+        <span class="mob-stat-box-value" id="mob-global-gain">--</span>
+      </div>
+      <div class="mob-stat-box">
+        <span class="mob-stat-box-label">Day Var</span>
+        <span class="mob-stat-box-value" id="mob-global-dayvar">--</span>
+      </div>
+    </div>
+
+    <div class="mob-section-header">
+      <span class="mob-section-title">I Tuoi Portafogli</span>
+    </div>
+
+    <div id="mob-portf-cards" class="mob-portfolio-list">
+      <div style="text-align:center;padding:32px">
+        <div class="mob-spinner" style="margin:0 auto"></div>
+      </div>
+    </div>
+
+    <div style="height:12px"></div>
+  </div>
+
+  <!-- ══════════════════════════════
+       VIEW B: Portfolio Detail
+  ══════════════════════════════ -->
+  <div id="mob-portfolio-detail-view" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+
+    <!-- Back bar -->
+    <div class="mob-back-bar">
+      <div class="mob-back-btn" onclick="mobShowPortfolioList()">
+        <span class="material-symbols-outlined">chevron_left</span>
+        Portafogli
+      </div>
+      <span class="mob-back-label" id="mob-detail-pname">---</span>
+    </div>
+
+    <div class="mob-scroll">
+      <!-- Hero -->
+      <div class="mob-hero">
+        <div class="mob-hero-label" id="mob-detail-label">Portafoglio</div>
+        <div class="mob-hero-value" id="mob-detail-total">0</div>
+        <div class="mob-hero-stats">
+          <div class="mob-hero-stat-item">
+            <span class="mob-hero-stat-label">Lordo</span>
+            <span class="mob-hero-stat-value" id="mob-detail-gross">--</span>
+          </div>
+          <div class="mob-hero-stat-item">
+            <span class="mob-hero-stat-label">Cash</span>
+            <span class="mob-hero-stat-value" id="mob-detail-cash">--</span>
+          </div>
+          <div class="mob-hero-stat-item">
+            <span class="mob-hero-stat-label">Gain</span>
+            <span class="mob-hero-stat-value" id="mob-detail-gain">--</span>
+          </div>
+          <div class="mob-hero-stat-item">
+            <span class="mob-hero-stat-label">Assets</span>
+            <span class="mob-hero-stat-value" id="mob-detail-assets">--</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions row -->
+      <div style="display:flex;gap:10px;padding:4px 16px 8px">
+        <button onclick="openTransactionModal()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;border-radius:14px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);color:#10b981;font-size:13px;font-weight:700;cursor:pointer">
+          <span class="material-symbols-outlined" style="font-size:18px">add_circle</span> Transazione
+        </button>
+        <button onclick="openImportModal()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;border-radius:14px;background:var(--mob-primary-dim);border:1px solid rgba(19,91,236,0.25);color:var(--mob-primary);font-size:13px;font-weight:700;cursor:pointer">
+          <span class="material-symbols-outlined" style="font-size:18px">upload_file</span> Importa
+        </button>
+      </div>
+
+      <!-- Chart -->
+      <div class="mob-chart-card">
+        <div class="mob-chart-title">Performance</div>
+        <div class="mob-chart-range-bar" id="mob-detail-range-bar">
+          <div class="mob-range-btn" onclick="mobDetailRange('1D')" data-range="1D">1D</div>
+          <div class="mob-range-btn active" onclick="mobDetailRange('1M')" data-range="1M">1M</div>
+          <div class="mob-range-btn" onclick="mobDetailRange('3M')" data-range="3M">3M</div>
+          <div class="mob-range-btn" onclick="mobDetailRange('6M')" data-range="6M">6M</div>
+          <div class="mob-range-btn" onclick="mobDetailRange('YTD')" data-range="YTD">YTD</div>
+          <div class="mob-range-btn" onclick="mobDetailRange('1Y')" data-range="1Y">1Y</div>
+          <div class="mob-range-btn" onclick="mobDetailRange('ALL')" data-range="ALL">ALL</div>
+        </div>
+        <div class="mob-chart-canvas-wrapper">
+          <canvas id="mob-detail-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="mob-tabs">
+        <div class="mob-tab-pill active" id="mob-pill-holdings" onclick="mobSwitchDetailTab('holdings')">Holdings</div>
+        <div class="mob-tab-pill" id="mob-pill-transactions" onclick="mobSwitchDetailTab('transactions')">Transazioni</div>
+      </div>
+
+      <!-- Holdings -->
+      <div id="mob-holdings-view">
+        <div class="mob-holdings-list" id="mob-holdings-list">
+          <div style="text-align:center;padding:32px">
+            <div class="mob-spinner" style="margin:0 auto"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Transactions (hidden initially) -->
+      <div id="mob-transactions-view" style="display:none">
+        <div class="mob-holdings-list" id="mob-transactions-list">
+          <div style="text-align:center;padding:32px">
+            <div class="mob-spinner" style="margin:0 auto"></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="height:24px"></div>
+    </div>
+  </div>
+
+  <!-- ── Bottom Tab Bar ── -->
+  <div class="mob-tab-bar">
+    <a class="mob-tab" href="/dashboard">
+      <div class="mob-tab-indicator"></div>
+      <span class="material-symbols-outlined">dashboard</span>
+      <span class="mob-tab-label">Dashboard</span>
+    </a>
+    <a class="mob-tab active" href="/portfolio">
+      <div class="mob-tab-indicator"></div>
+      <span class="material-symbols-outlined">work</span>
+      <span class="mob-tab-label">Portafogli</span>
+    </a>
+    <a class="mob-tab" href="/market">
+      <div class="mob-tab-indicator"></div>
+      <span class="material-symbols-outlined">trending_up</span>
+      <span class="mob-tab-label">Mercato</span>
+    </a>
+    <a class="mob-tab" href="/reports">
+      <div class="mob-tab-indicator"></div>
+      <span class="material-symbols-outlined">pie_chart</span>
+      <span class="mob-tab-label">Report</span>
+    </a>
+    <a class="mob-tab" href="/settings">
+      <div class="mob-tab-indicator"></div>
+      <span class="material-symbols-outlined">settings</span>
+      <span class="mob-tab-label">Settings</span>
+    </a>
+  </div>
+</div>
+
+<!-- Mobile Portfolio JS -->
+<script>
+(function() {
+  let mobDetailChart = null;
+  let mobDetailRange = '1M';
+  let mobCurrentPortfolioId = null;
+
+  function mobSyncPrivacyIcon() {
+    const icon = document.getElementById('mob-privacy-icon');
+    if (icon) icon.innerText = window.privacyState?.enabled ? 'visibility_off' : 'visibility';
+  }
+
+  // ── Portfolio List ────────────────────────────────
+  async function mobLoadPortfolioList() {
+    try {
+      const res = await fetch('/api/portfolios');
+      const data = await res.json();
+      const g = data.global || {};
+      const portfolios = data.portfolios || [];
+
+      // Global mini-stats
+      const netEl = document.getElementById('mob-global-net');
+      const gainEl = document.getElementById('mob-global-gain');
+      const dvEl = document.getElementById('mob-global-dayvar');
+
+      if (netEl) netEl.textContent = formatPrivacy(g.totalNetValue, 'EUR', 'mob-gnet');
+      if (gainEl) {
+        const gain = g.totalGain || 0;
+        gainEl.style.color = gain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        gainEl.textContent = (gain >= 0 ? '+' : '') + formatPrivacy(gain, 'EUR', 'mob-ggain', 0);
+      }
+      if (dvEl) {
+        const dv = g.changeValue || 0;
+        dvEl.style.color = dv >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        dvEl.textContent = (dv >= 0 ? '+' : '') + formatPrivacy(dv, 'EUR', 'mob-gdv', 0);
+      }
+
+      const container = document.getElementById('mob-portf-cards');
+      if (!container) return;
+      if (portfolios.length === 0) {
+        container.innerHTML = '<div class="mob-empty"><span class="material-symbols-outlined">work_off</span><div class="mob-empty-title">Nessun portafoglio</div><div class="mob-empty-sub">Crea il tuo primo portafoglio</div></div>';
+        return;
+      }
+      container.innerHTML = portfolios.map(p => {
+        const isPos = p.changePercent >= 0;
+        return `
+          <div class="mob-portfolio-card" onclick="mobOpenPortfolio(${p.id})">
+            <div class="mob-portfolio-icon" style="background-color:${p.color||'#6366f1'}">
+              <span class="material-symbols-outlined">work</span>
+            </div>
+            <div class="mob-portfolio-info">
+              <div class="mob-portfolio-name">${p.name}</div>
+              <div class="mob-portfolio-meta">${p.assetCount} Assets · ${p.currency}</div>
+            </div>
+            <div class="mob-portfolio-values">
+              <div class="mob-portfolio-net">${formatPrivacy(p.netValue||p.totalValue, p.currency, 'mob-pn-'+p.id)}</div>
+              <div class="mob-portfolio-gross">Lordo: ${formatPrivacy(p.totalValue, p.currency, 'mob-pg-'+p.id)}</div>
+              <div class="mob-portfolio-change" style="color:${isPos?'var(--mob-emerald)':'var(--mob-rose)'}">${isPos?'▲':'▼'} ${Math.abs(p.changePercent).toFixed(2)}%</div>
+            </div>
+          </div>`;
+      }).join('');
+    } catch(e) { console.error('[MOB] Portfolio list error:', e); }
+  }
+
+  window.mobOpenPortfolio = function(id) {
+    mobCurrentPortfolioId = id;
+    document.getElementById('mob-portfolio-list-view').style.display = 'none';
+    const dv = document.getElementById('mob-portfolio-detail-view');
+    dv.style.display = 'flex';
+    document.getElementById('mob-page-header-title').textContent = 'Portafoglio';
+    mobLoadPortfolioDetail(id);
+    // Sync desktop view too
+    currentPortfolioId = id;
+  };
+
+  window.mobShowPortfolioList = function() {
+    document.getElementById('mob-portfolio-detail-view').style.display = 'none';
+    document.getElementById('mob-portfolio-list-view').style.display = '';
+    document.getElementById('mob-page-header-title').textContent = 'Portafogli';
+    mobCurrentPortfolioId = null;
+  };
+
+  // ── Portfolio Detail ──────────────────────────────
+  async function mobLoadPortfolioDetail(id) {
+    try {
+      const res = await fetch(`/api/portfolios/${id}`);
+      const p = await res.json();
+
+      const currency = p.currency || 'EUR';
+      portfolioCurrency = currency;
+
+      const el = (eid) => document.getElementById(eid);
+      if (el('mob-detail-pname')) el('mob-detail-pname').textContent = p.name;
+      if (el('mob-detail-label')) el('mob-detail-label').textContent = p.name;
+      if (el('mob-detail-total')) el('mob-detail-total').textContent = formatPrivacy(p.netValue || p.totalValue, currency, 'mob-dt');
+      if (el('mob-detail-gross')) el('mob-detail-gross').textContent = formatPrivacy(p.totalValue, currency, 'mob-dg');
+      if (el('mob-detail-cash')) el('mob-detail-cash').textContent = formatPrivacy(p.cashBalance, currency, 'mob-dc', 2);
+      if (el('mob-detail-assets')) el('mob-detail-assets').textContent = p.assetCount || 0;
+
+      const gain = (p.netValue || p.totalValue) - (p.investedCapital || 0);
+      const gainEl = el('mob-detail-gain');
+      if (gainEl) {
+        gainEl.style.color = gain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        gainEl.textContent = (gain >= 0 ? '+' : '') + formatCurrency(gain, currency, 0);
+      }
+
+      // Load holdings
+      mobLoadHoldings(id, currency);
+      mobLoadTransactions(id, currency);
+      // Init chart
+      mobInitDetailChart(id);
+    } catch(e) { console.error('[MOB] Portfolio detail error:', e); }
+  }
+
+  async function mobLoadHoldings(portfolioId, currency) {
+    const container = document.getElementById('mob-holdings-list');
+    if (!container) return;
+    try {
+      const res = await fetch(`/api/portfolios/${portfolioId}/holdings`);
+      const data = await res.json();
+      const holdings = data.holdings || [];
+
+      if (holdings.length === 0) {
+        container.innerHTML = '<div class="mob-empty"><span class="material-symbols-outlined">inbox</span><div class="mob-empty-title">Nessun asset</div></div>';
+        return;
+      }
+      container.innerHTML = holdings.map(h => {
+        const isPos = (h.currentValue - h.totalCost) >= 0;
+        const pct = h.changePercent || 0;
+        const letters = (h.ticker || '').substring(0,3);
+        return `
+          <div class="mob-holding-item">
+            <div class="mob-holding-logo">${letters}</div>
+            <div class="mob-holding-info">
+              <div class="mob-holding-ticker">${h.ticker}</div>
+              <div class="mob-holding-name">${h.name || ''}</div>
+              <div class="mob-holding-qty">${formatNumber(h.quantity, 4)} units</div>
+            </div>
+            <div class="mob-holding-values">
+              <div class="mob-holding-value">${formatPrivacy(h.currentValue, currency, 'mob-hv-'+h.ticker)}</div>
+              <div class="mob-holding-gain" style="color:${pct>=0?'var(--mob-emerald)':'var(--mob-rose)'}">${pct>=0?'+':''}${pct.toFixed(2)}%</div>
+            </div>
+          </div>`;
+      }).join('');
+    } catch(e) {
+      console.error('[MOB] Holdings load error:', e);
+      if (container) container.innerHTML = '<div class="mob-empty"><span class="material-symbols-outlined">error</span><div class="mob-empty-title">Errore nel caricamento</div></div>';
+    }
+  }
+
+  async function mobLoadTransactions(portfolioId, currency) {
+    const container = document.getElementById('mob-transactions-list');
+    if (!container) return;
+    try {
+      const res = await fetch(`/api/portfolios/${portfolioId}/transactions`);
+      const data = await res.json();
+      const txs = data.transactions || [];
+
+      const typeColors = { BUY:'var(--mob-emerald)', SELL:'var(--mob-rose)', DEPOSIT:'var(--mob-emerald)', WITHDRAWAL:'var(--mob-rose)', DIVIDEND:'var(--mob-amber)', TAX:'var(--mob-rose)', TRANSFER:'var(--mob-text-muted)' };
+      const typeIcons = { BUY:'shopping_cart', SELL:'sell', DEPOSIT:'arrow_downward', WITHDRAWAL:'arrow_upward', DIVIDEND:'payments', TAX:'account_balance', TRANSFER:'swap_horiz' };
+
+      if (txs.length === 0) {
+        container.innerHTML = '<div class="mob-empty"><span class="material-symbols-outlined">receipt_long</span><div class="mob-empty-title">Nessuna transazione</div></div>';
+        return;
+      }
+
+      container.innerHTML = txs.slice(0,50).map(t => {
+        const col = typeColors[t.type] || 'var(--mob-text)';
+        const icon = typeIcons[t.type] || 'receipt';
+        const date = new Date(t.date).toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit', year:'2-digit' });
+        return `
+          <div class="mob-holding-item">
+            <div class="mob-holding-logo" style="background:${col}22;color:${col}">
+              <span class="material-symbols-outlined" style="font-size:20px">${icon}</span>
+            </div>
+            <div class="mob-holding-info">
+              <div class="mob-holding-ticker" style="color:${col}">${t.type}</div>
+              <div class="mob-holding-name">${t.ticker || '—'}</div>
+              <div class="mob-holding-qty">${date}</div>
+            </div>
+            <div class="mob-holding-values">
+              <div class="mob-holding-value">${formatPrivacy(t.total || t.amount || 0, currency, 'mob-tx-'+t.id)}</div>
+              <div style="font-size:10px;color:var(--mob-text-caption)">${t.quantity ? 'x'+formatNumber(t.quantity,2) : ''}</div>
+            </div>
+          </div>`;
+      }).join('');
+    } catch(e) {
+      console.error('[MOB] Transactions load error:', e);
+    }
+  }
+
+  function mobInitDetailChart(portfolioId) {
+    if (mobDetailChart) { mobDetailChart.destroy(); mobDetailChart = null; }
+    const ctx = document.getElementById('mob-detail-chart')?.getContext('2d');
+    if (!ctx) return;
+    const isDark = document.documentElement.classList.contains('dark');
+    mobDetailChart = new Chart(ctx, {
+      type: 'line',
+      data: { labels: [], datasets: [{
+        label: 'Value', data: [],
+        borderColor: '#135bec', backgroundColor: 'rgba(19,91,236,0.10)',
+        fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4
+      }]},
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { mode:'index', intersect:false, padding:8,
+            callbacks: { label: (ctx) => formatCurrency(ctx.parsed.y, portfolioCurrency, 0) }
+          }
+        },
+        scales: {
+          x: { ticks: { color: '#64748b', font:{size:8}, maxTicksLimit:4 }, grid:{display:false} },
+          y: { ticks: { color: '#64748b', font:{size:8}, callback: v => formatCurrency(v, portfolioCurrency, 0).split(',')[0] }, grid: { color: 'rgba(255,255,255,0.04)' } }
+        }
+      }
+    });
+    mobUpdateDetailChart(portfolioId);
+  }
+
+  async function mobUpdateDetailChart(portfolioId, range) {
+    if (!mobDetailChart) return;
+    const r = range || mobDetailRange;
+    try {
+      const res = await fetch(`/api/portfolios/${portfolioId}/performance?range=${r}`);
+      const result = await res.json();
+      const pts = result.dataPoints || (Array.isArray(result) ? result : []);
+      mobDetailChart.data.labels = pts.map(d => new Date(d.date).toLocaleDateString('it-IT', {day:'2-digit',month:'2-digit'}));
+      mobDetailChart.data.datasets[0].data = pts.map(d => d.value);
+      mobDetailChart.update();
+    } catch(e) { console.error('[MOB] Detail chart error:', e); }
+  }
+
+  window.mobDetailRange = function(range) {
+    mobDetailRange = range;
+    document.querySelectorAll('#mob-detail-range-bar .mob-range-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.range === range);
+    });
+    if (mobCurrentPortfolioId) mobUpdateDetailChart(mobCurrentPortfolioId, range);
+  };
+
+  window.mobSwitchDetailTab = function(tab) {
+    const isHoldings = tab === 'holdings';
+    document.getElementById('mob-pill-holdings').classList.toggle('active', isHoldings);
+    document.getElementById('mob-pill-transactions').classList.toggle('active', !isHoldings);
+    document.getElementById('mob-holdings-view').style.display = isHoldings ? '' : 'none';
+    document.getElementById('mob-transactions-view').style.display = isHoldings ? 'none' : '';
+  };
+
+  function mobInit() {
+    if (!window._mobileViewActive) return;
+    mobSyncPrivacyIcon();
+
+    // Check if detail view should open (URL has ?id=)
+    const params = new URLSearchParams(window.location.search);
+    const pid = params.get('id');
+    if (pid) {
+      mobCurrentPortfolioId = parseInt(pid);
+      const dv = document.getElementById('mob-portfolio-detail-view');
+      dv.style.display = 'flex';
+      document.getElementById('mob-portfolio-list-view').style.display = 'none';
+      document.getElementById('mob-page-header-title').textContent = 'Portafoglio';
+      mobLoadPortfolioDetail(mobCurrentPortfolioId);
+    } else {
+      mobLoadPortfolioList();
+    }
+  }
+
+  window.addEventListener('mobile-view-activated', mobInit);
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window._mobileViewActive) mobInit();
+  });
+
+  window.addEventListener('mobile-view-activated', () => {
+    setTimeout(() => { if (mobDetailChart) mobDetailChart.resize(); }, 100);
+  });
+
+  window.addEventListener('privacy-changed', () => {
+    mobSyncPrivacyIcon();
+    if (window._mobileViewActive) {
+      if (mobCurrentPortfolioId) mobLoadPortfolioDetail(mobCurrentPortfolioId);
+      else mobLoadPortfolioList();
+    }
+  });
+})();
 </script>
 
 </body></html>
