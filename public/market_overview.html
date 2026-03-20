@@ -708,7 +708,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="mob-section-header">
         <span class="mob-section-title">Top Movers</span>
       </div>
-      <div id="mob-movers-carousel" class="flex gap-4 overflow-x-auto px-4 pb-4 no-scrollbar">
+      <div id="mob-movers-carousel" class="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
         <!-- Movers cards by JS -->
       </div>
     </div>
@@ -801,7 +801,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const isPos = m.changePercent >= 0;
         const color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
         return `
-          <div class="snap-start shrink-0 w-32 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 p-4 rounded-xl flex flex-col items-center justify-center text-center shadow-sm"
+          <div class="snap-start shrink-0 w-32 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 p-4 rounded-xl first:ml-4 last:mr-4 flex flex-col items-center justify-center text-center shadow-sm"
                onclick="window.location.href='/portfolio_detail.html?ticker=${m.ticker}'">
             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">${m.ticker}</span>
             <span class="text-xl font-black" style="color:${color}">${isPos?'+':''}${m.changePercent.toFixed(2)}%</span>
@@ -826,7 +826,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (posCountEl) posCountEl.textContent = `${openPos.length} Assets`;
       if (watchCountEl) watchCountEl.textContent = `${watchlist.length} Assets`;
 
-      const renderCard = (a) => {
+      const renderCard = (a, isLarge = false) => {
         const price = a.currentPrice || 0;
         const change = a.changePercent || 0;
         const isPos = change >= 0;
@@ -838,7 +838,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const alertBorder = targetReached ? 'border: 1px solid var(--mob-emerald)' : (stopLossHit ? 'border: 1px solid var(--mob-rose)' : '');
 
         return `
-          <div class="mob-holding-item" style="${alertBorder}" onclick="window.location.href='/portfolio_detail.html?ticker=${a.ticker}'">
+          <div class="mob-holding-item ${isLarge ? 'large' : ''}" style="${alertBorder}" onclick="window.location.href='/portfolio_detail.html?ticker=${a.ticker}'">
             <div class="mob-holding-logo">${a.ticker.substring(0,3)}</div>
             <div class="mob-holding-info">
               <div class="mob-holding-ticker">${a.ticker}</div>
@@ -855,8 +855,8 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>`;
       };
 
-      if (posContainer) posContainer.innerHTML = openPos.map(renderCard).join('') || '<div class="mob-empty">Nessuna posizione</div>';
-      if (watchContainer) watchContainer.innerHTML = watchlist.map(renderCard).join('') || '<div class="mob-empty">Watchlist vuota</div>';
+      if (posContainer) posContainer.innerHTML = openPos.map(a => renderCard(a, true)).join('') || '<div class="mob-empty">Nessuna posizione</div>';
+      if (watchContainer) watchContainer.innerHTML = watchlist.map(a => renderCard(a, false)).join('') || '<div class="mob-empty">Watchlist vuota</div>';
 
     } catch(e) { console.error('[MOB] Market load error:', e); }
   }

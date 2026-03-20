@@ -451,7 +451,7 @@ body.mobile-view-active #mobile-ui {
 
 /* ─── Holdings List ─────────────────────────────────────────────────────── */
 .mob-holdings-list {
-  padding: 4px 16px 8px;
+  padding: 4px 0 8px !important;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -460,8 +460,10 @@ body.mobile-view-active #mobile-ui {
 .mob-holding-item {
   background: var(--mob-surface);
   border: 1px solid var(--mob-border);
-  border-radius: 16px;
-  padding: 14px 16px;
+  border-left: none !important;
+  border-right: none !important;
+  border-radius: 0 !important;
+  padding: 14px 20px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -494,6 +496,26 @@ body.mobile-view-active #mobile-ui {
 .mob-holding-values { text-align: right; flex-shrink: 0; }
 .mob-holding-value { font-size: 13px; font-weight: 700; }
 .mob-holding-gain { font-size: 11px; font-weight: 700; }
+
+/* Large Item for Open Positions */
+.mob-holding-item.large {
+  padding: 18px 20px;
+}
+.mob-holding-item.large .mob-holding-ticker {
+  font-size: 16px;
+}
+.mob-holding-item.large .mob-holding-value {
+  font-size: 17px;
+  font-weight: 800;
+}
+.mob-holding-item.large .mob-holding-gain {
+  font-size: 14px;
+}
+.mob-holding-item.large .mob-holding-logo {
+  width: 44px;
+  height: 44px;
+  font-size: 12px;
+}
 
 /* ─── Allocation Donut ───────────────────────────────────────────────────── */
 .mob-allocation-card {
