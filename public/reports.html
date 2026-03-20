@@ -272,7 +272,120 @@
 </section>
 </div>
 </div>
-</main>
+  </main>
+</div>
+
+<!-- Mobile GUI Root -->
+<div id="mobile-ui">
+  <!-- Mobile Header -->
+  <div class="mob-header">
+    <div class="mob-header-logo">FolioTrack</div>
+    <div class="mob-header-actions">
+      <div id="mob-var-pill-container"></div>
+      <button onclick="togglePrivacy()" class="material-symbols-outlined">visibility</button>
+      <button onclick="toggleTheme()" class="material-symbols-outlined">dark_mode</button>
+    </div>
+  </div>
+
+  <!-- Mobile Scrollable Content -->
+  <div class="mob-scroll-area">
+    <!-- Hero metrics -->
+    <div class="mob-hero">
+      <div class="mob-hero-label">TOTAL ROI</div>
+      <div class="mob-hero-title" id="mob-total-roi">--%</div>
+      <div style="display:flex; gap:20px; margin-top:15px">
+        <div>
+          <div class="mob-hero-label">ANNUALIZED</div>
+          <div style="font-size:18px; font-weight:900" id="mob-cagr">--%</div>
+        </div>
+        <div>
+          <div class="mob-hero-label">SHARPE</div>
+          <div style="font-size:18px; font-weight:900" id="mob-sharpe">--</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Performance Chart -->
+    <div class="mob-section-header">
+      <span class="mob-section-title">Performance (1Y)</span>
+    </div>
+    <div class="mob-card mob-card-padded">
+      <div style="height:220px; width:100%">
+        <canvas id="mob-perf-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- Portfolio Breakdown -->
+    <div class="mob-section-header">
+      <span class="mob-section-title">Portafogli</span>
+    </div>
+    <div id="mob-portfolios-list" style="padding: 0 16px 16px">
+      <!-- Injected via JS -->
+    </div>
+
+    <!-- Diversification -->
+    <div class="mob-section-header">
+      <span class="mob-section-title">Diversificazione</span>
+    </div>
+    <div class="mob-card mob-card-padded" style="margin-bottom:16px">
+      <div style="display:flex; gap:15px; align-items:center">
+        <div style="width:120px; height:120px">
+          <canvas id="mob-asset-chart"></canvas>
+        </div>
+        <div id="mob-asset-legend" class="flex-1 space-y-1"></div>
+      </div>
+      <div class="border-t border-slate-100 dark:border-slate-800 my-4"></div>
+      <div style="display:flex; gap:15px; align-items:center">
+        <div style="width:120px; height:120px">
+          <canvas id="mob-geo-chart"></canvas>
+        </div>
+        <div id="mob-geo-legend" class="flex-1 space-y-1"></div>
+      </div>
+    </div>
+
+    <!-- Dividends -->
+    <div class="mob-section-header">
+      <span class="mob-section-title">Dividendi (12M)</span>
+    </div>
+    <div class="mob-card mob-card-padded" style="margin-bottom:80px">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
+        <div class="mob-hero-label">TOTAL INCOME</div>
+        <div style="font-size:20px; font-weight:900; color:var(--mob-emerald)" id="mob-div-total">$0.00</div>
+      </div>
+      <div style="height:120px; width:100%">
+        <canvas id="mob-div-chart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Tab Bar -->
+  <div class="mob-tab-bar">
+    <a class="mob-tab" href="/dashboard">
+      <div class="mob-tab-indicator"></div>
+      <span class="material-symbols-outlined">dashboard</span>
+      <span class="mob-tab-label">Dashboard</span>
+    </a>
+    <a class="mob-tab" href="/portfolio">
+      <div class="mob-tab-indicator"></div>
+      <span class="material-symbols-outlined">work</span>
+      <span class="mob-tab-label">Portafogli</span>
+    </a>
+    <a class="mob-tab" href="/market">
+      <div class="mob-tab-indicator"></div>
+      <span class="material-symbols-outlined">trending_up</span>
+      <span class="mob-tab-label">Mercato</span>
+    </a>
+    <a class="mob-tab active" href="/reports">
+      <div class="mob-tab-indicator"></div>
+      <span class="material-symbols-outlined">pie_chart</span>
+      <span class="mob-tab-label">Report</span>
+    </a>
+    <a class="mob-tab" href="/settings">
+      <div class="mob-tab-indicator"></div>
+      <span class="material-symbols-outlined">settings</span>
+      <span class="mob-tab-label">Settings</span>
+    </a>
+  </div>
 </div>
 
 <script>
@@ -542,5 +655,140 @@
     }
 
     document.addEventListener('DOMContentLoaded', loadReportData);
+
+    // ─── Mobile Reports Logic ────────────────────────────────────────────────
+    let mobPerfChart, mobAssetChart, mobGeoChart, mobDivChart;
+
+    async function mobSyncReports() {
+        if (!window._mobileViewActive) return;
+        try {
+            const res = await fetch(`/api/analytics/reports?range=1Y`);
+            const data = await res.json();
+            if (data.error) return;
+
+            // Metrics
+            const m = data.metrics;
+            document.getElementById('mob-total-roi').textContent = (m.totalROI * 100).toFixed(2) + '%';
+            document.getElementById('mob-total-roi').style.color = m.totalROI >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+            document.getElementById('mob-cagr').textContent = (m.annualizedROI * 100).toFixed(2) + '%';
+            document.getElementById('mob-sharpe').textContent = m.sharpeRatio.toFixed(2);
+
+            // Portfolio List
+            const list = document.getElementById('mob-portfolios-list');
+            list.innerHTML = Object.values(data.performance.individual)
+                .sort((a,b) => b.metrics.currentValue - a.metrics.currentValue)
+                .map(p => {
+                    const pm = p.metrics;
+                    const roiColor = pm.totalROI >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+                    return `
+                        <div class="mob-card mob-card-padded" style="margin-bottom:8px">
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start">
+                                <div>
+                                    <div class="font-bold" style="font-size:14px">${p.name}</div>
+                                    <div style="font-size:10px; color:var(--mob-text-muted)">Contribution: ${(pm.contribution*100).toFixed(1)}%</div>
+                                </div>
+                                <div style="text-align:right">
+                                    <div class="font-bold" style="font-size:14px">${formatCurrency(pm.currentValue, 'EUR')}</div>
+                                    <div style="font-size:12px; font-weight:900; color:${roiColor}">${(pm.totalROI*100).toFixed(2)}%</div>
+                                </div>
+                            </div>
+                        </div>`;
+                }).join('');
+
+            // Charts
+            mobRenderCharts(data);
+        } catch(e) {}
+    }
+
+    function mobRenderCharts(data) {
+        const colors = ['#135bec', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6'];
+        
+        // Performance
+        const pCtx = document.getElementById('mob-perf-chart').getContext('2d');
+        if (mobPerfChart) mobPerfChart.destroy();
+        mobPerfChart = new Chart(pCtx, {
+            type: 'line',
+            data: {
+                labels: data.performance.portfolio.map(d => d.date),
+                datasets: [{
+                    data: data.performance.portfolio.map(d => d.value),
+                    borderColor: '#135bec',
+                    borderWidth: 3,
+                    fill: true,
+                    backgroundColor: 'rgba(19, 91, 236, 0.05)',
+                    tension: 0.4,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { 
+                    x: { display: false },
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { font: { size: 9 } } }
+                }
+            }
+        });
+
+        // Assets Doughnut
+        const aCtx = document.getElementById('mob-asset-chart').getContext('2d');
+        const assetData = Object.entries(data.diversification.assetType).sort((a,b) => b[1] - a[1]);
+        if (mobAssetChart) mobAssetChart.destroy();
+        mobAssetChart = new Chart(aCtx, {
+            type: 'doughnut',
+            data: {
+                labels: assetData.map(x => x[0]),
+                datasets: [{ data: assetData.map(x => x[1]), backgroundColor: colors, borderWidth: 0 }]
+            },
+            options: { cutout: '75%', plugins: { legend: { display: false } } }
+        });
+        document.getElementById('mob-asset-legend').innerHTML = assetData.slice(0,4).map((x,i) => `
+            <div style="display:flex; justify-content:space-between; font-size:10px">
+                <span style="color:var(--mob-text-muted)">${x[0]}</span>
+                <span class="font-bold">${((x[1]/Object.values(data.diversification.assetType).reduce((a,b)=>a+b,0))*100).toFixed(1)}%</span>
+            </div>`).join('');
+
+        // Geo Doughnut
+        const gCtx = document.getElementById('mob-geo-chart').getContext('2d');
+        const geoData = Object.entries(data.diversification.geography).sort((a,b) => b[1] - a[1]);
+        if (mobGeoChart) mobGeoChart.destroy();
+        mobGeoChart = new Chart(gCtx, {
+            type: 'doughnut',
+            data: {
+                labels: geoData.map(x => x[0]),
+                datasets: [{ data: geoData.map(x => x[1]), backgroundColor: colors, borderWidth: 0 }]
+            },
+            options: { cutout: '75%', plugins: { legend: { display: false } } }
+        });
+        document.getElementById('mob-geo-legend').innerHTML = geoData.slice(0,4).map((x,i) => `
+            <div style="display:flex; justify-content:space-between; font-size:10px">
+                <span style="color:var(--mob-text-muted)">${x[0]}</span>
+                <span class="font-bold">${((x[1]/Object.values(data.diversification.geography).reduce((a,b)=>a+b,0))*100).toFixed(1)}%</span>
+            </div>`).join('');
+
+        // Dividends
+        const dCtx = document.getElementById('mob-div-chart').getContext('2d');
+        if (mobDivChart) mobDivChart.destroy();
+        const totalDiv = data.dividends.reduce((s, x) => s + x.amount, 0);
+        document.getElementById('mob-div-total').textContent = formatCurrency(totalDiv, 'USD');
+        mobDivChart = new Chart(dCtx, {
+            type: 'bar',
+            data: {
+                labels: data.dividends.map(x => x.date),
+                datasets: [{ data: data.dividends.map(x => x.amount), backgroundColor: '#10b981', borderRadius: 4 }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { 
+                    x: { ticks: { font: { size: 8 } }, grid: { display: false } },
+                    y: { display: false }
+                }
+            }
+        });
+    }
+
+    window.addEventListener('mobile-view-activated', mobSyncReports);
+    if (window._mobileViewActive) mobSyncReports();
 </script>
 </body></html>

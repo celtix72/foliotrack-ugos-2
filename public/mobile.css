@@ -12,8 +12,8 @@
   --mob-primary: #135bec;
   --mob-primary-dim: rgba(19,91,236,0.15);
   --mob-text: #f1f5f9;
-  --mob-text-muted: #64748b;
-  --mob-text-caption: #475569;
+  --mob-text-muted: #94a3b8; /* Lighter for dark mode */
+  --mob-text-caption: #64748b; /* Lighter for dark mode */
   --mob-emerald: #10b981;
   --mob-rose: #f43f5e;
   --mob-amber: #f59e0b;
@@ -34,8 +34,8 @@ html:not(.dark) .mobile-view-active #mobile-ui {
   --mob-surface-2: #f1f5f9;
   --mob-border: rgba(0,0,0,0.07);
   --mob-text: #0f172a;
-  --mob-text-muted: #64748b;
-  --mob-text-caption: #94a3b8;
+  --mob-text-muted: #4b5563; /* Darker for light mode */
+  --mob-text-caption: #6b7280; /* Darker for light mode */
   --mob-header-bg: rgba(255, 255, 255, 0.85);
   --mob-hero-bg: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
   --mob-tab-bg: rgba(255, 255, 255, 0.92);
@@ -116,6 +116,11 @@ body.mobile-view-active #mobile-ui {
   font-weight: 700;
   letter-spacing: -0.3px;
   flex: 1;
+}
+
+.mob-header-actions .material-symbols-outlined {
+  font-size: 22px;
+  color: var(--mob-text-muted);
 }
 
 .mob-header-subtitle {
