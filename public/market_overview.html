@@ -129,7 +129,7 @@
 <div class="p-8 space-y-6">
 
 <!-- Page Title + Search -->
-<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4 desktop-only">
 <div>
 <h1 class="text-3xl font-black tracking-tight">Market Monitor</h1>
 <p class="text-slate-500 dark:text-slate-400 mt-1 text-sm">Real-time tracking of your monitored assets and price alerts.</p>
@@ -709,8 +709,8 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
     </div>
 
-    <!-- Quick Add Section -->
-    <div style="padding: 0 16px 16px">
+    <!-- Quick Add Section (Hidden on mobile as requested) -->
+    <div style="padding: 0 16px 16px; display: none !important;">
       <div class="mob-card mob-card-padded" style="border-style: dashed; background: transparent; border-color: var(--mob-primary)">
         <div style="display:flex; gap:10px; align-items:center">
           <div class="flex-1 relative">

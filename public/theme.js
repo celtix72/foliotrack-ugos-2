@@ -460,7 +460,7 @@
                 mobVar.style.borderColor = color + '44';
                 mobVar.innerHTML = `
                     <span class="material-symbols-outlined" style="font-size:12px">${isPos ? 'trending_up' : 'trending_down'}</span>
-                    <span>${sign}${changePct.toFixed(2)}%</span>
+                    <span>${sign}${formatted}</span>
                 `;
             }
 
@@ -671,6 +671,20 @@
             }
         }, 200);
     });
+
+    // ─── Universal Link Interceptor (PWA Fix for iOS) ────────────────────────
+    document.addEventListener('click', (e) => {
+        if (!window._mobileViewActive) return;
+        const link = e.target.closest('a');
+        if (link && link.getAttribute('href') && !link.getAttribute('target') && !link.getAttribute('download')) {
+            const href = link.getAttribute('href');
+            // Only intercept internal links
+            if (href.startsWith('/') || href.startsWith(window.location.origin)) {
+                e.preventDefault();
+                window.location.href = href;
+            }
+        }
+    }, true);
 
 })();
 
