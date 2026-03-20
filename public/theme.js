@@ -44,6 +44,46 @@
         if (themeIcon) {
             themeIcon.innerText = (theme === 'light') ? 'dark_mode' : 'light_mode';
         }
+
+        // --- Sidebar Collapsed Style (Dynamic injection) ---
+        let sideStyle = document.getElementById('sidebar-style');
+        if (!sideStyle) {
+            sideStyle = document.createElement('style');
+            sideStyle.id = 'sidebar-style';
+            document.head.appendChild(sideStyle);
+        }
+        sideStyle.innerHTML = `
+            aside { transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; }
+            aside.collapsed { width: 80px !important; }
+            aside.collapsed .px-6 h1, aside.collapsed .px-6 p, 
+            aside.collapsed nav span:not(.material-symbols-outlined), 
+            aside.collapsed #sidebar-portfolios,
+            aside.collapsed .p-4 .flex-1,
+            aside.collapsed .p-4 p,
+            aside.collapsed .text-xs.text-slate-500 { display: none !important; }
+            aside.collapsed .p-6, aside.collapsed .p-4 { padding: 1.25rem !important; justify-content: center; }
+            aside.collapsed nav { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+            aside.collapsed a { justify-content: center; padding-left: 0 !important; padding-right: 0 !important; }
+            aside.collapsed .material-symbols-outlined { margin: 0 !important; font-size: 24px !important; }
+            aside.collapsed .w-10.h-10 { width: 40px; height: 40px; }
+            
+            .sidebar-toggle-tab {
+                position: absolute; right: -12px; top: 100px; width: 24px; height: 24px;
+                background: white; border: 1px solid #e2e8f0; border-radius: 50%;
+                display: flex; align-items: center; justify-content: center;
+                cursor: pointer; z-index: 100; transition: all 0.2s;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.05); color: #64748b;
+            }
+            .dark .sidebar-toggle-tab { background: #1e293b; border-color: #334155; color: #94a3b8; }
+            .sidebar-toggle-tab:hover { transform: scale(1.1); color: #135bec; border-color: #135bec; }
+            
+            /* Mobile Var Day Pill */
+            .mob-var-pill {
+                display: flex; align-items: center; gap: 4px; padding: 4px 10px;
+                border-radius: 999px; font-size: 10px; font-weight: 800;
+                background: var(--mob-surface-2); border: 1px solid var(--mob-border);
+            }
+        `;
     }
 
     const localFont = localStorage.getItem('app-font') || defaultFont;
@@ -225,6 +265,31 @@
         if (res.ok) updateSidebarContents();
     }
 
+    // ─── Sidebar Toggle ──────────────────────────────────────────────────────
+    window.toggleSidebar = function() {
+        const aside = document.querySelector('aside');
+        if (!aside) return;
+        const isCollapsed = aside.classList.toggle('collapsed');
+        localStorage.setItem('sidebar-collapsed', isCollapsed);
+        const tabIcon = document.querySelector('#sidebar-toggle-tab span');
+        if (tabIcon) tabIcon.innerText = isCollapsed ? 'chevron_right' : 'chevron_left';
+    };
+
+    function injectSidebarToggle() {
+        const aside = document.querySelector('aside');
+        if (!aside || document.getElementById('sidebar-toggle-tab')) return;
+        
+        const tab = document.createElement('div');
+        tab.id = 'sidebar-toggle-tab';
+        tab.className = 'sidebar-toggle-tab';
+        const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+        tab.innerHTML = `<span class="material-symbols-outlined" style="font-size:16px">${isCollapsed ? 'chevron_right' : 'chevron_left'}</span>`;
+        tab.onclick = toggleSidebar;
+        aside.appendChild(tab);
+        
+        if (isCollapsed) aside.classList.add('collapsed');
+    }
+
     // ─── Notifications System ──────────────────────────────────────────────────
     async function updateNotifications() {
         // Find the notification button (bell)
@@ -298,12 +363,14 @@
         document.addEventListener('DOMContentLoaded', () => { 
             updateSidebarContents(); 
             updateNotifications(); 
-            updateMarketStatusUI(); 
+            updateMarketStatusUI();
+            injectSidebarToggle();
         });
     } else {
         updateSidebarContents();
         updateNotifications();
         updateMarketStatusUI();
+        injectSidebarToggle();
     }
 
     setInterval(updateNotifications, 30000); // 30s notifications sync
@@ -361,18 +428,39 @@
             }
 
             // 2. Portfolio Variation
+            const pRes = await fetch('/api/portfolios');
+            const pData = await pRes.json();
+            const change = pData.global.changeValue || 0;
+            const changePct = pData.global.changePercent || 0;
+            const isPos = change >= 0;
+            const formatted = window.formatPrivacy(change, 'EUR', 'h-var', 0);
+            const sign = (formatted !== '****' && isPos) ? '+' : '';
+
             if (portfolioVar) {
-                const pRes = await fetch('/api/portfolios');
-                const pData = await pRes.json();
-                const change = pData.global.changeValue || 0;
-                const isPos = change >= 0;
-                const formatted = window.formatPrivacy(change, 'EUR', 'h-var', 0);
-                const sign = (formatted !== '****' && isPos) ? '+' : '';
                 portfolioVar.innerHTML = `
                     <span class="flex items-center gap-1.5 ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'} font-bold px-3 py-1 rounded-full border ${isPos ? 'border-emerald-500/20' : 'border-rose-500/20'}">
                         <span class="material-symbols-outlined text-[16px]">${isPos ? 'trending_up' : 'trending_down'}</span>
                         ${sign}${formatted}
                     </span>
+                `;
+            }
+
+            // --- Mobile Var Day Injection ---
+            let mobActions = document.querySelector('.mob-header-actions');
+            if (mobActions) {
+                let mobVar = document.getElementById('mob-header-var-day');
+                if (!mobVar) {
+                    mobVar = document.createElement('div');
+                    mobVar.id = 'mob-header-var-day';
+                    mobVar.className = 'mob-var-pill';
+                    mobActions.insertBefore(mobVar, mobActions.firstChild);
+                }
+                const color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+                mobVar.style.color = color;
+                mobVar.style.borderColor = color + '44';
+                mobVar.innerHTML = `
+                    <span class="material-symbols-outlined" style="font-size:12px">${isPos ? 'trending_up' : 'trending_down'}</span>
+                    <span>${sign}${changePct.toFixed(2)}%</span>
                 `;
             }
 
