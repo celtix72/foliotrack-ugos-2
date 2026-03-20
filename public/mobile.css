@@ -24,6 +24,7 @@
   --mob-radius-card: 20px;
   --mob-radius-pill: 999px;
   --mob-blur: blur(20px) saturate(180%);
+  --mob-tab-icon-size: 32px;
 }
 
 /* Light theme overrides */
@@ -167,6 +168,36 @@ body.mobile-view-active #mobile-ui {
   gap: 6px;
   padding: 8px 16px 4px;
   flex-shrink: 0;
+}
+.mob-tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--mob-text-muted);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.mob-tab-item .material-symbols-outlined {
+  font-size: var(--mob-tab-icon-size) !important;
+  transition: transform 0.2s, color 0.2s;
+}
+
+.mob-tab-label {
+  display: none !important;
+}
+
+.mob-tab-item.active {
+  color: var(--mob-primary);
+}
+
+.mob-tab-item.active .material-symbols-outlined {
+  transform: scale(1.1);
 }
 .mob-back-btn {
   display: flex;

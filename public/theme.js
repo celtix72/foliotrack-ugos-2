@@ -55,12 +55,20 @@
             body.mobile-view-active #mobile-ui {
                 font-size: ${mobSize}px !important;
             }
-            /* Scale absolute pixel classes in mobile view based on selected size */
-            body.mobile-view-active #mobile-ui .text-\\[10px\\] { font-size: calc(10px * ${scale}) !important; }
-            body.mobile-view-active #mobile-ui .text-\\[11px\\] { font-size: calc(11px * ${scale}) !important; }
-            body.mobile-view-active #mobile-ui .text-\\[12px\\] { font-size: calc(12px * ${scale}) !important; }
-            body.mobile-view-active #mobile-ui .text-xs { font-size: calc(0.75rem * ${scale}) !important; }
-            body.mobile-view-active #mobile-ui .text-sm { font-size: calc(0.875rem * ${scale}) !important; }
+            
+            /* Scale absolute pixel classes in mobile view based on selected size, but EXCLUDE standard UI elements */
+            body.mobile-view-active #mobile-ui .mob-scroll .text-\\[10px\\] { font-size: calc(10px * ${scale}) !important; }
+            body.mobile-view-active #mobile-ui .mob-scroll .text-\\[11px\\] { font-size: calc(11px * ${scale}) !important; }
+            body.mobile-view-active #mobile-ui .mob-scroll .text-\\[12px\\] { font-size: calc(12px * ${scale}) !important; }
+            body.mobile-view-active #mobile-ui .mob-scroll .text-xs { font-size: calc(0.75rem * ${scale}) !important; }
+            body.mobile-view-active #mobile-ui .mob-scroll .text-sm { font-size: calc(0.875rem * ${scale}) !important; }
+
+            /* Ensure Material Icons in header and tab bar have fixed sizes and no scaling */
+            #mobile-ui .mob-header .material-symbols-outlined,
+            #mobile-ui .mob-tab-bar .material-symbols-outlined {
+                font-family: 'Material Symbols Outlined' !important;
+                font-size: revert !important; 
+            }
         `;
 
         if (theme === 'light') {
