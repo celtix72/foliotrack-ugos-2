@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="FolioTrack">
 <link rel="manifest" href="/manifest.json">
 <link rel="stylesheet" href="/dist/output.css">
-
+<link rel="stylesheet" href="/mobile.css">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <style>
         .custom-scrollbar::-webkit-scrollbar {
@@ -546,6 +546,162 @@
 </div>
 </main>
 
+<!-- Mobile GUI Root -->
+<div id="mobile-ui">
+  <!-- Top Header -->
+  <div class="mob-header">
+    <div class="mob-header-logo">
+      <span class="material-symbols-outlined" style="font-size:18px">settings</span>
+    </div>
+    <div style="flex:1">
+      <div class="mob-header-title">FolioTrack</div>
+      <span class="mob-header-subtitle">Settings & Preferences</span>
+    </div>
+    <div class="mob-header-actions">
+      <div class="mob-icon-btn" onclick="toggleTheme()" title="Toggle Theme" style="color: var(--mob-primary)">
+        <span class="material-symbols-outlined" id="mob-theme-icon">dark_mode</span>
+      </div>
+      <div class="mob-icon-btn" onclick="toggleMobileView()" title="Desktop View">
+        <span class="material-symbols-outlined">computer</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Scrollable Content -->
+  <div class="mob-scroll" id="mob-settings-scroll">
+    
+    <!-- Account Settings -->
+    <div class="mob-section-header">
+      <span class="mob-section-title">Account Settings</span>
+    </div>
+    <div class="mob-card mob-card-padded" style="margin-bottom:16px; display:flex; align-items:center; gap:15px">
+        <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+            <span class="material-symbols-outlined text-2xl">person</span>
+        </div>
+        <div style="flex:1">
+            <div class="font-bold text-sm">User</div>
+            <div style="font-size:10px; color:var(--mob-text-muted)">user@foliotrack.io</div>
+        </div>
+        <div>
+            <button class="px-3 py-1.5 bg-primary text-white rounded text-xs font-bold" onclick="alert('Not implemented locally')">Logout</button>
+        </div>
+    </div>
+
+    <!-- Appearance -->
+    <div class="mob-section-header">
+      <span class="mob-section-title">Appearance</span>
+    </div>
+    <div class="mob-card mob-card-padded" style="margin-bottom:16px; display:flex; flex-direction:column; gap:12px">
+        <div>
+            <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest mb-1">Theme</label>
+            <div class="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-lg">
+                <button onclick="setTheme('dark')" class="flex-1 py-1.5 text-[10px] font-bold bg-slate-800 rounded-md shadow-sm text-primary">Dark</button>
+                <button onclick="setTheme('light')" class="flex-1 py-1.5 text-[10px] font-bold text-slate-400">Light</button>
+            </div>
+        </div>
+        <div class="mt-3">
+            <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest mb-1">Font Family</label>
+            <select id="mob-font-family-select" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded px-2 py-1.5 text-xs focus:outline-none">
+                <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
+                <option value="'Fira Code', monospace">Fira Code</option>
+                <option value="'Roboto Mono', monospace">Roboto Mono</option>
+                <option value="'Inter', sans-serif">Inter</option>
+            </select>
+        </div>
+        <div class="mt-3">
+            <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest mb-1">Font Size</label>
+            <select id="mob-font-size-select" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded px-2 py-1.5 text-xs focus:outline-none">
+                <option value="12">Small (12px)</option>
+                <option value="14">Default (14px)</option>
+                <option value="16">Large (16px)</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Portfolio Preferences -->
+    <div class="mob-section-header">
+      <span class="mob-section-title">Preferences</span>
+    </div>
+    <div class="mob-card mob-card-padded" style="margin-bottom:16px">
+        <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest mb-1">Update Frequency</label>
+        <select id="mob-update-frequency-select" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded px-2 py-1.5 text-xs focus:outline-none">
+            <option value="1">1 Min</option>
+            <option value="5">5 Min</option>
+            <option value="15">15 Min</option>
+            <option value="60">1 Hour</option>
+            <option value="0">Manual</option>
+        </select>
+    </div>
+
+    <!-- Backup & Restore -->
+    <div class="mob-section-header">
+      <span class="mob-section-title">Backup & Restore</span>
+    </div>
+    <div class="mob-card mob-card-padded" style="margin-bottom:16px">
+        <div class="flex justify-between items-center mb-3">
+            <div>
+                <div class="font-bold text-xs" style="color:var(--mob-primary)">Create Backup</div>
+                <div style="font-size:9px; color:var(--mob-text-muted)">Trigger local backup</div>
+            </div>
+            <button id="mob-run-backup-btn" class="px-3 py-1.5 bg-primary/20 text-primary rounded text-xs font-bold border border-primary/30" onclick="document.getElementById('run-backup-btn').click(); this.innerText='Running...'">Run Now</button>
+        </div>
+        <div class="h-px bg-slate-100 dark:bg-slate-800 w-full mb-3"></div>
+        <div class="font-bold text-[10px] text-slate-500 uppercase tracking-widest mb-2">Available Backups</div>
+        <div id="mob-backups-list" class="space-y-2">
+            <!-- Populated via JS -->
+            <div class="text-[10px] text-slate-400 italic">No backups available in mobile view. Log in to desktop.</div>
+        </div>
+    </div>
+
+    <!-- System Maintenance -->
+    <div class="mob-section-header">
+      <span class="mob-section-title text-rose-500">Danger Zone</span>
+    </div>
+    <div class="mob-card mob-card-padded" style="margin-bottom:80px; border:1px solid rgba(225, 29, 72, 0.2)">
+        <div class="flex justify-between items-center mb-4">
+            <div>
+                <div class="font-bold text-xs text-rose-500">Rebuild History</div>
+                <div style="font-size:9px; color:var(--mob-text-muted)">Recalculate all metrics</div>
+            </div>
+            <button class="px-3 py-1 bg-rose-500/20 text-rose-500 rounded text-[10px] font-bold" onclick="document.getElementById('rebuild-history-btn').click()">Rebuild</button>
+        </div>
+        <div class="h-px bg-slate-100 dark:bg-slate-800 w-full mb-4"></div>
+        <div class="flex justify-between items-center">
+            <div>
+                <div class="font-bold text-xs text-rose-500">Purge Data</div>
+                <div style="font-size:9px; color:var(--mob-text-muted)">Delete all records</div>
+            </div>
+            <button class="px-3 py-1 bg-rose-500 text-white rounded text-[10px] font-bold shadow shadow-rose-500/30" onclick="document.getElementById('reset-data-btn').click()">Purge</button>
+        </div>
+    </div>
+
+  </div>
+
+  <!-- Mobile Tab Bar -->
+  <div class="mob-tab-bar">
+    <a href="/dashboard" class="mob-tab-item">
+      <span class="material-symbols-outlined mob-tab-icon">dashboard</span>
+      <span class="mob-tab-label">Dash</span>
+    </a>
+    <a href="/market" class="mob-tab-item">
+      <span class="material-symbols-outlined mob-tab-icon">trending_up</span>
+      <span class="mob-tab-label">Market</span>
+    </a>
+    <a href="/portfolio" class="mob-tab-item">
+      <span class="material-symbols-outlined mob-tab-icon">work</span>
+      <span class="mob-tab-label">Portfolio</span>
+    </a>
+    <a href="/reports" class="mob-tab-item">
+      <span class="material-symbols-outlined mob-tab-icon">pie_chart</span>
+      <span class="mob-tab-label">Reports</span>
+    </a>
+    <a href="/settings" class="mob-tab-item active">
+      <span class="material-symbols-outlined mob-tab-icon">settings</span>
+      <span class="mob-tab-label">Settings</span>
+    </a>
+  </div>
+</div>
+
 <!-- Restore Confirm Modal -->
 <div id="confirm-restore-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
   <div class="bg-white dark:bg-[#111722] border border-indigo-500/30 rounded-2xl w-full max-w-md shadow-2xl p-8 space-y-6">
@@ -596,6 +752,10 @@
         const backupRetentionInput = document.getElementById('backup-retention-input');
         // const privacyCheckbox = document.getElementById('privacy-mode-checkbox');
         
+        const mobFontSelect = document.getElementById('mob-font-family-select');
+        const mobSizeSelect = document.getElementById('mob-font-size-select');
+        const mobFreqSelect = document.getElementById('mob-update-frequency-select');
+        
         // Initial setup from window global settings if available or local cache
         const updateUI = (settings) => {
             if (fontSelect && settings.fontFamily) fontSelect.value = settings.fontFamily;
@@ -604,6 +764,11 @@
             if (backupFreqSelect && settings.backupFrequency) backupFreqSelect.value = settings.backupFrequency;
             if (backupRetentionInput && settings.backupRetention) backupRetentionInput.value = settings.backupRetention;
             // if (privacyCheckbox) privacyCheckbox.checked = settings.privacyMode === 'true';
+
+            // Mobile binds
+            if (mobFontSelect && settings.fontFamily) mobFontSelect.value = settings.fontFamily;
+            if (mobSizeSelect && settings.fontSize) mobSizeSelect.value = settings.fontSize;
+            if (mobFreqSelect && settings.updateFrequency) mobFreqSelect.value = settings.updateFrequency;
             
             const lightBtn = document.getElementById('theme-light-btn');
             const darkBtn = document.getElementById('theme-dark-btn');
@@ -660,24 +825,43 @@
         if (backupFreqSelect) backupFreqSelect.addEventListener('change', saveSettings);
         if (backupRetentionInput) backupRetentionInput.addEventListener('change', saveSettings);
         // if (privacyCheckbox) privacyCheckbox.addEventListener('change', saveSettings);
+
+        // Mobile save settings
+        const saveMobSettings = () => {
+            if (window.updateAppSettings) {
+                window.updateAppSettings({
+                    fontFamily: mobFontSelect ? mobFontSelect.value : fontSelect.value,
+                    fontSize: mobSizeSelect ? mobSizeSelect.value : sizeSelect.value,
+                    updateFrequency: mobFreqSelect ? mobFreqSelect.value : freqSelect.value,
+                    backupFrequency: backupFreqSelect ? backupFreqSelect.value : 'None',
+                    backupRetention: backupRetentionInput ? backupRetentionInput.value : 5
+                });
+            }
+        };
+
+        if (mobFontSelect) mobFontSelect.addEventListener('change', saveMobSettings);
+        if (mobSizeSelect) mobSizeSelect.addEventListener('change', saveMobSettings);
+        if (mobFreqSelect) mobFreqSelect.addEventListener('change', saveMobSettings);
         
         // Backup logic
         async function loadBackups() {
             const list = document.getElementById('backups-list');
-            if (!list) return;
+            const mobList = document.getElementById('mob-backups-list');
+            if (!list && !mobList) return;
             try {
                 const res = await fetch('/api/backups');
                 const backups = await res.json();
                 if (backups.length === 0) {
-                    list.innerHTML = '<p class="text-xs text-slate-500 italic">No backups found.</p>';
+                    if (list) list.innerHTML = '<p class="text-xs text-slate-500 italic">No backups found.</p>';
+                    if (mobList) mobList.innerHTML = '<p class="text-xs text-slate-500 italic">No backups found.</p>';
                     return;
                 }
-                list.innerHTML = backups.map(b => `
+                const html = backups.map(b => `
                     <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 group">
                         <div class="flex items-center gap-3">
                             <span class="material-symbols-outlined text-slate-400 group-hover:text-indigo-500 transition-colors">database</span>
-                            <div>
-                                <p class="text-xs font-bold truncate max-w-[200px]">${b.filename}</p>
+                            <div style="flex:1; overflow:hidden">
+                                <p class="text-xs font-bold truncate">${b.filename}</p>
                                 <p class="text-[10px] text-slate-500">${new Date(b.timestamp).toLocaleString()} • ${(b.size / 1024).toFixed(1)} KB</p>
                             </div>
                         </div>
@@ -691,6 +875,22 @@
                         </div>
                     </div>
                 `).join('');
+                
+                const mobHtml = backups.map(b => `
+                    <div class="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                        <div style="flex:1; overflow:hidden">
+                            <p class="text-xs font-bold truncate">${b.filename}</p>
+                            <p class="text-[9px] text-slate-400">${new Date(b.timestamp).toLocaleString()}</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                             <button onclick="confirmRestore('${b.filename}')" class="text-primary text-xs font-bold">Restore</button>
+                             <button onclick="deleteBackup('${b.filename}')" class="text-rose-500 text-xs font-bold">Del</button>
+                        </div>
+                    </div>
+                `).join('');
+
+                if (list) list.innerHTML = html;
+                if (mobList) mobList.innerHTML = mobHtml;
             } catch (err) { console.error(err); }
         }
 
