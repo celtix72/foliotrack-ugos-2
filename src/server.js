@@ -2269,12 +2269,17 @@ async function calculatePerformanceHistory(portfolioIds, range) {
             }
         }
 
+        if (isNaN(dayValue)) {
+            logger.warn(`NaN dayValue detected on ${dateStr}! Cash: ${dayCash}, Assets: ${dayAssets}, profit: ${dayProfit}`);
+            dayValue = 0; dayProfit = 0; dayCash = 0; dayAssets = 0;
+        }
+
         dataPoints.push({
             date: dateStr,
-            value: Math.round(dayValue),
-            profit: Math.round(dayProfit),
-            cash: Math.round(dayCash),
-            assets: Math.round(dayAssets),
+            value: isNaN(dayValue) ? 0 : Math.round(dayValue),
+            profit: isNaN(dayProfit) ? 0 : Math.round(dayProfit),
+            cash: isNaN(dayCash) ? 0 : Math.round(dayCash),
+            assets: isNaN(dayAssets) ? 0 : Math.round(dayAssets),
             events: dayEvents
         });
         currentDate.setDate(currentDate.getDate() + 1);
