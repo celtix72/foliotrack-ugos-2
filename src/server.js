@@ -1528,7 +1528,8 @@ app.get('/api/market/movers', async (req, res) => {
 // Validate a ticker against Yahoo Finance (used by bulk import)
 app.get('/api/validate-ticker', async (req, res) => {
     const ticker = (req.query.ticker || "").toUpperCase();
-    if (!ticker) return res.status(400).send('Ticker required');
+    const isin = (req.query.isin || "").toUpperCase();
+    if (!ticker && !isin) return res.status(400).send('Ticker or ISIN required');
 
     if (ticker === 'CASH') {
         return res.json({
@@ -1563,7 +1564,28 @@ app.get('/api/validate-ticker', async (req, res) => {
     }
 
     try {
-        const metadata = await fetchAssetMetadata(ticker);
+        let metadata = await fetchAssetMetadata(ticker);
+        
+        // Fallback to ISIN if ticker fails or is just a label (like ROM39)
+        if ((!metadata || ticker.length < 3) && isin && isin.length >= 10) {
+            const isItIsin = /^IT[0-9A-Z]{10}$/.test(isin) || /^XS[0-9]{10}$/.test(isin);
+            if (isItIsin) {
+                const bResult = await B_ITA(isin);
+                if (bResult.success) {
+                    metadata = {
+                        name: bResult.name || ticker,
+                        currentPrice: bResult.price,
+                        changePercent: bResult.variation,
+                        quoteType: 'Bond',
+                        exchange: 'XMIL',
+                        currency: 'EUR',
+                        dataSource: 'B_ITA',
+                        isin: isin
+                    };
+                }
+            }
+        }
+
         if (!metadata) return res.json({ valid: false });
 
         res.json({

@@ -2213,11 +2213,16 @@
         document.getElementById('import-step-3').classList.remove('hidden');
         const progressLabel = document.getElementById('import-progress-label');
 
-        const uniqueTickers = [...new Set(parsed.map(r => r.tickerRaw).filter(Boolean))];
+        // Group by both ticker and isin for accurate validation
+        const uniqueAssetKeys = [...new Set(parsed.map(r => JSON.stringify({t: r.tickerRaw, i: r.isin})))];
         const tickerCache = {};
 
-        for (let i = 0; i < uniqueTickers.length; i++) {
-            const tk = uniqueTickers[i];
+        for (let i = 0; i < uniqueAssetKeys.length; i++) {
+            const assetInfo = JSON.parse(uniqueAssetKeys[i]);
+            const tk = assetInfo.t;
+            const isin = assetInfo.i;
+            const cacheKey = tk + (isin ? '|'+isin : '');
+
             // BTP* tickers are virtual — they don't exist on YF or Borsa Italiana directly;
             // only their ISIN is searchable. Skip YF validation and auto-resolve as B_ITA.
             if (tk.toUpperCase().startsWith('BTP')) {
@@ -2225,17 +2230,19 @@
                 progressLabel.textContent = `BTP virtual asset: ${tk} → B_ITA (${i+1}/${uniqueTickers.length})`;
                 continue;
             }
-            progressLabel.textContent = `Validating ${tk} (${i+1}/${uniqueTickers.length})...`;
+            progressLabel.textContent = `Validating ${tk || isin} (${i+1}/${uniqueAssetKeys.length})...`;
             try {
-                const res = await fetch(`/api/validate-ticker?ticker=${encodeURIComponent(tk)}`);
-                tickerCache[tk] = await res.json();
+                const url = `/api/validate-ticker?ticker=${encodeURIComponent(tk)}&isin=${encodeURIComponent(isin || '')}`;
+                const res = await fetch(url);
+                tickerCache[cacheKey] = await res.json();
             } catch {
-                tickerCache[tk] = { valid: false, suggestions: [] };
+                tickerCache[cacheKey] = { valid: false, suggestions: [] };
             }
         }
 
         for (const row of parsed) {
-            const result = tickerCache[row.tickerRaw];
+            const cacheKey = row.tickerRaw + (row.isin ? '|'+row.isin : '');
+            const result = tickerCache[cacheKey];
             if (!result) { row.status = 'manual'; continue; }
             if (result.isBTP) {
                 // Virtual BTP ticker — keep original ticker label, use ISIN for B_ITA pricing
