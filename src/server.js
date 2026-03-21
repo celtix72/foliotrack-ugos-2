@@ -1573,7 +1573,8 @@ app.get('/api/validate-ticker', async (req, res) => {
                 const bResult = await B_ITA(isin);
                 if (bResult.success) {
                     metadata = {
-                        name: bResult.name || ticker,
+                        ticker: ticker || isin,
+                        name: bResult.name || ticker || isin,
                         currentPrice: bResult.price,
                         changePercent: bResult.variation,
                         quoteType: 'Bond',
