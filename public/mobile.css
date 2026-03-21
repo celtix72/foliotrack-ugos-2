@@ -170,22 +170,37 @@ body.mobile-view-active #mobile-ui {
   flex-shrink: 0;
 }
 .mob-tab-item {
+  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  height: 48px;
+  max-width: 64px;
+  border-radius: 24px;
   color: var(--mob-text-muted);
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
-  transition: all 0.2s;
-  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin: 0 4px;
+}
+
+.mob-tab-item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  background-color: var(--mob-primary);
+  opacity: 0;
+  transform: scale(0.8);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: -1;
 }
 
 .mob-tab-item .material-symbols-outlined {
-  font-size: var(--mob-tab-icon-size) !important;
-  transition: transform 0.2s, color 0.2s;
+  font-size: calc(24px * var(--mob-scale, 1)) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .mob-tab-label {
@@ -196,8 +211,32 @@ body.mobile-view-active #mobile-ui {
   color: var(--mob-primary);
 }
 
+.mob-tab-item.active::before {
+  opacity: 0.15;
+  transform: scale(1);
+}
+
 .mob-tab-item.active .material-symbols-outlined {
-  transform: scale(1.1);
+  font-variation-settings: 'FILL' 1;
+  transform: translateY(-2px);
+}
+
+.mob-tab-item::after {
+  content: '';
+  position: absolute;
+  bottom: 8px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: var(--mob-primary);
+  opacity: 0;
+  transform: scale(0);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mob-tab-item.active::after {
+  opacity: 1;
+  transform: scale(1);
 }
 .mob-back-btn {
   display: flex;
@@ -574,77 +613,32 @@ body.mobile-view-active #mobile-ui {
   font-weight: 800;
 }
 
-/* ─── Bottom Tab Bar ─────────────────────────────────────────────────────── */
+/* ─── Modern Floating Tab Bar ────────────────────────────────────────────── */
 .mob-tab-bar {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: calc(var(--mob-tab-h) + var(--mob-safe-bottom));
-  padding-bottom: var(--mob-safe-bottom);
+  bottom: calc(var(--mob-safe-bottom, 24px) + 16px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 400px;
+  height: 64px;
   background: var(--mob-tab-bg);
   -webkit-backdrop-filter: var(--mob-blur);
   backdrop-filter: var(--mob-blur);
-  border-top: 1px solid var(--mob-border);
+  border: 1px solid var(--mob-border);
+  border-radius: 32px;
   display: flex;
-  align-items: flex-start;
-  padding-top: 8px;
+  align-items: center;
+  justify-content: space-evenly;
+  padding: 0 8px;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.25);
   z-index: 500;
   -webkit-tap-highlight-color: transparent;
 }
 
-.mob-tab {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  cursor: pointer;
-  padding: 4px 0 2px;
-  position: relative;
-  -webkit-tap-highlight-color: transparent;
-  transition: opacity 0.15s;
-  color: var(--mob-text-caption);
-  text-decoration: none;
+.dark .mob-tab-bar {
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.75);
 }
-
-.mob-tab:active { opacity: 0.6; }
-
-.mob-tab .material-symbols-outlined {
-  font-size: calc(24px * var(--mob-scale, 1));
-  transition: color 0.2s, transform 0.2s;
-}
-
-.mob-tab span.mob-tab-label {
-  font-size: calc(9px * var(--mob-scale, 1));
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  transition: color 0.2s;
-}
-
-.mob-tab.active .material-symbols-outlined,
-.mob-tab.active span.mob-tab-label {
-  color: var(--mob-primary);
-}
-
-.mob-tab.active .material-symbols-outlined {
-  transform: scale(1.1);
-}
-
-.mob-tab-indicator {
-  position: absolute;
-  top: -2px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 28px;
-  height: 3px;
-  border-radius: 2px;
-  background: var(--mob-primary);
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-.mob-tab.active .mob-tab-indicator { opacity: 1; }
 
 /* ─── Floating Action Button ─────────────────────────────────────────────── */
 .mob-fab {
