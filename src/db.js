@@ -33,6 +33,9 @@ function initDb() {
         totalValue  REAL    NOT NULL DEFAULT 0,
         performance1D REAL  NOT NULL DEFAULT 0,
         assetCount  INTEGER NOT NULL DEFAULT 0,
+        createdAt   TEXT    NOT NULL DEFAULT (datetime('now'))
+      );
+
       CREATE TABLE IF NOT EXISTS transactions (
         id           INTEGER PRIMARY KEY AUTOINCREMENT,
         portfolioId  INTEGER NOT NULL REFERENCES portfolios(id) ON DELETE CASCADE,
