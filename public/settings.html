@@ -621,16 +621,20 @@
     <div class="mob-section-header">
       <span class="mob-section-title">Account Settings</span>
     </div>
-    <div class="mob-card mob-card-padded" style="margin-bottom:16px; display:flex; align-items:center; gap:15px">
-        <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
-            <span class="material-symbols-outlined text-2xl">person</span>
+    <div class="mob-card mob-card-padded" style="margin-bottom:16px; display:flex; flex-direction:column; gap:15px">
+        <div style="display:flex; align-items:center; gap:15px">
+            <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+                <span class="material-symbols-outlined text-2xl">person</span>
+            </div>
+            <div style="flex:1">
+                <div class="font-bold text-sm">User</div>
+                <div style="font-size:10px; color:var(--mob-text-muted)">user@foliotrack.io</div>
+            </div>
         </div>
-        <div style="flex:1">
-            <div class="font-bold text-sm">User</div>
-            <div style="font-size:10px; color:var(--mob-text-muted)">user@foliotrack.io</div>
-        </div>
-        <div>
-            <button class="px-3 py-1.5 bg-primary text-white rounded text-xs font-bold" onclick="alert('Not implemented locally')">Logout</button>
+        <div class="flex flex-col gap-2 mt-2">
+            <button class="w-full py-2 bg-primary text-white rounded-lg text-xs font-bold shadow-sm shadow-primary/20">Change Password</button>
+            <button class="w-full py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold border border-slate-200 dark:border-slate-700">Update Email</button>
+            <button class="w-full py-2 bg-rose-50 dark:bg-rose-500/10 text-rose-500 rounded-lg text-xs font-bold mt-2" onclick="alert('Not implemented locally')">Logout</button>
         </div>
     </div>
 
@@ -665,6 +669,24 @@
                 <option value="20">Huge (20px)</option>
             </select>
         </div>
+        <div class="mt-3 flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-3">
+            <div>
+                <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest">Layout Mode</label>
+                <div style="font-size:9px; color:var(--mob-text-muted)">Force desktop view</div>
+            </div>
+            <button onclick="toggleMobileView()" class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-500">
+                <span class="material-symbols-outlined text-sm block">computer</span>
+            </button>
+        </div>
+        <div class="mt-3 flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-3">
+            <div>
+                <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest">Privacy Mode</label>
+                <div style="font-size:9px; color:var(--mob-text-muted)">Hide sensitive data</div>
+            </div>
+            <button onclick="togglePrivacy()" class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-500">
+                <span class="material-symbols-outlined text-sm block" id="mob-privacy-icon-settings">visibility</span>
+            </button>
+        </div>
     </div>
 
     <!-- Portfolio Preferences -->
@@ -672,6 +694,17 @@
       <span class="mob-section-title">Preferences</span>
     </div>
     <div class="mob-card mob-card-padded" style="margin-bottom:16px">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest mb-1">Default Currency</label>
+                <div style="font-size:9px; color:var(--mob-text-muted)">Currency for calculations</div>
+            </div>
+            <div class="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-md">
+                <button class="px-3 py-1 text-[10px] font-bold bg-white dark:bg-slate-800 rounded shadow-sm">EUR</button>
+                <button class="px-3 py-1 text-[10px] font-bold text-slate-400">USD</button>
+            </div>
+        </div>
+        <div class="h-px bg-slate-100 dark:bg-slate-800 w-full mb-3"></div>
         <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest mb-1">Update Frequency</label>
         <select id="mob-update-frequency-select" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded px-2 py-1.5 text-xs focus:outline-none">
             <option value="1">1 Min</option>
@@ -721,6 +754,14 @@
                 <div style="font-size:9px; color:var(--mob-text-muted)">Delete all records</div>
             </div>
             <button class="px-3 py-1 bg-rose-500 text-white rounded text-[10px] font-bold shadow shadow-rose-500/30" onclick="document.getElementById('reset-data-btn').click()">Purge</button>
+        </div>
+        <div class="h-px bg-slate-100 dark:bg-slate-800 w-full my-4"></div>
+        <div class="flex justify-between items-center">
+            <div>
+                <div class="font-bold text-xs text-rose-500">Terminate Account</div>
+                <div style="font-size:9px; color:var(--mob-text-muted)">Irreversible deletion</div>
+            </div>
+            <button class="px-3 py-1 bg-rose-600 text-white rounded text-[10px] font-bold shadow shadow-rose-600/30">Delete</button>
         </div>
     </div>
 
