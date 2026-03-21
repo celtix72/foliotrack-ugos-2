@@ -469,7 +469,7 @@
                 const g = groups[year];
                 const key = 'hist_' + year;
                 const isCollapsed = mobCollapsedGroups.has(key);
-                const colorClass = g.totalGain >= 0 ? 'text-emerald-500' : 'text-rose-500';
+                const colorRaw = g.totalGain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
                 const sign = g.totalGain >= 0 ? '+' : '';
                 
                 html += `
@@ -478,7 +478,7 @@
                             <span class="material-symbols-outlined" style="font-size: 20px;">${isCollapsed ? 'chevron_right' : 'expand_more'}</span>
                             ${year} <span style="font-size:11px; color:var(--mob-text-muted); font-weight:normal;">(${g.count})</span>
                         </div>
-                        <div class="mob-section-link ${colorClass}" style="font-size: 14px; font-weight: 800;">
+                        <div class="mob-section-link" style="color: ${colorRaw}; font-size: 18px; font-weight: 900;">
                             ${sign}${formatPrivacy(g.totalGain, 'EUR', 'mob-hist-'+year, 0)}
                         </div>
                     </div>
@@ -494,17 +494,21 @@
                         // Icon letter
                         const logoChar = pos.ticker ? pos.ticker.substring(0,2) : pos.type.substring(0,2);
                         
+                        // Layout logic: The main value should be the Realized Gain (colored green/red) and large
+                        // The sub value should be the proceeds or type
                         html += `
-                            <div class="mob-holding-item" style="border: 1px solid var(--mob-border) !important; border-radius: 12px !important; margin-bottom: 8px;">
+                            <div class="mob-holding-item large" style="border: 1px solid var(--mob-border) !important; border-radius: 12px !important; margin-bottom: 8px;">
                                 <div class="mob-holding-logo">${logoChar}</div>
                                 <div class="mob-holding-info">
                                     <div class="mob-holding-ticker">${pos.ticker || pos.name}</div>
                                     <div class="mob-holding-name">${pos.portfolioName} • ${isTrade ? pos.quantity + ' shrs' : pos.type}</div>
                                 </div>
                                 <div class="mob-holding-values">
-                                    <div class="mob-holding-value">${formatPrivacy(isTrade ? pos.pmc : pos.totalProceeds, 'EUR')}</div>
-                                    <div class="mob-holding-gain" style="color: ${isTrade ? gainColor : 'var(--mob-text-muted)'}; font-size: 11px;">
-                                        ${isTrade ? gainSign + formatPrivacy(pos.realizedGain, 'EUR') : pos.type}
+                                    <div class="mob-holding-value" style="color: ${isTrade ? gainColor : 'inherit'}">
+                                        ${isTrade ? gainSign + formatPrivacy(pos.realizedGain, 'EUR') : formatPrivacy(pos.totalProceeds, 'EUR')}
+                                    </div>
+                                    <div class="mob-holding-gain" style="color: var(--mob-text-muted); font-size: 11px;">
+                                        ${isTrade ? 'Proceeds: ' + formatPrivacy(pos.totalProceeds, 'EUR') : pos.type}
                                     </div>
                                 </div>
                             </div>
@@ -540,7 +544,7 @@
                             <span class="material-symbols-outlined" style="font-size: 20px;">${isCollapsed ? 'chevron_right' : 'expand_more'}</span>
                             ${year} <span style="font-size:11px; color:var(--mob-text-muted); font-weight:normal;">(${g.count})</span>
                         </div>
-                        <div class="mob-section-link text-emerald-500" style="font-size: 14px; font-weight: 800;">
+                        <div class="mob-section-link" style="color: var(--mob-emerald); font-size: 18px; font-weight: 900;">
                             +${formatPrivacy(g.total, 'EUR', 'mob-div-'+year, 0)}
                         </div>
                     </div>
@@ -551,14 +555,14 @@
                     g.items.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(d => {
                         const logoChar = d.assetTicker ? d.assetTicker.substring(0,2) : 'DI';
                         html += `
-                            <div class="mob-holding-item" style="border: 1px solid var(--mob-border) !important; border-radius: 12px !important; margin-bottom: 8px;">
+                            <div class="mob-holding-item large" style="border: 1px solid var(--mob-border) !important; border-radius: 12px !important; margin-bottom: 8px;">
                                 <div class="mob-holding-logo" style="color:var(--mob-emerald); background:rgba(16, 185, 129, 0.1);">${logoChar}</div>
                                 <div class="mob-holding-info">
                                     <div class="mob-holding-ticker">${d.assetTicker}</div>
                                     <div class="mob-holding-name">${d.portfolioName} • ${d.date}</div>
                                 </div>
                                 <div class="mob-holding-values">
-                                    <div class="mob-holding-value text-emerald-500">${formatPrivacy(d.amount, 'EUR')}</div>
+                                    <div class="mob-holding-value" style="color: var(--mob-emerald)">+${formatPrivacy(d.amount, 'EUR')}</div>
                                 </div>
                             </div>
                         `;
