@@ -25,6 +25,7 @@ function initDb() {
       CREATE TABLE IF NOT EXISTS portfolios (
         id          INTEGER PRIMARY KEY AUTOINCREMENT,
         name        TEXT    NOT NULL,
+        type        TEXT    NOT NULL DEFAULT 'Investimento',
         currency    TEXT    NOT NULL DEFAULT 'EUR',
         startDate   TEXT    NOT NULL,
         initialCash REAL    NOT NULL DEFAULT 0,
@@ -32,9 +33,6 @@ function initDb() {
         totalValue  REAL    NOT NULL DEFAULT 0,
         performance1D REAL  NOT NULL DEFAULT 0,
         assetCount  INTEGER NOT NULL DEFAULT 0,
-        createdAt   TEXT    NOT NULL DEFAULT (datetime('now'))
-      );
-
       CREATE TABLE IF NOT EXISTS transactions (
         id           INTEGER PRIMARY KEY AUTOINCREMENT,
         portfolioId  INTEGER NOT NULL REFERENCES portfolios(id) ON DELETE CASCADE,
@@ -73,6 +71,11 @@ function initDb() {
         value TEXT NOT NULL
       );
     `);
+
+    // Migration: Add type to portfolios if it doesn't exist
+    try {
+        dbConnection.prepare(`ALTER TABLE portfolios ADD COLUMN type TEXT NOT NULL DEFAULT 'Investimento'`).run();
+    } catch (e) {}
 
     // Migration: Add country to assets if it doesn't exist
     try {

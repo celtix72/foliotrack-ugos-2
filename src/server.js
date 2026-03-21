@@ -1193,7 +1193,7 @@ app.get('/api/portfolios/:id/export', (req, res) => {
 
 app.post('/api/portfolios', (req, res) => {
     console.log('POST /api/portfolios:', req.body);
-    const { name, currency, startDate, initialCash, color, losses } = req.body;
+    const { name, type, currency, startDate, initialCash, color, losses } = req.body;
 
     if (!name) return res.status(400).json({ error: 'Portfolio name is required' });
 
@@ -1202,9 +1202,9 @@ app.post('/api/portfolios', (req, res) => {
     const pColor = color || '#6366f1';
 
     const result = database.db.prepare(`
-        INSERT INTO portfolios (name, currency, startDate, initialCash, currentCash, totalValue, color)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(name, currency || 'EUR', start, cash, cash, cash, pColor);
+        INSERT INTO portfolios (name, type, currency, startDate, initialCash, currentCash, totalValue, color)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(name, type || 'Investimento', currency || 'EUR', start, cash, cash, cash, pColor);
 
     const portfolioId = result.lastInsertRowid;
 
@@ -1226,11 +1226,12 @@ app.put('/api/portfolios/:id', async (req, res) => {
     const existing = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(req.params.id);
     if (!existing) return res.status(404).send('Portfolio not found');
 
-    const { name, currency, startDate, initialCash, color, losses } = req.body;
+    const { name, type, currency, startDate, initialCash, color, losses } = req.body;
     database.db.prepare(`
-        UPDATE portfolios SET name=?, currency=?, startDate=?, initialCash=?, color=? WHERE id=?
+        UPDATE portfolios SET name=?, type=?, currency=?, startDate=?, initialCash=?, color=? WHERE id=?
     `).run(
         name       || existing.name,
+        type       || existing.type || 'Investimento',
         currency   || existing.currency,
         startDate  || existing.startDate,
         parseFloat(initialCash != null ? initialCash : existing.initialCash),
@@ -2091,12 +2092,16 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                     break;
                 }
                 case 'BUY':
-                    portfolioStates[p.id].cash -= (t.amount || (qty * price + comm + tax)) / fx;
-                    if (t.assetTicker !== 'CASH') portfolioStates[p.id].holdings[t.assetTicker] = (portfolioStates[p.id].holdings[t.assetTicker] || 0) + qty;
+                    if (p.type !== 'Conto Deposito') {
+                        portfolioStates[p.id].cash -= (t.amount || (qty * price + comm + tax)) / fx;
+                        if (t.assetTicker !== 'CASH') portfolioStates[p.id].holdings[t.assetTicker] = (portfolioStates[p.id].holdings[t.assetTicker] || 0) + qty;
+                    }
                     break;
                 case 'SELL':
-                    portfolioStates[p.id].cash += (t.amount || (qty * price - comm - tax)) / fx;
-                    if (t.assetTicker !== 'CASH') portfolioStates[p.id].holdings[t.assetTicker] = (portfolioStates[p.id].holdings[t.assetTicker] || 0) - qty;
+                    if (p.type !== 'Conto Deposito') {
+                        portfolioStates[p.id].cash += (t.amount || (qty * price - comm - tax)) / fx;
+                        if (t.assetTicker !== 'CASH') portfolioStates[p.id].holdings[t.assetTicker] = (portfolioStates[p.id].holdings[t.assetTicker] || 0) - qty;
+                    }
                     break;
             }
         }
@@ -2159,12 +2164,16 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                             break;
                         }
                         case 'BUY':
-                            state.cash -= (t.amount || (qty * price + comm + tax)) / fx;
-                            if (t.assetTicker !== 'CASH') state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) + qty;
+                            if (p.type !== 'Conto Deposito') {
+                                state.cash -= (t.amount || (qty * price + comm + tax)) / fx;
+                                if (t.assetTicker !== 'CASH') state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) + qty;
+                            }
                             break;
                         case 'SELL':
-                            state.cash += (t.amount || (qty * price - comm - tax)) / fx;
-                            if (t.assetTicker !== 'CASH') state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) - qty;
+                            if (p.type !== 'Conto Deposito') {
+                                state.cash += (t.amount || (qty * price - comm - tax)) / fx;
+                                if (t.assetTicker !== 'CASH') state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) - qty;
+                            }
                             break;
                     }
                 }
@@ -2204,19 +2213,24 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                             break;
                         }
                         case 'BUY':
-                            state.cash -= (t.amount || (qty * price + comm + tax)) / fx;
-                            if (t.assetTicker !== 'CASH') state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) + qty;
+                            if (p.type !== 'Conto Deposito') {
+                                state.cash -= (t.amount || (qty * price + comm + tax)) / fx;
+                                if (t.assetTicker !== 'CASH') state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) + qty;
+                            }
                             break;
                         case 'SELL':
-                            state.cash += (t.amount || (qty * price - comm - tax)) / fx;
-                            if (t.assetTicker !== 'CASH') state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) - qty;
+                            if (p.type !== 'Conto Deposito') {
+                                state.cash += (t.amount || (qty * price - comm - tax)) / fx;
+                                if (t.assetTicker !== 'CASH') state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) - qty;
+                            }
                             break;
                     }
                 }
 
                 let pAssets = 0;
-                for (const [ticker, shares] of Object.entries(state.holdings)) {
-                    if (shares <= 0.0001) continue;
+                if (p.type !== 'Conto Deposito') {
+                    for (const [ticker, shares] of Object.entries(state.holdings)) {
+                        if (shares <= 0.0001) continue;
                     
                     let price = historicalPrices[ticker]?.[dateStr];
                     const isToday = dateStr === today.toISOString().split('T')[0];
@@ -2279,7 +2293,9 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                         rate = lastFx ? lastFx.exchangeRate : 1;
                     }
                     pAssets += shares * (price / rate);
+                    }
                 }
+
                 dayValue += (state.cash + pAssets);
                 dayProfit += (state.cash + pAssets - state.netDeposits);
                 dayCash += state.cash;

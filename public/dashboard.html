@@ -909,7 +909,7 @@
                 </div>
                 <div class="mob-portfolio-info">
                   <div class="mob-portfolio-name">${p.name}</div>
-                  <div class="mob-portfolio-meta">${p.assetCount} Assets · ${p.currency}</div>
+                  <div class="mob-portfolio-meta">${p.assetCount} Assets · ${p.currency} ${p.type === 'Conto Deposito' ? '<span style="color:var(--mob-amber); font-weight:900; background:rgba(245,158,11,0.1); padding:1px 4px; border-radius:4px; font-size:8px; vertical-align:middle; margin-left:4px">DEPOSITO</span>' : ''}</div>
                 </div>
                 <div class="mob-portfolio-values">
                   <div class="mob-portfolio-net">${formatPrivacy(p.netValue||p.totalValue, p.currency, 'mob-p-'+p.id)}</div>

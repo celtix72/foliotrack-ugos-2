@@ -172,6 +172,7 @@
                     <span class="material-symbols-outlined">work</span>
                 </div>
                 <h1 id="title-portfolio-name" class="text-4xl font-black">---</h1>
+                <span id="p-type-badge" class="hidden ml-3 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest bg-amber-500/20 text-amber-500 border border-amber-500/30">DEPOSITO</span>
             </div>
             <div class="flex items-center gap-4">
                 <div class="flex items-center gap-2">
@@ -458,6 +459,13 @@
             <div class="space-y-2">
                 <label class="text-sm font-medium">Portfolio Name</label>
                 <input id="p-name" required class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3" placeholder="e.g. Retirement"/>
+            </div>
+            <div class="space-y-2">
+                <label class="text-sm font-medium">Portfolio Type</label>
+                <select id="p-type" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3">
+                    <option value="Investimento">Investimento (Market Tracking)</option>
+                    <option value="Conto Deposito">Conto Deposito (Cash & Interests)</option>
+                </select>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-2">
@@ -788,6 +796,7 @@
         if (!id) {
             document.getElementById('p-id').value = '';
             document.getElementById('portfolio-form').reset();
+            document.getElementById('p-type').value = 'Investimento';
             document.getElementById('portfolio-modal-title').innerText = "New Portfolio";
             document.getElementById('delete-portfolio-btn').classList.add('hidden');
             
@@ -806,6 +815,7 @@
                 
                 document.getElementById('p-id').value = p.id;
                 document.getElementById('p-name').value = p.name;
+                document.getElementById('p-type').value = p.type || 'Investimento';
                 document.getElementById('p-currency').value = p.currency;
                 document.getElementById('p-date').value = p.startDate;
                 document.getElementById('p-cash').value = p.initialCash;
@@ -873,6 +883,7 @@
                                 <span class="material-symbols-outlined">folder</span>
                             </div>
                             <span class="text-[10px] font-black bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-slate-500">${p.currency}</span>
+                            ${p.type === 'Conto Deposito' ? '<span class="text-[10px] font-black bg-amber-500/10 text-amber-500 px-2 py-1 rounded ml-1">DEPOSITO</span>' : ''}
                         </div>
                         <h3 class="text-xl font-bold group-hover:text-primary transition-colors">${p.name}</h3>
                         <p class="text-slate-500 text-sm mt-1">Started on ${p.startDate}</p>
@@ -934,6 +945,15 @@
             
             document.getElementById('header-portfolio-name').innerText = p.name || 'Untitled';
             document.getElementById('title-portfolio-name').innerText = p.name || 'Untitled';
+            const typeBadge = document.getElementById('p-type-badge');
+            if (typeBadge) {
+                if (p.type === 'Conto Deposito') {
+                    typeBadge.classList.remove('hidden');
+                    typeBadge.innerText = 'CONTO DEPOSITO';
+                } else {
+                    typeBadge.classList.add('hidden');
+                }
+            }
             document.getElementById('title-portfolio-icon-bg').style.backgroundColor = portfolioColor;
             
             document.getElementById('total-value-label').innerText = formatPrivacy(p.totalValue, p.currency, 'p-total');
@@ -1362,6 +1382,7 @@
 
             const data = {
                 name: document.getElementById('p-name').value,
+                type: document.getElementById('p-type').value,
                 currency: document.getElementById('p-currency').value,
                 startDate: document.getElementById('p-date').value,
                 initialCash: parseFloat(document.getElementById('p-cash').value),
