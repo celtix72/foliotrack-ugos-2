@@ -2227,7 +2227,7 @@
             // only their ISIN is searchable. Skip YF validation and auto-resolve as B_ITA.
             if (tk.toUpperCase().startsWith('BTP')) {
                 tickerCache[tk] = { valid: true, isBTP: true };
-                progressLabel.textContent = `BTP virtual asset: ${tk} → B_ITA (${i+1}/${uniqueTickers.length})`;
+                progressLabel.textContent = `BTP virtual asset: ${tk} → B_ITA (${i+1}/${uniqueAssetKeys.length})`;
                 continue;
             }
             progressLabel.textContent = `Validating ${tk || isin} (${i+1}/${uniqueAssetKeys.length})...`;
