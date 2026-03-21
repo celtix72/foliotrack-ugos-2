@@ -1217,8 +1217,8 @@
         fullLogBody.innerHTML = sorted.length ? sorted.map(t => {
             const isDebit = ['BUY', 'WITHDRAWAL', 'TAX', 'TRANSFER'].includes(t.type);
             const color = isDebit ? 'rose' : 'emerald';
-            const sign = isDebit ? '-' : '+';
-            const isCash = ['DEPOSIT', 'WITHDRAWAL', 'TAX', 'TRANSFER'].includes(t.type);
+            const sign = (t.type === 'DEPOSIT' || t.type === 'BUY' || t.type === 'DIVIDEND') ? '+' : (isDebit ? '-' : '+');
+            const isCash = ['DEPOSIT', 'WITHDRAWAL', 'TAX', 'TRANSFER', 'DIVIDEND'].includes(t.type);
             
             let total = t.amount;
             if (!isCash) {
@@ -2188,7 +2188,10 @@
                 price:        price,
                 quantity:     qty,
                 commission:   comm,
-                valEur:       (type === 'DIVIDEND' && cols[13]) ? parseNum(cols[13]) : (amount || parseNum(cols[10])),
+                // Improved valEur for DIVIDEND: take the first non-zero value among amount, cols[13], cols[10], cols[7]
+                valEur:       (type === 'DIVIDEND') 
+                                ? (parseNum(cols[8]) || parseNum(cols[7]) || parseNum(cols[10]) || parseNum(cols[13])) 
+                                : (amount || parseNum(cols[10])),
                 tax:          tax,
                 status:       'pending',
                 yfName:       '',

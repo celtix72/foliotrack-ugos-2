@@ -2208,7 +2208,8 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                         case 'TAX':        state.cash -= amount; break;
                         case 'TRANSFER':   state.cash -= amount; break;
                         case 'DIVIDEND': {
-                            const divAmt = (t.amount || (qty * price - comm - tax)) / fx;
+                            // Ensure dividend is positive; prioritize explicit amount
+                            const divAmt = (Math.abs(t.amount) || Math.abs(qty * price - comm - tax)) / fx;
                             state.cash += divAmt; 
                             break;
                         }
