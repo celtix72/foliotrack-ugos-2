@@ -87,6 +87,18 @@ const MARKET_HOURS = {
  * Fetches robust metadata from Yahoo Finance, including Country/Area and Type improvements.
  */
 async function fetchAssetMetadata(ticker) {
+    if (ticker && ticker.startsWith('CD_')) {
+        return {
+            currentPrice: 1.0, 
+            changePercent: 0,
+            quoteType: 'Deposit', 
+            longName: ticker,
+            shortName: ticker,
+            currency: 'EUR',
+            exchange: 'N/A',
+            country: 'Italy'
+        };
+    }
     try {
         const quote = await yahooFinance.quote(ticker).catch(err => {
             if (err.message.includes('429') || err.message.includes('Too Many Requests')) {
@@ -1951,6 +1963,11 @@ async function calculatePerformanceHistory(portfolioIds, range) {
     };
 
     const fetchTickerData = async (ticker) => {
+        // --- CD_ (Conto Deposito) skip ---
+        if (ticker.startsWith('CD_')) {
+            logger.info(`Skipping remote fetch for ${ticker} (Conto Deposito Asset)`);
+            return;
+        }
         const todayStr = new Date().toISOString().split('T')[0];
 
         // --- EOD Throttle: in-memory cache ---
@@ -2958,6 +2975,7 @@ async function updateMarketData(force = false) {
 
     for (const asset of assets) {
         if (!asset.ticker || asset.ticker === 'CASH') continue;
+        if (asset.ticker.startsWith('CD_')) continue; // Skip constant-value deposit assets
         if (asset.isManual === 1 && (!asset.dataSource || asset.dataSource === 'YF')) continue;
         
         logger.info(`Updating [${asset.ticker}] using [${asset.dataSource || 'YF'}]...`);
