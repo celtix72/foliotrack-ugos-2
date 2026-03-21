@@ -5,6 +5,78 @@
     const defaultMobSize = "14";
     const defaultTheme = "dark";
     
+    // --- SPA-Like Fetch Caching (Stale-While-Revalidate) ---
+    const originalFetch = window.fetch;
+    window.fetch = async function(url, options = {}) {
+        const isStringUrl = typeof url === 'string';
+        const targetUrl = isStringUrl ? url : (url.url || '');
+        
+        if (targetUrl.startsWith('/api/')) {
+            const method = options.method ? options.method.toUpperCase() : 'GET';
+            
+            if (method === 'GET') {
+                const cacheKey = 'ft_cache_' + targetUrl;
+                const cachedItemStr = sessionStorage.getItem(cacheKey);
+                
+                if (cachedItemStr) {
+                    try {
+                        const cachedItem = JSON.parse(cachedItemStr);
+                        // 5 minutes TTL for instant SPA-like reactivity
+                        if (Date.now() - cachedItem.timestamp < 300000) {
+                            
+                            // Background fetch for strict Stale-While-Revalidate
+                            originalFetch(url, options).then(async res => {
+                                if (res.ok) {
+                                    const cloned = res.clone();
+                                    const data = await cloned.json();
+                                    sessionStorage.setItem(cacheKey, JSON.stringify({
+                                        timestamp: Date.now(),
+                                        data: data
+                                    }));
+                                }
+                            }).catch(e => console.error('Background SWR fetch failed:', e));
+                            
+                            // Immediately resolve with cached data
+                            return new Response(JSON.stringify(cachedItem.data), {
+                                status: 200,
+                                headers: { 'Content-Type': 'application/json' }
+                            });
+                        }
+                    } catch(e) {}
+                }
+                
+                // Normal fetch if cache miss or expired
+                const res = await originalFetch(url, options);
+                if (res.ok) {
+                    const cloned = res.clone();
+                    try {
+                        const data = await cloned.json();
+                        sessionStorage.setItem(cacheKey, JSON.stringify({
+                            timestamp: Date.now(),
+                            data: data
+                        }));
+                    } catch(e) {}
+                }
+                return res;
+            } else {
+                // Non-GET requests to /api/ (POST, PUT, DELETE) -> clear cache!
+                const res = await originalFetch(url, options);
+                if (res.ok) {
+                    Object.keys(sessionStorage).forEach(key => {
+                        if (key.startsWith('ft_cache_')) {
+                            sessionStorage.removeItem(key);
+                        }
+                    });
+                }
+                return res;
+            }
+        }
+        
+        // Pass-through for anything else
+        return originalFetch(url, options);
+    };
+    // -----------------------------------------------------
+
     function applyTheme(font, size, theme = "dark", mobFont = defaultMobFont, mobSize = defaultMobSize) {
         const fonts = {
             "'JetBrains Mono', monospace": "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap",
