@@ -112,24 +112,24 @@ body.mobile-view-active #mobile-ui {
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 18px;
+  font-size: calc(18px * var(--mob-scale, 1));
   flex-shrink: 0;
 }
 
 .mob-header-title {
-  font-size: 17px;
+  font-size: calc(17px * var(--mob-scale, 1));
   font-weight: 700;
   letter-spacing: -0.3px;
   flex: 1;
 }
 
 .mob-header-actions .material-symbols-outlined {
-  font-size: 22px;
+  font-size: calc(22px * var(--mob-scale, 1));
   color: var(--mob-text-muted);
 }
 
 .mob-header-subtitle {
-  font-size: 10px;
+  font-size: calc(10px * var(--mob-scale, 1));
   color: var(--mob-text-muted);
   font-weight: 600;
   text-transform: uppercase;
@@ -159,7 +159,7 @@ body.mobile-view-active #mobile-ui {
   color: var(--mob-text-muted);
 }
 .mob-icon-btn:active { transform: scale(0.88); background: var(--mob-primary-dim); }
-.mob-icon-btn .material-symbols-outlined { font-size: 18px; }
+.mob-icon-btn .material-symbols-outlined { font-size: calc(18px * var(--mob-scale, 1)); }
 
 /* Back button row  */
 .mob-back-bar {
@@ -204,15 +204,15 @@ body.mobile-view-active #mobile-ui {
   align-items: center;
   gap: 4px;
   color: var(--mob-primary);
-  font-size: 15px;
+  font-size: calc(15px * var(--mob-scale, 1));
   font-weight: 600;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   padding: 6px 0;
 }
-.mob-back-btn .material-symbols-outlined { font-size: 20px; }
+.mob-back-btn .material-symbols-outlined { font-size: calc(20px * var(--mob-scale, 1)); }
 .mob-back-label {
-  font-size: 13px;
+  font-size: calc(13px * var(--mob-scale, 1));
   font-weight: 700;
   color: var(--mob-text-muted);
   margin-left: auto;
@@ -254,7 +254,7 @@ body.mobile-view-active #mobile-ui {
 }
 
 .mob-hero-label {
-  font-size: 10px;
+  font-size: calc(10px * var(--mob-scale, 1));
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.15em;
@@ -273,7 +273,7 @@ body.mobile-view-active #mobile-ui {
 }
 
 .mob-hero-value {
-  font-size: 36px;
+  font-size: calc(36px * var(--mob-scale, 1));
   font-weight: 900;
   letter-spacing: -1.5px;
   color: var(--mob-text);
@@ -294,7 +294,7 @@ body.mobile-view-active #mobile-ui {
 }
 
 .mob-hero-stat-label {
-  font-size: 9px;
+  font-size: calc(9px * var(--mob-scale, 1));
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -302,7 +302,7 @@ body.mobile-view-active #mobile-ui {
 }
 
 .mob-hero-stat-value {
-  font-size: 14px;
+  font-size: calc(14px * var(--mob-scale, 1));
   font-weight: 700;
   color: var(--mob-text);
 }
@@ -316,13 +316,13 @@ body.mobile-view-active #mobile-ui {
 }
 
 .mob-section-title {
-  font-size: 16px;
+  font-size: calc(16px * var(--mob-scale, 1));
   font-weight: 800;
   letter-spacing: -0.3px;
 }
 
 .mob-section-link {
-  font-size: 12px;
+  font-size: calc(12px * var(--mob-scale, 1));
   font-weight: 600;
   color: var(--mob-primary);
   cursor: pointer;
@@ -355,13 +355,13 @@ body.mobile-view-active #mobile-ui {
 }
 
 .mob-chart-title {
-  font-size: 13px;
+  font-size: calc(13px * var(--mob-scale, 1));
   font-weight: 800;
   margin-bottom: 4px;
 }
 
 .mob-chart-subtitle {
-  font-size: 10px;
+  font-size: calc(10px * var(--mob-scale, 1));
   color: var(--mob-text-muted);
   margin-bottom: 12px;
 }
@@ -382,7 +382,7 @@ body.mobile-view-active #mobile-ui {
   min-width: 32px;
   padding: 5px 4px;
   border-radius: 8px;
-  font-size: 10px;
+  font-size: calc(10px * var(--mob-scale, 1));
   font-weight: 800;
   text-align: center;
   cursor: pointer;
@@ -438,16 +438,16 @@ body.mobile-view-active #mobile-ui {
   color: white;
   flex-shrink: 0;
 }
-.mob-portfolio-icon .material-symbols-outlined { font-size: 22px; }
+.mob-portfolio-icon .material-symbols-outlined { font-size: calc(22px * var(--mob-scale, 1)); }
 
 .mob-portfolio-info { flex: 1; min-width: 0; }
-.mob-portfolio-name { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mob-portfolio-meta { font-size: 11px; color: var(--mob-text-muted); font-weight: 500; }
+.mob-portfolio-name { font-size: calc(14px * var(--mob-scale, 1)); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mob-portfolio-meta { font-size: calc(11px * var(--mob-scale, 1)); color: var(--mob-text-muted); font-weight: 500; }
 
 .mob-portfolio-values { text-align: right; flex-shrink: 0; }
-.mob-portfolio-net { font-size: 14px; font-weight: 800; color: var(--mob-primary); }
-.mob-portfolio-gross { font-size: 10px; color: var(--mob-text-caption); font-weight: 600; }
-.mob-portfolio-change { font-size: 11px; font-weight: 700; }
+.mob-portfolio-net { font-size: calc(14px * var(--mob-scale, 1)); font-weight: 800; color: var(--mob-primary); }
+.mob-portfolio-gross { font-size: calc(10px * var(--mob-scale, 1)); color: var(--mob-text-caption); font-weight: 600; }
+.mob-portfolio-change { font-size: calc(11px * var(--mob-scale, 1)); font-weight: 700; }
 
 /* ─── Holdings List ─────────────────────────────────────────────────────── */
 .mob-holdings-list {
@@ -481,7 +481,7 @@ body.mobile-view-active #mobile-ui {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: calc(11px * var(--mob-scale, 1));
   font-weight: 900;
   color: var(--mob-primary);
   flex-shrink: 0;
@@ -489,32 +489,32 @@ body.mobile-view-active #mobile-ui {
 }
 
 .mob-holding-info { flex: 1; min-width: 0; }
-.mob-holding-ticker { font-size: 13px; font-weight: 800; }
-.mob-holding-name { font-size: 10px; color: var(--mob-text-muted); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mob-holding-qty { font-size: 10px; color: var(--mob-text-caption); }
+.mob-holding-ticker { font-size: calc(13px * var(--mob-scale, 1)); font-weight: 800; }
+.mob-holding-name { font-size: calc(10px * var(--mob-scale, 1)); color: var(--mob-text-muted); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mob-holding-qty { font-size: calc(10px * var(--mob-scale, 1)); color: var(--mob-text-caption); }
 
 .mob-holding-values { text-align: right; flex-shrink: 0; }
-.mob-holding-value { font-size: 13px; font-weight: 700; }
-.mob-holding-gain { font-size: 11px; font-weight: 700; }
+.mob-holding-value { font-size: calc(13px * var(--mob-scale, 1)); font-weight: 700; }
+.mob-holding-gain { font-size: calc(11px * var(--mob-scale, 1)); font-weight: 700; }
 
 /* Large Item for Open Positions */
 .mob-holding-item.large {
   padding: 18px 20px;
 }
 .mob-holding-item.large .mob-holding-ticker {
-  font-size: 16px;
+  font-size: calc(16px * var(--mob-scale, 1));
 }
 .mob-holding-item.large .mob-holding-value {
-  font-size: 17px;
+  font-size: calc(17px * var(--mob-scale, 1));
   font-weight: 800;
 }
 .mob-holding-item.large .mob-holding-gain {
-  font-size: 14px;
+  font-size: calc(14px * var(--mob-scale, 1));
 }
 .mob-holding-item.large .mob-holding-logo {
   width: 44px;
   height: 44px;
-  font-size: 12px;
+  font-size: calc(12px * var(--mob-scale, 1));
 }
 
 /* ─── Allocation Donut ───────────────────────────────────────────────────── */
@@ -560,7 +560,7 @@ body.mobile-view-active #mobile-ui {
 }
 
 .mob-alloc-type {
-  font-size: 11px;
+  font-size: calc(11px * var(--mob-scale, 1));
   font-weight: 600;
   color: var(--mob-text-muted);
   flex: 1;
@@ -570,7 +570,7 @@ body.mobile-view-active #mobile-ui {
 }
 
 .mob-alloc-pct {
-  font-size: 11px;
+  font-size: calc(11px * var(--mob-scale, 1));
   font-weight: 800;
 }
 
@@ -611,12 +611,12 @@ body.mobile-view-active #mobile-ui {
 .mob-tab:active { opacity: 0.6; }
 
 .mob-tab .material-symbols-outlined {
-  font-size: 24px;
+  font-size: calc(24px * var(--mob-scale, 1));
   transition: color 0.2s, transform 0.2s;
 }
 
 .mob-tab span.mob-tab-label {
-  font-size: 9px;
+  font-size: calc(9px * var(--mob-scale, 1));
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -669,7 +669,7 @@ body.mobile-view-active #mobile-ui {
   transform: scale(0.9);
   box-shadow: 0 4px 16px rgba(19,91,236,0.3);
 }
-.mob-fab .material-symbols-outlined { font-size: 26px; }
+.mob-fab .material-symbols-outlined { font-size: calc(26px * var(--mob-scale, 1)); }
 
 /* ─── Status Pill ────────────────────────────────────────────────────────── */
 .mob-status-pill {
@@ -678,7 +678,7 @@ body.mobile-view-active #mobile-ui {
   gap: 5px;
   padding: 4px 10px;
   border-radius: 999px;
-  font-size: 9px;
+  font-size: calc(9px * var(--mob-scale, 1));
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -722,14 +722,14 @@ body.mobile-view-active #mobile-ui {
   gap: 3px;
 }
 .mob-stat-box-label {
-  font-size: 8px;
+  font-size: calc(8px * var(--mob-scale, 1));
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--mob-text-caption);
 }
 .mob-stat-box-value {
-  font-size: 12px;
+  font-size: calc(12px * var(--mob-scale, 1));
   font-weight: 800;
   white-space: nowrap;
   overflow: hidden;
@@ -742,9 +742,9 @@ body.mobile-view-active #mobile-ui {
   padding: 40px 20px;
   color: var(--mob-text-muted);
 }
-.mob-empty .material-symbols-outlined { font-size: 48px; margin-bottom: 12px; display: block; opacity: 0.4; }
-.mob-empty-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
-.mob-empty-sub { font-size: 13px; opacity: 0.7; }
+.mob-empty .material-symbols-outlined { font-size: calc(48px * var(--mob-scale, 1)); margin-bottom: 12px; display: block; opacity: 0.4; }
+.mob-empty-title { font-size: calc(16px * var(--mob-scale, 1)); font-weight: 700; margin-bottom: 6px; }
+.mob-empty-sub { font-size: calc(13px * var(--mob-scale, 1)); opacity: 0.7; }
 
 /* ─── Loading Spinner ────────────────────────────────────────────────────── */
 .mob-spinner {
@@ -770,7 +770,7 @@ body.mobile-view-active #mobile-ui {
 .mob-tab-pill {
   padding: 7px 16px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: calc(12px * var(--mob-scale, 1));
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
@@ -802,7 +802,7 @@ body.mobile-view-active #mobile-ui {
 }
 
 .mob-market-name {
-  font-size: 9px;
+  font-size: calc(9px * var(--mob-scale, 1));
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -811,13 +811,13 @@ body.mobile-view-active #mobile-ui {
 }
 
 .mob-market-value {
-  font-size: 16px;
+  font-size: calc(16px * var(--mob-scale, 1));
   font-weight: 900;
   letter-spacing: -0.5px;
 }
 
 .mob-market-change {
-  font-size: 11px;
+  font-size: calc(11px * var(--mob-scale, 1));
   font-weight: 700;
   margin-top: 2px;
 }

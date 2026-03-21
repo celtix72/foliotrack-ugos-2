@@ -42,6 +42,7 @@
         
         // Scale factor for mobile absolute px classes
         const scale = mobSize / 14;
+        document.documentElement.style.setProperty('--mob-scale', scale);
         
         styleTag.innerHTML = `
             html, body, body *:not(.material-symbols-outlined) { 
@@ -573,11 +574,22 @@
                 body: JSON.stringify(payload)
             });
             const settings = await res.json();
+            
+            // Store all settings in localStorage to prevent reset on navigation before fetch completes
+            localStorage.setItem('app-font', settings.fontFamily || defaultFont);
+            localStorage.setItem('app-font-size', settings.fontSize || defaultSize);
             localStorage.setItem('app-theme', settings.theme || 'dark');
-            // Re-apply theme immediately
-            const font = settings.fontFamily || localStorage.getItem('app-font');
-            const size = settings.fontSize || localStorage.getItem('app-font-size');
-            applyTheme(font, size, settings.theme);
+            localStorage.setItem('app-mob-font', settings.mobFont || defaultMobFont);
+            localStorage.setItem('app-mob-size', settings.mobSize || defaultMobSize);
+            
+            // Re-apply theme immediately with all arguments
+            applyTheme(
+                settings.fontFamily || defaultFont, 
+                settings.fontSize || defaultSize, 
+                settings.theme || 'dark',
+                settings.mobFont || defaultMobFont,
+                settings.mobSize || defaultMobSize
+            );
             
             // Update Privacy Mode state
             window.privacyState.enabled = settings.privacyMode === 'true';
