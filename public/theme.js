@@ -504,21 +504,21 @@
             }
 
             // --- Mobile Var Day Injection ---
-            let mobActions = document.querySelector('.mob-header-actions');
-            if (mobActions) {
-                let mobVar = document.getElementById('mob-header-var-day');
-                if (!mobVar) {
-                    mobVar = document.createElement('div');
-                    mobVar.id = 'mob-header-var-day';
-                    mobVar.className = 'mob-header-var';
-                    mobActions.insertBefore(mobVar, mobActions.firstChild);
-                }
+            let mobVar = document.getElementById('mob-header-var-day');
+            if (mobVar) {
                 const color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
                 mobVar.style.color = color;
-                mobVar.innerHTML = `
-                    <span class="material-symbols-outlined" style="font-size:14px">${isPos ? 'trending_up' : 'trending_down'}</span>
-                    <span>${sign}${formatted}</span>
-                `;
+                mobVar.innerHTML = `<span>${sign}${formatted}</span>`;
+            }
+
+            // --- Mobile Market Dots Injection ---
+            let mobDotEU = document.getElementById('mob-dot-eu');
+            let mobDotUS = document.getElementById('mob-dot-us');
+            if (mobDotEU && mobDotUS) {
+                const euOpen = status.EU;
+                const usOpen = status.US;
+                mobDotEU.className = euOpen ? 'w-2.5 h-2.5 rounded-full transition-colors bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'w-2.5 h-2.5 rounded-full transition-colors bg-slate-400';
+                mobDotUS.className = usOpen ? 'w-2.5 h-2.5 rounded-full transition-colors bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'w-2.5 h-2.5 rounded-full transition-colors bg-slate-400';
             }
 
         } catch (err) { console.error("Header update error:", err); }

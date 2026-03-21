@@ -344,26 +344,34 @@
 ════════════════════════════════════════════════ -->
 <div id="mobile-ui">
   <!-- ── Top Header ── -->
-  <div class="mob-header">
-    <div class="mob-header-logo">
-      <span class="material-symbols-outlined" style="font-size:18px">query_stats</span>
-    </div>
-    <div style="flex:1">
-      <div class="mob-header-title">History</div>
-      <span class="mob-header-subtitle">Premium Terminal</span>
-    </div>
-    <div class="mob-header-actions">
-      <div id="mob-status-pill" class="mob-status-pill">
-        <span class="mob-status-dot" id="mob-live-dot"></span>
-        <span id="mob-live-text">--</span>
+  <div class="mob-header" style="height: 60px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--mob-border);">
+    <!-- 1. Full Height Logo Image -->
+    <img src="/favicon.ico" alt="Logo" style="height: 100%; object-fit: contain; padding: 12px 0;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3135/3135715.png'">
+
+    <!-- 2. Page Indicator (2 Chars) -->
+    <div class="mob-header-title text-xl font-bold" style="letter-spacing: -1px; line-height: 1; margin-left: 4px;">HT</div>
+
+    <div style="flex:1"></div>
+
+    <!-- 3. EU / US Market Status Dots -->
+    <div style="display: flex; flex-direction: column; gap: 4px; align-items: center; justify-content: center;">
+      <div style="display: flex; gap: 4px; align-items: center;">
+        <span class="text-[8px] font-bold text-slate-500 leading-none">EU</span>
+        <span id="mob-dot-eu" class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
       </div>
-      <div class="mob-icon-btn" onclick="togglePrivacy()" title="Privacy">
-        <span class="material-symbols-outlined" id="mob-privacy-icon">visibility</span>
+      <div style="display: flex; gap: 4px; align-items: center;">
+        <span class="text-[8px] font-bold text-slate-500 leading-none">US</span>
+        <span id="mob-dot-us" class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
       </div>
-      <a href="/settings" class="mob-icon-btn text-inherit" style="color: inherit; text-decoration: none;" title="Settings">
-        <span class="material-symbols-outlined">settings</span>
-      </a>
     </div>
+
+    <!-- 4. Day Var (Large Font, No Icon) -->
+    <div id="mob-header-var-day" class="font-black tracking-tight" style="font-size: 18px; line-height: 1; margin: 0 8px; min-width: 60px; text-align: right;">--</div>
+
+    <!-- 5. Settings Icon (Flush Right) -->
+    <a href="/settings" class="mob-icon-btn text-inherit" style="color: inherit; text-decoration: none; padding: 0;" title="Settings">
+      <span class="material-symbols-outlined" style="font-size: 28px;">settings</span>
+    </a>
   </div>
 
   <!-- ── Tabs section for History / Dividends ── -->
