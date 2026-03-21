@@ -1990,7 +1990,17 @@ async function calculatePerformanceHistory(portfolioIds, range) {
 
             // Fallback to Yahoo Finance
             if (!pricesMap) {
-                const qStart = (allTransactions.find(t => t.assetTicker === ticker)?.date) || startDate.toISOString().split('T')[0];
+                // Ensure we fetch at least 5 years of history for full charts, or more if first transaction is older
+                const firstTxDate = allTransactions.find(t => t.assetTicker === ticker)?.date;
+                const fiveYearsAgo = new Date();
+                fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
+                const fiveYearsAgoStr = fiveYearsAgo.toISOString().split('T')[0];
+                const fallbackStart = startDate.toISOString().split('T')[0];
+                
+                let qStart = fiveYearsAgoStr;
+                if (firstTxDate && firstTxDate < qStart) qStart = firstTxDate;
+                if (fallbackStart < qStart) qStart = fallbackStart;
+
                 const chartResult = await yahooFinance.chart(ticker, {
                     period1: qStart,
                     period2: todayStr,
