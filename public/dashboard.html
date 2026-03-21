@@ -619,7 +619,7 @@
                             label: (context) => {
                                 const label = context.label || '';
                                 const value = context.parsed || 0;
-                                return ` ${label}: ${value.toFixed(1)}%`;
+                                return ` ${label}: ${value.toFixed(0)}%`;
                             }
                         }
                     }
@@ -1003,7 +1003,7 @@
       }]},
       options: {
         responsive: true, maintainAspectRatio: false, cutout: '72%',
-        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toFixed(1)}%` } } }
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toFixed(0)}%` } } }
       }
     });
     mobUpdateAllocChart();

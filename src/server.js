@@ -1823,7 +1823,7 @@ async function calculatePerformanceHistory(portfolioIds, range) {
             if (startDate > today) startDate = new Date(today);
         }
     }
-    const uniqueTickers = [...new Set(allTransactions.map(t => t.assetTicker).filter(Boolean))];
+    const uniqueTickers = [...new Set(allTransactions.map(t => t.assetTicker).filter(t => t && t !== 'CASH'))];
     logger.info(`Calculating performance history (range: ${range}, start: ${startDate.toISOString().split('T')[0]}) for ${uniqueTickers.length} tickers...`);
 
     const historicalPrices = {};
@@ -2092,11 +2092,11 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                 }
                 case 'BUY':
                     portfolioStates[p.id].cash -= (t.amount || (qty * price + comm + tax)) / fx;
-                    portfolioStates[p.id].holdings[t.assetTicker] = (portfolioStates[p.id].holdings[t.assetTicker] || 0) + qty;
+                    if (t.assetTicker !== 'CASH') portfolioStates[p.id].holdings[t.assetTicker] = (portfolioStates[p.id].holdings[t.assetTicker] || 0) + qty;
                     break;
                 case 'SELL':
                     portfolioStates[p.id].cash += (t.amount || (qty * price - comm - tax)) / fx;
-                    portfolioStates[p.id].holdings[t.assetTicker] = (portfolioStates[p.id].holdings[t.assetTicker] || 0) - qty;
+                    if (t.assetTicker !== 'CASH') portfolioStates[p.id].holdings[t.assetTicker] = (portfolioStates[p.id].holdings[t.assetTicker] || 0) - qty;
                     break;
             }
         }
@@ -2160,11 +2160,11 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                         }
                         case 'BUY':
                             state.cash -= (t.amount || (qty * price + comm + tax)) / fx;
-                            state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) + qty;
+                            if (t.assetTicker !== 'CASH') state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) + qty;
                             break;
                         case 'SELL':
                             state.cash += (t.amount || (qty * price - comm - tax)) / fx;
-                            state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) - qty;
+                            if (t.assetTicker !== 'CASH') state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) - qty;
                             break;
                     }
                 }
@@ -2205,11 +2205,11 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                         }
                         case 'BUY':
                             state.cash -= (t.amount || (qty * price + comm + tax)) / fx;
-                            state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) + qty;
+                            if (t.assetTicker !== 'CASH') state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) + qty;
                             break;
                         case 'SELL':
                             state.cash += (t.amount || (qty * price - comm - tax)) / fx;
-                            state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) - qty;
+                            if (t.assetTicker !== 'CASH') state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) - qty;
                             break;
                     }
                 }
@@ -2287,17 +2287,17 @@ async function calculatePerformanceHistory(portfolioIds, range) {
             }
         }
 
-        if (isNaN(dayValue)) {
-            logger.warn(`NaN dayValue detected on ${dateStr}! Cash: ${dayCash}, Assets: ${dayAssets}, profit: ${dayProfit}`);
+        if (!isFinite(dayValue) || isNaN(dayValue)) {
+            logger.warn(`Invalid math dayValue detected on ${dateStr}! Cash: ${dayCash}, Assets: ${dayAssets}, profit: ${dayProfit}`);
             dayValue = 0; dayProfit = 0; dayCash = 0; dayAssets = 0;
         }
 
         dataPoints.push({
             date: dateStr,
-            value: isNaN(dayValue) ? 0 : Math.round(dayValue),
-            profit: isNaN(dayProfit) ? 0 : Math.round(dayProfit),
-            cash: isNaN(dayCash) ? 0 : Math.round(dayCash),
-            assets: isNaN(dayAssets) ? 0 : Math.round(dayAssets),
+            value: !isFinite(dayValue) ? 0 : Math.round(dayValue),
+            profit: !isFinite(dayProfit) ? 0 : Math.round(dayProfit),
+            cash: !isFinite(dayCash) ? 0 : Math.round(dayCash),
+            assets: !isFinite(dayAssets) ? 0 : Math.round(dayAssets),
             events: dayEvents
         });
         currentDate.setDate(currentDate.getDate() + 1);

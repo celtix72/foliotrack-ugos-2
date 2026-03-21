@@ -773,7 +773,7 @@
             <div class="mob-alloc-item">
                 <div class="mob-alloc-dot" style="background:${colors[i%colors.length]}"></div>
                 <span class="mob-alloc-type">${x[0]}</span>
-                <span class="mob-alloc-pct">${((x[1]/Object.values(data.diversification.assetType).reduce((a,b)=>a+b,0))*100).toFixed(1)}%</span>
+                <span class="mob-alloc-pct">${((x[1]/Object.values(data.diversification.assetType).reduce((a,b)=>a+b,0))*100).toFixed(0)}%</span>
             </div>`).join('');
 
         // Geo Doughnut
@@ -792,7 +792,7 @@
             <div class="mob-alloc-item">
                 <div class="mob-alloc-dot" style="background:${colors[i%colors.length]}"></div>
                 <span class="mob-alloc-type">${x[0]}</span>
-                <span class="mob-alloc-pct">${((x[1]/Object.values(data.diversification.geography).reduce((a,b)=>a+b,0))*100).toFixed(1)}%</span>
+                <span class="mob-alloc-pct">${((x[1]/Object.values(data.diversification.geography).reduce((a,b)=>a+b,0))*100).toFixed(0)}%</span>
             </div>`).join('');
 
         // Dividends

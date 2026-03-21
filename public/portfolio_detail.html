@@ -520,6 +520,8 @@
                     <button onclick="loadAssetChart(null, '1m')" data-range="1m" class="chart-range-btn px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-violet-500 hover:text-white transition-colors">1M</button>
                     <button onclick="loadAssetChart(null, '6m')" data-range="6m" class="chart-range-btn px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-violet-500 hover:text-white transition-colors">6M</button>
                     <button onclick="loadAssetChart(null, '1y')" data-range="1y" class="chart-range-btn px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-violet-500 hover:text-white transition-colors">1Y</button>
+                    <button onclick="loadAssetChart(null, '3y')" data-range="3y" class="chart-range-btn px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-violet-500 hover:text-white transition-colors">3Y</button>
+                    <button onclick="loadAssetChart(null, '5y')" data-range="5y" class="chart-range-btn px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-violet-500 hover:text-white transition-colors">5Y</button>
                     <button onclick="loadAssetChart(null, 'all')" data-range="all" class="chart-range-btn px-2 py-1 rounded-lg bg-violet-500 text-white transition-colors">All</button>
                 </div>
                 <button onclick="closeAssetChartModal()" class="text-slate-400 hover:text-rose-500 transition-colors ml-2">
@@ -1313,7 +1315,7 @@
                         <div class="space-y-1.5">
                             <div class="flex justify-between text-[11px] font-bold">
                                 <span class="text-slate-600 dark:text-slate-300">${a.type}</span>
-                                <span class="text-primary">${a.percent}%</span>
+                                <span class="text-primary">${Math.round(a.percent)}%</span>
                             </div>
                             <div class="h-1 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                                 <div class="h-full ${color} rounded-full" style="width: ${a.percent}%"></div>
@@ -2526,6 +2528,8 @@
             if (range === '1m') fromDate.setMonth(fromDate.getMonth() - 1);
             else if (range === '6m') fromDate.setMonth(fromDate.getMonth() - 6);
             else if (range === '1y') fromDate.setFullYear(fromDate.getFullYear() - 1);
+            else if (range === '3y') fromDate.setFullYear(fromDate.getFullYear() - 3);
+            else if (range === '5y') fromDate.setFullYear(fromDate.getFullYear() - 5);
             else fromDate.setFullYear(fromDate.getFullYear() - 20); // 'all'
 
             const filtered = _allChartData.filter(d => new Date(d.date) >= fromDate);
@@ -2920,7 +2924,7 @@
         const pct = h.changePercent || 0;
         const letters = (h.ticker || '').substring(0,3);
         return `
-          <div class="mob-holding-item">
+          <div class="mob-holding-item" onclick="openAssetChartModal('${h.ticker}', '${h.name || ''}', '${currency}')">
             <div class="mob-holding-logo">${letters}</div>
             <div class="mob-holding-info">
               <div class="mob-holding-ticker">${h.ticker}</div>
