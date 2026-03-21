@@ -1964,13 +1964,21 @@ async function calculatePerformanceHistory(portfolioIds, range) {
         }
 
         // --- DB Cache check ---
-        const dbQuotes = database.db.prepare(`SELECT date, price FROM asset_quotes WHERE ticker = ? AND date >= ?`).all(ticker, startDate.toISOString().split('T')[0]);
+        const reqStart = startDate.toISOString().split('T')[0];
+        const dbQuotes = database.db.prepare(`SELECT date, price FROM asset_quotes WHERE ticker = ? AND date >= ?`).all(ticker, reqStart);
         if (dbQuotes.length > 0) {
-            const latestDate = dbQuotes.map(q => q.date).sort().at(-1);
+            const sortedDates = dbQuotes.map(q => q.date).sort();
+            const latestDate = sortedDates.at(-1);
+            const earliestDate = sortedDates[0];
             historicalPrices[ticker] = Object.fromEntries(dbQuotes.map(q => [q.date, q.price]));
             historicalPricesCache[ticker] = { ...historicalPrices[ticker], _fetchedDate: todayStr };
-            if (latestDate >= todayStr) {
-                // DB already has today's data — no remote fetch needed
+            
+            const firstTxDate = allTransactions.find(t => t.assetTicker === ticker)?.date || reqStart;
+            // If we have data stretching back to either the requested start date or the first transaction date, it's sufficient
+            const hasSufficientHistory = earliestDate <= reqStart || earliestDate <= firstTxDate;
+            
+            if (latestDate >= todayStr && hasSufficientHistory) {
+                // DB already has today's data and sufficient history — no remote fetch needed
                 return;
             }
         }
