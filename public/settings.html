@@ -559,12 +559,16 @@
       <span class="mob-header-subtitle">Settings & Preferences</span>
     </div>
     <div class="mob-header-actions">
-      <div class="mob-icon-btn" onclick="toggleTheme()" title="Toggle Theme" style="color: var(--mob-primary)">
-        <span class="material-symbols-outlined" id="mob-theme-icon">dark_mode</span>
+      <div id="mob-status-pill" class="mob-status-pill">
+        <span class="mob-status-dot" id="mob-live-dot"></span>
+        <span id="mob-live-text">--</span>
       </div>
-      <div class="mob-icon-btn" onclick="toggleMobileView()" title="Desktop View">
-        <span class="material-symbols-outlined">computer</span>
+      <div class="mob-icon-btn" onclick="togglePrivacy()" title="Privacy">
+        <span class="material-symbols-outlined" id="mob-privacy-icon">visibility</span>
       </div>
+      <a href="/settings" class="mob-icon-btn text-inherit" style="color: inherit; text-decoration: none;" title="Settings">
+        <span class="material-symbols-outlined">settings</span>
+      </a>
     </div>
   </div>
 
@@ -693,9 +697,6 @@
     </a>
     <a href="/reports" class="mob-tab-item">
       <span class="material-symbols-outlined">pie_chart</span>
-    </a>
-    <a href="/settings" class="mob-tab-item active">
-      <span class="material-symbols-outlined">settings</span>
     </a>
   </div>
 </div>
