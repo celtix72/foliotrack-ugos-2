@@ -2226,7 +2226,7 @@
             // BTP* tickers are virtual — they don't exist on YF or Borsa Italiana directly;
             // only their ISIN is searchable. Skip YF validation and auto-resolve as B_ITA.
             if (tk.toUpperCase().startsWith('BTP')) {
-                tickerCache[tk] = { valid: true, isBTP: true };
+                tickerCache[cacheKey] = { valid: true, isBTP: true };
                 progressLabel.textContent = `BTP virtual asset: ${tk} → B_ITA (${i+1}/${uniqueAssetKeys.length})`;
                 continue;
             }
