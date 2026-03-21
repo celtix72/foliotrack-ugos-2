@@ -1801,9 +1801,16 @@ app.get('/api/market/exchange-rate', async (req, res) => {
  * Shared helper to calculate performance data points for one or more portfolios.
  */
 async function calculatePerformanceHistory(portfolioIds, range) {
-    // Standardize input: null, single ID, or array
     const pIdsInput = portfolioIds === null ? null : (Array.isArray(portfolioIds) ? portfolioIds : [portfolioIds]);
-    
+    const rangeKey = range || 'ALL';
+    const cacheKey = `history_${pIdsInput ? pIdsInput.sort().join(',') : 'global'}_${rangeKey}`;
+
+    // 1. Check Cache (1 minute TTL for dashboard-level history)
+    const CACHE_SHORT_TTL = 60 * 1000; 
+    if (performanceResultsCache[cacheKey] && (Date.now() - performanceResultsCache[cacheKey].timestamp < CACHE_SHORT_TTL)) {
+        return performanceResultsCache[cacheKey].data;
+    }
+
     const isGlobal = !pIdsInput || pIdsInput.length === 0;
     const portfolios = isGlobal 
         ? database.db.prepare('SELECT * FROM portfolios').all()
@@ -1837,7 +1844,7 @@ async function calculatePerformanceHistory(portfolioIds, range) {
         }
     }
     const uniqueTickers = [...new Set(allTransactions.map(t => t.assetTicker).filter(t => t && t !== 'CASH'))];
-    logger.info(`Calculating performance history (range: ${range}, start: ${startDate.toISOString().split('T')[0]}) for ${uniqueTickers.length} tickers...`);
+    // console.log(`[Perf] ${range} for ${portfolios.length} portfolios (${uniqueTickers.length} assets)`);
 
     const historicalPrices = {};
     const fxRates = {};
@@ -2082,7 +2089,10 @@ async function calculatePerformanceHistory(portfolioIds, range) {
     const portfolioStates = {};
 
     for (const p of portfolios) {
-        logger.info(`Recalculating history for Portfolio: ${p.id} (${p.name})...`);
+        // Reduced logging - only log if it's a heavy calculation (many assets or long range)
+        if (uniqueTickers.length > 10 || (range !== '1W' && range !== '1M')) {
+            logger.info(`Calculating history for ${p.name}...`);
+        }
         portfolioStates[p.id] = {
             cash: p.initialCash || 0,
             netDeposits: p.initialCash || 0,
@@ -2336,6 +2346,12 @@ async function calculatePerformanceHistory(portfolioIds, range) {
         });
         currentDate.setDate(currentDate.getDate() + 1);
     }
+    // 5. Cache result
+    performanceResultsCache[cacheKey] = {
+        data: dataPoints,
+        timestamp: Date.now()
+    };
+
     return dataPoints;
 }
 
