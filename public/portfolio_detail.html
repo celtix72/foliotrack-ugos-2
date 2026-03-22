@@ -2594,7 +2594,7 @@
 
     <div class="mob-scroll">
       <!-- Hero -->
-      <div class="mob-hero">
+      <div class="mob-hero" id="mob-hero-section">
         <div class="mob-hero-label" id="mob-detail-label">Portafoglio</div>
         <div class="mob-hero-value" id="mob-detail-total">0</div>
         <div class="mob-hero-stats">
@@ -2781,6 +2781,16 @@
       portfolioCurrency = currency;
 
       const el = (eid) => document.getElementById(eid);
+      // 1. Prominent Header with Portfolio Color
+      const hero = el('mob-hero-section');
+      if (hero && p.color) {
+        hero.style.backgroundColor = p.color;
+        hero.style.color = '#fff';
+        hero.querySelectorAll('.mob-hero-label, .mob-hero-stat-label').forEach(l => {
+          l.style.color = 'rgba(255,255,255,0.7)';
+        });
+      }
+
       if (el('mob-detail-pname')) el('mob-detail-pname').textContent = p.name;
       if (el('mob-detail-label')) el('mob-detail-label').textContent = p.name;
       if (el('mob-detail-total')) el('mob-detail-total').textContent = formatPrivacy(p.netValue || p.totalValue, currency, 'mob-dt');
@@ -2791,11 +2801,16 @@
       const gain = (p.netValue || p.totalValue) - (p.investedCapital || 0);
       const gainEl = el('mob-detail-gain');
       if (gainEl) {
-        gainEl.style.color = gain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        // If background is colored, gain should be white or high contrast
+        if (p.color) {
+            gainEl.style.color = '#fff';
+        } else {
+            gainEl.style.color = gain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        }
         gainEl.textContent = (gain >= 0 ? '+' : '') + formatCurrency(gain, currency, 0);
       }
 
-      // Load holdings and transactions from the already fetched portfolio data
+      // 2. Load holdings and transactions from the already fetched portfolio data
       mobLoadHoldings(p.holdings || [], currency);
       mobLoadTransactions(p.transactions || [], currency);
       // Init chart
@@ -2822,7 +2837,9 @@
             <div class="mob-holding-info">
               <div class="mob-holding-ticker">${h.ticker}</div>
               <div class="mob-holding-name">${h.name || ''}</div>
-              <div class="mob-holding-qty">${formatNumber(h.quantity, 4)} units</div>
+              <div style="display:flex;align-items:center;gap:3px;font-size:10px;font-weight:700;color:var(--mob-primary);margin-top:2px;">
+                <span class="material-symbols-outlined" style="font-size:14px">show_chart</span> Storico Asset
+              </div>
             </div>
             <div class="mob-holding-values">
               <div class="mob-holding-value">${formatPrivacy(h.currentValue, currency, 'mob-hv-'+h.ticker)}</div>
@@ -2931,7 +2948,10 @@
                       const labels = { 'BUY': 'ACQUISTO', 'SELL': 'VENDITA', 'DEPOSIT': 'DEPOSITO', 'WITHDRAWAL': 'PRELIEVO', 'DIVIDEND': 'DIVIDENDO' };
                       return d.events.map(ev => {
                           const typeLabel = labels[ev.type] || ev.type;
-                          return `${typeLabel}: ${ev.ticker || ev.assetName || ''}`;
+                          const prefix = (ev.type === 'DEPOSIT' || ev.type === 'BUY' || ev.type === 'DIVIDEND') ? '+' : '-';
+                          if (ev.type === 'BUY' || ev.type === 'SELL') return `${typeLabel}: ${ev.assetName || ev.ticker}`;
+                          if (ev.type === 'DEPOSIT' || ev.type === 'WITHDRAWAL') return `${typeLabel}: ${prefix}${formatCurrency(ev.amount, 'EUR', 0)}`;
+                          return `${typeLabel}: ${ev.ticker} ${prefix}${formatCurrency(ev.amount, 'EUR', 0)}`;
                       });
                   }
                   return null;
