@@ -2585,9 +2585,9 @@
 
     <!-- Back bar -->
     <div class="mob-back-bar">
-      <div class="mob-back-btn" onclick="mobShowPortfolioList()">
+      <div class="mob-back-btn" onclick="mobShowDashboard()">
         <span class="material-symbols-outlined">chevron_left</span>
-        Portafogli
+        Dashboard
       </div>
       <span class="mob-back-label" id="mob-detail-pname">---</span>
     </div>
@@ -2982,7 +2982,8 @@
       }
       container.innerHTML = holdings.map(h => {
         const isPos = (h.currentValue - h.totalCost) >= 0;
-        const pct = h.changePercent || 0;
+        const diff = h.currentValue - h.totalCost;
+        const pct = h.totalCost > 0 ? (diff / h.totalCost) * 100 : 0;
         const letters = (h.ticker || '').substring(0,3);
         const dataSource = h.dataSource || 'YF';
         const isin = h.isin || '';
@@ -3021,9 +3022,6 @@
               <div class="mob-holding-info">
                 <div class="mob-holding-ticker">${h.ticker}</div>
                 <div class="mob-holding-name">${h.name || ''}</div>
-                <div style="display:flex;align-items:center;gap:3px;font-size:10px;font-weight:700;color:var(--mob-primary);margin-top:2px;">
-                  <span class="material-symbols-outlined" style="font-size:14px">swipe_left</span> Scorri per azioni
-                </div>
               </div>
               <div class="mob-holding-values">
                 <div class="mob-holding-value">${formatPrivacy(h.currentValue, currency, 'mob-hv-'+h.ticker)}</div>
