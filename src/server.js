@@ -2825,6 +2825,42 @@ app.get('/api/analytics/reports', async (req, res) => {
             if (totalProfit > bestAsset.profit) bestAsset = { ticker, profit: totalProfit, name: a.name };
         }
 
+        // 5. Annual Gains (Realized + Dividends + Unrealized for Current Year)
+        const annualGainsMap = {}; // { year: { realized: 0, dividends: 0, unrealized: 0 } }
+        const currentYear = today.getFullYear().toString();
+        const liveRateVal = await getEurUsdRate();
+
+        for (const p of portfolios) {
+            try {
+                const details = await getPortfolioDetails(p.id, liveRateVal);
+                const rate = (p.currency === 'USD') ? liveRateVal : 1;
+                
+                // Realized from closed positions
+                for (const pos of details.closedPositions) {
+                    const y = pos.year;
+                    if (!annualGainsMap[y]) annualGainsMap[y] = { year: y, realized: 0, dividends: 0, unrealized: 0 };
+                    annualGainsMap[y].realized += pos.realizedGain / rate;
+                }
+                
+                // Dividends
+                for (const group of details.dividendGroups) {
+                    const y = group.year;
+                    if (!annualGainsMap[y]) annualGainsMap[y] = { year: y, realized: 0, dividends: 0, unrealized: 0 };
+                    annualGainsMap[y].dividends += group.total / rate;
+                }
+                
+                // Unrealized (only current year)
+                const pUnrealized = details.holdings.reduce((sum, h) => sum + (h.unrealizedGain || 0), 0);
+                if (!annualGainsMap[currentYear]) annualGainsMap[currentYear] = { year: currentYear, realized: 0, dividends: 0, unrealized: 0 };
+                annualGainsMap[currentYear].unrealized += pUnrealized / rate;
+                
+            } catch (e) {
+                console.error(`Error aggregating annual gains for portfolio ${p.id}:`, e);
+            }
+        }
+
+        const annualGains = Object.values(annualGainsMap).sort((a,b) => b.year - a.year);
+
         res.json({
             performance: {
                 portfolio: normalizedGlobal,
@@ -2834,19 +2870,17 @@ app.get('/api/analytics/reports', async (req, res) => {
             },
             diversification,
             dividends,
+            annualGains,
             metrics: {
                 totalROI,
                 annualizedROI: Math.pow(1 + totalROI, 1 / (portfolioPerformance.length / 12)) - 1,
                 bestAsset: bestAsset.ticker === '-' ? '-' : `${bestAsset.name} (${bestAsset.ticker})`,
                 sharpeRatio: (() => {
-                    // Monthly returns for Sharpe Ratio based on ROI Index
                     const returns = [];
                     for (let i = 1; i < normalizedGlobal.length; i++) {
                         const prev = normalizedGlobal[i-1].value;
                         const curr = normalizedGlobal[i].value;
-                        if (prev > 0) {
-                            returns.push((curr / prev) - 1);
-                        }
+                        if (prev > 0) returns.push((curr / prev) - 1);
                     }
                     if (returns.length < 2) return 0;
                     const mean = returns.reduce((a, b) => a + b, 0) / returns.length;

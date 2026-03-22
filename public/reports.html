@@ -229,6 +229,32 @@
     </div>
 </section>
 
+<!-- Annual Gains Summary Section -->
+<section class="bg-white dark:bg-[#111722] p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h3 class="text-xl font-bold">Annual Gains Summary</h3>
+            <p class="text-sm text-slate-500">Total yearly income from realized gains and dividends</p>
+        </div>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="text-[10px] font-bold uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800">
+                    <th class="pb-4 font-bold">Year</th>
+                    <th class="pb-4 font-bold text-right">Realized Gain (Sales)</th>
+                    <th class="pb-4 font-bold text-right">Dividends</th>
+                    <th class="pb-4 font-bold text-right">Total Realized</th>
+                    <th class="pb-4 font-bold text-right">Unrealized (Open)</th>
+                </tr>
+            </thead>
+            <tbody id="annual-gains-body" class="divide-y divide-slate-50 dark:divide-slate-800/50">
+                <!-- Data will be injected here -->
+            </tbody>
+        </table>
+    </div>
+</section>
+
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-8">
 <!-- Diversification -->
 <section class="bg-white dark:bg-[#111722] p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -348,6 +374,14 @@
       <!-- Injected via JS -->
     </div>
 
+    <!-- Annual Gains -->
+    <div class="mob-section-header">
+      <span class="mob-section-title">Annual Gains Summary</span>
+    </div>
+    <div class="mob-chart-card" id="mob-annual-gains-container" style="padding: 16px;">
+        <!-- Injected via JS -->
+    </div>
+
     <!-- Diversification Types -->
     <div class="mob-section-header">
       <span class="mob-section-title">Asset Types</span>
@@ -439,11 +473,56 @@
             renderPortfoliosBreakdown(data.performance.individual);
             renderDiversification(data.diversification);
             renderDividendChart(data.dividends);
+            if (data.annualGains) renderAnnualGains(data.annualGains);
 
             // document.getElementById('last-update-label').textContent = 'Last Update: ' + new Date().toLocaleTimeString('it-IT');
         } catch (err) {
             console.error('Report loading error:', err);
         }
+    }
+
+    function renderAnnualGains(gains) {
+        const body = document.getElementById('annual-gains-body');
+        if (!body) return;
+        body.innerHTML = '';
+
+        const currentYear = new Date().getFullYear().toString();
+
+        gains.forEach(g => {
+            const totalRealized = g.realized + g.dividends;
+            const isCurrentYear = g.year === currentYear;
+            
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors';
+            tr.innerHTML = `
+                <td class="py-4">
+                    <div class="flex items-center gap-3">
+                        <span class="font-bold text-sm">${g.year}</span>
+                        ${isCurrentYear ? '<span class="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[8px] font-black uppercase tracking-widest">Current</span>' : ''}
+                    </div>
+                </td>
+                <td class="py-4 text-right font-black text-sm ${g.realized >= 0 ? 'text-emerald-500' : 'text-rose-500'}">
+                    ${formatCurrency(g.realized, 'EUR')}
+                </td>
+                <td class="py-4 text-right font-black text-sm text-emerald-500">
+                    ${formatCurrency(g.dividends, 'EUR')}
+                </td>
+                <td class="py-4 text-right font-black text-sm">
+                    ${formatCurrency(totalRealized, 'EUR')}
+                </td>
+                <td class="py-4 text-right">
+                    ${isCurrentYear ? `
+                        <div class="flex flex-col items-end">
+                            <span class="font-black text-sm ${g.unrealized >= 0 ? 'text-emerald-500' : 'text-rose-500'}">
+                                ${formatCurrency(g.unrealized, 'EUR')}
+                            </span>
+                            <span class="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">Net Gain (Open)</span>
+                        </div>
+                    ` : '<span class="text-slate-300 dark:text-slate-700">--</span>'}
+                </td>
+            `;
+            body.appendChild(tr);
+        });
     }
 
     function renderMetrics(m) {
@@ -724,7 +803,40 @@
 
             // Charts
             mobRenderCharts(data);
+            if (data.annualGains) mobRenderAnnualGains(data.annualGains);
         } catch(e) {}
+    }
+
+    function mobRenderAnnualGains(gains) {
+        const container = document.getElementById('mob-annual-gains-container');
+        if (!container) return;
+        
+        const currentYear = new Date().getFullYear().toString();
+        
+        container.innerHTML = gains.map(g => {
+            const isCurr = g.year === currentYear;
+            const totalRealized = g.realized + g.dividends;
+            return `
+                <div style="display: flex; flex-direction: column; gap: 8px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--mob-border);">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 900; font-size: 16px;">${g.year} ${isCurr ? '<span style="font-size: 10px; color: var(--mob-primary); margin-left: 4px;">NOW</span>' : ''}</span>
+                        <span style="font-weight: 900; font-size: 14px;">${formatCurrency(totalRealized, 'EUR')}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--mob-text-dim);">
+                        <span>Sales: <span style="color: ${g.realized >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">${formatCurrency(g.realized, 'EUR')}</span></span>
+                        <span>Div: <span style="color: var(--mob-emerald)">${formatCurrency(g.dividends, 'EUR')}</span></span>
+                    </div>
+                    ${isCurr ? `
+                    <div style="margin-top: 4px; padding: 8px; background: rgba(0,0,0,0.05); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 10px; font-weight: 700; color: var(--mob-text-dim); text-transform: uppercase;">Unrealized (Open)</span>
+                        <span style="font-weight: 900; font-size: 14px; color: ${g.unrealized >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">
+                            ${formatCurrency(g.unrealized, 'EUR')}
+                        </span>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+        }).join('') || '<div class="text-xs italic text-center text-slate-400">No data available</div>';
     }
 
     function mobRenderCharts(data) {
