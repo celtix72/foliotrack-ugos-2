@@ -2128,6 +2128,7 @@ async function calculatePerformanceHistory(portfolioIds, range) {
         portfolioStates[p.id] = {
             cash: p.initialCash || 0,
             netDeposits: p.initialCash || 0,
+            dividends: 0,
             holdings: {},
             lastTxPrices: {} 
         };
@@ -2146,8 +2147,10 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                 case 'TAX':        portfolioStates[p.id].cash -= amount; break;
                 case 'TRANSFER':   portfolioStates[p.id].cash -= amount; break;
                 case 'DIVIDEND': {
-                    const divAmt = (t.amount || (qty * price - comm - tax)) / fx;
+                    const absAmount = Math.abs(amount);
+                    const divAmt = (absAmount || Math.abs(qty * price - comm - tax)) / fx;
                     portfolioStates[p.id].cash += divAmt; 
+                    portfolioStates[p.id].dividends += divAmt;
                     break;
                 }
                 case 'BUY':
@@ -2218,8 +2221,10 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                         case 'TAX':        state.cash -= amount; break;
                         case 'TRANSFER':   state.cash -= amount; break;
                         case 'DIVIDEND': {
-                            const divAmt = (t.amount || (qty * price - comm - tax)) / fx;
+                            const absAmount = Math.abs(t.amount || (qty * price - comm - tax));
+                            const divAmt = absAmount / fx;
                             state.cash += divAmt; 
+                            state.dividends += divAmt;
                             break;
                         }
                         case 'BUY':
@@ -2267,9 +2272,10 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                         case 'TAX':        state.cash -= amount; break;
                         case 'TRANSFER':   state.cash -= amount; break;
                         case 'DIVIDEND': {
-                            // Ensure dividend is positive; prioritize explicit amount
-                            const divAmt = (Math.abs(t.amount) || Math.abs(qty * price - comm - tax)) / fx;
+                            const absAmount = Math.abs(t.amount || (qty * price - comm - tax));
+                            const divAmt = absAmount / fx;
                             state.cash += divAmt; 
+                            state.dividends += divAmt;
                             break;
                         }
                         case 'BUY':
@@ -2368,10 +2374,14 @@ async function calculatePerformanceHistory(portfolioIds, range) {
             dayValue = 0; dayProfit = 0; dayCash = 0; dayAssets = 0;
         }
 
+        let dayDividends = 0;
+        for (const p of portfolios) dayDividends += portfolioStates[p.id].dividends;
+
         dataPoints.push({
             date: dateStr,
             value: !isFinite(dayValue) ? 0 : Math.round(dayValue),
             profit: !isFinite(dayProfit) ? 0 : Math.round(dayProfit),
+            profitNoDiv: !isFinite(dayProfit) ? 0 : Math.round(dayProfit - dayDividends),
             cash: !isFinite(dayCash) ? 0 : Math.round(dayCash),
             assets: !isFinite(dayAssets) ? 0 : Math.round(dayAssets),
             events: dayEvents

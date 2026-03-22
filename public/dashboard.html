@@ -183,7 +183,7 @@
     <section class="lg:col-span-3 bg-white dark:bg-[#111722] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
         <div class="flex items-center justify-between mb-8">
             <div>
-                <h3 class="text-lg font-bold">Performance History</h3>
+                <h3 class="text-lg font-bold">Performance</h3>
                 <p class="text-xs text-slate-500">Aggregated net worth across all connected platforms</p>
             </div>
             <div class="flex gap-1 bg-slate-50 dark:bg-slate-900/50 p-1 rounded-lg border border-slate-100 dark:border-slate-800" id="chart-range-buttons">
@@ -379,6 +379,21 @@
                     pointHoverBorderColor: '#fff',
                     pointHoverBorderWidth: 2,
                     yAxisID: 'y1'
+                }, {
+                    label: 'Net Gain (No Div)',
+                    data: [],
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'transparent',
+                    fill: false,
+                    tension: 0.4,
+                    borderWidth: 2,
+                    borderDash: [2, 2],
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                    pointHoverBackgroundColor: '#f59e0b',
+                    pointHoverBorderColor: '#fff',
+                    pointHoverBorderWidth: 2,
+                    yAxisID: 'y1'
                 }]
             },
             options: {
@@ -506,6 +521,7 @@
             });
             dashboardChart.data.datasets[0].data = dataPoints.map(d => d.value);
             dashboardChart.data.datasets[1].data = dataPoints.map(d => d.profit);
+            dashboardChart.data.datasets[2].data = dataPoints.map(d => d.profitNoDiv);
 
             // Year Markers (Vertical dashed lines)
             const annotations = {};
@@ -794,7 +810,7 @@
 
     <!-- Performance Chart -->
     <div class="mob-chart-card">
-      <div class="mob-chart-title">Performance History</div>
+      <div class="mob-chart-title">Performance</div>
       <div class="mob-chart-subtitle">Net worth aggregato</div>
       <div class="mob-chart-range-bar" id="mob-range-bar">
         <div class="mob-range-btn" onclick="mobSetRange('1W')" data-range="1W">1W</div>

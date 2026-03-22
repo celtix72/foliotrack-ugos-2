@@ -263,7 +263,7 @@
         <!-- Performance Chart (Left) -->
         <div class="lg:col-span-2 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
             <div class="flex items-center justify-between mb-8">
-                <h3 class="text-lg font-bold">Performance Over Time</h3>
+                <h3 class="text-lg font-bold">Performance</h3>
                 <div class="flex bg-slate-100 dark:bg-slate-900 rounded-lg p-1" id="chart-range-buttons">
                     <button data-range="1D" onclick="setChartRange('1D')" class="range-btn px-4 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">1D</button>
                     <button data-range="1M" onclick="setChartRange('1M')" class="range-btn px-4 py-1.5 text-xs font-bold rounded-md bg-white dark:bg-slate-800 shadow-sm transition-all">1M</button>
@@ -1775,6 +1775,21 @@
                     pointHoverBorderColor: '#fff',
                     pointHoverBorderWidth: 2,
                     yAxisID: 'y1'
+                }, {
+                    label: 'Net Gain (No Div)',
+                    data: [],
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'transparent',
+                    fill: false,
+                    tension: 0.4,
+                    borderWidth: 2,
+                    borderDash: [2, 2],
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                    pointHoverBackgroundColor: '#f59e0b',
+                    pointHoverBorderColor: '#fff',
+                    pointHoverBorderWidth: 2,
+                    yAxisID: 'y1'
                 }]
             },
             options: {
@@ -1898,6 +1913,7 @@
             });
             performanceChart.data.datasets[0].data = dataPoints.map(d => d.value);
             performanceChart.data.datasets[1].data = dataPoints.map(d => d.profit);
+            performanceChart.data.datasets[2].data = dataPoints.map(d => d.profitNoDiv);
 
             // Year Markers (Vertical dashed lines)
             const annotations = {};
@@ -2850,6 +2866,14 @@
         label: 'Value', data: [],
         borderColor: '#135bec', backgroundColor: 'rgba(19,91,236,0.10)',
         fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4
+      }, {
+        label: 'Net Profit', data: [],
+        borderColor: '#10b981', borderWidth: 1.5, borderDash: [3, 3],
+        pointRadius: 0, tension: 0.4, yAxisID: 'y'
+      }, {
+        label: 'Net Gain (No Div)', data: [],
+        borderColor: '#f59e0b', borderWidth: 1.5, borderDash: [1, 1],
+        pointRadius: 0, tension: 0.4, yAxisID: 'y'
       }]},
       options: {
         responsive: true, maintainAspectRatio: false,
@@ -2877,6 +2901,8 @@
       const pts = result.dataPoints || (Array.isArray(result) ? result : []);
       mobDetailChart.data.labels = pts.map(d => new Date(d.date).toLocaleDateString('it-IT', {day:'2-digit',month:'2-digit'}));
       mobDetailChart.data.datasets[0].data = pts.map(d => d.value);
+      mobDetailChart.data.datasets[1].data = pts.map(d => d.profit);
+      mobDetailChart.data.datasets[2].data = pts.map(d => d.profitNoDiv);
       mobDetailChart.update();
     } catch(e) { console.error('[MOB] Detail chart error:', e); }
   }
