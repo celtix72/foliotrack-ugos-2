@@ -2903,15 +2903,21 @@
                ontouchend="handleTouchEnd(event, this)">
             
             <div class="mob-holding-actions">
-              <div class="mob-action-btn" style="background:#3b82f6" onclick="mobViewAssetTransactions('${h.ticker}')">
+              <div class="mob-action-btn" style="background:#3b82f6" 
+                   ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
+                   onclick="event.stopPropagation(); mobViewAssetTransactions('${h.ticker}')">
                 <span class="material-symbols-outlined">list</span>
                 <span>Trans</span>
               </div>
-              <div class="mob-action-btn" style="background:#8b5cf6" onclick="openAssetChartModal('${h.ticker}', '${h.name || ''}', '${currency}')">
+              <div class="mob-action-btn" style="background:#8b5cf6" 
+                   ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
+                   onclick="event.stopPropagation(); openAssetChartModal('${h.ticker}', '${h.name || ''}', '${currency}')">
                 <span class="material-symbols-outlined">show_chart</span>
                 <span>Grafico</span>
               </div>
-              <div class="mob-action-btn" style="background:#f59e0b" onclick="openManualModal('${h.ticker}', '${currency}', ${h.currentPrice}, '${type}', '${country}', '${dataSource}', '${isin}')">
+              <div class="mob-action-btn" style="background:#f59e0b" 
+                   ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
+                   onclick="event.stopPropagation(); openManualModal('${h.ticker}', '${currency}', ${h.currentPrice}, '${type}', '${country}', '${dataSource}', '${isin}')">
                 <span class="material-symbols-outlined">edit_note</span>
                 <span>Modifica</span>
               </div>
