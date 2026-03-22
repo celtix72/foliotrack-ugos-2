@@ -1644,6 +1644,145 @@
         populateLogDates();
         loadLogs();
         setInterval(loadLogs, 15000);
+
+        // --- NEW AUDIT FUNCTIONS ---
+        window.editTransactionAudit = async function(id) {
+            try {
+                const res = await fetch('/api/transactions');
+                const txs = await res.json();
+                const t = txs.find(x => x.id === id);
+                if (!t) return alert('Transaction not found');
+
+                document.getElementById('edit-audit-id').value = t.id;
+                document.getElementById('edit-audit-type').value = t.type;
+                document.getElementById('edit-audit-date').value = t.date;
+                document.getElementById('edit-audit-qty').value = t.quantity || 0;
+                document.getElementById('edit-audit-price').value = t.price || 0;
+                document.getElementById('edit-audit-fx').value = t.exchangeRate || 1;
+                document.getElementById('edit-audit-comm').value = t.commission || 0;
+                document.getElementById('edit-audit-tax').value = t.tax || 0;
+                document.getElementById('edit-audit-amount').value = t.amount || 0;
+
+                document.getElementById('edit-audit-modal').classList.remove('hidden');
+            } catch (e) {
+                alert('Error fetching transaction: ' + e.message);
+            }
+        };
+
+        window.closeEditAuditModal = function() {
+            document.getElementById('edit-audit-modal').classList.add('hidden');
+        };
+
+        window.saveAuditTransaction = async function() {
+            const id = document.getElementById('edit-audit-id').value;
+            const body = {
+                type: document.getElementById('edit-audit-type').value,
+                date: document.getElementById('edit-audit-date').value,
+                quantity: parseFloat(document.getElementById('edit-audit-qty').value),
+                price: parseFloat(document.getElementById('edit-audit-price').value),
+                exchangeRate: parseFloat(document.getElementById('edit-audit-fx').value),
+                commission: parseFloat(document.getElementById('edit-audit-comm').value),
+                tax: parseFloat(document.getElementById('edit-audit-tax').value),
+                amount: parseFloat(document.getElementById('edit-audit-amount').value)
+            };
+
+            try {
+                const res = await fetch(`/api/transactions/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    closeEditAuditModal();
+                    loadAuditData(); // Refresh table
+                } else {
+                    alert('Save failed: ' + (data.error || 'Unknown error'));
+                }
+            } catch (e) {
+                alert('Error saving: ' + e.message);
+            }
+        };
+
+        window.deleteTransactionAudit = async function(id) {
+            if (!confirm('Are you sure you want to delete this transaction? This will affect your portfolio balance and history.')) return;
+            try {
+                const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    loadAuditData(); // Refresh
+                } else {
+                    const txt = await res.text();
+                    alert('Delete failed: ' + txt);
+                }
+            } catch (e) {
+                alert('Error deleting: ' + e.message);
+            }
+        };
     });
 </script>
+
+<!-- Edit Transaction Audit Modal -->
+<div id="edit-audit-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl p-6">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-bold">Edit Transaction</h3>
+            <button onclick="closeEditAuditModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <form id="edit-audit-form" class="space-y-4">
+            <input type="hidden" id="edit-audit-id">
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Type</label>
+                    <select id="edit-audit-type" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:ring-primary/30">
+                        <option value="BUY">BUY</option>
+                        <option value="SELL">SELL</option>
+                        <option value="DIVIDEND">DIVIDEND</option>
+                        <option value="DEPOSIT">DEPOSIT</option>
+                        <option value="WITHDRAWAL">WITHDRAWAL</option>
+                        <option value="TAX">TAX</option>
+                        <option value="TRANSFER">TRANSFER</option>
+                    </select>
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Date</label>
+                    <input type="date" id="edit-audit-date" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:ring-primary/30">
+                </div>
+            </div>
+            <div class="grid grid-cols-3 gap-4">
+                <div class="space-y-1.5">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Qty</label>
+                    <input type="number" step="any" id="edit-audit-qty" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:ring-primary/30">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Price</label>
+                    <input type="number" step="any" id="edit-audit-price" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:ring-primary/30">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">FX Rate</label>
+                    <input type="number" step="any" id="edit-audit-fx" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:ring-primary/30">
+                </div>
+            </div>
+            <div class="grid grid-cols-3 gap-4">
+                <div class="space-y-1.5">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Comm</label>
+                    <input type="number" step="any" id="edit-audit-comm" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:ring-primary/30">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Tax</label>
+                    <input type="number" step="any" id="edit-audit-tax" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:ring-primary/30">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Amt (EUR)</label>
+                    <input type="number" step="any" id="edit-audit-amount" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:ring-primary/30">
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 pt-4">
+                <button type="button" onclick="closeEditAuditModal()" class="px-6 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold">Cancel</button>
+                <button type="button" onclick="saveAuditTransaction()" class="px-6 py-2 bg-primary text-white rounded-lg text-[10px] font-bold shadow-sm shadow-primary/20">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
 </body></html>
