@@ -264,14 +264,27 @@
         <div class="lg:col-span-2 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
             <div class="flex items-center justify-between mb-8">
                 <h3 class="text-lg font-bold">Performance</h3>
-                <div class="flex bg-slate-100 dark:bg-slate-900 rounded-lg p-1" id="chart-range-buttons">
-                    <button data-range="1D" onclick="setChartRange('1D')" class="range-btn px-4 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">1D</button>
-                    <button data-range="1M" onclick="setChartRange('1M')" class="range-btn px-4 py-1.5 text-xs font-bold rounded-md bg-white dark:bg-slate-800 shadow-sm transition-all">1M</button>
-                    <button data-range="3M" onclick="setChartRange('3M')" class="range-btn px-4 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">3M</button>
-                    <button data-range="6M" onclick="setChartRange('6M')" class="range-btn px-4 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">6M</button>
-                    <button data-range="YTD" onclick="setChartRange('YTD')" class="range-btn px-4 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">YTD</button>
-                    <button data-range="1Y" onclick="setChartRange('1Y')" class="range-btn px-4 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">1Y</button>
-                    <button data-range="ALL" onclick="setChartRange('ALL')" class="range-btn px-4 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">ALL</button>
+                <div class="flex bg-slate-100 dark:bg-slate-900 rounded-lg p-1 gap-1" id="chart-range-buttons">
+                    <button data-range="1W" onclick="setChartRange('1W')" class="range-btn px-3 py-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all rounded-md">1W</button>
+                    <button data-range="1M" onclick="setChartRange('1M')" class="range-btn px-3 py-1.5 text-[10px] font-bold rounded-md bg-white dark:bg-slate-800 shadow-sm transition-all">1M</button>
+                    <button data-range="3M" onclick="setChartRange('3M')" class="range-btn px-3 py-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all rounded-md">3M</button>
+                    <button data-range="YTD" onclick="setChartRange('YTD')" class="range-btn px-3 py-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all rounded-md">YTD</button>
+                    <button data-range="1Y" onclick="setChartRange('1Y')" class="range-btn px-3 py-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all rounded-md">1Y</button>
+                    <button data-range="2Y" onclick="setChartRange('2Y')" class="range-btn px-3 py-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all rounded-md">2Y</button>
+                    <button data-range="3Y" onclick="setChartRange('3Y')" class="range-btn px-3 py-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all rounded-md">3Y</button>
+                    <button data-range="5Y" onclick="setChartRange('5Y')" class="range-btn px-3 py-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all rounded-md">5Y</button>
+                    <button data-range="ALL" onclick="setChartRange('ALL')" class="range-btn px-3 py-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all rounded-md">ALL</button>
+                    
+                    <div class="h-4 w-[1px] bg-slate-200 dark:bg-slate-700 mx-1 self-center"></div>
+                    
+                    <select id="year-selector" onchange="setChartRange(this.value)" class="bg-transparent border-none text-[10px] font-bold text-slate-500 focus:ring-0 cursor-pointer">
+                        <option value="" disabled selected>Year</option>
+                        <option value="2026">2026</option>
+                        <option value="2025">2025</option>
+                        <option value="2024">2024</option>
+                        <option value="2023">2023</option>
+                        <option value="2022">2022</option>
+                    </select>
                 </div>
             </div>
             <div class="h-64 w-full relative">
@@ -1880,16 +1893,23 @@
     async function setChartRange(range) {
         currentChartRange = range;
         
+        const yearSelector = document.getElementById('year-selector');
+        if (/^\d{4}$/.test(range)) {
+            if (yearSelector) yearSelector.value = range;
+        } else {
+            if (yearSelector) yearSelector.value = "";
+        }
+
         // Reset zoom when range changes
         if (performanceChart) performanceChart.resetZoom();
 
         // Update UI
         document.querySelectorAll('.range-btn').forEach(btn => {
             if (btn.dataset.range === range) {
-                btn.classList.add('bg-white', 'dark:bg-slate-800', 'shadow-sm', 'text-slate-900', 'dark:text-white');
+                btn.classList.add('bg-white', 'dark:bg-slate-800', 'shadow-sm', 'text-slate-900', 'dark:text-white', 'font-black');
                 btn.classList.remove('text-slate-400');
             } else {
-                btn.classList.remove('bg-white', 'dark:bg-slate-800', 'shadow-sm', 'text-slate-900', 'dark:text-white');
+                btn.classList.remove('bg-white', 'dark:bg-slate-800', 'shadow-sm', 'text-slate-900', 'dark:text-white', 'font-black');
                 btn.classList.add('text-slate-400');
             }
         });

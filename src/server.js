@@ -1932,20 +1932,31 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
     `).all();
 
     let startDate;
+    let endSimulationDate = new Date(today);
     
-    switch (range) {
-        case '1D':  startDate = new Date(today); startDate.setDate(today.getDate() - 1); break;
-        case '1W':  startDate = new Date(today); startDate.setDate(today.getDate() - 7); break;
-        case '1M':  startDate = new Date(today); startDate.setMonth(today.getMonth() - 1); break;
-        case '3M':  startDate = new Date(today); startDate.setMonth(today.getMonth() - 3); break;
-        case '6M':  startDate = new Date(today); startDate.setMonth(today.getMonth() - 6); break;
-        case '1Y':  startDate = new Date(today); startDate.setFullYear(today.getFullYear() - 1); break;
-        case '2Y':  startDate = new Date(today); startDate.setFullYear(today.getFullYear() - 2); break;
-        case 'YTD': startDate = new Date(today.getFullYear(), 0, 1); break;
-        default: {
-            const firstDate = allTransactions.length > 0 ? allTransactions[0].date : null;
-            startDate = firstDate ? new Date(firstDate) : new Date(today);
-            if (startDate > today) startDate = new Date(today);
+    // Support specific years (e.g. "2024")
+    if (/^\d{4}$/.test(range)) {
+        const y = parseInt(range);
+        startDate = new Date(y, 0, 1);
+        endSimulationDate = new Date(y, 11, 31);
+        if (endSimulationDate > today) endSimulationDate = new Date(today);
+    } else {
+        switch (range) {
+            case '1D':  startDate = new Date(today); startDate.setDate(today.getDate() - 1); break;
+            case '1W':  startDate = new Date(today); startDate.setDate(today.getDate() - 7); break;
+            case '1M':  startDate = new Date(today); startDate.setMonth(today.getMonth() - 1); break;
+            case '3M':  startDate = new Date(today); startDate.setMonth(today.getMonth() - 3); break;
+            case '6M':  startDate = new Date(today); startDate.setMonth(today.getMonth() - 6); break;
+            case '1Y':  startDate = new Date(today); startDate.setFullYear(today.getFullYear() - 1); break;
+            case '2Y':  startDate = new Date(today); startDate.setFullYear(today.getFullYear() - 2); break;
+            case '3Y':  startDate = new Date(today); startDate.setFullYear(today.getFullYear() - 3); break;
+            case '5Y':  startDate = new Date(today); startDate.setFullYear(today.getFullYear() - 5); break;
+            case 'YTD': startDate = new Date(today.getFullYear(), 0, 1); break;
+            default: {
+                const firstDate = allTransactions.length > 0 ? allTransactions[0].date : null;
+                startDate = firstDate ? new Date(firstDate) : new Date(today);
+                if (startDate > today) startDate = new Date(today);
+            }
         }
     }
     const historicalPrices = {};
@@ -2200,7 +2211,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     };
 
-    while (currentDate <= today) {
+    while (currentDate <= endSimulationDate) {
         const dateStr = formatDate(currentDate);
         let dayValue = 0, dayProfit = 0, dayCash = 0, dayAssets = 0;
         const dayEvents = [];
