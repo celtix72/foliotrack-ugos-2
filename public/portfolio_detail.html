@@ -2596,7 +2596,10 @@
       <!-- Hero -->
       <div class="mob-hero" id="mob-hero-section">
         <div class="mob-hero-label" id="mob-detail-label">Portafoglio</div>
-        <div class="mob-hero-value" id="mob-detail-total">0</div>
+        <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:16px;">
+          <div class="mob-hero-value" id="mob-detail-total" style="margin-bottom:0">0</div>
+          <div id="mob-detail-perf-badge" class="hidden">--</div>
+        </div>
         <div class="mob-hero-stats">
           <div class="mob-hero-stat-item">
             <span class="mob-hero-stat-label">Lordo</span>
@@ -2614,6 +2617,22 @@
             <span class="mob-hero-stat-label">Assets</span>
             <span class="mob-hero-stat-value" id="mob-detail-assets">--</span>
           </div>
+        </div>
+      </div>
+
+      <!-- Fiscal Summary (Latent Taxation) -->
+      <div id="mob-fiscal-summary" class="mob-stats-row" style="margin-top:-14px; margin-bottom:8px; display:none">
+        <div class="mob-stat-box" style="background:rgba(245,158,11,0.08); border-color:rgba(245,158,11,0.2);">
+          <span class="mob-stat-box-label" style="color:var(--mob-amber)">Netto Latente</span>
+          <span class="mob-stat-box-value" id="mob-fiscal-net-latent" style="color:var(--mob-amber)">--</span>
+        </div>
+        <div class="mob-stat-box">
+          <span class="mob-stat-box-label">Lordo Lat.</span>
+          <span class="mob-stat-box-value" id="mob-fiscal-gross-latent">--</span>
+        </div>
+        <div class="mob-stat-box">
+          <span class="mob-stat-box-label">Tasse Est.</span>
+          <span class="mob-stat-box-value" id="mob-fiscal-tax-est" style="color:var(--mob-rose)">--</span>
         </div>
       </div>
 
@@ -2641,6 +2660,14 @@
         </div>
         <div class="mob-chart-canvas-wrapper">
           <canvas id="mob-detail-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- Allocation Row -->
+      <div id="mob-allocation-section" style="display:none; padding:12px 20px; background:var(--mob-surface); border:1px solid var(--mob-border); border-left:none; border-right:none; margin-bottom:8px;">
+        <div class="mob-chart-title" style="margin-bottom:12px">Allocazione Asset</div>
+        <div id="mob-allocation-list" style="display:flex; flex-direction:column; gap:10px;">
+          <!-- JS filled -->
         </div>
       </div>
 
@@ -2860,22 +2887,79 @@
       if (el('mob-detail-cash')) el('mob-detail-cash').textContent = formatPrivacy(p.cashBalance, currency, 'mob-dc', 2);
       if (el('mob-detail-assets')) el('mob-detail-assets').textContent = p.assetCount || 0;
 
-      const gain = (p.netValue || p.totalValue) - (p.investedCapital || 0);
+      // Performance Badge
+      const perfBadge = el('mob-detail-perf-badge');
+      if (perfBadge) {
+        const perf = p.changePercent || 0;
+        const isPos = perf >= 0;
+        perfBadge.classList.replace('hidden', 'flex');
+        perfBadge.style.backgroundColor = isPos ? 'rgba(16,185,129,0.15)' : 'rgba(244,63,94,0.15)';
+        perfBadge.style.color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        perfBadge.innerHTML = `<span class="material-symbols-outlined text-sm font-bold">${isPos ? 'trending_up' : 'trending_down'}</span> ${isPos ? '+' : ''}${perf.toFixed(2)}%`;
+      }
+
+      // Fiscal Summary
+      const fiscalSection = el('mob-fiscal-summary');
+      if (fiscalSection) {
+        if (p.taxBreakdown && p.taxBreakdown.length > 0) {
+          fiscalSection.style.display = 'grid';
+          const totalGross = p.taxBreakdown.reduce((s, b) => s + b.grossGain, 0);
+          const totalNet = p.taxBreakdown.reduce((s, b) => s + b.netGain, 0);
+          const totalTax = p.totalLatentTax || 0;
+          
+          if (el('mob-fiscal-net-latent')) el('mob-fiscal-net-latent').textContent = formatPrivacy(totalNet, currency, 'mob-f-net', 0);
+          if (el('mob-fiscal-gross-latent')) el('mob-fiscal-gross-latent').textContent = formatPrivacy(totalGross, currency, 'mob-f-gross', 0);
+          if (el('mob-fiscal-tax-est')) el('mob-fiscal-tax-est').textContent = formatPrivacy(totalTax, currency, 'mob-f-tax', 0);
+        } else {
+          fiscalSection.style.display = 'none';
+        }
+      }
+
+      const gain = p.totalGain || 0;
       const gainEl = el('mob-detail-gain');
       if (gainEl) {
         if (p.color) gainEl.style.color = '#fff';
         else gainEl.style.color = gain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-        gainEl.textContent = (gain >= 0 ? '+' : '') + formatCurrency(gain, currency, 0);
+        gainEl.textContent = (gain >= 0 ? '+' : '') + formatPrivacy(gain, currency, 'mob-d-gain', 0);
       }
-
-
 
       // 2. Load holdings and transactions from the already fetched portfolio data
       mobLoadHoldings(p.holdings || [], currency);
       mobLoadTransactions(p.transactions || [], currency);
+      mobRenderAllocation(p.allocation || [], currency);
       // Init chart
       mobInitDetailChart(id);
     } catch(e) { console.error('[MOB] Portfolio detail error:', e); }
+  }
+
+  function mobRenderAllocation(allocation, currency) {
+    const container = document.getElementById('mob-allocation-list');
+    const section = document.getElementById('mob-allocation-section');
+    if (!container || !section) return;
+
+    if (!allocation || allocation.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+
+    section.style.display = 'block';
+    container.innerHTML = allocation.slice(0, 6).map(a => {
+      const pct = a.percent || 0;
+      // Define colors for common types if not provided
+      const typeColors = { 'Bond': '#3b82f6', 'Azioni': '#10b981', 'Liquidity': '#f59e0b', 'ETF': '#8b5cf6', 'Stock': '#10b981' };
+      const color = a.color || typeColors[a.type] || 'var(--mob-primary)';
+      return `
+        <div class="mob-alloc-bar-container">
+          <div class="mob-alloc-bar-label">
+            <span>${a.type}</span>
+            <span>${pct.toFixed(1)}%</span>
+          </div>
+          <div class="mob-alloc-bar-bg">
+            <div class="mob-alloc-bar-fill" style="width:${pct}%; background:${color}"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
   }
 
   async function mobLoadHoldings(holdings, currency) {
