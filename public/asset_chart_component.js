@@ -79,6 +79,10 @@
         }
     };
 
+    window.openAssetChartModal = function(ticker, name, currency) {
+        window.loadAssetChart(ticker, 'all');
+    };
+
     window.loadAssetChart = async function(ticker, range = 'all') {
         ensureModalExists();
         if (ticker) _chartTicker = ticker;
