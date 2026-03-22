@@ -2771,17 +2771,79 @@
     mobCurrentPortfolioId = null;
   };
 
+  // ── Swipe Logic ──────────────────────────────────
+  let touchStartX = 0;
+  let touchMoveX = 0;
+  let currentSwipeEl = null;
+  const SWIPE_THRESHOLD = 50;
+  const ACTION_WIDTH = 195; // 3 buttons * 65px
+
+  window.handleTouchStart = function(e, container) {
+    touchStartX = e.touches[0].clientX;
+    touchMoveX = 0;
+    if (currentSwipeEl && currentSwipeEl !== container) {
+      resetSwipes(container);
+    }
+  };
+
+  window.handleTouchMove = function(e, container) {
+    const item = container.querySelector('.mob-holding-item');
+    if (!item) return;
+    touchMoveX = e.touches[0].clientX;
+    let diff = touchMoveX - touchStartX;
+    if (diff > 0) diff = 0;
+    if (diff < -ACTION_WIDTH - 20) diff = -ACTION_WIDTH - 20;
+    item.style.transition = 'none';
+    item.style.transform = `translateX(${diff}px)`;
+  };
+
+  window.handleTouchEnd = function(e, container) {
+    const item = container.querySelector('.mob-holding-item');
+    if (!item) return;
+    const diff = touchMoveX - touchStartX;
+    item.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
+    if (touchMoveX !== 0 && diff < -SWIPE_THRESHOLD) {
+      item.style.transform = `translateX(-${ACTION_WIDTH}px)`;
+      currentSwipeEl = container;
+    } else {
+      item.style.transform = 'translateX(0)';
+      currentSwipeEl = null;
+    }
+  };
+
+  function resetSwipes(except) {
+    document.querySelectorAll('.mob-holding-swipe-container').forEach(c => {
+      if (c === except) return;
+      const item = c.querySelector('.mob-holding-item');
+      if (item) item.style.transform = 'translateX(0)';
+    });
+    currentSwipeEl = null;
+  }
+
+  window.mobViewAssetTransactions = function(ticker) {
+    mobSwitchDetailTab('transactions');
+    const items = document.querySelectorAll('#mob-transactions-list .mob-transaction-item');
+    items.forEach(it => {
+      if (it.dataset.ticker === ticker) {
+        it.style.display = '';
+        it.style.backgroundColor = 'var(--mob-primary-dim)';
+      } else {
+        it.style.display = 'none';
+      }
+    });
+    // Add a "Clear Filter" button? Maybe just clicking the tab again resets it.
+    resetSwipes();
+  };
+
   // ── Portfolio Detail ──────────────────────────────
   async function mobLoadPortfolioDetail(id) {
     try {
       const res = await fetch(`/api/portfolios/${id}`);
       const p = await res.json();
-
       const currency = p.currency || 'EUR';
       portfolioCurrency = currency;
-
       const el = (eid) => document.getElementById(eid);
-      // 1. Prominent Header with Portfolio Color
+
       const hero = el('mob-hero-section');
       if (hero && p.color) {
         hero.style.backgroundColor = p.color;
@@ -2801,14 +2863,12 @@
       const gain = (p.netValue || p.totalValue) - (p.investedCapital || 0);
       const gainEl = el('mob-detail-gain');
       if (gainEl) {
-        // If background is colored, gain should be white or high contrast
-        if (p.color) {
-            gainEl.style.color = '#fff';
-        } else {
-            gainEl.style.color = gain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-        }
+        if (p.color) gainEl.style.color = '#fff';
+        else gainEl.style.color = gain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
         gainEl.textContent = (gain >= 0 ? '+' : '') + formatCurrency(gain, currency, 0);
       }
+
+
 
       // 2. Load holdings and transactions from the already fetched portfolio data
       mobLoadHoldings(p.holdings || [], currency);
@@ -2831,21 +2891,48 @@
         const isPos = (h.currentValue - h.totalCost) >= 0;
         const pct = h.changePercent || 0;
         const letters = (h.ticker || '').substring(0,3);
+        const dataSource = h.dataSource || 'YF';
+        const isin = h.isin || '';
+        const type = h.type || '';
+        const country = h.country || '';
+
         return `
-          <div class="mob-holding-item" onclick="openAssetChartModal('${h.ticker}', '${h.name || ''}', '${currency}')">
-            <div class="mob-holding-logo">${letters}</div>
-            <div class="mob-holding-info">
-              <div class="mob-holding-ticker">${h.ticker}</div>
-              <div class="mob-holding-name">${h.name || ''}</div>
-              <div style="display:flex;align-items:center;gap:3px;font-size:10px;font-weight:700;color:var(--mob-primary);margin-top:2px;">
-                <span class="material-symbols-outlined" style="font-size:14px">show_chart</span> Storico Asset
+          <div class="mob-holding-swipe-container" 
+               ontouchstart="handleTouchStart(event, this)" 
+               ontouchmove="handleTouchMove(event, this)" 
+               ontouchend="handleTouchEnd(event, this)">
+            
+            <div class="mob-holding-actions">
+              <div class="mob-action-btn" style="background:#3b82f6" onclick="mobViewAssetTransactions('${h.ticker}')">
+                <span class="material-symbols-outlined">list</span>
+                <span>Trans</span>
+              </div>
+              <div class="mob-action-btn" style="background:#8b5cf6" onclick="openAssetChartModal('${h.ticker}', '${h.name || ''}', '${currency}')">
+                <span class="material-symbols-outlined">show_chart</span>
+                <span>Grafico</span>
+              </div>
+              <div class="mob-action-btn" style="background:#f59e0b" onclick="openManualModal('${h.ticker}', '${currency}', ${h.currentPrice}, '${type}', '${country}', '${dataSource}', '${isin}')">
+                <span class="material-symbols-outlined">edit_note</span>
+                <span>Modifica</span>
               </div>
             </div>
-            <div class="mob-holding-values">
-              <div class="mob-holding-value">${formatPrivacy(h.currentValue, currency, 'mob-hv-'+h.ticker)}</div>
-              <div class="mob-holding-gain" style="color:${pct>=0?'var(--mob-emerald)':'var(--mob-rose)'}">${pct>=0?'+':''}${pct.toFixed(2)}%</div>
+
+            <div class="mob-holding-item" onclick="openAssetChartModal('${h.ticker}', '${h.name || ''}', '${currency}')">
+              <div class="mob-holding-logo">${letters}</div>
+              <div class="mob-holding-info">
+                <div class="mob-holding-ticker">${h.ticker}</div>
+                <div class="mob-holding-name">${h.name || ''}</div>
+                <div style="display:flex;align-items:center;gap:3px;font-size:10px;font-weight:700;color:var(--mob-primary);margin-top:2px;">
+                  <span class="material-symbols-outlined" style="font-size:14px">swipe_left</span> Scorri per azioni
+                </div>
+              </div>
+              <div class="mob-holding-values">
+                <div class="mob-holding-value">${formatPrivacy(h.currentValue, currency, 'mob-hv-'+h.ticker)}</div>
+                <div class="mob-holding-gain" style="color:${pct>=0?'var(--mob-emerald)':'var(--mob-rose)'}">${pct>=0?'+':''}${pct.toFixed(2)}%</div>
+              </div>
             </div>
-          </div>`;
+          </div>
+        `;
       }).join('');
     } catch(e) {
       console.error('[MOB] Holdings load error:', e);
@@ -2871,13 +2958,13 @@
         const icon = typeIcons[t.type] || 'receipt';
         const date = new Date(t.date).toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit', year:'2-digit' });
         return `
-          <div class="mob-holding-item">
+          <div class="mob-holding-item mob-transaction-item" data-ticker="${t.assetTicker || ''}">
             <div class="mob-holding-logo" style="background:${col}22;color:${col}">
               <span class="material-symbols-outlined" style="font-size:20px">${icon}</span>
             </div>
             <div class="mob-holding-info">
               <div class="mob-holding-ticker" style="color:${col}">${t.type}</div>
-              <div class="mob-holding-name">${t.ticker || '—'}</div>
+              <div class="mob-holding-name">${t.assetTicker || t.ticker || '—'}</div>
               <div class="mob-holding-qty">${date}</div>
             </div>
             <div class="mob-holding-values">

@@ -496,7 +496,41 @@ body.mobile-view-active #mobile-ui {
   gap: 8px;
 }
 
+/* Swipe Actions */
+.mob-holding-swipe-container {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--mob-surface-2); /* Background visible during swipe */
+}
+
+.mob-holding-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: stretch;
+  z-index: 1;
+}
+
+.mob-action-btn {
+  width: 65px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.2s;
+}
+.mob-action-btn:active { opacity: 0.7; }
+.mob-action-btn .material-symbols-outlined { font-size: 20px; margin-bottom: 2px; }
+.mob-action-btn span:not(.material-symbols-outlined) { font-size: 9px; font-weight: 800; text-transform: uppercase; }
+
 .mob-holding-item {
+  position: relative;
+  z-index: 2;
   background: var(--mob-surface);
   border: 1px solid var(--mob-border);
   border-left: none !important;
@@ -508,7 +542,8 @@ body.mobile-view-active #mobile-ui {
   gap: 12px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: transform 0.12s;
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform;
 }
 .mob-holding-item:active { transform: scale(0.97); }
 
