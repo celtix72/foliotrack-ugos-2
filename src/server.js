@@ -1945,9 +1945,6 @@ async function calculatePerformanceHistory(portfolioIds, range) {
             if (startDate > today) startDate = new Date(today);
         }
     }
-    const uniqueTickers = [...new Set(allTransactions.map(t => t.assetTicker).filter(t => t && t !== 'CASH'))];
-    // console.log(`[Perf] ${range} for ${portfolios.length} portfolios (${uniqueTickers.length} assets)`);
-
     const historicalPrices = {};
     const fxRates = {};
 
@@ -1955,53 +1952,14 @@ async function calculatePerformanceHistory(portfolioIds, range) {
     const allAssets = database.db.prepare('SELECT ticker, currency, currentPrice, type, isin, dataSource FROM assets').all();
     for (const a of allAssets) assetMetadataCache[a.ticker] = a;
 
-    // 1. Fetch historical EUR/USD if any portfolio or asset is non-EUR, or for global dashboard
-    const hasNonEur = isGlobal || portfolios.some(p => p.currency !== 'EUR') || uniqueTickers.some(t => assetMetadataCache[t]?.currency === 'USD');
-    if (hasNonEur) {
-        try {
-            const fxCacheKey = `EUR_USD_history_${startDate.toISOString().split('T')[0]}_${today.toISOString().split('T')[0]}`;
-            if (historicalPricesCache[fxCacheKey]) {
-                fxRates['USD'] = historicalPricesCache[fxCacheKey];
-            } else {
-                const fxResult = await yahooFinance.chart('EURUSD=X', {
-                    period1: startDate.toISOString().split('T')[0],
-                    period2: today.toISOString().split('T')[0],
-                    interval: '1d'
-                });
-                if (fxResult && fxResult.quotes) {
-                    const sanitizedRates = {};
-                    let lastValidRate = 1.0;
-                    
-                    // Sort quotes by date to ensure proper forward-filling
-                    const sortedQuotes = fxResult.quotes
-                        .filter(h => h.date)
-                        .sort((a, b) => new Date(a.date) - new Date(b.date));
-
-                    for (const h of sortedQuotes) {
-                        const dateStr = new Date(h.date).toISOString().split('T')[0];
-                        let currentRate = h.adjclose || h.close;
-                        
-                        // SANITIZATION: Yahoo Finance often returns 1.0 for EURUSD=X on holidays or gaps.
-                        // Also handle occasional null/zero values.
-                        if ((!currentRate || currentRate <= 0 || currentRate === 1.0) && lastValidRate > 0 && lastValidRate !== 1.0) {
-                            currentRate = lastValidRate;
-                        } else if (currentRate && currentRate > 0 && currentRate !== 1.0) {
-                            lastValidRate = currentRate;
-                        } else if (!currentRate || currentRate <= 0) {
-                            // If we have no lastValidRate yet, we'll have to skip this date 
-                            // to let the fallback logic handle it later
-                            continue;
-                        }
-                        
-                        sanitizedRates[dateStr] = currentRate;
-                    }
-                    
-                    fxRates['USD'] = sanitizedRates;
-                    historicalPricesCache[fxCacheKey] = fxRates['USD'];
-                }
-            }
-        } catch (err) { console.warn("Failed to fetch EURUSD history", err); }
+    // 1. Determine tickers and include EURUSD=X if needed for conversion visibility in DB
+    const rawTickers = [...new Set(allTransactions.map(t => t.assetTicker).filter(t => t && t !== 'CASH'))];
+    const hasNonEur = isGlobal || portfolios.some(p => p.currency !== 'EUR') || rawTickers.some(t => assetMetadataCache[t]?.currency === 'USD');
+    const uniqueTickers = [...rawTickers];
+    if (hasNonEur && !uniqueTickers.includes('EURUSD=X')) {
+        uniqueTickers.push('EURUSD=X');
     }
+
 
     // 2. Fetch historical data for all involved tickers (with parallelization and DB cache)
     // 2. Fetch historical data for all involved tickers (with parallelization and DB cache)
@@ -2183,6 +2141,11 @@ async function calculatePerformanceHistory(portfolioIds, range) {
 
 
     await Promise.all(uniqueTickers.map(ticker => fetchTickerData(ticker)));
+
+    // Post-process EURUSD=X into the special fxRates['USD'] map for simulation efficiency
+    if (historicalPrices['EURUSD=X']) {
+        fxRates['USD'] = historicalPrices['EURUSD=X'];
+    }
 
     const dataPoints = [];
     let currentDate = new Date(startDate);
@@ -2471,8 +2434,13 @@ async function calculatePerformanceHistory(portfolioIds, range) {
         }
 
         if (!isFinite(dayValue) || isNaN(dayValue)) {
-            logger.warn(`Invalid math dayValue detected on ${dateStr}! Cash: ${dayCash}, Assets: ${dayAssets}, profit: ${dayProfit}`);
-            dayValue = 0; dayProfit = 0; dayCash = 0; dayAssets = 0;
+            // Log exactly which portfolio and asset caused the issue if possible
+            logger.warn(`Invalid math dayValue detected on ${dateStr}! Cash: ${dayCash}, Assets: ${dayAssets}, profit: ${dayProfit}. Attempting recovery...`);
+            
+            // Try to recover rather than hard zeroing
+            dayValue = (isFinite(dayValue) && !isNaN(dayValue)) ? dayValue : (dayCash + dayAssets);
+            if (!isFinite(dayValue) || isNaN(dayValue)) dayValue = 0;
+            if (!isFinite(dayProfit) || isNaN(dayProfit)) dayProfit = 0;
         }
 
         let dayDividends = 0;
@@ -3367,7 +3335,16 @@ updateMarketData();
 
 // ─── Start ──────────────────────────────────────────────────────────────────
 
-app.listen(PORT, '0.0.0.0', () => {
-    logger.info(`FolioTrack server running on port ${PORT}`);
-    logger.info(`Database: ${require('./db').db.name}`);
-});
+if (require.main === module) {
+    app.listen(PORT, '0.0.0.0', () => {
+        logger.info(`FolioTrack server running on port ${PORT}`);
+        logger.info(`Database: ${require('./db').db.name}`);
+    });
+}
+
+module.exports = {
+    app,
+    calculatePerformanceHistory,
+    updateMarketData,
+    getEurUsdRate
+};
