@@ -588,6 +588,7 @@
                             <th class="py-3 px-2 text-right text-indigo-500 bg-indigo-500/5" title="Amount calculated using direct EUR calculation logic">Calc (EUR)</th>
                             <th class="py-3 px-2 text-right text-amber-500 bg-amber-500/5" title="PMC per unit in EUR BEFORE this transaction">PMC (EUR)</th>
                             <th class="py-3 px-3 text-right text-emerald-500 bg-emerald-500/5">Gain (EUR)</th>
+                            <th class="py-3 px-3 text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="audit-table-body" class="divide-y divide-slate-50 dark:divide-slate-800/50">
@@ -1545,7 +1546,7 @@
                 tbody.innerHTML = data.reverse().map(t => {
                     const gainClass = t.realizedGainEUR > 0 ? 'text-emerald-500' : (t.realizedGainEUR < 0 ? 'text-rose-500' : 'text-slate-400');
                     return `
-                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors border-b border-slate-50 dark:border-slate-800/30">
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors border-b border-slate-50 dark:border-slate-800/30" id="audit-row-${t.id}">
                             <td class="py-2.5 px-3 font-mono whitespace-nowrap text-slate-400">${t.date}</td>
                             <td class="py-2.5 px-3 font-bold text-slate-600 dark:text-slate-300">${t.portfolioName}</td>
                             <td class="py-2.5 px-3">
@@ -1562,6 +1563,16 @@
                             <td class="py-2.5 px-2 text-right font-mono font-bold text-indigo-500 bg-indigo-500/5 border-l border-indigo-500/10">${(t.amountEUR || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                             <td class="py-2.5 px-2 text-right font-mono text-amber-500 bg-amber-500/5 border-l border-amber-500/10">${(t.pmcEURBefore || 0).toLocaleString(undefined, {minimumFractionDigits: 4})}</td>
                             <td class="py-2.5 px-3 text-right font-mono font-bold ${gainClass} bg-emerald-500/5 border-l border-emerald-500/10">${t.realizedGainEUR ? (t.realizedGainEUR > 0 ? '+' : '') + t.realizedGainEUR.toLocaleString(undefined, {minimumFractionDigits: 2}) : '—'}</td>
+                            <td class="py-2.5 px-3 text-right">
+                                <div class="flex items-center justify-end gap-1">
+                                    <button onclick="editTransactionAudit(${t.id})" class="p-1.5 rounded-lg hover:bg-primary/10 text-slate-400 hover:text-primary transition-colors" title="Edit">
+                                        <span class="material-symbols-outlined text-[16px]">edit</span>
+                                    </button>
+                                    <button onclick="deleteTransactionAudit(${t.id})" class="p-1.5 rounded-lg hover:bg-rose-500/10 text-slate-400 hover:text-rose-500 transition-colors" title="Delete">
+                                        <span class="material-symbols-outlined text-[16px]">delete</span>
+                                    </button>
+                                </div>
+                            </td>
                         </tr>
                     `;
                 }).join('');
