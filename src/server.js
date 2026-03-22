@@ -1031,15 +1031,22 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
     }).filter(b => b.grossGain !== 0 || b.minusvalenze !== 0);
 
     const totalAssetsValue = holdings.reduce((s, h) => s + h.currentValue, 0);
-    const totalNetValueForAllocation = Math.round((portfolio.currentCash + totalAssetsValue) * 100) / 100;
-    
     const roundedCash = Math.round((portfolio.currentCash || 0) * 100) / 100;
-    const typeMap = { 'Liquidity': roundedCash };
+    
+    // For Allocation charts, we use GROSS value (sum of positive items) as denominator
+    // to avoid >100% percentages when cash is negative.
+    let totalGrossValueForAllocation = totalAssetsValue + Math.max(0, roundedCash);
+    
+    const typeMap = {};
+    if (roundedCash > 0) { typeMap['Liquidity'] = roundedCash; }
+    
     const currMap = {};
-    if (roundedCash !== 0) {
+    if (roundedCash > 0) {
         currMap[portfolio.currency || 'EUR'] = roundedCash;
     }
-    const counMap = { 'Liquidity': roundedCash };
+    
+    const counMap = {};
+    if (roundedCash > 0) { counMap['Liquidity'] = roundedCash; }
 
     for (const h of holdings) { 
         const tp = h.type || 'Other'; 
@@ -1052,7 +1059,9 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
     }
 
     const allocation = Object.entries(typeMap).map(([type, value]) => ({
-        type, value, percent: totalNetValueForAllocation > 0 ? (value / totalNetValueForAllocation) * 100 : 0
+        type, 
+        value, 
+        percent: totalGrossValueForAllocation > 0 ? (value / totalGrossValueForAllocation) * 100 : 0
     })).sort((a, b) => b.value - a.value);
 
     // Closed positions
@@ -1093,10 +1102,10 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
         holdings,
         allocation,
         currencyAllocation: Object.entries(currMap).map(([type, value]) => ({ 
-            type, value, percent: totalNetValueForAllocation > 0 ? (value / totalNetValueForAllocation) * 100 : 0 
+            type, value, percent: totalGrossValueForAllocation > 0 ? (value / totalGrossValueForAllocation) * 100 : 0 
         })),
         countryAllocation: Object.entries(counMap).map(([type, value]) => ({ 
-            type, value, percent: totalNetValueForAllocation > 0 ? (value / totalNetValueForAllocation) * 100 : 0 
+            type, value, percent: totalGrossValueForAllocation > 0 ? (value / totalGrossValueForAllocation) * 100 : 0 
         })),
         closedPositions,
         dividendGroups: Object.values(divYearMap).sort((a, b) => b.year - a.year),
@@ -1122,7 +1131,7 @@ app.get('/api/analytics/global-allocation', async (req, res) => {
         const portfolios = database.db.prepare('SELECT id FROM portfolios').all();
         const liveRate = await getEurUsdRate();
         const typeMap = {};
-        let totalValue = 0;
+        let totalGrossValue = 0;
 
         for (const { id } of portfolios) {
             const details = await getPortfolioDetails(id, liveRate);
@@ -1130,12 +1139,12 @@ app.get('/api/analytics/global-allocation', async (req, res) => {
             for (const h of holdings) {
                 const tp = h.type || 'Other';
                 typeMap[tp] = (typeMap[tp] || 0) + h.currentValue;
-                totalValue += h.currentValue;
+                totalGrossValue += h.currentValue;
             }
-            // Inclusion of Cash
-            if (details.currentCash) {
+            // Inclusion of Cash (only if positive)
+            if (details.currentCash > 0) {
                 typeMap['Liquidity'] = (typeMap['Liquidity'] || 0) + details.currentCash;
-                totalValue += details.currentCash;
+                totalGrossValue += details.currentCash;
             }
         }
 
@@ -1143,7 +1152,7 @@ app.get('/api/analytics/global-allocation', async (req, res) => {
             .map(([type, value]) => ({
                 type,
                 value: Math.round(value * 100) / 100,
-                percent: totalValue > 0 ? Math.round((value / totalValue) * 1000) / 10 : 0
+                percent: totalGrossValue > 0 ? Math.round((value / totalGrossValue) * 1000) / 10 : 0
             })).sort((a, b) => b.value - a.value);
 
         res.json(allocation);
