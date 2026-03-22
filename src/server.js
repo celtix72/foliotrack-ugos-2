@@ -912,9 +912,7 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
         liveRate = await getEurUsdRate();
     }
 
-    // FIFO lots per ticker
-    const lots        = {};   // { ticker: [{qty, costPerShare, costPerShareAssetCurr}] }
-    const openMap     = {};   // { ticker: {shares, totalCostInPCurr, totalCostInAssetCurr} }
+    const openMap     = {};   // { ticker: {shares: 0, totalCostInPCurr: 0, totalCostInAssetCurr: 0} }
     const closedByKey = {};   // key = ticker|year
     const dividends   = [];
 
@@ -928,43 +926,35 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
         const year   = (t.date || '').substring(0, 4);
 
         if (t.type === 'BUY' && t.assetTicker) {
-            const totalCost    = (t.amount || (qty * price + comm + tax)) / fx;
-            const costPerShare = qty > 0 ? totalCost / qty : 0;
-            if (!lots[t.assetTicker])    lots[t.assetTicker] = [];
+            const totalCostPCurr    = (t.amount || (qty * price + comm + tax)) / fx;
+            const totalCostAssetCurr = (t.amount || (qty * price + comm + tax));
+            
             if (!openMap[t.assetTicker]) openMap[t.assetTicker] = { shares: 0, totalCostInPCurr: 0, totalCostInAssetCurr: 0 };
             
-            const totalCostAssetCurr = (t.amount || (qty * price + comm + tax));
-            const costPerShareAsset  = qty > 0 ? totalCostAssetCurr / qty : 0;
-            
-            lots[t.assetTicker].push({ qty, costPerShare, costPerShareAssetCurr: costPerShareAsset });
             openMap[t.assetTicker].shares              += qty;
-            openMap[t.assetTicker].totalCostInPCurr    += totalCost;
+            openMap[t.assetTicker].totalCostInPCurr    += totalCostPCurr;
             openMap[t.assetTicker].totalCostInAssetCurr += totalCostAssetCurr;
         }
 
         if (t.type === 'SELL' && t.assetTicker) {
-            let remaining  = qty;
             const proceeds = (t.amount || (qty * price - comm - tax)) / fx;
-            const lotsCopy = lots[t.assetTicker] || [];
-            let costBasis          = 0;
-            let costBasisAssetCurr = 0;
-            while (remaining > 0 && lotsCopy.length > 0) {
-                const lot  = lotsCopy[0];
-                const used = Math.min(lot.qty, remaining);
-                costBasis          += used * lot.costPerShare;
-                costBasisAssetCurr += used * (lot.costPerShareAssetCurr || 0);
-                lot.qty   -= used;
-                remaining -= used;
-                if (lot.qty <= 0) lotsCopy.shift();
-            }
-            lots[t.assetTicker] = lotsCopy;
+            const h = openMap[t.assetTicker] || { shares: 0, totalCostInPCurr: 0, totalCostInAssetCurr: 0 };
+            
+            // Weighted Average Cost (PMC)
+            const pmc = h.shares > 0 ? h.totalCostInPCurr / h.shares : 0;
+            const pmcAsset = h.shares > 0 ? h.totalCostInAssetCurr / h.shares : 0;
+            
+            const costBasis = qty * pmc;
+            const costBasisAsset = qty * pmcAsset;
+            const rGain = proceeds - costBasis;
+
             if (openMap[t.assetTicker]) {
                 openMap[t.assetTicker].shares              -= qty;
                 openMap[t.assetTicker].totalCostInPCurr    -= costBasis;
-                openMap[t.assetTicker].totalCostInAssetCurr -= costBasisAssetCurr;
+                openMap[t.assetTicker].totalCostInAssetCurr -= costBasisAsset;
                 if (openMap[t.assetTicker].shares <= 0.0001) delete openMap[t.assetTicker];
             }
-            const rGain = proceeds - costBasis;
+
             const ck = t.assetTicker + '|' + year;
             if (!closedByKey[ck]) closedByKey[ck] = { ticker: t.assetTicker, year, totalProceeds: 0, totalCostBasis: 0, realizedGain: 0, sells: 0 };
             closedByKey[ck].totalProceeds  += proceeds;
@@ -2476,7 +2466,7 @@ app.get('/api/analytics/history', (req, res) => {
 
                 if (t.type === 'BUY' && t.assetTicker) {
                     if (!holdingsMap[t.assetTicker]) holdingsMap[t.assetTicker] = { shares: 0, costBasis: 0 };
-                    const totalCost = (t.quantity * t.price + t.commission + t.tax) / t.exchangeRate;
+                    const totalCost = (t.amount || (t.quantity * t.price + t.commission + t.tax)) / t.exchangeRate;
                     holdingsMap[t.assetTicker].shares += t.quantity;
                     holdingsMap[t.assetTicker].costBasis += totalCost;
 
@@ -2485,7 +2475,7 @@ app.get('/api/analytics/history', (req, res) => {
                     const h = holdingsMap[t.assetTicker] || { shares: 0, costBasis: 0 };
                     const pmc = h.shares > 0 ? h.costBasis / h.shares : 0;
                     const sellCostBasis = sellQty * pmc;
-                    const proceeds = (t.quantity * t.price - t.commission - t.tax) / t.exchangeRate;
+                    const proceeds = (t.amount || (t.quantity * t.price - t.commission - t.tax)) / t.exchangeRate;
                     const gain = proceeds - sellCostBasis;
                     const gainPct = sellCostBasis > 0 ? ((gain / sellCostBasis) * 100).toFixed(2) : 0;
 
@@ -2696,7 +2686,24 @@ app.get('/api/analytics/reports', async (req, res) => {
                     const a = assetMap[ticker];
                     if (a) {
                         // Use historical price if available, otherwise fallback to current price
-                        const histPrice = assetHistories[ticker]?.[currentMonthStr] || a.currentPrice;
+                        // Find historical price or best approximation
+                        let histPrice = a.currentPrice;
+                        const hMap = assetHistories[ticker];
+                        if (hMap && Object.keys(hMap).length > 0) {
+                            if (hMap[currentMonthStr]) {
+                                histPrice = hMap[currentMonthStr];
+                            } else {
+                                // Find closest previous month
+                                const months = Object.keys(hMap).sort();
+                                const prevMonth = months.filter(m => m < currentMonthStr).pop();
+                                if (prevMonth) {
+                                    histPrice = hMap[prevMonth];
+                                } else {
+                                    // Use first available
+                                    histPrice = hMap[months[0]];
+                                }
+                            }
+                        }
                         const lastFxTx = pTxs.filter(tx => tx.assetTicker === ticker && tx.exchangeRate).at(-1);
                         const rate = lastFxTx ? lastFxTx.exchangeRate : 1;
                         assetVal += shares * (histPrice / rate);
@@ -2807,7 +2814,7 @@ app.get('/api/analytics/reports', async (req, res) => {
             let costBasis = 0;
             const tks = allTransactions.filter(t => t.assetTicker === ticker);
             for (const t of tks) {
-                const total = (t.quantity * t.price + (t.type==='BUY'?1:-1)*(t.commission+t.tax)) / (t.exchangeRate||1);
+                const total = (t.amount || (t.quantity * t.price + (t.type==='BUY'?1:-1)*(t.commission+t.tax))) / (t.exchangeRate||1);
                 if (t.type === 'BUY') {
                     qty += t.quantity;
                     costBasis += total;
