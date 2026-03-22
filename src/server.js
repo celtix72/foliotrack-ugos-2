@@ -2510,7 +2510,7 @@ app.get('/api/analytics/history', (req, res) => {
                         year,
                         quantity: 0,
                         pmc: 0,
-                        totalProceeds: t.amount,
+                        totalProceeds: Math.abs(t.amount),
                         totalCostBasis: 0,
                         realizedGain: 0,
                         gainPct: 0,
@@ -2670,10 +2670,12 @@ app.get('/api/analytics/reports', async (req, res) => {
                     const qty = t.quantity || 0;
                     const amount = t.amount || 0;
                     const fx = t.exchangeRate || 1;
+                    const absAmount = Math.abs(amount);
                     switch (t.type) {
-                        case 'DEPOSIT': cash += amount; pNetDep += amount; break;
-                        case 'WITHDRAWAL': cash -= amount; pNetDep -= amount; break;
-                        case 'TAX': cash -= amount; break;
+                        case 'DEPOSIT': cash += absAmount; pNetDep += absAmount; break;
+                        case 'WITHDRAWAL': 
+                        case 'TRANSFER': cash -= absAmount; pNetDep -= absAmount; break;
+                        case 'TAX': cash -= absAmount; break;
                         case 'DIVIDEND': cash += (t.amount || (qty * (t.price || 0) - (t.commission || 0) - (t.tax || 0))) / fx; break;
                         case 'BUY': cash -= (t.amount || (qty * (t.price || 0) + (t.commission || 0) + (t.tax || 0))) / fx; holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) + qty; break;
                         case 'SELL': cash += (t.amount || (qty * (t.price || 0) - (t.commission || 0) - (t.tax || 0))) / fx; holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) - qty; break;

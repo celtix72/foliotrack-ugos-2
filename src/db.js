@@ -259,11 +259,12 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
         const fx        = t.exchangeRate || 1;
         const amount    = t.amount       || 0;
 
+        const absAmount = Math.abs(amount);
         switch (t.type) {
-            case 'DEPOSIT':    cash += amount; break;
-            case 'WITHDRAWAL': cash -= amount; break;
-            case 'TAX':        cash -= amount; break;
-            case 'TRANSFER':   cash -= amount; break;
+            case 'DEPOSIT':    cash += absAmount; break;
+            case 'WITHDRAWAL': 
+            case 'TAX':        
+            case 'TRANSFER':   cash -= absAmount; break;
             case 'DIVIDEND': {
                 const dividendAmount = amount || (qty * price - comm - tax);
                 const dividendInPCurr = dividendAmount / fx;
