@@ -1734,9 +1734,10 @@ app.post('/api/transactions/bulk', async (req, res) => {
                 if (isNaN(targetId)) throw new Error('Invalid portfolio mapping');
                 affectedPortfolios.add(targetId);
 
+                let sanitizedTicker = '';
                 // Auto-add or update asset with ISIN/DataSource
                 if (t.assetTicker) {
-                    const sanitizedTicker = sanitizeTicker(t.assetTicker);
+                    sanitizedTicker = sanitizeTicker(t.assetTicker);
                     // BTP* tickers are ALWAYS B_ITA, regardless of isin
                     const isBTP = sanitizedTicker.toUpperCase().startsWith('BTP');
                     const newIsin = (t.isin && t.isin.trim()) ? t.isin.trim() : null;
@@ -1783,7 +1784,7 @@ app.post('/api/transactions/bulk', async (req, res) => {
                 insertTx.run(
                     targetId,
                     t.type,
-                    sanitizedTicker || '',
+                    sanitizedTicker,
                     t.date,
                     parseFloat(t.quantity || 0),
                     parseFloat(t.price || 0),
@@ -1807,7 +1808,12 @@ app.post('/api/transactions/bulk', async (req, res) => {
     }
     
     clearPerformanceCache();
-    res.json({ imported: results.filter(r => r.ok).length, results });
+    const importedCount = results.filter(r => r.ok).length;
+    logger.info(`Bulk import finished: ${importedCount} succeeded, ${results.length - importedCount} failed.`);
+    if (results.some(r => !r.ok)) {
+        logger.warn(`Bulk import errors: ${JSON.stringify(results.filter(r => !r.ok))}`);
+    }
+    res.json({ imported: importedCount, results });
 });
 
 // ════════════════════════════════════════════════════════════════════════════
