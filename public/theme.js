@@ -597,7 +597,7 @@
     }
 
     // ─── Global Formatting ────────────────────────────────────────────────────
-    window.formatCurrency = function(val, currency = 'USD', decimals = 0) {
+    window.formatCurrency = function(val, currency = 'EUR', decimals = 0) {
         if (val === null || val === undefined) return '—';
         const value = parseFloat(val);
         if (!currency || currency.length !== 3) {

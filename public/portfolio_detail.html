@@ -2880,7 +2880,7 @@
         plugins: {
           legend: { display: false },
           tooltip: { mode:'index', intersect:false, padding:8,
-            callbacks: { label: (ctx) => formatCurrency(ctx.parsed.y, portfolioCurrency, 0) }
+            callbacks: { label: (ctx) => formatCurrency(ctx.parsed.y, 'EUR', 0) }
           }
         },
         scales: {

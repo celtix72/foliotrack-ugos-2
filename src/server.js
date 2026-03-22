@@ -1881,9 +1881,9 @@ async function calculatePerformanceHistory(portfolioIds, range) {
     const historicalPrices = {};
     const fxRates = {};
 
-    // 1. Fetch historical EUR/USD if any portfolio is EUR
-    const hasEurPortfolio = portfolios.some(p => p.currency === 'EUR');
-    if (hasEurPortfolio) {
+    // 1. Fetch historical EUR/USD if any portfolio or asset is non-EUR, or for global dashboard
+    const hasNonEur = isGlobal || portfolios.some(p => p.currency !== 'EUR') || uniqueTickers.some(t => assetMetadataCache[t]?.currency === 'USD');
+    if (hasNonEur) {
         try {
             const fxCacheKey = `EUR_USD_history_${startDate.toISOString().split('T')[0]}_${today.toISOString().split('T')[0]}`;
             if (historicalPricesCache[fxCacheKey]) {
@@ -2243,7 +2243,14 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                 }
             }
             let totalNetDeps = 0;
-            for (const p of portfolios) totalNetDeps += portfolioStates[p.id].netDeposits;
+            for (const p of portfolios) {
+                let pNet = portfolioStates[p.id].netDeposits;
+                if (p.currency === 'USD') {
+                    const rate = fxRates['USD']?.[dateStr] || 1;
+                    pNet /= rate;
+                }
+                totalNetDeps += pNet;
+            }
             dayProfit = dayValue - totalNetDeps;
         } else {
             for (const p of portfolios) {
@@ -2362,10 +2369,23 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                     }
                 }
 
-                dayValue += (state.cash + pAssets);
-                dayProfit += (state.cash + pAssets - state.netDeposits);
-                dayCash += state.cash;
-                dayAssets += pAssets;
+                let pValue = (state.cash + pAssets);
+                let pProfit = (state.cash + pAssets - state.netDeposits);
+                let pCash = state.cash;
+                let pAssetsVal = pAssets;
+
+                if (p.currency === 'USD') {
+                    const rate = fxRates['USD']?.[dateStr] || 1;
+                    pValue /= rate;
+                    pProfit /= rate;
+                    pCash /= rate;
+                    pAssetsVal /= rate;
+                }
+
+                dayValue += pValue;
+                dayProfit += pProfit;
+                dayCash += pCash;
+                dayAssets += pAssetsVal;
             }
         }
 
@@ -2375,7 +2395,14 @@ async function calculatePerformanceHistory(portfolioIds, range) {
         }
 
         let dayDividends = 0;
-        for (const p of portfolios) dayDividends += portfolioStates[p.id].dividends;
+        for (const p of portfolios) {
+            let pDivs = portfolioStates[p.id].dividends;
+            if (p.currency === 'USD') {
+                const rate = fxRates['USD']?.[dateStr] || 1;
+                pDivs /= rate;
+            }
+            dayDividends += pDivs;
+        }
 
         dataPoints.push({
             date: dateStr,
