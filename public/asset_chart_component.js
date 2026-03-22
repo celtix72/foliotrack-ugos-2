@@ -188,6 +188,7 @@
             
             const buys = transactions.filter(t => t.type === 'BUY' && labels.includes(t.date));
             const sells = transactions.filter(t => t.type === 'SELL' && labels.includes(t.date));
+            const divs = transactions.filter(t => t.type === 'DIVIDEND' && labels.includes(t.date));
 
             if (buys.length > 0) {
                 tradeDatasets.push({
@@ -210,6 +211,20 @@
                     borderColor: 'rgb(239,68,68)',
                     backgroundColor: 'rgb(239,68,68)',
                     pointStyle: 'circle',
+                    pointRadius: 6,
+                    pointHoverRadius: 9,
+                    showLine: false,
+                    yAxisID: 'y'
+                });
+            }
+
+            if (divs.length > 0) {
+                tradeDatasets.push({
+                    label: 'DIVIDEND',
+                    data: divs.map(t => ({ x: t.date, y: t.price })),
+                    borderColor: 'rgb(245,158,11)',
+                    backgroundColor: 'rgb(245,158,11)',
+                    pointStyle: 'rectRot',
                     pointRadius: 6,
                     pointHoverRadius: 9,
                     showLine: false,
@@ -246,19 +261,24 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    const datasetLabel = context.dataset.label || '';
-                                    const value = context.parsed.y.toFixed(2);
-                                    if (datasetLabel === 'BUY' || datasetLabel === 'SELL') {
-                                        // Find transaction at this index/date
-                                        const dt = context.label;
-                                        const trades = tradesByDate[dt] || [];
-                                        const trade = trades.find(tr => tr.type === datasetLabel);
-                                        if (trade) {
-                                            return ` ${trade.type}: ${trade.quantity} @ ${trade.price.toFixed(2)}`;
-                                        }
+                                const datasetLabel = context.dataset.label || '';
+                                if (datasetLabel === 'BUY' || datasetLabel === 'SELL' || datasetLabel === 'DIVIDEND') {
+                                    const dt = context.label;
+                                    const trades = tradesByDate[dt] || [];
+                                    const trade = trades.find(tr => tr.type === datasetLabel);
+                                    if (trade) {
+                                        return ` ${trade.type}: ${_chartTicker} (${trade.quantity} @ ${trade.price.toFixed(2)})`;
                                     }
-                                    return ` ${datasetLabel}: ${value} ${_chartCurrency}`;
                                 }
+                                return null;
+                            },
+                            title: function(tooltipItems) {
+                                const datasetLabel = tooltipItems[0].dataset.label || '';
+                                if (datasetLabel === 'BUY' || datasetLabel === 'SELL' || datasetLabel === 'DIVIDEND') {
+                                    return tooltipItems[0].label;
+                                }
+                                return null;
+                            }
                             }
                         }
                     },

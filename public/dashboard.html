@@ -424,37 +424,26 @@
                         borderWidth: 1,
                         padding: 12,
                         callbacks: {
-                            label: (context) => {
-                                const label = context.dataset.label || '';
-                                return `${label}: ${formatCurrency(context.parsed.y)}`;
+                            label: (context) => null,
+                            title: (tooltipItems) => {
+                                const index = tooltipItems[0].dataIndex;
+                                const d = dashboardChart.rawPoints ? dashboardChart.rawPoints[index] : null;
+                                return (d && d.events && d.events.length > 0) ? tooltipItems[0].label : null;
                             },
-                            footer: (tooltipItems) => {
+                            afterBody: (tooltipItems) => {
                                 const index = tooltipItems[0].dataIndex;
                                 const d = dashboardChart.rawPoints ? dashboardChart.rawPoints[index] : null;
                                 if (d && d.events && d.events.length > 0) {
-                                    let lines = ['\nTransazioni:'];
-                                    const labels = {
-                                        'BUY': 'ACQUISTO',
-                                        'SELL': 'VENDITA',
-                                        'DEPOSIT': 'DEPOSITO',
-                                        'WITHDRAWAL': 'PRELIEVO',
-                                        'DIVIDEND': 'DIVIDENDO'
-                                    };
-                                    d.events.forEach(ev => {
+                                    const labels = { 'BUY': 'ACQUISTO', 'SELL': 'VENDITA', 'DEPOSIT': 'DEPOSITO', 'WITHDRAWAL': 'PRELIEVO', 'DIVIDEND': 'DIVIDENDO' };
+                                    return d.events.map(ev => {
                                         const typeLabel = labels[ev.type] || ev.type;
                                         const prefix = (ev.type === 'DEPOSIT' || ev.type === 'BUY' || ev.type === 'DIVIDEND') ? '+' : '-';
-                                        
-                                        if (ev.type === 'BUY' || ev.type === 'SELL') {
-                                            lines.push(`${typeLabel}: ${ev.assetName || ev.ticker}`);
-                                        } else if (ev.type === 'DEPOSIT' || ev.type === 'WITHDRAWAL') {
-                                            lines.push(`${typeLabel}: ${prefix}${formatCurrency(ev.amount, 'EUR', 0)}`);
-                                        } else {
-                                            lines.push(`${typeLabel}: ${ev.ticker} ${prefix}${formatCurrency(ev.amount, 'EUR', 0)}`);
-                                        }
+                                        if (ev.type === 'BUY' || ev.type === 'SELL') return `${typeLabel}: ${ev.assetName || ev.ticker}`;
+                                        if (ev.type === 'DEPOSIT' || ev.type === 'WITHDRAWAL') return `${typeLabel}: ${prefix}${formatCurrency(ev.amount, 'EUR', 0)}`;
+                                        return `${typeLabel}: ${ev.ticker} ${prefix}${formatCurrency(ev.amount, 'EUR', 0)}`;
                                     });
-                                    return lines.join('\n');
                                 }
-                                return '';
+                                return null;
                             }
                         }
                     },
@@ -999,7 +988,24 @@
             bodyColor: isDark ? '#f1f5f9' : '#1e293b',
             borderColor: isDark ? '#334155' : '#e2e8f0',
             borderWidth: 1, padding: 10,
-            callbacks: { label: (ctx) => `${formatCurrency(ctx.parsed.y, 'EUR', 0)}` }
+            callbacks: {
+              label: () => null,
+              title: (items) => {
+                  const d = dashboardChart.rawPoints ? dashboardChart.rawPoints[items[0].dataIndex] : null;
+                  return (d && d.events && d.events.length > 0) ? items[0].label : null;
+              },
+              afterBody: (items) => {
+                  const d = dashboardChart.rawPoints ? dashboardChart.rawPoints[items[0].dataIndex] : null;
+                  if (d && d.events && d.events.length > 0) {
+                      const labels = { 'BUY': 'ACQUISTO', 'SELL': 'VENDITA', 'DEPOSIT': 'DEPOSITO', 'WITHDRAWAL': 'PRELIEVO', 'DIVIDEND': 'DIVIDENDO' };
+                      return d.events.map(ev => {
+                          const typeLabel = labels[ev.type] || ev.type;
+                          return `${typeLabel}: ${ev.ticker || ev.assetName || ''}`;
+                      });
+                  }
+                  return null;
+              }
+            }
           },
           zoom: { zoom: { wheel:{enabled:false}, pinch:{enabled:true}, mode:'x' }, pan:{enabled:true, mode:'x'} }
         },
