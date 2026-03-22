@@ -297,7 +297,8 @@ body.mobile-view-active #mobile-ui {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.15em;
-  color: var(--mob-primary);
+  color: var(--mob-text-muted);
+  opacity: 1;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -914,4 +915,58 @@ body.mobile-view-active #mobile-ui {
   justify-content: center;
   line-height: 1;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* ─── Compact Hero Grid ─────────────────────────────────────────── */
+.mob-hero-stats-new {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+.mob-hero-stat-box {
+  background: var(--mob-surface-2);
+  border: 1px solid var(--mob-border);
+  border-radius: 10px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+}
+.mob-hero-stat-box.highlight {
+  background: rgba(245,158,11,0.1);
+  border-color: rgba(245,158,11,0.2);
+}
+.mob-hero-stat-box-label {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--mob-text-caption);
+  margin-bottom: 2px;
+}
+.mob-hero-stat-box-value {
+  font-size: 13px;
+  font-weight: 900;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--mob-text);
+}
+
+.mob-hero-add-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 16px;
+  background: var(--mob-primary);
+  color: #fff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(19,91,236,0.3);
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+}
+.mob-hero-add-btn:active {
+  transform: scale(0.9);
+  background: #0f49c0;
 }
