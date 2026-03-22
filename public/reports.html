@@ -569,7 +569,7 @@
         const datasets = [
             {
                 label: 'Your Total Portfolio',
-                data: p.portfolio.map(d => d.value),
+                data: p.portfolio.map(d => ({ x: d.date, y: d.value, events: d.events })),
                 borderColor: '#135bec',
                 backgroundColor: 'rgba(19, 91, 236, 0.1)',
                 borderWidth: 4,
@@ -581,7 +581,7 @@
             },
             {
                 label: 'S&P 500',
-                data: p.sp500.map(d => d.value),
+                data: p.sp500.map(d => ({ x: d.date, y: d.value })),
                 borderColor: '#10b981',
                 borderDash: [5, 5],
                 borderWidth: 2,
@@ -591,7 +591,7 @@
             },
             {
                 label: 'MSCI World',
-                data: p.msci.map(d => d.value),
+                data: p.msci.map(d => ({ x: d.date, y: d.value })),
                 borderColor: '#f59e0b',
                 borderDash: [5, 5],
                 borderWidth: 2,
@@ -608,7 +608,7 @@
             const port = p.individual[pid];
             datasets.push({
                 label: port.name,
-                data: port.history.map(h => h.value),
+                data: port.history.map(h => ({ x: h.date, y: h.value, events: h.events })),
                 borderColor: pColors[colorIdx % pColors.length],
                 borderWidth: 2,
                 pointRadius: 0,
@@ -640,7 +640,20 @@
                         titleFont: { size: 13, weight: 'bold' },
                         bodyFont: { size: 11 },
                         callbacks: {
-                            label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)}`
+                            label: (ctx) => null, // Hide value
+                            afterBody: (tooltipItems) => {
+                                const events = [];
+                                tooltipItems.forEach(item => {
+                                    const dataPoint = item.dataset.data[item.dataIndex];
+                                    if (dataPoint.events && dataPoint.events.length > 0) {
+                                        dataPoint.events.forEach(e => {
+                                            events.push(`• ${e.type}: ${e.assetName || e.ticker} (${formatCurrency(e.amount, 'EUR')})`);
+                                        });
+                                    }
+                                });
+                                // Remove duplicates and return unique events
+                                return [...new Set(events)];
+                            }
                         }
                     }
                 },

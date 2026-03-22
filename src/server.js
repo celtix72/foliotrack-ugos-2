@@ -815,20 +815,23 @@ app.get('/api/portfolios', async (req, res) => {
         database.recalculateAll(liveRate);
         const rows = database.db.prepare(`SELECT * FROM portfolios ORDER BY createdAt ASC`).all();
         
-        const todayStr = new Date().toISOString().split('T')[0];
-        
-        // 1. Calculate Global Variation using Chart Engine
-        const globalPoints = await calculatePerformanceHistory(null, '1W');
+        // SINGLE SOURCE OF TRUTH: Use Performance Engine for all dashboard metrics
+        // includeIndividual=true gets history for each portfolio in one simulation pass
+        const perfData = await calculatePerformanceHistory(null, 'ALL', false, true);
+        const globalPoints = perfData.dataPoints || [];
+        const individual = perfData.individual || {};
+
+        let globalTotalValue = 0;
+        let globalProfit = 0;
         let globalChangeValue = 0;
         let globalChangePercent = 0;
-        let globalTotalValue = 0;
 
         if (globalPoints.length > 0) {
             const lastPoint = globalPoints[globalPoints.length - 1];
             globalTotalValue = lastPoint.value;
+            globalProfit = lastPoint.profit;
             
             if (globalPoints.length > 1) {
-                const lastPoint = globalPoints[globalPoints.length - 1];
                 const prevPoint = globalPoints[globalPoints.length - 2];
                 // Profit-based variation (Independent of capital movements)
                 globalChangeValue = lastPoint.profit - prevPoint.profit;
@@ -838,19 +841,16 @@ app.get('/api/portfolios', async (req, res) => {
             }
         }
 
-        // 2. Calculate Totals including Taxes
         let totalGrossValue = 0;
         let totalTax = 0;
-        let totalUnrealizedGain = 0;
 
         for (const p of rows) {
-            const pPoints = await calculatePerformanceHistory([p.id], '1W');
-            if (pPoints.length > 0) {
-                const lastP = pPoints[pPoints.length - 1];
+            const pHistory = individual[p.id] || [];
+            if (pHistory.length > 0) {
+                const lastP = pHistory[pHistory.length - 1];
                 p.totalValue = lastP.value;
-                if (pPoints.length > 1) {
-                    const lastP = pPoints[pPoints.length - 1];
-                    const prevP = pPoints[pPoints.length - 2];
+                if (pHistory.length > 1) {
+                    const prevP = pHistory[pHistory.length - 2];
                     // Profit-based variation
                     p.changeValue = lastP.profit - prevP.profit;
                     p.changePercent = prevP.value > 0 ? (p.changeValue / prevP.value) * 100 : 0;
@@ -859,33 +859,27 @@ app.get('/api/portfolios', async (req, res) => {
                     p.changePercent = 0;
                 }
             } else {
+                p.totalValue = 0;
                 p.changeValue = 0;
                 p.changePercent = 0;
             }
 
-            // Calculate tax and gain for this portfolio
+            // Still need details for taxes (not covered by perf engine simulation)
             const details = await getPortfolioDetails(p.id, liveRate);
             p.totalTax = details.totalLatentTax;
             p.netValue = p.totalValue - p.totalTax;
-            p.totalGrossLatentGain = details.totalGrossLatentGain || 0;
             
             totalGrossValue += p.totalValue;
             totalTax += p.totalTax;
-            totalUnrealizedGain += p.totalGrossLatentGain;
         }
-
-        const totalNetValue   = totalGrossValue - totalTax;
-        
-        // Dashboard GAIN Totale is now sum of Gross Latent Gains
-        const totalGain = totalUnrealizedGain;
 
         res.json({
             portfolios: rows,
             global: {
                 totalValue: totalGrossValue,
-                totalNetValue,
+                totalNetValue: totalGrossValue - totalTax,
                 totalTax: totalTax,
-                totalGain,
+                totalGain: globalProfit, // Now matches Performance Chart Net Profit
                 changePercent: globalChangePercent,
                 changeValue: globalChangeValue
             }
@@ -1904,12 +1898,12 @@ app.get('/api/market/exchange-rate', async (req, res) => {
 /**
  * Shared helper to calculate performance data points for one or more portfolios.
  */
-async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefresh = false) {
+async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefresh = false, includeIndividual = false) {
     const pIdsInput = portfolioIds === null ? null : (Array.isArray(portfolioIds) ? portfolioIds : [portfolioIds]);
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
     const rangeKey = range || 'ALL';
-    const cacheKey = `history_${pIdsInput ? pIdsInput.sort().join(',') : 'global'}_${rangeKey}`;
+    const cacheKey = `history_${pIdsInput ? pIdsInput.sort().join(',') : 'global'}_${rangeKey}_${includeIndividual}`;
 
     // 1. Check Cache (1 minute TTL for dashboard-level history)
     const CACHE_SHORT_TTL = 60 * 1000; 
@@ -2157,6 +2151,10 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
 
     // Initial state and metadata caching per portfolio
     const portfolioStates = {};
+    const individualHistories = {};
+    if (includeIndividual) {
+        portfolios.forEach(p => individualHistories[p.id] = []);
+    }
 
     for (const p of portfolios) {
         // Reduced logging - only log if it's a heavy calculation (many assets or long range)
@@ -2436,6 +2434,16 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                 dayProfit += pProfit;
                 dayCash += pCash;
                 dayAssets += pAssetsVal;
+
+                if (includeIndividual) {
+                    const rateForP = p.currency === 'USD' ? (fxRates['USD']?.[dateStr] || 1) : 1;
+                    individualHistories[p.id].push({
+                        date: dateStr,
+                        value: Math.round(pValue),
+                        profit: Math.round(pProfit),
+                        netDeposits: Math.round(portfolioStates[p.id].netDeposits / rateForP)
+                    });
+                }
             }
         }
 
@@ -2471,12 +2479,13 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
         currentDate.setDate(currentDate.getDate() + 1);
     }
     // 5. Cache result
+    const result = includeIndividual ? { dataPoints, individual: individualHistories } : dataPoints;
     performanceResultsCache[cacheKey] = {
-        data: dataPoints,
+        data: result,
         timestamp: Date.now()
     };
 
-    return dataPoints;
+    return result;
 }
 
 // ─── ANALYTICS ENDPOINTS ──────────────────────────────────────────────────────
@@ -2695,11 +2704,13 @@ app.get('/api/analytics/reports', async (req, res) => {
         const dateStrStart = startDate.toISOString().split('T')[0];
         const dateStrEnd = today.toISOString().split('T')[0];
 
-        // 1. Performance Comparison (Normalized to 100)
-        const benchmarks = ['^GSPC', 'URTH']; // S&P 500, MSCI World
-        
-        // Helper to fetch normalized history
-        const fetchHistory = async (ticker) => {
+        const portfolioData = await calculatePerformanceHistory(null, range, false, true);
+        if (!portfolioData || !portfolioData.dataPoints || portfolioData.dataPoints.length === 0) {
+             return res.json({ error: 'No performance data' });
+        }
+
+        // Fetch Benchmarks in parallel
+        const fetchBenchmark = async (ticker) => {
             try {
                 const chart = await yahooFinance.chart(ticker, {
                     period1: dateStrStart,
@@ -2709,129 +2720,75 @@ app.get('/api/analytics/reports', async (req, res) => {
                 if (chart && chart.quotes && chart.quotes.length > 0) {
                     const firstPrice = chart.quotes[0].adjclose || chart.quotes[0].close;
                     return chart.quotes.map(h => ({
-                        date: new Date(h.date).toISOString().split('T')[0].substring(0, 7), // YYYY-MM
-                        value: ((h.adjclose || h.close) / firstPrice) * 100,
-                        price: h.adjclose || h.close
+                        date: new Date(h.date).toISOString().split('T')[0].substring(0, 7),
+                        value: ((h.adjclose || h.close) / (firstPrice || 1)) * 100
                     }));
                 }
             } catch (e) {
-                console.warn(`Failed benchmark/asset fetch for ${ticker}:`, e.message);
+                console.warn(`Failed benchmark fetch for ${ticker}:`, e.message);
             }
             return [];
         };
 
-        // Identify all unique tickers needed for historical valuation
-        const uniqueTickers = [...new Set(allTransactions.filter(t => t.assetTicker).map(t => t.assetTicker))];
-        
-        // Fetch benchmark and asset histories in parallel
-        const histories = await Promise.all([
-            fetchHistory('^GSPC'),
-            fetchHistory('URTH'),
-            ...uniqueTickers.map(t => fetchHistory(t))
-        ]);
+        const [sp500, msci] = await Promise.all([fetchBenchmark('^GSPC'), fetchBenchmark('URTH')]);
 
-        const sp500 = histories[0];
-        const msci = histories[1];
-        const assetHistories = {};
-        uniqueTickers.forEach((t, i) => {
-            assetHistories[t] = Object.fromEntries(histories[i+2].map(h => [h.date, h.price]));
-        });
-
-        // Calculate Portfolio Monthly Performance (Global and Individual)
-        const portfolioPerformance = [];
-        const individualPortfolios = Object.fromEntries(portfolios.map(p => [p.id, { id: p.id, name: p.name, history: [], metrics: {} }]));
-        
-        let tempDate = new Date(startDate);
-        tempDate.setDate(1); // Start of month
-
-        while (tempDate <= today) {
-            const currentMonthStr = tempDate.toISOString().substring(0, 7);
-            const lastDayOfMonth = new Date(tempDate.getFullYear(), tempDate.getMonth() + 1, 0).toISOString().split('T')[0];
-            
-            // Calculate value at last day of month
-            let totalVal = 0;
-            let netDep = 0;
-
-            for (const p of portfolios) {
-                let cash = p.initialCash;
-                let pNetDep = p.initialCash;
-                const holdings = {};
-                const pTxs = allTransactions.filter(t => t.portfolioId === p.id && t.date <= lastDayOfMonth);
-
-                for (const t of pTxs) {
-                    const qty = t.quantity || 0;
-                    const amount = t.amount || 0;
-                    const fx = t.exchangeRate || 1;
-                    const absAmount = Math.abs(amount);
-                    switch (t.type) {
-                        case 'DEPOSIT': cash += absAmount; pNetDep += absAmount; break;
-                        case 'WITHDRAWAL': 
-                        case 'TRANSFER': cash -= absAmount; pNetDep -= absAmount; break;
-                        case 'TAX': cash -= absAmount; break;
-                        case 'DIVIDEND': cash += (t.amount || (qty * (t.price || 0) - (t.commission || 0) - (t.tax || 0))) / fx; break;
-                        case 'BUY': cash -= (t.amount || (qty * (t.price || 0) + (t.commission || 0) + (t.tax || 0))) / fx; holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) + qty; break;
-                        case 'SELL': cash += (t.amount || (qty * (t.price || 0) - (t.commission || 0) - (t.tax || 0))) / fx; holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) - qty; break;
-                    }
+        // Downsample to Monthly for Comparison Chart (Matches Benchmark interval)
+        const downsampleToMonthly = (daily) => {
+            const monthly = [];
+            let currentMonthEvents = [];
+            for (let i = 0; i < daily.length; i++) {
+                const day = daily[i];
+                const mStr = day.date.substring(0, 7);
+                if (day.events) currentMonthEvents.push(...day.events);
+                
+                const next = daily[i+1];
+                if (!next || next.date.substring(0, 7) !== mStr) {
+                    monthly.push({
+                        ...day,
+                        events: [...currentMonthEvents]
+                    });
+                    currentMonthEvents = [];
                 }
-
-                let assetVal = 0;
-                for (const [ticker, shares] of Object.entries(holdings)) {
-                    if (shares <= 0.0001) continue;
-                    const a = assetMap[ticker];
-                    if (a) {
-                        // Use historical price if available, otherwise fallback to current price
-                        // Find historical price or best approximation
-                        let histPrice = a.currentPrice;
-                        const hMap = assetHistories[ticker];
-                        if (hMap && Object.keys(hMap).length > 0) {
-                            if (hMap[currentMonthStr]) {
-                                histPrice = hMap[currentMonthStr];
-                            } else {
-                                // Find closest previous month
-                                const months = Object.keys(hMap).sort();
-                                const prevMonth = months.filter(m => m < currentMonthStr).pop();
-                                if (prevMonth) {
-                                    histPrice = hMap[prevMonth];
-                                } else {
-                                    // Use first available
-                                    histPrice = hMap[months[0]];
-                                }
-                            }
-                        }
-                        const lastFxTx = pTxs.filter(tx => tx.assetTicker === ticker && tx.exchangeRate).at(-1);
-                        const rate = lastFxTx ? lastFxTx.exchangeRate : 1;
-                        assetVal += shares * (histPrice / rate);
-                    }
-                }
-                const pVal = cash + assetVal;
-                totalVal += pVal;
-                netDep += pNetDep;
-                individualPortfolios[p.id].history.push({ date: currentMonthStr, value: pVal, netDeposits: pNetDep });
             }
+            return monthly;
+        };
 
-            portfolioPerformance.push({ date: currentMonthStr, value: totalVal, netDeposits: netDep });
-            tempDate.setMonth(tempDate.getMonth() + 1);
+        const monthlyGlobal = downsampleToMonthly(portfolioData.dataPoints);
+        const monthlyIndividual = {};
+        for (const pid in portfolioData.individual) {
+            const p = portfolios.find(port => port.id == pid);
+            monthlyIndividual[pid] = {
+                id: pid,
+                name: p ? p.name : pid,
+                history: downsampleToMonthly(portfolioData.individual[pid]),
+                metrics: {}
+            };
         }
 
-        // Normalize portfolio performance using ROI-based Index (100 base)
-        const normalizeHistory = (history) => history.map(p => {
-            const roi = p.netDeposits > 0 ? (p.value / p.netDeposits) - 1 : 0;
-            return {
-                date: p.date,
-                value: (1 + roi) * 100,
-                absoluteValue: p.value,
-                profit: p.value - p.netDeposits,
-                netDeposits: p.netDeposits
-            };
-        });
+        // Normalize History (Starting at 100 at the beginning of the period)
+        const normalizeRelative = (history) => {
+            if (history.length === 0) return [];
+            const first = history[0];
+            const firstRatio = first.netDeposits > 0 ? (first.value / first.netDeposits) : 1;
+            return history.map(p => {
+                const currentRatio = p.netDeposits > 0 ? (p.value / p.netDeposits) : 1;
+                return {
+                    date: p.date.substring(0, 7),
+                    value: (currentRatio / (firstRatio || 1)) * 100,
+                    absoluteValue: p.value,
+                    profit: p.value - p.netDeposits,
+                    netDeposits: p.netDeposits
+                };
+            });
+        };
 
-        const normalizedGlobal = normalizeHistory(portfolioPerformance);
-        
-        // Normalize each individual portfolio and calculate its metrics
+        const normalizedGlobal = normalizeRelative(monthlyGlobal);
         const riskFreeMonthly = 0.002;
-        for (const pid in individualPortfolios) {
-            const p = individualPortfolios[pid];
-            p.history = normalizeHistory(p.history);
+
+        for (const pid in monthlyIndividual) {
+            const p = monthlyIndividual[pid];
+            p.history = normalizeRelative(p.history);
+            if (p.history.length === 0) continue;
             
             const last = p.history[p.history.length - 1];
             const roi = last.netDeposits > 0 ? (last.absoluteValue / last.netDeposits) - 1 : 0;
@@ -2844,9 +2801,9 @@ app.get('/api/analytics/reports', async (req, res) => {
                 sharpeRatio: (() => {
                     const returns = [];
                     for (let i = 1; i < p.history.length; i++) {
-                        const pVal = p.history[i-1].value;
-                        const cVal = p.history[i].value;
-                        if (pVal > 0) returns.push((cVal / pVal) - 1);
+                        const prev = p.history[i-1].value;
+                        const curr = p.history[i].value;
+                        if (prev > 0) returns.push((curr / prev) - 1);
                     }
                     if (returns.length < 2) return 0;
                     const m = returns.reduce((a, b) => a + b, 0) / returns.length;
@@ -2928,13 +2885,13 @@ app.get('/api/analytics/reports', async (req, res) => {
 
         // 5. Annual Gains (Realized + Dividends + Unrealized for Current Year)
         const annualGainsMap = {}; // { year: { realized: 0, dividends: 0, unrealized: 0 } }
-        const currentYear = today.getFullYear().toString();
-        const liveRateVal = await getEurUsdRate();
+        const currentYearString = today.getFullYear().toString();
+        const liveRateValReports = await getEurUsdRate();
 
         for (const p of portfolios) {
             try {
-                const details = await getPortfolioDetails(p.id, liveRateVal);
-                const rate = (p.currency === 'USD') ? liveRateVal : 1;
+                const details = await getPortfolioDetails(p.id, liveRateValReports);
+                const rate = (p.currency === 'USD') ? liveRateValReports : 1;
                 
                 // Realized from closed positions
                 for (const pos of details.closedPositions) {
@@ -2952,8 +2909,8 @@ app.get('/api/analytics/reports', async (req, res) => {
                 
                 // Unrealized (only current year)
                 const pUnrealized = details.holdings.reduce((sum, h) => sum + (h.unrealizedGain || 0), 0);
-                if (!annualGainsMap[currentYear]) annualGainsMap[currentYear] = { year: currentYear, realized: 0, dividends: 0, unrealized: 0 };
-                annualGainsMap[currentYear].unrealized += pUnrealized / rate;
+                if (!annualGainsMap[currentYearString]) annualGainsMap[currentYearString] = { year: currentYearString, realized: 0, dividends: 0, unrealized: 0 };
+                annualGainsMap[currentYearString].unrealized += pUnrealized / rate;
                 
             } catch (e) {
                 console.error(`Error aggregating annual gains for portfolio ${p.id}:`, e);
@@ -2965,7 +2922,7 @@ app.get('/api/analytics/reports', async (req, res) => {
         res.json({
             performance: {
                 portfolio: normalizedGlobal,
-                individual: individualPortfolios,
+                individual: monthlyIndividual,
                 sp500,
                 msci
             },
@@ -2974,7 +2931,7 @@ app.get('/api/analytics/reports', async (req, res) => {
             annualGains,
             metrics: {
                 totalROI,
-                annualizedROI: Math.pow(1 + totalROI, 1 / (portfolioPerformance.length / 12)) - 1,
+                annualizedROI: Math.pow(1 + totalROI, 1 / (Math.max(1, monthlyGlobal.length) / 12)) - 1,
                 bestAsset: bestAsset.ticker === '-' ? '-' : `${bestAsset.name} (${bestAsset.ticker})`,
                 sharpeRatio: (() => {
                     const returns = [];
@@ -2984,9 +2941,9 @@ app.get('/api/analytics/reports', async (req, res) => {
                         if (prev > 0) returns.push((curr / prev) - 1);
                     }
                     if (returns.length < 2) return 0;
-                    const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
-                    const stdDev = Math.sqrt(returns.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b, 0) / returns.length);
-                    return stdDev > 0 ? (mean - riskFreeMonthly) / stdDev : 0;
+                    const meanValue = returns.reduce((a, b) => a + b, 0) / returns.length;
+                    const stdDevValue = Math.sqrt(returns.map(x => Math.pow(x - meanValue, 2)).reduce((a, b) => a + b, 0) / returns.length);
+                    return stdDevValue > 0 ? (meanValue - riskFreeMonthly) / stdDevValue : 0;
                 })()
             }
         });
