@@ -2145,7 +2145,7 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                 case 'DEPOSIT':    portfolioStates[p.id].cash += amount; portfolioStates[p.id].netDeposits += amount; break;
                 case 'WITHDRAWAL': portfolioStates[p.id].cash -= amount; portfolioStates[p.id].netDeposits -= amount; break;
                 case 'TAX':        portfolioStates[p.id].cash -= amount; break;
-                case 'TRANSFER':   portfolioStates[p.id].cash -= amount; break;
+                case 'TRANSFER':   portfolioStates[p.id].cash -= amount; portfolioStates[p.id].netDeposits -= amount; break;
                 case 'DIVIDEND': {
                     const absAmount = Math.abs(amount);
                     const divAmt = (absAmount || Math.abs(qty * price - comm - tax)) / fx;
@@ -2185,14 +2185,28 @@ async function calculatePerformanceHistory(portfolioIds, range) {
         // Check for manual overrides for this specific date
         // CRITICAL FIX: For the CURRENT day, we skip the snapshot and use live calculation 
         // to avoid discrepancies between outdated snapshots and new transactions.
-        const manualTotal = (!isToday && (isGlobal 
-            ? database.db.prepare('SELECT totalValue, cashValue, assetValue FROM portfolio_history WHERE portfolioId IS NULL AND date = ?').get(dateStr)
-            : database.db.prepare(`SELECT SUM(totalValue) as totalValue, SUM(cashValue) as cashValue, SUM(assetValue) as assetValue FROM portfolio_history WHERE portfolioId IN (${pIds.join(',')}) AND date = ?`).get(dateStr)));
+        const historyRecords = !isToday ? database.db.prepare(`SELECT portfolioId, totalValue, cashValue, assetValue FROM portfolio_history WHERE portfolioId IN (${pIds.join(',')}) AND date = ?`).all(dateStr) : [];
+        
+        if (!isToday && historyRecords.length > 0) {
+            // Correctly aggregate snapshots with currency conversion
+            for (const rec of historyRecords) {
+                const p = portfolios.find(port => port.id === rec.portfolioId);
+                let val = rec.totalValue || 0;
+                let csh = rec.cashValue || 0;
+                let ast = rec.assetValue || 0;
 
-        if (manualTotal && manualTotal.totalValue !== null) {
-            dayValue = manualTotal.totalValue;
-            dayCash = manualTotal.cashValue || 0;
-            dayAssets = manualTotal.assetValue || 0;
+                if (p && p.currency === 'USD') {
+                    const rate = fxRates['USD']?.[dateStr] || 1;
+                    val /= rate;
+                    csh /= rate;
+                    ast /= rate;
+                }
+                dayValue += val;
+                dayCash += csh;
+                dayAssets += ast;
+            }
+
+            // Still need to update state for transactions on this day if any
             // For profit, we still need netDeposits calculation to keep track of state
             for (const p of portfolios) {
                 const state = portfolioStates[p.id];
@@ -2219,7 +2233,7 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                         case 'DEPOSIT':    state.cash += amount; break;
                         case 'WITHDRAWAL': state.cash -= amount; break;
                         case 'TAX':        state.cash -= amount; break;
-                        case 'TRANSFER':   state.cash -= amount; break;
+                        case 'TRANSFER':   state.cash -= amount; state.netDeposits -= amount; break;
                         case 'DIVIDEND': {
                             const absAmount = Math.abs(t.amount || (qty * price - comm - tax));
                             const divAmt = absAmount / fx;
@@ -2277,7 +2291,7 @@ async function calculatePerformanceHistory(portfolioIds, range) {
                         case 'DEPOSIT':    state.cash += amount; state.netDeposits += amount; break;
                         case 'WITHDRAWAL': state.cash -= amount; state.netDeposits -= amount; break;
                         case 'TAX':        state.cash -= amount; break;
-                        case 'TRANSFER':   state.cash -= amount; break;
+                        case 'TRANSFER':   state.cash -= amount; state.netDeposits -= amount; break;
                         case 'DIVIDEND': {
                             const absAmount = Math.abs(t.amount || (qty * price - comm - tax));
                             const divAmt = absAmount / fx;
@@ -3269,9 +3283,10 @@ setInterval(async () => {
     if (lastSnapshotDate !== todayStr) {
         logger.info(`Recording daily snapshots for portfolios and dashboard...`);
         try {
+            const liveRate = await getEurUsdRate();
             const portfolios = database.db.prepare(`SELECT id FROM portfolios`).all();
-            portfolios.forEach(p => database.savePortfolioSnapshot(p.id));
-            database.savePortfolioSnapshot(null); // Global snapshot
+            portfolios.forEach(p => database.savePortfolioSnapshot(p.id, liveRate));
+            database.savePortfolioSnapshot(null, liveRate); // Global snapshot
             lastSnapshotDate = todayStr;
             logger.info(`Daily snapshots completed.`);
         } catch (e) {

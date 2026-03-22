@@ -342,7 +342,7 @@ function recalculateAll(liveEurUsdRate = null) {
     for (const { id } of ids) recalculatePortfolio(id, liveEurUsdRate);
 }
 
-function savePortfolioSnapshot(portfolioId = null) {
+function savePortfolioSnapshot(portfolioId = null, eurUsdRate = 1.0) {
     let totalValue = 0, cashValue = 0, assetValue = 0;
     const date = new Date().toISOString().split('T')[0];
 
@@ -354,11 +354,20 @@ function savePortfolioSnapshot(portfolioId = null) {
             assetValue = totalValue - cashValue;
         } else return;
     } else {
-        // Global Dashboard Snapshot
-        const portfolios = dbConnection.prepare(`SELECT totalValue, currentCash FROM portfolios`).all();
+        // Global Dashboard Snapshot - Convert to EUR for consistent aggregate history
+        const portfolios = dbConnection.prepare(`SELECT totalValue, currentCash, currency FROM portfolios`).all();
         portfolios.forEach(p => {
-            totalValue += (p.totalValue || 0);
-            cashValue += (p.currentCash || 0);
+            let tVal = (p.totalValue || 0);
+            let cVal = (p.currentCash || 0);
+            
+            // Convert to EUR if native is USD
+            if (p.currency === 'USD' && eurUsdRate && eurUsdRate > 0) {
+                tVal /= eurUsdRate;
+                cVal /= eurUsdRate;
+            }
+            
+            totalValue += tVal;
+            cashValue += cVal;
         });
         assetValue = totalValue - cashValue;
     }
