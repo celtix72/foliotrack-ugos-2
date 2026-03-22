@@ -261,10 +261,22 @@
                             <option value="B_ITA">Borsa Italiana</option>
                         </select>
                     </div>
-                    <div id="edit-isin-field" class="space-y-2 hidden">
-                        <label class="text-xs font-bold text-slate-400 uppercase tracking-widest">ISIN</label>
-                        <input id="edit-isin" type="text" placeholder="e.g. IT000..." class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 text-sm font-bold"/>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-widest">Asset Type</label>
+                        <select id="edit-asset-type" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 text-sm font-bold">
+                            <option value="Azioni">Azioni</option>
+                            <option value="Bond">Bond</option>
+                            <option value="ETF Azionario">ETF Azionario</option>
+                            <option value="ETF Monetario">ETF Monetario</option>
+                            <option value="ETF Obblig">ETF Obblig</option>
+                            <option value="Deposito Vincolato">Deposito Vincolato</option>
+                            <option value="Cash">Cash</option>
+                        </select>
                     </div>
+                </div>
+                <div id="edit-isin-field" class="space-y-2 hidden">
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-widest">ISIN</label>
+                    <input id="edit-isin" type="text" placeholder="e.g. IT000..." class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 text-sm font-bold"/>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div class="space-y-2">
@@ -513,6 +525,7 @@ window.openAlertModal = function(ticker) {
     document.getElementById('edit-stop-loss').value = a.stopLoss || 0;
     document.getElementById('edit-data-source').value = a.dataSource || 'YF';
     document.getElementById('edit-isin').value = a.isin || '';
+    document.getElementById('edit-asset-type').value = a.type || 'Azioni';
     
     toggleEditISIN();
     document.getElementById('alert-edit-modal').classList.remove('hidden');
@@ -538,12 +551,13 @@ window.saveAlertSettings = async function() {
     const stopLoss = parseFloat(document.getElementById('edit-stop-loss').value || 0);
     const dataSource = document.getElementById('edit-data-source').value;
     const isin = document.getElementById('edit-isin').value;
+    const type = document.getElementById('edit-asset-type').value;
 
     try {
         const res = await fetch(`/api/assets/${ticker}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ targetPrice, stopLoss, isMonitored: 1, dataSource, isin })
+            body: JSON.stringify({ targetPrice, stopLoss, isMonitored: 1, dataSource, isin, type })
         });
         if (res.ok) {
             closeAlertModal();

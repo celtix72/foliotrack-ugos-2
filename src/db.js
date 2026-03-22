@@ -178,20 +178,35 @@ function initDb() {
       );
     `);
 
-    // Default tax rates
-    const defaultTaxRates = [
+    // Standardized asset types remapping
+    const remapSql = [
+        `UPDATE assets SET type = 'Azioni' WHERE type IN ('Stock', 'Equity', 'EQUITY', 'Azionario')`,
+        `UPDATE tax_rates SET asset_type = 'Azioni' WHERE asset_type IN ('Stock', 'Equity', 'Azionario')`,
+        `UPDATE assets SET type = 'Bond' WHERE type IN ('Obbligazionario', 'BOND')`,
+        `UPDATE tax_rates SET asset_type = 'Bond' WHERE asset_type IN ('Obbligazionario')`,
+        `UPDATE assets SET type = 'ETF Azionario' WHERE type LIKE 'ETF%Azionario%'`,
+        `UPDATE assets SET type = 'ETF Monetario' WHERE type LIKE 'ETF%Monetario%'`,
+        `UPDATE assets SET type = 'ETF Obblig' WHERE type LIKE 'ETF%Obblig%' OR type LIKE 'ETF%Bond%'`
+    ];
+    remapSql.forEach(sql => {
+        try { dbConnection.prepare(sql).run(); } catch(e) {}
+    });
+
+    // Default tax rates for new standardized types
+    const standardizedTaxRates = [
+        { type: 'Azioni', rate: 26.0 },
         { type: 'Bond', rate: 12.5 },
-        { type: 'Azionario', rate: 26.0 },
         { type: 'ETF Azionario', rate: 26.0 },
         { type: 'ETF Monetario', rate: 12.5 },
-        { type: 'Stock', rate: 26.0 },
+        { type: 'ETF Obblig', rate: 12.5 },
+        { type: 'Deposito Vincolato', rate: 26.0 },
         { type: 'Cash', rate: 0.0 }
     ];
 
     const insertTaxRate = dbConnection.prepare(
         `INSERT OR IGNORE INTO tax_rates (asset_type, rate) VALUES (?, ?)`
     );
-    defaultTaxRates.forEach(tr => insertTaxRate.run(tr.type, tr.rate));
+    standardizedTaxRates.forEach(tr => insertTaxRate.run(tr.type, tr.rate));
 
     // ─── Default settings ────────────────────────────────────────────────────────
     const defaultSettings = {

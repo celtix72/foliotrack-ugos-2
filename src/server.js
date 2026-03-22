@@ -91,7 +91,7 @@ async function fetchAssetMetadata(ticker) {
         return {
             currentPrice: 1.0, 
             changePercent: 0,
-            quoteType: 'Deposit', 
+            type: 'Deposito Vincolato', 
             longName: ticker,
             shortName: ticker,
             currency: 'EUR',
@@ -109,7 +109,10 @@ async function fetchAssetMetadata(ticker) {
         if (!quote) return null;
 
         let country = 'N/A';
-        let detailedType = quote.quoteType === 'EQUITY' ? 'Azionario' : (quote.quoteType || 'Altro');
+        // Remap EQUITY to Azioni
+        let detailedType = quote.quoteType === 'EQUITY' ? 'Azioni' : (quote.quoteType || 'Altro');
+        // Remap BOND to Bond
+        if (quote.quoteType === 'BOND') detailedType = 'Bond';
 
         const summary = await yahooFinance.quoteSummary(ticker, { 
             modules: ["summaryProfile", "assetProfile", "fundProfile"] 
@@ -148,13 +151,19 @@ async function fetchAssetMetadata(ticker) {
             }
 
             if (fp && fp.categoryName) {
-                detailedType = `${quote.quoteType === 'ETF' ? 'ETF' : 'Fondo'} ${fp.categoryName}`;
+                const cat = fp.categoryName.toLowerCase();
+                if (cat.includes('bond') || cat.includes('obblig')) detailedType = 'ETF Obblig';
+                else if (cat.includes('equity') || cat.includes('azion')) detailedType = 'ETF Azionario';
+                else if (cat.includes('money') || cat.includes('monet')) detailedType = 'ETF Monetario';
+                else detailedType = 'ETF Azionario'; // Default for funds
             } else if (nameStr.includes('bond') || nameStr.includes('obbligazion')) {
-                detailedType = `${quote.quoteType === 'ETF' ? 'ETF' : 'Fondo'} Obbligazionario`;
+                detailedType = 'ETF Obblig';
             } else if (nameStr.includes('equity') || nameStr.includes('azionario') || nameStr.includes('world') || nameStr.includes('stock')) {
-                detailedType = `${quote.quoteType === 'ETF' ? 'ETF' : 'Fondo'} Azionario`;
+                detailedType = 'ETF Azionario';
             } else if (nameStr.includes('monetary') || nameStr.includes('monetario') || nameStr.includes('cash') || nameStr.includes('rate')) {
-                detailedType = `${quote.quoteType === 'ETF' ? 'ETF' : 'Fondo'} Monetario`;
+                detailedType = 'ETF Monetario';
+            } else {
+                detailedType = 'ETF Azionario';
             }
         }
 
