@@ -2973,9 +2973,9 @@
         return;
       }
       container.innerHTML = holdings.map(h => {
-        const isPos = (h.currentValue - h.totalCost) >= 0;
-        const diff = h.currentValue - h.totalCost;
-        const pct = h.totalCost > 0 ? (diff / h.totalCost) * 100 : 0;
+        const cost = h.totalCostInPCurr || h.totalCost || 0;
+        const pct = h.unrealizedGainPct !== undefined ? h.unrealizedGainPct : (cost > 0 ? ((h.currentValue - cost) / cost) * 100 : 0);
+        const isPos = pct >= 0;
         const letters = (h.ticker || '').substring(0,3);
         const dataSource = h.dataSource || 'YF';
         const isin = h.isin || '';
