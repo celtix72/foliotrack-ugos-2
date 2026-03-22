@@ -2585,7 +2585,7 @@
 
     <!-- Back bar -->
     <div class="mob-back-bar">
-      <div class="mob-back-btn" onclick="mobShowDashboard()">
+      <div class="mob-back-btn" onclick="window.location.href='/dashboard'">
         <span class="material-symbols-outlined">chevron_left</span>
         Dashboard
       </div>
@@ -2609,16 +2609,8 @@
 
         <div class="mob-hero-stats-new">
           <div class="mob-hero-stat-box">
-            <span class="mob-hero-stat-box-label">Lordo</span>
-            <span class="mob-hero-stat-box-value" id="mob-detail-gross">--</span>
-          </div>
-          <div class="mob-hero-stat-box">
             <span class="mob-hero-stat-box-label">Cassa</span>
             <span class="mob-hero-stat-box-value" id="mob-detail-cash">--</span>
-          </div>
-          <div class="mob-hero-stat-box">
-            <span class="mob-hero-stat-box-label">Assets</span>
-            <span class="mob-hero-stat-box-value" id="mob-detail-assets">--</span>
           </div>
           <div class="mob-hero-stat-box">
             <span class="mob-hero-stat-box-label">Gain</span>
@@ -2891,7 +2883,7 @@
       }
 
       if (el('mob-detail-pname')) el('mob-detail-pname').textContent = p.name;
-      if (el('mob-detail-label')) el('mob-detail-label').textContent = p.name;
+      if (el('mob-detail-label')) el('mob-detail-label').textContent = 'Portafoglio';
       if (el('mob-detail-total')) el('mob-detail-total').textContent = formatPrivacy(p.netValue || p.totalValue, currency, 'mob-dt');
       if (el('mob-detail-gross')) el('mob-detail-gross').textContent = formatPrivacy(p.totalValue, currency, 'mob-dg');
       if (el('mob-detail-cash')) el('mob-detail-cash').textContent = formatPrivacy(p.cashBalance, currency, 'mob-dc', 2);
