@@ -1380,11 +1380,21 @@ app.post('/api/admin/rebuild-history', async (req, res) => {
 // ════════════════════════════════════════════════════════════════════════════
 
 app.get('/api/transactions', (req, res) => {
-    const { portfolioId } = req.query;
+    const { portfolioId, assetTicker } = req.query;
+    let query = `SELECT * FROM transactions WHERE 1=1 `;
+    let params = [];
+    
     if (portfolioId) {
-        return res.json(database.db.prepare(`SELECT * FROM transactions WHERE portfolioId = ? ORDER BY date ASC`).all(portfolioId));
+        query += `AND portfolioId = ? `;
+        params.push(portfolioId);
     }
-    res.json(database.db.prepare(`SELECT * FROM transactions ORDER BY date ASC`).all());
+    if (assetTicker) {
+        query += `AND assetTicker = ? `;
+        params.push(assetTicker);
+    }
+    
+    query += `ORDER BY date ASC`;
+    res.json(database.db.prepare(query).all(...params));
 });
 
 app.post('/api/transactions', async (req, res) => {
