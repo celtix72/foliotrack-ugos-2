@@ -761,8 +761,12 @@
 <div id="mobile-ui">
   <!-- ── Top Header ── -->
   <div class="mob-header" style="height: 60px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--mob-border);">
-    <!-- 1. Full Height Logo Image -->
-    <img src="/logo_cropped.png" alt="FolioTrack" style="height: 48px; width: auto; object-fit: contain;" onerror="this.src='/logo.png'">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white">
+        <span class="material-symbols-outlined text-[20px]">query_stats</span>
+      </div>
+      <span class="text-xl font-black tracking-tighter text-slate-900 dark:text-white">Ft</span>
+    </div>
 
     <!-- 2. Page Indicator (2 Chars) -->
     <div class="mob-header-title text-xl font-bold" style="letter-spacing: -1px; line-height: 1; margin-left: 4px;">DH</div>
@@ -971,12 +975,33 @@
     const isDark = document.documentElement.classList.contains('dark');
     mobPerfChart = new Chart(ctx, {
       type: 'line',
-      data: { labels: [], datasets: [{
-        label: 'Net Worth', data: [],
-        borderColor: '#135bec', backgroundColor: 'rgba(19,91,236,0.12)',
-        fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0, pointHoverRadius: 5,
-        pointHoverBackgroundColor: '#135bec', pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2
-      }]},
+      data: { 
+        labels: [], 
+        datasets: [
+          {
+            label: 'Net Worth', data: [],
+            borderColor: '#135bec', backgroundColor: 'rgba(19,91,236,0.12)',
+            fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0, pointHoverRadius: 6,
+            pointHoverBackgroundColor: '#135bec', pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2
+          },
+          {
+            label: 'Net Profit/Loss', data: [],
+            borderColor: '#10b981', backgroundColor: 'transparent',
+            fill: false, tension: 0.4, borderWidth: 2, borderDash: [5, 5],
+            pointRadius: 0, pointHoverRadius: 6,
+            pointHoverBackgroundColor: '#10b981', pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2,
+            yAxisID: 'y1'
+          },
+          {
+            label: 'Net Gain (No Div)', data: [],
+            borderColor: '#f59e0b', backgroundColor: 'transparent',
+            fill: false, tension: 0.4, borderWidth: 2, borderDash: [2, 2],
+            pointRadius: 0, pointHoverRadius: 6,
+            pointHoverBackgroundColor: '#f59e0b', pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2,
+            yAxisID: 'y1'
+          }
+        ]
+      },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
@@ -991,11 +1016,11 @@
             callbacks: {
               label: () => null,
               title: (items) => {
-                  const d = dashboardChart.rawPoints ? dashboardChart.rawPoints[items[0].dataIndex] : null;
+                  const d = mobPerfChart.rawPoints ? mobPerfChart.rawPoints[items[0].dataIndex] : null;
                   return (d && d.events && d.events.length > 0) ? items[0].label : null;
               },
               afterBody: (items) => {
-                  const d = dashboardChart.rawPoints ? dashboardChart.rawPoints[items[0].dataIndex] : null;
+                  const d = mobPerfChart.rawPoints ? mobPerfChart.rawPoints[items[0].dataIndex] : null;
                   if (d && d.events && d.events.length > 0) {
                       const labels = { 'BUY': 'ACQUISTO', 'SELL': 'VENDITA', 'DEPOSIT': 'DEPOSITO', 'WITHDRAWAL': 'PRELIEVO', 'DIVIDEND': 'DIVIDENDO' };
                       return d.events.map(ev => {
@@ -1007,11 +1032,26 @@
               }
             }
           },
-          zoom: { zoom: { wheel:{enabled:false}, pinch:{enabled:true}, mode:'x' }, pan:{enabled:true, mode:'x'} }
+          zoom: { zoom: { wheel:{enabled:false}, pinch:{enabled:true}, mode:'x' }, pan:{enabled:true, mode:'x'} },
+          annotation: { annotations: {} }
         },
         scales: {
           x: { ticks: { color: isDark?'#64748b':'#94a3b8', font:{size:9}, maxTicksLimit: 5 }, grid: { display: false } },
-          y: { ticks: { color: isDark?'#64748b':'#94a3b8', font:{size:9}, callback: v => '€'+Math.round(v/1000)+'k' }, grid: { color: isDark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.04)' } }
+          y: { 
+            ticks: { 
+              color: isDark?'#64748b':'#94a3b8', font:{size:9}, 
+              callback: v => '€'+Math.round(v/1000)+'k' 
+            }, 
+            grid: { color: isDark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.04)' } 
+          },
+          y1: {
+            position: 'right',
+            ticks: {
+              color: '#10b981', font: { size: 9 },
+              callback: v => '€'+Math.round(v/1000)+'k'
+            },
+            grid: { drawOnChartArea: false }
+          }
         }
       }
     });
@@ -1020,15 +1060,70 @@
 
   async function mobUpdatePerfChart() {
     if (!mobPerfChart) return;
+    const isDark = document.documentElement.classList.contains('dark');
     try {
       const res = await fetch(`/api/analytics/global-performance?range=${mobCurrentRange}`);
       const result = await res.json();
       const dataPoints = result.dataPoints || (Array.isArray(result) ? result : []);
+      
+      mobPerfChart.rawPoints = dataPoints;
       mobPerfChart.data.labels = dataPoints.map(d => {
         const dt = new Date(d.date);
         return dt.toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit' });
       });
+      
       mobPerfChart.data.datasets[0].data = dataPoints.map(d => d.value);
+      mobPerfChart.data.datasets[1].data = dataPoints.map(d => d.profit);
+      mobPerfChart.data.datasets[2].data = dataPoints.map(d => d.profitNoDiv);
+
+      // Year Markers (Annotations)
+      const annotations = {};
+      let lastYear = null;
+      dataPoints.forEach((d, index) => {
+        const year = new Date(d.date).getFullYear();
+        if (lastYear !== null && year !== lastYear) {
+          annotations[`line${year}`] = {
+            type: 'line', xMin: index, xMax: index,
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+            borderWidth: 1, borderDash: [5, 5],
+            label: {
+              display: true, content: year.toString(), position: 'start',
+              backgroundColor: isDark ? 'rgba(15, 23, 42, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+              color: isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)',
+              font: { size: 8, weight: 'bold' }
+            }
+          };
+        }
+        lastYear = year;
+      });
+      mobPerfChart.options.plugins.annotation.annotations = annotations;
+
+      // Transaction Markers
+      const pointStyles = [];
+      const pointColors = [];
+      const pointRadii = [];
+
+      dataPoints.forEach(d => {
+        const events = d.events || [];
+        if (events.some(e => e.type === 'SELL')) {
+          pointStyles.push('circle'); pointColors.push('#f43f5e'); pointRadii.push(4);
+        } else if (events.some(e => e.type === 'BUY')) {
+          pointStyles.push('circle'); pointColors.push('#10b981'); pointRadii.push(4);
+        } else if (events.some(e => e.type === 'DEPOSIT' || e.type === 'DIVIDEND')) {
+          pointStyles.push('triangle'); pointColors.push('#10b981'); pointRadii.push(4);
+        } else if (events.some(e => e.type === 'WITHDRAWAL')) {
+          pointStyles.push('triangle'); pointColors.push('#f59e0b'); pointRadii.push(4);
+        } else {
+          pointStyles.push('circle'); pointColors.push('#135bec'); pointRadii.push(0);
+        }
+      });
+
+      mobPerfChart.data.datasets[0].pointStyle = pointStyles;
+      mobPerfChart.data.datasets[0].pointBackgroundColor = pointColors;
+      mobPerfChart.data.datasets[0].pointRadius = pointRadii;
+      mobPerfChart.data.datasets[0].pointBorderColor = '#fff';
+      mobPerfChart.data.datasets[0].pointBorderWidth = 1;
+
       mobPerfChart.update();
     } catch(e) { console.error('[MOB] Perf chart error:', e); }
   }

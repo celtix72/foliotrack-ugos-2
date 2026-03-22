@@ -643,8 +643,12 @@
 <div id="mobile-ui">
   <!-- Top Header -->
   <div class="mob-header" style="height: 60px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--mob-border);">
-    <!-- 1. Full Height Logo Image -->
-    <img src="/logo_cropped.png" alt="FolioTrack" style="height: 48px; width: auto; object-fit: contain;" onerror="this.src='/logo.png'">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white">
+        <span class="material-symbols-outlined text-[20px]">query_stats</span>
+      </div>
+      <span class="text-xl font-black tracking-tighter text-slate-900 dark:text-white">Ft</span>
+    </div>
 
     <!-- 2. Page Indicator (2 Chars) -->
     <div class="mob-header-title text-xl font-bold" style="letter-spacing: -1px; line-height: 1; margin-left: 4px;">ST</div>

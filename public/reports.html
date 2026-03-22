@@ -317,8 +317,12 @@
 <div id="mobile-ui">
   <!-- ── Top Header ── -->
   <div class="mob-header" style="height: 60px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--mob-border);">
-    <!-- 1. Full Height Logo Image -->
-    <img src="/logo_cropped.png" alt="FolioTrack" style="height: 48px; width: auto; object-fit: contain;" onerror="this.src='/logo.png'">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white">
+        <span class="material-symbols-outlined text-[20px]">query_stats</span>
+      </div>
+      <span class="text-xl font-black tracking-tighter text-slate-900 dark:text-white">Ft</span>
+    </div>
 
     <!-- 2. Page Indicator (2 Chars) -->
     <div class="mob-header-title text-xl font-bold" style="letter-spacing: -1px; line-height: 1; margin-left: 4px;">RP</div>
@@ -878,26 +882,96 @@
         // Performance
         const pCtx = document.getElementById('mob-perf-chart').getContext('2d');
         if (mobPerfChart) mobPerfChart.destroy();
+        
+        const isDark = document.documentElement.classList.contains('dark');
+        
         mobPerfChart = new Chart(pCtx, {
             type: 'line',
             data: {
-                labels: data.performance.portfolio.map(d => d.date),
-                datasets: [{
-                    data: data.performance.portfolio.map(d => d.value),
-                    borderColor: '#135bec',
-                    borderWidth: 3,
-                    fill: true,
-                    backgroundColor: 'rgba(19, 91, 236, 0.05)',
-                    tension: 0.4,
-                    pointRadius: 0
-                }]
+                labels: data.performance.portfolio.map(d => new Date(d.date).toLocaleDateString('it-IT', {day:'2-digit',month:'2-digit'})),
+                datasets: [
+                    {
+                        label: 'Portfolio',
+                        data: data.performance.portfolio.map(d => d.value),
+                        borderColor: '#135bec',
+                        borderWidth: 2,
+                        fill: true,
+                        backgroundColor: isDark ? 'rgba(19, 91, 236, 0.1)' : 'rgba(19, 91, 236, 0.05)',
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 6,
+                        pointHoverBackgroundColor: '#135bec',
+                        pointHoverBorderColor: '#fff',
+                        pointHoverBorderWidth: 2
+                    },
+                    {
+                        label: 'S&P 500',
+                        data: data.performance.sp500.map(d => d.value),
+                        borderColor: '#10b981',
+                        borderWidth: 1.5,
+                        borderDash: [5, 5],
+                        fill: false,
+                        tension: 0.4,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'MSCI World',
+                        data: data.performance.msci.map(d => d.value),
+                        borderColor: '#f59e0b',
+                        borderWidth: 1.5,
+                        borderDash: [5, 5],
+                        fill: false,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }
+                ]
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                interaction: { mode: 'index', intersect: false },
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: isDark ? 'rgba(30, 41, 59, 1)' : 'rgba(255, 255, 255, 1)',
+                        titleColor: isDark ? '#f1f5f9' : '#1e293b',
+                        bodyColor: isDark ? '#f1f5f9' : '#1e293b',
+                        borderColor: isDark ? '#334155' : '#e2e8f0',
+                        borderWidth: 1,
+                        padding: 10,
+                        callbacks: {
+                            label: (ctx) => null, // Hide numeric value from tooltip
+                            title: (items) => {
+                                const d = data.performance.portfolio[items[0].dataIndex];
+                                return (d && d.events && d.events.length > 0) ? items[0].label : null;
+                            },
+                            afterBody: (items) => {
+                                const index = items[0].dataIndex;
+                                const d = data.performance.portfolio[index];
+                                if (d && d.events && d.events.length > 0) {
+                                    const labels = { 'BUY': 'ACQUISTO', 'SELL': 'VENDITA', 'DEPOSIT': 'DEPOSITO', 'WITHDRAWAL': 'PRELIEVO', 'DIVIDEND': 'DIVIDENDO' };
+                                    return d.events.map(ev => {
+                                        const typeLabel = labels[ev.type] || ev.type;
+                                        return `${typeLabel}: ${ev.ticker || ev.assetName || ''}`;
+                                    });
+                                }
+                                return null;
+                            }
+                        }
+                    }
+                },
                 scales: { 
-                    x: { display: false },
-                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { font: { size: 9 } } }
+                    x: { 
+                        ticks: { color: isDark?'#64748b':'#94a3b8', font: { size: 9 }, maxTicksLimit: 5 },
+                        grid: { display: false }
+                    },
+                    y: { 
+                        grid: { color: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' }, 
+                        ticks: { 
+                            color: isDark?'#64748b':'#94a3b8', 
+                            font: { size: 9 },
+                            callback: v => '€'+Math.round(v/1000)+'k'
+                        } 
+                    }
                 }
             }
         });
