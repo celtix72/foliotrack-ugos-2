@@ -1340,7 +1340,7 @@ app.post('/api/admin/rebuild-history', async (req, res) => {
         logger.info(`Rebuilding performance history: Step 3/4 - Recalculating for ${portfolios.length} portfolios...`);
         
         for (const p of portfolios) {
-            const dataPoints = await calculatePerformanceHistory(p.id, 'ALL');
+            const dataPoints = await calculatePerformanceHistory(p.id, 'ALL', true);
             const insert = database.db.prepare(`
                 INSERT OR REPLACE INTO portfolio_history (portfolioId, date, totalValue, cashValue, assetValue)
                 VALUES (?, ?, ?, ?, ?)
@@ -1354,7 +1354,7 @@ app.post('/api/admin/rebuild-history', async (req, res) => {
         }
         
         logger.info('Rebuilding performance history: Step 4/4 - Recalculating Global...');
-        const globalPoints = await calculatePerformanceHistory(null, 'ALL');
+        const globalPoints = await calculatePerformanceHistory(null, 'ALL', true);
         const insertGlobal = database.db.prepare(`
             INSERT OR REPLACE INTO portfolio_history (portfolioId, date, totalValue, cashValue, assetValue)
             VALUES (NULL, ?, ?, ?, ?)
@@ -1384,7 +1384,7 @@ app.get('/api/transactions/audit', async (req, res) => {
         const portfolios = database.db.prepare(`SELECT id, name, currency FROM portfolios`).all();
         const pMap = Object.fromEntries(portfolios.map(p => [p.id, p]));
         
-        const assets = database.db.prepare(`SELECT ticker, name, currency FROM assets`).all();
+        const assets = database.db.prepare(`SELECT ticker, name, currency, isVirtualHistory, hasHistoryInconsistency FROM assets`).all();
         const aMap = Object.fromEntries(assets.map(a => [a.ticker, a]));
         
         const transactions = database.db.prepare(`
@@ -1438,7 +1438,9 @@ app.get('/api/transactions/audit', async (req, res) => {
                 assetCurrency: a.currency,
                 amountEUR: amountEUR,
                 pmcEURBefore: pmcEURBefore,
-                realizedGainEUR: realizedGainEUR
+                realizedGainEUR: realizedGainEUR,
+                isVirtualHistory: a.isVirtualHistory,
+                hasHistoryInconsistency: a.hasHistoryInconsistency
             };
         });
         
@@ -1902,8 +1904,10 @@ app.get('/api/market/exchange-rate', async (req, res) => {
 /**
  * Shared helper to calculate performance data points for one or more portfolios.
  */
-async function calculatePerformanceHistory(portfolioIds, range) {
+async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefresh = false) {
     const pIdsInput = portfolioIds === null ? null : (Array.isArray(portfolioIds) ? portfolioIds : [portfolioIds]);
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
     const rangeKey = range || 'ALL';
     const cacheKey = `history_${pIdsInput ? pIdsInput.sort().join(',') : 'global'}_${rangeKey}`;
 
@@ -1927,7 +1931,6 @@ async function calculatePerformanceHistory(portfolioIds, range) {
         ORDER BY date ASC
     `).all();
 
-    const today = new Date();
     let startDate;
     
     switch (range) {
@@ -2034,108 +2037,99 @@ async function calculatePerformanceHistory(portfolioIds, range) {
     };
 
     const fetchTickerData = async (ticker) => {
-        // --- CD_ (Conto Deposito) skip ---
-        if (ticker.startsWith('CD_')) {
-            logger.info(`Skipping remote fetch for ${ticker} (Conto Deposito Asset)`);
-            return;
-        }
-        const todayStr = new Date().toISOString().split('T')[0];
-
-        // --- EOD Throttle: in-memory cache ---
-        // Cache entry: { data: {...}, fetchedDate: 'YYYY-MM-DD' }
-        if (historicalPricesCache[ticker]) {
-            const cached = historicalPricesCache[ticker];
-            // If we already fetched today (or data is fresh from DB), skip remote call
-            if (cached._fetchedDate === todayStr) {
-                historicalPrices[ticker] = cached;
-                return;
-            }
-        }
-
-        // --- DB Cache check ---
+        if (ticker.startsWith('CD_')) return;
+        const assetMeta = assetMetadataCache[ticker];
         const reqStart = startDate.toISOString().split('T')[0];
-        const dbQuotes = database.db.prepare(`SELECT date, price FROM asset_quotes WHERE ticker = ? AND date >= ?`).all(ticker, reqStart);
-        if (dbQuotes.length > 0) {
-            const sortedDates = dbQuotes.map(q => q.date).sort();
-            const latestDate = sortedDates.at(-1);
-            const earliestDate = sortedDates[0];
-            historicalPrices[ticker] = Object.fromEntries(dbQuotes.map(q => [q.date, q.price]));
-            historicalPricesCache[ticker] = { ...historicalPrices[ticker], _fetchedDate: todayStr };
-            
+        
+        // 1. Check DB Cache unless forced
+        const dbQuotes = !forceRefresh ? database.db.prepare(`SELECT date, price FROM asset_quotes WHERE ticker = ? AND date >= ? ORDER BY date ASC`).all(ticker, reqStart) : [];
+        if (!forceRefresh && dbQuotes.length > 0) {
+            const latestDate = dbQuotes.at(-1).date;
             const firstTxDate = allTransactions.find(t => t.assetTicker === ticker)?.date || reqStart;
-            // If we have data stretching back to either the requested start date or the first transaction date, it's sufficient
-            const hasSufficientHistory = earliestDate <= reqStart || earliestDate <= firstTxDate;
-            
-            if (latestDate >= todayStr && hasSufficientHistory) {
-                // DB already has today's data and sufficient history — no remote fetch needed
+            // Check if we have data up to today (or last business day approx)
+            if (latestDate >= todayStr || (new Date(latestDate) >= new Date(today.getTime() - 3*24*60*60*1000))) {
+                historicalPrices[ticker] = Object.fromEntries(dbQuotes.map(q => [q.date, q.price]));
                 return;
             }
         }
 
-        // --- Remote Fetch (only if DB doesn't have today's data) ---
-        logger.info(`Fetching EOD history for ${ticker} (not in DB for today)...`);
-        try {
-            // Determine if we should use Borsa Italiana
-            const assetMeta = assetMetadataCache[ticker];
-            const isItIsin = assetMeta && assetMeta.isin && /^IT[0-9A-Z]{10}$/.test(assetMeta.isin);
-            let pricesMap = null;
+        // 2. Fetch from External Sources
+        logger.info(`Fetching EOD history for ${ticker} (forceRefresh: ${forceRefresh})...`);
+        let pricesMap = null;
+        const isItIsin = assetMeta && assetMeta.isin && /^IT[0-9A-Z]{10}$/.test(assetMeta.isin);
+        
+        // Attempt Borsa Italiana first if ISIN present
+        if (isItIsin || (assetMeta && assetMeta.dataSource === 'B_ITA')) {
+            pricesMap = await fetchBorsaItalianaHistory(ticker, (assetMeta && assetMeta.isin) || ticker);
+        }
 
-            if (isItIsin || (assetMeta && assetMeta.dataSource === 'B_ITA')) {
-                const searchIsin = (assetMeta && assetMeta.isin) || ticker;
-                pricesMap = await fetchBorsaItalianaHistory(ticker, searchIsin);
+        // Fallback to Yahoo Finance
+        if (!pricesMap) {
+            const firstTxDate = allTransactions.find(t => t.assetTicker === ticker)?.date;
+            const fiveYearsAgo = new Date(); fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
+            const fiveYearsAgoStr = fiveYearsAgo.toISOString().split('T')[0];
+            const qStart = [firstTxDate, fiveYearsAgoStr, reqStart].filter(Boolean).sort()[0];
+            
+            const chartResult = await yahooFinance.chart(ticker, { period1: qStart, period2: todayStr, interval: '1d' }).catch(() => null);
+            if (chartResult && chartResult.quotes) {
+                pricesMap = Object.fromEntries(
+                    chartResult.quotes
+                        .filter(h => h.date && (h.adjclose || h.close))
+                        .map(h => [new Date(h.date).toISOString().split('T')[0], h.adjclose || h.close])
+                );
             }
+        }
 
-            // Fallback to Yahoo Finance
-            if (!pricesMap) {
-                // Ensure we fetch at least 5 years of history for full charts, or more if first transaction is older
-                const firstTxDate = allTransactions.find(t => t.assetTicker === ticker)?.date;
-                const fiveYearsAgo = new Date();
-                fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
-                const fiveYearsAgoStr = fiveYearsAgo.toISOString().split('T')[0];
-                const fallbackStart = startDate.toISOString().split('T')[0];
-                
-                let qStart = fiveYearsAgoStr;
-                if (firstTxDate && firstTxDate < qStart) qStart = firstTxDate;
-                if (fallbackStart < qStart) qStart = fallbackStart;
+        let isVirtual = 0;
+        let isInconsistent = 0;
 
-                const chartResult = await yahooFinance.chart(ticker, {
-                    period1: qStart,
-                    period2: todayStr,
-                    interval: '1d'
-                }).catch(() => null);
-
-                if (chartResult && chartResult.quotes) {
-                    const validQuotes = chartResult.quotes
-                        .filter(h => h.date && (h.adjclose || h.close) && (h.adjclose || h.close) > 0);
-                    
-                    pricesMap = Object.fromEntries(
-                        validQuotes.map(h => [new Date(h.date).toISOString().split('T')[0], h.adjclose || h.close])
-                    );
+        // 3. Virtual Data Fallback (Last BUY price)
+        if (!pricesMap || Object.keys(pricesMap).length === 0) {
+            const lastBuy = allTransactions.filter(t => t.assetTicker === ticker && (t.type === 'BUY' || t.type === 'DEPOSIT') && t.price > 0).at(-1);
+            if (lastBuy) {
+                isVirtual = 1;
+                pricesMap = {};
+                const start = new Date(lastBuy.date);
+                for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) {
+                    pricesMap[d.toISOString().split('T')[0]] = lastBuy.price;
                 }
+                logger.info(`Created virtual history for ${ticker} from purchase price ${lastBuy.price}`);
             }
+        }
 
-            if (pricesMap && Object.keys(pricesMap).length > 0) {
-                // Merge with existing DB data
-                const merged = { ...historicalPrices[ticker], ...pricesMap };
-                historicalPrices[ticker] = merged;
-                historicalPricesCache[ticker] = { ...merged, _fetchedDate: todayStr };
-
-                // Save to DB Cache (UPSERT)
-                const insertQuote = database.db.prepare(`INSERT OR REPLACE INTO asset_quotes (ticker, date, price) VALUES (?, ?, ?)`);
-                const saveQuotes = database.db.transaction((quotes) => {
-                    for (const [date, price] of Object.entries(pricesMap)) {
-                        insertQuote.run(ticker, date, price);
-                    }
-                });
-                saveQuotes(null);
-                logger.info(`EOD history saved for ${ticker}: ${Object.keys(pricesMap).length} new points`);
-            } else {
-                historicalPrices[ticker] = historicalPrices[ticker] || {};
-                historicalPricesCache[ticker] = { ...historicalPrices[ticker], _fetchedDate: todayStr };
+        // 4. Forward-filling & Sanitization
+        if (pricesMap && Object.keys(pricesMap).length > 0) {
+            const dates = Object.keys(pricesMap).sort();
+            let lastValid = pricesMap[dates[0]];
+            const fullMap = {};
+            const startDateObj = new Date(dates[0]);
+            
+            // Generate continuous daily data
+            for (let d = new Date(startDateObj); d <= today; d.setDate(d.getDate() + 1)) {
+                const ds = d.toISOString().split('T')[0];
+                let p = pricesMap[ds];
+                if (!p || p <= 0) { 
+                    p = lastValid;
+                    if (d.getDay() !== 0 && d.getDay() !== 6) isInconsistent = 1;
+                } else {
+                    lastValid = p;
+                }
+                fullMap[ds] = p;
             }
-        } catch (err) {
-            logger.warn(`Failed to fetch EOD history for ${ticker}: ${err.message}`);
-            historicalPrices[ticker] = historicalPrices[ticker] || {};
+            
+            pricesMap = fullMap;
+            historicalPrices[ticker] = pricesMap;
+
+            // Save to DB
+            const insertQuote = database.db.prepare(`INSERT OR REPLACE INTO asset_quotes (ticker, date, price) VALUES (?, ?, ?)`);
+            database.db.transaction(() => {
+                for (const [date, price] of Object.entries(pricesMap)) {
+                    insertQuote.run(ticker, date, price);
+                }
+            })();
+
+            // Update Asset Tags
+            database.db.prepare(`UPDATE assets SET isVirtualHistory = ?, hasHistoryInconsistency = ? WHERE ticker = ?`).run(isVirtual, isInconsistent, ticker);
         }
     };
 

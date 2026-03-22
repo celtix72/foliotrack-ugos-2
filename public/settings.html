@@ -1557,7 +1557,11 @@
                                 <span class="px-1.5 py-0.5 rounded-[4px] font-black text-[8px] uppercase tracking-tighter ${t.type === 'BUY' ? 'bg-indigo-500/10 text-indigo-500' : (t.type === 'SELL' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-slate-500/10 text-slate-500')}">${t.type}</span>
                             </td>
                             <td class="py-2.5 px-3">
-                                <div class="font-bold text-slate-900 dark:text-white">${t.assetTicker || 'CASH'}</div>
+                                <div class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                                    ${t.assetTicker || 'CASH'}
+                                    ${t.isVirtualHistory ? '<span class="px-1 py-0.5 rounded text-[7px] bg-amber-500/10 text-amber-500 border border-amber-500/20 font-black tracking-tighter" title="Historical data simulated from purchase price">VIRTUAL</span>' : ''}
+                                    ${t.hasHistoryInconsistency ? '<span class="px-1 py-0.5 rounded text-[7px] bg-rose-500/10 text-rose-500 border border-rose-500/20 font-black tracking-tighter" title="Missing data points were forward-filled">GAPS</span>' : ''}
+                                </div>
                                 <div class="text-[8px] text-slate-400 truncate max-w-[120px]">${t.assetName || ''}</div>
                             </td>
                             <td class="py-2.5 px-3 text-right font-mono">${t.quantity ? t.quantity.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 4}) : '—'}</td>

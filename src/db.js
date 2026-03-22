@@ -126,6 +126,14 @@ function initDb() {
     } catch (e) {}
 
     try {
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN isVirtualHistory INTEGER NOT NULL DEFAULT 0`).run();
+    } catch (e) {}
+
+    try {
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN hasHistoryInconsistency INTEGER NOT NULL DEFAULT 0`).run();
+    } catch (e) {}
+
+    try {
         dbConnection.prepare(`ALTER TABLE portfolios ADD COLUMN totalDividends REAL NOT NULL DEFAULT 0`).run();
     } catch (e) {}
 
