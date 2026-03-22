@@ -53,7 +53,7 @@ function initDb() {
 
       CREATE TABLE IF NOT EXISTS assets (
         id            TEXT    PRIMARY KEY,
-        ticker        TEXT    NOT NULL UNIQUE,
+        ticker        TEXT    NOT NULL UNIQUE COLLATE NOCASE,
         name          TEXT    NOT NULL,
         type          TEXT,
         exchange      TEXT,
@@ -165,7 +165,7 @@ function initDb() {
       );
 
       CREATE TABLE IF NOT EXISTS asset_quotes (
-        ticker TEXT NOT NULL,
+        ticker TEXT NOT NULL COLLATE NOCASE,
         date   TEXT NOT NULL,
         price  REAL NOT NULL,
         UNIQUE(ticker, date)

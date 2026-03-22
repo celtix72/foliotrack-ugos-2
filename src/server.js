@@ -1555,7 +1555,7 @@ app.put('/api/transactions/:id', (req, res) => {
         WHERE id = ?
     `).run(
         type || existing.type,
-        assetTicker || existing.assetTicker,
+        sanitizeTicker(assetTicker) || existing.assetTicker,
         date || existing.date,
         parseFloat(quantity || 0),
         parseFloat(price || 0),
@@ -1783,7 +1783,7 @@ app.post('/api/transactions/bulk', async (req, res) => {
                 insertTx.run(
                     targetId,
                     t.type,
-                    t.assetTicker || '',
+                    sanitizedTicker || '',
                     t.date,
                     parseFloat(t.quantity || 0),
                     parseFloat(t.price || 0),
@@ -3148,6 +3148,9 @@ async function updateMarketData(force = false) {
         if (asset.ticker.startsWith('CD_')) continue; // Skip constant-value deposit assets
         if (asset.isManual === 1 && (!asset.dataSource || asset.dataSource === 'YF')) continue;
         
+        // If markets are closed, only update assets with 0 price (unless forced)
+        if (!force && !status.anyOpen && asset.currentPrice > 0) continue;
+
         logger.info(`Updating [${asset.ticker}] using [${asset.dataSource || 'YF'}]...`);
         try {
             let updateData = null;
