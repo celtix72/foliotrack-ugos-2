@@ -1881,6 +1881,10 @@ async function calculatePerformanceHistory(portfolioIds, range) {
     const historicalPrices = {};
     const fxRates = {};
 
+    const assetMetadataCache = {}; // Cache to avoid DB queries inside the date loop
+    const allAssets = database.db.prepare('SELECT ticker, currency, currentPrice, type, isin, dataSource FROM assets').all();
+    for (const a of allAssets) assetMetadataCache[a.ticker] = a;
+
     // 1. Fetch historical EUR/USD if any portfolio or asset is non-EUR, or for global dashboard
     const hasNonEur = isGlobal || portfolios.some(p => p.currency !== 'EUR') || uniqueTickers.some(t => assetMetadataCache[t]?.currency === 'USD');
     if (hasNonEur) {
@@ -2107,10 +2111,6 @@ async function calculatePerformanceHistory(portfolioIds, range) {
         }
     };
 
-    // Move assetMetadataCache creation HERE, BEFORE fetchTickerData uses it!
-    const assetMetadataCache = {}; // Cache to avoid DB queries inside the date loop
-    const allAssets = database.db.prepare('SELECT ticker, currency, currentPrice, type, isin, dataSource FROM assets').all();
-    for (const a of allAssets) assetMetadataCache[a.ticker] = a;
 
     await Promise.all(uniqueTickers.map(ticker => fetchTickerData(ticker)));
 
