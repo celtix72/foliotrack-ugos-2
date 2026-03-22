@@ -2354,16 +2354,17 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                     for (const [ticker, shares] of Object.entries(state.holdings)) {
                         if (shares <= 0.0001) continue;
                     
-                    let price = historicalPrices[ticker]?.[dateStr];
-                    const isToday = dateStr === today.toISOString().split('T')[0];
+                    const dayBuyTx = dayTx.filter(t => t.assetTicker === ticker && t.type === 'BUY' && t.price > 0);
+                    let price = dayBuyTx.length > 0 ? dayBuyTx.at(-1).price : historicalPrices[ticker]?.[dateStr];
+                    
+                    const isTodayNow = dateStr === today.toISOString().split('T')[0];
 
                     // If price is missing (undefined, null, or 0), try to find a fallback
                     if (!price || price === 0) {
-                        const isToday = dateStr === today.toISOString().split('T')[0];
                         const assetMeta = assetMetadataCache[ticker];
 
-                        // Priority 1: If it's today, try live price from cache
-                        if (isToday && assetMeta && assetMeta.currentPrice > 0) {
+                        // Priority 1: If it's today right now, try live price from cache
+                        if (isTodayNow && assetMeta && assetMeta.currentPrice > 0) {
                             price = assetMeta.currentPrice;
                         }
 
@@ -2386,7 +2387,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                         // Priority 4: Final fallback to current asset price ONLY if no historical data at all
                         if (!price || price === 0) {
                             if (assetMeta && assetMeta.currentPrice > 0) price = assetMeta.currentPrice;
-                            else if (assetMeta && assetMeta.type === 'Bond') price = 100.0; // Simulated par value for bonds
+                            else if (assetMeta && assetMeta.type === 'Bond') price = 100.0;
                             else price = 0;
                         }
                     }
