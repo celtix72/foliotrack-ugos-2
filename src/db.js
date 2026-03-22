@@ -266,20 +266,19 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
             case 'TAX':        
             case 'TRANSFER':   cash -= absAmount; break;
             case 'DIVIDEND': {
-                const dividendAmount = amount || (qty * price - comm - tax);
-                const dividendInPCurr = dividendAmount / fx;
+                const dividendInPCurr = amount ? amount : (qty * price - comm - tax) / fx;
                 cash += dividendInPCurr; 
                 totalDividends += dividendInPCurr;
                 break;
             }
             case 'BUY': {
-                const cost = (t.amount || (qty * price + comm + tax)) / fx;
+                const cost = amount ? amount : (qty * price + comm + tax) / fx;
                 cash -= cost;
                 holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) + qty;
                 break;
             }
             case 'SELL': {
-                const proceeds = (t.amount || (qty * price - comm - tax)) / fx;
+                const proceeds = amount ? amount : (qty * price - comm - tax) / fx;
                 cash += proceeds;
                 holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) - qty;
                 break;
