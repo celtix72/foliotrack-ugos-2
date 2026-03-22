@@ -552,6 +552,59 @@
     </div>
 </section>
 
+
+<!-- Transaction Audit (Audit & Debug) -->
+<section class="space-y-4">
+    <div class="flex items-center justify-between cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-900/50 p-2 -mx-2 rounded-xl transition-colors" onclick="toggleSection('transaction-audit-content')">
+        <h2 class="text-lg font-bold border-l-4 border-primary pl-3">Transaction Audit</h2>
+        <span id="transaction-audit-content-icon" class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-transform">expand_more</span>
+    </div>
+    <div id="transaction-audit-content" class="hidden">
+        <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-4">
+            <div class="flex flex-wrap items-center gap-4">
+                <div class="flex-1 min-w-[200px]">
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+                        <input type="text" id="audit-search" onkeyup="filterAuditTable()" placeholder="Search ticker, name or portfolio..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 pl-9 pr-4 text-xs focus:ring-primary/30 focus:border-primary">
+                    </div>
+                </div>
+                <button onclick="loadAuditData()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-[10px] font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all flex items-center gap-2">
+                    <span class="material-symbols-outlined text-sm">refresh</span> Reload Data
+                </button>
+            </div>
+            
+            <div class="overflow-x-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-xl">
+                <table class="w-full text-left text-[10px] border-collapse" id="audit-table">
+                    <thead>
+                        <tr class="bg-slate-50 dark:bg-slate-900/50 font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
+                            <th class="py-3 px-3 cursor-pointer hover:text-primary transition-colors" onclick="sortAuditTable(0)">Date</th>
+                            <th class="py-3 px-3 cursor-pointer hover:text-primary transition-colors" onclick="sortAuditTable(1)">Portfolio</th>
+                            <th class="py-3 px-3 cursor-pointer hover:text-primary transition-colors" onclick="sortAuditTable(2)">Type</th>
+                            <th class="py-3 px-3 cursor-pointer hover:text-primary transition-colors" onclick="sortAuditTable(3)">Asset</th>
+                            <th class="py-3 px-3 text-right">Qty</th>
+                            <th class="py-3 px-3 text-right">Price (Asset)</th>
+                            <th class="py-3 px-3 text-right">FX</th>
+                            <th class="py-3 px-3 text-right">Amt (User)</th>
+                            <th class="py-3 px-2 text-right text-indigo-500 bg-indigo-500/5" title="Amount calculated using direct EUR calculation logic">Calc (EUR)</th>
+                            <th class="py-3 px-2 text-right text-amber-500 bg-amber-500/5" title="PMC per unit in EUR BEFORE this transaction">PMC (EUR)</th>
+                            <th class="py-3 px-3 text-right text-emerald-500 bg-emerald-500/5">Gain (EUR)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="audit-table-body" class="divide-y divide-slate-50 dark:divide-slate-800/50">
+                        <!-- Rows will be injected here -->
+                        <tr><td colspan="11" class="py-12 text-center text-slate-500 italic">Click "Reload Data" to fetch transaction trace...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-[9px] text-slate-400 leading-relaxed italic">
+                * <strong>Calc (EUR)</strong>: Valore in Euro calcolato dal motore dell'app (corretto per doppia conversione). 
+                * <strong>PMC (EUR)</strong>: Prezzo Medio di Carico in Euro calcolato cumulativamente fino alla data della transazione.
+                * <strong>Gain (EUR)</strong>: Profitto realizzato per le vendite, calcolato come (Proceeds EUR - (Qty * PMC_EUR)).
+            </p>
+        </div>
+    </div>
+</section>
+
 <!-- Danger Zone -->
 <section class="space-y-4 pb-12">
     <div class="flex items-center justify-between cursor-pointer group hover:bg-rose-50/10 p-2 -mx-2 rounded-xl transition-colors" onclick="toggleSection('danger-zone-content')">
@@ -1474,6 +1527,106 @@
                 }
             });
         }
+
+
+        window.loadAuditData = async function() {
+            const tbody = document.getElementById('audit-table-body');
+            tbody.innerHTML = '<tr><td colspan="11" class="py-12 text-center text-slate-500 italic">Calculating transaction trace...</td></tr>';
+            
+            try {
+                const res = await fetch('/api/transactions/audit');
+                const data = await res.json();
+                
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="11" class="py-12 text-center text-slate-500">No transactions found.</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = data.reverse().map(t => {
+                    const gainClass = t.realizedGainEUR > 0 ? 'text-emerald-500' : (t.realizedGainEUR < 0 ? 'text-rose-500' : 'text-slate-400');
+                    return `
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors border-b border-slate-50 dark:border-slate-800/30">
+                            <td class="py-2.5 px-3 font-mono whitespace-nowrap text-slate-400">${t.date}</td>
+                            <td class="py-2.5 px-3 font-bold text-slate-600 dark:text-slate-300">${t.portfolioName}</td>
+                            <td class="py-2.5 px-3">
+                                <span class="px-1.5 py-0.5 rounded-[4px] font-black text-[8px] uppercase tracking-tighter ${t.type === 'BUY' ? 'bg-indigo-500/10 text-indigo-500' : (t.type === 'SELL' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-slate-500/10 text-slate-500')}">${t.type}</span>
+                            </td>
+                            <td class="py-2.5 px-3">
+                                <div class="font-bold text-slate-900 dark:text-white">${t.assetTicker || 'CASH'}</div>
+                                <div class="text-[8px] text-slate-400 truncate max-w-[120px]">${t.assetName || ''}</div>
+                            </td>
+                            <td class="py-2.5 px-3 text-right font-mono">${t.quantity ? t.quantity.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 4}) : '—'}</td>
+                            <td class="py-2.5 px-3 text-right font-mono">${t.price ? t.price.toLocaleString(undefined, {minimumFractionDigits: 2}) : '—'} <span class="text-[8px] text-slate-500">${t.assetCurrency || ''}</span></td>
+                            <td class="py-2.5 px-3 text-right font-mono text-slate-500">${t.exchangeRate ? t.exchangeRate.toFixed(4) : '1.0000'}</td>
+                            <td class="py-2.5 px-3 text-right font-mono text-slate-400 border-l border-slate-50 dark:border-slate-800/10">${t.amount ? t.amount.toLocaleString(undefined, {minimumFractionDigits: 2}) : '—'}</td>
+                            <td class="py-2.5 px-2 text-right font-mono font-bold text-indigo-500 bg-indigo-500/5 border-l border-indigo-500/10">${(t.amountEUR || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                            <td class="py-2.5 px-2 text-right font-mono text-amber-500 bg-amber-500/5 border-l border-amber-500/10">${(t.pmcEURBefore || 0).toLocaleString(undefined, {minimumFractionDigits: 4})}</td>
+                            <td class="py-2.5 px-3 text-right font-mono font-bold ${gainClass} bg-emerald-500/5 border-l border-emerald-500/10">${t.realizedGainEUR ? (t.realizedGainEUR > 0 ? '+' : '') + t.realizedGainEUR.toLocaleString(undefined, {minimumFractionDigits: 2}) : '—'}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="11" class="py-12 text-center text-rose-500">Error loading data: ${err.message}</td></tr>`;
+            }
+        };
+
+        window.filterAuditTable = function() {
+            const input = document.getElementById('audit-search');
+            const filter = input.value.toUpperCase();
+            const table = document.getElementById('audit-table');
+            const tr = table.getElementsByTagName('tr');
+
+            for (let i = 1; i < tr.length; i++) {
+                const td = tr[i].getElementsByTagName('td');
+                let found = false;
+                for (let j = 0; j < td.length; j++) {
+                    if (td[j] && td[j].innerText.toUpperCase().indexOf(filter) > -1) {
+                        found = true;
+                        break;
+                    }
+                }
+                tr[i].style.display = found ? "" : "none";
+            }
+        };
+
+        window.sortAuditTable = function(n) {
+            const table = document.getElementById('audit-table');
+            let switching = true;
+            let dir = "asc";
+            let switchcount = 0;
+            while (switching) {
+                switching = false;
+                const rows = table.rows;
+                for (let i = 1; i < (rows.length - 1); i++) {
+                    let shouldSwitch = false;
+                    const x = rows[i].getElementsByTagName("TD")[n];
+                    const y = rows[i + 1].getElementsByTagName("TD")[n];
+                    let xVal = x.innerText.toLowerCase();
+                    let yVal = y.innerText.toLowerCase();
+                    
+                    if (!isNaN(parseFloat(xVal.replace(/[^-0-9.]/g, '')))) {
+                        xVal = parseFloat(xVal.replace(/[^-0-9.]/g, ''));
+                        yVal = parseFloat(yVal.replace(/[^-0-9.]/g, ''));
+                    }
+
+                    if (dir == "asc") {
+                        if (xVal > yVal) { shouldSwitch = true; break; }
+                    } else if (dir == "desc") {
+                        if (xVal < yVal) { shouldSwitch = true; break; }
+                    }
+                }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                    switchcount ++;
+                } else {
+                    if (switchcount == 0 && dir == "asc") {
+                        dir = "desc";
+                        switching = true;
+                    }
+                }
+            }
+        };
 
         const refreshBtn = document.getElementById('refresh-logs-btn');
         if (refreshBtn) refreshBtn.addEventListener('click', loadLogs);

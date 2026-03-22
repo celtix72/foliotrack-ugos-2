@@ -1378,6 +1378,76 @@ app.post('/api/admin/rebuild-history', async (req, res) => {
 // TRANSACTIONS API
 // ════════════════════════════════════════════════════════════════════════════
 
+
+app.get('/api/transactions/audit', async (req, res) => {
+    try {
+        const portfolios = database.db.prepare(`SELECT id, name, currency FROM portfolios`).all();
+        const pMap = Object.fromEntries(portfolios.map(p => [p.id, p]));
+        
+        const assets = database.db.prepare(`SELECT ticker, name, currency FROM assets`).all();
+        const aMap = Object.fromEntries(assets.map(a => [a.ticker, a]));
+        
+        const transactions = database.db.prepare(`
+            SELECT * FROM transactions ORDER BY date ASC, id ASC
+        `).all();
+        
+        const pmcStats = {}; // { portfolioId: { ticker: { shares: 0, costEUR: 0 } } }
+        
+        const audit = transactions.map(t => {
+            const p = pMap[t.portfolioId] || { name: 'Unknown', currency: 'EUR' };
+            const a = aMap[t.assetTicker] || { name: t.assetTicker || 'CASH', currency: 'EUR' };
+            
+            const qty = t.quantity || 0;
+            const price = t.price || 0;
+            const comm = t.commission || 0;
+            const tax = t.tax || 0;
+            const fx = t.exchangeRate || 1;
+            
+            // Fixed Amount Calculation (consistent with the rest of the app)
+            const amountEUR = t.amount ? t.amount : (qty * price + (t.type === 'BUY' ? comm + tax : -comm - tax)) / fx;
+            
+            if (!pmcStats[t.portfolioId]) pmcStats[t.portfolioId] = {};
+            if (t.assetTicker && !pmcStats[t.portfolioId][t.assetTicker]) {
+                pmcStats[t.portfolioId][t.assetTicker] = { shares: 0, costEUR: 0 };
+            }
+            
+            const stats = t.assetTicker ? pmcStats[t.portfolioId][t.assetTicker] : null;
+            let pmcEURBefore = stats && stats.shares > 0 ? stats.costEUR / stats.shares : 0;
+            let realizedGainEUR = 0;
+            
+            if (t.type === 'BUY' && stats) {
+                stats.shares += qty;
+                stats.costEUR += amountEUR;
+            } else if (t.type === 'SELL' && stats) {
+                const costBasis = qty * pmcEURBefore;
+                realizedGainEUR = amountEUR - costBasis;
+                stats.shares -= qty;
+                stats.costEUR -= costBasis;
+                if (stats.shares <= 0.0001) {
+                    stats.shares = 0;
+                    stats.costEUR = 0;
+                }
+            } else if (t.type === 'DIVIDEND') {
+                realizedGainEUR = amountEUR;
+            }
+            
+            return {
+                ...t,
+                portfolioName: p.name,
+                assetName: a.name,
+                assetCurrency: a.currency,
+                amountEUR: amountEUR,
+                pmcEURBefore: pmcEURBefore,
+                realizedGainEUR: realizedGainEUR
+            };
+        });
+        
+        res.json(audit);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.get('/api/transactions', (req, res) => {
     const { portfolioId, assetTicker } = req.query;
     let query = `SELECT * FROM transactions WHERE 1=1 `;
