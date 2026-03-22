@@ -1602,8 +1602,8 @@ app.get('/api/market/movers', async (req, res) => {
 
 // Validate a ticker against Yahoo Finance (used by bulk import)
 app.get('/api/validate-ticker', async (req, res) => {
-    const ticker = (req.query.ticker || "").toUpperCase();
-    const isin = (req.query.isin || "").toUpperCase();
+    const ticker = (req.query.ticker || "").trim().toUpperCase();
+    const isin = (req.query.isin || "").trim().toUpperCase();
     if (!ticker && !isin) return res.status(400).send('Ticker or ISIN required');
 
     if (ticker === 'CASH') {
@@ -2133,8 +2133,23 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                 }
             })();
 
-            // Update Asset Tags
-            database.db.prepare(`UPDATE assets SET isVirtualHistory = ?, hasHistoryInconsistency = ? WHERE ticker = ?`).run(isVirtual, isInconsistent, ticker);
+            // Update Asset Tags and currentPrice from history
+            const sortedDates = Object.keys(pricesMap).sort();
+            const latestHistoryDate = sortedDates[sortedDates.length - 1];
+            const latestHistoryPrice = pricesMap[latestHistoryDate];
+
+            if (latestHistoryPrice > 0) {
+                database.db.prepare(`
+                    UPDATE assets 
+                    SET currentPrice = ?, quoteDate = ?, isVirtualHistory = ?, hasHistoryInconsistency = ?, updatedAt = datetime('now') 
+                    WHERE ticker = ?
+                `).run(latestHistoryPrice, latestHistoryDate, isVirtual, isInconsistent, ticker);
+                logger.info(`Sync assets: updated [${ticker}] currentPrice to ${latestHistoryPrice} (as of ${latestHistoryDate})`);
+            } else {
+                database.db.prepare(`
+                    UPDATE assets SET isVirtualHistory = ?, hasHistoryInconsistency = ? WHERE ticker = ?
+                `).run(isVirtual, isInconsistent, ticker);
+            }
         }
     };
 
@@ -3116,8 +3131,13 @@ app.use((req, res) => res.redirect('/dashboard'));
 async function updateMarketData(force = false) {
     const status = getMarketStatus();
     if (!force && !status.anyOpen) {
-        logger.info('Skipping automatic market update: all markets are closed.');
-        return;
+        // If markets are closed, only proceed if there are assets with 0.00€ price (critical for newly imported BTPs)
+        const hasZeroPrice = database.db.prepare(`SELECT id FROM assets WHERE currentPrice = 0 AND ticker != 'CASH' LIMIT 1`).get();
+        if (!hasZeroPrice) {
+            logger.info('Skipping automatic market update: all markets are closed.');
+            return;
+        }
+        logger.info('Markets are closed, but fetching quotes for assets with 0.00€ price...');
     }
     const assets = database.db.prepare(`SELECT * FROM assets`).all();
     if (assets.length === 0) return;
