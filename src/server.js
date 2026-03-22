@@ -2241,7 +2241,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
 
     while (currentDate <= endSimulationDate) {
         const dateStr = formatDate(currentDate);
-        let dayValue = 0, dayProfit = 0, dayCash = 0, dayAssets = 0;
+        let dayValue = 0, dayProfit = 0, dayCash = 0, dayAssets = 0, dayNetDeposits = 0;
         const dayEvents = [];
 
         const todayStr = today.toISOString().split('T')[0];
@@ -2464,6 +2464,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                 dayProfit += pProfit;
                 dayCash += pCash;
                 dayAssets += pAssetsVal;
+                dayNetDeposits += (portfolioStates[p.id].netDeposits / (p.currency === 'USD' ? (fxRates['USD']?.[dateStr] || 1) : 1));
 
                 if (includeIndividual) {
                     const rateForP = p.currency === 'USD' ? (fxRates['USD']?.[dateStr] || 1) : 1;
@@ -2502,6 +2503,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
             value: !isFinite(dayValue) ? 0 : Math.round(dayValue),
             profit: !isFinite(dayProfit) ? 0 : Math.round(dayProfit),
             profitNoDiv: !isFinite(dayProfit) ? 0 : Math.round(dayProfit - dayDividends),
+            netDeposits: !isFinite(dayNetDeposits) ? 0 : Math.round(dayNetDeposits),
             cash: !isFinite(dayCash) ? 0 : Math.round(dayCash),
             assets: !isFinite(dayAssets) ? 0 : Math.round(dayAssets),
             events: dayEvents
@@ -2795,19 +2797,28 @@ app.get('/api/analytics/reports', async (req, res) => {
             };
         }
 
-        // Normalize History (Starting at 100 at the beginning of the period)
+        // Normalize History (Standardize to 100 at the beginning of the period)
         const normalizeRelative = (history) => {
             if (history.length === 0) return [];
             const first = history[0];
-            const firstRatio = first.netDeposits > 0 ? (first.value / first.netDeposits) : 1;
+            
+            // ROI Base Fallback: If netDeposits is 0, we assume the "investment" is the 
+            // cost basis of the assets (Value - Profit).
+            const getRatio = (p) => {
+                if (p.netDeposits > 0) return p.value / p.netDeposits;
+                const impliedInvestment = Math.max(1, p.value - p.profit);
+                return p.value / impliedInvestment;
+            };
+
+            const firstRatio = getRatio(first);
             return history.map(p => {
-                const currentRatio = p.netDeposits > 0 ? (p.value / p.netDeposits) : 1;
+                const currentRatio = getRatio(p);
                 return {
                     date: p.date.substring(0, 7),
                     value: (currentRatio / (firstRatio || 1)) * 100,
-                    absoluteValue: p.value,
-                    profit: p.value - p.netDeposits,
-                    netDeposits: p.netDeposits
+                    absoluteValue: Math.round(p.value),
+                    profit: Math.round(p.profit),
+                    netDeposits: p.netDeposits || 0
                 };
             });
         };
@@ -2818,10 +2829,9 @@ app.get('/api/analytics/reports', async (req, res) => {
         for (const pid in monthlyIndividual) {
             const p = monthlyIndividual[pid];
             p.history = normalizeRelative(p.history);
-            if (p.history.length === 0) continue;
-            
             const last = p.history[p.history.length - 1];
-            const roi = last.netDeposits > 0 ? (last.absoluteValue / last.netDeposits) - 1 : 0;
+            const costBasis = p.history[0].absoluteValue - p.history[0].profit;
+            const roi = last.netDeposits > 0 ? (last.absoluteValue / last.netDeposits) - 1 : (last.absoluteValue / Math.max(1, last.absoluteValue - last.profit)) - 1;
             
             p.metrics = {
                 totalROI: roi,
@@ -2883,7 +2893,8 @@ app.get('/api/analytics/reports', async (req, res) => {
         // 4. Metrics
         const currentTotalValue = normalizedGlobal[normalizedGlobal.length - 1]?.absoluteValue || 0;
         const currentNetDeposits = normalizedGlobal[normalizedGlobal.length - 1]?.netDeposits || 0;
-        const totalROI = currentNetDeposits > 0 ? (currentTotalValue / currentNetDeposits) - 1 : 0;
+        const currentProfit = normalizedGlobal[normalizedGlobal.length - 1]?.profit || 0;
+        const totalROI = currentNetDeposits > 0 ? (currentTotalValue / currentNetDeposits) - 1 : (currentTotalValue / Math.max(1, currentTotalValue - currentProfit)) - 1;
 
         // Best Asset (by absolute profit)
         let bestAsset = { ticker: '-', profit: -Infinity };
