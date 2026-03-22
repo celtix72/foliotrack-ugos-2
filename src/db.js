@@ -292,9 +292,17 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
         if (shares <= 0.0001) continue;
         assetCount++;
         const asset = dbConnection.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(ticker);
-        if (asset && asset.currentPrice) {
+        let price = (asset && asset.currentPrice) ? asset.currentPrice : 0;
+        
+        if (price <= 0) {
+            const lastBuy = transactions.filter(t => t.assetTicker === ticker && t.type === 'BUY' && t.price > 0).at(-1);
+            if (lastBuy) price = lastBuy.price;
+        }
+
+        if (price > 0) {
             let rate = 1;
-            if (asset.currency !== portfolio.currency) {
+            const aCurr = (asset && asset.currency) ? asset.currency : 'EUR';
+            if (aCurr !== portfolio.currency) {
                 if (asset.currency === 'USD' && portfolio.currency === 'EUR') {
                     if (liveEurUsdRate) {
                         rate = liveEurUsdRate;
@@ -319,9 +327,9 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
                 }
             }
             
-            const priceInPCurr = asset.currency !== portfolio.currency
-                ? asset.currentPrice / rate
-                : asset.currentPrice;
+            const priceInPCurr = aCurr !== portfolio.currency
+                ? price / rate
+                : price;
             assetValue += shares * priceInPCurr;
         }
     }
