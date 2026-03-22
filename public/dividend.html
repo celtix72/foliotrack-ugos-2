@@ -129,6 +129,23 @@
                 </div>
             </div>
 
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Total Dividends Card -->
+                <div class="bg-white dark:bg-[#111722] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
+                    <div class="relative">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                                <span class="material-symbols-outlined">payments</span>
+                            </div>
+                            <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Dividends</span>
+                        </div>
+                        <div id="global-total-dividends" class="text-3xl font-black tracking-tight">€0.00</div>
+                        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-2">All-time passive income</p>
+                    </div>
+                </div>
+            </div>
+
             <div class="overflow-hidden bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
                 <table class="w-full text-left border-collapse text-sm">
                     <thead>
@@ -161,11 +178,13 @@
                 
                 // Calculate global total
                 const total = rawDivData.reduce((sum, d) => sum + d.amount, 0);
-                document.getElementById('global-total-dividends').innerText = formatCurrency(total, 'EUR');
+                const totalEl = document.getElementById('global-total-dividends');
+                if (totalEl) totalEl.innerText = formatCurrency(total, 'EUR');
 
-                // Set default collapsed state for years
+                // Set default collapsed state: collapse all years EXCEPT the current one
+                const currentYear = new Date().getFullYear().toString();
                 const years = [...new Set(rawDivData.map(d => d.date.split('-')[0]))];
-                collapsedGroups = new Set(years);
+                collapsedGroups = new Set(years.filter(y => y !== currentYear));
 
                 renderDividends();
             } catch (err) { console.error('Error loading dividends:', err); }
