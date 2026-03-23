@@ -212,6 +212,11 @@
     fetch(`/api/settings?t=${Date.now()}`)
         .then(res => res.json())
         .then(settings => {
+            window.privacyState.enabled = settings.privacyMode === 'true';
+            const privacyIcon = document.getElementById('header-privacy-icon');
+            if (privacyIcon) {
+                privacyIcon.innerText = window.privacyState.enabled ? 'visibility_off' : 'visibility';
+            }
             if (settings.fontFamily !== localFont || settings.fontSize !== localSize || 
                 settings.theme !== localTheme || settings.mobFont !== localMobFont || 
                 settings.mobSize !== localMobSize) {
@@ -513,12 +518,15 @@
         const updateLabel   = document.getElementById('header-last-update');
         const marketStatus  = document.getElementById('header-market-status');
         const portfolioVar  = document.getElementById('header-portfolio-var');
+        const mobDotEU = document.getElementById('mob-dot-eu');
+        const mobDotUS = document.getElementById('mob-dot-us');
         
-        if (!liveIndicator && !updateLabel && !marketStatus && !portfolioVar) return;
+        if (!liveIndicator && !updateLabel && !marketStatus && !portfolioVar && !mobDotEU) return;
 
         try {
             // 1. Market Status
             const statusRes = await fetch('/api/market-status');
+            if (!statusRes.ok) throw new Error("Connection Error");
             const status = await statusRes.json();
             
             if (liveIndicator) {
@@ -529,7 +537,7 @@
                     dot?.classList.remove('bg-slate-400', 'bg-rose-500');
                     if (text) text.textContent = 'Live';
                 } else {
-                    dot?.classList.remove('bg-emerald-500', 'animate-pulse');
+                    dot?.classList.remove('bg-emerald-500', 'animate-pulse', 'bg-rose-500');
                     dot?.classList.add('bg-slate-400');
                     if (text) text.textContent = 'Closed';
                 }
@@ -557,11 +565,18 @@
                 `;
             }
 
+            // --- Mobile Market Dots Injection ---
+            if (mobDotEU && mobDotUS) {
+                const euOpen = status.EU;
+                const usOpen = status.US;
+                mobDotEU.className = euOpen ? 'w-2.5 h-2.5 rounded-full transition-colors bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'w-2.5 h-2.5 rounded-full transition-colors bg-slate-400';
+                mobDotUS.className = usOpen ? 'w-2.5 h-2.5 rounded-full transition-colors bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'w-2.5 h-2.5 rounded-full transition-colors bg-slate-400';
+            }
+
             // 2. Portfolio Variation
             const pRes = await fetch('/api/portfolios');
             const pData = await pRes.json();
             const change = pData.global.changeValue || 0;
-            const changePct = pData.global.changePercent || 0;
             const isPos = change >= 0;
             const formatted = window.formatPrivacy(change, 'EUR', 'h-var', 0);
             const sign = (formatted !== '****' && isPos) ? '+' : '';
@@ -583,17 +598,29 @@
                 mobVar.innerHTML = `<span>${sign}${formatted}</span>`;
             }
 
-            // --- Mobile Market Dots Injection ---
-            let mobDotEU = document.getElementById('mob-dot-eu');
-            let mobDotUS = document.getElementById('mob-dot-us');
-            if (mobDotEU && mobDotUS) {
-                const euOpen = status.EU;
-                const usOpen = status.US;
-                mobDotEU.className = euOpen ? 'w-2.5 h-2.5 rounded-full transition-colors bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'w-2.5 h-2.5 rounded-full transition-colors bg-slate-400';
-                mobDotUS.className = usOpen ? 'w-2.5 h-2.5 rounded-full transition-colors bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'w-2.5 h-2.5 rounded-full transition-colors bg-slate-400';
+        } catch (err) { 
+            console.error("Header update error:", err); 
+            // Show Error State (Blinking Red)
+            if (liveIndicator) {
+                const dot = liveIndicator.querySelector('.header-live-dot');
+                const text = liveIndicator.querySelector('.header-live-text');
+                dot?.classList.remove('bg-emerald-500', 'bg-slate-400');
+                dot?.classList.add('bg-rose-500', 'animate-pulse');
+                if (text) text.textContent = 'Err';
             }
-
-        } catch (err) { console.error("Header update error:", err); }
+            if (marketStatus) {
+                marketStatus.innerHTML = `
+                    <div class="flex items-center gap-1.5 text-rose-500 animate-pulse">
+                        <span class="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"></span>
+                        <span class="font-black">CONN ERR</span>
+                    </div>
+                `;
+            }
+            if (mobDotEU && mobDotUS) {
+                mobDotEU.className = 'w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse';
+                mobDotUS.className = 'w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse';
+            }
+        }
     }
 
     // ─── Global Formatting ────────────────────────────────────────────────────
@@ -631,7 +658,17 @@
 
 
     window.formatPrivacy = function(val, currency = 'EUR', id = null, decimals = 0) {
-        if (window.privacyState.enabled) {
+        // Privacy mode ONLY hides "total" fields
+        const totalFields = [
+            'networth', 'gross', 'gain', 'h-var',                 // Dashboard desktop
+            'mob-net', 'mob-gross', 'mob-gain', 'mob-dayvar',      // Dashboard mobile
+            'p-', 'mob-p-', 'mob-pg-', 'mob-pn-', 'mob-gnet',      // Portfolio lists & detail
+            'tax-', 'mob-detail-total', 'mob-dt', 'mob-dg'         // Taxes & mobile details
+        ];
+
+        const isTotal = id && totalFields.some(f => id === f || id.startsWith(f));
+
+        if (window.privacyState.enabled && isTotal) {
             return '****';
         }
         return formatCurrency(val, currency, decimals);
