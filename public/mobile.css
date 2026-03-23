@@ -1039,6 +1039,52 @@ body.mobile-view-active #mobile-ui {
   color: var(--mob-text);
 }
 
+/* Fiscal Variant for Hero */
+.mob-hero.fiscal {
+  background: rgba(245, 158, 11, 0.08) !important;
+  border: 1px solid rgba(245, 158, 11, 0.15) !important;
+  border-left: none !important;
+  border-right: none !important;
+  box-shadow: inset 0 0 40px rgba(245, 158, 11, 0.03);
+}
+.mobile-view-active.light-mode .mob-hero.fiscal,
+html:not(.dark) .mobile-view-active .mob-hero.fiscal {
+  background: #fffbeb !important; /* amber-50 */
+  border-color: #fde68a !important; /* amber-200 */
+}
+.mob-hero.fiscal .mob-hero-label {
+  color: #b45309 !important; /* amber-700 */
+  opacity: 0.6;
+}
+.mob-hero.fiscal .mob-hero-value {
+  color: #b45309 !important;
+}
+.mob-hero.fiscal .mob-hero-stat-box {
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.15);
+}
+.mob-hero.fiscal .mob-hero-stat-box-label {
+  color: #b45309;
+  opacity: 0.7;
+}
+.mob-hero.fiscal .mob-hero-stat-box-value {
+  color: #92400e; /* amber-800 */
+}
+
+/* Dark mode specific for fiscal hero */
+.dark .mob-hero.fiscal .mob-hero-label,
+.dark .mob-hero.fiscal .mob-hero-value,
+.dark .mob-hero.fiscal .mob-hero-stat-box-label {
+  color: #f59e0b !important; /* amber-500 */
+}
+.dark .mob-hero.fiscal .mob-hero-stat-box-value {
+  color: #fbbf24 !important; /* amber-400 */
+}
+.dark .mob-hero.fiscal .mob-hero-stat-box {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
 .mob-hero-add-btn {
   width: 32px;
   height: 32px;
