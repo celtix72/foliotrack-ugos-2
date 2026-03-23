@@ -2601,41 +2601,34 @@
 
     <div class="mob-scroll">
       <!-- Compact Hero -->
-    <div class="mob-hero fiscal" id="mob-hero-section">
-      <div class="flex justify-between items-center mb-2">
-        <div class="mob-hero-label" style="margin-bottom:0">Fiscal Summary (Latent)</div>
-        <button onclick="openTransactionModal()" class="mob-hero-add-btn">
+    <div class="mob-hero fiscal" id="mob-hero-section" style="padding: 20px 20px 24px;">
+      <div class="flex justify-between items-start mb-4">
+        <div style="flex: 1;">
+          <div class="text-[10px] font-black uppercase tracking-[0.2em] text-amber-700/60 dark:text-amber-500/60 mb-0.5">Portafoglio</div>
+          <div id="mob-detail-pname-hero" class="text-3xl font-black truncate max-w-[220px]" style="line-height: 1; color: #78350f;">--</div>
+        </div>
+        <button onclick="openTransactionModal()" class="mob-hero-add-btn" style="margin-top: 4px;">
           <span class="material-symbols-outlined" style="font-size:20px">add</span>
         </button>
       </div>
-      
-      <div class="flex items-baseline gap-2 mb-4">
-        <div class="mob-hero-value" id="mob-fiscal-net-latent-hero" style="margin-bottom:0; font-size: 32px;">--</div>
-        <div id="mob-detail-perf-badge" class="hidden">--</div>
+
+      <div class="flex flex-col mb-5">
+        <div class="text-[10px] font-black uppercase tracking-[0.2em] text-amber-700/60 dark:text-amber-500/60 mb-1">Valore Netto</div>
+        <div class="flex items-baseline gap-3">
+          <div class="mob-hero-value" id="mob-detail-total" style="margin-bottom:0; font-size: 34px;">--</div>
+          <div id="mob-detail-gain-netto-pill" class="px-2 py-0.5 rounded-full text-[11px] font-black flex items-center gap-1">--</div>
+        </div>
       </div>
 
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <div class="mob-hero-stat-box">
-          <span class="mob-hero-stat-box-label">Lordo Lat.</span>
-          <span class="mob-hero-stat-box-value" id="mob-f-gross">--</span>
-        </div>
+      <div class="grid grid-cols-2 gap-3">
         <div class="mob-hero-stat-box">
           <span class="mob-hero-stat-box-label">Tasse Est.</span>
-          <span class="mob-hero-stat-box-value" id="mob-f-tax" style="color:var(--mob-rose)">--</span>
+          <span class="mob-hero-stat-box-value text-rose-500" id="mob-f-tax">--</span>
         </div>
         <div class="mob-hero-stat-box">
-          <span class="mob-hero-stat-box-label">Minus.</span>
+          <span class="mob-hero-stat-box-label">Minusvalenze</span>
           <span class="mob-hero-stat-box-value" id="mob-f-minus">--</span>
         </div>
-        <div class="mob-hero-stat-box">
-          <span class="mob-hero-stat-box-label">Capitale</span>
-          <span class="mob-hero-stat-box-value" id="mob-f-cap">--</span>
-        </div>
-      </div>
-
-      <div class="mt-4 pt-3 border-t border-amber-500/10 flex justify-between items-center opacity-80">
-        <div class="text-[10px] font-bold uppercase tracking-widest text-amber-700/60 dark:text-amber-500/60">Portfolio Netto</div>
-        <div class="text-xs font-black text-amber-900/80 dark:text-amber-400" id="mob-detail-total">--</div>
       </div>
     </div>
 
@@ -2879,6 +2872,7 @@
       }
 
       if (el('mob-detail-pname')) el('mob-detail-pname').textContent = p.name;
+      if (el('mob-detail-pname-hero')) el('mob-detail-pname-hero').textContent = p.name;
       if (el('mob-detail-label')) el('mob-detail-label').textContent = 'Portafoglio';
       if (el('mob-detail-total')) el('mob-detail-total').textContent = formatPrivacy(p.netValue || p.totalValue, currency, 'mob-dt');
       if (el('mob-detail-gross')) el('mob-detail-gross').textContent = formatPrivacy(p.totalValue, currency, 'mob-dg');
@@ -2896,18 +2890,26 @@
         perfBadge.innerHTML = `<span class="material-symbols-outlined text-sm font-bold">${isPos ? 'trending_up' : 'trending_down'}</span> ${isPos ? '+' : ''}${perf.toFixed(2)}%`;
       }
 
-      // Fiscal Summary (Compact - Mob Redesign Phase 4)
+      // Fiscal Summary (Compact - Mob Redesign Phase 5)
       const totalGross = (p.taxBreakdown || []).reduce((s, b) => s + (b.grossGain || 0), 0);
       const totalTax   = p.totalLatentTax || 0;
-      const totalNet   = totalGross - totalTax;
+      const totalNetLatentGain = totalGross - totalTax;
       const totalMinus = (p.taxBreakdown || []).reduce((s, b) => s + (b.minusvalenze || 0), 0);
-      const invested   = (p.totalValue || 0) - (p.totalGain || 0);
 
-      if (el('mob-fiscal-net-latent-hero')) el('mob-fiscal-net-latent-hero').textContent = formatPrivacy(totalNet, currency, 'mob-f-net', 0);
-      if (el('mob-f-gross')) el('mob-f-gross').textContent = formatPrivacy(totalGross, currency, 'mob-f-gross', 0);
+      const netValue = p.netValue || p.totalValue;
+      if (el('mob-detail-total')) el('mob-detail-total').textContent = formatPrivacy(netValue, currency, 'mob-dt');
+      
+      const gainNetto = p.totalGain || 0; // Or (totalGross - totalTax + totalDividends) - Realized is also part of totalGain
+      const gnEl = el('mob-detail-gain-netto-pill');
+      if (gnEl) {
+        const isPos = gainNetto >= 0;
+        gnEl.style.background = isPos ? 'rgba(16,185,129,0.15)' : 'rgba(244,63,94,0.15)';
+        gnEl.style.color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        gnEl.innerHTML = `<span class="material-symbols-outlined text-xs font-bold">${isPos ? 'trending_up' : 'trending_down'}</span> ${isPos ? '+' : ''}${formatPrivacy(gainNetto, currency, 'mob-gn', 0)}`;
+      }
+
       if (el('mob-f-tax')) el('mob-f-tax').textContent = formatPrivacy(totalTax, currency, 'mob-f-tax', 0);
       if (el('mob-f-minus')) el('mob-f-minus').textContent = formatPrivacy(totalMinus, currency, 'mob-f-minus', 0);
-      if (el('mob-f-cap')) el('mob-f-cap').textContent = formatPrivacy(invested, currency, 'mob-f-cap', 0);
 
       const gain = p.totalGain || 0;
       const gainEl = el('mob-detail-gain');
