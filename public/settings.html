@@ -642,38 +642,45 @@
 <!-- Mobile GUI Root -->
 <div id="mobile-ui">
   <!-- Top Header -->
-  <div class="mob-header" style="height: 60px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--mob-border);">
-    <div class="flex items-center gap-2">
-      <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white">
-        <span class="material-symbols-outlined text-[20px]">query_stats</span>
+  <!-- ── Mobile Header ── -->
+  <div class="mob-header">
+    <div class="mob-header-logo-container">
+      <div class="mob-header-logo-circle">
+        <span class="material-symbols-outlined">insights</span>
       </div>
-      <span class="text-xl font-black tracking-tighter text-slate-900 dark:text-white">Ft</span>
+      <div class="mob-header-logo-text">FolioTrack</div>
     </div>
 
-    <!-- 2. Page Indicator (2 Chars) -->
-    <div class="mob-header-title text-xl font-bold" style="letter-spacing: -1px; line-height: 1; margin-left: 4px;">ST</div>
+    <!-- Page Title (ST) -->
+    <div class="mob-header-title" style="display:none">ST</div>
 
     <div style="flex:1"></div>
 
-    <!-- 3. EU / US Market Status Dots -->
-    <div style="display: flex; flex-direction: column; gap: 4px; align-items: center; justify-content: center;">
-      <div style="display: flex; gap: 4px; align-items: center;">
-        <span class="text-[8px] font-bold text-slate-500 leading-none">EU</span>
-        <span id="mob-dot-eu" class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+    <!-- EU / US Market Status Pill -->
+    <div class="mob-header-market-pill">
+      <div class="mob-market-item">
+        <span>EU</span>
+        <span id="mob-dot-eu" class="mob-market-dot"></span>
       </div>
-      <div style="display: flex; gap: 4px; align-items: center;">
-        <span class="text-[8px] font-bold text-slate-500 leading-none">US</span>
-        <span id="mob-dot-us" class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+      <div class="mob-market-item">
+        <span>US</span>
+        <span id="mob-dot-us" class="mob-market-dot"></span>
       </div>
     </div>
 
-    <!-- 4. Day Var (Large Font, No Icon) -->
-    <div id="mob-header-var-day" class="font-black tracking-tight" style="font-size: 18px; line-height: 1; margin: 0 8px; min-width: 60px; text-align: right;">--</div>
+    <!-- Day Variation Pill -->
+    <div id="mob-header-var-day" class="mob-header-var-pill">--</div>
 
-    <!-- 5. Settings Icon (Flush Right) -->
-    <a href="/settings" class="mob-icon-btn text-inherit" style="color: inherit; text-decoration: none; padding: 0;" title="Settings">
-      <span class="material-symbols-outlined" style="font-size: 28px;">settings</span>
-    </a>
+    <!-- Action Buttons -->
+    <div class="mob-header-actions">
+      <button onclick="toggleMobileNotifications()" class="mob-icon-btn relative" title="Notifications">
+        <span class="material-symbols-outlined">notifications</span>
+        <span id="mob-notification-badge" class="mob-badge" style="display: none;">0</span>
+      </button>
+      <a href="/settings" class="mob-icon-btn" title="Settings">
+        <span class="material-symbols-outlined">settings</span>
+      </a>
+    </div>
   </div>
 
   <!-- Mobile Scrollable Content -->

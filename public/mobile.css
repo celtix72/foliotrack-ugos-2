@@ -141,7 +141,93 @@ body.mobile-view-active #mobile-ui {
 .mob-header-actions {
   display: flex;
   align-items: center;
+  gap: 10px;
+}
+
+/* Redesigned Logo */
+.mob-header-logo-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mob-header-logo-circle {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--mob-primary) 0%, #3b82f6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 4px 12px rgba(19,91,236,0.25);
+}
+.mob-header-logo-circle .material-symbols-outlined { font-size: 22px; font-variation-settings: 'FILL' 1; }
+
+.mob-header-logo-text {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -0.8px;
+  color: var(--mob-text);
+}
+
+/* Market Status Pill */
+.mob-header-market-pill {
+  display: flex;
+  align-items: center;
   gap: 8px;
+  background: var(--mob-surface-2);
+  padding: 6px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--mob-border);
+}
+
+.mob-market-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.mob-market-item span:first-child {
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--mob-text-muted);
+}
+.mob-market-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mob-text-caption);
+  transition: all 0.3s;
+}
+
+/* Variation Pill */
+.mob-header-var-pill {
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: -0.3px;
+  min-width: 65px;
+  text-align: center;
+}
+
+/* Notification Badge */
+.mob-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--mob-rose);
+  color: white;
+  font-size: 9px;
+  font-weight: 900;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--mob-surface);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 .mob-icon-btn {

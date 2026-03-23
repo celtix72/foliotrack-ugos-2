@@ -457,33 +457,68 @@
                 dropdown.onclick = (e) => e.stopPropagation();
             }
 
-            const header = `<div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
-                <span class="font-black text-sm uppercase tracking-widest">Notifications</span>
-                ${unreadCount > 0 ? `<button onclick="markAllRead()" class="text-[10px] font-bold text-primary hover:underline">Mark all read</button>` : ''}
-            </div>`;
+            dropdown = document.getElementById('notification-dropdown');
+            if (dropdown) {
+                const header = `<div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
+                    <span class="font-black text-sm uppercase tracking-widest">Notifications</span>
+                    ${unreadCount > 0 ? `<button onclick="markAllRead()" class="text-[10px] font-bold text-primary hover:underline">Mark all read</button>` : ''}
+                </div>`;
 
-            const list = `<div class="max-h-96 overflow-y-auto custom-scrollbar">` + 
-                (notifications.length === 0 ? `<div class="p-8 text-center text-slate-400 italic text-sm">No notifications</div>` : 
-                notifications.map(n => `
-                <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors relative ${!n.isRead ? 'bg-primary/[0.03]' : ''}">
-                    <div class="flex items-start gap-3">
-                        <div class="w-8 h-8 rounded-lg ${n.type === 'TARGET' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'} flex items-center justify-center shrink-0">
-                            <span class="material-symbols-outlined text-sm font-bold">${n.type === 'TARGET' ? 'trending_up' : 'trending_down'}</span>
+                const list = `<div class="max-h-96 overflow-y-auto custom-scrollbar">` + 
+                    (notifications.length === 0 ? `<div class="p-8 text-center text-slate-400 italic text-sm">No notifications</div>` : 
+                    notifications.map(n => `
+                    <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors relative ${!n.isRead ? 'bg-primary/[0.03]' : ''}">
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-lg ${n.type === 'TARGET' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'} flex items-center justify-center shrink-0">
+                                <span class="material-symbols-outlined text-sm font-bold">${n.type === 'TARGET' ? 'trending_up' : 'trending_down'}</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-bold leading-none mb-1">${n.title}</p>
+                                <p class="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-2">${n.message}</p>
+                                <p class="text-[9px] text-slate-400 mt-2">${new Date(n.date).toLocaleString('it-IT', { hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit' })}</p>
+                            </div>
+                            ${!n.isRead ? `<div class="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-1"></div>` : ''}
                         </div>
-                        <div class="flex-1 min-w-0">
-                            <p class="text-xs font-bold leading-none mb-1">${n.title}</p>
-                            <p class="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-2">${n.message}</p>
-                            <p class="text-[9px] text-slate-400 mt-2">${new Date(n.date).toLocaleString('it-IT', { hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit' })}</p>
-                        </div>
-                        ${!n.isRead ? `<div class="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-1"></div>` : ''}
-                    </div>
-                    ${!n.isRead ? `<button onclick="markRead(${n.id})" class="absolute inset-0 w-full h-full opacity-0"></button>` : ''}
-                </div>`).join('')) + `</div>`;
+                        ${!n.isRead ? `<button onclick="markRead(${n.id})" class="absolute inset-0 w-full h-full opacity-0"></button>` : ''}
+                    </div>`).join('')) + `</div>`;
 
-            dropdown.innerHTML = header + list;
+                dropdown.innerHTML = header + list;
+            }
 
         } catch (err) { console.error("Notifications error:", err); }
     }
+
+    // Mobile Notification Modal Logic (Available Globally)
+    window.toggleMobileNotifications = (show = true) => {
+        let modal = document.getElementById('mob-notification-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'mob-notification-modal';
+            modal.className = 'fixed inset-0 z-[10000] hidden';
+            modal.innerHTML = `
+                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="toggleMobileNotifications(false)"></div>
+                <div class="absolute bottom-0 left-0 right-0 bg-white dark:bg-[#111722] rounded-t-[32px] max-h-[80vh] flex flex-col overflow-hidden shadow-2xl border-t border-slate-200 dark:border-slate-800 focus:outline-none">
+                    <div class="p-6 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
+                        <h3 class="text-xl font-black">Notifiche</h3>
+                        <button onclick="toggleMobileNotifications(false)" class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                            <span class="material-symbols-outlined">close</span>
+                        </button>
+                    </div>
+                    <div id="mob-notification-list" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+                    <div id="mob-notification-mark-all" class="p-4 bg-slate-50 dark:bg-slate-900/50 hidden">
+                        <button onclick="markAllRead(); toggleMobileNotifications(false);" class="w-full py-4 bg-primary text-white font-black rounded-2xl">Segna tutte come lette</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+        }
+
+        if (show) {
+            // Initial/Empty list while fetch happens if needed, but usually we draw from global state
+            modal.classList.remove('hidden');
+        } else {
+            modal.classList.add('hidden');
+        }
+    };
 
     window.markRead = async function(id) {
         await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
@@ -567,12 +602,14 @@
                 `;
             }
 
-            // --- Mobile Market Dots Injection ---
+            // --- Mobile Market Dots & Pillars Injection ---
             if (mobDotEU && mobDotUS) {
                 const euOpen = status.EU;
                 const usOpen = status.US;
-                mobDotEU.className = euOpen ? 'w-2.5 h-2.5 rounded-full transition-colors bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'w-2.5 h-2.5 rounded-full transition-colors bg-slate-400';
-                mobDotUS.className = usOpen ? 'w-2.5 h-2.5 rounded-full transition-colors bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'w-2.5 h-2.5 rounded-full transition-colors bg-slate-400';
+                mobDotEU.style.backgroundColor = euOpen ? 'var(--mob-emerald)' : 'var(--mob-text-caption)';
+                mobDotUS.style.backgroundColor = usOpen ? 'var(--mob-emerald)' : 'var(--mob-text-caption)';
+                if (euOpen) mobDotEU.classList.add('animate-pulse'); else mobDotEU.classList.remove('animate-pulse');
+                if (usOpen) mobDotUS.classList.add('animate-pulse'); else mobDotUS.classList.remove('animate-pulse');
             }
 
             if (mobMarketStatus) {
@@ -601,11 +638,15 @@
                  `;
             }
 
-            // --- Mobile Var Day Injection ---
+            // --- Mobile Var Pill Redesign ---
             let mobVar = document.getElementById('mob-header-var-day');
             if (mobVar) {
+                const bg = isPos ? 'rgba(16,185,129,0.1)' : 'rgba(244,63,94,0.1)';
                 const color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+                const border = isPos ? 'rgba(16,185,129,0.2)' : 'rgba(244,63,94,0.2)';
+                mobVar.style.backgroundColor = bg;
                 mobVar.style.color = color;
+                mobVar.style.border = `1px solid ${border}`;
                 mobVar.innerHTML = `<span>${sign}${formatted}</span>`;
             }
 
@@ -628,8 +669,10 @@
                 `;
             }
             if (mobDotEU && mobDotUS) {
-                mobDotEU.className = 'w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse';
-                mobDotUS.className = 'w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse';
+                mobDotEU.style.backgroundColor = 'var(--mob-rose)';
+                mobDotUS.style.backgroundColor = 'var(--mob-rose)';
+                mobDotEU.classList.add('animate-pulse');
+                mobDotUS.classList.add('animate-pulse');
             }
             if (mobMarketStatus) {
                 mobMarketStatus.innerHTML = `<span style="color:var(--mob-rose); font-weight:bold; white-space:nowrap;" class="animate-pulse">ERROR</span>`;
