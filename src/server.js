@@ -873,15 +873,31 @@ app.get('/api/portfolios', async (req, res) => {
             totalTax += p.totalTax;
         }
 
+        // Top Winner/Loser from current holdings
+        const heldAssets = database.db.prepare(`
+            SELECT a.ticker, a.name, a.changePercent 
+            FROM assets a
+            JOIN (
+                SELECT assetTicker, SUM(quantity) as netQty 
+                FROM transactions 
+                WHERE assetTicker IS NOT NULL 
+                GROUP BY assetTicker 
+                HAVING netQty > 0.001
+            ) h ON a.ticker = h.assetTicker
+            ORDER BY a.changePercent DESC
+        `).all();
+
         res.json({
             portfolios: rows,
             global: {
                 totalValue: totalGrossValue,
                 totalNetValue: totalGrossValue - totalTax,
                 totalTax: totalTax,
-                totalGain: globalProfit, // Now matches Performance Chart Net Profit
+                totalGain: globalProfit,
                 changePercent: globalChangePercent,
-                changeValue: globalChangeValue
+                changeValue: globalChangeValue,
+                topWinner: heldAssets[0] || null,
+                topLoser: heldAssets.length > 1 ? heldAssets[heldAssets.length - 1] : null
             }
         });
     } catch (err) {

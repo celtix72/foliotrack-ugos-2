@@ -148,7 +148,8 @@ body.mobile-view-active #mobile-ui {
 .mob-header-logo-container {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  margin-left: 8px;
 }
 
 .mob-header-logo-circle {

@@ -807,31 +807,33 @@
     <!-- Hero Card -->
     <div class="mob-hero">
       <div class="mob-hero-label">Portfolio Netto</div>
-      <div class="mob-hero-value" id="mob-total-net">€ 0</div>
+      <div class="flex items-baseline gap-3 mb-4">
+        <div class="mob-hero-value" id="mob-total-net" style="margin-bottom:0">€ 0</div>
+        <div class="text-xs font-bold text-slate-500 opacity-80" id="mob-total-gross">Lordo: € 0</div>
+      </div>
+      
       <div class="mob-hero-stats">
-        <div class="mob-hero-stat-item">
-          <span class="mob-hero-stat-label">Lordo</span>
-          <span class="mob-hero-stat-value" id="mob-total-gross">€ 0</span>
-        </div>
         <div class="mob-hero-stat-item">
           <span class="mob-hero-stat-label">Gain Totale</span>
           <span class="mob-hero-stat-value" id="mob-total-gain">€ 0</span>
         </div>
-        <div class="mob-hero-stat-item">
-          <span class="mob-hero-stat-label">Day Var</span>
-          <span class="mob-hero-stat-value" id="mob-day-var">--</span>
+        <div class="mob-hero-stat-item" id="mob-stat-winner">
+          <span class="mob-hero-stat-label">Top Winner</span>
+          <span class="mob-hero-stat-value" id="mob-top-winner">--</span>
         </div>
-        <div class="mob-hero-stat-item">
-          <span class="mob-hero-stat-label">Mercato EU/US</span>
-          <span class="mob-hero-stat-value" id="mob-market-status">--</span>
+        <div class="mob-hero-stat-item" id="mob-stat-loser">
+          <span class="mob-hero-stat-label">Top Loser</span>
+          <span class="mob-hero-stat-value" id="mob-top-loser">--</span>
         </div>
       </div>
     </div>
 
     <!-- Performance Chart -->
     <div class="mob-chart-card">
-      <div class="mob-chart-title">Performance</div>
-      <div class="mob-chart-subtitle">Net worth aggregato</div>
+      <div class="flex items-baseline gap-2 mb-3">
+        <div class="mob-chart-title" style="margin-bottom:0">Performance</div>
+        <div class="mob-chart-subtitle" style="margin-bottom:0">Net worth aggregato</div>
+      </div>
       <div class="mob-chart-range-bar" id="mob-range-bar">
         <div class="mob-range-btn" onclick="mobSetRange('1W')" data-range="1W">1W</div>
         <div class="mob-range-btn active" onclick="mobSetRange('1M')" data-range="1M">1M</div>
@@ -913,7 +915,7 @@
       const mobDayVar = document.getElementById('mob-day-var');
 
       if (mobNet) mobNet.textContent = formatPrivacy(g.totalNetValue, 'EUR', 'mob-net');
-      if (mobGross) mobGross.textContent = formatPrivacy(g.totalValue, 'EUR', 'mob-gross');
+      if (mobGross) mobGross.textContent = 'Lordo: ' + formatPrivacy(g.totalValue, 'EUR', 'mob-gross');
 
       const gainAmt = g.totalGain || (g.totalNetValue - g.investedCapital) || 0;
       if (mobGain) {
@@ -922,12 +924,16 @@
         mobGain.textContent = (isPos ? '+' : '') + formatPrivacy(gainAmt, 'EUR', 'mob-gain', 0);
       }
 
-      const change = g.changeValue || 0;
-      if (mobDayVar) {
-        const isPos = change >= 0;
-        mobDayVar.style.color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-        const formatted = formatPrivacy(change, 'EUR', 'mob-dayvar', 0);
-        mobDayVar.textContent = (formatted !== '****' && isPos ? '+' : '') + formatted;
+      // Top Winner / Loser
+      const winnerEl = document.getElementById('mob-top-winner');
+      const loserEl = document.getElementById('mob-top-loser');
+      if (winnerEl && g.topWinner) {
+        const isPos = g.topWinner.changePercent >= 0;
+        winnerEl.innerHTML = `<span class="text-[10px] opacity-70">${g.topWinner.ticker}</span> <span style="color:${isPos?'var(--mob-emerald)':'var(--mob-rose)'}">${isPos?'+':''}${g.topWinner.changePercent}%</span>`;
+      }
+      if (loserEl && g.topLoser) {
+        const isPos = g.topLoser.changePercent >= 0;
+        loserEl.innerHTML = `<span class="text-[10px] opacity-70">${g.topLoser.ticker}</span> <span style="color:${isPos?'var(--mob-emerald)':'var(--mob-rose)'}">${isPos?'+':''}${g.topLoser.changePercent}%</span>`;
       }
 
       // Portfolios
