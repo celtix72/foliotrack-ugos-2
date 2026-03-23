@@ -878,9 +878,10 @@ app.get('/api/portfolios', async (req, res) => {
             SELECT a.ticker, a.name, a.changePercent, a.currentPrice, a.currency, h.netQty
             FROM assets a
             JOIN (
-                SELECT assetTicker, SUM(quantity) as netQty 
+                SELECT assetTicker, 
+                       SUM(CASE WHEN type = 'BUY' THEN quantity ELSE -quantity END) as netQty 
                 FROM transactions 
-                WHERE assetTicker IS NOT NULL 
+                WHERE assetTicker IS NOT NULL AND assetTicker != 'CASH'
                 GROUP BY assetTicker 
                 HAVING netQty > 0.001
             ) h ON a.ticker = h.assetTicker
