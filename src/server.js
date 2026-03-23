@@ -821,50 +821,19 @@ app.get('/api/portfolios', async (req, res) => {
         const globalPoints = perfData.dataPoints || [];
         const individual = perfData.individual || {};
 
-        let globalTotalValue = 0;
-        let globalProfit = 0;
         let globalChangeValue = 0;
-        let globalChangePercent = 0;
-
-        if (globalPoints.length > 0) {
-            const lastPoint = globalPoints[globalPoints.length - 1];
-            globalTotalValue = lastPoint.value;
-            globalProfit = lastPoint.profit;
-            
-            if (globalPoints.length > 1) {
-                const prevPoint = globalPoints[globalPoints.length - 2];
-                // Profit-based variation (Independent of capital movements)
-                globalChangeValue = lastPoint.profit - prevPoint.profit;
-                if (prevPoint.value > 0) {
-                    globalChangePercent = (globalChangeValue / prevPoint.value) * 100;
-                }
-            }
-        }
-
         let totalGrossValue = 0;
         let totalTax = 0;
 
         for (const p of rows) {
-            const pHistory = individual[p.id] || [];
-            if (pHistory.length > 0) {
-                const lastP = pHistory[pHistory.length - 1];
-                p.totalValue = lastP.value;
-                if (pHistory.length > 1) {
-                    const prevP = pHistory[pHistory.length - 2];
-                    // Profit-based variation
-                    p.changeValue = lastP.profit - prevP.profit;
-                    p.changePercent = prevP.value > 0 ? (p.changeValue / prevP.value) * 100 : 0;
-                } else {
-                    p.changeValue = 0;
-                    p.changePercent = 0;
-                }
-            } else {
-                p.totalValue = 0;
-                p.changeValue = 0;
-                p.changePercent = 0;
-            }
+            // Use performance1D from DB (profit-based)
+            p.changeValue = p.performance1D || 0;
+            const prevValue = (p.totalValue || 0) - p.changeValue;
+            p.changePercent = prevValue > 0 ? (p.changeValue / prevValue) * 100 : 0;
 
-            // Still need details for taxes (not covered by perf engine simulation)
+            globalChangeValue += p.changeValue;
+
+            // Still need details for taxes
             const details = await getPortfolioDetails(p.id, liveRate);
             p.totalTax = details.totalLatentTax;
             p.netValue = p.totalValue - p.totalTax;
@@ -899,14 +868,15 @@ app.get('/api/portfolios', async (req, res) => {
                 totalValue: totalGrossValue,
                 totalNetValue: totalGrossValue - totalTax,
                 totalTax: totalTax,
-                totalGain: globalProfit,
-                changePercent: globalChangePercent,
+                totalGain: (globalPoints.length > 0) ? globalPoints[globalPoints.length-1].profit : 0,
                 changeValue: globalChangeValue,
+                changePercent: (totalGrossValue - globalChangeValue) > 0 ? (globalChangeValue / (totalGrossValue - globalChangeValue)) * 100 : 0,
                 topWinner: heldAssets[0] || null,
                 topLoser: heldAssets.length > 1 ? heldAssets[heldAssets.length - 1] : null
             }
         });
     } catch (err) {
+        console.error('API Error /api/portfolios:', err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -1102,23 +1072,19 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
         totalDividends += d.amount;
     }
 
-    const liveTotalValue = Math.round((portfolio.currentCash + totalAssetsValue) * 100) / 100;
-
-    // PROFIT-BASED VARIATION (Excluding capital moves)
-    const history = await calculatePerformanceHistory([portfolioId], '1W');
-    let changePercent = 0;
-    if (history.length > 1) {
-        const last = history[history.length - 1];
-        const prev = history[history.length - 2];
-        const profitChange = last.profit - prev.profit;
-        if (prev.value > 0) {
-            changePercent = (profitChange / prev.value) * 100;
-        }
-    }
+    const totalValue = portfolio.totalValue || 0;
+    const currentCash = portfolio.currentCash || 0;
+    const performance1D = portfolio.performance1D || 0;
+    
+    // Calculate 1D Percent consistently
+    const prevValue = totalValue - performance1D;
+    const changePercent = prevValue > 0 ? (performance1D / prevValue) * 100 : 0;
 
     return {
         ...portfolio,
-        totalValue: liveTotalValue,
+        totalValue,
+        currentCash,
+        performance1D,
         changePercent,
         transactions,
         holdings,

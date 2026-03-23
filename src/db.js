@@ -141,6 +141,10 @@ function initDb() {
         dbConnection.prepare(`ALTER TABLE portfolios ADD COLUMN color TEXT DEFAULT '#6366f1'`).run();
     } catch (e) {}
 
+    try {
+        dbConnection.prepare(`ALTER TABLE portfolio_history ADD COLUMN netDeposits REAL NOT NULL DEFAULT 0`).run();
+    } catch (e) {}
+
     // ─── Notifications Table ──────────────────────────────────────────────────
     dbConnection.exec(`
       CREATE TABLE IF NOT EXISTS notifications (
@@ -155,11 +159,12 @@ function initDb() {
 
       CREATE TABLE IF NOT EXISTS portfolio_history (
         id           INTEGER PRIMARY KEY AUTOINCREMENT,
-        portfolioId  INTEGER REFERENCES portfolios(id) ON DELETE CASCADE,
+        portfolioId  INTEGER NOT NULL REFERENCES portfolios(id) ON DELETE CASCADE,
         date         TEXT    NOT NULL,
-        totalValue   REAL    NOT NULL,
-        cashValue    REAL    NOT NULL,
-        assetValue   REAL    NOT NULL,
+        totalValue   REAL    NOT NULL DEFAULT 0,
+        cashValue    REAL    NOT NULL DEFAULT 0,
+        assetValue   REAL    NOT NULL DEFAULT 0,
+        netDeposits  REAL    NOT NULL DEFAULT 0,
         createdAt    TEXT    NOT NULL DEFAULT (datetime('now')),
         UNIQUE(portfolioId, date)
       );
@@ -345,14 +350,29 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
     // Total value = Cash + Assets (Dividends are already in Cash)
     const totalValue = cash + assetValue;
 
-    // Calculate 1D Performance (Day variation)
+    // Calculate performance1D (Profit-based)
     const yesterday = dbConnection.prepare(`
-        SELECT totalValue FROM portfolio_history 
+        SELECT totalValue, netDeposits FROM portfolio_history 
         WHERE portfolioId = ? AND date < date('now', 'localtime')
         ORDER BY date DESC LIMIT 1
     `).get(portfolioId);
     
-    const performance1D = yesterday ? (totalValue - yesterday.totalValue) : 0;
+    // Get CURRENT netDeposits for profit calculation (capital in/out)
+    const txs = dbConnection.prepare(`SELECT type, amount, exchangeRate, quantity, price, commission, tax FROM transactions WHERE portfolioId = ?`).all(portfolioId);
+    let currentNetDep = 0;
+    for (const t of txs) {
+        const amount = t.amount || ((t.quantity || 0) * (t.price || 0) + (t.commission || 0) + (t.tax || 0)) / (t.exchangeRate || 1);
+        if (t.type === 'DEPOSIT') currentNetDep += amount;
+        if (t.type === 'WITHDRAWAL') currentNetDep -= amount;
+        if (t.type === 'TRANSFER') currentNetDep -= amount;
+    }
+
+    let performance1D = 0;
+    const currentProfit = totalValue - currentNetDep;
+    if (yesterday) {
+        const yesterdayProfit = (yesterday.totalValue || 0) - (yesterday.netDeposits || 0);
+        performance1D = currentProfit - yesterdayProfit;
+    }
 
     dbConnection.prepare(`
         UPDATE portfolios
@@ -367,7 +387,7 @@ function recalculateAll(liveEurUsdRate = null) {
 }
 
 function savePortfolioSnapshot(portfolioId = null, eurUsdRate = 1.0) {
-    let totalValue = 0, cashValue = 0, assetValue = 0;
+    let totalValue = 0, cashValue = 0, assetValue = 0, netDeposits = 0;
     const date = new Date().toISOString().split('T')[0];
 
     if (portfolioId) {
@@ -376,34 +396,60 @@ function savePortfolioSnapshot(portfolioId = null, eurUsdRate = 1.0) {
             totalValue = p.totalValue || 0;
             cashValue = p.currentCash || 0;
             assetValue = totalValue - cashValue;
+            
+            // Calculate current netDeposits for this portfolio
+            const txs = dbConnection.prepare(`SELECT type, amount, exchangeRate, quantity, price, commission, tax FROM transactions WHERE portfolioId = ?`).all(portfolioId);
+            let netDep = 0;
+            for (const t of txs) {
+                const amount = t.amount || ((t.quantity || 0) * (t.price || 0) + (t.commission || 0) + (t.tax || 0)) / (t.exchangeRate || 1);
+                if (t.type === 'DEPOSIT') netDep += amount;
+                if (t.type === 'WITHDRAWAL') netDep -= amount;
+                if (t.type === 'TRANSFER') netDep -= amount;
+            }
+            // For now, simplicity: netDeposits is used to identify profit. 
+            // Better to use portfolio and calculated netDeposits if available.
+            netDeposits = netDep;
         } else return;
     } else {
         // Global Dashboard Snapshot - Convert to EUR for consistent aggregate history
-        const portfolios = dbConnection.prepare(`SELECT totalValue, currentCash, currency FROM portfolios`).all();
-        portfolios.forEach(p => {
+        const portfolios = dbConnection.prepare(`SELECT id, currency, totalValue, currentCash FROM portfolios`).all();
+        for (const p of portfolios) {
             let tVal = (p.totalValue || 0);
             let cVal = (p.currentCash || 0);
             
+            // Calculate netDeposits for this portfolio to aggregate globally
+            const txs = dbConnection.prepare(`SELECT type, amount, exchangeRate, quantity, price, commission, tax FROM transactions WHERE portfolioId = ?`).all(p.id);
+            let pNetDep = 0;
+            for (const t of txs) {
+                const amount = t.amount || ((t.quantity || 0) * (t.price || 0) + (t.commission || 0) + (t.tax || 0)) / (t.exchangeRate || 1);
+                if (t.type === 'DEPOSIT') pNetDep += amount;
+                if (t.type === 'WITHDRAWAL') pNetDep -= amount;
+                if (t.type === 'TRANSFER') pNetDep -= amount;
+            }
+
             // Convert to EUR if native is USD
             if (p.currency === 'USD' && eurUsdRate && eurUsdRate > 0) {
                 tVal /= eurUsdRate;
-                cVal /= eurUsdRate;
+                cVal /= eurUsdRate; 
+                pNetDep /= eurUsdRate;
             }
             
             totalValue += tVal;
             cashValue += cVal;
-        });
+            netDeposits += pNetDep;
+        }
         assetValue = totalValue - cashValue;
     }
 
     dbConnection.prepare(`
-        INSERT INTO portfolio_history (portfolioId, date, totalValue, cashValue, assetValue)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO portfolio_history (portfolioId, date, totalValue, cashValue, assetValue, netDeposits)
+        VALUES (?, ?, ?, ?, ?, ?)
         ON CONFLICT(portfolioId, date) DO UPDATE SET
             totalValue = excluded.totalValue,
             cashValue = excluded.cashValue,
-            assetValue = excluded.assetValue
-    `).run(portfolioId, date, Math.round(totalValue), Math.round(cashValue), Math.round(assetValue));
+            assetValue = excluded.assetValue,
+            netDeposits = excluded.netDeposits
+    `).run(portfolioId, date, Math.round(totalValue), Math.round(cashValue), Math.round(assetValue), Math.round(netDeposits));
 }
 
 module.exports = { 

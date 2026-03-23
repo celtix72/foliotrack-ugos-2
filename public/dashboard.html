@@ -320,6 +320,7 @@
                                     <p class="text-[10px] text-slate-500 font-bold">Lordo: ${formatPrivacy(p.totalValue, p.currency, 'p-' + p.id)}</p>
                                     <p class="${isPos ? 'text-emerald-500' : 'text-rose-500'} text-[10px] font-bold">
                                         ${isPos ? '▲' : '▼'} ${Math.abs(p.changePercent).toFixed(2)}%
+                                        (${p.changeValue >= 0 ? '+' : ''}${Math.round(p.changeValue).toLocaleString('it-IT')} €)
                                     </p>
                                 </div>
                             </div>
@@ -736,6 +737,7 @@
                                     <p class="text-[10px] text-slate-500 font-bold">Lordo: ${formatPrivacy(p.totalValue, p.currency, 'p-' + p.id)}</p>
                                     <p class="${isPos ? 'text-emerald-500' : 'text-rose-500'} text-[10px] font-bold">
                                         ${isPos ? '▲' : '▼'} ${Math.abs(p.changePercent).toFixed(2)}%
+                                        (${p.changeValue >= 0 ? '+' : ''}${Math.round(p.changeValue).toLocaleString('it-IT')} €)
                                     </p>
                                 </div>
                             </div>
