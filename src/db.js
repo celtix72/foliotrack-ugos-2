@@ -345,11 +345,20 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
     // Total value = Cash + Assets (Dividends are already in Cash)
     const totalValue = cash + assetValue;
 
+    // Calculate 1D Performance (Day variation)
+    const yesterday = dbConnection.prepare(`
+        SELECT totalValue FROM portfolio_history 
+        WHERE portfolioId = ? AND date < date('now', 'localtime')
+        ORDER BY date DESC LIMIT 1
+    `).get(portfolioId);
+    
+    const performance1D = yesterday ? (totalValue - yesterday.totalValue) : 0;
+
     dbConnection.prepare(`
         UPDATE portfolios
-        SET currentCash = ?, totalValue = ?, totalDividends = ?, assetCount = ?, performance1D = 0
+        SET currentCash = ?, totalValue = ?, totalDividends = ?, assetCount = ?, performance1D = ?
         WHERE id = ?
-    `).run(cash, totalValue, totalDividends, assetCount, portfolioId);
+    `).run(cash, totalValue, totalDividends, assetCount, performance1D, portfolioId);
 }
 
 function recalculateAll(liveEurUsdRate = null) {

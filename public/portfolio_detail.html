@@ -1391,22 +1391,31 @@
         };
     }
 
-    function openTransactionModal() {
+    window.openTransactionModal = function() {
         document.getElementById('t-id').value = '';
         document.getElementById('t-modal-title').innerText = "New Transaction";
         document.getElementById('transaction-form').reset();
-        document.getElementById('transaction-modal').classList.remove('hidden');
+        const modal = document.getElementById('transaction-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex'; // Force visibility
+            modal.style.zIndex = '9999';   // Ensure top-most
+        }
         document.getElementById('t-date').value = new Date().toISOString().split('T')[0];
         toggleTransactionFields();
-    }
-    function closeTransactionModal() {
-        document.getElementById('transaction-modal').classList.add('hidden');
+    };
+    window.closeTransactionModal = function() {
+        const modal = document.getElementById('transaction-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+        }
         document.getElementById('transaction-form').reset();
-        document.getElementById('t-fx-field').classList.add('hidden');
+        if (document.getElementById('t-fx-field')) document.getElementById('t-fx-field').classList.add('hidden');
         if (document.getElementById('t-asset-metadata')) {
             document.getElementById('t-asset-metadata').classList.add('hidden');
         }
-    }
+    };
 
     function toggleTransactionFields() {
         const type = document.getElementById('t-type').value;
@@ -2851,8 +2860,9 @@
   // ── Portfolio Detail ──────────────────────────────
   async function mobLoadPortfolioDetail(id) {
     try {
-      const res = await fetch(`/api/portfolios/${id}`);
-      const p = await res.json();
+       const res = await fetch(`/api/portfolios/${id}`);
+       const p = await res.json();
+       console.log('[DEBUG] Mob Portfolio Data:', p);
       const currency = p.currency || 'EUR';
       portfolioCurrency = currency;
       const el = (eid) => document.getElementById(eid);
@@ -2899,13 +2909,17 @@
       const netValue = p.netValue || p.totalValue;
       if (el('mob-detail-total')) el('mob-detail-total').textContent = formatPrivacy(netValue, currency, 'mob-dt');
       
-      const gainNetto = p.totalGain || 0; // Or (totalGross - totalTax + totalDividends) - Realized is also part of totalGain
+      // Daily Variation (Phase 6 Fix)
+      const dayVar = p.performance1D || 0;
+      const prevValue = netValue - dayVar;
+      const dayPct = prevValue > 0 ? (dayVar / prevValue) * 100 : 0;
+      
       const gnEl = el('mob-detail-gain-netto-pill');
       if (gnEl) {
-        const isPos = gainNetto >= 0;
+        const isPos = dayVar >= 0;
         gnEl.style.background = isPos ? 'rgba(16,185,129,0.15)' : 'rgba(244,63,94,0.15)';
         gnEl.style.color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-        gnEl.innerHTML = `<span class="material-symbols-outlined text-xs font-bold">${isPos ? 'trending_up' : 'trending_down'}</span> ${isPos ? '+' : ''}${formatPrivacy(gainNetto, currency, 'mob-gn', 0)}`;
+        gnEl.innerHTML = `<span class="material-symbols-outlined text-xs font-bold">${isPos ? 'trending_up' : 'trending_down'}</span> ${isPos ? '+' : ''}${formatPrivacy(dayVar, currency, 'mob-gn', 0)} (${isPos ? '+' : ''}${dayPct.toFixed(2)}%)`;
       }
 
       if (el('mob-f-tax')) el('mob-f-tax').textContent = formatPrivacy(totalTax, currency, 'mob-f-tax', 0);
