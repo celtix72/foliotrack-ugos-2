@@ -365,6 +365,10 @@
       <div class="mob-hero-value" id="mob-total-roi">--%</div>
       <div class="mob-hero-stats">
         <div class="mob-hero-stat-item">
+          <span class="mob-hero-stat-label">GAIN TOTALE</span>
+          <span class="mob-hero-stat-value" id="mob-total-gain">€ 0</span>
+        </div>
+        <div class="mob-hero-stat-item">
           <span class="mob-hero-stat-label">ANNUALIZED</span>
           <span class="mob-hero-stat-value" id="mob-cagr">--%</span>
         </div>
@@ -819,8 +823,16 @@
             const m = data.metrics;
             document.getElementById('mob-total-roi').textContent = (m.totalROI * 100).toFixed(2) + '%';
             document.getElementById('mob-total-roi').style.color = m.totalROI >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+            
+            const gainEl = document.getElementById('mob-total-gain');
+            if (gainEl) {
+                gainEl.textContent = formatCurrency(m.totalGain, 'EUR');
+                gainEl.style.color = m.totalGain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+            }
+
             document.getElementById('mob-cagr').textContent = (m.annualizedROI * 100).toFixed(2) + '%';
             document.getElementById('mob-sharpe').textContent = m.sharpeRatio.toFixed(2);
+            if (document.getElementById('mob-best')) document.getElementById('mob-best').textContent = m.bestAsset;
 
             // Portfolio List
             const list = document.getElementById('mob-portfolios-list');

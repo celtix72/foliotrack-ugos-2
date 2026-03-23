@@ -874,8 +874,8 @@ app.get('/api/portfolios', async (req, res) => {
         }
 
         // Top Winner/Loser from current holdings
-        const heldAssets = database.db.prepare(`
-            SELECT a.ticker, a.name, a.changePercent 
+        const heldAssetsRaw = database.db.prepare(`
+            SELECT a.ticker, a.name, a.changePercent, a.currentPrice, a.currency, h.netQty
             FROM assets a
             JOIN (
                 SELECT assetTicker, SUM(quantity) as netQty 
@@ -884,8 +884,13 @@ app.get('/api/portfolios', async (req, res) => {
                 GROUP BY assetTicker 
                 HAVING netQty > 0.001
             ) h ON a.ticker = h.assetTicker
-            ORDER BY a.changePercent DESC
         `).all();
+
+        const heldAssets = heldAssetsRaw.map(a => {
+            const rate = (a.currency === 'USD') ? liveRate : 1;
+            const absChange = (a.currentPrice * a.changePercent / 100) * a.netQty / rate;
+            return { ticker: a.ticker, name: a.name, changePercent: a.changePercent, absChange };
+        }).sort((a,b) => b.changePercent - a.changePercent);
 
         res.json({
             portfolios: rows,
@@ -2988,6 +2993,7 @@ app.get('/api/analytics/reports', async (req, res) => {
             annualGains,
             metrics: {
                 totalROI,
+                totalGain: currentProfit,
                 annualizedROI: Math.pow(1 + totalROI, 1 / (Math.max(1, monthlyGlobal.length) / 12)) - 1,
                 bestAsset: bestAsset.ticker === '-' ? '-' : `${bestAsset.name} (${bestAsset.ticker})`,
                 sharpeRatio: (() => {

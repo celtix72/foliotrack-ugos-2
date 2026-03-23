@@ -807,23 +807,19 @@
     <!-- Hero Card -->
     <div class="mob-hero">
       <div class="mob-hero-label">Portfolio Netto</div>
-      <div class="flex items-baseline gap-3 mb-4">
-        <div class="mob-hero-value" id="mob-total-net" style="margin-bottom:0">€ 0</div>
-        <div class="text-xs font-bold text-slate-500 opacity-80" id="mob-total-gross">Lordo: € 0</div>
+      <div class="flex items-baseline gap-2 mb-4 overflow-hidden">
+        <div class="mob-hero-value" id="mob-total-net" style="margin-bottom:0; font-size: 28px;">€ 0</div>
+        <div class="text-[13px] font-bold text-slate-500 opacity-60 truncate" id="mob-total-gross">(€ 0)</div>
       </div>
       
-      <div class="mob-hero-stats">
-        <div class="mob-hero-stat-item">
-          <span class="mob-hero-stat-label">Gain Totale</span>
-          <span class="mob-hero-stat-value" id="mob-total-gain">€ 0</span>
-        </div>
-        <div class="mob-hero-stat-item" id="mob-stat-winner">
+      <div class="grid grid-cols-2 gap-4">
+        <div class="mob-hero-stat-item !p-0 !bg-transparent border-0" id="mob-stat-winner">
           <span class="mob-hero-stat-label">Top Winner</span>
-          <span class="mob-hero-stat-value" id="mob-top-winner">--</span>
+          <div id="mob-top-winner">--</div>
         </div>
-        <div class="mob-hero-stat-item" id="mob-stat-loser">
+        <div class="mob-hero-stat-item !p-0 !bg-transparent border-0" id="mob-stat-loser">
           <span class="mob-hero-stat-label">Top Loser</span>
-          <span class="mob-hero-stat-value" id="mob-top-loser">--</span>
+          <div id="mob-top-loser">--</div>
         </div>
       </div>
     </div>
@@ -915,26 +911,29 @@
       const mobDayVar = document.getElementById('mob-day-var');
 
       if (mobNet) mobNet.textContent = formatPrivacy(g.totalNetValue, 'EUR', 'mob-net');
-      if (mobGross) mobGross.textContent = 'Lordo: ' + formatPrivacy(g.totalValue, 'EUR', 'mob-gross');
-
-      const gainAmt = g.totalGain || (g.totalNetValue - g.investedCapital) || 0;
-      if (mobGain) {
-        const isPos = gainAmt >= 0;
-        mobGain.style.color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-        mobGain.textContent = (isPos ? '+' : '') + formatPrivacy(gainAmt, 'EUR', 'mob-gain', 0);
-      }
+      if (mobGross) mobGross.textContent = '(' + formatPrivacy(g.totalValue, 'EUR', 'mob-gross') + ')';
 
       // Top Winner / Loser
       const winnerEl = document.getElementById('mob-top-winner');
       const loserEl = document.getElementById('mob-top-loser');
-      if (winnerEl && g.topWinner) {
-        const isPos = g.topWinner.changePercent >= 0;
-        winnerEl.innerHTML = `<span class="text-[10px] opacity-70">${g.topWinner.ticker}</span> <span style="color:${isPos?'var(--mob-emerald)':'var(--mob-rose)'}">${isPos?'+':''}${g.topWinner.changePercent}%</span>`;
-      }
-      if (loserEl && g.topLoser) {
-        const isPos = g.topLoser.changePercent >= 0;
-        loserEl.innerHTML = `<span class="text-[10px] opacity-70">${g.topLoser.ticker}</span> <span style="color:${isPos?'var(--mob-emerald)':'var(--mob-rose)'}">${isPos?'+':''}${g.topLoser.changePercent}%</span>`;
-      }
+      
+      const renderMiniAsset = (el, asset) => {
+        if (!el || !asset) return;
+        const isPos = asset.changePercent >= 0;
+        const color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        const absVal = Math.abs(asset.absChange || 0).toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        el.innerHTML = `
+          <div class="flex flex-col">
+            <div class="flex items-center gap-1.5">
+              <span class="text-[11px] font-black">${asset.ticker}</span>
+              <span class="text-[11px] font-black" style="color:${color}">${isPos?'+':''}${asset.changePercent.toFixed(1)}%</span>
+            </div>
+            <div class="text-[10px] opacity-50 font-medium">${isPos?'+':'-'}€ ${absVal}</div>
+          </div>`;
+      };
+
+      if (winnerEl) renderMiniAsset(winnerEl, g.topWinner);
+      if (loserEl) renderMiniAsset(loserEl, g.topLoser);
 
       // Portfolios
       const pList = document.getElementById('mob-portfolio-list');
