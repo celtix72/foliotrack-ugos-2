@@ -510,6 +510,7 @@
 
     setInterval(updateNotifications, 30000); // 30s notifications sync
     setInterval(updateMarketStatusUI, 60000); // 60s market status sync
+    updateMarketStatusUI(); // Call immediately on load
 
     window.refreshSidebarPortfolios = () => { _sidebarLoading = false; updateSidebarContents(); };
 
@@ -520,8 +521,9 @@
         const portfolioVar  = document.getElementById('header-portfolio-var');
         const mobDotEU = document.getElementById('mob-dot-eu');
         const mobDotUS = document.getElementById('mob-dot-us');
+        const mobMarketStatus = document.getElementById('mob-market-status');
         
-        if (!liveIndicator && !updateLabel && !marketStatus && !portfolioVar && !mobDotEU) return;
+        if (!liveIndicator && !updateLabel && !marketStatus && !portfolioVar && !mobDotEU && !mobMarketStatus) return;
 
         try {
             // 1. Market Status
@@ -573,6 +575,15 @@
                 mobDotUS.className = usOpen ? 'w-2.5 h-2.5 rounded-full transition-colors bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'w-2.5 h-2.5 rounded-full transition-colors bg-slate-400';
             }
 
+            if (mobMarketStatus) {
+                const euOpen = status.EU;
+                const usOpen = status.US;
+                mobMarketStatus.innerHTML = `
+                    <span style="color:${euOpen ? 'var(--mob-emerald)' : 'var(--mob-text-muted)'}">EU</span> | 
+                    <span style="color:${usOpen ? 'var(--mob-emerald)' : 'var(--mob-text-muted)'}">US</span>
+                `;
+            }
+
             // 2. Portfolio Variation
             const pRes = await fetch('/api/portfolios');
             const pData = await pRes.json();
@@ -587,7 +598,7 @@
                         <span class="material-symbols-outlined text-[16px]">${isPos ? 'trending_up' : 'trending_down'}</span>
                         ${sign}${formatted}
                     </span>
-                `;
+                 `;
             }
 
             // --- Mobile Var Day Injection ---
@@ -619,6 +630,9 @@
             if (mobDotEU && mobDotUS) {
                 mobDotEU.className = 'w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse';
                 mobDotUS.className = 'w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse';
+            }
+            if (mobMarketStatus) {
+                mobMarketStatus.innerHTML = `<span style="color:var(--mob-rose); font-weight:bold; white-space:nowrap;" class="animate-pulse">ERROR</span>`;
             }
         }
     }
