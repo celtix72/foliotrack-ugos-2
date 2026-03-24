@@ -107,10 +107,6 @@
             <span id="header-last-update" class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Upd: --:--</span>
             <div id="header-market-status" class="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest"></div>
         </div>
-        <div class="flex items-center gap-2 border-l border-slate-200 dark:border-slate-800 pl-6">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Day Var:</span>
-            <div id="header-portfolio-var" class="text-xs font-bold"></div>
-        </div>
     </div>
     <div class="flex items-center gap-4">
         <div class="flex items-center gap-2">
@@ -180,6 +176,7 @@
                     <p class="text-3xl font-black tracking-tight"><span id="total-value-label">0.00</span> <span id="portfolio-currency-code" class="text-sm text-slate-400 font-bold">EUR</span></p>
                 </div>
                 <div id="header-perf-badge" class="hidden"></div>
+                <div id="p-detail-day-var" class="px-2 py-0.5 rounded-lg text-xs font-bold shadow-sm hidden"></div>
                 <div class="flex flex-col">
                     <div class="flex items-center gap-2">
                         <p class="text-sm font-bold text-slate-500">Cash: <span id="cash-balance-label">0.00</span></p>
@@ -940,14 +937,20 @@
             
             document.getElementById('cash-balance-label').innerText = formatPrivacy(p.currentCash, p.currency, 'p-cash');
 
-            const headerVar = document.getElementById('header-portfolio-var');
-            if (headerVar) {
+            // Update hero variation
+            const heroVar = document.getElementById('p-detail-day-var');
+            if (heroVar) {
                 const change = p.changeValue || 0;
                 const isPos = change >= 0;
                 const formatted = formatPrivacy(change, p.currency, 'h-var', 0);
-                const sign = (formatted !== '****' && isPos) ? '+' : '';
-                headerVar.className = `text-xs font-bold ${isPos ? 'text-emerald-500' : 'text-rose-500'}`;
-                headerVar.innerHTML = `${sign}${formatted}`;
+                if (formatted === '****') {
+                    heroVar.classList.add('hidden');
+                } else {
+                    const sign = isPos ? '+' : '';
+                    heroVar.className = `px-2 py-0.5 rounded-lg text-xs font-bold shadow-sm ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`;
+                    heroVar.innerHTML = `${sign}${formatted}`;
+                    heroVar.classList.remove('hidden');
+                }
             }
 
             const perfBadge = document.getElementById('header-perf-badge');
@@ -2048,14 +2051,20 @@
                 document.getElementById('total-value-label').innerText = formatPrivacy(p.totalValue, p.currency, 'p-total');
                 document.getElementById('cash-balance-label').innerText = formatPrivacy(p.currentCash, p.currency, 'p-cash');
                 
-                // Update header var
-                const headerVar = document.getElementById('header-portfolio-var');
-                if (headerVar) {
+                // Update hero var
+                const heroVar = document.getElementById('p-detail-day-var');
+                if (heroVar) {
                     const change = p.changeValue || 0;
                     const isPos = change >= 0;
                     const formatted = formatPrivacy(change, p.currency, 'h-var', 0);
-                    const sign = (formatted !== '****' && isPos) ? '+' : '';
-                    headerVar.innerHTML = `${sign}${formatted}`;
+                    if (formatted === '****') {
+                        heroVar.classList.add('hidden');
+                    } else {
+                        const sign = isPos ? '+' : '';
+                        heroVar.className = `px-2 py-0.5 rounded-lg text-xs font-bold shadow-sm ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`;
+                        heroVar.innerHTML = `${sign}${formatted}`;
+                        heroVar.classList.remove('hidden');
+                    }
                 }
 
                 // Update detail perf badge

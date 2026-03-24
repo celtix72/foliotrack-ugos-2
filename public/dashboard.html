@@ -789,8 +789,7 @@
       </div>
     </div>
 
-    <!-- Day Variation Pill -->
-    <div id="mob-header-var-day" class="mob-header-var-pill">--</div>
+    <div style="flex:1"></div>
 
     <!-- Action Buttons -->
     <div class="mob-header-actions">
@@ -810,10 +809,11 @@
     <!-- Hero Card -->
     <div class="mob-hero">
       <div class="mob-hero-label">Portfolio Netto</div>
-      <div class="flex items-baseline gap-2 mb-4 overflow-hidden">
+      <div class="flex items-center gap-2 mb-4 overflow-hidden">
         <div class="mob-hero-value" id="mob-total-net" style="margin-bottom:0; font-size: 28px;">€ 0</div>
-        <div class="text-[13px] font-bold text-slate-500 opacity-60 truncate" id="mob-total-gross">(€ 0)</div>
+        <div id="mob-day-var" class="px-2 py-0.5 rounded-lg text-xs font-bold shadow-sm hidden" style="margin-top: 4px;"></div>
       </div>
+      <div class="text-[13px] font-bold text-slate-500 opacity-60 truncate mb-4" id="mob-total-gross">(€ 0)</div>
       
       <div class="grid grid-cols-2 gap-4">
         <div class="mob-hero-stat-item !p-0 !bg-transparent border-0" id="mob-stat-winner">
@@ -915,6 +915,20 @@
 
       if (mobNet) mobNet.textContent = formatPrivacy(g.totalNetValue, 'EUR', 'mob-net');
       if (mobGross) mobGross.textContent = '(' + formatPrivacy(g.totalValue, 'EUR', 'mob-gross') + ')';
+
+      if (mobDayVar) {
+          const change = g.changeValue || 0;
+          const isPos = change >= 0;
+          const formatted = formatPrivacy(change, 'EUR', 'mob-h-var', 0);
+          if (formatted === '****') {
+              mobDayVar.classList.add('hidden');
+          } else {
+              const sign = isPos ? '+' : '';
+              mobDayVar.className = `px-2 py-0.5 rounded-lg text-xs font-bold shadow-sm ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`;
+              mobDayVar.innerHTML = `${sign}${formatted}`;
+              mobDayVar.classList.remove('hidden');
+          }
+      }
 
       // Top Winner / Loser
       const winnerEl = document.getElementById('mob-top-winner');
