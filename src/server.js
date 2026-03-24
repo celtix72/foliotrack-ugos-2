@@ -261,7 +261,8 @@ async function getEurUsdRate() {
 
 function clearPerformanceCache() {
     performanceResultsCache = {};
-    console.log('Performance result cache invalidated.');
+    exchangeRateCache = {}; // Also clear currency cache to ensure fresh calculations
+    logger.info('Performance and Exchange Rate caches invalidated.');
 }
 
 // ─── BORSA ITALIANA SCRAPER ──────────────────────────────────────────────────
@@ -1267,6 +1268,10 @@ app.delete('/api/portfolios/:id', (req, res) => {
     // ON DELETE CASCADE removes transactions automatically
     database.db.prepare(`DELETE FROM portfolios WHERE id = ?`).run(req.params.id);
     console.log(`Deleted portfolio ${req.params.id}`);
+    
+    // Trigger global rebuild to update aggregate charts
+    triggerHistoryRebuild(null);
+    
     clearPerformanceCache();
     res.json(row);
 });
@@ -1331,7 +1336,7 @@ app.post('/api/admin/rebuild-history', async (req, res) => {
         
         logger.info('Rebuilding performance history: Step 2/4 - Clearing history tables...');
         database.db.prepare('DELETE FROM portfolio_history').run();
-        performanceResultsCache = {};
+        clearPerformanceCache();
         
         const portfolios = database.db.prepare('SELECT id FROM portfolios').all();
         logger.info(`Rebuilding performance history: Step 3/4 - Recalculating for ${portfolios.length} portfolios...`);
@@ -2569,6 +2574,9 @@ async function triggerHistoryRebuild(portfolioId = null) {
                     insertGlobal.run(pt.date, pt.value, pt.cash || 0, pt.assets || 0, pt.netDeposits || 0);
                 }
             })();
+
+            // Clear cache to ensure charts refresh with new historical points
+            clearPerformanceCache();
 
             logger.info(`Background history rebuild completed for ${portfolioId ? 'portfolio ' + portfolioId : 'ALL'}`);
         } catch (err) {
