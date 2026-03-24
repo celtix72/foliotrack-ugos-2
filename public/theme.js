@@ -717,7 +717,7 @@
     window.formatPrivacy = function(val, currency = 'EUR', id = null, decimals = 0) {
         // Privacy mode ONLY hides "total" fields
         const totalFields = [
-            'networth', 'gross', 'gain', 'h-var',                 // Dashboard desktop
+            'networth', 'gross', 'gain', 'h-var', 'h-perf',       // Dashboard desktop
             'mob-net', 'mob-gross', 'mob-gain', 'mob-dayvar',      // Dashboard mobile
             'p-', 'mob-p-', 'mob-pg-', 'mob-pn-', 'mob-gnet',      // Portfolio lists & detail
             'tax-', 'mob-detail-total', 'mob-dt', 'mob-dg'         // Taxes & mobile details

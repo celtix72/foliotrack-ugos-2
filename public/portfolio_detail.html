@@ -952,12 +952,14 @@
 
             const perfBadge = document.getElementById('header-perf-badge');
             if (perfBadge) {
-                const change = p.changePercent || 0;
+                const change = p.changeValue || 0;
                 const isPos = change >= 0;
                 perfBadge.className = `flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold text-xs ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`;
+                const formatted = formatPrivacy(change, p.currency, 'h-perf', 0);
+                const sign = (formatted !== '****' && isPos) ? '+' : '';
                 perfBadge.innerHTML = `
                     <span class="material-symbols-outlined text-sm font-bold">${isPos ? 'trending_up' : 'trending_down'}</span>
-                    ${isPos ? '+' : ''}${change.toFixed(2)}%
+                    ${sign}${formatted}
                 `;
                 perfBadge.classList.remove('hidden');
             }
@@ -2054,6 +2056,19 @@
                     const formatted = formatPrivacy(change, p.currency, 'h-var', 0);
                     const sign = (formatted !== '****' && isPos) ? '+' : '';
                     headerVar.innerHTML = `${sign}${formatted}`;
+                }
+
+                // Update detail perf badge
+                const perfBadge = document.getElementById('header-perf-badge');
+                if (perfBadge) {
+                    const change = p.changeValue || 0;
+                    const isPos = change >= 0;
+                    const formatted = formatPrivacy(change, p.currency, 'h-perf', 0);
+                    const sign = (formatted !== '****' && isPos) ? '+' : '';
+                    perfBadge.innerHTML = `
+                        <span class="material-symbols-outlined text-sm font-bold">${isPos ? 'trending_up' : 'trending_down'}</span>
+                        ${sign}${formatted}
+                    `;
                 }
 
                 // Re-render Taxation if visible
