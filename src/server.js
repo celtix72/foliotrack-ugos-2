@@ -3105,14 +3105,20 @@ app.delete('/api/backups/:filename', (req, res) => {
 // ════════════════════════════════════════════════════════════════════════════
 
 app.post('/api/reset-data', (req, res) => {
-    database.db.prepare(`DELETE FROM transactions`).run();
-    database.db.prepare(`DELETE FROM portfolios`).run();
-    database.db.prepare(`DELETE FROM assets`).run();
-    database.db.prepare(`DELETE FROM notifications`).run();
-    database.db.prepare(`DELETE FROM portfolio_history`).run();
-    database.db.prepare(`DELETE FROM portfolio_losses`).run();
-    database.db.prepare(`DELETE FROM asset_quotes`).run();
-    database.db.prepare(`DELETE FROM test`).run();
+    const tables = [
+        'transactions', 'portfolios', 'assets', 'notifications', 
+        'portfolio_history', 'portfolio_losses', 'asset_quotes', 'test'
+    ];
+    
+    for (const table of tables) {
+        try {
+            database.db.prepare(`DELETE FROM ${table}`).run();
+        } catch (err) {
+            // Ignore errors if table doesn't exist
+            console.log(`Note: Table ${table} skip during reset (likely doesn't exist)`);
+        }
+    }
+
     console.log('All application data has been reset.');
     clearPerformanceCache();
     res.json({ success: true });

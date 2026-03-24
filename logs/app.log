@@ -39274,3 +39274,239 @@
 2026-03-24T06:23:12.331Z [INFO] Skipping automatic market update: all markets are closed.
 2026-03-24T06:23:12.343Z [INFO] FolioTrack server running on port 3000
 2026-03-24T06:23:12.351Z [INFO] Database: /Users/mauro/Documents/Progetto_FolioTracker2/foliotrack.db
+2026-03-24T06:24:12.322Z [INFO] Recording daily snapshots for portfolios and dashboard...
+2026-03-24T06:24:12.341Z [INFO] Daily snapshots completed.
+2026-03-24T06:26:44.613Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-24T06:26:44.633Z [INFO] FolioTrack server running on port 3000
+2026-03-24T06:26:44.640Z [INFO] Database: /Users/mauro/Documents/Progetto_FolioTracker2/foliotrack.db
+2026-03-24T06:27:25.366Z [INFO] Auto-created portfolio: DIRECTA (ID: 31)
+2026-03-24T06:27:25.389Z [INFO] Bulk: ELV → YF (inserted)
+2026-03-24T06:27:25.405Z [INFO] Bulk: TDIV.AS → YF (inserted)
+2026-03-24T06:27:25.424Z [INFO] Bulk: NOMD → YF (inserted)
+2026-03-24T06:27:25.436Z [INFO] Bulk: MSF.DE → YF (inserted)
+2026-03-24T06:27:25.448Z [INFO] Bulk: CRM → YF (inserted)
+2026-03-24T06:27:25.456Z [INFO] Bulk: META → YF (inserted)
+2026-03-24T06:27:25.469Z [INFO] Bulk: ELV → YF (updated)
+2026-03-24T06:27:25.477Z [INFO] Bulk: ADBE → YF (inserted)
+2026-03-24T06:27:25.484Z [INFO] Bulk: UNH → YF (inserted)
+2026-03-24T06:27:25.493Z [INFO] Bulk: PYPL → YF (inserted)
+2026-03-24T06:27:25.500Z [INFO] Bulk: TDIV.AS → YF (updated)
+2026-03-24T06:27:25.507Z [INFO] Bulk: NOMD → YF (updated)
+2026-03-24T06:27:25.514Z [INFO] Bulk: BABA → YF (inserted)
+2026-03-24T06:27:25.522Z [INFO] Bulk: CRM → YF (updated)
+2026-03-24T06:27:25.529Z [INFO] Bulk: JD → YF (inserted)
+2026-03-24T06:27:25.536Z [INFO] Bulk: NGAS.MI → YF (inserted)
+2026-03-24T06:27:25.543Z [INFO] Bulk: META → YF (updated)
+2026-03-24T06:27:25.550Z [INFO] Bulk: NOV.DE → YF (inserted)
+2026-03-24T06:27:25.557Z [INFO] Bulk: ABNB → YF (inserted)
+2026-03-24T06:27:25.564Z [INFO] Bulk: 1ASML.MI → YF (inserted)
+2026-03-24T06:27:25.571Z [INFO] Bulk: FISV → YF (inserted)
+2026-03-24T06:27:25.578Z [INFO] Bulk: GOOGL → YF (inserted)
+2026-03-24T06:27:25.585Z [INFO] Bulk: NOV.DE → YF (updated)
+2026-03-24T06:27:25.593Z [INFO] Bulk: NOMD → YF (updated)
+2026-03-24T06:27:25.600Z [INFO] Bulk: BABA → YF (updated)
+2026-03-24T06:27:25.607Z [INFO] Bulk: FISV → YF (updated)
+2026-03-24T06:27:25.614Z [INFO] Bulk: 1ASML.MI → YF (updated)
+2026-03-24T06:27:25.621Z [INFO] Bulk: 1ASML.MI → YF (updated)
+2026-03-24T06:27:25.628Z [INFO] Bulk: ELV → YF (updated)
+2026-03-24T06:27:25.635Z [INFO] Bulk: MARA → YF (inserted)
+2026-03-24T06:27:25.642Z [INFO] Bulk: MELI → YF (inserted)
+2026-03-24T06:27:25.649Z [INFO] Bulk: UNH → YF (updated)
+2026-03-24T06:27:25.657Z [INFO] Bulk: GOOGL → YF (updated)
+2026-03-24T06:27:25.664Z [INFO] Bulk: ADBE → YF (updated)
+2026-03-24T06:27:25.671Z [INFO] Bulk: LULU → YF (inserted)
+2026-03-24T06:27:25.678Z [INFO] Bulk: X25E.MI → YF (inserted)
+2026-03-24T06:27:25.685Z [INFO] Bulk: 3GOO.MI → YF (inserted)
+2026-03-24T06:27:25.692Z [INFO] Bulk: XEON.DE → YF (inserted)
+2026-03-24T06:27:25.699Z [INFO] Bulk: XEON.DE → YF (updated)
+2026-03-24T06:27:25.707Z [INFO] Bulk: NU → YF (inserted)
+2026-03-24T06:27:25.713Z [INFO] Bulk: PYPL → YF (updated)
+2026-03-24T06:27:25.721Z [INFO] Bulk: UNH → YF (updated)
+2026-03-24T06:27:25.728Z [INFO] Bulk: UNH → YF (updated)
+2026-03-24T06:27:25.735Z [INFO] Bulk: GOOGL → YF (updated)
+2026-03-24T06:27:25.742Z [INFO] Bulk: NOV.DE → YF (updated)
+2026-03-24T06:27:25.749Z [INFO] Bulk: AMD.DE → YF (inserted)
+2026-03-24T06:27:25.756Z [INFO] Bulk: SPM.MI → YF (inserted)
+2026-03-24T06:27:25.763Z [INFO] Bulk: NGAS.MI → YF (updated)
+2026-03-24T06:27:25.771Z [INFO] Bulk: LULU → YF (updated)
+2026-03-24T06:27:25.778Z [INFO] Bulk: BABA → YF (updated)
+2026-03-24T06:27:25.785Z [INFO] Bulk: BABA → YF (updated)
+2026-03-24T06:27:25.792Z [INFO] Bulk: MARA → YF (updated)
+2026-03-24T06:27:25.799Z [INFO] Bulk: FISV → YF (updated)
+2026-03-24T06:27:25.806Z [INFO] Bulk: CRM → YF (updated)
+2026-03-24T06:27:25.813Z [INFO] Bulk: HIMS → YF (inserted)
+2026-03-24T06:27:25.820Z [INFO] Bulk: HIMS → YF (updated)
+2026-03-24T06:27:25.829Z [INFO] Bulk: LULU → YF (updated)
+2026-03-24T06:27:25.836Z [INFO] Bulk: AMD.DE → YF (updated)
+2026-03-24T06:27:25.843Z [INFO] Bulk: META → YF (updated)
+2026-03-24T06:27:25.850Z [INFO] Bulk: SPM.MI → YF (updated)
+2026-03-24T06:27:25.857Z [INFO] Bulk: LULU → YF (updated)
+2026-03-24T06:27:25.864Z [INFO] Bulk: NEXI.MI → YF (inserted)
+2026-03-24T06:27:25.871Z [INFO] Bulk: SPM.MI → YF (updated)
+2026-03-24T06:27:25.878Z [INFO] Bulk: AMD.DE → YF (updated)
+2026-03-24T06:27:25.885Z [INFO] Bulk: 3GOO.MI → YF (updated)
+2026-03-24T06:27:25.892Z [INFO] Bulk: FCT.MI → YF (inserted)
+2026-03-24T06:27:25.899Z [INFO] Bulk: VERE.DE → YF (inserted)
+2026-03-24T06:27:25.906Z [INFO] Bulk: TIT.MI → YF (inserted)
+2026-03-24T06:27:25.913Z [INFO] Bulk: 1ASML.MI → YF (updated)
+2026-03-24T06:27:25.921Z [INFO] Bulk: META → YF (updated)
+2026-03-24T06:27:25.928Z [INFO] Bulk: NOV.DE → YF (updated)
+2026-03-24T06:27:25.935Z [INFO] Bulk: SPM.MI → YF (updated)
+2026-03-24T06:27:25.942Z [INFO] Bulk: BABA → YF (updated)
+2026-03-24T06:27:25.949Z [INFO] Bulk: 1ASML.MI → YF (updated)
+2026-03-24T06:27:25.956Z [INFO] Bulk: 3NLV.MI → YF (inserted)
+2026-03-24T06:27:25.963Z [INFO] Bulk: CASH → YF (inserted)
+2026-03-24T06:27:25.971Z [INFO] Bulk: 3NLV.MI → YF (updated)
+2026-03-24T06:27:25.978Z [INFO] Bulk: ASPN → YF (inserted)
+2026-03-24T06:27:25.985Z [INFO] Bulk: FCT.MI → YF (updated)
+2026-03-24T06:27:25.992Z [INFO] Bulk: NOV.DE → YF (updated)
+2026-03-24T06:27:25.999Z [INFO] Bulk: ZTS → YF (inserted)
+2026-03-24T06:27:26.006Z [INFO] Bulk: SPM.MI → YF (updated)
+2026-03-24T06:27:26.013Z [INFO] Bulk: 1ASML.MI → YF (updated)
+2026-03-24T06:27:26.020Z [INFO] Bulk: ZTS → YF (updated)
+2026-03-24T06:27:26.028Z [INFO] Bulk: PLTR → YF (inserted)
+2026-03-24T06:27:26.035Z [INFO] Bulk: STMMI.MI → YF (inserted)
+2026-03-24T06:27:26.042Z [INFO] Bulk: NOV.DE → YF (updated)
+2026-03-24T06:27:26.049Z [INFO] Bulk: STMMI.MI → YF (updated)
+2026-03-24T06:27:26.056Z [INFO] Bulk: PLTR → YF (updated)
+2026-03-24T06:27:26.063Z [INFO] Bulk: SRG.MI → YF (inserted)
+2026-03-24T06:27:26.070Z [INFO] Bulk: STMMI.MI → YF (updated)
+2026-03-24T06:27:26.077Z [INFO] Bulk: X25E.MI → YF (updated)
+2026-03-24T06:27:26.085Z [INFO] Bulk: STMMI.MI → YF (updated)
+2026-03-24T06:27:26.092Z [INFO] Bulk: ASPN → YF (updated)
+2026-03-24T06:27:26.099Z [INFO] Bulk: X25E.MI → YF (updated)
+2026-03-24T06:27:26.106Z [INFO] Bulk: STMMI.MI → YF (updated)
+2026-03-24T06:27:26.113Z [INFO] Bulk: TIT.MI → YF (updated)
+2026-03-24T06:27:26.120Z [INFO] Bulk: STMMI.MI → YF (updated)
+2026-03-24T06:27:26.127Z [INFO] Bulk: TIT.MI → YF (updated)
+2026-03-24T06:27:26.134Z [INFO] Bulk: TSLA → YF (inserted)
+2026-03-24T06:27:26.141Z [INFO] Bulk: 1ASML.MI → YF (updated)
+2026-03-24T06:27:26.149Z [INFO] Bulk: TSLA → YF (updated)
+2026-03-24T06:27:26.156Z [INFO] Bulk: AHLA.DE → YF (inserted)
+2026-03-24T06:27:26.163Z [INFO] Bulk: CASH → YF (updated)
+2026-03-24T06:27:26.170Z [INFO] Bulk: MFEA.MI → YF (inserted)
+2026-03-24T06:27:26.177Z [INFO] Bulk: TIT.MI → YF (updated)
+2026-03-24T06:27:26.184Z [INFO] Bulk: TIT.MI → YF (updated)
+2026-03-24T06:27:26.191Z [INFO] Bulk: SPM.MI → YF (updated)
+2026-03-24T06:27:26.198Z [INFO] Bulk: X25E.MI → YF (updated)
+2026-03-24T06:27:26.206Z [INFO] Bulk: SPM.MI → YF (updated)
+2026-03-24T06:27:26.213Z [INFO] Bulk: AHLA.DE → YF (updated)
+2026-03-24T06:27:26.220Z [INFO] Bulk: TIT.MI → YF (updated)
+2026-03-24T06:27:26.227Z [INFO] Bulk: MSFT → YF (inserted)
+2026-03-24T06:27:26.234Z [INFO] Bulk: SPM.MI → YF (updated)
+2026-03-24T06:27:26.241Z [INFO] Bulk: MFEA.MI → YF (updated)
+2026-03-24T06:27:26.248Z [INFO] Bulk: MSFT → YF (updated)
+2026-03-24T06:27:26.255Z [INFO] Bulk: TDIV.AS → YF (updated)
+2026-03-24T06:27:26.262Z [INFO] Bulk: XCHA.DE → YF (inserted)
+2026-03-24T06:27:26.269Z [INFO] Bulk: SPM.MI → YF (updated)
+2026-03-24T06:27:26.276Z [INFO] Bulk: AHLA.DE → YF (updated)
+2026-03-24T06:27:26.284Z [INFO] Bulk: CASH → YF (updated)
+2026-03-24T06:27:26.291Z [INFO] Bulk: MFEA.MI → YF (updated)
+2026-03-24T06:27:26.298Z [INFO] Bulk: TSLA → YF (updated)
+2026-03-24T06:27:26.305Z [INFO] Bulk: MSFT → YF (updated)
+2026-03-24T06:27:26.312Z [INFO] Bulk: TSLA → YF (updated)
+2026-03-24T06:27:26.320Z [INFO] Bulk: SPM.MI → YF (updated)
+2026-03-24T06:27:26.326Z [INFO] Bulk: AHLA.DE → YF (updated)
+2026-03-24T06:27:26.334Z [INFO] Bulk: CASH → YF (updated)
+2026-03-24T06:27:26.341Z [INFO] Bulk: SPM.MI → YF (updated)
+2026-03-24T06:27:26.348Z [INFO] Bulk: X25E.MI → YF (updated)
+2026-03-24T06:27:26.355Z [INFO] Bulk: CASH → YF (updated)
+2026-03-24T06:27:26.363Z [INFO] Bulk: CASH → YF (updated)
+2026-03-24T06:27:26.370Z [INFO] Bulk: CASH → YF (updated)
+2026-03-24T06:27:26.377Z [INFO] Bulk: CASH → YF (updated)
+2026-03-24T06:27:26.384Z [INFO] Bulk: CASH → YF (updated)
+2026-03-24T06:27:26.392Z [INFO] Bulk: CASH → YF (updated)
+2026-03-24T06:27:26.402Z [INFO] Bulk import finished: 136 succeeded, 0 failed.
+2026-03-24T06:27:27.377Z [INFO] Fetching EOD history for X25E.MI (forceRefresh: false)...
+2026-03-24T06:27:27.398Z [INFO] Fetching EOD history for SPM.MI (forceRefresh: false)...
+2026-03-24T06:27:27.412Z [INFO] Fetching EOD history for AHLA.DE (forceRefresh: false)...
+2026-03-24T06:27:27.422Z [INFO] Fetching EOD history for MSFT (forceRefresh: false)...
+2026-03-24T06:27:27.431Z [INFO] Fetching EOD history for TSLA (forceRefresh: false)...
+2026-03-24T06:27:27.440Z [INFO] Fetching EOD history for MFEA.MI (forceRefresh: false)...
+2026-03-24T06:27:27.447Z [INFO] Fetching EOD history for XCHA.DE (forceRefresh: false)...
+2026-03-24T06:27:27.455Z [INFO] Fetching EOD history for TDIV.AS (forceRefresh: false)...
+2026-03-24T06:27:27.462Z [INFO] Fetching EOD history for TIT.MI (forceRefresh: false)...
+2026-03-24T06:27:27.470Z [INFO] Fetching EOD history for 1ASML.MI (forceRefresh: false)...
+2026-03-24T06:27:27.477Z [INFO] Fetching EOD history for STMMI.MI (forceRefresh: false)...
+2026-03-24T06:27:27.484Z [INFO] Fetching EOD history for ASPN (forceRefresh: false)...
+2026-03-24T06:27:27.492Z [INFO] Fetching EOD history for PLTR (forceRefresh: false)...
+2026-03-24T06:27:27.500Z [INFO] Fetching EOD history for SRG.MI (forceRefresh: false)...
+2026-03-24T06:27:27.507Z [INFO] Fetching EOD history for NOV.DE (forceRefresh: false)...
+2026-03-24T06:27:27.514Z [INFO] Fetching EOD history for ZTS (forceRefresh: false)...
+2026-03-24T06:27:27.521Z [INFO] Fetching EOD history for FCT.MI (forceRefresh: false)...
+2026-03-24T06:27:27.528Z [INFO] Fetching EOD history for 3NLV.MI (forceRefresh: false)...
+2026-03-24T06:27:27.535Z [INFO] Fetching EOD history for BABA (forceRefresh: false)...
+2026-03-24T06:27:27.543Z [INFO] Fetching EOD history for META (forceRefresh: false)...
+2026-03-24T06:27:27.550Z [INFO] Fetching EOD history for AMD.DE (forceRefresh: false)...
+2026-03-24T06:27:27.557Z [INFO] Fetching EOD history for 3GOO.MI (forceRefresh: false)...
+2026-03-24T06:27:27.564Z [INFO] Fetching EOD history for VERE.DE (forceRefresh: false)...
+2026-03-24T06:27:27.571Z [INFO] Fetching EOD history for NEXI.MI (forceRefresh: false)...
+2026-03-24T06:27:27.578Z [INFO] Fetching EOD history for LULU (forceRefresh: false)...
+2026-03-24T06:27:27.586Z [INFO] Fetching EOD history for HIMS (forceRefresh: false)...
+2026-03-24T06:27:27.593Z [INFO] Fetching EOD history for CRM (forceRefresh: false)...
+2026-03-24T06:27:27.600Z [INFO] Fetching EOD history for FISV (forceRefresh: false)...
+2026-03-24T06:27:27.607Z [INFO] Fetching EOD history for MARA (forceRefresh: false)...
+2026-03-24T06:27:27.614Z [INFO] Fetching EOD history for NGAS.MI (forceRefresh: false)...
+2026-03-24T06:27:27.621Z [INFO] Fetching EOD history for GOOGL (forceRefresh: false)...
+2026-03-24T06:27:27.628Z [INFO] Fetching EOD history for UNH (forceRefresh: false)...
+2026-03-24T06:27:27.636Z [INFO] Fetching EOD history for NU (forceRefresh: false)...
+2026-03-24T06:27:27.643Z [INFO] Fetching EOD history for PYPL (forceRefresh: false)...
+2026-03-24T06:27:27.650Z [INFO] Fetching EOD history for XEON.DE (forceRefresh: false)...
+2026-03-24T06:27:27.657Z [INFO] Fetching EOD history for ADBE (forceRefresh: false)...
+2026-03-24T06:27:27.664Z [INFO] Fetching EOD history for ELV (forceRefresh: false)...
+2026-03-24T06:27:27.672Z [INFO] Fetching EOD history for MELI (forceRefresh: false)...
+2026-03-24T06:27:27.679Z [INFO] Fetching EOD history for NOMD (forceRefresh: false)...
+2026-03-24T06:27:27.686Z [INFO] Fetching EOD history for ABNB (forceRefresh: false)...
+2026-03-24T06:27:27.693Z [INFO] Fetching EOD history for JD (forceRefresh: false)...
+2026-03-24T06:27:27.701Z [INFO] Fetching EOD history for MSF.DE (forceRefresh: false)...
+2026-03-24T06:27:27.708Z [INFO] Fetching EOD history for EURUSD=X (forceRefresh: false)...
+2026-03-24T06:27:28.042Z [INFO] Sync assets: updated [AHLA.DE] currentPrice to 108.19999694824219 (as of 2026-03-24)
+2026-03-24T06:27:28.073Z [INFO] Sync assets: updated [MSFT] currentPrice to 383 (as of 2026-03-24)
+2026-03-24T06:27:28.096Z [INFO] Sync assets: updated [X25E.MI] currentPrice to 250.77000427246094 (as of 2026-03-24)
+2026-03-24T06:27:28.114Z [INFO] Sync assets: updated [SPM.MI] currentPrice to 3.4800000190734863 (as of 2026-03-24)
+2026-03-24T06:27:28.168Z [INFO] Sync assets: updated [TDIV.AS] currentPrice to 50.93000030517578 (as of 2026-03-24)
+2026-03-24T06:27:28.212Z [INFO] Sync assets: updated [TSLA] currentPrice to 380.8500061035156 (as of 2026-03-24)
+2026-03-24T06:27:28.234Z [INFO] Sync assets: updated [MFEA.MI] currentPrice to 2.4739999771118164 (as of 2026-03-24)
+2026-03-24T06:27:28.307Z [INFO] Sync assets: updated [1ASML.MI] currentPrice to 1179 (as of 2026-03-24)
+2026-03-24T06:27:28.326Z [INFO] Sync assets: updated [TIT.MI] currentPrice to 0.6032000184059143 (as of 2026-03-24)
+2026-03-24T06:27:28.342Z [INFO] Sync assets: updated [XCHA.DE] currentPrice to 16.618000030517578 (as of 2026-03-24)
+2026-03-24T06:27:28.360Z [INFO] Sync assets: updated [STMMI.MI] currentPrice to 27.0049991607666 (as of 2026-03-24)
+2026-03-24T06:27:28.390Z [INFO] Sync assets: updated [ASPN] currentPrice to 3.259999990463257 (as of 2026-03-24)
+2026-03-24T06:27:28.408Z [INFO] Sync assets: updated [PLTR] currentPrice to 160.83999633789062 (as of 2026-03-24)
+2026-03-24T06:27:28.433Z [INFO] Sync assets: updated [SRG.MI] currentPrice to 6.254000186920166 (as of 2026-03-24)
+2026-03-24T06:27:28.480Z [INFO] Sync assets: updated [FCT.MI] currentPrice to 12.84000015258789 (as of 2026-03-24)
+2026-03-24T06:27:28.489Z [INFO] Created virtual history for 3NLV.MI from purchase price 13.58
+2026-03-24T06:27:28.499Z [INFO] Sync assets: updated [3NLV.MI] currentPrice to 13.58 (as of 2026-03-24)
+2026-03-24T06:27:28.671Z [INFO] Sync assets: updated [ZTS] currentPrice to 115.2300033569336 (as of 2026-03-24)
+2026-03-24T06:27:28.691Z [INFO] Sync assets: updated [3GOO.MI] currentPrice to 131.4199981689453 (as of 2026-03-24)
+2026-03-24T06:27:28.706Z [INFO] Sync assets: updated [NOV.DE] currentPrice to 31.594999313354492 (as of 2026-03-24)
+2026-03-24T06:27:28.721Z [INFO] Sync assets: updated [AMD.DE] currentPrice to 175.4600067138672 (as of 2026-03-24)
+2026-03-24T06:27:28.736Z [INFO] Sync assets: updated [BABA] currentPrice to 126.05999755859375 (as of 2026-03-24)
+2026-03-24T06:27:28.751Z [INFO] Sync assets: updated [META] currentPrice to 604.0599975585938 (as of 2026-03-24)
+2026-03-24T06:27:28.803Z [INFO] Sync assets: updated [VERE.DE] currentPrice to 52.77000045776367 (as of 2026-03-24)
+2026-03-24T06:27:28.854Z [INFO] Sync assets: updated [NEXI.MI] currentPrice to 2.9000000953674316 (as of 2026-03-24)
+2026-03-24T06:27:28.914Z [INFO] Sync assets: updated [FISV] currentPrice to 57.709999084472656 (as of 2026-03-24)
+2026-03-24T06:27:28.933Z [INFO] Sync assets: updated [CRM] currentPrice to 195.17999267578125 (as of 2026-03-24)
+2026-03-24T06:27:28.947Z [INFO] Sync assets: updated [LULU] currentPrice to 164.3800048828125 (as of 2026-03-24)
+2026-03-24T06:27:28.986Z [INFO] Sync assets: updated [MARA] currentPrice to 8.90999984741211 (as of 2026-03-24)
+2026-03-24T06:27:29.002Z [INFO] Sync assets: updated [HIMS] currentPrice to 22.459999084472656 (as of 2026-03-24)
+2026-03-24T06:27:29.054Z [INFO] Sync assets: updated [GOOGL] currentPrice to 302.05999755859375 (as of 2026-03-24)
+2026-03-24T06:27:29.080Z [INFO] Sync assets: updated [NU] currentPrice to 14.680000305175781 (as of 2026-03-24)
+2026-03-24T06:27:29.096Z [INFO] Sync assets: updated [NGAS.MI] currentPrice to 4.927999973297119 (as of 2026-03-24)
+2026-03-24T06:27:29.118Z [INFO] Sync assets: updated [PYPL] currentPrice to 45.4900016784668 (as of 2026-03-24)
+2026-03-24T06:27:29.151Z [INFO] Sync assets: updated [UNH] currentPrice to 269.5400085449219 (as of 2026-03-24)
+2026-03-24T06:27:29.183Z [INFO] Sync assets: updated [ADBE] currentPrice to 247.63999938964844 (as of 2026-03-24)
+2026-03-24T06:27:29.201Z [INFO] Sync assets: updated [XEON.DE] currentPrice to 148.6719970703125 (as of 2026-03-24)
+2026-03-24T06:27:29.249Z [INFO] Sync assets: updated [NOMD] currentPrice to 9.770000457763672 (as of 2026-03-24)
+2026-03-24T06:27:29.267Z [INFO] Sync assets: updated [ELV] currentPrice to 289.239990234375 (as of 2026-03-24)
+2026-03-24T06:27:29.283Z [INFO] Sync assets: updated [ABNB] currentPrice to 132.58999633789062 (as of 2026-03-24)
+2026-03-24T06:27:29.296Z [INFO] Sync assets: updated [MELI] currentPrice to 1666.0799560546875 (as of 2026-03-24)
+2026-03-24T06:27:29.331Z [INFO] Sync assets: updated [JD] currentPrice to 27.540000915527344 (as of 2026-03-24)
+2026-03-24T06:27:29.390Z [INFO] Sync assets: updated [MSF.DE] currentPrice to 330.45001220703125 (as of 2026-03-24)
+2026-03-24T06:27:29.419Z [INFO] Sync assets: updated [EURUSD=X] currentPrice to 1.1588828563690186 (as of 2026-03-24)
+2026-03-24T06:27:29.427Z [INFO] Calculating history for DIRECTA...
+2026-03-24T06:27:37.559Z [INFO] Calculating history for DIRECTA...
+2026-03-24T06:27:44.607Z [INFO] Recording daily snapshots for portfolios and dashboard...
+2026-03-24T06:27:44.629Z [INFO] Daily snapshots completed.
+2026-03-24T06:27:53.689Z [INFO] Calculating history for DIRECTA...
+2026-03-24T06:28:22.858Z [INFO] Calculating history for DIRECTA...
