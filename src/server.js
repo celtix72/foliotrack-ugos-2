@@ -2262,9 +2262,10 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
         // Check for manual overrides for this specific date
         // CRITICAL FIX: For the CURRENT day, we skip the snapshot and use live calculation 
         // to avoid discrepancies between outdated snapshots and new transactions.
+        // ALSO: for aggregate history (multiple pIds), we only use snapshots if we have them for ALL portfolios to avoid jumps.
         const historyRecords = !isToday ? database.db.prepare(`SELECT portfolioId, totalValue, cashValue, assetValue FROM portfolio_history WHERE portfolioId IN (${pIds.join(',')}) AND date = ?`).all(dateStr) : [];
         
-        if (!isToday && historyRecords.length > 0) {
+        if (!isToday && historyRecords.length > 0 && historyRecords.length === pIds.length) {
             // Correctly aggregate snapshots with currency conversion
             for (const rec of historyRecords) {
                 const p = portfolios.find(port => port.id === rec.portfolioId);
@@ -2547,6 +2548,12 @@ async function triggerHistoryRebuild(portfolioId = null) {
             logger.info(`Background history rebuild started for ${portfolioId ? 'portfolio ' + portfolioId : 'ALL portfolios'}`);
 
             for (const p of portfolios) {
+                // AUTO-SYNC startDate with earliest transaction to prevent jumps
+                const minTxDate = database.db.prepare('SELECT MIN(date) FROM transactions WHERE portfolioId = ?').get(p.id)['MIN(date)'];
+                if (minTxDate) {
+                    database.db.prepare('UPDATE portfolios SET startDate = ? WHERE id = ?').run(minTxDate, p.id);
+                }
+
                 const perfData = await calculatePerformanceHistory(p.id, 'ALL', true, true);
                 const dataPoints = perfData.dataPoints || [];
                 const insert = database.db.prepare(`
