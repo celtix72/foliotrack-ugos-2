@@ -285,13 +285,14 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
                 break;
             }
             case 'BUY': {
-                const cost = amount ? amount : (qty * price + comm + tax) / fx;
+                // If amount is provided, use its absolute value as cost
+                const cost = amount ? Math.abs(amount) : (qty * price + comm + tax) / fx;
                 cash -= cost;
                 holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) + qty;
                 break;
             }
             case 'SELL': {
-                const proceeds = amount ? amount : (qty * price - comm - tax) / fx;
+                const proceeds = amount ? Math.abs(amount) : (qty * price - comm - tax) / fx;
                 cash += proceeds;
                 holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) - qty;
                 break;
@@ -374,11 +375,17 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
         performance1D = currentProfit - yesterdayProfit;
     }
 
+    // Safety guards against NaN
+    const finalCash = isNaN(cash) ? 0 : cash;
+    const finalTotalValue = isNaN(totalValue) ? 0 : totalValue;
+    const finalDividends = isNaN(totalDividends) ? 0 : totalDividends;
+    const finalPerf1D = isNaN(performance1D) ? 0 : performance1D;
+
     dbConnection.prepare(`
         UPDATE portfolios
         SET currentCash = ?, totalValue = ?, totalDividends = ?, assetCount = ?, performance1D = ?
         WHERE id = ?
-    `).run(cash, totalValue, totalDividends, assetCount, performance1D, portfolioId);
+    `).run(finalCash, finalTotalValue, finalDividends, assetCount, finalPerf1D, portfolioId);
 }
 
 function recalculateAll(liveEurUsdRate = null) {

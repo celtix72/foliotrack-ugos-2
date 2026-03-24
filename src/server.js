@@ -261,7 +261,7 @@ async function getEurUsdRate() {
 
 function clearPerformanceCache() {
     performanceResultsCache = {};
-    exchangeRateCache = {}; // Also clear currency cache to ensure fresh calculations
+    if (eurUsdCache) eurUsdCache.timestamp = 0; // Reset currency cache as well
     logger.info('Performance and Exchange Rate caches invalidated.');
 }
 
@@ -1716,125 +1716,127 @@ app.post('/api/transactions/bulk', async (req, res) => {
     if (!portfolioId || !transactions || !transactions.length) {
         return res.status(400).json({ error: 'portfolioId and transactions[] required' });
     }
-    // If portfolioId is provided, check if it exists (unless it's a dummy value for multi-import)
-    const portfolio = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(portfolioId);
-    if (!portfolio && portfolioId !== 'all' && portfolioId !== 0 && portfolioId !== '0') {
-        return res.status(404).json({ error: 'Portfolio not found' });
-    }
 
-    const insertTx = database.db.prepare(`
-        INSERT INTO transactions (portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
+    try {
+        const insertTx = database.db.prepare(`
+            INSERT INTO transactions (portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
 
-    const results = [];
-    const affectedPortfolios = new Set();
-    if (portfolioId !== 'all') affectedPortfolios.add(parseInt(portfolioId));
+        const results = [];
+        const affectedPortfolios = new Set();
+        if (portfolioId !== 'all') {
+            const pid = parseInt(portfolioId);
+            if (!isNaN(pid)) affectedPortfolios.add(pid);
+        }
 
-    const importMany = database.db.transaction((txs) => {
-        for (const t of txs) {
-            try {
-                let targetId = parseInt(portfolioId);
-                
-                // Multi-portfolio logic: resolve or create by name
-                if (t.portfolioName && t.portfolioName.trim()) {
-                    const pName = t.portfolioName.trim();
-                    let p = database.db.prepare(`SELECT id FROM portfolios WHERE name = ?`).get(pName);
-                    if (!p) {
-                        const info = database.db.prepare(`
-                            INSERT INTO portfolios (name, currency, startDate, initialCash)
-                            VALUES (?, 'EUR', ?, 0)
-                        `).run(pName, t.date || new Date().toISOString().split('T')[0]);
-                        targetId = info.lastInsertRowid;
-                        logger.info(`Auto-created portfolio: ${pName} (ID: ${targetId})`);
-                    } else {
-                        targetId = p.id;
+        const importMany = database.db.transaction((txs) => {
+            for (const t of txs) {
+                try {
+                    let targetId = parseInt(portfolioId);
+                    
+                    // Multi-portfolio logic: resolve or create by name
+                    if (t.portfolioName && t.portfolioName.trim()) {
+                        const pName = t.portfolioName.trim();
+                        let p = database.db.prepare(`SELECT id FROM portfolios WHERE name = ?`).get(pName);
+                        if (!p) {
+                            const info = database.db.prepare(`
+                                INSERT INTO portfolios (name, currency, startDate, initialCash)
+                                VALUES (?, 'EUR', ?, 0)
+                            `).run(pName, t.date || new Date().toISOString().split('T')[0]);
+                            targetId = info.lastInsertRowid;
+                            logger.info(`Auto-created portfolio: ${pName} (ID: ${targetId})`);
+                        } else {
+                            targetId = p.id;
+                        }
                     }
-                }
-                
-                if (isNaN(targetId)) throw new Error('Invalid portfolio mapping');
-                affectedPortfolios.add(targetId);
+                    
+                    if (isNaN(targetId)) throw new Error('Invalid portfolio mapping');
+                    affectedPortfolios.add(targetId);
 
-                let sanitizedTicker = '';
-                // Auto-add or update asset with ISIN/DataSource
-                if (t.assetTicker) {
-                    sanitizedTicker = sanitizeTicker(t.assetTicker);
-                    // BTP* tickers are ALWAYS B_ITA, regardless of isin
-                    const isBTP = sanitizedTicker.toUpperCase().startsWith('BTP');
-                    const newIsin = (t.isin && t.isin.trim()) ? t.isin.trim() : null;
-                    const newSource = (isBTP || newIsin || t.dataSource === 'B_ITA') ? 'B_ITA' : 'YF';
+                    let sanitizedTicker = '';
+                    let newSource = (t.assetTicker && t.assetTicker.toUpperCase().startsWith('BTP')) ? 'B_ITA' : 'YF';
+                    let newIsin = (t.isin && t.isin.trim()) ? t.isin.trim() : null;
 
-                    // Use case-insensitive match to find an existing asset
-                    const existingAsset = database.db.prepare(
-                        `SELECT id, ticker FROM assets WHERE UPPER(ticker) = UPPER(?)`
-                    ).get(sanitizedTicker);
-                    if (existingAsset) {
-                        // Always update isin and dataSource from what the import sends
-                        database.db.prepare(
-                            `UPDATE assets SET 
-                                isin = CASE WHEN ? IS NOT NULL THEN ? ELSE isin END,
-                                dataSource = ?,
-                                name = CASE WHEN ? IS NOT NULL AND ? != '' THEN ? ELSE name END
-                             WHERE UPPER(ticker) = UPPER(?)`
-                        ).run(newIsin, newIsin, newSource,
-                              t.assetName || null, t.assetName || null, t.assetName || null,
-                              sanitizedTicker);
-                    } else {
-                        database.db.prepare(`
-                            INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, country, isManual, dataSource, isin, updatedAt)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
-                        `).run(
-                            t.assetId || null, 
-                            sanitizedTicker, 
-                            t.assetName || sanitizedTicker, 
-                            t.assetType || (isBTP ? 'Bond' : 'Stock'), 
-                            t.assetExchange || (isBTP ? 'XMIL' : 'N/A'), 
-                            t.assetCurrency || (isBTP ? 'EUR' : 'USD'), 
-                            t.assetPrice || 0,
-                            0, 
-                            t.assetPe || null,
-                            t.assetCountry || (isBTP ? 'Italy' : 'N/A'),
-                            0,
-                            newSource,
-                            newIsin
-                        );
+                    if (t.assetTicker) {
+                        sanitizedTicker = t.assetTicker.trim();
+                        const existingAsset = database.db.prepare(
+                            `SELECT id, ticker FROM assets WHERE UPPER(ticker) = UPPER(?)`
+                        ).get(sanitizedTicker);
+
+                        if (existingAsset) {
+                            database.db.prepare(`
+                                UPDATE assets SET 
+                                    isin = CASE WHEN ? IS NOT NULL THEN ? ELSE isin END,
+                                    dataSource = ?,
+                                    name = CASE WHEN ? IS NOT NULL AND ? != '' THEN ? ELSE name END
+                                WHERE UPPER(ticker) = UPPER(?)
+                            `).run(newIsin, newIsin, newSource, 
+                                  t.assetName || null, t.assetName || null, t.assetName || null, 
+                                  sanitizedTicker);
+                        } else {
+                            database.db.prepare(`
+                                INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, country, isManual, dataSource, isin, updatedAt)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                            `).run(
+                                t.assetId || null, 
+                                sanitizedTicker, 
+                                t.assetName || sanitizedTicker, 
+                                t.assetType || (newSource === 'B_ITA' ? 'Bond' : 'Stock'), 
+                                t.assetExchange || (newSource === 'B_ITA' ? 'XMIL' : 'N/A'), 
+                                t.assetCurrency || (newSource === 'B_ITA' ? 'EUR' : 'USD'), 
+                                t.assetPrice || 0,
+                                0, 
+                                t.assetPe || null,
+                                t.assetCountry || (newSource === 'B_ITA' ? 'Italy' : 'N/A'),
+                                0,
+                                newSource,
+                                newIsin
+                            );
+                        }
                     }
-                    logger.info(`Bulk: ${sanitizedTicker} → ${newSource}${newIsin ? ' / '+newIsin : ''} (${existingAsset ? 'updated' : 'inserted'})`);
-                }
 
-                insertTx.run(
-                    targetId,
-                    t.type,
-                    sanitizedTicker,
-                    t.date,
-                    parseFloat(t.quantity || 0),
-                    parseFloat(t.price || 0),
-                    parseFloat(t.commission || 0),
-                    parseFloat(t.tax || 0),
-                    parseFloat(t.exchangeRate || 1),
-                    parseFloat(t.amount || 0)
-                );
-                results.push({ ok: true, ticker: t.assetTicker, date: t.date, portfolioId: targetId });
-            } catch (err) {
-                results.push({ ok: false, ticker: t.assetTicker, error: err.message });
+                    insertTx.run(
+                        targetId,
+                        t.type,
+                        sanitizedTicker || null,
+                        t.date,
+                        parseFloat(t.quantity || 0),
+                        parseFloat(t.price || 0),
+                        parseFloat(t.commission || 0),
+                        parseFloat(t.tax || 0),
+                        parseFloat(t.exchangeRate || 1),
+                        parseFloat(t.amount || 0)
+                    );
+
+                    results.push({ ok: true, ticker: t.assetTicker, date: t.date, portfolioId: targetId });
+                } catch (err) {
+                    results.push({ ok: false, ticker: t.assetTicker, error: err.message });
+                }
+            }
+        });
+
+        importMany(transactions);
+
+        // Recalculate affected portfolios
+        for (const pid of affectedPortfolios) {
+            if (!isNaN(pid) && pid > 0) {
+                database.recalculatePortfolio(pid);
             }
         }
-    });
+        
+        clearPerformanceCache();
 
-    importMany(transactions);
-    
-    // Recalculate ALL affected portfolios
-    for (const pid of affectedPortfolios) {
-        database.recalculatePortfolio(pid);
+        res.json({ 
+            success: true, 
+            imported: results.filter(r => r.ok).length,
+            errors: results.filter(r => !r.ok),
+            details: results 
+        });
+    } catch (err) {
+        logger.error('Bulk import crash:', err);
+        res.status(500).json({ error: 'Internal Server Error during bulk processing: ' + err.message });
     }
-    
-    clearPerformanceCache();
-    const importedCount = results.filter(r => r.ok).length;
-    logger.info(`Bulk import finished: ${importedCount} succeeded, ${results.length - importedCount} failed.`);
-    if (results.some(r => !r.ok)) {
-        logger.warn(`Bulk import errors: ${JSON.stringify(results.filter(r => !r.ok))}`);
-    }
-    res.json({ imported: importedCount, results });
 });
 
 // ════════════════════════════════════════════════════════════════════════════
