@@ -735,9 +735,8 @@
                                 <div class="text-right">
                                     <p class="text-sm font-black text-primary">${formatPrivacy(p.netValue || p.totalValue, p.currency, 'p-' + p.id)}</p>
                                     <p class="text-[10px] text-slate-500 font-bold">Lordo: ${formatPrivacy(p.totalValue, p.currency, 'p-' + p.id)}</p>
-                                    <p class="${isPos ? 'text-emerald-500' : 'text-rose-500'} text-[10px] font-bold">
-                                        ${isPos ? '▲' : '▼'} ${Math.abs(p.changePercent).toFixed(2)}%
-                                        (${p.changeValue >= 0 ? '+' : ''}${Math.round(p.changeValue).toLocaleString('it-IT')} €)
+                                    <p class="${isPos ? 'text-emerald-500' : 'text-rose-500'} text-[11px] font-black">
+                                        ${formatPrivacy(p.changeValue || 0, p.currency, 'p-var')}
                                     </p>
                                 </div>
                             </div>
@@ -957,7 +956,7 @@
                 <div class="mob-portfolio-values">
                   <div class="mob-portfolio-net">${formatPrivacy(p.netValue||p.totalValue, p.currency, 'mob-p-'+p.id)}</div>
                   <div class="mob-portfolio-gross">Lordo: ${formatPrivacy(p.totalValue, p.currency, 'mob-pg-'+p.id)}</div>
-                  <div class="mob-portfolio-change" style="color:${isPos?'var(--mob-emerald)':'var(--mob-rose)'}">${isPos?'▲':'▼'} ${Math.abs(p.changePercent).toFixed(2)}%</div>
+                  <div class="mob-portfolio-change" style="color:${isPos?'var(--mob-emerald)':'var(--mob-rose)'}">${formatPrivacy(p.changeValue || 0, p.currency, 'mob-var')}</div>
                 </div>
               </div>`;
           }).join('');
