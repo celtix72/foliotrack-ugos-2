@@ -3110,6 +3110,9 @@ app.post('/api/reset-data', (req, res) => {
     database.db.prepare(`DELETE FROM assets`).run();
     database.db.prepare(`DELETE FROM notifications`).run();
     database.db.prepare(`DELETE FROM portfolio_history`).run();
+    database.db.prepare(`DELETE FROM portfolio_losses`).run();
+    database.db.prepare(`DELETE FROM asset_quotes`).run();
+    database.db.prepare(`DELETE FROM test`).run();
     console.log('All application data has been reset.');
     clearPerformanceCache();
     res.json({ success: true });
