@@ -1331,15 +1331,17 @@ app.post('/api/admin/rebuild-history', async (req, res) => {
         logger.info(`Rebuilding performance history: Step 3/4 - Recalculating for ${portfolios.length} portfolios...`);
         
         for (const p of portfolios) {
-            const dataPoints = await calculatePerformanceHistory(p.id, 'ALL', true);
+            // true for forceRefresh and true for includeIndividual
+            const perfData = await calculatePerformanceHistory(p.id, 'ALL', true, true);
+            const dataPoints = perfData.dataPoints || [];
             const insert = database.db.prepare(`
-                INSERT OR REPLACE INTO portfolio_history (portfolioId, date, totalValue, cashValue, assetValue)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT OR REPLACE INTO portfolio_history (portfolioId, date, totalValue, cashValue, assetValue, netDeposits)
+                VALUES (?, ?, ?, ?, ?, ?)
             `);
             
             database.db.transaction(() => {
                 for (const pt of dataPoints) {
-                    insert.run(p.id, pt.date, pt.value, pt.cash || 0, pt.assets || 0);
+                    insert.run(p.id, pt.date, pt.value, pt.cash || 0, pt.assets || 0, pt.netDeposits || 0);
                 }
             })();
         }
@@ -1347,13 +1349,13 @@ app.post('/api/admin/rebuild-history', async (req, res) => {
         logger.info('Rebuilding performance history: Step 4/4 - Recalculating Global...');
         const globalPoints = await calculatePerformanceHistory(null, 'ALL', true);
         const insertGlobal = database.db.prepare(`
-            INSERT OR REPLACE INTO portfolio_history (portfolioId, date, totalValue, cashValue, assetValue)
-            VALUES (NULL, ?, ?, ?, ?)
+            INSERT OR REPLACE INTO portfolio_history (portfolioId, date, totalValue, cashValue, assetValue, netDeposits)
+            VALUES (NULL, ?, ?, ?, ?, ?)
         `);
         
         database.db.transaction(() => {
             for (const pt of globalPoints) {
-                insertGlobal.run(pt.date, pt.value, pt.cash || 0, pt.assets || 0);
+                insertGlobal.run(pt.date, pt.value, pt.cash || 0, pt.assets || 0, pt.netDeposits || 0);
             }
         })();
 
@@ -1910,7 +1912,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
 
     // 1. Check Cache (1 minute TTL for dashboard-level history)
     const CACHE_SHORT_TTL = 60 * 1000; 
-    if (performanceResultsCache[cacheKey] && (Date.now() - performanceResultsCache[cacheKey].timestamp < CACHE_SHORT_TTL)) {
+    if (!forceRefresh && performanceResultsCache[cacheKey] && (Date.now() - performanceResultsCache[cacheKey].timestamp < CACHE_SHORT_TTL)) {
         return performanceResultsCache[cacheKey].data;
     }
 
