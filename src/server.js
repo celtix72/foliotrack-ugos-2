@@ -632,6 +632,9 @@ app.put('/api/assets/:id', (req, res) => {
         params.push(req.params.id);
         const sql = `UPDATE assets SET ${updates.join(', ')} WHERE id = ? OR ticker = ?`;
         database.db.prepare(sql).run(...params);
+        
+        // Auto-rebuild history if metadata changed (currency, ticker, etc.)
+        triggerHistoryRebuild(null); 
     }
     res.json(database.db.prepare(`SELECT * FROM assets WHERE id = ? OR ticker = ?`).get(req.params.id, req.params.id));
 });
@@ -1209,7 +1212,8 @@ app.post('/api/portfolios', (req, res) => {
     `).run(name, type || 'Investimento', currency || 'EUR', start, cash, cash, cash, pColor);
 
     const portfolioId = result.lastInsertRowid;
-
+    triggerHistoryRebuild(portfolioId);
+    
     // Handle initial losses if provided
     if (losses && typeof losses === 'object') {
         const stmt = database.db.prepare(`INSERT OR REPLACE INTO portfolio_losses (portfolioId, asset_type, amount) VALUES (?, ?, ?)`);
@@ -1240,6 +1244,8 @@ app.put('/api/portfolios/:id', async (req, res) => {
         color      || existing.color || '#6366f1',
         req.params.id
     );
+
+    triggerHistoryRebuild(req.params.id);
 
     // Update losses
     if (losses && typeof losses === 'object') {
@@ -1515,6 +1521,9 @@ app.post('/api/transactions', async (req, res) => {
 
     database.recalculatePortfolio(portfolioId, liveRate);
     clearPerformanceCache();
+    
+    // Auto-rebuild history for this portfolio
+    triggerHistoryRebuild(portfolioId);
 
     res.status(201).json(database.db.prepare(`SELECT * FROM transactions WHERE id = ?`).get(result.lastInsertRowid));
 });
@@ -1540,6 +1549,10 @@ app.delete('/api/transactions/:id', async (req, res) => {
     }
 
     clearPerformanceCache();
+    
+    // Auto-rebuild history for this portfolio
+    triggerHistoryRebuild(row.portfolioId);
+
     res.json(row);
 });
 
@@ -1567,6 +1580,10 @@ app.put('/api/transactions/:id', (req, res) => {
 
     database.recalculatePortfolio(existing.portfolioId);
     clearPerformanceCache();
+
+    // Auto-rebuild history for this portfolio
+    triggerHistoryRebuild(existing.portfolioId);
+
     res.json({ success: true });
 });
 
@@ -2508,6 +2525,56 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
     };
 
     return result;
+}
+
+/**
+ * Triggers a background recalculation and persistence of portfolio history.
+ * @param {number|null} portfolioId - The ID of a specific portfolio, or null for all/global.
+ */
+async function triggerHistoryRebuild(portfolioId = null) {
+    // Run in background to not block the main API response
+    setImmediate(async () => {
+        try {
+            const portfolios = portfolioId 
+                ? [{ id: portfolioId }] 
+                : database.db.prepare('SELECT id FROM portfolios').all();
+                
+            logger.info(`Background history rebuild started for ${portfolioId ? 'portfolio ' + portfolioId : 'ALL portfolios'}`);
+
+            for (const p of portfolios) {
+                const perfData = await calculatePerformanceHistory(p.id, 'ALL', true, true);
+                const dataPoints = perfData.dataPoints || [];
+                const insert = database.db.prepare(`
+                    INSERT OR REPLACE INTO portfolio_history (portfolioId, date, totalValue, cashValue, assetValue, netDeposits)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                `);
+                
+                database.db.transaction(() => {
+                    for (const pt of dataPoints) {
+                        insert.run(p.id, pt.date, pt.value, pt.cash || 0, pt.assets || 0, pt.netDeposits || 0);
+                    }
+                })();
+            }
+
+            // Always rebuild global to keep it in sync
+            const perfDataGlobal = await calculatePerformanceHistory(null, 'ALL', true);
+            const globalPoints = Array.isArray(perfDataGlobal) ? perfDataGlobal : (perfDataGlobal.dataPoints || []);
+            const insertGlobal = database.db.prepare(`
+                INSERT OR REPLACE INTO portfolio_history (portfolioId, date, totalValue, cashValue, assetValue, netDeposits)
+                VALUES (NULL, ?, ?, ?, ?, ?)
+            `);
+            
+            database.db.transaction(() => {
+                for (const pt of globalPoints) {
+                    insertGlobal.run(pt.date, pt.value, pt.cash || 0, pt.assets || 0, pt.netDeposits || 0);
+                }
+            })();
+
+            logger.info(`Background history rebuild completed for ${portfolioId ? 'portfolio ' + portfolioId : 'ALL'}`);
+        } catch (err) {
+            logger.error(`Failed background history rebuild for ${portfolioId || 'ALL'}`, err);
+        }
+    });
 }
 
 // ─── ANALYTICS ENDPOINTS ──────────────────────────────────────────────────────
