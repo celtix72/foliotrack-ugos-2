@@ -902,6 +902,36 @@ body.mobile-view-active #mobile-ui {
   color: var(--mob-primary);
   border-color: rgba(19,91,236,0.3);
 }
+.mob-status-pill.status-closed {
+  color: var(--mob-rose);
+  background-color: rgba(244, 63, 94, 0.1);
+}
+
+/* ─── Mobile Tap Feedback (Pressure) ─────────────────────────────────────── */
+.mob-tab-item:active, 
+.mob-action-btn:active, 
+.mob-card:active, 
+.mob-icon-btn:active, 
+.mob-fab:active {
+  transform: scale(0.94) !important;
+  background-color: rgba(0, 0, 0, 0.06) !important;
+  transition: transform 0.1s cubic-bezier(0, 0, 0.2, 1) !important;
+}
+
+.dark .mob-tab-item:active, 
+.dark .mob-action-btn:active, 
+.dark .mob-card:active, 
+.dark .mob-icon-btn:active, 
+.dark .mob-fab:active {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Ensure icons also scale for better feedback */
+.mob-tab-item:active .material-symbols-outlined,
+.mob-icon-btn:active .material-symbols-outlined,
+.mob-fab:active .material-symbols-outlined {
+  transform: scale(0.9) !important;
+}
 
 /* ─── Market Overview Cards ──────────────────────────────────────────────── */
 .mob-market-grid {

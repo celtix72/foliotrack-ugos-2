@@ -920,5 +920,15 @@
         }
     }, true);
 
+    // --- Mobile Tap Haptic Feedback ---
+    document.addEventListener('touchstart', (e) => {
+        const item = e.target.closest('.mob-tab-item, .mob-action-btn, .mob-card, .mob-icon-btn, .mob-fab, .mob-portfolio-card, .mob-holding-item');
+        if (item && window.navigator && window.navigator.vibrate) {
+            window.navigator.vibrate(8); // Short subtle "tick"
+        }
+    }, { passive: true });
+
+    console.log('FolioTrack Theme Engine Initialized.');
+
 })();
 
