@@ -227,7 +227,6 @@ async function sendTelegramDailyReport() {
 
             for (const a of cat.assets) {
                 const icon = getAssetIcon(a.changePercent, a.varEUR);
-                const trend = a.varEUR >= 0 ? '🟢' : '🔴';
                 const pSym = a.currency === 'USD' ? '$' : '€';
                 
                 // Ticker: 8 characters fixed width
@@ -258,8 +257,8 @@ async function sendTelegramDailyReport() {
                 const pctStr = `${pSign}${a.changePercent.toFixed(2)}%`.padStart(8);
                 
                 // Minimizing gaps to prevent line wrapping:
-                // Exact spacing: icon [1] ticker [8] price [fixed] [1] var [1] pct [1] trend
-                msg += `\`${icon} ${tickerStr} ${priceStr} ${varStr} ${pctStr} ${trend}\`\n`;
+                // Exact spacing: icon [1] ticker [8] price [fixed] [1] var [1] pct
+                msg += `\`${icon} ${tickerStr} ${priceStr} ${varStr} ${pctStr}\`\n`;
             }
             msg += `\n`;
         }
