@@ -302,6 +302,7 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
 
     let assetValue = 0;
     let assetCount = 0;
+    let performance1D = 0;
     for (const [ticker, shares] of Object.entries(holdings)) {
         if (shares <= 0.0001) continue;
         assetCount++;
@@ -345,35 +346,19 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
                 ? price / rate
                 : price;
             assetValue += shares * priceInPCurr;
+
+            // Calculate daily market variation
+            if (asset && asset.changeValue) {
+                const changeInPCurr = (aCurr !== portfolio.currency && rate !== 0)
+                    ? asset.changeValue / rate
+                    : asset.changeValue;
+                performance1D += shares * changeInPCurr;
+            }
         }
     }
 
     // Total value = Cash + Assets (Dividends are already in Cash)
     const totalValue = cash + assetValue;
-
-    // Calculate performance1D (Profit-based)
-    const yesterday = dbConnection.prepare(`
-        SELECT totalValue, netDeposits FROM portfolio_history 
-        WHERE portfolioId = ? AND date < date('now', 'localtime')
-        ORDER BY date DESC LIMIT 1
-    `).get(portfolioId);
-    
-    // Get CURRENT netDeposits for profit calculation (capital in/out)
-    const txs = dbConnection.prepare(`SELECT type, amount, exchangeRate, quantity, price, commission, tax FROM transactions WHERE portfolioId = ?`).all(portfolioId);
-    let currentNetDep = 0;
-    for (const t of txs) {
-        const amount = t.amount || ((t.quantity || 0) * (t.price || 0) + (t.commission || 0) + (t.tax || 0)) / (t.exchangeRate || 1);
-        if (t.type === 'DEPOSIT') currentNetDep += amount;
-        if (t.type === 'WITHDRAWAL') currentNetDep -= amount;
-        if (t.type === 'TRANSFER') currentNetDep -= amount;
-    }
-
-    let performance1D = 0;
-    const currentProfit = totalValue - currentNetDep;
-    if (yesterday) {
-        const yesterdayProfit = (yesterday.totalValue || 0) - (yesterday.netDeposits || 0);
-        performance1D = currentProfit - yesterdayProfit;
-    }
 
     // Safety guards against NaN and Infinity
     const finalCash = (isNaN(cash) || !isFinite(cash)) ? 0 : cash;

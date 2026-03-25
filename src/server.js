@@ -1107,6 +1107,7 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
         totalValue,
         currentCash,
         performance1D,
+        changeValue: performance1D,
         changePercent,
         transactions,
         holdings,
