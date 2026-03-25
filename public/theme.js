@@ -851,12 +851,13 @@
     window.activateMobileView = function() {
         window._mobileViewActive = true;
         document.body.classList.add('mobile-view-active');
-        const btn = document.getElementById('mobile-view-toggle-btn');
-        if (btn) btn.classList.add('mob-active');
-        // Store preference (not for real mobiles where it's auto)
-        if (!window.isMobileDevice()) {
-            localStorage.setItem('mobile-view-forced', 'true');
-        }
+        // Update all toggle buttons (use class for consistency)
+        document.querySelectorAll('.layout-toggle-btn').forEach(btn => btn.classList.add('mob-active'));
+        // Store preference
+        localStorage.setItem('layout-preference', 'mobile');
+        // Keep legacy for backward compatibility if needed, but clean it up eventually
+        localStorage.removeItem('mobile-view-forced');
+        
         // Reinit charts if they exist (chart canvases move between views)
         setTimeout(() => {
             window.dispatchEvent(new CustomEvent('mobile-view-activated'));
@@ -866,9 +867,12 @@
     window.deactivateMobileView = function() {
         window._mobileViewActive = false;
         document.body.classList.remove('mobile-view-active');
-        const btn = document.getElementById('mobile-view-toggle-btn');
-        if (btn) btn.classList.remove('mob-active');
+        // Update all toggle buttons
+        document.querySelectorAll('.layout-toggle-btn').forEach(btn => btn.classList.remove('mob-active'));
+        // Store preference
+        localStorage.setItem('layout-preference', 'desktop');
         localStorage.removeItem('mobile-view-forced');
+        
         setTimeout(() => {
             window.dispatchEvent(new CustomEvent('mobile-view-deactivated'));
         }, 50);
@@ -882,9 +886,14 @@
         }
     };
 
-    // Auto-activate: real mobile device OR previously forced on desktop
+    // Auto-activate: manual preference takes absolute priority over auto-detection
     function _initMobileView() {
-        if (window.isMobileDevice() || localStorage.getItem('mobile-view-forced') === 'true') {
+        const pref = localStorage.getItem('layout-preference');
+        if (pref === 'mobile') {
+            window.activateMobileView();
+        } else if (pref === 'desktop') {
+            window.deactivateMobileView();
+        } else if (window.isMobileDevice()) {
             window.activateMobileView();
         }
     }
@@ -895,14 +904,17 @@
         _initMobileView();
     }
 
-    // Re-check on resize
+    // Re-check on resize (only auto-activate if NO preference or preference is already mobile)
     let _resizeTimer;
     window.addEventListener('resize', () => {
         clearTimeout(_resizeTimer);
         _resizeTimer = setTimeout(() => {
-            const isNowMobile = window.isMobileDevice();
-            if (isNowMobile && !window._mobileViewActive) {
-                window.activateMobileView();
+            const pref = localStorage.getItem('layout-preference');
+            if (!pref || pref === 'mobile') {
+                const isNowMobile = window.isMobileDevice();
+                if (isNowMobile && !window._mobileViewActive) {
+                    window.activateMobileView();
+                }
             }
         }, 200);
     });
