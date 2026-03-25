@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+    <title>FolioTrack - Notifications</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FolioTrack">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="stylesheet" href="/dist/output.css">
+    <link rel="stylesheet" href="/mobile.css">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+        
+        /* Swipe Animation classes */
+        .notification-item {
+            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s;
+        }
+        .notification-item.removing {
+            transform: translateX(-100%) !important;
+            opacity: 0;
+        }
+        
+        /* Desktop specific styles for the notification list */
+        .desktop-notif-card {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            padding: 1.5rem;
+            background-color: #fff;
+            border-width: 1px;
+            border-color: #e2e8f0;
+            border-radius: 1rem;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+        .dark .desktop-notif-card {
+            background-color: #111722;
+            border-color: #1e293b;
+        }
+        .notif-type-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+    </style>
+    <script src="/theme.js"></script>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex">
+    <!-- Sidebar (Desktop) -->
+    <aside class="w-72 border-r border-slate-200 dark:border-slate-800 flex flex-col h-screen sticky top-0 bg-white dark:bg-[#111722] shrink-0">
+        <div class="p-6 flex items-center gap-3">
+            <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white">
+                <span class="material-symbols-outlined">query_stats</span>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold tracking-tight">FolioTrack</h1>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Premium Terminal</p>
+            </div>
+        </div>
+        <nav class="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
+            <div class="pb-4">
+                <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/dashboard">
+                    <span class="material-symbols-outlined text-[20px]">dashboard</span>
+                    <span>Dashboard</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/portfolio">
+                    <span class="material-symbols-outlined text-[20px]">work</span>
+                    <span>Portfolio</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/market">
+                    <span class="material-symbols-outlined text-[20px]">trending_up</span>
+                    <span>Market</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/assets">
+                    <span class="material-symbols-outlined text-[20px]">currency_exchange</span>
+                    <span>Asset</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/reports">
+                    <span class="material-symbols-outlined text-[20px]">pie_chart</span>
+                    <span>Reports</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/history">
+                    <span class="material-symbols-outlined text-[20px]">history</span>
+                    <span>History</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/dividend">
+                    <span class="material-symbols-outlined text-[20px]">payments</span>
+                    <span>Dividend</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/settings">
+                    <span class="material-symbols-outlined text-[20px]">settings</span>
+                    <span>Settings</span>
+                </a>
+            </div>
+            <div class="pt-4 border-t border-slate-200 dark:border-slate-800">
+                <div class="space-y-1" id="sidebar-portfolios"></div>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+        <header class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-50">
+            <div class="flex items-center gap-6">
+                <h1 class="text-xl font-black uppercase tracking-widest text-primary">Notifications</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <button onclick="clearAllNotifications()" class="text-[10px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-600 transition-colors flex items-center gap-2">
+                    <span class="material-symbols-outlined text-sm">delete_sweep</span>
+                    Clear All
+                </button>
+                <div class="h-4 w-[1px] bg-slate-200 dark:bg-slate-800"></div>
+                <!-- Privacy & Theme same as other pages -->
+                <button onclick="togglePrivacy()" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all shadow-sm">
+                    <span class="material-symbols-outlined text-sm">visibility</span>
+                </button>
+                <button onclick="toggleTheme()" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all shadow-sm">
+                    <span class="material-symbols-outlined text-sm">dark_mode</span>
+                </button>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-8 space-y-6" id="desktop-notifications-container">
+            <!-- Notifications will be injected here -->
+            <div class="flex items-center justify-center h-64 opacity-50">
+                <div class="text-center">
+                    <span class="material-symbols-outlined text-4xl mb-2">notifications_off</span>
+                    <p class="text-sm font-bold uppercase tracking-widest">No notifications found</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Mobile UI Root -->
+    <div id="mobile-ui">
+        <div class="mob-header">
+            <div class="mob-header-logo-container">
+                <div class="mob-header-logo-circle" onclick="window.history.back()">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                </div>
+                <div class="mob-header-logo-text">Notifications</div>
+            </div>
+            <div style="flex:1"></div>
+            <button onclick="clearAllNotifications()" class="mob-icon-btn text-rose-500">
+                <span class="material-symbols-outlined">delete_sweep</span>
+            </button>
+        </div>
+
+        <div class="mob-scroll" id="mob-notifications-scroll">
+            <div class="mob-section-header">
+                <span class="mob-section-title">Latest Updates</span>
+            </div>
+            <div id="mob-notifications-list">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+
+        <div class="mob-tab-bar">
+            <a href="/dashboard" class="mob-tab-item">
+                <span class="material-symbols-outlined">dashboard</span>
+            </a>
+            <a href="/market" class="mob-tab-item">
+                <span class="material-symbols-outlined">trending_up</span>
+            </a>
+            <a href="/history" class="mob-tab-item">
+                <span class="material-symbols-outlined">history</span>
+            </a>
+            <a href="/reports" class="mob-tab-item">
+                <span class="material-symbols-outlined">pie_chart</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        let notifications = [];
+
+        async function loadNotifications() {
+            try {
+                const res = await fetch('/api/notifications');
+                notifications = await res.json();
+                renderNotifications();
+            } catch (err) {
+                console.error('Error loading notifications:', err);
+            }
+        }
+
+        function renderNotifications() {
+            const desktopContainer = document.getElementById('desktop-notifications-container');
+            const mobileContainer = document.getElementById('mob-notifications-list');
+
+            if (notifications.length === 0) {
+                const emptyState = `
+                    <div class="flex flex-col items-center justify-center opacity-40 py-20">
+                        <span class="material-symbols-outlined text-6xl mb-4">notifications_off</span>
+                        <p class="font-black uppercase tracking-widest text-sm">Everything is quiet here</p>
+                    </div>
+                `;
+                desktopContainer.innerHTML = emptyState;
+                mobileContainer.innerHTML = emptyState;
+                return;
+            }
+
+            // Render Desktop
+            desktopContainer.innerHTML = notifications.map(n => {
+                const { color, icon } = getIconAndColor(n.type);
+                return `
+                    <div class="desktop-notif-card group notification-item" id="notif-desktop-${n.id}">
+                        <div class="flex items-start gap-4">
+                            <div class="notif-type-icon ${color}">
+                                <span class="material-symbols-outlined">${icon}</span>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between mb-1">
+                                    <h3 class="font-black text-sm uppercase tracking-tight">${n.title}</h3>
+                                    <span class="text-[10px] font-bold text-slate-400">${formatDate(n.date)}</span>
+                                </div>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">${n.message}</p>
+                                ${n.ticker ? `<span class="inline-block mt-2 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px] font-black text-primary">${n.ticker}</span>` : ''}
+                            </div>
+                            <button onclick="removeNotification(${n.id})" class="opacity-0 group-hover:opacity-100 transition-opacity p-2 text-slate-300 hover:text-rose-500">
+                                <span class="material-symbols-outlined text-lg">close</span>
+                            </button>
+                        </div>
+                        ${!n.isRead ? '<div class="absolute top-3 right-3 w-2 h-2 rounded-full bg-primary ring-4 ring-white dark:ring-slate-900"></div>' : ''}
+                    </div>
+                `;
+            }).join('');
+
+            // Render Mobile
+            mobileContainer.innerHTML = notifications.map(n => {
+                const { color, icon } = getIconAndColor(n.type);
+                const logoChar = n.ticker ? n.ticker.substring(0,2) : n.type.substring(0,2).toUpperCase();
+                
+                return `
+                    <div class="mob-holding-swipe-container notification-item-wrapper" 
+                         ontouchstart="handleTouchStart(event, this)" 
+                         ontouchmove="handleTouchMove(event, this)" 
+                         ontouchend="handleTouchEnd(event, this)">
+                        <div class="mob-holding-actions">
+                            <div class="mob-action-btn bg-rose-500" onclick="removeNotification(${n.id})">
+                                <span class="material-symbols-outlined">delete</span>
+                                <span>Rimuovi</span>
+                            </div>
+                        </div>
+                        <div class="mob-holding-item large notification-item" id="notif-mob-${n.id}">
+                            <div class="mob-holding-logo ${color}" style="color:white; background:none;">
+                                <div class="w-10 h-10 rounded-xl flex items-center justify-center ${color}">
+                                    <span class="material-symbols-outlined">${icon}</span>
+                                </div>
+                            </div>
+                            <div class="mob-holding-info">
+                                <div class="flex items-center justify-between">
+                                    <div class="mob-holding-ticker">${n.title}</div>
+                                    <div class="text-[9px] font-bold text-slate-500">${formatRelativeDate(n.date)}</div>
+                                </div>
+                                <div class="mob-holding-name">${n.message}</div>
+                                ${n.ticker ? `<div class="mob-holding-qty" style="color:var(--mob-primary); font-weight:900">${n.ticker}</div>` : ''}
+                            </div>
+                            ${!n.isRead ? '<div class="w-1.5 h-1.5 rounded-full bg-primary absolute right-3 top-1/2 -translate-y-1/2"></div>' : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Mark all as read since we're viewing the page
+            markAllAsRead();
+        }
+
+        function getIconAndColor(type) {
+            switch(type.toLowerCase()) {
+                case 'stop_loss': return { icon: 'trending_down', color: 'bg-rose-500/10 text-rose-500' };
+                case 'stop_profit': return { icon: 'trending_up', color: 'bg-emerald-500/10 text-emerald-500' };
+                case 'dividend': return { icon: 'payments', color: 'bg-amber-500/10 text-amber-500' };
+                case 'alert': return { icon: 'warning', color: 'bg-orange-500/10 text-orange-500' };
+                default: return { icon: 'notifications', color: 'bg-primary/10 text-primary' };
+            }
+        }
+
+        function formatDate(dateStr) {
+            const d = new Date(dateStr);
+            return d.toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
+        function formatRelativeDate(dateStr) {
+            const now = new Date();
+            const d = new Date(dateStr);
+            const diffMs = now - d;
+            const diffMins = Math.floor(diffMs / 60000);
+            if (diffMins < 1) return 'Adesso';
+            if (diffMins < 60) return `${diffMins}m fa`;
+            const diffHours = Math.floor(diffMins / 60);
+            if (diffHours < 24) return `${diffHours}o fa`;
+            return d.toLocaleDateString('it-IT');
+        }
+
+        async function removeNotification(id) {
+            const desktopEl = document.getElementById(`notif-desktop-${id}`);
+            const mobEl = document.getElementById(`notif-mob-${id}`);
+            
+            if (desktopEl) desktopEl.classList.add('removing');
+            if (mobEl) mobEl.classList.add('removing');
+
+            setTimeout(async () => {
+                try {
+                    await fetch(`/api/notifications/${id}`, { method: 'DELETE' });
+                    notifications = notifications.filter(n => n.id !== id);
+                    renderNotifications();
+                    if (window.updateNotificationBadge) window.updateNotificationBadge();
+                } catch (err) {
+                    console.error('Delete failed:', err);
+                }
+            }, 300);
+        }
+
+        async function clearAllNotifications() {
+            if (!confirm('Sei sicuro di voler rimuovere tutte le notifiche?')) return;
+            try {
+                await fetch('/api/notifications', { method: 'DELETE' });
+                notifications = [];
+                renderNotifications();
+                if (window.updateNotificationBadge) window.updateNotificationBadge();
+            } catch (err) {
+                console.error('Clear all failed:', err);
+            }
+        }
+
+        async function markAllAsRead() {
+            try {
+                await fetch('/api/notifications/read-all', { method: 'POST' });
+                if (window.updateNotificationBadge) window.updateNotificationBadge();
+            } catch (err) {}
+        }
+
+        // --- Swipe Logic (Mobile) ---
+        let touchStartX = 0;
+        let touchMoveX = 0;
+        let currentSwipeEl = null;
+        const SWIPE_THRESHOLD = 50;
+        const ACTION_WIDTH = 80;
+
+        window.handleTouchStart = function(e, container) {
+            touchStartX = e.touches[0].clientX;
+            touchMoveX = 0;
+            if (currentSwipeEl && currentSwipeEl !== container) {
+                resetSwipes(container);
+            }
+        };
+
+        window.handleTouchMove = function(e, container) {
+            const item = container.querySelector('.notification-item');
+            if (!item) return;
+            touchMoveX = e.touches[0].clientX;
+            let diff = touchMoveX - touchStartX;
+            if (diff > 0) diff = 0;
+            if (diff < -ACTION_WIDTH - 10) diff = -ACTION_WIDTH - 10;
+            item.style.transition = 'none';
+            item.style.transform = `translateX(${diff}px)`;
+        };
+
+        window.handleTouchEnd = function(e, container) {
+            const item = container.querySelector('.notification-item');
+            if (!item) return;
+            const diff = touchMoveX - touchStartX;
+            item.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
+            if (touchMoveX !== 0 && diff < -SWIPE_THRESHOLD) {
+                item.style.transform = `translateX(-${ACTION_WIDTH}px)`;
+                currentSwipeEl = container;
+            } else {
+                item.style.transform = 'translateX(0)';
+                currentSwipeEl = null;
+            }
+        };
+
+        function resetSwipes(except) {
+            document.querySelectorAll('.notification-item-wrapper').forEach(c => {
+                if (c === except) return;
+                const item = c.querySelector('.notification-item');
+                if (item) item.style.transform = 'translateX(0)';
+            });
+            currentSwipeEl = null;
+        }
+
+        document.addEventListener('DOMContentLoaded', loadNotifications);
+    </script>
+</body>
+</html>

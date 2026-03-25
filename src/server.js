@@ -809,6 +809,24 @@ app.post('/api/notifications/read-all', (req, res) => {
     }
 });
 
+app.delete('/api/notifications/:id', (req, res) => {
+    try {
+        database.db.prepare(`DELETE FROM notifications WHERE id = ?`).run(req.params.id);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/notifications', (req, res) => {
+    try {
+        database.db.prepare(`DELETE FROM notifications`).run();
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ════════════════════════════════════════════════════════════════════════════
 // PORTFOLIOS API
 // ════════════════════════════════════════════════════════════════════════════

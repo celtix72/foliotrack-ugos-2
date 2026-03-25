@@ -109,6 +109,11 @@
     </div>
     <div class="flex items-center gap-4">
         <div class="flex items-center gap-2">
+            <!-- Notifications Bell -->
+            <a href="/notifications" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all shadow-sm relative" title="Notifications">
+                <span class="material-symbols-outlined text-sm">notifications</span>
+                <span id="header-notif-badge" class="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900" style="display: none;">0</span>
+            </a>
             <!-- Privacy Toggle -->
             <button onclick="togglePrivacy()" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all shadow-sm" title="Toggle Privacy">
                 <span class="material-symbols-outlined text-sm" id="header-privacy-icon">visibility</span>
@@ -793,10 +798,10 @@
 
     <!-- Action Buttons -->
     <div class="mob-header-actions">
-      <button onclick="toggleMobileNotifications()" class="mob-icon-btn relative" title="Notifications">
+      <a href="/notifications" class="mob-icon-btn relative" title="Notifications">
         <span class="material-symbols-outlined">notifications</span>
         <span id="mob-notification-badge" class="mob-badge" style="display: none;">0</span>
-      </button>
+      </a>
       <a href="/settings" class="mob-icon-btn" title="Settings">
         <span class="material-symbols-outlined">settings</span>
       </a>

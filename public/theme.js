@@ -929,6 +929,37 @@
         }
     }, { passive: true });
 
+    // --- Notification Badge Management ---
+    window.updateNotificationBadge = async function() {
+        try {
+            const res = await fetch('/api/notifications');
+            const notifications = await res.json();
+            const unreadCount = notifications.filter(n => !n.isRead).length;
+            
+            // Desktop badge
+            const desktopBadge = document.getElementById('header-notif-badge');
+            if (desktopBadge) {
+                desktopBadge.textContent = unreadCount;
+                desktopBadge.style.display = unreadCount > 0 ? 'flex' : 'none';
+            }
+            
+            // Mobile badge
+            const mobBadge = document.getElementById('mob-notification-badge');
+            if (mobBadge) {
+                mobBadge.textContent = unreadCount;
+                mobBadge.style.display = unreadCount > 0 ? 'flex' : 'none';
+            }
+        } catch (err) {
+            console.error('Failed to update notification badge:', err);
+        }
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', window.updateNotificationBadge);
+    } else {
+        window.updateNotificationBadge();
+    }
+
     console.log('FolioTrack Theme Engine Initialized.');
 
 })();
