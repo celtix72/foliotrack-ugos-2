@@ -1751,7 +1751,9 @@ app.post('/api/transactions/bulk', async (req, res) => {
                         }
                     }
                     
-                    if (isNaN(targetId)) throw new Error('Invalid portfolio mapping');
+                    if (isNaN(targetId)) {
+                        throw new Error(`Invalid portfolio mapping for transaction on ${t.date}. 'portfolioId' is '${portfolioId}' and row 'portfolioName' is '${t.portfolioName || 'Missing'}'.`);
+                    }
                     affectedPortfolios.add(targetId);
 
                     let sanitizedTicker = '';
@@ -1785,7 +1787,7 @@ app.post('/api/transactions/bulk', async (req, res) => {
                                 t.assetType || (newSource === 'B_ITA' ? 'Bond' : 'Stock'), 
                                 t.assetExchange || (newSource === 'B_ITA' ? 'XMIL' : 'N/A'), 
                                 t.assetCurrency || (newSource === 'B_ITA' ? 'EUR' : 'USD'), 
-                                t.assetPrice || 0,
+                                parseFloat(t.assetPrice || 0) || 0,
                                 0, 
                                 t.assetPe || null,
                                 t.assetCountry || (newSource === 'B_ITA' ? 'Italy' : 'N/A'),
@@ -1796,22 +1798,33 @@ app.post('/api/transactions/bulk', async (req, res) => {
                         }
                     }
 
+                    // Robust parsing helper for common export formats
+                    const cleanNum = (val, dflt = 0) => {
+                        if (typeof val === 'number') return isFinite(val) ? val : dflt;
+                        if (!val) return dflt;
+                        // Handle Italian comma decimals and dot thousands
+                        const s = String(val).replace(/[€$£\s]/g,'').replace(/\./g,'').replace(',','.');
+                        const n = parseFloat(s);
+                        return isNaN(n) ? dflt : n;
+                    };
+
                     insertTx.run(
                         targetId,
                         t.type,
                         sanitizedTicker || null,
                         t.date,
-                        parseFloat(t.quantity || 0),
-                        parseFloat(t.price || 0),
-                        parseFloat(t.commission || 0),
-                        parseFloat(t.tax || 0),
-                        parseFloat(t.exchangeRate || 1),
-                        parseFloat(t.amount || 0)
+                        cleanNum(t.quantity),
+                        cleanNum(t.price),
+                        cleanNum(t.commission),
+                        cleanNum(t.tax),
+                        cleanNum(t.exchangeRate, 1),
+                        cleanNum(t.amount)
                     );
 
                     results.push({ ok: true, ticker: t.assetTicker, date: t.date, portfolioId: targetId });
                 } catch (err) {
-                    results.push({ ok: false, ticker: t.assetTicker, error: err.message });
+                    logger.warn(`Failed to process row: ${JSON.stringify(t)} | Error: ${err.message}`);
+                    results.push({ ok: false, ticker: t.assetTicker, date: t.date, error: err.message });
                 }
             }
         });

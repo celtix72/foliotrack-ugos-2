@@ -341,7 +341,7 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
                 }
             }
             
-            const priceInPCurr = aCurr !== portfolio.currency
+            const priceInPCurr = (aCurr !== portfolio.currency && rate !== 0)
                 ? price / rate
                 : price;
             assetValue += shares * priceInPCurr;
@@ -375,11 +375,11 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
         performance1D = currentProfit - yesterdayProfit;
     }
 
-    // Safety guards against NaN
-    const finalCash = isNaN(cash) ? 0 : cash;
-    const finalTotalValue = isNaN(totalValue) ? 0 : totalValue;
-    const finalDividends = isNaN(totalDividends) ? 0 : totalDividends;
-    const finalPerf1D = isNaN(performance1D) ? 0 : performance1D;
+    // Safety guards against NaN and Infinity
+    const finalCash = (isNaN(cash) || !isFinite(cash)) ? 0 : cash;
+    const finalTotalValue = (isNaN(totalValue) || !isFinite(totalValue)) ? 0 : totalValue;
+    const finalDividends = (isNaN(totalDividends) || !isFinite(totalDividends)) ? 0 : totalDividends;
+    const finalPerf1D = (isNaN(performance1D) || !isFinite(performance1D)) ? 0 : performance1D;
 
     dbConnection.prepare(`
         UPDATE portfolios

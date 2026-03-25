@@ -720,7 +720,8 @@
             'networth', 'gross', 'gain', 'h-var', 'h-perf',       // Dashboard desktop
             'mob-net', 'mob-gross', 'mob-gain', 'mob-dayvar',      // Dashboard mobile
             'p-', 'mob-p-', 'mob-pg-', 'mob-pn-', 'mob-gnet',      // Portfolio lists & detail
-            'tax-', 'mob-detail-total', 'mob-dt', 'mob-dg'         // Taxes & mobile details
+            'tax-', 'mob-detail-total', 'mob-dt', 'mob-dg',        // Taxes & mobile details
+            'p-detail-day-var'                                     // New hero variation pill
         ];
 
         const isTotal = id && totalFields.some(f => id === f || id.startsWith(f));
