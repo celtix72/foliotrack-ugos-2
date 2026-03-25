@@ -228,21 +228,29 @@ async function sendTelegramDailyReport() {
             for (const a of cat.assets) {
                 const icon = getAssetIcon(a.changePercent, a.varEUR);
                 const trend = a.varEUR >= 0 ? '🟢' : '🔴';
-                const priceSymbol = a.currency === 'USD' ? '$' : '€';
+                const pSym = a.currency === 'USD' ? '$' : '€';
                 
-                // Format parts for alignment
-                const ticker = a.ticker.padEnd(9);
-                const priceVal = a.currentPrice.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 2});
-                const price = `${priceSymbol} ${priceVal}`.padStart(11);
+                // Ticker (pad 8)
+                const tickerStr = (a.ticker || '').padEnd(8);
                 
-                const varAbs = Math.round(Math.abs(a.varEUR));
-                const varSign = a.varEUR >= 0 ? '+' : '-';
-                const vStr = `${varSign}€${varAbs}`.padStart(9);
+                // Price: Symbol + 2 spaces + Price (total 10)
+                const pVal = a.currentPrice.toLocaleString(undefined, {
+                    minimumFractionDigits: (a.currentPrice < 1 && a.currentPrice > 0 ? 4 : 1),
+                    maximumFractionDigits: (a.currentPrice < 1 && a.currentPrice > 0 ? 4 : 2)
+                });
+                const priceStr = `${pSym}  ${pVal.padStart(7)}`;
                 
+                // Var: Sign + € + AbsValue (pad 8)
+                const vSign = a.varEUR >= 0 ? '+' : '-';
+                const vAbs = Math.round(Math.abs(a.varEUR));
+                const varStr = `${vSign}€${vAbs}`.padStart(8);
+                
+                // Pct: Sign + Value + % (pad 8)
                 const pSign = a.changePercent >= 0 ? '+' : '';
-                const pStr = `${pSign}${a.changePercent.toFixed(2)}%`.padStart(8);
+                const pctStr = `${pSign}${a.changePercent.toFixed(2)}%`.padStart(8);
                 
-                msg += `\`${icon} ${ticker} ${price} ${vStr} ${pStr} ${trend}\`\n`;
+                // Compact line formatting: `Icon Ticker Price Var Pct Trend`
+                msg += `\`${icon} ${tickerStr} ${priceStr}   ${varStr}  ${pctStr} ${trend}\`\n`;
             }
             msg += `\n`;
         }
