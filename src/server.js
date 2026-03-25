@@ -244,8 +244,8 @@ async function sendTelegramDailyReport() {
                     minimumFractionDigits: decimals,
                     maximumFractionDigits: decimals
                 });
-                // Adjust space after symbol: 2 spaces if length <= 5, 1 if longer
-                const pSpace = pVal.length <= 5 ? '  ' : ' ';
+                // Adjust space after symbol: 1 space if length <= 5, 0 if longer
+                const pSpace = pVal.length <= 5 ? ' ' : '';
                 const priceStr = `${pSym}${pSpace}${pVal.padStart(6)}`;
                 
                 // Var: Sign + € + AbsValue. Pad to 8.
