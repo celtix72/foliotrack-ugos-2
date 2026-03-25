@@ -167,11 +167,11 @@ async function sendTelegramDailyReport() {
         const assets = database.db.prepare(`
             SELECT 
                 a.ticker, a.name, a.type, a.currency, a.currentPrice, a.changePercent, a.changeValue,
-                SUM(CASE WHEN t.type = 'BUY' THEN t.quantity WHEN t.type = 'SELL' THEN -t.quantity ELSE 0 END) as quantity
+                SUM(CASE WHEN t.type = 'BUY' THEN t.quantity WHEN t.type = 'SELL' THEN -t.quantity ELSE 0 END) as totalQty
             FROM transactions t
             JOIN assets a ON t.assetTicker = a.ticker
             GROUP BY t.assetTicker
-            HAVING quantity > 0.0001
+            HAVING totalQty > 0.0001
         `).all();
 
         const portfolios = database.db.prepare('SELECT totalValue, performance1D, currency FROM portfolios').all();
@@ -206,7 +206,7 @@ async function sendTelegramDailyReport() {
             const cat = categories[catName];
             if (!cat) continue;
             
-            let varEUR = (a.quantity || 0) * (a.changeValue || 0);
+            let varEUR = (a.totalQty || 0) * (a.changeValue || 0);
             if (a.currency === 'USD' && liveRate > 0) varEUR /= liveRate;
             
             cat.assets.push({ ...a, varEUR });
