@@ -218,8 +218,8 @@ async function sendTelegramDailyReport() {
         for (const [name, cat] of Object.entries(categories)) {
             if (cat.assets.length === 0) continue;
             
-            const catVarAbs = Math.round(Math.abs(cat.totalVar));
             const catVarSign = cat.totalVar >= 0 ? '+' : '-';
+            const catVarAbs = Math.round(Math.abs(cat.totalVar));
             msg += `${cat.emoji} *${name}* ${catVarSign}€${catVarAbs}\n`;
             
             // Sort assets by absolute variation descending
@@ -230,26 +230,28 @@ async function sendTelegramDailyReport() {
                 const trend = a.varEUR >= 0 ? '🟢' : '🔴';
                 const pSym = a.currency === 'USD' ? '$' : '€';
                 
-                // Ticker (pad 8)
+                // Ticker: 8 characters fixed width
                 const tickerStr = (a.ticker || '').padEnd(8);
                 
-                // Price: Symbol + 2 spaces + Price (total 10)
+                // Price: Sym + 1-2 spaces + price. Total ~9 chars.
                 const pVal = a.currentPrice.toLocaleString(undefined, {
                     minimumFractionDigits: (a.currentPrice < 1 && a.currentPrice > 0 ? 4 : 1),
                     maximumFractionDigits: (a.currentPrice < 1 && a.currentPrice > 0 ? 4 : 2)
                 });
-                const priceStr = `${pSym}  ${pVal.padStart(7)}`;
+                // Adjust space after symbol: 2 spaces if length <= 5, 1 if longer
+                const pSpace = pVal.length <= 5 ? '  ' : ' ';
+                const priceStr = `${pSym}${pSpace}${pVal.padStart(6)}`;
                 
-                // Var: Sign + € + AbsValue (pad 8)
+                // Var: Sign + € + AbsValue. Pad to 8.
                 const vSign = a.varEUR >= 0 ? '+' : '-';
                 const vAbs = Math.round(Math.abs(a.varEUR));
                 const varStr = `${vSign}€${vAbs}`.padStart(8);
                 
-                // Pct: Sign + Value + % (pad 8)
+                // Pct: Sign + Value + %. Pad to 8.
                 const pSign = a.changePercent >= 0 ? '+' : '';
                 const pctStr = `${pSign}${a.changePercent.toFixed(2)}%`.padStart(8);
                 
-                // Compact line formatting: `Icon Ticker Price Var Pct Trend`
+                // Exact spacing: icon [1] ticker [8] price [short gap] var [gap] pct [1] trend
                 msg += `\`${icon} ${tickerStr} ${priceStr}   ${varStr}  ${pctStr} ${trend}\`\n`;
             }
             msg += `\n`;
