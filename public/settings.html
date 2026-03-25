@@ -747,212 +747,181 @@
         <span class="material-symbols-outlined">settings</span>
       </a>
     </div>
-  </div>
-
-  <!-- Mobile Scrollable Content -->
-  <div class="mob-scroll" id="mob-settings-scroll">
-    
-    <!-- Account Settings -->
-    <div class="mob-section-header">
-      <span class="mob-section-title">Account Settings</span>
-    </div>
-    <div class="mob-card mob-card-padded" style="margin-bottom:16px; display:flex; flex-direction:column; gap:15px">
-        <div style="display:flex; align-items:center; gap:15px">
-            <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
-                <span class="material-symbols-outlined text-2xl">person</span>
-            </div>
-            <div style="flex:1">
-                <div class="font-bold text-sm">User</div>
-                <div style="font-size:10px; color:var(--mob-text-muted)">user@foliotrack.io</div>
-            </div>
-        </div>
-        <div class="flex flex-col gap-2 mt-2">
-            <button class="w-full py-2 bg-primary text-white rounded-lg text-xs font-bold shadow-sm shadow-primary/20">Change Password</button>
-            <button class="w-full py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold border border-slate-200 dark:border-slate-700">Update Email</button>
-            <button class="w-full py-2 bg-rose-50 dark:bg-rose-500/10 text-rose-500 rounded-lg text-xs font-bold mt-2" onclick="alert('Not implemented locally')">Logout</button>
-        </div>
-    </div>
-
-    <!-- Appearance -->
-    <div class="mob-section-header">
-      <span class="mob-section-title">Appearance</span>
-    </div>
-    <div class="mob-card mob-card-padded" style="margin-bottom:16px; display:flex; flex-direction:column; gap:12px">
-        <div>
-            <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest mb-1">Theme</label>
-            <div class="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-lg">
-                <button onclick="setTheme('dark')" class="flex-1 py-1.5 text-[10px] font-bold bg-slate-800 rounded-md shadow-sm text-primary">Dark</button>
-                <button onclick="setTheme('light')" class="flex-1 py-1.5 text-[10px] font-bold text-slate-400">Light</button>
-            </div>
-        </div>
-        <div class="mt-3">
-            <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest mb-1">Font Family</label>
-            <select id="mob-font-family-select" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded px-2 py-1.5 text-xs focus:outline-none">
-                <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
-                <option value="'Fira Code', monospace">Fira Code</option>
-                <option value="'Roboto Mono', monospace">Roboto Mono</option>
-                <option value="'Inter', sans-serif">Inter</option>
-            </select>
-        </div>
-        <div class="mt-3">
-            <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest mb-1">Font Size</label>
-            <select id="mob-font-size-select" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded px-2 py-1.5 text-xs focus:outline-none">
-                <option value="12">Small (12px)</option>
-                <option value="14">Default (14px)</option>
-                <option value="16">Large (16px)</option>
-                <option value="18">Extra Large (18px)</option>
-                <option value="20">Huge (20px)</option>
-            </select>
-        </div>
-        <div class="mt-3 flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-3">
-            <div>
-                <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest">Layout Mode</label>
-                <div style="font-size:9px; color:var(--mob-text-muted)">Switch Mobile/Desktop view</div>
-            </div>
-            <button onclick="toggleMobileView()" class="layout-toggle-btn w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-500">
-                <span class="material-symbols-outlined text-sm block">computer</span>
-            </button>
-        </div>
-        <div class="mt-3 flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-3">
-            <div>
-                <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest">Privacy Mode</label>
-                <div style="font-size:9px; color:var(--mob-text-muted)">Hide sensitive data</div>
-            </div>
-            <button onclick="togglePrivacy()" class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-500">
-                <span class="material-symbols-outlined text-sm block" id="mob-privacy-icon-settings">visibility</span>
-            </button>
-        </div>
-    </div>
-
-    <!-- Portfolio Preferences -->
-    <div class="mob-section-header">
-      <span class="mob-section-title">Preferences</span>
-    </div>
-    <div class="mob-card mob-card-padded" style="margin-bottom:16px">
-        <div class="flex items-center justify-between mb-4">
-            <div>
-                <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest mb-1">Default Currency</label>
-                <div style="font-size:9px; color:var(--mob-text-muted)">Currency for calculations</div>
-            </div>
-            <div class="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-md">
-                <button class="px-3 py-1 text-[10px] font-bold bg-white dark:bg-slate-800 rounded shadow-sm">EUR</button>
-                <button class="px-3 py-1 text-[10px] font-bold text-slate-400">USD</button>
-            </div>
-        </div>
-        <div class="h-px bg-slate-100 dark:bg-slate-800 w-full mb-3"></div>
-        <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest mb-1">Update Frequency</label>
-        <select id="mob-update-frequency-select" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded px-2 py-1.5 text-xs focus:outline-none">
-            <option value="1">1 Min</option>
-            <option value="5">5 Min</option>
-            <option value="15">15 Min</option>
-            <option value="60">1 Hour</option>
-            <option value="0">Manual</option>
-        </select>
-    </div>
-
-    <!-- Telegram Notifications (Mobile) -->
-    <div class="mob-section-header">
-      <span class="mob-section-title">Telegram Notifications</span>
-    </div>
-    <div class="mob-card mob-card-padded" style="margin-bottom:16px; display:flex; flex-direction:column; gap:12px">
-        <div class="flex items-center justify-between mb-2">
-            <div>
-                <div class="font-bold text-xs">Enable Telegram</div>
-                <div style="font-size:9px; color:var(--mob-text-muted)">Global background service</div>
-            </div>
-            <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" id="mob-telegram-enabled-check" class="sr-only peer">
-                <div class="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-[#0088cc]"></div>
-            </label>
-        </div>
-        
-        <div class="h-px bg-slate-100 dark:bg-slate-800 w-full"></div>
-
-        <div class="space-y-3 pt-1">
-            <div>
-                <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest mb-1">Bot Token</label>
-                <input id="mob-telegram-bot-token" type="password" placeholder="Token..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded px-2 py-1.5 text-xs focus:outline-none">
-            </div>
-            <div>
-                <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest mb-1">Chat ID</label>
-                <input id="mob-telegram-chat-id" type="text" placeholder="Chat ID..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded px-2 py-1.5 text-xs focus:outline-none">
+    <!-- Mobile Scrollable Content -->
+    <div class="mob-scroll" id="mob-settings-scroll">
+        <!-- Profile Card -->
+        <div class="px-5 pt-6 pb-2">
+            <div class="flex items-center gap-4 p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+                <div class="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                    <span class="material-symbols-outlined text-3xl">person</span>
+                </div>
+                <div class="flex-1 overflow-hidden">
+                    <h3 class="font-black text-lg truncate">User</h3>
+                    <p class="text-xs text-slate-500 truncate">user@foliotrack.io</p>
+                </div>
+                <div class="p-2 bg-emerald-500/10 rounded-full">
+                    <span class="material-symbols-outlined text-emerald-500 text-sm">verified</span>
+                </div>
             </div>
         </div>
 
-        <div class="h-px bg-slate-100 dark:bg-slate-800 w-full"></div>
-
-        <div class="flex items-center justify-between">
-            <div>
-                <div class="font-bold text-[10px] text-slate-500 uppercase tracking-widest">Market Status</div>
-                <div style="font-size:9px; color:var(--mob-text-muted)">Periodic updates</div>
-            </div>
-            <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" id="mob-telegram-market-status-check" class="sr-only peer">
-                <div class="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-[#0088cc]"></div>
-            </label>
+        <div class="flex gap-3 px-5 mb-2">
+            <button class="flex-1 py-3 bg-white dark:bg-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-200 dark:border-slate-800 shadow-sm">Security</button>
+            <button class="flex-1 py-3 bg-white dark:bg-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-200 dark:border-slate-800 shadow-sm">Account</button>
         </div>
 
-        <div>
-            <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest mb-1">Status Interval (Min)</label>
-            <input id="mob-telegram-status-interval" type="number" min="1" step="1" placeholder="60" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded px-2 py-1.5 text-xs focus:outline-none">
+        <!-- Appearance Group -->
+        <div class="mob-settings-group">
+            <div class="mob-settings-group-title">Layout & Display</div>
+            <div class="mob-settings-card">
+                <div class="mob-settings-row">
+                    <div class="mob-settings-icon bg-blue-ios"><span class="material-symbols-outlined">palette</span></div>
+                    <div class="mob-settings-label">Font Family</div>
+                    <div class="mob-settings-value">
+                        <select id="mob-font-family-select" class="mob-settings-select">
+                            <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
+                            <option value="'Fira Code', monospace">Fira Code</option>
+                            <option value="'Roboto Mono', monospace">Roboto Mono</option>
+                            <option value="'Inter', sans-serif">Inter</option>
+                        </select>
+                        <span class="material-symbols-outlined mob-settings-chevron">chevron_right</span>
+                    </div>
+                </div>
+                <div class="mob-settings-row">
+                    <div class="mob-settings-icon bg-teal-ios"><span class="material-symbols-outlined">format_size</span></div>
+                    <div class="mob-settings-label">Font Size</div>
+                    <div class="mob-settings-value">
+                        <select id="mob-font-size-select" class="mob-settings-select">
+                            <option value="12">12px</option>
+                            <option value="14">14px</option>
+                            <option value="16">16px</option>
+                            <option value="18">18px</option>
+                            <option value="20">20px</option>
+                        </select>
+                        <span class="material-symbols-outlined mob-settings-chevron">chevron_right</span>
+                    </div>
+                </div>
+                <div class="mob-settings-row" onclick="document.getElementById('mob-theme-toggle-check').click()">
+                    <div class="mob-settings-icon bg-gray-ios"><span class="material-symbols-outlined">dark_mode</span></div>
+                    <div class="mob-settings-label">Dark Mode</div>
+                    <div class="mob-toggle">
+                        <input type="checkbox" id="mob-theme-toggle-check" onclick="event.stopPropagation()">
+                        <div class="mob-toggle-slider"></div>
+                    </div>
+                </div>
+                <div class="mob-settings-row" onclick="toggleMobileView()">
+                    <div class="mob-settings-icon bg-indigo-ios"><span class="material-symbols-outlined">computer</span></div>
+                    <div class="mob-settings-label">Desktop Mode</div>
+                    <span class="material-symbols-outlined mob-settings-chevron">open_in_new</span>
+                </div>
+            </div>
         </div>
 
-        <div class="grid grid-cols-3 gap-2 mt-2">
-            <button onclick="sendTestTelegram('tp')" class="py-2 bg-slate-100 dark:bg-slate-800 rounded text-[9px] font-bold">Test TP</button>
-            <button onclick="sendTestTelegram('sl')" class="py-2 bg-slate-100 dark:bg-slate-800 rounded text-[9px] font-bold">Test SL</button>
-            <button onclick="sendTestTelegram('status')" class="py-2 bg-slate-100 dark:bg-slate-800 rounded text-[9px] font-bold">Test Stat</button>
+        <!-- Preferences Group -->
+        <div class="mob-settings-group">
+            <div class="mob-settings-group-title">App Preferences</div>
+            <div class="mob-settings-card">
+                <div class="mob-settings-row">
+                    <div class="mob-settings-icon bg-orange-ios"><span class="material-symbols-outlined">sync</span></div>
+                    <div class="mob-settings-label">Live Update</div>
+                    <div class="mob-settings-value">
+                        <select id="mob-update-frequency-select" class="mob-settings-select">
+                            <option value="5000">5s (Auto)</option>
+                            <option value="10000">10s</option>
+                            <option value="30000">30s</option>
+                            <option value="60000">1m</option>
+                        </select>
+                        <span class="material-symbols-outlined mob-settings-chevron">chevron_right</span>
+                    </div>
+                </div>
+                <div class="mob-settings-row" onclick="document.getElementById('mob-privacy-toggle-check').click()">
+                    <div class="mob-settings-icon bg-purple-ios"><span class="material-symbols-outlined">visibility_off</span></div>
+                    <div class="mob-settings-label">Privacy Mode</div>
+                    <div class="mob-toggle">
+                        <input type="checkbox" id="mob-privacy-toggle-check" onclick="event.stopPropagation()">
+                        <div class="mob-toggle-slider"></div>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        <!-- Telegram Notifications -->
+        <div class="mob-settings-group">
+            <div class="mob-settings-group-title">Notifications & Alerts</div>
+            <div class="mob-settings-card">
+                <div class="mob-settings-row" onclick="toggleMobSection('mob-sec-telegram-config')">
+                    <div class="mob-settings-icon bg-telegram"><span class="material-symbols-outlined">send</span></div>
+                    <div class="mob-settings-label">Telegram Bot</div>
+                    <div class="mob-settings-value">
+                        <span class="text-[10px] font-black uppercase text-slate-400" id="mob-tg-status-label">Setup</span>
+                        <span class="material-symbols-outlined mob-settings-chevron" id="mob-sec-telegram-config-icon">expand_more</span>
+                    </div>
+                </div>
+                <div id="mob-sec-telegram-config" class="hidden bg-slate-50 dark:bg-black/20 px-5 py-4 space-y-4 border-t border-slate-100 dark:border-slate-800">
+                    <div class="flex items-center justify-between">
+                        <div class="text-xs font-bold text-slate-500 uppercase tracking-widest">Enable Alerts</div>
+                        <div class="mob-toggle">
+                            <input type="checkbox" id="mob-telegram-enabled-check">
+                            <div class="mob-toggle-slider"></div>
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Bot Token</label>
+                        <input id="mob-telegram-bot-token" type="password" placeholder="API Key..." class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs font-mono outline-none focus:ring-1 focus:ring-primary/50">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Chat ID</label>
+                        <input id="mob-telegram-chat-id" type="text" placeholder="ID..." class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs font-mono outline-none focus:ring-1 focus:ring-primary/50">
+                    </div>
+                    <div class="pt-2 flex gap-2">
+                        <button onclick="sendTestTelegram('tp')" class="flex-1 py-2 bg-slate-200 dark:bg-slate-800 rounded-lg text-[9px] font-bold uppercase tracking-widest">Test TP</button>
+                        <button onclick="sendTestTelegram('sl')" class="flex-1 py-2 bg-slate-200 dark:bg-slate-800 rounded-lg text-[9px] font-bold uppercase tracking-widest">Test SL</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Management -->
+        <div class="mob-settings-group">
+            <div class="mob-settings-group-title">Data & Backup</div>
+            <div class="mob-settings-card">
+                <div class="mob-settings-row" onclick="window.location.href='/api/settings/backup'">
+                    <div class="mob-settings-icon bg-blue-ios"><span class="material-symbols-outlined">cloud_download</span></div>
+                    <div class="mob-settings-label">Export Data</div>
+                    <span class="material-symbols-outlined mob-settings-chevron">chevron_right</span>
+                </div>
+                <div class="mob-settings-row" onclick="document.getElementById('mob-restore-file').click()">
+                    <div class="mob-settings-icon bg-indigo-ios"><span class="material-symbols-outlined">cloud_upload</span></div>
+                    <div class="mob-settings-label">Import Data</div>
+                    <span class="material-symbols-outlined mob-settings-chevron">chevron_right</span>
+                </div>
+                <div class="mob-settings-row" onclick="document.getElementById('rebuild-history-btn').click()">
+                    <div class="mob-settings-icon bg-orange-ios"><span class="material-symbols-outlined">restart_alt</span></div>
+                    <div class="mob-settings-label">Rebuild Engine</div>
+                    <span class="material-symbols-outlined mob-settings-chevron">chevron_right</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="mob-settings-group mt-10">
+            <div class="mob-settings-group-title text-rose-500">Destructive Actions</div>
+            <div class="mob-settings-card">
+                <button class="mob-settings-row w-full text-left" onclick="confirmReset()">
+                    <div class="mob-settings-icon bg-red-ios"><span class="material-symbols-outlined">delete_forever</span></div>
+                    <div class="mob-settings-label text-rose-500 font-bold">Purge Database</div>
+                    <span class="material-symbols-outlined mob-settings-chevron">chevron_right</span>
+                </button>
+            </div>
+            <p class="px-5 py-3 text-[10px] text-slate-400 italic leading-relaxed">
+                Resetting the database will permanently remove all transactions, portfolios and historical data points.
+            </p>
+        </div>
+
+        <input type="file" id="mob-restore-file" class="hidden" accept=".json" onchange="handleRestore(this)">
+        <div class="h-32"></div>
     </div>
 
-    <!-- Backup & Restore -->
-    <div class="mob-section-header">
-      <span class="mob-section-title">Backup & Restore</span>
-    </div>
-    <div class="mob-card mob-card-padded" style="margin-bottom:16px">
-        <div class="flex justify-between items-center mb-3">
-            <div>
-                <div class="font-bold text-xs" style="color:var(--mob-primary)">Create Backup</div>
-                <div style="font-size:9px; color:var(--mob-text-muted)">Trigger local backup</div>
-            </div>
-            <button id="mob-run-backup-btn" class="px-3 py-1.5 bg-primary/20 text-primary rounded text-xs font-bold border border-primary/30" onclick="document.getElementById('run-backup-btn').click(); this.innerText='Running...'">Run Now</button>
-        </div>
-        <div class="h-px bg-slate-100 dark:bg-slate-800 w-full mb-3"></div>
-        <div class="font-bold text-[10px] text-slate-500 uppercase tracking-widest mb-2">Available Backups</div>
-        <div id="mob-backups-list" class="space-y-2">
-            <!-- Populated via JS -->
-            <div class="text-[10px] text-slate-400 italic">No backups available in mobile view. Log in to desktop.</div>
-        </div>
-    </div>
-
-    <!-- System Maintenance -->
-    <div class="mob-section-header">
-      <span class="mob-section-title text-rose-500">Danger Zone</span>
-    </div>
-    <div class="mob-card mob-card-padded" style="margin-bottom:80px; border:1px solid rgba(225, 29, 72, 0.2)">
-        <div class="flex justify-between items-center mb-4">
-            <div>
-                <div class="font-bold text-xs text-rose-500">Rebuild History</div>
-                <div style="font-size:9px; color:var(--mob-text-muted)">Recalculate all metrics</div>
-            </div>
-            <button class="px-3 py-1 bg-rose-500/20 text-rose-500 rounded text-[10px] font-bold" onclick="document.getElementById('rebuild-history-btn').click()">Rebuild</button>
-        </div>
-        <div class="h-px bg-slate-100 dark:bg-slate-800 w-full mb-4"></div>
-        <div class="flex justify-between items-center">
-            <div>
-                <div class="font-bold text-xs text-rose-500">Purge Data</div>
-                <div style="font-size:9px; color:var(--mob-text-muted)">Delete all records</div>
-            </div>
-            <button class="px-3 py-1 bg-rose-500 text-white rounded text-[10px] font-bold shadow shadow-rose-500/30" onclick="document.getElementById('reset-data-btn').click()">Purge</button>
-        </div>
-        <div class="h-px bg-slate-100 dark:bg-slate-800 w-full my-4"></div>
-        <div class="flex justify-between items-center">
-            <div>
-                <div class="font-bold text-xs text-rose-500">Terminate Account</div>
-                <div style="font-size:9px; color:var(--mob-text-muted)">Irreversible deletion</div>
-            </div>
-            <button class="px-3 py-1 bg-rose-600 text-white rounded text-[10px] font-bold shadow shadow-rose-600/30">Delete</button>
-        </div>
-    </div>
 
   </div>
 
@@ -1043,6 +1012,9 @@
         const mobTgChat = document.getElementById('mob-telegram-chat-id');
         const mobTgMarket = document.getElementById('mob-telegram-market-status-check');
         const mobTgInterval = document.getElementById('mob-telegram-status-interval');
+        const mobThemeToggle = document.getElementById('mob-theme-toggle-check');
+        const mobPrivacyToggle = document.getElementById('mob-privacy-toggle-check');
+        const mobTgStatusLabel = document.getElementById('mob-tg-status-label');
 
         // Backup & Restore
         const backupFreqSelect = document.getElementById('backup-frequency-select');
@@ -1068,6 +1040,14 @@
             else if (mobSizeSelect && settings.fontSize) mobSizeSelect.value = settings.fontSize;
             
             if (mobFreqSelect && settings.updateFrequency) mobFreqSelect.value = settings.updateFrequency;
+
+            if (mobThemeToggle) mobThemeToggle.checked = theme === 'dark';
+            if (mobPrivacyToggle) mobPrivacyToggle.checked = settings.privacyMode === 'true';
+            
+            if (mobTgStatusLabel) {
+                mobTgStatusLabel.textContent = settings.telegramEnabled === 'true' ? 'Active' : 'Setup';
+                mobTgStatusLabel.className = 'text-[10px] font-black uppercase ' + (settings.telegramEnabled === 'true' ? 'text-emerald-500' : 'text-slate-400');
+            }
 
             if (tgEnabledCheck) tgEnabledCheck.checked = settings.telegramEnabled === 'true';
             if (tgMarketCheck) tgMarketCheck.checked = settings.marketStatusTelegramEnabled === 'true';
@@ -1186,6 +1166,9 @@
         if (tgEnabledCheck) tgEnabledCheck.addEventListener('change', saveTelegramSettings);
         if (tgMarketCheck) tgMarketCheck.addEventListener('change', saveTelegramSettings);
         if (tgIntervalInput) tgIntervalInput.addEventListener('change', saveTelegramSettings);
+
+        if (mobThemeToggle) mobThemeToggle.addEventListener('change', () => toggleTheme());
+        if (mobPrivacyToggle) mobPrivacyToggle.addEventListener('change', () => togglePrivacy());
 
         setupSync(tgTokenInput, mobTgToken);
         setupSync(tgChatIdInput, mobTgChat);
@@ -1411,6 +1394,30 @@
                 content.classList.add('hidden');
                 if (icon) icon.style.transform = 'rotate(0deg)';
             }
+        };
+
+        window.toggleMobSection = function(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.toggle('hidden');
+            const icon = document.getElementById(id + '-icon');
+            if (icon) {
+                icon.style.transform = el.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+            }
+        };
+
+        window.confirmReset = () => {
+             const resetModal = document.getElementById('confirm-reset-modal');
+             if (resetModal) resetModal.classList.remove('hidden');
+        };
+
+        window.sendMarketStatusTelegram = async () => {
+            try {
+                const res = await fetch('/api/settings/telegram/test-status', { method: 'POST' });
+                const data = await res.json();
+                if (data.success) alert('Status notification sent!');
+                else alert('Failed: ' + data.error);
+            } catch (err) { alert('Error: ' + err.message); }
         };
 
         // Taxation Management logic
