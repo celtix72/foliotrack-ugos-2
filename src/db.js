@@ -227,6 +227,11 @@ function initDb() {
         fontSize:   '14',
         updateFrequency: '5',
         privacyMode: 'false',
+        telegramBotToken: '',
+        telegramChatId: '',
+        telegramEnabled: 'false',
+        marketStatusTelegramEnabled: 'false',
+        marketStatusInterval: '60',
         schemaVersion: '1.0'
     };
 

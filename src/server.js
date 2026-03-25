@@ -58,6 +58,105 @@ const logger = {
 
 dotenv.config();
 
+const https = require('https');
+
+// ─── Telegram Utility ────────────────────────────────────────────────────────
+async function sendTelegramMessage(text) {
+    const settings = database.getSettings();
+    const token = settings.telegramBotToken;
+    const chatId = settings.telegramChatId;
+    const enabled = settings.telegramEnabled === 'true';
+
+    if (!enabled || !token || !chatId) return;
+
+    const data = JSON.stringify({
+        chat_id: chatId,
+        text: text,
+        parse_mode: 'Markdown'
+    });
+
+    const options = {
+        hostname: 'api.telegram.org',
+        port: 443,
+        path: `/bot${token}/sendMessage`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': data.length
+        }
+    };
+
+    return new Promise((resolve, reject) => {
+        const req = https.request(options, (res) => {
+            let body = '';
+            res.on('data', (d) => body += d);
+            res.on('end', () => {
+                try {
+                    const parsed = JSON.parse(body);
+                    if (parsed.ok) resolve(parsed);
+                    else {
+                        logger.error(`Telegram API error: ${parsed.description}`);
+                        reject(new Error(parsed.description));
+                    }
+                } catch (e) {
+                    reject(e);
+                }
+            });
+        });
+
+        req.on('error', (e) => {
+            logger.error(`Telegram request error: ${e.message}`);
+            reject(e);
+        });
+
+        req.write(data);
+        req.end();
+    });
+}
+
+async function sendMarketStatusTelegram() {
+    const portfolios = database.db.prepare('SELECT totalValue, performance1D, currency FROM portfolios').all();
+    const liveRate = await getEurUsdRate();
+    
+    let totalValEUR = 0;
+    let totalVarEUR = 0;
+    
+    for (const p of portfolios) {
+        let val = p.totalValue || 0;
+        let var1D = p.performance1D || 0;
+        if (p.currency === 'USD' && liveRate > 0) {
+            val /= liveRate;
+            var1D /= liveRate;
+        }
+        totalValEUR += val;
+        totalVarEUR += var1D;
+    }
+    
+    const movers = database.db.prepare(`
+        SELECT ticker, name, changePercent 
+        FROM assets 
+        WHERE ticker != 'CASH' AND currentPrice > 0 
+        ORDER BY ABS(changePercent) DESC 
+        LIMIT 5
+    `).all();
+    
+    let msg = `📊 *STATO MERCATI*\n\n`;
+    msg += `💰 *Portfolio Totale:* € ${totalValEUR.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}\n`;
+    const varEmoji = totalVarEUR >= 0 ? '📈' : '📉';
+    msg += `${varEmoji} *Variazione 1D:* € ${totalVarEUR.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}\n\n`;
+    
+    msg += `🚀 *Top Movers:*\n`;
+    msg += '```\n';
+    for (const m of movers) {
+        const sign = m.changePercent >= 0 ? '+' : '';
+        const mEmoji = m.changePercent >= 0 ? '🟢' : '🔴';
+        msg += `${mEmoji} ${m.ticker.padEnd(9)} ${sign}${m.changePercent.toFixed(2)}%\n`;
+    }
+    msg += '```';
+    
+    await sendTelegramMessage(msg);
+}
+
 const yahooFinance = new YahooFinance({ suppressNotices: ['ripHistorical'] });
 const database = require('./db');
 const backupManager = require('./backup_manager');
@@ -105,7 +204,48 @@ async function fetchAssetMetadata(ticker) {
                 throw new Error('YF_RATE_LIMIT');
             }
             return null;
-        });
+        });async function sendMarketStatusTelegram() {
+    const portfolios = database.db.prepare('SELECT totalValue, performance1D, currency FROM portfolios').all();
+    const liveRate = await getEurUsdRate();
+    
+    let totalValEUR = 0;
+    let totalVarEUR = 0;
+    
+    for (const p of portfolios) {
+        let val = p.totalValue || 0;
+        let var1D = p.performance1D || 0;
+        if (p.currency === 'USD' && liveRate > 0) {
+            val /= liveRate;
+            var1D /= liveRate;
+        }
+        totalValEUR += val;
+        totalVarEUR += var1D;
+    }
+    
+    const movers = database.db.prepare(`
+        SELECT ticker, name, changePercent 
+        FROM assets 
+        WHERE ticker != 'CASH' AND currentPrice > 0 
+        ORDER BY ABS(changePercent) DESC 
+        LIMIT 5
+    `).all();
+    
+    let msg = `📊 *STATO MERCATI*\n\n`;
+    msg += `💰 *Portfolio Totale:* € ${totalValEUR.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}\n`;
+    const varEmoji = totalVarEUR >= 0 ? '📈' : '📉';
+    msg += `${varEmoji} *Variazione 1D:* € ${totalVarEUR.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}\n\n`;
+    
+    msg += `🚀 *Top Movers:*\n`;
+    msg += '```\n';
+    for (const m of movers) {
+        const sign = m.changePercent >= 0 ? '+' : '';
+        const mEmoji = m.changePercent >= 0 ? '🟢' : '🔴';
+        msg += `${mEmoji} ${m.ticker.padEnd(9)} ${sign}${m.changePercent.toFixed(2)}%\n`;
+    }
+    msg += '```';
+    
+    await sendTelegramMessage(msg);
+}
         if (!quote) return null;
 
         let country = 'N/A';
@@ -3199,6 +3339,36 @@ app.post('/api/market-sync', async (req, res) => {
     }
 });
 
+// ─── Telegram Test Endpoints ────────────────────────────────────────────────
+app.post('/api/settings/telegram/test-tp', async (req, res) => {
+    try {
+        const msg = `🎯 *TEST: TARGET RAGGIUNTO*\n\n*Titolo:* AAPL\n*Prezzo Attuale:* 190.50\n*Target:* 190.00`;
+        await sendTelegramMessage(msg);
+        res.json({ success: true, message: 'Test TP sent' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/settings/telegram/test-sl', async (req, res) => {
+    try {
+        const msg = `⚠️ *TEST: STOP LOSS*\n\n*Titolo:* TSLA\n*Prezzo Attuale:* 165.20\n*Soglia SL:* 170.00`;
+        await sendTelegramMessage(msg);
+        res.json({ success: true, message: 'Test SL sent' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/settings/telegram/test-status', async (req, res) => {
+    try {
+        await sendMarketStatusTelegram();
+        res.json({ success: true, message: 'Test Status sent' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/backups/restore', async (req, res) => {
     try {
         const { filename } = req.body;
@@ -3377,6 +3547,10 @@ async function updateMarketData(force = false) {
                             INSERT INTO notifications (type, title, message, ticker)
                             VALUES (?, ?, ?, ?)
                         `).run('TARGET', 'Target Raggiunto', `${asset.ticker}: ${newPrice} (Target: ${asset.targetPrice})`, asset.ticker);
+                        
+                        // Telegram Notification
+                        const msg = `🎯 *TARGET RAGGIUNTO*\n\n*Titolo:* ${asset.ticker}\n*Prezzo Attuale:* ${newPrice}\n*Target:* ${asset.targetPrice}`;
+                        sendTelegramMessage(msg).catch(e => logger.error('Telegram Target Alert failed', e));
                     }
                 }
                 if (asset.stopLoss > 0 && newPrice <= asset.stopLoss) {
@@ -3389,6 +3563,10 @@ async function updateMarketData(force = false) {
                             INSERT INTO notifications (type, title, message, ticker)
                             VALUES (?, ?, ?, ?)
                         `).run('STOP', 'Stop Loss', `${asset.ticker}: ${newPrice} (Soglia: ${asset.stopLoss})`, asset.ticker);
+                        
+                        // Telegram Notification
+                        const msg = `⚠️ *STOP LOSS*\n\n*Titolo:* ${asset.ticker}\n*Prezzo Attuale:* ${newPrice}\n*Soglia SL:* ${asset.stopLoss}`;
+                        sendTelegramMessage(msg).catch(e => logger.error('Telegram Stop Alert failed', e));
                     }
                 }
             }
@@ -3415,16 +3593,29 @@ async function updateMarketData(force = false) {
 let lastUpdateTime = Date.now();
 let lastBackupDate = ''; // 'YYYY-MM-DD'
 let lastSnapshotDate = ''; // 'YYYY-MM-DD'
+let lastTelegramStatusTime = 0;
 
 setInterval(async () => {
     const settings = database.getSettings();
     const now = new Date();
+    const status = getMarketStatus();
     
     // 1. Market Data Update
     const freqMs = parseInt(settings.updateFrequency || 5) * 60 * 1000;
     if (freqMs > 0 && Date.now() - lastUpdateTime >= freqMs) {
         updateMarketData();
         lastUpdateTime = Date.now();
+    }
+
+    // 2. Telegram Periodic Status
+    const tgStatusEnabled = settings.marketStatusTelegramEnabled === 'true';
+    const tgIntervalMin = parseInt(settings.marketStatusInterval || 60);
+    if (tgStatusEnabled && status.anyOpen && tgIntervalMin > 0) {
+        if (Date.now() - lastTelegramStatusTime >= tgIntervalMin * 60 * 1000) {
+            logger.info('Sending periodic market status to Telegram...');
+            sendMarketStatusTelegram().catch(e => logger.error('Periodic Telegram status failed', e));
+            lastTelegramStatusTime = Date.now();
+        }
     }
 
     // 2. Scheduled Backups

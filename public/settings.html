@@ -925,6 +925,13 @@
             else if (mobSizeSelect && settings.fontSize) mobSizeSelect.value = settings.fontSize;
             
             if (mobFreqSelect && settings.updateFrequency) mobFreqSelect.value = settings.updateFrequency;
+
+            // Telegram Notifications
+            if (tgTokenInput && settings.telegramBotToken) tgTokenInput.value = settings.telegramBotToken;
+            if (tgChatIdInput && settings.telegramChatId) tgChatIdInput.value = settings.telegramChatId;
+            if (tgEnabledCheck) tgEnabledCheck.checked = settings.telegramEnabled === 'true';
+            if (tgMarketCheck) tgMarketCheck.checked = settings.marketStatusTelegramEnabled === 'true';
+            if (tgIntervalInput && settings.marketStatusInterval) tgIntervalInput.value = settings.marketStatusInterval;
             
             const lightBtn = document.getElementById('theme-light-btn');
             const darkBtn = document.getElementById('theme-dark-btn');
@@ -993,6 +1000,44 @@
                     backupFrequency: backupFreqSelect ? backupFreqSelect.value : 'None',
                     backupRetention: backupRetentionInput ? backupRetentionInput.value : 5
                 });
+            }
+        };
+
+        const tgTokenInput = document.getElementById('telegram-bot-token');
+        const tgChatIdInput = document.getElementById('telegram-chat-id');
+        const tgEnabledCheck = document.getElementById('telegram-enabled-check');
+        const tgMarketCheck = document.getElementById('telegram-market-status-check');
+        const tgIntervalInput = document.getElementById('telegram-status-interval');
+
+        const saveTelegramSettings = () => {
+            if (window.updateAppSettings) {
+                window.updateAppSettings({
+                    telegramBotToken: tgTokenInput.value,
+                    telegramChatId: tgChatIdInput.value,
+                    telegramEnabled: String(tgEnabledCheck.checked),
+                    marketStatusTelegramEnabled: String(tgMarketCheck.checked),
+                    marketStatusInterval: tgIntervalInput.value
+                });
+            }
+        };
+
+        if (tgTokenInput) tgTokenInput.addEventListener('change', saveTelegramSettings);
+        if (tgChatIdInput) tgChatIdInput.addEventListener('change', saveTelegramSettings);
+        if (tgEnabledCheck) tgEnabledCheck.addEventListener('change', saveTelegramSettings);
+        if (tgMarketCheck) tgMarketCheck.addEventListener('change', saveTelegramSettings);
+        if (tgIntervalInput) tgIntervalInput.addEventListener('change', saveTelegramSettings);
+
+        window.sendTestTelegram = async (type) => {
+            try {
+                const res = await fetch(`/api/settings/telegram/test-${type}`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    alert('Test notification sent!');
+                } else {
+                    alert('Failed: ' + data.error);
+                }
+            } catch (err) {
+                alert('Error: ' + err.message);
             }
         };
 
