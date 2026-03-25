@@ -82,7 +82,7 @@ async function sendTelegramMessage(text) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Content-Length': data.length
+            'Content-Length': Buffer.byteLength(data)
         }
     };
 
@@ -211,12 +211,16 @@ async function sendTelegramDailyReport() {
             cat.totalVar += varEUR;
         }
 
-        let msg = `📊 *REPORT DAY:*                   ${totalVarEUR >= 0 ? '🟢🟢' : '🔴🔴'} ${totalVarEUR >= 0 ? '+' : ''}€${Math.round(totalVarEUR)}\n\n`;
+        const totalVarAbs = Math.round(Math.abs(totalVarEUR));
+        const totalVarSign = totalVarEUR >= 0 ? '+' : '-';
+        let msg = `📊 *REPORT DAY:*                   ${totalVarEUR >= 0 ? '🟢🟢' : '🔴🔴'} ${totalVarSign}€${totalVarAbs}\n\n`;
 
         for (const [name, cat] of Object.entries(categories)) {
             if (cat.assets.length === 0) continue;
             
-            msg += `${cat.emoji} *${name}* ${cat.totalVar >= 0 ? '+' : ''}€${Math.round(cat.totalVar)}\n`;
+            const catVarAbs = Math.round(Math.abs(cat.totalVar));
+            const catVarSign = cat.totalVar >= 0 ? '+' : '-';
+            msg += `${cat.emoji} *${name}* ${catVarSign}€${catVarAbs}\n`;
             
             // Sort assets by absolute variation descending
             cat.assets.sort((a, b) => Math.abs(b.varEUR) - Math.abs(a.varEUR));
@@ -229,9 +233,14 @@ async function sendTelegramDailyReport() {
                 // Format parts for alignment
                 const ticker = a.ticker.padEnd(9);
                 const priceVal = a.currentPrice.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 2});
-                const price = `${priceSymbol} ${priceVal}`.padStart(10);
-                const vStr = `${a.varEUR >= 0 ? '+' : ''}€${Math.round(a.varEUR)}`.padStart(8);
-                const pStr = `${a.changePercent >= 0 ? '+' : ''}${a.changePercent.toFixed(2)}%`.padStart(8);
+                const price = `${priceSymbol} ${priceVal}`.padStart(11);
+                
+                const varAbs = Math.round(Math.abs(a.varEUR));
+                const varSign = a.varEUR >= 0 ? '+' : '-';
+                const vStr = `${varSign}€${varAbs}`.padStart(9);
+                
+                const pSign = a.changePercent >= 0 ? '+' : '';
+                const pStr = `${pSign}${a.changePercent.toFixed(2)}%`.padStart(8);
                 
                 msg += `\`${icon} ${ticker} ${price} ${vStr} ${pStr} ${trend}\`\n`;
             }
