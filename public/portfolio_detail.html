@@ -3060,8 +3060,8 @@
                 <div class="mob-holding-ticker">${h.ticker}</div>
                 <div class="mob-holding-name">${h.name || ''}</div>
                 <div style="display:flex; gap:8px; margin-top:4px">
-                  ${targetPrice > 0 ? `<div style="font-size:8px; font-weight:900; color:${targetReached?'var(--mob-emerald)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:10px">target</span> TP: ${formatCurrency(targetPrice, h.currency)}</div>` : ''}
-                  ${stopLoss > 0 ? `<div style="font-size:8px; font-weight:900; color:${stopLossHit?'var(--mob-rose)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:10px">warning</span> SL: ${formatCurrency(stopLoss, h.currency)}</div>` : ''}
+                  ${targetPrice > 0 ? `<div style="font-size:10px; font-weight:900; color:${targetReached?'var(--mob-emerald)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">target</span> TP: ${formatCurrency(targetPrice, h.currency)}</div>` : ''}
+                  ${stopLoss > 0 ? `<div style="font-size:10px; font-weight:900; color:${stopLossHit?'var(--mob-rose)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">warning</span> SL: ${formatCurrency(stopLoss, h.currency)}</div>` : ''}
                 </div>
               </div>
               <div class="mob-holding-values">

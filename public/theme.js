@@ -76,6 +76,27 @@
         return originalFetch(url, options);
     };
     // -----------------------------------------------------
+    window.showNotification = function(message, type = 'info') {
+        console.log(`[Theme] Showing notification: ${message} (${type})`);
+        let toast = document.getElementById('global-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'global-toast';
+            toast.className = 'fixed bottom-8 left-1/2 -translate-x-1/2 z-[9999] px-6 py-3 rounded-2xl shadow-2xl font-bold text-sm transition-all transform translate-y-20 opacity-0 border';
+            document.body.appendChild(toast);
+        }
+        const colors = {
+            success: 'bg-emerald-500 text-white border-emerald-400',
+            error: 'bg-rose-500 text-white border-rose-400',
+            info: 'bg-primary text-white border-primary-light',
+            warn: 'bg-amber-500 text-white border-amber-400'
+        };
+        toast.className = `fixed bottom-8 left-1/2 -translate-x-1/2 z-[9999] px-6 py-3 rounded-2xl shadow-2xl font-bold text-sm transition-all transform translate-y-0 opacity-100 border ${colors[type] || colors.info}`;
+        toast.textContent = message;
+        setTimeout(() => {
+            toast.classList.add('translate-y-20', 'opacity-0');
+        }, 5000);
+    };
 
     function applyTheme(font, size, theme = "dark", mobFont = defaultMobFont, mobSize = defaultMobSize) {
         const fonts = {
@@ -436,6 +457,18 @@
             const res = await fetch('/api/notifications');
             const notifications = await res.json();
             const unreadCount = notifications.filter(n => !n.isRead).length;
+
+            // Check for new notifications to show toast
+            const maxId = notifications.length ? Math.max(...notifications.map(n => n.id)) : 0;
+            if (window._lastNotifId !== undefined && maxId > window._lastNotifId) {
+                const newOnes = notifications.filter(n => n.id > window._lastNotifId);
+                newOnes.forEach(n => {
+                    if (n.type === 'TARGET' || n.type === 'STOP') {
+                        window.showNotification(`${n.title}: ${n.message}`, n.type === 'TARGET' ? 'success' : 'error');
+                    }
+                });
+            }
+            window._lastNotifId = maxId;
 
             if (bellDot) {
                 bellDot.classList.toggle('hidden', unreadCount === 0);
@@ -836,31 +869,6 @@
             window.showNotification(`Failed to recover history for ${ticker}.`, 'error');
             return false;
         }
-    };
-
-    window.showNotification = function(message, type = 'info') {
-        // Create a temporary toast if no container exists
-        let toast = document.getElementById('global-toast');
-        if (!toast) {
-            toast = document.createElement('div');
-            toast.id = 'global-toast';
-            toast.className = 'fixed bottom-8 left-1/2 -translate-x-1/2 z-[9999] px-6 py-3 rounded-2xl shadow-2xl font-bold text-sm transition-all transform translate-y-20 opacity-0 border';
-            document.body.appendChild(toast);
-        }
-        
-        const colors = {
-            success: 'bg-emerald-500 text-white border-emerald-400',
-            error: 'bg-rose-500 text-white border-rose-400',
-            info: 'bg-primary text-white border-primary-light',
-            warn: 'bg-amber-500 text-white border-amber-400'
-        };
-        
-        toast.className = `fixed bottom-8 left-1/2 -translate-x-1/2 z-[9999] px-6 py-3 rounded-2xl shadow-2xl font-bold text-sm transition-all transform translate-y-0 opacity-100 border ${colors[type] || colors.info}`;
-        toast.textContent = message;
-        
-        setTimeout(() => {
-            toast.classList.add('translate-y-20', 'opacity-0');
-        }, 4000);
     };
 
     // ─── Mobile View Management ───────────────────────────────────────────────
