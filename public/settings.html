@@ -861,7 +861,7 @@
                 <div style="font-size:9px; color:var(--mob-text-muted)">Global background service</div>
             </div>
             <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" id="mob-telegram-enabled-check" class="sr-only peer" onchange="document.getElementById('telegram-enabled-check').checked = this.checked; document.getElementById('telegram-enabled-check').dispatchEvent(new Event('change'))">
+                <input type="checkbox" id="mob-telegram-enabled-check" class="sr-only peer">
                 <div class="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-[#0088cc]"></div>
             </label>
         </div>
@@ -871,11 +871,11 @@
         <div class="space-y-3 pt-1">
             <div>
                 <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest mb-1">Bot Token</label>
-                <input id="mob-telegram-bot-token" type="password" placeholder="Token..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded px-2 py-1.5 text-xs focus:outline-none" onchange="document.getElementById('telegram-bot-token').value = this.value; document.getElementById('telegram-bot-token').dispatchEvent(new Event('change'))">
+                <input id="mob-telegram-bot-token" type="password" placeholder="Token..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded px-2 py-1.5 text-xs focus:outline-none">
             </div>
             <div>
                 <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest mb-1">Chat ID</label>
-                <input id="mob-telegram-chat-id" type="text" placeholder="Chat ID..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded px-2 py-1.5 text-xs focus:outline-none" onchange="document.getElementById('telegram-chat-id').value = this.value; document.getElementById('telegram-chat-id').dispatchEvent(new Event('change'))">
+                <input id="mob-telegram-chat-id" type="text" placeholder="Chat ID..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded px-2 py-1.5 text-xs focus:outline-none">
             </div>
         </div>
 
@@ -887,9 +887,14 @@
                 <div style="font-size:9px; color:var(--mob-text-muted)">Periodic updates</div>
             </div>
             <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" id="mob-telegram-market-status-check" class="sr-only peer" onchange="document.getElementById('telegram-market-status-check').checked = this.checked; document.getElementById('telegram-market-status-check').dispatchEvent(new Event('change'))">
+                <input type="checkbox" id="mob-telegram-market-status-check" class="sr-only peer">
                 <div class="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-[#0088cc]"></div>
             </label>
+        </div>
+
+        <div>
+            <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest mb-1">Status Interval (Min)</label>
+            <input id="mob-telegram-status-interval" type="number" min="1" step="1" placeholder="60" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded px-2 py-1.5 text-xs focus:outline-none">
         </div>
 
         <div class="grid grid-cols-3 gap-2 mt-2">
@@ -1257,7 +1262,6 @@
             } catch (err) { console.error(err); }
         }
 
-        const runBackupBtn = document.getElementById('run-backup-btn');
         if (runBackupBtn) {
             runBackupBtn.addEventListener('click', async () => {
                 runBackupBtn.disabled = true;
