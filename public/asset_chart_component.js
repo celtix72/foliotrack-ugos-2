@@ -11,82 +11,84 @@
 
     // Inject Modal HTML if not present
     function ensureModalExists() {
-        if (document.getElementById('asset-chart-modal')) return;
+        const existing = document.getElementById('asset-chart-modal');
+        if (existing) existing.remove(); // Force re-injection for debug
 
         const modalHtml = `
-        <div id="asset-chart-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[150] flex items-center justify-center hidden p-4">
-            <div class="bg-white dark:bg-[#111722] w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col" style="max-height:90vh">
-                <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 shrink-0">
+        <div id="asset-chart-modal" 
+             style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999; align-items: center; justify-content: center; background-color: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); padding: 1rem; flex-direction: column;"
+             class="flex">
+            <div class="bg-white dark:bg-[#111722]" 
+                 style="width: 100%; max-width: 900px; max-height: 95vh; position: relative; z-index: 10000; display: flex; flex-direction: column; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); background-color: white;">
+                
+                <!-- Header -->
+                <div style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border-top-left-radius: 20px; border-top-right-radius: 20px;">
                     <div>
-                        <h3 class="font-black text-lg" id="chart-modal-title">Asset History</h3>
-                        <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold" id="chart-modal-subtitle"></p>
+                        <h3 class="font-black text-lg" id="chart-modal-title" style="margin: 0; color: #0f172a;">Asset History</h3>
+                        <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold" id="chart-modal-subtitle" style="margin: 4px 0 0 0; font-size: 10px;"></p>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <div class="flex gap-1 text-[10px] font-black" id="chart-range-btns">
-                            <button onclick="loadAssetChart(null, '1m')" data-range="1m" class="chart-range-btn px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-primary hover:text-white transition-colors">1M</button>
-                            <button onclick="loadAssetChart(null, '6m')" data-range="6m" class="chart-range-btn px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-primary hover:text-white transition-colors">6M</button>
-                            <button onclick="loadAssetChart(null, '1y')" data-range="1y" class="chart-range-btn px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-primary hover:text-white transition-colors">1Y</button>
-                            <button onclick="loadAssetChart(null, '3y')" data-range="3y" class="chart-range-btn px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-primary hover:text-white transition-colors">3Y</button>
-                            <button onclick="loadAssetChart(null, '5y')" data-range="5y" class="chart-range-btn px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-primary hover:text-white transition-colors">5Y</button>
-                            <button onclick="loadAssetChart(null, 'all')" data-range="all" class="chart-range-btn px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-primary hover:text-white transition-colors">All</button>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div id="chart-range-btns" style="display: flex; gap: 5px;">
+                            <button onclick="loadAssetChart(null, '1m')" data-range="1m" class="chart-range-btn" style="padding: 5px 10px; border-radius: 6px; border: 1px solid #e2e8f0; background: white; cursor: pointer; font-size: 11px; font-weight: bold;">1M</button>
+                            <button onclick="loadAssetChart(null, '6m')" data-range="6m" class="chart-range-btn" style="padding: 5px 10px; border-radius: 6px; border: 1px solid #e2e8f0; background: white; cursor: pointer; font-size: 11px; font-weight: bold;">6M</button>
+                            <button onclick="loadAssetChart(null, '1y')" data-range="1y" class="chart-range-btn" style="padding: 5px 10px; border-radius: 6px; border: 1px solid #e2e8f0; background: white; cursor: pointer; font-size: 11px; font-weight: bold;">1Y</button>
+                            <button onclick="loadAssetChart(null, 'all')" data-range="all" class="chart-range-btn" style="padding: 5px 10px; border-radius: 6px; border: 1px solid #e2e8f0; background: white; cursor: pointer; font-size: 11px; font-weight: bold;">ALL</button>
                         </div>
-                        <button onclick="closeAssetChartModal()" class="text-slate-400 hover:text-rose-500 transition-colors ml-2">
+                        <button onclick="closeAssetChartModal()" style="background: none; border: none; cursor: pointer; color: #94a3b8;">
                             <span class="material-symbols-outlined">close</span>
                         </button>
                     </div>
                 </div>
-                <div class="p-4 flex-1 overflow-hidden flex flex-col" style="min-height:300px">
-                    <div id="chart-modal-loading" class="flex-1 flex items-center justify-center hidden">
-                        <span class="material-symbols-outlined animate-spin text-primary text-4xl">progress_activity</span>
+                
+                <!-- Chart Area -->
+                <div style="padding: 20px; flex: 1; min-height: 350px; display: flex; flex-direction: column; background: white;">
+                    <div id="chart-modal-loading" style="display: none; flex: 1; align-items: center; justify-content: center;">
+                        <span class="material-symbols-outlined animate-spin" style="font-size: 40px; color: #135bec;">progress_activity</span>
                     </div>
-                    <div id="chart-modal-empty" class="flex-1 flex flex-col items-center justify-center hidden text-slate-400 gap-2">
-                        <span class="material-symbols-outlined text-4xl">bar_chart_off</span>
-                        <p class="text-sm font-bold">No historical data available for this asset.</p>
-                        <p class="text-xs">Trigger a history rebuild from the Dashboard to populate data.</p>
+                    <div id="chart-modal-empty" style="display: none; flex: 1; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8;">
+                        <span class="material-symbols-outlined" style="font-size: 48px;">bar_chart_off</span>
+                        <p style="font-weight: bold; margin-top: 10px;">No historical data available.</p>
                     </div>
-                    <div id="chart-modal-content" class="flex-1 hidden">
-                        <canvas id="asset-history-chart" class="w-full h-full"></canvas>
+                    <div id="chart-modal-content" style="display: none; flex: 1; min-height: 300px; position: relative;">
+                        <canvas id="asset-history-chart" style="width: 100% !important; height: 100% !important;"></canvas>
                     </div>
                 </div>
 
                 <!-- Price Alerts Section -->
-                <div class="px-6 py-4 border-t border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
-                    <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <div class="flex-1 grid grid-cols-2 gap-4 w-full">
-                            <div class="space-y-1">
-                                <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                                    <span class="material-symbols-outlined text-[12px] text-emerald-500">trending_up</span> Target Price
-                                </label>
-                                <div class="relative">
-                                    <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold" id="modal-tp-curr">€</span>
-                                    <input type="number" id="modal-tp-input" step="any" class="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl py-2 pl-6 pr-3 text-sm font-black focus:ring-2 focus:ring-primary/20" placeholder="0.00">
+                <div style="padding: 20px; border-top: 1px solid #eee; background: #fdfdfd;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end;">
+                        <div style="flex: 1; min-width: 250px; display: flex; gap: 15px;">
+                            <div style="flex: 1;">
+                                <label style="display: block; font-size: 9px; font-weight: 900; color: #64748b; text-transform: uppercase; margin-bottom: 5px;">Target Price</label>
+                                <div style="position: relative;">
+                                    <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-weight: bold; color: #94a3b8;" id="modal-tp-curr">€</span>
+                                    <input type="number" id="modal-tp-input" step="any" style="width: 100%; padding: 10px 10px 10px 25px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; font-weight: bold;" placeholder="0.00">
                                 </div>
                             </div>
-                            <div class="space-y-1">
-                                <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                                    <span class="material-symbols-outlined text-[12px] text-rose-500">trending_down</span> Stop Loss
-                                </label>
-                                <div class="relative">
-                                    <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold" id="modal-sl-curr">€</span>
-                                    <input type="number" id="modal-sl-input" step="any" class="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl py-2 pl-6 pr-3 text-sm font-black focus:ring-2 focus:ring-primary/20" placeholder="0.00">
+                            <div style="flex: 1;">
+                                <label style="display: block; font-size: 9px; font-weight: 900; color: #64748b; text-transform: uppercase; margin-bottom: 5px;">Stop Loss</label>
+                                <div style="position: relative;">
+                                    <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-weight: bold; color: #94a3b8;" id="modal-sl-curr">€</span>
+                                    <input type="number" id="modal-sl-input" step="any" style="width: 100%; padding: 10px 10px 10px 25px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; font-weight: bold;" placeholder="0.00">
                                 </div>
                             </div>
                         </div>
-                        <button id="modal-save-alerts-btn" onclick="saveModalAlerts()" class="w-full sm:w-auto px-8 py-2.5 bg-primary text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-primary/20 hover:bg-primary/95 transition-all self-end">
+                        <button id="modal-save-alerts-btn" onclick="saveModalAlerts()" style="background: #135bec; color: white; padding: 12px 25px; border-radius: 10px; border: none; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px;">
                             Save Alerts
                         </button>
                     </div>
                 </div>
 
-                <div class="px-6 py-3 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between shrink-0 bg-white dark:bg-[#111722]">
-                    <div class="flex items-center gap-4">
-                        <p class="text-[10px] text-slate-400 font-bold" id="chart-modal-points">—</p>
-                        <div class="flex items-center gap-3 text-[9px] font-bold">
-                            <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> BUY</div>
-                            <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500"></span> SELL</div>
+                <!-- Footer Info -->
+                <div style="padding: 15px 20px; border-top: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #64748b; font-weight: bold;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <span id="chart-modal-points">—</span>
+                        <div style="display: flex; gap: 10px;">
+                            <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span> BUY</span>
+                            <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444;"></span> SELL</span>
                         </div>
                     </div>
-                    <p class="text-[11px] font-black" id="chart-modal-range-label"></p>
+                    <span id="chart-modal-range-label" style="font-weight: 900; color: #0f172a;"></span>
                 </div>
             </div>
         </div>`;
@@ -102,7 +104,7 @@
 
     window.closeAssetChartModal = function() {
         const modal = document.getElementById('asset-chart-modal');
-        if (modal) modal.classList.add('hidden');
+        if (modal) modal.style.display = 'none';
         if (_assetChartInstance) { 
             _assetChartInstance.destroy(); 
             _assetChartInstance = null; 
@@ -163,7 +165,7 @@
         if (!_chartTicker) return;
 
         const modal = document.getElementById('asset-chart-modal');
-        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
 
         document.getElementById('chart-modal-title').textContent = `History: ${_chartTicker}`;
 
@@ -177,9 +179,9 @@
         });
 
         // Show loading
-        document.getElementById('chart-modal-loading').classList.remove('hidden');
-        document.getElementById('chart-modal-empty').classList.add('hidden');
-        document.getElementById('chart-modal-content').classList.add('hidden');
+        document.getElementById('chart-modal-loading').style.display = 'flex';
+        document.getElementById('chart-modal-empty').style.display = 'none';
+        document.getElementById('chart-modal-content').style.display = 'none';
         document.getElementById('chart-modal-points').textContent = '—';
 
         try {
@@ -209,8 +211,8 @@
             }
 
             if (!_allChartData.length) {
-                document.getElementById('chart-modal-loading').classList.add('hidden');
-                document.getElementById('chart-modal-empty').classList.remove('hidden');
+                document.getElementById('chart-modal-loading').style.display = 'none';
+                document.getElementById('chart-modal-empty').style.display = 'flex';
                 return;
             }
 
@@ -248,8 +250,81 @@
             const lineColor = isUp ? 'rgb(16,185,129)' : 'rgb(239,68,68)';
             const fillColor = isUp ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)';
 
-            document.getElementById('chart-modal-loading').classList.add('hidden');
-            document.getElementById('chart-modal-content').classList.remove('hidden');
+            // Prepare TP/SL Annotations
+            const annotations = {};
+            let adjustedMin = minP;
+            let adjustedMax = maxP;
+
+            if (assetInfo && assetInfo.targetPrice) {
+                const tp = parseFloat(assetInfo.targetPrice);
+                annotations.tpLine = {
+                    type: 'line',
+                    yMin: tp,
+                    yMax: tp,
+                    borderColor: 'rgb(16, 185, 129)',
+                    borderWidth: 2,
+                    borderDash: [6, 6],
+                    label: {
+                        display: true,
+                        content: `TP: ${tp.toFixed(2)}`,
+                        position: 'end',
+                        backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                        color: 'white',
+                        font: { size: 10, weight: 'bold' }
+                    }
+                };
+                adjustedMax = Math.max(adjustedMax, tp);
+                adjustedMin = Math.min(adjustedMin, tp);
+            }
+
+            if (assetInfo && assetInfo.stopLoss) {
+                const sl = parseFloat(assetInfo.stopLoss);
+                annotations.slLine = {
+                    type: 'line',
+                    yMin: sl,
+                    yMax: sl,
+                    borderColor: 'rgb(239, 68, 68)',
+                    borderWidth: 2,
+                    borderDash: [6, 6],
+                    label: {
+                        display: true,
+                        content: `SL: ${sl.toFixed(2)}`,
+                        position: 'end',
+                        backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                        color: 'white',
+                        font: { size: 10, weight: 'bold' }
+                    }
+                };
+                adjustedMax = Math.max(adjustedMax, sl);
+                adjustedMin = Math.min(adjustedMin, sl);
+            }
+
+            // Current Price Annotation
+            if (prices.length > 0) {
+                const lastPrice = prices[prices.length - 1];
+                annotations.lastPriceLine = {
+                    type: 'line',
+                    yMin: lastPrice,
+                    yMax: lastPrice,
+                    borderColor: 'rgba(59, 130, 246, 0.6)',
+                    borderWidth: 1,
+                    borderDash: [4, 4],
+                    label: {
+                        display: true,
+                        content: `NOW: ${lastPrice.toFixed(2)}`,
+                        position: 'start',
+                        backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                        color: 'white',
+                        font: { size: 9, weight: 'bold' }
+                    }
+                };
+                // Ensure Y-axis also includes current price if it's an outlier
+                adjustedMax = Math.max(adjustedMax, lastPrice);
+                adjustedMin = Math.min(adjustedMin, lastPrice);
+            }
+
+            document.getElementById('chart-modal-loading').style.display = 'none';
+            document.getElementById('chart-modal-content').style.display = 'block';
             document.getElementById('chart-modal-points').textContent = `${displayData.length} data points`;
             document.getElementById('chart-modal-range-label').textContent =
                 `${displayData[0]?.date} → ${displayData[displayData.length-1]?.date}`;
@@ -360,6 +435,9 @@
                                 return null;
                             }
                             }
+                        },
+                        annotation: {
+                            annotations: annotations
                         }
                     },
                     scales: {
@@ -374,17 +452,17 @@
                                 font: { size: 10 }
                             },
                             grid: { color: 'rgba(148,163,184,0.1)' },
-                            // SCALE strictly on the min/max of the period
-                            min: minP * 0.99,
-                            max: maxP * 1.01
+                            // SCALE strictly on the min/max of the period, including TP/SL
+                            min: adjustedMin * 0.99,
+                            max: adjustedMax * 1.01
                         }
                     }
                 }
             });
         } catch (err) {
             console.error('Chart load error:', err);
-            document.getElementById('chart-modal-loading').classList.add('hidden');
-            document.getElementById('chart-modal-empty').classList.remove('hidden');
+            document.getElementById('chart-modal-loading').style.display = 'none';
+            document.getElementById('chart-modal-empty').style.display = 'flex';
         }
     };
 
