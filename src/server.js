@@ -233,10 +233,16 @@ async function sendTelegramDailyReport() {
                 // Ticker: 8 characters fixed width
                 const tickerStr = (a.ticker || '').padEnd(8);
                 
-                // Price: Sym + 1-2 spaces + price. Total ~9 chars.
+                // Dynamic decimal places for compact layout:
+                // >1000: 0, >100: 1, >1: 2, >0: 3
+                let decimals = 3;
+                if (a.currentPrice >= 1000) decimals = 0;
+                else if (a.currentPrice >= 100) decimals = 1;
+                else if (a.currentPrice >= 1) decimals = 2;
+
                 const pVal = a.currentPrice.toLocaleString(undefined, {
-                    minimumFractionDigits: (a.currentPrice < 1 && a.currentPrice > 0 ? 4 : 1),
-                    maximumFractionDigits: (a.currentPrice < 1 && a.currentPrice > 0 ? 4 : 2)
+                    minimumFractionDigits: decimals,
+                    maximumFractionDigits: decimals
                 });
                 // Adjust space after symbol: 2 spaces if length <= 5, 1 if longer
                 const pSpace = pVal.length <= 5 ? '  ' : ' ';
