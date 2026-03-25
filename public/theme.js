@@ -1,4 +1,5 @@
 (function() {
+    console.log("[Theme] Script loading...");
     const defaultFont = "'JetBrains Mono', monospace";
     const defaultSize = "14";
     const defaultMobFont = "'Inter', sans-serif";
@@ -460,9 +461,13 @@
 
             // Check for new notifications to show toast
             const maxId = notifications.length ? Math.max(...notifications.map(n => n.id)) : 0;
+            console.log(`[Theme] Notifications: count=${notifications.length}, unread=${unreadCount}, maxId=${maxId}, lastId=${window._lastNotifId}`);
+            
             if (window._lastNotifId !== undefined && maxId > window._lastNotifId) {
                 const newOnes = notifications.filter(n => n.id > window._lastNotifId);
+                console.log(`[Theme] Found ${newOnes.length} new notifications`);
                 newOnes.forEach(n => {
+                    console.log(`[Theme] Processing new notify: ${n.id} type=${n.type}`);
                     if (n.type === 'TARGET' || n.type === 'STOP') {
                         window.showNotification(`${n.title}: ${n.message}`, n.type === 'TARGET' ? 'success' : 'error');
                     }
