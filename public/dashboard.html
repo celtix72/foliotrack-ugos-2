@@ -1239,6 +1239,20 @@
     mobSyncPrivacyIcon();
     if (window._mobileViewActive) mobUpdateDashboard();
   });
+
+  // Auto-refresh on market update
+  window.addEventListener('market-data-updated', () => {
+    console.log("[Dashboard] Auto-refreshing UI...");
+    if (window._mobileViewActive) {
+      if (typeof mobUpdateDashboard === 'function') mobUpdateDashboard();
+      if (typeof mobUpdatePerfChart === 'function') mobUpdatePerfChart();
+      if (typeof mobUpdateAllocChart === 'function') mobUpdateAllocChart();
+    } else {
+      if (typeof loadDashboard === 'function') loadDashboard();
+      if (typeof updateDashboardChart === 'function') updateDashboardChart();
+      if (typeof initAllocationChart === 'function') initAllocationChart();
+    }
+  });
 })();
 </script>
 </body></html>

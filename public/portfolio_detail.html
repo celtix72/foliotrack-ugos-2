@@ -3318,6 +3318,22 @@
       else mobLoadPortfolioList();
     }
   });
+
+  // Auto-refresh on market update
+  window.addEventListener('market-data-updated', () => {
+    console.log("[Portfolio] Auto-refreshing UI...");
+    if (window._mobileViewActive) {
+      if (typeof mobLoadPortfolioDetail === 'function' && mobCurrentPortfolioId) mobLoadPortfolioDetail(mobCurrentPortfolioId);
+      else if (typeof mobLoadPortfolioList === 'function') mobLoadPortfolioList();
+    } else {
+      // currentPortfolioId is defined in the script scope of portfolio_detail.html
+      if (typeof currentPortfolioId !== 'undefined' && currentPortfolioId) {
+        if (typeof loadPortfolioDetails === 'function') loadPortfolioDetails();
+      } else {
+        if (typeof loadPortfolios === 'function') loadPortfolios();
+      }
+    }
+  });
 })();
 </script>
 

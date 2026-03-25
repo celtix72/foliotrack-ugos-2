@@ -23,21 +23,21 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <div class="flex gap-1 text-[10px] font-black" id="chart-range-btns">
-                            <button onclick="loadAssetChart(null, '1m')" data-range="1m" class="chart-range-btn px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-violet-500 hover:text-white transition-colors">1M</button>
-                            <button onclick="loadAssetChart(null, '6m')" data-range="6m" class="chart-range-btn px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-violet-500 hover:text-white transition-colors">6M</button>
-                            <button onclick="loadAssetChart(null, '1y')" data-range="1y" class="chart-range-btn px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-violet-500 hover:text-white transition-colors">1Y</button>
-                            <button onclick="loadAssetChart(null, '3y')" data-range="3y" class="chart-range-btn px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-violet-500 hover:text-white transition-colors">3Y</button>
-                            <button onclick="loadAssetChart(null, '5y')" data-range="5y" class="chart-range-btn px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-violet-500 hover:text-white transition-colors">5Y</button>
-                            <button onclick="loadAssetChart(null, 'all')" data-range="all" class="chart-range-btn px-2 py-1 rounded-lg bg-violet-500 text-white transition-colors">All</button>
+                            <button onclick="loadAssetChart(null, '1m')" data-range="1m" class="chart-range-btn px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-primary hover:text-white transition-colors">1M</button>
+                            <button onclick="loadAssetChart(null, '6m')" data-range="6m" class="chart-range-btn px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-primary hover:text-white transition-colors">6M</button>
+                            <button onclick="loadAssetChart(null, '1y')" data-range="1y" class="chart-range-btn px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-primary hover:text-white transition-colors">1Y</button>
+                            <button onclick="loadAssetChart(null, '3y')" data-range="3y" class="chart-range-btn px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-primary hover:text-white transition-colors">3Y</button>
+                            <button onclick="loadAssetChart(null, '5y')" data-range="5y" class="chart-range-btn px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-primary hover:text-white transition-colors">5Y</button>
+                            <button onclick="loadAssetChart(null, 'all')" data-range="all" class="chart-range-btn px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-primary hover:text-white transition-colors">All</button>
                         </div>
                         <button onclick="closeAssetChartModal()" class="text-slate-400 hover:text-rose-500 transition-colors ml-2">
                             <span class="material-symbols-outlined">close</span>
                         </button>
                     </div>
                 </div>
-                <div class="p-4 flex-1 overflow-hidden flex flex-col" style="min-height:400px">
+                <div class="p-4 flex-1 overflow-hidden flex flex-col" style="min-height:300px">
                     <div id="chart-modal-loading" class="flex-1 flex items-center justify-center hidden">
-                        <span class="material-symbols-outlined animate-spin text-violet-400 text-4xl">progress_activity</span>
+                        <span class="material-symbols-outlined animate-spin text-primary text-4xl">progress_activity</span>
                     </div>
                     <div id="chart-modal-empty" class="flex-1 flex flex-col items-center justify-center hidden text-slate-400 gap-2">
                         <span class="material-symbols-outlined text-4xl">bar_chart_off</span>
@@ -48,7 +48,37 @@
                         <canvas id="asset-history-chart" class="w-full h-full"></canvas>
                     </div>
                 </div>
-                <div class="px-6 py-3 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between shrink-0">
+
+                <!-- Price Alerts Section -->
+                <div class="px-6 py-4 border-t border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div class="flex-1 grid grid-cols-2 gap-4 w-full">
+                            <div class="space-y-1">
+                                <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[12px] text-emerald-500">trending_up</span> Target Price
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold" id="modal-tp-curr">€</span>
+                                    <input type="number" id="modal-tp-input" step="any" class="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl py-2 pl-6 pr-3 text-sm font-black focus:ring-2 focus:ring-primary/20" placeholder="0.00">
+                                </div>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[12px] text-rose-500">trending_down</span> Stop Loss
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold" id="modal-sl-curr">€</span>
+                                    <input type="number" id="modal-sl-input" step="any" class="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl py-2 pl-6 pr-3 text-sm font-black focus:ring-2 focus:ring-primary/20" placeholder="0.00">
+                                </div>
+                            </div>
+                        </div>
+                        <button id="modal-save-alerts-btn" onclick="saveModalAlerts()" class="w-full sm:w-auto px-8 py-2.5 bg-primary text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-primary/20 hover:bg-primary/95 transition-all self-end">
+                            Save Alerts
+                        </button>
+                    </div>
+                </div>
+
+                <div class="px-6 py-3 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between shrink-0 bg-white dark:bg-[#111722]">
                     <div class="flex items-center gap-4">
                         <p class="text-[10px] text-slate-400 font-bold" id="chart-modal-points">—</p>
                         <div class="flex items-center gap-3 text-[9px] font-bold">
@@ -79,11 +109,55 @@
         }
     };
 
-    window.openAssetChartModal = function(ticker, name, currency) {
-        window.loadAssetChart(ticker, 'all');
+    window.saveModalAlerts = async function() {
+        if (!_chartTicker) return;
+        const btn = document.getElementById('modal-save-alerts-btn');
+        const tp = parseFloat(document.getElementById('modal-tp-input').value || 0);
+        const sl = parseFloat(document.getElementById('modal-sl-input').value || 0);
+        
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'SAVING...';
+
+        try {
+            const res = await fetch(`/api/assets/${encodeURIComponent(_chartTicker)}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ targetPrice: tp, stopLoss: sl, isMonitored: 1 })
+            });
+            if (res.ok) {
+                btn.textContent = 'SAVED!';
+                const oldClass = 'bg-primary';
+                const newClass = 'bg-emerald-500';
+                btn.classList.remove(oldClass);
+                btn.classList.add(newClass);
+                
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                    btn.classList.remove(newClass);
+                    btn.classList.add(oldClass);
+                }, 2000);
+                
+                if (typeof loadAssets === 'function') loadAssets();
+                if (typeof mobLoadAssets === 'function') mobLoadAssets();
+            } else {
+                alert('Error saving alerts');
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        } catch (e) {
+            console.error('Save alerts error:', e);
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
     };
 
-    window.loadAssetChart = async function(ticker, range = 'all') {
+    window.openAssetChartModal = function(ticker, name, currency) {
+        window.loadAssetChart(ticker, '1y');
+    };
+
+    window.loadAssetChart = async function(ticker, range = '1y') {
         ensureModalExists();
         if (ticker) _chartTicker = ticker;
         if (!_chartTicker) return;
@@ -96,7 +170,7 @@
         // Update active range button
         document.querySelectorAll('.chart-range-btn').forEach(b => {
             const isMatch = b.dataset.range === range;
-            b.classList.toggle('bg-violet-500', isMatch);
+            b.classList.toggle('bg-primary', isMatch);
             b.classList.toggle('text-white', isMatch);
             if (!isMatch) b.classList.add('bg-slate-100', 'dark:bg-slate-800');
             else b.classList.remove('bg-slate-100', 'dark:bg-slate-800');
@@ -110,11 +184,10 @@
 
         try {
             // 1. Fetch asset info, historical quotes AND transactions in parallel
-            // We search for the asset in the local assets list first or fetch from an endpoint
             const [quotesRes, txRes, assetRes] = await Promise.all([
                 fetch(`/api/asset-quotes/${encodeURIComponent(_chartTicker)}`),
                 fetch(`/api/transactions?assetTicker=${encodeURIComponent(_chartTicker)}`),
-                fetch(`/api/assets`) // Get all assets to find name/currency
+                fetch(`/api/assets`)
             ]);
 
             _allChartData = await quotesRes.json();
@@ -126,6 +199,13 @@
                 _chartCurrency = assetInfo.currency || 'EUR';
                 document.getElementById('chart-modal-subtitle').textContent = 
                     `${assetInfo.name} • ${assetInfo.exchange || 'Market'} (${_chartCurrency})`;
+
+                // Pre-fill TP/SL inputs
+                document.getElementById('modal-tp-input').value = assetInfo.targetPrice || '';
+                document.getElementById('modal-sl-input').value = assetInfo.stopLoss || '';
+                const currSym = _chartCurrency === 'EUR' ? '€' : (_chartCurrency === 'USD' ? '$' : _chartCurrency);
+                document.getElementById('modal-tp-curr').textContent = currSym;
+                document.getElementById('modal-sl-curr').textContent = currSym;
             }
 
             if (!_allChartData.length) {
@@ -144,7 +224,7 @@
             else if (range === '5y') fromDate.setFullYear(fromDate.getFullYear() - 5);
             else fromDate.setFullYear(fromDate.getFullYear() - 20); // 'all'
 
-            const data = _allChartData.filter(d => new Date(d.date) >= fromDate);
+            const data = _allChartData.filter(d => d.date && new Date(d.date) >= fromDate);
             const displayData = data.length > 0 ? data : _allChartData;
 
             const labels = displayData.map(d => d.date);
@@ -294,9 +374,9 @@
                                 font: { size: 10 }
                             },
                             grid: { color: 'rgba(148,163,184,0.1)' },
-                            // Add a bit of padding to the y-axis
-                            suggestedMin: Math.min(minP, ...transactions.map(t=>t.price)) * 0.98,
-                            suggestedMax: Math.max(maxP, ...transactions.map(t=>t.price)) * 1.02
+                            // SCALE strictly on the min/max of the period
+                            min: minP * 0.99,
+                            max: maxP * 1.01
                         }
                     }
                 }

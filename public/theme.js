@@ -549,6 +549,8 @@
 
     window.refreshSidebarPortfolios = () => { _sidebarLoading = false; updateSidebarContents(); };
 
+    window._lastMarketUpdate = 0;
+
     async function updateMarketStatusUI() {
         const liveIndicator = document.getElementById('header-live-indicator');
         const updateLabel   = document.getElementById('header-last-update');
@@ -564,7 +566,28 @@
             // 1. Market Status
             const statusRes = await fetch('/api/market-status');
             if (!statusRes.ok) throw new Error("Connection Error");
-            const status = await statusRes.json();
+            const data = await statusRes.json();
+
+            // Auto-refresh logic: check if server has newer data
+            if (data.lastUpdate && data.lastUpdate > window._lastMarketUpdate) {
+                const isInitial = window._lastMarketUpdate === 0;
+                window._lastMarketUpdate = data.lastUpdate;
+                
+                if (!isInitial) {
+                    console.log("[Theme] Market data update detected, dispatching refresh event...");
+                    // Clear SWR cache for portfolios and analytics to ensure fresh data
+                    for (let i = 0; i < sessionStorage.length; i++) {
+                        const key = sessionStorage.key(i);
+                        if (key && (key.startsWith('ft_cache_/api/portfolios') || key.startsWith('ft_cache_/api/analytics'))) {
+                            sessionStorage.removeItem(key);
+                            i--;
+                        }
+                    }
+                    window.dispatchEvent(new CustomEvent('market-data-updated', { detail: { lastUpdate: data.lastUpdate } }));
+                }
+            }
+
+            const status = data;
             
             if (liveIndicator) {
                 const dot = liveIndicator.querySelector('.header-live-dot');

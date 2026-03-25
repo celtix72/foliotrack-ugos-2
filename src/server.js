@@ -3163,7 +3163,10 @@ app.get('/api/logs/dates', (req, res) => {
 });
 
 app.get('/api/market-status', (req, res) => {
-    res.json(getMarketStatus());
+    res.json({
+        ...getMarketStatus(),
+        lastUpdate: globalLastMarketUpdate
+    });
 });
 
 app.get('/api/market/movers', (req, res) => {
@@ -3269,6 +3272,8 @@ app.use((req, res) => res.redirect('/dashboard'));
 // ════════════════════════════════════════════════════════════════════════════
 // MARKET DATA UPDATE  (runs on interval)
 // ════════════════════════════════════════════════════════════════════════════
+
+let globalLastMarketUpdate = Date.now();
 
 async function updateMarketData(force = false) {
     const status = getMarketStatus();
@@ -3399,6 +3404,7 @@ async function updateMarketData(force = false) {
     }
     const liveRate = await getEurUsdRate();
     database.recalculateAll(liveRate);
+    globalLastMarketUpdate = Date.now();
     logger.info(`Market data update cycle completed.`);
 }
 
