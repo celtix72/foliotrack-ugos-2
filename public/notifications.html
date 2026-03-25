@@ -29,8 +29,8 @@
         .desktop-notif-card {
             display: flex;
             flex-direction: column;
-            gap: 1rem;
-            padding: 1.5rem;
+            gap: 0.75rem;
+            padding: 1rem;
             background-color: #fff;
             border-width: 1px;
             border-color: #e2e8f0;
@@ -219,12 +219,12 @@
                                 <span class="material-symbols-outlined">${icon}</span>
                             </div>
                             <div class="flex-1">
-                                <div class="flex items-center justify-between mb-1">
-                                    <h3 class="font-black text-sm uppercase tracking-tight">${n.title}</h3>
+                                <div class="flex items-center justify-between mb-0.5">
+                                    <h3 class="font-black text-[13px] uppercase tracking-tight">${n.title}</h3>
                                     <span class="text-[10px] font-bold text-slate-400">${formatDate(n.date)}</span>
                                 </div>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">${n.message}</p>
-                                ${n.ticker ? `<span class="inline-block mt-2 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px] font-black text-primary">${n.ticker}</span>` : ''}
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-tight">${n.message}</p>
+                                ${n.ticker ? `<span class="inline-block mt-1.5 px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[9px] font-black text-primary">${n.ticker}</span>` : ''}
                             </div>
                             <button onclick="removeNotification(${n.id})" class="opacity-0 group-hover:opacity-100 transition-opacity p-2 text-slate-300 hover:text-rose-500">
                                 <span class="material-symbols-outlined text-lg">close</span>
@@ -251,19 +251,19 @@
                                 <span>Rimuovi</span>
                             </div>
                         </div>
-                        <div class="mob-holding-item large notification-item" id="notif-mob-${n.id}">
-                            <div class="mob-holding-logo ${color}" style="color:white; background:none;">
-                                <div class="w-10 h-10 rounded-xl flex items-center justify-center ${color}">
-                                    <span class="material-symbols-outlined">${icon}</span>
+                        <div class="mob-holding-item large notification-item" id="notif-mob-${n.id}" style="padding: 12px 16px; gap: 10px;">
+                            <div class="mob-holding-logo ${color}" style="color:white; background:none; width: 38px; height: 38px;">
+                                <div class="w-8 h-8 rounded-xl flex items-center justify-center ${color}">
+                                    <span class="material-symbols-outlined" style="font-size: 18px;">${icon}</span>
                                 </div>
                             </div>
                             <div class="mob-holding-info">
                                 <div class="flex items-center justify-between">
-                                    <div class="mob-holding-ticker">${n.title}</div>
+                                    <div class="mob-holding-ticker" style="font-size: 14px;">${n.title}</div>
                                     <div class="text-[9px] font-bold text-slate-500">${formatRelativeDate(n.date)}</div>
                                 </div>
-                                <div class="mob-holding-name">${n.message}</div>
-                                ${n.ticker ? `<div class="mob-holding-qty" style="color:var(--mob-primary); font-weight:900">${n.ticker}</div>` : ''}
+                                <div class="mob-holding-name" style="font-size: 11px; margin-top: -1px;">${n.message}</div>
+                                ${n.ticker ? `<div class="mob-holding-qty" style="color:var(--mob-primary); font-weight:900; font-size: 9px; margin-top: 2px;">${n.ticker}</div>` : ''}
                             </div>
                             ${!n.isRead ? '<div class="w-1.5 h-1.5 rounded-full bg-primary absolute right-3 top-1/2 -translate-y-1/2"></div>' : ''}
                         </div>

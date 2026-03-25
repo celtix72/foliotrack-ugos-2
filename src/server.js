@@ -3253,6 +3253,7 @@ app.get('/reports',   (req, res) => res.sendFile(path.join(__dirname, '../public
 app.get('/history',   (req, res) => res.sendFile(path.join(__dirname, '../public/history.html')));
 app.get('/dividend',  (req, res) => res.sendFile(path.join(__dirname, '../public/dividend.html')));
 app.get('/settings',  (req, res) => res.sendFile(path.join(__dirname, '../public/settings.html')));
+app.get('/notifications', (req, res) => res.sendFile(path.join(__dirname, '../public/notifications.html')));
 
 // Legacy /assets route → redirect to /market
 app.get('/assets', (req, res) => res.redirect('/market'));
@@ -3367,7 +3368,7 @@ async function updateMarketData(force = false) {
                         database.db.prepare(`
                             INSERT INTO notifications (type, title, message, ticker)
                             VALUES (?, ?, ?, ?)
-                        `).run('TARGET', 'Target Price Reached', `${asset.ticker} has reached your target of ${asset.targetPrice} (Price: ${newPrice})`, asset.ticker);
+                        `).run('TARGET', 'Target Raggiunto', `${asset.ticker}: ${newPrice} (Target: ${asset.targetPrice})`, asset.ticker);
                     }
                 }
                 if (asset.stopLoss > 0 && newPrice <= asset.stopLoss) {
@@ -3379,7 +3380,7 @@ async function updateMarketData(force = false) {
                         database.db.prepare(`
                             INSERT INTO notifications (type, title, message, ticker)
                             VALUES (?, ?, ?, ?)
-                        `).run('STOP', 'Stop Loss Triggered', `${asset.ticker} has dropped to your stop loss of ${asset.stopLoss} (Price: ${newPrice})`, asset.ticker);
+                        `).run('STOP', 'Stop Loss', `${asset.ticker}: ${newPrice} (Soglia: ${asset.stopLoss})`, asset.ticker);
                     }
                 }
             }
