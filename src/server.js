@@ -257,8 +257,9 @@ async function sendTelegramDailyReport() {
                 const pSign = a.changePercent >= 0 ? '+' : '';
                 const pctStr = `${pSign}${a.changePercent.toFixed(2)}%`.padStart(8);
                 
-                // Exact spacing: icon [1] ticker [8] price [short gap] var [gap] pct [1] trend
-                msg += `\`${icon} ${tickerStr} ${priceStr}   ${varStr}  ${pctStr} ${trend}\`\n`;
+                // Minimizing gaps to prevent line wrapping:
+                // Exact spacing: icon [1] ticker [8] price [fixed] [1] var [1] pct [1] trend
+                msg += `\`${icon} ${tickerStr} ${priceStr} ${varStr} ${pctStr} ${trend}\`\n`;
             }
             msg += `\n`;
         }
