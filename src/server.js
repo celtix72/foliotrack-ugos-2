@@ -223,6 +223,7 @@ async function sendTelegramDailyReport() {
             const catVarSign = cat.totalVar >= 0 ? '+' : '-';
             const catVarAbs = Math.round(Math.abs(cat.totalVar));
             msg += `${cat.emoji} *${name}* ${catVarSign}€${catVarAbs}\n`;
+            msg += '```\n';
             
             // Sort assets by absolute variation descending
             cat.assets.sort((a, b) => Math.abs(b.varEUR) - Math.abs(a.varEUR));
@@ -245,6 +246,7 @@ async function sendTelegramDailyReport() {
                     minimumFractionDigits: decimals,
                     maximumFractionDigits: decimals
                 });
+                
                 // Adjust space after symbol: 1 space if length <= 5, 0 if longer
                 const pSpace = pVal.length <= 5 ? ' ' : '';
                 const priceStr = `${pSym}${pSpace}${pVal.padStart(6)}`;
@@ -260,9 +262,9 @@ async function sendTelegramDailyReport() {
                 
                 // Minimizing gaps to prevent line wrapping:
                 // Exact spacing: icon [1] ticker [8] price [fixed] [1] var [1] pct
-                msg += `\`${icon} ${tickerStr} ${priceStr} ${varStr} ${pctStr}\`\n`;
+                msg += `${icon} ${tickerStr} ${priceStr} ${varStr} ${pctStr}\n`;
             }
-            msg += `\n`;
+            msg += '```\n\n';
         }
 
         const now = new Date();
