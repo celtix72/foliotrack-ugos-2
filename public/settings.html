@@ -1011,16 +1011,40 @@
 </div>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        // --- Element Selections (Grouped by Category) ---
+        
+        // Appearance
         const fontSelect = document.getElementById('font-family-select');
         const sizeSelect = document.getElementById('font-size-select');
-        const freqSelect = document.getElementById('update-frequency-select');
-        const backupFreqSelect = document.getElementById('backup-frequency-select');
-        const backupRetentionInput = document.getElementById('backup-retention-input');
-        // const privacyCheckbox = document.getElementById('privacy-mode-checkbox');
-        
+        const themeLightBtn = document.getElementById('theme-light-btn');
+        const themeDarkBtn = document.getElementById('theme-dark-btn');
         const mobFontSelect = document.getElementById('mob-font-family-select');
         const mobSizeSelect = document.getElementById('mob-font-size-select');
+        
+        // General Preferences
+        const freqSelect = document.getElementById('update-frequency-select');
         const mobFreqSelect = document.getElementById('mob-update-frequency-select');
+        
+        // Telegram Notifications (Desktop)
+        const tgTokenInput = document.getElementById('telegram-bot-token');
+        const tgChatIdInput = document.getElementById('telegram-chat-id');
+        const tgEnabledCheck = document.getElementById('telegram-enabled-check');
+        const tgMarketCheck = document.getElementById('telegram-market-status-check');
+        const tgIntervalInput = document.getElementById('telegram-status-interval');
+        
+        // Telegram Notifications (Mobile)
+        const mobTgEnabled = document.getElementById('mob-telegram-enabled-check');
+        const mobTgToken = document.getElementById('mob-telegram-bot-token');
+        const mobTgChat = document.getElementById('mob-telegram-chat-id');
+        const mobTgMarket = document.getElementById('mob-telegram-market-status-check');
+        const mobTgInterval = document.getElementById('mob-telegram-status-interval');
+
+        // Backup & Restore
+        const backupFreqSelect = document.getElementById('backup-frequency-select');
+        const backupRetentionInput = document.getElementById('backup-retention-input');
+        const runBackupBtn = document.getElementById('run-backup-btn');
+        
+        // ------------------------------------------------
         
         // Initial setup from window global settings if available or local cache
         const updateUI = (settings) => {
@@ -1040,23 +1064,16 @@
             
             if (mobFreqSelect && settings.updateFrequency) mobFreqSelect.value = settings.updateFrequency;
 
-            // Telegram Notifications
-            if (tgTokenInput && settings.telegramBotToken) tgTokenInput.value = settings.telegramBotToken;
-            if (tgChatIdInput && settings.telegramChatId) tgChatIdInput.value = settings.telegramChatId;
             if (tgEnabledCheck) tgEnabledCheck.checked = settings.telegramEnabled === 'true';
             if (tgMarketCheck) tgMarketCheck.checked = settings.marketStatusTelegramEnabled === 'true';
             if (tgIntervalInput && settings.marketStatusInterval) tgIntervalInput.value = settings.marketStatusInterval;
             
             // Sync Mobile fields
-            const mobTgEnabled = document.getElementById('mob-telegram-enabled-check');
-            const mobTgToken = document.getElementById('mob-telegram-bot-token');
-            const mobTgChat = document.getElementById('mob-telegram-chat-id');
-            const mobTgMarket = document.getElementById('mob-telegram-market-status-check');
-            
             if (mobTgEnabled) mobTgEnabled.checked = settings.telegramEnabled === 'true';
             if (mobTgToken && settings.telegramBotToken) mobTgToken.value = settings.telegramBotToken;
             if (mobTgChat && settings.telegramChatId) mobTgChat.value = settings.telegramChatId;
             if (mobTgMarket) mobTgMarket.checked = settings.marketStatusTelegramEnabled === 'true';
+            if (mobTgInterval && settings.marketStatusInterval) mobTgInterval.value = settings.marketStatusInterval;
             
             const lightBtn = document.getElementById('theme-light-btn');
             const darkBtn = document.getElementById('theme-dark-btn');
@@ -1128,14 +1145,12 @@
             }
         };
 
-        const tgTokenInput = document.getElementById('telegram-bot-token');
-        const tgChatIdInput = document.getElementById('telegram-chat-id');
-        const tgEnabledCheck = document.getElementById('telegram-enabled-check');
-        const tgMarketCheck = document.getElementById('telegram-market-status-check');
-        const tgIntervalInput = document.getElementById('telegram-status-interval');
-
         const saveTelegramSettings = () => {
             if (window.updateAppSettings) {
+                // If we are on mobile view (determined by one of the mobile inputs being present and visible, 
+                // but simpler to just try to take from where the user is likely typing), 
+                // we should check both. 
+                // But a safer way is to just use desktop values as master and ensure mobile syncs to them.
                 window.updateAppSettings({
                     telegramBotToken: tgTokenInput.value,
                     telegramChatId: tgChatIdInput.value,
@@ -1146,11 +1161,32 @@
             }
         };
 
+        // Bi-directional Sync and Listeners
+        const setupSync = (master, slave) => {
+            if (!master || !slave) return;
+            master.addEventListener('change', () => {
+                if (slave.type === 'checkbox') slave.checked = master.checked;
+                else slave.value = master.value;
+                saveTelegramSettings();
+            });
+            slave.addEventListener('change', () => {
+                if (master.type === 'checkbox') master.checked = slave.checked;
+                else master.value = slave.value;
+                saveTelegramSettings();
+            });
+        };
+
         if (tgTokenInput) tgTokenInput.addEventListener('change', saveTelegramSettings);
         if (tgChatIdInput) tgChatIdInput.addEventListener('change', saveTelegramSettings);
         if (tgEnabledCheck) tgEnabledCheck.addEventListener('change', saveTelegramSettings);
         if (tgMarketCheck) tgMarketCheck.addEventListener('change', saveTelegramSettings);
         if (tgIntervalInput) tgIntervalInput.addEventListener('change', saveTelegramSettings);
+
+        setupSync(tgTokenInput, mobTgToken);
+        setupSync(tgChatIdInput, mobTgChat);
+        setupSync(tgEnabledCheck, mobTgEnabled);
+        setupSync(tgMarketCheck, mobTgMarket);
+        setupSync(tgIntervalInput, mobTgInterval);
 
         window.sendTestTelegram = async (type) => {
             try {
