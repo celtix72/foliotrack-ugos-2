@@ -1230,13 +1230,15 @@ html:not(.dark) .mobile-view-active .mob-hero.fiscal {
     text-transform: uppercase;
     letter-spacing: 0.1em;
     color: var(--mob-text-muted);
-    margin: 32px 20px 8px; /* Added more top margin for visual separation */
+    margin: 24px 20px 8px;
 }
 
 .mob-settings-card {
     background: var(--mob-surface);
     border-top: 1px solid var(--mob-border);
     border-bottom: 1px solid var(--mob-border);
+    margin-left: 0;
+    margin-right: 0;
 }
 
 .mob-settings-row {
@@ -1260,7 +1262,7 @@ html:not(.dark) .mobile-view-active .mob-hero.fiscal {
     position: absolute;
     bottom: 0;
     right: 0;
-    left: 54px; /* Offset to align with text after icon */
+    left: 20px; /* Full width separator starting from padding */
     height: 1px;
     background: var(--mob-border);
 }
