@@ -354,6 +354,9 @@
             <div class="pt-6 border-t border-slate-200 dark:border-slate-800">
                 <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Test Notifications</p>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <button onclick="sendDailyReport()" class="px-4 py-2 bg-[#0088cc]/10 hover:bg-[#0088cc]/20 text-[#0088cc] dark:text-[#0088cc] rounded-lg text-xs font-bold transition-all border border-[#0088cc]/20 flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-sm">assignment</span> Daily Report
+                    </button>
                     <button onclick="sendTestTelegram('tp')" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2">
                         <span class="material-symbols-outlined text-sm">notifications_active</span> Test TP Alert
                     </button>
@@ -882,7 +885,8 @@
                         <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Chat ID</label>
                         <input id="mob-telegram-chat-id" type="text" placeholder="ID..." class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs font-mono outline-none focus:ring-1 focus:ring-primary/50">
                     </div>
-                    <div class="pt-2 flex gap-2">
+                    <div class="pt-2 flex flex-wrap gap-2">
+                        <button onclick="sendDailyReport()" class="flex-1 py-2 bg-[#0088cc]/10 text-[#0088cc] rounded-lg text-[9px] font-bold uppercase tracking-widest border border-[#0088cc]/20">Report</button>
                         <button onclick="sendTestTelegram('tp')" class="flex-1 py-2 bg-slate-200 dark:bg-slate-800 rounded-lg text-[9px] font-bold uppercase tracking-widest">Test TP</button>
                         <button onclick="sendTestTelegram('sl')" class="flex-1 py-2 bg-slate-200 dark:bg-slate-800 rounded-lg text-[9px] font-bold uppercase tracking-widest">Test SL</button>
                     </div>
@@ -1437,6 +1441,15 @@
                 const res = await fetch('/api/settings/telegram/test-status', { method: 'POST' });
                 const data = await res.json();
                 if (data.success) alert('Status notification sent!');
+                else alert('Failed: ' + data.error);
+            } catch (err) { alert('Error: ' + err.message); }
+        };
+
+        window.sendDailyReport = async () => {
+            try {
+                const res = await fetch('/api/telegram/send-report', { method: 'POST' });
+                const data = await res.json();
+                if (data.success) alert('Daily Report sent to Telegram!');
                 else alert('Failed: ' + data.error);
             } catch (err) { alert('Error: ' + err.message); }
         };

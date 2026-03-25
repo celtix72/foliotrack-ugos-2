@@ -157,6 +157,110 @@ async function sendMarketStatusTelegram() {
     await sendTelegramMessage(msg);
 }
 
+async function sendTelegramDailyReport() {
+    try {
+        const settings = database.getSettings();
+        const enabled = settings.telegramEnabled === 'true';
+        if (!enabled) return;
+
+        const liveRate = await getEurUsdRate();
+        const assets = database.db.prepare(`
+            SELECT 
+                a.ticker, a.name, a.type, a.currency, a.currentPrice, a.changePercent, a.changeValue,
+                SUM(CASE WHEN t.type = 'BUY' THEN t.quantity WHEN t.type = 'SELL' THEN -t.quantity ELSE 0 END) as quantity
+            FROM transactions t
+            JOIN assets a ON t.assetTicker = a.ticker
+            GROUP BY t.assetTicker
+            HAVING quantity > 0.0001
+        `).all();
+
+        const portfolios = database.db.prepare('SELECT totalValue, performance1D, currency FROM portfolios').all();
+        let totalVarEUR = 0;
+        for (const p of portfolios) {
+            let var1D = p.performance1D || 0;
+            if (p.currency === 'USD' && liveRate > 0) var1D /= liveRate;
+            totalVarEUR += var1D;
+        }
+
+        // Categories mapping
+        const categories = {
+            'OBBLIGAZIONI': { emoji: '🟠', assets: [], totalVar: 0 },
+            'ETF MONETARI': { emoji: '🟣', assets: [], totalVar: 0 },
+            'AZIONI': { emoji: '🔵', assets: [], totalVar: 0 },
+            'ETF AZIONARI': { emoji: '🟢', assets: [], totalVar: 0 }
+        };
+
+        const typeToCat = {
+            'Bond': 'OBBLIGAZIONI',
+            'ETF Obblig': 'OBBLIGAZIONI',
+            'ETF Monetario': 'ETF MONETARI',
+            'Deposito Vincolato': 'ETF MONETARI',
+            'Azioni': 'AZIONI',
+            'ETF Azionario': 'ETF AZIONARI'
+        };
+
+        for (const a of assets) {
+            const catName = typeToCat[a.type] || 'AZIONI';
+            const cat = categories[catName];
+            if (!cat) continue;
+            
+            let varEUR = (a.quantity || 0) * (a.changeValue || 0);
+            if (a.currency === 'USD' && liveRate > 0) varEUR /= liveRate;
+            
+            cat.assets.push({ ...a, varEUR });
+            cat.totalVar += varEUR;
+        }
+
+        let msg = `📊 *REPORT DAY:*                   ${totalVarEUR >= 0 ? '🟢🟢' : '🔴🔴'} ${totalVarEUR >= 0 ? '+' : ''}€${Math.round(totalVarEUR)}\n\n`;
+
+        for (const [name, cat] of Object.entries(categories)) {
+            if (cat.assets.length === 0) continue;
+            
+            msg += `${cat.emoji} *${name}* ${cat.totalVar >= 0 ? '+' : ''}€${Math.round(cat.totalVar)}\n`;
+            
+            // Sort assets by absolute variation descending
+            cat.assets.sort((a, b) => Math.abs(b.varEUR) - Math.abs(a.varEUR));
+
+            for (const a of cat.assets) {
+                const icon = getAssetIcon(a.changePercent, a.varEUR);
+                const trend = a.varEUR >= 0 ? '🟢' : '🔴';
+                const priceSymbol = a.currency === 'USD' ? '$' : '€';
+                
+                // Format parts for alignment
+                const ticker = a.ticker.padEnd(9);
+                const priceVal = a.currentPrice.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 2});
+                const price = `${priceSymbol} ${priceVal}`.padStart(10);
+                const vStr = `${a.varEUR >= 0 ? '+' : ''}€${Math.round(a.varEUR)}`.padStart(8);
+                const pStr = `${a.changePercent >= 0 ? '+' : ''}${a.changePercent.toFixed(2)}%`.padStart(8);
+                
+                msg += `\`${icon} ${ticker} ${price} ${vStr} ${pStr} ${trend}\`\n`;
+            }
+            msg += `\n`;
+        }
+
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
+        const timeStr = now.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+        const fullTS = now.toLocaleString('it-IT');
+        
+        msg += `_${dateStr} ${timeStr}_\n\n`;
+        msg += `_${fullTS}_`;
+
+        await sendTelegramMessage(msg);
+    } catch (e) {
+        logger.error('Failed to generate Telegram daily report', e);
+    }
+}
+
+function getAssetIcon(pct, varEur) {
+    if (pct > 5) return '🚀';
+    if (varEur > 200) return '💰';
+    if (pct > 1) return '✅';
+    if (pct >= 0) return '📈';
+    if (pct < -1.5) return '💣';
+    return '📉';
+}
+
 const yahooFinance = new YahooFinance({ suppressNotices: ['ripHistorical'] });
 const database = require('./db');
 const backupManager = require('./backup_manager');
@@ -204,48 +308,7 @@ async function fetchAssetMetadata(ticker) {
                 throw new Error('YF_RATE_LIMIT');
             }
             return null;
-        });async function sendMarketStatusTelegram() {
-    const portfolios = database.db.prepare('SELECT totalValue, performance1D, currency FROM portfolios').all();
-    const liveRate = await getEurUsdRate();
-    
-    let totalValEUR = 0;
-    let totalVarEUR = 0;
-    
-    for (const p of portfolios) {
-        let val = p.totalValue || 0;
-        let var1D = p.performance1D || 0;
-        if (p.currency === 'USD' && liveRate > 0) {
-            val /= liveRate;
-            var1D /= liveRate;
-        }
-        totalValEUR += val;
-        totalVarEUR += var1D;
-    }
-    
-    const movers = database.db.prepare(`
-        SELECT ticker, name, changePercent 
-        FROM assets 
-        WHERE ticker != 'CASH' AND currentPrice > 0 
-        ORDER BY ABS(changePercent) DESC 
-        LIMIT 5
-    `).all();
-    
-    let msg = `📊 *STATO MERCATI*\n\n`;
-    msg += `💰 *Portfolio Totale:* € ${totalValEUR.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}\n`;
-    const varEmoji = totalVarEUR >= 0 ? '📈' : '📉';
-    msg += `${varEmoji} *Variazione 1D:* € ${totalVarEUR.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}\n\n`;
-    
-    msg += `🚀 *Top Movers:*\n`;
-    msg += '```\n';
-    for (const m of movers) {
-        const sign = m.changePercent >= 0 ? '+' : '';
-        const mEmoji = m.changePercent >= 0 ? '🟢' : '🔴';
-        msg += `${mEmoji} ${m.ticker.padEnd(9)} ${sign}${m.changePercent.toFixed(2)}%\n`;
-    }
-    msg += '```';
-    
-    await sendTelegramMessage(msg);
-}
+        });
         if (!quote) return null;
 
         let country = 'N/A';
@@ -2065,6 +2128,15 @@ app.put('/api/settings', (req, res) => {
         database.setSetting(key, value);
     }
     res.json(database.getSettings());
+});
+
+app.post('/api/telegram/send-report', async (req, res) => {
+    try {
+        await sendTelegramDailyReport();
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // ════════════════════════════════════════════════════════════════════════════
