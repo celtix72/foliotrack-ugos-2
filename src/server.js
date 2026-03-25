@@ -200,6 +200,8 @@ async function sendTelegramDailyReport() {
         };
 
         for (const a of assets) {
+            if (!a.changeValue || a.changeValue === 0) continue; 
+
             const catName = typeToCat[a.type] || 'AZIONI';
             const cat = categories[catName];
             if (!cat) continue;
