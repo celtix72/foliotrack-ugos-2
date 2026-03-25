@@ -1009,7 +1009,9 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
                 isin: asset ? asset.isin : null,
                 dataSource: asset ? asset.dataSource : 'YF',
                 country: asset ? asset.country : 'Global',
-                lastUpdateError: asset ? asset.lastUpdateError : null
+                lastUpdateError: asset ? asset.lastUpdateError : null,
+                targetPrice: asset ? asset.targetPrice : 0,
+                stopLoss: asset ? asset.stopLoss : 0
             };
         });
 

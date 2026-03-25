@@ -3017,6 +3017,16 @@
         const type = h.type || '';
         const country = h.country || '';
 
+        // Alert state
+        const price = h.currentPrice || 0;
+        const targetPrice = h.targetPrice || 0;
+        const stopLoss = h.stopLoss || 0;
+        const targetReached = targetPrice > 0 && price >= targetPrice;
+        const stopLossHit = stopLoss > 0 && price <= stopLoss;
+        
+        const alertBg = targetReached ? 'background:rgba(16,185,129,0.15)' : (stopLossHit ? 'background:rgba(244,63,94,0.15)' : '');
+        const alertBorder = targetReached ? 'border:1px solid rgba(16,185,129,0.3)' : (stopLossHit ? 'border:1px solid rgba(244,63,94,0.3)' : '');
+
         return `
           <div class="mob-holding-swipe-container" 
                ontouchstart="handleTouchStart(event, this)" 
@@ -3044,11 +3054,15 @@
               </div>
             </div>
 
-            <div class="mob-holding-item" onclick="openAssetChartModal('${h.ticker}', '${h.name || ''}', '${currency}')">
+            <div class="mob-holding-item" style="${alertBg}; ${alertBorder}" onclick="openAssetChartModal('${h.ticker}', '${h.name || ''}', '${currency}')">
               <div class="mob-holding-logo">${letters}</div>
               <div class="mob-holding-info">
                 <div class="mob-holding-ticker">${h.ticker}</div>
                 <div class="mob-holding-name">${h.name || ''}</div>
+                <div style="display:flex; gap:8px; margin-top:4px">
+                  ${targetPrice > 0 ? `<div style="font-size:8px; font-weight:900; color:${targetReached?'var(--mob-emerald)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:10px">target</span> TP: ${formatCurrency(targetPrice, h.currency)}</div>` : ''}
+                  ${stopLoss > 0 ? `<div style="font-size:8px; font-weight:900; color:${stopLossHit?'var(--mob-rose)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:10px">warning</span> SL: ${formatCurrency(stopLoss, h.currency)}</div>` : ''}
+                </div>
               </div>
               <div class="mob-holding-values">
                 <div class="mob-holding-value">${formatPrivacy(h.currentValue, currency, 'mob-hv-'+h.ticker)}</div>

@@ -868,19 +868,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
         
         // Alert state
-        const targetReached = a.targetPrice > 0 && price >= a.targetPrice;
-        const stopLossHit = a.stopLoss > 0 && price <= a.stopLoss;
-        const alertBorder = targetReached ? 'border: 1px solid var(--mob-emerald)' : (stopLossHit ? 'border: 1px solid var(--mob-rose)' : '');
+        const targetPrice = a.targetPrice || 0;
+        const stopLoss = a.stopLoss || 0;
+        const targetReached = targetPrice > 0 && price >= targetPrice;
+        const stopLossHit = stopLoss > 0 && price <= stopLoss;
+        
+        const alertBg = targetReached ? 'background:rgba(16,185,129,0.15)' : (stopLossHit ? 'background:rgba(244,63,94,0.15)' : '');
+        const alertBorder = targetReached ? 'border:1px solid rgba(16,185,129,0.3)' : (stopLossHit ? 'border:1px solid rgba(244,63,94,0.3)' : '');
 
         return `
-          <div class="mob-holding-item ${isLarge ? 'large' : ''}" style="${alertBorder}" onclick="loadAssetChart('${a.ticker}')">
+          <div class="mob-holding-item ${isLarge ? 'large' : ''}" style="${alertBg}; ${alertBorder}" onclick="loadAssetChart('${a.ticker}')">
             <div class="mob-holding-logo">${a.ticker.substring(0,3)}</div>
             <div class="mob-holding-info">
               <div class="mob-holding-ticker">${a.ticker}</div>
               <div class="mob-holding-name">${a.name || ''}</div>
-              <div class="mob-status-pill" style="margin-top:4px">
-                <span class="mob-status-dot" style="background:${a.dataSource==='B_ITA'?'#f59e0b':'#3b82f6'}"></span>
-                <span style="font-size:8px">${a.dataSource==='B_ITA'?'B_ITA':'Yahoo'}</span>
+              <div style="display:flex; gap:8px; margin-top:4px; flex-wrap:wrap">
+                <div class="mob-status-pill">
+                  <span class="mob-status-dot" style="background:${a.dataSource==='B_ITA'?'#f59e0b':'#3b82f6'}"></span>
+                  <span style="font-size:8px">${a.dataSource==='B_ITA'?'B_ITA':'Yahoo'}</span>
+                </div>
+                ${targetPrice > 0 ? `<div style="font-size:8px; font-weight:900; color:${targetReached?'var(--mob-emerald)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:10px">target</span> TP: ${formatCurrency(targetPrice, a.currency)}</div>` : ''}
+                ${stopLoss > 0 ? `<div style="font-size:8px; font-weight:900; color:${stopLossHit?'var(--mob-rose)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:10px">warning</span> SL: ${formatCurrency(stopLoss, a.currency)}</div>` : ''}
               </div>
             </div>
             <div class="mob-holding-values">
