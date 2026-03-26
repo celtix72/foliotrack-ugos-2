@@ -1240,6 +1240,7 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
                 unrealizedGainPct: Math.round(uGainPct * 100) / 100,
                 changePercent: asset ? asset.changePercent : 0,
                 changeValue: asset ? asset.changeValue : 0,
+                changeValuePortfolio: asset ? (asset.changeValue / rate) : 0,
                 isin: asset ? asset.isin : null,
                 dataSource: asset ? asset.dataSource : 'YF',
                 country: asset ? asset.country : 'Global',

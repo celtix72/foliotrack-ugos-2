@@ -193,7 +193,7 @@
 
       <!-- Holdings -->
       <div id="mob-holdings-view">
-        <div class="mob-ios-grouped" id="mob-holdings-list">
+        <div class="mob-list-edge" id="mob-holdings-list">
           <div style="text-align:center;padding:32px">
             <div class="mob-spinner" style="margin:0 auto"></div>
           </div>
@@ -212,7 +212,7 @@
                 <button onclick="mobResetTxFilter()" class="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg active:scale-95 transition-transform" style="background:rgba(0,0,0,0.05)">Rimuovi</button>
             </div>
         </div>
-        <div class="mob-ios-grouped" id="mob-transactions-list">
+        <div class="mob-list-edge" id="mob-transactions-list">
           <div style="text-align:center;padding:32px">
             <div class="mob-spinner" style="margin:0 auto"></div>
           </div>
@@ -917,7 +917,7 @@
                 <div class="flex items-center gap-2">
                   <div class="mob-holding-ticker">${h.ticker}</div>
                   <div class="text-[10px] font-black ${dvIsPos ? 'text-emerald-500' : 'text-rose-500'} flex items-center gap-0.5">
-                    ${dvIsPos ? '▲' : '▼'}${Math.abs(dvPct).toFixed(2)}% (${dvIsPos ? '+' : ''}${dvVal.toFixed(2)})
+                    ${dvIsPos ? '▲' : '▼'}${Math.abs(dvPct).toFixed(2)}% (${dvIsPos ? '+' : ''}${((h.shares || 0) * (h.changeValuePortfolio || 0)).toFixed(2)})
                   </div>
                 </div>
                 <div class="mob-holding-name">${h.name || ''}</div>

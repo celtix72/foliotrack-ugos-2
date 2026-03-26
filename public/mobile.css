@@ -1369,6 +1369,31 @@ html:not(.dark) .mobile-view-active .mob-hero.fiscal {
   background-color: var(--mob-surface-2);
 }
 
+/* ─── Edge-to-Edge List Style ───────────────────────────────────────────── */
+.mob-list-edge {
+  margin: 8px 0 !important;
+  background: var(--mob-surface);
+  border-top: 1px solid var(--mob-border);
+  border-bottom: 1px solid var(--mob-border);
+  overflow: hidden;
+}
+
+.mob-list-edge .mob-holding-swipe-container:not(:last-child) {
+  border-bottom: 1px solid var(--mob-border);
+}
+
+.mob-list-edge .mob-holding-item {
+  background: var(--mob-surface) !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.mob-list-edge .mob-holding-swipe-container {
+  background-color: var(--mob-surface-2);
+}
+
 /* Custom Toggle Switch */
 .mob-toggle {
     position: relative;
