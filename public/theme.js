@@ -891,6 +891,12 @@
     };
 
     window.activateMobileView = function() {
+        if (!document.getElementById('mobile-ui')) {
+            console.warn('[Theme] Mobile UI container (#mobile-ui) not found. Staying in desktop view.');
+            window._mobileViewActive = false;
+            document.body.classList.remove('mobile-view-active');
+            return;
+        }
         window._mobileViewActive = true;
         document.body.classList.add('mobile-view-active');
         // Update all toggle buttons (use class for consistency)
