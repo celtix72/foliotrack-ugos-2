@@ -51,7 +51,8 @@ html:not(.dark) .mobile-view-active #mobile-ui {
 
 /* ─── Activation: hide desktop, show mobile ─────────────────────────────── */
 body.mobile-view-active > aside,
-body.mobile-view-active .flex-1,
+body.mobile-view-active > .flex-1,
+body.mobile-view-active main,
 body.mobile-view-active .desktop-only {
   display: none !important;
 }
