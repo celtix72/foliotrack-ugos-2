@@ -25,9 +25,8 @@
     </style>
     <script src="/theme.js"></script>
 </head>
-<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display min-h-screen mobile-view-active">
+<body class="bg-background-light dark:bg-[#0b0f1a] text-slate-900 dark:text-slate-100 min-h-screen flex mobile-view-active">
 <div id="mobile-ui">
-  <!-- Top Header -->
   <!-- ── Mobile Header ── -->
   <div class="mob-header">
     <div class="mob-header-logo-container">
@@ -36,13 +35,9 @@
       </div>
       <div class="mob-header-logo-text">FolioTrack</div>
     </div>
-
-    <!-- Page Title (ST) -->
-    <div class="mob-header-title" style="display:none">ST</div>
-
+    
     <div style="flex:1"></div>
 
-    <!-- EU / US Market Status Pill -->
     <div class="mob-header-market-pill">
       <div class="mob-market-item">
         <span>EU</span>
@@ -53,221 +48,72 @@
         <span id="mob-dot-us" class="mob-market-dot"></span>
       </div>
     </div>
-
-    <!-- Day Variation Pill -->
-    <div id="mob-header-var-day" class="mob-header-var-pill">--</div>
-
-    <!-- Action Buttons -->
+    
     <div class="mob-header-actions">
-      <a href="/notifications" class="mob-icon-btn relative" title="Notifications">
+      <a href="/notifications" class="mob-icon-btn relative">
         <span class="material-symbols-outlined">notifications</span>
         <span id="mob-notification-badge" class="mob-badge" style="display: none;">0</span>
       </a>
-      <a href="/settings" class="mob-icon-btn" title="Settings">
-        <span class="material-symbols-outlined">settings</span>
-      </a>
-      <div class="mob-icon-btn" onclick="toggleMobileView()" title="Desktop View">
+      <div class="mob-icon-btn" onclick="toggleMobileView()">
         <span class="material-symbols-outlined">desktop_windows</span>
       </div>
     </div>
-    <!-- Mobile Scrollable Content -->
-    <div class="mob-scroll" id="mob-settings-scroll">
-        <!-- Profile & Account -->
-        <div class="mob-settings-group">
-            <div class="mob-settings-group-title">Account</div>
-            <div class="mob-settings-card">
-                <div class="mob-settings-row">
-                    <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                        <span class="material-symbols-outlined text-2xl">person</span>
-                    </div>
-                    <div class="flex-1 overflow-hidden">
-                        <h3 class="font-black text-base truncate">User</h3>
-                        <p class="text-[11px] text-slate-500 truncate">user@foliotrack.io</p>
-                    </div>
-                    <span class="material-symbols-outlined text-emerald-500 text-sm">verified</span>
-                </div>
-                <div class="mob-settings-row">
-                    <div class="mob-settings-icon bg-blue-ios"><span class="material-symbols-outlined">security</span></div>
-                    <div class="mob-settings-label">Security</div>
-                    <span class="material-symbols-outlined mob-settings-chevron">chevron_right</span>
-                </div>
-                <div class="mob-settings-row">
-                    <div class="mob-settings-icon bg-gray-ios"><span class="material-symbols-outlined">badge</span></div>
-                    <div class="mob-settings-label">Account Info</div>
-                    <span class="material-symbols-outlined mob-settings-chevron">chevron_right</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Appearance Group -->
-        <div class="mob-settings-group">
-            <div class="mob-settings-group-title">Layout & Display</div>
-            <div class="mob-settings-card">
-                <div class="mob-settings-row">
-                    <div class="mob-settings-icon bg-blue-ios"><span class="material-symbols-outlined">palette</span></div>
-                    <div class="mob-settings-label">Font Family</div>
-                    <div class="mob-settings-value">
-                        <select id="mob-font-family-select" class="mob-settings-select">
-                            <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
-                            <option value="'Fira Code', monospace">Fira Code</option>
-                            <option value="'Roboto Mono', monospace">Roboto Mono</option>
-                            <option value="'Inter', sans-serif">Inter</option>
-                        </select>
-                        <span class="material-symbols-outlined mob-settings-chevron">chevron_right</span>
-                    </div>
-                </div>
-                <div class="mob-settings-row">
-                    <div class="mob-settings-icon bg-teal-ios"><span class="material-symbols-outlined">format_size</span></div>
-                    <div class="mob-settings-label">Font Size</div>
-                    <div class="mob-settings-value">
-                        <select id="mob-font-size-select" class="mob-settings-select">
-                            <option value="12">12px</option>
-                            <option value="14">14px</option>
-                            <option value="16">16px</option>
-                            <option value="18">18px</option>
-                            <option value="20">20px</option>
-                        </select>
-                        <span class="material-symbols-outlined mob-settings-chevron">chevron_right</span>
-                    </div>
-                </div>
-                <div class="mob-settings-row" onclick="document.getElementById('mob-theme-toggle-check').click()">
-                    <div class="mob-settings-icon bg-gray-ios"><span class="material-symbols-outlined">dark_mode</span></div>
-                    <div class="mob-settings-label">Dark Mode</div>
-                    <div class="mob-toggle">
-                        <input type="checkbox" id="mob-theme-toggle-check" onclick="event.stopPropagation()">
-                        <div class="mob-toggle-slider"></div>
-                    </div>
-                </div>
-                <div class="mob-settings-row" onclick="toggleMobileView()">
-                    <div class="mob-settings-icon bg-indigo-ios"><span class="material-symbols-outlined">computer</span></div>
-                    <div class="mob-settings-label">Desktop Mode</div>
-                    <span class="material-symbols-outlined mob-settings-chevron">open_in_new</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Preferences Group -->
-        <div class="mob-settings-group">
-            <div class="mob-settings-group-title">App Preferences</div>
-            <div class="mob-settings-card">
-                <div class="mob-settings-row">
-                    <div class="mob-settings-icon bg-orange-ios"><span class="material-symbols-outlined">sync</span></div>
-                    <div class="mob-settings-label">Live Update</div>
-                    <div class="mob-settings-value">
-                        <select id="mob-update-frequency-select" class="mob-settings-select">
-                            <option value="5000">5s (Auto)</option>
-                            <option value="10000">10s</option>
-                            <option value="30000">30s</option>
-                            <option value="60000">1m</option>
-                        </select>
-                        <span class="material-symbols-outlined mob-settings-chevron">chevron_right</span>
-                    </div>
-                </div>
-                <div class="mob-settings-row" onclick="document.getElementById('mob-privacy-toggle-check').click()">
-                    <div class="mob-settings-icon bg-purple-ios"><span class="material-symbols-outlined">visibility_off</span></div>
-                    <div class="mob-settings-label">Privacy Mode</div>
-                    <div class="mob-toggle">
-                        <input type="checkbox" id="mob-privacy-toggle-check" onclick="event.stopPropagation()">
-                        <div class="mob-toggle-slider"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Telegram Notifications -->
-        <div class="mob-settings-group">
-            <div class="mob-settings-group-title">Notifications & Alerts</div>
-            <div class="mob-settings-card">
-                <div class="mob-settings-row" onclick="toggleMobSection('mob-sec-telegram-config')">
-                    <div class="mob-settings-icon bg-telegram"><span class="material-symbols-outlined">send</span></div>
-                    <div class="mob-settings-label">Telegram Bot</div>
-                    <div class="mob-settings-value">
-                        <span class="text-[10px] font-black uppercase text-slate-400" id="mob-tg-status-label">Setup</span>
-                        <span class="material-symbols-outlined mob-settings-chevron" id="mob-sec-telegram-config-icon">expand_more</span>
-                    </div>
-                </div>
-                <div id="mob-sec-telegram-config" class="hidden bg-slate-50 dark:bg-black/20 px-5 py-4 space-y-4 border-t border-slate-100 dark:border-slate-800">
-                    <div class="flex items-center justify-between">
-                        <div class="text-xs font-bold text-slate-500 uppercase tracking-widest">Enable Alerts</div>
-                        <div class="mob-toggle">
-                            <input type="checkbox" id="mob-telegram-enabled-check">
-                            <div class="mob-toggle-slider"></div>
-                        </div>
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Bot Token</label>
-                        <input id="mob-telegram-bot-token" type="password" placeholder="API Key..." class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs font-mono outline-none focus:ring-1 focus:ring-primary/50">
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Chat ID</label>
-                        <input id="mob-telegram-chat-id" type="text" placeholder="ID..." class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs font-mono outline-none focus:ring-1 focus:ring-primary/50">
-                    </div>
-                    <div class="pt-2 flex flex-wrap gap-2">
-                        <button onclick="sendDailyReport()" class="flex-1 py-2 bg-[#0088cc]/10 text-[#0088cc] rounded-lg text-[9px] font-bold uppercase tracking-widest border border-[#0088cc]/20">Report</button>
-                        <button onclick="sendTestTelegram('tp')" class="flex-1 py-2 bg-slate-200 dark:bg-slate-800 rounded-lg text-[9px] font-bold uppercase tracking-widest">Test TP</button>
-                        <button onclick="sendTestTelegram('sl')" class="flex-1 py-2 bg-slate-200 dark:bg-slate-800 rounded-lg text-[9px] font-bold uppercase tracking-widest">Test SL</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Data Management -->
-        <div class="mob-settings-group">
-            <div class="mob-settings-group-title">Data & Backup</div>
-            <div class="mob-settings-card">
-                <div class="mob-settings-row" onclick="window.location.href='/api/settings/backup'">
-                    <div class="mob-settings-icon bg-blue-ios"><span class="material-symbols-outlined">cloud_download</span></div>
-                    <div class="mob-settings-label">Export Data</div>
-                    <span class="material-symbols-outlined mob-settings-chevron">chevron_right</span>
-                </div>
-                <div class="mob-settings-row" onclick="document.getElementById('mob-restore-file').click()">
-                    <div class="mob-settings-icon bg-indigo-ios"><span class="material-symbols-outlined">cloud_upload</span></div>
-                    <div class="mob-settings-label">Import Data</div>
-                    <span class="material-symbols-outlined mob-settings-chevron">chevron_right</span>
-                </div>
-                <div class="mob-settings-row" onclick="document.getElementById('rebuild-history-btn').click()">
-                    <div class="mob-settings-icon bg-orange-ios"><span class="material-symbols-outlined">restart_alt</span></div>
-                    <div class="mob-settings-label">Rebuild Engine</div>
-                    <span class="material-symbols-outlined mob-settings-chevron">chevron_right</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="mob-settings-group">
-            <div class="mob-settings-group-title flex items-center justify-between">
-                <span>Recent Backups</span>
-                <button onclick="loadBackups()" class="text-primary hover:underline lowercase font-bold tracking-normal">Refresh</button>
-            </div>
-            <div class="mob-settings-card">
-                <div id="mob-backups-list" class="divide-y divide-slate-100 dark:divide-slate-800">
-                    <p class="p-5 text-[10px] text-slate-500 italic">No backups found.</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Danger Zone -->
-        <div class="mob-settings-group mt-10">
-            <div class="mob-settings-group-title text-rose-500">Destructive Actions</div>
-            <div class="mob-settings-card">
-                <button class="mob-settings-row w-full text-left" onclick="confirmReset()">
-                    <div class="mob-settings-icon bg-red-ios"><span class="material-symbols-outlined">delete_forever</span></div>
-                    <div class="mob-settings-label text-rose-500 font-bold">Purge Database</div>
-                    <span class="material-symbols-outlined mob-settings-chevron">chevron_right</span>
-                </button>
-            </div>
-            <p class="px-5 py-3 text-[10px] text-slate-400 italic leading-relaxed">
-                Resetting the database will permanently remove all transactions, portfolios and historical data points.
-            </p>
-        </div>
-
-        <input type="file" id="mob-restore-file" class="hidden" accept=".json" onchange="handleRestore(this)">
-        <div class="h-32"></div>
-    </div>
-
-
   </div>
 
-  <!-- Mobile Tab Bar -->
+  <!-- ── Mobile Scrollable Content ── -->
+  <div class="mob-scroll" id="mob-settings-scroll">
+      <!-- Profile Area -->
+      <div class="mob-settings-group">
+          <div class="mob-settings-group-title">Account</div>
+          <div class="mob-settings-card p-5 flex items-center gap-4">
+              <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                  <span class="material-symbols-outlined text-2xl">person</span>
+              </div>
+              <div class="flex-1">
+                  <h3 class="font-black text-base">User</h3>
+                  <p class="text-xs text-slate-500">user@foliotrack.io</p>
+              </div>
+          </div>
+      </div>
+
+      <!-- Settings Cards -->
+      <div class="mob-settings-group">
+          <div class="mob-settings-group-title">Options</div>
+          <div class="mob-settings-card">
+              <div class="mob-settings-row" onclick="document.getElementById('mob-theme-toggle').click()">
+                  <div class="mob-settings-icon bg-gray-500"><span class="material-symbols-outlined">dark_mode</span></div>
+                  <div class="mob-settings-label">Dark Mode</div>
+                  <div class="mob-toggle">
+                      <input type="checkbox" id="mob-theme-toggle" onclick="event.stopPropagation()">
+                      <div class="mob-toggle-slider"></div>
+                  </div>
+              </div>
+              <div class="mob-settings-row" onclick="document.getElementById('mob-privacy-toggle').click()">
+                  <div class="mob-settings-icon bg-purple-500"><span class="material-symbols-outlined">visibility_off</span></div>
+                  <div class="mob-settings-label">Privacy Mode</div>
+                  <div class="mob-toggle">
+                      <input type="checkbox" id="mob-privacy-toggle" onclick="event.stopPropagation()">
+                      <div class="mob-toggle-slider"></div>
+                  </div>
+              </div>
+          </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="mob-settings-group mt-8">
+          <div class="mob-settings-card">
+              <button onclick="confirmReset()" class="mob-settings-row w-full text-left">
+                  <div class="mob-settings-icon bg-rose-500"><span class="material-symbols-outlined text-white">delete_forever</span></div>
+                  <div class="mob-settings-label text-rose-500 font-bold">Wipe Database</div>
+                  <span class="material-symbols-outlined text-rose-500">chevron_right</span>
+              </button>
+          </div>
+      </div>
+
+      <div class="h-32"></div>
+  </div>
+
+  <!-- ── Mobile Tab Bar ── -->
   <div class="mob-tab-bar">
     <a href="/dashboard" class="mob-tab-item">
       <span class="material-symbols-outlined">dashboard</span>
@@ -284,564 +130,33 @@
   </div>
 </div>
 
-<!-- Restore Confirm Modal -->
-<div id="confirm-restore-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-  <div class="bg-white dark:bg-[#111722] border border-indigo-500/30 rounded-2xl w-full max-w-md shadow-2xl p-8 space-y-6">
-    <div class="flex items-center gap-4">
-      <div class="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center shrink-0">
-        <span class="material-symbols-outlined text-indigo-500 text-2xl">settings_backup_restore</span>
-      </div>
-      <div>
-        <p class="font-bold text-indigo-500">Confirm Restore</p>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">This will <strong class="text-indigo-500">completely overwrite</strong> your current data with the selected backup. The application will restart.</p>
-      </div>
-    </div>
-    <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
-        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Backup to restore:</p>
-        <p id="restore-target-name" class="text-sm font-mono font-bold truncate">backup-file.db</p>
-    </div>
-    <div class="flex gap-3">
-      <button id="restore-cancel-btn" class="flex-1 py-2.5 rounded-lg font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors">Cancel</button>
-      <button id="restore-confirm-btn" class="flex-1 py-2.5 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20">Restore & Restart</button>
-    </div>
-  </div>
-</div>
-
-<!-- Custom Confirm Modal -->
-<div id="confirm-reset-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-  <div class="bg-white dark:bg-[#111722] border border-rose-500/30 rounded-2xl w-full max-w-sm shadow-2xl p-8 space-y-6">
-    <div class="flex items-center gap-4">
-      <div class="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center shrink-0">
-        <span class="material-symbols-outlined text-rose-500 text-2xl">warning</span>
-      </div>
-      <div>
-        <p class="font-bold text-rose-500">Confirm Reset</p>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">This will permanently delete all portfolios, transactions, and assets. This action cannot be undone.</p>
-      </div>
-    </div>
-    <div class="flex gap-3">
-      <button id="confirm-cancel-btn" class="flex-1 py-2.5 rounded-lg font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors">Cancel</button>
-      <button id="confirm-reset-btn" class="flex-1 py-2.5 bg-rose-600 text-white rounded-lg font-bold hover:bg-rose-700 transition-all shadow-lg shadow-rose-600/20">Yes, Delete All</button>
-    </div>
-  </div>
-</div>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // --- Element Selections (Grouped by Category) ---
-        
-        // Appearance
-        const fontSelect = document.getElementById('font-family-select');
-        const sizeSelect = document.getElementById('font-size-select');
-        const themeLightBtn = document.getElementById('theme-light-btn');
-        const themeDarkBtn = document.getElementById('theme-dark-btn');
-        const mobFontSelect = document.getElementById('mob-font-family-select');
-        const mobSizeSelect = document.getElementById('mob-font-size-select');
-        
-        // General Preferences
-        const freqSelect = document.getElementById('update-frequency-select');
-        const mobFreqSelect = document.getElementById('mob-update-frequency-select');
-        
-        // Telegram Notifications (Desktop)
-        const tgTokenInput = document.getElementById('telegram-bot-token');
-        const tgChatIdInput = document.getElementById('telegram-chat-id');
-        const tgEnabledCheck = document.getElementById('telegram-enabled-check');
-        const tgMarketCheck = document.getElementById('telegram-market-status-check');
-        const tgIntervalInput = document.getElementById('telegram-status-interval');
-        
-        // Telegram Notifications (Mobile)
-        const mobTgEnabled = document.getElementById('mob-telegram-enabled-check');
-        const mobTgToken = document.getElementById('mob-telegram-bot-token');
-        const mobTgChat = document.getElementById('mob-telegram-chat-id');
-        const mobTgMarket = document.getElementById('mob-telegram-market-status-check');
-        const mobTgInterval = document.getElementById('mob-telegram-status-interval');
-        const mobThemeToggle = document.getElementById('mob-theme-toggle-check');
-        const mobPrivacyToggle = document.getElementById('mob-privacy-toggle-check');
-        const mobTgStatusLabel = document.getElementById('mob-tg-status-label');
+        const themeToggle = document.getElementById('mob-theme-toggle');
+        const privacyToggle = document.getElementById('mob-privacy-toggle');
 
-        // Backup & Restore
-        const backupFreqSelect = document.getElementById('backup-frequency-select');
-        const backupRetentionInput = document.getElementById('backup-retention-input');
-        const runBackupBtn = document.getElementById('run-backup-btn');
-        
-        // ------------------------------------------------
-        
-        // Initial setup from window global settings if available or local cache
         const updateUI = (settings) => {
-            const theme = settings.theme || 'dark';
-            if (fontSelect && settings.fontFamily) fontSelect.value = settings.fontFamily;
-            if (sizeSelect && settings.fontSize) sizeSelect.value = settings.fontSize;
-            if (freqSelect && settings.updateFrequency) freqSelect.value = settings.updateFrequency;
-            if (backupFreqSelect && settings.backupFrequency) backupFreqSelect.value = settings.backupFrequency;
-            if (backupRetentionInput && settings.backupRetention) backupRetentionInput.value = settings.backupRetention;
-            // if (privacyCheckbox) privacyCheckbox.checked = settings.privacyMode === 'true';
-
-            // Mobile binds
-            if (mobFontSelect && settings.mobFont) mobFontSelect.value = settings.mobFont;
-            else if (mobFontSelect && settings.fontFamily) mobFontSelect.value = settings.fontFamily;
-            
-            if (mobSizeSelect && settings.mobSize) mobSizeSelect.value = settings.mobSize;
-            else if (mobSizeSelect && settings.fontSize) mobSizeSelect.value = settings.fontSize;
-            
-            if (mobFreqSelect && settings.updateFrequency) mobFreqSelect.value = settings.updateFrequency;
-
-            if (mobThemeToggle) mobThemeToggle.checked = theme === 'dark';
-            if (mobPrivacyToggle) mobPrivacyToggle.checked = settings.privacyMode === 'true';
-            
-            if (mobTgStatusLabel) {
-                mobTgStatusLabel.textContent = settings.telegramEnabled === 'true' ? 'Active' : 'Setup';
-                mobTgStatusLabel.className = 'text-[10px] font-black uppercase ' + (settings.telegramEnabled === 'true' ? 'text-emerald-500' : 'text-slate-400');
-            }
-
-            if (tgEnabledCheck) tgEnabledCheck.checked = settings.telegramEnabled === 'true';
-            if (tgMarketCheck) tgMarketCheck.checked = settings.marketStatusTelegramEnabled === 'true';
-            if (tgIntervalInput && settings.marketStatusInterval) tgIntervalInput.value = settings.marketStatusInterval;
-            
-            // Sync Mobile fields
-            if (mobTgEnabled) mobTgEnabled.checked = settings.telegramEnabled === 'true';
-            if (mobTgToken && settings.telegramBotToken) mobTgToken.value = settings.telegramBotToken;
-            if (mobTgChat && settings.telegramChatId) mobTgChat.value = settings.telegramChatId;
-            if (mobTgMarket) mobTgMarket.checked = settings.marketStatusTelegramEnabled === 'true';
-            if (mobTgInterval && settings.marketStatusInterval) mobTgInterval.value = settings.marketStatusInterval;
-            
-            const lightBtn = document.getElementById('theme-light-btn');
-            const darkBtn = document.getElementById('theme-dark-btn');
-            
-            if (lightBtn && darkBtn) {
-                if (theme === 'light') {
-                    lightBtn.className = 'px-6 py-2 rounded-lg text-sm font-black bg-white shadow-sm text-primary';
-                    darkBtn.className = 'px-6 py-2 rounded-lg text-sm font-bold text-slate-500 hover:text-slate-700 transition-all';
-                } else {
-                    darkBtn.className = 'px-6 py-2 rounded-lg text-sm font-black bg-slate-800 shadow-sm text-primary';
-                    lightBtn.className = 'px-6 py-2 rounded-lg text-sm font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-all';
-                }
-            }
-            if (typeof loadBackups === 'function') loadBackups();
+            if (themeToggle) themeToggle.checked = settings.theme === 'dark';
+            if (privacyToggle) privacyToggle.checked = settings.privacyMode === 'true';
         };
 
-        window.setTheme = (theme) => {
-            if (window.updateAppSettings) {
-                window.updateAppSettings({
-                    fontFamily: fontSelect ? fontSelect.value : (mobFontSelect ? mobFontSelect.value : "'JetBrains Mono', monospace"),
-                    fontSize: sizeSelect ? sizeSelect.value : (mobSizeSelect ? mobSizeSelect.value : "14"),
-                    updateFrequency: freqSelect ? freqSelect.value : (mobFreqSelect ? mobFreqSelect.value : "30000"),
-                    backupFrequency: backupFreqSelect ? backupFreqSelect.value : 'None',
-                    backupRetention: backupRetentionInput ? backupRetentionInput.value : 5,
-                    theme: theme
-                });
-            }
-        };
+        window.addEventListener('settings-updated', (e) => updateUI(e.detail));
 
-        // Sync with backend if changed
-        window.addEventListener('settings-updated', (e) => {
-            updateUI(e.detail);
+        if (themeToggle) themeToggle.addEventListener('change', () => {
+            if (window.updateAppSettings) window.updateAppSettings({ theme: themeToggle.checked ? 'dark' : 'light' });
+        });
+        if (privacyToggle) privacyToggle.addEventListener('change', () => {
+            if (window.updateAppSettings) window.updateAppSettings({ privacyMode: String(privacyToggle.checked) });
         });
 
-        // Handle changes
-        const saveSettings = () => {
-            if (window.updateAppSettings) {
-                const settings = {};
-                if (fontSelect) settings.fontFamily = fontSelect.value;
-                if (sizeSelect) settings.fontSize = sizeSelect.value;
-                if (freqSelect) settings.updateFrequency = freqSelect.value;
-                if (backupFreqSelect) settings.backupFrequency = backupFreqSelect.value;
-                if (backupRetentionInput) settings.backupRetention = backupRetentionInput.value;
-                window.updateAppSettings(settings);
-            }
-        };
-
-        if (fontSelect) fontSelect.addEventListener('change', saveSettings);
-        if (sizeSelect) sizeSelect.addEventListener('change', saveSettings);
-        if (freqSelect) freqSelect.addEventListener('change', saveSettings);
-        if (backupFreqSelect) backupFreqSelect.addEventListener('change', saveSettings);
-        if (backupRetentionInput) backupRetentionInput.addEventListener('change', saveSettings);
-        // if (privacyCheckbox) privacyCheckbox.addEventListener('change', saveSettings);
-
-        // Mobile save settings
-        const saveMobSettings = () => {
-            if (window.updateAppSettings) {
-                window.updateAppSettings({
-                    // Only update mobile-specific font properties
-                    mobFont: mobFontSelect ? mobFontSelect.value : fontSelect.value,
-                    mobSize: mobSizeSelect ? mobSizeSelect.value : sizeSelect.value,
-                    updateFrequency: mobFreqSelect ? mobFreqSelect.value : freqSelect.value,
-                    backupFrequency: backupFreqSelect ? backupFreqSelect.value : 'None',
-                    backupRetention: backupRetentionInput ? backupRetentionInput.value : 5
-                });
-            }
-        };
-
-        const saveTelegramSettings = () => {
-            if (window.updateAppSettings) {
-                const settings = {};
-                // Favor desktop values if present, else fallback to mobile values
-                if (tgTokenInput) settings.telegramBotToken = tgTokenInput.value;
-                else if (mobTgToken) settings.telegramBotToken = mobTgToken.value;
-
-                if (tgChatIdInput) settings.telegramChatId = tgChatIdInput.value;
-                else if (mobTgChat) settings.telegramChatId = mobTgChat.value;
-
-                if (tgEnabledCheck) settings.telegramEnabled = String(tgEnabledCheck.checked);
-                else if (mobTgEnabled) settings.telegramEnabled = String(mobTgEnabled.checked);
-
-                if (tgMarketCheck) settings.marketStatusTelegramEnabled = String(tgMarketCheck.checked);
-                else if (mobTgMarket) settings.marketStatusTelegramEnabled = String(mobTgMarket.checked);
-
-                if (tgIntervalInput) settings.marketStatusInterval = tgIntervalInput.value;
-                else if (mobTgInterval) settings.marketStatusInterval = mobTgInterval.value;
-
-                window.updateAppSettings(settings);
-            }
-        };
-
-        // Bi-directional Sync and Listeners
-        const setupSync = (master, slave) => {
-            if (!master || !slave) return;
-            master.addEventListener('change', () => {
-                if (slave.type === 'checkbox') slave.checked = master.checked;
-                else slave.value = master.value;
-                saveTelegramSettings();
-            });
-            slave.addEventListener('change', () => {
-                if (master.type === 'checkbox') master.checked = slave.checked;
-                else master.value = slave.value;
-                saveTelegramSettings();
-            });
-        };
-
-        if (tgTokenInput) tgTokenInput.addEventListener('change', saveTelegramSettings);
-        if (tgChatIdInput) tgChatIdInput.addEventListener('change', saveTelegramSettings);
-        if (tgEnabledCheck) tgEnabledCheck.addEventListener('change', saveTelegramSettings);
-        if (tgMarketCheck) tgMarketCheck.addEventListener('change', saveTelegramSettings);
-        if (tgIntervalInput) tgIntervalInput.addEventListener('change', saveTelegramSettings);
-
-        if (mobThemeToggle) mobThemeToggle.addEventListener('change', () => toggleTheme());
-        if (mobPrivacyToggle) mobPrivacyToggle.addEventListener('change', () => togglePrivacy());
-
-        setupSync(tgTokenInput, mobTgToken);
-        setupSync(tgChatIdInput, mobTgChat);
-        setupSync(tgEnabledCheck, mobTgEnabled);
-        setupSync(tgMarketCheck, mobTgMarket);
-        setupSync(tgIntervalInput, mobTgInterval);
-
-        window.sendTestTelegram = async (type) => {
-            try {
-                const res = await fetch(`/api/settings/telegram/test-${type}`, { method: 'POST' });
-                const data = await res.json();
-                if (data.success) {
-                    alert('Test notification sent!');
-                } else {
-                    alert('Failed: ' + data.error);
-                }
-            } catch (err) {
-                alert('Error: ' + err.message);
-            }
-        };
-
-        if (mobFontSelect) mobFontSelect.addEventListener('change', saveMobSettings);
-        if (mobSizeSelect) mobSizeSelect.addEventListener('change', saveMobSettings);
-        if (mobFreqSelect) mobFreqSelect.addEventListener('change', saveMobSettings);
-        
-        // Backup logic
-        async function loadBackups() {
-            const list = document.getElementById('backups-list');
-            const mobList = document.getElementById('mob-backups-list');
-            if (!list && !mobList) return;
-            try {
-                const res = await fetch('/api/backups');
-                const backups = await res.json();
-                if (backups.length === 0) {
-                    if (list) list.innerHTML = '<p class="text-xs text-slate-500 italic">No backups found.</p>';
-                    if (mobList) mobList.innerHTML = '<p class="text-xs text-slate-500 italic">No backups found.</p>';
-                    return;
-                }
-                const html = backups.map(b => `
-                    <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 group">
-                        <div class="flex items-center gap-3">
-                            <span class="material-symbols-outlined text-slate-400 group-hover:text-indigo-500 transition-colors">database</span>
-                            <div style="flex:1; overflow:hidden">
-                                <p class="text-xs font-bold truncate">${b.filename}</p>
-                                <p class="text-[10px] text-slate-500">${new Date(b.timestamp).toLocaleString()} • ${(b.size / 1024).toFixed(1)} KB</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onclick="confirmRestore('${b.filename}')" class="p-1.5 rounded-lg text-indigo-500 hover:bg-indigo-500/10 transition-colors" title="Restore">
-                                <span class="material-symbols-outlined text-lg">settings_backup_restore</span>
-                            </button>
-                            <button onclick="deleteBackup('${b.filename}')" class="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 transition-colors" title="Delete">
-                                <span class="material-symbols-outlined text-lg">delete</span>
-                            </button>
-                        </div>
-                    </div>
-                `).join('');
-                
-                const mobHtml = backups.map(b => `
-                    <div class="flex items-center justify-between p-4 px-5 border-b border-slate-100 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
-                        <div style="flex:1; overflow:hidden">
-                            <p class="text-[13px] font-bold truncate">${b.filename}</p>
-                            <p class="text-[10px] text-slate-400 font-medium">${new Date(b.timestamp).toLocaleString()} • ${(b.size / 1024).toFixed(1)} KB</p>
-                        </div>
-                        <div class="flex items-center gap-3">
-                             <button onclick="confirmRestore('${b.filename}')" class="text-primary text-xs font-black uppercase tracking-wider">Restore</button>
-                             <button onclick="deleteBackup('${b.filename}')" class="text-rose-500 text-xs font-black uppercase tracking-wider">Del</button>
-                        </div>
-                    </div>
-                `).join('');
-
-                if (list) list.innerHTML = html;
-                if (mobList) mobList.innerHTML = mobHtml;
-            } catch (err) { console.error(err); }
-        }
-
-        if (runBackupBtn) {
-            runBackupBtn.addEventListener('click', async () => {
-                runBackupBtn.disabled = true;
-                runBackupBtn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">sync</span> Running...';
-                try {
-                    const res = await fetch('/api/backups/manual', { method: 'POST' });
-                    if (!res.ok) throw new Error('Backup failed');
-                    await loadBackups();
-                } catch (err) {
-                    alert('Error: ' + err.message);
-                } finally {
-                    runBackupBtn.disabled = false;
-                    runBackupBtn.innerHTML = '<span class="material-symbols-outlined text-sm">backup</span> Run Now';
-                }
-            });
-        }
-
-        window.deleteBackup = async (filename) => {
-            if (!confirm('Delete this backup?')) return;
-            try {
-                await fetch(`/api/backups/${filename}`, { method: 'DELETE' });
-                loadBackups();
-            } catch (err) { console.error(err); }
-        };
-
-        const restoreModal = document.getElementById('confirm-restore-modal');
-        const restoreTargetName = document.getElementById('restore-target-name');
-        let pendingRestore = null;
-
-        window.confirmRestore = (filename) => {
-            pendingRestore = filename;
-            restoreTargetName.textContent = filename;
-            restoreModal.classList.remove('hidden');
-        };
-
-        document.getElementById('restore-cancel-btn').addEventListener('click', () => {
-            restoreModal.classList.add('hidden');
-            pendingRestore = null;
-        });
-
-        document.getElementById('restore-confirm-btn').addEventListener('click', async () => {
-            const btn = document.getElementById('restore-confirm-btn');
-            btn.disabled = true;
-            btn.textContent = 'Restoring...';
-            try {
-                const res = await fetch('/api/backups/restore', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ filename: pendingRestore })
-                });
-                // Server will restart, so connection will drop
-                alert('Restore complete. Page will refresh once server is back.');
-                setTimeout(() => window.location.reload(), 3000);
-            } catch (err) {
-                console.error(err);
-                btn.disabled = false;
-                btn.textContent = 'Restore & Restart';
-            }
-        });
-        
-        // Reset Data logic
-        const resetBtn        = document.getElementById('reset-data-btn');
-        const resetModal      = document.getElementById('confirm-reset-modal');
-        const confirmResetBtn = document.getElementById('confirm-reset-btn');
-        const confirmCancelBtn= document.getElementById('confirm-cancel-btn');
-
-        if (resetBtn && resetModal) {
-            resetBtn.addEventListener('click', () => {
-                resetModal.classList.remove('hidden');
-            });
-            confirmCancelBtn.addEventListener('click', () => {
-                resetModal.classList.add('hidden');
-            });
-            confirmResetBtn.addEventListener('click', async () => {
-                confirmResetBtn.disabled = true;
-                confirmResetBtn.textContent = 'Deleting...';
-                try {
-                    const res = await fetch('/api/reset-data', { method: 'POST' });
-                    if (!res.ok) throw new Error('Server error');
-                    resetModal.classList.add('hidden');
-                    window.location.href = '/dashboard';
-                } catch (err) {
-                    console.error(err);
-                    confirmResetBtn.disabled = false;
-                    confirmResetBtn.textContent = 'Yes, Delete All';
-                    alert('Reset failed: ' + err.message);
-                }
-            });
-        }
-
-        // B_ITA Scraper Debug logic
-        const testBtn = document.getElementById('test-scraper-btn');
-        const resultArea = document.getElementById('scraper-result');
-        if (testBtn) {
-            testBtn.addEventListener('click', async () => {
-                const isin = document.getElementById('debug-isin').value.trim();
-                const type = document.getElementById('debug-type').value;
-                if (!isin) return alert('Please enter an ISIN');
-
-                testBtn.disabled = true;
-                testBtn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">sync</span> Running...';
-                resultArea.classList.add('hidden');
-
-                try {
-                    const res = await fetch('/api/debug/borsa-italiana', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ isin, assetType: type })
-                    });
-                    const data = await res.json();
-                    
-                    const statusEl = document.getElementById('debug-status');
-                    if (data.success) {
-                        statusEl.innerText = 'SUCCESS';
-                        statusEl.className = 'px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter bg-emerald-500/10 text-emerald-500';
-                        document.getElementById('debug-price').innerText = data.price;
-                        document.getElementById('debug-variation').innerText = (data.variation >= 0 ? '+' : '') + data.variation + '%';
-                        document.getElementById('debug-variation').className = 'text-xl font-mono font-black ' + (data.variation >= 0 ? 'text-emerald-500' : 'text-rose-500');
-                    } else {
-                        statusEl.innerText = 'FAILED';
-                        statusEl.className = 'px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter bg-rose-500/10 text-rose-500';
-                        document.getElementById('debug-price').innerText = 'Err';
-                        document.getElementById('debug-variation').innerText = '--';
-                        document.getElementById('debug-variation').className = 'text-xl font-mono font-black text-slate-400';
-                    }
-                    document.getElementById('debug-url').innerText = data.url;
-                    document.getElementById('debug-url').href = data.url;
-                    resultArea.classList.remove('hidden');
-                } catch (err) {
-                    alert('Error: ' + err.message);
-                } finally {
-                    testBtn.disabled = false;
-                    testBtn.innerHTML = '<span class="material-symbols-outlined text-sm">search_check</span> Run Diagnostic';
-                }
-            });
-        }
-        
-        window.toggleSection = function(id) {
-            const content = document.getElementById(id);
-            const icon = document.getElementById(id + '-icon');
-            if (content.classList.contains('hidden')) {
-                content.classList.remove('hidden');
-                if (icon) icon.style.transform = 'rotate(180deg)';
-                if (id === 'history-management-content') loadHistoryData();
-                if (id === 'taxation-management-content') loadTaxRates();
-            } else {
-                content.classList.add('hidden');
-                if (icon) icon.style.transform = 'rotate(0deg)';
-            }
-        };
-
-        window.toggleMobSection = function(id) {
-            const el = document.getElementById(id);
-            if (!el) return;
-            el.classList.toggle('hidden');
-            const icon = document.getElementById(id + '-icon');
-            if (icon) {
-                icon.style.transform = el.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
-            }
-        };
-
-        window.confirmReset = () => {
-             const resetModal = document.getElementById('confirm-reset-modal');
-             if (resetModal) resetModal.classList.remove('hidden');
-        };
-
-        window.sendMarketStatusTelegram = async () => {
-            try {
-                const res = await fetch('/api/settings/telegram/test-status', { method: 'POST' });
-                const data = await res.json();
-                if (data.success) alert('Status notification sent!');
-                else alert('Failed: ' + data.error);
-            } catch (err) { alert('Error: ' + err.message); }
-        };
-
-        window.sendDailyReport = async () => {
-            try {
-                const res = await fetch('/api/telegram/send-report', { method: 'POST' });
-                const data = await res.json();
-                if (data.success) alert('Daily Report sent to Telegram!');
-                else alert('Failed: ' + data.error);
-            } catch (err) { alert('Error: ' + err.message); }
-        };
-        // Initial fetch to populate UI
         fetch('/api/settings').then(res => res.json()).then(updateUI);
+    });
 
+    function confirmReset() {
+        if (confirm('Permanently delete all data?')) {
+            fetch('/api/reset-data', { method: 'POST' }).then(() => window.location.href = '/dashboard');
+        }
+    }
 </script>
-
-<!-- Edit Transaction Audit Modal -->
-<div id="edit-audit-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl p-6">
-        <div class="flex items-center justify-between mb-6">
-            <h3 class="text-lg font-bold">Edit Transaction</h3>
-            <button onclick="closeEditAuditModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
-                <span class="material-symbols-outlined">close</span>
-            </button>
-        </div>
-        <form id="edit-audit-form" class="space-y-4">
-            <input type="hidden" id="edit-audit-id">
-            <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Type</label>
-                    <select id="edit-audit-type" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:ring-primary/30">
-                        <option value="BUY">BUY</option>
-                        <option value="SELL">SELL</option>
-                        <option value="DIVIDEND">DIVIDEND</option>
-                        <option value="DEPOSIT">DEPOSIT</option>
-                        <option value="WITHDRAWAL">WITHDRAWAL</option>
-                        <option value="TAX">TAX</option>
-                        <option value="TRANSFER">TRANSFER</option>
-                    </select>
-                </div>
-                <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Date</label>
-                    <input type="date" id="edit-audit-date" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:ring-primary/30">
-                </div>
-            </div>
-            <div class="grid grid-cols-3 gap-4">
-                <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Qty</label>
-                    <input type="number" step="any" id="edit-audit-qty" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:ring-primary/30">
-                </div>
-                <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Price</label>
-                    <input type="number" step="any" id="edit-audit-price" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:ring-primary/30">
-                </div>
-                <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">FX Rate</label>
-                    <input type="number" step="any" id="edit-audit-fx" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:ring-primary/30">
-                </div>
-            </div>
-            <div class="grid grid-cols-3 gap-4">
-                <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Comm</label>
-                    <input type="number" step="any" id="edit-audit-comm" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:ring-primary/30">
-                </div>
-                <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Tax</label>
-                    <input type="number" step="any" id="edit-audit-tax" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:ring-primary/30">
-                </div>
-                <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Amt (EUR)</label>
-                    <input type="number" step="any" id="edit-audit-amount" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:ring-primary/30">
-                </div>
-            </div>
-            <div class="flex justify-end gap-3 pt-4">
-                <button type="button" onclick="closeEditAuditModal()" class="px-6 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold">Cancel</button>
-                <button type="button" onclick="saveAuditTransaction()" class="px-6 py-2 bg-primary text-white rounded-lg text-[10px] font-bold shadow-sm shadow-primary/20">Save Changes</button>
-            </div>
-        </form>
-    </div>
-</div>
-</body></html>
+</body>
+</html>
