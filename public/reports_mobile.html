@@ -202,6 +202,8 @@
     </a>
   </div>
 </div>
+
+<script>
     // ─── Mobile Reports Logic ────────────────────────────────────────────────
     let mobPerfChart, mobAssetChart, mobGeoChart, mobDivChart;
     let mobCurrentRange = '1Y';
@@ -272,7 +274,9 @@
             // Charts
             mobRenderCharts(data);
             if (data.annualGains) mobRenderAnnualGains(data.annualGains);
-        } catch(e) {}
+        } catch(e) {
+            console.error('Mobile Reports sync error:', e);
+        }
     }
 
     function mobRenderAnnualGains(gains) {
@@ -468,6 +472,10 @@
     }
 
     window.addEventListener('mobile-view-activated', mobSyncReports);
-    if (window._mobileViewActive) mobSyncReports();
+    
+    // Initial call
+    if (document.body.classList.contains('mobile-view-active') || window._mobileViewActive) {
+        mobSyncReports();
+    }
 </script>
 </body></html>
