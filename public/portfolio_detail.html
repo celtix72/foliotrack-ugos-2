@@ -2778,6 +2778,16 @@
 
       <!-- Transactions (hidden initially) -->
       <div id="mob-transactions-view" style="display:none">
+        <!-- Filter Info Bar -->
+        <div id="mob-tx-filter-info" class="mob-ios-grouped hidden" style="background:rgba(19,91,236,0.1); border-color:rgba(19,91,236,0.3); border-radius:12px; margin-bottom:0 !important">
+            <div style="padding:10px 16px; display:flex; justify-content:space-between; align-items:center">
+                <div style="font-size:12px; font-weight:800; color:var(--mob-primary); display:flex; align-items:center; gap:6px">
+                    <span class="material-symbols-outlined" style="font-size:16px">filter_list</span>
+                    Filtrato per: <span id="mob-tx-filter-ticker" style="font-family:monospace; font-weight:900">—</span>
+                </div>
+                <button onclick="mobResetTxFilter()" class="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg active:scale-95 transition-transform" style="background:rgba(0,0,0,0.05)">Rimuovi</button>
+            </div>
+        </div>
         <div class="mob-ios-grouped" id="mob-transactions-list">
           <div style="text-align:center;padding:32px">
             <div class="mob-spinner" style="margin:0 auto"></div>
@@ -2938,7 +2948,14 @@
   }
 
   window.mobViewAssetTransactions = function(ticker) {
-    mobSwitchDetailTab('transactions');
+    mobSwitchDetailTab('transactions', true); // true = don't reset filter yet
+    const info = document.getElementById('mob-tx-filter-info');
+    const tickerEl = document.getElementById('mob-tx-filter-ticker');
+    if (info && tickerEl) {
+      info.classList.remove('hidden');
+      tickerEl.textContent = ticker;
+    }
+
     const items = document.querySelectorAll('#mob-transactions-list .mob-transaction-item');
     items.forEach(it => {
       const container = it.closest('.mob-holding-swipe-container');
@@ -2950,6 +2967,18 @@
       }
     });
     resetSwipes();
+  };
+
+  window.mobResetTxFilter = function() {
+    const info = document.getElementById('mob-tx-filter-info');
+    if (info) info.classList.add('hidden');
+    
+    const items = document.querySelectorAll('#mob-transactions-list .mob-transaction-item');
+    items.forEach(it => {
+      const container = it.closest('.mob-holding-swipe-container');
+      if (container) container.style.display = '';
+      it.style.backgroundColor = '';
+    });
   };
 
   // ── Portfolio Detail ──────────────────────────────
@@ -3373,12 +3402,14 @@
     if (mobCurrentPortfolioId) mobUpdateDetailChart(mobCurrentPortfolioId, range);
   };
 
-  window.mobSwitchDetailTab = function(tab) {
+  window.mobSwitchDetailTab = function(tab, keepFilter = false) {
     const isHoldings = tab === 'holdings';
     document.getElementById('mob-pill-holdings').classList.toggle('active', isHoldings);
     document.getElementById('mob-pill-transactions').classList.toggle('active', !isHoldings);
     document.getElementById('mob-holdings-view').style.display = isHoldings ? '' : 'none';
     document.getElementById('mob-transactions-view').style.display = isHoldings ? 'none' : '';
+    
+    if (!keepFilter) mobResetTxFilter();
   };
 
   function mobInit() {
