@@ -1639,6 +1639,7 @@
                 });
                 closeTransactionModal();
                 loadPortfolioDetails();
+                window.dispatchEvent(new CustomEvent('portfolios-updated'));
             } catch (err) { console.error(err); }
         };
     }
@@ -1675,6 +1676,7 @@
             async () => {
                 await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
                 loadPortfolioDetails();
+                window.dispatchEvent(new CustomEvent('portfolios-updated'));
             }
         );
     }

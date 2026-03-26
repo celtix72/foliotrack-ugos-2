@@ -584,6 +584,12 @@
     setInterval(updateNotifications, 30000); // 30s notifications sync
     setInterval(updateMarketStatusUI, 60000); // 60s market status sync
     updateMarketStatusUI(); // Call immediately on load
+    
+    window.addEventListener('portfolios-updated', () => {
+        console.log("[Theme] portfolios-updated event received, refreshing UI...");
+        updateSidebarContents();
+        updateMarketStatusUI();
+    });
 
     window.refreshSidebarPortfolios = () => { _sidebarLoading = false; updateSidebarContents(); };
 
