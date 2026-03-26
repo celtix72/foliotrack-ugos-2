@@ -26,9 +26,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/theme.js"></script>
 </head>
-<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex">
-<!-- Sidebar -->
-<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display min-h-screen flex mobile-view-active">
+<body class="bg-background-light dark:bg-[#0b0f1a] text-slate-900 dark:text-slate-100 font-display min-h-screen flex mobile-view-active">
 <div id="mobile-ui">
   <!-- ── Top Header ── -->
   <!-- ── Mobile Header ── -->
@@ -103,9 +101,26 @@
 
     <!-- Performance Chart -->
     <div class="mob-chart-card">
-      <div class="mob-chart-title">Performance (1Y)</div>
-      <div class="mob-chart-subtitle">Portfolio vs Benchmarks</div>
-      <div class="mob-chart-canvas-wrapper">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <div class="mob-chart-title">Performance Comparison</div>
+          <div class="mob-chart-subtitle">Portfolio vs Benchmarks</div>
+        </div>
+        <button onclick="window.print()" class="mob-icon-btn" title="Export PDF">
+          <span class="material-symbols-outlined">download</span>
+        </button>
+      </div>
+      
+      <!-- Range Selector -->
+      <div class="mob-chart-range-bar" id="mob-reports-range-bar">
+        <div class="mob-range-btn" onclick="mobChangeRange('YTD')" data-range="YTD">YTD</div>
+        <div class="mob-range-btn active" onclick="mobChangeRange('1Y')" data-range="1Y">1Y</div>
+        <div class="mob-range-btn" onclick="mobChangeRange('3Y')" data-range="3Y">3Y</div>
+        <div class="mob-range-btn" onclick="mobChangeRange('5Y')" data-range="5Y">5Y</div>
+        <div class="mob-range-btn" onclick="mobChangeRange('ALL')" data-range="ALL">ALL</div>
+      </div>
+
+      <div class="mob-chart-canvas-wrapper" style="height: 180px;">
         <canvas id="mob-perf-chart"></canvas>
       </div>
     </div>
@@ -162,6 +177,9 @@
       <div class="mob-chart-canvas-wrapper" style="height:120px">
         <canvas id="mob-div-chart"></canvas>
       </div>
+      <div id="mob-yield-box" class="mt-4 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10 hidden">
+        <p class="text-[11px] text-emerald-600 font-bold">Estimated Annual Yield: <span id="mob-yield-percent">--%</span></p>
+      </div>
     </div>
 
     <!-- Bottom spacer -->
@@ -186,13 +204,24 @@
 </div>
     // ─── Mobile Reports Logic ────────────────────────────────────────────────
     let mobPerfChart, mobAssetChart, mobGeoChart, mobDivChart;
+    let mobCurrentRange = '1Y';
+    let mobLastData = null;
+
+    window.mobChangeRange = function(range) {
+        mobCurrentRange = range;
+        document.querySelectorAll('#mob-reports-range-bar .mob-range-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.range === range);
+        });
+        mobSyncReports();
+    };
 
     async function mobSyncReports() {
         if (!window._mobileViewActive) return;
         try {
-            const res = await fetch(`/api/analytics/reports?range=1Y`);
+            const res = await fetch(`/api/analytics/reports?range=${mobCurrentRange}`);
             const data = await res.json();
             if (data.error) return;
+            mobLastData = data;
 
             // Metrics
             const m = data.metrics;
@@ -208,6 +237,14 @@
             document.getElementById('mob-cagr').textContent = (m.annualizedROI * 100).toFixed(2) + '%';
             document.getElementById('mob-sharpe').textContent = m.sharpeRatio.toFixed(2);
             if (document.getElementById('mob-best')) document.getElementById('mob-best').textContent = m.bestAsset;
+            
+            // Yield
+            const yieldBox = document.getElementById('mob-yield-box');
+            const yieldVal = document.getElementById('mob-yield-percent');
+            if (yieldBox && yieldVal && m.dividendYield !== undefined) {
+                yieldVal.textContent = (m.dividendYield * 100).toFixed(2) + '%';
+                yieldBox.classList.remove('hidden');
+            }
 
             // Portfolio List
             const list = document.getElementById('mob-portfolios-list');
@@ -223,7 +260,7 @@
                         </div>
                         <div class="mob-portfolio-info">
                           <div class="mob-portfolio-name">${p.name}</div>
-                          <div class="mob-portfolio-meta">Contrib: ${(pm.contribution*100).toFixed(1)}%</div>
+                          <div class="mob-portfolio-meta">Contrib: ${(pm.contribution*100).toFixed(1)}% · Sharpe: ${pm.sharpeRatio.toFixed(2)}</div>
                         </div>
                         <div class="mob-portfolio-values">
                           <div class="mob-portfolio-net">${formatCurrency(pm.currentValue, 'EUR')}</div>

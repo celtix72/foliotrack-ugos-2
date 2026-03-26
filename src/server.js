@@ -3335,7 +3335,8 @@ app.get('/api/analytics/reports', async (req, res) => {
                     const meanValue = returns.reduce((a, b) => a + b, 0) / returns.length;
                     const stdDevValue = Math.sqrt(returns.map(x => Math.pow(x - meanValue, 2)).reduce((a, b) => a + b, 0) / returns.length);
                     return stdDevValue > 0 ? (meanValue - riskFreeMonthly) / stdDevValue : 0;
-                })()
+                })(),
+                dividendYield: currentTotalValue > 0 ? dividends.reduce((s, x) => s + x.amount, 0) / currentTotalValue : 0
             }
         });
 

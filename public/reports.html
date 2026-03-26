@@ -630,6 +630,16 @@
         const totalIncome = divs.reduce((s, x) => s + x.amount, 0);
         document.getElementById('dividend-total-income').textContent = formatCurrency(totalIncome, 'USD');
 
+        // Projected Yield
+        if (data && data.metrics && data.metrics.dividendYield !== undefined) {
+            const yieldEl = document.getElementById('yield-percent');
+            const yieldBox = document.getElementById('dividend-projection');
+            if (yieldEl && yieldBox) {
+                yieldEl.textContent = (data.metrics.dividendYield * 100).toFixed(2) + '%';
+                yieldBox.classList.remove('hidden');
+            }
+        }
+
         divChart = new Chart(ctx, {
             type: 'bar',
             data: {
