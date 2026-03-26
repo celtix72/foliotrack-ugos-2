@@ -166,76 +166,85 @@
                         <p class="font-black uppercase tracking-widest text-sm">Everything is quiet here</p>
                     </div>
                 `;
-                desktopContainer.innerHTML = emptyState;
-                mobileContainer.innerHTML = emptyState;
+                if (desktopContainer) desktopContainer.innerHTML = emptyState;
+                if (mobileContainer) mobileContainer.innerHTML = emptyState;
                 return;
             }
 
-            // Render Desktop
-            desktopContainer.innerHTML = notifications.map(n => {
-                const { color, icon, cardBg } = getIconAndColor(n.type);
-                const isTPSL = n.type === 'TARGET_PROFIT' || n.type === 'STOP_LOSS';
-                
-                return `
-                    <div class="desktop-notif-card group notification-item ${cardBg || ''}" id="notif-desktop-${n.id}">
-                        <div class="flex items-start gap-4">
-                            <div class="notif-type-icon ${color}">
-                                <span class="material-symbols-outlined">${icon}</span>
-                            </div>
-                            <div class="flex-1">
-                                <div class="flex items-center justify-between mb-0.5">
-                                    <h3 class="font-black text-[13px] uppercase tracking-tight ${isTPSL ? 'text-slate-900 dark:text-white' : ''}">${n.title}</h3>
-                                    <span class="text-[10px] font-bold text-slate-400">${formatDate(n.date)}</span>
+            // Render Desktop View
+            if (desktopContainer) {
+                desktopContainer.innerHTML = notifications.map(n => {
+                    const { color, icon, cardBg } = getIconAndColor(n.type);
+                    const isTPSL = n.type === 'TARGET_PROFIT' || n.type === 'STOP_LOSS';
+                    const ticker = n.ticker || '';
+                    const message = n.message || '';
+                    const highlightedMessage = ticker ? message.replace(ticker, `<b class="text-blue-500 dark:text-blue-400 font-black">${ticker}</b>`) : message;
+                    
+                    return `
+                        <div class="desktop-notif-card group notification-item ${cardBg || ''}" id="notif-desktop-${n.id}">
+                            <div class="flex items-start gap-4">
+                                <div class="notif-type-icon ${color}">
+                                    <span class="material-symbols-outlined">${icon}</span>
                                 </div>
-                                <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-tight">${n.message.replace(n.ticker, `<b class="text-blue-500 dark:text-blue-400 font-black">${n.ticker}</b>`)}</p>
-                                ${n.ticker ? `<span class="inline-block mt-1.5 px-1.5 py-0.5 rounded-md bg-blue-500/10 text-[9px] font-black text-blue-600 dark:text-blue-400 border border-blue-500/20">${n.ticker}</span>` : ''}
+                                <div class="flex-1">
+                                    <div class="flex items-center justify-between mb-0.5">
+                                        <h3 class="font-black text-[13px] uppercase tracking-tight ${isTPSL ? 'text-slate-900 dark:text-white' : ''}">${n.title}</h3>
+                                        <span class="text-[10px] font-bold text-slate-400">${formatDate(n.date)}</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-tight">${highlightedMessage}</p>
+                                    ${ticker ? `<span class="inline-block mt-1.5 px-1.5 py-0.5 rounded-md bg-blue-500/10 text-[9px] font-black text-blue-600 dark:text-blue-400 border border-blue-500/20">${ticker}</span>` : ''}
+                                </div>
+                                <button onclick="removeNotification(${n.id})" class="opacity-0 group-hover:opacity-100 transition-opacity p-2 text-slate-300 hover:text-rose-500">
+                                    <span class="material-symbols-outlined text-lg">close</span>
+                                </button>
                             </div>
-                            <button onclick="removeNotification(${n.id})" class="opacity-0 group-hover:opacity-100 transition-opacity p-2 text-slate-300 hover:text-rose-500">
-                                <span class="material-symbols-outlined text-lg">close</span>
-                            </button>
+                            ${!n.isRead ? '<div class="absolute top-3 right-3 w-2 h-2 rounded-full bg-primary ring-4 ring-white dark:ring-slate-900"></div>' : ''}
                         </div>
-                        ${!n.isRead ? '<div class="absolute top-3 right-3 w-2 h-2 rounded-full bg-primary ring-4 ring-white dark:ring-slate-900"></div>' : ''}
-                    </div>
-                `;
-            }).join('');
+                    `;
+                }).join('');
+            }
 
-            // Render Mobile
-            mobileContainer.innerHTML = notifications.map(n => {
-                const { color, icon, cardBg } = getIconAndColor(n.type);
-                const isTPSL = n.type === 'TARGET_PROFIT' || n.type === 'STOP_LOSS';
-                
-                return `
-                    <div class="mob-holding-swipe-container notification-item-wrapper" 
-                         ontouchstart="handleTouchStart(event, this)" 
-                         ontouchmove="handleTouchMove(event, this)" 
-                         ontouchend="handleTouchEnd(event, this)">
-                        <div class="mob-holding-actions">
-                            <div class="mob-action-btn bg-rose-500" onclick="removeNotification(${n.id})">
-                                <span class="material-symbols-outlined">delete</span>
-                                <span>Rimuovi</span>
-                            </div>
-                        </div>
-                        <div class="mob-holding-item large notification-item ${cardBg || ''}" id="notif-mob-${n.id}" style="padding: 12px 16px; gap: 10px;">
-                            <div class="mob-holding-logo ${color}" style="color:white; background:none; width: 38px; height: 38px;">
-                                <div class="w-8 h-8 rounded-xl flex items-center justify-center ${color}">
-                                    <span class="material-symbols-outlined" style="font-size: 18px;">${icon}</span>
+            // Render Mobile View
+            if (mobileContainer) {
+                mobileContainer.innerHTML = notifications.map(n => {
+                    const { color, icon, cardBg } = getIconAndColor(n.type);
+                    const isTPSL = n.type === 'TARGET_PROFIT' || n.type === 'STOP_LOSS';
+                    const ticker = n.ticker || '';
+                    const message = n.message || '';
+                    const highlightedMessage = ticker ? message.replace(ticker, `<b class="text-blue-500 dark:text-blue-400 font-black">${ticker}</b>`) : message;
+                    
+                    return `
+                        <div class="mob-holding-swipe-container notification-item-wrapper" 
+                             ontouchstart="handleTouchStart(event, this)" 
+                             ontouchmove="handleTouchMove(event, this)" 
+                             ontouchend="handleTouchEnd(event, this)">
+                            <div class="mob-holding-actions">
+                                <div class="mob-action-btn bg-rose-500" onclick="removeNotification(${n.id})">
+                                    <span class="material-symbols-outlined">delete</span>
+                                    <span>Rimuovi</span>
                                 </div>
                             </div>
-                            <div class="mob-holding-info">
-                                <div class="flex items-center justify-between">
-                                    <div class="mob-holding-ticker ${isTPSL ? 'text-slate-900 dark:text-white font-black' : ''}" style="font-size: 14px;">${n.title}</div>
-                                    <div class="text-[9px] font-bold text-slate-500">${formatRelativeDate(n.date)}</div>
+                            <div class="mob-holding-item large notification-item ${cardBg || ''}" id="notif-mob-${n.id}" style="padding: 12px 16px; gap: 10px;">
+                                <div class="mob-holding-logo ${color}" style="color:white; background:none; width: 38px; height: 38px;">
+                                    <div class="w-8 h-8 rounded-xl flex items-center justify-center ${color}">
+                                        <span class="material-symbols-outlined" style="font-size: 18px;">${icon}</span>
+                                    </div>
                                 </div>
-                                <div class="mob-holding-name" style="font-size: 11px; margin-top: -1px;">${n.message.replace(n.ticker, `<b class="text-blue-500 dark:text-blue-400 font-black">${n.ticker}</b>`)}</div>
-                                ${n.ticker ? `<div class="mob-holding-qty" style="color:var(--mob-primary); font-weight:900; font-size: 9px; margin-top: 2px;"><span class="text-blue-600 dark:text-blue-400">${n.ticker}</span></div>` : ''}
+                                <div class="mob-holding-info">
+                                    <div class="flex items-center justify-between">
+                                        <div class="mob-holding-ticker ${isTPSL ? 'text-slate-900 dark:text-white font-black' : ''}" style="font-size: 14px;">${n.title}</div>
+                                        <div class="text-[9px] font-bold text-slate-500">${formatRelativeDate(n.date)}</div>
+                                    </div>
+                                    <div class="mob-holding-name" style="font-size: 11px; margin-top: -1px;">${highlightedMessage}</div>
+                                    ${ticker ? `<div class="mob-holding-qty" style="color:var(--mob-primary); font-weight:900; font-size: 9px; margin-top: 2px;"><span class="text-blue-600 dark:text-blue-400">${ticker}</span></div>` : ''}
+                                </div>
+                                ${!n.isRead ? '<div class="w-1.5 h-1.5 rounded-full bg-primary absolute right-3 top-1/2 -translate-y-1/2"></div>' : ''}
                             </div>
-                            ${!n.isRead ? '<div class="w-1.5 h-1.5 rounded-full bg-primary absolute right-3 top-1/2 -translate-y-1/2"></div>' : ''}
                         </div>
-                    </div>
-                `;
-            }).join('');
+                    `;
+                }).join('');
+            }
 
-            // Mark all as read since we're viewing the page
             markAllAsRead();
         }
 
