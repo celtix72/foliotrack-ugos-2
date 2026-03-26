@@ -2769,7 +2769,7 @@
 
       <!-- Holdings -->
       <div id="mob-holdings-view">
-        <div class="mob-holdings-list" id="mob-holdings-list">
+        <div class="mob-ios-grouped" id="mob-holdings-list">
           <div style="text-align:center;padding:32px">
             <div class="mob-spinner" style="margin:0 auto"></div>
           </div>
@@ -2778,7 +2778,7 @@
 
       <!-- Transactions (hidden initially) -->
       <div id="mob-transactions-view" style="display:none">
-        <div class="mob-holdings-list" id="mob-transactions-list">
+        <div class="mob-ios-grouped" id="mob-transactions-list">
           <div style="text-align:center;padding:32px">
             <div class="mob-spinner" style="margin:0 auto"></div>
           </div>
@@ -2941,14 +2941,14 @@
     mobSwitchDetailTab('transactions');
     const items = document.querySelectorAll('#mob-transactions-list .mob-transaction-item');
     items.forEach(it => {
+      const container = it.closest('.mob-holding-swipe-container');
       if (it.dataset.ticker === ticker) {
-        it.style.display = '';
+        if (container) container.style.display = '';
         it.style.backgroundColor = 'var(--mob-primary-dim)';
       } else {
-        it.style.display = 'none';
+        if (container) container.style.display = 'none';
       }
     });
-    // Add a "Clear Filter" button? Maybe just clicking the tab again resets it.
     resetSwipes();
   };
 
@@ -3026,8 +3026,10 @@
       }
 
       // 2. Load holdings and transactions from the already fetched portfolio data
-      mobLoadHoldings(p.holdings || [], currency);
-      mobLoadTransactions(p.transactions || [], currency);
+      currentHoldings = p.holdings || [];
+      currentTransactions = p.transactions || [];
+      mobLoadHoldings(currentHoldings, currency);
+      mobLoadTransactions(currentTransactions, currency);
       mobRenderAllocation(p.allocation || [], currency);
       // Init chart
       mobInitDetailChart(id);
@@ -3100,20 +3102,17 @@
                ontouchend="handleTouchEnd(event, this)">
             
             <div class="mob-holding-actions">
-              <div class="mob-action-btn" style="background:#3b82f6" 
-                   ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
+              <div class="mob-action-btn bg-blue-ios" 
                    onclick="event.stopPropagation(); mobViewAssetTransactions('${h.ticker}')">
                 <span class="material-symbols-outlined">list</span>
                 <span>Trans</span>
               </div>
-              <div class="mob-action-btn" style="background:#8b5cf6" 
-                   ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
+              <div class="mob-action-btn bg-purple-ios" 
                    onclick="event.stopPropagation(); openAssetChartModal('${h.ticker}', '${h.name || ''}', '${currency}')">
                 <span class="material-symbols-outlined">show_chart</span>
                 <span>Grafico</span>
               </div>
-              <div class="mob-action-btn" style="background:#f59e0b" 
-                   ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
+              <div class="mob-action-btn bg-orange-ios" 
                    onclick="event.stopPropagation(); openManualModal('${h.ticker}', '${currency}', ${h.currentPrice}, '${type}', '${country}', '${dataSource}', '${isin}')">
                 <span class="material-symbols-outlined">edit_note</span>
                 <span>Modifica</span>
@@ -3148,7 +3147,6 @@
     const container = document.getElementById('mob-transactions-list');
     if (!container) return;
     try {
-
       const typeColors = { BUY:'var(--mob-emerald)', SELL:'var(--mob-rose)', DEPOSIT:'var(--mob-emerald)', WITHDRAWAL:'var(--mob-rose)', DIVIDEND:'var(--mob-amber)', TAX:'var(--mob-rose)', TRANSFER:'var(--mob-text-muted)' };
       const typeIcons = { BUY:'shopping_cart', SELL:'sell', DEPOSIT:'arrow_downward', WITHDRAWAL:'arrow_upward', DIVIDEND:'payments', TAX:'account_balance', TRANSFER:'swap_horiz' };
 
@@ -3162,23 +3160,42 @@
         const icon = typeIcons[t.type] || 'receipt';
         const date = new Date(t.date).toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit', year:'2-digit' });
         return `
-          <div class="mob-holding-item mob-transaction-item" data-ticker="${t.assetTicker || ''}">
-            <div class="mob-holding-logo" style="background:${col}22;color:${col}">
-              <span class="material-symbols-outlined" style="font-size:20px">${icon}</span>
+          <div class="mob-holding-swipe-container" 
+               ontouchstart="handleTouchStart(event, this)" 
+               ontouchmove="handleTouchMove(event, this)" 
+               ontouchend="handleTouchEnd(event, this)">
+            
+            <div class="mob-holding-actions">
+              <div class="mob-action-btn bg-blue-ios" 
+                   onclick="event.stopPropagation(); duplicateTransaction(${t.id})">
+                <span class="material-symbols-outlined">content_copy</span>
+                <span>Duplica</span>
+              </div>
+              <div class="mob-action-btn bg-orange-ios" 
+                   onclick="event.stopPropagation(); editTransaction(${t.id})">
+                <span class="material-symbols-outlined">edit</span>
+                <span>Modifica</span>
+              </div>
+              <div class="mob-action-btn bg-red-ios" 
+                   onclick="event.stopPropagation(); confirmDeleteTransaction(${t.id})">
+                <span class="material-symbols-outlined">delete</span>
+                <span>Elimina</span>
+              </div>
             </div>
-            <div class="mob-holding-info">
-              <div class="mob-holding-ticker" style="color:${col}">${t.type}</div>
-              <div class="mob-holding-name">${t.assetTicker || t.ticker || '—'}</div>
-              <div class="mob-holding-qty">${date}</div>
-            </div>
-            <div class="mob-holding-values" style="display:flex; align-items:center; gap:12px">
-              <div style="text-align:right">
+
+            <div class="mob-holding-item mob-transaction-item" data-ticker="${t.assetTicker || ''}">
+              <div class="mob-holding-logo" style="background:${col}22;color:${col}">
+                <span class="material-symbols-outlined" style="font-size:20px">${icon}</span>
+              </div>
+              <div class="mob-holding-info">
+                <div class="mob-holding-ticker" style="color:${col}">${t.type}</div>
+                <div class="mob-holding-name">${t.assetTicker || t.ticker || '—'}</div>
+                <div class="mob-holding-qty">${date}</div>
+              </div>
+              <div class="mob-holding-values">
                 <div class="mob-holding-value">${formatPrivacy(t.total || t.amount || 0, currency, 'mob-tx-'+t.id)}</div>
                 <div style="font-size:10px;color:var(--mob-text-caption)">${t.quantity ? 'x'+formatNumber(t.quantity,2) : ''}</div>
               </div>
-              <button onclick="event.stopPropagation(); duplicateTransaction(${t.id})" class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 active:scale-90 transition-transform">
-                <span class="material-symbols-outlined" style="font-size:16px">content_copy</span>
-              </button>
             </div>
           </div>`;
       }).join('');

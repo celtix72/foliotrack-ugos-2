@@ -1304,17 +1304,40 @@ html:not(.dark) .mobile-view-active .mob-hero.fiscal {
 }
 
 /* Specific item colors (iOS style) */
-.bg-blue-ios { background: #007aff; }
-.bg-gray-ios { background: #8e8e93; }
-.bg-green-ios { background: #34c759; }
-.bg-orange-ios { background: #ff9500; }
-.bg-red-ios { background: #ff3b30; }
-.bg-purple-ios { background: #5856d6; }
-.bg-teal-ios { background: #5ac8fa; }
-.bg-indigo-ios { background: #5856d6; }
-.bg-pink-ios { background: #ff2d55; }
-.bg-telegram { background: #0088cc; }
-.bg-sheets { background: #10a37f; }
+.bg-blue-ios { background: #007aff !important; }
+.bg-gray-ios { background: #8e8e93 !important; }
+.bg-green-ios { background: #34c759 !important; }
+.bg-orange-ios { background: #ff9500 !important; }
+.bg-red-ios { background: #ff3b30 !important; }
+.bg-purple-ios { background: #5856d6 !important; }
+.bg-teal-ios { background: #5ac8fa !important; }
+.bg-indigo-ios { background: #5856d6 !important; }
+.bg-pink-ios { background: #ff2d55 !important; }
+.bg-telegram { background: #0088cc !important; }
+.bg-sheets { background: #10a37f !important; }
+
+/* ─── iOS Grouped List Style ────────────────────────────────────────────── */
+.mob-ios-grouped {
+  margin: 12px 16px !important;
+  background: var(--mob-surface);
+  border: 1px solid var(--mob-border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.mob-ios-grouped .mob-holding-swipe-container:not(:last-child) {
+  border-bottom: 1px solid var(--mob-border);
+}
+
+.mob-ios-grouped .mob-holding-item {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+.mob-ios-grouped .mob-holding-swipe-container {
+  background-color: var(--mob-surface-2);
+}
 
 /* Custom Toggle Switch */
 .mob-toggle {
