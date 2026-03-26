@@ -1234,10 +1234,13 @@
                     </td>
                     <td class="px-6 py-4">
                         <div class="flex items-center justify-center gap-2">
-                            <button onclick="editTransaction(${t.id})" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-primary transition-colors">
+                            <button onclick="duplicateTransaction(${t.id})" title="Duplicate Transaction" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-emerald-500 transition-colors">
+                                <span class="material-symbols-outlined text-sm">content_copy</span>
+                            </button>
+                            <button onclick="editTransaction(${t.id})" title="Edit" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-primary transition-colors">
                                 <span class="material-symbols-outlined text-sm">edit</span>
                             </button>
-                            <button onclick="confirmDeleteTransaction(${t.id})" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-500 transition-colors">
+                            <button onclick="confirmDeleteTransaction(${t.id})" title="Delete" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-500 transition-colors">
                                 <span class="material-symbols-outlined text-sm">delete</span>
                             </button>
                         </div>
@@ -1721,6 +1724,64 @@
         document.getElementById('transaction-modal').classList.remove('hidden');
         toggleTransactionFields();
         checkFX(true); // Pass true to avoid overwriting existing FX rate
+    }
+
+    window.duplicateTransaction = async function(id) {
+        const t = currentTransactions.find(tx => tx.id === id);
+        if (!t) return;
+
+        // Reset ID for NEW transaction
+        document.getElementById('t-id').value = '';
+        
+        // Fill data from original
+        document.getElementById('t-type').value = t.type;
+        document.getElementById('t-qty').value = t.quantity || 0;
+        document.getElementById('t-price').value = t.price || 0;
+        document.getElementById('t-comm').value = t.commission || 0;
+        document.getElementById('t-tax').value = t.tax || 0;
+        document.getElementById('t-fx').value = t.exchangeRate || 1;
+        document.getElementById('t-amount').value = t.amount || 0;
+        document.getElementById('t-asset-ticker').value = t.assetTicker || '';
+        document.getElementById('t-asset-search').value = t.assetTicker || '';
+
+        // Requirement: Date must be today
+        document.getElementById('t-date').value = new Date().toISOString().split('T')[0];
+        
+        // Fetch asset metadata for isin and source (like edit)
+        if (t.assetTicker && t.assetTicker !== 'CASH') {
+            fetch(`/api/validate-ticker?ticker=${t.assetTicker}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.valid) {
+                        document.getElementById('t-isin').value = data.isin || '';
+                        document.getElementById('t-source').value = data.dataSource || 'YF';
+                    }
+                }).catch(console.error);
+        } else {
+            document.getElementById('t-isin').value = '';
+            document.getElementById('t-source').value = 'YF';
+        }
+
+        // Determine asset currency for FX display
+        let assetCurr = portfolioCurrency;
+        if (t.assetTicker === 'CASH' || !t.assetTicker) {
+            assetCurr = portfolioCurrency;
+        } else {
+            const h = currentHoldings.find(hold => hold.ticker === t.assetTicker);
+            if (h) assetCurr = h.currency;
+        }
+        document.getElementById('t-asset-currency').value = assetCurr;
+        
+        document.getElementById('t-modal-title').innerText = "Duplicate Transaction";
+        const modal = document.getElementById('transaction-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
+            modal.style.zIndex = '9999';
+        }
+        
+        toggleTransactionFields();
+        checkFX(true);
     }
 
     async function deletePortfolio() {
