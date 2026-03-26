@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FolioTrack - Dashboard</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FolioTrack">
+<link rel="manifest" href="/manifest.json">
+<link rel="stylesheet" href="/dist/output.css">
+<link rel="stylesheet" href="/mobile.css">
+
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 10px;
+        }
+    </style>
+    <script src="/theme.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+</head>
+<body class="bg-background-light dark:bg-[#0b0f1a] text-slate-900 dark:text-slate-100 min-h-screen flex mobile-view-active">
+<div id="mobile-ui">
+  <!-- ── Top Header ── -->
+  <!-- ── Mobile Header ── -->
+  <div class="mob-header">
+    <div class="mob-header-logo-container">
+      <div class="mob-header-logo-circle">
+        <span class="material-symbols-outlined">insights</span>
+      </div>
+      <div class="mob-header-logo-text">FolioTrack</div>
+    </div>
+
+    <!-- Page Title (DH) -->
+    <div class="mob-header-title" style="display:none">DH</div>
+
+    <div style="flex:1"></div>
+
+    <!-- EU / US Market Status Pill -->
+    <div class="mob-header-market-pill">
+      <div class="mob-market-item">
+        <span>EU</span>
+        <span id="mob-dot-eu" class="mob-market-dot"></span>
+      </div>
+      <div class="mob-market-item">
+        <span>US</span>
+        <span id="mob-dot-us" class="mob-market-dot"></span>
+      </div>
+    </div>
+
+    <div style="flex:1"></div>
+
+    <!-- Action Buttons -->
+    <div class="mob-header-actions">
+      <a href="/notifications" class="mob-icon-btn relative" title="Notifications">
+        <span class="material-symbols-outlined">notifications</span>
+        <span id="mob-notification-badge" class="mob-badge" style="display: none;">0</span>
+      </a>
+      <a href="/settings" class="mob-icon-btn" title="Settings">
+        <span class="material-symbols-outlined">settings</span>
+      </a>
+      <div class="mob-icon-btn" onclick="toggleMobileView()" title="Desktop View">
+        <span class="material-symbols-outlined">desktop_windows</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Scrollable Content ── -->
+  <div class="mob-scroll" id="mob-dashboard-scroll">
+
+    <!-- Hero Card -->
+    <div class="mob-hero">
+      <div class="mob-hero-label">Portfolio Netto</div>
+      <div class="flex items-center gap-2 mb-4 overflow-hidden">
+        <div class="mob-hero-value" id="mob-total-net" style="margin-bottom:0; font-size: 28px;">€ 0</div>
+        <div id="mob-day-var" class="px-2 py-0.5 rounded-lg text-xs font-bold shadow-sm hidden" style="margin-top: 4px;"></div>
+      </div>
+      <div class="text-[13px] font-bold text-slate-500 opacity-60 truncate mb-4" id="mob-total-gross">(€ 0)</div>
+      
+      <div class="grid grid-cols-2 gap-4">
+        <div class="mob-hero-stat-item !p-0 !bg-transparent border-0" id="mob-stat-winner">
+          <span class="mob-hero-stat-label">Top Winner</span>
+          <div id="mob-top-winner">--</div>
+        </div>
+        <div class="mob-hero-stat-item !p-0 !bg-transparent border-0" id="mob-stat-loser">
+          <span class="mob-hero-stat-label">Top Loser</span>
+          <div id="mob-top-loser">--</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Performance Chart -->
+    <div class="mob-chart-card">
+      <div class="flex items-baseline gap-2 mb-3">
+        <div class="mob-chart-title" style="margin-bottom:0">Performance</div>
+        <div class="mob-chart-subtitle" style="margin-bottom:0">Net worth aggregato</div>
+      </div>
+      <div class="mob-chart-range-bar" id="mob-range-bar">
+        <div class="mob-range-btn" onclick="mobSetRange('1W')" data-range="1W">1W</div>
+        <div class="mob-range-btn active" onclick="mobSetRange('1M')" data-range="1M">1M</div>
+        <div class="mob-range-btn" onclick="mobSetRange('3M')" data-range="3M">3M</div>
+        <div class="mob-range-btn" onclick="mobSetRange('YTD')" data-range="YTD">YTD</div>
+        <div class="mob-range-btn" onclick="mobSetRange('1Y')" data-range="1Y">1Y</div>
+        <div class="mob-range-btn" onclick="mobSetRange('ALL')" data-range="ALL">ALL</div>
+      </div>
+      <div class="mob-chart-canvas-wrapper">
+        <canvas id="mob-perf-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- Asset Allocation -->
+    <div class="mob-allocation-card">
+      <div class="mob-allocation-chart">
+        <canvas id="mob-alloc-chart"></canvas>
+      </div>
+      <div class="mob-allocation-legend" id="mob-alloc-legend">
+        <!-- filled by JS -->
+      </div>
+    </div>
+
+    <!-- Portfolio List -->
+    <div class="mob-section-header">
+      <span class="mob-section-title">I Tuoi Portafogli</span>
+      <span class="mob-section-link" onclick="window.location.href='/portfolio'">Vedi tutti →</span>
+    </div>
+    <div class="mob-portfolio-list" id="mob-portfolio-list">
+      <div style="text-align:center;padding:24px">
+        <div class="mob-spinner" style="margin:0 auto"></div>
+      </div>
+    </div>
+
+    <!-- Bottom spacer -->
+    <div style="height: 20px"></div>
+  </div>
+
+  <!-- ── Bottom Tab Bar ── -->
+  <div class="mob-tab-bar">
+    <a href="/dashboard" class="mob-tab-item active">
+      <span class="material-symbols-outlined">dashboard</span>
+    </a>
+    <a href="/market" class="mob-tab-item">
+      <span class="material-symbols-outlined">trending_up</span>
+    </a>
+    <a href="/history" class="mob-tab-item">
+      <span class="material-symbols-outlined">history</span>
+    </a>
+    <a href="/reports" class="mob-tab-item">
+      <span class="material-symbols-outlined">pie_chart</span>
+    </a>
+  </div>
+</div>
+
+<!-- Mobile Dashboard JS -->
+<script>
+(function() {
+  let mobPerfChart = null;
+  let mobAllocChart = null;
+  let mobCurrentRange = '1M';
+
+  function mobSyncPrivacyIcon() {
+    const icon = document.getElementById('mob-privacy-icon');
+    if (icon) icon.innerText = window.privacyState?.enabled ? 'visibility_off' : 'visibility';
+  }
+
+  async function mobUpdateDashboard() {
+    try {
+      const res = await fetch('/api/portfolios');
+      const data = await res.json();
+      const g = data.global || {};
+      const portfolios = data.portfolios || [];
+
+      // Hero numbers
+      const mobNet = document.getElementById('mob-total-net');
+      const mobGross = document.getElementById('mob-total-gross');
+      const mobGain = document.getElementById('mob-total-gain');
+      const mobDayVar = document.getElementById('mob-day-var');
+
+      if (mobNet) mobNet.textContent = formatPrivacy(g.totalNetValue, 'EUR', 'mob-net');
+      if (mobGross) mobGross.textContent = '(' + formatPrivacy(g.totalValue, 'EUR', 'mob-gross') + ')';
+
+      if (mobDayVar) {
+          const change = g.changeValue || 0;
+          const isPos = change >= 0;
+          const formatted = formatPrivacy(change, 'EUR', 'mob-h-var', 0);
+          if (formatted === '****') {
+              mobDayVar.classList.add('hidden');
+          } else {
+              const sign = isPos ? '+' : '';
+              mobDayVar.className = `px-2 py-0.5 rounded-lg text-xs font-bold shadow-sm ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`;
+              mobDayVar.innerHTML = `${sign}${formatted}`;
+              mobDayVar.classList.remove('hidden');
+          }
+      }
+
+      // Top Winner / Loser
+      const winnerEl = document.getElementById('mob-top-winner');
+      const loserEl = document.getElementById('mob-top-loser');
+      
+      const renderMiniAsset = (el, asset) => {
+        if (!el || !asset) return;
+        const isPos = asset.changePercent >= 0;
+        const color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        const absVal = Math.abs(asset.absChange || 0).toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        el.innerHTML = `
+          <div class="flex flex-col">
+            <div class="flex items-center gap-1.5">
+              <span class="text-[11px] font-black">${asset.ticker}</span>
+              <span class="text-[11px] font-black" style="color:${color}">${isPos?'+':''}${asset.changePercent.toFixed(1)}%</span>
+            </div>
+            <div class="text-[10px] opacity-50 font-medium">${isPos?'+':'-'}€ ${absVal}</div>
+          </div>`;
+      };
+
+      if (winnerEl) renderMiniAsset(winnerEl, g.topWinner);
+      if (loserEl) renderMiniAsset(loserEl, g.topLoser);
+
+      // Portfolios
+      const pList = document.getElementById('mob-portfolio-list');
+      if (pList) {
+        if (portfolios.length === 0) {
+          pList.innerHTML = '<div class="mob-empty"><span class="material-symbols-outlined">work_off</span><div class="mob-empty-title">Nessun portafoglio</div></div>';
+        } else {
+          pList.innerHTML = portfolios.map(p => {
+            const isPos = p.changePercent >= 0;
+            return `
+              <div class="mob-portfolio-card" onclick="window.location.href='/portfolio?id=${p.id}'">
+                <div class="mob-portfolio-icon" style="background-color:${p.color||'#6366f1'}">
+                  <span class="material-symbols-outlined">work</span>
+                </div>
+                <div class="mob-portfolio-info">
+                  <div class="mob-portfolio-name">${p.name}</div>
+                  <div class="mob-portfolio-meta">${p.assetCount} Assets · ${p.currency} ${p.type === 'Conto Deposito' ? '<span style="color:var(--mob-amber); font-weight:900; background:rgba(245,158,11,0.1); padding:1px 4px; border-radius:4px; font-size:8px; vertical-align:middle; margin-left:4px">DEPOSITO</span>' : ''}</div>
+                </div>
+                <div class="mob-portfolio-values">
+                  <div class="mob-portfolio-net">${formatPrivacy(p.netValue||p.totalValue, p.currency, 'mob-p-'+p.id)}</div>
+                  <div class="mob-portfolio-gross">Lordo: ${formatPrivacy(p.totalValue, p.currency, 'mob-pg-'+p.id)}</div>
+                  <div class="mob-portfolio-change" style="color:${isPos?'var(--mob-emerald)':'var(--mob-rose)'}">${formatPrivacy(p.changeValue || 0, p.currency, 'mob-var')}</div>
+                </div>
+              </div>`;
+          }).join('');
+        }
+      }
+
+      // Sync header dot
+      mobSyncMarketStatus();
+    } catch(e) { console.error('[MOB] Dashboard update error:', e); }
+  }
+
+  async function mobSyncMarketStatus() {
+    try {
+      const res = await fetch('/api/market-status');
+      const s = await res.json();
+      const dot = document.getElementById('mob-live-dot');
+      const txt = document.getElementById('mob-live-text');
+      const ms = document.getElementById('mob-market-status');
+      if (dot) { dot.className = 'mob-status-dot' + (s.anyOpen ? ' live' : ''); }
+      if (txt) txt.textContent = s.anyOpen ? 'Live' : 'Closed';
+      if (ms) ms.textContent = `EU:${s.EU?'🟢':'🔴'} US:${s.US?'🟢':'🔴'}`;
+    } catch(e) {}
+  }
+
+  function mobInitPerfChart() {
+    if (mobPerfChart) { mobPerfChart.destroy(); mobPerfChart = null; }
+    const ctx = document.getElementById('mob-perf-chart')?.getContext('2d');
+    if (!ctx) return;
+    const isDark = document.documentElement.classList.contains('dark');
+    mobPerfChart = new Chart(ctx, {
+      type: 'line',
+      data: { 
+        labels: [], 
+        datasets: [
+          {
+            label: 'Net Worth', data: [],
+            borderColor: '#135bec', backgroundColor: 'rgba(19,91,236,0.12)',
+            fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0, pointHoverRadius: 6,
+            pointHoverBackgroundColor: '#135bec', pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2
+          },
+          {
+            label: 'Net Profit/Loss', data: [],
+            borderColor: '#10b981', backgroundColor: 'transparent',
+            fill: false, tension: 0.4, borderWidth: 2, borderDash: [5, 5],
+            pointRadius: 0, pointHoverRadius: 6,
+            pointHoverBackgroundColor: '#10b981', pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2,
+            yAxisID: 'y1'
+          },
+          {
+            label: 'Net Gain (No Div)', data: [],
+            borderColor: '#f59e0b', backgroundColor: 'transparent',
+            fill: false, tension: 0.4, borderWidth: 2, borderDash: [2, 2],
+            pointRadius: 0, pointHoverRadius: 6,
+            pointHoverBackgroundColor: '#f59e0b', pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2,
+            yAxisID: 'y1'
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            mode: 'index', intersect: false,
+            backgroundColor: isDark ? '#1e293b' : '#fff',
+            titleColor: isDark ? '#f1f5f9' : '#1e293b',
+            bodyColor: isDark ? '#f1f5f9' : '#1e293b',
+            borderColor: isDark ? '#334155' : '#e2e8f0',
+            borderWidth: 1, padding: 10,
+            callbacks: {
+              label: () => null,
+              title: (items) => {
+                  const d = mobPerfChart.rawPoints ? mobPerfChart.rawPoints[items[0].dataIndex] : null;
+                  return (d && d.events && d.events.length > 0) ? items[0].label : null;
+              },
+              afterBody: (items) => {
+                  const d = mobPerfChart.rawPoints ? mobPerfChart.rawPoints[items[0].dataIndex] : null;
+                  if (d && d.events && d.events.length > 0) {
+                      const labels = { 'BUY': 'ACQUISTO', 'SELL': 'VENDITA', 'DEPOSIT': 'DEPOSITO', 'WITHDRAWAL': 'PRELIEVO', 'DIVIDEND': 'DIVIDENDO' };
+                      return d.events.map(ev => {
+                          const typeLabel = labels[ev.type] || ev.type;
+                          return `${typeLabel}: ${ev.ticker || ev.assetName || ''}`;
+                      });
+                  }
+                  return null;
+              }
+            }
+          },
+          zoom: { zoom: { wheel:{enabled:false}, pinch:{enabled:true}, mode:'x' }, pan:{enabled:true, mode:'x'} },
+          annotation: { annotations: {} }
+        },
+        scales: {
+          x: { ticks: { color: isDark?'#64748b':'#94a3b8', font:{size:9}, maxTicksLimit: 5 }, grid: { display: false } },
+          y: { 
+            ticks: { 
+              color: isDark?'#64748b':'#94a3b8', font:{size:9}, 
+              callback: v => '€'+Math.round(v/1000)+'k' 
+            }, 
+            grid: { color: isDark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.04)' } 
+          },
+          y1: {
+            position: 'right',
+            ticks: {
+              color: '#10b981', font: { size: 9 },
+              callback: v => '€'+Math.round(v/1000)+'k'
+            },
+            grid: { drawOnChartArea: false }
+          }
+        }
+      }
+    });
+    mobUpdatePerfChart();
+  }
+
+  async function mobUpdatePerfChart() {
+    if (!mobPerfChart) return;
+    const isDark = document.documentElement.classList.contains('dark');
+    try {
+      const res = await fetch(`/api/analytics/global-performance?range=${mobCurrentRange}`);
+      const result = await res.json();
+      const dataPoints = result.dataPoints || (Array.isArray(result) ? result : []);
+      
+      mobPerfChart.rawPoints = dataPoints;
+      mobPerfChart.data.labels = dataPoints.map(d => {
+        const dt = new Date(d.date);
+        return dt.toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit' });
+      });
+      
+      mobPerfChart.data.datasets[0].data = dataPoints.map(d => d.value);
+      mobPerfChart.data.datasets[1].data = dataPoints.map(d => d.profit);
+      mobPerfChart.data.datasets[2].data = dataPoints.map(d => d.profitNoDiv);
+
+      // Year Markers (Annotations)
+      const annotations = {};
+      let lastYear = null;
+      dataPoints.forEach((d, index) => {
+        const year = new Date(d.date).getFullYear();
+        if (lastYear !== null && year !== lastYear) {
+          annotations[`line${year}`] = {
+            type: 'line', xMin: index, xMax: index,
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+            borderWidth: 1, borderDash: [5, 5],
+            label: {
+              display: true, content: year.toString(), position: 'start',
+              backgroundColor: isDark ? 'rgba(15, 23, 42, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+              color: isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)',
+              font: { size: 8, weight: 'bold' }
+            }
+          };
+        }
+        lastYear = year;
+      });
+      mobPerfChart.options.plugins.annotation.annotations = annotations;
+
+      // Transaction Markers
+      const pointStyles = [];
+      const pointColors = [];
+      const pointRadii = [];
+
+      dataPoints.forEach(d => {
+        const events = d.events || [];
+        if (events.some(e => e.type === 'SELL')) {
+          pointStyles.push('circle'); pointColors.push('#f43f5e'); pointRadii.push(4);
+        } else if (events.some(e => e.type === 'BUY')) {
+          pointStyles.push('circle'); pointColors.push('#10b981'); pointRadii.push(4);
+        } else if (events.some(e => e.type === 'DEPOSIT' || e.type === 'DIVIDEND')) {
+          pointStyles.push('triangle'); pointColors.push('#10b981'); pointRadii.push(4);
+        } else if (events.some(e => e.type === 'WITHDRAWAL')) {
+          pointStyles.push('triangle'); pointColors.push('#f59e0b'); pointRadii.push(4);
+        } else {
+          pointStyles.push('circle'); pointColors.push('#135bec'); pointRadii.push(0);
+        }
+      });
+
+      mobPerfChart.data.datasets[0].pointStyle = pointStyles;
+      mobPerfChart.data.datasets[0].pointBackgroundColor = pointColors;
+      mobPerfChart.data.datasets[0].pointRadius = pointRadii;
+      mobPerfChart.data.datasets[0].pointBorderColor = '#fff';
+      mobPerfChart.data.datasets[0].pointBorderWidth = 1;
+
+      mobPerfChart.update();
+    } catch(e) { console.error('[MOB] Perf chart error:', e); }
+  }
+
+  function mobInitAllocChart() {
+    if (mobAllocChart) { mobAllocChart.destroy(); mobAllocChart = null; }
+    const ctx = document.getElementById('mob-alloc-chart')?.getContext('2d');
+    if (!ctx) return;
+    mobAllocChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: { labels: [], datasets: [{ data: [],
+        backgroundColor: ['#135bec','#10b981','#f59e0b','#6366f1','#ec4899','#8b5cf6','#06b6d4'],
+        borderWidth: 0, hoverOffset: 4
+      }]},
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '72%',
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toFixed(0)}%` } } }
+      }
+    });
+    mobUpdateAllocChart();
+  }
+
+  async function mobUpdateAllocChart() {
+    if (!mobAllocChart) return;
+    try {
+      const res = await fetch('/api/analytics/global-allocation');
+      const data = await res.json();
+      mobAllocChart.data.labels = data.map(d => d.type);
+      mobAllocChart.data.datasets[0].data = data.map(d => d.percent);
+      mobAllocChart.update();
+      const legend = document.getElementById('mob-alloc-legend');
+      if (legend) {
+        const colors = mobAllocChart.data.datasets[0].backgroundColor;
+        legend.innerHTML = data.slice(0,5).map((d,i) => `
+          <div class="mob-alloc-item">
+            <div class="mob-alloc-dot" style="background:${colors[i%colors.length]}"></div>
+            <span class="mob-alloc-type">${d.type}</span>
+            <span class="mob-alloc-pct">${d.percent}%</span>
+          </div>`).join('');
+        if (data.length > 5) legend.innerHTML += `<div class="mob-alloc-item"><span class="mob-alloc-type" style="color:var(--mob-text-caption)">+${data.length-5} altri</span></div>`;
+      }
+    } catch(e) { console.error('[MOB] Alloc chart error:', e); }
+  }
+
+  window.mobSetRange = function(range) {
+    mobCurrentRange = range;
+    document.querySelectorAll('#mob-range-bar .mob-range-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.range === range);
+    });
+    mobUpdatePerfChart();
+  };
+
+  function mobInit() {
+    if (!window._mobileViewActive) return;
+    mobUpdateDashboard();
+    mobInitPerfChart();
+    mobInitAllocChart();
+    mobSyncPrivacyIcon();
+  }
+
+  // Init when mobile view is activated
+  window.addEventListener('mobile-view-activated', mobInit);
+  // If already active when DOM ready
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window._mobileViewActive) mobInit();
+  });
+
+  // Re-init charts after activation (canvas may need redraw)
+  window.addEventListener('mobile-view-activated', () => {
+    setTimeout(() => {
+      if (mobPerfChart) { mobPerfChart.resize(); }
+      if (mobAllocChart) { mobAllocChart.resize(); }
+    }, 100);
+  });
+
+  // Privacy sync
+  window.addEventListener('privacy-changed', () => {
+    mobSyncPrivacyIcon();
+    if (window._mobileViewActive) mobUpdateDashboard();
+  });
+
+  // Auto-refresh on market update
+  window.addEventListener('market-data-updated', () => {
+    console.log("[Dashboard] Auto-refreshing UI...");
+    if (window._mobileViewActive) {
+      if (typeof mobUpdateDashboard === 'function') mobUpdateDashboard();
+      if (typeof mobUpdatePerfChart === 'function') mobUpdatePerfChart();
+      if (typeof mobUpdateAllocChart === 'function') mobUpdateAllocChart();
+    } else {
+      if (typeof loadDashboard === 'function') loadDashboard();
+      if (typeof updateDashboardChart === 'function') updateDashboardChart();
+      if (typeof initAllocationChart === 'function') initAllocationChart();
+    }
+  });
+})();
+</script>
+</body></html>

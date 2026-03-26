@@ -3522,15 +3522,52 @@ app.post('/api/reset-data', (req, res) => {
 
 app.use(express.static(path.join(__dirname, '../public')));
 
+// Helper to detect mobile devices
+const isMobile = (req) => {
+    const ua = req.headers['user-agent'] || '';
+    return /Mobile|Android|iPhone|iPad|IEMobile|Opera Mini/i.test(ua);
+};
+
 // ─── HTML page routes ───────────────────────────────────────────────────────
-app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, '../public/dashboard.html')));
-app.get('/portfolio', (req, res) => res.sendFile(path.join(__dirname, '../public/portfolio_detail.html')));
-app.get('/market',    (req, res) => res.sendFile(path.join(__dirname, '../public/market_overview.html')));
-app.get('/reports',   (req, res) => res.sendFile(path.join(__dirname, '../public/reports.html')));
-app.get('/history',   (req, res) => res.sendFile(path.join(__dirname, '../public/history.html')));
-app.get('/dividend',  (req, res) => res.sendFile(path.join(__dirname, '../public/dividend.html')));
-app.get('/settings',  (req, res) => res.sendFile(path.join(__dirname, '../public/settings.html')));
-app.get('/notifications', (req, res) => res.sendFile(path.join(__dirname, '../public/notifications.html')));
+app.get('/dashboard', (req, res) => {
+    const file = isMobile(req) ? 'dashboard_mobile.html' : 'dashboard.html';
+    res.sendFile(path.join(__dirname, '../public', file));
+});
+
+app.get('/portfolio', (req, res) => {
+    const file = isMobile(req) ? 'portfolio_detail_mobile.html' : 'portfolio_detail.html';
+    res.sendFile(path.join(__dirname, '../public', file));
+});
+
+app.get('/market', (req, res) => {
+    const file = isMobile(req) ? 'market_mobile.html' : 'market_overview.html';
+    res.sendFile(path.join(__dirname, '../public', file));
+});
+
+app.get('/reports', (req, res) => {
+    const file = isMobile(req) ? 'reports_mobile.html' : 'reports.html';
+    res.sendFile(path.join(__dirname, '../public', file));
+});
+
+app.get('/history', (req, res) => {
+    const file = isMobile(req) ? 'history_mobile.html' : 'history.html';
+    res.sendFile(path.join(__dirname, '../public', file));
+});
+
+app.get('/dividend', (req, res) => {
+    const file = isMobile(req) ? 'dividend_mobile.html' : 'dividend.html';
+    res.sendFile(path.join(__dirname, '../public', file));
+});
+
+app.get('/settings', (req, res) => {
+    const file = isMobile(req) ? 'settings_mobile.html' : 'settings.html';
+    res.sendFile(path.join(__dirname, '../public', file));
+});
+
+app.get('/notifications', (req, res) => {
+    const file = isMobile(req) ? 'notifications_mobile.html' : 'notifications.html';
+    res.sendFile(path.join(__dirname, '../public', file));
+});
 
 // Legacy /assets route → redirect to /market
 app.get('/assets', (req, res) => res.redirect('/market'));

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>FolioTrack - History</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FolioTrack">
+<link rel="manifest" href="/manifest.json">
+    <link rel="stylesheet" href="/dist/output.css">
+    <link rel="stylesheet" href="/mobile.css">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+    </style>
+    <script src="/theme.js"></script>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex mobile-view-active">
+<div id="mobile-ui">
+  <!-- ── Top Header ── -->
+  <!-- ── Mobile Header ── -->
+  <div class="mob-header" style="height: 60px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--mob-border);">
+    <div class="mob-header-logo-container">
+      <div class="mob-header-logo-circle">
+        <span class="material-symbols-outlined">insights</span>
+      </div>
+      <div class="mob-header-logo-text">FolioTrack</div>
+    </div>
+
+    <!-- Page Title (HT) -->
+    <div class="mob-header-title" style="display:none">HT</div>
+
+    <div style="flex:1"></div>
+
+    <!-- EU / US Market Status Pill -->
+    <div class="mob-header-market-pill">
+      <div class="mob-market-item">
+        <span>EU</span>
+        <span id="mob-dot-eu" class="mob-market-dot"></span>
+      </div>
+      <div class="mob-market-item">
+        <span>US</span>
+        <span id="mob-dot-us" class="mob-market-dot"></span>
+      </div>
+    </div>
+
+    <!-- Day Variation Pill -->
+    <div id="mob-header-var-day" class="mob-header-var-pill">--</div>
+
+    <!-- Action Buttons -->
+    <div class="mob-header-actions">
+      <a href="/notifications" class="mob-icon-btn relative" title="Notifications">
+        <span class="material-symbols-outlined">notifications</span>
+        <span id="mob-notification-badge" class="mob-badge" style="display: none;">0</span>
+      </a>
+      <a href="/settings" class="mob-icon-btn" title="Settings">
+        <span class="material-symbols-outlined">settings</span>
+      </a>
+      <div class="mob-icon-btn" onclick="toggleMobileView()" title="Desktop View">
+        <span class="material-symbols-outlined">desktop_windows</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tabs section for History / Dividends ── -->
+  <div class="mob-tabs" style="padding-bottom: 10px;">
+    <div class="mob-tab-pill active" id="mob-pill-history" onclick="mobSwitchTab('history')">Closed Positions</div>
+    <div class="mob-tab-pill" id="mob-pill-dividends" onclick="mobSwitchTab('dividends')">Dividends</div>
+  </div>
+
+  <!-- ── Scrollable Content ── -->
+  <div class="mob-scroll" id="mob-history-scroll">
+    <div class="mob-portfolio-list" id="mob-history-list">
+      <div style="text-align:center;padding:24px">
+        <div class="mob-spinner" style="margin:0 auto"></div>
+      </div>
+    </div>
+    <div style="height: 20px"></div>
+  </div>
+
+  <!-- ── Bottom Tab Bar ── -->
+  <div class="mob-tab-bar">
+    <a href="/dashboard" class="mob-tab-item">
+      <span class="material-symbols-outlined">dashboard</span>
+    </a>
+    <a href="/market" class="mob-tab-item">
+      <span class="material-symbols-outlined">trending_up</span>
+    </a>
+    <a href="/history" class="mob-tab-item active">
+      <span class="material-symbols-outlined">history</span>
+    </a>
+    <a href="/reports" class="mob-tab-item">
+      <span class="material-symbols-outlined">pie_chart</span>
+    </a>
+  </div>
+</div>
+<script>
+let rawHistoryData = [];
+        async function loadHistory() {
+            try {
+                const res = await fetch('/api/analytics/history');
+                rawHistoryData = await res.json();
+                
+                // Set default collapsed state: collapse all initial years
+                const years = [...new Set(rawHistoryData.map(d => d.year))];
+                collapsedGroups = new Set(years);
+                
+                renderHistory();
+            } catch (err) { console.error('Error loading history:', err); }
+        }
+    let rawMobDivData = [];
+    let currentMobTab = 'history'; 
+    let mobCollapsedGroups = new Set();
+    let isMobDataLoaded = false;
+
+    async function loadMobileData() {
+        try {
+            // Already loaded rawHistoryData in desktop logic, now load dividends
+            const res = await fetch('/api/analytics/dividends');
+            rawMobDivData = await res.json();
+            
+            // Set defaults: collapse all except current year maybe? Or just leave it to default rendering (starts uncollapsed or we can set it)
+            // User requested grouped by year. Let's start with collapsed years except the latest
+            const currentYear = new Date().getFullYear().toString();
+            
+            // For history
+            const histYears = [...new Set(rawHistoryData.map(d => d.year))];
+            histYears.forEach(y => { if (y !== currentYear) mobCollapsedGroups.add('hist_'+y); });
+            
+            // For dividends
+            const divYears = [...new Set(rawMobDivData.map(d => d.date.split('-')[0]))];
+            divYears.forEach(y => { if (y !== currentYear) mobCollapsedGroups.add('div_'+y); });
+            
+            isMobDataLoaded = true;
+            renderMobileView();
+        } catch (err) { console.error('Error loading mobile data:', err); }
+    }
+
+    function mobSwitchTab(tab) {
+        currentMobTab = tab;
+        document.getElementById('mob-pill-history').classList.toggle('active', tab === 'history');
+        document.getElementById('mob-pill-dividends').classList.toggle('active', tab === 'dividends');
+        renderMobileView();
+    }
+
+    function mobToggleGroup(key) {
+        if (mobCollapsedGroups.has(key)) {
+            mobCollapsedGroups.delete(key);
+        } else {
+            mobCollapsedGroups.add(key);
+        }
+        renderMobileView();
+    }
+
+    function renderMobileView() {
+        if (!isMobDataLoaded) return;
+        const container = document.getElementById('mob-history-list');
+        
+        if (currentMobTab === 'history') {
+            // Group rawHistoryData by year
+            const groups = {};
+            rawHistoryData.forEach(pos => {
+                const y = pos.year;
+                if (!groups[y]) groups[y] = { items: [], totalGain: 0, count: 0 };
+                groups[y].items.push(pos);
+                groups[y].totalGain += pos.realizedGain;
+                groups[y].count++;
+            });
+            
+            const sortedYears = Object.keys(groups).sort((a,b) => b - a);
+            let html = '';
+            
+            sortedYears.forEach(year => {
+                const g = groups[year];
+                const key = 'hist_' + year;
+                const isCollapsed = mobCollapsedGroups.has(key);
+                const colorRaw = g.totalGain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+                const sign = g.totalGain >= 0 ? '+' : '';
+                
+                html += `
+                    <div class="mob-section-header" onclick="mobToggleGroup('${key}')" style="cursor:pointer">
+                        <div class="mob-section-title flex items-center gap-2">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">${isCollapsed ? 'chevron_right' : 'expand_more'}</span>
+                            ${year} <span style="font-size:11px; color:var(--mob-text-muted); font-weight:normal;">(${g.count})</span>
+                        </div>
+                        <div class="mob-section-link" style="color: ${colorRaw}; font-size: 18px; font-weight: 900;">
+                            ${sign}${formatPrivacy(g.totalGain, 'EUR', 'mob-hist-'+year, 0)}
+                        </div>
+                    </div>
+                `;
+                
+                if (!isCollapsed) {
+                    html += `<div style="padding: 0 16px;">`;
+                    g.items.forEach(pos => {
+                        const isTrade = ['BUY', 'SELL'].includes(pos.type);
+                        const gainColor = pos.realizedGain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+                        const gainSign = pos.realizedGain >= 0 ? '+' : '';
+                        
+                        // Icon letter
+                        const logoChar = pos.ticker ? pos.ticker.substring(0,2) : pos.type.substring(0,2);
+                        
+                        // Layout logic: The main value should be the Realized Gain (colored green/red) and large
+                        // The sub value should be the proceeds or type
+                        html += `
+                            <div class="mob-holding-item large" style="border: 1px solid var(--mob-border) !important; border-radius: 12px !important; margin-bottom: 8px;">
+                                <div class="mob-holding-logo">${logoChar}</div>
+                                <div class="mob-holding-info">
+                                    <div class="mob-holding-ticker">${pos.ticker || pos.name}</div>
+                                    <div class="mob-holding-name">${pos.portfolioName} • ${isTrade ? pos.quantity + ' shrs' : pos.type}</div>
+                                </div>
+                                <div class="mob-holding-values">
+                                    <div class="mob-holding-value" style="color: ${isTrade ? gainColor : 'inherit'}">
+                                        ${isTrade ? gainSign + formatPrivacy(pos.realizedGain, 'EUR') : formatPrivacy(pos.totalProceeds, 'EUR')}
+                                    </div>
+                                    <div class="mob-holding-gain" style="color: var(--mob-text-muted); font-size: 11px;">
+                                        ${isTrade ? 'Proceeds: ' + formatPrivacy(pos.totalProceeds, 'EUR') : pos.type}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += `</div>`;
+                }
+            });
+            container.innerHTML = html || '<div class="mob-empty"><span class="material-symbols-outlined">inbox</span><div class="mob-empty-title">No Closed Positions</div></div>';
+        } else {
+            // Dividends Tab
+            // Group rawMobDivData by year
+            const groups = {};
+            rawMobDivData.forEach(d => {
+                const y = d.date.split('-')[0];
+                if (!groups[y]) groups[y] = { items: [], total: 0, count: 0 };
+                groups[y].items.push(d);
+                groups[y].total += d.amount;
+                groups[y].count++;
+            });
+            
+            const sortedYears = Object.keys(groups).sort((a,b) => b - a);
+            let html = '';
+            
+            sortedYears.forEach(year => {
+                const g = groups[year];
+                const key = 'div_' + year;
+                const isCollapsed = mobCollapsedGroups.has(key);
+                
+                html += `
+                    <div class="mob-section-header" onclick="mobToggleGroup('${key}')" style="cursor:pointer">
+                        <div class="mob-section-title flex items-center gap-2">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">${isCollapsed ? 'chevron_right' : 'expand_more'}</span>
+                            ${year} <span style="font-size:11px; color:var(--mob-text-muted); font-weight:normal;">(${g.count})</span>
+                        </div>
+                        <div class="mob-section-link" style="color: var(--mob-emerald); font-size: 18px; font-weight: 900;">
+                            +${formatPrivacy(g.total, 'EUR', 'mob-div-'+year, 0)}
+                        </div>
+                    </div>
+                `;
+                
+                if (!isCollapsed) {
+                    html += `<div style="padding: 0 16px;">`;
+                    g.items.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(d => {
+                        const logoChar = d.assetTicker ? d.assetTicker.substring(0,2) : 'DI';
+                        html += `
+                            <div class="mob-holding-item large" style="border: 1px solid var(--mob-border) !important; border-radius: 12px !important; margin-bottom: 8px;">
+                                <div class="mob-holding-logo" style="color:var(--mob-emerald); background:rgba(16, 185, 129, 0.1);">${logoChar}</div>
+                                <div class="mob-holding-info">
+                                    <div class="mob-holding-ticker">${d.assetTicker}</div>
+                                    <div class="mob-holding-name">${d.portfolioName} • ${d.date}</div>
+                                </div>
+                                <div class="mob-holding-values">
+                                    <div class="mob-holding-value" style="color: var(--mob-emerald)">+${formatPrivacy(d.amount, 'EUR')}</div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += `</div>`;
+                }
+            });
+            container.innerHTML = html || '<div class="mob-empty"><span class="material-symbols-outlined">payments</span><div class="mob-empty-title">No Dividends</div></div>';
+        }
+    }
+
+    // Hook into global privacy toggle
+    window.addEventListener('privacy-changed', renderMobileView);
+
+    // After history loads its things, load mobile things
+    const origLoadHistory = loadHistory;
+    loadHistory = async function() {
+        await origLoadHistory();
+        await loadMobileData();
+    };
+document.addEventListener("DOMContentLoaded", () => { loadHistory(); });
+</script></body></html>

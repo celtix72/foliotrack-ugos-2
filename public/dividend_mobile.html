@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>FolioTrack - Dividends</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FolioTrack">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="stylesheet" href="/dist/output.css">
+    <link rel="stylesheet" href="/mobile.css">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script src="/theme.js"></script>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex mobile-view-active">
+    <div id="mobile-ui">
+        <!-- ── Mobile Header ── -->
+        <div class="mob-header">
+            <div class="mob-header-logo-container">
+                <div class="mob-header-logo-circle">
+                    <span class="material-symbols-outlined">payments</span>
+                </div>
+                <div class="mob-header-logo-text">Dividendi</div>
+            </div>
+            <div style="flex:1"></div>
+            <div class="mob-header-actions">
+                <a href="/notifications" class="mob-icon-btn relative">
+                    <span class="material-symbols-outlined">notifications</span>
+                    <span id="mob-notification-badge" class="mob-badge" style="display: none;">0</span>
+                </a>
+                <a href="/settings" class="mob-icon-btn">
+                    <span class="material-symbols-outlined">settings</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="mob-scroll">
+            <!-- Hero Stats -->
+            <div class="mob-hero">
+                <div class="mob-hero-label">Totale Dividendi</div>
+                <div class="mob-hero-value" id="mob-total-dividends">€ 0.00</div>
+                <div class="text-[11px] font-black uppercase tracking-widest text-slate-500 opacity-60">Rendita passiva totale</div>
+            </div>
+
+            <!-- Filters -->
+            <div style="padding: 0 20px 16px;">
+                <div class="flex items-center gap-3 bg-white dark:bg-slate-900/50 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <span class="material-symbols-outlined text-slate-400 text-lg">search</span>
+                    <input type="text" id="mob-div-search" placeholder="Cerca titolo..." 
+                        class="flex-1 bg-transparent border-none p-0 text-sm focus:ring-0 font-bold"
+                        oninput="renderMobDividends()">
+                </div>
+            </div>
+
+            <div class="mob-section-header">
+                <span class="mob-section-title">Storico Pagamenti</span>
+                <select id="mob-div-group-by" onchange="renderMobDividends()" 
+                    class="bg-transparent border-none text-[11px] font-black uppercase tracking-wider text-primary focus:ring-0 p-0 text-right">
+                    <option value="year">Per Anno</option>
+                    <option value="portfolioName">Per Portafoglio</option>
+                    <option value="none">Lista</option>
+                </select>
+            </div>
+
+            <div id="mob-dividends-list" class="space-y-1">
+                <div style="text-align:center;padding:48px">
+                    <div class="mob-spinner" style="margin:0 auto"></div>
+                </div>
+            </div>
+
+            <div style="height:40px"></div>
+        </div>
+
+        <!-- ── Bottom Tab Bar ── -->
+        <div class="mob-tab-bar">
+            <a href="/dashboard" class="mob-tab-item">
+                <span class="material-symbols-outlined">dashboard</span>
+            </a>
+            <a href="/market" class="mob-tab-item">
+                <span class="material-symbols-outlined">trending_up</span>
+            </a>
+            <a href="/history" class="mob-tab-item">
+                <span class="material-symbols-outlined">history</span>
+            </a>
+            <a href="/reports" class="mob-tab-item">
+                <span class="material-symbols-outlined">pie_chart</span>
+            </a>
+        </div>
+    </div>
+
+    <script shadow>
+        (function() {
+            let rawDivData = [];
+            let collapsedGroups = new Set();
+            let currentGroupBy = 'year';
+
+            async function loadMobDividends() {
+                try {
+                    const res = await fetch('/api/analytics/dividends');
+                    rawDivData = await res.json();
+                    
+                    const total = rawDivData.reduce((sum, d) => sum + d.amount, 0);
+                    const totalEl = document.getElementById('mob-total-dividends');
+                    if (totalEl) totalEl.innerText = formatCurrency(total, 'EUR');
+
+                    const currentYear = new Date().getFullYear().toString();
+                    const years = [...new Set(rawDivData.map(d => d.date.split('-')[0]))];
+                    collapsedGroups = new Set(years.filter(y => y !== currentYear));
+
+                    renderMobDividends();
+                } catch (err) { console.error('Error loading dividends:', err); }
+            }
+
+            window.toggleMobGroup = (key) => {
+                if (collapsedGroups.has(key)) collapsedGroups.delete(key);
+                else collapsedGroups.add(key);
+                renderMobDividends();
+            }
+
+            window.renderMobDividends = () => {
+                const container = document.getElementById('mob-dividends-list');
+                const searchTerm = document.getElementById('mob-div-search').value.toLowerCase();
+                const groupBy = document.getElementById('mob-div-group-by').value;
+
+                if (groupBy !== currentGroupBy) {
+                    collapsedGroups = new Set();
+                    currentGroupBy = groupBy;
+                    if (groupBy === 'year') {
+                        const years = [...new Set(rawDivData.map(d => d.date.split('-')[0]))];
+                        collapsedGroups = new Set(years);
+                    }
+                }
+
+                let filtered = rawDivData.filter(d => {
+                    return (d.assetTicker || '').toLowerCase().includes(searchTerm) ||
+                           (d.portfolioName || '').toLowerCase().includes(searchTerm);
+                });
+
+                if (filtered.length === 0) {
+                    container.innerHTML = '<div style="text-align:center;padding:48px;opacity:0.5;font-size:13px">Nessun dividendo trovato</div>';
+                    return;
+                }
+
+                if (groupBy === 'none') {
+                    container.innerHTML = `<div class="mob-ios-grouped">` + 
+                        filtered.sort((a,b) => new Date(b.date) - new Date(a.date))
+                        .map(d => renderMobRow(d)).join('') + 
+                        `</div>`;
+                } else {
+                    const groups = {};
+                    filtered.forEach(d => {
+                        let key = d[groupBy];
+                        if (groupBy === 'year') key = d.date.split('-')[0];
+                        if (!groups[key]) groups[key] = { items: [], total: 0 };
+                        groups[key].items.push(d);
+                        groups[key].total += d.amount;
+                    });
+
+                    const keys = Object.keys(groups).sort((a, b) => {
+                        if (groupBy === 'year') return b - a;
+                        return a.localeCompare(b);
+                    });
+
+                    let html = '';
+                    keys.forEach(key => {
+                        const group = groups[key];
+                        const isCollapsed = collapsedGroups.has(key);
+                        html += `
+                            <div class="mob-section-header" style="margin-top:12px;" onclick="toggleMobGroup('${key}')">
+                                <span class="text-[11px] font-black uppercase tracking-widest text-slate-500">${key}</span>
+                                <span class="text-[11px] font-black text-emerald-500">${formatCurrency(group.total, 'EUR')}</span>
+                            </div>
+                            <div class="mob-ios-grouped" style="${isCollapsed ? 'display:none' : ''}">
+                                ${group.items.sort((a,b) => new Date(b.date) - new Date(a.date)).map(d => renderMobRow(d)).join('')}
+                            </div>
+                        `;
+                    });
+                    container.innerHTML = html;
+                }
+            }
+
+            function renderMobRow(d) {
+                return `
+                    <div class="mob-ios-item">
+                        <div class="mob-ios-item-inner">
+                            <div style="flex:1">
+                                <div class="text-[14px] font-bold">${d.assetTicker}</div>
+                                <div class="text-[10px] font-medium text-slate-500 uppercase tracking-tighter">${d.portfolioName} · ${d.date}</div>
+                            </div>
+                            <div class="text-[15px] font-black text-emerald-500">${formatCurrency(d.amount, 'EUR')}</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.addEventListener('DOMContentLoaded', loadMobDividends);
+        })();
+    </script>
+</body>
+</html>

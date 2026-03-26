@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FolioTrack - Tech Growth Portfolio</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FolioTrack">
+<link rel="manifest" href="/manifest.json">
+<link rel="stylesheet" href="/dist/output.css">
+<link rel="stylesheet" href="/mobile.css">
+
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 10px;
+        }
+    </style>
+    <script src="/theme.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+    <script src="/asset_chart_component.js"></script>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex mobile-view-active">
+<div id="mobile-ui">
+
+  <!-- ── Mobile Header ── -->
+  <!-- ── Mobile Header ── -->
+  <div class="mob-header">
+    <div class="mob-header-logo-container">
+      <div class="mob-header-logo-circle">
+        <span class="material-symbols-outlined">insights</span>
+      </div>
+      <div class="mob-header-logo-text">FolioTrack</div>
+    </div>
+
+    <!-- Page Title (PT) -->
+    <div id="mob-page-header-title" class="mob-header-title" style="display:none">PT</div>
+
+    <div style="flex:1"></div>
+
+    <!-- EU / US Market Status Pill -->
+    <div class="mob-header-market-pill">
+      <div class="mob-market-item">
+        <span>EU</span>
+        <span id="mob-dot-eu" class="mob-market-dot"></span>
+      </div>
+      <div class="mob-market-item">
+        <span>US</span>
+        <span id="mob-dot-us" class="mob-market-dot"></span>
+      </div>
+    </div>
+
+    <!-- Day Variation Pill -->
+    <div id="mob-header-var-day" class="mob-header-var-pill">--</div>
+
+    <!-- Action Buttons -->
+    <div class="mob-header-actions">
+      <a href="/notifications" class="mob-icon-btn relative" title="Notifications">
+        <span class="material-symbols-outlined">notifications</span>
+        <span id="mob-notification-badge" class="mob-badge" style="display: none;">0</span>
+      </a>
+      <a href="/settings" class="mob-icon-btn" title="Settings">
+        <span class="material-symbols-outlined">settings</span>
+      </a>
+      <div class="mob-icon-btn" onclick="toggleMobileView()" title="Desktop View">
+        <span class="material-symbols-outlined">desktop_windows</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       VIEW A: Portfolio List
+  ══════════════════════════════ -->
+  <div id="mob-portfolio-list-view" class="mob-scroll">
+
+    <!-- Hero Stats Row -->
+    <div class="mob-stats-row" id="mob-global-stats-row">
+      <div class="mob-stat-box">
+        <span class="mob-stat-box-label">Netto Tot.</span>
+        <span class="mob-stat-box-value" id="mob-global-net">--</span>
+      </div>
+      <div class="mob-stat-box">
+        <span class="mob-stat-box-label">Gain</span>
+        <span class="mob-stat-box-value" id="mob-global-gain">--</span>
+      </div>
+      <div class="mob-stat-box">
+        <span class="mob-stat-box-label">Day Var</span>
+        <span class="mob-stat-box-value" id="mob-global-dayvar">--</span>
+      </div>
+    </div>
+
+    <div class="mob-section-header">
+      <span class="mob-section-title">I Tuoi Portafogli</span>
+    </div>
+
+    <div id="mob-portf-cards" class="mob-portfolio-list">
+      <div style="text-align:center;padding:32px">
+        <div class="mob-spinner" style="margin:0 auto"></div>
+      </div>
+    </div>
+
+    <div style="height:12px"></div>
+  </div>
+
+  <!-- ══════════════════════════════
+       VIEW B: Portfolio Detail
+  ══════════════════════════════ -->
+  <div id="mob-portfolio-detail-view" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+
+    <!-- Back bar -->
+    <div class="mob-back-bar">
+      <div class="mob-back-btn" onclick="window.location.href='/dashboard'">
+        <span class="material-symbols-outlined">chevron_left</span>
+        Dashboard
+      </div>
+      <span class="mob-back-label" id="mob-detail-pname">---</span>
+    </div>
+
+    <div class="mob-scroll">
+      <!-- Compact Hero -->
+    <div class="mob-hero fiscal" id="mob-hero-section" style="padding: 20px 20px 24px;">
+      <div class="flex justify-between items-start mb-4">
+        <div style="flex: 1;">
+          <div class="text-[10px] font-black uppercase tracking-[0.2em] text-amber-700/60 dark:text-amber-500/60 mb-0.5">Portafoglio</div>
+          <div id="mob-detail-pname-hero" class="text-3xl font-black truncate max-w-[220px]" style="line-height: 1; color: #78350f;">--</div>
+        </div>
+        <button onclick="openTransactionModal()" class="mob-hero-add-btn" style="margin-top: 4px;">
+          <span class="material-symbols-outlined" style="font-size:20px">add</span>
+        </button>
+      </div>
+
+      <div class="flex flex-col mb-5">
+        <div class="text-[10px] font-black uppercase tracking-[0.2em] text-amber-700/60 dark:text-amber-500/60 mb-1">Valore Netto</div>
+        <div class="flex items-baseline gap-3">
+          <div class="mob-hero-value" id="mob-detail-total" style="margin-bottom:0; font-size: 34px;">--</div>
+          <div id="mob-detail-gain-netto-pill" class="px-2 py-0.5 rounded-full text-[11px] font-black flex items-center gap-1">--</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div class="mob-hero-stat-box">
+          <span class="mob-hero-stat-box-label">Tasse Est.</span>
+          <span class="mob-hero-stat-box-value text-rose-500" id="mob-f-tax">--</span>
+        </div>
+        <div class="mob-hero-stat-box">
+          <span class="mob-hero-stat-box-label">Minusvalenze</span>
+          <span class="mob-hero-stat-box-value" id="mob-f-minus">--</span>
+        </div>
+      </div>
+    </div>
+
+      <!-- Chart -->
+      <div class="mob-chart-card">
+        <div class="mob-chart-title">Performance</div>
+        <div class="mob-chart-range-bar" id="mob-detail-range-bar">
+          <div class="mob-range-btn" onclick="mobDetailRange('1D')" data-range="1D">1D</div>
+          <div class="mob-range-btn active" onclick="mobDetailRange('1M')" data-range="1M">1M</div>
+          <div class="mob-range-btn" onclick="mobDetailRange('3M')" data-range="3M">3M</div>
+          <div class="mob-range-btn" onclick="mobDetailRange('6M')" data-range="6M">6M</div>
+          <div class="mob-range-btn" onclick="mobDetailRange('YTD')" data-range="YTD">YTD</div>
+          <div class="mob-range-btn" onclick="mobDetailRange('1Y')" data-range="1Y">1Y</div>
+          <div class="mob-range-btn" onclick="mobDetailRange('ALL')" data-range="ALL">ALL</div>
+        </div>
+        <div class="mob-chart-canvas-wrapper">
+          <canvas id="mob-detail-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- Allocation Row -->
+      <div id="mob-allocation-section" style="display:none; padding:12px 20px; background:var(--mob-surface); border:1px solid var(--mob-border); border-left:none; border-right:none; margin-bottom:8px;">
+        <div class="mob-chart-title" style="margin-bottom:12px">Allocazione Asset</div>
+        <div id="mob-allocation-list" style="display:flex; flex-direction:column; gap:10px;">
+          <!-- JS filled -->
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="mob-tabs">
+        <div class="mob-tab-pill active" id="mob-pill-holdings" onclick="mobSwitchDetailTab('holdings')">Holdings</div>
+        <div class="mob-tab-pill" id="mob-pill-transactions" onclick="mobSwitchDetailTab('transactions')">Transazioni</div>
+      </div>
+
+      <!-- Holdings -->
+      <div id="mob-holdings-view">
+        <div class="mob-ios-grouped" id="mob-holdings-list">
+          <div style="text-align:center;padding:32px">
+            <div class="mob-spinner" style="margin:0 auto"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Transactions (hidden initially) -->
+      <div id="mob-transactions-view" style="display:none">
+        <!-- Filter Info Bar -->
+        <div id="mob-tx-filter-info" class="mob-ios-grouped hidden" style="background:rgba(19,91,236,0.1); border-color:rgba(19,91,236,0.3); border-radius:12px; margin-bottom:0 !important">
+            <div style="padding:10px 16px; display:flex; justify-content:space-between; align-items:center">
+                <div style="font-size:12px; font-weight:800; color:var(--mob-primary); display:flex; align-items:center; gap:6px">
+                    <span class="material-symbols-outlined" style="font-size:16px">filter_list</span>
+                    Filtrato per: <span id="mob-tx-filter-ticker" style="font-family:monospace; font-weight:900">—</span>
+                </div>
+                <button onclick="mobResetTxFilter()" class="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg active:scale-95 transition-transform" style="background:rgba(0,0,0,0.05)">Rimuovi</button>
+            </div>
+        </div>
+        <div class="mob-ios-grouped" id="mob-transactions-list">
+          <div style="text-align:center;padding:32px">
+            <div class="mob-spinner" style="margin:0 auto"></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="height:24px"></div>
+    </div>
+  </div>
+
+  <!-- ── Bottom Tab Bar ── -->
+  <div class="mob-tab-bar">
+    <a href="/dashboard" class="mob-tab-item">
+      <span class="material-symbols-outlined">dashboard</span>
+    </a>
+    <a href="/market" class="mob-tab-item">
+      <span class="material-symbols-outlined">trending_up</span>
+    </a>
+    <a href="/history" class="mob-tab-item">
+      <span class="material-symbols-outlined">history</span>
+    </a>
+    <a href="/reports" class="mob-tab-item">
+      <span class="material-symbols-outlined">pie_chart</span>
+    </a>
+  </div>
+</div>
+<!-- Reconcile Modal -->
+<div id="reconcile-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center hidden">
+    <div class="bg-white dark:bg-[#111722] w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform transition-all">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
+            <h3 class="font-black text-lg">Cash Reconciliation</h3>
+            <button onclick="closeReconcileModal()" class="text-slate-400 hover:text-rose-500 transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="p-6 space-y-4">
+            <div class="p-4 bg-primary/5 border border-primary/20 rounded-xl space-y-1">
+                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">System Calculated Balance</p>
+                <p id="reconcile-current-cash" class="text-xl font-black text-primary">€ 0.00</p>
+            </div>
+            <div class="space-y-2">
+                <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Actual Balance (<span id="reconcile-currency-label">EUR</span>)</label>
+                <input id="reconcile-actual-cash" type="number" step="any" placeholder="0.00" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold text-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"/>
+                <p class="text-[10px] text-slate-400 italic">Enter the current cash balance from your broker/bank.</p>
+            </div>
+            <div class="space-y-2">
+                <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Adjustment Date</label>
+                <input id="reconcile-date" type="date" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold outline-none"/>
+            </div>
+            <div class="pt-2 flex gap-3">
+                <button onclick="closeReconcileModal()" class="flex-1 py-3 rounded-xl font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Cancel</button>
+                <button onclick="saveReconcile()" class="flex-1 py-3 rounded-xl font-bold bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">Reconcile Now</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Modal -->
+<div id="general-confirm-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-[#111722] border border-rose-500/30 rounded-2xl w-full max-w-sm shadow-2xl p-8 space-y-6">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-rose-500 text-2xl">warning</span>
+            </div>
+            <div>
+                <p id="confirm-modal-title" class="font-bold text-rose-500">Confirm Action</p>
+                <p id="confirm-modal-body" class="text-sm text-slate-500 dark:text-slate-400 mt-1">Are you sure you want to proceed?</p>
+            </div>
+        </div>
+        <div class="flex gap-3">
+            <button onclick="closeConfirmModal()" class="flex-1 py-2.5 rounded-lg font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors">Cancel</button>
+            <button id="confirm-modal-btn" class="flex-1 py-2.5 bg-rose-600 text-white rounded-lg font-bold hover:bg-rose-700 transition-all shadow-lg shadow-rose-600/20">Delete</button>
+        </div>
+    </div>
+</div>
+
+<!-- Portfolio Modal -->
+<div id="portfolio-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <h3 id="portfolio-modal-title" class="font-bold text-lg">New Portfolio</h3>
+            <button onclick="closePortfolioModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <form id="portfolio-form" class="p-6 space-y-4">
+            <input type="hidden" id="p-id"/>
+            <div class="space-y-2">
+                <label class="text-sm font-medium">Portfolio Name</label>
+                <input id="p-name" required class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3" placeholder="e.g. Retirement"/>
+            </div>
+            <div class="space-y-2">
+                <label class="text-sm font-medium">Portfolio Type</label>
+                <select id="p-type" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3">
+                    <option value="Investimento">Investimento (Market Tracking)</option>
+                    <option value="Conto Deposito">Conto Deposito (Cash & Interests)</option>
+                </select>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <label class="text-sm font-medium">Currency</label>
+                    <select id="p-currency" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3">
+                        <option value="EUR">EUR</option>
+                        <option value="USD">USD</option>
+                        <option value="GBP">GBP</option>
+                    </select>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-medium">Start Date</label>
+                    <input id="p-date" type="date" required class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3"/>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <label class="text-sm font-medium">Initial Cash</label>
+                    <input id="p-cash" type="number" step="any" required class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3" placeholder="0.00"/>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-medium">Brand Color</label>
+                    <input id="p-color" type="color" class="w-full h-[42px] bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-1 px-1 cursor-pointer" value="#6366f1"/>
+                </div>
+            </div>
+
+            <!-- Fiscal Management (Minusvalenze) -->
+            <div class="border-t border-slate-200 dark:border-slate-800 pt-4 mt-2">
+                <button type="button" onclick="document.getElementById('fiscal-management').classList.toggle('hidden')" class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-primary transition-colors mb-4">
+                    <span class="material-symbols-outlined text-sm">account_balance_wallet</span>
+                    Fiscal Management (Minusvalenze)
+                    <span class="material-symbols-outlined text-sm">expand_more</span>
+                </button>
+                <div id="fiscal-management" class="hidden space-y-3 pb-2">
+                    <div id="minusvalenze-list" class="space-y-3">
+                        <!-- Dynamic losses inputs will be injected here -->
+                    </div>
+                </div>
+            </div>
+            <div class="pt-4 flex gap-3">
+                <button type="button" id="delete-portfolio-btn" onclick="deletePortfolio()" class="px-4 py-2 text-rose-500 font-bold hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg hidden transition-colors">Delete</button>
+                <div class="flex-1"></div>
+                <button type="button" onclick="closePortfolioModal()" class="px-5 py-2 rounded-lg font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Cancel</button>
+                <button type="submit" class="px-5 py-2 bg-primary text-white rounded-lg font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">Save Portfolio</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- Manual Update Modal -->
+
+<div id="manual-update-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center hidden">
+    <div class="bg-white dark:bg-[#111722] w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform transition-all">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
+            <h3 class="font-black text-lg">Manual Price Update</h3>
+            <button onclick="closeManualModal()" class="text-slate-400 hover:text-rose-500 transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="p-6 space-y-4">
+            <input type="hidden" id="manual-ticker"/>
+            <div class="space-y-2">
+                <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">New Price (<span id="manual-currency-label">EUR</span>)</label>
+                <input id="manual-price" type="number" step="any" placeholder="0.00" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold text-lg"/>
+            </div>
+            <div class="space-y-2">
+                <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Effective Date</label>
+                <input id="manual-date" type="date" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold"/>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Data Source</label>
+                    <select id="manual-source" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold" onchange="toggleManualISIN()">
+                        <option value="YF">Yahoo Finance</option>
+                        <option value="B_ITA">Borsa Italiana</option>
+                    </select>
+                </div>
+                <div id="manual-isin-field" class="space-y-2 hidden">
+                    <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">ISIN</label>
+                    <input id="manual-isin" type="text" placeholder="e.g. IT000..." class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold"/>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Asset Type</label>
+                    <select id="manual-type" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold">
+                        <option value="">No Change</option>
+                        <option value="Azioni">Azioni</option>
+                        <option value="Bond">Bond</option>
+                        <option value="ETF Azionario">ETF Azionario</option>
+                        <option value="ETF Monetario">ETF Monetario</option>
+                        <option value="ETF Obblig">ETF Obblig</option>
+                        <option value="Deposito Vincolato">Deposito Vincolato</option>
+                        <option value="Cash">Cash</option>
+                    </select>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Area/Country</label>
+                    <input id="manual-country" type="text" placeholder="e.g. US, Europe" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold"/>
+                </div>
+            </div>
+            <div class="pt-2 flex gap-3">
+                <button onclick="closeManualModal()" class="flex-1 py-3 rounded-xl font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Cancel</button>
+                <button onclick="saveManualUpdate()" class="flex-1 py-3 rounded-xl font-bold bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">Apply Price</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transaction Modal -->
+<div id="transaction-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-2 md:p-4">
+    <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl max-h-[95vh] flex flex-col">
+        <div class="px-4 py-3 md:px-6 md:py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <h3 id="t-modal-title" class="font-bold text-base md:text-lg">New Transaction</h3>
+            <button onclick="closeTransactionModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <form id="transaction-form" class="p-4 md:p-6 space-y-4 md:space-y-6 overflow-y-auto custom-scrollbar">
+            <input type="hidden" id="t-id"/>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                <div class="space-y-1 md:space-y-2">
+                    <label class="text-xs md:text-sm font-medium">Type</label>
+                    <select id="t-type" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 md:py-2.5 md:px-4 text-sm" onchange="toggleTransactionFields()">
+                        <option value="BUY">BUY</option>
+                        <option value="SELL">SELL</option>
+                        <option value="DIVIDEND">DIVIDEND</option>
+                        <option value="DEPOSIT">DEPOSIT</option>
+                        <option value="WITHDRAWAL">WITHDRAWAL</option>
+                        <option value="TAX">TAX</option>
+                        <option value="TRANSFER">TRANSFER</option>
+                    </select>
+                </div>
+                <div class="space-y-1 md:space-y-2">
+                    <label class="text-xs md:text-sm font-medium">Date</label>
+                    <input id="t-date" type="date" required class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 md:py-2.5 md:px-4 text-sm"/>
+                </div>
+                <div id="t-dest-portfolio-field" class="space-y-1 md:space-y-2 hidden md:col-span-2">
+                    <label class="text-xs md:text-sm font-medium">Destination Portfolio (for Transfer)</label>
+                    <select id="t-dest-portfolio" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 md:py-2.5 md:px-4 text-sm">
+                        <option value="">— Select Target —</option>
+                    </select>
+                </div>
+                <div id="t-asset-field" class="space-y-1 md:space-y-2 relative md:col-span-2">
+                    <label class="text-xs md:text-sm font-medium">Asset (Search)</label>
+                    <input id="t-asset-search" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 md:py-2.5 md:px-4 text-sm" placeholder="Ticker..." autocomplete="off"/>
+                    <div id="t-search-results" class="absolute left-0 right-0 mt-1 bg-white dark:bg-[#1a2332] border rounded-lg shadow-xl z-50 hidden max-h-48 overflow-y-auto"></div>
+                    
+                    <!-- Metadata Display Block -->
+                    <div id="t-asset-metadata" class="hidden mt-3 p-3 md:p-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl grid grid-cols-3 gap-2 md:gap-4">
+                        <div>
+                            <p class="text-[9px] md:text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-0.5 md:mb-1">Mercato</p>
+                            <p id="t-meta-exchange" class="text-[10px] md:text-xs font-bold truncate">-</p>
+                        </div>
+                        <div>
+                            <p class="text-[9px] md:text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-0.5 md:mb-1">Tipologia</p>
+                            <p id="t-meta-type" class="text-[10px] md:text-xs font-bold truncate">-</p>
+                        </div>
+                        <div>
+                            <p class="text-[9px] md:text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-0.5 md:mb-1">Area Geog.</p>
+                            <p id="t-meta-country" class="text-[10px] md:text-xs font-bold truncate">-</p>
+                        </div>
+                    </div>
+
+                    <input type="hidden" id="t-asset-ticker"/>
+                    <input type="hidden" id="t-asset-currency"/>
+                </div>
+                <div class="space-y-1 md:space-y-2">
+                    <label class="text-xs md:text-sm font-medium">ISIN (Ticker 2)</label>
+                    <input id="t-isin" type="text" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 md:py-2.5 md:px-4 text-sm" placeholder="IT000..." autocomplete="off"/>
+                </div>
+                <div class="space-y-1 md:space-y-2">
+                    <label class="text-xs md:text-sm font-medium">Data Source</label>
+                    <select id="t-source" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 md:py-2.5 md:px-4 text-sm">
+                        <option value="YF" selected>Yahoo Finance</option>
+                        <option value="B_ITA">Borsa Italiana</option>
+                    </select>
+                </div>
+                <div id="t-amount-field" class="space-y-1 md:space-y-2 hidden">
+                    <label class="text-xs md:text-sm font-medium">Amount</label>
+                    <input id="t-amount" type="number" step="any" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 md:py-2.5 md:px-4 text-sm"/>
+                </div>
+                <div id="t-stock-fields" class="contents">
+                    <div class="space-y-1 md:space-y-2">
+                        <label class="text-xs md:text-sm font-medium">Quantity</label>
+                        <input id="t-qty" type="number" step="any" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 md:py-2.5 md:px-4 text-sm"/>
+                    </div>
+                    <div class="space-y-1 md:space-y-2">
+                        <label class="text-xs md:text-sm font-medium">Price</label>
+                        <input id="t-price" type="number" step="any" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 md:py-2.5 md:px-4 text-sm" onchange="checkFX()"/>
+                    </div>
+                </div>
+                <div class="space-y-1 md:space-y-2">
+                    <label class="text-xs md:text-sm font-medium">Comm</label>
+                    <input id="t-comm" type="number" step="any" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 md:py-2.5 md:px-4 text-sm" value="0"/>
+                </div>
+                <div class="space-y-1 md:space-y-2">
+                    <label class="text-xs md:text-sm font-medium">Tax</label>
+                    <input id="t-tax" type="number" step="any" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 md:py-2.5 md:px-4 text-sm" value="0"/>
+                </div>
+                <div id="t-fx-field" class="space-y-1 md:space-y-2 md:col-span-2 hidden">
+                    <div class="p-3 md:p-4 bg-primary/5 border rounded-xl flex items-center justify-between">
+                        <span class="text-[10px] md:text-xs text-slate-500">Asset: <span id="asset-curr-label">?</span> • Portfolio: <span id="p-curr-label">?</span></span>
+                        <input id="t-fx" type="number" step="any" class="w-20 md:w-24 text-right bg-white dark:bg-slate-800 border-slate-200 rounded py-1 px-2 font-bold text-xs md:text-sm" value="1"/>
+                    </div>
+                </div>
+            </div>
+            <div class="pt-2 md:pt-4 flex gap-3 md:gap-4">
+                <button type="button" onclick="closeTransactionModal()" class="flex-1 py-2.5 md:py-3 rounded-lg font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm md:text-base">Abort</button>
+                <button type="submit" class="flex-1 py-2.5 md:py-3 bg-emerald-600 text-white rounded-lg font-bold shadow-lg hover:bg-emerald-700 text-sm md:text-base">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div id="import-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-start justify-center pt-8 pb-8 px-4 overflow-y-auto">
+  <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-6xl shadow-2xl flex flex-col">
+    <div class="px-6 py-4 border-b flex items-center justify-between">
+      <h3 class="font-bold text-lg">Import</h3>
+      <button onclick="closeImportModal()"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div id="import-step-1" class="p-6 space-y-4">
+      <textarea id="import-paste-area" rows="12" class="w-full bg-slate-50 dark:bg-slate-900 rounded-xl p-4 font-mono text-xs" placeholder="Paste tab-separated data..."></textarea>
+      <div class="flex justify-end gap-3">
+        <button onclick="parseImportData()" class="px-7 py-2.5 bg-primary text-white rounded-lg font-bold">Parse</button>
+      </div>
+    </div>
+    <div id="import-step-2" class="hidden p-6 space-y-4">
+      <div class="overflow-x-auto rounded-xl border">
+        <table class="w-full text-xs text-left">
+          <thead class="bg-slate-50 dark:bg-slate-800/40">
+            <tr>
+              <th class="px-3 py-3">Status</th>
+              <th class="px-3 py-3">Date</th>
+              <th class="px-3 py-3">Type</th>
+              <th class="px-3 py-3">Ticker</th>
+              <th class="px-3 py-3">Name</th>
+              <th class="px-3 py-3">Curr</th>
+              <th class="px-3 py-3 text-right">FX</th>
+              <th class="px-3 py-3 text-right">Price</th>
+              <th class="px-3 py-3 text-right">Qty</th>
+              <th class="px-3 py-3 text-right">Comm</th>
+              <th class="px-3 py-3 text-right">Tax</th>
+              <th class="px-3 py-3 text-right">Total (Net)</th>
+            </tr>
+          </thead>
+          <tbody id="import-preview-body"></tbody>
+        </table>
+      </div>
+      <div class="flex gap-3 justify-end items-center">
+        <div class="flex-1 text-[10px] font-bold flex gap-4">
+          <span id="import-ok-count" class="text-emerald-500">0 OK</span>
+          <span id="import-warn-count" class="text-amber-500">0 Need Review</span>
+        </div>
+        <button onclick="confirmImport()" class="px-7 py-2.5 bg-emerald-600 text-white rounded-lg font-bold">Confirm</button>
+      </div>
+    </div>
+    <div id="import-step-3" class="hidden p-12 text-center">
+      <p id="import-progress-label">Processing...</p>
+    </div>
+  </div>
+</div>
+</main>
+
+<script>
+(function() {
+  let mobDetailChart = null;
+  let mobDetailRange = '1M';
+  let mobCurrentPortfolioId = null;
+
+  function mobSyncPrivacyIcon() {
+    const icon = document.getElementById('mob-privacy-icon');
+    if (icon) icon.innerText = window.privacyState?.enabled ? 'visibility_off' : 'visibility';
+  }
+
+  // ── Portfolio List ────────────────────────────────
+  async function mobLoadPortfolioList() {
+    try {
+      const res = await fetch('/api/portfolios');
+      const data = await res.json();
+      const g = data.global || {};
+      const portfolios = data.portfolios || [];
+
+      // Global mini-stats
+      const netEl = document.getElementById('mob-global-net');
+      const gainEl = document.getElementById('mob-global-gain');
+      const dvEl = document.getElementById('mob-global-dayvar');
+
+      if (netEl) netEl.textContent = formatPrivacy(g.totalNetValue, 'EUR', 'mob-gnet');
+      if (gainEl) {
+        const gain = g.totalGain || 0;
+        gainEl.style.color = gain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        gainEl.textContent = (gain >= 0 ? '+' : '') + formatPrivacy(gain, 'EUR', 'mob-ggain', 0);
+      }
+      if (dvEl) {
+        const dv = g.changeValue || 0;
+        dvEl.style.color = dv >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        dvEl.textContent = (dv >= 0 ? '+' : '') + formatPrivacy(dv, 'EUR', 'mob-gdv', 0);
+      }
+
+      const container = document.getElementById('mob-portf-cards');
+      if (!container) return;
+      if (portfolios.length === 0) {
+        container.innerHTML = '<div class="mob-empty"><span class="material-symbols-outlined">work_off</span><div class="mob-empty-title">Nessun portafoglio</div><div class="mob-empty-sub">Crea il tuo primo portafoglio</div></div>';
+        return;
+      }
+      container.innerHTML = portfolios.map(p => {
+        const isPos = p.changePercent >= 0;
+        return `
+          <div class="mob-portfolio-card" onclick="mobOpenPortfolio(${p.id})">
+            <div class="mob-portfolio-icon" style="background-color:${p.color||'#6366f1'}">
+              <span class="material-symbols-outlined">work</span>
+            </div>
+            <div class="mob-portfolio-info">
+              <div class="mob-portfolio-name">${p.name}</div>
+              <div class="mob-portfolio-meta">${p.assetCount} Assets · ${p.currency}</div>
+            </div>
+            <div class="mob-portfolio-values">
+              <div class="mob-portfolio-net">${formatPrivacy(p.netValue||p.totalValue, p.currency, 'mob-pn-'+p.id)}</div>
+              <div class="mob-portfolio-gross">Lordo: ${formatPrivacy(p.totalValue, p.currency, 'mob-pg-'+p.id)}</div>
+              <div class="mob-portfolio-change" style="color:${isPos?'var(--mob-emerald)':'var(--mob-rose)'}">${isPos?'▲':'▼'} ${Math.abs(p.changePercent).toFixed(2)}%</div>
+            </div>
+          </div>`;
+      }).join('');
+    } catch(e) { console.error('[MOB] Portfolio list error:', e); }
+  }
+
+  window.mobOpenPortfolio = function(id) {
+    mobCurrentPortfolioId = id;
+    document.getElementById('mob-portfolio-list-view').style.display = 'none';
+    const dv = document.getElementById('mob-portfolio-detail-view');
+    dv.style.display = 'flex';
+    document.getElementById('mob-page-header-title').textContent = 'PT';
+    mobLoadPortfolioDetail(id);
+    // Sync desktop view too
+    currentPortfolioId = id;
+  };
+
+  window.mobShowPortfolioList = function() {
+    document.getElementById('mob-portfolio-detail-view').style.display = 'none';
+    document.getElementById('mob-portfolio-list-view').style.display = '';
+    document.getElementById('mob-page-header-title').textContent = 'PT';
+    mobCurrentPortfolioId = null;
+  };
+
+  // ── Swipe Logic ──────────────────────────────────
+  let touchStartX = 0;
+  let touchMoveX = 0;
+  let currentSwipeEl = null;
+  const SWIPE_THRESHOLD = 50;
+  const ACTION_WIDTH = 195; // 3 buttons * 65px
+
+  window.handleTouchStart = function(e, container) {
+    touchStartX = e.touches[0].clientX;
+    touchMoveX = 0;
+    if (currentSwipeEl && currentSwipeEl !== container) {
+      resetSwipes(container);
+    }
+  };
+
+  window.handleTouchMove = function(e, container) {
+    const item = container.querySelector('.mob-holding-item');
+    if (!item) return;
+    touchMoveX = e.touches[0].clientX;
+    let diff = touchMoveX - touchStartX;
+    if (diff > 0) diff = 0;
+    if (diff < -ACTION_WIDTH - 20) diff = -ACTION_WIDTH - 20;
+    item.style.transition = 'none';
+    item.style.transform = `translateX(${diff}px)`;
+  };
+
+  window.handleTouchEnd = function(e, container) {
+    const item = container.querySelector('.mob-holding-item');
+    if (!item) return;
+    const diff = touchMoveX - touchStartX;
+    item.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
+    if (touchMoveX !== 0 && diff < -SWIPE_THRESHOLD) {
+      item.style.transform = `translateX(-${ACTION_WIDTH}px)`;
+      currentSwipeEl = container;
+    } else {
+      item.style.transform = 'translateX(0)';
+      currentSwipeEl = null;
+    }
+  };
+
+  function resetSwipes(except) {
+    document.querySelectorAll('.mob-holding-swipe-container').forEach(c => {
+      if (c === except) return;
+      const item = c.querySelector('.mob-holding-item');
+      if (item) item.style.transform = 'translateX(0)';
+    });
+    currentSwipeEl = null;
+  }
+
+  window.mobViewAssetTransactions = function(ticker) {
+    mobSwitchDetailTab('transactions', true); // true = don't reset filter yet
+    const info = document.getElementById('mob-tx-filter-info');
+    const tickerEl = document.getElementById('mob-tx-filter-ticker');
+    if (info && tickerEl) {
+      info.classList.remove('hidden');
+      tickerEl.textContent = ticker;
+    }
+
+    const items = document.querySelectorAll('#mob-transactions-list .mob-transaction-item');
+    items.forEach(it => {
+      const container = it.closest('.mob-holding-swipe-container');
+      if (it.dataset.ticker === ticker) {
+        if (container) container.style.display = '';
+        it.style.backgroundColor = 'var(--mob-primary-dim)';
+      } else {
+        if (container) container.style.display = 'none';
+      }
+    });
+    resetSwipes();
+  };
+
+  window.mobResetTxFilter = function() {
+    const info = document.getElementById('mob-tx-filter-info');
+    if (info) info.classList.add('hidden');
+    
+    const items = document.querySelectorAll('#mob-transactions-list .mob-transaction-item');
+    items.forEach(it => {
+      const container = it.closest('.mob-holding-swipe-container');
+      if (container) container.style.display = '';
+      it.style.backgroundColor = '';
+    });
+  };
+
+  // ── Portfolio Detail ──────────────────────────────
+  async function mobLoadPortfolioDetail(id) {
+    try {
+       const res = await fetch(`/api/portfolios/${id}`);
+       const p = await res.json();
+       console.log('[DEBUG] Mob Portfolio Data:', p);
+      const currency = p.currency || 'EUR';
+      portfolioCurrency = currency;
+      const el = (eid) => document.getElementById(eid);
+
+      const hero = el('mob-hero-section');
+      if (hero) {
+        // Phase 4: Hero background is now consistently Amber (Fiscal Summary style)
+        // Individual portfolio color is no longer used for the entire hero background.
+        hero.style.background = ''; 
+        hero.style.color = '';
+        hero.querySelectorAll('.mob-hero-label, .mob-hero-stat-box-label, .mob-hero-stat-box-value, .mob-hero-value, .mob-hero-stat-box').forEach(l => {
+          l.style.color = '';
+          l.style.background = '';
+          l.style.borderColor = '';
+        });
+        // We can still use p.color for the "add" button or name icon if wanted, but the hero background is Amber.
+      }
+
+      if (el('mob-detail-pname')) el('mob-detail-pname').textContent = p.name;
+      if (el('mob-detail-pname-hero')) el('mob-detail-pname-hero').textContent = p.name;
+      if (el('mob-detail-label')) el('mob-detail-label').textContent = 'Portafoglio';
+      if (el('mob-detail-total')) el('mob-detail-total').textContent = formatPrivacy(p.netValue || p.totalValue, currency, 'mob-dt');
+      if (el('mob-detail-gross')) el('mob-detail-gross').textContent = formatPrivacy(p.totalValue, currency, 'mob-dg');
+      if (el('mob-detail-cash')) el('mob-detail-cash').textContent = formatPrivacy(p.cashBalance, currency, 'mob-dc', 2);
+      if (el('mob-detail-assets')) el('mob-detail-assets').textContent = p.assetCount || 0;
+
+      // Performance Badge
+      const perfBadge = el('mob-detail-perf-badge');
+      if (perfBadge) {
+        const absVal = p.changeValue || 0;
+        const isPos = absVal >= 0;
+        perfBadge.innerHTML = `<span class="material-symbols-outlined text-sm font-bold">${isPos ? 'trending_up' : 'trending_down'}</span> ${formatPrivacy(absVal, currency, 'mob-perf', 0)}`;
+      }
+
+      // Fiscal Summary (Compact - Mob Redesign Phase 5)
+      const totalGross = (p.taxBreakdown || []).reduce((s, b) => s + (b.grossGain || 0), 0);
+      const totalTax   = p.totalLatentTax || 0;
+      const totalNetLatentGain = totalGross - totalTax;
+      const totalMinus = (p.taxBreakdown || []).reduce((s, b) => s + (b.minusvalenze || 0), 0);
+
+      const netValue = p.netValue || p.totalValue;
+      if (el('mob-detail-total')) el('mob-detail-total').textContent = formatPrivacy(netValue, currency, 'mob-dt');
+      
+      // Daily Variation (Phase 6 Fix)
+      const dayVar = p.performance1D || 0;
+      const prevValue = netValue - dayVar;
+      const dayPct = prevValue > 0 ? (dayVar / prevValue) * 100 : 0;
+      
+      const gnEl = el('mob-detail-gain-netto-pill');
+      if (gnEl) {
+        const isPos = dayVar >= 0;
+        gnEl.style.background = isPos ? 'rgba(16,185,129,0.15)' : 'rgba(244,63,94,0.15)';
+        gnEl.style.color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        gnEl.innerHTML = `<span class="material-symbols-outlined text-xs font-bold">${isPos ? 'trending_up' : 'trending_down'}</span> ${formatPrivacy(dayVar, currency, 'mob-gn', 0)}`;
+      }
+
+      if (el('mob-f-tax')) el('mob-f-tax').textContent = formatPrivacy(totalTax, currency, 'mob-f-tax', 0);
+      if (el('mob-f-minus')) el('mob-f-minus').textContent = formatPrivacy(totalMinus, currency, 'mob-f-minus', 0);
+
+      const gain = p.totalGain || 0;
+      const gainEl = el('mob-detail-gain');
+      if (gainEl) {
+        if (p.color) gainEl.style.color = '#fff';
+        else gainEl.style.color = gain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        gainEl.textContent = (gain >= 0 ? '+' : '') + formatPrivacy(gain, currency, 'mob-d-gain', 0);
+      }
+
+      // 2. Load holdings and transactions from the already fetched portfolio data
+      currentHoldings = p.holdings || [];
+      currentTransactions = p.transactions || [];
+      mobLoadHoldings(currentHoldings, currency);
+      mobLoadTransactions(currentTransactions, currency);
+      mobRenderAllocation(p.allocation || [], currency);
+      // Init chart
+      mobInitDetailChart(id);
+    } catch(e) { console.error('[MOB] Portfolio detail error:', e); }
+  }
+
+  function mobRenderAllocation(allocation, currency) {
+    const container = document.getElementById('mob-allocation-list');
+    const section = document.getElementById('mob-allocation-section');
+    if (!container || !section) return;
+
+    if (!allocation || allocation.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+
+    section.style.display = 'block';
+    container.innerHTML = allocation.slice(0, 6).map(a => {
+      const pct = a.percent || 0;
+      // Define colors for common types if not provided
+      const typeColors = { 'Bond': '#3b82f6', 'Azioni': '#10b981', 'Liquidity': '#f59e0b', 'ETF': '#8b5cf6', 'Stock': '#10b981' };
+      const color = a.color || typeColors[a.type] || 'var(--mob-primary)';
+      return `
+        <div class="mob-alloc-bar-container">
+          <div class="mob-alloc-bar-label">
+            <span>${a.type}</span>
+            <span>${pct.toFixed(1)}%</span>
+          </div>
+          <div class="mob-alloc-bar-bg">
+            <div class="mob-alloc-bar-fill" style="width:${pct}%; background:${color}"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  async function mobLoadHoldings(holdings, currency) {
+    const container = document.getElementById('mob-holdings-list');
+    if (!container) return;
+    try {
+
+      if (holdings.length === 0) {
+        container.innerHTML = '<div class="mob-empty"><span class="material-symbols-outlined">inbox</span><div class="mob-empty-title">Nessun asset</div></div>';
+        return;
+      }
+      container.innerHTML = holdings.map(h => {
+        const cost = h.totalCostInPCurr || h.totalCost || 0;
+        const pct = h.unrealizedGainPct !== undefined ? h.unrealizedGainPct : (cost > 0 ? ((h.currentValue - cost) / cost) * 100 : 0);
+        const isPos = pct >= 0;
+        const letters = (h.ticker || '').substring(0,3);
+        const dataSource = h.dataSource || 'YF';
+        const isin = h.isin || '';
+        const type = h.type || '';
+        const country = h.country || '';
+
+        // Alert state
+        const price = h.currentPrice || 0;
+        const targetPrice = h.targetPrice || 0;
+        const stopLoss = h.stopLoss || 0;
+        const targetReached = targetPrice > 0 && price >= targetPrice;
+        const stopLossHit = stopLoss > 0 && price <= stopLoss;
+        
+        const alertBg = targetReached ? 'background:rgba(16,185,129,0.15)' : (stopLossHit ? 'background:rgba(244,63,94,0.15)' : '');
+        const alertBorder = targetReached ? 'border:1px solid rgba(16,185,129,0.3)' : (stopLossHit ? 'border:1px solid rgba(244,63,94,0.3)' : '');
+
+        return `
+          <div class="mob-holding-swipe-container" 
+               ontouchstart="handleTouchStart(event, this)" 
+               ontouchmove="handleTouchMove(event, this)" 
+               ontouchend="handleTouchEnd(event, this)">
+            
+            <div class="mob-holding-actions">
+              <div class="mob-action-btn bg-blue-ios" 
+                   onclick="event.stopPropagation(); mobViewAssetTransactions('${h.ticker}')">
+                <span class="material-symbols-outlined">list</span>
+                <span>Trans</span>
+              </div>
+              <div class="mob-action-btn bg-purple-ios" 
+                   onclick="event.stopPropagation(); openAssetChartModal('${h.ticker}', '${(h.name || '').replace(/'/g, "\\'")}', '${currency}')">
+                <span class="material-symbols-outlined">show_chart</span>
+                <span>Grafico</span>
+              </div>
+              <div class="mob-action-btn bg-orange-ios" 
+                   onclick="event.stopPropagation(); openManualModal('${h.ticker}', '${currency}', ${h.currentPrice}, '${type}', '${country}', '${dataSource}', '${isin}')">
+                <span class="material-symbols-outlined">edit_note</span>
+                <span>Modifica</span>
+              </div>
+            </div>
+
+            <div class="mob-holding-item" style="${alertBg}; ${alertBorder}" onclick="openAssetChartModal('${h.ticker}', '${(h.name || '').replace(/'/g, "\\'")}', '${currency}')">
+              <div class="mob-holding-logo">${letters}</div>
+              <div class="mob-holding-info">
+                <div class="mob-holding-ticker">${h.ticker}</div>
+                <div class="mob-holding-name">${h.name || ''}</div>
+                <div style="display:flex; gap:8px; margin-top:4px">
+                  ${targetPrice > 0 ? `<div style="font-size:10px; font-weight:900; color:${targetReached?'var(--mob-emerald)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">target</span> TP: ${formatCurrency(targetPrice, h.currency)}</div>` : ''}
+                  ${stopLoss > 0 ? `<div style="font-size:10px; font-weight:900; color:${stopLossHit?'var(--mob-rose)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">warning</span> SL: ${formatCurrency(stopLoss, h.currency)}</div>` : ''}
+                </div>
+              </div>
+              <div class="mob-holding-values">
+                <div class="mob-holding-value">${formatPrivacy(h.currentValue, currency, 'mob-hv-'+h.ticker)}</div>
+                <div class="mob-holding-gain" style="color:${pct>=0?'var(--mob-emerald)':'var(--mob-rose)'}">${formatPrivacy(h.unrealizedGain, currency, 'mob-h-gain', 0)}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    } catch(e) {
+      console.error('[MOB] Holdings load error:', e);
+      if (container) container.innerHTML = '<div class="mob-empty"><span class="material-symbols-outlined">error</span><div class="mob-empty-title">Errore nel caricamento</div></div>';
+    }
+  }
+
+  async function mobLoadTransactions(txs, currency) {
+    const container = document.getElementById('mob-transactions-list');
+    if (!container) return;
+    try {
+      const typeColors = { BUY:'var(--mob-emerald)', SELL:'var(--mob-rose)', DEPOSIT:'var(--mob-emerald)', WITHDRAWAL:'var(--mob-rose)', DIVIDEND:'var(--mob-amber)', TAX:'var(--mob-rose)', TRANSFER:'var(--mob-text-muted)' };
+      const typeIcons = { BUY:'shopping_cart', SELL:'sell', DEPOSIT:'arrow_downward', WITHDRAWAL:'arrow_upward', DIVIDEND:'payments', TAX:'account_balance', TRANSFER:'swap_horiz' };
+
+      if (txs.length === 0) {
+        container.innerHTML = '<div class="mob-empty"><span class="material-symbols-outlined">receipt_long</span><div class="mob-empty-title">Nessuna transazione</div></div>';
+        return;
+      }
+
+      container.innerHTML = txs.slice(0,50).map(t => {
+        const col = typeColors[t.type] || 'var(--mob-text)';
+        const icon = typeIcons[t.type] || 'receipt';
+        const date = new Date(t.date).toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit', year:'2-digit' });
+        return `
+          <div class="mob-holding-swipe-container" 
+               ontouchstart="handleTouchStart(event, this)" 
+               ontouchmove="handleTouchMove(event, this)" 
+               ontouchend="handleTouchEnd(event, this)">
+            
+            <div class="mob-holding-actions">
+              <div class="mob-action-btn bg-blue-ios" 
+                   onclick="event.stopPropagation(); duplicateTransaction(${t.id})">
+                <span class="material-symbols-outlined">content_copy</span>
+                <span>Duplica</span>
+              </div>
+              <div class="mob-action-btn bg-orange-ios" 
+                   onclick="event.stopPropagation(); editTransaction(${t.id})">
+                <span class="material-symbols-outlined">edit</span>
+                <span>Modifica</span>
+              </div>
+              <div class="mob-action-btn bg-red-ios" 
+                   onclick="event.stopPropagation(); confirmDeleteTransaction(${t.id})">
+                <span class="material-symbols-outlined">delete</span>
+                <span>Elimina</span>
+              </div>
+            </div>
+
+            <div class="mob-holding-item mob-transaction-item" data-ticker="${t.assetTicker || ''}">
+              <div class="mob-holding-logo" style="background:${col}22;color:${col}">
+                <span class="material-symbols-outlined" style="font-size:20px">${icon}</span>
+              </div>
+              <div class="mob-holding-info">
+                <div class="mob-holding-ticker" style="color:${col}">${t.type}</div>
+                <div class="mob-holding-name">${t.assetTicker || t.ticker || '—'}</div>
+                <div class="mob-holding-qty">${date}</div>
+              </div>
+              <div class="mob-holding-values">
+                <div class="mob-holding-value">${formatPrivacy(t.total || t.amount || 0, currency, 'mob-tx-'+t.id)}</div>
+                <div style="font-size:10px;color:var(--mob-text-caption)">${t.quantity ? 'x'+formatNumber(t.quantity,2) : ''}</div>
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+    } catch(e) {
+      console.error('[MOB] Transactions load error:', e);
+    }
+  }
+
+  function mobInitDetailChart(portfolioId) {
+    if (mobDetailChart) { mobDetailChart.destroy(); mobDetailChart = null; }
+    const ctx = document.getElementById('mob-detail-chart')?.getContext('2d');
+    if (!ctx) return;
+    const isDark = document.documentElement.classList.contains('dark');
+    mobDetailChart = new Chart(ctx, {
+      type: 'line',
+      data: { 
+        labels: [], 
+        datasets: [
+          {
+            label: 'Valore', data: [],
+            borderColor: '#135bec', backgroundColor: 'rgba(19,91,236,0.10)',
+            fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0, pointHoverRadius: 6,
+            pointHoverBackgroundColor: '#135bec', pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2
+          },
+          {
+            label: 'Profitto Netto', data: [],
+            borderColor: '#10b981', backgroundColor: 'transparent',
+            fill: false, tension: 0.4, borderWidth: 2, borderDash: [5, 5],
+            pointRadius: 0, pointHoverRadius: 6,
+            pointHoverBackgroundColor: '#10b981', pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2,
+            yAxisID: 'y1'
+          },
+          {
+            label: 'Guadagno (No Div)', data: [],
+            borderColor: '#f59e0b', backgroundColor: 'transparent',
+            fill: false, tension: 0.4, borderWidth: 2, borderDash: [2, 2],
+            pointRadius: 0, pointHoverRadius: 6,
+            pointHoverBackgroundColor: '#f59e0b', pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2,
+            yAxisID: 'y1'
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            mode: 'index', intersect: false,
+            backgroundColor: isDark ? '#1e293b' : '#fff',
+            titleColor: isDark ? '#f1f5f9' : '#1e293b',
+            bodyColor: isDark ? '#f1f5f9' : '#1e293b',
+            borderColor: isDark ? '#334155' : '#e2e8f0',
+            borderWidth: 1, padding: 10,
+            callbacks: {
+              label: () => null,
+              title: (items) => {
+                  const d = mobDetailChart.rawPoints ? mobDetailChart.rawPoints[items[0].dataIndex] : null;
+                  return (d && d.events && d.events.length > 0) ? items[0].label : null;
+              },
+              afterBody: (items) => {
+                  const d = mobDetailChart.rawPoints ? mobDetailChart.rawPoints[items[0].dataIndex] : null;
+                  if (d && d.events && d.events.length > 0) {
+                      const labels = { 'BUY': 'ACQUISTO', 'SELL': 'VENDITA', 'DEPOSIT': 'DEPOSITO', 'WITHDRAWAL': 'PRELIEVO', 'DIVIDEND': 'DIVIDENDO' };
+                      return d.events.map(ev => {
+                          const typeLabel = labels[ev.type] || ev.type;
+                          const prefix = (ev.type === 'DEPOSIT' || ev.type === 'BUY' || ev.type === 'DIVIDEND') ? '+' : '-';
+                          if (ev.type === 'BUY' || ev.type === 'SELL') return `${typeLabel}: ${ev.assetName || ev.ticker}`;
+                          if (ev.type === 'DEPOSIT' || ev.type === 'WITHDRAWAL') return `${typeLabel}: ${prefix}${formatCurrency(ev.amount, 'EUR', 0)}`;
+                          return `${typeLabel}: ${ev.ticker} ${prefix}${formatCurrency(ev.amount, 'EUR', 0)}`;
+                      });
+                  }
+                  return null;
+              }
+            }
+          },
+          zoom: { zoom: { wheel:{enabled:false}, pinch:{enabled:true}, mode:'x' }, pan:{enabled:true, mode:'x'} },
+          annotation: { annotations: {} }
+        },
+        scales: {
+          x: { ticks: { color: isDark?'#64748b':'#94a3b8', font:{size:8}, maxTicksLimit: 5 }, grid: { display: false } },
+          y: { 
+            ticks: { 
+              color: isDark?'#64748b':'#94a3b8', font:{size:8}, 
+              callback: v => '€'+Math.round(v/1000)+'k' 
+            }, 
+            grid: { color: isDark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.04)' } 
+          },
+          y1: {
+            position: 'right',
+            ticks: {
+              color: '#10b981', font: { size: 8 },
+              callback: v => '€'+Math.round(v/1000)+'k'
+            },
+            grid: { drawOnChartArea: false }
+          }
+        }
+      }
+    });
+    mobUpdateDetailChart(portfolioId);
+  }
+
+  async function mobUpdateDetailChart(portfolioId, range) {
+    if (!mobDetailChart) return;
+    const isDark = document.documentElement.classList.contains('dark');
+    const r = range || mobDetailRange;
+    try {
+      const res = await fetch(`/api/analytics/portfolio-performance/${portfolioId}?range=${r}`);
+      const result = await res.json();
+      const pts = result.dataPoints || (Array.isArray(result) ? result : []);
+      
+      mobDetailChart.rawPoints = pts;
+      mobDetailChart.data.labels = pts.map(d => new Date(d.date).toLocaleDateString('it-IT', {day:'2-digit',month:'2-digit'}));
+      
+      mobDetailChart.data.datasets[0].data = pts.map(d => d.value);
+      mobDetailChart.data.datasets[1].data = pts.map(d => d.profit);
+      mobDetailChart.data.datasets[2].data = pts.map(d => d.profitNoDiv);
+
+      // Year Markers (Annotations)
+      const annotations = {};
+      let lastYear = null;
+      pts.forEach((d, index) => {
+        const year = new Date(d.date).getFullYear();
+        if (lastYear !== null && year !== lastYear) {
+          annotations[`line${year}`] = {
+            type: 'line', xMin: index, xMax: index,
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+            borderWidth: 1, borderDash: [5, 5],
+            label: {
+              display: true, content: year.toString(), position: 'start',
+              backgroundColor: isDark ? 'rgba(15, 23, 42, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+              color: isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)',
+              font: { size: 8, weight: 'bold' }
+            }
+          };
+        }
+        lastYear = year;
+      });
+      mobDetailChart.options.plugins.annotation.annotations = annotations;
+
+      // Transaction Markers
+      const pointStyles = [];
+      const pointColors = [];
+      const pointRadii = [];
+
+      pts.forEach(d => {
+        const events = d.events || [];
+        if (events.some(e => e.type === 'SELL')) {
+          pointStyles.push('circle'); pointColors.push('#f43f5e'); pointRadii.push(4);
+        } else if (events.some(e => e.type === 'BUY')) {
+          pointStyles.push('circle'); pointColors.push('#10b981'); pointRadii.push(4);
+        } else if (events.some(e => e.type === 'DEPOSIT' || e.type === 'DIVIDEND')) {
+          pointStyles.push('triangle'); pointColors.push('#10b981'); pointRadii.push(4);
+        } else if (events.some(e => e.type === 'WITHDRAWAL')) {
+          pointStyles.push('triangle'); pointColors.push('#f59e0b'); pointRadii.push(4);
+        } else {
+          pointStyles.push('circle'); pointColors.push('#135bec'); pointRadii.push(0);
+        }
+      });
+
+      mobDetailChart.data.datasets[0].pointStyle = pointStyles;
+      mobDetailChart.data.datasets[0].pointBackgroundColor = pointColors;
+      mobDetailChart.data.datasets[0].pointRadius = pointRadii;
+      mobDetailChart.data.datasets[0].pointBorderColor = '#fff';
+      mobDetailChart.data.datasets[0].pointBorderWidth = 1;
+
+      mobDetailChart.update();
+    } catch(e) { console.error('[MOB] Detail chart error:', e); }
+  }
+
+  window.mobDetailRange = function(range) {
+    mobDetailRange = range;
+    document.querySelectorAll('#mob-detail-range-bar .mob-range-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.range === range);
+    });
+    if (mobCurrentPortfolioId) mobUpdateDetailChart(mobCurrentPortfolioId, range);
+  };
+
+  window.mobSwitchDetailTab = function(tab, keepFilter = false) {
+    const isHoldings = tab === 'holdings';
+    document.getElementById('mob-pill-holdings').classList.toggle('active', isHoldings);
+    document.getElementById('mob-pill-transactions').classList.toggle('active', !isHoldings);
+    document.getElementById('mob-holdings-view').style.display = isHoldings ? '' : 'none';
+    document.getElementById('mob-transactions-view').style.display = isHoldings ? 'none' : '';
+    
+    if (!keepFilter) mobResetTxFilter();
+  };
+
+  function mobInit() {
+    if (!window._mobileViewActive) return;
+    mobSyncPrivacyIcon();
+
+    // Check if detail view should open (URL has ?id=)
+    const params = new URLSearchParams(window.location.search);
+    const pid = params.get('id');
+    if (pid) {
+      mobCurrentPortfolioId = parseInt(pid);
+      const dv = document.getElementById('mob-portfolio-detail-view');
+      dv.style.display = 'flex';
+      document.getElementById('mob-portfolio-list-view').style.display = 'none';
+      document.getElementById('mob-page-header-title').textContent = 'PT';
+      mobLoadPortfolioDetail(mobCurrentPortfolioId);
+      const ticker = params.get('ticker');
+      if (ticker) {
+        setTimeout(() => loadAssetChart(ticker), 500);
+      }
+    } else {
+      mobLoadPortfolioList();
+    }
+  }
+
+  window.addEventListener('mobile-view-activated', mobInit);
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window._mobileViewActive) mobInit();
+  });
+
+  window.addEventListener('mobile-view-activated', () => {
+    setTimeout(() => { if (mobDetailChart) mobDetailChart.resize(); }, 100);
+  });
+
+  window.addEventListener('privacy-changed', () => {
+    mobSyncPrivacyIcon();
+    if (window._mobileViewActive) {
+      if (mobCurrentPortfolioId) mobLoadPortfolioDetail(mobCurrentPortfolioId);
+      else mobLoadPortfolioList();
+    }
+  });
+
+  // Auto-refresh on market update
+  window.addEventListener('market-data-updated', () => {
+    console.log("[Portfolio] Auto-refreshing UI...");
+    if (window._mobileViewActive) {
+      if (typeof mobLoadPortfolioDetail === 'function' && mobCurrentPortfolioId) mobLoadPortfolioDetail(mobCurrentPortfolioId);
+      else if (typeof mobLoadPortfolioList === 'function') mobLoadPortfolioList();
+    } else {
+      // currentPortfolioId is defined in the script scope of portfolio_detail.html
+      if (typeof currentPortfolioId !== 'undefined' && currentPortfolioId) {
+        if (typeof loadPortfolioDetails === 'function') loadPortfolioDetails();
+      } else {
+        if (typeof loadPortfolios === 'function') loadPortfolios();
+      }
+    }
+  });
+})();
+</script>
+</body></html>
