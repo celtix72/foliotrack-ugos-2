@@ -62,26 +62,27 @@
 
   <!-- ── Mobile Scrollable Content ── -->
   <div class="mob-scroll" id="mob-settings-scroll">
-      <!-- Profile Area -->
+      <!-- Profile Area (Compact) -->
       <div class="mob-settings-group">
           <div class="mob-settings-group-title">Account</div>
-          <div class="mob-settings-card p-5 flex items-center gap-4">
-              <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                  <span class="material-symbols-outlined text-2xl">person</span>
-              </div>
-              <div class="flex-1">
-                  <h3 class="font-black text-base">User</h3>
-                  <p class="text-xs text-slate-500">user@foliotrack.io</p>
+          <div class="mob-settings-card">
+              <div class="mob-settings-row">
+                  <div class="mob-settings-icon bg-blue-ios"><span class="material-symbols-outlined text-white">person</span></div>
+                  <div class="mob-settings-label">
+                      <div class="font-bold">User</div>
+                      <div class="text-[11px] text-slate-500">user@foliotrack.io</div>
+                  </div>
+                  <button class="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-[10px] font-black uppercase text-primary">Edit</button>
               </div>
           </div>
       </div>
 
-      <!-- Settings Cards -->
+      <!-- Appearance -->
       <div class="mob-settings-group">
-          <div class="mob-settings-group-title">Options</div>
+          <div class="mob-settings-group-title">Appearance</div>
           <div class="mob-settings-card">
               <div class="mob-settings-row" onclick="document.getElementById('mob-theme-toggle').click()">
-                  <div class="mob-settings-icon bg-gray-500"><span class="material-symbols-outlined">dark_mode</span></div>
+                  <div class="mob-settings-icon bg-gray-ios"><span class="material-symbols-outlined text-white">dark_mode</span></div>
                   <div class="mob-settings-label">Dark Mode</div>
                   <div class="mob-toggle">
                       <input type="checkbox" id="mob-theme-toggle" onclick="event.stopPropagation()">
@@ -89,21 +90,167 @@
                   </div>
               </div>
               <div class="mob-settings-row" onclick="document.getElementById('mob-privacy-toggle').click()">
-                  <div class="mob-settings-icon bg-purple-500"><span class="material-symbols-outlined">visibility_off</span></div>
+                  <div class="mob-settings-icon bg-purple-ios"><span class="material-symbols-outlined text-white">visibility_off</span></div>
                   <div class="mob-settings-label">Privacy Mode</div>
                   <div class="mob-toggle">
                       <input type="checkbox" id="mob-privacy-toggle" onclick="event.stopPropagation()">
                       <div class="mob-toggle-slider"></div>
                   </div>
               </div>
+              <div class="mob-settings-row">
+                  <div class="mob-settings-icon bg-indigo-ios"><span class="material-symbols-outlined text-white">font_download</span></div>
+                  <div class="mob-settings-label">Font Family</div>
+                  <select id="mob-font-family-select" class="mob-settings-select">
+                      <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
+                      <option value="'Fira Code', monospace">Fira Code</option>
+                      <option value="'Roboto Mono', monospace">Roboto Mono</option>
+                      <option value="'Inter', sans-serif">Inter</option>
+                  </select>
+              </div>
+              <div class="mob-settings-row">
+                  <div class="mob-settings-icon bg-pink-ios"><span class="material-symbols-outlined text-white">format_size</span></div>
+                  <div class="mob-settings-label">Font Size</div>
+                  <select id="mob-font-size-select" class="mob-settings-select">
+                      <option value="12">12px</option>
+                      <option value="14">14px</option>
+                      <option value="16">16px</option>
+                      <option value="18">18px</option>
+                  </select>
+              </div>
           </div>
       </div>
 
-      <!-- Actions -->
+      <!-- Portfolio Preferences -->
+      <div class="mob-settings-group">
+          <div class="mob-settings-group-title">Preferences</div>
+          <div class="mob-settings-card">
+              <div class="mob-settings-row">
+                  <div class="mob-settings-icon bg-green-ios"><span class="material-symbols-outlined text-white">payments</span></div>
+                  <div class="mob-settings-label">Currency</div>
+                  <div class="mob-settings-value">EUR <span class="material-symbols-outlined text-[14px]">chevron_right</span></div>
+              </div>
+              <div class="mob-settings-row">
+                  <div class="mob-settings-icon bg-orange-ios"><span class="material-symbols-outlined text-white">sync</span></div>
+                  <div class="mob-settings-label">Updates</div>
+                  <select id="mob-update-frequency-select" class="mob-settings-select">
+                      <option value="1">1 Min</option>
+                      <option value="5">5 Min</option>
+                      <option value="15">15 Min</option>
+                      <option value="60">1 Hour</option>
+                      <option value="0">Manual</option>
+                  </select>
+              </div>
+          </div>
+      </div>
+
+      <!-- Connections -->
+      <div class="mob-settings-group">
+          <div class="mob-settings-group-title">Connections</div>
+          <div class="mob-settings-card">
+              <!-- Telegram Toggle Row -->
+              <div class="mob-settings-row" onclick="toggleMobSection('mob-tg-config')">
+                  <div class="mob-settings-icon bg-telegram"><span class="material-symbols-outlined text-white">send</span></div>
+                  <div class="mob-settings-label">Telegram Alerts</div>
+                  <div class="mob-settings-value" id="mob-tg-status-label">Setup <span id="mob-tg-config-icon" class="material-symbols-outlined text-[14px] transition-transform">expand_more</span></div>
+              </div>
+              <!-- Collapsible Content -->
+              <div id="mob-tg-config" class="hidden bg-slate-50/50 dark:bg-black/20 px-5 py-4 space-y-4 border-t border-slate-100 dark:border-slate-800">
+                  <div>
+                      <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Bot Token</label>
+                      <input id="mob-telegram-bot-token" type="password" placeholder="Token" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs">
+                  </div>
+                  <div>
+                      <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Chat ID</label>
+                      <input id="mob-telegram-chat-id" type="text" placeholder="Chat ID" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs">
+                  </div>
+                  <div class="flex items-center justify-between">
+                      <span class="text-xs font-bold">Enabled</span>
+                      <input type="checkbox" id="mob-telegram-enabled-check">
+                  </div>
+                  <div class="flex gap-2">
+                      <button onclick="sendDailyReport()" class="flex-1 py-2 bg-primary/10 text-primary text-[10px] font-black uppercase rounded-lg border border-primary/20">Test Report</button>
+                      <button onclick="sendTestTelegram('tp')" class="flex-1 py-2 bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase rounded-lg">Test TP</button>
+                  </div>
+              </div>
+              <!-- Yahoo Finance Info -->
+              <div class="mob-settings-row">
+                  <div class="mob-settings-icon bg-purple-500"><span class="material-symbols-outlined text-white">finance</span></div>
+                  <div class="mob-settings-label">Yahoo Finance</div>
+                  <div class="mob-settings-value text-emerald-500">Connected</div>
+              </div>
+              <!-- Google Sheets -->
+              <div class="mob-settings-row">
+                  <div class="mob-settings-icon bg-sheets"><span class="material-symbols-outlined text-white">table_view</span></div>
+                  <div class="mob-settings-label">Google Sheets</div>
+                  <div class="mob-settings-value text-slate-400">Setup</div>
+              </div>
+          </div>
+      </div>
+
+      <!-- Database Maintenance -->
+      <div class="mob-settings-group">
+          <div class="mob-settings-group-title">Maintenance</div>
+          <div class="mob-settings-card">
+              <div class="mob-settings-row" onclick="toggleMobSection('mob-backup-area')">
+                  <div class="mob-settings-icon bg-indigo-ios"><span class="material-symbols-outlined text-white">backup</span></div>
+                  <div class="mob-settings-label">Backups</div>
+                  <div class="mob-settings-value"><span id="mob-backup-area-icon" class="material-symbols-outlined text-[14px] transition-transform">expand_more</span></div>
+              </div>
+              <div id="mob-backup-area" class="hidden bg-slate-50/50 dark:bg-black/20 border-t border-slate-100 dark:border-slate-800">
+                  <div class="p-4 flex gap-2">
+                       <button id="mob-run-backup-btn" class="flex-1 py-2 bg-indigo-500 text-white text-[10px] font-black uppercase rounded-lg shadow-sm">Run Manual Backup</button>
+                  </div>
+                  <div id="mob-backups-list" class="max-h-60 overflow-y-auto">
+                      <p class="p-5 text-center text-xs text-slate-400 italic">No backups found.</p>
+                  </div>
+              </div>
+              <div class="mob-settings-row" onclick="toggleMobSection('mob-advanced-tools')">
+                  <div class="mob-settings-icon bg-amber-ios"><span class="material-symbols-outlined text-white">build</span></div>
+                  <div class="mob-settings-label">Advanced Tools</div>
+                  <div class="mob-settings-value"><span id="mob-advanced-tools-icon" class="material-symbols-outlined text-[14px] transition-transform">expand_more</span></div>
+              </div>
+              <div id="mob-advanced-tools" class="hidden bg-slate-50/50 dark:bg-black/20 border-t border-slate-100 dark:border-slate-800 p-4 space-y-4">
+                  <button onclick="loadTaxRates(); toggleMobSection('mob-tax-area')" class="w-full py-2 bg-emerald-500 text-white text-[10px] font-black uppercase rounded-lg">Taxation Management</button>
+                  <div id="mob-tax-area" class="hidden space-y-2">
+                      <div class="max-h-40 overflow-y-auto bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800">
+                          <table class="w-full text-[10px]">
+                              <tbody id="tax-rates-table-body"></tbody>
+                          </table>
+                      </div>
+                      <button onclick="addTaxRateRow()" class="w-full py-1 text-primary text-[10px] font-bold">+ Add Category</button>
+                  </div>
+
+                  <button onclick="loadHistoryData(); toggleMobSection('mob-history-area')" class="w-full py-2 bg-indigo-500 text-white text-[10px] font-black uppercase rounded-lg">History Management</button>
+                  <div id="mob-history-area" class="hidden space-y-2">
+                      <div class="max-h-60 overflow-y-auto bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800">
+                          <table class="w-full text-[10px]">
+                              <tbody id="mob-history-table-body"></tbody>
+                          </table>
+                      </div>
+                      <button onclick="addHistoryEntry()" class="w-full py-1 text-primary text-[10px] font-bold">+ Add Entry</button>
+                  </div>
+
+                  <button id="mob-rebuild-history-btn" class="w-full py-2 bg-rose-500/10 text-rose-500 text-[10px] font-black uppercase rounded-lg border border-rose-500/20">Rebuild Performance Index</button>
+              </div>
+          </div>
+      </div>
+
+      <!-- System Logs Link -->
+      <div class="mob-settings-group">
+          <div class="mob-settings-card">
+              <a href="/settings" class="mob-settings-row">
+                  <div class="mob-settings-icon bg-slate-500"><span class="material-symbols-outlined text-white">terminal</span></div>
+                  <div class="mob-settings-label">Full Console (Desktop)</div>
+                  <span class="material-symbols-outlined text-slate-400 text-sm">open_in_new</span>
+              </a>
+          </div>
+      </div>
+
+      <!-- Danger Zone -->
       <div class="mob-settings-group mt-8">
           <div class="mob-settings-card">
               <button onclick="confirmReset()" class="mob-settings-row w-full text-left">
-                  <div class="mob-settings-icon bg-rose-500"><span class="material-symbols-outlined text-white">delete_forever</span></div>
+                  <div class="mob-settings-icon bg-rose-ios"><span class="material-symbols-outlined text-white">delete_forever</span></div>
                   <div class="mob-settings-label text-rose-500 font-bold">Wipe Database</div>
                   <span class="material-symbols-outlined text-rose-500">chevron_right</span>
               </button>
@@ -111,6 +258,17 @@
       </div>
 
       <div class="h-32"></div>
+  </div>
+
+  <div id="confirm-reset-modal" class="hidden fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-6">
+      <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-sm p-6 shadow-2xl space-y-4">
+          <h2 class="text-lg font-black text-rose-500">Wipe All Data?</h2>
+          <p class="text-sm text-slate-500">This action is irreversible. All portfolios, transactions and tracking will be permanently deleted.</p>
+          <div class="flex gap-3 pt-2">
+              <button onclick="document.getElementById('confirm-reset-modal').classList.add('hidden')" class="flex-1 py-3 bg-slate-100 dark:bg-slate-800 rounded-xl font-bold text-sm">Cancel</button>
+              <button id="confirm-reset-btn" class="flex-1 py-3 bg-rose-500 text-white rounded-xl font-bold text-sm">Yes, Wipe</button>
+          </div>
+      </div>
   </div>
 
   <!-- ── Mobile Tab Bar ── -->
@@ -127,35 +285,271 @@
     <a href="/reports" class="mob-tab-item">
       <span class="material-symbols-outlined">pie_chart</span>
     </a>
+    <a href="/settings" class="mob-tab-item active">
+      <span class="material-symbols-outlined">settings</span>
+    </a>
   </div>
 </div>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        // --- Element Selections ---
         const themeToggle = document.getElementById('mob-theme-toggle');
         const privacyToggle = document.getElementById('mob-privacy-toggle');
+        const fontSelect = document.getElementById('mob-font-family-select');
+        const sizeSelect = document.getElementById('mob-font-size-select');
+        const freqSelect = document.getElementById('mob-update-frequency-select');
+        
+        const mobTgEnabled = document.getElementById('mob-telegram-enabled-check');
+        const mobTgToken = document.getElementById('mob-telegram-bot-token');
+        const mobTgChat = document.getElementById('mob-telegram-chat-id');
+        const mobTgStatusLabel = document.getElementById('mob-tg-status-label');
+        const runBackupBtn = document.getElementById('mob-run-backup-btn');
+        const rebuildHistoryBtn = document.getElementById('mob-rebuild-history-btn');
 
+        // --- Logic Functions ---
         const updateUI = (settings) => {
             if (themeToggle) themeToggle.checked = settings.theme === 'dark';
             if (privacyToggle) privacyToggle.checked = settings.privacyMode === 'true';
+            if (fontSelect && settings.mobFont) fontSelect.value = settings.mobFont;
+            if (sizeSelect && settings.mobSize) sizeSelect.value = settings.mobSize;
+            if (freqSelect && settings.updateFrequency) freqSelect.value = settings.updateFrequency;
+
+            if (mobTgEnabled) mobTgEnabled.checked = settings.telegramEnabled === 'true';
+            if (mobTgToken) mobTgToken.value = settings.telegramBotToken || '';
+            if (mobTgChat) mobTgChat.value = settings.telegramChatId || '';
+            
+            if (mobTgStatusLabel) {
+                const isActive = settings.telegramEnabled === 'true' && settings.telegramBotToken && settings.telegramChatId;
+                mobTgStatusLabel.innerHTML = (isActive ? 'Active' : 'Setup') + ' <span class="material-symbols-outlined text-[14px]">expand_more</span>';
+                mobTgStatusLabel.className = 'mob-settings-value ' + (isActive ? 'text-emerald-500' : 'text-slate-400');
+            }
+            
+            loadBackups();
         };
+
+        const saveSettings = () => {
+            if (window.updateAppSettings) {
+                window.updateAppSettings({
+                    mobFont: fontSelect.value,
+                    mobSize: sizeSelect.value,
+                    updateFrequency: freqSelect.value,
+                    theme: themeToggle.checked ? 'dark' : 'light',
+                    privacyMode: String(privacyToggle.checked),
+                    telegramEnabled: String(mobTgEnabled.checked),
+                    telegramBotToken: mobTgToken.value,
+                    telegramChatId: mobTgChat.value
+                });
+            }
+        };
+
+        // --- Listeners ---
+        [themeToggle, privacyToggle, fontSelect, sizeSelect, freqSelect, mobTgEnabled].forEach(el => {
+            if (el) el.addEventListener('change', saveSettings);
+        });
+        [mobTgToken, mobTgChat].forEach(el => {
+            if (el) el.addEventListener('blur', saveSettings);
+        });
 
         window.addEventListener('settings-updated', (e) => updateUI(e.detail));
 
-        if (themeToggle) themeToggle.addEventListener('change', () => {
-            if (window.updateAppSettings) window.updateAppSettings({ theme: themeToggle.checked ? 'dark' : 'light' });
-        });
-        if (privacyToggle) privacyToggle.addEventListener('change', () => {
-            if (window.updateAppSettings) window.updateAppSettings({ privacyMode: String(privacyToggle.checked) });
-        });
+        // --- Helpers ---
+        window.toggleMobSection = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.toggle('hidden');
+            const icon = document.getElementById(id + '-icon');
+            if (icon) icon.style.transform = el.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+        };
 
+        window.sendTestTelegram = async (type) => {
+            try {
+                const res = await fetch(`/api/settings/telegram/test-${type}`, { method: 'POST' });
+                const data = await res.json();
+                alert(data.success ? 'Test notification sent!' : 'Failed: ' + data.error);
+            } catch (err) { alert('Error: ' + err.message); }
+        };
+
+        window.sendDailyReport = async () => {
+            try {
+                const res = await fetch('/api/telegram/send-report', { method: 'POST' });
+                const data = await res.json();
+                alert(data.success ? 'Daily Report sent!' : 'Failed: ' + data.error);
+            } catch (err) { alert('Error: ' + err.message); }
+        };
+
+        async function loadBackups() {
+            const list = document.getElementById('mob-backups-list');
+            if (!list) return;
+            try {
+                const res = await fetch('/api/backups');
+                const backups = await res.json();
+                if (backups.length === 0) {
+                    list.innerHTML = '<p class="p-5 text-center text-xs text-slate-400 italic">No backups found.</p>';
+                    return;
+                }
+                list.innerHTML = backups.map(b => `
+                    <div class="flex items-center justify-between p-4 px-5 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                        <div style="flex:1; overflow:hidden">
+                            <p class="text-[13px] font-bold truncate">${b.filename}</p>
+                            <p class="text-[10px] text-slate-400 font-medium">${new Date(b.timestamp).toLocaleString()} • ${(b.size / 1024).toFixed(1)} KB</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                             <button onclick="confirmRestore('${b.filename}')" class="text-primary text-xs font-black uppercase">Restore</button>
+                             <button onclick="deleteBackup('${b.filename}')" class="text-rose-500 text-xs font-black uppercase">Del</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) { console.error(err); }
+        }
+
+        if (runBackupBtn) {
+            runBackupBtn.addEventListener('click', async () => {
+                runBackupBtn.disabled = true;
+                runBackupBtn.innerText = 'Creating...';
+                try {
+                    const res = await fetch('/api/backups/manual', { method: 'POST' });
+                    if (res.ok) await loadBackups();
+                    else alert('Backup failed');
+                } catch (err) { alert('Error: ' + err.message); }
+                runBackupBtn.disabled = false;
+                runBackupBtn.innerText = 'Run Manual Backup';
+            });
+        }
+
+        if (rebuildHistoryBtn) {
+            rebuildHistoryBtn.addEventListener('click', async () => {
+                if (!confirm('This will delete all saved performance history and recalculate it. Continue?')) return;
+                rebuildHistoryBtn.disabled = true;
+                rebuildHistoryBtn.innerText = 'Rebuilding...';
+                try {
+                    const res = await fetch('/api/admin/rebuild-history', { method: 'POST' });
+                    const data = await res.json();
+                    alert(data.success ? 'Performance history rebuilt!' : 'Failed: ' + data.error);
+                } catch (err) { alert('Error: ' + err.message); }
+                rebuildHistoryBtn.disabled = false;
+                rebuildHistoryBtn.innerText = 'Rebuild Performance Index';
+            });
+        }
+
+        // --- Taxation logic (Simplified for Mobile) ---
+        const taxBody = document.getElementById('tax-rates-table-body');
+        window.loadTaxRates = async function() {
+            if (!taxBody) return;
+            try {
+                const res = await fetch('/api/tax-rates');
+                const rates = await res.json();
+                taxBody.innerHTML = rates.map(r => `
+                    <tr class="border-b border-slate-100 dark:border-slate-800">
+                        <td class="p-2"><input type="text" value="${r.asset_type}" class="w-full bg-transparent border-none p-0 focus:ring-0 font-bold text-xs" onchange="saveTaxRates()"></td>
+                        <td class="p-2 w-16"><input type="number" value="${r.rate}" class="w-full bg-transparent border-none p-0 focus:ring-0 font-mono text-xs text-right" onchange="saveTaxRates()"></td>
+                        <td class="p-2 w-8"><button onclick="this.closest('tr').remove(); saveTaxRates()" class="text-rose-500"><span class="material-symbols-outlined text-sm">delete</span></button></td>
+                    </tr>
+                `).join('');
+            } catch (err) { console.error(err); }
+        }
+
+        window.addTaxRateRow = function() {
+            const tr = document.createElement('tr');
+            tr.className = "border-b border-slate-100 dark:border-slate-800";
+            tr.innerHTML = `
+                <td class="p-2"><input type="text" placeholder="Type" class="w-full bg-transparent border-none p-0 focus:ring-0 font-bold text-xs" onchange="saveTaxRates()"></td>
+                <td class="p-2 w-16"><input type="number" value="26" class="w-full bg-transparent border-none p-0 focus:ring-0 font-mono text-xs text-right" onchange="saveTaxRates()"></td>
+                <td class="p-2 w-8"><button onclick="this.closest('tr').remove(); saveTaxRates()" class="text-rose-500"><span class="material-symbols-outlined text-sm">delete</span></button></td>
+            `;
+            taxBody.appendChild(tr);
+        }
+
+        window.saveTaxRates = async function() {
+            const rows = Array.from(taxBody.querySelectorAll('tr'));
+            const rates = rows.map(r => ({
+                asset_type: r.querySelectorAll('input')[0].value.trim(),
+                rate: parseFloat(r.querySelectorAll('input')[1].value) || 0
+            })).filter(r => r.asset_type);
+            await fetch('/api/tax-rates', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rates })
+            });
+        }
+
+        // --- History logic (Simplified for Mobile) ---
+        const historyBody = document.getElementById('mob-history-table-body');
+        window.loadHistoryData = async function() {
+            if (!historyBody) return;
+            try {
+                const res = await fetch('/api/history?portfolioId=null');
+                const data = await res.json();
+                historyBody.innerHTML = data.slice(0, 20).map(h => `
+                    <tr class="border-b border-slate-100 dark:border-slate-800">
+                        <td class="p-2 font-mono text-[9px] text-slate-400">${h.date}</td>
+                        <td class="p-2 font-bold text-[10px]">€${h.totalValue.toLocaleString()}</td>
+                        <td class="p-2 w-8"><button onclick="deleteHistoryEntry(${h.id})" class="text-rose-500"><span class="material-symbols-outlined text-sm">delete</span></button></td>
+                    </tr>
+                `).join('');
+            } catch (err) { console.error(err); }
+        }
+
+        window.deleteHistoryEntry = async function(id) {
+            if (!confirm('Delete record?')) return;
+            await fetch(`/api/history/${id}`, { method: 'DELETE' });
+            loadHistoryData();
+        }
+
+        window.addHistoryEntry = async function() {
+            const val = prompt('Enter Total Value (€)');
+            if (!val) return;
+            const date = new Date().toISOString().split('T')[0];
+            await fetch('/api/history', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ portfolioId: null, date, totalValue: parseFloat(val), cashValue: 0, assetValue: parseFloat(val) })
+            });
+            loadHistoryData();
+        }
+
+        const confirmResetBtn = document.getElementById('confirm-reset-btn');
+        if (confirmResetBtn) {
+            confirmResetBtn.addEventListener('click', async () => {
+                confirmResetBtn.disabled = true;
+                confirmResetBtn.textContent = 'Deleting...';
+                try {
+                    await fetch('/api/reset-data', { method: 'POST' });
+                    window.location.href = '/dashboard';
+                } catch (err) {
+                    confirmResetBtn.disabled = false;
+                    confirmResetBtn.textContent = 'Yes, Wipe';
+                    alert('Reset failed');
+                }
+            });
+        }
+
+        // Initial fetch
         fetch('/api/settings').then(res => res.json()).then(updateUI);
     });
 
-    function confirmReset() {
-        if (confirm('Permanently delete all data?')) {
-            fetch('/api/reset-data', { method: 'POST' }).then(() => window.location.href = '/dashboard');
+    window.confirmRestore = (filename) => {
+        if (confirm(`Restore backup "${filename}"? Server will restart.`)) {
+            fetch('/api/backups/restore', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filename })
+            }).then(() => {
+                alert('Restore complete. Page will refresh shortly.');
+                setTimeout(() => window.location.reload(), 3000);
+            });
         }
+    };
+
+    window.deleteBackup = async (filename) => {
+        if (confirm('Delete this backup?')) {
+            await fetch(`/api/backups/${filename}`, { method: 'DELETE' });
+            location.reload(); // Simple refresh for mobile
+        }
+    };
+
+    function confirmReset() {
+        document.getElementById('confirm-reset-modal').classList.remove('hidden');
     }
 </script>
 </body>
