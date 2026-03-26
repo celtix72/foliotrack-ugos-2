@@ -879,6 +879,10 @@
         const stopLoss = h.stopLoss || 0;
         const targetReached = targetPrice > 0 && price >= targetPrice;
         const stopLossHit = stopLoss > 0 && price <= stopLoss;
+
+        const dvVal = h.changeValue || 0;
+        const dvPct = h.changePercent || 0;
+        const dvIsPos = dvVal >= 0;
         
         const alertBg = targetReached ? 'background:rgba(16,185,129,0.15)' : (stopLossHit ? 'background:rgba(244,63,94,0.15)' : '');
         const alertBorder = targetReached ? 'border:1px solid rgba(16,185,129,0.3)' : (stopLossHit ? 'border:1px solid rgba(244,63,94,0.3)' : '');
@@ -910,11 +914,16 @@
             <div class="mob-holding-item" style="${alertBg}; ${alertBorder}" onclick="openAssetChartModal('${h.ticker}', '${(h.name || '').replace(/'/g, "\\'")}', '${currency}')">
               <div class="mob-holding-logo">${letters}</div>
               <div class="mob-holding-info">
-                <div class="mob-holding-ticker">${h.ticker}</div>
+                <div class="flex items-center gap-2">
+                  <div class="mob-holding-ticker">${h.ticker}</div>
+                  <div class="text-[10px] font-black ${dvIsPos ? 'text-emerald-500' : 'text-rose-500'} flex items-center gap-0.5">
+                    ${dvIsPos ? '▲' : '▼'}${Math.abs(dvPct).toFixed(2)}% (${dvIsPos ? '+' : ''}${dvVal.toFixed(2)})
+                  </div>
+                </div>
                 <div class="mob-holding-name">${h.name || ''}</div>
                 <div style="display:flex; gap:8px; margin-top:4px">
-                  ${targetPrice > 0 ? `<div style="font-size:10px; font-weight:900; color:${targetReached?'var(--mob-emerald)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">target</span> TP: ${formatCurrency(targetPrice, h.currency)}</div>` : ''}
-                  ${stopLoss > 0 ? `<div style="font-size:10px; font-weight:900; color:${stopLossHit?'var(--mob-rose)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">warning</span> SL: ${formatCurrency(stopLoss, h.currency)}</div>` : ''}
+                  ${targetPrice > 0 ? `<div style="font-size:10px; font-weight:900; color:${targetReached?'var(--mob-emerald)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">target</span> TP: ${formatCurrency(targetPrice, h.currency, 2)}</div>` : ''}
+                  ${stopLoss > 0 ? `<div style="font-size:10px; font-weight:900; color:${stopLossHit?'var(--mob-rose)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">warning</span> SL: ${formatCurrency(stopLoss, h.currency, 2)}</div>` : ''}
                 </div>
               </div>
               <div class="mob-holding-values">
