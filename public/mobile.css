@@ -1330,7 +1330,7 @@ html:not(.dark) .mobile-view-active .mob-hero.fiscal {
 }
 
 .mob-ios-grouped .mob-holding-item {
-  background: transparent !important;
+  background: var(--mob-surface) !important;
   border: none !important;
   border-radius: 0 !important;
 }
