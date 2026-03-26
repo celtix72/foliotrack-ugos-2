@@ -3685,10 +3685,10 @@ async function updateMarketData(force = false) {
                         database.db.prepare(`
                             INSERT INTO notifications (type, title, message, ticker)
                             VALUES (?, ?, ?, ?)
-                        `).run('TARGET', 'Target Raggiunto', `${asset.ticker}: ${newPrice} (Target: ${asset.targetPrice})`, asset.ticker);
+                        `).run('TARGET_PROFIT', 'TARGET PROFIT', `${asset.ticker}: ${newPrice} (Target TP: ${asset.targetPrice})`, asset.ticker);
                         
                         // Telegram Notification
-                        const msg = `🎯 *TARGET RAGGIUNTO*\n\n*Titolo:* ${asset.ticker}\n*Prezzo Attuale:* ${newPrice}\n*Target:* ${asset.targetPrice}`;
+                        const msg = `🏆 *TARGET PROFIT*\n\n*Titolo:* ${asset.ticker}\n*Prezzo Attuale:* ${newPrice}\n*Target TP:* ${asset.targetPrice}`;
                         sendTelegramMessage(msg).catch(e => logger.error('Telegram Target Alert failed', e));
                     }
                 }
@@ -3701,7 +3701,7 @@ async function updateMarketData(force = false) {
                         database.db.prepare(`
                             INSERT INTO notifications (type, title, message, ticker)
                             VALUES (?, ?, ?, ?)
-                        `).run('STOP', 'Stop Loss', `${asset.ticker}: ${newPrice} (Soglia: ${asset.stopLoss})`, asset.ticker);
+                        `).run('STOP_LOSS', 'STOP LOSS', `${asset.ticker}: ${newPrice} (Soglia SL: ${asset.stopLoss})`, asset.ticker);
                         
                         // Telegram Notification
                         const msg = `⚠️ *STOP LOSS*\n\n*Titolo:* ${asset.ticker}\n*Prezzo Attuale:* ${newPrice}\n*Soglia SL:* ${asset.stopLoss}`;
