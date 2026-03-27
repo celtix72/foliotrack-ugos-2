@@ -114,22 +114,48 @@ async function sendTelegramMessage(text) {
     });
 }
 
+function getNetDeposits(portfolioId) {
+    const row = database.db.prepare(`
+        SELECT 
+            SUM(CASE WHEN type IN ('DEPOSIT', 'BUY') THEN amount ELSE 0 END) -
+            SUM(CASE WHEN type IN ('WITHDRAWAL', 'TRANSFER', 'SELL') THEN amount ELSE 0 END) as net
+        FROM transactions 
+        WHERE portfolioId = ?
+    `).get(portfolioId);
+    // Note: BUY/SELL amount already includes commissions/taxes if 'amount' is set, 
+    // but here we want to know how much cash the user PUT IN vs TOOK OUT.
+    // Actually simpler: Net Deposits = SUM(DEPOSIT) - SUM(WITHDRAWAL/TRANSFER)
+    const simpleNet = database.db.prepare(`
+        SELECT 
+            SUM(CASE WHEN type = 'DEPOSIT' THEN amount ELSE 0 END) -
+            SUM(CASE WHEN type IN ('WITHDRAWAL', 'TRANSFER') THEN amount ELSE 0 END) as net
+        FROM transactions 
+        WHERE portfolioId = ?
+    `).get(portfolioId);
+    return simpleNet ? (simpleNet.net || 0) : 0;
+}
+
 async function sendMarketStatusTelegram() {
-    const portfolios = database.db.prepare('SELECT name, totalValue, performance1D, currency FROM portfolios').all();
+    const portfolios = database.db.prepare('SELECT id, name, totalValue, performance1D, currency FROM portfolios').all();
     const liveRate = await getEurUsdRate();
     
     let totalValEUR = 0;
+    let totalNetValueEUR = 0;
     let totalVarEUR = 0;
     let positivePortfolios = [];
     
     for (const p of portfolios) {
         let val = p.totalValue || 0;
         let var1D = p.performance1D || 0;
+        let netDep = getNetDeposits(p.id);
+        
         if (p.currency === 'USD' && liveRate > 0) {
             val /= liveRate;
             var1D /= liveRate;
+            netDep /= liveRate;
         }
         totalValEUR += val;
+        totalNetValueEUR += (val - netDep);
         totalVarEUR += var1D;
         
         if (var1D > 0) {
@@ -140,11 +166,18 @@ async function sendMarketStatusTelegram() {
     const fmt = (val) => {
         const rounded = Math.round(val);
         const sign = rounded > 0 ? '+' : '';
-        return `€ ${sign}${rounded.toLocaleString('it-IT', { maximumFractionDigits: 0 })}`;
+        return `€ ${sign}${rounded.toLocaleString('it-IT')}`;
+    };
+
+    const fmtVal = (val, pad = 8) => {
+        const rounded = Math.round(val);
+        const sign = rounded >= 0 ? '+' : '-';
+        const absVal = Math.abs(rounded).toLocaleString('it-IT');
+        return `${sign}${absVal}`.padStart(pad);
     };
 
     let msg = `📊 *STATO MERCATI*\n\n`;
-    msg += `💰 *Netto:* ${fmt(totalValEUR).replace('+', '')}\n`;
+    msg += `💰 *Netto:* ${fmt(totalNetValueEUR).replace('+', '')}\n`;
     const varEmoji = totalVarEUR >= 0 ? '📈' : '📉';
     msg += `${varEmoji} *Var. 1D:* ${fmt(totalVarEUR).replace(' € ', ' ')}\n\n`;
     
@@ -157,7 +190,6 @@ async function sendMarketStatusTelegram() {
     }
 
     const today = new Date().toISOString().split('T')[0];
-    // Top Movers only from open positions
     const movers = database.db.prepare(`
         SELECT a.*, h.balance
         FROM assets a
@@ -182,14 +214,14 @@ async function sendMarketStatusTelegram() {
             const mktVal = Math.round(m.currentPrice * m.balance);
             const cSym = m.currency === 'USD' ? '$' : (m.currency === 'EUR' ? '€' : m.currency);
             
-            const mktValStr = `${cSym}${mktVal}`.padStart(7);
-            const valChg = Math.round(m.changeValue * m.balance);
-            const valChgStr = (valChg >= 0 ? '+' : '') + valChg.toString().padStart(valChg >= 0 ? 6 : 7);
-            const pctChgStr = (m.changePercent >= 0 ? '+' : '') + m.changePercent.toFixed(1).padStart(5) + '%';
+            const mktValStr = `${cSym}${mktVal.toLocaleString('it-IT')}`.padStart(7);
+            const valChgStr = fmtVal(m.changeValue * m.balance, 7);
+            const pSign = m.changePercent >= 0 ? '+' : '-';
+            const pVal = Math.abs(m.changePercent).toFixed(1);
+            const pctChgStr = `${pSign}${pVal}%`.padStart(7);
             const endIcon = m.changeValue === 0 ? '⚪' : (m.changeValue > 0 ? '🟢' : '🔴');
             
-            // Format: icon `symbol` `marketValue` `valChange` `pctChange` endIcon
-            msg += `🔵 \`${sym}\` \`${mktValStr}\` \`${valChgStr.padStart(8)}\` \`${pctChgStr.padStart(8)}\` ${endIcon}\n`;
+            msg += `🔵 \`${sym}\` \`${mktValStr}\` \`${valChgStr}\` \`${pctChgStr}\` ${endIcon}\n`;
         }
     }
     
@@ -213,31 +245,36 @@ async function sendTelegramDailyReport() {
             HAVING totalQty > 0.0001
         `).all();
 
-        const portfolios = database.db.prepare('SELECT totalValue, performance1D, currency FROM portfolios').all();
+        const portfolios = database.db.prepare('SELECT id, totalValue, performance1D, currency FROM portfolios').all();
         let totalValEUR = 0;
+        let totalNetValueEUR = 0;
         let totalVarEUR = 0;
         for (const p of portfolios) {
             let val = p.totalValue || 0;
             let var1D = p.performance1D || 0;
+            let netDep = getNetDeposits(p.id);
+
             if (p.currency === 'USD' && liveRate > 0) {
                 val /= liveRate;
                 var1D /= liveRate;
+                netDep /= liveRate;
             }
             totalValEUR += val;
+            totalNetValueEUR += (val - netDep);
             totalVarEUR += var1D;
         }
 
         const fmt = (val) => {
             const rounded = Math.round(val);
             const sign = rounded > 0 ? '+' : '';
-            return `€ ${sign}${rounded.toLocaleString('it-IT', { maximumFractionDigits: 0 })}`;
+            return `€ ${sign}${rounded.toLocaleString('it-IT')}`;
         };
 
-        const fmtVal = (val, pad = 6) => {
+        const fmtVal = (val, pad = 7) => {
             const rounded = Math.round(val);
-            const sign = rounded > 0 ? '+' : (rounded < 0 ? '-' : ' ');
+            const sign = rounded >= 0 ? '+' : '-';
             const absVal = Math.abs(rounded).toLocaleString('it-IT');
-            return `${sign}${absVal.padStart(pad)}`;
+            return `${sign}${absVal}`.padStart(pad);
         };
 
         const extractSimpleSymbol = (s) => s.split('.')[0].split(':')[0];
@@ -291,7 +328,7 @@ async function sendTelegramDailyReport() {
         };
 
         let msg = `📊 *REPORT DAY*\n\n`;
-        msg += `💰 *Netto:* ${fmt(totalValEUR).replace('+', '')}\n`;
+        msg += `💰 *Netto:* ${fmt(totalNetValueEUR).replace('+', '')}\n`;
         msg += `${getDynamicEmoji(totalVarEUR)} *Var. 1D:* ${fmt(totalVarEUR).replace(' € ', ' ')}\n\n`;
 
         for (const [name, cat] of Object.entries(categories)) {
@@ -308,11 +345,13 @@ async function sendTelegramDailyReport() {
                 const cSym = a.currency === 'USD' ? '$' : (a.currency === 'EUR' ? '€' : a.currency);
                 
                 const mktValStr = `${cSym}${mktVal.toLocaleString('it-IT')}`.padStart(7);
-                const valChgStr = fmtVal(a.changeValue * a.totalQty, 6);
-                const pctChgStr = (a.changePercent >= 0 ? '+' : '') + a.changePercent.toFixed(1).padStart(5) + '%';
+                const valChgStr = fmtVal(a.changeValue * a.totalQty, 7);
+                const pSign = a.changePercent >= 0 ? '+' : '-';
+                const pVal = Math.abs(a.changePercent).toFixed(1);
+                const pctChgStr = `${pSign}${pVal}%`.padStart(7);
                 const endIcon = a.changeValue === 0 ? '⚪' : (a.changeValue > 0 ? '🟢' : '🔴');
                 
-                msg += `${cat.emoji} \`${sym}\` \`${mktValStr}\` \`${valChgStr}\` \`${pctChgStr.padStart(8)}\` ${endIcon}\n`;
+                msg += `${cat.emoji} \`${sym}\` \`${mktValStr}\` \`${valChgStr}\` \`${pctChgStr}\` ${endIcon}\n`;
             }
             msg += '\n';
         }
