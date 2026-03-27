@@ -140,22 +140,18 @@ async function sendMarketStatusTelegram() {
     const liveRate = await getEurUsdRate();
     
     let totalValEUR = 0;
-    let totalNetValueEUR = 0;
     let totalVarEUR = 0;
     let positivePortfolios = [];
     
     for (const p of portfolios) {
         let val = p.totalValue || 0;
         let var1D = p.performance1D || 0;
-        let netDep = getNetDeposits(p.id);
         
         if (p.currency === 'USD' && liveRate > 0) {
             val /= liveRate;
             var1D /= liveRate;
-            netDep /= liveRate;
         }
         totalValEUR += val;
-        totalNetValueEUR += (val - netDep);
         totalVarEUR += var1D;
         
         if (var1D > 0) {
@@ -177,7 +173,7 @@ async function sendMarketStatusTelegram() {
     };
 
     let msg = `📊 *STATO MERCATI*\n\n`;
-    msg += `💰 *Netto:* ${fmt(totalNetValueEUR).replace('+', '')}\n`;
+    msg += `💰 *Netto:* ${fmt(totalValEUR).replace('+', '')}\n`;
     const varEmoji = totalVarEUR >= 0 ? '📈' : '📉';
     msg += `${varEmoji} *Var. 1D:* ${fmt(totalVarEUR).replace(' € ', ' ')}\n\n`;
     
@@ -247,20 +243,16 @@ async function sendTelegramDailyReport() {
 
         const portfolios = database.db.prepare('SELECT id, totalValue, performance1D, currency FROM portfolios').all();
         let totalValEUR = 0;
-        let totalNetValueEUR = 0;
         let totalVarEUR = 0;
         for (const p of portfolios) {
             let val = p.totalValue || 0;
             let var1D = p.performance1D || 0;
-            let netDep = getNetDeposits(p.id);
 
             if (p.currency === 'USD' && liveRate > 0) {
                 val /= liveRate;
                 var1D /= liveRate;
-                netDep /= liveRate;
             }
             totalValEUR += val;
-            totalNetValueEUR += (val - netDep);
             totalVarEUR += var1D;
         }
 
@@ -328,7 +320,7 @@ async function sendTelegramDailyReport() {
         };
 
         let msg = `📊 *REPORT DAY*\n\n`;
-        msg += `💰 *Netto:* ${fmt(totalNetValueEUR).replace('+', '')}\n`;
+        msg += `💰 *Netto:* ${fmt(totalValEUR).replace('+', '')}\n`;
         msg += `${getDynamicEmoji(totalVarEUR)} *Var. 1D:* ${fmt(totalVarEUR).replace(' € ', ' ')}\n\n`;
 
         for (const [name, cat] of Object.entries(categories)) {
@@ -3784,7 +3776,7 @@ async function updateMarketData(force = false) {
                 if (asset.targetPrice > 0 && newPrice >= asset.targetPrice) {
                     const existing = database.db.prepare(`
                         SELECT id FROM notifications 
-                        WHERE ticker = ? AND type = 'TARGET' AND date > datetime('now','-1 day')
+                        WHERE ticker = ? AND type = 'TARGET_PROFIT' AND date(date) = date('now')
                     `).get(asset.ticker);
                     if (!existing) {
                         database.db.prepare(`
@@ -3800,7 +3792,7 @@ async function updateMarketData(force = false) {
                 if (asset.stopLoss > 0 && newPrice <= asset.stopLoss) {
                     const existing = database.db.prepare(`
                         SELECT id FROM notifications 
-                        WHERE ticker = ? AND type = 'STOP' AND date > datetime('now','-1 day')
+                        WHERE ticker = ? AND type = 'STOP_LOSS' AND date(date) = date('now')
                     `).get(asset.ticker);
                     if (!existing) {
                         database.db.prepare(`
