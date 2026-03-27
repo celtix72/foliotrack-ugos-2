@@ -11,9 +11,10 @@
     <link rel="stylesheet" href="/dist/output.css">
     <link rel="stylesheet" href="/mobile.css">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/theme.js"></script>
 </head>
-<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex mobile-view-active">
+<body class="bg-background-light dark:bg-[#0b0f1a] text-slate-900 dark:text-slate-100 min-h-screen flex mobile-view-active">
     <div id="mobile-ui">
         <!-- ── Mobile Header ── -->
         <div class="mob-header">
@@ -35,24 +36,58 @@
             </div>
         </div>
 
-        <div class="mob-scroll">
-            <!-- Hero Stats -->
+        <div class="mob-scroll" id="mob-dividend-scroll">
+            
+            <!-- Hero Stats: KPIs -->
             <div class="mob-hero">
-                <div class="mob-hero-label">Totale Dividendi</div>
-                <div class="mob-hero-value" id="mob-total-dividends">€ 0.00</div>
-                <div class="text-[11px] font-black uppercase tracking-widest text-slate-500 opacity-60">Rendita passiva totale</div>
-            </div>
-
-            <!-- Filters -->
-            <div style="padding: 0 20px 16px;">
-                <div class="flex items-center gap-3 bg-white dark:bg-slate-900/50 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <span class="material-symbols-outlined text-slate-400 text-lg">search</span>
-                    <input type="text" id="mob-div-search" placeholder="Cerca titolo..." 
-                        class="flex-1 bg-transparent border-none p-0 text-sm focus:ring-0 font-bold"
-                        oninput="renderMobDividends()">
+                <div class="mob-hero-label">Ricevuto nel <span id="mob-current-year">2025</span></div>
+                <div class="mob-hero-value" id="mob-total-actual">€ 0.00</div>
+                
+                <div class="grid grid-cols-2 gap-4 mt-6">
+                    <div class="mob-hero-stat-item !p-2 !bg-white/5 border-0">
+                        <span class="mob-hero-stat-label">Proiezione Totale</span>
+                        <div id="mob-total-projected" class="text-blue-400 font-bold">€ 0.00</div>
+                    </div>
+                    <div class="mob-hero-stat-item !p-2 !bg-white/5 border-0">
+                        <span class="mob-hero-stat-label">Residuo Atteso</span>
+                        <div id="mob-total-remaining" class="text-amber-400 font-bold">€ 0.00</div>
+                    </div>
                 </div>
             </div>
 
+            <!-- Distribution Chart Card -->
+            <div class="mob-chart-card">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <div class="mob-chart-title" style="margin-bottom:0">Distribuzione</div>
+                        <div class="mob-chart-subtitle" style="margin-bottom:0">Proiezioni mensili</div>
+                    </div>
+                </div>
+                <div class="relative h-64">
+                    <canvas id="mob-projection-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Projected Assets (Collapsible) -->
+            <div class="px-5 mb-6">
+                <div class="bg-white dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                    <button onclick="document.getElementById('mob-proj-list-content').classList.toggle('hidden')"
+                            class="w-full flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                        <div class="flex items-center gap-2">
+                             <span class="text-[11px] font-black uppercase tracking-widest text-slate-500">Dettaglio Proiezioni</span>
+                             <span id="mob-proj-asset-count" class="text-[10px] font-bold text-primary bg-primary/10 px-1.5 rounded-sm">0</span>
+                        </div>
+                        <span class="material-symbols-outlined text-slate-400">expand_more</span>
+                    </button>
+                    <div id="mob-proj-list-content" class="hidden">
+                        <div id="mob-proj-body" class="divide-y divide-slate-100 dark:divide-slate-800/30">
+                            <!-- JS Injected -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters & History Section -->
             <div class="mob-section-header">
                 <span class="mob-section-title">Storico Pagamenti</span>
                 <select id="mob-div-group-by" onchange="renderMobDividends()" 
@@ -63,13 +98,22 @@
                 </select>
             </div>
 
+            <div style="padding: 0 20px 16px;">
+                <div class="flex items-center gap-3 bg-white dark:bg-slate-900/50 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <span class="material-symbols-outlined text-slate-400 text-lg">search</span>
+                    <input type="text" id="mob-div-search" placeholder="Cerca titolo..." 
+                        class="flex-1 bg-transparent border-none p-0 text-sm focus:ring-0 font-bold"
+                        oninput="renderMobDividends()">
+                </div>
+            </div>
+
             <div id="mob-dividends-list" class="space-y-1">
                 <div style="text-align:center;padding:48px">
                     <div class="mob-spinner" style="margin:0 auto"></div>
                 </div>
             </div>
 
-            <div style="height:40px"></div>
+            <div style="height:60px"></div>
         </div>
 
         <!-- ── Bottom Tab Bar ── -->
@@ -83,33 +127,156 @@
             <a href="/history" class="mob-tab-item">
                 <span class="material-symbols-outlined">history</span>
             </a>
+            <a href="/dividend" class="mob-tab-item active">
+                <span class="material-symbols-outlined">payments</span>
+            </a>
             <a href="/reports" class="mob-tab-item">
                 <span class="material-symbols-outlined">pie_chart</span>
             </a>
         </div>
     </div>
 
-    <script shadow>
+    <script>
         (function() {
             let rawDivData = [];
             let collapsedGroups = new Set();
             let currentGroupBy = 'year';
+            let mobProjChart = null;
 
-            async function loadMobDividends() {
+            async function loadMobData() {
                 try {
-                    const res = await fetch('/api/analytics/dividends');
-                    rawDivData = await res.json();
+                    // Load Projections
+                    const projRes = await fetch('/api/analytics/dividend-projections');
+                    const projData = await projRes.json();
                     
-                    const total = rawDivData.reduce((sum, d) => sum + d.amount, 0);
-                    const totalEl = document.getElementById('mob-total-dividends');
-                    if (totalEl) totalEl.innerText = formatCurrency(total, 'EUR');
+                    document.getElementById('mob-current-year').innerText = projData.year;
+                    document.getElementById('mob-total-actual').innerText = formatCurrency(projData.totalActual, 'EUR');
+                    document.getElementById('mob-total-projected').innerText = formatCurrency(projData.totalProjected, 'EUR');
+                    document.getElementById('mob-total-remaining').innerText = formatCurrency(Math.max(0, projData.totalProjected - projData.totalActual), 'EUR');
 
+                    renderMobProjectionChart(projData.months);
+                    renderMobProjList(projData.assets);
+
+                    // Load History
+                    const histRes = await fetch('/api/analytics/dividends');
+                    rawDivData = await histRes.json();
+                    
                     const currentYear = new Date().getFullYear().toString();
                     const years = [...new Set(rawDivData.map(d => d.date.split('-')[0]))];
                     collapsedGroups = new Set(years.filter(y => y !== currentYear));
 
                     renderMobDividends();
-                } catch (err) { console.error('Error loading dividends:', err); }
+                } catch (err) { console.error('Error loading mobile dividends data:', err); }
+            }
+
+            function renderMobProjectionChart(months) {
+                const ctx = document.getElementById('mob-projection-chart').getContext('2d');
+                if (mobProjChart) mobProjChart.destroy();
+
+                const isDark = document.documentElement.classList.contains('dark');
+                const textColor = isDark ? '#94a3b8' : '#64748b';
+                const gridColor = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)';
+
+                mobProjChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: months.map(m => m.name),
+                        datasets: [
+                            {
+                                label: 'Ricevuto',
+                                data: months.map(m => m.actual),
+                                backgroundColor: '#10b981',
+                                borderRadius: 4,
+                                borderSkipped: false
+                            },
+                            {
+                                label: 'Proiettato',
+                                data: months.map(m => m.display),
+                                backgroundColor: isDark ? '#3b82f6' : '#60a5fa',
+                                borderRadius: 4,
+                                borderSkipped: false
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        layout: { padding: { top: 25 } },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { 
+                                intersect: false, 
+                                mode: 'index',
+                                backgroundColor: isDark ? '#1e293b' : '#fff',
+                                titleColor: isDark ? '#f1f5f9' : '#1e293b',
+                                bodyColor: isDark ? '#f1f5f9' : '#1e293b',
+                                borderColor: isDark ? '#334155' : '#e2e8f0',
+                                borderWidth: 1
+                            }
+                        },
+                        scales: {
+                            x: { 
+                                stacked: true, 
+                                grid: { display: false }, 
+                                ticks: { color: textColor, font: { size: 9, weight: 'bold' } } 
+                            },
+                            y: { 
+                                stacked: true, 
+                                grid: { color: gridColor }, 
+                                ticks: { color: textColor, font: { size: 9 }, callback: v => '€' + v } 
+                            }
+                        }
+                    },
+                    plugins: [{
+                        id: 'barLabels',
+                        afterDatasetsDraw(chart) {
+                            const {ctx} = chart;
+                            ctx.save();
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'bottom';
+                            ctx.font = 'bold 8px sans-serif';
+                            ctx.fillStyle = textColor;
+
+                            const chartData = chart.data;
+                            const meta0 = chart.getDatasetMeta(0);
+                            const meta1 = chart.getDatasetMeta(1);
+
+                            chartData.labels.forEach((label, i) => {
+                                const val0 = chartData.datasets[0].data[i] || 0;
+                                const val1 = chartData.datasets[1].data[i] || 0;
+                                const total = val0 + val1;
+                                
+                                if (total > 0) {
+                                    const topY = Math.min(meta0.data[i].y, meta1.data[i].y);
+                                    ctx.fillText('€' + Math.round(total), meta0.data[i].x, topY - 5);
+                                }
+                            });
+                            ctx.restore();
+                        }
+                    }]
+                });
+            }
+
+            function renderMobProjList(assets) {
+                const countEl = document.getElementById('mob-proj-asset-count');
+                const bodyEl = document.getElementById('mob-proj-body');
+                
+                countEl.innerText = assets.length;
+                bodyEl.innerHTML = assets.map(a => `
+                    <div class="p-4 flex flex-col gap-1">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[13px] font-black">${a.ticker}</span>
+                            <span class="text-[13px] font-black text-blue-400">€ ${Math.round(a.annualProjected).toLocaleString('it-IT')}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-[10px] font-bold opacity-60">
+                            <span class="truncate pr-4">${a.name || ''}</span>
+                            <div class="flex items-center gap-3">
+                                <span class="text-slate-500">${(a.yield * 100).toFixed(2)}% RESA</span>
+                                <span class="text-amber-500">${a.nextDate || '—'}</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
             }
 
             window.toggleMobGroup = (key) => {
@@ -120,16 +287,16 @@
 
             window.renderMobDividends = () => {
                 const container = document.getElementById('mob-dividends-list');
-                const searchTerm = document.getElementById('mob-div-search').value.toLowerCase();
-                const groupBy = document.getElementById('mob-div-group-by').value;
+                const searchEl = document.getElementById('mob-div-search');
+                const groupByEl = document.getElementById('mob-div-group-by');
+                if (!container || !searchEl || !groupByEl) return;
+
+                const searchTerm = searchEl.value.toLowerCase();
+                const groupBy = groupByEl.value;
 
                 if (groupBy !== currentGroupBy) {
                     collapsedGroups = new Set();
                     currentGroupBy = groupBy;
-                    if (groupBy === 'year') {
-                        const years = [...new Set(rawDivData.map(d => d.date.split('-')[0]))];
-                        collapsedGroups = new Set(years);
-                    }
                 }
 
                 let filtered = rawDivData.filter(d => {
@@ -162,21 +329,22 @@
                         return a.localeCompare(b);
                     });
 
-                    let html = '';
-                    keys.forEach(key => {
+                    container.innerHTML = keys.map(key => {
                         const group = groups[key];
                         const isCollapsed = collapsedGroups.has(key);
-                        html += `
+                        return `
                             <div class="mob-section-header" style="margin-top:12px;" onclick="toggleMobGroup('${key}')">
                                 <span class="text-[11px] font-black uppercase tracking-widest text-slate-500">${key}</span>
-                                <span class="text-[11px] font-black text-emerald-500">${formatCurrency(group.total, 'EUR')}</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-[11px] font-black text-emerald-500">${formatCurrency(group.total, 'EUR')}</span>
+                                    <span class="material-symbols-outlined text-sm opacity-30">${isCollapsed ? 'expand_more' : 'expand_less'}</span>
+                                </div>
                             </div>
                             <div class="mob-ios-grouped" style="${isCollapsed ? 'display:none' : ''}">
                                 ${group.items.sort((a,b) => new Date(b.date) - new Date(a.date)).map(d => renderMobRow(d)).join('')}
                             </div>
                         `;
-                    });
-                    container.innerHTML = html;
+                    }).join('');
                 }
             }
 
@@ -194,7 +362,8 @@
                 `;
             }
 
-            document.addEventListener('DOMContentLoaded', loadMobDividends);
+            document.addEventListener('DOMContentLoaded', loadMobData);
+            window.addEventListener('mobile-view-activated', loadMobData);
         })();
     </script>
 </body>
