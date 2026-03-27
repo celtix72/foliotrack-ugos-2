@@ -3154,7 +3154,7 @@ app.get('/api/analytics/dividend-projections', async (req, res) => {
 
         // Step 2: All DIVIDEND transactions for all portfolios
         const allDivTx = database.db.prepare(`
-            SELECT t.assetTicker as ticker, t.date, t.amount, t.quantity, t.price, t.exchangeRate,
+            SELECT t.assetTicker as ticker, t.date, t.amount, t.quantity, t.price, t.tax, t.exchangeRate,
                    p.currency as portCurrency
             FROM transactions t
             JOIN portfolios p ON t.portfolioId = p.id
@@ -3174,7 +3174,7 @@ app.get('/api/analytics/dividend-projections', async (req, res) => {
         const actualByAsset = {};
         allDivTx.filter(d => d.date.startsWith(currentYear.toString())).forEach(d => {
             const month = parseInt(d.date.split('-')[1]) - 1;
-            const amtEUR = toEUR(d.amount || (d.quantity * d.price), d.portCurrency, d.exchangeRate);
+            const amtEUR = toEUR(d.amount || (d.quantity * d.price - (d.tax || 0)), d.portCurrency, d.exchangeRate);
             actualByMonth[month] += amtEUR;
             if (!actualByAsset[d.ticker]) actualByAsset[d.ticker] = 0;
             actualByAsset[d.ticker] += amtEUR;
@@ -3198,7 +3198,7 @@ app.get('/api/analytics/dividend-projections', async (req, res) => {
                 if (lastYearDivs.length > 0) {
                     lastYearDivs.forEach(d => {
                         const month = parseInt(d.date.split('-')[1]) - 1;
-                        const amtEUR = toEUR(d.amount || (d.quantity * d.price), d.portCurrency, d.exchangeRate);
+                        const amtEUR = toEUR(d.amount || (d.quantity * d.price - (d.tax || 0)), d.portCurrency, d.exchangeRate);
                         projMonths[month] += amtEUR;
                     });
                     method = 'last_year';
@@ -3251,7 +3251,7 @@ app.get('/api/analytics/dividend-projections', async (req, res) => {
                     if (lastYearDivs.length > 0) {
                         lastYearDivs.forEach(d => {
                             const month = parseInt(d.date.split('-')[1]) - 1;
-                            const amtEUR = toEUR(d.amount || (d.quantity * d.price), d.portCurrency, d.exchangeRate);
+                            const amtEUR = toEUR(d.amount || (d.quantity * d.price - (d.tax || 0)), d.portCurrency, d.exchangeRate);
                             projMonths[month] += amtEUR;
                         });
                         method = 'last_year';

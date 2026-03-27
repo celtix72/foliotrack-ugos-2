@@ -1130,7 +1130,14 @@
                                     const isDebit = ['BUY', 'TAX'].includes(t.type);
                                     const tColor = isDebit ? 'rose' : 'emerald';
                                     const tSign = isDebit ? '-' : '+';
-                                    const total = t.amount || (t.quantity * t.price + t.commission + t.tax) / t.exchangeRate;
+                                    let total = t.amount;
+                                    if (!total && t.quantity && t.price) {
+                                        if (t.type === 'DIVIDEND') {
+                                            total = (t.quantity * t.price - t.commission - t.tax) / (t.exchangeRate || 1);
+                                        } else {
+                                            total = (t.quantity * t.price + t.commission + t.tax) / (t.exchangeRate || 1);
+                                        }
+                                    }
                                     return `
                                         <tr class="text-slate-600 dark:text-slate-400">
                                             <td class="px-4 py-2 font-mono text-[10px]">${t.date}</td>
@@ -1212,8 +1219,12 @@
             const isCash = ['DEPOSIT', 'WITHDRAWAL', 'TAX', 'TRANSFER', 'DIVIDEND'].includes(t.type);
             
             let total = t.amount;
-            if (!isCash) {
-                total = (t.quantity * t.price + t.commission + t.tax) / t.exchangeRate;
+            if (!total && t.quantity && t.price) {
+                if (t.type === 'DIVIDEND') {
+                    total = (t.quantity * t.price - (t.commission || 0) - (t.tax || 0)) / (t.exchangeRate || 1);
+                } else if (!isCash) {
+                    total = (t.quantity * t.price + (t.commission || 0) + (t.tax || 0)) / (t.exchangeRate || 1);
+                }
             }
 
             const asset = holdings?.find(hold => hold.ticker === t.assetTicker);
@@ -2290,9 +2301,9 @@
                 price:        price,
                 quantity:     qty,
                 commission:   comm,
-                // Improved valEur for DIVIDEND: take the first non-zero value among amount, cols[13], cols[10], cols[7]
+                // Improved valEur for DIVIDEND: prioritize Amount/Total columns (10 or 13) over Quantity (8)
                 valEur:       (type === 'DIVIDEND') 
-                                ? (parseNum(cols[8]) || parseNum(cols[7]) || parseNum(cols[10]) || parseNum(cols[13])) 
+                                ? (parseNum(cols[10]) || parseNum(cols[13]) || (parseNum(cols[8]) * parseNum(cols[7]) - parseNum(cols[11]))) 
                                 : (amount || parseNum(cols[10])),
                 tax:          tax,
                 status:       'pending',
@@ -2425,7 +2436,7 @@
                 <td class="px-3 py-2.5 text-right font-mono">${formatNumber(r.quantity, 0)}</td>
                 <td class="px-3 py-2.5 text-right text-slate-500">${r.commission}</td>
                 <td class="px-3 py-2.5 text-right text-slate-500">${r.tax}</td>
-                <td class="px-3 py-2.5 text-right font-bold text-emerald-600">${formatNumber(r.valEur, 0)}</td>
+                <td class="px-3 py-2.5 text-right font-bold text-emerald-600">${formatNumber(r.valEur, 2)}</td>
             </tr>`;
         }).join('');
 

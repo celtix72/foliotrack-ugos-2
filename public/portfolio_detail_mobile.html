@@ -970,6 +970,15 @@
         const col = typeColors[t.type] || 'var(--mob-text)';
         const icon = typeIcons[t.type] || 'receipt';
         const date = new Date(t.date).toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit', year:'2-digit' });
+        let total = t.amount;
+        if (!total && t.quantity && t.price) {
+          if (t.type === 'DIVIDEND') {
+            total = (t.quantity * t.price - (t.commission || 0) - (t.tax || 0)) / (t.exchangeRate || 1);
+          } else if (!['DEPOSIT','WITHDRAWAL','TAX','TRANSFER'].includes(t.type)) {
+            total = (t.quantity * t.price + (t.commission || 0) + (t.tax || 0)) / (t.exchangeRate || 1);
+          }
+        }
+        const tSign = ['BUY', 'WITHDRAWAL', 'TAX', 'TRANSFER'].includes(t.type) ? '-' : '+';
         return `
           <div class="mob-holding-swipe-container" 
                ontouchstart="handleTouchStart(event, this)" 
@@ -1004,7 +1013,7 @@
                 <div class="mob-holding-qty">${date}</div>
               </div>
               <div class="mob-holding-values">
-                <div class="mob-holding-value">${formatPrivacy(t.total || t.amount || 0, currency, 'mob-tx-'+t.id)}</div>
+                <div class="mob-holding-value">${tSign}${formatPrivacy(total || 0, currency, 'mob-tx-'+t.id)}</div>
                 <div style="font-size:10px;color:var(--mob-text-caption)">${t.quantity ? 'x'+formatNumber(t.quantity,2) : ''}</div>
               </div>
             </div>
