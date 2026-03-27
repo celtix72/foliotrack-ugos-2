@@ -581,6 +581,10 @@
   let mobDetailChart = null;
   let mobDetailRange = '1M';
   let mobCurrentPortfolioId = null;
+  let currentHoldings = [];
+  let currentTransactions = [];
+  let portfolioCurrency = 'EUR';
+  let pendingDeleteAction = null;
 
   function mobSyncPrivacyIcon() {
     const icon = document.getElementById('mob-privacy-icon');
@@ -1180,9 +1184,401 @@
     if (!keepFilter) mobResetTxFilter();
   };
 
+  // ── Ported Transaction Logic ──
+  window.openTransactionModal = function() {
+    document.getElementById('t-id').value = '';
+    document.getElementById('t-modal-title').innerText = "New Transaction";
+    document.getElementById('transaction-form').reset();
+    const modal = document.getElementById('transaction-modal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.style.display = 'flex';
+      modal.style.zIndex = '9999';
+    }
+    document.getElementById('t-date').value = new Date().toISOString().split('T')[0];
+    toggleTransactionFields();
+  };
+
+  window.closeTransactionModal = function() {
+    const modal = document.getElementById('transaction-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.style.display = 'none';
+    }
+    document.getElementById('transaction-form').reset();
+    if (document.getElementById('t-fx-field')) document.getElementById('t-fx-field').classList.add('hidden');
+    if (document.getElementById('t-asset-metadata')) {
+      document.getElementById('t-asset-metadata').classList.add('hidden');
+    }
+  };
+
+  window.toggleTransactionFields = function() {
+    const type = document.getElementById('t-type').value;
+    const isTrade = ['BUY', 'SELL'].includes(type);
+    const isDividend = type === 'DIVIDEND';
+    const isCash = ['DEPOSIT', 'WITHDRAWAL', 'TAX', 'DIVIDEND', 'TRANSFER'].includes(type);
+    
+    document.getElementById('t-asset-field').style.display = (isTrade || isDividend || isCash) ? 'block' : 'none';
+    document.getElementById('t-stock-fields').style.display = (isTrade || isDividend) ? 'contents' : 'none';
+    document.getElementById('t-amount-field').style.display = isCash ? 'block' : 'none';
+    
+    if (isDividend) calculateNetDividend();
+
+    const assetSearch = document.getElementById('t-asset-search');
+    const assetTicker = document.getElementById('t-asset-ticker');
+    if (['DEPOSIT', 'WITHDRAWAL', 'TAX', 'TRANSFER'].includes(type) && !assetTicker.value) {
+      assetSearch.value = 'CASH';
+      selectTAsset('CASH', portfolioCurrency);
+    }
+    
+    const amountLabel = document.querySelector('#t-amount-field label');
+    if (amountLabel) {
+      amountLabel.textContent = isDividend ? 'Net Dividend' : 'Amount';
+    }
+
+    document.getElementById('t-dest-portfolio-field').classList.toggle('hidden', type !== 'TRANSFER');
+    if (type === 'TRANSFER' && document.getElementById('t-dest-portfolio').children.length <= 1) {
+      loadAllPortfoliosForSelect();
+    }
+  };
+
+  async function loadAllPortfoliosForSelect() {
+    try {
+      const res = await fetch('/api/portfolios');
+      const portfolios = await res.json();
+      const select = document.getElementById('t-dest-portfolio');
+      select.innerHTML = '<option value="">— Select Target —</option>' + 
+        portfolios.filter(p => p.id != mobCurrentPortfolioId).map(p => `<option value="${p.id}">${p.name} (${p.currency})</option>`).join('');
+    } catch (err) { console.error('Failed to load portfolios for select', err); }
+  }
+
+  function calculateNetDividend() {
+    const type = document.getElementById('t-type').value;
+    if (type !== 'DIVIDEND') return;
+
+    const qty = parseFloat(document.getElementById('t-qty').value) || 0;
+    const price = parseFloat(document.getElementById('t-price').value) || 0;
+    const tax = parseFloat(document.getElementById('t-tax').value) || 0;
+    const fx = parseFloat(document.getElementById('t-fx').value) || 1;
+
+    const gross = (qty * price) / fx;
+    const net = gross - (tax / fx);
+    document.getElementById('t-amount').value = net.toFixed(2);
+  }
+
+  window.selectTAsset = async function(ticker, currency) {
+    let finalCurrency = currency && currency !== 'undefined' ? currency : 'USD';
+    document.getElementById('t-asset-ticker').value = ticker;
+    document.getElementById('t-asset-currency').value = finalCurrency;
+    document.getElementById('t-asset-search').value = ticker;
+    const results = document.getElementById('t-search-results');
+    if (results) results.classList.add('hidden');
+    
+    const metaBox = document.getElementById('t-asset-metadata');
+    if (metaBox) {
+      if (ticker === 'CASH') {
+        metaBox.classList.add('hidden');
+        checkFX();
+        return;
+      }
+      metaBox.classList.remove('hidden');
+      document.getElementById('t-meta-exchange').innerText = 'Loading...';
+      document.getElementById('t-meta-type').innerText = 'Loading...';
+      document.getElementById('t-meta-country').innerText = 'Loading...';
+
+      try {
+        const res = await fetch(`/api/validate-ticker?ticker=${ticker}`);
+        const data = await res.json();
+        if (data.valid) {
+          document.getElementById('t-meta-exchange').innerText = data.exchange || 'N/A';
+          document.getElementById('t-meta-type').innerText = data.type || 'N/A';
+          document.getElementById('t-meta-country').innerText = data.country || 'N/A';
+          if (data.currency) {
+            finalCurrency = data.currency;
+            document.getElementById('t-asset-currency').value = finalCurrency;
+          }
+          if (data.currentPrice) {
+            document.getElementById('t-price').value = data.currentPrice;
+          }
+        }
+      } catch (err) { console.error(err); }
+    }
+    checkFX();
+  };
+
+  window.checkFX = async function(isEdit = false) {
+    const assetCurr = document.getElementById('t-asset-currency').value;
+    if (!assetCurr || assetCurr === portfolioCurrency) {
+      document.getElementById('t-fx-field').classList.add('hidden');
+      document.getElementById('t-fx').value = 1;
+      return;
+    }
+
+    document.getElementById('asset-curr-label').innerText = assetCurr;
+    document.getElementById('p-curr-label').innerText = portfolioCurrency;
+    document.getElementById('t-fx-field').classList.remove('hidden');
+
+    if (isEdit) return;
+
+    try {
+      const res = await fetch(`/api/fx-rate?from=${portfolioCurrency}&to=${assetCurr}`);
+      const data = await res.json();
+      document.getElementById('t-fx').value = data.rate;
+    } catch (err) { console.error(err); }
+  };
+
+  function _wireTransactionForm() {
+    const form = document.getElementById('transaction-form');
+    if (!form) return;
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const data = {
+        portfolioId: mobCurrentPortfolioId,
+        type: document.getElementById('t-type').value,
+        assetTicker: document.getElementById('t-asset-ticker').value,
+        date: document.getElementById('t-date').value,
+        quantity: document.getElementById('t-qty').value,
+        price: document.getElementById('t-price').value,
+        commission: document.getElementById('t-comm').value,
+        tax: document.getElementById('t-tax').value,
+        exchangeRate: document.getElementById('t-fx').value,
+        amount: document.getElementById('t-amount').value,
+        destinationPortfolioId: document.getElementById('t-dest-portfolio').value,
+        isin: document.getElementById('t-isin').value,
+        dataSource: document.getElementById('t-source').value
+      };
+      const id = document.getElementById('t-id').value;
+      const method = id ? 'PUT' : 'POST';
+      const url = id ? `/api/transactions/${id}` : '/api/transactions';
+
+      try {
+        await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        closeTransactionModal();
+        mobLoadPortfolioDetail(mobCurrentPortfolioId);
+        window.dispatchEvent(new CustomEvent('portfolios-updated'));
+      } catch (err) { console.error(err); }
+    };
+  }
+
+  function openConfirmModal(title, body, action) {
+    document.getElementById('confirm-modal-title').innerText = title;
+    document.getElementById('confirm-modal-body').innerText = body;
+    pendingDeleteAction = action;
+    document.getElementById('general-confirm-modal').classList.remove('hidden');
+  }
+
+  window.closeConfirmModal = function() {
+    document.getElementById('general-confirm-modal').classList.add('hidden');
+    pendingDeleteAction = null;
+  };
+
+  function _wireConfirmModal() {
+    const btn = document.getElementById('confirm-modal-btn');
+    if (!btn) return;
+    btn.onclick = async () => {
+      if (pendingDeleteAction) {
+        await pendingDeleteAction();
+        closeConfirmModal();
+      }
+    };
+  }
+
+  window.confirmDeleteTransaction = async function(id) {
+    openConfirmModal(
+      'Delete Transaction',
+      'Are you sure you want to delete this transaction?',
+      async () => {
+        await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
+        mobLoadPortfolioDetail(mobCurrentPortfolioId);
+        window.dispatchEvent(new CustomEvent('portfolios-updated'));
+      }
+    );
+  };
+
+  window.editTransaction = async function(id) {
+    const t = currentTransactions.find(tx => tx.id === id);
+    if (!t) return;
+
+    document.getElementById('t-id').value = t.id;
+    document.getElementById('t-type').value = t.type;
+    document.getElementById('t-date').value = t.date;
+    document.getElementById('t-qty').value = t.quantity || 0;
+    document.getElementById('t-price').value = t.price || 0;
+    document.getElementById('t-comm').value = t.commission || 0;
+    document.getElementById('t-tax').value = t.tax || 0;
+    document.getElementById('t-fx').value = t.exchangeRate || 1;
+    document.getElementById('t-amount').value = t.amount || 0;
+    document.getElementById('t-asset-ticker').value = t.assetTicker || '';
+    document.getElementById('t-asset-search').value = t.assetTicker || '';
+    
+    if (t.assetTicker && t.assetTicker !== 'CASH') {
+      fetch(`/api/validate-ticker?ticker=${t.assetTicker}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.valid) {
+            document.getElementById('t-isin').value = data.isin || '';
+            document.getElementById('t-source').value = data.dataSource || 'YF';
+          }
+        }).catch(console.error);
+    } else {
+      document.getElementById('t-isin').value = '';
+      document.getElementById('t-source').value = 'YF';
+    }
+
+    let assetCurr = portfolioCurrency;
+    if (t.assetTicker === 'CASH' || !t.assetTicker) {
+      assetCurr = portfolioCurrency;
+    } else {
+      const h = currentHoldings.find(hold => hold.ticker === t.assetTicker);
+      if (h) assetCurr = h.currency;
+    }
+    document.getElementById('t-asset-currency').value = assetCurr;
+    
+    document.getElementById('t-modal-title').innerText = "Edit Transaction";
+    document.getElementById('transaction-modal').classList.remove('hidden');
+    toggleTransactionFields();
+    checkFX(true);
+  };
+
+  window.duplicateTransaction = async function(id) {
+    const t = currentTransactions.find(tx => tx.id === id);
+    if (!t) return;
+
+    document.getElementById('t-id').value = '';
+    document.getElementById('t-type').value = t.type;
+    document.getElementById('t-qty').value = t.quantity || 0;
+    document.getElementById('t-price').value = t.price || 0;
+    document.getElementById('t-comm').value = t.commission || 0;
+    document.getElementById('t-tax').value = t.tax || 0;
+    document.getElementById('t-fx').value = t.exchangeRate || 1;
+    document.getElementById('t-amount').value = t.amount || 0;
+    document.getElementById('t-asset-ticker').value = t.assetTicker || '';
+    document.getElementById('t-asset-search').value = t.assetTicker || '';
+    document.getElementById('t-date').value = new Date().toISOString().split('T')[0];
+    
+    if (t.assetTicker && t.assetTicker !== 'CASH') {
+      fetch(`/api/validate-ticker?ticker=${t.assetTicker}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.valid) {
+            document.getElementById('t-isin').value = data.isin || '';
+            document.getElementById('t-source').value = data.dataSource || 'YF';
+          }
+        }).catch(console.error);
+    } else {
+      document.getElementById('t-isin').value = '';
+      document.getElementById('t-source').value = 'YF';
+    }
+
+    let assetCurr = portfolioCurrency;
+    if (t.assetTicker === 'CASH' || !t.assetTicker) {
+      assetCurr = portfolioCurrency;
+    } else {
+      const h = currentHoldings.find(hold => hold.ticker === t.assetTicker);
+      if (h) assetCurr = h.currency;
+    }
+    document.getElementById('t-asset-currency').value = assetCurr;
+    
+    document.getElementById('t-modal-title').innerText = "Duplicate Transaction";
+    const modal = document.getElementById('transaction-modal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.style.display = 'flex';
+      modal.style.zIndex = '9999';
+    }
+    toggleTransactionFields();
+    checkFX(true);
+  };
+
+  window.openManualModal = function(ticker, currency, currentPrice, type = '', country = '', dataSource = 'YF', isin = '') {
+    const modal = document.getElementById('manual-update-modal');
+    document.getElementById('manual-ticker').value = ticker;
+    document.getElementById('manual-currency-label').innerText = currency;
+    document.getElementById('manual-price').value = currentPrice;
+    document.getElementById('manual-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('manual-type').value = type;
+    document.getElementById('manual-country').value = country;
+    const sourceEl = document.getElementById('manual-source');
+    sourceEl.value = dataSource || 'YF';
+    document.getElementById('manual-isin').value = isin || '';
+    toggleManualISIN();
+    modal.classList.remove('hidden');
+  };
+
+  window.toggleManualISIN = function() {
+    const source = document.getElementById('manual-source').value;
+    const field = document.getElementById('manual-isin-field');
+    if (source === 'B_ITA') {
+      field.classList.remove('hidden');
+    } else {
+      field.classList.add('hidden');
+    }
+  };
+
+  window.closeManualModal = function() {
+    document.getElementById('manual-update-modal').classList.add('hidden');
+  };
+
+  window.saveManualUpdate = async function() {
+    const ticker = document.getElementById('manual-ticker').value;
+    const price = document.getElementById('manual-price').value;
+    const date = document.getElementById('manual-date').value;
+    const type = document.getElementById('manual-type').value;
+    const country = document.getElementById('manual-country').value;
+    const dataSource = document.getElementById('manual-source').value;
+    const isin = document.getElementById('manual-isin').value;
+
+    try {
+      const res = await fetch('/api/assets/manual-update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticker, price, date, type, country, dataSource, isin })
+      });
+      if (res.ok) {
+        closeManualModal();
+        mobLoadPortfolioDetail(mobCurrentPortfolioId);
+      } else {
+        const errData = await res.json();
+        alert('Update failed: ' + (errData.error || errData.message || 'Unknown error'));
+      }
+    } catch (err) { console.error('Manual update error:', err); }
+  };
+
+  // Asset Search Logic
+  const tSearchInput = document.getElementById('t-asset-search');
+  const tResults = document.getElementById('t-search-results');
+  let tTimeout;
+
+  if (tSearchInput) {
+    tSearchInput.addEventListener('input', () => {
+      clearTimeout(tTimeout);
+      const q = tSearchInput.value.trim();
+      if (q.length < 2) return tResults.classList.add('hidden');
+
+      tTimeout = setTimeout(async () => {
+        const res = await fetch(`/api/asset-search?query=${q}`);
+        const data = await res.json();
+        tResults.innerHTML = data.filter(i => i.symbol).map(i => `
+          <div class="px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-sm" onclick="selectTAsset('${i.symbol}', '${i.currency}')">
+            <span class="font-bold">${i.symbol}</span> - ${i.shortname || i.symbol} 
+            <span class="text-[10px] text-primary italic ml-2">${i.currency}</span>
+          </div>
+        `).join('');
+        tResults.classList.remove('hidden');
+      }, 300);
+    });
+  }
+
   function mobInit() {
     if (!window._mobileViewActive) return;
     mobSyncPrivacyIcon();
+
+    _wireTransactionForm();
+    _wireConfirmModal();
 
     // Check if detail view should open (URL has ?id=)
     const params = new URLSearchParams(window.location.search);
