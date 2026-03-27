@@ -551,21 +551,43 @@
                 const assets = data.assets || [];
                 document.getElementById('proj-asset-count').textContent = `${assets.length} asset`;
                 
+                // Build Projected Assets Summary
                 const summaryBody = document.getElementById('proj-summary-body');
                 if (summaryBody) {
-                    summaryBody.innerHTML = assets.map(a => `
-                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors border-b border-slate-100 dark:border-slate-800/40 last:border-0">
-                            <td class="px-5 py-3 text-[10px] font-black text-amber-500">${a.nextDate || '—'}</td>
-                            <td class="px-5 py-3">
-                                <div class="flex flex-col">
-                                    <span class="text-xs font-black text-slate-700 dark:text-white">${a.ticker}</span>
-                                    <span class="text-[9px] font-bold text-slate-500 truncate max-w-[180px]">${a.name || ''}</span>
-                                </div>
-                            </td>
-                            <td class="px-5 py-3 text-right font-mono text-xs font-bold text-slate-500">${(a.yield * 100).toFixed(2)}%</td>
-                            <td class="px-5 py-3 text-right font-mono text-xs font-black text-blue-400">€ ${formatNumber(a.annualProjected, 0)}</td>
-                        </tr>
-                    `).join('');
+                    const sortedAssets = [...assets].sort((a, b) => {
+                        if (!a.nextDate) return 1;
+                        if (!b.nextDate) return -1;
+                        return a.nextDate.localeCompare(b.nextDate);
+                    });
+
+                    summaryBody.innerHTML = sortedAssets.map(a => {
+                        const isReceived = (a.alreadyReceived || 0) > 0;
+                        const methodBadge = a.method === 'yahoo_finance'
+                            ? `<span class="text-[9px] px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold ml-2">YAHOO</span>`
+                            : `<span class="text-[9px] px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-800 font-bold ml-2">PAST</span>`;
+
+                        return `
+                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors border-b border-slate-100 dark:border-slate-800/40 last:border-0">
+                                <td class="px-5 py-3 whitespace-nowrap">
+                                    <div class="flex items-center gap-2">
+                                        ${isReceived ? '<span class="material-symbols-outlined text-sm text-emerald-500 font-black">check_circle</span>' : '<span class="material-symbols-outlined text-sm text-slate-200 dark:text-slate-800 font-black">history</span>'}
+                                        <span class="text-[10px] font-black ${isReceived ? 'text-emerald-500' : 'text-amber-500'}">${a.nextDate || '—'}</span>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-3">
+                                    <div class="flex items-center">
+                                        <div class="flex flex-col">
+                                            <span class="text-xs font-black text-slate-700 dark:text-white">${a.ticker}</span>
+                                            <span class="text-[9px] font-bold text-slate-500 truncate max-w-[150px]">${a.name || ''}</span>
+                                        </div>
+                                        ${methodBadge}
+                                    </div>
+                                </td>
+                                <td class="px-5 py-3 text-right font-mono text-xs font-bold text-slate-500">${(a.yield * 100).toFixed(2)}%</td>
+                                <td class="px-5 py-3 text-right font-mono text-xs font-black text-blue-400">€ ${formatNumber(a.annualProjected, 0)}</td>
+                            </tr>
+                        `;
+                    }).join('');
                 }
 
                 const MONTH_NAMES = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
