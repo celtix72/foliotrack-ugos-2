@@ -214,12 +214,26 @@ async function sendTelegramDailyReport() {
         `).all();
 
         const portfolios = database.db.prepare('SELECT totalValue, performance1D, currency FROM portfolios').all();
+        let totalValEUR = 0;
         let totalVarEUR = 0;
         for (const p of portfolios) {
+            let val = p.totalValue || 0;
             let var1D = p.performance1D || 0;
-            if (p.currency === 'USD' && liveRate > 0) var1D /= liveRate;
+            if (p.currency === 'USD' && liveRate > 0) {
+                val /= liveRate;
+                var1D /= liveRate;
+            }
+            totalValEUR += val;
             totalVarEUR += var1D;
         }
+
+        const fmt = (val) => {
+            const rounded = Math.round(val);
+            const sign = rounded > 0 ? '+' : '';
+            return `€ ${sign}${rounded.toLocaleString('it-IT', { maximumFractionDigits: 0 })}`;
+        };
+
+        const extractSimpleSymbol = (s) => s.split('.')[0].split(':')[0];
 
         // Categories mapping
         const categories = {
@@ -252,66 +266,37 @@ async function sendTelegramDailyReport() {
             cat.totalVar += varEUR;
         }
 
-        const totalVarAbs = Math.round(Math.abs(totalVarEUR));
-        const totalVarSign = totalVarEUR >= 0 ? '+' : '-';
-        let msg = `📊 *REPORT DAY:*                   ${totalVarEUR >= 0 ? '🟢🟢' : '🔴🔴'} ${totalVarSign}€${totalVarAbs}\n\n`;
+        let msg = `📊 *REPORT DAY*\n\n`;
+        msg += `💰 *Netto:* ${fmt(totalValEUR).replace('+', '')}\n`;
+        const varEmoji = totalVarEUR >= 0 ? '📈' : '📉';
+        msg += `${varEmoji} *Var. 1D:* ${fmt(totalVarEUR).replace(' € ', ' ')}\n\n`;
 
         for (const [name, cat] of Object.entries(categories)) {
             if (cat.assets.length === 0) continue;
             
-            const catVarSign = cat.totalVar >= 0 ? '+' : '-';
-            const catVarAbs = Math.round(Math.abs(cat.totalVar));
-            msg += `${cat.emoji} *${name}* ${catVarSign}€${catVarAbs}\n`;
-            msg += '```\n';
+            msg += `\`${cat.emoji} ${name}\` ${fmt(cat.totalVar)}\n`;
             
             // Sort assets by absolute variation descending
             cat.assets.sort((a, b) => Math.abs(b.varEUR) - Math.abs(a.varEUR));
 
             for (const a of cat.assets) {
-                const icon = getAssetIcon(a.changePercent, a.varEUR);
-                const pSym = a.currency === 'USD' ? '$' : '€';
+                const sym = extractSimpleSymbol(a.ticker).substring(0, 8).padEnd(8);
+                const mktVal = Math.round(a.currentPrice * a.totalQty);
+                const cSym = a.currency === 'USD' ? '$' : (a.currency === 'EUR' ? '€' : a.currency);
                 
-                // Ticker: 8 characters fixed width
-                const tickerStr = (a.ticker || '').padEnd(8);
+                const mktValStr = `${cSym}${mktVal}`.padStart(7);
+                const valChg = Math.round(a.changeValue * a.totalQty);
+                const valChgStr = (valChg >= 0 ? '+' : '') + valChg.toString().padStart(valChg >= 0 ? 6 : 7);
+                const pctChgStr = (a.changePercent >= 0 ? '+' : '') + a.changePercent.toFixed(1).padStart(5) + '%';
+                const endIcon = a.changeValue === 0 ? '⚪' : (a.changeValue > 0 ? '🟢' : '🔴');
                 
-                // Dynamic decimal places for compact layout:
-                // >1000: 0, >100: 1, >1: 2, >0: 3
-                let decimals = 3;
-                if (a.currentPrice >= 1000) decimals = 0;
-                else if (a.currentPrice >= 100) decimals = 1;
-                else if (a.currentPrice >= 1) decimals = 2;
-
-                const pVal = a.currentPrice.toLocaleString(undefined, {
-                    minimumFractionDigits: decimals,
-                    maximumFractionDigits: decimals
-                });
-                
-                // Adjust space after symbol: 1 space if length <= 5, 0 if longer
-                const pSpace = pVal.length <= 5 ? ' ' : '';
-                const priceStr = `${pSym}${pSpace}${pVal.padStart(6)}`;
-                
-                // Var: Sign + € + AbsValue. Pad to 8.
-                const vSign = a.varEUR >= 0 ? '+' : '-';
-                const vAbs = Math.round(Math.abs(a.varEUR));
-                const varStr = `${vSign}€${vAbs}`.padStart(8);
-                
-                // Pct: Sign + Value + %. Pad to 8.
-                const pSign = a.changePercent >= 0 ? '+' : '';
-                const pctStr = `${pSign}${a.changePercent.toFixed(2)}%`.padStart(8);
-                
-                // Minimizing gaps to prevent line wrapping:
-                // Exact spacing: icon [1] ticker [8] price [fixed] [1] var [1] pct
-                msg += `${icon} ${tickerStr} ${priceStr} ${varStr} ${pctStr}\n`;
+                msg += `${cat.emoji} \`${sym}\` \`${mktValStr}\` \`${valChgStr.padStart(8)}\` \`${pctChgStr.padStart(8)}\` ${endIcon}\n`;
             }
-            msg += '```\n\n';
+            msg += '\n';
         }
 
         const now = new Date();
-        const dateStr = now.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
-        const timeStr = now.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
         const fullTS = now.toLocaleString('it-IT');
-        
-        msg += `_${dateStr} ${timeStr}_\n\n`;
         msg += `_${fullTS}_`;
 
         await sendTelegramMessage(msg);
