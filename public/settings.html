@@ -893,8 +893,8 @@
         if (tgMarketCheck) tgMarketCheck.addEventListener('change', saveTelegramSettings);
         if (tgIntervalInput) tgIntervalInput.addEventListener('change', saveTelegramSettings);
 
-        if (mobThemeToggle) mobThemeToggle.addEventListener('change', () => toggleTheme());
-        if (mobPrivacyToggle) mobPrivacyToggle.addEventListener('change', () => togglePrivacy());
+        if (mobThemeToggle) mobThemeToggle.addEventListener('change', () => { if (typeof toggleTheme === 'function') toggleTheme(); });
+        if (mobPrivacyToggle) mobPrivacyToggle.addEventListener('change', () => { if (typeof togglePrivacy === 'function') togglePrivacy(); });
 
         setupSync(tgTokenInput, mobTgToken);
         setupSync(tgChatIdInput, mobTgChat);
@@ -1002,34 +1002,39 @@
 
         window.confirmRestore = (filename) => {
             pendingRestore = filename;
-            restoreTargetName.textContent = filename;
-            restoreModal.classList.remove('hidden');
+            if (restoreTargetName) restoreTargetName.textContent = filename;
+            if (restoreModal) restoreModal.classList.remove('hidden');
         };
 
-        document.getElementById('restore-cancel-btn').addEventListener('click', () => {
-            restoreModal.classList.add('hidden');
-            pendingRestore = null;
-        });
+        const restoreCancelBtn = document.getElementById('restore-cancel-btn');
+        if (restoreCancelBtn) {
+            restoreCancelBtn.addEventListener('click', () => {
+                if (restoreModal) restoreModal.classList.add('hidden');
+                pendingRestore = null;
+            });
+        }
 
-        document.getElementById('restore-confirm-btn').addEventListener('click', async () => {
-            const btn = document.getElementById('restore-confirm-btn');
-            btn.disabled = true;
-            btn.textContent = 'Restoring...';
-            try {
-                const res = await fetch('/api/backups/restore', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ filename: pendingRestore })
-                });
-                // Server will restart, so connection will drop
-                alert('Restore complete. Page will refresh once server is back.');
-                setTimeout(() => window.location.reload(), 3000);
-            } catch (err) {
-                console.error(err);
-                btn.disabled = false;
-                btn.textContent = 'Restore & Restart';
-            }
-        });
+        const restoreConfirmBtn = document.getElementById('restore-confirm-btn');
+        if (restoreConfirmBtn) {
+            restoreConfirmBtn.addEventListener('click', async () => {
+                restoreConfirmBtn.disabled = true;
+                restoreConfirmBtn.textContent = 'Restoring...';
+                try {
+                    const res = await fetch('/api/backups/restore', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ filename: pendingRestore })
+                    });
+                    // Server will restart, so connection will drop
+                    alert('Restore complete. Page will refresh once server is back.');
+                    setTimeout(() => window.location.reload(), 3000);
+                } catch (err) {
+                    console.error(err);
+                    restoreConfirmBtn.disabled = false;
+                    restoreConfirmBtn.textContent = 'Restore & Restart';
+                }
+            });
+        }
         
         // Reset Data logic
         const resetBtn        = document.getElementById('reset-data-btn');
@@ -1041,16 +1046,20 @@
             resetBtn.addEventListener('click', () => {
                 resetModal.classList.remove('hidden');
             });
+        }
+        if (confirmCancelBtn && resetModal) {
             confirmCancelBtn.addEventListener('click', () => {
                 resetModal.classList.add('hidden');
             });
+        }
+        if (confirmResetBtn) {
             confirmResetBtn.addEventListener('click', async () => {
                 confirmResetBtn.disabled = true;
                 confirmResetBtn.textContent = 'Deleting...';
                 try {
                     const res = await fetch('/api/reset-data', { method: 'POST' });
                     if (!res.ok) throw new Error('Server error');
-                    resetModal.classList.add('hidden');
+                    if (resetModal) resetModal.classList.add('hidden');
                     window.location.href = '/dashboard';
                 } catch (err) {
                     console.error(err);
@@ -1777,5 +1786,29 @@
         </form>
     </div>
 </div>
-</body></html>
-</body></html>
+<!-- confirm-restore-modal (Restored for Desktop) -->
+<div id="confirm-restore-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl p-6">
+        <h3 class="text-lg font-bold text-indigo-500 mb-2">Confirm Restore</h3>
+        <p class="text-sm text-slate-500 mb-6">Are you sure you want to restore <span id="restore-target-name" class="font-bold"></span>? The server will restart.</p>
+        <div class="flex gap-3">
+            <button id="restore-cancel-btn" class="flex-1 py-3 bg-slate-100 dark:bg-slate-800 rounded-xl font-bold text-sm">Cancel</button>
+            <button id="restore-confirm-btn" class="flex-1 py-3 bg-indigo-500 text-white rounded-xl font-bold text-sm">Restore & Restart</button>
+        </div>
+    </div>
+</div>
+
+<!-- confirm-reset-modal (Restored for Desktop) -->
+<div id="confirm-reset-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl p-6">
+        <h3 class="text-lg font-bold text-rose-500 mb-2">Delete All Data?</h3>
+        <p class="text-sm text-slate-500 mb-6">This action is irreversible. All portfolios, transactions, and settings will be permanently removed.</p>
+        <div class="flex gap-3">
+            <button id="confirm-cancel-btn" class="flex-1 py-3 bg-slate-100 dark:bg-slate-800 rounded-xl font-bold text-sm">Cancel</button>
+            <button id="confirm-reset-btn" class="flex-1 py-3 bg-rose-500 text-white rounded-xl font-bold text-sm">Yes, Delete All</button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

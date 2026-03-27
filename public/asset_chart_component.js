@@ -16,40 +16,39 @@
 
         const modalHtml = `
         <div id="asset-chart-modal" 
-             style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999; align-items: center; justify-content: center; background-color: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); padding: 1rem; flex-direction: column;"
+             style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999; align-items: center; justify-content: center; background-color: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); padding: 0.5rem; flex-direction: column;"
              class="flex">
             <div class="bg-white dark:bg-[#111722]" 
-                 style="width: 100%; max-width: 900px; max-height: 95vh; position: relative; z-index: 10000; display: flex; flex-direction: column; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); background-color: white;">
+                 style="width: 100%; max-width: 900px; max-height: 92vh; position: relative; z-index: 10000; display: flex; flex-direction: column; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); background-color: white; overflow: hidden;">
                 
                 <!-- Header -->
-                <div style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border-top-left-radius: 20px; border-top-right-radius: 20px;">
+                <div style="padding: 12px 16px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border-top-left-radius: 16px; border-top-right-radius: 16px;">
                     <div>
-                        <h3 class="font-black text-lg" id="chart-modal-title" style="margin: 0; color: #0f172a;">Asset History</h3>
-                        <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold" id="chart-modal-subtitle" style="margin: 4px 0 0 0; font-size: 10px;"></p>
+                        <h3 class="font-black text-sm md:text-lg" id="chart-modal-title" style="margin: 0; color: #0f172a;">Asset History</h3>
+                        <p class="text-[9px] text-slate-400 uppercase tracking-widest font-bold" id="chart-modal-subtitle" style="margin: 2px 0 0 0; font-size: 9px;"></p>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <div id="chart-range-btns" style="display: flex; gap: 5px;">
-                            <button onclick="loadAssetChart(null, '1m')" data-range="1m" class="chart-range-btn" style="padding: 5px 10px; border-radius: 6px; border: 1px solid #e2e8f0; background: white; cursor: pointer; font-size: 11px; font-weight: bold;">1M</button>
-                            <button onclick="loadAssetChart(null, '6m')" data-range="6m" class="chart-range-btn" style="padding: 5px 10px; border-radius: 6px; border: 1px solid #e2e8f0; background: white; cursor: pointer; font-size: 11px; font-weight: bold;">6M</button>
-                            <button onclick="loadAssetChart(null, '1y')" data-range="1y" class="chart-range-btn" style="padding: 5px 10px; border-radius: 6px; border: 1px solid #e2e8f0; background: white; cursor: pointer; font-size: 11px; font-weight: bold;">1Y</button>
-                            <button onclick="loadAssetChart(null, 'all')" data-range="all" class="chart-range-btn" style="padding: 5px 10px; border-radius: 6px; border: 1px solid #e2e8f0; background: white; cursor: pointer; font-size: 11px; font-weight: bold;">ALL</button>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div id="chart-range-btns" style="display: flex; gap: 4px;">
+                            <button onclick="loadAssetChart(null, '1m')" data-range="1m" class="chart-range-btn" style="padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0; background: white; cursor: pointer; font-size: 10px; font-weight: bold;">1M</button>
+                            <button onclick="loadAssetChart(null, '1y')" data-range="1y" class="chart-range-btn" style="padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0; background: white; cursor: pointer; font-size: 10px; font-weight: bold;">1Y</button>
+                            <button onclick="loadAssetChart(null, 'all')" data-range="all" class="chart-range-btn" style="padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0; background: white; cursor: pointer; font-size: 10px; font-weight: bold;">ALL</button>
                         </div>
-                        <button onclick="closeAssetChartModal()" style="background: none; border: none; cursor: pointer; color: #94a3b8;">
-                            <span class="material-symbols-outlined">close</span>
+                        <button onclick="closeAssetChartModal()" style="background: none; border: none; cursor: pointer; color: #94a3b8; padding: 4px;">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">close</span>
                         </button>
                     </div>
                 </div>
                 
                 <!-- Chart Area -->
-                <div style="padding: 20px; flex: 1; min-height: 350px; display: flex; flex-direction: column; background: white;">
+                <div style="padding: 12px; flex: 1; min-height: 200px; display: flex; flex-direction: column; background: white; overflow: hidden;">
                     <div id="chart-modal-loading" style="display: none; flex: 1; align-items: center; justify-content: center;">
-                        <span class="material-symbols-outlined animate-spin" style="font-size: 40px; color: #135bec;">progress_activity</span>
+                        <span class="material-symbols-outlined animate-spin" style="font-size: 32px; color: #135bec;">progress_activity</span>
                     </div>
                     <div id="chart-modal-empty" style="display: none; flex: 1; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8;">
-                        <span class="material-symbols-outlined" style="font-size: 48px;">bar_chart_off</span>
-                        <p style="font-weight: bold; margin-top: 10px;">No historical data available.</p>
+                        <span class="material-symbols-outlined" style="font-size: 40px;">bar_chart_off</span>
+                        <p style="font-weight: bold; margin-top: 8px; font-size: 12px;">No historical data.</p>
                     </div>
-                    <div id="chart-modal-content" style="display: none; flex: 1; min-height: 300px; position: relative;">
+                    <div id="chart-modal-content" style="display: none; flex: 1; min-height: 180px; position: relative;">
                         <canvas id="asset-history-chart" style="width: 100% !important; height: 100% !important;"></canvas>
                     </div>
                 </div>
