@@ -115,11 +115,12 @@ async function sendTelegramMessage(text) {
 }
 
 async function sendMarketStatusTelegram() {
-    const portfolios = database.db.prepare('SELECT totalValue, performance1D, currency FROM portfolios').all();
+    const portfolios = database.db.prepare('SELECT name, totalValue, performance1D, currency FROM portfolios').all();
     const liveRate = await getEurUsdRate();
     
     let totalValEUR = 0;
     let totalVarEUR = 0;
+    let positivePortfolios = [];
     
     for (const p of portfolios) {
         let val = p.totalValue || 0;
@@ -130,8 +131,31 @@ async function sendMarketStatusTelegram() {
         }
         totalValEUR += val;
         totalVarEUR += var1D;
+        
+        if (var1D > 0) {
+            positivePortfolios.push({ name: p.name, variation: var1D });
+        }
     }
     
+    const fmt = (val) => {
+        const rounded = Math.round(val);
+        const sign = rounded > 0 ? '+' : '';
+        return `€ ${sign}${rounded.toLocaleString('it-IT', { maximumFractionDigits: 0 })}`;
+    };
+
+    let msg = `📊 *STATO MERCATI*\n\n`;
+    msg += `💰 *Portafoglio Totale Netto:* ${fmt(totalValEUR).replace('+', '')}\n`;
+    const varEmoji = totalVarEUR >= 0 ? '📈' : '📉';
+    msg += `${varEmoji} *Variazione Giornaliera in Valore del totale Portafoglio:* ${fmt(totalVarEUR)}\n\n`;
+    
+    if (positivePortfolios.length > 0) {
+        msg += `📂 *Variazione Giornaliera per Portafoglio (>0):*\n`;
+        for (const pp of positivePortfolios) {
+            msg += `• ${pp.name}: ${fmt(pp.variation)}\n`;
+        }
+        msg += `\n`;
+    }
+
     const today = new Date().toISOString().split('T')[0];
     const movers = database.db.prepare(`
         SELECT ticker, name, changePercent 
@@ -141,19 +165,16 @@ async function sendMarketStatusTelegram() {
         LIMIT 5
     `).all(today);
     
-    let msg = `📊 *STATO MERCATI*\n\n`;
-    msg += `💰 *Portfolio Totale:* € ${totalValEUR.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}\n`;
-    const varEmoji = totalVarEUR >= 0 ? '📈' : '📉';
-    msg += `${varEmoji} *Variazione 1D:* € ${totalVarEUR.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}\n\n`;
-    
-    msg += `🚀 *Top Movers:*\n`;
-    msg += '```\n';
-    for (const m of movers) {
-        const sign = m.changePercent >= 0 ? '+' : '';
-        const mEmoji = m.changePercent >= 0 ? '🟢' : '🔴';
-        msg += `${mEmoji} ${m.ticker.padEnd(9)} ${sign}${m.changePercent.toFixed(2)}%\n`;
+    if (movers.length > 0) {
+        msg += `🚀 *Top Movers:*\n`;
+        msg += '```\n';
+        for (const m of movers) {
+            const sign = m.changePercent >= 0 ? '+' : '';
+            const mEmoji = m.changePercent >= 0 ? '🟢' : '🔴';
+            msg += `${mEmoji} ${m.ticker.padEnd(9)} ${sign}${m.changePercent.toFixed(2)}%\n`;
+        }
+        msg += '```';
     }
-    msg += '```';
     
     await sendTelegramMessage(msg);
 }
