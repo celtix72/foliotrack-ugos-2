@@ -144,12 +144,12 @@ async function sendMarketStatusTelegram() {
     };
 
     let msg = `📊 *STATO MERCATI*\n\n`;
-    msg += `💰 *Portafoglio Totale Netto:* ${fmt(totalValEUR).replace('+', '')}\n`;
+    msg += `💰 *Netto:* ${fmt(totalValEUR).replace('+', '')}\n`;
     const varEmoji = totalVarEUR >= 0 ? '📈' : '📉';
-    msg += `${varEmoji} *Variazione Giornaliera in Valore del totale Portafoglio:* ${fmt(totalVarEUR)}\n\n`;
+    msg += `${varEmoji} *Var. 1D:* ${fmt(totalVarEUR).replace(' € ', ' ')}\n\n`;
     
     if (positivePortfolios.length > 0) {
-        msg += `📂 *Variazione Giornaliera per Portafoglio (>0):*\n`;
+        msg += `📂 *Portafogli (>0):*\n`;
         for (const pp of positivePortfolios) {
             msg += `• ${pp.name}: ${fmt(pp.variation)}\n`;
         }
@@ -157,23 +157,40 @@ async function sendMarketStatusTelegram() {
     }
 
     const today = new Date().toISOString().split('T')[0];
+    // Top Movers only from open positions
     const movers = database.db.prepare(`
-        SELECT ticker, name, changePercent 
-        FROM assets 
-        WHERE ticker != 'CASH' AND quoteDate = ?
-        ORDER BY ABS(changePercent) DESC 
-        LIMIT 5
+        SELECT a.*, h.balance
+        FROM assets a
+        JOIN (
+            SELECT assetTicker, 
+                   SUM(CASE WHEN type = 'BUY' THEN quantity WHEN type = 'SELL' THEN -quantity ELSE 0 END) as balance 
+            FROM transactions 
+            GROUP BY assetTicker 
+            HAVING balance > 0.0001
+        ) h ON a.ticker = h.assetTicker
+        WHERE a.quoteDate = ?
+        ORDER BY ABS(a.changePercent) DESC
+        LIMIT 10
     `).all(today);
     
     if (movers.length > 0) {
-        msg += `🚀 *Top Movers:*\n`;
-        msg += '```\n';
+        msg += `\`🔵 ASSETS\` ${fmt(totalVarEUR)}\n`;
+        const extractSimpleSymbol = (s) => s.split('.')[0].split(':')[0];
+        
         for (const m of movers) {
-            const sign = m.changePercent >= 0 ? '+' : '';
-            const mEmoji = m.changePercent >= 0 ? '🟢' : '🔴';
-            msg += `${mEmoji} ${m.ticker.padEnd(9)} ${sign}${m.changePercent.toFixed(2)}%\n`;
+            const sym = extractSimpleSymbol(m.ticker).substring(0, 8).padEnd(8);
+            const mktVal = Math.round(m.currentPrice * m.balance);
+            const cSym = m.currency === 'USD' ? '$' : (m.currency === 'EUR' ? '€' : m.currency);
+            
+            const mktValStr = `${cSym}${mktVal}`.padStart(7);
+            const valChg = Math.round(m.changeValue * m.balance);
+            const valChgStr = (valChg >= 0 ? '+' : '') + valChg.toString().padStart(valChg >= 0 ? 6 : 7);
+            const pctChgStr = (m.changePercent >= 0 ? '+' : '') + m.changePercent.toFixed(1).padStart(5) + '%';
+            const endIcon = m.changeValue === 0 ? '⚪' : (m.changeValue > 0 ? '🟢' : '🔴');
+            
+            // Format: icon `symbol` `marketValue` `valChange` `pctChange` endIcon
+            msg += `🔵 \`${sym}\` \`${mktValStr}\` \`${valChgStr.padStart(8)}\` \`${pctChgStr.padStart(8)}\` ${endIcon}\n`;
         }
-        msg += '```';
     }
     
     await sendTelegramMessage(msg);
