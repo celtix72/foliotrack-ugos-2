@@ -346,22 +346,25 @@
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
-                            <th class="px-6 py-4 cursor-pointer hover:text-primary transition-all group" onclick="toggleSort('transactions', 'date')">
+                            <th class="px-4 py-3 cursor-pointer hover:text-primary transition-all group" onclick="toggleSort('transactions', 'date')">
                                 <div class="flex items-center gap-1">
                                     Date
                                     <span id="t-sort-date" class="material-symbols-outlined text-[14px]">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="px-6 py-4">Asset</th>
-                            <th class="px-6 py-4">Type</th>
-                            <th class="px-6 py-4 text-right">Qty / Price</th>
-                            <th class="px-6 py-4 cursor-pointer hover:text-primary transition-all group" onclick="toggleSort('transactions', 'total')">
+                            <th class="px-4 py-3">Asset</th>
+                            <th class="px-4 py-3">Type</th>
+                            <th class="px-4 py-3 text-right">Qty</th>
+                            <th class="px-4 py-3 text-right">Price</th>
+                            <th class="px-4 py-3 text-right">FX</th>
+                            <th class="px-4 py-3 text-right">Comm/Tax</th>
+                            <th class="px-4 py-3 cursor-pointer hover:text-primary transition-all group" onclick="toggleSort('transactions', 'total')">
                                 <div class="flex items-center gap-1 justify-end">
                                     Total (<span class="log-currency-label">---</span>)
                                     <span id="t-sort-total" class="material-symbols-outlined text-[14px]">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="px-6 py-4 text-center">Actions</th>
+                            <th class="px-4 py-3 text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm" id="full-transactions-body">
@@ -388,9 +391,9 @@
             <table class="w-full text-left border-collapse text-xs">
                 <thead>
                     <tr class="text-[9px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
-                        <th class="px-6 py-3">Date</th>
-                        <th class="px-6 py-3">Type</th>
-                        <th class="px-6 py-3 text-right">Amount</th>
+                        <th class="px-4 py-2">Date</th>
+                            <th class="px-4 py-2">Type</th>
+                            <th class="px-4 py-2 text-right">Amount</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800" id="cash-history-body">
@@ -1174,12 +1177,12 @@
             const color = isDebit ? 'rose' : 'emerald';
             const sign = isDebit ? '-' : '+';
             return `
-                <tr class="text-slate-600 dark:text-slate-400 border-b border-slate-50 dark:border-slate-800/50 last:border-0">
-                    <td class="px-6 py-3 font-mono">${t.date}</td>
-                    <td class="px-6 py-3">
+                <tr class="text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                    <td class="px-4 py-2 font-mono text-[10px]">${t.date}</td>
+                    <td class="px-4 py-2">
                         <span class="px-1.5 py-0.5 rounded-[4px] font-black text-[8px] bg-${color}-500/10 text-${color}-500 border border-${color}-500/20">${t.type}</span>
                     </td>
-                    <td class="px-6 py-3 text-right font-bold font-mono text-${color}-600">${sign}${formatPrivacy(t.amount, currency, 'ch-amount-' + t.id)}</td>
+                    <td class="px-4 py-2 text-right font-bold font-mono text-xs text-${color}-600">${sign}${formatPrivacy(t.amount, currency, 'ch-amount-' + t.id)}</td>
                 </tr>
             `;
         }).join('') : '<tr><td colspan="3" class="px-6 py-4 text-center text-slate-500 italic">No cash movements found.</td></tr>';
@@ -1204,8 +1207,8 @@
 
         fullLogBody.innerHTML = sorted.length ? sorted.map(t => {
             const isDebit = ['BUY', 'WITHDRAWAL', 'TAX', 'TRANSFER'].includes(t.type);
-            const color = isDebit ? 'rose' : 'emerald';
-            const sign = (t.type === 'DEPOSIT' || t.type === 'BUY' || t.type === 'DIVIDEND') ? '+' : (isDebit ? '-' : '+');
+            const tColor = isDebit ? 'rose' : 'emerald';
+            const tSign = isDebit ? '-' : '+';
             const isCash = ['DEPOSIT', 'WITHDRAWAL', 'TAX', 'TRANSFER', 'DIVIDEND'].includes(t.type);
             
             let total = t.amount;
@@ -1215,39 +1218,36 @@
 
             const asset = holdings?.find(hold => hold.ticker === t.assetTicker);
             const displayCurr = (t.assetTicker === 'CASH' || !t.assetTicker) ? currency : (asset ? asset.currency : currency);
+            const commTax = (t.commission || 0) + (t.tax || 0);
 
             return `
-                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                    <td class="px-6 py-4 font-mono text-xs text-slate-500">${t.date}</td>
-                    <td class="px-6 py-4 font-bold text-slate-900 dark:text-white capitalize">${t.assetTicker || 'Portfolio Cash'}</td>
-                    <td class="px-6 py-4">
-                        <span class="px-2 py-0.5 rounded font-black text-[8px] bg-${color}-500/10 text-${color}-500 border border-${color}-500/20">${t.type}</span>
+                <tr class="text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                    <td class="px-4 py-2 font-mono text-[10px]">${t.date}</td>
+                    <td class="px-4 py-2 font-bold text-slate-900 dark:text-white text-xs">${t.assetTicker || 'Cash'}</td>
+                    <td class="px-4 py-2">
+                        <span class="px-1.5 py-0.5 rounded-[4px] font-black text-[8px] bg-${tColor}-500/10 text-${tColor}-500 border border-${tColor}-500/20">${t.type}</span>
                     </td>
-                    <td class="px-6 py-4 text-right">
-                        ${!isCash ? `
-                            <div class="font-mono text-xs font-bold">${formatNumber(t.quantity, 0)} @ ${formatPrivacy(t.price, displayCurr, 'ft-price-' + t.id, 2)}</div>
-                            <div class="text-[9px] text-slate-400">FX: ${t.exchangeRate !== 1 ? formatPrivacy(t.exchangeRate, 'num', 'ft-fx-' + t.id, 4) : '1:1'}</div>
-                        ` : '—'}
-                    </td>
-                    <td class="px-6 py-4 text-right font-black font-mono text-sm text-${color}-600">
-                        ${sign}${formatPrivacy(total, currency, 'ft-total-' + t.id)}
-                    </td>
-                    <td class="px-6 py-4">
-                        <div class="flex items-center justify-center gap-2">
-                            <button onclick="duplicateTransaction(${t.id})" title="Duplicate Transaction" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-emerald-500 transition-colors">
-                                <span class="material-symbols-outlined text-sm">content_copy</span>
+                    <td class="px-4 py-2 text-right font-mono font-bold text-xs">${t.quantity ? formatNumber(t.quantity, 0) : '—'}</td>
+                    <td class="px-4 py-2 text-right font-mono text-xs">${t.price ? formatPrivacy(t.price, displayCurr, 'ft-price-' + t.id, 2) : '—'}</td>
+                    <td class="px-4 py-2 text-right font-mono text-xs text-slate-400 opacity-60">${t.exchangeRate !== 1 ? formatPrivacy(t.exchangeRate, 'num', 'ft-fx-' + t.id, 4) : '—'}</td>
+                    <td class="px-4 py-2 text-right font-mono text-xs text-slate-400 opacity-60">${commTax > 0 ? formatPrivacy(commTax, displayCurr, 'ft-ct-' + t.id, 2) : '—'}</td>
+                    <td class="px-4 py-2 text-right font-bold font-mono text-xs text-slate-700 dark:text-slate-200">${tSign}${formatPrivacy(total, currency, 'ft-total-' + t.id)}</td>
+                    <td class="px-4 py-2 text-center">
+                        <div class="flex items-center justify-center gap-1">
+                            <button onclick="duplicateTransaction(${t.id})" title="Duplicate" class="p-1 text-slate-400 hover:text-emerald-500 transition-colors">
+                                <span class="material-symbols-outlined text-[16px]">content_copy</span>
                             </button>
-                            <button onclick="editTransaction(${t.id})" title="Edit" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-primary transition-colors">
-                                <span class="material-symbols-outlined text-sm">edit</span>
+                            <button onclick="editTransaction(${t.id})" title="Edit" class="p-1 text-slate-400 hover:text-primary transition-colors">
+                                <span class="material-symbols-outlined text-[16px]">edit</span>
                             </button>
-                            <button onclick="confirmDeleteTransaction(${t.id})" title="Delete" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-500 transition-colors">
-                                <span class="material-symbols-outlined text-sm">delete</span>
+                            <button onclick="confirmDeleteTransaction(${t.id})" title="Delete" class="p-1 text-slate-400 hover:text-rose-500 transition-colors">
+                                <span class="material-symbols-outlined text-[16px]">delete</span>
                             </button>
                         </div>
                     </td>
                 </tr>
             `;
-        }).join('') : '<tr><td colspan="6" class="px-6 py-12 text-center text-slate-500 italic">No transactions recorded yet.</td></tr>';
+        }).join('') : '<tr><td colspan="9" class="px-6 py-12 text-center text-slate-500 italic">No transactions recorded yet.</td></tr>';
 
         updateSortIndicators('transactions', transactionsSort);
     }
