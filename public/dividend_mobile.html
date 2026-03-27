@@ -91,23 +91,23 @@
             <div class="mob-section-header">
                 <span class="mob-section-title">Storico Pagamenti</span>
                 <select id="mob-div-group-by" onchange="renderMobDividends()" 
-                    class="bg-transparent border-none text-[11px] font-black uppercase tracking-wider text-primary focus:ring-0 p-0 text-right">
+                    class="bg-transparent border-none text-[11px] font-black uppercase tracking-wider text-primary focus:ring-0 p-0 text-right outline-none">
                     <option value="year">Per Anno</option>
                     <option value="portfolioName">Per Portafoglio</option>
                     <option value="none">Lista</option>
                 </select>
             </div>
 
-            <div style="padding: 0 20px 16px;">
-                <div class="flex items-center gap-3 bg-white dark:bg-slate-900/50 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <span class="material-symbols-outlined text-slate-400 text-lg">search</span>
-                    <input type="text" id="mob-div-search" placeholder="Cerca titolo..." 
-                        class="flex-1 bg-transparent border-none p-0 text-sm focus:ring-0 font-bold"
+            <div class="px-5 mb-4">
+                <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-900/80 p-2.5 px-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <span class="material-symbols-outlined text-slate-400 text-[18px]">search</span>
+                    <input type="text" id="mob-div-search" placeholder="Cerca titolo o portafoglio..." 
+                        class="flex-1 bg-transparent border-none p-0 text-[13px] focus:ring-0 font-bold placeholder:text-slate-400"
                         oninput="renderMobDividends()">
                 </div>
             </div>
 
-            <div id="mob-dividends-list" class="space-y-1">
+            <div id="mob-dividends-list" class="mob-holdings-list">
                 <div style="text-align:center;padding:48px">
                     <div class="mob-spinner" style="margin:0 auto"></div>
                 </div>
@@ -310,7 +310,7 @@
                 }
 
                 if (groupBy === 'none') {
-                    container.innerHTML = `<div class="mob-ios-grouped">` + 
+                    container.innerHTML = `<div class="mob-holdings-list">` + 
                         filtered.sort((a,b) => new Date(b.date) - new Date(a.date))
                         .map(d => renderMobRow(d)).join('') + 
                         `</div>`;
@@ -333,14 +333,14 @@
                         const group = groups[key];
                         const isCollapsed = collapsedGroups.has(key);
                         return `
-                            <div class="mob-section-header" style="margin-top:12px;" onclick="toggleMobGroup('${key}')">
-                                <span class="text-[11px] font-black uppercase tracking-widest text-slate-500">${key}</span>
+                            <div class="mob-section-header" style="margin-top:10px; cursor:pointer" onclick="toggleMobGroup('${key}')">
+                                <span class="text-[11px] font-black uppercase tracking-widest text-slate-500">${key.toUpperCase()}</span>
                                 <div class="flex items-center gap-2">
-                                    <span class="text-[11px] font-black text-emerald-500">${formatCurrency(group.total, 'EUR')}</span>
-                                    <span class="material-symbols-outlined text-sm opacity-30">${isCollapsed ? 'expand_more' : 'expand_less'}</span>
+                                    <span class="text-[11px] font-bold text-emerald-500">${formatCurrency(group.total, 'EUR')}</span>
+                                    <span class="material-symbols-outlined text-sm opacity-30 transition-transform ${isCollapsed ? 'rotate-180' : ''}">${isCollapsed ? 'expand_more' : 'expand_less'}</span>
                                 </div>
                             </div>
-                            <div class="mob-ios-grouped" style="${isCollapsed ? 'display:none' : ''}">
+                            <div class="mob-holdings-list" style="${isCollapsed ? 'display:none' : ''}">
                                 ${group.items.sort((a,b) => new Date(b.date) - new Date(a.date)).map(d => renderMobRow(d)).join('')}
                             </div>
                         `;
@@ -349,14 +349,16 @@
             }
 
             function renderMobRow(d) {
+                const letters = d.assetTicker ? d.assetTicker.substring(0, 3).toUpperCase() : '???';
                 return `
-                    <div class="mob-ios-item">
-                        <div class="mob-ios-item-inner">
-                            <div style="flex:1">
-                                <div class="text-[14px] font-bold">${d.assetTicker}</div>
-                                <div class="text-[10px] font-medium text-slate-500 uppercase tracking-tighter">${d.portfolioName} · ${d.date}</div>
-                            </div>
-                            <div class="text-[15px] font-black text-emerald-500">${formatCurrency(d.amount, 'EUR')}</div>
+                    <div class="mob-holding-item">
+                        <div class="mob-holding-logo">${letters}</div>
+                        <div class="mob-holding-info">
+                            <div class="mob-holding-ticker">${d.assetTicker}</div>
+                            <div class="mob-holding-name">${d.portfolioName} · ${d.date}</div>
+                        </div>
+                        <div class="mob-holding-values">
+                            <div class="mob-holding-value text-emerald-500" style="font-weight:800">${formatCurrency(d.amount, 'EUR')}</div>
                         </div>
                     </div>
                 `;
