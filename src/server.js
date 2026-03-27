@@ -132,13 +132,14 @@ async function sendMarketStatusTelegram() {
         totalVarEUR += var1D;
     }
     
+    const today = new Date().toISOString().split('T')[0];
     const movers = database.db.prepare(`
         SELECT ticker, name, changePercent 
         FROM assets 
-        WHERE ticker != 'CASH' AND currentPrice > 0 
+        WHERE ticker != 'CASH' AND quoteDate = ?
         ORDER BY ABS(changePercent) DESC 
         LIMIT 5
-    `).all();
+    `).all(today);
     
     let msg = `📊 *STATO MERCATI*\n\n`;
     msg += `💰 *Portfolio Totale:* € ${totalValEUR.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}\n`;
@@ -659,6 +660,8 @@ app.get('/api/assets', (req, res) => {
         ORDER BY a.name ASC
     `).all();
 
+    const today = new Date().toISOString().split('T')[0];
+
     // Add sparkline data (last 7 days from cache)
     const result = rows.map(a => {
         let sparkline = [];
@@ -667,7 +670,13 @@ app.get('/api/assets', (req, res) => {
             const dates = Object.keys(history).sort();
             sparkline = dates.slice(-7).map(d => history[d]);
         }
-        return { ...a, sparkline };
+        const isToday = a.quoteDate === today;
+        return { 
+            ...a, 
+            sparkline,
+            changePercent: isToday ? a.changePercent : 0,
+            changeValue: isToday ? a.changeValue : 0
+        };
     });
 
     res.json(result);
@@ -1098,7 +1107,7 @@ app.get('/api/portfolios', async (req, res) => {
 
         // Top Winner/Loser from current holdings
         const heldAssetsRaw = database.db.prepare(`
-            SELECT a.ticker, a.name, a.changePercent, a.currentPrice, a.currency, h.netQty
+            SELECT a.ticker, a.name, a.changePercent, a.currentPrice, a.currency, a.quoteDate, h.netQty
             FROM assets a
             JOIN (
                 SELECT assetTicker, 
@@ -1110,10 +1119,13 @@ app.get('/api/portfolios', async (req, res) => {
             ) h ON a.ticker = h.assetTicker
         `).all();
 
+        const today = new Date().toISOString().split('T')[0];
         const heldAssets = heldAssetsRaw.map(a => {
+            const isToday = a.quoteDate === today;
+            const changePct = isToday ? (a.changePercent || 0) : 0;
             const rate = (a.currency === 'USD') ? liveRate : 1;
-            const absChange = (a.currentPrice * a.changePercent / 100) * a.netQty / rate;
-            return { ticker: a.ticker, name: a.name, changePercent: a.changePercent, absChange };
+            const absChange = (a.currentPrice * changePct / 100) * a.netQty / rate;
+            return { ticker: a.ticker, name: a.name, changePercent: changePct, absChange };
         }).sort((a,b) => b.changePercent - a.changePercent);
 
         res.json({
@@ -1147,6 +1159,8 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
     const transactions = database.db.prepare(`
         SELECT * FROM transactions WHERE portfolioId = ? ORDER BY date ASC
     `).all(portfolioId);
+
+    const today = new Date().toISOString().split('T')[0];
 
     if (!liveRate) {
         liveRate = await getEurUsdRate();
@@ -1223,8 +1237,12 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
             const curVal = h.shares * curPxP;
             const avgCost = h.shares > 0 ? h.totalCostInPCurr / h.shares : 0;
             const avgCostAsset = h.shares > 0 ? h.totalCostInAssetCurr / h.shares : 0;
+            const isToday = asset && asset.quoteDate === today;
+            const changePercent = isToday ? (asset.changePercent || 0) : 0;
+            const changeValue = isToday ? (asset.changeValue || 0) : 0;
             const uGain  = curVal - h.totalCostInPCurr;
             const uGainPct = h.totalCostInPCurr > 0 ? (uGain / h.totalCostInPCurr) * 100 : 0;
+
             return {
                 ticker, shares: Math.round(h.shares * 10000) / 10000,
                 name: asset ? asset.name : ticker,
@@ -1238,9 +1256,9 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
                 currentValue: Math.round(curVal * 100) / 100,
                 unrealizedGain: Math.round(uGain * 100) / 100,
                 unrealizedGainPct: Math.round(uGainPct * 100) / 100,
-                changePercent: asset ? asset.changePercent : 0,
-                changeValue: asset ? asset.changeValue : 0,
-                changeValuePortfolio: asset ? (asset.changeValue / rate) : 0,
+                changePercent: changePercent,
+                changeValue: changeValue,
+                changeValuePortfolio: changeValue / rate,
                 isin: asset ? asset.isin : null,
                 dataSource: asset ? asset.dataSource : 'YF',
                 country: asset ? asset.country : 'Global',

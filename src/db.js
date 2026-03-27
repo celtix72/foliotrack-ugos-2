@@ -353,11 +353,15 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
             assetValue += shares * priceInPCurr;
 
             // Calculate daily market variation
-            if (asset && asset.changeValue) {
+            const today = new Date().toISOString().split('T')[0];
+            if (asset && asset.changeValue && asset.quoteDate === today) {
                 const changeInPCurr = (aCurr !== portfolio.currency && rate !== 0)
                     ? asset.changeValue / rate
                     : asset.changeValue;
                 performance1D += shares * changeInPCurr;
+                // console.log(`[DEBUG] Included ${asset.ticker}: shares=${shares}, change=${asset.changeValue}, quoteDate=${asset.quoteDate}`);
+            } else if (asset && asset.changeValue) {
+                // console.log(`[DEBUG] Excluded ${asset.ticker}: quoteDate=${asset.quoteDate}, expected=${today}`);
             }
         }
     }
