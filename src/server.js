@@ -233,6 +233,13 @@ async function sendTelegramDailyReport() {
             return `€ ${sign}${rounded.toLocaleString('it-IT', { maximumFractionDigits: 0 })}`;
         };
 
+        const fmtVal = (val, pad = 6) => {
+            const rounded = Math.round(val);
+            const sign = rounded > 0 ? '+' : (rounded < 0 ? '-' : ' ');
+            const absVal = Math.abs(rounded).toLocaleString('it-IT');
+            return `${sign}${absVal.padStart(pad)}`;
+        };
+
         const extractSimpleSymbol = (s) => s.split('.')[0].split(':')[0];
 
         // Categories mapping
@@ -266,10 +273,26 @@ async function sendTelegramDailyReport() {
             cat.totalVar += varEUR;
         }
 
+        const EMOJI_LIMITS = { low: 300, medium: 1000, high: 3000 };
+        const getDynamicEmoji = (val) => {
+            if (val > 0) {
+                if (val < EMOJI_LIMITS.low) return '🟢';
+                if (val < EMOJI_LIMITS.medium) return '🟢🟢';
+                if (val < EMOJI_LIMITS.high) return '💰💰💰';
+                return '🚀🚀🚀';
+            } else if (val < 0) {
+                const abs = Math.abs(val);
+                if (abs < EMOJI_LIMITS.low) return '🔴';
+                if (abs < EMOJI_LIMITS.medium) return '🔴🔴';
+                if (abs < EMOJI_LIMITS.high) return '💣💣';
+                return '☠️☠️☠️';
+            }
+            return '⚪';
+        };
+
         let msg = `📊 *REPORT DAY*\n\n`;
         msg += `💰 *Netto:* ${fmt(totalValEUR).replace('+', '')}\n`;
-        const varEmoji = totalVarEUR >= 0 ? '📈' : '📉';
-        msg += `${varEmoji} *Var. 1D:* ${fmt(totalVarEUR).replace(' € ', ' ')}\n\n`;
+        msg += `${getDynamicEmoji(totalVarEUR)} *Var. 1D:* ${fmt(totalVarEUR).replace(' € ', ' ')}\n\n`;
 
         for (const [name, cat] of Object.entries(categories)) {
             if (cat.assets.length === 0) continue;
@@ -284,13 +307,12 @@ async function sendTelegramDailyReport() {
                 const mktVal = Math.round(a.currentPrice * a.totalQty);
                 const cSym = a.currency === 'USD' ? '$' : (a.currency === 'EUR' ? '€' : a.currency);
                 
-                const mktValStr = `${cSym}${mktVal}`.padStart(7);
-                const valChg = Math.round(a.changeValue * a.totalQty);
-                const valChgStr = (valChg >= 0 ? '+' : '') + valChg.toString().padStart(valChg >= 0 ? 6 : 7);
+                const mktValStr = `${cSym}${mktVal.toLocaleString('it-IT')}`.padStart(7);
+                const valChgStr = fmtVal(a.changeValue * a.totalQty, 6);
                 const pctChgStr = (a.changePercent >= 0 ? '+' : '') + a.changePercent.toFixed(1).padStart(5) + '%';
                 const endIcon = a.changeValue === 0 ? '⚪' : (a.changeValue > 0 ? '🟢' : '🔴');
                 
-                msg += `${cat.emoji} \`${sym}\` \`${mktValStr}\` \`${valChgStr.padStart(8)}\` \`${pctChgStr.padStart(8)}\` ${endIcon}\n`;
+                msg += `${cat.emoji} \`${sym}\` \`${mktValStr}\` \`${valChgStr}\` \`${pctChgStr.padStart(8)}\` ${endIcon}\n`;
             }
             msg += '\n';
         }
