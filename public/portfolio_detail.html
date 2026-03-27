@@ -1723,7 +1723,12 @@
         document.getElementById('t-asset-currency').value = assetCurr;
         
         document.getElementById('t-modal-title').innerText = "Edit Transaction";
-        document.getElementById('transaction-modal').classList.remove('hidden');
+        const editModal = document.getElementById('transaction-modal');
+        if (editModal) {
+            editModal.classList.remove('hidden');
+            editModal.style.display = 'flex';
+            editModal.style.zIndex = '9999';
+        }
         toggleTransactionFields();
         checkFX(true); // Pass true to avoid overwriting existing FX rate
     }
