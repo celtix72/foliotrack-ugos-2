@@ -578,6 +578,7 @@
 
 <script>
 (function() {
+  window._mobileViewActive = true;
   let mobDetailChart = null;
   let mobDetailRange = '1M';
   let mobCurrentPortfolioId = null;
@@ -968,17 +969,17 @@
             
             <div class="mob-holding-actions">
               <div class="mob-action-btn bg-blue-ios" 
-                   onclick="event.stopPropagation(); duplicateTransaction(${t.id})">
+                   onclick="event.stopPropagation(); duplicateTransaction('${t.id}')">
                 <span class="material-symbols-outlined">content_copy</span>
                 <span>Duplica</span>
               </div>
               <div class="mob-action-btn bg-orange-ios" 
-                   onclick="event.stopPropagation(); editTransaction(${t.id})">
+                   onclick="event.stopPropagation(); editTransaction('${t.id}')">
                 <span class="material-symbols-outlined">edit</span>
                 <span>Modifica</span>
               </div>
               <div class="mob-action-btn bg-red-ios" 
-                   onclick="event.stopPropagation(); confirmDeleteTransaction(${t.id})">
+                   onclick="event.stopPropagation(); confirmDeleteTransaction('${t.id}')">
                 <span class="material-symbols-outlined">delete</span>
                 <span>Elimina</span>
               </div>
@@ -1193,7 +1194,7 @@
     if (modal) {
       modal.classList.remove('hidden');
       modal.style.display = 'flex';
-      modal.style.zIndex = '9999';
+      modal.style.zIndex = '10000';
     }
     document.getElementById('t-date').value = new Date().toISOString().split('T')[0];
     toggleTransactionFields();
@@ -1365,10 +1366,16 @@
   }
 
   function openConfirmModal(title, body, action) {
+    console.log('[MOB] Opening Confirm Modal:', title);
     document.getElementById('confirm-modal-title').innerText = title;
     document.getElementById('confirm-modal-body').innerText = body;
     pendingDeleteAction = action;
-    document.getElementById('general-confirm-modal').classList.remove('hidden');
+    const modal = document.getElementById('general-confirm-modal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.style.display = 'flex';
+      modal.style.zIndex = '10000';
+    }
   }
 
   window.closeConfirmModal = function() {
@@ -1388,10 +1395,12 @@
   }
 
   window.confirmDeleteTransaction = async function(id) {
+    console.log('[MOB] Confirm Delete triggered for ID:', id);
     openConfirmModal(
       'Delete Transaction',
       'Are you sure you want to delete this transaction?',
       async () => {
+        console.log('[MOB] Executing Delete for ID:', id);
         await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
         mobLoadPortfolioDetail(mobCurrentPortfolioId);
         window.dispatchEvent(new CustomEvent('portfolios-updated'));
@@ -1400,8 +1409,12 @@
   };
 
   window.editTransaction = async function(id) {
-    const t = currentTransactions.find(tx => tx.id === id);
-    if (!t) return;
+    console.log('[MOB] Edit Transaction triggered for ID:', id);
+    const t = currentTransactions.find(tx => tx.id == id);
+    if (!t) {
+      console.warn('[MOB] Transaction not found for ID in currentTransactions:', id);
+      return;
+    }
 
     document.getElementById('t-id').value = t.id;
     document.getElementById('t-type').value = t.type;
@@ -1439,14 +1452,23 @@
     document.getElementById('t-asset-currency').value = assetCurr;
     
     document.getElementById('t-modal-title').innerText = "Edit Transaction";
-    document.getElementById('transaction-modal').classList.remove('hidden');
+    const modal = document.getElementById('transaction-modal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.style.display = 'flex';
+      modal.style.zIndex = '10000';
+    }
     toggleTransactionFields();
     checkFX(true);
   };
 
   window.duplicateTransaction = async function(id) {
-    const t = currentTransactions.find(tx => tx.id === id);
-    if (!t) return;
+    console.log('[MOB] Duplicate Transaction triggered for ID:', id);
+    const t = currentTransactions.find(tx => tx.id == id);
+    if (!t) {
+      console.warn('[MOB] Transaction not found for ID in currentTransactions:', id);
+      return;
+    }
 
     document.getElementById('t-id').value = '';
     document.getElementById('t-type').value = t.type;
@@ -1488,7 +1510,7 @@
     if (modal) {
       modal.classList.remove('hidden');
       modal.style.display = 'flex';
-      modal.style.zIndex = '9999';
+      modal.style.zIndex = '10000';
     }
     toggleTransactionFields();
     checkFX(true);
@@ -1574,7 +1596,10 @@
   }
 
   function mobInit() {
-    if (!window._mobileViewActive) return;
+    window._mobileViewActive = true;
+    if (!document.body.classList.contains('mobile-view-active')) {
+      document.body.classList.add('mobile-view-active');
+    }
     mobSyncPrivacyIcon();
 
     _wireTransactionForm();
@@ -1601,7 +1626,7 @@
 
   window.addEventListener('mobile-view-activated', mobInit);
   document.addEventListener('DOMContentLoaded', () => {
-    if (window._mobileViewActive) mobInit();
+    setTimeout(mobInit, 100);
   });
 
   window.addEventListener('mobile-view-activated', () => {
