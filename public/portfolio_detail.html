@@ -2303,7 +2303,7 @@
                 commission:   comm,
                 // Improved valEur for DIVIDEND: prioritize Amount/Total columns (10 or 13) over Quantity (8)
                 valEur:       (type === 'DIVIDEND') 
-                                ? (parseNum(cols[10]) || parseNum(cols[13]) || (parseNum(cols[8]) * parseNum(cols[7]) - parseNum(cols[11]))) 
+                                ? (parseNum(cols[13]) || parseNum(cols[10]) || (parseNum(cols[8]) * parseNum(cols[7]) - parseNum(cols[11]))) 
                                 : (amount || parseNum(cols[10])),
                 tax:          tax,
                 status:       'pending',
