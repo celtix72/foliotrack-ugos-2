@@ -240,7 +240,7 @@
   </div>
 </div>
 <!-- Reconcile Modal -->
-<div id="reconcile-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] items-center justify-center" style="display:none">
+<div id="reconcile-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[10000] flex items-center justify-center" style="display:none">
     <div class="bg-white dark:bg-[#111722] w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden max-h-[90vh] flex flex-col">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
             <h3 class="font-black text-lg">Cash Reconciliation</h3>
@@ -271,7 +271,7 @@
 </div>
 
 <!-- Confirm Modal -->
-<div id="general-confirm-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[100] items-center justify-center p-4" style="display:none">
+<div id="general-confirm-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[10000] flex items-center justify-center p-4" style="display:none">
     <div class="bg-white dark:bg-[#111722] border border-rose-500/30 rounded-2xl w-full max-w-sm shadow-2xl p-5 space-y-4 max-h-[90vh] overflow-y-auto">
         <div class="flex items-center gap-4">
             <div class="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center shrink-0">
@@ -290,7 +290,7 @@
 </div>
 
 <!-- Portfolio Modal -->
-<div id="portfolio-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+<div id="portfolio-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[10000] flex items-center justify-center p-4" style="display:none">
     <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
         <div class="px-5 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
             <h3 id="portfolio-modal-title" class="font-bold text-lg">New Portfolio</h3>
@@ -362,7 +362,7 @@
 
 <!-- Manual Update Modal -->
 
-<div id="manual-update-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center hidden">
+<div id="manual-update-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[10000] flex items-center justify-center" style="display:none">
     <div class="bg-white dark:bg-[#111722] w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform transition-all max-h-[90vh] flex flex-col">
         <div class="px-5 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
             <h3 class="font-black text-lg">Manual Price Update</h3>
@@ -421,7 +421,7 @@
 </div>
 
 <!-- Transaction Modal -->
-<div id="transaction-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] items-center justify-center p-3" style="display:none">
+<div id="transaction-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[10000] flex items-center justify-center p-3" style="display:none">
     <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
         <div class="px-4 py-3 md:px-5 md:py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
             <h3 id="t-modal-title" class="font-bold text-base md:text-lg">New Transaction</h3>
@@ -653,6 +653,15 @@
     mobLoadPortfolioDetail(id);
     // Sync desktop view too
     currentPortfolioId = id;
+  };
+
+  window.openPortfolioModal = function() {
+    const modal = document.getElementById('portfolio-modal');
+    if (modal) modal.style.display = 'flex';
+  };
+  window.closePortfolioModal = function() {
+    const modal = document.getElementById('portfolio-modal');
+    if (modal) modal.style.display = 'none';
   };
 
   window.mobShowPortfolioList = function() {
@@ -1521,7 +1530,7 @@
     sourceEl.value = dataSource || 'YF';
     document.getElementById('manual-isin').value = isin || '';
     toggleManualISIN();
-    modal.classList.remove('hidden');
+    if (modal) modal.style.display = 'flex';
   };
 
   window.toggleManualISIN = function() {
@@ -1535,7 +1544,8 @@
   };
 
   window.closeManualModal = function() {
-    document.getElementById('manual-update-modal').classList.add('hidden');
+    const modal = document.getElementById('manual-update-modal');
+    if (modal) modal.style.display = 'none';
   };
 
   window.saveManualUpdate = async function() {
