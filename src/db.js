@@ -278,6 +278,7 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
         const amount    = t.amount       || 0;
 
         const absAmount = Math.abs(amount);
+        console.log(`[DEBUG_TX] ${t.assetTicker || 'CASH'} type=${t.type} qty=${qty}`);
         switch (t.type) {
             case 'DEPOSIT':    cash += absAmount; break;
             case 'WITHDRAWAL': 
@@ -290,7 +291,6 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
                 break;
             }
             case 'BUY': {
-                // If amount is provided, use its absolute value as cost
                 const cost = amount ? Math.abs(amount) : (qty * price + comm + tax) / fx;
                 cash -= cost;
                 holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) + qty;
@@ -327,12 +327,10 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
                     if (liveEurUsdRate) {
                         rate = liveEurUsdRate;
                     } else {
-                        // Fallback 1: Look for persisted EURUSD=X in assets table
                         const savedFx = dbConnection.prepare("SELECT currentPrice FROM assets WHERE ticker = 'EURUSD=X'").get();
                         if (savedFx && savedFx.currentPrice > 0) {
                             rate = savedFx.currentPrice;
                         } else {
-                            // Fallback 2: Use last transaction FX rate
                             const lastFxTx = transactions
                                 .filter(t => t.assetTicker === ticker && t.exchangeRate)
                                 .at(-1);
@@ -359,9 +357,6 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
                     ? asset.changeValue / rate
                     : asset.changeValue;
                 performance1D += shares * changeInPCurr;
-                // console.log(`[DEBUG] Included ${asset.ticker}: shares=${shares}, change=${asset.changeValue}, quoteDate=${asset.quoteDate}`);
-            } else if (asset && asset.changeValue) {
-                // console.log(`[DEBUG] Excluded ${asset.ticker}: quoteDate=${asset.quoteDate}, expected=${today}`);
             }
         }
     }
