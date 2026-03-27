@@ -16,6 +16,7 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
     </style>
     <script src="/theme.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex">
     <!-- Sidebar -->
@@ -130,6 +131,78 @@
                 </div>
             </div>
 
+            <!-- ─── ANNUAL PROJECTIONS ──────────────────────────────────────────── -->
+            <section id="projections-section" class="space-y-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-black tracking-tight">Proiezioni Annuali <span id="proj-year" class="text-primary"></span></h2>
+                        <p class="text-slate-500 dark:text-slate-400 text-xs mt-0.5">Cedole e dividendi previsti per l'anno corrente, basati su storico e dati di mercato.</p>
+                    </div>
+                    <button onclick="toggleProjectionDetail()" id="proj-detail-btn"
+                        class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-500 hover:text-primary hover:border-primary transition-colors">
+                        <span class="material-symbols-outlined text-sm">table_rows</span>
+                        Dettaglio
+                    </button>
+                </div>
+
+                <!-- Hero KPIs -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white dark:bg-[#111722] p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <p class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Ricevuto YTD</p>
+                        <div id="proj-actual" class="text-2xl font-black text-emerald-500">€ 0,00</div>
+                        <p class="text-[10px] text-slate-500 mt-1">Dividendi già incassati nel <span class="proj-year-lbl"></span></p>
+                    </div>
+                    <div class="bg-white dark:bg-[#111722] p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <p class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Totale Proiettato</p>
+                        <div id="proj-total" class="text-2xl font-black text-blue-400">€ 0,00</div>
+                        <p class="text-[10px] text-slate-500 mt-1">Previsione annuale su posizioni aperte</p>
+                    </div>
+                    <div class="bg-white dark:bg-[#111722] p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <p class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Residuo Atteso</p>
+                        <div id="proj-remaining" class="text-2xl font-black text-amber-400">€ 0,00</div>
+                        <p class="text-[10px] text-slate-500 mt-1">Ancora da ricevere nel <span class="proj-year-lbl"></span></p>
+                    </div>
+                </div>
+
+                <!-- Bar Chart -->
+                <div class="bg-white dark:bg-[#111722] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Distribuzione Mensile</span>
+                        <div class="flex items-center gap-4 text-[10px] font-bold text-slate-400">
+                            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-emerald-500 inline-block"></span>Ricevuto</span>
+                            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-blue-400 inline-block"></span>Proiettato</span>
+                        </div>
+                    </div>
+                    <div class="relative h-56">
+                        <canvas id="projectionChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Detail Table (collapsed by default) -->
+                <div id="proj-detail-table" class="hidden bg-white dark:bg-[#111722] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                        <span class="text-xs font-black uppercase text-slate-400 tracking-widest">Dettaglio per Asset</span>
+                        <span class="text-[10px] text-slate-400" id="proj-asset-count">0 asset</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead>
+                                <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                                    <th class="px-6 py-3">Asset</th>
+                                    <th class="px-6 py-3">Tipo</th>
+                                    <th class="px-6 py-3">Metodo</th>
+                                    <th class="px-6 py-3 text-right">Ricevuto</th>
+                                    <th class="px-6 py-3 text-right">Proiettato</th>
+                                    <th class="px-6 py-3 text-right">Mesi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="proj-detail-body" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ─── HISTORICAL DIVIDENDS ──────────────────────────────────────── -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <!-- Total Dividends Card -->
                 <div class="bg-white dark:bg-[#111722] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group">
@@ -315,8 +388,141 @@
             } catch (err) { console.error(err); }
         }
 
+        // ─── DIVIDEND PROJECTIONS ────────────────────────────────────────────
+        let projectionChart = null;
+        let projDetailVisible = false;
+
+        function fmt(v) {
+            return '€ ' + v.toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        }
+
+        function toggleProjectionDetail() {
+            projDetailVisible = !projDetailVisible;
+            const el = document.getElementById('proj-detail-table');
+            if (el) el.classList.toggle('hidden', !projDetailVisible);
+        }
+
+        async function loadProjections() {
+            try {
+                const res = await fetch('/api/analytics/dividend-projections');
+                if (!res.ok) throw new Error('API error');
+                const data = await res.json();
+
+                // Set year labels
+                document.querySelectorAll('#proj-year, .proj-year-lbl').forEach(el => el.textContent = data.year);
+
+                // Hero KPIs
+                document.getElementById('proj-actual').textContent = fmt(data.totalActual || 0);
+                document.getElementById('proj-total').textContent = fmt(data.totalProjected || 0);
+                const remaining = Math.max(0, (data.totalProjected || 0) - (data.totalActual || 0));
+                document.getElementById('proj-remaining').textContent = fmt(remaining);
+
+                // Chart
+                const labels = data.months.map(m => m.name);
+                const actualData = data.months.map(m => m.actual);
+                const displayData = data.months.map(m => m.display);
+
+                const isDark = document.documentElement.classList.contains('dark');
+                const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+                const textColor = isDark ? '#94a3b8' : '#64748b';
+
+                if (projectionChart) projectionChart.destroy();
+                const ctx = document.getElementById('projectionChart').getContext('2d');
+                projectionChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [
+                            {
+                                label: 'Ricevuto',
+                                data: actualData,
+                                backgroundColor: 'rgba(16,185,129,0.75)',
+                                borderRadius: 6,
+                                borderSkipped: false
+                            },
+                            {
+                                label: 'Proiettato',
+                                data: displayData,
+                                backgroundColor: 'rgba(96,165,250,0.5)',
+                                borderColor: 'rgba(96,165,250,0.8)',
+                                borderWidth: 1,
+                                borderRadius: 6,
+                                borderSkipped: false
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.raw)}`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                stacked: true,
+                                grid: { display: false },
+                                ticks: { color: textColor, font: { size: 11, weight: 'bold' } }
+                            },
+                            y: {
+                                stacked: true,
+                                grid: { color: gridColor },
+                                ticks: {
+                                    color: textColor,
+                                    font: { size: 11 },
+                                    callback: v => '€' + v.toLocaleString('it-IT')
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // Detail table
+                const assets = data.assets || [];
+                document.getElementById('proj-asset-count').textContent = `${assets.length} asset`;
+
+                const MONTH_NAMES = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+                const tbody = document.getElementById('proj-detail-body');
+                tbody.innerHTML = assets.map(a => {
+                    const activeMonths = a.projMonths
+                        .map((v, i) => v > 0 ? MONTH_NAMES[i] : null)
+                        .filter(Boolean)
+                        .join(', ');
+                    const methodBadge = a.method === 'yahoo_finance'
+                        ? `<span class="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-bold">Yahoo Finance</span>`
+                        : `<span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 text-[10px] font-bold">Anno Prec.</span>`;
+                    const typeBadge = a.isBond
+                        ? `<span class="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-[10px] font-bold">Bond/ETF</span>`
+                        : `<span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold">Azioni/ETF Az.</span>`;
+                    return `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                        <td class="px-6 py-3">
+                            <div class="font-bold text-xs">${a.ticker}</div>
+                            <div class="text-[10px] text-slate-400">${a.name || ''}</div>
+                        </td>
+                        <td class="px-6 py-3">${typeBadge}</td>
+                        <td class="px-6 py-3">${methodBadge}</td>
+                        <td class="px-6 py-3 text-right font-mono text-xs font-bold text-emerald-500">${fmt(a.alreadyReceived)}</td>
+                        <td class="px-6 py-3 text-right font-mono text-xs font-bold text-blue-400">${fmt(a.annualProjected)}</td>
+                        <td class="px-6 py-3 text-right text-[10px] text-slate-400">${activeMonths || '—'}</td>
+                    </tr>`;
+                }).join('');
+
+            } catch (err) {
+                console.error('Error loading projections:', err);
+                document.getElementById('projections-section').innerHTML +=
+                    `<div class="text-slate-400 text-xs italic">Errore nel caricamento delle proiezioni.</div>`;
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             loadDividends();
+            loadProjections();
             loadSidebarPortfolios();
         });
     </script>

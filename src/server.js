@@ -3130,6 +3130,182 @@ app.get('/api/analytics/dividends', (req, res) => {
     }
 });
 
+app.get('/api/analytics/dividend-projections', async (req, res) => {
+    try {
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const lastYear = currentYear - 1;
+        const liveRate = await getEurUsdRate();
+
+        const BOND_TYPES = ['Bond', 'ETF Obblig', 'Deposito Vincolato', 'ETF Monetario'];
+
+        // Step 1: Find all open positions
+        const openPositions = database.db.prepare(`
+            SELECT t.assetTicker as ticker,
+                   SUM(CASE WHEN t.type = 'BUY' THEN t.quantity WHEN t.type = 'SELL' THEN -t.quantity ELSE 0 END) as balance,
+                   a.type as assetType,
+                   a.currency as currency,
+                   a.name as name
+            FROM transactions t
+            JOIN assets a ON t.assetTicker = a.ticker
+            GROUP BY t.assetTicker
+            HAVING balance > 0.0001
+        `).all();
+
+        // Step 2: All DIVIDEND transactions for all portfolios
+        const allDivTx = database.db.prepare(`
+            SELECT t.assetTicker as ticker, t.date, t.amount, t.quantity, t.price, t.exchangeRate,
+                   p.currency as portCurrency
+            FROM transactions t
+            JOIN portfolios p ON t.portfolioId = p.id
+            WHERE t.type = 'DIVIDEND'
+            ORDER BY t.date ASC
+        `).all();
+
+        // Helper: convert amount to EUR
+        const toEUR = (amount, currency, exchangeRate) => {
+            if (currency === 'USD' && liveRate > 0) return amount / liveRate;
+            if (exchangeRate && exchangeRate !== 1) return amount / exchangeRate;
+            return amount;
+        };
+
+        // Step 3: Actual dividends for current year, grouped by month
+        const actualByMonth = Array(12).fill(0); // index 0 = Jan
+        const actualByAsset = {};
+        allDivTx.filter(d => d.date.startsWith(currentYear.toString())).forEach(d => {
+            const month = parseInt(d.date.split('-')[1]) - 1;
+            const amtEUR = toEUR(d.amount || (d.quantity * d.price), d.portCurrency, d.exchangeRate);
+            actualByMonth[month] += amtEUR;
+            if (!actualByAsset[d.ticker]) actualByAsset[d.ticker] = 0;
+            actualByAsset[d.ticker] += amtEUR;
+        });
+
+        // Step 4: Build projections per asset
+        const assetProjections = [];
+        const projectedByMonth = Array(12).fill(0);
+
+        for (const pos of openPositions) {
+            const ticker = pos.ticker;
+            const isBond = BOND_TYPES.includes(pos.assetType);
+            let projMonths = Array(12).fill(0); // projected per month for this asset
+            let method = 'none';
+
+            if (isBond) {
+                // Use last year's actual payments as projection
+                const lastYearDivs = allDivTx.filter(d =>
+                    d.ticker === ticker && d.date.startsWith(lastYear.toString())
+                );
+                if (lastYearDivs.length > 0) {
+                    lastYearDivs.forEach(d => {
+                        const month = parseInt(d.date.split('-')[1]) - 1;
+                        const amtEUR = toEUR(d.amount || (d.quantity * d.price), d.portCurrency, d.exchangeRate);
+                        projMonths[month] += amtEUR;
+                    });
+                    method = 'last_year';
+                }
+            } else {
+                // Try YahooFinance for dividendRate & exDividendDate
+                let yfSuccess = false;
+                try {
+                    const summary = await yahooFinance.quoteSummary(ticker, {
+                        modules: ['summaryDetail', 'calendarEvents']
+                    }).catch(() => null);
+
+                    if (summary && summary.summaryDetail && summary.summaryDetail.dividendRate > 0) {
+                        const annualRate = summary.summaryDetail.dividendRate;
+                        const frequency = summary.summaryDetail.dividendFrequency || 4; // default quarterly
+                        const currencyYF = summary.summaryDetail.currency || pos.currency;
+
+                        // Determine which months dividends fall in based on exDividendDate
+                        let divMonths = [];
+                        if (summary.calendarEvents && summary.calendarEvents.dividendDate) {
+                            const exDate = new Date(summary.calendarEvents.dividendDate);
+                            const baseMonth = exDate.getMonth();
+                            const monthInterval = Math.round(12 / frequency);
+                            for (let i = 0; i < frequency; i++) {
+                                divMonths.push((baseMonth + (i * monthInterval)) % 12);
+                            }
+                        } else {
+                            // Spread evenly
+                            const monthInterval = Math.round(12 / frequency);
+                            for (let i = 0; i < frequency; i++) {
+                                divMonths.push((i * monthInterval) % 12);
+                            }
+                        }
+
+                        const perPayment = (annualRate * pos.balance) / frequency;
+                        const perPaymentEUR = toEUR(perPayment, currencyYF, null);
+                        divMonths.forEach(m => { projMonths[m] += perPaymentEUR; });
+                        method = 'yahoo_finance';
+                        yfSuccess = true;
+                    }
+                } catch(e) {
+                    // YF failed, fall through to last-year history
+                }
+
+                if (!yfSuccess) {
+                    // Fallback: last year's history
+                    const lastYearDivs = allDivTx.filter(d =>
+                        d.ticker === ticker && d.date.startsWith(lastYear.toString())
+                    );
+                    if (lastYearDivs.length > 0) {
+                        lastYearDivs.forEach(d => {
+                            const month = parseInt(d.date.split('-')[1]) - 1;
+                            const amtEUR = toEUR(d.amount || (d.quantity * d.price), d.portCurrency, d.exchangeRate);
+                            projMonths[month] += amtEUR;
+                        });
+                        method = 'last_year';
+                    }
+                }
+            }
+
+            if (projMonths.some(v => v > 0)) {
+                const annualProjected = projMonths.reduce((s, v) => s + v, 0);
+                assetProjections.push({
+                    ticker,
+                    name: pos.name,
+                    assetType: pos.assetType,
+                    isBond,
+                    method,
+                    annualProjected,
+                    projMonths,
+                    alreadyReceived: actualByAsset[ticker] || 0
+                });
+                projMonths.forEach((v, i) => { projectedByMonth[i] += v; });
+            }
+        }
+
+        // Step 5: Build per-month summary: actual + remaining projected
+        const currentMonth = now.getMonth(); // 0-indexed
+        const months = [];
+        const MONTH_NAMES = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+        for (let i = 0; i < 12; i++) {
+            months.push({
+                month: i + 1,
+                name: MONTH_NAMES[i],
+                actual: actualByMonth[i],
+                projected: projectedByMonth[i],
+                // For past months: show actual. For future: show projected minus anything received
+                display: i < currentMonth ? actualByMonth[i] : Math.max(0, projectedByMonth[i] - actualByMonth[i])
+            });
+        }
+
+        const totalActual = actualByMonth.reduce((s, v) => s + v, 0);
+        const totalProjected = projectedByMonth.reduce((s, v) => s + v, 0);
+
+        res.json({
+            year: currentYear,
+            totalActual,
+            totalProjected,
+            months,
+            assets: assetProjections.sort((a, b) => b.annualProjected - a.annualProjected)
+        });
+    } catch (err) {
+        logger.error('Dividend projections error', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.get('/api/analytics/reports', async (req, res) => {
     try {
         const portfolios = database.db.prepare('SELECT * FROM portfolios').all();
