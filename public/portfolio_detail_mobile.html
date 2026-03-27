@@ -240,8 +240,8 @@
   </div>
 </div>
 <!-- Reconcile Modal -->
-<div id="reconcile-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center hidden">
-    <div class="bg-white dark:bg-[#111722] w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform transition-all">
+<div id="reconcile-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] items-center justify-center" style="display:none">
+    <div class="bg-white dark:bg-[#111722] w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden max-h-[90vh] flex flex-col">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
             <h3 class="font-black text-lg">Cash Reconciliation</h3>
             <button onclick="closeReconcileModal()" class="text-slate-400 hover:text-rose-500 transition-colors">
@@ -421,8 +421,8 @@
 </div>
 
 <!-- Transaction Modal -->
-<div id="transaction-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-2 md:p-4">
-    <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
+<div id="transaction-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] hidden items-center justify-center p-3" style="display:none">
+    <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
         <div class="px-4 py-3 md:px-5 md:py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
             <h3 id="t-modal-title" class="font-bold text-base md:text-lg">New Transaction</h3>
             <button onclick="closeTransactionModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
@@ -1192,9 +1192,7 @@
     document.getElementById('transaction-form').reset();
     const modal = document.getElementById('transaction-modal');
     if (modal) {
-      modal.classList.remove('hidden');
       modal.style.display = 'flex';
-      modal.style.zIndex = '10000';
     }
     document.getElementById('t-date').value = new Date().toISOString().split('T')[0];
     toggleTransactionFields();
@@ -1203,10 +1201,10 @@
   window.closeTransactionModal = function() {
     const modal = document.getElementById('transaction-modal');
     if (modal) {
-      modal.classList.add('hidden');
       modal.style.display = 'none';
     }
-    document.getElementById('transaction-form').reset();
+    const form = document.getElementById('transaction-form');
+    if (form) form.reset();
     if (document.getElementById('t-fx-field')) document.getElementById('t-fx-field').classList.add('hidden');
     if (document.getElementById('t-asset-metadata')) {
       document.getElementById('t-asset-metadata').classList.add('hidden');
@@ -1454,9 +1452,7 @@
     document.getElementById('t-modal-title').innerText = "Edit Transaction";
     const modal = document.getElementById('transaction-modal');
     if (modal) {
-      modal.classList.remove('hidden');
       modal.style.display = 'flex';
-      modal.style.zIndex = '10000';
     }
     toggleTransactionFields();
     checkFX(true);
@@ -1508,9 +1504,7 @@
     document.getElementById('t-modal-title').innerText = "Duplicate Transaction";
     const modal = document.getElementById('transaction-modal');
     if (modal) {
-      modal.classList.remove('hidden');
       modal.style.display = 'flex';
-      modal.style.zIndex = '10000';
     }
     toggleTransactionFields();
     checkFX(true);
@@ -1594,6 +1588,42 @@
       }, 300);
     });
   }
+
+  // ── Reconcile Modal ──────────────────────────────────
+  window.openReconcileModal = function(currentCash, currency) {
+    const modal = document.getElementById('reconcile-modal');
+    if (!modal) return;
+    if (currentCash !== undefined) document.getElementById('reconcile-current-cash').textContent = formatCurrency(currentCash, currency, 2);
+    if (currency) document.getElementById('reconcile-currency-label').textContent = currency;
+    document.getElementById('reconcile-date').value = new Date().toISOString().split('T')[0];
+    modal.style.display = 'flex';
+  };
+
+  window.closeReconcileModal = function() {
+    const modal = document.getElementById('reconcile-modal');
+    if (modal) modal.style.display = 'none';
+  };
+
+  window.saveReconcile = async function() {
+    const actual = parseFloat(document.getElementById('reconcile-actual-cash').value);
+    const date = document.getElementById('reconcile-date').value;
+    if (isNaN(actual)) return alert('Please enter a valid amount');
+    try {
+      const res = await fetch(`/api/portfolios/${mobCurrentPortfolioId}/reconcile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ actualCash: actual, date })
+      });
+      if (res.ok) {
+        closeReconcileModal();
+        mobLoadPortfolioDetail(mobCurrentPortfolioId);
+        window.showNotification && window.showNotification('Cash reconciled!', 'success');
+      } else {
+        const e = await res.json();
+        alert('Reconcile failed: ' + (e.error || 'Unknown error'));
+      }
+    } catch (err) { console.error(err); }
+  };
 
   function mobInit() {
     window._mobileViewActive = true;
