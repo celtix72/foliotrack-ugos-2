@@ -3261,6 +3261,20 @@ app.get('/api/analytics/dividend-projections', async (req, res) => {
 
             if (projMonths.some(v => v > 0)) {
                 const annualProjected = projMonths.reduce((s, v) => s + v, 0);
+                
+                // Extra metadata from YF if available
+                let divYield = 0;
+                let nextDate = null;
+                try {
+                    const summary = await yahooFinance.quoteSummary(ticker, { modules: ['summaryDetail', 'calendarEvents'] }).catch(() => null);
+                    if (summary && summary.summaryDetail) {
+                        divYield = summary.summaryDetail.dividendYield || 0;
+                    }
+                    if (summary && summary.calendarEvents && summary.calendarEvents.exDividendDate) {
+                        nextDate = new Date(summary.calendarEvents.exDividendDate).toISOString().split('T')[0];
+                    }
+                } catch(e) {}
+
                 assetProjections.push({
                     ticker,
                     name: pos.name,
@@ -3269,7 +3283,9 @@ app.get('/api/analytics/dividend-projections', async (req, res) => {
                     method,
                     annualProjected,
                     projMonths,
-                    alreadyReceived: actualByAsset[ticker] || 0
+                    alreadyReceived: actualByAsset[ticker] || 0,
+                    yield: divYield,
+                    nextDate: nextDate
                 });
                 projMonths.forEach((v, i) => { projectedByMonth[i] += v; });
             }
