@@ -3192,15 +3192,17 @@ app.post('/api/dividends/projections/reset', async (req, res) => {
 
         // Get open positions
         const openPositions = database.db.prepare(`
-            SELECT COALESCE(NULLIF(NULLIF(t.assetTicker, 'null'), ''), 'Sconosciuto') as ticker,
-                   SUM(CASE WHEN t.type = 'BUY' THEN t.quantity WHEN t.type = 'SELL' THEN -t.quantity ELSE 0 END) as balance,
-                   a.type as assetType,
-                   a.currency as currency,
-                   COALESCE(a.name, 'N/A') as name
-            FROM transactions t
-            LEFT JOIN assets a ON t.assetTicker = a.ticker
-            GROUP BY ticker
-            HAVING balance > 0.0001
+            SELECT * FROM (
+                SELECT COALESCE(NULLIF(NULLIF(t.assetTicker, 'null'), ''), 'Sconosciuto') as ticker,
+                       SUM(CASE WHEN t.type = 'BUY' THEN t.quantity WHEN t.type = 'SELL' THEN -t.quantity ELSE 0 END) as balance,
+                       a.type as assetType,
+                       a.currency as currency,
+                       COALESCE(a.name, 'N/A') as name
+                FROM transactions t
+                LEFT JOIN assets a ON t.assetTicker = a.ticker
+                GROUP BY ticker
+            )
+            WHERE balance > 0.0001 OR ticker LIKE 'CD_%' OR ticker = 'Sconosciuto'
         `).all();
 
         const allDivTx = database.db.prepare(`
@@ -3218,7 +3220,7 @@ app.post('/api/dividends/projections/reset', async (req, res) => {
 
         for (const pos of openPositions) {
             const ticker = pos.ticker;
-            const isBond = BOND_TYPES.includes(pos.assetType);
+            const isBond = BOND_TYPES.includes(pos.assetType) || ticker.startsWith('CD_') || ticker === 'Sconosciuto';
             
             if (isBond) {
                 const lastYearDivs = allDivTx.filter(d => d.ticker === ticker && d.date.startsWith(lastYear.toString()));
