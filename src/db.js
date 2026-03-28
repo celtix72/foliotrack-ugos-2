@@ -189,6 +189,14 @@ function initDb() {
         amount       REAL    NOT NULL DEFAULT 0,
         UNIQUE(portfolioId, asset_type)
       );
+
+      CREATE TABLE IF NOT EXISTS manual_dividend_projections (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        ticker      TEXT    NOT NULL REFERENCES assets(ticker) ON DELETE CASCADE,
+        exDate      TEXT    NOT NULL,
+        amount      REAL    NOT NULL,
+        createdAt   TEXT    NOT NULL DEFAULT (datetime('now'))
+      );
     `);
 
     // Standardized asset types remapping

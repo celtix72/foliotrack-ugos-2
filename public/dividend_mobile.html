@@ -71,14 +71,16 @@
             <!-- Projected Assets (Collapsible) -->
             <div class="px-5 mb-6">
                 <div class="bg-white dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                    <button onclick="document.getElementById('mob-proj-list-content').classList.toggle('hidden')"
-                            class="w-full flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                        <div class="flex items-center gap-2">
+                    <div class="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800/40">
+                        <button onclick="document.getElementById('mob-proj-list-content').classList.toggle('hidden')" class="flex items-center gap-2 hover:opacity-70 transition-opacity">
                              <span class="text-[11px] font-black uppercase tracking-widest text-slate-500">Dettaglio Proiezioni</span>
                              <span id="mob-proj-asset-count" class="text-[10px] font-bold text-primary bg-primary/10 px-1.5 rounded-sm">0</span>
-                        </div>
-                        <span class="material-symbols-outlined text-slate-400">expand_more</span>
-                    </button>
+                             <span class="material-symbols-outlined text-sm text-slate-400">expand_more</span>
+                        </button>
+                        <button onclick="openManualModal()" class="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2 py-1 rounded-md">
+                            + Manuale
+                        </button>
+                    </div>
                     <div id="mob-proj-list-content" class="hidden">
                         <div id="mob-proj-body" class="divide-y divide-slate-100 dark:divide-slate-800/30">
                             <!-- JS Injected -->
@@ -86,6 +88,36 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Manual Dividend Modal -->
+            <div id="manual-modal" class="fixed inset-0 bg-slate-900/50 dark:bg-black/60 backdrop-blur-sm hidden z-[100] flex items-center justify-center p-4">
+                <div class="bg-white dark:bg-[#111722] w-full max-w-sm rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-5">
+                    <div class="flex justify-between items-center mb-5">
+                        <h3 class="text-sm font-black tracking-tight">Dividendo Manuale</h3>
+                        <button onclick="closeManualModal()" class="text-slate-400 hover:text-slate-200">
+                            <span class="material-symbols-outlined text-lg">close</span>
+                        </button>
+                    </div>
+                    <form id="manual-div-form" onsubmit="submitManualDividend(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Ticker</label>
+                            <input type="text" id="manual-ticker" required placeholder="Es. AAPL" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Data</label>
+                            <input type="date" id="manual-date" required class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Importo unitario (€)</label>
+                            <input type="number" step="0.0001" id="manual-amount" required placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm font-mono">
+                        </div>
+                        <button type="submit" class="w-full mt-4 py-2 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg text-sm">
+                            Salva
+                        </button>
+                    </form>
+                </div>
+            </div>
+
 
             <!-- Filters & History Section -->
             <div class="mob-section-header">
@@ -169,6 +201,29 @@
                 } catch (err) { console.error('Error loading mobile dividends data:', err); }
             }
 
+            window.openManualModal = () => document.getElementById('manual-modal').classList.remove('hidden');
+            window.closeManualModal = () => {
+                document.getElementById('manual-modal').classList.add('hidden');
+                document.getElementById('manual-div-form').reset();
+            };
+            window.submitManualDividend = async (e) => {
+                e.preventDefault();
+                const ticker = document.getElementById('manual-ticker').value;
+                const exDate = document.getElementById('manual-date').value;
+                const amount = document.getElementById('manual-amount').value;
+                try {
+                    const res = await fetch('/api/dividends/manual-projections', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ ticker, exDate, amount })
+                    });
+                    if (res.ok) {
+                        window.closeManualModal();
+                        loadMobData();
+                    } else alert('Errore al salvataggio');
+                } catch (err) { console.error(err); }
+            };
+
             function renderMobProjectionChart(months) {
                 const ctx = document.getElementById('mob-projection-chart').getContext('2d');
                 if (mobProjChart) mobProjChart.destroy();
@@ -176,6 +231,7 @@
                 const isDark = document.documentElement.classList.contains('dark');
                 const textColor = isDark ? '#94a3b8' : '#64748b';
                 const gridColor = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)';
+                const tickersData = months.map(m => m.tickers.join(', '));
 
                 mobProjChart = new Chart(ctx, {
                     type: 'bar',
@@ -185,14 +241,16 @@
                             {
                                 label: 'Ricevuto',
                                 data: months.map(m => m.actual),
-                                backgroundColor: '#10b981',
+                                backgroundColor: 'rgba(16,185,129,0.75)', // Green
                                 borderRadius: 4,
                                 borderSkipped: false
                             },
                             {
                                 label: 'Proiettato',
                                 data: months.map(m => m.display),
-                                backgroundColor: isDark ? '#3b82f6' : '#60a5fa',
+                                backgroundColor: 'rgba(6,182,212,0.6)', // Cyan
+                                borderColor: 'rgba(6,182,212,1)',
+                                borderWidth: 1,
                                 borderRadius: 4,
                                 borderSkipped: false
                             }
@@ -201,7 +259,7 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        layout: { padding: { top: 25 } },
+                        layout: { padding: { top: 25, bottom: 20 } },
                         plugins: {
                             legend: { display: false },
                             tooltip: { 
@@ -211,7 +269,14 @@
                                 titleColor: isDark ? '#f1f5f9' : '#1e293b',
                                 bodyColor: isDark ? '#f1f5f9' : '#1e293b',
                                 borderColor: isDark ? '#334155' : '#e2e8f0',
-                                borderWidth: 1
+                                borderWidth: 1,
+                                callbacks: {
+                                    afterBody: (context) => {
+                                        const idx = context[0].dataIndex;
+                                        if (tickersData[idx]) return '\nAsset: ' + tickersData[idx];
+                                        return '';
+                                    }
+                                }
                             }
                         },
                         scales: {
@@ -228,7 +293,7 @@
                         }
                     },
                     plugins: [{
-                        id: 'barLabels',
+                        id: 'barLabelsAndTickers',
                         afterDatasetsDraw(chart) {
                             const {ctx} = chart;
                             ctx.save();
@@ -240,15 +305,26 @@
                             const chartData = chart.data;
                             const meta0 = chart.getDatasetMeta(0);
                             const meta1 = chart.getDatasetMeta(1);
+                            const xAxis = chart.scales.x;
 
                             chartData.labels.forEach((label, i) => {
                                 const val0 = chartData.datasets[0].data[i] || 0;
                                 const val1 = chartData.datasets[1].data[i] || 0;
                                 const total = val0 + val1;
                                 
+                                const xPos = xAxis.getPixelForTick(i);
+
                                 if (total > 0) {
                                     const topY = Math.min(meta0.data[i].y, meta1.data[i].y);
-                                    ctx.fillText('€' + Math.round(total), meta0.data[i].x, topY - 5);
+                                    ctx.fillText('€' + Math.round(total), xPos, topY - 5);
+                                }
+
+                                const t = tickersData[i];
+                                if (t) {
+                                    ctx.textBaseline = 'top';
+                                    const yPos = chart.chartArea.bottom + 8;
+                                    let txt = t.length > 7 ? t.substring(0, 5) + '..' : t;
+                                    ctx.fillText(txt, xPos, yPos);
                                 }
                             });
                             ctx.restore();
@@ -262,21 +338,28 @@
                 const bodyEl = document.getElementById('mob-proj-body');
                 
                 countEl.innerText = assets.length;
-                bodyEl.innerHTML = assets.map(a => `
+                bodyEl.innerHTML = assets.map(a => {
+                    let badge = '';
+                    if (a.tag === 'REGISTRATO') badge = '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/10 text-emerald-500">Ricevuto</span>';
+                    if (a.tag === 'YF') badge = '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/10 text-blue-400">YF</span>';
+                    if (a.tag === 'STORICO') badge = '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-500/10 text-slate-500">Storico</span>';
+                    if (a.tag === 'MANUALE') badge = '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/10 text-purple-400">Manuale</span>';
+
+                    return `
                     <div class="p-4 flex flex-col gap-1">
                         <div class="flex items-center justify-between">
-                            <span class="text-[13px] font-black">${a.ticker}</span>
-                            <span class="text-[13px] font-black text-blue-400">€ ${Math.round(a.annualProjected).toLocaleString('it-IT')}</span>
+                            <span class="text-[13px] font-black">${a.ticker} <span class="opacity-50 text-[10px] ml-1">${a.date}</span></span>
+                            <span class="text-[13px] font-black text-blue-400">€ ${Math.round(a.totalAmount).toLocaleString('it-IT')}</span>
                         </div>
-                        <div class="flex items-center justify-between text-[10px] font-bold opacity-60">
+                        <div class="flex items-center justify-between text-[10px] font-bold opacity-60 mt-1">
                             <span class="truncate pr-4">${(a.name && a.name !== 'null') ? a.name : a.ticker}</span>
-                            <div class="flex items-center gap-3">
-                                <span class="text-slate-500">${(a.yield * 100).toFixed(2)}% RESA</span>
-                                <span class="text-amber-500">${a.nextDate || '—'}</span>
+                            <div class="flex items-center gap-2">
+                                ${badge}
+                                <span class="text-slate-500 hidden sm:inline-block">${(a.yield * 100).toFixed(2)}% YLD</span>
                             </div>
                         </div>
                     </div>
-                `).join('');
+                `}).join('');
             }
 
             window.toggleMobGroup = (key) => {

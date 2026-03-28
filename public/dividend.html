@@ -189,47 +189,26 @@
                         <canvas id="projectionChart"></canvas>
                     </div>
 
-                    <!-- Projected Assets Summary (Collapsed) -->
-                    <div class="mt-8 border-t border-slate-100 dark:border-slate-800/80 pt-6">
-                        <button onclick="document.getElementById('proj-summary-list').classList.toggle('hidden')" 
-                                class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-primary transition-colors">
-                            <span class="material-symbols-outlined text-sm">expand_more</span>
-                            Previsioni Dettagliate per Asset
-                        </button>
-                            <div id="proj-summary-list" class="hidden mt-4 overflow-hidden rounded-xl border border-slate-100 dark:border-slate-800">
-                                <table class="w-full text-left border-collapse">
-                                    <thead>
-                                        <tr class="bg-slate-50/50 dark:bg-slate-900/50 text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800/60">
-                                            <th class="px-5 py-3">Data Stacco</th>
-                                            <th class="px-5 py-3">Ticker ASSET</th>
-                                            <th class="px-5 py-3 text-right">Yield Previsto</th>
-                                            <th class="px-5 py-3 text-right">Valore Previsto</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="proj-summary-body" class="divide-y divide-slate-100/50 dark:divide-slate-800/30">
-                                        <!-- JS Injected -->
-                                    </tbody>
-                                </table>
-                            </div>
-                    </div>
+                <div class="flex items-center justify-between mt-8">
+                    <span class="text-xs font-black uppercase text-slate-400 tracking-widest">Dettaglio per Asset</span>
+                    <button onclick="openManualModal()"
+                        class="px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold shadow-md hover:bg-primary/90 transition-colors">
+                        + Manuale
+                    </button>
                 </div>
-
-                <!-- Detail Table (collapsed by default) -->
-                <div id="proj-detail-table" class="hidden bg-white dark:bg-[#111722] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                    <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                        <span class="text-xs font-black uppercase text-slate-400 tracking-widest">Dettaglio per Asset</span>
-                        <span class="text-[10px] text-slate-400" id="proj-asset-count">0 asset</span>
-                    </div>
+                <!-- Detail Table -->
+                <div id="proj-detail-table" class="bg-white dark:bg-[#111722] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-sm">
                             <thead>
-                                <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                                <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
                                     <th class="px-6 py-3">Asset</th>
-                                    <th class="px-6 py-3">Tipo</th>
-                                    <th class="px-6 py-3">Metodo</th>
-                                    <th class="px-6 py-3 text-right">Ricevuto</th>
-                                    <th class="px-6 py-3 text-right">Proiettato</th>
-                                    <th class="px-6 py-3 text-right">Mesi</th>
+                                    <th class="px-6 py-3">Data</th>
+                                    <th class="px-6 py-3">Fonte</th>
+                                    <th class="px-6 py-3 text-right">Singolo</th>
+                                    <th class="px-6 py-3 text-right">Totale Evento</th>
+                                    <th class="px-6 py-3 text-right">Attesi Anno</th>
+                                    <th class="px-6 py-3 text-right">Yield</th>
                                 </tr>
                             </thead>
                             <tbody id="proj-detail-body" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
@@ -237,6 +216,36 @@
                     </div>
                 </div>
             </section>
+            
+            <!-- Manual Dividend Modal -->
+            <div id="manual-modal" class="fixed inset-0 bg-slate-900/50 dark:bg-black/60 backdrop-blur-sm hidden z-[100] flex items-center justify-center p-4">
+                <div class="bg-white dark:bg-[#111722] w-full max-w-md rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-lg font-black tracking-tight">Aggiungi Dividendo Manuale</h3>
+                        <button onclick="closeManualModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                            <span class="material-symbols-outlined">close</span>
+                        </button>
+                    </div>
+                    <form id="manual-div-form" onsubmit="submitManualDividend(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Ticker in portafoglio</label>
+                            <input type="text" id="manual-ticker" required placeholder="Es. AAPL" class="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm focus:ring-2 focus:ring-primary/20">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Data Stacco</label>
+                            <input type="date" id="manual-date" required class="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm focus:ring-2 focus:ring-primary/20">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Importo per singola azione (€)</label>
+                            <input type="number" step="0.0001" id="manual-amount" required placeholder="0.00" class="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm focus:ring-2 focus:ring-primary/20 font-mono">
+                        </div>
+                        <button type="submit" class="w-full mt-6 py-2 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg text-sm transition-colors">
+                            Salva
+                        </button>
+                    </form>
+                </div>
+            </div>
+
 
             <!-- ─── HISTORICAL DIVIDENDS ──────────────────────────────────────── -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -453,10 +462,11 @@
                 const remaining = Math.max(0, (data.totalProjected || 0) - (data.totalActual || 0));
                 document.getElementById('proj-remaining').textContent = fmt(remaining);
 
-                // Chart
+                // Chart mapping
                 const labels = data.months.map(m => m.name);
                 const actualData = data.months.map(m => m.actual);
                 const displayData = data.months.map(m => m.display);
+                const tickersData = data.months.map(m => m.tickers.join(', '));
 
                 const isDark = document.documentElement.classList.contains('dark');
                 const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
@@ -472,15 +482,15 @@
                             {
                                 label: 'Ricevuto',
                                 data: actualData,
-                                backgroundColor: 'rgba(16,185,129,0.75)',
+                                backgroundColor: 'rgba(16,185,129,0.75)', // Green
                                 borderRadius: 6,
                                 borderSkipped: false
                             },
                             {
                                 label: 'Proiettato',
                                 data: displayData,
-                                backgroundColor: 'rgba(96,165,250,0.5)',
-                                borderColor: 'rgba(96,165,250,0.8)',
+                                backgroundColor: 'rgba(6,182,212,0.6)', // Cyan
+                                borderColor: 'rgba(6,182,212,1)',
                                 borderWidth: 1,
                                 borderRadius: 6,
                                 borderSkipped: false
@@ -490,12 +500,17 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        layout: { padding: { top: 25 } },
+                        layout: { padding: { top: 25, bottom: 20 } },
                         interaction: { mode: 'index', intersect: false },
                         plugins: {
                             legend: { display: false },
                             tooltip: {
                                 callbacks: {
+                                    afterBody: (context) => {
+                                        const idx = context[0].dataIndex;
+                                        if (tickersData[idx]) return '\nAsset: ' + tickersData[idx];
+                                        return '';
+                                    },
                                     label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.raw)}`
                                 }
                             }
@@ -518,28 +533,40 @@
                         }
                     },
                     plugins: [{
-                        id: 'barLabels',
+                        id: 'barLabelsAndTickers',
                         afterDatasetsDraw(chart) {
                             const {ctx} = chart;
                             ctx.save();
                             ctx.textAlign = 'center';
-                            ctx.textBaseline = 'bottom';
                             ctx.font = 'bold 9px ' + (getComputedStyle(document.documentElement).getPropertyValue('--app-font-family') || 'sans-serif');
                             ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
 
                             const chartData = chart.data;
                             const meta0 = chart.getDatasetMeta(0);
                             const meta1 = chart.getDatasetMeta(1);
+                            const xAxis = chart.scales.x;
 
                             chartData.labels.forEach((label, i) => {
                                 const val0 = chartData.datasets[0].data[i] || 0;
                                 const val1 = chartData.datasets[1].data[i] || 0;
                                 const total = val0 + val1;
                                 
+                                const xPos = xAxis.getPixelForTick(i);
+                                
+                                // Draw Top Amount
                                 if (total > 0) {
-                                    // Plot above the stacked bar
+                                    ctx.textBaseline = 'bottom';
                                     const topY = Math.min(meta0.data[i].y, meta1.data[i].y);
-                                    ctx.fillText('€' + Math.round(total), meta0.data[i].x, topY - 8);
+                                    ctx.fillText('€' + Math.round(total), xPos, topY - 8);
+                                }
+
+                                // Draw Bottom Tickers
+                                const t = tickersData[i];
+                                if (t) {
+                                    ctx.textBaseline = 'top';
+                                    const yPos = chart.chartArea.bottom + 15;
+                                    let txt = t.length > 15 ? t.substring(0, 13) + '...' : t;
+                                    ctx.fillText(txt, xPos, yPos);
                                 }
                             });
                             ctx.restore();
@@ -547,82 +574,66 @@
                     }]
                 });
 
-                // Detail table (Asset projected values list)
+                // Render detail table
                 const assets = data.assets || [];
-                document.getElementById('proj-asset-count').textContent = `${assets.length} asset`;
-                
-                // Build Projected Assets Summary
-                const summaryBody = document.getElementById('proj-summary-body');
-                if (summaryBody) {
-                    const sortedAssets = [...assets].sort((a, b) => {
-                        if (!a.nextDate) return 1;
-                        if (!b.nextDate) return -1;
-                        return a.nextDate.localeCompare(b.nextDate);
-                    });
-
-                    summaryBody.innerHTML = sortedAssets.map(a => {
-                        const isReceived = (a.alreadyReceived || 0) > 0;
-                        const methodBadge = a.method === 'yahoo_finance'
-                            ? `<span class="text-[9px] px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold ml-2">YAHOO</span>`
-                            : `<span class="text-[9px] px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-800 font-bold ml-2">PAST</span>`;
-
-                        return `
-                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors border-b border-slate-100 dark:border-slate-800/40 last:border-0">
-                                <td class="px-5 py-3 whitespace-nowrap">
-                                    <div class="flex items-center gap-2">
-                                        ${isReceived ? '<span class="material-symbols-outlined text-sm text-emerald-500 font-black">check_circle</span>' : '<span class="material-symbols-outlined text-sm text-slate-200 dark:text-slate-800 font-black">history</span>'}
-                                        <span class="text-[10px] font-black ${isReceived ? 'text-emerald-500' : 'text-amber-500'}">${a.nextDate || '—'}</span>
-                                    </div>
-                                </td>
-                                <td class="px-5 py-3">
-                                    <div class="flex items-center">
-                                        <div class="flex flex-col">
-                                            <span class="text-xs font-black text-slate-700 dark:text-white">${a.ticker}</span>
-                                            <span class="text-[9px] font-bold text-slate-500 truncate max-w-[150px]">${(a.name && a.name !== 'null') ? a.name : a.ticker}</span>
-                                        </div>
-                                        ${methodBadge}
-                                    </div>
-                                </td>
-                                <td class="px-5 py-3 text-right font-mono text-xs font-bold text-slate-500">${(a.yield * 100).toFixed(2)}%</td>
-                                <td class="px-5 py-3 text-right font-mono text-xs font-black text-blue-400">€ ${formatNumber(a.annualProjected, 0)}</td>
-                            </tr>
-                        `;
-                    }).join('');
-                }
-
-                const MONTH_NAMES = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
                 const tbody = document.getElementById('proj-detail-body');
                 tbody.innerHTML = assets.map(a => {
-                    const activeMonths = a.projMonths
-                        .map((v, i) => v > 0 ? MONTH_NAMES[i] : null)
-                        .filter(Boolean)
-                        .join(', ');
-                    const methodBadge = a.method === 'yahoo_finance'
-                        ? `<span class="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-bold">Yahoo Finance</span>`
-                        : `<span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 text-[10px] font-bold">Anno Prec.</span>`;
-                    const typeBadge = a.isBond
-                        ? `<span class="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-[10px] font-bold">Bond/ETF</span>`
-                        : `<span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold">Azioni/ETF Az.</span>`;
+                    let badge = '';
+                    if (a.tag === 'REGISTRATO') badge = '<span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-bold">Ricevuto</span>';
+                    if (a.tag === 'YF') badge = '<span class="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-bold">Previsto (YF)</span>';
+                    if (a.tag === 'STORICO') badge = '<span class="px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-500 text-[10px] font-bold">Storico (1Y)</span>';
+                    if (a.tag === 'MANUALE') badge = '<span class="px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 text-[10px] font-bold flex items-center gap-1 w-max"><span class="material-symbols-outlined text-[10px]">edit</span>Manuale</span>';
+
                     return `
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                        <td class="px-6 py-3">
+                        <td class="px-6 py-3 min-w-[150px]">
                             <div class="font-bold text-xs">${a.ticker}</div>
-                            <div class="text-[10px] text-slate-400">${a.name || ''}</div>
+                            <div class="text-[10px] text-slate-400 truncate max-w-[150px]">${(a.name && a.name !== 'null') ? a.name : a.ticker}</div>
                         </td>
-                        <td class="px-6 py-3">${typeBadge}</td>
-                        <td class="px-6 py-3">${methodBadge}</td>
-                        <td class="px-6 py-3 text-right font-mono text-xs font-bold text-emerald-500">${fmt(a.alreadyReceived)}</td>
-                        <td class="px-6 py-3 text-right font-mono text-xs font-bold text-blue-400">${fmt(a.annualProjected)}</td>
-                        <td class="px-6 py-3 text-right text-[10px] text-slate-400">${activeMonths || '—'}</td>
+                        <td class="px-6 py-3 font-mono text-[10px] text-slate-500">${a.date}</td>
+                        <td class="px-6 py-3">${badge}</td>
+                        <td class="px-6 py-3 text-right font-mono text-xs font-bold text-slate-500">${a.amount ? '€' + a.amount.toFixed(2) : '—'}</td>
+                        <td class="px-6 py-3 text-right font-mono text-xs font-black text-slate-800 dark:text-slate-100">${fmt(a.totalAmount)}</td>
+                        <td class="px-6 py-3 text-right font-mono text-xs font-bold text-primary">${fmt(a.annualProjected)}</td>
+                        <td class="px-6 py-3 text-right font-mono text-xs font-bold text-amber-500">${a.yield ? (a.yield*100).toFixed(2)+'%' : '—'}</td>
                     </tr>`;
                 }).join('');
 
             } catch (err) {
                 console.error('Error loading projections:', err);
-                document.getElementById('projections-section').innerHTML +=
-                    `<div class="text-slate-400 text-xs italic">Errore nel caricamento delle proiezioni.</div>`;
+                // Silence handled by empty render or retry
             }
         }
+
+        function openManualModal() {
+            document.getElementById('manual-modal').classList.remove('hidden');
+        }
+
+        function closeManualModal() {
+            document.getElementById('manual-modal').classList.add('hidden');
+            document.getElementById('manual-div-form').reset();
+        }
+
+        async function submitManualDividend(e) {
+            e.preventDefault();
+            const ticker = document.getElementById('manual-ticker').value;
+            const exDate = document.getElementById('manual-date').value;
+            const amount = document.getElementById('manual-amount').value;
+            try {
+                const res = await fetch('/api/dividends/manual-projections', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ ticker, exDate, amount })
+                });
+                if (res.ok) {
+                    closeManualModal();
+                    loadProjections(); // refresh
+                } else alert('Errore al salvataggio');
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
 
         document.addEventListener('DOMContentLoaded', () => {
             loadDividends();
