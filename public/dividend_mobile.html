@@ -101,7 +101,9 @@
                     <form id="manual-div-form" onsubmit="submitManualDividend(event)" class="space-y-4">
                         <div>
                             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Ticker</label>
-                            <input type="text" id="manual-ticker" required placeholder="Es. AAPL" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm">
+                            <select id="manual-ticker" required class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm font-bold">
+                                <option value="" disabled selected>Seleziona un asset...</option>
+                            </select>
                         </div>
                         <div>
                             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Data</label>
@@ -182,12 +184,20 @@
                     const projData = await projRes.json();
                     
                     document.getElementById('mob-current-year').innerText = projData.year;
-                    document.getElementById('mob-total-actual').innerText = formatCurrency(projData.totalActual, 'EUR');
-                    document.getElementById('mob-total-projected').innerText = formatCurrency(projData.totalProjected, 'EUR');
-                    document.getElementById('mob-total-remaining').innerText = formatCurrency(Math.max(0, projData.totalProjected - projData.totalActual), 'EUR');
+                    document.getElementById('mob-total-actual').innerText = formatCurrency(projData.totalReceived || 0, 'EUR');
+                    document.getElementById('mob-total-projected').innerText = formatCurrency(projData.totalExpected || 0, 'EUR');
+                    document.getElementById('mob-total-remaining').innerText = formatCurrency(projData.totalRemaining || 0, 'EUR');
 
                     renderMobProjectionChart(projData.months);
                     renderMobProjList(projData.assets);
+
+                    const manualSelect = document.getElementById('manual-ticker');
+                    if (manualSelect && projData.openTickers) {
+                        const currentVal = manualSelect.value;
+                        const options = projData.openTickers.map(t => `<option value="${t.ticker}">${t.ticker} - ${t.name}</option>`).join('');
+                        manualSelect.innerHTML = `<option value="" disabled selected>Seleziona un asset...</option>` + options;
+                        if (currentVal && projData.openTickers.find(t => t.ticker === currentVal)) manualSelect.value = currentVal;
+                    }
 
                     // Load History
                     const histRes = await fetch('/api/analytics/dividends');
@@ -317,14 +327,6 @@
                                 if (total > 0) {
                                     const topY = Math.min(meta0.data[i].y, meta1.data[i].y);
                                     ctx.fillText('€' + Math.round(total), xPos, topY - 5);
-                                }
-
-                                const t = tickersData[i];
-                                if (t) {
-                                    ctx.textBaseline = 'top';
-                                    const yPos = chart.chartArea.bottom + 8;
-                                    let txt = t.length > 7 ? t.substring(0, 5) + '..' : t;
-                                    ctx.fillText(txt, xPos, yPos);
                                 }
                             });
                             ctx.restore();

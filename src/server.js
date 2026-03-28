@@ -3183,20 +3183,20 @@ app.get('/api/analytics/dividend-projections', async (req, res) => {
 
         // Step 1: Find all open positions
         const openPositions = database.db.prepare(`
-            SELECT t.assetTicker as ticker,
+            SELECT COALESCE(NULLIF(NULLIF(t.assetTicker, 'null'), ''), 'Sconosciuto') as ticker,
                    SUM(CASE WHEN t.type = 'BUY' THEN t.quantity WHEN t.type = 'SELL' THEN -t.quantity ELSE 0 END) as balance,
                    a.type as assetType,
                    a.currency as currency,
-                   a.name as name
+                   COALESCE(a.name, 'N/A') as name
             FROM transactions t
-            JOIN assets a ON t.assetTicker = a.ticker
-            GROUP BY t.assetTicker
+            LEFT JOIN assets a ON t.assetTicker = a.ticker
+            GROUP BY ticker
             HAVING balance > 0.0001
         `).all();
 
         // Step 2: All DIVIDEND transactions
         const allDivTx = database.db.prepare(`
-            SELECT t.assetTicker as ticker, t.date, t.amount, t.quantity, t.price, t.tax, t.exchangeRate,
+            SELECT COALESCE(NULLIF(NULLIF(t.assetTicker, 'null'), ''), 'Sconosciuto') as ticker, t.date, t.amount, t.quantity, t.price, t.tax, t.exchangeRate,
                    p.currency as portCurrency
             FROM transactions t
             JOIN portfolios p ON t.portfolioId = p.id
@@ -3352,7 +3352,8 @@ app.get('/api/analytics/dividend-projections', async (req, res) => {
             totalReceived,
             totalRemaining,
             months,
-            assets: listItems.sort((a,b) => new Date(b.date) - new Date(a.date))
+            assets: listItems.sort((a,b) => new Date(b.date) - new Date(a.date)),
+            openTickers: openPositions.map(p => ({ ticker: p.ticker, name: p.name }))
         });
     } catch (err) {
         logger.error('Dividend projections error', err);

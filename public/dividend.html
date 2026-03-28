@@ -229,7 +229,9 @@
                     <form id="manual-div-form" onsubmit="submitManualDividend(event)" class="space-y-4">
                         <div>
                             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Ticker in portafoglio</label>
-                            <input type="text" id="manual-ticker" required placeholder="Es. AAPL" class="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm focus:ring-2 focus:ring-primary/20">
+                            <select id="manual-ticker" required class="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm focus:ring-2 focus:ring-primary/20 font-bold">
+                                <option value="" disabled selected>Seleziona un asset...</option>
+                            </select>
                         </div>
                         <div>
                             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Data Stacco</label>
@@ -457,10 +459,9 @@
                 document.querySelectorAll('#proj-year, .proj-year-lbl').forEach(el => el.textContent = data.year);
 
                 // Hero KPIs
-                document.getElementById('proj-actual').textContent = fmt(data.totalActual || 0);
-                document.getElementById('proj-total').textContent = fmt(data.totalProjected || 0);
-                const remaining = Math.max(0, (data.totalProjected || 0) - (data.totalActual || 0));
-                document.getElementById('proj-remaining').textContent = fmt(remaining);
+                document.getElementById('proj-actual').textContent = fmt(data.totalReceived || 0);
+                document.getElementById('proj-total').textContent = fmt(data.totalExpected || 0);
+                document.getElementById('proj-remaining').textContent = fmt(data.totalRemaining || 0);
 
                 // Chart mapping
                 const labels = data.months.map(m => m.name);
@@ -559,20 +560,22 @@
                                     const topY = Math.min(meta0.data[i].y, meta1.data[i].y);
                                     ctx.fillText('€' + Math.round(total), xPos, topY - 8);
                                 }
-
-                                // Draw Bottom Tickers
-                                const t = tickersData[i];
-                                if (t) {
-                                    ctx.textBaseline = 'top';
-                                    const yPos = chart.chartArea.bottom + 15;
-                                    let txt = t.length > 15 ? t.substring(0, 13) + '...' : t;
-                                    ctx.fillText(txt, xPos, yPos);
-                                }
                             });
                             ctx.restore();
                         }
                     }]
                 });
+
+                // Populate Manual Ticker Select
+                const manualSelect = document.getElementById('manual-ticker');
+                if (manualSelect && data.openTickers) {
+                    const currentVal = manualSelect.value;
+                    const options = data.openTickers.map(t => `<option value="${t.ticker}">${t.ticker} - ${t.name}</option>`).join('');
+                    manualSelect.innerHTML = `<option value="" disabled selected>Seleziona un asset...</option>` + options;
+                    if (currentVal && data.openTickers.find(t => t.ticker === currentVal)) {
+                        manualSelect.value = currentVal;
+                    }
+                }
 
                 // Render detail table
                 const assets = data.assets || [];
