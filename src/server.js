@@ -2070,6 +2070,7 @@ app.get('/api/validate-ticker', async (req, res) => {
 // Bulk import: save multiple validated transactions at once
 app.post('/api/transactions/bulk', async (req, res) => {
     const { portfolioId, transactions } = req.body;
+    logger.info(`Bulk import request received for portfolioId: ${portfolioId} | Rows: ${transactions ? transactions.length : 0}`);
     if (!portfolioId || !transactions || !transactions.length) {
         return res.status(400).json({ error: 'portfolioId and transactions[] required' });
     }
@@ -2138,7 +2139,7 @@ app.post('/api/transactions/bulk', async (req, res) => {
                                 INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, country, isManual, dataSource, isin, updatedAt)
                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
                             `).run(
-                                t.assetId || null, 
+                                t.assetId || sanitizedTicker, 
                                 sanitizedTicker, 
                                 t.assetName || sanitizedTicker, 
                                 t.assetType || (newSource === 'B_ITA' ? 'Bond' : 'Stock'), 

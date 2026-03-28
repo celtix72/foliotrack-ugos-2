@@ -2485,8 +2485,8 @@
 
         const toImport = importRows.map(r => ({
             type:         r.type,
-            assetTicker:  r.ticker,
-            assetName:    r.yfName || r.ticker,
+            assetTicker:  r.ticker || r.tickerRaw,
+            assetName:    r.yfName || r.ticker || r.tickerRaw,
             assetCurrency:r.yfCurrency || r.currency,
             assetExchange:r.yfExchange || '',
             assetType:    r.yfType || 'Stock',
@@ -2504,6 +2504,8 @@
             isin:         r.isin,
             dataSource:   r.dataSource
         }));
+
+        console.log('Sending to import:', toImport);
 
         document.getElementById('import-step-2').classList.add('hidden');
         document.getElementById('import-step-3').classList.remove('hidden');
