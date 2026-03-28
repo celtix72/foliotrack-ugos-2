@@ -111,143 +111,180 @@
                     <h1 class="text-3xl font-black tracking-tight">Dividend Income</h1>
                     <p class="text-slate-500 dark:text-slate-400 text-sm">Passive income tracking across all portfolios, grouped and searchable.</p>
                 </div>
-                <!-- Filters & Grouping -->
-                <div class="flex flex-wrap items-center gap-4 bg-white dark:bg-[#111722] p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <div class="relative">
-                        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
-                        <input type="text" id="div-search" placeholder="Filter by asset..." 
-                            class="pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-900/50 border-none rounded-lg text-xs w-48 focus:ring-2 focus:ring-primary/20 transition-all"
-                            oninput="renderDividends()">
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Group By</span>
-                        <select id="div-group-by" onchange="renderDividends()" 
-                            class="bg-slate-50 dark:bg-slate-900/50 border-none rounded-lg text-xs py-2 pl-3 pr-8 focus:ring-2 focus:ring-primary/20 transition-all font-bold">
-                            <option value="year">Year</option>
-                            <option value="portfolioName">Portfolio</option>
-                            <option value="none">None (Linear List)</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
             <!-- ─── ANNUAL PROJECTIONS ──────────────────────────────────────────── -->
             <section id="projections-section" class="space-y-6">
-                <div class="flex items-center justify-between">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <h2 class="text-xl font-black tracking-tight">Proiezioni Annuali <span id="proj-year" class="text-primary"></span></h2>
-                        <p class="text-slate-500 dark:text-slate-400 text-xs mt-0.5">Cedole e dividendi previsti per l'anno corrente, basati su storico e dati di mercato.</p>
+                        <h2 class="text-xl font-black tracking-tight">Proiezioni <span id="proj-year" class="text-primary"></span></h2>
+                        <p class="text-[11px] text-slate-500 font-bold uppercase tracking-widest mt-1">Stime anno in corso</p>
                     </div>
-                    <button onclick="toggleProjectionDetail()" id="proj-detail-btn"
-                        class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-500 hover:text-primary hover:border-primary transition-colors">
-                        <span class="material-symbols-outlined text-sm">table_rows</span>
-                        Dettaglio
-                    </button>
+                    <div class="flex items-center justify-end gap-2">
+                        <button id="btn-recalc" onclick="resetProjections()" class="text-xs font-bold text-slate-500 hover:text-primary transition-colors flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-lg shadow-sm">
+                            <span class="material-symbols-outlined text-[16px]">refresh</span> Ricalcola
+                        </button>
+                        <button onclick="openManualModal()" class="text-xs font-bold text-white bg-primary hover:bg-primary/90 transition-colors px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[16px]">add</span> Manuale
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Hero KPIs: Compact Row -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="grid grid-cols-3 gap-3 md:gap-6">
                     <div class="bg-white dark:bg-[#111722] p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
                         <div>
-                            <p class="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Ricevuto YTD</p>
-                            <div id="proj-actual" class="text-xl font-black text-emerald-500">€ 0,00</div>
+                            <p class="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">YTD</p>
+                            <div id="proj-actual" class="text-xl md:text-2xl font-black text-emerald-500">€ 0</div>
                         </div>
                         <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                            <span class="material-symbols-outlined text-sm">check_circle</span>
+                            <span class="material-symbols-outlined text-sm md:text-lg">check_circle</span>
                         </div>
                     </div>
                     <div class="bg-white dark:bg-[#111722] p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
                         <div>
-                            <p class="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Totale Proiettato</p>
-                            <div id="proj-total" class="text-xl font-black text-blue-400">€ 0,00</div>
+                            <p class="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Attesi</p>
+                            <div id="proj-remaining" class="text-xl md:text-2xl font-black text-amber-500">€ 0</div>
                         </div>
-                        <div class="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400">
-                            <span class="material-symbols-outlined text-sm">query_stats</span>
+                        <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500">
+                            <span class="material-symbols-outlined text-sm md:text-lg">hourglass_empty</span>
                         </div>
                     </div>
-                    <div class="bg-white dark:bg-[#111722] p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+                    <div class="bg-white dark:bg-[#111722] p-4 rounded-xl border border-primary/20 shadow-sm flex items-center justify-between">
                         <div>
-                            <p class="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Residuo Atteso</p>
-                            <div id="proj-remaining" class="text-xl font-black text-amber-400">€ 0,00</div>
+                            <p class="text-[9px] font-black uppercase text-primary tracking-widest mb-1">Totale</p>
+                            <div id="proj-total" class="text-xl md:text-2xl font-black text-primary">€ 0</div>
                         </div>
-                        <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400">
-                            <span class="material-symbols-outlined text-sm">hourglass_empty</span>
+                        <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                            <span class="material-symbols-outlined text-sm md:text-lg">query_stats</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Bar Chart -->
-                <div class="bg-white dark:bg-[#111722] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Distribuzione Mensile</span>
-                        <div class="flex items-center gap-4 text-[10px] font-bold text-slate-400">
-                            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-emerald-500 inline-block"></span>Ricevuto</span>
-                            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-blue-400 inline-block"></span>Proiettato</span>
-                        </div>
-                    </div>
-                    <div class="relative h-64">
+                <div class="bg-white dark:bg-[#111722] p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="relative h-60">
                         <canvas id="projectionChart"></canvas>
                     </div>
-
-                <div class="flex items-center justify-between mt-8">
-                    <span class="text-xs font-black uppercase text-slate-400 tracking-widest">Dettaglio per Asset</span>
-                    <button onclick="openManualModal()"
-                        class="px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold shadow-md hover:bg-primary/90 transition-colors">
-                        + Manuale
-                    </button>
                 </div>
+
                 <!-- Detail Table -->
-                <div id="proj-detail-table" class="bg-white dark:bg-[#111722] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                    <div class="overflow-x-auto">
+                <details class="group bg-white dark:bg-[#111722] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                    <summary class="flex items-center justify-between px-5 py-4 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors outline-none">
+                        <span class="text-[11px] font-black uppercase tracking-widest text-slate-500">Dettaglio Proiezioni Mensili</span>
+                        <div class="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-slate-500 text-sm group-open:rotate-180 transition-transform">expand_more</span>
+                        </div>
+                    </summary>
+                    <div class="overflow-x-auto border-t border-slate-200 dark:border-slate-800">
                         <table class="w-full text-left text-sm">
                             <thead>
-                                <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-                                    <th class="px-6 py-3">Asset</th>
-                                    <th class="px-6 py-3">Data</th>
-                                    <th class="px-6 py-3">Fonte</th>
-                                    <th class="px-6 py-3 text-right">Singolo</th>
-                                    <th class="px-6 py-3 text-right">Totale Evento</th>
-                                    <th class="px-6 py-3 text-right">Attesi Anno</th>
-                                    <th class="px-6 py-3 text-right">Yield</th>
+                                <tr class="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                                    <th class="px-5 py-3">Asset</th>
+                                    <th class="px-5 py-3">Data</th>
+                                    <th class="px-5 py-3">Fonte</th>
+                                    <th class="px-5 py-3 text-right">Singolo</th>
+                                    <th class="px-5 py-3 text-right">Ammontare</th>
+                                    <th class="px-5 py-3 text-right">Attesi Anno</th>
+                                    <th class="px-5 py-3 text-right">Yield</th>
+                                    <th class="px-5 py-3"></th>
                                 </tr>
                             </thead>
                             <tbody id="proj-detail-body" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
                         </table>
                     </div>
-                </div>
+                </details>
             </section>
-            
-            <!-- Manual Dividend Modal -->
-            <div id="manual-modal" class="fixed inset-0 bg-slate-900/50 dark:bg-black/60 backdrop-blur-sm hidden z-[100] flex items-center justify-center p-4">
-                <div class="bg-white dark:bg-[#111722] w-full max-w-md rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 id="manual-modal-title" class="text-lg font-black tracking-tight">Aggiungi Dividendo Manuale</h3>
-                        <button onclick="closeManualModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-                            <span class="material-symbols-outlined">close</span>
-                        </button>
+
+            <!-- ─── HISTORICAL DIVIDENDS ──────────────────────────────────────── -->
+            <section id="historical-section" class="space-y-6 pt-8 mt-6 border-t border-slate-200 dark:border-slate-800">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-xl font-black tracking-tight">Storico Accumulato</h2>
+                        <p class="text-[11px] text-slate-500 font-bold uppercase tracking-widest mt-1">Dividendi reali incassati</p>
                     </div>
-                    <form id="manual-div-form" onsubmit="submitManualDividend(event)" class="space-y-4">
-                        <input type="hidden" id="manual-id">
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Ticker in portafoglio</label>
-                            <select id="manual-ticker" required class="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm focus:ring-2 focus:ring-primary/20 font-bold">
-                                <option value="" disabled selected>Seleziona un asset...</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Data Stacco</label>
-                            <input type="date" id="manual-date" required class="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm focus:ring-2 focus:ring-primary/20">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Importo per singola azione (€)</label>
-                            <input type="number" step="0.0001" id="manual-amount" required placeholder="0.00" class="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm focus:ring-2 focus:ring-primary/20 font-mono">
-                        </div>
-                        <button type="submit" class="w-full mt-6 py-2 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg text-sm transition-colors">
-                            Salva
-                        </button>
-                    </form>
                 </div>
+
+                <!-- Historic KPIs -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6">
+                    <div class="bg-white dark:bg-[#111722] p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-[9px] font-black uppercase text-emerald-500 tracking-widest mb-1">Totale All-Time</p>
+                            <div id="global-total-dividends" class="text-xl md:text-2xl font-black text-emerald-500">€ 0.00</div>
+                        </div>
+                        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                            <span class="material-symbols-outlined text-sm md:text-lg">account_balance_wallet</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Historical Chart -->
+                <div class="bg-white dark:bg-[#111722] p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="relative h-60">
+                        <canvas id="historicalChart"></canvas>
+                    </div>
+                </div>
+
+                <details class="group bg-white dark:bg-[#111722] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                    <summary class="flex items-center justify-between px-5 py-4 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors outline-none">
+                        <span class="text-[11px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">Elenco Dettagliato
+                            <select id="div-group-by" onchange="renderDividends()" onclick="event.stopPropagation()" class="bg-white/50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] py-1 pl-2 pr-6 focus:ring-0 cursor-pointer">
+                                <option value="year">Per Anno</option>
+                                <option value="portfolioName">Per Portafoglio</option>
+                                <option value="none">Lista Lineare</option>
+                            </select>
+                        </span>
+                        <div class="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-slate-500 text-sm group-open:rotate-180 transition-transform">expand_more</span>
+                        </div>
+                    </summary>
+                    <div class="overflow-x-auto border-t border-slate-200 dark:border-slate-800">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                                    <th class="px-5 py-3">Asset</th>
+                                    <th class="px-5 py-3">Portafoglio</th>
+                                    <th class="px-5 py-3 text-right">Data</th>
+                                    <th class="px-5 py-3 text-right">Importo</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dividends-table-body" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
+                        </table>
+                    </div>
+                </details>
+            </section>
+        </div>
+    </main>
+
+    <!-- Manual Dividend Modal -->
+    <div id="manual-modal" class="fixed inset-0 bg-slate-900/50 dark:bg-black/60 backdrop-blur-sm hidden z-[100] flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-[#111722] w-full max-w-sm rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="manual-modal-title" class="text-sm font-black tracking-tight uppercase tracking-widest">Manuale</h3>
+                <button onclick="closeManualModal()" class="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                    <span class="material-symbols-outlined text-sm">close</span>
+                </button>
             </div>
+            <form id="manual-div-form" onsubmit="submitManualDividend(event)" class="space-y-4">
+                <input type="hidden" id="manual-id">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Ticker in portafoglio</label>
+                    <select id="manual-ticker" required class="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-sm focus:ring-2 focus:ring-primary/20 font-bold outline-none">
+                        <option value="" disabled selected>Seleziona un asset...</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Data Stacco</label>
+                    <input type="date" id="manual-date" required class="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-sm focus:ring-2 focus:ring-primary/20 outline-none">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Importo per singola azione (€)</label>
+                    <input type="number" step="0.0001" id="manual-amount" required placeholder="0.00" class="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-sm focus:ring-2 focus:ring-primary/20 font-mono font-bold outline-none">
+                </div>
+                <button type="submit" class="w-full mt-6 py-2.5 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg text-sm transition-colors shadow-sm">
+                    Salva Previsione
+                </button>
+            </form>
+        </div>
+    </div>
 
     <script>
         let rawDivData = [];
@@ -270,6 +307,7 @@
                 collapsedGroups = new Set(years.filter(y => y !== currentYear));
 
                 renderDividends();
+                renderHistoricalChart();
             } catch (err) { console.error('Error loading dividends:', err); }
         }
 
@@ -296,10 +334,7 @@
                 }
             }
 
-            let filtered = rawDivData.filter(d => {
-                return (d.assetTicker || '').toLowerCase().includes(searchTerm) ||
-                       (d.portfolioName || '').toLowerCase().includes(searchTerm);
-            });
+            let filtered = rawDivData;
 
             if (filtered.length === 0) {
                 body.innerHTML = '<tr><td colspan="4" class="px-6 py-12 text-center text-slate-500 italic">No dividend records matching filters.</td></tr>';
@@ -362,17 +397,14 @@
         function renderRow(d) {
             return `
             <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                <td class="px-6 py-4 pl-12">
-                    <div class="flex items-center gap-2">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                        <span class="font-bold text-xs">${d.assetTicker}</span>
-                    </div>
+                <td class="px-5 py-3 border-y border-slate-100 dark:border-slate-800/50">
+                    <span class="font-bold text-xs">${d.assetTicker}</span>
                 </td>
-                <td class="px-6 py-4">
-                    <span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-bold">${d.portfolioName}</span>
+                <td class="px-5 py-3 border-y border-slate-100 dark:border-slate-800/50">
+                    <span class="px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-[10px] font-bold text-slate-500">${d.portfolioName}</span>
                 </td>
-                <td class="px-6 py-4 font-bold text-slate-400 text-xs">${d.date}</td>
-                <td class="px-6 py-4 text-right font-black font-mono text-xs">${formatCurrency(d.amount, 'EUR')}</td>
+                <td class="px-5 py-3 border-y border-slate-100 dark:border-slate-800/50 text-right font-mono text-[10px] font-bold text-slate-400">${d.date}</td>
+                <td class="px-5 py-3 border-y border-slate-100 dark:border-slate-800/50 text-right font-black font-mono text-xs text-emerald-500">${formatCurrency(d.amount, 'EUR')}</td>
             </tr>
             `;
         }
@@ -395,16 +427,68 @@
         }
 
         let projectionChart = null;
-        let projDetailVisible = false;
 
         function fmt(v) {
             return '€ ' + v.toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
         }
 
+        let histChartInstance = null;
+        
+        function renderHistoricalChart() {
+            if (histChartInstance) histChartInstance.destroy();
+            const ctx = document.getElementById('historicalChart').getContext('2d');
+            
+            // Aggregate by Year
+            const grouped = {};
+            rawDivData.forEach(d => {
+                const year = d.date.split('-')[0];
+                grouped[year] = (grouped[year] || 0) + d.amount;
+            });
+            const labels = Object.keys(grouped).sort();
+            const data = labels.map(y => grouped[y]);
+
+            const isDark = document.documentElement.classList.contains('dark');
+            const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+            const textColor = isDark ? '#94a3b8' : '#64748b';
+
+            histChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Incassato',
+                        data: data,
+                        backgroundColor: 'rgba(16,185,129,0.7)',
+                        hoverBackgroundColor: 'rgba(16,185,129,1)',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: textColor, font: { size: 10, weight: 'bold' } }
+                        },
+                        y: {
+                            grid: { color: gridColor },
+                            ticks: {
+                                color: textColor,
+                                font: { size: 10 },
+                                callback: v => '€' + v.toLocaleString('it-IT')
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
         function toggleProjectionDetail() {
-            projDetailVisible = !projDetailVisible;
-            const el = document.getElementById('proj-detail-table');
-            if (el) el.classList.toggle('hidden', !projDetailVisible);
+            /* Now handled by details summary native behaviour */
         }
 
         window.openManualModal = () => {

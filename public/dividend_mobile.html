@@ -127,30 +127,55 @@
             </div>
 
 
-            <!-- Filters & History Section -->
-            <div class="mob-section-header">
-                <span class="mob-section-title">Storico Pagamenti</span>
-                <select id="mob-div-group-by" onchange="renderMobDividends()" 
-                    class="bg-transparent border-none text-[11px] font-black uppercase tracking-wider text-primary focus:ring-0 p-0 text-right outline-none">
-                    <option value="year">Per Anno</option>
-                    <option value="portfolioName">Per Portafoglio</option>
-                    <option value="none">Lista</option>
-                </select>
+            <!-- ── HISTORICAL SECTION ── -->
+            <div class="mob-section-header mt-8">
+                <span class="mob-section-title">Storico Accumulato</span>
+                <span class="text-[10px] uppercase font-bold text-slate-500">All-time</span>
             </div>
 
+            <!-- Historical KPIs -->
             <div class="px-5 mb-4">
-                <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-900/80 p-2.5 px-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <span class="material-symbols-outlined text-slate-400 text-[18px]">search</span>
-                    <input type="text" id="mob-div-search" placeholder="Cerca titolo o portafoglio..." 
-                        class="flex-1 bg-transparent border-none p-0 text-[13px] focus:ring-0 font-bold placeholder:text-slate-400"
-                        oninput="renderMobDividends()">
+                <div class="bg-white/5 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-[9px] font-black uppercase text-emerald-500 tracking-widest mb-1">Totale Incassato</p>
+                        <div id="mob-global-total" class="text-xl font-black text-emerald-500">€ 0.00</div>
+                    </div>
+                    <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                        <span class="material-symbols-outlined text-sm">account_balance_wallet</span>
+                    </div>
                 </div>
             </div>
 
-            <div id="mob-dividends-list" class="mob-holdings-list">
-                <div style="text-align:center;padding:48px">
-                    <div class="mob-spinner" style="margin:0 auto"></div>
+            <!-- Historical Chart -->
+            <div class="px-5 mb-4">
+                <div class="bg-white/5 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="relative h-48">
+                        <canvas id="mob-historical-chart"></canvas>
+                    </div>
                 </div>
+            </div>
+
+            <div class="px-5 mb-6">
+                <details class="group bg-white/5 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                    <summary class="flex items-center justify-between p-4 cursor-pointer select-none outline-none">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] font-black uppercase tracking-widest text-slate-500">Transazioni</span>
+                            <select id="mob-div-group-by" onchange="renderMobDividends()" onclick="event.stopPropagation()" class="bg-black/5 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-md text-[10px] py-1 pl-2 pr-6 focus:ring-0 cursor-pointer text-slate-600 dark:text-slate-300">
+                                <option value="year">Per Anno</option>
+                                <option value="portfolioName">Portafoglio</option>
+                                <option value="none">Lista</option>
+                            </select>
+                        </div>
+                        <div class="w-6 h-6 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-slate-500 text-sm group-open:rotate-180 transition-transform">expand_more</span>
+                        </div>
+                    </summary>
+                    <div id="mob-dividends-list" class="divide-y divide-slate-100 dark:divide-slate-800/30 border-t border-slate-200 dark:border-slate-800">
+                        <div style="text-align:center;padding:48px">
+                            <div class="mob-spinner" style="margin:0 auto"></div>
+                        </div>
+                    </div>
+                </details>
             </div>
 
             <div style="height:60px"></div>
@@ -220,11 +245,16 @@
                     const histRes = await fetch('/api/analytics/dividends');
                     rawDivData = await histRes.json();
                     
+                    const total = rawDivData.reduce((sum, d) => sum + d.amount, 0);
+                    const totalEl = document.getElementById('mob-global-total');
+                    if (totalEl) totalEl.innerText = formatCurrency(total, 'EUR');
+
                     const currentYear = new Date().getFullYear().toString();
                     const years = [...new Set(rawDivData.map(d => d.date.split('-')[0]))];
                     collapsedGroups = new Set(years.filter(y => y !== currentYear));
 
                     renderMobDividends();
+                    renderMobHistoricalChart();
                 } catch (err) { console.error('Error loading mobile dividends data:', err); }
             }
 
@@ -391,6 +421,58 @@
                 });
             }
 
+            let mobHistChartInstance = null;
+            
+            function renderMobHistoricalChart() {
+                if (mobHistChartInstance) mobHistChartInstance.destroy();
+                const ctx = document.getElementById('mob-historical-chart').getContext('2d');
+                
+                const grouped = {};
+                rawDivData.forEach(d => {
+                    const year = d.date.split('-')[0];
+                    grouped[year] = (grouped[year] || 0) + d.amount;
+                });
+                const labels = Object.keys(grouped).sort();
+                const data = labels.map(y => grouped[y]);
+
+                const isDark = document.documentElement.classList.contains('dark');
+                const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+                const textColor = isDark ? '#94a3b8' : '#64748b';
+
+                mobHistChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Incassato',
+                            data: data,
+                            backgroundColor: 'rgba(16,185,129,0.7)',
+                            hoverBackgroundColor: 'rgba(16,185,129,1)',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: textColor, font: { size: 10, weight: 'bold' } }
+                            },
+                            y: {
+                                grid: { color: gridColor },
+                                ticks: {
+                                    color: textColor,
+                                    font: { size: 10 },
+                                    callback: v => '€' + v.toLocaleString('it-IT')
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
             function renderMobProjList(assets) {
                 const countEl = document.getElementById('mob-proj-asset-count');
                 const bodyEl = document.getElementById('mob-proj-body');
@@ -437,11 +519,9 @@
 
             window.renderMobDividends = () => {
                 const container = document.getElementById('mob-dividends-list');
-                const searchEl = document.getElementById('mob-div-search');
                 const groupByEl = document.getElementById('mob-div-group-by');
-                if (!container || !searchEl || !groupByEl) return;
+                if (!container || !groupByEl) return;
 
-                const searchTerm = searchEl.value.toLowerCase();
                 const groupBy = groupByEl.value;
 
                 if (groupBy !== currentGroupBy) {
@@ -449,10 +529,7 @@
                     currentGroupBy = groupBy;
                 }
 
-                let filtered = rawDivData.filter(d => {
-                    return (d.assetTicker || '').toLowerCase().includes(searchTerm) ||
-                           (d.portfolioName || '').toLowerCase().includes(searchTerm);
-                });
+                let filtered = rawDivData;
 
                 if (filtered.length === 0) {
                     container.innerHTML = '<div style="text-align:center;padding:48px;opacity:0.5;font-size:13px">Nessun dividendo trovato</div>';
