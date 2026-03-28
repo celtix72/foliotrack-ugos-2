@@ -67,7 +67,7 @@
         </nav>
     </aside>
 
-    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+    <div class="flex-1 flex flex-col h-screen overflow-hidden">
         <header class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-50">
     <div class="flex items-center gap-6">
         <div id="header-live-indicator" class="flex items-center gap-2 bg-slate-100 dark:bg-slate-900 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-800">
@@ -105,12 +105,15 @@
     </div>
 </header>
 
-        <div class="flex-1 overflow-y-auto p-8 space-y-8">
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <main class="flex-1 overflow-y-auto custom-scrollbar p-8 bg-slate-50 dark:bg-background-dark">
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
                 <div>
-                    <h1 class="text-3xl font-black tracking-tight">Dividend Income</h1>
-                    <p class="text-slate-500 dark:text-slate-400 text-sm">Passive income tracking across all portfolios, grouped and searchable.</p>
+                    <h2 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Dividend Income</h2>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Passive income tracking across all portfolios, grouped and searchable.</p>
                 </div>
+            </div>
+
+            <div class="space-y-8 max-w-7xl mx-auto">
             <!-- ─── ANNUAL PROJECTIONS ──────────────────────────────────────────── -->
             <section id="projections-section" class="space-y-6">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -251,8 +254,9 @@
                     </div>
                 </details>
             </section>
-        </div>
-    </main>
+            </div>
+        </main>
+    </div>
 
     <!-- Manual Dividend Modal -->
     <div id="manual-modal" class="fixed inset-0 bg-slate-900/50 dark:bg-black/60 backdrop-blur-sm hidden z-[100] flex items-center justify-center p-4">
