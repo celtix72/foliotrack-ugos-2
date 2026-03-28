@@ -356,7 +356,7 @@
             renderPerformanceChart(data.performance);
             renderPortfoliosBreakdown(data.performance.individual);
             renderDiversification(data.diversification);
-            renderDividendChart(data.dividends);
+            renderDividendChart(data.dividends, data.metrics);
             if (data.annualGains) renderAnnualGains(data.annualGains);
 
             // document.getElementById('last-update-label').textContent = 'Last Update: ' + new Date().toLocaleTimeString('it-IT');
@@ -623,7 +623,7 @@
         legendsEl.innerHTML = renderLeg(assetData, 'By Type') + renderLeg(geoData, 'By Region');
     }
 
-    function renderDividendChart(divs) {
+    function renderDividendChart(divs, metrics) {
         const ctx = document.getElementById('dividendChart').getContext('2d');
         if (divChart) divChart.destroy();
 
@@ -631,11 +631,11 @@
         document.getElementById('dividend-total-income').textContent = formatCurrency(totalIncome, 'USD');
 
         // Projected Yield
-        if (data && data.metrics && data.metrics.dividendYield !== undefined) {
+        if (metrics && metrics.dividendYield !== undefined) {
             const yieldEl = document.getElementById('yield-percent');
             const yieldBox = document.getElementById('dividend-projection');
             if (yieldEl && yieldBox) {
-                yieldEl.textContent = (data.metrics.dividendYield * 100).toFixed(2) + '%';
+                yieldEl.textContent = (metrics.dividendYield * 100).toFixed(2) + '%';
                 yieldBox.classList.remove('hidden');
             }
         }
