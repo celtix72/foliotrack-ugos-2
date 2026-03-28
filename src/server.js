@@ -2354,12 +2354,12 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
             }
         }
     }
-    const historicalPrices = {};
-    const fxRates = {};
-
     const assetMetadataCache = {}; // Cache to avoid DB queries inside the date loop
     const allAssets = database.db.prepare('SELECT ticker, currency, currentPrice, type, isin, dataSource FROM assets').all();
     for (const a of allAssets) assetMetadataCache[a.ticker] = a;
+
+    const historicalPrices = {};
+    const fxRates = {};
 
     // 1. Determine tickers and include EURUSD=X if needed for conversion visibility in DB
     const rawTickers = [...new Set(allTransactions.map(t => t.assetTicker).filter(t => t && t !== 'CASH'))];
@@ -2443,9 +2443,19 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
     };
 
     const fetchTickerData = async (ticker) => {
-        if (ticker.startsWith('CD_')) return;
-        const assetMeta = assetMetadataCache[ticker];
         const reqStart = startDate.toISOString().split('T')[0];
+
+        // Special handling for Savings Accounts (CD_) - constant 1.0 price
+        if (ticker.startsWith('CD_')) {
+            const pricesMap = {};
+            for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
+                pricesMap[d.toISOString().split('T')[0]] = 1.0;
+            }
+            historicalPrices[ticker] = pricesMap;
+            return;
+        }
+
+        const assetMeta = assetMetadataCache[ticker];
         
         // 1. Check DB Cache unless forced
         const dbQuotes = !forceRefresh ? database.db.prepare(`SELECT date, price FROM asset_quotes WHERE ticker = ? AND date >= ? ORDER BY date ASC`).all(ticker, reqStart) : [];
@@ -3203,7 +3213,7 @@ app.get('/api/analytics/dividend-projections', async (req, res) => {
                     });
                     method = 'last_year';
                 }
-            } else {
+            } else if (!ticker.startsWith('CD_')) {
                 // Try YahooFinance for dividendRate & exDividendDate
                 let yfSuccess = false;
                 try {

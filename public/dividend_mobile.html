@@ -269,7 +269,7 @@
                             <span class="text-[13px] font-black text-blue-400">€ ${Math.round(a.annualProjected).toLocaleString('it-IT')}</span>
                         </div>
                         <div class="flex items-center justify-between text-[10px] font-bold opacity-60">
-                            <span class="truncate pr-4">${a.name || ''}</span>
+                            <span class="truncate pr-4">${(a.name && a.name !== 'null') ? a.name : a.ticker}</span>
                             <div class="flex items-center gap-3">
                                 <span class="text-slate-500">${(a.yield * 100).toFixed(2)}% RESA</span>
                                 <span class="text-amber-500">${a.nextDate || '—'}</span>
