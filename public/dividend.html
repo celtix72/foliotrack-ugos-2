@@ -221,12 +221,13 @@
             <div id="manual-modal" class="fixed inset-0 bg-slate-900/50 dark:bg-black/60 backdrop-blur-sm hidden z-[100] flex items-center justify-center p-4">
                 <div class="bg-white dark:bg-[#111722] w-full max-w-md rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-6">
                     <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-lg font-black tracking-tight">Aggiungi Dividendo Manuale</h3>
+                        <h3 id="manual-modal-title" class="text-lg font-black tracking-tight">Aggiungi Dividendo Manuale</h3>
                         <button onclick="closeManualModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                             <span class="material-symbols-outlined">close</span>
                         </button>
                     </div>
                     <form id="manual-div-form" onsubmit="submitManualDividend(event)" class="space-y-4">
+                        <input type="hidden" id="manual-id">
                         <div>
                             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Ticker in portafoglio</label>
                             <select id="manual-ticker" required class="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm focus:ring-2 focus:ring-primary/20 font-bold">
@@ -248,61 +249,22 @@
                 </div>
             </div>
 
-
-            <!-- ─── HISTORICAL DIVIDENDS ──────────────────────────────────────── -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Total Dividends Card -->
-                <div class="bg-white dark:bg-[#111722] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
-                    <div class="relative">
-                        <div class="flex items-center gap-3 mb-4">
-                            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                                <span class="material-symbols-outlined">payments</span>
-                            </div>
-                            <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Dividends</span>
-                        </div>
-                        <div id="global-total-dividends" class="text-3xl font-black tracking-tight">€0.00</div>
-                        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-2">All-time passive income</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="overflow-hidden bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
-                <table class="w-full text-left border-collapse text-sm">
-                    <thead>
-                        <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
-                            <th class="px-6 py-4">Asset</th>
-                            <th class="px-6 py-4">Portfolio</th>
-                            <th class="px-6 py-4">Date</th>
-                            <th class="px-6 py-4 text-right">Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dividends-table-body" class="divide-y divide-slate-100 dark:divide-slate-800">
-                        <!-- Content injected by JS -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </main>
-
     <script>
         let rawDivData = [];
         let collapsedGroups = new Set();
         let currentGroupBy = 'year';
-
-        // Global formatting from theme.js
+        window.globalProjData = null;
+        window.hasTriedReset = false;
 
         async function loadDividends() {
             try {
                 const res = await fetch('/api/analytics/dividends');
                 rawDivData = await res.json();
                 
-                // Calculate global total
                 const total = rawDivData.reduce((sum, d) => sum + d.amount, 0);
                 const totalEl = document.getElementById('global-total-dividends');
                 if (totalEl) totalEl.innerText = formatCurrency(total, 'EUR');
 
-                // Set default collapsed state: collapse all years EXCEPT the current one
                 const currentYear = new Date().getFullYear().toString();
                 const years = [...new Set(rawDivData.map(d => d.date.split('-')[0]))];
                 collapsedGroups = new Set(years.filter(y => y !== currentYear));
@@ -325,7 +287,6 @@
             const searchTerm = document.getElementById('div-search').value.toLowerCase();
             const groupBy = document.getElementById('div-group-by').value;
 
-            // Reset collapsed if group type changes
             if (groupBy !== currentGroupBy) {
                 collapsedGroups = new Set();
                 currentGroupBy = groupBy;
@@ -335,7 +296,6 @@
                 }
             }
 
-            // 1. Filter
             let filtered = rawDivData.filter(d => {
                 return (d.assetTicker || '').toLowerCase().includes(searchTerm) ||
                        (d.portfolioName || '').toLowerCase().includes(searchTerm);
@@ -346,7 +306,6 @@
                 return;
             }
 
-            // 2. Grouping
             if (groupBy === 'none') {
                 body.innerHTML = filtered.sort((a,b) => new Date(b.date) - new Date(a.date)).map(d => renderRow(d)).join('');
             } else {
@@ -363,8 +322,8 @@
                 });
 
                 const keys = Object.keys(groups).sort((a, b) => {
-                    if (groupBy === 'year') return b - a; // Desc year
-                    return a.localeCompare(b); // Asc portfolio
+                    if (groupBy === 'year') return b - a;
+                    return a.localeCompare(b);
                 });
 
                 let html = '';
@@ -435,7 +394,6 @@
             } catch (err) { console.error(err); }
         }
 
-        // ─── DIVIDEND PROJECTIONS ────────────────────────────────────────────
         let projectionChart = null;
         let projDetailVisible = false;
 
@@ -449,21 +407,92 @@
             if (el) el.classList.toggle('hidden', !projDetailVisible);
         }
 
+        window.openManualModal = () => {
+            document.getElementById('manual-modal-title').innerText = 'Nuova Previsione';
+            document.getElementById('manual-id').value = '';
+            document.getElementById('manual-modal').classList.remove('hidden');
+        };
+        window.openEditModal = (id) => {
+            const proj = window.globalProjData.assets.find(a => a.id === id);
+            if (!proj) return;
+            document.getElementById('manual-modal-title').innerText = 'Modifica Previsione';
+            document.getElementById('manual-id').value = proj.id;
+            document.getElementById('manual-ticker').value = proj.ticker;
+            document.getElementById('manual-date').value = proj.date;
+            document.getElementById('manual-amount').value = proj.amount || (proj.totalAmount / (proj.yield > 0 ? proj.totalAmount / proj.amount : 1));
+            document.getElementById('manual-modal').classList.remove('hidden');
+        };
+        window.closeManualModal = () => {
+            document.getElementById('manual-modal').classList.add('hidden');
+            document.getElementById('manual-div-form').reset();
+        };
+        
+        window.deleteProjection = async (id) => {
+            if(!confirm('Vuoi davvero rimuovere questa proiezione? Se rimuovi una previsione generata automaticamente, il sistema non la riproporrà più a meno che tu non prema "Ricalcola".')) return;
+            try {
+                const res = await fetch('/api/dividends/projections/' + id, { method: 'DELETE' });
+                if(res.ok) loadProjections();
+            } catch(e) { console.error(e); }
+        };
+
+        window.resetProjections = async () => {
+            if(window.hasTriedReset || confirm('Verranno cancellate tutte le proiezioni automatiche attuali e ricalcolate da zero basandosi sul portafoglio. Le tue aggiunte/modifiche testuali ("Manuale") verranno conservate.\nProcedere?')) {
+                const btn = document.getElementById('btn-recalc');
+                if(btn) btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">refresh</span> Calcolo...';
+                try {
+                    const res = await fetch('/api/dividends/projections/reset', { method: 'POST' });
+                    if(res.ok) loadProjections();
+                    else alert('Errore ricalcolo prevesioni.');
+                } catch(e) { console.error(e); }
+                if(btn) btn.innerHTML = '<span class="material-symbols-outlined text-sm">refresh</span> Ricalcola Previsioni';
+            }
+        };
+
+        window.submitManualDividend = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('manual-id').value;
+            const ticker = document.getElementById('manual-ticker').value;
+            const exDate = document.getElementById('manual-date').value;
+            const amount = document.getElementById('manual-amount').value;
+
+            try {
+                const url = id ? `/api/dividends/projections/${id}` : '/api/dividends/projections';
+                const method = id ? 'PUT' : 'POST';
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ticker, exDate, amount })
+                });
+                if (res.ok) {
+                    window.closeManualModal();
+                    loadProjections();
+                } else {
+                    alert('Errore salvataggio dividendo manuale.');
+                }
+            } catch (err) {
+                console.error('Error saving manual dividend:', err);
+            }
+        };
+
         async function loadProjections() {
             try {
                 const res = await fetch('/api/analytics/dividend-projections');
                 if (!res.ok) throw new Error('API error');
                 const data = await res.json();
+                window.globalProjData = data;
 
-                // Set year labels
+                if (data.assets && data.assets.filter(a => a.tag !== 'REGISTRATO').length === 0 && !window.hasTriedReset) {
+                    window.hasTriedReset = true;
+                    window.resetProjections();
+                    return;
+                }
+
                 document.querySelectorAll('#proj-year, .proj-year-lbl').forEach(el => el.textContent = data.year);
 
-                // Hero KPIs
                 document.getElementById('proj-actual').textContent = fmt(data.totalReceived || 0);
                 document.getElementById('proj-total').textContent = fmt(data.totalExpected || 0);
                 document.getElementById('proj-remaining').textContent = fmt(data.totalRemaining || 0);
 
-                // Chart mapping
                 const labels = data.months.map(m => m.name);
                 const actualData = data.months.map(m => m.actual);
                 const displayData = data.months.map(m => m.display);
@@ -483,14 +512,14 @@
                             {
                                 label: 'Ricevuto',
                                 data: actualData,
-                                backgroundColor: 'rgba(16,185,129,0.75)', // Green
+                                backgroundColor: 'rgba(16,185,129,0.75)',
                                 borderRadius: 6,
                                 borderSkipped: false
                             },
                             {
                                 label: 'Proiettato',
                                 data: displayData,
-                                backgroundColor: 'rgba(6,182,212,0.6)', // Cyan
+                                backgroundColor: 'rgba(6,182,212,0.6)',
                                 borderColor: 'rgba(6,182,212,1)',
                                 borderWidth: 1,
                                 borderRadius: 6,
@@ -554,7 +583,6 @@
                                 
                                 const xPos = xAxis.getPixelForTick(i);
                                 
-                                // Draw Top Amount
                                 if (total > 0) {
                                     ctx.textBaseline = 'bottom';
                                     const topY = Math.min(meta0.data[i].y, meta1.data[i].y);
@@ -566,7 +594,6 @@
                     }]
                 });
 
-                // Populate Manual Ticker Select
                 const manualSelect = document.getElementById('manual-ticker');
                 if (manualSelect && data.openTickers) {
                     const currentVal = manualSelect.value;
@@ -577,15 +604,22 @@
                     }
                 }
 
-                // Render detail table
                 const assets = data.assets || [];
                 const tbody = document.getElementById('proj-detail-body');
                 tbody.innerHTML = assets.map(a => {
                     let badge = '';
-                    if (a.tag === 'REGISTRATO') badge = '<span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-bold">Ricevuto</span>';
-                    if (a.tag === 'YF') badge = '<span class="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-bold">Previsto (YF)</span>';
-                    if (a.tag === 'STORICO') badge = '<span class="px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-500 text-[10px] font-bold">Storico (1Y)</span>';
-                    if (a.tag === 'MANUALE') badge = '<span class="px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 text-[10px] font-bold flex items-center gap-1 w-max"><span class="material-symbols-outlined text-[10px]">edit</span>Manuale</span>';
+                    if (a.tag === 'REGISTRATO') badge = '<span class="px-2 py-1 rounded inline-block text-[10px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">Ricevuto</span>';
+                    if (a.tag === 'YF') badge = '<span class="px-2 py-1 rounded inline-block text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">Previsto (YF)</span>';
+                    if (a.tag === 'STORICO') badge = '<span class="px-2 py-1 rounded inline-block text-[10px] font-bold bg-slate-500/10 text-slate-500 border border-slate-500/20">Storico (1Y)</span>';
+                    if (a.tag === 'MANUALE') badge = '<span class="px-2 py-1 rounded inline-block text-[10px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">Manuale</span>';
+
+                    const isProjected = a.id !== null;
+                    const actionsHtml = isProjected ? `
+                        <div class="flex items-center justify-end gap-2">
+                            <button onclick="openEditModal(${a.id})" class="text-slate-400 hover:text-primary transition-colors cursor-pointer" title="Modifica"><span class="material-symbols-outlined text-sm">edit</span></button>
+                            <button onclick="deleteProjection(${a.id})" class="text-slate-400 hover:text-red-500 transition-colors cursor-pointer" title="Rimuovi"><span class="material-symbols-outlined text-sm">delete</span></button>
+                        </div>
+                    ` : '';
 
                     return `
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
@@ -599,41 +633,12 @@
                         <td class="px-6 py-3 text-right font-mono text-xs font-black text-slate-800 dark:text-slate-100">${fmt(a.totalAmount)}</td>
                         <td class="px-6 py-3 text-right font-mono text-xs font-bold text-primary">${fmt(a.annualProjected)}</td>
                         <td class="px-6 py-3 text-right font-mono text-xs font-bold text-amber-500">${a.yield ? (a.yield*100).toFixed(2)+'%' : '—'}</td>
+                        <td class="px-6 py-3 text-right">${actionsHtml}</td>
                     </tr>`;
                 }).join('');
 
             } catch (err) {
                 console.error('Error loading projections:', err);
-                // Silence handled by empty render or retry
-            }
-        }
-
-        function openManualModal() {
-            document.getElementById('manual-modal').classList.remove('hidden');
-        }
-
-        function closeManualModal() {
-            document.getElementById('manual-modal').classList.add('hidden');
-            document.getElementById('manual-div-form').reset();
-        }
-
-        async function submitManualDividend(e) {
-            e.preventDefault();
-            const ticker = document.getElementById('manual-ticker').value;
-            const exDate = document.getElementById('manual-date').value;
-            const amount = document.getElementById('manual-amount').value;
-            try {
-                const res = await fetch('/api/dividends/manual-projections', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ ticker, exDate, amount })
-                });
-                if (res.ok) {
-                    closeManualModal();
-                    loadProjections(); // refresh
-                } else alert('Errore al salvataggio');
-            } catch (err) {
-                console.error(err);
             }
         }
 

@@ -77,9 +77,14 @@
                              <span id="mob-proj-asset-count" class="text-[10px] font-bold text-primary bg-primary/10 px-1.5 rounded-sm">0</span>
                              <span class="material-symbols-outlined text-sm text-slate-400">expand_more</span>
                         </button>
-                        <button onclick="openManualModal()" class="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2 py-1 rounded-md">
-                            + Manuale
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button id="btn-recalc" onclick="resetProjections()" class="text-slate-500 hover:text-primary transition-colors flex items-center justify-center p-1 rounded-md bg-slate-100 dark:bg-slate-800">
+                                <span class="material-symbols-outlined text-[16px]">refresh</span>
+                            </button>
+                            <button onclick="openManualModal()" class="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2 py-1 rounded-md">
+                                + Manuale
+                            </button>
+                        </div>
                     </div>
                     <div id="mob-proj-list-content" class="hidden">
                         <div id="mob-proj-body" class="divide-y divide-slate-100 dark:divide-slate-800/30">
@@ -93,12 +98,13 @@
             <div id="manual-modal" class="fixed inset-0 bg-slate-900/50 dark:bg-black/60 backdrop-blur-sm hidden z-[100] flex items-center justify-center p-4">
                 <div class="bg-white dark:bg-[#111722] w-full max-w-sm rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-5">
                     <div class="flex justify-between items-center mb-5">
-                        <h3 class="text-sm font-black tracking-tight">Dividendo Manuale</h3>
+                        <h3 class="text-sm font-black tracking-tight" id="manual-modal-title">Nuova Previsione</h3>
                         <button onclick="closeManualModal()" class="text-slate-400 hover:text-slate-200">
                             <span class="material-symbols-outlined text-lg">close</span>
                         </button>
                     </div>
                     <form id="manual-div-form" onsubmit="submitManualDividend(event)" class="space-y-4">
+                        <input type="hidden" id="manual-id">
                         <div>
                             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Ticker</label>
                             <select id="manual-ticker" required class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm font-bold">
@@ -176,13 +182,24 @@
             let collapsedGroups = new Set();
             let currentGroupBy = 'year';
             let mobProjChart = null;
+            window.globalProjData = null;
+            window.hasTriedReset = false;
 
             async function loadMobData() {
                 try {
                     // Load Projections
                     const projRes = await fetch('/api/analytics/dividend-projections');
                     const projData = await projRes.json();
-                    
+                    window.globalProjData = projData;
+
+                    if (projData.assets && projData.assets.filter(a => a.tag !== 'REGISTRATO').length === 0 && !window.hasTriedReset) {
+                        window.hasTriedReset = true;
+                        if(confirm('Nessuna proiezione presente per quest\'anno. Vuoi ricalcolarle automaticamente in base al tuo portafoglio attuale?')) {
+                            window.resetProjections();
+                            return;
+                        }
+                    }
+
                     document.getElementById('mob-current-year').innerText = projData.year;
                     document.getElementById('mob-total-actual').innerText = formatCurrency(projData.totalReceived || 0, 'EUR');
                     document.getElementById('mob-total-projected').innerText = formatCurrency(projData.totalExpected || 0, 'EUR');
@@ -211,19 +228,58 @@
                 } catch (err) { console.error('Error loading mobile dividends data:', err); }
             }
 
-            window.openManualModal = () => document.getElementById('manual-modal').classList.remove('hidden');
+            window.openManualModal = () => {
+                document.getElementById('manual-modal-title').innerText = 'Nuova Previsione';
+                document.getElementById('manual-id').value = '';
+                document.getElementById('manual-modal').classList.remove('hidden');
+            };
+            window.openEditModal = (id) => {
+                const proj = window.globalProjData.assets.find(a => a.id === id);
+                if (!proj) return;
+                document.getElementById('manual-modal-title').innerText = 'Modifica Previsione';
+                document.getElementById('manual-id').value = proj.id;
+                document.getElementById('manual-ticker').value = proj.ticker;
+                document.getElementById('manual-date').value = proj.date;
+                document.getElementById('manual-amount').value = proj.amount || (proj.totalAmount / (proj.yield > 0 ? proj.totalAmount / proj.amount : 1));
+                document.getElementById('manual-modal').classList.remove('hidden');
+            };
             window.closeManualModal = () => {
                 document.getElementById('manual-modal').classList.add('hidden');
                 document.getElementById('manual-div-form').reset();
             };
+
+            window.deleteProjection = async (id) => {
+                if(!confirm('Cancellare questa proiezione?\nSe era automatica, sparirà fino al prossimo "Ricalcolo".')) return;
+                try {
+                    const res = await fetch('/api/dividends/projections/' + id, { method: 'DELETE' });
+                    if(res.ok) loadMobData();
+                } catch(e) { console.error(e); }
+            };
+
+            window.resetProjections = async () => {
+                if(window.hasTriedReset || confirm('Le stime verranno rigenerate cancellando le attuali (tranne quelle "Manuali"). Procedere?')) {
+                    const btn = document.getElementById('btn-recalc');
+                    if(btn) btn.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">refresh</span>';
+                    try {
+                        const res = await fetch('/api/dividends/projections/reset', { method: 'POST' });
+                        if(res.ok) loadMobData();
+                        else alert('Errore ricalcolo prevesioni.');
+                    } catch(e) { console.error(e); }
+                    if(btn) btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">refresh</span>';
+                }
+            };
+
             window.submitManualDividend = async (e) => {
                 e.preventDefault();
+                const id = document.getElementById('manual-id').value;
                 const ticker = document.getElementById('manual-ticker').value;
                 const exDate = document.getElementById('manual-date').value;
                 const amount = document.getElementById('manual-amount').value;
                 try {
-                    const res = await fetch('/api/dividends/manual-projections', {
-                        method: 'POST',
+                    const url = id ? `/api/dividends/projections/${id}` : '/api/dividends/projections';
+                    const method = id ? 'PUT' : 'POST';
+                    const res = await fetch(url, {
+                        method,
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify({ ticker, exDate, amount })
                     });
@@ -347,6 +403,14 @@
                     if (a.tag === 'STORICO') badge = '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-500/10 text-slate-500">Storico</span>';
                     if (a.tag === 'MANUALE') badge = '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/10 text-purple-400">Manuale</span>';
 
+                    const isProjected = a.id !== null;
+                    const actionHtml = isProjected ? `
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="openEditModal(${a.id})" class="text-slate-400 hover:text-primary"><span class="material-symbols-outlined text-[14px]">edit</span></button>
+                            <button onclick="deleteProjection(${a.id})" class="text-slate-400 hover:text-red-500"><span class="material-symbols-outlined text-[14px]">delete</span></button>
+                        </div>
+                    ` : '';
+
                     return `
                     <div class="p-4 flex flex-col gap-1">
                         <div class="flex items-center justify-between">
@@ -356,6 +420,7 @@
                         <div class="flex items-center justify-between text-[10px] font-bold opacity-60 mt-1">
                             <span class="truncate pr-4">${(a.name && a.name !== 'null') ? a.name : a.ticker}</span>
                             <div class="flex items-center gap-2">
+                                ${actionHtml}
                                 ${badge}
                                 <span class="text-slate-500 hidden sm:inline-block">${(a.yield * 100).toFixed(2)}% YLD</span>
                             </div>

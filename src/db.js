@@ -190,11 +190,17 @@ function initDb() {
         UNIQUE(portfolioId, asset_type)
       );
 
-      CREATE TABLE IF NOT EXISTS manual_dividend_projections (
+      CREATE TABLE IF NOT EXISTS dividend_projections (
         id          INTEGER PRIMARY KEY AUTOINCREMENT,
-        ticker      TEXT    NOT NULL REFERENCES assets(ticker) ON DELETE CASCADE,
+        ticker      TEXT    NOT NULL,
+        name        TEXT,
         exDate      TEXT    NOT NULL,
         amount      REAL    NOT NULL,
+        totalAmount REAL    NOT NULL DEFAULT 0,
+        yield       REAL    NOT NULL DEFAULT 0,
+        tag         TEXT    NOT NULL,
+        year        INTEGER NOT NULL,
+        isCustom    INTEGER NOT NULL DEFAULT 0,
         createdAt   TEXT    NOT NULL DEFAULT (datetime('now'))
       );
     `);
