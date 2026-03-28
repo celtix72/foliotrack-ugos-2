@@ -3186,6 +3186,25 @@ app.delete('/api/dividends/projections/:id', (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+app.post('/api/dividends/projections/:id/confirm', async (req, res) => {
+    try {
+        const { portfolioId, ticker, amount, date } = req.body;
+        if (!portfolioId || !ticker || !amount || !date) {
+            return res.status(400).json({ error: 'Missing fields' });
+        }
+        
+        database.db.prepare(`
+            INSERT INTO transactions (portfolioId, type, assetTicker, date, amount, quantity, price, commission, tax, exchangeRate)
+            VALUES (?, 'DIVIDEND', ?, ?, ?, 0, 0, 0, 0, 1)
+        `).run(portfolioId, ticker, date, parseFloat(amount));
+        
+        database.db.prepare(`DELETE FROM dividend_projections WHERE id = ?`).run(req.params.id);
+        database.recalculatePortfolio(portfolioId);
+        
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 app.post('/api/dividends/projections/reset', async (req, res) => {
     try {
         const now = new Date();

@@ -260,31 +260,40 @@
 
     <!-- Manual Dividend Modal -->
     <div id="manual-modal" class="fixed inset-0 bg-slate-900/50 dark:bg-black/60 backdrop-blur-sm hidden z-[100] flex items-center justify-center p-4">
+        <!-- ... existing content ... -->
+    </div>
+
+    <!-- Confirm Dividend Modal -->
+    <div id="confirm-modal" class="fixed inset-0 bg-slate-900/50 dark:bg-black/60 backdrop-blur-sm hidden z-[100] flex items-center justify-center p-4">
         <div class="bg-white dark:bg-[#111722] w-full max-w-sm rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6">
             <div class="flex justify-between items-center mb-6">
-                <h3 id="manual-modal-title" class="text-sm font-black tracking-tight uppercase tracking-widest">Manuale</h3>
-                <button onclick="closeManualModal()" class="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                <div>
+                    <h3 class="text-sm font-black tracking-tight uppercase tracking-widest text-emerald-500">Conferma Dividendo</h3>
+                    <p id="confirm-asset-label" class="text-[10px] text-slate-500 font-bold mt-1"></p>
+                </div>
+                <button onclick="closeConfirmModal()" class="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
                     <span class="material-symbols-outlined text-sm">close</span>
                 </button>
             </div>
-            <form id="manual-div-form" onsubmit="submitManualDividend(event)" class="space-y-4">
-                <input type="hidden" id="manual-id">
+            <form id="confirm-div-form" onsubmit="submitConfirmDividend(event)" class="space-y-4">
+                <input type="hidden" id="confirm-id">
+                <input type="hidden" id="confirm-ticker">
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Ticker in portafoglio</label>
-                    <select id="manual-ticker" required class="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-sm focus:ring-2 focus:ring-primary/20 font-bold outline-none">
-                        <option value="" disabled selected>Seleziona un asset...</option>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Accredita su Portafoglio</label>
+                    <select id="confirm-portfolio" required class="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-sm focus:ring-2 focus:ring-emerald-500/20 font-bold outline-none">
+                        <option value="" disabled selected>Seleziona portafoglio...</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Data Stacco</label>
-                    <input type="date" id="manual-date" required class="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-sm focus:ring-2 focus:ring-primary/20 outline-none">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Data Incasso</label>
+                    <input type="date" id="confirm-date" required class="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-sm focus:ring-2 focus:ring-emerald-500/20 outline-none">
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Importo per singola azione (€)</label>
-                    <input type="number" step="0.0001" id="manual-amount" required placeholder="0.00" class="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-sm focus:ring-2 focus:ring-primary/20 font-mono font-bold outline-none">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Totale di questo dividendo (€)</label>
+                    <input type="number" step="0.01" id="confirm-amount" required placeholder="0.00" class="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-sm focus:ring-2 focus:ring-emerald-500/20 font-mono font-black outline-none">
                 </div>
-                <button type="submit" class="w-full mt-6 py-2.5 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg text-sm transition-colors shadow-sm">
-                    Salva Previsione
+                <button type="submit" class="w-full mt-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg text-sm transition-colors shadow-sm">
+                    Finalizza e Registra
                 </button>
             </form>
         </div>
@@ -499,6 +508,7 @@
             document.getElementById('manual-id').value = '';
             document.getElementById('manual-modal').classList.remove('hidden');
         };
+
         window.openEditModal = (id) => {
             const proj = window.globalProjData.assets.find(a => a.id === id);
             if (!proj) return;
@@ -509,6 +519,60 @@
             document.getElementById('manual-amount').value = proj.amount || (proj.totalAmount / (proj.yield > 0 ? proj.totalAmount / proj.amount : 1));
             document.getElementById('manual-modal').classList.remove('hidden');
         };
+
+        window.openConfirmModal = async (id) => {
+            const proj = window.globalProjData.assets.find(a => a.id === id);
+            if (!proj) return;
+            
+            document.getElementById('confirm-id').value = proj.id;
+            document.getElementById('confirm-ticker').value = proj.ticker;
+            document.getElementById('confirm-asset-label').innerText = `${proj.ticker} - ${(proj.name && proj.name !== 'null') ? proj.name : ''}`;
+            document.getElementById('confirm-date').value = proj.date;
+            document.getElementById('confirm-amount').value = (proj.totalAmount || 0).toFixed(2);
+            
+            try {
+                const res = await fetch('/api/portfolios');
+                const pData = await res.json();
+                const sel = document.getElementById('confirm-portfolio');
+                sel.innerHTML = '<option value="" disabled selected>Seleziona portafoglio...</option>' + 
+                                pData.portfolios.map(p => `<option value="${p.id}">${p.name} (${p.currency})</option>`).join('');
+            } catch(e) { console.error(e); }
+
+            document.getElementById('confirm-modal').classList.remove('hidden');
+        };
+
+        window.submitConfirmDividend = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('confirm-id').value;
+            const ticker = document.getElementById('confirm-ticker').value;
+            const portfolioId = document.getElementById('confirm-portfolio').value;
+            const date = document.getElementById('confirm-date').value;
+            const amount = document.getElementById('confirm-amount').value;
+
+            try {
+                const res = await fetch(`/api/dividends/projections/${id}/confirm`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ portfolioId, ticker, date, amount })
+                });
+                if (res.ok) {
+                    window.closeConfirmModal();
+                    loadProjections();
+                    loadDividends();
+                } else {
+                    const err = await res.json();
+                    alert('Errore: ' + (err.error || 'Invio fallito'));
+                }
+            } catch (err) {
+                console.error('Error confirming dividend:', err);
+            }
+        };
+
+        window.closeConfirmModal = () => {
+            document.getElementById('confirm-modal').classList.add('hidden');
+            document.getElementById('confirm-div-form').reset();
+        };
+
         window.closeManualModal = () => {
             document.getElementById('manual-modal').classList.add('hidden');
             document.getElementById('manual-div-form').reset();
@@ -703,6 +767,7 @@
                     const isProjected = a.id !== null;
                     const actionsHtml = isProjected ? `
                         <div class="flex items-center justify-end gap-2">
+                            <button onclick="openConfirmModal(${a.id})" class="text-emerald-500 hover:text-emerald-600 transition-colors cursor-pointer" title="Conferma Incasso"><span class="material-symbols-outlined text-sm">check_circle</span></button>
                             <button onclick="openEditModal(${a.id})" class="text-slate-400 hover:text-primary transition-colors cursor-pointer" title="Modifica"><span class="material-symbols-outlined text-sm">edit</span></button>
                             <button onclick="deleteProjection(${a.id})" class="text-slate-400 hover:text-red-500 transition-colors cursor-pointer" title="Rimuovi"><span class="material-symbols-outlined text-sm">delete</span></button>
                         </div>
