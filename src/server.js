@@ -398,7 +398,7 @@ const MARKET_HOURS = {
 async function fetchAssetMetadata(ticker) {
     if (ticker && ticker.startsWith('CD_')) {
         return {
-            currentPrice: 1.0, 
+            currentPrice: 0, 
             changePercent: 0,
             type: 'Deposito Vincolato', 
             longName: ticker,
@@ -1304,15 +1304,21 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
         .filter(([, h]) => h.shares > 0.0001)
         .map(([ticker, h]) => {
             const asset  = database.db.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(ticker);
-            const curPx  = asset ? asset.currentPrice : 0;
+            let curPx  = asset ? asset.currentPrice : 0;
             
             // FX rate for this specific asset conversion
             const rate = (asset && asset.currency === 'USD' && portfolio.currency === 'EUR') ? liveRate : 1;
             
-            const curPxP = (asset && asset.currency !== portfolio.currency) ? curPx / rate : curPx;
-            const curVal = h.shares * curPxP;
             const avgCost = h.shares > 0 ? h.totalCostInPCurr / h.shares : 0;
             const avgCostAsset = h.shares > 0 ? h.totalCostInAssetCurr / h.shares : 0;
+
+            // For CD_ assets, current price strictly follows cost basis per share (zero unrealized gain)
+            if (ticker && ticker.startsWith('CD_')) {
+                curPx = avgCostAsset;
+            }
+
+            const curPxP = (asset && asset.currency !== portfolio.currency) ? curPx / rate : curPx;
+            const curVal = h.shares * curPxP;
             const isToday = asset && asset.quoteDate === today;
             const changePercent = isToday ? (asset.changePercent || 0) : 0;
             const changeValue = isToday ? (asset.changeValue || 0) : 0;
@@ -2445,13 +2451,9 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
     const fetchTickerData = async (ticker) => {
         const reqStart = startDate.toISOString().split('T')[0];
 
-        // Special handling for Savings Accounts (CD_) - constant 1.0 price
+        // Special handling for Savings Accounts (CD_) - completely fall back to transaction history prices
         if (ticker.startsWith('CD_')) {
-            const pricesMap = {};
-            for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
-                pricesMap[d.toISOString().split('T')[0]] = 1.0;
-            }
-            historicalPrices[ticker] = pricesMap;
+            historicalPrices[ticker] = {};
             return;
         }
 

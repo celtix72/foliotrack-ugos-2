@@ -2265,8 +2265,14 @@
 
             let type = (cols[1] || 'BUY').toUpperCase();
             if (type === 'DIV') type = 'DIVIDEND';
-            if (['CASH', 'DEPOSITO'].includes(type)) type = 'DEPOSIT';
-            if (type === 'PRELIEVO' || type === 'MINUS') type = 'WITHDRAWAL';
+            
+            const rawTicker = (cols[3] || '').toUpperCase();
+            if (['CASH', 'DEPOSITO'].includes(type)) {
+                type = rawTicker.startsWith('CD_') ? 'BUY' : 'DEPOSIT';
+            }
+            if (type === 'PRELIEVO' || type === 'MINUS') {
+                type = rawTicker.startsWith('CD_') ? 'SELL' : 'WITHDRAWAL';
+            }
             if (type === 'TRASFERIMENTO') type = 'TRANSFER';
 
             const validTypes = ['BUY','SELL','DIVIDEND','DEPOSIT','WITHDRAWAL','TAX', 'TRANSFER'];
