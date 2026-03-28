@@ -2058,12 +2058,36 @@ app.get('/api/validate-ticker', async (req, res) => {
                     exchange: q.exchange,
                     type: q.quoteType
                 }))});
-            } else {
-                res.json({ valid: false, suggestions: [] });
             }
         } catch {
             res.json({ valid: false, suggestions: [] });
         }
+    }
+});
+
+// Diagnostic tool: fetch full metadata for a ticker from Yahoo Finance
+app.get('/api/test/yahoo-ticker', async (req, res) => {
+    const ticker = (req.query.ticker || "").trim().toUpperCase();
+    if (!ticker) return res.status(400).send('Ticker required');
+
+    try {
+        const quote = await yahooFinance.quote(ticker).catch(() => null);
+        const summary = await yahooFinance.quoteSummary(ticker, {
+            modules: ['summaryDetail', 'assetProfile', 'financialData', 'defaultKeyStatistics', 'calendarEvents', 'price', "majorDirectHolders", "majorHoldersBreakdown", "insiderTransactions"]
+        }).catch(() => null);
+
+        if (!quote && !summary) {
+            return res.status(404).json({ error: 'Ticker not found on Yahoo Finance' });
+        }
+
+        res.json({
+            ticker,
+            timestamp: new Date().toISOString(),
+            quote,
+            summary
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
