@@ -2349,6 +2349,20 @@
                 progressLabel.textContent = `BTP virtual asset: ${tk} → B_ITA (${i+1}/${uniqueAssetKeys.length})`;
                 continue;
             }
+
+            // CD_ Savings/Deposit assets are virtual — skip API validation and use directly
+            if (tk.toUpperCase().startsWith('CD_')) {
+                tickerCache[cacheKey] = { 
+                    valid: true, 
+                    ticker: tk, 
+                    name: tk, 
+                    type: 'Deposito Vincolato', 
+                    currency: 'EUR', 
+                    exchange: 'N/A', 
+                    country: 'Italy' 
+                };
+                continue;
+            }
             progressLabel.textContent = `Validating ${tk || isin} (${i+1}/${uniqueAssetKeys.length})...`;
             try {
                 const url = `/api/validate-ticker?ticker=${encodeURIComponent(tk)}&isin=${encodeURIComponent(isin || '')}`;

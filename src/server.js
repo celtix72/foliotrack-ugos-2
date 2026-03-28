@@ -398,6 +398,7 @@ const MARKET_HOURS = {
 async function fetchAssetMetadata(ticker) {
     if (ticker && ticker.startsWith('CD_')) {
         return {
+            ticker: ticker,
             currentPrice: 0, 
             changePercent: 0,
             type: 'Deposito Vincolato', 
