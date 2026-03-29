@@ -3383,7 +3383,7 @@ async function refreshDividendProjections() {
                 LEFT JOIN assets a ON t.assetTicker = a.ticker
                 GROUP BY ticker
             )
-            WHERE balance > 0.0001 OR ticker LIKE 'CD_%' OR ticker = 'Sconosciuto'
+            WHERE balance > 0.0001
         `).all();
 
         const allDivTx = database.db.prepare(`
