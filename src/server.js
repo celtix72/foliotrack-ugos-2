@@ -1052,6 +1052,64 @@ app.delete('/api/watchlist/:ticker', (req, res) => {
     }
 });
 
+app.get('/api/watchlist/performance', async (req, res) => {
+    try {
+        const watchlist = database.db.prepare('SELECT ticker FROM assets WHERE inWatchlist = 1').all();
+        const results = {};
+        
+        const now = new Date();
+        const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+
+        for (const item of watchlist) {
+            const ticker = item.ticker;
+            try {
+                // Fetch historical data from YF
+                const historical = await yahooFinance.historical(ticker, {
+                    period1: oneYearAgo.toISOString().split('T')[0],
+                    interval: '1d'
+                }).catch(() => []);
+
+                if (historical.length > 0) {
+                    const currentPrice = (await yahooFinance.quote(ticker)).regularMarketPrice;
+                    
+                    const getPerformance = (pastDate) => {
+                        const pastEntry = historical.find(h => new Date(h.date) >= pastDate);
+                        if (pastEntry && pastEntry.close) {
+                            return ((currentPrice - pastEntry.close) / pastEntry.close) * 100;
+                        }
+                        return null;
+                    };
+
+                    results[ticker] = {
+                        perf1W: getPerformance(oneWeekAgo),
+                        perf1M: getPerformance(oneMonthAgo),
+                        perf1Y: getPerformance(oneYearAgo)
+                    };
+                }
+            } catch (e) {
+                console.error(`Error fetching performance for ${ticker}:`, e.message);
+            }
+        }
+        res.json(results);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/assets/:ticker/details', async (req, res) => {
+    const { ticker } = req.params;
+    try {
+        const summary = await yahooFinance.quoteSummary(ticker, {
+            modules: ['summaryDetail', 'financialData', 'defaultKeyStatistics', 'assetProfile', 'calendarEvents']
+        });
+        res.json(summary);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.delete('/api/assets/:id', (req, res) => {
     const asset = database.db.prepare(`SELECT * FROM assets WHERE id = ? OR ticker = ?`).get(req.params.id, req.params.id);
     if (!asset) return res.status(404).send('Asset not found');

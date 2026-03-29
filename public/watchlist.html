@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>FolioTrack - Watchlist</title>
+    <link rel="stylesheet" href="/dist/output.css">
+    <link rel="stylesheet" href="/mobile.css">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+        .performance-chip { font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 6px; }
+    </style>
+    <script src="/theme.js"></script>
+</head>
+<body class="bg-background-light dark:bg-[#0b0f1a] text-slate-900 dark:text-slate-100 min-h-screen flex">
+
+<!-- Sidebar -->
+<aside class="w-72 border-r border-slate-200 dark:border-slate-800 flex flex-col h-screen sticky top-0 bg-white dark:bg-[#111722]">
+    <div class="p-6 flex items-center gap-3">
+        <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white">
+            <span class="material-symbols-outlined">query_stats</span>
+        </div>
+        <div>
+            <h1 class="text-lg font-bold tracking-tight">FolioTrack</h1>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Premium Terminal</p>
+        </div>
+    </div>
+    <nav class="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
+        <div class="pb-4">
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/dashboard">
+                <span class="material-symbols-outlined text-[20px]">dashboard</span>
+                <span>Dashboard</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/portfolio">
+                <span class="material-symbols-outlined text-[20px]">work</span>
+                <span>Portfolio</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/market">
+                <span class="material-symbols-outlined text-[20px]">trending_up</span>
+                <span>Market</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/reports">
+                <span class="material-symbols-outlined text-[20px]">pie_chart</span>
+                <span>Reports</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/history">
+                <span class="material-symbols-outlined text-[20px]">history</span>
+                <span>History</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/dividend">
+                <span class="material-symbols-outlined text-[20px]">payments</span>
+                <span>Dividend</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary font-medium" href="/watchlist">
+                <span class="material-symbols-outlined text-[20px]">visibility</span>
+                <span>Watchlist</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/settings">
+                <span class="material-symbols-outlined text-[20px]">settings</span>
+                <span>Settings</span>
+            </a>
+        </div>
+    </nav>
+</aside>
+
+<!-- Main Content -->
+<div class="flex-1 flex flex-col h-screen overflow-hidden">
+    <header class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-50">
+        <div class="flex items-center gap-4">
+            <h2 class="text-xl font-black tracking-tight">Watchlist</h2>
+        </div>
+        <div class="flex items-center gap-4">
+             <div class="relative group">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 group-focus-within:text-primary transition-colors text-sm">search</span>
+                <input type="text" id="asset-search" placeholder="Search ticker (e.g. AAPL, NVDA)..." 
+                       class="w-80 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium">
+                <div id="search-suggestions" class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl z-[100] hidden overflow-hidden backdrop-blur-xl"></div>
+            </div>
+            <button onclick="togglePrivacy()" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-primary transition-all">
+                <span class="material-symbols-outlined text-sm" id="header-privacy-icon">visibility</span>
+            </button>
+            <button onclick="toggleTheme()" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-primary transition-all">
+                <span class="material-symbols-outlined text-sm" id="header-theme-icon">dark_mode</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto custom-scrollbar p-8">
+        <div class="bg-white dark:bg-[#111722] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+                        <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Ticker / Name</th>
+                        <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Price</th>
+                        <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">1D</th>
+                        <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">1W</th>
+                        <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">1M</th>
+                        <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">1Y</th>
+                        <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="watchlist-body">
+                    <!-- Rows injected via JS -->
+                </tbody>
+            </table>
+            <div id="watchlist-empty" class="p-20 text-center hidden">
+                <span class="material-symbols-outlined text-6xl text-slate-200 dark:text-slate-800 mb-4">visibility_off</span>
+                <p class="text-slate-500 font-bold">Your watchlist is empty.</p>
+                <p class="text-xs text-slate-400">Start by searching and adding tickers above.</p>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Asset Detail Modal -->
+<div id="detail-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
+    <div class="bg-white dark:bg-[#111722] w-full max-w-2xl rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div class="p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start">
+            <div>
+                <div class="flex items-center gap-3 mb-1">
+                    <h3 id="modal-ticker" class="text-3xl font-black tracking-tighter text-primary">AAPL</h3>
+                    <span id="modal-exchange" class="text-[10px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-500">NasdaqGS</span>
+                </div>
+                <p id="modal-name" class="text-slate-500 font-bold">Apple Inc.</p>
+            </div>
+            <button onclick="closeDetailModal()" class="w-10 h-10 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 flex items-center justify-center transition-all">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="p-8 grid grid-cols-2 gap-8" id="modal-content">
+            <!-- Details will be injected here -->
+        </div>
+        <div class="p-6 bg-slate-50 dark:bg-slate-800/30 flex justify-end px-8">
+            <button onclick="closeDetailModal()" class="px-6 py-2 bg-slate-200 dark:bg-slate-700 font-bold rounded-xl text-sm">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let watchlist = [];
+    let performanceData = {};
+
+    async function loadWatchlist() {
+        try {
+            const [resW, resP] = await Promise.all([
+                fetch('/api/watchlist'),
+                fetch('/api/watchlist/performance')
+            ]);
+            watchlist = await resW.json();
+            performanceData = await resP.json();
+            renderWatchlist();
+        } catch (err) {
+            console.error('Failed to load watchlist:', err);
+        }
+    }
+
+    function renderWatchlist() {
+        const tbody = document.getElementById('watchlist-body');
+        const empty = document.getElementById('watchlist-empty');
+        
+        if (watchlist.length === 0) {
+            tbody.innerHTML = '';
+            empty.classList.remove('hidden');
+            return;
+        }
+        
+        empty.classList.add('hidden');
+        tbody.innerHTML = watchlist.map(item => {
+            const perf = performanceData[item.ticker] || {};
+            const d1 = item.changePercent || 0;
+            
+            return `
+                <tr class="border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
+                    <td class="px-6 py-5">
+                        <div class="text-sm font-black text-slate-900 dark:text-white">${item.ticker}</div>
+                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">${item.name}</div>
+                    </td>
+                    <td class="px-6 py-5">
+                        <div class="text-sm font-bold">${formatCurrency(item.currentPrice, item.currency)}</div>
+                    </td>
+                    <td class="px-6 py-5 text-center">${renderPerf(d1)}</td>
+                    <td class="px-6 py-5 text-center">${renderPerf(perf.perf1W)}</td>
+                    <td class="px-6 py-5 text-center">${renderPerf(perf.perf1M)}</td>
+                    <td class="px-6 py-5 text-center">${renderPerf(perf.perf1Y)}</td>
+                    <td class="px-6 py-5 text-right">
+                        <div class="flex items-center justify-end gap-2">
+                            <button onclick="showDetails('${item.ticker}')" class="w-8 h-8 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all flex items-center justify-center">
+                                <span class="material-symbols-outlined text-sm">info</span>
+                            </button>
+                            <button onclick="removeFromWatchlist('${item.ticker}')" class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center">
+                                <span class="material-symbols-outlined text-sm">delete</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function renderPerf(val) {
+        if (val === undefined || val === null) return `<span class="text-slate-300 dark:text-slate-700 font-bold text-xs">--</span>`;
+        const isPos = val >= 0;
+        const color = isPos ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border-rose-500/20';
+        return `<span class="performance-chip border ${color}">${isPos ? '+' : ''}${val.toFixed(2)}%</span>`;
+    }
+
+    async function removeFromWatchlist(ticker) {
+        if (!confirm(`Remove ${ticker} from watchlist?`)) return;
+        try {
+            await fetch(`/api/watchlist/${ticker}`, { method: 'DELETE' });
+            watchlist = watchlist.filter(it => it.ticker !== ticker);
+            renderWatchlist();
+        } catch (err) {
+            alert('Failed to remove: ' + err.message);
+        }
+    }
+
+    async function showDetails(ticker) {
+        try {
+            const res = await fetch(`/api/assets/${ticker}/details`);
+            const data = await res.json();
+            
+            const sd = data.summaryDetail || {};
+            const fd = data.financialData || {};
+            const ks = data.defaultKeyStatistics || {};
+            const ap = data.assetProfile || {};
+            
+            document.getElementById('modal-ticker').innerText = ticker;
+            document.getElementById('modal-name').innerText = ap.longName || ticker;
+            document.getElementById('modal-exchange').innerText = sd.exchange || 'Unknown';
+            
+            const content = document.getElementById('modal-content');
+            
+            const fields = [
+                { label: 'Market Cap', val: formatLarge(sd.marketCap) },
+                { label: 'P/E Ratio', val: formatNum(sd.trailingPE) },
+                { label: 'Forward P/E', val: formatNum(sd.forwardPE) },
+                { label: 'Dividend Yield', val: formatPct(sd.dividendYield) },
+                { label: 'EPS (Trailling)', val: formatNum(ks.trailingEps) },
+                { label: 'Beta', val: formatNum(sd.beta) },
+                { label: 'Revenue Growth', val: formatPct(fd.revenueGrowth) },
+                { label: 'Operating Margins', val: formatPct(fd.operatingMargins) },
+                { label: 'Total Cash', val: formatLarge(fd.totalCash) },
+                { label: 'Total Debt', val: formatLarge(fd.totalDebt) },
+                { label: 'Current Ratio', val: formatNum(fd.currentRatio) },
+                { label: 'Debt to Equity', val: formatNum(fd.debtToEquity) }
+            ];
+
+            content.innerHTML = fields.map(f => `
+                <div class="space-y-1 py-1 border-b border-slate-50 dark:border-slate-800/50">
+                    <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">${f.label}</p>
+                    <p class="text-sm font-black text-slate-800 dark:text-slate-200">${f.val || 'N/A'}</p>
+                </div>
+            `).join('');
+
+            document.getElementById('detail-modal').classList.remove('hidden');
+        } catch (err) {
+            alert('Error loading details: ' + err.message);
+        }
+    }
+
+    function closeDetailModal() {
+        document.getElementById('detail-modal').classList.add('hidden');
+    }
+
+    function formatNum(n) { return n ? n.toFixed(2) : null; }
+    function formatPct(n) { return n ? (n * 100).toFixed(2) + '%' : null; }
+    function formatLarge(n) {
+        if (!n) return null;
+        if (n >= 1e12) return (n / 1e12).toFixed(2) + 'T';
+        if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+        if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+        return n.toLocaleString();
+    }
+
+    // --- Search Logic ---
+    const searchInput = document.getElementById('asset-search');
+    const suggestionsBox = document.getElementById('search-suggestions');
+    let searchTimeout;
+
+    searchInput.addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        const q = searchInput.value.trim();
+        if (q.length < 2) {
+            suggestionsBox.classList.add('hidden');
+            return;
+        }
+        searchTimeout = setTimeout(async () => {
+            const res = await fetch(`/api/market/search?q=${encodeURIComponent(q)}`);
+            const suggestions = await res.json();
+            renderSuggestions(suggestions);
+        }, 300);
+    });
+
+    function renderSuggestions(list) {
+        if (!list.length) {
+            suggestionsBox.classList.add('hidden');
+            return;
+        }
+        suggestionsBox.innerHTML = list.map(s => `
+            <div class="px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer border-b border-slate-50 dark:border-slate-800/50 last:border-0" 
+                 onclick="addToWatchlist('${s.ticker}')">
+                <div class="flex items-center justify-between">
+                    <span class="font-black text-sm text-primary">${s.ticker}</span>
+                    <span class="text-[9px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-slate-500">${s.type}</span>
+                </div>
+                <div class="text-[11px] font-bold text-slate-500 truncate mt-0.5">${s.name}</div>
+            </div>
+        `).join('');
+        suggestionsBox.classList.remove('hidden');
+    }
+
+    async function addToWatchlist(ticker) {
+        suggestionsBox.classList.add('hidden');
+        searchInput.value = '';
+        try {
+            await fetch('/api/watchlist', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ticker })
+            });
+            loadWatchlist();
+        } catch (err) {
+            alert('Failed to add: ' + err.message);
+        }
+    }
+
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+            suggestionsBox.classList.add('hidden');
+        }
+    });
+
+    // Initialize
+    loadWatchlist();
+</script>
+
+</body>
+</html>

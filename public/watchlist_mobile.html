@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>FolioTrack - Watchlist</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="stylesheet" href="/dist/output.css">
+    <link rel="stylesheet" href="/mobile.css">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script src="/theme.js"></script>
+    <style>
+        .mob-perf-badge { font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 6px; border-width: 1px; }
+        .mob-watchlist-item { background: var(--mob-bg-card); border-radius: 16px; padding: 16px; margin-bottom: 12px; border: 1px solid var(--mob-border); }
+        .mob-detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--mob-border); }
+        .mob-detail-label { font-size: 10px; text-transform: uppercase; font-weight: 800; color: var(--mob-text-caption); }
+        .mob-detail-value { font-size: 13px; font-weight: 800; }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-[#0b0f1a] text-slate-900 dark:text-slate-100 min-h-screen flex mobile-view-active">
+
+<div id="mobile-ui" class="flex flex-col h-screen w-full overflow-hidden">
+    <!-- Header -->
+    <div class="mob-header">
+        <div class="mob-header-logo-container">
+            <div class="mob-header-logo-circle">
+                <span class="material-symbols-outlined">visibility</span>
+            </div>
+            <div class="mob-header-logo-text">Watchlist</div>
+        </div>
+        <div style="flex:1"></div>
+        <div class="mob-header-actions">
+            <button onclick="toggleTheme()" class="mob-icon-btn">
+                <span class="material-symbols-outlined">dark_mode</span>
+            </button>
+            <div class="mob-icon-btn" onclick="toggleMobileView()">
+                <span class="material-symbols-outlined">desktop_windows</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="mob-scroll p-4" id="mob-watchlist-scroll">
+        <!-- Search -->
+        <div class="relative mb-6">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-sm">search</span>
+            <input type="text" id="mob-asset-search" placeholder="Search ticker..." 
+                   class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20">
+            <div id="mob-search-suggestions" class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl z-[100] hidden overflow-hidden"></div>
+        </div>
+
+        <div id="mob-watchlist-container">
+            <!-- Items injected here -->
+        </div>
+
+        <div id="mob-watchlist-empty" class="py-20 text-center hidden">
+            <span class="material-symbols-outlined text-6xl text-slate-200 dark:text-slate-800 mb-4">visibility_off</span>
+            <p class="text-slate-500 font-bold">Watchlist empty</p>
+        </div>
+        
+        <div style="height: 80px"></div>
+    </div>
+
+    <!-- Bottom Tab Bar -->
+    <div class="mob-tab-bar">
+        <a href="/dashboard" class="mob-tab-item">
+            <span class="material-symbols-outlined">dashboard</span>
+        </a>
+        <a href="/market" class="mob-tab-item">
+            <span class="material-symbols-outlined">trending_up</span>
+        </a>
+        <a href="/watchlist" class="mob-tab-item active">
+            <span class="material-symbols-outlined">visibility</span>
+        </a>
+        <a href="/dividend" class="mob-tab-item">
+            <span class="material-symbols-outlined">payments</span>
+        </a>
+        <a href="/settings" class="mob-tab-item">
+            <span class="material-symbols-outlined">settings</span>
+        </a>
+    </div>
+</div>
+
+<!-- Bottom Sheet Detail -->
+<div id="mob-detail-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] hidden" onclick="closeMobDetail()"></div>
+<div id="mob-detail-sheet" class="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#111722] rounded-t-3xl z-[201] transform translate-y-full transition-transform duration-300 pb-8 px-6 pt-2 shadow-2xl border-t border-slate-200 dark:border-slate-800">
+    <div class="w-12 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full mx-auto mb-6"></div>
+    <div class="flex justify-between items-start mb-6">
+        <div>
+            <h3 id="mob-modal-ticker" class="text-2xl font-black text-primary">AAPL</h3>
+            <p id="mob-modal-name" class="text-sm text-slate-500 font-bold">Apple Inc.</p>
+        </div>
+        <div id="mob-modal-exchange" class="text-[10px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-500">NasdaqGS</div>
+    </div>
+    <div class="grid grid-cols-2 gap-x-8 gap-y-4" id="mob-modal-content">
+        <!-- Details here -->
+    </div>
+</div>
+
+<script>
+    let watchlist = [];
+    let performanceData = {};
+
+    async function loadWatchlist() {
+        try {
+            const [resW, resP] = await Promise.all([
+                fetch('/api/watchlist'),
+                fetch('/api/watchlist/performance')
+            ]);
+            watchlist = await resW.json();
+            performanceData = await resP.json();
+            renderWatchlist();
+        } catch (err) {
+            console.error('Failed to load watchlist:', err);
+        }
+    }
+
+    function renderWatchlist() {
+        const container = document.getElementById('mob-watchlist-container');
+        const empty = document.getElementById('mob-watchlist-empty');
+        
+        if (watchlist.length === 0) {
+            container.innerHTML = '';
+            empty.classList.remove('hidden');
+            return;
+        }
+        
+        empty.classList.add('hidden');
+        container.innerHTML = watchlist.map(item => {
+            const perf = performanceData[item.ticker] || {};
+            const d1 = item.changePercent || 0;
+            
+            return `
+                <div class="mob-watchlist-item" onclick="showMobDetails('${item.ticker}')">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <div class="text-base font-black">${item.ticker}</div>
+                            <div class="text-xs font-bold text-slate-500 truncate max-w-[150px]">${item.name}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-base font-black text-primary">${formatCurrency(item.currentPrice, item.currency)}</div>
+                            <div class="mt-1">${renderPerf(d1)}</div>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                        <div class="flex flex-col gap-1 min-w-[60px]">
+                            <span class="text-[9px] uppercase font-black text-slate-400">1W</span>
+                            ${renderPerf(perf.perf1W)}
+                        </div>
+                        <div class="flex flex-col gap-1 min-w-[60px]">
+                            <span class="text-[9px] uppercase font-black text-slate-400">1M</span>
+                            ${renderPerf(perf.perf1M)}
+                        </div>
+                        <div class="flex flex-col gap-1 min-w-[60px]">
+                            <span class="text-[9px] uppercase font-black text-slate-400">1Y</span>
+                            ${renderPerf(perf.perf1Y)}
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+                        <button onclick="event.stopPropagation(); removeFromWatchlist('${item.ticker}')" class="text-rose-500 text-xs font-bold flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">delete</span> Remove
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderPerf(val) {
+        if (val === undefined || val === null) return `<span class="text-slate-300 dark:text-slate-700 font-bold text-[10px]">--</span>`;
+        const isPos = val >= 0;
+        const color = isPos ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border-rose-500/20';
+        return `<span class="mob-perf-badge border ${color}">${isPos ? '+' : ''}${val.toFixed(1)}%</span>`;
+    }
+
+    async function removeFromWatchlist(ticker) {
+        if (!confirm(`Remove ${ticker}?`)) return;
+        try {
+            await fetch(`/api/watchlist/${ticker}`, { method: 'DELETE' });
+            watchlist = watchlist.filter(it => it.ticker !== ticker);
+            renderWatchlist();
+        } catch (err) {
+            alert('Error: ' + err.message);
+        }
+    }
+
+    async function showMobDetails(ticker) {
+        try {
+            const res = await fetch(`/api/assets/${ticker}/details`);
+            const data = await res.json();
+            
+            const sd = data.summaryDetail || {};
+            const fd = data.financialData || {};
+            const ks = data.defaultKeyStatistics || {};
+            const ap = data.assetProfile || {};
+            
+            document.getElementById('mob-modal-ticker').innerText = ticker;
+            document.getElementById('mob-modal-name').innerText = ap.longName || ticker;
+            document.getElementById('mob-modal-exchange').innerText = sd.exchange || 'Unknown';
+            
+            const content = document.getElementById('mob-modal-content');
+            const fields = [
+                { label: 'Cap. Mercato', val: formatLarge(sd.marketCap) },
+                { label: 'P/E Ratio', val: formatNum(sd.trailingPE) },
+                { label: 'Div. Yield', val: formatPct(sd.dividendYield) },
+                { label: 'Revenue Growth', val: formatPct(fd.revenueGrowth) },
+                { label: 'EPS', val: formatNum(ks.trailingEps) },
+                { label: 'Debt to Equity', val: formatNum(fd.debtToEquity) }
+            ];
+
+            content.innerHTML = fields.map(f => `
+                <div class="flex flex-col gap-0.5">
+                    <span class="mob-detail-label">${f.label}</span>
+                    <span class="mob-detail-value">${f.val || 'N/A'}</span>
+                </div>
+            `).join('');
+
+            document.getElementById('mob-detail-overlay').classList.remove('hidden');
+            document.getElementById('mob-detail-sheet').classList.remove('translate-y-full');
+        } catch (err) {
+            alert('Error: ' + err.message);
+        }
+    }
+
+    function closeMobDetail() {
+        document.getElementById('mob-detail-overlay').classList.add('hidden');
+        document.getElementById('mob-detail-sheet').classList.add('translate-y-full');
+    }
+
+    function formatNum(n) { return n ? n.toFixed(2) : null; }
+    function formatPct(n) { return n ? (n * 100).toFixed(2) + '%' : null; }
+    function formatLarge(n) {
+        if (!n) return null;
+        if (n >= 1e12) return (n / 1e12).toFixed(1) + 'T';
+        if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
+        if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+        return n.toLocaleString();
+    }
+
+    // Search logic (simplified for mobile)
+    const searchInput = document.getElementById('mob-asset-search');
+    const suggestionsBox = document.getElementById('mob-search-suggestions');
+    let searchTimeout;
+
+    searchInput.addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        const q = searchInput.value.trim();
+        if (q.length < 2) { suggestionsBox.classList.add('hidden'); return; }
+        searchTimeout = setTimeout(async () => {
+            const res = await fetch(`/api/market/search?q=${encodeURIComponent(q)}`);
+            const suggestions = await res.json();
+            renderSuggestions(suggestions);
+        }, 300);
+    });
+
+    function renderSuggestions(list) {
+        if (!list.length) { suggestionsBox.classList.add('hidden'); return; }
+        suggestionsBox.innerHTML = list.map(s => `
+            <div class="px-4 py-4 hover:bg-slate-100 dark:hover:bg-slate-800 border-b border-slate-50 dark:border-slate-800 last:border-0" 
+                 onclick="addToWatchlist('${s.ticker}')">
+                <div class="flex justify-between">
+                    <span class="font-black text-primary">${s.ticker}</span>
+                    <span class="text-[9px] font-black uppercase bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded text-slate-500">${s.type}</span>
+                </div>
+                <div class="text-[11px] font-bold text-slate-500 truncate mt-1">${s.name}</div>
+            </div>
+        `).join('');
+        suggestionsBox.classList.remove('hidden');
+    }
+
+    async function addToWatchlist(ticker) {
+        suggestionsBox.classList.add('hidden');
+        searchInput.value = '';
+        try {
+            await fetch('/api/watchlist', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ticker })
+            });
+            loadWatchlist();
+        } catch (err) { alert('Failed: ' + err.message); }
+    }
+
+    loadWatchlist();
+</script>
+
+</body>
+</html>
