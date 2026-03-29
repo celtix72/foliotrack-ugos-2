@@ -148,7 +148,7 @@
             </div>
         </div>
 
-        <div class="p-8 grid grid-cols-2 gap-8" id="modal-content">
+        <div class="p-8 grid grid-cols-3 gap-x-6 gap-y-4" id="modal-content">
             <!-- Details will be injected here -->
         </div>
         <div class="p-6 bg-slate-50 dark:bg-slate-800/30 flex justify-end px-8">
@@ -315,19 +315,14 @@
                     { label: 'Volume Medio (10D)', val: formatLarge(sd.averageVolume10days) }
                 ];
             } else {
+                const nextDiv = data.calendarEvents?.dividendDate || data.calendarEvents?.exDividendDate;
                 fields = [
-                    { label: 'Market Cap', val: formatLarge(sd.marketCap) },
                     { label: 'P/E Ratio', val: formatNum(sd.trailingPE) },
                     { label: 'Forward P/E', val: formatNum(sd.forwardPE) },
                     { label: 'Dividend Yield', val: formatPct(sd.dividendYield) },
-                    { label: 'EPS (Trailling)', val: formatNum(ks.trailingEps) },
+                    { label: 'EPS (Trailing)', val: formatNum(ks.trailingEps) },
                     { label: 'Beta', val: formatNum(sd.beta) },
-                    { label: 'Revenue Growth', val: formatPct(fd.revenueGrowth) },
-                    { label: 'Operating Margins', val: formatPct(fd.operatingMargins) },
-                    { label: 'Total Cash', val: formatLarge(fd.totalCash) },
-                    { label: 'Total Debt', val: formatLarge(fd.totalDebt) },
-                    { label: 'Current Ratio', val: formatNum(fd.currentRatio) },
-                    { label: 'Debt to Equity', val: formatNum(fd.debtToEquity) }
+                    { label: 'Prossimo Stacco', val: nextDiv ? new Date(nextDiv).toLocaleDateString('it-IT') : 'N/A' }
                 ];
             }
 

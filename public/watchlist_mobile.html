@@ -107,7 +107,7 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-2 gap-x-8 gap-y-4" id="mob-modal-content">
+    <div class="grid grid-cols-2 gap-x-4 gap-y-3" id="mob-modal-content">
         <!-- Details here -->
     </div>
 </div>
@@ -291,13 +291,14 @@
                     { label: 'Legal Type', val: fp.legalType || 'N/A' }
                 ];
             } else {
+                const nextDiv = data.calendarEvents?.dividendDate || data.calendarEvents?.exDividendDate;
                 fields = [
-                    { label: 'Cap. Mercato', val: formatLarge(sd.marketCap) },
                     { label: 'P/E Ratio', val: formatNum(sd.trailingPE) },
-                    { label: 'Div. Yield', val: formatPct(sd.dividendYield) },
-                    { label: 'Revenue Growth', val: formatPct(fd.revenueGrowth) },
-                    { label: 'EPS', val: formatNum(ks.trailingEps) },
-                    { label: 'Debt to Equity', val: formatNum(fd.debtToEquity) }
+                    { label: 'Forward P/E', val: formatNum(sd.forwardPE) },
+                    { label: 'Dividend Yield', val: formatPct(sd.dividendYield) },
+                    { label: 'EPS (Trailing)', val: formatNum(ks.trailingEps) },
+                    { label: 'Beta', val: formatNum(sd.beta) },
+                    { label: 'Prossimo Stacco', val: nextDiv ? new Date(nextDiv).toLocaleDateString('it-IT') : 'N/A' }
                 ];
             }
 
