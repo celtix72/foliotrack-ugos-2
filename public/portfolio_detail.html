@@ -2268,16 +2268,29 @@
             if (headerKeywords.some(k => cols[0].toLowerCase().includes(k))) continue;
 
             let type = (cols[1] || 'BUY').toUpperCase();
-            if (type === 'DIV') type = 'DIVIDEND';
-            
             const rawTicker = (cols[3] || '').toUpperCase();
-            if (['CASH', 'DEPOSITO'].includes(type)) {
+
+            // 1. Synonym mapping (Italian & terminology variants)
+            if (['DIV', 'DIVIDENDO', 'CEDOLA', 'DIV'].includes(type)) type = 'DIVIDEND';
+            if (['ACQUISTO', 'COMPRA'].includes(type)) type = 'BUY';
+            if (['VENDITA'].includes(type)) type = 'SELL';
+            if (['TRASFERIMENTO'].includes(type)) type = 'TRANSFER';
+            
+            // 2. Cash management terms & CD_ special handling
+            const isDepositLike = ['CASH', 'DEPOSITO', 'VERSAMENTO', 'ACCREDITO', 'DEPOSIT'].includes(type);
+            const isWithdrawLike = ['PRELIEVO', 'MINUS', 'ADDEBITO', 'WITHDRAWAL', 'PRELIMINARE'].includes(type);
+
+            if (isDepositLike) {
                 type = rawTicker.startsWith('CD_') ? 'BUY' : 'DEPOSIT';
-            }
-            if (type === 'PRELIEVO' || type === 'MINUS') {
+            } else if (isWithdrawLike) {
                 type = rawTicker.startsWith('CD_') ? 'SELL' : 'WITHDRAWAL';
             }
-            if (type === 'TRASFERIMENTO') type = 'TRANSFER';
+
+            // 3. Asset-to-Cash normalization (BUY/SELL on CASH is just a DEPOSIT/WITHDRAWAL)
+            if (rawTicker === 'CASH' || !rawTicker) {
+                if (type === 'BUY') type = 'DEPOSIT';
+                if (type === 'SELL') type = 'WITHDRAWAL';
+            }
 
             const validTypes = ['BUY','SELL','DIVIDEND','DEPOSIT','WITHDRAWAL','TAX', 'TRANSFER'];
             if (!validTypes.includes(type)) continue;
