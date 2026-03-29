@@ -2004,6 +2004,9 @@ app.post('/api/transactions', async (req, res) => {
     
     // Auto-rebuild history for this portfolio
     triggerHistoryRebuild(portfolioId);
+    
+    // Auto-refresh dividend projections (non-blocking if possible, but YF is async)
+    await refreshDividendProjections().catch(e => logger.error("Background Dividend Refresh Error:", e));
 
     res.status(201).json(database.db.prepare(`SELECT * FROM transactions WHERE id = ?`).get(result.lastInsertRowid));
 });
@@ -2033,10 +2036,13 @@ app.delete('/api/transactions/:id', async (req, res) => {
     // Auto-rebuild history for this portfolio
     triggerHistoryRebuild(row.portfolioId);
 
+    // Auto-refresh dividend projections
+    await refreshDividendProjections().catch(e => logger.error("Background Dividend Refresh Error:", e));
+
     res.json(row);
 });
 
-app.put('/api/transactions/:id', (req, res) => {
+app.put('/api/transactions/:id', async (req, res) => {
     const { type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount } = req.body;
     const existing = database.db.prepare(`SELECT * FROM transactions WHERE id = ?`).get(req.params.id);
     if (!existing) return res.status(404).send('Transaction not found');
@@ -2063,6 +2069,9 @@ app.put('/api/transactions/:id', (req, res) => {
 
     // Auto-rebuild history for this portfolio
     triggerHistoryRebuild(existing.portfolioId);
+
+    // Auto-refresh dividend projections
+    await refreshDividendProjections().catch(e => logger.error("Background Dividend Refresh Error:", e));
 
     res.json({ success: true });
 });
@@ -2339,6 +2348,9 @@ app.post('/api/transactions/bulk', async (req, res) => {
         }
         
         clearPerformanceCache();
+        
+        // Auto-refresh dividend projections after bulk import
+        await refreshDividendProjections().catch(e => logger.error("Background Dividend Refresh Error (Bulk):", e));
 
         res.json({ 
             success: true, 
@@ -3347,7 +3359,11 @@ app.post('/api/dividends/projections/:id/confirm', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/dividends/projections/reset', async (req, res) => {
+/**
+ * Core function to recalculate and refresh dividend projections in the database.
+ * This can be called manually or automatically after transactions (BUY/SELL).
+ */
+async function refreshDividendProjections() {
     try {
         const now = new Date();
         const currentYear = now.getFullYear();
@@ -3355,7 +3371,7 @@ app.post('/api/dividends/projections/reset', async (req, res) => {
         const liveRate = await getEurUsdRate();
         const BOND_TYPES = ['Bond', 'ETF Obblig', 'Deposito Vincolato', 'ETF Monetario'];
 
-        // Get open positions
+        // Get open positions (only assets currently held)
         const openPositions = database.db.prepare(`
             SELECT * FROM (
                 SELECT COALESCE(NULLIF(NULLIF(t.assetTicker, 'null'), ''), 'Sconosciuto') as ticker,
@@ -3419,13 +3435,11 @@ app.post('/api/dividends/projections/reset', async (req, res) => {
                             const unitAmount = toEUR(annualRate / freq, currencyYF, null);
                             newProjections.push({ ticker, name: pos.name, date: nextDateStr, tag: 'YF', amount: unitAmount, totalAmount: amtEUR, yield: assetYield });
                         } else if (annualRate > 0) {
-                            // FALLBACK: No future dividendDate found in YF, but we have a Rate.
-                            // Use historical payment months for this ticker in the previous year as a proxy.
                             const histLastYear = allDivTx.filter(d => d.ticker === ticker && d.date.startsWith(lastYear.toString()));
                             if (histLastYear.length > 0) {
                                 const months = [...new Set(histLastYear.map(d => d.date.substring(5, 7)))];
                                 months.forEach(m => {
-                                    const nextDate = `${currentYear}-${m}-20`; // Estimate approx date
+                                    const nextDate = `${currentYear}-${m}-20`;
                                     if (nextDate > now.toISOString().split('T')[0]) {
                                         const perPayment = (annualRate * pos.balance) / months.length;
                                         const amtEUR = toEUR(perPayment, currencyYF, null);
@@ -3436,11 +3450,12 @@ app.post('/api/dividends/projections/reset', async (req, res) => {
                             }
                         }
                     }
-                } catch(e) {}
+                } catch(e) {
+                    logger.error(`Error fetching YF data for ${ticker}:`, e.message);
+                }
             }
         }
 
-        // Transaction DB ops
         const tx = database.db.transaction((projs) => {
             database.db.prepare(`DELETE FROM dividend_projections WHERE tag != 'MANUALE' AND year = ?`).run(currentYear);
             const insert = database.db.prepare(`
@@ -3452,10 +3467,18 @@ app.post('/api/dividends/projections/reset', async (req, res) => {
             }
         });
         tx(newProjections);
-        
-        res.json({ success: true, count: newProjections.length });
+        return newProjections.length;
     } catch (err) {
-        logger.error('Reset projections error', err);
+        logger.error('refreshDividendProjections error', err);
+        throw err;
+    }
+}
+
+app.post('/api/dividends/projections/reset', async (req, res) => {
+    try {
+        const count = await refreshDividendProjections();
+        res.json({ success: true, count });
+    } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
@@ -3493,16 +3516,19 @@ app.get('/api/analytics/dividend-projections', async (req, res) => {
             return amount;
         };
 
-        // Received
+        // Received - Filtered by current holdings
         allDivTx.forEach(d => {
+            const pos = openPositions.find(p => p.ticker === d.ticker);
+            if (!pos) return; // Skip dividends for assets no longer held
+
             const m = parseInt(d.date.split('-')[1]) - 1;
             const amtEUR = toEUR(d.amount || (d.quantity * d.price - (d.tax || 0)), d.portCurrency, d.exchangeRate);
             actualByMonth[m] += amtEUR;
             totalReceived += amtEUR;
             tickersByMonth[m].add(d.ticker);
-            const pos = openPositions.find(p => p.ticker === d.ticker);
+            
             listItems.push({
-                id: null, ticker: d.ticker, name: pos ? pos.name : null, date: d.date, tag: 'REGISTRATO',
+                id: null, ticker: d.ticker, name: pos.name, date: d.date, tag: 'REGISTRATO',
                 amount: null, totalAmount: amtEUR, annualProjected: 0, yield: 0
             });
         });
