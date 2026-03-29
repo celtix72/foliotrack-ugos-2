@@ -8,14 +8,15 @@
     <link rel="stylesheet" href="/dist/output.css">
     <link rel="stylesheet" href="/mobile.css">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-    <script src="/theme.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .mob-perf-badge { font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 6px; border-width: 1px; }
         .mob-watchlist-item { background: var(--mob-bg-card); border-radius: 16px; padding: 16px; margin-bottom: 12px; border: 1px solid var(--mob-border); }
         .mob-detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--mob-border); }
         .mob-detail-label { font-size: 10px; text-transform: uppercase; font-weight: 800; color: var(--mob-text-caption); }
         .mob-detail-value { font-size: 13px; font-weight: 800; }
+        
+        /* Force visibility of #mobile-ui when mobile view is active */
+        body.mobile-view-active #mobile-ui { display: flex !important; visibility: visible !important; opacity: 1 !important; }
     </style>
 </head>
 <body class="bg-background-light dark:bg-[#0b0f1a] text-slate-900 dark:text-slate-100 min-h-screen flex mobile-view-active">
@@ -122,13 +123,17 @@
     async function loadWatchlist() {
         console.log('Mobile: loadWatchlist starting...');
         try {
-            const [resW, resP] = await Promise.all([
-                fetch('/api/watchlist'),
-                fetch('/api/watchlist/performance')
-            ]);
+            // First pass: Load basic asset list
+            const resW = await fetch('/api/watchlist');
             watchlist = await resW.json();
+            console.log('Mobile: Watchlist loaded:', watchlist.length, 'items');
+            renderWatchlist(); // Render immediately with items
+
+            // Second pass: Load performance metrics (slow)
+            const resP = await fetch('/api/watchlist/performance');
             performanceData = await resP.json();
-            renderWatchlist();
+            console.log('Mobile: Performance data received');
+            renderWatchlist(); // Update with performance metrics
         } catch (err) {
             console.error('Failed to load watchlist:', err);
         }
@@ -138,7 +143,7 @@
         const container = document.getElementById('mob-watchlist-container');
         const empty = document.getElementById('mob-watchlist-empty');
         
-        if (watchlist.length === 0) {
+        if (!watchlist || watchlist.length === 0) {
             container.innerHTML = '';
             empty.classList.remove('hidden');
             return;
@@ -146,7 +151,7 @@
         
         empty.classList.add('hidden');
 
-        // Robust grouping logic
+        // Categorize assets
         const equities = watchlist.filter(item => {
             const t = (item.type || '').toUpperCase();
             return t === 'AZIONI' || t === 'EQUITY' || t === 'STOCK' || t === 'COMMON STOCK';
@@ -163,7 +168,7 @@
         });
 
         const renderSection = (items, title) => {
-            if (items.length === 0) return '';
+            if (!items || items.length === 0) return '';
             return `
                 <div class="px-2 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
                     ${title} (${items.length})
@@ -172,7 +177,6 @@
                     const perf = performanceData[item.ticker] || {};
                     const d1 = item.changePercent || 0;
                     
-                    // Standardize Type Label
                     let typeLabel = item.type || 'Other';
                     const t = typeLabel.toUpperCase();
                     if (t === 'AZIONI' || t === 'EQUITY' || t === 'STOCK' || t === 'COMMON STOCK') typeLabel = 'Equity';
@@ -225,13 +229,22 @@
             `;
         };
 
-        container.innerHTML = renderSection(equities, 'Equity') + 
-                              renderSection(etfs, 'ETF') + 
-                              renderSection(other, 'Other');
+        const listHtml = (renderSection(equities, 'Equity') + renderSection(etfs, 'ETF') + renderSection(other, 'Other')).trim();
+        if (listHtml === '' && watchlist.length > 0) {
+            container.innerHTML = renderSection(watchlist, 'Watchlist Items');
+        } else {
+            container.innerHTML = listHtml;
+        }
     }
 
     function renderPerf(val) {
-        if (val === undefined || val === null) return `<span class="text-slate-300 dark:text-slate-700 font-bold text-[11px] tracking-tighter">—</span>`;
+        if (val === undefined || val === null) {
+            // If we have watchlist items but no performance data yet, show loading state
+            if (Object.keys(performanceData).length === 0 && watchlist.length > 0) {
+                return `<span class="animate-pulse text-slate-300 dark:text-slate-700 font-black text-[10px]">...</span>`;
+            }
+            return `<span class="text-slate-300 dark:text-slate-700 font-bold text-[11px] tracking-tighter">—</span>`;
+        }
         const isPos = val >= 0;
         const color = isPos ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border-rose-500/20';
         return `<span class="mob-perf-badge border ${color}">${isPos ? '+' : ''}${val.toFixed(1)}%</span>`;
@@ -451,9 +464,15 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         console.log('Mobile: DOMContentLoaded, loading watchlist...');
+        // Ensure detail sheet starts definitely hidden
+        if (window.closeMobDetail) closeMobDetail();
         loadWatchlist();
     });
 </script>
+
+<!-- Scripts at the bottom to ensure DOM is ready -->
+<script src="/theme.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </body>
 </html>

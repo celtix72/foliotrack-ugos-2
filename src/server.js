@@ -3415,6 +3415,22 @@ app.post('/api/dividends/projections/reset', async (req, res) => {
                             const amtEUR = toEUR(perPayment, currencyYF, null);
                             const unitAmount = toEUR(annualRate / freq, currencyYF, null);
                             newProjections.push({ ticker, name: pos.name, date: nextDateStr, tag: 'YF', amount: unitAmount, totalAmount: amtEUR, yield: assetYield });
+                        } else if (annualRate > 0) {
+                            // FALLBACK: No future dividendDate found in YF, but we have a Rate.
+                            // Use historical payment months for this ticker in the previous year as a proxy.
+                            const histLastYear = allDivTx.filter(d => d.ticker === ticker && d.date.startsWith(lastYear.toString()));
+                            if (histLastYear.length > 0) {
+                                const months = [...new Set(histLastYear.map(d => d.date.substring(5, 7)))];
+                                months.forEach(m => {
+                                    const nextDate = `${currentYear}-${m}-20`; // Estimate approx date
+                                    if (nextDate > now.toISOString().split('T')[0]) {
+                                        const perPayment = (annualRate * pos.balance) / months.length;
+                                        const amtEUR = toEUR(perPayment, currencyYF, null);
+                                        const unitAmount = toEUR(annualRate / months.length, currencyYF, null);
+                                        newProjections.push({ ticker, name: pos.name, date: nextDate, tag: 'SIMULATO', amount: unitAmount, totalAmount: amtEUR, yield: assetYield });
+                                    }
+                                });
+                            }
                         }
                     }
                 } catch(e) {}
