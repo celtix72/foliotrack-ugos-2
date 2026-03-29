@@ -407,8 +407,9 @@ async function fetchAssetMetadata(ticker) {
             longName: ticker,
             shortName: ticker,
             currency: 'EUR',
-            exchange: 'N/A',
-            country: 'Italy'
+            exchange: 'MANUAL',
+            country: 'Italy',
+            dataSource: 'MANUAL'
         };
     }
     try {
@@ -1973,15 +1974,26 @@ app.post('/api/transactions', async (req, res) => {
         }
     }
 
+    let finalQty = parseFloat(quantity || 0);
+    let finalPrice = parseFloat(price || 0);
+    let finalExRate = parseFloat(exchangeRate || 1);
+
+    // Enforcement for CD_ assets: Quantity is always 1, Currency is always EUR
+    if (sanitizedTicker && sanitizedTicker.startsWith('CD_')) {
+        finalQty = 1.0;
+        finalExRate = 1.0;
+        // The price input from the user is treated as the total amount deposited
+    }
+
     const result = database.db.prepare(`
         INSERT INTO transactions (portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
         parseInt(portfolioId), type, sanitizedTicker || '',
         date || new Date().toISOString().split('T')[0],
-        parseFloat(quantity || 0), parseFloat(price || 0),
+        finalQty, finalPrice,
         parseFloat(commission || 0), parseFloat(tax || 0),
-        parseFloat(exchangeRate || 1), parseFloat(amount || 0)
+        finalExRate, parseFloat(amount || 0)
     );
 
     const liveRate = await getEurUsdRate();
@@ -2293,15 +2305,15 @@ app.post('/api/transactions/bulk', async (req, res) => {
                                 t.assetId || sanitizedTicker, 
                                 sanitizedTicker, 
                                 t.assetName || sanitizedTicker, 
-                                t.assetType || (newSource === 'B_ITA' ? 'Bond' : 'Stock'), 
-                                t.assetExchange || (newSource === 'B_ITA' ? 'XMIL' : 'N/A'), 
-                                t.assetCurrency || (newSource === 'B_ITA' ? 'EUR' : 'USD'), 
+                                sanitizedTicker.startsWith('CD_') ? 'Deposito Vincolato' : (t.assetType || (newSource === 'B_ITA' ? 'Bond' : 'Stock')), 
+                                sanitizedTicker.startsWith('CD_') ? 'MANUAL' : (t.assetExchange || (newSource === 'B_ITA' ? 'XMIL' : 'N/A')), 
+                                sanitizedTicker.startsWith('CD_') ? 'EUR' : (t.assetCurrency || (newSource === 'B_ITA' ? 'EUR' : 'USD')), 
                                 parseFloat(t.assetPrice || 0) || 0,
                                 0, 
                                 t.assetPe || null,
-                                t.assetCountry || (newSource === 'B_ITA' ? 'Italy' : 'N/A'),
+                                sanitizedTicker.startsWith('CD_') ? 'Italy' : (t.assetCountry || (newSource === 'B_ITA' ? 'Italy' : 'N/A')),
                                 0,
-                                newSource,
+                                sanitizedTicker.startsWith('CD_') ? 'MANUAL' : newSource,
                                 newIsin
                             );
                         }
@@ -2317,16 +2329,23 @@ app.post('/api/transactions/bulk', async (req, res) => {
                         return isNaN(n) ? dflt : n;
                     };
 
+                    let finalQty = cleanNum(t.quantity);
+                    let finalExRate = cleanNum(t.exchangeRate, 1);
+                    if (sanitizedTicker && sanitizedTicker.startsWith('CD_')) {
+                        finalQty = 1.0;
+                        finalExRate = 1.0;
+                    }
+
                     insertTx.run(
                         targetId,
                         t.type,
                         sanitizedTicker || null,
                         t.date,
-                        cleanNum(t.quantity),
+                        finalQty,
                         cleanNum(t.price),
                         cleanNum(t.commission),
                         cleanNum(t.tax),
-                        cleanNum(t.exchangeRate, 1),
+                        finalExRate,
                         cleanNum(t.amount)
                     );
 
@@ -2952,7 +2971,12 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                             price = assetMeta.currentPrice;
                         }
 
-                        // Priority 2: Try most recent historical price (critical for weekends/holidays)
+                        // Priority 2: CD_ (Certificate of Deposit) - always use last purchase price (fixed value)
+                        if (ticker.startsWith('CD_')) {
+                            price = state.lastBuyPrices[ticker];
+                        }
+
+                        // Priority 3: Try most recent historical price (critical for weekends/holidays)
                         if (!price || price === 0) {
                             const availableDates = Object.keys(historicalPrices[ticker] || {}).sort();
                             const pastDates = availableDates.filter(d => d < dateStr);
