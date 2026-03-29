@@ -4009,6 +4009,11 @@ app.get('/notifications', (req, res) => {
     res.sendFile(path.join(__dirname, '../public', file));
 });
 
+app.get('/watchlist', (req, res) => {
+    const file = isMobile(req) ? 'watchlist_mobile.html' : 'watchlist.html';
+    res.sendFile(path.join(__dirname, '../public', file));
+});
+
 // Legacy /assets route → redirect to /market
 app.get('/assets', (req, res) => res.redirect('/market'));
 

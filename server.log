@@ -1,0 +1,387 @@
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+2026-03-29T08:40:18.436Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-29T08:40:18.463Z [INFO] FolioTrack server running on port 3000
+2026-03-29T08:40:18.479Z [INFO] Database: /Users/mauro/Documents/Progetto_FolioTracker2/foliotrack.db
+[yahooFinance.historical] Invalid options ("#/definitions/ChartOptions")
+{
+  "errors": [
+    {
+      "instancePath": "/period2",
+      "schemaPath": "#/definitions/ChartOptions",
+      "message": "should match some schema in anyOf",
+      "subErrors": [
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/0",
+          "message": "Expecting date'ish",
+          "params": {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/1",
+          "message": "Expected a string"
+        },
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/2",
+          "message": "Expected a number'ish"
+        }
+      ]
+    }
+  ],
+  "input": {
+    "period1": "2025-03-29T00:00:00.000Z",
+    "interval": "1d",
+    "events": ""
+  }
+}
+Please consider completing the survey at https://bit.ly/yahoo-finance-api-feedback if you haven't already; for more info see https://github.com/gadicc/yahoo-finance2/issues/764#issuecomment-2056623851.  This will only be shown once, but you can suppress this message in future with `new YahooFinance({ suppressNotices: ['yahooSurvey'] })`.
+[yahooFinance.historical] Invalid options ("#/definitions/ChartOptions")
+{
+  "errors": [
+    {
+      "instancePath": "/period2",
+      "schemaPath": "#/definitions/ChartOptions",
+      "message": "should match some schema in anyOf",
+      "subErrors": [
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/0",
+          "message": "Expecting date'ish",
+          "params": {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/1",
+          "message": "Expected a string"
+        },
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/2",
+          "message": "Expected a number'ish"
+        }
+      ]
+    }
+  ],
+  "input": {
+    "period1": "2025-03-29T00:00:00.000Z",
+    "interval": "1d",
+    "events": ""
+  }
+}
+[yahooFinance.historical] Invalid options ("#/definitions/ChartOptions")
+{
+  "errors": [
+    {
+      "instancePath": "/period2",
+      "schemaPath": "#/definitions/ChartOptions",
+      "message": "should match some schema in anyOf",
+      "subErrors": [
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/0",
+          "message": "Expecting date'ish",
+          "params": {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/1",
+          "message": "Expected a string"
+        },
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/2",
+          "message": "Expected a number'ish"
+        }
+      ]
+    }
+  ],
+  "input": {
+    "period1": "2025-03-29T00:00:00.000Z",
+    "interval": "1d",
+    "events": ""
+  }
+}
+[yahooFinance.historical] Invalid options ("#/definitions/ChartOptions")
+{
+  "errors": [
+    {
+      "instancePath": "/period2",
+      "schemaPath": "#/definitions/ChartOptions",
+      "message": "should match some schema in anyOf",
+      "subErrors": [
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/0",
+          "message": "Expecting date'ish",
+          "params": {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/1",
+          "message": "Expected a string"
+        },
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/2",
+          "message": "Expected a number'ish"
+        }
+      ]
+    }
+  ],
+  "input": {
+    "period1": "2025-03-29T00:00:00.000Z",
+    "interval": "1d",
+    "events": ""
+  }
+}
+[yahooFinance.historical] Invalid options ("#/definitions/ChartOptions")
+{
+  "errors": [
+    {
+      "instancePath": "/period2",
+      "schemaPath": "#/definitions/ChartOptions",
+      "message": "should match some schema in anyOf",
+      "subErrors": [
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/0",
+          "message": "Expecting date'ish",
+          "params": {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/1",
+          "message": "Expected a string"
+        },
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/2",
+          "message": "Expected a number'ish"
+        }
+      ]
+    }
+  ],
+  "input": {
+    "period1": "2025-03-29T00:00:00.000Z",
+    "interval": "1d",
+    "events": ""
+  }
+}
+2026-03-29T08:41:18.395Z [INFO] Recording daily snapshots for portfolios and dashboard...
+2026-03-29T08:41:18.680Z [INFO] Daily snapshots completed.
+[yahooFinance.historical] Invalid options ("#/definitions/ChartOptions")
+{
+  "errors": [
+    {
+      "instancePath": "/period2",
+      "schemaPath": "#/definitions/ChartOptions",
+      "message": "should match some schema in anyOf",
+      "subErrors": [
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/0",
+          "message": "Expecting date'ish",
+          "params": {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/1",
+          "message": "Expected a string"
+        },
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/2",
+          "message": "Expected a number'ish"
+        }
+      ]
+    }
+  ],
+  "input": {
+    "period1": "2025-03-29T00:00:00.000Z",
+    "interval": "1d",
+    "events": ""
+  }
+}
+[yahooFinance.historical] Invalid options ("#/definitions/ChartOptions")
+{
+  "errors": [
+    {
+      "instancePath": "/period2",
+      "schemaPath": "#/definitions/ChartOptions",
+      "message": "should match some schema in anyOf",
+      "subErrors": [
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/0",
+          "message": "Expecting date'ish",
+          "params": {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/1",
+          "message": "Expected a string"
+        },
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/2",
+          "message": "Expected a number'ish"
+        }
+      ]
+    }
+  ],
+  "input": {
+    "period1": "2025-03-29T00:00:00.000Z",
+    "interval": "1d",
+    "events": ""
+  }
+}
+[yahooFinance.historical] Invalid options ("#/definitions/ChartOptions")
+{
+  "errors": [
+    {
+      "instancePath": "/period2",
+      "schemaPath": "#/definitions/ChartOptions",
+      "message": "should match some schema in anyOf",
+      "subErrors": [
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/0",
+          "message": "Expecting date'ish",
+          "params": {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/1",
+          "message": "Expected a string"
+        },
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/2",
+          "message": "Expected a number'ish"
+        }
+      ]
+    }
+  ],
+  "input": {
+    "period1": "2025-03-29T00:00:00.000Z",
+    "interval": "1d",
+    "events": ""
+  }
+}
+[yahooFinance.historical] Invalid options ("#/definitions/ChartOptions")
+{
+  "errors": [
+    {
+      "instancePath": "/period2",
+      "schemaPath": "#/definitions/ChartOptions",
+      "message": "should match some schema in anyOf",
+      "subErrors": [
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/0",
+          "message": "Expecting date'ish",
+          "params": {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/1",
+          "message": "Expected a string"
+        },
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/2",
+          "message": "Expected a number'ish"
+        }
+      ]
+    }
+  ],
+  "input": {
+    "period1": "2025-03-29T00:00:00.000Z",
+    "interval": "1d",
+    "events": ""
+  }
+}
+[yahooFinance.historical] Invalid options ("#/definitions/ChartOptions")
+{
+  "errors": [
+    {
+      "instancePath": "/period2",
+      "schemaPath": "#/definitions/ChartOptions",
+      "message": "should match some schema in anyOf",
+      "subErrors": [
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/0",
+          "message": "Expecting date'ish",
+          "params": {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/1",
+          "message": "Expected a string"
+        },
+        {
+          "instancePath": "/period2",
+          "schemaPath": "#/definitions/ChartOptions/anyOf/2",
+          "message": "Expected a number'ish"
+        }
+      ]
+    }
+  ],
+  "input": {
+    "period1": "2025-03-29T00:00:00.000Z",
+    "interval": "1d",
+    "events": ""
+  }
+}
