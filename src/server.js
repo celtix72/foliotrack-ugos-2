@@ -2005,8 +2005,8 @@ app.post('/api/transactions', async (req, res) => {
     // Auto-rebuild history for this portfolio
     triggerHistoryRebuild(portfolioId);
     
-    // Auto-refresh dividend projections (non-blocking if possible, but YF is async)
-    await refreshDividendProjections().catch(e => logger.error("Background Dividend Refresh Error:", e));
+    // Auto-refresh dividend projections (non-blocking)
+    refreshDividendProjections().catch(e => logger.error("Background Dividend Refresh Error:", e));
 
     res.status(201).json(database.db.prepare(`SELECT * FROM transactions WHERE id = ?`).get(result.lastInsertRowid));
 });
@@ -2036,8 +2036,8 @@ app.delete('/api/transactions/:id', async (req, res) => {
     // Auto-rebuild history for this portfolio
     triggerHistoryRebuild(row.portfolioId);
 
-    // Auto-refresh dividend projections
-    await refreshDividendProjections().catch(e => logger.error("Background Dividend Refresh Error:", e));
+    // Auto-refresh dividend projections (non-blocking)
+    refreshDividendProjections().catch(e => logger.error("Background Dividend Refresh Error:", e));
 
     res.json(row);
 });
@@ -2070,8 +2070,8 @@ app.put('/api/transactions/:id', async (req, res) => {
     // Auto-rebuild history for this portfolio
     triggerHistoryRebuild(existing.portfolioId);
 
-    // Auto-refresh dividend projections
-    await refreshDividendProjections().catch(e => logger.error("Background Dividend Refresh Error:", e));
+    // Auto-refresh dividend projections (non-blocking)
+    refreshDividendProjections().catch(e => logger.error("Background Dividend Refresh Error:", e));
 
     res.json({ success: true });
 });
@@ -2350,7 +2350,8 @@ app.post('/api/transactions/bulk', async (req, res) => {
         clearPerformanceCache();
         
         // Auto-refresh dividend projections after bulk import
-        await refreshDividendProjections().catch(e => logger.error("Background Dividend Refresh Error (Bulk):", e));
+        // Auto-refresh dividend projections (non-blocking)
+        refreshDividendProjections().catch(e => logger.error("Background Dividend Refresh Error (Bulk):", e));
 
         res.json({ 
             success: true, 
@@ -3399,7 +3400,7 @@ async function refreshDividendProjections() {
 
         const newProjections = [];
 
-        for (const pos of openPositions) {
+        const projectionPromises = openPositions.map(async (pos) => {
             const ticker = pos.ticker;
             const isBond = BOND_TYPES.includes(pos.assetType) || ticker.startsWith('CD_') || ticker === 'Sconosciuto';
             
@@ -3454,7 +3455,10 @@ async function refreshDividendProjections() {
                     logger.error(`Error fetching YF data for ${ticker}:`, e.message);
                 }
             }
-        }
+        });
+
+        // Run all fetches in parallel
+        await Promise.all(projectionPromises);
 
         const tx = database.db.transaction((projs) => {
             database.db.prepare(`DELETE FROM dividend_projections WHERE tag != 'MANUALE' AND year = ?`).run(currentYear);
