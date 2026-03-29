@@ -2508,10 +2508,22 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
         ORDER BY date ASC
     `).all();
 
+    const assetMetadataCache = {};
+    const allAssets = database.db.prepare('SELECT ticker, currency, currentPrice, type, isin, dataSource FROM assets').all();
+    for (const a of allAssets) assetMetadataCache[a.ticker] = a;
+
+    const rawTickers = [...new Set(allTransactions.map(t => t.assetTicker).filter(t => t && t !== 'CASH'))];
+    const hasNonEur = isGlobal || portfolios.some(p => p.currency !== 'EUR') || rawTickers.some(t => assetMetadataCache[t]?.currency === 'USD');
+    const uniqueTickers = [...rawTickers];
+    if (hasNonEur && !uniqueTickers.includes('EURUSD=X')) {
+        uniqueTickers.push('EURUSD=X');
+    }
+
     let startDate;
     let endSimulationDate = new Date(today);
-    
-    // Support specific years (e.g. "2024")
+
+
+    // 1. Support specific years (e.g. "2024")
     if (/^\d{4}$/.test(range)) {
         const y = parseInt(range);
         startDate = new Date(y, 0, 1);
@@ -2536,23 +2548,10 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
             }
         }
     }
-    const assetMetadataCache = {}; // Cache to avoid DB queries inside the date loop
-    const allAssets = database.db.prepare('SELECT ticker, currency, currentPrice, type, isin, dataSource FROM assets').all();
-    for (const a of allAssets) assetMetadataCache[a.ticker] = a;
 
     const historicalPrices = {};
     const fxRates = {};
 
-    // 1. Determine tickers and include EURUSD=X if needed for conversion visibility in DB
-    const rawTickers = [...new Set(allTransactions.map(t => t.assetTicker).filter(t => t && t !== 'CASH'))];
-    const hasNonEur = isGlobal || portfolios.some(p => p.currency !== 'EUR') || rawTickers.some(t => assetMetadataCache[t]?.currency === 'USD');
-    const uniqueTickers = [...rawTickers];
-    if (hasNonEur && !uniqueTickers.includes('EURUSD=X')) {
-        uniqueTickers.push('EURUSD=X');
-    }
-
-
-    // 2. Fetch historical data for all involved tickers (with parallelization and DB cache)
     // 2. Fetch historical data for all involved tickers (with parallelization and DB cache)
     const fetchBorsaItalianaHistory = async (ticker, isin) => {
         let attempts = 0;
@@ -2798,6 +2797,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                     portfolioStates[p.id].cash -= cost;
                     if (t.assetTicker && t.assetTicker !== 'CASH') {
                         portfolioStates[p.id].holdings[t.assetTicker] = (portfolioStates[p.id].holdings[t.assetTicker] || 0) + qty;
+                        portfolioStates[p.id].holdingsTotalCost[t.assetTicker] = (portfolioStates[p.id].holdingsTotalCost[t.assetTicker] || 0) + cost;
                     }
                     break;
                 }
@@ -2805,7 +2805,11 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                     const proceeds = amount ? Math.abs(amount) : (qty * price - comm - tax) / fx;
                     portfolioStates[p.id].cash += proceeds;
                     if (t.assetTicker && t.assetTicker !== 'CASH') {
-                        portfolioStates[p.id].holdings[t.assetTicker] = (portfolioStates[p.id].holdings[t.assetTicker] || 0) - qty;
+                        const oldQty = portfolioStates[p.id].holdings[t.assetTicker] || 0;
+                        const oldCost = portfolioStates[p.id].holdingsTotalCost[t.assetTicker] || 0;
+                        const avgCost = oldQty > 0 ? oldCost / oldQty : 0;
+                        portfolioStates[p.id].holdings[t.assetTicker] = oldQty - qty;
+                        portfolioStates[p.id].holdingsTotalCost[t.assetTicker] = Math.max(0, oldCost - (qty * avgCost));
                     }
                     break;
                 }
@@ -2876,8 +2880,8 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                     const qty = t.quantity || 0, price = t.price || 0, comm = t.commission || 0, tax = t.tax || 0, fx = t.exchangeRate || 1;
                     const effectAmt = amount ? Math.abs(amount) : (qty * price) / fx;
                     switch (t.type) {
-                        case 'DEPOSIT':    state.cash += effectAmt; break;
-                        case 'WITHDRAWAL': state.cash -= effectAmt; break;
+                        case 'DEPOSIT':    state.cash += effectAmt; state.netDeposits += effectAmt; break;
+                        case 'WITHDRAWAL': state.cash -= effectAmt; state.netDeposits -= effectAmt; break;
                         case 'TAX':        state.cash -= effectAmt; break;
                         case 'TRANSFER':   state.cash -= effectAmt; state.netDeposits -= effectAmt; break;
                         case 'DIVIDEND': {
@@ -2889,13 +2893,22 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                         case 'BUY': {
                             const cost = amount ? Math.abs(amount) : (qty * price + comm + tax) / fx;
                             state.cash -= cost;
-                            if (t.assetTicker !== 'CASH') state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) + qty;
+                            if (t.assetTicker !== 'CASH') {
+                                state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) + qty;
+                                state.holdingsTotalCost[t.assetTicker] = (state.holdingsTotalCost[t.assetTicker] || 0) + cost;
+                            }
                             break;
                         }
                         case 'SELL': {
                             const proceeds = amount ? Math.abs(amount) : (qty * price - comm - tax) / fx;
                             state.cash += proceeds;
-                            if (t.assetTicker !== 'CASH') state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) - qty;
+                            if (t.assetTicker !== 'CASH') {
+                                const oldQty = state.holdings[t.assetTicker] || 0;
+                                const oldCost = state.holdingsTotalCost[t.assetTicker] || 0;
+                                const avgCost = oldQty > 0 ? oldCost / oldQty : 0;
+                                state.holdings[t.assetTicker] = oldQty - qty;
+                                state.holdingsTotalCost[t.assetTicker] = Math.max(0, oldCost - (qty * avgCost));
+                            }
                             break;
                         }
                     }
@@ -2949,6 +2962,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                             state.cash -= cost;
                             if (t.assetTicker && t.assetTicker !== 'CASH') {
                                 state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) + qty;
+                                state.holdingsTotalCost[t.assetTicker] = (state.holdingsTotalCost[t.assetTicker] || 0) + cost;
                             }
                             break;
                         }
@@ -2956,7 +2970,11 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                             const proceeds = amount ? Math.abs(amount) : (qty * price - comm - tax) / fx;
                             state.cash += proceeds;
                             if (t.assetTicker && t.assetTicker !== 'CASH') {
-                                state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) - qty;
+                                const oldQty = state.holdings[t.assetTicker] || 0;
+                                const oldCost = state.holdingsTotalCost[t.assetTicker] || 0;
+                                const avgCost = oldQty > 0 ? oldCost / oldQty : 0;
+                                state.holdings[t.assetTicker] = oldQty - qty;
+                                state.holdingsTotalCost[t.assetTicker] = Math.max(0, oldCost - (qty * avgCost));
                             }
                             break;
                         }
@@ -2983,7 +3001,10 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
 
                         // Priority 2: CD_ (Certificate of Deposit) - always use last purchase price (fixed value)
                         if (ticker.startsWith('CD_')) {
-                            price = state.lastBuyPrices[ticker];
+                            // Valuation for Savings Account: Price is essentially PMC
+                            const currentQty = state.holdings[ticker] || 0;
+                            const currentCost = state.holdingsTotalCost[ticker] || 0;
+                            price = currentQty > 0 ? (currentCost / currentQty) : (state.lastBuyPrices[ticker] || 1);
                         }
 
                         // Priority 3: Try most recent historical price (critical for weekends/holidays)
