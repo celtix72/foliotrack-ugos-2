@@ -281,7 +281,7 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
 
     let cash = portfolio.initialCash || 0;
     let totalDividends = 0;
-    const holdings = {};
+    const holdings = {}; // { ticker: { shares: 0, totalCost: 0, totalCostAssetCurr: 0 } }
 
     for (const t of transactions) {
         const qty       = t.quantity     || 0;
@@ -292,28 +292,43 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
         const amount    = t.amount       || 0;
 
         const absAmount = Math.abs(amount);
-        console.log(`[DEBUG_TX] ${t.assetTicker || 'CASH'} type=${t.type} qty=${qty}`);
-        switch (t.type) {
-            case 'DEPOSIT':    cash += absAmount; break;
-            case 'WITHDRAWAL': 
-            case 'TAX':        
-            case 'TRANSFER':   cash -= absAmount; break;
-            case 'DIVIDEND': {
-                const dividendInPCurr = amount ? amount : (qty * price - comm - tax) / fx;
-                cash += dividendInPCurr; 
-                totalDividends += dividendInPCurr;
-                break;
+        if (!t.assetTicker) {
+            switch (t.type) {
+                case 'DEPOSIT':    cash += absAmount; break;
+                case 'WITHDRAWAL': 
+                case 'TAX':        
+                case 'TRANSFER':   cash -= absAmount; break;
             }
+            continue;
+        }
+
+        if (!holdings[t.assetTicker]) holdings[t.assetTicker] = { shares: 0, totalCost: 0, totalCostAssetCurr: 0 };
+        const h = holdings[t.assetTicker];
+
+        switch (t.type) {
             case 'BUY': {
                 const cost = amount ? Math.abs(amount) : (qty * price + comm + tax) / fx;
+                const costAsset = amount ? (Math.abs(amount) * fx) : (qty * price + comm + tax);
                 cash -= cost;
-                holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) + qty;
+                h.shares += qty;
+                h.totalCost += cost;
+                h.totalCostAssetCurr += costAsset;
                 break;
             }
             case 'SELL': {
                 const proceeds = amount ? Math.abs(amount) : (qty * price - comm - tax) / fx;
+                const pmc = h.shares > 0 ? h.totalCost / h.shares : 0;
+                const pmcAsset = h.shares > 0 ? h.totalCostAssetCurr / h.shares : 0;
                 cash += proceeds;
-                holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) - qty;
+                h.shares -= qty;
+                h.totalCost -= qty * pmc;
+                h.totalCostAssetCurr -= qty * pmcAsset;
+                break;
+            }
+            case 'DIVIDEND': {
+                const divAmt = amount ? amount : (qty * price - comm - tax) / fx;
+                cash += divAmt; 
+                totalDividends += divAmt;
                 break;
             }
         }
@@ -322,13 +337,18 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
     let assetValue = 0;
     let assetCount = 0;
     let performance1D = 0;
-    for (const [ticker, shares] of Object.entries(holdings)) {
+    for (const [ticker, h] of Object.entries(holdings)) {
+        const shares = h.shares;
         if (shares <= 0.0001) continue;
         assetCount++;
         const asset = dbConnection.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(ticker);
         let price = (asset && asset.currentPrice) ? asset.currentPrice : 0;
         
-        if (price <= 0) {
+        // Special logic for CD_ assets: Price is strictly cost-basis based (no market fluctuate)
+        if (ticker && ticker.startsWith('CD_')) {
+            price = h.shares > 0 ? h.totalCostAssetCurr / h.shares : 0;
+        } else if (price <= 0) {
+            // Fallback for missing prices for other tickers
             const lastBuy = transactions.filter(t => t.assetTicker === ticker && t.type === 'BUY' && t.price > 0).at(-1);
             if (lastBuy) price = lastBuy.price;
         }
