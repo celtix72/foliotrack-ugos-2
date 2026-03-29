@@ -94,6 +94,7 @@
                 <thead>
                     <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
                         <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Ticker / Name</th>
+                        <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Type</th>
                         <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Price</th>
                         <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">1D</th>
                         <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">1W</th>
@@ -172,11 +173,21 @@
             const perf = performanceData[item.ticker] || {};
             const d1 = item.changePercent || 0;
             
+            // Clean type label
+            let typeLabel = item.type || 'N/A';
+            if (typeLabel === 'Azioni') typeLabel = 'Equity';
+            if (typeLabel.startsWith('ETF')) typeLabel = 'ETF';
+
             return `
                 <tr class="border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
                     <td class="px-6 py-5">
                         <div class="text-sm font-black text-slate-900 dark:text-white">${item.ticker}</div>
                         <div class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">${item.name}</div>
+                    </td>
+                    <td class="px-6 py-5">
+                        <span class="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md ${typeLabel === 'Equity' ? 'bg-primary/10 text-primary' : 'bg-amber-500/10 text-amber-500'}">
+                            ${typeLabel}
+                        </span>
                     </td>
                     <td class="px-6 py-5">
                         <div class="text-sm font-bold">${formatCurrency(item.currentPrice, item.currency)}</div>

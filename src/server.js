@@ -1065,28 +1065,33 @@ app.get('/api/watchlist/performance', async (req, res) => {
         for (const item of watchlist) {
             const ticker = item.ticker;
             try {
-                // Fetch historical data from YF
+                // Fetch historical data from YF (using Date objects for better compatibility)
                 const historical = await yahooFinance.historical(ticker, {
-                    period1: oneYearAgo.toISOString().split('T')[0],
+                    period1: oneYearAgo,
+                    period2: now,
                     interval: '1d'
                 }).catch(() => []);
 
                 if (historical.length > 0) {
-                    const currentPrice = (await yahooFinance.quote(ticker)).regularMarketPrice;
+                    const quote = await yahooFinance.quote(ticker).catch(() => null);
+                    const currentPrice = quote?.regularMarketPrice || 0;
                     
-                    const getPerformance = (pastDate) => {
-                        const pastEntry = historical.find(h => new Date(h.date) >= pastDate);
-                        if (pastEntry && pastEntry.close) {
-                            return ((currentPrice - pastEntry.close) / pastEntry.close) * 100;
-                        }
-                        return null;
-                    };
+                    if (currentPrice > 0) {
+                        const getPerformance = (pastDate) => {
+                            // Find the entry closest to the pastDate
+                            const pastEntry = historical.find(h => new Date(h.date) >= pastDate);
+                            if (pastEntry && pastEntry.close) {
+                                return ((currentPrice - pastEntry.close) / pastEntry.close) * 100;
+                            }
+                            return null;
+                        };
 
-                    results[ticker] = {
-                        perf1W: getPerformance(oneWeekAgo),
-                        perf1M: getPerformance(oneMonthAgo),
-                        perf1Y: getPerformance(oneYearAgo)
-                    };
+                        results[ticker] = {
+                            perf1W: getPerformance(oneWeekAgo),
+                            perf1M: getPerformance(oneMonthAgo),
+                            perf1Y: getPerformance(oneYearAgo)
+                        };
+                    }
                 }
             } catch (e) {
                 console.error(`Error fetching performance for ${ticker}:`, e.message);

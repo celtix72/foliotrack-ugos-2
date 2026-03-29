@@ -130,11 +130,21 @@
             const perf = performanceData[item.ticker] || {};
             const d1 = item.changePercent || 0;
             
+            // Clean type label
+            let typeLabel = item.type || 'N/A';
+            if (typeLabel === 'Azioni') typeLabel = 'Equity';
+            if (typeLabel.startsWith('ETF')) typeLabel = 'ETF';
+
             return `
                 <div class="mob-watchlist-item" onclick="showMobDetails('${item.ticker}')">
                     <div class="flex justify-between items-start mb-4">
                         <div>
-                            <div class="text-base font-black">${item.ticker}</div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-base font-black">${item.ticker}</span>
+                                <span class="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${typeLabel === 'Equity' ? 'bg-primary/10 text-primary' : 'bg-amber-500/10 text-amber-500'}">
+                                    ${typeLabel}
+                                </span>
+                            </div>
                             <div class="text-xs font-bold text-slate-500 truncate max-w-[150px]">${item.name}</div>
                         </div>
                         <div class="text-right">

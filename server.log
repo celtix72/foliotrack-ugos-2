@@ -1,387 +1,284 @@
-[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
-2026-03-29T08:40:18.436Z [INFO] Skipping automatic market update: all markets are closed.
-2026-03-29T08:40:18.463Z [INFO] FolioTrack server running on port 3000
-2026-03-29T08:40:18.479Z [INFO] Database: /Users/mauro/Documents/Progetto_FolioTracker2/foliotrack.db
-[yahooFinance.historical] Invalid options ("#/definitions/ChartOptions")
-{
-  "errors": [
-    {
-      "instancePath": "/period2",
-      "schemaPath": "#/definitions/ChartOptions",
-      "message": "should match some schema in anyOf",
-      "subErrors": [
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/0",
-          "message": "Expecting date'ish",
-          "params": {
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            }
-          }
-        },
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/1",
-          "message": "Expected a string"
-        },
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/2",
-          "message": "Expected a number'ish"
-        }
-      ]
-    }
-  ],
-  "input": {
-    "period1": "2025-03-29T00:00:00.000Z",
-    "interval": "1d",
-    "events": ""
-  }
-}
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+2026-03-29T08:56:32.731Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-29T08:56:32.750Z [INFO] FolioTrack server running on port 3000
+2026-03-29T08:56:32.759Z [INFO] Database: /Users/mauro/Documents/Progetto_FolioTracker2/foliotrack.db
 Please consider completing the survey at https://bit.ly/yahoo-finance-api-feedback if you haven't already; for more info see https://github.com/gadicc/yahoo-finance2/issues/764#issuecomment-2056623851.  This will only be shown once, but you can suppress this message in future with `new YahooFinance({ suppressNotices: ['yahooSurvey'] })`.
-[yahooFinance.historical] Invalid options ("#/definitions/ChartOptions")
-{
-  "errors": [
-    {
-      "instancePath": "/period2",
-      "schemaPath": "#/definitions/ChartOptions",
-      "message": "should match some schema in anyOf",
-      "subErrors": [
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/0",
-          "message": "Expecting date'ish",
-          "params": {
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            }
-          }
-        },
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/1",
-          "message": "Expected a string"
-        },
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/2",
-          "message": "Expected a number'ish"
-        }
-      ]
-    }
-  ],
-  "input": {
-    "period1": "2025-03-29T00:00:00.000Z",
-    "interval": "1d",
-    "events": ""
-  }
-}
-[yahooFinance.historical] Invalid options ("#/definitions/ChartOptions")
-{
-  "errors": [
-    {
-      "instancePath": "/period2",
-      "schemaPath": "#/definitions/ChartOptions",
-      "message": "should match some schema in anyOf",
-      "subErrors": [
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/0",
-          "message": "Expecting date'ish",
-          "params": {
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            }
-          }
-        },
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/1",
-          "message": "Expected a string"
-        },
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/2",
-          "message": "Expected a number'ish"
-        }
-      ]
-    }
-  ],
-  "input": {
-    "period1": "2025-03-29T00:00:00.000Z",
-    "interval": "1d",
-    "events": ""
-  }
-}
-[yahooFinance.historical] Invalid options ("#/definitions/ChartOptions")
-{
-  "errors": [
-    {
-      "instancePath": "/period2",
-      "schemaPath": "#/definitions/ChartOptions",
-      "message": "should match some schema in anyOf",
-      "subErrors": [
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/0",
-          "message": "Expecting date'ish",
-          "params": {
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            }
-          }
-        },
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/1",
-          "message": "Expected a string"
-        },
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/2",
-          "message": "Expected a number'ish"
-        }
-      ]
-    }
-  ],
-  "input": {
-    "period1": "2025-03-29T00:00:00.000Z",
-    "interval": "1d",
-    "events": ""
-  }
-}
-[yahooFinance.historical] Invalid options ("#/definitions/ChartOptions")
-{
-  "errors": [
-    {
-      "instancePath": "/period2",
-      "schemaPath": "#/definitions/ChartOptions",
-      "message": "should match some schema in anyOf",
-      "subErrors": [
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/0",
-          "message": "Expecting date'ish",
-          "params": {
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            }
-          }
-        },
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/1",
-          "message": "Expected a string"
-        },
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/2",
-          "message": "Expected a number'ish"
-        }
-      ]
-    }
-  ],
-  "input": {
-    "period1": "2025-03-29T00:00:00.000Z",
-    "interval": "1d",
-    "events": ""
-  }
-}
-2026-03-29T08:41:18.395Z [INFO] Recording daily snapshots for portfolios and dashboard...
-2026-03-29T08:41:18.680Z [INFO] Daily snapshots completed.
-[yahooFinance.historical] Invalid options ("#/definitions/ChartOptions")
-{
-  "errors": [
-    {
-      "instancePath": "/period2",
-      "schemaPath": "#/definitions/ChartOptions",
-      "message": "should match some schema in anyOf",
-      "subErrors": [
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/0",
-          "message": "Expecting date'ish",
-          "params": {
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            }
-          }
-        },
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/1",
-          "message": "Expected a string"
-        },
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/2",
-          "message": "Expected a number'ish"
-        }
-      ]
-    }
-  ],
-  "input": {
-    "period1": "2025-03-29T00:00:00.000Z",
-    "interval": "1d",
-    "events": ""
-  }
-}
-[yahooFinance.historical] Invalid options ("#/definitions/ChartOptions")
-{
-  "errors": [
-    {
-      "instancePath": "/period2",
-      "schemaPath": "#/definitions/ChartOptions",
-      "message": "should match some schema in anyOf",
-      "subErrors": [
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/0",
-          "message": "Expecting date'ish",
-          "params": {
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            }
-          }
-        },
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/1",
-          "message": "Expected a string"
-        },
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/2",
-          "message": "Expected a number'ish"
-        }
-      ]
-    }
-  ],
-  "input": {
-    "period1": "2025-03-29T00:00:00.000Z",
-    "interval": "1d",
-    "events": ""
-  }
-}
-[yahooFinance.historical] Invalid options ("#/definitions/ChartOptions")
-{
-  "errors": [
-    {
-      "instancePath": "/period2",
-      "schemaPath": "#/definitions/ChartOptions",
-      "message": "should match some schema in anyOf",
-      "subErrors": [
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/0",
-          "message": "Expecting date'ish",
-          "params": {
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            }
-          }
-        },
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/1",
-          "message": "Expected a string"
-        },
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/2",
-          "message": "Expected a number'ish"
-        }
-      ]
-    }
-  ],
-  "input": {
-    "period1": "2025-03-29T00:00:00.000Z",
-    "interval": "1d",
-    "events": ""
-  }
-}
-[yahooFinance.historical] Invalid options ("#/definitions/ChartOptions")
-{
-  "errors": [
-    {
-      "instancePath": "/period2",
-      "schemaPath": "#/definitions/ChartOptions",
-      "message": "should match some schema in anyOf",
-      "subErrors": [
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/0",
-          "message": "Expecting date'ish",
-          "params": {
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            }
-          }
-        },
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/1",
-          "message": "Expected a string"
-        },
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/2",
-          "message": "Expected a number'ish"
-        }
-      ]
-    }
-  ],
-  "input": {
-    "period1": "2025-03-29T00:00:00.000Z",
-    "interval": "1d",
-    "events": ""
-  }
-}
-[yahooFinance.historical] Invalid options ("#/definitions/ChartOptions")
-{
-  "errors": [
-    {
-      "instancePath": "/period2",
-      "schemaPath": "#/definitions/ChartOptions",
-      "message": "should match some schema in anyOf",
-      "subErrors": [
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/0",
-          "message": "Expecting date'ish",
-          "params": {
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            }
-          }
-        },
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/1",
-          "message": "Expected a string"
-        },
-        {
-          "instancePath": "/period2",
-          "schemaPath": "#/definitions/ChartOptions/anyOf/2",
-          "message": "Expected a number'ish"
-        }
-      ]
-    }
-  ],
-  "input": {
-    "period1": "2025-03-29T00:00:00.000Z",
-    "interval": "1d",
-    "events": ""
-  }
-}
+2026-03-29T08:57:32.696Z [INFO] Recording daily snapshots for portfolios and dashboard...
+2026-03-29T08:57:32.983Z [INFO] Daily snapshots completed.
+[DEBUG_TX] CASH type=DEPOSIT qty=1
+[DEBUG_TX] CASH type=WITHDRAWAL qty=0
+[DEBUG_TX] CASH type=DEPOSIT qty=1
+[DEBUG_TX] CASH type=DEPOSIT qty=1
+[DEBUG_TX] CASH type=DEPOSIT qty=1
+[DEBUG_TX] CASH type=DEPOSIT qty=1
+[DEBUG_TX] CASH type=DEPOSIT qty=1
+[DEBUG_TX] X25E.MI type=BUY qty=37
+[DEBUG_TX] SPM.MI type=BUY qty=4000
+[DEBUG_TX] CASH type=DEPOSIT qty=1
+[DEBUG_TX] AHLA.DE type=BUY qty=44
+[DEBUG_TX] SPM.MI type=SELL qty=4000
+[DEBUG_TX] MSFT type=BUY qty=10
+[DEBUG_TX] TSLA type=BUY qty=20
+[DEBUG_TX] MFEA.MI type=BUY qty=1516
+[DEBUG_TX] TSLA type=SELL qty=20
+[DEBUG_TX] CASH type=DEPOSIT qty=1
+[DEBUG_TX] AHLA.DE type=SELL qty=44
+[DEBUG_TX] SPM.MI type=BUY qty=1469
+[DEBUG_TX] XCHA.DE type=BUY qty=400
+[DEBUG_TX] MFEA.MI type=DIVIDEND qty=1516
+[DEBUG_TX] MSFT type=DIVIDEND qty=44
+[DEBUG_TX] TDIV.AS type=BUY qty=60
+[DEBUG_TX] MSFT type=SELL qty=10
+[DEBUG_TX] SPM.MI type=SELL qty=1469
+[DEBUG_TX] TIT.MI type=BUY qty=21105
+[DEBUG_TX] AHLA.DE type=BUY qty=41
+[DEBUG_TX] X25E.MI type=SELL qty=19
+[DEBUG_TX] SPM.MI type=BUY qty=2606
+[DEBUG_TX] SPM.MI type=SELL qty=2606
+[DEBUG_TX] TIT.MI type=SELL qty=21105
+[DEBUG_TX] MFEA.MI type=SELL qty=1516
+[DEBUG_TX] TIT.MI type=BUY qty=20500
+[DEBUG_TX] CASH type=DEPOSIT qty=1
+[DEBUG_TX] AHLA.DE type=SELL qty=41
+[DEBUG_TX] TSLA type=BUY qty=25
+[DEBUG_TX] 1ASML.MI type=BUY qty=8
+[DEBUG_TX] STMMI.MI type=BUY qty=200
+[DEBUG_TX] TIT.MI type=SELL qty=20500
+[DEBUG_TX] TSLA type=SELL qty=25
+[DEBUG_TX] TIT.MI type=BUY qty=20000
+[DEBUG_TX] STMMI.MI type=BUY qty=170
+[DEBUG_TX] X25E.MI type=SELL qty=18
+[DEBUG_TX] ASPN type=BUY qty=104
+[DEBUG_TX] STMMI.MI type=DIVIDEND qty=200
+[DEBUG_TX] X25E.MI type=BUY qty=17
+[DEBUG_TX] PLTR type=BUY qty=28
+[DEBUG_TX] SRG.MI type=DIVIDEND qty=1055
+[DEBUG_TX] STMMI.MI type=SELL qty=81
+[DEBUG_TX] NOV.DE type=BUY qty=36
+[DEBUG_TX] STMMI.MI type=SELL qty=145
+[DEBUG_TX] PLTR type=SELL qty=28
+[DEBUG_TX] STMMI.MI type=SELL qty=144
+[DEBUG_TX] 1ASML.MI type=DIVIDEND qty=8
+[DEBUG_TX] ZTS type=BUY qty=20
+[DEBUG_TX] SPM.MI type=BUY qty=1268
+[DEBUG_TX] ASPN type=SELL qty=104
+[DEBUG_TX] FCT.MI type=BUY qty=698
+[DEBUG_TX] NOV.DE type=SELL qty=36
+[DEBUG_TX] ZTS type=SELL qty=20
+[DEBUG_TX] 3NLV.MI type=BUY qty=120
+[DEBUG_TX] CASH type=DEPOSIT qty=1
+[DEBUG_TX] 1ASML.MI type=BUY qty=10
+[DEBUG_TX] 3NLV.MI type=SELL qty=120
+[DEBUG_TX] BABA type=BUY qty=53
+[DEBUG_TX] NOV.DE type=BUY qty=52
+[DEBUG_TX] SPM.MI type=BUY qty=1136
+[DEBUG_TX] META type=BUY qty=10
+[DEBUG_TX] 1ASML.MI type=DIVIDEND qty=8
+[DEBUG_TX] TIT.MI type=SELL qty=20000
+[DEBUG_TX] AMD.DE type=BUY qty=50
+[DEBUG_TX] 3GOO.MI type=BUY qty=89
+[DEBUG_TX] FCT.MI type=SELL qty=698
+[DEBUG_TX] VERE.DE type=BUY qty=120
+[DEBUG_TX] SPM.MI type=DIVIDEND qty=2606
+[DEBUG_TX] NEXI.MI type=DIVIDEND qty=700
+[DEBUG_TX] LULU type=BUY qty=15
+[DEBUG_TX] SPM.MI type=SELL qty=2404
+[DEBUG_TX] AMD.DE type=BUY qty=44
+[DEBUG_TX] META type=SELL qty=10
+[DEBUG_TX] LULU type=BUY qty=15
+[DEBUG_TX] HIMS type=BUY qty=100
+[DEBUG_TX] HIMS type=SELL qty=100
+[DEBUG_TX] CRM type=BUY qty=13
+[DEBUG_TX] FISV type=BUY qty=20
+[DEBUG_TX] MARA type=BUY qty=110
+[DEBUG_TX] BABA type=DIVIDEND qty=51
+[DEBUG_TX] BABA type=BUY qty=51
+[DEBUG_TX] NGAS.MI type=BUY qty=500
+[DEBUG_TX] LULU type=SELL qty=30
+[DEBUG_TX] AMD.DE type=SELL qty=94
+[DEBUG_TX] SPM.MI type=BUY qty=2125
+[DEBUG_TX] NOV.DE type=BUY qty=51
+[DEBUG_TX] GOOGL type=BUY qty=30
+[DEBUG_TX] UNH type=BUY qty=15
+[DEBUG_TX] NU type=BUY qty=182
+[DEBUG_TX] PYPL type=BUY qty=70
+[DEBUG_TX] UNH type=BUY qty=15
+[DEBUG_TX] XEON.DE type=BUY qty=341
+[DEBUG_TX] XEON.DE type=BUY qty=340
+[DEBUG_TX] 3GOO.MI type=SELL qty=89
+[DEBUG_TX] X25E.MI type=SELL qty=17
+[DEBUG_TX] ADBE type=BUY qty=10
+[DEBUG_TX] LULU type=BUY qty=24
+[DEBUG_TX] GOOGL type=DIVIDEND qty=30
+[DEBUG_TX] UNH type=DIVIDEND qty=30
+[DEBUG_TX] 1ASML.MI type=SELL qty=9
+[DEBUG_TX] 1ASML.MI type=SELL qty=9
+[DEBUG_TX] ELV type=BUY qty=17
+[DEBUG_TX] MARA type=SELL qty=110
+[DEBUG_TX] MELI type=BUY qty=2
+[DEBUG_TX] FISV type=BUY qty=20
+[DEBUG_TX] BABA type=SELL qty=50
+[DEBUG_TX] NOMD type=BUY qty=200
+[DEBUG_TX] 1ASML.MI type=DIVIDEND qty=9
+[DEBUG_TX] FISV type=SELL qty=40
+[DEBUG_TX] GOOGL type=SELL qty=30
+[DEBUG_TX] NOV.DE type=SELL qty=103
+[DEBUG_TX] ABNB type=BUY qty=50
+[DEBUG_TX] NOV.DE type=BUY qty=100
+[DEBUG_TX] META type=BUY qty=10
+[DEBUG_TX] NGAS.MI type=SELL qty=500
+[DEBUG_TX] BABA type=BUY qty=30
+[DEBUG_TX] CRM type=BUY qty=15
+[DEBUG_TX] JD type=BUY qty=135
+[DEBUG_TX] NOMD type=DIVIDEND qty=1
+[DEBUG_TX] TDIV.AS type=DIVIDEND qty=1
+[DEBUG_TX] PYPL type=DIVIDEND qty=1
+[DEBUG_TX] UNH type=DIVIDEND qty=1
+[DEBUG_TX] ADBE type=SELL qty=10
+[DEBUG_TX] ELV type=DIVIDEND qty=1
+[DEBUG_TX] META type=DIVIDEND qty=1
+[DEBUG_TX] CRM type=DIVIDEND qty=1
+[DEBUG_TX] MSF.DE type=BUY qty=15
+[DEBUG_TX] NOMD type=DIVIDEND qty=1
+[DEBUG_TX] TDIV.AS type=DIVIDEND qty=1
+[DEBUG_TX] ELV type=SELL qty=17
+[DEBUG_TX] JD type=DIVIDEND qty=0
+2026-03-29T08:58:06.354Z [INFO] Calculating history for DIRECTA...
+[DEBUG_TX] CASH type=DEPOSIT qty=1
+[DEBUG_TX] CASH type=WITHDRAWAL qty=0
+[DEBUG_TX] CASH type=DEPOSIT qty=1
+[DEBUG_TX] CASH type=DEPOSIT qty=1
+[DEBUG_TX] CASH type=DEPOSIT qty=1
+[DEBUG_TX] CASH type=DEPOSIT qty=1
+[DEBUG_TX] CASH type=DEPOSIT qty=1
+[DEBUG_TX] X25E.MI type=BUY qty=37
+[DEBUG_TX] SPM.MI type=BUY qty=4000
+[DEBUG_TX] CASH type=DEPOSIT qty=1
+[DEBUG_TX] AHLA.DE type=BUY qty=44
+[DEBUG_TX] SPM.MI type=SELL qty=4000
+[DEBUG_TX] MSFT type=BUY qty=10
+[DEBUG_TX] TSLA type=BUY qty=20
+[DEBUG_TX] MFEA.MI type=BUY qty=1516
+[DEBUG_TX] TSLA type=SELL qty=20
+[DEBUG_TX] CASH type=DEPOSIT qty=1
+[DEBUG_TX] AHLA.DE type=SELL qty=44
+[DEBUG_TX] SPM.MI type=BUY qty=1469
+[DEBUG_TX] XCHA.DE type=BUY qty=400
+[DEBUG_TX] MFEA.MI type=DIVIDEND qty=1516
+[DEBUG_TX] MSFT type=DIVIDEND qty=44
+[DEBUG_TX] TDIV.AS type=BUY qty=60
+[DEBUG_TX] MSFT type=SELL qty=10
+[DEBUG_TX] SPM.MI type=SELL qty=1469
+[DEBUG_TX] TIT.MI type=BUY qty=21105
+[DEBUG_TX] AHLA.DE type=BUY qty=41
+[DEBUG_TX] X25E.MI type=SELL qty=19
+[DEBUG_TX] SPM.MI type=BUY qty=2606
+[DEBUG_TX] SPM.MI type=SELL qty=2606
+[DEBUG_TX] TIT.MI type=SELL qty=21105
+[DEBUG_TX] MFEA.MI type=SELL qty=1516
+[DEBUG_TX] TIT.MI type=BUY qty=20500
+[DEBUG_TX] CASH type=DEPOSIT qty=1
+[DEBUG_TX] AHLA.DE type=SELL qty=41
+[DEBUG_TX] TSLA type=BUY qty=25
+[DEBUG_TX] 1ASML.MI type=BUY qty=8
+[DEBUG_TX] STMMI.MI type=BUY qty=200
+[DEBUG_TX] TIT.MI type=SELL qty=20500
+[DEBUG_TX] TSLA type=SELL qty=25
+[DEBUG_TX] TIT.MI type=BUY qty=20000
+[DEBUG_TX] STMMI.MI type=BUY qty=170
+[DEBUG_TX] X25E.MI type=SELL qty=18
+[DEBUG_TX] ASPN type=BUY qty=104
+[DEBUG_TX] STMMI.MI type=DIVIDEND qty=200
+[DEBUG_TX] X25E.MI type=BUY qty=17
+[DEBUG_TX] PLTR type=BUY qty=28
+[DEBUG_TX] SRG.MI type=DIVIDEND qty=1055
+[DEBUG_TX] STMMI.MI type=SELL qty=81
+[DEBUG_TX] NOV.DE type=BUY qty=36
+[DEBUG_TX] STMMI.MI type=SELL qty=145
+[DEBUG_TX] PLTR type=SELL qty=28
+[DEBUG_TX] STMMI.MI type=SELL qty=144
+[DEBUG_TX] 1ASML.MI type=DIVIDEND qty=8
+[DEBUG_TX] ZTS type=BUY qty=20
+[DEBUG_TX] SPM.MI type=BUY qty=1268
+[DEBUG_TX] ASPN type=SELL qty=104
+[DEBUG_TX] FCT.MI type=BUY qty=698
+[DEBUG_TX] NOV.DE type=SELL qty=36
+[DEBUG_TX] ZTS type=SELL qty=20
+[DEBUG_TX] 3NLV.MI type=BUY qty=120
+[DEBUG_TX] CASH type=DEPOSIT qty=1
+[DEBUG_TX] 1ASML.MI type=BUY qty=10
+[DEBUG_TX] 3NLV.MI type=SELL qty=120
+[DEBUG_TX] BABA type=BUY qty=53
+[DEBUG_TX] NOV.DE type=BUY qty=52
+[DEBUG_TX] SPM.MI type=BUY qty=1136
+[DEBUG_TX] META type=BUY qty=10
+[DEBUG_TX] 1ASML.MI type=DIVIDEND qty=8
+[DEBUG_TX] TIT.MI type=SELL qty=20000
+[DEBUG_TX] AMD.DE type=BUY qty=50
+[DEBUG_TX] 3GOO.MI type=BUY qty=89
+[DEBUG_TX] FCT.MI type=SELL qty=698
+[DEBUG_TX] VERE.DE type=BUY qty=120
+[DEBUG_TX] SPM.MI type=DIVIDEND qty=2606
+[DEBUG_TX] NEXI.MI type=DIVIDEND qty=700
+[DEBUG_TX] LULU type=BUY qty=15
+[DEBUG_TX] SPM.MI type=SELL qty=2404
+[DEBUG_TX] AMD.DE type=BUY qty=44
+[DEBUG_TX] META type=SELL qty=10
+[DEBUG_TX] LULU type=BUY qty=15
+[DEBUG_TX] HIMS type=BUY qty=100
+[DEBUG_TX] HIMS type=SELL qty=100
+[DEBUG_TX] CRM type=BUY qty=13
+[DEBUG_TX] FISV type=BUY qty=20
+[DEBUG_TX] MARA type=BUY qty=110
+[DEBUG_TX] BABA type=DIVIDEND qty=51
+[DEBUG_TX] BABA type=BUY qty=51
+[DEBUG_TX] NGAS.MI type=BUY qty=500
+[DEBUG_TX] LULU type=SELL qty=30
+[DEBUG_TX] AMD.DE type=SELL qty=94
+[DEBUG_TX] SPM.MI type=BUY qty=2125
+[DEBUG_TX] NOV.DE type=BUY qty=51
+[DEBUG_TX] GOOGL type=BUY qty=30
+[DEBUG_TX] UNH type=BUY qty=15
+[DEBUG_TX] NU type=BUY qty=182
+[DEBUG_TX] PYPL type=BUY qty=70
+[DEBUG_TX] UNH type=BUY qty=15
+[DEBUG_TX] XEON.DE type=BUY qty=341
+[DEBUG_TX] XEON.DE type=BUY qty=340
+[DEBUG_TX] 3GOO.MI type=SELL qty=89
+[DEBUG_TX] X25E.MI type=SELL qty=17
+[DEBUG_TX] ADBE type=BUY qty=10
+[DEBUG_TX] LULU type=BUY qty=24
+[DEBUG_TX] GOOGL type=DIVIDEND qty=30
+[DEBUG_TX] UNH type=DIVIDEND qty=30
+[DEBUG_TX] 1ASML.MI type=SELL qty=9
+[DEBUG_TX] 1ASML.MI type=SELL qty=9
+[DEBUG_TX] ELV type=BUY qty=17
+[DEBUG_TX] MARA type=SELL qty=110
+[DEBUG_TX] MELI type=BUY qty=2
+[DEBUG_TX] FISV type=BUY qty=20
+[DEBUG_TX] BABA type=SELL qty=50
+[DEBUG_TX] NOMD type=BUY qty=200
+[DEBUG_TX] 1ASML.MI type=DIVIDEND qty=9
+[DEBUG_TX] FISV type=SELL qty=40
+[DEBUG_TX] GOOGL type=SELL qty=30
+[DEBUG_TX] NOV.DE type=SELL qty=103
+[DEBUG_TX] ABNB type=BUY qty=50
+[DEBUG_TX] NOV.DE type=BUY qty=100
+[DEBUG_TX] META type=BUY qty=10
+[DEBUG_TX] NGAS.MI type=SELL qty=500
+[DEBUG_TX] BABA type=BUY qty=30
+[DEBUG_TX] CRM type=BUY qty=15
+[DEBUG_TX] JD type=BUY qty=135
+[DEBUG_TX] NOMD type=DIVIDEND qty=1
+[DEBUG_TX] TDIV.AS type=DIVIDEND qty=1
+[DEBUG_TX] PYPL type=DIVIDEND qty=1
+[DEBUG_TX] UNH type=DIVIDEND qty=1
+[DEBUG_TX] ADBE type=SELL qty=10
+[DEBUG_TX] ELV type=DIVIDEND qty=1
+[DEBUG_TX] META type=DIVIDEND qty=1
+[DEBUG_TX] CRM type=DIVIDEND qty=1
+[DEBUG_TX] MSF.DE type=BUY qty=15
+[DEBUG_TX] NOMD type=DIVIDEND qty=1
+[DEBUG_TX] TDIV.AS type=DIVIDEND qty=1
+[DEBUG_TX] ELV type=SELL qty=17
+[DEBUG_TX] JD type=DIVIDEND qty=0
