@@ -290,20 +290,29 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
         const tax       = t.tax          || 0;
         const fx        = t.exchangeRate || 1;
         const amount    = t.amount       || 0;
-
         const absAmount = Math.abs(amount);
-        if (!t.assetTicker) {
-            switch (t.type) {
-                case 'DEPOSIT':    cash += absAmount; break;
-                case 'WITHDRAWAL': 
-                case 'TAX':        
-                case 'TRANSFER':   cash -= absAmount; break;
-            }
+        const ticker    = t.assetTicker || '';
+
+        // 1. Pure Cash Management (No Asset Holdings Impact)
+        if (['DEPOSIT', 'WITHDRAWAL', 'TAX', 'TRANSFER'].includes(t.type)) {
+            if (t.type === 'DEPOSIT') cash += absAmount;
+            else cash -= absAmount;
             continue;
         }
 
-        if (!holdings[t.assetTicker]) holdings[t.assetTicker] = { shares: 0, totalCost: 0, totalCostAssetCurr: 0 };
-        const h = holdings[t.assetTicker];
+        // 2. Dividends (Can have ticker 'CASH' or no ticker, or asset ticker)
+        if (t.type === 'DIVIDEND') {
+            const divAmt = amount ? amount : (qty * price - comm - tax) / fx;
+            cash += divAmt; 
+            totalDividends += divAmt;
+            continue;
+        }
+
+        // 3. Asset Operations (Requires a non-CASH ticker)
+        if (!ticker || ticker === 'CASH') continue;
+
+        if (!holdings[ticker]) holdings[ticker] = { shares: 0, totalCost: 0, totalCostAssetCurr: 0 };
+        const h = holdings[ticker];
 
         switch (t.type) {
             case 'BUY': {
@@ -323,12 +332,6 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
                 h.shares -= qty;
                 h.totalCost -= qty * pmc;
                 h.totalCostAssetCurr -= qty * pmcAsset;
-                break;
-            }
-            case 'DIVIDEND': {
-                const divAmt = amount ? amount : (qty * price - comm - tax) / fx;
-                cash += divAmt; 
-                totalDividends += divAmt;
                 break;
             }
         }

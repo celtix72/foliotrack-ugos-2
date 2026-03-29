@@ -2777,33 +2777,37 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
         const startDateStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
         const initialTx = allTransactions.filter(t => t.portfolioId === p.id && t.date < startDateStr);
         for (const t of initialTx) {
-            const qty = t.quantity || 0, price = t.price || 0, comm = t.commission || 0, tax = t.tax || 0, fx = t.exchangeRate || 1, amount = t.amount || 0;
+            const absAmt = Math.abs(amount);
             if (t.type === 'BUY' && t.assetTicker && price > 0) {
                 portfolioStates[p.id].lastBuyPrices[t.assetTicker] = price;
             }
             switch (t.type) {
-                case 'DEPOSIT':    portfolioStates[p.id].cash += amount; portfolioStates[p.id].netDeposits += amount; break;
-                case 'WITHDRAWAL': portfolioStates[p.id].cash -= amount; portfolioStates[p.id].netDeposits -= amount; break;
-                case 'TAX':        portfolioStates[p.id].cash -= amount; break;
-                case 'TRANSFER':   portfolioStates[p.id].cash -= amount; portfolioStates[p.id].netDeposits -= amount; break;
+                case 'DEPOSIT':    portfolioStates[p.id].cash += absAmt; portfolioStates[p.id].netDeposits += absAmt; break;
+                case 'WITHDRAWAL': portfolioStates[p.id].cash -= absAmt; portfolioStates[p.id].netDeposits -= absAmt; break;
+                case 'TAX':        portfolioStates[p.id].cash -= absAmt; break;
+                case 'TRANSFER':   portfolioStates[p.id].cash -= absAmt; portfolioStates[p.id].netDeposits -= absAmt; break;
                 case 'DIVIDEND': {
                     const divAmt = amount ? amount : (Math.abs(amount) || Math.abs(qty * price - comm - tax)) / fx;
                     portfolioStates[p.id].cash += divAmt; 
                     portfolioStates[p.id].dividends += divAmt;
                     break;
                 }
-                case 'BUY':
-                    if (p.type !== 'Conto Deposito') {
-                        portfolioStates[p.id].cash -= amount ? Math.abs(amount) : (qty * price + comm + tax) / fx;
-                        if (t.assetTicker !== 'CASH') portfolioStates[p.id].holdings[t.assetTicker] = (portfolioStates[p.id].holdings[t.assetTicker] || 0) + qty;
+                case 'BUY': {
+                    const cost = amount ? Math.abs(amount) : (qty * price + comm + tax) / fx;
+                    portfolioStates[p.id].cash -= cost;
+                    if (t.assetTicker && t.assetTicker !== 'CASH') {
+                        portfolioStates[p.id].holdings[t.assetTicker] = (portfolioStates[p.id].holdings[t.assetTicker] || 0) + qty;
                     }
                     break;
-                case 'SELL':
-                    if (p.type !== 'Conto Deposito') {
-                        portfolioStates[p.id].cash += amount ? Math.abs(amount) : (qty * price - comm - tax) / fx;
-                        if (t.assetTicker !== 'CASH') portfolioStates[p.id].holdings[t.assetTicker] = (portfolioStates[p.id].holdings[t.assetTicker] || 0) - qty;
+                }
+                case 'SELL': {
+                    const proceeds = amount ? Math.abs(amount) : (qty * price - comm - tax) / fx;
+                    portfolioStates[p.id].cash += proceeds;
+                    if (t.assetTicker && t.assetTicker !== 'CASH') {
+                        portfolioStates[p.id].holdings[t.assetTicker] = (portfolioStates[p.id].holdings[t.assetTicker] || 0) - qty;
                     }
                     break;
+                }
             }
         }
     }
@@ -2911,44 +2915,48 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                 const dayTx = allTransactions.filter(t => t.portfolioId === p.id && t.date === dateStr);
 
                 for (const t of dayTx) {
-                    const qty = t.quantity || 0, price = t.price || 0, comm = t.commission || 0, tax = t.tax || 0, fx = t.exchangeRate || 1, amount = t.amount || 0;
+                    const absAmt = Math.abs(amount);
                     if (t.type === 'BUY' && t.assetTicker && price > 0) {
                         state.lastBuyPrices[t.assetTicker] = price;
                     }
                     if (['BUY', 'SELL', 'DIVIDEND', 'DEPOSIT', 'WITHDRAWAL'].includes(t.type)) {
-                        const ticker = t.assetTicker || 'CASH';
-                        const assetMeta = assetMetadataCache[ticker];
+                        const tickerForEvent = t.assetTicker || 'CASH';
+                        const assetMeta = assetMetadataCache[tickerForEvent];
                         dayEvents.push({ 
                             type: t.type, 
-                            ticker: ticker, 
-                            assetName: assetMeta ? assetMeta.name : ticker,
+                            ticker: tickerForEvent, 
+                            assetName: assetMeta ? assetMeta.name : tickerForEvent,
                             portfolioName: p.name, 
                             amount: t.amount || (qty * price) 
                         });
                     }
                     switch (t.type) {
-                        case 'DEPOSIT':    state.cash += amount; state.netDeposits += amount; break;
-                        case 'WITHDRAWAL': state.cash -= amount; state.netDeposits -= amount; break;
-                        case 'TAX':        state.cash -= amount; break;
-                        case 'TRANSFER':   state.cash -= amount; state.netDeposits -= amount; break;
+                        case 'DEPOSIT':    state.cash += absAmt; state.netDeposits += absAmt; break;
+                        case 'WITHDRAWAL': state.cash -= absAmt; state.netDeposits -= absAmt; break;
+                        case 'TAX':        state.cash -= absAmt; break;
+                        case 'TRANSFER':   state.cash -= absAmt; state.netDeposits -= absAmt; break;
                         case 'DIVIDEND': {
                             const divAmt = amount ? amount : (Math.abs(t.amount || (qty * price - comm - tax))) / fx;
                             state.cash += divAmt; 
                             state.dividends += divAmt;
                             break;
                         }
-                        case 'BUY':
-                            if (p.type !== 'Conto Deposito') {
-                                state.cash -= amount ? Math.abs(amount) : (qty * price + comm + tax) / fx;
-                                if (t.assetTicker !== 'CASH') state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) + qty;
+                        case 'BUY': {
+                            const cost = amount ? Math.abs(amount) : (qty * price + comm + tax) / fx;
+                            state.cash -= cost;
+                            if (t.assetTicker && t.assetTicker !== 'CASH') {
+                                state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) + qty;
                             }
                             break;
-                        case 'SELL':
-                            if (p.type !== 'Conto Deposito') {
-                                state.cash += amount ? Math.abs(amount) : (qty * price - comm - tax) / fx;
-                                if (t.assetTicker !== 'CASH') state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) - qty;
+                        }
+                        case 'SELL': {
+                            const proceeds = amount ? Math.abs(amount) : (qty * price - comm - tax) / fx;
+                            state.cash += proceeds;
+                            if (t.assetTicker && t.assetTicker !== 'CASH') {
+                                state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) - qty;
                             }
                             break;
+                        }
                     }
                 }
 
