@@ -294,8 +294,9 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
         const ticker    = t.assetTicker || '';
 
         // 1. Pure Cash Management (No Asset Holdings Impact)
-        if (['DEPOSIT', 'WITHDRAWAL', 'TAX', 'TRANSFER'].includes(t.type)) {
-            if (t.type === 'DEPOSIT') cash += absAmount;
+        if (['DEPOSIT', 'WITHDRAWAL', 'TAX', 'TRANSFER', 'RECONCILE'].includes(t.type)) {
+            const absAmount = amount ? Math.abs(amount) : (qty * price) / fx;
+            if (t.type === 'DEPOSIT' || t.type === 'RECONCILE') cash += absAmount;
             else cash -= absAmount;
             continue;
         }

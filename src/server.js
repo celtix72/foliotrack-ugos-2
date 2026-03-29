@@ -2778,17 +2778,17 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
         const initialTx = allTransactions.filter(t => t.portfolioId === p.id && t.date < startDateStr);
         for (const t of initialTx) {
             const qty = t.quantity || 0, price = t.price || 0, comm = t.commission || 0, tax = t.tax || 0, fx = t.exchangeRate || 1, amount = t.amount || 0;
-            const absAmt = Math.abs(amount);
+            const effectAmt = amount ? Math.abs(amount) : (qty * price) / fx;
             if (t.type === 'BUY' && t.assetTicker && price > 0) {
                 portfolioStates[p.id].lastBuyPrices[t.assetTicker] = price;
             }
             switch (t.type) {
-                case 'DEPOSIT':    portfolioStates[p.id].cash += absAmt; portfolioStates[p.id].netDeposits += absAmt; break;
-                case 'WITHDRAWAL': portfolioStates[p.id].cash -= absAmt; portfolioStates[p.id].netDeposits -= absAmt; break;
-                case 'TAX':        portfolioStates[p.id].cash -= absAmt; break;
-                case 'TRANSFER':   portfolioStates[p.id].cash -= absAmt; portfolioStates[p.id].netDeposits -= absAmt; break;
+                case 'DEPOSIT':    portfolioStates[p.id].cash += effectAmt; portfolioStates[p.id].netDeposits += effectAmt; break;
+                case 'WITHDRAWAL': portfolioStates[p.id].cash -= effectAmt; portfolioStates[p.id].netDeposits -= effectAmt; break;
+                case 'TAX':        portfolioStates[p.id].cash -= effectAmt; break;
+                case 'TRANSFER':   portfolioStates[p.id].cash -= effectAmt; portfolioStates[p.id].netDeposits -= effectAmt; break;
                 case 'DIVIDEND': {
-                    const divAmt = amount ? amount : (Math.abs(amount) || Math.abs(qty * price - comm - tax)) / fx;
+                    const divAmt = amount ? amount : (Math.abs(amount || (qty * price - comm - tax))) / fx;
                     portfolioStates[p.id].cash += divAmt; 
                     portfolioStates[p.id].dividends += divAmt;
                     break;
@@ -2874,29 +2874,30 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                     }
                     // We still need to update holdings state to keep it consistent if manual record missing for next day
                     const qty = t.quantity || 0, price = t.price || 0, comm = t.commission || 0, tax = t.tax || 0, fx = t.exchangeRate || 1;
+                    const effectAmt = amount ? Math.abs(amount) : (qty * price) / fx;
                     switch (t.type) {
-                        case 'DEPOSIT':    state.cash += amount; break;
-                        case 'WITHDRAWAL': state.cash -= amount; break;
-                        case 'TAX':        state.cash -= amount; break;
-                        case 'TRANSFER':   state.cash -= amount; state.netDeposits -= amount; break;
+                        case 'DEPOSIT':    state.cash += effectAmt; break;
+                        case 'WITHDRAWAL': state.cash -= effectAmt; break;
+                        case 'TAX':        state.cash -= effectAmt; break;
+                        case 'TRANSFER':   state.cash -= effectAmt; state.netDeposits -= effectAmt; break;
                         case 'DIVIDEND': {
-                            const divAmt = amount ? amount : (Math.abs(t.amount || (qty * price - comm - tax))) / fx;
+                            const divAmt = amount ? amount : (Math.abs(amount || (qty * price - comm - tax))) / fx;
                             state.cash += divAmt; 
                             state.dividends += divAmt;
                             break;
                         }
-                        case 'BUY':
-                            if (p.type !== 'Conto Deposito') {
-                                state.cash -= amount ? amount : (qty * price + comm + tax) / fx;
-                                if (t.assetTicker !== 'CASH') state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) + qty;
-                            }
+                        case 'BUY': {
+                            const cost = amount ? Math.abs(amount) : (qty * price + comm + tax) / fx;
+                            state.cash -= cost;
+                            if (t.assetTicker !== 'CASH') state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) + qty;
                             break;
-                        case 'SELL':
-                            if (p.type !== 'Conto Deposito') {
-                                state.cash += amount ? amount : (qty * price - comm - tax) / fx;
-                                if (t.assetTicker !== 'CASH') state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) - qty;
-                            }
+                        }
+                        case 'SELL': {
+                            const proceeds = amount ? Math.abs(amount) : (qty * price - comm - tax) / fx;
+                            state.cash += proceeds;
+                            if (t.assetTicker !== 'CASH') state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) - qty;
                             break;
+                        }
                     }
                 }
             }
@@ -2917,7 +2918,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
 
                 for (const t of dayTx) {
                     const qty = t.quantity || 0, price = t.price || 0, comm = t.commission || 0, tax = t.tax || 0, fx = t.exchangeRate || 1, amount = t.amount || 0;
-                    const absAmt = Math.abs(amount);
+                    const effectAmt = amount ? Math.abs(amount) : (qty * price) / fx;
                     if (t.type === 'BUY' && t.assetTicker && price > 0) {
                         state.lastBuyPrices[t.assetTicker] = price;
                     }
@@ -2933,12 +2934,12 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                         });
                     }
                     switch (t.type) {
-                        case 'DEPOSIT':    state.cash += absAmt; state.netDeposits += absAmt; break;
-                        case 'WITHDRAWAL': state.cash -= absAmt; state.netDeposits -= absAmt; break;
-                        case 'TAX':        state.cash -= absAmt; break;
-                        case 'TRANSFER':   state.cash -= absAmt; state.netDeposits -= absAmt; break;
+                        case 'DEPOSIT':    state.cash += effectAmt; state.netDeposits += effectAmt; break;
+                        case 'WITHDRAWAL': state.cash -= effectAmt; state.netDeposits -= effectAmt; break;
+                        case 'TAX':        state.cash -= effectAmt; break;
+                        case 'TRANSFER':   state.cash -= effectAmt; state.netDeposits -= effectAmt; break;
                         case 'DIVIDEND': {
-                            const divAmt = amount ? amount : (Math.abs(t.amount || (qty * price - comm - tax))) / fx;
+                            const divAmt = amount ? amount : (Math.abs(amount || (qty * price - comm - tax))) / fx;
                             state.cash += divAmt; 
                             state.dividends += divAmt;
                             break;
@@ -2963,8 +2964,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                 }
 
                 let pAssets = 0;
-                if (p.type !== 'Conto Deposito') {
-                    for (const [ticker, shares] of Object.entries(state.holdings)) {
+                for (const [ticker, shares] of Object.entries(state.holdings)) {
                         if (shares <= 0.0001) continue;
                     
                     const dayBuyTx = dayTx.filter(t => t.assetTicker === ticker && t.type === 'BUY' && t.price > 0);
@@ -3034,7 +3034,6 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                         rate = lastFx ? lastFx.exchangeRate : 1;
                     }
                     pAssets += shares * (price / rate);
-                    }
                 }
 
                 let pValue = (state.cash + pAssets);
