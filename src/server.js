@@ -2625,10 +2625,12 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
 
     const fetchTickerData = async (ticker) => {
         const reqStart = startDate.toISOString().split('T')[0];
+        
+        // Ensure historicalPrices entry exists to avoid "Cannot read properties of undefined"
+        if (!historicalPrices[ticker]) historicalPrices[ticker] = {};
 
         // Special handling for Savings Accounts (CD_) - completely fall back to transaction history prices
         if (ticker.startsWith('CD_')) {
-            historicalPrices[ticker] = {};
             return;
         }
 
@@ -2676,9 +2678,10 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
         let isVirtual = 0;
         let isInconsistent = 0;
 
-        // 3. Virtual Data Fallback (Last BUY price)
+        // 3. Virtual Data Fallback (Universal Fallback for ANY ticker)
         if (!pricesMap || Object.keys(pricesMap).length === 0) {
-            const lastBuy = allTransactions.filter(t => t.assetTicker === ticker && (t.type === 'BUY' || t.type === 'DEPOSIT') && t.price > 0).at(-1);
+            // Find any transaction with a price
+            const lastBuy = allTransactions.filter(t => t.assetTicker === ticker && t.price > 0).sort((a,b) => b.date.localeCompare(a.date))[0];
             if (lastBuy) {
                 isVirtual = 1;
                 pricesMap = {};
@@ -2686,7 +2689,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                 for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) {
                     pricesMap[d.toISOString().split('T')[0]] = lastBuy.price;
                 }
-                logger.info(`Created virtual history for ${ticker} from purchase price ${lastBuy.price}`);
+                logger.info(`Universal Fallback: Created virtual history for ${ticker} from transaction price ${lastBuy.price}`);
             }
         }
 
@@ -2867,11 +2870,11 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                     
                     if (['BUY', 'SELL', 'DIVIDEND', 'DEPOSIT', 'WITHDRAWAL'].includes(t.type)) {
                         const ticker = t.assetTicker || 'CASH';
-                        const assetMeta = assetMetadataCache[ticker];
+                        const assetMeta = assetMetadataCache[ticker] || { name: ticker };
                         dayEvents.push({ 
                             type: t.type, 
                             ticker: ticker, 
-                            assetName: assetMeta ? assetMeta.name : ticker,
+                            assetName: assetMeta.name,
                             portfolioName: p.name, 
                             amount: t.amount || ((t.quantity || 0) * (t.price || 0)) 
                         });
@@ -2937,11 +2940,11 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                     }
                     if (['BUY', 'SELL', 'DIVIDEND', 'DEPOSIT', 'WITHDRAWAL'].includes(t.type)) {
                         const tickerForEvent = t.assetTicker || 'CASH';
-                        const assetMeta = assetMetadataCache[tickerForEvent];
+                        const assetMeta = assetMetadataCache[tickerForEvent] || { name: tickerForEvent };
                         dayEvents.push({ 
                             type: t.type, 
                             ticker: tickerForEvent, 
-                            assetName: assetMeta ? assetMeta.name : tickerForEvent,
+                            assetName: assetMeta.name,
                             portfolioName: p.name, 
                             amount: t.amount || (qty * price) 
                         });
@@ -3031,8 +3034,8 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                         }
                     }
 
-                    const assetMeta = assetMetadataCache[ticker];
-                    const aCurr = assetMeta ? assetMeta.currency : 'EUR';
+                    const assetMeta = (assetMetadataCache && assetMetadataCache[ticker]) || { currency: 'EUR' };
+                    const aCurr = assetMeta.currency || 'EUR';
                     let rate = 1;
                     if (aCurr === 'USD' && p.currency === 'EUR') {
                         rate = fxRates['USD']?.[dateStr];

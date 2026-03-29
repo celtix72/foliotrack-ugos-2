@@ -346,7 +346,8 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
         if (shares <= 0.0001) continue;
         assetCount++;
         const asset = dbConnection.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(ticker);
-        let price = (asset && asset.currentPrice) ? asset.currentPrice : 0;
+        let price = (asset && asset.currentPrice > 0) ? asset.currentPrice : 0;
+        const aCurr = (asset && asset.currency) ? asset.currency : 'EUR';
         
         // Special logic for CD_ assets: Price is strictly cost-basis based (no market fluctuate)
         if (ticker && ticker.startsWith('CD_')) {
