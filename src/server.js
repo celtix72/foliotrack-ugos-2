@@ -1119,6 +1119,45 @@ app.get('/api/watchlist/performance', async (req, res) => {
     }
 });
 
+app.get('/api/assets/:ticker/history', async (req, res) => {
+    const { ticker } = req.params;
+    const { range } = req.query;
+    
+    try {
+        const now = new Date();
+        const rangeMap = {
+            '1W': 7,
+            '2W': 14,
+            '1M': 30,
+            '3M': 90,
+            '6M': 180,
+            '1Y': 365,
+            'ALL': 3650
+        };
+        const days = rangeMap[range] || 30; // 1M default
+        const period1 = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+
+        const historical = await yahooFinance.historical(ticker, {
+            period1: period1,
+            period2: now,
+            interval: '1d'
+        }).catch(() => []);
+
+        // Filter and map for Chart.js
+        const result = historical
+            .filter(h => h.close !== null && h.close !== undefined)
+            .map(h => ({
+                date: h.date instanceof Date ? h.date.toISOString().split('T')[0] : h.date,
+                price: h.close
+            }));
+
+        res.json(result);
+    } catch (err) {
+        console.error(`Error fetching history for ${ticker}:`, err.message);
+        res.json([]);
+    }
+});
+
 app.get('/api/assets/:ticker/details', async (req, res) => {
     const { ticker } = req.params;
     try {
