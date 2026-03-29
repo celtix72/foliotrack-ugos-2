@@ -53,10 +53,13 @@
                     </div>
                 </div>
 
+                <!-- Metrics Area (YF Data) -->
+                <div id="chart-modal-metrics" style="display: none; padding: 15px 20px; border-top: 1px solid #eee; background: #fafafa;">
+                </div>
+
                 <!-- Price Alerts Section -->
                 <div style="padding: 20px; border-top: 1px solid #eee; background: #fdfdfd;">
                     <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end;">
-                        <div style="flex: 1; min-width: 250px; display: flex; gap: 15px;">
                             <div style="flex: 1;">
                                 <label style="display: block; font-size: 9px; font-weight: 900; color: #64748b; text-transform: uppercase; margin-bottom: 5px;">Target Price</label>
                                 <div style="position: relative;">
@@ -184,16 +187,22 @@
         document.getElementById('chart-modal-points').textContent = '—';
 
         try {
-            // 1. Fetch asset info, historical quotes AND transactions in parallel
-            const [quotesRes, txRes, assetRes] = await Promise.all([
+            // 1. Fetch asset info, historical quotes, transactions AND details in parallel
+            const [quotesRes, txRes, assetRes, detailsRes] = await Promise.all([
                 fetch(`/api/asset-quotes/${encodeURIComponent(_chartTicker)}`),
                 fetch(`/api/transactions?assetTicker=${encodeURIComponent(_chartTicker)}`),
-                fetch(`/api/assets`)
+                fetch(`/api/assets`),
+                fetch(`/api/assets/${encodeURIComponent(_chartTicker)}/details`).catch(() => null)
             ]);
 
             _allChartData = await quotesRes.json();
             const transactions = await txRes.json();
             const allAssets = await assetRes.json();
+            let detailsData = {};
+            if (detailsRes && detailsRes.ok) {
+                try { detailsData = await detailsRes.json(); } catch(e) {}
+            }
+
             const assetInfo = allAssets.find(a => a.ticker === _chartTicker);
             
             if (assetInfo) {
@@ -207,6 +216,41 @@
                 const currSym = _chartCurrency === 'EUR' ? '€' : (_chartCurrency === 'USD' ? '$' : _chartCurrency);
                 document.getElementById('modal-tp-curr').textContent = currSym;
                 document.getElementById('modal-sl-curr').textContent = currSym;
+            }
+
+            // Populate Metrics if YF data is available
+            const metricsDiv = document.getElementById('chart-modal-metrics');
+            const sd = detailsData?.summaryDetail || {};
+            const ks = detailsData?.defaultKeyStatistics || {};
+            const ce = detailsData?.calendarEvents || {};
+            
+            const nextDiv = ce.dividendDate || ce.exDividendDate;
+            const tType = (assetInfo && assetInfo.type ? assetInfo.type.toUpperCase() : '');
+            const isEquity = tType === 'AZIONI' || tType === 'EQUITY' || tType === 'STOCK' || tType === 'COMMON STOCK' || sd.trailingPE;
+
+            if (isEquity && Object.keys(sd).length > 0) {
+                const formatNum = n => n ? parseFloat(n).toFixed(2) : 'N/A';
+                const formatPct = n => n ? (n * 100).toFixed(2) + '%' : 'N/A';
+                
+                const fields = [
+                    { label: 'P/E Ratio', val: formatNum(sd.trailingPE) },
+                    { label: 'Forward P/E', val: formatNum(sd.forwardPE) },
+                    { label: 'Dividend Yield', val: formatPct(sd.dividendYield) },
+                    { label: 'EPS (Trailing)', val: formatNum(ks.trailingEps) },
+                    { label: 'Beta', val: formatNum(sd.beta) },
+                    { label: 'Prossimo Stacco', val: nextDiv ? new Date(nextDiv).toLocaleDateString('it-IT') : 'N/A' }
+                ];
+
+                metricsDiv.innerHTML = `<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">` + 
+                    fields.map(f => `
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <span style="font-size: 9px; font-weight: 900; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">${f.label}</span>
+                            <span style="font-size: 13px; font-weight: 900; color: #0f172a;" class="dark:text-white">${f.val}</span>
+                        </div>
+                    `).join('') + `</div>`;
+                metricsDiv.style.display = 'block';
+            } else {
+                metricsDiv.style.display = 'none';
             }
 
             if (!_allChartData.length) {
