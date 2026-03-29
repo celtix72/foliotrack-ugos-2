@@ -807,6 +807,13 @@
                 window.dispatchEvent(new CustomEvent('privacy-changed'));
             }
         });
+
+        window.addEventListener('market-data-updated', () => {
+            console.log("[Dashboard] Auto-refreshing UI...");
+            loadDashboard();
+            if (typeof updateDashboardChart === 'function') updateDashboardChart();
+            if (typeof updateAllocationChart === 'function') updateAllocationChart();
+        });
     });
 </script>
 
