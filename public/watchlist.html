@@ -169,50 +169,87 @@
         }
         
         empty.classList.add('hidden');
-        tbody.innerHTML = watchlist.map(item => {
-            const perf = performanceData[item.ticker] || {};
-            const d1 = item.changePercent || 0;
-            
-            // Clean type label
-            let typeLabel = item.type || 'N/A';
-            if (typeLabel === 'Azioni') typeLabel = 'Equity';
-            if (typeLabel.startsWith('ETF')) typeLabel = 'ETF';
 
+        // Robust grouping logic
+        const equities = watchlist.filter(item => {
+            const t = (item.type || '').toUpperCase();
+            return t === 'AZIONI' || t === 'EQUITY' || t === 'STOCK' || t === 'COMMON STOCK';
+        });
+        const etfs = watchlist.filter(item => {
+            const t = (item.type || '').toUpperCase();
+            return t.includes('ETF') || t.includes('EXCHANGE TRADED FUND');
+        });
+        const other = watchlist.filter(item => {
+            const t = (item.type || '').toUpperCase();
+            const isEq = t === 'AZIONI' || t === 'EQUITY' || t === 'STOCK' || t === 'COMMON STOCK';
+            const isEtf = t.includes('ETF') || t.includes('EXCHANGE TRADED FUND');
+            return !isEq && !isEtf;
+        });
+
+        const renderSection = (items, title) => {
+            if (items.length === 0) return '';
             return `
-                <tr class="border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
-                    <td class="px-6 py-5">
-                        <div class="text-sm font-black text-slate-900 dark:text-white">${item.ticker}</div>
-                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">${item.name}</div>
-                    </td>
-                    <td class="px-6 py-5">
-                        <span class="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md ${typeLabel === 'Equity' ? 'bg-primary/10 text-primary' : 'bg-amber-500/10 text-amber-500'}">
-                            ${typeLabel}
-                        </span>
-                    </td>
-                    <td class="px-6 py-5">
-                        <div class="text-sm font-bold">${formatCurrency(item.currentPrice, item.currency)}</div>
-                    </td>
-                    <td class="px-6 py-5 text-center">${renderPerf(d1)}</td>
-                    <td class="px-6 py-5 text-center">${renderPerf(perf.perf1W)}</td>
-                    <td class="px-6 py-5 text-center">${renderPerf(perf.perf1M)}</td>
-                    <td class="px-6 py-5 text-center">${renderPerf(perf.perf1Y)}</td>
-                    <td class="px-6 py-5 text-right">
-                        <div class="flex items-center justify-end gap-2">
-                            <button onclick="showDetails('${item.ticker}')" class="w-8 h-8 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all flex items-center justify-center">
-                                <span class="material-symbols-outlined text-sm">info</span>
-                            </button>
-                            <button onclick="removeFromWatchlist('${item.ticker}')" class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center">
-                                <span class="material-symbols-outlined text-sm">delete</span>
-                            </button>
-                        </div>
+                <tr class="bg-slate-100/50 dark:bg-slate-800/80">
+                    <td colspan="8" class="px-6 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+                        ${title} (${items.length})
                     </td>
                 </tr>
+                ${items.map(item => {
+                    const perf = performanceData[item.ticker] || {};
+                    const d1 = item.changePercent || 0;
+                    
+                    // Standardize Type Label for display
+                    let typeLabel = item.type || 'Other';
+                    const t = typeLabel.toUpperCase();
+                    if (t === 'AZIONI' || t === 'EQUITY' || t === 'STOCK' || t === 'COMMON STOCK') typeLabel = 'Equity';
+                    else if (t.includes('ETF') || t.includes('EXCHANGE TRADED FUND')) typeLabel = 'ETF';
+                    else if (t.includes('MUTUAL FUND')) typeLabel = 'Fund';
+
+                    const typeColor = typeLabel === 'Equity' ? 'bg-primary/10 text-primary border-primary/20' : 
+                                    typeLabel === 'ETF' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 
+                                    'bg-slate-500/10 text-slate-500 border-slate-500/20';
+
+                    return `
+                        <tr class="border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
+                            <td class="px-6 py-5">
+                                <div class="text-sm font-black text-slate-900 dark:text-white">${item.ticker}</div>
+                                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-tight truncate max-w-[180px]">${item.name}</div>
+                            </td>
+                            <td class="px-6 py-5">
+                                <span class="text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md border ${typeColor}">
+                                    ${typeLabel}
+                                </span>
+                            </td>
+                            <td class="px-6 py-5">
+                                <div class="text-sm font-bold">${formatCurrency(item.currentPrice, item.currency, 2)}</div>
+                            </td>
+                            <td class="px-6 py-5 text-center">${renderPerf(d1)}</td>
+                            <td class="px-6 py-5 text-center">${renderPerf(perf.perf1W)}</td>
+                            <td class="px-6 py-5 text-center">${renderPerf(perf.perf1M)}</td>
+                            <td class="px-6 py-5 text-center">${renderPerf(perf.perf1Y)}</td>
+                            <td class="px-6 py-5 text-right">
+                                <div class="flex items-center justify-end gap-2">
+                                    <button onclick="showDetails('${item.ticker}', '${typeLabel}')" class="w-8 h-8 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all flex items-center justify-center border border-primary/10">
+                                        <span class="material-symbols-outlined text-sm">info</span>
+                                    </button>
+                                    <button onclick="removeFromWatchlist('${item.ticker}')" class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center border border-rose-500/10">
+                                        <span class="material-symbols-outlined text-sm">delete</span>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('')}
             `;
-        }).join('');
+        };
+
+        tbody.innerHTML = renderSection(equities, 'Equity') + 
+                          renderSection(etfs, 'ETF') + 
+                          renderSection(other, 'Other');
     }
 
     function renderPerf(val) {
-        if (val === undefined || val === null) return `<span class="text-slate-300 dark:text-slate-700 font-bold text-xs">--</span>`;
+        if (val === undefined || val === null) return `<span class="text-slate-300 dark:text-slate-700 font-bold text-xs tracking-tighter">—</span>`;
         const isPos = val >= 0;
         const color = isPos ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border-rose-500/20';
         return `<span class="performance-chip border ${color}">${isPos ? '+' : ''}${val.toFixed(2)}%</span>`;
@@ -229,7 +266,7 @@
         }
     }
 
-    async function showDetails(ticker) {
+    async function showDetails(ticker, typeLabel) {
         try {
             const res = await fetch(`/api/assets/${ticker}/details`);
             const data = await res.json();
@@ -238,27 +275,43 @@
             const fd = data.financialData || {};
             const ks = data.defaultKeyStatistics || {};
             const ap = data.assetProfile || {};
+            const fp = data.fundProfile || {};
             
             document.getElementById('modal-ticker').innerText = ticker;
-            document.getElementById('modal-name').innerText = ap.longName || ticker;
+            document.getElementById('modal-name').innerText = ap.longName || (data.quoteType && data.quoteType.longName) || ticker;
             document.getElementById('modal-exchange').innerText = sd.exchange || 'Unknown';
             
             const content = document.getElementById('modal-content');
-            
-            const fields = [
-                { label: 'Market Cap', val: formatLarge(sd.marketCap) },
-                { label: 'P/E Ratio', val: formatNum(sd.trailingPE) },
-                { label: 'Forward P/E', val: formatNum(sd.forwardPE) },
-                { label: 'Dividend Yield', val: formatPct(sd.dividendYield) },
-                { label: 'EPS (Trailling)', val: formatNum(ks.trailingEps) },
-                { label: 'Beta', val: formatNum(sd.beta) },
-                { label: 'Revenue Growth', val: formatPct(fd.revenueGrowth) },
-                { label: 'Operating Margins', val: formatPct(fd.operatingMargins) },
-                { label: 'Total Cash', val: formatLarge(fd.totalCash) },
-                { label: 'Total Debt', val: formatLarge(fd.totalDebt) },
-                { label: 'Current Ratio', val: formatNum(fd.currentRatio) },
-                { label: 'Debt to Equity', val: formatNum(fd.debtToEquity) }
-            ];
+            let fields = [];
+
+            if (typeLabel === 'ETF') {
+                const fees = fp.feesExpensesInvestment || {};
+                fields = [
+                    { label: 'Asset Totali (AUM)', val: formatLarge(fees.totalNetAssets) },
+                    { label: 'TER (Expense Ratio)', val: formatPct(fees.annualReportExpenseRatio) },
+                    { label: 'Categoria', val: fp.categoryName || 'N/A' },
+                    { label: 'Tipo Legale', val: fp.legalType || 'N/A' },
+                    { label: 'Inception Date', val: ks.fundInceptionDate ? new Date(ks.fundInceptionDate).toLocaleDateString() : 'N/A' },
+                    { label: 'Yield (Trebbiato)', val: formatPct(sd.dividendYield) },
+                    { label: 'Beta (3Y)', val: formatNum(sd.beta) },
+                    { label: 'Volume Medio (10D)', val: formatLarge(sd.averageVolume10days) }
+                ];
+            } else {
+                fields = [
+                    { label: 'Market Cap', val: formatLarge(sd.marketCap) },
+                    { label: 'P/E Ratio', val: formatNum(sd.trailingPE) },
+                    { label: 'Forward P/E', val: formatNum(sd.forwardPE) },
+                    { label: 'Dividend Yield', val: formatPct(sd.dividendYield) },
+                    { label: 'EPS (Trailling)', val: formatNum(ks.trailingEps) },
+                    { label: 'Beta', val: formatNum(sd.beta) },
+                    { label: 'Revenue Growth', val: formatPct(fd.revenueGrowth) },
+                    { label: 'Operating Margins', val: formatPct(fd.operatingMargins) },
+                    { label: 'Total Cash', val: formatLarge(fd.totalCash) },
+                    { label: 'Total Debt', val: formatLarge(fd.totalDebt) },
+                    { label: 'Current Ratio', val: formatNum(fd.currentRatio) },
+                    { label: 'Debt to Equity', val: formatNum(fd.debtToEquity) }
+                ];
+            }
 
             content.innerHTML = fields.map(f => `
                 <div class="space-y-1 py-1 border-b border-slate-50 dark:border-slate-800/50">

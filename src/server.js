@@ -380,6 +380,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // ─── CACHING LAYER ──────────────────────────────────────────────────────────
 const historicalPricesCache = {}; // { ticker: { date: price } }
+const watchlistPerformanceCache = { data: {}, lastUpdated: 0 };
+const WATCHLIST_PERF_CACHE_TTL = 3600 * 1000; // 1 hour
 let performanceResultsCache = {}; // { cacheKey: { data, timestamp } }
 performanceResultsCache = {}; // Clear cache to apply date fix immediately
 let eurUsdCache = { rate: 1.08, timestamp: 0 };
@@ -1054,21 +1056,27 @@ app.delete('/api/watchlist/:ticker', (req, res) => {
 
 app.get('/api/watchlist/performance', async (req, res) => {
     try {
+        const now = Date.now();
+        if (now - watchlistPerformanceCache.lastUpdated < WATCHLIST_PERF_CACHE_TTL) {
+            return res.json(watchlistPerformanceCache.data);
+        }
+
         const watchlist = database.db.prepare('SELECT ticker FROM assets WHERE inWatchlist = 1').all();
         const results = {};
         
-        const now = new Date();
-        const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        const nowDate = new Date();
+        const oneWeekAgo = new Date(nowDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const oneMonthAgo = new Date(nowDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+        const oneYearAgo = new Date(nowDate.getTime() - 365 * 24 * 60 * 60 * 1000);
 
-        for (const item of watchlist) {
+        // Fetch in parallel
+        await Promise.all(watchlist.map(async (item) => {
             const ticker = item.ticker;
             try {
-                // Fetch historical data from YF (using Date objects for better compatibility)
+                // Fetch historical data from YF
                 const historical = await yahooFinance.historical(ticker, {
                     period1: oneYearAgo,
-                    period2: now,
+                    period2: nowDate,
                     interval: '1d'
                 }).catch(() => []);
 
@@ -1077,28 +1085,36 @@ app.get('/api/watchlist/performance', async (req, res) => {
                     const currentPrice = quote?.regularMarketPrice || 0;
                     
                     if (currentPrice > 0) {
-                        const getPerformance = (pastDate) => {
-                            // Find the entry closest to the pastDate
+                        const getPerformance = (pastDate, minDaysDiff) => {
+                            // Find the entry closest to the pastDate (first entry that is >= pastDate)
                             const pastEntry = historical.find(h => new Date(h.date) >= pastDate);
                             if (pastEntry && pastEntry.close) {
+                                // Validate if the date found is actually "past" enough
+                                const diffDays = (nowDate - new Date(pastEntry.date)) / (1000 * 3600 * 24);
+                                if (diffDays < minDaysDiff) return null;
+
                                 return ((currentPrice - pastEntry.close) / pastEntry.close) * 100;
                             }
                             return null;
                         };
 
                         results[ticker] = {
-                            perf1W: getPerformance(oneWeekAgo),
-                            perf1M: getPerformance(oneMonthAgo),
-                            perf1Y: getPerformance(oneYearAgo)
+                            perf1W: getPerformance(oneWeekAgo, 4),   // 1W needs at least 4 days back (handles weekends)
+                            perf1M: getPerformance(oneMonthAgo, 20), // 1M needs at least 20 days back
+                            perf1Y: getPerformance(oneYearAgo, 300)  // 1Y needs at least 300 days back
                         };
                     }
                 }
             } catch (e) {
                 console.error(`Error fetching performance for ${ticker}:`, e.message);
             }
-        }
+        }));
+
+        watchlistPerformanceCache.data = results;
+        watchlistPerformanceCache.lastUpdated = now;
         res.json(results);
     } catch (err) {
+        console.error('Watchlist performance error:', err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -1107,7 +1123,7 @@ app.get('/api/assets/:ticker/details', async (req, res) => {
     const { ticker } = req.params;
     try {
         const summary = await yahooFinance.quoteSummary(ticker, {
-            modules: ['summaryDetail', 'financialData', 'defaultKeyStatistics', 'assetProfile', 'calendarEvents']
+            modules: ['summaryDetail', 'financialData', 'defaultKeyStatistics', 'assetProfile', 'calendarEvents', 'fundProfile']
         });
         res.json(summary);
     } catch (err) {
