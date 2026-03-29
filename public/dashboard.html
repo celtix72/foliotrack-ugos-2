@@ -143,6 +143,24 @@
 </header>
 <!-- Main Content Scroll Area -->
 <main class="flex-1 overflow-y-auto custom-scrollbar bg-slate-50/50 dark:bg-[#0b0f1a]">
+    <!-- Dividend Alert Banner -->
+    <div id="dividend-alert-container" class="px-8 mt-6 -mb-2 hidden">
+        <div class="bg-amber-500/10 dark:bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/20">
+                    <span class="material-symbols-outlined">payments</span>
+                </div>
+                <div>
+                    <h4 class="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight" id="div-alert-title">Dividendi di Marzo</h4>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-bold" id="div-alert-msg">Hai 3 pagamenti previsti per un totale di €45.20.</p>
+                </div>
+            </div>
+            <a href="/dividend" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg transition-all shadow-md shadow-amber-500/10">
+                Dettagli
+            </a>
+        </div>
+    </div>
+
     <div class="px-8 pt-8 pb-4">
         <div class="flex flex-col xl:flex-row items-start xl:items-end justify-between gap-6">
             <div class="flex flex-wrap items-center gap-8 lg:gap-12">
@@ -343,7 +361,7 @@
                 pContainer.innerHTML = '<p class="text-sm text-slate-500 col-span-2">No portfolios found.</p>';
             }
 
-            // Render Markets (Live data from server if available, else mock)
+            // Render Markets
             const mContainer = document.getElementById('market-container');
             mContainer.innerHTML = mockMarkets.map(m => `
                 <div class="p-4 rounded-xl bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 group hover:border-primary/50 transition-colors">
@@ -355,7 +373,32 @@
                 </div>
             `).join('');
 
+            // Load Dividend Alert
+            loadDividendAlert();
+
         } catch (err) { console.error(err); }
+    }
+
+    async function loadDividendAlert() {
+        const container = document.getElementById('dividend-alert-container');
+        const titleEl = document.getElementById('div-alert-title');
+        const msgEl = document.getElementById('div-alert-msg');
+        if (!container || !titleEl || !msgEl) return;
+
+        try {
+            const res = await fetch('/api/analytics/current-month-dividends');
+            const data = await res.json();
+
+            if (data.hasDividends) {
+                titleEl.innerText = `Dividendi di ${data.monthName}`;
+                msgEl.innerText = `Hai ${data.count} ${data.count === 1 ? 'pagamento previsto' : 'pagamenti previsti'} per un totale di ${formatCurrency(data.amount, 'EUR', 2)}.`;
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        } catch (err) {
+            console.error('Failed to load dividend alert:', err);
+        }
     }
 
     // ─── Dashboard Chart Logic ────────────────────────────────────────────────

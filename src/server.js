@@ -3551,6 +3551,53 @@ app.get('/api/analytics/dividend-projections', async (req, res) => {
     }
 });
 
+/**
+ * Endpoint for the persistent Dashboard Dividend Alert.
+ * Returns summary for the current month and year.
+ */
+app.get('/api/analytics/current-month-dividends', async (req, res) => {
+    try {
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth() + 1;
+        const monthStr = currentMonth.toString().padStart(2, '0');
+        const yearMonth = `${currentYear}-${monthStr}`;
+
+        // Get projected dividends for this month
+        const projections = database.db.prepare(`
+            SELECT SUM(totalAmount) as total, COUNT(*) as count 
+            FROM dividend_projections 
+            WHERE exDate LIKE ?
+        `).get(yearMonth + '%');
+
+        // Get already received dividends for this month from transactions
+        const received = database.db.prepare(`
+            SELECT SUM(amount) as total, COUNT(*) as count 
+            FROM transactions 
+            WHERE type = 'DIVIDEND' AND date LIKE ?
+        `).get(yearMonth + '%');
+
+        const totalAmount = (projections.total || 0) + (received.total || 0);
+        const totalCount = (projections.count || 0) + (received.count || 0);
+
+        const MONTH_NAMES_LONG = [
+            'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+            'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'
+        ];
+
+        res.json({
+            monthName: MONTH_NAMES_LONG[currentMonth - 1],
+            year: currentYear,
+            count: totalCount,
+            amount: totalAmount,
+            hasDividends: totalCount > 0
+        });
+    } catch (err) {
+        logger.error('Current month dividends error', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.get('/api/analytics/reports', async (req, res) => {
     try {
         const portfolios = database.db.prepare('SELECT * FROM portfolios').all();

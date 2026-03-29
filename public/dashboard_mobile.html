@@ -260,7 +260,34 @@
 
       // Sync header dot
       mobSyncMarketStatus();
+
+      // Load Dividend Alert
+      mobLoadDividendAlert();
     } catch(e) { console.error('[MOB] Dashboard update error:', e); }
+  }
+
+  async function mobLoadDividendAlert() {
+    const container = document.getElementById('mob-dividend-alert');
+    const titleEl = document.getElementById('mob-div-alert-title');
+    const msgEl = document.getElementById('mob-div-alert-msg');
+    if (!container || !titleEl || !msgEl) return;
+
+    try {
+      const res = await fetch('/api/analytics/current-month-dividends');
+      const data = await res.json();
+
+      if (data.hasDividends) {
+        titleEl.innerText = `Dividendi di ${data.monthName}`;
+        msgEl.innerText = `Hai ${data.count} ${data.count === 1 ? 'pagamento previsto' : 'pagamenti previsti'} (${formatCurrency(data.amount, 'EUR', 0)}).`;
+        container.classList.remove('hidden');
+        container.style.display = 'flex';
+      } else {
+        container.classList.add('hidden');
+        container.style.display = 'none';
+      }
+    } catch (err) {
+      console.error('Failed to load mobile dividend alert:', err);
+    }
   }
 
   async function mobSyncMarketStatus() {
