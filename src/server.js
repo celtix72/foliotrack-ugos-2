@@ -2777,6 +2777,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
         const startDateStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
         const initialTx = allTransactions.filter(t => t.portfolioId === p.id && t.date < startDateStr);
         for (const t of initialTx) {
+            const qty = t.quantity || 0, price = t.price || 0, comm = t.commission || 0, tax = t.tax || 0, fx = t.exchangeRate || 1, amount = t.amount || 0;
             const absAmt = Math.abs(amount);
             if (t.type === 'BUY' && t.assetTicker && price > 0) {
                 portfolioStates[p.id].lastBuyPrices[t.assetTicker] = price;
@@ -2915,6 +2916,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                 const dayTx = allTransactions.filter(t => t.portfolioId === p.id && t.date === dateStr);
 
                 for (const t of dayTx) {
+                    const qty = t.quantity || 0, price = t.price || 0, comm = t.commission || 0, tax = t.tax || 0, fx = t.exchangeRate || 1, amount = t.amount || 0;
                     const absAmt = Math.abs(amount);
                     if (t.type === 'BUY' && t.assetTicker && price > 0) {
                         state.lastBuyPrices[t.assetTicker] = price;
