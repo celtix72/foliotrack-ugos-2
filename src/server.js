@@ -3406,11 +3406,14 @@ app.post('/api/dividends/projections/reset', async (req, res) => {
                         const currencyYF = summary.summaryDetail.currency || pos.currency;
                         
                         let nextDateStr = null;
-                        if (summary.calendarEvents && summary.calendarEvents.dividendDate) {
-                            nextDateStr = new Date(summary.calendarEvents.dividendDate).toISOString().split('T')[0];
+                        const ce = summary.calendarEvents || {};
+                        const dDate = ce.dividendDate || ce.exDividendDate;
+                        
+                        if (dDate) {
+                            nextDateStr = new Date(dDate).toISOString().split('T')[0];
                         }
                         
-                        if (nextDateStr && nextDateStr.startsWith(currentYear.toString()) && nextDateStr > now.toISOString().split('T')[0]) {
+                        if (nextDateStr && nextDateStr >= now.toISOString().split('T')[0]) {
                             const perPayment = (annualRate * pos.balance) / freq;
                             const amtEUR = toEUR(perPayment, currencyYF, null);
                             const unitAmount = toEUR(annualRate / freq, currencyYF, null);

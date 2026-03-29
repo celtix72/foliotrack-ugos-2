@@ -485,6 +485,7 @@
                     let badge = '';
                     if (a.tag === 'REGISTRATO') badge = '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/10 text-emerald-500">Ricevuto</span>';
                     if (a.tag === 'YF') badge = '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/10 text-blue-400">YF</span>';
+                    if (a.tag === 'SIMULATO') badge = '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-600">Simulato</span>';
                     if (a.tag === 'STORICO') badge = '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-500/10 text-slate-500">Storico</span>';
                     if (a.tag === 'MANUALE') badge = '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/10 text-purple-400">Manuale</span>';
 
@@ -507,7 +508,7 @@
                             <div class="flex items-center gap-2">
                                 ${actionHtml}
                                 ${badge}
-                                <span class="text-slate-500 hidden sm:inline-block">${(a.yield * 100).toFixed(2)}% YLD</span>
+                                <span class="text-slate-500">${a.yield ? (a.yield * 100).toFixed(2) + '% YLD' : ''}</span>
                             </div>
                         </div>
                     </div>
