@@ -204,6 +204,16 @@
       if (posCountEl) posCountEl.textContent = `${openPos.length} Assets`;
       if (watchCountEl) watchCountEl.textContent = `${watchlist.length} Assets`;
 
+      const getAssetTag = (type, ticker) => {
+        const t = (type || '').toUpperCase();
+        const tk = (ticker || '').toUpperCase();
+        if (tk.startsWith('CD_')) return 'CD';
+        if (t.includes('ETF')) return 'ETF';
+        if (t.includes('BOND') || t.includes('FIXED INCOME') || tk.startsWith('BTP')) return 'Bond';
+        if (t.includes('EQUITY') || t.includes('AZIENDA') || t.includes('AZ')) return 'Az';
+        return 'Az';
+      };
+
       const renderCard = (a, isLarge = false) => {
         const price = a.currentPrice || 0;
         const change = a.changePercent || 0;
@@ -219,12 +229,7 @@
         const alertBg = targetReached ? 'background:rgba(16,185,129,0.15)' : (stopLossHit ? 'background:rgba(244,63,94,0.15)' : '');
         const alertBorder = targetReached ? 'border:1px solid rgba(16,185,129,0.3)' : (stopLossHit ? 'border:1px solid rgba(244,63,94,0.3)' : '');
 
-        // Position data
-        const qty = a.totalQuantity || 0;
-        const val = qty * price;
-        const gain = val - (a.totalCostAssetCurr || 0);
-        const gainPct = (a.totalCostAssetCurr > 0) ? (gain / a.totalCostAssetCurr) * 100 : 0;
-        const dvVal = qty * (a.changeValue || 0);
+        const tag = getAssetTag(a.yfType || a.type, a.ticker);
 
         return `
           <div class="mob-holding-item" style="${alertBg}; ${alertBorder}" onclick="loadAssetChart('${a.ticker}')">
@@ -232,9 +237,7 @@
             <div class="mob-holding-info">
               <div class="flex items-center gap-2">
                 <div class="mob-holding-ticker">${a.ticker}</div>
-                <div class="text-[10px] font-black ${isPos ? 'text-emerald-500' : 'text-rose-500'} flex items-center gap-0.5">
-                  ${isPos ? '▲' : '▼'}${Math.abs(change).toFixed(1)}% ${a.hasPosition && dvVal !== 0 ? `(${dvVal >= 0 ? '+' : ''}${Math.round(dvVal)}€)` : ''}
-                </div>
+                <div class="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[8px] font-black uppercase tracking-tighter text-slate-500 border border-slate-200 dark:border-slate-700">${tag}</div>
               </div>
               <div class="mob-holding-name">${a.name || ''}</div>
               <div style="display:flex; gap:8px; margin-top:4px">
@@ -243,13 +246,8 @@
               </div>
             </div>
             <div class="mob-holding-values">
-              ${a.hasPosition ? `
-                <div class="mob-holding-value">${formatCurrency(val, a.currency, 0)}</div>
-                <div class="mob-holding-gain" style="color:${gain>=0?'var(--mob-emerald)':'var(--mob-rose)'}">${gain>=0?'+':''}${formatCurrency(gain, a.currency, 0)}</div>
-              ` : `
-                <div class="mob-holding-value">${formatCurrency(price, a.currency, 2)}</div>
-                <div class="mob-holding-gain" style="color:${color}">${isPos?'+':''}${change.toFixed(1)}%</div>
-              `}
+              <div class="mob-holding-value">${formatCurrency(price, a.currency, 2)}</div>
+              <div class="mob-holding-gain" style="color:${color}; font-weight:900">${isPos?'+':''}${change.toFixed(1)}%</div>
             </div>
           </div>`;
       };
