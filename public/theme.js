@@ -748,7 +748,7 @@
     }
 
     // ─── Global Formatting ────────────────────────────────────────────────────
-    window.formatCurrency = function(val, currency = 'EUR', decimals = 0) {
+    window.formatCurrency = function(val, currency = 'EUR', decimals = 2) {
         if (val === null || val === undefined) return '—';
         const value = parseFloat(val);
         if (!currency || currency.length !== 3) {
@@ -759,19 +759,19 @@
                 style: 'currency', 
                 currency: currency,
                 minimumFractionDigits: decimals,
-                maximumFractionDigits: decimals
+                maximumFractionDigits: Math.max(decimals, 2)
             }).format(value);
         } catch (e) {
             return formatNumber(val, decimals) + ' ' + currency;
         }
     };
 
-    window.formatNumber = function(val, decimals = 0) {
+    window.formatNumber = function(val, decimals = 2) {
         if (val === null || val === undefined) return '—';
         const value = parseFloat(val);
         return new Intl.NumberFormat('de-DE', { 
             minimumFractionDigits: decimals,
-            maximumFractionDigits: decimals
+            maximumFractionDigits: Math.max(decimals, 2)
         }).format(value);
     };
 

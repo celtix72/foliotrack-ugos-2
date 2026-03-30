@@ -293,7 +293,7 @@
 
       if (data.hasDividends) {
         titleEl.innerText = `Dividendi di ${data.monthName}`;
-        msgEl.innerText = `Hai ${data.count} ${data.count === 1 ? 'pagamento previsto' : 'pagamenti previsti'} (${formatCurrency(data.amount, 'EUR', 0)}).`;
+        msgEl.innerText = `Hai ${data.count} ${data.count === 1 ? 'pagamento previsto' : 'pagamenti previsti'} (${formatCurrency(data.amount, 'EUR')}).`;
         container.classList.remove('hidden');
         container.style.display = 'flex';
       } else {

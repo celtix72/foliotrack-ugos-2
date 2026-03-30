@@ -986,8 +986,8 @@
                           const typeLabel = labels[ev.type] || ev.type;
                           const prefix = (ev.type === 'DEPOSIT' || ev.type === 'BUY' || ev.type === 'DIVIDEND') ? '+' : '-';
                           if (ev.type === 'BUY' || ev.type === 'SELL') return `${typeLabel}: ${ev.assetName || ev.ticker}`;
-                          if (ev.type === 'DEPOSIT' || ev.type === 'WITHDRAWAL') return `${typeLabel}: ${prefix}${formatCurrency(ev.amount, 'EUR', 0)}`;
-                          return `${typeLabel}: ${ev.ticker} ${prefix}${formatCurrency(ev.amount, 'EUR', 0)}`;
+                          if (ev.type === 'DEPOSIT' || ev.type === 'WITHDRAWAL') return `${typeLabel}: ${prefix}${formatCurrency(ev.amount, 'EUR')}`;
+                          return `${typeLabel}: ${ev.ticker} ${prefix}${formatCurrency(ev.amount, 'EUR')}`;
                       });
                   }
                   return null;
