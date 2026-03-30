@@ -207,8 +207,8 @@
       const mobGain = document.getElementById('mob-total-gain');
       const mobDayVar = document.getElementById('mob-day-var');
 
-      if (mobNet) mobNet.textContent = formatPrivacy(g.totalNetValue, 'EUR', 'mob-net');
-      if (mobGross) mobGross.textContent = '(' + formatPrivacy(g.totalValue, 'EUR', 'mob-gross') + ')';
+      if (mobNet) mobNet.textContent = formatPrivacy(g.totalNetValue, 'EUR', 'mob-net', 0);
+      if (mobGross) mobGross.textContent = '(' + formatPrivacy(g.totalValue, 'EUR', 'mob-gross', 0) + ')';
 
       if (mobDayVar) {
           const change = g.changeValue || 0;
@@ -293,7 +293,7 @@
 
       if (data.hasDividends) {
         titleEl.innerText = `Dividendi di ${data.monthName}`;
-        msgEl.innerText = `Hai ${data.count} ${data.count === 1 ? 'pagamento previsto' : 'pagamenti previsti'} (${formatCurrency(data.amount, 'EUR')}).`;
+        msgEl.innerText = `Hai ${data.count} ${data.count === 1 ? 'pagamento previsto' : 'pagamenti previsti'} (${formatCurrency(data.amount, 'EUR', 0)}).`;
         container.classList.remove('hidden');
         container.style.display = 'flex';
       } else {

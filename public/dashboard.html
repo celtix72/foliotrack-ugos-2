@@ -296,8 +296,8 @@
             const globalData = data.global || { totalValue: 0, totalNetValue: 0, totalTax: 0, changePercent: 0 };
             window._dashboardData = data; // Cache data for privacy toggles
             
-            document.getElementById('total-net-worth').innerText = formatPrivacy(globalData.totalNetValue, 'EUR', 'networth');
-            document.getElementById('total-gross-worth').innerText = formatPrivacy(globalData.totalValue, 'EUR', 'gross');
+            document.getElementById('total-net-worth').innerText = formatPrivacy(globalData.totalNetValue, 'EUR', 'networth', 0);
+            document.getElementById('total-gross-worth').innerText = formatPrivacy(globalData.totalValue, 'EUR', 'gross', 0);
 
             // TAX & GAIN derived from gross - net
             const taxAmt = (globalData.totalValue || 0) - (globalData.totalNetValue || 0);
@@ -391,7 +391,7 @@
 
             if (data.hasDividends) {
                 titleEl.innerText = `Dividendi di ${data.monthName}`;
-                msgEl.innerText = `Hai ${data.count} ${data.count === 1 ? 'pagamento previsto' : 'pagamenti previsti'} (${formatCurrency(data.amount, 'EUR')}).`;
+                msgEl.innerText = `Hai ${data.count} ${data.count === 1 ? 'pagamento previsto' : 'pagamenti previsti'} (${formatCurrency(data.amount, 'EUR', 0)}).`;
                 container.classList.remove('hidden');
             } else {
                 container.classList.add('hidden');
