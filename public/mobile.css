@@ -810,7 +810,7 @@ body.mobile-view-active #mobile-ui {
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: transform 0.15s, box-shadow 0.15s;
-  z-index: 400;
+  z-index: 11000;
 }
 .mob-fab:active {
   transform: scale(0.9);

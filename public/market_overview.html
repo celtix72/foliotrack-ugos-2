@@ -201,8 +201,21 @@
         <div class="flex items-center justify-between px-2">
             <h3 class="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Open Positions</h3>
         </div>
-        <div class="grid grid-cols-1 gap-4" id="list-positions">
-            <!-- Open positions will be rendered here -->
+        <div class="overflow-hidden bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                        <th class="px-5 py-3">Asset</th>
+                        <th class="px-5 py-3">Price</th>
+                        <th class="px-5 py-3">Performance</th>
+                        <th class="px-5 py-3 hidden sm:table-cell">Target/Stop</th>
+                        <th class="px-5 py-3 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="list-positions" class="divide-y divide-slate-100 dark:divide-slate-800">
+                    <!-- Open positions will be rendered here -->
+                </tbody>
+            </table>
         </div>
     </div>
 
@@ -216,8 +229,21 @@
             <p id="watchlist-count" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">0 Assets</p>
         </div>
         <div id="watchlist-container" class="hidden">
-            <div class="grid grid-cols-1 gap-4" id="list-watchlist">
-                <!-- Watchlist assets will be rendered here -->
+            <div class="overflow-hidden bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                            <th class="px-5 py-3">Asset</th>
+                            <th class="px-5 py-3">Price</th>
+                            <th class="px-5 py-3">Performance</th>
+                            <th class="px-5 py-3 hidden sm:table-cell">Target/Stop</th>
+                            <th class="px-5 py-3 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="list-watchlist" class="divide-y divide-slate-100 dark:divide-slate-800">
+                        <!-- Watchlist assets will be rendered here -->
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -335,99 +361,99 @@ function renderAssets(filter = '') {
 
     if (watchCountEl) watchCountEl.textContent = `${watchlist.length} ASSETS`;
 
-    const renderCard = (a) => {
+    const renderRow = (a) => {
         const price = a.currentPrice || 0;
         const change = a.changePercent || 0;
         const color = change >= 0 ? 'emerald' : 'rose';
         const sign = change >= 0 ? '+' : '';
-        const opacity = a.isMonitored ? '' : 'opacity-60';
+        const opacity = a.isMonitored ? '' : 'opacity-40';
         
         // Alert highlights
         const targetReached = a.targetPrice > 0 && price >= a.targetPrice;
         const stopLossHit = a.stopLoss > 0 && price <= a.stopLoss;
-        const alertClass = targetReached ? 'border-emerald-500/50 bg-emerald-500/5' : (stopLossHit ? 'border-rose-500/50 bg-rose-500/5' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111722]');
+        const alertClass = targetReached ? 'bg-emerald-500/5' : (stopLossHit ? 'bg-rose-500/5' : '');
 
         return `
-        <div class="group border ${alertClass} rounded-2xl p-5 shadow-sm hover:shadow-md transition-all ${opacity}">
-            <div class="flex items-center justify-between mb-4">
+        <tr class="group transition-colors hover:bg-slate-50 dark:hover:bg-white/[0.02] ${alertClass} ${opacity}">
+            <td class="px-5 py-4">
                 <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-xs shrink-0 uppercase border border-primary/20 shadow-inner">
+                    <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-[10px] shrink-0 uppercase border border-primary/20">
                         ${a.ticker.substring(0,4)}
                     </div>
                     <div>
                         <div class="flex items-center gap-2">
-                            <p class="font-black text-lg text-slate-900 dark:text-white leading-none">${a.name}</p>
+                            <p class="font-black text-sm text-slate-900 dark:text-white leading-none">${a.name}</p>
                             ${!a.isMonitored ? '<span class="text-[8px] font-black bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-500 tracking-tighter uppercase">Inactive</span>' : ''}
                             ${a.lastUpdateError ? `<span class="px-1.5 py-0.5 rounded-full bg-rose-500 text-[8px] font-black text-white uppercase tracking-tighter" title="${a.lastUpdateError.replace(/"/g, '&quot;')}">Err</span>` : ''}
                         </div>
-                        <p class="text-[10px] text-slate-400 uppercase font-black tracking-[0.2em] mt-1.5">
+                        <p class="text-[9px] text-slate-400 uppercase font-black tracking-widest mt-1">
                             ${a.ticker} • ${a.exchange || 'Market'}
-                            <span class="inline-block ml-1 px-1.5 py-0.5 rounded text-[9px] font-black leading-none ${a.dataSource === 'B_ITA' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400'}" title="${a.dataSource === 'B_ITA' ? 'Borsa Italiana' : 'Yahoo Finance'}">${a.dataSource === 'B_ITA' ? 'BI' : 'YF'}</span>
+                            <span class="inline-block ml-1 px-1.5 py-0.5 rounded text-[8px] font-black leading-none ${a.dataSource === 'B_ITA' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400'}">${a.dataSource === 'B_ITA' ? 'BI' : 'YF'}</span>
                         </p>
                     </div>
                 </div>
-                <div class="text-right flex items-center gap-4">
-                    <!-- Sparkline Canvas -->
-                    <div class="hidden sm:block">
-                        <canvas id="sparkline-${a.ticker}" width="80" height="30" class="opacity-80"></canvas>
+            </td>
+            <td class="px-5 py-4">
+                <p class="text-sm font-black text-slate-900 dark:text-white font-mono">${formatCurrency(price, a.currency)}</p>
+            </td>
+            <td class="px-5 py-4">
+                <div class="flex items-center gap-4">
+                    <!-- Sparkline -->
+                    <div class="hidden md:block">
+                        <canvas id="sparkline-${a.ticker}" width="60" height="24" class="opacity-80"></canvas>
                     </div>
-                    <div>
-                        <p class="text-xl font-black text-slate-900 dark:text-white font-mono leading-none">${formatCurrency(price, a.currency, 4)}</p>
-                        <div class="flex items-center justify-end gap-1.5 mt-2">
-                            <span class="material-symbols-outlined text-[10px] text-${color}-500">${change >= 0 ? 'trending_up' : 'trending_down'}</span>
-                            <p class="text-xs font-black text-${color}-500 font-mono">${sign}${formatNumber(change, 2)}%</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="pt-4 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between">
-                <div class="flex items-center gap-6">
-                    <div class="space-y-0.5">
-                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Type</p>
-                        <p class="text-[10px] font-bold text-slate-600 dark:text-slate-300">${a.type || 'Stock'}</p>
-                    </div>
-                    <div class="space-y-0.5">
-                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Target Price</p>
-                        <p class="text-[10px] font-black ${targetReached ? 'text-emerald-500 font-black scale-110' : 'text-slate-600 dark:text-slate-300'} transition-transform">${a.targetPrice ? formatCurrency(a.targetPrice, a.currency) : '—'}</p>
-                    </div>
-                    <div class="space-y-0.5">
-                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Stop Loss</p>
-                        <p class="text-[10px] font-black ${stopLossHit ? 'text-rose-500 font-black scale-110' : 'text-slate-600 dark:text-slate-300'} transition-transform">${a.stopLoss ? formatCurrency(a.stopLoss, a.currency) : '—'}</p>
+                    <div class="flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-xs text-${color}-500">${change >= 0 ? 'trending_up' : 'trending_down'}</span>
+                        <p class="text-xs font-black text-${color}-500 font-mono">${sign}${formatNumber(change, 2)}%</p>
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <button onclick="loadAssetChart('${a.ticker}')" class="h-9 w-9 rounded-xl bg-violet-500/10 text-violet-500 hover:bg-violet-500 hover:text-white transition-all flex items-center justify-center" title="View History Chart">
-                        <span class="material-symbols-outlined text-lg">show_chart</span>
+            </td>
+            <td class="px-5 py-4 hidden sm:table-cell">
+                <div class="flex gap-4">
+                    <div class="space-y-0.5">
+                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Target</p>
+                        <p class="text-[10px] font-black ${targetReached ? 'text-emerald-500' : 'text-slate-500'}">${a.targetPrice ? formatCurrency(a.targetPrice, a.currency) : '—'}</p>
+                    </div>
+                    <div class="space-y-0.5">
+                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Stop</p>
+                        <p class="text-[10px] font-black ${stopLossHit ? 'text-rose-500' : 'text-slate-500'}">${a.stopLoss ? formatCurrency(a.stopLoss, a.currency) : '—'}</p>
+                    </div>
+                </div>
+            </td>
+            <td class="px-5 py-4 text-right">
+                <div class="flex items-center justify-end gap-1">
+                    <button onclick="loadAssetChart('${a.ticker}')" class="h-8 w-8 rounded-lg bg-violet-500/10 text-violet-500 hover:bg-violet-500 hover:text-white transition-all flex items-center justify-center">
+                        <span class="material-symbols-outlined text-base">show_chart</span>
                     </button>
-                    <button onclick="openAlertModal('${a.ticker}')" class="h-9 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
-                        <span class="material-symbols-outlined text-sm">settings_alert</span> Settings
+                    <button onclick="openAlertModal('${a.ticker}')" class="h-8 w-8 rounded-lg bg-slate-100 dark:bg-white/[0.05] text-slate-500 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-all flex items-center justify-center">
+                        <span class="material-symbols-outlined text-base">settings_alert</span>
                     </button>
                     ${a.isMonitored ? `
-                    <button onclick="unmonitorAsset('${a.ticker}')" class="h-9 w-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-rose-500/10 hover:text-rose-500 transition-all flex items-center justify-center">
-                        <span class="material-symbols-outlined text-lg">visibility_off</span>
+                    <button onclick="unmonitorAsset('${a.ticker}')" class="h-8 w-8 rounded-lg bg-slate-100 dark:bg-white/[0.05] text-slate-400 hover:bg-rose-500/10 hover:text-rose-500 transition-all flex items-center justify-center">
+                        <span class="material-symbols-outlined text-base">visibility_off</span>
                     </button>` : `
-                    <button onclick="restoreMonitoring('${a.ticker}')" class="h-9 w-9 rounded-xl bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all flex items-center justify-center">
-                        <span class="material-symbols-outlined text-lg">visibility</span>
+                    <button onclick="restoreMonitoring('${a.ticker}')" class="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all flex items-center justify-center">
+                        <span class="material-symbols-outlined text-base">visibility</span>
                     </button>
                     `}
                 </div>
-            </div>
-        </div>`;
+            </td>
+        </tr>`;
     };
 
     if (listPos) {
         if (openPositions.length) {
-            listPos.innerHTML = openPositions.map(renderCard).join('');
+            listPos.innerHTML = openPositions.map(renderRow).join('');
         } else {
-            listPos.innerHTML = `<div class="px-6 py-8 text-center text-slate-500 italic bg-white dark:bg-[#111722] rounded-2xl border border-slate-200 dark:border-slate-800">No open positions.</div>`;
+            listPos.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500 italic bg-white dark:bg-[#111722]">No open positions.</td></tr>`;
         }
     }
 
     if (listWatch) {
         if (watchlist.length) {
-            listWatch.innerHTML = watchlist.map(renderCard).join('');
+            listWatch.innerHTML = watchlist.map(renderRow).join('');
         } else {
-            listWatch.innerHTML = `<div class="px-6 py-8 text-center text-slate-500 italic bg-white dark:bg-[#111722] rounded-2xl border border-slate-200 dark:border-slate-800">Watchlist is empty.</div>`;
+            listWatch.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500 italic bg-white dark:bg-[#111722]">Watchlist is empty.</td></tr>`;
         }
     }
 
