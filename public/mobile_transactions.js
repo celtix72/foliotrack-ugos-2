@@ -24,6 +24,13 @@
                 </div>
                 <form id="transaction-form" class="mob-modal-body" onsubmit="handleMobileTransactionSubmit(event)">
                     <input type="hidden" id="t-id"/>
+
+                    <div id="t-portfolio-field" class="mob-input-group">
+                        <label class="mob-input-label">Portafoglio</label>
+                        <select id="t-portfolio" class="mob-input-field">
+                            <option value="">— Caricamento... —</option>
+                        </select>
+                    </div>
                     
                     <div class="mob-grid-2">
                         <div class="mob-input-group">
@@ -122,8 +129,29 @@
             const select = document.getElementById('t-dest-portfolio');
             if (select) {
                 const currentP = window.mobCurrentPortfolioId || window.currentPortfolioId;
+                const portfolios = data.portfolios || data;
                 select.innerHTML = '<option value="">— Seleziona Target —</option>' + 
-                    data.portfolios.filter(p => p.id != currentP).map(p => `<option value="${p.id}">${p.name} (${p.currency})</option>`).join('');
+                    portfolios.filter(p => p.id != currentP).map(p => `<option value="${p.id}">${p.name} (${p.currency})</option>`).join('');
+            }
+        } catch(e) {}
+    }
+
+    async function loadAllPortfolios() {
+        try {
+            const res = await fetch('/api/portfolios');
+            const data = await res.json();
+            const select = document.getElementById('t-portfolio');
+            if (select) {
+                const portfolios = data.portfolios || data;
+                select.innerHTML = portfolios.map(p => `<option value="${p.id}">${p.name} (${p.currency})</option>`).join('');
+                
+                // Default selection
+                const currentP = window.mobCurrentPortfolioId || window.currentPortfolioId;
+                if (currentP) {
+                    select.value = currentP;
+                } else if (portfolios.length > 0) {
+                    select.value = portfolios[0].id;
+                }
             }
         } catch(e) {}
     }
@@ -136,6 +164,9 @@
             // Ensure FAB is visible
             const fab = document.getElementById('global-mob-fab');
             if (fab) fab.style.display = 'flex';
+            
+            // Populate and set default portfolio
+            loadAllPortfolios();
         }
         
         const form = document.getElementById('transaction-form');
@@ -221,11 +252,12 @@
             return;
         }
         try {
-            const res = await fetch(`/api/market/search?query=${query}`);
+            // Yahoo Finance search expects 'q' parameter
+            const res = await fetch(`/api/market/search?q=${query}`);
             const data = await res.json();
             if (silent) {
                 if (data.length > 0) {
-                    document.getElementById('t-asset-currency').value = data[0].currency;
+                    document.getElementById('t-asset-currency').value = data[0].currency || 'USD';
                     checkFX();
                 }
                 return;
@@ -233,8 +265,8 @@
             const results = document.getElementById('t-search-results');
             if (results) {
                 results.innerHTML = data.map(a => `
-                    <div class="mob-search-item" onclick="selectMobileAsset('${a.ticker}', '${a.currency}', '${a.name}')">
-                        <div class="mob-search-item-ticker">${a.ticker}</div>
+                    <div class="mob-search-item" onclick="selectMobileAsset('${a.ticker}', '${a.currency || 'USD'}', '${a.name}')">
+                        <div class="mob-search-item-ticker">${a.ticker} <span style="font-size: 10px; color: var(--mob-primary); margin-left: 4px;">${a.currency || ''}</span></div>
                         <div class="mob-search-item-name">${a.name} • ${a.exchange}</div>
                     </div>
                 `).join('');
@@ -243,19 +275,35 @@
         } catch(e) {}
     };
 
-    window.selectMobileAsset = function(ticker, currency, name) {
+    window.selectMobileAsset = async function(ticker, currency, name) {
         document.getElementById('t-asset-search').value = ticker;
         document.getElementById('t-asset-ticker').value = ticker;
-        document.getElementById('t-asset-currency').value = currency;
+        document.getElementById('t-asset-currency').value = currency || 'USD';
+        
         const results = document.getElementById('t-search-results');
         if (results) results.style.display = 'none';
+
+        // Fetch detailed metadata/price like desktop
+        try {
+            const res = await fetch(`/api/validate-ticker?ticker=${ticker}`);
+            const data = await res.json();
+            if (data && data.valid) {
+                if (data.currentPrice) {
+                    document.getElementById('t-price').value = data.currentPrice;
+                }
+                if (data.currency) {
+                    document.getElementById('t-asset-currency').value = data.currency;
+                }
+            }
+        } catch(e) {}
+
         checkFX();
         calculateNetDividend();
     };
 
     window.handleMobileTransactionSubmit = async function(e) {
         e.preventDefault();
-        const pId = window.mobCurrentPortfolioId || window.currentPortfolioId;
+        const pId = document.getElementById('t-portfolio').value;
         if (!pId) {
             alert("Seleziona un portafoglio prima di operare.");
             return;
