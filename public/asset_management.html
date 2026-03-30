@@ -241,7 +241,11 @@
 <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Asset</th>
 <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Market</th>
 <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">Currency</th>
-<th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-right">P/E Ratio</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-right">P/E (Fwd)</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-right">Yield</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-right">EPS</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-right">Beta</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-right">Next Div</th>
 <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-right">Latest Price</th>
 <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-right">Day Range</th>
 <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">Actions</th>
@@ -369,7 +373,6 @@
                 tBody.innerHTML = assets.map(a => {
                     const price = a.currentPrice || 0;
                     const change = a.changePercent || 0;
-                    const pe = a.pe ? formatNumber(a.pe, 1) : '-';
                     
                     let tickerColor = 'primary';
                     if (a.type === 'Crypto') { tickerColor = 'orange'; }
@@ -396,7 +399,22 @@
                             <span class="text-xs font-bold text-slate-400">${a.currency}</span>
                         </td>
                         <td class="px-6 py-4 text-right">
-                            <span class="text-sm font-bold text-slate-600 dark:text-slate-300">${pe}</span>
+                            <div class="flex flex-col items-end">
+                                <span class="text-xs font-bold text-slate-600 dark:text-slate-300" title="Trailing P/E">${ftFormatPE(a.pe)}</span>
+                                <span class="text-[9px] text-slate-400 font-medium" title="Forward P/E">${ftFormatPE(a.forwardPE)}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <span class="text-xs font-bold text-emerald-500">${ftFormatYield(a.dividendYield)}</span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <span class="text-xs font-medium text-slate-500">${ftFormatEPS(a.eps, a.currency)}</span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <span class="text-xs font-medium text-slate-500">${ftFormatBeta(a.beta)}</span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <span class="text-xs font-bold text-slate-500">${ftFormatDate(a.nextDividendDate)}</span>
                         </td>
                         <td class="px-6 py-4 text-right">
                             <span class="text-sm font-black text-primary">${formatCurrency(price, a.currency)}</span>
@@ -404,7 +422,6 @@
                         <td class="px-6 py-4 text-right">
                             <p class="text-sm ${change > 0 ? 'text-emerald-500' : (change < 0 ? 'text-red-500' : 'text-slate-500')} font-bold flex items-center justify-end gap-1">
                                 ${change > 0 ? '+' : ''}${formatNumber(change, 2)}%
-                                <span class="material-symbols-outlined text-sm">${change >= 0 ? 'trending_up' : 'trending_down'}</span>
                             </p>
                         </td>
                         <td class="px-6 py-4">

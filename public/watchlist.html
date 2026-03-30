@@ -101,6 +101,7 @@
                         <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">1W</th>
                         <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">1M</th>
                         <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">1Y</th>
+                        <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Yield</th>
                         <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
                     </tr>
                 </thead>
@@ -245,6 +246,7 @@
                             <td class="px-6 py-5 text-center">${renderPerf(perf.perf1W)}</td>
                             <td class="px-6 py-5 text-center">${renderPerf(perf.perf1M)}</td>
                             <td class="px-6 py-5 text-center">${renderPerf(perf.perf1Y)}</td>
+                            <td class="px-6 py-5 text-right font-bold text-emerald-500 text-xs">${ftFormatYield(item.dividendYield)}</td>
                             <td class="px-6 py-5 text-right">
                                 <div class="flex items-center justify-end gap-2">
                                     <button onclick="showDetails('${item.ticker}', '${typeLabel}')" class="w-8 h-8 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all flex items-center justify-center border border-primary/10">
@@ -306,23 +308,23 @@
                 const fees = fp.feesExpensesInvestment || {};
                 fields = [
                     { label: 'Asset Totali (AUM)', val: formatLarge(fees.totalNetAssets) },
-                    { label: 'TER (Expense Ratio)', val: formatPct(fees.annualReportExpenseRatio) },
+                    { label: 'TER (Expense Ratio)', val: ftFormatYield(fees.annualReportExpenseRatio) },
                     { label: 'Categoria', val: fp.categoryName || 'N/A' },
                     { label: 'Tipo Legale', val: fp.legalType || 'N/A' },
-                    { label: 'Inception Date', val: ks.fundInceptionDate ? new Date(ks.fundInceptionDate).toLocaleDateString() : 'N/A' },
-                    { label: 'Yield (Trebbiato)', val: formatPct(sd.dividendYield) },
-                    { label: 'Beta (3Y)', val: formatNum(sd.beta) },
+                    { label: 'Inception Date', val: ftFormatDate(ks.fundInceptionDate) },
+                    { label: 'Yield (Trebbiato)', val: ftFormatYield(sd.dividendYield) },
+                    { label: 'Beta (3Y)', val: ftFormatBeta(sd.beta) },
                     { label: 'Volume Medio (10D)', val: formatLarge(sd.averageVolume10days) }
                 ];
             } else {
                 const nextDiv = data.calendarEvents?.dividendDate || data.calendarEvents?.exDividendDate;
                 fields = [
-                    { label: 'P/E Ratio', val: formatNum(sd.trailingPE) },
-                    { label: 'Forward P/E', val: formatNum(sd.forwardPE) },
-                    { label: 'Dividend Yield', val: formatPct(sd.dividendYield) },
-                    { label: 'EPS (Trailing)', val: formatNum(ks.trailingEps) },
-                    { label: 'Beta', val: formatNum(sd.beta) },
-                    { label: 'Prossimo Stacco', val: nextDiv ? new Date(nextDiv).toLocaleDateString('it-IT') : 'N/A' }
+                    { label: 'P/E Ratio', val: ftFormatPE(sd.trailingPE) },
+                    { label: 'Forward P/E', val: ftFormatPE(sd.forwardPE) },
+                    { label: 'Dividend Yield', val: ftFormatYield(sd.dividendYield) },
+                    { label: 'EPS (Trailing)', val: ftFormatEPS(ks.trailingEps, item.currency) },
+                    { label: 'Beta', val: ftFormatBeta(sd.beta) },
+                    { label: 'Prossimo Stacco', val: ftFormatDate(nextDiv) }
                 ];
             }
 

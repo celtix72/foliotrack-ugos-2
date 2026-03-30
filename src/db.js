@@ -62,10 +62,21 @@ function initDb() {
         changePercent REAL    NOT NULL DEFAULT 0,
         pe            REAL,
         country       TEXT,
+        targetPrice   REAL,
+        stopLoss      REAL,
+        forwardPE     REAL,
+        dividendYield REAL,
+        eps           REAL,
+        beta          REAL,
+        nextDividendDate TEXT,
         isManual      INTEGER NOT NULL DEFAULT 0,
         dataSource    TEXT    NOT NULL DEFAULT 'YF',
         isin          TEXT,
         lastUpdateError TEXT,
+        quoteDate     TEXT,
+        changeValue   REAL    NOT NULL DEFAULT 0,
+        isVirtualHistory INTEGER NOT NULL DEFAULT 0,
+        hasHistoryInconsistency INTEGER NOT NULL DEFAULT 0,
         updatedAt     TEXT    NOT NULL DEFAULT (datetime('now'))
       );
 
@@ -139,6 +150,27 @@ function initDb() {
 
     try {
         dbConnection.prepare(`ALTER TABLE portfolios ADD COLUMN color TEXT DEFAULT '#6366f1'`).run();
+    } catch (e) {}
+
+    // --- New Equity Metrics Migrations ---
+    try {
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN forwardPE REAL`).run();
+    } catch (e) {}
+
+    try {
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN dividendYield REAL`).run();
+    } catch (e) {}
+
+    try {
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN eps REAL`).run();
+    } catch (e) {}
+
+    try {
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN beta REAL`).run();
+    } catch (e) {}
+
+    try {
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN nextDividendDate TEXT`).run();
     } catch (e) {}
 
     try {

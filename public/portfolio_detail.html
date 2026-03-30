@@ -329,6 +329,7 @@
                             </th>
                             <th class="px-6 py-4">Quantity & Avg Cost</th>
                             <th class="px-6 py-4">Market Price</th>
+                            <th class="px-6 py-4 text-right">Metrics (Yield/PE)</th>
                             <th class="px-6 py-4 cursor-pointer hover:text-primary transition-all group" onclick="toggleSort('holdings', 'impact')">
                                 <div class="flex items-center gap-1 justify-end">
                                     Portfolio Impact
@@ -1106,7 +1107,12 @@
                 </td>
                 <td class="px-6 py-4">
                     <p class="font-bold text-slate-900 dark:text-white font-mono text-sm leading-tight">${formatCurrency(h.currentPrice, h.currency, 2)}</p>
-                    <p class="text-[10px] font-bold text-${color}-500/80 font-mono mt-0.5" style="visibility:hidden">_</p>
+                </td>
+                <td class="px-6 py-4 text-right">
+                    <div class="flex flex-col items-end">
+                        <span class="text-xs font-bold text-emerald-500">${ftFormatYield(h.dividendYield)}</span>
+                        <span class="text-[10px] font-bold text-slate-500 font-mono">${ftFormatPE(h.pe)} <span class="text-[9px] opacity-60">PE</span></span>
+                    </div>
                 </td>
                 <td class="px-6 py-4 text-right">
                     <p class="font-black text-slate-900 dark:text-white font-mono text-sm leading-tight">${formatCurrency(h.currentValue, currency)}</p>

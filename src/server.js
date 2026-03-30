@@ -428,7 +428,7 @@ async function fetchAssetMetadata(ticker) {
         if (quote.quoteType === 'BOND') detailedType = 'Bond';
 
         const summary = await yahooFinance.quoteSummary(ticker, { 
-            modules: ["summaryProfile", "assetProfile", "fundProfile"] 
+            modules: ["summaryProfile", "assetProfile", "fundProfile", "summaryDetail", "defaultKeyStatistics", "calendarEvents"] 
         }).catch(err => {
             if (err.message.includes('429') || err.message.includes('Too Many Requests')) {
                 throw new Error('YF_RATE_LIMIT');
@@ -490,7 +490,12 @@ async function fetchAssetMetadata(ticker) {
             currentPrice: quote.regularMarketPrice || 0,
             changePercent: quote.regularMarketChangePercent || 0,
             changeValue: quote.regularMarketChange || 0,
-            pe: quote.trailingPE || quote.forwardPE || null,
+            pe: quote.trailingPE || (summary.summaryDetail ? summary.summaryDetail.trailingPE : null),
+            forwardPE: quote.forwardPE || (summary.summaryDetail ? summary.summaryDetail.forwardPE : null),
+            dividendYield: quote.dividendYield || (summary.summaryDetail ? summary.summaryDetail.dividendYield : null),
+            eps: quote.epsTrailingTwelveMonths || (summary.defaultKeyStatistics ? summary.defaultKeyStatistics.trailingEps : null),
+            beta: quote.beta || (summary.summaryDetail ? summary.summaryDetail.beta : null),
+            nextDividendDate: (summary.calendarEvents && summary.calendarEvents.exDividendDate) ? new Date(summary.calendarEvents.exDividendDate).toISOString().split('T')[0] : (quote.dividendDate ? new Date(quote.dividendDate * 1000).toISOString().split('T')[0] : null),
             quoteDate: quote.regularMarketTime ? new Date(quote.regularMarketTime).toISOString().split('T')[0] : null
         };
     } catch (e) {
@@ -900,6 +905,11 @@ app.post('/api/assets', async (req, res) => {
                     currentPrice: parseFloat(currentPrice || metadata.currentPrice),
                     changePercent:parseFloat(changePercent || metadata.changePercent),
                     pe:           pe ? parseFloat(pe) : metadata.pe,
+                    forwardPE:    metadata.forwardPE,
+                    dividendYield:metadata.dividendYield,
+                    eps:          metadata.eps,
+                    beta:         metadata.beta,
+                    nextDividendDate: metadata.nextDividendDate,
                     country:      metadata.country,
                     dataSource:   dataSource || 'YF',
                     isin:         isin || null
@@ -911,12 +921,14 @@ app.post('/api/assets', async (req, res) => {
         if (existing && assetData.ticker) return res.status(400).send('Asset already in monitoring list');
 
         database.db.prepare(`
-            INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, country, dataSource, isin, updatedAt)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, forwardPE, dividendYield, eps, beta, nextDividendDate, country, dataSource, isin, updatedAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
         `).run(
             assetData.id, assetData.ticker, assetData.name, assetData.type,
             assetData.exchange, assetData.currency, assetData.currentPrice,
-            assetData.changePercent, assetData.pe, assetData.country,
+            assetData.changePercent, assetData.pe, assetData.forwardPE || null,
+            assetData.dividendYield || null, assetData.eps || null, assetData.beta || null,
+            assetData.nextDividendDate || null, assetData.country,
             assetData.dataSource || 'YF', assetData.isin || null
         );
 
@@ -2316,8 +2328,8 @@ app.post('/api/transactions/bulk', async (req, res) => {
                                   sanitizedTicker);
                         } else {
                             database.db.prepare(`
-                                INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, country, isManual, dataSource, isin, updatedAt)
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                                INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, forwardPE, dividendYield, eps, beta, nextDividendDate, country, isManual, dataSource, isin, updatedAt)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
                             `).run(
                                 t.assetId || sanitizedTicker, 
                                 sanitizedTicker, 
@@ -2328,6 +2340,7 @@ app.post('/api/transactions/bulk', async (req, res) => {
                                 parseFloat(t.assetPrice || 0) || 0,
                                 0, 
                                 t.assetPe || null,
+                                null, null, null, null, null, // forwardPE, dividendYield, eps, beta, nextDividendDate
                                 sanitizedTicker.startsWith('CD_') ? 'Italy' : (t.assetCountry || (newSource === 'B_ITA' ? 'Italy' : 'N/A')),
                                 0,
                                 sanitizedTicker.startsWith('CD_') ? 'MANUAL' : newSource,
@@ -4355,6 +4368,11 @@ async function updateMarketData(force = false) {
                     change: metadata.changePercent || asset.changePercent,
                     changeValue: metadata.changeValue || 0,
                     pe: metadata.pe || asset.pe,
+                    forwardPE: metadata.forwardPE || asset.forwardPE,
+                    dividendYield: metadata.dividendYield || asset.dividendYield,
+                    eps: metadata.eps || asset.eps,
+                    beta: metadata.beta || asset.beta,
+                    nextDividendDate: metadata.nextDividendDate || asset.nextDividendDate,
                     name: metadata.name || asset.name,
                     currency: metadata.currency || asset.currency,
                     exchange: metadata.exchange || asset.exchange,
@@ -4367,13 +4385,18 @@ async function updateMarketData(force = false) {
             if (updateData) {
                 database.db.prepare(`
                     UPDATE assets
-                    SET currentPrice=?, changePercent=?, changeValue=?, pe=?, name=?, currency=?, exchange=?, country=?, quoteDate=?, lastUpdateError=NULL, updatedAt=datetime('now')
+                    SET currentPrice=?, changePercent=?, changeValue=?, pe=?, forwardPE=?, dividendYield=?, eps=?, beta=?, nextDividendDate=?, name=?, currency=?, exchange=?, country=?, quoteDate=?, lastUpdateError=NULL, updatedAt=datetime('now')
                     WHERE ticker=?
                 `).run(
                     updateData.price,
                     updateData.change,
                     updateData.changeValue,
                     updateData.pe,
+                    updateData.forwardPE,
+                    updateData.dividendYield,
+                    updateData.eps,
+                    updateData.beta,
+                    updateData.nextDividendDate,
                     updateData.name,
                     updateData.currency,
                     updateData.exchange,

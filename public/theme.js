@@ -799,6 +799,36 @@
         return formatCurrency(val, currency, decimals);
     };
 
+    // --- Specialized Equity Metrics Formatters ---
+    window.ftFormatPE = function(val) {
+        if (val === null || val === undefined || isNaN(val) || val === 0) return '—';
+        return parseFloat(val).toFixed(2);
+    };
+
+    window.ftFormatYield = function(val) {
+        if (val === null || val === undefined || isNaN(val) || val === 0) return '—';
+        return (parseFloat(val) * 100).toFixed(2) + '%';
+    };
+
+    window.ftFormatBeta = function(val) {
+        if (val === null || val === undefined || isNaN(val) || val === 0) return '—';
+        return parseFloat(val).toFixed(2);
+    };
+
+    window.ftFormatEPS = function(val, curr = 'EUR') {
+        if (val === null || val === undefined || isNaN(val) || val === 0) return '—';
+        return formatCurrency(val, curr, 2);
+    };
+
+    window.ftFormatDate = function(val) {
+        if (!val || val === '—' || val === 'N/A') return '—';
+        try {
+            const d = new Date(val);
+            if (isNaN(d.getTime())) return '—';
+            return d.toLocaleDateString('it-IT');
+        } catch(e) { return '—'; }
+    };
+
 
     window.updateAppSettings = async (payload) => {
         try {
