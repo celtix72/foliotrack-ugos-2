@@ -3,10 +3,10 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>FolioTrack - Dividends</title>
+    <title>M2T - Dividends</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="FolioTrack">
+    <meta name="apple-mobile-web-app-title" content="M2T">
     <link rel="manifest" href="/manifest.json">
     <link rel="stylesheet" href="/dist/output.css">
     <link rel="stylesheet" href="/mobile.css">
@@ -23,7 +23,7 @@
                 <div class="mob-header-logo-circle">
                     <span class="material-symbols-outlined">payments</span>
                 </div>
-                <div class="mob-header-logo-text">Dividendi</div>
+                <div class="mob-header-logo-text">M2T</div>
             </div>
             <div style="flex:1"></div>
             <div class="mob-header-actions">
@@ -130,8 +130,8 @@
 
             <!-- ── HISTORICAL SECTION ── -->
             <div class="mob-section-header mt-8">
-                <span class="mob-section-title">Storico Accumulato</span>
-                <span class="text-[10px] uppercase font-bold text-slate-500">All-time</span>
+                <h1 class="text-lg font-bold tracking-tight">M2T</h1>
+                <p class="text-xs text-slate-500 dark:text-slate-400">M2T</p>
             </div>
 
             <!-- Historical KPIs -->
@@ -509,7 +509,7 @@
                             <div class="flex items-center gap-2">
                                 ${actionHtml}
                                 ${badge}
-                                <span class="text-slate-500">${a.yield ? (a.yield * 100).toFixed(2) + '% YLD' : ''}</span>
+                                <span class="text-amber-500">${a.yield ? (a.yield * 100).toFixed(1) + '% YLD' : ''}</span>
                             </div>
                         </div>
                     </div>

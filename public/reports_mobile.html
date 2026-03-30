@@ -3,10 +3,10 @@
 <html class="dark" lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>FolioTrack - Reports</title>
+<title>M2T - Reports</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="FolioTrack">
+<meta name="apple-mobile-web-app-title" content="M2T">
 <link rel="manifest" href="/manifest.json">
 <link rel="stylesheet" href="/dist/output.css">
 <link rel="stylesheet" href="/mobile.css">
@@ -36,7 +36,7 @@
       <div class="mob-header-logo-circle">
         <span class="material-symbols-outlined">insights</span>
       </div>
-      <div class="mob-header-logo-text">FolioTrack</div>
+      <div class="mob-header-logo-text">M2T</div>
     </div>
 
     <!-- Page Title (RP) -->
@@ -179,7 +179,8 @@
         <canvas id="mob-div-chart"></canvas>
       </div>
       <div id="mob-yield-box" class="mt-4 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10 hidden">
-        <p class="text-[11px] text-emerald-600 font-bold">Estimated Annual Yield: <span id="mob-yield-percent">--%</span></p>
+            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">M2T</p>
+ Yield: <span id="mob-yield-percent">--%</span></p>
       </div>
     </div>
 
@@ -234,7 +235,7 @@
 
             // Metrics
             const m = data.metrics;
-            document.getElementById('mob-total-roi').textContent = (m.totalROI * 100).toFixed(2) + '%';
+            document.getElementById('mob-total-roi').textContent = (m.totalROI * 100).toFixed(1) + '%';
             document.getElementById('mob-total-roi').style.color = m.totalROI >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
             
             const gainEl = document.getElementById('mob-total-gain');
@@ -243,15 +244,15 @@
                 gainEl.style.color = m.totalGain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
             }
 
-            document.getElementById('mob-cagr').textContent = (m.annualizedROI * 100).toFixed(2) + '%';
-            document.getElementById('mob-sharpe').textContent = m.sharpeRatio.toFixed(2);
+            document.getElementById('mob-cagr').textContent = (m.annualizedROI * 100).toFixed(1) + '%';
+            document.getElementById('mob-sharpe').textContent = m.sharpeRatio.toFixed(1);
             if (document.getElementById('mob-best')) document.getElementById('mob-best').textContent = m.bestAsset;
             
             // Yield
             const yieldBox = document.getElementById('mob-yield-box');
             const yieldVal = document.getElementById('mob-yield-percent');
             if (yieldBox && yieldVal && m.dividendYield !== undefined) {
-                yieldVal.textContent = (m.dividendYield * 100).toFixed(2) + '%';
+                yieldVal.textContent = (m.dividendYield * 100).toFixed(1) + '%';
                 yieldBox.classList.remove('hidden');
             }
 
@@ -267,13 +268,14 @@
                         <div class="mob-portfolio-icon" style="background-color:#6366f1">
                           <span class="material-symbols-outlined">work</span>
                         </div>
-                        <div class="mob-portfolio-info">
-                          <div class="mob-portfolio-name">${p.name}</div>
-                          <div class="mob-portfolio-meta">Contrib: ${(pm.contribution*100).toFixed(1)}% · Sharpe: ${pm.sharpeRatio.toFixed(2)}</div>
+                        <h1 class="text-lg font-bold tracking-tight">M2T</h1>
+            <p class="text-xs text-slate-500 dark:text-slate-400">M2T</p>
+</div>
+                          <div class="mob-portfolio-meta">Contrib: ${(pm.contribution*100).toFixed(1)}% · Sharpe: ${pm.sharpeRatio.toFixed(1)}</div>
                         </div>
                         <div class="mob-portfolio-values">
                           <div class="mob-portfolio-net">${formatCurrency(pm.currentValue, 'EUR')}</div>
-                          <div class="mob-portfolio-change" style="color:${isPos?'var(--mob-emerald)':'var(--mob-rose)'}">${isPos?'▲':'▼'} ${Math.abs(pm.totalROI*100).toFixed(2)}%</div>
+                          <div class="mob-portfolio-change" style="color:${isPos?'var(--mob-emerald)':'var(--mob-rose)'}">${isPos?'▲':'▼'} ${Math.abs(pm.totalROI*100).toFixed(1)}%</div>
                         </div>
                       </div>`;
                 }).join('');

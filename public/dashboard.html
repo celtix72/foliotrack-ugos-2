@@ -3,10 +3,10 @@
 <html class="dark" lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>FolioTrack - Dashboard</title>
+<title>M2T - Dashboard</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="FolioTrack">
+<meta name="apple-mobile-web-app-title" content="M2T">
 <link rel="manifest" href="/manifest.json">
 <link rel="stylesheet" href="/dist/output.css">
 <link rel="stylesheet" href="/mobile.css">
@@ -38,8 +38,8 @@
 <span class="material-symbols-outlined">query_stats</span>
 </div>
 <div>
-<h1 class="text-lg font-bold tracking-tight">FolioTrack</h1>
-<p class="text-xs text-slate-500 dark:text-slate-400">Premium Terminal</p>
+<h1 class="text-lg font-bold tracking-tight">M2T</h1>
+<p class="text-xs text-slate-500 dark:text-slate-400">M2T</p>
 </div>
 </div>
 <nav class="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
@@ -134,7 +134,7 @@
         </div>
         <div class="text-right hidden sm:block">
             <p class="text-xs font-bold">User</p>
-            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">Premium Terminal</p>
+            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">M2T</p>
         </div>
         <div class="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-400">
             <span class="material-symbols-outlined text-sm">person</span>
@@ -350,7 +350,7 @@
                                     <p class="text-sm font-black text-primary">${formatPrivacy(p.netValue || p.totalValue, p.currency, 'p-' + p.id)}</p>
                                     <p class="text-[10px] text-slate-500 font-bold">Lordo: ${formatPrivacy(p.totalValue, p.currency, 'p-' + p.id)}</p>
                                     <p class="${isPos ? 'text-emerald-500' : 'text-rose-500'} text-[10px] font-bold">
-                                        ${isPos ? '▲' : '▼'} ${Math.abs(p.changePercent).toFixed(2)}%
+                                        ${isPos ? '▲' : '▼'} ${Math.abs(p.changePercent).toFixed(1)}%
                                         (${p.changeValue >= 0 ? '+' : ''}${Math.round(p.changeValue).toLocaleString('it-IT')} €)
                                     </p>
                                 </div>
@@ -607,7 +607,7 @@
                             content: year.toString(),
                             position: 'start',
                             backgroundColor: isDark ? 'rgba(15, 23, 42, 0.8)' : 'rgba(255, 255, 255, 0.8)',
-                            color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
+                            color: isDark ? 'rgba(15, 23, 42, 0.5)' : 'rgba(255, 255, 255, 0.5)',
                             font: { size: 10, weight: 'bold' }
                         }
                     };
@@ -661,7 +661,7 @@
                 totalPerfEl.className = `${isPos ? 'text-emerald-500' : 'text-rose-500'} text-sm font-bold flex items-center gap-1`;
                 totalPerfEl.innerHTML = `
                     <span class="material-symbols-outlined text-[18px]">${isPos ? 'trending_up' : 'trending_down'}</span>
-                    ${isPos ? '+' : ''}${changePercent.toFixed(2)}%
+                    ${isPos ? '+' : ''}${changePercent.toFixed(1)}%
                 `;
             }
         } catch (err) {
@@ -701,7 +701,7 @@
                             label: (context) => {
                                 const label = context.label || '';
                                 const value = context.parsed || 0;
-                                return ` ${label}: ${value.toFixed(0)}%`;
+                                return ` ${label}: ${value.toFixed(1)}%`;
                             }
                         }
                     }

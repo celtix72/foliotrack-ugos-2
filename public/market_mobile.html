@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
-<title>FolioTrack - Market</title>
+<title>M2T - Market</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="FolioTrack">
+<meta name="apple-mobile-web-app-title" content="M2T">
 <link rel="manifest" href="/manifest.json">
 <link rel="stylesheet" href="/dist/output.css">
 <link rel="stylesheet" href="/mobile.css">
@@ -37,7 +37,7 @@
       <div class="mob-header-logo-circle">
         <span class="material-symbols-outlined">insights</span>
       </div>
-      <div class="mob-header-logo-text">FolioTrack</div>
+      <div class="mob-header-logo-text">M2T</div>
     </div>
 
     <!-- Page Title (MK) -->
@@ -182,7 +182,7 @@
           <div class="snap-start shrink-0 w-32 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 p-4 rounded-xl first:ml-4 last:mr-4 flex flex-col items-center justify-center text-center shadow-sm"
                onclick="loadAssetChart('${m.ticker}')">
             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">${m.ticker}</span>
-            <span class="text-xl font-black" style="color:${color}">${isPos?'+':''}${m.changePercent.toFixed(2)}%</span>
+            <span class="text-xl font-black" style="color:${color}">${isPos?'+':''}${m.changePercent.toFixed(1)}%</span>
           </div>`;
       }).join('');
     } catch(e) {}
@@ -233,7 +233,7 @@
               <div class="flex items-center gap-2">
                 <div class="mob-holding-ticker">${a.ticker}</div>
                 <div class="text-[10px] font-black ${isPos ? 'text-emerald-500' : 'text-rose-500'} flex items-center gap-0.5">
-                  ${isPos ? '▲' : '▼'}${Math.abs(change).toFixed(2)}% ${a.hasPosition && dvVal !== 0 ? `(${dvVal >= 0 ? '+' : ''}${Math.round(dvVal)}€)` : ''}
+                  ${isPos ? '▲' : '▼'}${Math.abs(change).toFixed(1)}% ${a.hasPosition && dvVal !== 0 ? `(${dvVal >= 0 ? '+' : ''}${Math.round(dvVal)}€)` : ''}
                 </div>
               </div>
               <div class="mob-holding-name">${a.name || ''}</div>
@@ -248,7 +248,7 @@
                 <div class="mob-holding-gain" style="color:${gain>=0?'var(--mob-emerald)':'var(--mob-rose)'}">${gain>=0?'+':''}${formatCurrency(gain, a.currency, 0)}</div>
               ` : `
                 <div class="mob-holding-value">${formatCurrency(price, a.currency, 2)}</div>
-                <div class="mob-holding-gain" style="color:${color}">${isPos?'+':''}${change.toFixed(2)}%</div>
+                <div class="mob-holding-gain" style="color:${color}">${isPos?'+':''}${change.toFixed(1)}%</div>
               `}
             </div>
           </div>`;

@@ -3,7 +3,10 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>FolioTrack - Watchlist</title>
+    <title>M2T - Watchlist</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="M2T">
     <link rel="manifest" href="/manifest.json">
     <link rel="stylesheet" href="/dist/output.css">
     <link rel="stylesheet" href="/mobile.css">
@@ -30,7 +33,7 @@
             <div class="mob-header-logo-circle">
                 <span class="material-symbols-outlined">visibility</span>
             </div>
-            <div class="mob-header-logo-text">Watchlist</div>
+            <div class="mob-header-logo-text">M2T</div>
         </div>
         <div style="flex:1"></div>
         <div class="mob-header-actions">
@@ -357,7 +360,7 @@
             
             const badge = document.getElementById('mob-modal-perf-badge');
             badge.className = `px-2 py-0.5 rounded text-[9px] font-black shadow-sm ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`;
-            badge.innerHTML = `${isPos ? '▲' : '▼'} ${Math.abs(change).toFixed(2)}%`;
+            badge.innerHTML = `${isPos ? '▲' : '▼'} ${Math.abs(change).toFixed(1)}%`;
 
             mobDetailChart = new Chart(ctx, {
                 type: 'line',
@@ -412,7 +415,7 @@
     }
 
     function formatNum(n) { return n ? n.toFixed(2) : null; }
-    function formatPct(n) { return n ? (n * 100).toFixed(2) + '%' : null; }
+    function formatPct(n) { return n ? (n * 100).toFixed(1) + '%' : null; }
     function formatLarge(n) {
         if (!n) return null;
         if (n >= 1e12) return (n / 1e12).toFixed(1) + 'T';

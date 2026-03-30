@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
-<title>FolioTrack - Market</title>
+<title>M2T - Market</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="FolioTrack">
+<meta name="apple-mobile-web-app-title" content="M2T">
 <link rel="manifest" href="/manifest.json">
 <link rel="stylesheet" href="/dist/output.css">
 <link rel="stylesheet" href="/mobile.css">
@@ -37,8 +37,8 @@
 <span class="material-symbols-outlined">query_stats</span>
 </div>
 <div>
-<h1 class="text-lg font-bold tracking-tight">FolioTrack</h1>
-<p class="text-xs text-slate-500 dark:text-slate-400">Premium Terminal</p>
+<h1 class="text-lg font-bold tracking-tight">M2T</h1>
+<p class="text-xs text-slate-500 dark:text-slate-400">M2T</p>
 </div>
 </div>
 <nav class="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
@@ -404,7 +404,7 @@ function renderAssets(filter = '') {
                     </div>
                     <div class="flex items-center gap-1.5">
                         <span class="material-symbols-outlined text-xs text-${color}-500">${change >= 0 ? 'trending_up' : 'trending_down'}</span>
-                        <p class="text-xs font-black text-${color}-500 font-mono">${sign}${formatNumber(change, 2)}%</p>
+                        <p class="text-xs font-black text-${color}-500 font-mono">${sign}${formatNumber(change, 1)}%</p>
                     </div>
                 </div>
             </td>
@@ -700,7 +700,7 @@ async function loadMovers() {
             return `
                 <div class="snap-start shrink-0 w-36 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 p-4 rounded-xl hover:border-primary transition-all cursor-pointer flex flex-col items-center justify-center text-center group shadow-sm" onclick="loadAssetChart('${m.ticker}')">
                     <span class="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 group-hover:text-primary transition-colors">${m.ticker}</span>
-                    <span class="text-2xl font-black text-${color}-500 leading-none">${isPos ? '+' : ''}${formatNumber(m.changePercent, 2)}%</span>
+                    <div class="${isPos ? 'text-emerald-500' : 'text-rose-500'} font-bold">${isPos ? '+' : ''}${m.changePercent.toFixed(1)}%</div>
                 </div>
             `;
         }).join('');

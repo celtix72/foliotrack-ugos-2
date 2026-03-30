@@ -3,10 +3,10 @@
 <html class="dark" lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>FolioTrack - Reports</title>
+<title>M2T - Reports</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="FolioTrack">
+<meta name="apple-mobile-web-app-title" content="M2T">
 <link rel="manifest" href="/manifest.json">
 <link rel="stylesheet" href="/dist/output.css">
 <link rel="stylesheet" href="/mobile.css">
@@ -34,8 +34,8 @@
 <span class="material-symbols-outlined">query_stats</span>
 </div>
 <div>
-<h1 class="text-lg font-bold tracking-tight">FolioTrack</h1>
-<p class="text-xs text-slate-500 dark:text-slate-400">Premium Terminal</p>
+<h1 class="text-lg font-bold tracking-tight">M2T</h1>
+<p class="text-xs text-slate-500 dark:text-slate-400">M2T</p>
 </div>
 </div>
 <nav class="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
@@ -125,7 +125,7 @@
         </div>
         <div class="text-right hidden sm:block">
             <p class="text-xs font-bold">User</p>
-            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">Premium Terminal</p>
+            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">M2T</p>
         </div>
         <div class="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-400">
             <span class="material-symbols-outlined text-sm">person</span>
@@ -639,7 +639,7 @@
             const yieldEl = document.getElementById('yield-percent');
             const yieldBox = document.getElementById('dividend-projection');
             if (yieldEl && yieldBox) {
-                yieldEl.textContent = (metrics.dividendYield * 100).toFixed(2) + '%';
+                yieldEl.textContent = (metrics.dividendYield * 100).toFixed(1) + '%';
                 yieldBox.classList.remove('hidden');
             }
         }

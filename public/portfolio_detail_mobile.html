@@ -3,10 +3,10 @@
 <html class="dark" lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>FolioTrack - Tech Growth Portfolio</title>
+<title>M2T - Dashboard</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="FolioTrack">
+<meta name="apple-mobile-web-app-title" content="M2T">
 <link rel="manifest" href="/manifest.json">
 <link rel="stylesheet" href="/dist/output.css">
 <link rel="stylesheet" href="/mobile.css">
@@ -42,7 +42,7 @@
       <div class="mob-header-logo-circle">
         <span class="material-symbols-outlined">insights</span>
       </div>
-      <div class="mob-header-logo-text">FolioTrack</div>
+      <div class="mob-header-logo-text">M2T</div>
     </div>
 
     <!-- Page Title (PT) -->
@@ -257,7 +257,7 @@
         </div>
         <div class="p-6 space-y-4">
             <div class="p-4 bg-primary/5 border border-primary/20 rounded-xl space-y-1">
-                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">System Calculated Balance</p>
+                <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">M2T</p>
                 <p id="reconcile-current-cash" class="text-xl font-black text-primary">€ 0.00</p>
             </div>
             <div class="space-y-2">
@@ -433,7 +433,7 @@
 <div id="import-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-start justify-center pt-8 pb-8 px-4 overflow-y-auto">
   <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-6xl shadow-2xl flex flex-col max-h-[90vh]">
     <div class="px-5 py-3 border-b flex items-center justify-between">
-      <h3 class="font-bold text-lg">Import</h3>
+      <h1 class="text-lg font-bold tracking-tight">M2T</h1>
       <button onclick="closeImportModal()"><span class="material-symbols-outlined">close</span></button>
     </div>
     <div id="import-step-1" class="p-5 space-y-3 overflow-y-auto custom-scrollbar">
@@ -473,6 +473,7 @@
       </div>
     </div>
     <div id="import-step-3" class="hidden p-12 text-center">
+      <p class="text-xs text-slate-500 dark:text-slate-400">M2T</p>
       <p id="import-progress-label">Processing...</p>
     </div>
   </div>
@@ -540,7 +541,7 @@
             <div class="mob-portfolio-values">
               <div class="mob-portfolio-net">${formatPrivacy(p.netValue||p.totalValue, p.currency, 'mob-pn-'+p.id, 0)}</div>
               <div class="mob-portfolio-gross">Lordo: ${formatPrivacy(p.totalValue, p.currency, 'mob-pg-'+p.id, 0)}</div>
-              <div class="mob-portfolio-change" style="color:${isPos?'var(--mob-emerald)':'var(--mob-rose)'}">${isPos?'▲':'▼'} ${Math.abs(p.changePercent).toFixed(2)}%</div>
+              <div class="mob-portfolio-change" style="color:${isPos?'var(--mob-emerald)':'var(--mob-rose)'}">${isPos?'▲':'▼'} ${Math.abs(p.changePercent).toFixed(1)}%</div>
             </div>
           </div>`;
       }).join('');
@@ -833,9 +834,9 @@
               <div class="mob-holding-info">
                 <div class="flex items-center gap-2">
                   <div class="mob-holding-ticker">${h.ticker}</div>
-                  <div class="text-[10px] font-black ${dvIsPos ? 'text-emerald-500' : 'text-rose-500'} flex items-center gap-0.5">
-                    ${dvIsPos ? '▲' : '▼'}${Math.abs(dvPct).toFixed(2)}% (${dvIsPos ? '+' : ''}${Math.round((h.shares || 0) * (h.changeValuePortfolio || 0))})
-                  </div>
+                  <div class="text-[10px] font-black ${isPos ? 'text-emerald-500' : 'text-rose-500'} flex items-center gap-0.5">
+                  ${isPos ? '▲' : '▼'}${Math.abs(pct).toFixed(1)}% ${h.hasPosition && dvVal !== 0 ? `(${dvVal >= 0 ? '+' : ''}${Math.round(dvVal)})` : ''}
+                </div>
                 </div>
                 <div class="mob-holding-name">${h.name || ''}</div>
                 <div style="display:flex; gap:8px; margin-top:4px">
