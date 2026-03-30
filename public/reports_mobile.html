@@ -260,18 +260,19 @@
                 .map(p => {
                     const pm = p.metrics;
                     const isPos = pm.totalROI >= 0;
+                    const pColor = (data.portfolios && data.portfolios.find(port => port.id == p.id)) ? data.portfolios.find(port => port.id == p.id).color : '#6366f1';
+                    const pCurrency = (data.portfolios && data.portfolios.find(port => port.id == p.id)) ? data.portfolios.find(port => port.id == p.id).currency : 'EUR';
                     return `
                       <div class="mob-portfolio-card" onclick="window.location.href='/portfolio?id=${p.id}'" style="margin: 0 16px 12px">
-                        <div class="mob-portfolio-icon" style="background-color:#6366f1">
+                        <div class="mob-portfolio-icon" style="background-color:${pColor}">
                           <span class="material-symbols-outlined">work</span>
                         </div>
-                        <h1 class="text-lg font-bold tracking-tight">M2T</h1>
-            <p class="text-xs text-slate-500 dark:text-slate-400">M2T</p>
-</div>
+                        <div class="mob-portfolio-info">
+                          <div class="mob-portfolio-name">${p.name}</div>
                           <div class="mob-portfolio-meta">Contrib: ${(pm.contribution*100).toFixed(1)}% · Sharpe: ${pm.sharpeRatio.toFixed(1)}</div>
                         </div>
                         <div class="mob-portfolio-values">
-                          <div class="mob-portfolio-net">${formatCurrency(pm.currentValue, 'EUR')}</div>
+                          <div class="mob-portfolio-net">${formatCurrency(pm.currentValue, pCurrency)}</div>
                           <div class="mob-portfolio-change" style="color:${isPos?'var(--mob-emerald)':'var(--mob-rose)'}">${isPos?'▲':'▼'} ${Math.abs(pm.totalROI*100).toFixed(1)}%</div>
                         </div>
                       </div>`;
