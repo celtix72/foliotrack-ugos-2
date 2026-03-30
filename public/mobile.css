@@ -1485,3 +1485,211 @@ html:not(.dark) .mobile-view-active .mob-hero.fiscal {
     color: var(--mob-rose);
 }
 
+
+/* ──────── Transaction Modal (Vanilla CSS for Robustness) ─────────────────── */
+.mob-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 20000;
+  display: flex !important; /* Force flex for container centering */
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease-out;
+}
+
+.mob-modal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.mob-modal-content {
+  background: var(--mob-surface);
+  border: 1px solid var(--mob-border);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  color: var(--mob-text);
+  transform: scale(0.95);
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.mob-modal-overlay.active .mob-modal-content {
+  transform: scale(1);
+}
+
+.mob-modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--mob-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mob-modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.mob-modal-close {
+  color: var(--mob-text-muted);
+  background: transparent;
+  border: none;
+  padding: 4px;
+}
+
+.mob-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mob-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mob-input-label {
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--mob-text-muted);
+}
+
+.mob-input-field {
+  width: 100%;
+  background: var(--mob-surface-2);
+  border: 1px solid var(--mob-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--mob-text);
+  outline: none;
+}
+
+.mob-input-field:focus {
+  border-color: var(--mob-primary);
+}
+
+.mob-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.mob-modal-footer {
+  padding: 16px 20px;
+  display: flex;
+  gap: 12px;
+}
+
+.mob-btn {
+  flex: 1;
+  padding: 14px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+  border: none;
+  transition: opacity 0.2s;
+}
+
+.mob-btn:active {
+  opacity: 0.7;
+}
+
+.mob-btn-secondary {
+  background: var(--mob-surface-2);
+  color: var(--mob-text-muted);
+}
+
+.mob-btn-primary {
+  background: var(--mob-primary);
+  color: white;
+  box-shadow: 0 4px 12px rgba(19, 91, 236, 0.3);
+}
+
+.mob-btn-success {
+  background: var(--mob-emerald);
+  color: white;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.mob-search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: var(--mob-surface);
+  border: 1px solid var(--mob-border);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  z-index: 20001;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.mob-search-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--mob-border);
+}
+
+.mob-search-item:active {
+  background: var(--mob-surface-2);
+}
+
+.mob-search-item-ticker {
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.mob-search-item-name {
+  font-size: 11px;
+  color: var(--mob-text-muted);
+}
+
+.mob-fx-pill {
+  padding: 12px;
+  background: var(--mob-primary-dim);
+  border: 1px solid rgba(19, 91, 236, 0.2);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mob-fx-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--mob-primary);
+  text-transform: uppercase;
+}
+
+.mob-fx-input {
+  width: 80px;
+  text-align: right;
+  background: var(--mob-surface);
+  border: 1px solid var(--mob-border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--mob-text);
+}

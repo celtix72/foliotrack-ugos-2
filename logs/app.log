@@ -47074,3 +47074,17 @@
 2026-03-30T05:35:45.290Z [INFO] Skipping automatic market update: all markets are closed.
 2026-03-30T05:41:45.303Z [INFO] Skipping automatic market update: all markets are closed.
 2026-03-30T05:46:45.333Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-30T17:39:35.029Z [INFO] Updating market data for 1 assets...
+2026-03-30T17:39:35.047Z [INFO] Updating [EURUSD=X] using [YF]...
+2026-03-30T17:39:35.073Z [INFO] FolioTrack server running on port 3000
+2026-03-30T17:39:35.086Z [INFO] Database: /Users/mauro/Documents/Progetto_FolioTracker2/foliotrack.db
+2026-03-30T17:39:36.851Z [INFO] YF ✓ EURUSD=X: price=1.1462632 USD chg=-0.41%
+2026-03-30T17:39:36.876Z [INFO] Successfully updated EURUSD=X: 1.1462632 USD
+2026-03-30T17:39:36.924Z [INFO] Market data update cycle completed.
+2026-03-30T17:40:34.991Z [INFO] Recording daily snapshots for portfolios and dashboard...
+2026-03-30T17:40:35.034Z [INFO] Daily snapshots completed.
+2026-03-30T17:44:35.001Z [INFO] Updating market data for 1 assets...
+2026-03-30T17:44:35.043Z [INFO] Updating [EURUSD=X] using [YF]...
+2026-03-30T17:44:35.514Z [INFO] YF ✓ EURUSD=X: price=1.146526 USD chg=-0.39%
+2026-03-30T17:44:35.539Z [INFO] Successfully updated EURUSD=X: 1.146526 USD
+2026-03-30T17:44:35.554Z [INFO] Market data update cycle completed.
