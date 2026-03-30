@@ -7,7 +7,7 @@
     let modalInjected = false;
 
     window.injectMobileModal = function() {
-        if (modalInjected || !document.body) return;
+        if (!document.body) return;
         if (document.getElementById('transaction-modal')) {
             modalInjected = true;
             return;
@@ -130,8 +130,15 @@
 
     window.openTransactionModal = function(ticker = '') {
         injectMobileModal();
+        
+        // Wait a small bit if it was JUST injected, though appendChild is sync
         const modal = document.getElementById('transaction-modal');
-        if (modal) modal.style.display = 'flex';
+        if (modal) {
+            modal.style.display = 'flex';
+            // Ensure FAB is visible too if needed
+            const fab = document.getElementById('global-mob-fab');
+            if (fab) fab.style.display = 'flex';
+        }
         
         const form = document.getElementById('transaction-form');
         if (form) form.reset();
@@ -339,11 +346,18 @@
     };
 
     // Auto-inject on mobile view
-    if (window._mobileViewActive || document.body.classList.contains('mobile-view-active')) {
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', injectMobileModal);
-        } else {
+    function autoInit() {
+        if (window._mobileViewActive || document.body.classList.contains('mobile-view-active') || window.innerWidth < 1024) {
             injectMobileModal();
         }
     }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', autoInit);
+    } else {
+        autoInit();
+    }
+    
+    // Also try again after a delay to catch late-setting _mobileViewActive
+    setTimeout(autoInit, 500);
 })();
