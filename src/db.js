@@ -294,15 +294,16 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
         const ticker    = t.assetTicker || '';
 
         // 1. Pure Cash Management (No Asset Holdings Impact)
-        if (['DEPOSIT', 'WITHDRAWAL', 'TAX', 'TRANSFER', 'RECONCILE'].includes(t.type)) {
+        const typeUC = (t.type || '').toUpperCase();
+        if (['DEPOSIT', 'DEPOSITO', 'WITHDRAWAL', 'PRELIEVO', 'TAX', 'TRANSFER', 'RECONCILE'].includes(typeUC)) {
             const absAmount = amount ? Math.abs(amount) : (qty * price) / fx;
-            if (t.type === 'DEPOSIT' || t.type === 'RECONCILE') cash += absAmount;
+            if (['DEPOSIT', 'DEPOSITO', 'RECONCILE'].includes(typeUC)) cash += absAmount;
             else cash -= absAmount;
             continue;
         }
 
         // 2. Dividends (Can have ticker 'CASH' or no ticker, or asset ticker)
-        if (t.type === 'DIVIDEND') {
+        if (typeUC === 'DIVIDEND' || typeUC === 'DIV') {
             const divAmt = amount ? amount : (qty * price - comm - tax) / fx;
             cash += divAmt; 
             totalDividends += divAmt;

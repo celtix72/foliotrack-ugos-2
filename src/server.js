@@ -2241,6 +2241,21 @@ app.post('/api/transactions/bulk', async (req, res) => {
     }
 
     try {
+        const parseItalianDate = (dateStr) => {
+            if (!dateStr) return null;
+            const s = String(dateStr).trim();
+            if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+            const match = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            if (match) return `${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}`;
+            return s;
+        };
+
+        const typeMapping = {
+            'DIV': 'DIVIDEND', 'DIVIDENDO': 'DIVIDEND',
+            'DEPOSITO': 'DEPOSIT', 'PRELIEVO': 'WITHDRAWAL',
+            'ACQUISTO': 'BUY', 'VENDITA': 'SELL'
+        };
+
         const insertTx = database.db.prepare(`
             INSERT INTO transactions (portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -2338,11 +2353,16 @@ app.post('/api/transactions/bulk', async (req, res) => {
                         finalExRate = 1.0;
                     }
 
+                    let finalType = (t.type || '').toUpperCase();
+                    if (typeMapping[finalType]) finalType = typeMapping[finalType];
+
+                    let finalDate = parseItalianDate(t.date);
+
                     insertTx.run(
                         targetId,
-                        t.type,
+                        finalType,
                         sanitizedTicker || null,
-                        t.date,
+                        finalDate,
                         finalQty,
                         cleanNum(t.price),
                         cleanNum(t.commission),
