@@ -298,6 +298,7 @@
             
             document.getElementById('total-net-worth').innerText = formatPrivacy(globalData.totalNetValue, 'EUR', 'networth', 0);
             document.getElementById('total-gross-worth').innerText = formatPrivacy(globalData.totalValue, 'EUR', 'gross', 0);
+            document.getElementById('total-gain-value').innerText = formatPrivacy(globalData.totalGain, 'EUR', 'gain', 0);
 
             // TAX & GAIN derived from gross - net
             const taxAmt = (globalData.totalValue || 0) - (globalData.totalNetValue || 0);

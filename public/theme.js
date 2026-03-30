@@ -759,7 +759,7 @@
                 style: 'currency', 
                 currency: currency,
                 minimumFractionDigits: decimals,
-                maximumFractionDigits: Math.max(decimals, 2)
+                maximumFractionDigits: decimals
             }).format(value);
         } catch (e) {
             return formatNumber(val, decimals) + ' ' + currency;
@@ -771,7 +771,7 @@
         const value = parseFloat(val);
         return new Intl.NumberFormat('de-DE', { 
             minimumFractionDigits: decimals,
-            maximumFractionDigits: Math.max(decimals, 2)
+            maximumFractionDigits: decimals
         }).format(value);
     };
 

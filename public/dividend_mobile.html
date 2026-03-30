@@ -41,17 +41,17 @@
             
             <!-- Hero Stats: KPIs -->
             <div class="mob-hero">
-                <div class="mob-hero-label">Ricevuto nel <span id="mob-current-year">2025</span></div>
-                <div class="mob-hero-value" id="mob-total-actual">€ 0.00</div>
+                <div class="mob-hero-label">Ricevuto nel <span id="mob-current-year">2026</span></div>
+                <div class="mob-hero-value" id="mob-total-actual">€ 0</div>
                 
                 <div class="grid grid-cols-2 gap-4 mt-6">
                     <div class="mob-hero-stat-item !p-2 !bg-white/5 border-0">
                         <span class="mob-hero-stat-label">Proiezione Totale</span>
-                        <div id="mob-total-projected" class="text-blue-400 font-bold">€ 0.00</div>
+                        <div id="mob-total-projected" class="text-blue-400 font-bold">€ 0</div>
                     </div>
                     <div class="mob-hero-stat-item !p-2 !bg-white/5 border-0">
                         <span class="mob-hero-stat-label">Residuo Atteso</span>
-                        <div id="mob-total-remaining" class="text-amber-400 font-bold">€ 0.00</div>
+                        <div id="mob-total-remaining" class="text-amber-400 font-bold">€ 0</div>
                     </div>
                 </div>
             </div>
@@ -139,7 +139,7 @@
                 <div class="bg-white/5 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
                     <div>
                         <p class="text-[9px] font-black uppercase text-emerald-500 tracking-widest mb-1">Totale Incassato</p>
-                        <div id="mob-global-total" class="text-xl font-black text-emerald-500">€ 0.00</div>
+                        <div id="mob-global-total" class="text-xl font-black text-emerald-500">€ 0</div>
                     </div>
                     <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
                         <span class="material-symbols-outlined text-sm">account_balance_wallet</span>
@@ -469,7 +469,7 @@
                                 ticks: {
                                     color: textColor,
                                     font: { size: 10 },
-                                    callback: v => '€' + v.toLocaleString('it-IT')
+                                    callback: v => '€' + Math.round(v).toLocaleString('it-IT')
                                 }
                             }
                         }
@@ -590,7 +590,7 @@
                             <div class="mob-holding-name">${d.portfolioName} · ${d.date}</div>
                         </div>
                         <div class="mob-holding-values">
-                            <div class="mob-holding-value text-emerald-500" style="font-weight:800">${formatCurrency(d.amount, 'EUR')}</div>
+                            <div class="mob-holding-value text-emerald-500" style="font-weight:800">+${formatCurrency(d.amount, 'EUR', 0)}</div>
                         </div>
                     </div>
                 `;

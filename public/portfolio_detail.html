@@ -945,9 +945,7 @@
             document.getElementById('title-portfolio-icon-bg').style.backgroundColor = portfolioColor;
             
             document.getElementById('total-value-label').innerText = formatPrivacy(p.totalValue, p.currency, 'p-total', 0);
-            
             document.getElementById('portfolio-currency-code').innerText = p.currency;
-            
             document.getElementById('cash-balance-label').innerText = formatPrivacy(p.currentCash, p.currency, 'p-cash', 0);
 
             // Update hero variation
@@ -1115,8 +1113,8 @@
                     </div>
                 </td>
                 <td class="px-6 py-4 text-right">
-                    <p class="font-black text-slate-900 dark:text-white font-mono text-sm leading-tight">${formatCurrency(h.currentValue, currency)}</p>
-                    <p class="text-[10px] font-bold text-${color}-500 font-mono mt-0.5">${sign}${formatCurrency(h.unrealizedGain, currency)}</p>
+                    <p class="font-black text-slate-900 dark:text-white font-mono text-sm leading-tight">${formatCurrency(h.currentValue, currency, 0)}</p>
+                    <p class="text-[10px] font-bold text-${color}-500 font-mono mt-0.5">${sign}${formatCurrency(h.unrealizedGain, currency, 0)}</p>
                 </td>
             </tr>
             <tr id="transactions-${h.ticker}" class="hidden bg-slate-50/50 dark:bg-slate-900/30">
@@ -1252,7 +1250,7 @@
                     <td class="px-4 py-2 text-right font-mono text-xs">${t.price ? formatPrivacy(t.price, displayCurr, 'ft-price-' + t.id, 2) : '—'}</td>
                     <td class="px-4 py-2 text-right font-mono text-xs text-slate-400 opacity-60">${t.exchangeRate !== 1 ? formatPrivacy(t.exchangeRate, 'num', 'ft-fx-' + t.id, 4) : '—'}</td>
                     <td class="px-4 py-2 text-right font-mono text-xs text-slate-400 opacity-60">${commTax > 0 ? formatPrivacy(commTax, displayCurr, 'ft-ct-' + t.id, 2) : '—'}</td>
-                    <td class="px-4 py-2 text-right font-bold font-mono text-xs text-slate-700 dark:text-slate-200">${tSign}${formatPrivacy(total, currency, 'ft-total-' + t.id)}</td>
+                    <td class="px-4 py-2 text-right font-bold font-mono text-xs text-slate-700 dark:text-slate-200">${tSign}${formatPrivacy(total, currency, 'ft-total-' + t.id, 0)}</td>
                     <td class="px-4 py-2 text-center">
                         <div class="flex items-center justify-center gap-1">
                             <button onclick="duplicateTransaction(${t.id})" title="Duplicate" class="p-1 text-slate-400 hover:text-emerald-500 transition-colors">

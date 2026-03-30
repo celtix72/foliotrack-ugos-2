@@ -704,7 +704,7 @@
       const totalMinus = (p.taxBreakdown || []).reduce((s, b) => s + (b.minusvalenze || 0), 0);
 
       const netValue = p.netValue || p.totalValue;
-      if (el('mob-detail-total')) el('mob-detail-total').textContent = formatPrivacy(netValue, currency, 'mob-dt');
+      if (el('mob-detail-total')) el('mob-detail-total').textContent = formatPrivacy(netValue, currency, 'mob-dt', 0);
       
       // Daily Variation (Phase 6 Fix)
       const dayVar = p.performance1D || 0;
@@ -834,7 +834,7 @@
                 <div class="flex items-center gap-2">
                   <div class="mob-holding-ticker">${h.ticker}</div>
                   <div class="text-[10px] font-black ${dvIsPos ? 'text-emerald-500' : 'text-rose-500'} flex items-center gap-0.5">
-                    ${dvIsPos ? '▲' : '▼'}${Math.abs(dvPct).toFixed(2)}% (${dvIsPos ? '+' : ''}${Math.round((h.shares || 0) * (h.changeValuePortfolio || 0))}€)
+                    ${dvIsPos ? '▲' : '▼'}${Math.abs(dvPct).toFixed(2)}% (${dvIsPos ? '+' : ''}${Math.round((h.shares || 0) * (h.changeValuePortfolio || 0))})
                   </div>
                 </div>
                 <div class="mob-holding-name">${h.name || ''}</div>
@@ -844,7 +844,7 @@
                 </div>
               </div>
               <div class="mob-holding-values">
-                <div class="mob-holding-value">${formatPrivacy(h.currentValue, currency, 'mob-hv-'+h.ticker)}</div>
+                <div class="mob-holding-value">${formatPrivacy(h.currentValue, currency, 'mob-hv-'+h.ticker, 0)}</div>
                 <div class="mob-holding-gain" style="color:${pct>=0?'var(--mob-emerald)':'var(--mob-rose)'}">${formatPrivacy(h.unrealizedGain, currency, 'mob-h-gain', 0)}</div>
               </div>
             </div>
@@ -916,7 +916,7 @@
                 <div class="mob-holding-qty">${date}</div>
               </div>
               <div class="mob-holding-values">
-                <div class="mob-holding-value">${tSign}${formatPrivacy(total || 0, currency, 'mob-tx-'+t.id)}</div>
+                <div class="mob-holding-value">${tSign}${formatPrivacy(total || 0, currency, 'mob-tx-'+t.id, 0)}</div>
                 <div style="font-size:10px;color:var(--mob-text-caption)">${t.quantity ? 'x'+formatNumber(t.quantity,2) : ''}</div>
               </div>
             </div>
