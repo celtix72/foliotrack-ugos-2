@@ -301,7 +301,7 @@
 
             // TAX & GAIN derived from gross - net
             const taxAmt = (globalData.totalValue || 0) - (globalData.totalNetValue || 0);
-            const gainAmt = globalData.totalGain || (globalData.totalNetValue - globalData.investedCapital) || 0;
+            const gainAmt = globalData.totalGain ?? 0;
             const gainEl = document.getElementById('total-gain-value');
             if (gainEl) {
                 const isGainPos = gainAmt >= 0;
@@ -753,7 +753,7 @@
                 document.getElementById('total-gross-worth').innerText = formatPrivacy(globalData.totalValue, 'EUR', 'gross');
 
                 // GAIN TOTALE
-                const gainAmtP = globalData.totalGain || (globalData.totalNetValue - globalData.investedCapital) || 0;
+                const gainAmtP = globalData.totalGain ?? 0;
                 const gainElP = document.getElementById('total-gain-value');
                 if (gainElP) {
                     const isGainPos = gainAmtP >= 0;

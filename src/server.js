@@ -1294,25 +1294,30 @@ app.get('/api/portfolios', async (req, res) => {
         const globalPoints = perfData.dataPoints || [];
         const individual = perfData.individual || {};
 
-        let globalChangeValue = 0;
-        let totalGrossValue = 0;
-        let totalTax = 0;
+        let totalValueEUR = 0;
+        let totalNetValueEUR = 0;
+        let totalTaxEUR = 0;
+        let globalChangeEUR = 0;
 
         for (const p of rows) {
+            const rate = p.currency === 'USD' ? liveRate : 1;
+            
             // Use performance1D from DB (profit-based)
             p.changeValue = p.performance1D || 0;
             const prevValue = (p.totalValue || 0) - p.changeValue;
             p.changePercent = prevValue > 0 ? (p.changeValue / prevValue) * 100 : 0;
 
-            globalChangeValue += p.changeValue;
+            // Normalize for global aggregates
+            globalChangeEUR += p.changeValue / rate;
 
             // Still need details for taxes
             const details = await getPortfolioDetails(p.id, liveRate);
             p.totalTax = details.totalLatentTax;
             p.netValue = p.totalValue - p.totalTax;
             
-            totalGrossValue += p.totalValue;
-            totalTax += p.totalTax;
+            totalValueEUR += p.totalValue / rate;
+            totalTaxEUR += p.totalTax / rate;
+            totalNetValueEUR += p.netValue / rate;
         }
 
         // Top Winner/Loser from current holdings
@@ -1338,15 +1343,19 @@ app.get('/api/portfolios', async (req, res) => {
             return { ticker: a.ticker, name: a.name, changePercent: changePct, absChange };
         }).sort((a,b) => b.changePercent - a.changePercent);
 
+        // Ground Truth from Simulation
+        const lastPoint = globalPoints.at(-1) || { value: 0, profit: 0, netDeposits: 0 };
+
         res.json({
             portfolios: rows,
             global: {
-                totalValue: totalGrossValue,
-                totalNetValue: totalGrossValue - totalTax,
-                totalTax: totalTax,
-                totalGain: (globalPoints.length > 0) ? globalPoints[globalPoints.length-1].profit : 0,
-                changeValue: globalChangeValue,
-                changePercent: (totalGrossValue - globalChangeValue) > 0 ? (globalChangeValue / (totalGrossValue - globalChangeValue)) * 100 : 0,
+                totalValue: lastPoint.value || totalValueEUR,
+                totalNetValue: (lastPoint.value || totalValueEUR) - totalTaxEUR,
+                totalTax: totalTaxEUR,
+                totalGain: lastPoint.profit || 0,
+                investedCapital: lastPoint.netDeposits || (totalNetValueEUR - (lastPoint.profit || 0)),
+                changeValue: globalChangeEUR,
+                changePercent: (totalValueEUR - globalChangeEUR) > 0 ? (globalChangeEUR / (totalValueEUR - globalChangeEUR)) * 100 : 0,
                 topWinner: heldAssets[0] || null,
                 topLoser: heldAssets.length > 1 ? heldAssets[heldAssets.length - 1] : null
             }
@@ -2807,6 +2816,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
         portfolioStates[p.id] = {
             cash: p.initialCash || 0,
             netDeposits: p.initialCash || 0,
+            netDepositsEUR: (p.initialCash || 0) / (p.currency === 'USD' ? (fxRates['USD']?.[startDateStr] || liveRate) : 1), // Track invested capital in base currency
             dividends: 0,
             holdings: {},
             holdingsTotalCost: {}, // Added fix for PMC tracking in simulation
@@ -2823,8 +2833,20 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                 portfolioStates[p.id].lastBuyPrices[t.assetTicker] = price;
             }
             switch (t.type) {
-                case 'DEPOSIT':    portfolioStates[p.id].cash += effectAmt; portfolioStates[p.id].netDeposits += effectAmt; break;
-                case 'WITHDRAWAL': portfolioStates[p.id].cash -= effectAmt; portfolioStates[p.id].netDeposits -= effectAmt; break;
+                case 'DEPOSIT': {
+                    portfolioStates[p.id].cash += effectAmt; 
+                    portfolioStates[p.id].netDeposits += effectAmt; 
+                    const rateOnDate = (p.currency === 'USD') ? (fxRates['USD']?.[t.date] || 1) : 1;
+                    portfolioStates[p.id].netDepositsEUR += effectAmt / rateOnDate;
+                    break;
+                }
+                case 'WITHDRAWAL': {
+                    portfolioStates[p.id].cash -= effectAmt; 
+                    portfolioStates[p.id].netDeposits -= effectAmt; 
+                    const rateOnDate = (p.currency === 'USD') ? (fxRates['USD']?.[t.date] || 1) : 1;
+                    portfolioStates[p.id].netDepositsEUR -= effectAmt / rateOnDate;
+                    break;
+                }
                 case 'TAX':        portfolioStates[p.id].cash -= effectAmt; break;
                 case 'TRANSFER':   portfolioStates[p.id].cash -= effectAmt; portfolioStates[p.id].netDeposits -= effectAmt; break;
                 case 'DIVIDEND': {
@@ -2903,8 +2925,15 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                 const dayTx = allTransactions.filter(t => t.portfolioId === p.id && t.date === dateStr);
                 for (const t of dayTx) {
                     const amount = t.amount || 0;
-                    if (t.type === 'DEPOSIT') state.netDeposits += amount;
-                    else if (t.type === 'WITHDRAWAL') state.netDeposits -= amount;
+                    if (t.type === 'DEPOSIT') {
+                        state.netDeposits += amount;
+                        const rateOnDate = (p.currency === 'USD') ? (fxRates['USD']?.[dateStr] || 1) : 1;
+                        state.netDepositsEUR += amount / rateOnDate;
+                    } else if (t.type === 'WITHDRAWAL') {
+                        state.netDeposits -= amount;
+                        const rateOnDate = (p.currency === 'USD') ? (fxRates['USD']?.[dateStr] || 1) : 1;
+                        state.netDepositsEUR -= amount / rateOnDate;
+                    }
                     
                     if (['BUY', 'SELL', 'DIVIDEND', 'DEPOSIT', 'WITHDRAWAL'].includes(t.type)) {
                         const ticker = t.assetTicker || 'CASH';
@@ -2988,10 +3017,28 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                         });
                     }
                     switch (t.type) {
-                        case 'DEPOSIT':    state.cash += effectAmt; state.netDeposits += effectAmt; break;
-                        case 'WITHDRAWAL': state.cash -= effectAmt; state.netDeposits -= effectAmt; break;
+                        case 'DEPOSIT': {
+                            state.cash += effectAmt; 
+                            state.netDeposits += effectAmt; 
+                            const rateOnDate = (p.currency === 'USD') ? (fxRates['USD']?.[dateStr] || 1) : 1;
+                            state.netDepositsEUR += effectAmt / rateOnDate;
+                            break;
+                        }
+                        case 'WITHDRAWAL': {
+                            state.cash -= effectAmt; 
+                            state.netDeposits -= effectAmt; 
+                            const rateOnDate = (p.currency === 'USD') ? (fxRates['USD']?.[dateStr] || 1) : 1;
+                            state.netDepositsEUR -= effectAmt / rateOnDate;
+                            break;
+                        }
                         case 'TAX':        state.cash -= effectAmt; break;
-                        case 'TRANSFER':   state.cash -= effectAmt; state.netDeposits -= effectAmt; break;
+                        case 'TRANSFER': {
+                            state.cash -= effectAmt; 
+                            state.netDeposits -= effectAmt; 
+                            const rateOnDate = (p.currency === 'USD') ? (fxRates['USD']?.[dateStr] || 1) : 1;
+                            state.netDepositsEUR -= effectAmt / rateOnDate;
+                            break;
+                        }
                         case 'DIVIDEND': {
                             const divAmt = amount ? amount : (Math.abs(amount || (qty * price - comm - tax))) / fx;
                             state.cash += divAmt; 
@@ -3099,7 +3146,11 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                 }
 
                 let pValue = (state.cash + pAssets);
-                let pProfit = (state.cash + pAssets - state.netDeposits);
+                // PROFIT CALCULATION: Total Wealth Change in base currency (EUR)
+                // If it's EUR portfolio, rate is 1. If USD, we convert current total value to EUR 
+                // and subtract the total invested capital expressed in EUR (historical).
+                const pValueEUR = p.currency === 'USD' ? pValue / (fxRates['USD']?.[dateStr] || 1) : pValue;
+                let pProfit = pValueEUR - state.netDepositsEUR;
                 let pCash = state.cash;
                 let pAssetsVal = pAssets;
 
