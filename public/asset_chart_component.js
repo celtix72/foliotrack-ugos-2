@@ -1,5 +1,5 @@
 /**
- * Asset Chart Component for FolioTrack
+ * Asset Chart Component for M2T
  * Centralizes historical chart modal and BUY/SELL visualization.
  */
 
