@@ -28,15 +28,17 @@
         background: var(--mob-surface);
         border-bottom: 1px solid var(--mob-border);
         height: 34px;
-        display: flex;
-        align-items: center;
+        display: block; /* Changed from flex to avoid stretching/align issues */
         white-space: nowrap;
         position: relative;
     }
     .ticker-content {
         display: inline-flex;
-        animation: ticker 30s linear infinite;
-        padding-left: 20px;
+        animation: ticker 40s linear infinite;
+        width: max-content;
+        height: 100%;
+        align-items: center;
+        will-change: transform;
     }
     .ticker-item {
         display: flex;
@@ -214,8 +216,8 @@
         `;
       }).join('');
       
-      // Duplicate for seamless scroll
-      content.innerHTML = html + html + html;
+      // Double the items for a perfect seamless loop with -50% translation
+      content.innerHTML = html + html;
     } catch(e) { console.error('[MOB] Indices load error:', e); }
   }
 
