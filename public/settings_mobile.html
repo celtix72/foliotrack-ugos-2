@@ -27,7 +27,6 @@
 </head>
 <body class="bg-background-light dark:bg-[#0b0f1a] text-slate-900 dark:text-slate-100 min-h-screen flex mobile-view-active">
 <div id="mobile-ui">
-  <!-- ── Mobile Header ── -->
   <div class="mob-header">
     <div class="mob-header-logo-container">
       <div class="mob-header-logo-circle">
@@ -35,9 +34,13 @@
       </div>
       <div class="mob-header-logo-text">M2T</div>
     </div>
-    
+
+    <!-- Page Title (ST) -->
+    <div class="mob-header-title" style="display:none">ST</div>
+
     <div style="flex:1"></div>
 
+    <!-- EU / US Market Status Pill -->
     <div class="mob-header-market-pill">
       <div class="mob-market-item">
         <span>EU</span>
@@ -48,12 +51,18 @@
         <span id="mob-dot-us" class="mob-market-dot"></span>
       </div>
     </div>
-    
+
+    <!-- Day Variation Pill -->
+    <div id="mob-header-var-day" class="mob-header-var-pill">--</div>
+
+    <!-- Action Buttons -->
     <div class="mob-header-actions">
-      <a href="/notifications" class="mob-icon-btn relative">
+      <a href="/notifications" class="mob-icon-btn relative" title="Notifications">
         <span class="material-symbols-outlined">notifications</span>
         <span id="mob-notification-badge" class="mob-badge" style="display: none;">0</span>
       </a>
+      <a href="/settings" class="mob-icon-btn" title="Settings">
+        <span class="material-symbols-outlined">settings</span>
       </a>
     </div>
   </div>

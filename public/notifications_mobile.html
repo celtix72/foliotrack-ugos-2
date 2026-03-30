@@ -59,15 +59,41 @@
     <div id="mobile-ui">
         <div class="mob-header">
             <div class="mob-header-logo-container">
-                <div class="mob-header-logo-circle" onclick="window.history.back()">
-                    <span class="material-symbols-outlined">arrow_back</span>
+                <div class="mob-header-logo-circle">
+                    <span class="material-symbols-outlined">insights</span>
                 </div>
                 <div class="mob-header-logo-text">M2T</div>
             </div>
+
             <div style="flex:1"></div>
-            <button onclick="clearAllNotifications()" class="mob-icon-btn text-rose-500">
-                <span class="material-symbols-outlined">delete_sweep</span>
-            </button>
+
+            <!-- EU / US Market Status Pill -->
+            <div class="mob-header-market-pill">
+                <div class="mob-market-item">
+                    <span>EU</span>
+                    <span id="mob-dot-eu" class="mob-market-dot"></span>
+                </div>
+                <div class="mob-market-item">
+                    <span>US</span>
+                    <span id="mob-dot-us" class="mob-market-dot"></span>
+                </div>
+            </div>
+
+            <!-- Day Variation Pill -->
+            <div id="mob-header-var-day" class="mob-header-var-pill">--</div>
+
+            <div class="mob-header-actions">
+                <button onclick="clearAllNotifications()" class="mob-icon-btn text-rose-500" title="Clear All">
+                    <span class="material-symbols-outlined">delete_sweep</span>
+                </button>
+                <a href="/notifications" class="mob-icon-btn relative" title="Notifications">
+                    <span class="material-symbols-outlined">notifications</span>
+                    <span id="mob-notification-badge" class="mob-badge" style="display: none;">0</span>
+                </a>
+                <a href="/settings" class="mob-icon-btn" title="Settings">
+                    <span class="material-symbols-outlined">settings</span>
+                </a>
+            </div>
         </div>
 
         <div class="mob-scroll" id="mob-notifications-scroll">
