@@ -125,7 +125,7 @@
       <div class="mob-section-header">
         <span class="mob-section-title">Top Movers</span>
       </div>
-      <div id="mob-movers-carousel" class="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+      <div id="mob-movers-carousel" class="flex overflow-x-auto pb-4 no-scrollbar">
         <!-- Movers cards by JS -->
       </div>
     </div>
@@ -248,10 +248,10 @@
         const isPos = m.changePercent >= 0;
         const color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
         return `
-          <div class="snap-start shrink-0 w-24 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 p-2.5 rounded-xl first:ml-4 last:mr-4 flex flex-col items-center justify-center text-center shadow-sm"
+          <div class="snap-start shrink-0 w-20 bg-white dark:bg-slate-50 border-r border-slate-200 dark:border-slate-300 py-2.5 flex flex-col items-center justify-center text-center"
                onclick="loadAssetChart('${m.ticker}')">
-            <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">${m.ticker}</span>
-            <span class="text-sm font-black" style="color:${color}; font-weight:900">${isPos?'+':''}${m.changePercent.toFixed(1)}%</span>
+            <span class="text-[11px] font-black text-black uppercase tracking-tight leading-none mb-1">${m.ticker}</span>
+            <span class="text-[10px] font-black" style="color:${color}; font-weight:900">${isPos?'+':''}${m.changePercent.toFixed(1)}%</span>
           </div>`;
       }).join('');
     } catch(e) {}
