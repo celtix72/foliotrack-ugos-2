@@ -4149,24 +4149,44 @@ app.delete('/api/backups/:filename', (req, res) => {
 // RESET DATA
 // ════════════════════════════════════════════════════════════════════════════
 
+// ══ PURGE PERFORMANCE HISTORY ONLY ══
+app.post('/api/admin/purge-performance', (req, res) => {
+    const tables = ['portfolio_history', 'portfolio_losses', 'asset_quotes'];
+    for (const table of tables) {
+        try { database.db.prepare(`DELETE FROM ${table}`).run(); } catch (e) {}
+    }
+    logger.info('Performance history purged.');
+    clearPerformanceCache();
+    res.json({ success: true, message: 'Performance history purged. Portfolios and transactions were kept.' });
+});
+
+// ══ FULL APPLICATION RESET ══
 app.post('/api/reset-data', (req, res) => {
     const tables = [
         'transactions', 'portfolios', 'assets', 'notifications', 
-        'portfolio_history', 'portfolio_losses', 'asset_quotes', 'test'
+        'portfolio_history', 'portfolio_losses', 'asset_quotes', 
+        'dividend_projections', 'tax_rates', 'settings', 'test'
     ];
     
     for (const table of tables) {
         try {
             database.db.prepare(`DELETE FROM ${table}`).run();
         } catch (err) {
-            // Ignore errors if table doesn't exist
             console.log(`Note: Table ${table} skip during reset (likely doesn't exist)`);
         }
     }
 
+    // Re-initialize default settings and tax rates
+    try {
+        database.initDb();
+        console.log('Application re-initialized with defaults.');
+    } catch (err) {
+        logger.error('Failed to re-init DB after reset', err);
+    }
+
     console.log('All application data has been reset.');
     clearPerformanceCache();
-    res.json({ success: true });
+    res.json({ success: true, message: 'Application has been fully reset.' });
 });
 
 // ════════════════════════════════════════════════════════════════════════════

@@ -717,14 +717,28 @@
     </div>
     <div id="danger-zone-content" class="hidden">
         <div class="bg-rose-500/5 border border-rose-500/20 rounded-2xl p-6 space-y-6">
+            <!-- Purge Performance -->
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <p class="font-bold text-rose-500 text-sm">Purge Performance Data</p>
-                    <p class="text-[10px] text-slate-500">Remove all historical tracking points.</p>
+                    <p class="text-[10px] text-slate-500">Remove all historical tracking points (Charts & Quotes). Portfolios and transactions will be KEPT.</p>
                 </div>
-                <button id="reset-data-btn" class="px-4 py-2 border border-rose-500/30 text-rose-500 rounded-lg text-xs font-bold hover:bg-rose-500/10 transition-all">Execute Purge</button>
+                <button id="reset-performance-btn" class="px-4 py-2 border border-rose-500/30 text-rose-500 rounded-lg text-xs font-bold hover:bg-rose-500/10 transition-all">Clear History</button>
             </div>
+            
             <div class="h-px bg-rose-500/10 w-full"></div>
+            
+            <!-- Purge ALL -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <p class="font-bold text-rose-500 text-sm">Purge All Application Data</p>
+                    <p class="text-[10px] text-slate-500">Completely reset the application. Portfolios, transactions, assets, and settings will be DELETED.</p>
+                </div>
+                <button id="reset-data-btn" class="px-4 py-2 bg-rose-500/10 border border-rose-500/40 text-rose-500 rounded-lg text-xs font-bold hover:bg-rose-500/20 transition-all">Full Reset</button>
+            </div>
+
+            <div class="h-px bg-rose-500/10 w-full"></div>
+
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <p class="font-bold text-rose-500 text-sm">Terminate Account</p>
@@ -1066,6 +1080,29 @@
             });
         }
         
+        // Reset Performance logic
+        const resetPerfBtn = document.getElementById('reset-performance-btn');
+        if (resetPerfBtn) {
+            resetPerfBtn.addEventListener('click', async () => {
+                if (!confirm('This will delete all historical performance data and saved quotes. Your portfolios and transactions will not be affected. Continue?')) return;
+                
+                resetPerfBtn.disabled = true;
+                resetPerfBtn.textContent = 'Clearing...';
+                try {
+                    const res = await fetch('/api/admin/purge-performance', { method: 'POST' });
+                    if (!res.ok) throw new Error('Server error');
+                    alert('Performance history has been purged successfully.');
+                    window.location.reload();
+                } catch (err) {
+                    console.error(err);
+                    alert('Purge failed: ' + err.message);
+                } finally {
+                    resetPerfBtn.disabled = false;
+                    resetPerfBtn.textContent = 'Clear History';
+                }
+            });
+        }
+
         // Reset Data logic
         const resetBtn        = document.getElementById('reset-data-btn');
         const resetModal      = document.getElementById('confirm-reset-modal');
@@ -1085,11 +1122,12 @@
         if (confirmResetBtn) {
             confirmResetBtn.addEventListener('click', async () => {
                 confirmResetBtn.disabled = true;
-                confirmResetBtn.textContent = 'Deleting...';
+                confirmResetBtn.textContent = 'Deleting Everything...';
                 try {
                     const res = await fetch('/api/reset-data', { method: 'POST' });
                     if (!res.ok) throw new Error('Server error');
                     if (resetModal) resetModal.classList.add('hidden');
+                    alert('All data has been reset. The application will now restart.');
                     window.location.href = '/dashboard';
                 } catch (err) {
                     console.error(err);
