@@ -248,10 +248,10 @@
         const isPos = m.changePercent >= 0;
         const color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
         return `
-          <div class="snap-start shrink-0 w-32 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 p-4 rounded-xl first:ml-4 last:mr-4 flex flex-col items-center justify-center text-center shadow-sm"
+          <div class="snap-start shrink-0 w-24 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 p-2.5 rounded-xl first:ml-4 last:mr-4 flex flex-col items-center justify-center text-center shadow-sm"
                onclick="loadAssetChart('${m.ticker}')">
-            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">${m.ticker}</span>
-            <span class="text-xl font-black" style="color:${color}">${isPos?'+':''}${m.changePercent.toFixed(1)}%</span>
+            <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">${m.ticker}</span>
+            <span class="text-sm font-black" style="color:${color}; font-weight:900">${isPos?'+':''}${m.changePercent.toFixed(1)}%</span>
           </div>`;
       }).join('');
     } catch(e) {}
