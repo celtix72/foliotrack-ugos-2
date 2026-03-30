@@ -1,0 +1,6 @@
+2026-03-30T05:18:45.258Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-30T05:18:45.283Z [INFO] FolioTrack server running on port 3000
+2026-03-30T05:18:45.294Z [INFO] Database: /Users/mauro/Documents/Progetto_FolioTracker2/foliotrack.db
+2026-03-30T05:19:45.220Z [INFO] Recording daily snapshots for portfolios and dashboard...
+2026-03-30T05:19:46.849Z [INFO] Daily snapshots completed.
+2026-03-30T05:22:28.977Z [INFO] Performance and Exchange Rate caches invalidated.

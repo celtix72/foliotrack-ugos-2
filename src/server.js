@@ -379,8 +379,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ─── CACHING LAYER ──────────────────────────────────────────────────────────
-const historicalPricesCache = {}; // { ticker: { date: price } }
-const watchlistPerformanceCache = { data: {}, lastUpdated: 0 };
+let historicalPricesCache = {}; // { ticker: { date: price } }
+let watchlistPerformanceCache = { data: {}, lastUpdated: 0 };
 const WATCHLIST_PERF_CACHE_TTL = 3600 * 1000; // 1 hour
 let performanceResultsCache = {}; // { cacheKey: { data, timestamp } }
 performanceResultsCache = {}; // Clear cache to apply date fix immediately
@@ -574,8 +574,10 @@ async function getEurUsdRate() {
 
 function clearPerformanceCache() {
     performanceResultsCache = {};
+    historicalPricesCache = {};
+    watchlistPerformanceCache = { data: {}, lastUpdated: 0 };
     if (eurUsdCache) eurUsdCache.timestamp = 0; // Reset currency cache as well
-    logger.info('Performance and Exchange Rate caches invalidated.');
+    logger.info('Performance, Historical Prices, and Exchange Rate caches invalidated.');
 }
 
 // ─── BORSA ITALIANA SCRAPER ──────────────────────────────────────────────────
@@ -2499,7 +2501,9 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
         ? database.db.prepare('SELECT * FROM portfolios').all()
         : database.db.prepare(`SELECT * FROM portfolios WHERE id IN (${pIdsInput.join(',')})`).all();
 
-    if (portfolios.length === 0) return [];
+    if (portfolios.length === 0) {
+        return includeIndividual ? { dataPoints: [], individual: {} } : [];
+    }
 
     const pIds = portfolios.map(p => p.id);
     const allTransactions = database.db.prepare(`
@@ -4162,31 +4166,39 @@ app.post('/api/admin/purge-performance', (req, res) => {
 
 // ══ FULL APPLICATION RESET ══
 app.post('/api/reset-data', (req, res) => {
+    logger.info('Initiating full application data reset...');
+    
+    // 1. Clear ALL tables in correct dependency order (transactions first due to FK)
     const tables = [
-        'transactions', 'portfolios', 'assets', 'notifications', 
-        'portfolio_history', 'portfolio_losses', 'asset_quotes', 
-        'dividend_projections', 'tax_rates', 'settings', 'test'
+        'notifications', 'portfolio_history', 'portfolio_losses', 'asset_quotes', 
+        'dividend_projections', 'transactions', 'portfolios', 'assets', 
+        'tax_rates', 'settings', 'test'
     ];
     
-    for (const table of tables) {
-        try {
-            database.db.prepare(`DELETE FROM ${table}`).run();
-        } catch (err) {
-            console.log(`Note: Table ${table} skip during reset (likely doesn't exist)`);
-        }
-    }
-
-    // Re-initialize default settings and tax rates
     try {
-        database.initDb();
-        console.log('Application re-initialized with defaults.');
-    } catch (err) {
-        logger.error('Failed to re-init DB after reset', err);
-    }
+        database.db.transaction(() => {
+            for (const table of tables) {
+                try {
+                    database.db.prepare(`DELETE FROM ${table}`).run();
+                } catch (err) {
+                    logger.warn(`Skip table ${table} during reset: ${err.message}`);
+                }
+            }
+        })();
 
-    console.log('All application data has been reset.');
-    clearPerformanceCache();
-    res.json({ success: true, message: 'Application has been fully reset.' });
+        // 2. Re-initialize default settings and tax rates
+        database.initDb();
+        
+        // 3. FORCE-CLEAR ALL MEMORY CACHES
+        clearPerformanceCache();
+        lastUpdateTime = 0; // Force immediate update of new assets (if any)
+        
+        logger.info('FULL RESET COMPLETED: All data wiped and re-initialized.');
+        res.json({ success: true, message: 'Application has been fully reset to factory defaults.' });
+    } catch (err) {
+        logger.error('CRITICAL ERROR DURING FULL RESET:', err);
+        res.status(500).json({ error: 'Full reset failed: ' + err.message });
+    }
 });
 
 // ════════════════════════════════════════════════════════════════════════════
