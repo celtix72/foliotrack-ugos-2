@@ -113,12 +113,15 @@
         </div>
         `;
 
-        const wrapper = document.createElement('div');
-        wrapper.id = 'mobile-modal-wrapper';
-        wrapper.innerHTML = modalHtml;
-        document.body.appendChild(wrapper);
-        modalInjected = true;
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = modalHtml;
         
+        // Append all children of tempDiv (modal and FAB) directly to body
+        while (tempDiv.firstChild) {
+            document.body.appendChild(tempDiv.firstChild);
+        }
+        
+        modalInjected = true;
         loadPortfoliosForTransfer();
     };
 
@@ -161,6 +164,7 @@
         const modal = document.getElementById('transaction-modal');
         if (modal) {
             modal.classList.add('active');
+            document.body.classList.add('modal-open'); // Lock scrolling
             // Ensure FAB is visible
             const fab = document.getElementById('global-mob-fab');
             if (fab) fab.style.display = 'flex';
@@ -187,7 +191,10 @@
 
     window.closeTransactionModal = function() {
         const modal = document.getElementById('transaction-modal');
-        if (modal) modal.classList.remove('active');
+        if (modal) {
+            modal.classList.remove('active');
+            document.body.classList.remove('modal-open'); // Unlock scrolling
+        }
         // Clear search results
         const results = document.getElementById('t-search-results');
         if (results) results.style.display = 'none';
