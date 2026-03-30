@@ -230,9 +230,9 @@
                     }
 
                     document.getElementById('mob-current-year').innerText = projData.year;
-                    document.getElementById('mob-total-actual').innerText = formatCurrency(projData.totalReceived || 0, 'EUR');
-                    document.getElementById('mob-total-projected').innerText = formatCurrency(projData.totalExpected || 0, 'EUR');
-                    document.getElementById('mob-total-remaining').innerText = formatCurrency(projData.totalRemaining || 0, 'EUR');
+                    document.getElementById('mob-total-actual').innerText = formatCurrency(projData.totalReceived || 0, 'EUR', 0);
+                    document.getElementById('mob-total-projected').innerText = formatCurrency(projData.totalExpected || 0, 'EUR', 0);
+                    document.getElementById('mob-total-remaining').innerText = formatCurrency(projData.totalRemaining || 0, 'EUR', 0);
 
                     renderMobProjectionChart(projData.months);
                     renderMobProjList(projData.assets);
@@ -251,7 +251,7 @@
                     
                     const total = rawDivData.reduce((sum, d) => sum + d.amount, 0);
                     const totalEl = document.getElementById('mob-global-total');
-                    if (totalEl) totalEl.innerText = formatCurrency(total, 'EUR');
+                    if (totalEl) totalEl.innerText = formatCurrency(total, 'EUR', 0);
 
                     const currentYear = new Date().getFullYear().toString();
                     const years = [...new Set(rawDivData.map(d => d.date.split('-')[0]))];
@@ -568,7 +568,7 @@
                             <div class="mob-section-header" style="margin-top:10px; cursor:pointer" onclick="toggleMobGroup('${key}')">
                                 <span class="text-[11px] font-black uppercase tracking-widest text-slate-500">${key.toUpperCase()}</span>
                                 <div class="flex items-center gap-2">
-                                    <span class="text-[11px] font-bold text-emerald-500">${formatCurrency(group.total, 'EUR')}</span>
+                                    <span class="text-[11px] font-bold text-emerald-500">${formatCurrency(group.total, 'EUR', 0)}</span>
                                     <span class="material-symbols-outlined text-sm opacity-30 transition-transform ${isCollapsed ? 'rotate-180' : ''}">${isCollapsed ? 'expand_more' : 'expand_less'}</span>
                                 </div>
                             </div>

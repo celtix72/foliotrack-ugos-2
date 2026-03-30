@@ -944,11 +944,11 @@
             }
             document.getElementById('title-portfolio-icon-bg').style.backgroundColor = portfolioColor;
             
-            document.getElementById('total-value-label').innerText = formatPrivacy(p.totalValue, p.currency, 'p-total');
+            document.getElementById('total-value-label').innerText = formatPrivacy(p.totalValue, p.currency, 'p-total', 0);
             
             document.getElementById('portfolio-currency-code').innerText = p.currency;
             
-            document.getElementById('cash-balance-label').innerText = formatPrivacy(p.currentCash, p.currency, 'p-cash');
+            document.getElementById('cash-balance-label').innerText = formatPrivacy(p.currentCash, p.currency, 'p-cash', 0);
 
             // Update hero variation
             const heroVar = document.getElementById('p-detail-day-var');

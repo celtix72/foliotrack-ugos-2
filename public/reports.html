@@ -390,19 +390,19 @@
                     </div>
                 </td>
                 <td class="py-4 text-right font-black text-sm ${g.realized >= 0 ? 'text-emerald-500' : 'text-rose-500'}">
-                    ${formatCurrency(g.realized, 'EUR')}
+                    ${formatCurrency(g.realized, 'EUR', 0)}
                 </td>
                 <td class="py-4 text-right font-black text-sm text-emerald-500">
-                    ${formatCurrency(g.dividends, 'EUR')}
+                    ${formatCurrency(g.dividends, 'EUR', 0)}
                 </td>
                 <td class="py-4 text-right font-black text-sm">
-                    ${formatCurrency(totalRealized, 'EUR')}
+                    ${formatCurrency(totalRealized, 'EUR', 0)}
                 </td>
                 <td class="py-4 text-right">
                     ${isCurrentYear ? `
                         <div class="flex flex-col items-end">
                             <span class="font-black text-sm ${g.unrealized >= 0 ? 'text-emerald-500' : 'text-rose-500'}">
-                                ${formatCurrency(g.unrealized, 'EUR')}
+                                ${formatCurrency(g.unrealized, 'EUR', 0)}
                             </span>
                             <span class="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">Net Gain (Open)</span>
                         </div>
@@ -550,7 +550,7 @@
                         <span class="font-bold text-sm">${p.name}</span>
                     </div>
                 </td>
-                <td class="py-4 text-right font-black text-sm">${formatCurrency(m.currentValue, 'EUR')}</td>
+                <td class="py-4 text-right font-black text-sm">${formatCurrency(m.currentValue, 'EUR', 0)}</td>
                 <td class="py-4 text-right font-black text-sm ${roiColor}">${formatNumber(m.totalROI * 100, 2)}%</td>
                 <td class="py-4 text-right font-bold text-sm text-slate-500">${formatNumber(m.sharpeRatio, 2)}</td>
                 <td class="py-4 text-right">
@@ -632,7 +632,7 @@
         if (divChart) divChart.destroy();
 
         const totalIncome = divs.reduce((s, x) => s + x.amount, 0);
-        document.getElementById('dividend-total-income').textContent = formatCurrency(totalIncome, 'USD');
+        document.getElementById('dividend-total-income').textContent = formatCurrency(totalIncome, 'USD', 0);
 
         // Projected Yield
         if (metrics && metrics.dividendYield !== undefined) {

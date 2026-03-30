@@ -508,7 +508,7 @@
       const gainEl = document.getElementById('mob-global-gain');
       const dvEl = document.getElementById('mob-global-dayvar');
 
-      if (netEl) netEl.textContent = formatPrivacy(g.totalNetValue, 'EUR', 'mob-gnet');
+      if (netEl) netEl.textContent = formatPrivacy(g.totalNetValue, 'EUR', 'mob-gnet', 0);
       if (gainEl) {
         const gain = g.totalGain || 0;
         gainEl.style.color = gain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
@@ -538,8 +538,8 @@
               <div class="mob-portfolio-meta">${p.assetCount} Assets · ${p.currency}</div>
             </div>
             <div class="mob-portfolio-values">
-              <div class="mob-portfolio-net">${formatPrivacy(p.netValue||p.totalValue, p.currency, 'mob-pn-'+p.id)}</div>
-              <div class="mob-portfolio-gross">Lordo: ${formatPrivacy(p.totalValue, p.currency, 'mob-pg-'+p.id)}</div>
+              <div class="mob-portfolio-net">${formatPrivacy(p.netValue||p.totalValue, p.currency, 'mob-pn-'+p.id, 0)}</div>
+              <div class="mob-portfolio-gross">Lordo: ${formatPrivacy(p.totalValue, p.currency, 'mob-pg-'+p.id, 0)}</div>
               <div class="mob-portfolio-change" style="color:${isPos?'var(--mob-emerald)':'var(--mob-rose)'}">${isPos?'▲':'▼'} ${Math.abs(p.changePercent).toFixed(2)}%</div>
             </div>
           </div>`;
@@ -684,9 +684,9 @@
       if (el('mob-detail-pname')) el('mob-detail-pname').textContent = p.name;
       if (el('mob-detail-pname-hero')) el('mob-detail-pname-hero').textContent = p.name;
       if (el('mob-detail-label')) el('mob-detail-label').textContent = 'Portafoglio';
-      if (el('mob-detail-total')) el('mob-detail-total').textContent = formatPrivacy(p.netValue || p.totalValue, currency, 'mob-dt');
-      if (el('mob-detail-gross')) el('mob-detail-gross').textContent = formatPrivacy(p.totalValue, currency, 'mob-dg');
-      if (el('mob-detail-cash')) el('mob-detail-cash').textContent = formatPrivacy(p.cashBalance, currency, 'mob-dc', 2);
+      if (el('mob-detail-total')) el('mob-detail-total').textContent = formatPrivacy(p.netValue || p.totalValue, currency, 'mob-dt', 0);
+      if (el('mob-detail-gross')) el('mob-detail-gross').textContent = formatPrivacy(p.totalValue, currency, 'mob-dg', 0);
+      if (el('mob-detail-cash')) el('mob-detail-cash').textContent = formatPrivacy(p.cashBalance, currency, 'mob-dc', 0);
       if (el('mob-detail-assets')) el('mob-detail-assets').textContent = p.assetCount || 0;
 
       // Performance Badge
