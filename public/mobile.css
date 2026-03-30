@@ -1166,10 +1166,13 @@ html:not(.dark) .mobile-view-active .mob-hero.fiscal {
 
 /* ─── Mobile Collapsible Sections ───────────────────────────────────────── */
 .mob-collapsible {
-  margin: 8px 16px;
+  margin: 10px 0 !important;
   background: var(--mob-surface);
-  border: 1px solid var(--mob-border);
-  border-radius: 16px;
+  border-top: 1px solid var(--mob-border);
+  border-bottom: 1px solid var(--mob-border);
+  border-left: none !important;
+  border-right: none !important;
+  border-radius: 0 !important;
   overflow: hidden;
   transition: all 0.3s ease;
 }
