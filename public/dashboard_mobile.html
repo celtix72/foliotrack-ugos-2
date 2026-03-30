@@ -253,27 +253,21 @@
           pList.innerHTML = '<div class="mob-empty"><span class="material-symbols-outlined">work_off</span><div class="mob-empty-title">Nessun portafoglio</div></div>';
         } else {
           pList.innerHTML = portfolios.map(p => {
-            const isPos = p.changePercent >= 0;
+            const isPos = p.changeValue >= 0;
             return `
-              <div class="mob-portfolio-card" onclick="window.location.href='/portfolio?id=${p.id}'">
+              <div class="mob-portfolio-card" onclick="window.location.href='/portfolio_detail_mobile.html?id=${p.id}'">
                 <div class="mob-portfolio-icon" style="background-color:${p.color||'#6366f1'}">
                   <span class="material-symbols-outlined">work</span>
                 </div>
                 <div class="mob-portfolio-info">
-              <div class="mob-card p-4 flex flex-col gap-3" onclick="location.href='/portfolio_detail_mobile.html?id=${p.id}'">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-3">
-                    <div class="w-2.5 h-2.5 rounded-full" style="background:${p.color}"></div>
-                    <div class="text-[13px] font-black uppercase tracking-tight">${p.name}</div>
-                  </div>
-                  <div class="flex items-center gap-1.5 font-black text-[14px]">
-                    <span>${formatPrivacy(p.totalValue, p.currency, 'mob-pv-'+p.id, 0)}</span>
-                  </div>
+                  <div class="mob-portfolio-name">${p.name}</div>
+                  <div class="mob-portfolio-meta">${p.assetCount || 0} Assets · ${p.currency} ${p.type === 'Conto Deposito' ? '<span style="color:var(--mob-amber); font-weight:900; background:rgba(245,158,11,0.1); padding:1px 4px; border-radius:4px; font-size:8px; vertical-align:middle; margin-left:4px">DEPOSITO</span>' : ''}</div>
                 </div>
-                <div class="flex items-center justify-between mt-1">
-                  <div class="text-[10px] opacity-50 font-bold uppercase tracking-widest">${p.type}</div>
-                  <div class="${isPos ? 'text-emerald-500' : 'text-rose-500'} text-[11px] font-black flex items-center gap-0.5">
-                     ${isPos?'+':''}${formatPrivacy(p.changeValue, p.currency, 'mob-pv-var-'+p.id, 0)}
+                <div class="mob-portfolio-values">
+                  <div class="mob-portfolio-net">${formatPrivacy(p.totalValue, p.currency, 'mob-p-'+p.id, 0)}</div>
+                  <div class="mob-portfolio-gross">Lordo: ${formatPrivacy(p.totalValue, p.currency, 'mob-pg-'+p.id, 0)}</div>
+                  <div class="mob-portfolio-change" style="color: ${isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">
+                    ${isPos?'+':''}${formatPrivacy(p.changeValue || 0, p.currency, 'mob-var', 0)}
                   </div>
                 </div>
               </div>`;
