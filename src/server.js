@@ -1006,6 +1006,35 @@ app.get('/api/market/search', async (req, res) => {
     }
 });
 
+app.get('/api/market/indices', async (req, res) => {
+    const symbols = ['FTSEMIB.MI', 'BTC-USD', '^GSPC', '^IXIC'];
+    const names = {
+        'FTSEMIB.MI': 'FTSE MIB',
+        'BTC-USD': 'Bitcoin',
+        '^GSPC': 'S&P 500',
+        '^IXIC': 'Nasdaq'
+    };
+    try {
+        const quotes = await Promise.all(symbols.map(s => 
+            yahooFinance.quote(s).catch(err => {
+                console.error(`Error fetching index ${s}:`, err.message);
+                return null;
+            })
+        ));
+        const result = quotes.filter(q => q).map(q => ({
+            symbol: q.symbol,
+            name: names[q.symbol] || q.symbol,
+            price: q.regularMarketPrice,
+            changePercent: q.regularMarketChangePercent,
+            currency: q.currency
+        }));
+        res.json(result);
+    } catch (err) {
+        console.error('Indices fetch error:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ─── WATCHLIST API ──────────────────────────────────────────────────────────
 
 app.get('/api/watchlist', (req, res) => {

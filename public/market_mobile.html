@@ -20,6 +20,39 @@
     .dark .tab-active { background: #1e293b; color: #135bec; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Indices Ticker Styles */
+    .ticker-container {
+        width: 100%;
+        overflow: hidden;
+        background: var(--mob-surface);
+        border-bottom: 1px solid var(--mob-border);
+        height: 34px;
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+        position: relative;
+    }
+    .ticker-content {
+        display: inline-flex;
+        animation: ticker 30s linear infinite;
+        padding-left: 20px;
+    }
+    .ticker-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-right: 48px;
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: -0.2px;
+    }
+    .ticker-name { color: var(--mob-text-muted); text-transform: uppercase; }
+    .ticker-price { font-family: 'SF Mono', monospace; color: var(--mob-text); }
+    @keyframes ticker {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+    }
 </style>
 <script src="/theme.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -77,6 +110,13 @@
 
   <!-- ── Scrollable Content Area ── -->
   <div class="mob-scroll" id="mob-market-scroll">
+    
+    <!-- Indices Ticker (INDICI) -->
+    <div id="mob-indices-section" class="ticker-container">
+      <div id="mob-indices-content" class="ticker-content">
+        <!-- Indices by JS -->
+      </div>
+    </div>
     
     <!-- Top Movers Carousel -->
     <div id="mob-movers-section">
@@ -150,6 +190,33 @@
   function mobSyncPrivacyIcon() {
     const icon = document.getElementById('mob-privacy-icon');
     if (icon) icon.innerText = window.privacyState?.enabled ? 'visibility_off' : 'visibility';
+  }
+
+  async function mobLoadIndices() {
+    try {
+      const res = await fetch('/api/market/indices');
+      const data = await res.json();
+      const content = document.getElementById('mob-indices-content');
+      if (!content || !data.length) return;
+      
+      const html = data.map(idx => {
+        const isPos = idx.changePercent >= 0;
+        const color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        const sign = isPos ? '+' : '';
+        const price = (idx.price || 0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+        const change = (idx.changePercent || 0).toFixed(1);
+        return `
+          <div class="ticker-item">
+            <span class="ticker-name">${idx.name}</span>
+            <span class="ticker-price">${price}</span>
+            <span style="color:${color}; font-weight:900">${sign}${change}%</span>
+          </div>
+        `;
+      }).join('');
+      
+      // Duplicate for seamless scroll
+      content.innerHTML = html + html + html;
+    } catch(e) { console.error('[MOB] Indices load error:', e); }
   }
 
   async function mobSyncMarketStatus() {
@@ -310,6 +377,7 @@
     if (!window._mobileViewActive) return;
     mobSyncPrivacyIcon();
     mobSyncMarketStatus();
+    mobLoadIndices();
     mobLoadMovers();
     mobLoadAssets();
   }
