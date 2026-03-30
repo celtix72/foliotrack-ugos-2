@@ -2809,6 +2809,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
             netDeposits: p.initialCash || 0,
             dividends: 0,
             holdings: {},
+            holdingsTotalCost: {}, // Added fix for PMC tracking in simulation
             lastBuyPrices: {} 
         };
         
