@@ -1,6 +1,6 @@
 {
-  "name": "FolioTrack",
-  "short_name": "FolioTrack",
+  "name": "M2T",
+  "short_name": "M2T",
   "description": "Portfolio and Market tracking terminal",
   "start_url": "/dashboard",
   "display": "standalone",
