@@ -735,11 +735,19 @@ app.delete('/api/history/:id', (req, res) => {
 app.get('/api/assets', (req, res) => {
     // Return all assets except CASH, with a flag indicating if they have an active position
     const rows = database.db.prepare(`
-        SELECT a.*, CASE WHEN t.balance IS NOT NULL AND t.balance > 0.0001 THEN 1 ELSE 0 END as hasPosition
+        SELECT a.*, 
+               CASE WHEN t.balance IS NOT NULL AND t.balance > 0.0001 THEN 1 ELSE 0 END as hasPosition,
+               IFNULL(t.balance, 0) as totalQuantity,
+               IFNULL(t.totalCostAsset, 0) as totalCostAssetCurr
         FROM assets a
         LEFT JOIN (
             SELECT assetTicker, 
-                   SUM(CASE WHEN type = 'BUY' THEN quantity WHEN type = 'SELL' THEN -quantity ELSE 0 END) as balance 
+                   SUM(CASE WHEN type = 'BUY' THEN quantity WHEN type = 'SELL' THEN -quantity ELSE 0 END) as balance,
+                   SUM(CASE 
+                        WHEN type = 'BUY' THEN (quantity * price + commission + tax)
+                        WHEN type = 'SELL' THEN -(quantity * (SELECT AVG(price) FROM transactions t2 WHERE t2.assetTicker = transactions.assetTicker AND t2.type = 'BUY'))
+                        ELSE 0 
+                   END) as totalCostAsset
             FROM transactions 
             GROUP BY assetTicker
         ) t ON a.ticker = t.assetTicker
