@@ -1050,7 +1050,7 @@
         window.updateNotificationBadge();
     }
 
-    console.log('FolioTrack Theme Engine Initialized.');
+    console.log('M2T Theme Engine Initialized.');
 
 })();
 
