@@ -267,8 +267,8 @@
       const posCountEl = document.getElementById('mob-pos-count');
       const watchCountEl = document.getElementById('mob-watch-count');
 
-      const openPos = assets.filter(a => a.hasPosition);
-      const watchlist = assets.filter(a => !a.hasPosition);
+      const openPos = assets.filter(a => a.hasPosition).sort((a, b) => (b.changePercent || 0) - (a.changePercent || 0));
+      const watchlist = assets.filter(a => !a.hasPosition).sort((a, b) => (b.changePercent || 0) - (a.changePercent || 0));
 
       if (posCountEl) posCountEl.textContent = `${openPos.length} Assets`;
       if (watchCountEl) watchCountEl.textContent = `${watchlist.length} Assets`;
