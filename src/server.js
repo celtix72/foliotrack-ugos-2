@@ -1354,14 +1354,15 @@ app.get('/api/portfolios', async (req, res) => {
         // Ground Truth from Simulation
         const lastPoint = globalPoints.at(-1) || { value: 0, profit: 0, netDeposits: 0 };
 
+        // Hero Source of Truth: Data aggregated from portfolios after recalculateAll
         res.json({
             portfolios: rows,
             global: {
-                totalValue: lastPoint.value || totalValueEUR,
-                totalNetValue: (lastPoint.value || totalValueEUR) - totalTaxEUR,
+                totalValue: totalValueEUR, // Use live database valuation
+                totalNetValue: totalNetValueEUR, // Use live database valuation
                 totalTax: totalTaxEUR,
                 totalGain: lastPoint.profit || 0,
-                investedCapital: lastPoint.netDeposits || (totalNetValueEUR - (lastPoint.profit || 0)),
+                investedCapital: totalNetValueEUR - (lastPoint.profit || 0),
                 changeValue: globalChangeEUR,
                 changePercent: (totalValueEUR - globalChangeEUR) > 0 ? (globalChangeEUR / (totalValueEUR - globalChangeEUR)) * 100 : 0,
                 topWinner: heldAssets[0] || null,

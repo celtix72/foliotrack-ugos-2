@@ -631,6 +631,8 @@
             if (res.ok) {
                 closeManualModal();
                 loadAssets();
+                // Refresh other tabs
+                window.dispatchEvent(new CustomEvent('market-data-updated'));
             } else {
                 alert(await res.text());
             }

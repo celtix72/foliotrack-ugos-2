@@ -1155,6 +1155,8 @@
       if (res.ok) {
         closeManualModal();
         mobLoadPortfolioDetail(mobCurrentPortfolioId);
+        // Refresh other tabs
+        window.dispatchEvent(new CustomEvent('market-data-updated'));
       } else {
         const errData = await res.json();
         alert('Update failed: ' + (errData.error || errData.message || 'Unknown error'));
