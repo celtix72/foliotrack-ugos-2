@@ -304,7 +304,13 @@ initDb();
 
 function getSettings() {
     const rows = dbConnection.prepare(`SELECT key, value FROM settings`).all();
-    return Object.fromEntries(rows.map(r => [r.key, r.value]));
+    const settings = Object.fromEntries(rows.map(r => [r.key, r.value]));
+    
+    // Default values for new settings
+    if (settings.volatilityNotificationsEnabled === undefined) settings.volatilityNotificationsEnabled = 'false';
+    if (settings.volatilityThreshold === undefined) settings.volatilityThreshold = '5.0';
+    
+    return settings;
 }
 
 function setSetting(key, value) {

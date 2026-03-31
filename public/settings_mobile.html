@@ -179,6 +179,26 @@
                       <button onclick="sendTestTelegram('tp')" class="flex-1 py-2 bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase rounded-lg">Test TP</button>
                   </div>
               </div>
+              <!-- Volatility Alert Row -->
+              <div class="mob-settings-row" onclick="toggleMobSection('mob-volatility-config')">
+                  <div class="mob-settings-icon bg-orange-ios"><span class="material-symbols-outlined text-white">notifications_active</span></div>
+                  <div class="mob-settings-label">Notifiche Volatilità</div>
+                  <div class="mob-settings-value" id="mob-vol-status-label">Off <span id="mob-vol-config-icon" class="material-symbols-outlined text-[14px] transition-transform">expand_more</span></div>
+              </div>
+              <div id="mob-volatility-config" class="hidden bg-slate-50/50 dark:bg-black/20 px-5 py-4 space-y-4 border-t border-slate-100 dark:border-slate-800">
+                  <div>
+                      <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Soglia Variazione (%)</label>
+                      <input id="mob-volatility-threshold" type="number" step="0.1" placeholder="5.0" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs">
+                  </div>
+                  <div class="flex items-center justify-between">
+                      <span class="text-xs font-bold">Attiva Notifiche</span>
+                      <div class="mob-toggle">
+                          <input type="checkbox" id="mob-volatility-enabled-check">
+                          <div class="mob-toggle-slider"></div>
+                      </div>
+                  </div>
+              </div>
+
               <!-- Yahoo Finance Info -->
               <div class="mob-settings-row">
                   <div class="mob-settings-icon bg-purple-500"><span class="material-symbols-outlined text-white">finance</span></div>
@@ -317,6 +337,9 @@
         const mobTgToken = document.getElementById('mob-telegram-bot-token');
         const mobTgChat = document.getElementById('mob-telegram-chat-id');
         const mobTgStatusLabel = document.getElementById('mob-tg-status-label');
+        const mobVolThreshold = document.getElementById('mob-volatility-threshold');
+        const mobVolEnabled = document.getElementById('mob-volatility-enabled-check');
+        const mobVolStatusLabel = document.getElementById('mob-vol-status-label');
         const runBackupBtn = document.getElementById('mob-run-backup-btn');
         const rebuildHistoryBtn = document.getElementById('mob-rebuild-history-btn');
 
@@ -337,6 +360,14 @@
                 mobTgStatusLabel.innerHTML = (isActive ? 'Active' : 'Setup') + ' <span class="material-symbols-outlined text-[14px]">expand_more</span>';
                 mobTgStatusLabel.className = 'mob-settings-value ' + (isActive ? 'text-emerald-500' : 'text-slate-400');
             }
+
+            if (mobVolEnabled) mobVolEnabled.checked = settings.volatilityNotificationsEnabled === 'true';
+            if (mobVolThreshold) mobVolThreshold.value = settings.volatilityThreshold || 5.0;
+            if (mobVolStatusLabel) {
+                const isVolActive = settings.volatilityNotificationsEnabled === 'true';
+                mobVolStatusLabel.innerHTML = (isVolActive ? 'Attive' : 'Off') + ' <span id="mob-vol-config-icon" class="material-symbols-outlined text-[14px] transition-transform">expand_more</span>';
+                mobVolStatusLabel.className = 'mob-settings-value ' + (isVolActive ? 'text-amber-500' : 'text-slate-400');
+            }
             
             loadBackups();
         };
@@ -351,16 +382,18 @@
                     privacyMode: String(privacyToggle.checked),
                     telegramEnabled: String(mobTgEnabled.checked),
                     telegramBotToken: mobTgToken.value,
-                    telegramChatId: mobTgChat.value
+                    telegramChatId: mobTgChat.value,
+                    volatilityNotificationsEnabled: String(mobVolEnabled.checked),
+                    volatilityThreshold: mobVolThreshold.value
                 });
             }
         };
 
         // --- Listeners ---
-        [themeToggle, privacyToggle, fontSelect, sizeSelect, freqSelect, mobTgEnabled].forEach(el => {
+        [themeToggle, privacyToggle, fontSelect, sizeSelect, freqSelect, mobTgEnabled, mobVolEnabled].forEach(el => {
             if (el) el.addEventListener('change', saveSettings);
         });
-        [mobTgToken, mobTgChat].forEach(el => {
+        [mobTgToken, mobTgChat, mobVolThreshold].forEach(el => {
             if (el) el.addEventListener('blur', saveSettings);
         });
 

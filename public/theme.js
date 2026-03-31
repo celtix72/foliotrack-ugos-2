@@ -468,8 +468,12 @@
                 console.log(`[Theme] Found ${newOnes.length} new notifications`);
                 newOnes.forEach(n => {
                     console.log(`[Theme] Processing new notify: ${n.id} type=${n.type}`);
-                    if (n.type === 'TARGET' || n.type === 'STOP') {
-                        window.showNotification(`${n.title}: ${n.message}`, n.type === 'TARGET' ? 'success' : 'error');
+                    if (n.type.startsWith('TARGET') || n.type === 'TARGET_PROFIT') {
+                        window.showNotification(`${n.title}: ${n.message}`, 'success');
+                    } else if (n.type.startsWith('STOP') || n.type === 'STOP_LOSS') {
+                        window.showNotification(`${n.title}: ${n.message}`, 'error');
+                    } else if (n.type === 'VOLATILITY') {
+                        window.showNotification(`${n.title}: ${n.message}`, 'warning');
                     }
                 });
             }

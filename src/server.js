@@ -4402,6 +4402,7 @@ app.use((req, res) => res.redirect('/dashboard'));
 let globalLastMarketUpdate = Date.now();
 
 async function updateMarketData(force = false) {
+    const settings = database.getSettings();
     const status = getMarketStatus();
     if (!force && !status.anyOpen) {
         // If markets are closed, only proceed if there are assets with 0.00€ price (critical for newly imported BTPs)

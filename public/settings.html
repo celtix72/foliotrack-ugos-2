@@ -376,6 +376,35 @@
     </div>
 </section>
 
+<!-- Volatility Notifications -->
+<section class="space-y-2">
+    <div class="flex items-center justify-between cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-900/50 p-2 -mx-2 rounded-xl transition-colors" onclick="toggleSection('volatility-settings-content')">
+        <h2 class="text-lg font-bold border-l-4 border-amber-500 pl-3">Volatility Notifications</h2>
+        <span id="volatility-settings-content-icon" class="material-symbols-outlined text-slate-400 group-hover:text-amber-500 transition-transform">expand_more</span>
+    </div>
+    <div id="volatility-settings-content" class="hidden">
+        <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1.5">Variation Threshold (%)</label>
+                    <p class="text-[10px] text-slate-400 mb-3">Trigger notification if daily price change exceeds this value.</p>
+                    <input id="volatility-threshold" type="number" min="0.1" step="0.1" placeholder="5.0" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2.5 text-sm px-4 focus:ring-amber-500/30 focus:border-amber-500"/>
+                </div>
+                <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 self-end">
+                    <div>
+                        <div class="font-bold text-sm">Enable Alerts</div>
+                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Telegram & Toast</div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="volatility-enabled-check" class="sr-only peer">
+                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-amber-500"></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- Backup & Restore -->
 <section class="space-y-2">
     <div class="flex items-center justify-between cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-900/50 p-2 -mx-2 rounded-xl transition-colors" onclick="toggleSection('backup-restore-content')">
@@ -790,6 +819,10 @@
         const backupFreqSelect = document.getElementById('backup-frequency-select');
         const backupRetentionInput = document.getElementById('backup-retention-input');
         const runBackupBtn = document.getElementById('run-backup-btn');
+
+        // Volatility Alerts
+        const volatilityEnabledCheck = document.getElementById('volatility-enabled-check');
+        const volatilityThresholdInput = document.getElementById('volatility-threshold');
         
         // ------------------------------------------------
         
@@ -823,6 +856,9 @@
             if (tgEnabledCheck) tgEnabledCheck.checked = settings.telegramEnabled === 'true';
             if (tgMarketCheck) tgMarketCheck.checked = settings.marketStatusTelegramEnabled === 'true';
             if (tgIntervalInput && settings.marketStatusInterval) tgIntervalInput.value = settings.marketStatusInterval;
+
+            if (volatilityEnabledCheck) volatilityEnabledCheck.checked = settings.volatilityNotificationsEnabled === 'true';
+            if (volatilityThresholdInput && settings.volatilityThreshold) volatilityThresholdInput.value = settings.volatilityThreshold || 5.0;
             
             // Sync Mobile fields
             if (mobTgEnabled) mobTgEnabled.checked = settings.telegramEnabled === 'true';
@@ -900,18 +936,25 @@
             }
         };
 
+        const saveVolatilitySettings = () => {
+            if (window.updateAppSettings) {
+                window.updateAppSettings({
+                    volatilityNotificationsEnabled: String(volatilityEnabledCheck.checked),
+                    volatilityThreshold: volatilityThresholdInput.value
+                });
+            }
+        };
+
         const saveTelegramSettings = () => {
             if (window.updateAppSettings) {
-                // If we are on mobile view (determined by one of the mobile inputs being present and visible, 
-                // but simpler to just try to take from where the user is likely typing), 
-                // we should check both. 
-                // But a safer way is to just use desktop values as master and ensure mobile syncs to them.
                 window.updateAppSettings({
                     telegramBotToken: tgTokenInput.value,
                     telegramChatId: tgChatIdInput.value,
                     telegramEnabled: String(tgEnabledCheck.checked),
                     marketStatusTelegramEnabled: String(tgMarketCheck.checked),
-                    marketStatusInterval: tgIntervalInput.value
+                    marketStatusInterval: tgIntervalInput.value,
+                    volatilityNotificationsEnabled: String(volatilityEnabledCheck.checked),
+                    volatilityThreshold: volatilityThresholdInput.value
                 });
             }
         };
@@ -936,6 +979,9 @@
         if (tgEnabledCheck) tgEnabledCheck.addEventListener('change', saveTelegramSettings);
         if (tgMarketCheck) tgMarketCheck.addEventListener('change', saveTelegramSettings);
         if (tgIntervalInput) tgIntervalInput.addEventListener('change', saveTelegramSettings);
+
+        if (volatilityEnabledCheck) volatilityEnabledCheck.addEventListener('change', saveVolatilitySettings);
+        if (volatilityThresholdInput) volatilityThresholdInput.addEventListener('blur', saveVolatilitySettings);
 
         if (mobThemeToggle) mobThemeToggle.addEventListener('change', () => { if (typeof toggleTheme === 'function') toggleTheme(); });
         if (mobPrivacyToggle) mobPrivacyToggle.addEventListener('change', () => { if (typeof togglePrivacy === 'function') togglePrivacy(); });
