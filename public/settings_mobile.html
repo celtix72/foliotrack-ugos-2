@@ -170,9 +170,12 @@
                       <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Chat ID</label>
                       <input id="mob-telegram-chat-id" type="text" placeholder="Chat ID" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs">
                   </div>
-                  <div class="flex items-center justify-between">
+                  <div class="flex items-center justify-between" onclick="document.getElementById('mob-telegram-enabled-check').click()">
                       <span class="text-xs font-bold">Enabled</span>
-                      <input type="checkbox" id="mob-telegram-enabled-check">
+                      <div class="mob-toggle">
+                          <input type="checkbox" id="mob-telegram-enabled-check" onclick="event.stopPropagation()">
+                          <div class="mob-toggle-slider"></div>
+                      </div>
                   </div>
                   <div class="flex gap-2">
                       <button onclick="sendDailyReport()" class="flex-1 py-2 bg-primary/10 text-primary text-[10px] font-black uppercase rounded-lg border border-primary/20">Test Report</button>
@@ -190,10 +193,10 @@
                       <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Soglia Variazione (%)</label>
                       <input id="mob-volatility-threshold" type="number" step="0.1" placeholder="5.0" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs">
                   </div>
-                  <div class="flex items-center justify-between">
+                  <div class="flex items-center justify-between" onclick="document.getElementById('mob-volatility-enabled-check').click()">
                       <span class="text-xs font-bold">Attiva Notifiche</span>
                       <div class="mob-toggle">
-                          <input type="checkbox" id="mob-volatility-enabled-check">
+                          <input type="checkbox" id="mob-volatility-enabled-check" onclick="event.stopPropagation()">
                           <div class="mob-toggle-slider"></div>
                       </div>
                   </div>
