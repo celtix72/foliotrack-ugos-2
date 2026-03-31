@@ -88,6 +88,35 @@
         <div style="height: 80px"></div>
     </div>
 
+    <!-- Bottom Sheet Detail (Moved inside mobile-ui and increased z-index) -->
+    <div id="mob-detail-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[10000]" style="display: none;" onclick="window.closeMobDetail()"></div>
+    <div id="mob-detail-sheet" class="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#111722] rounded-t-3xl z-[10001] transition-transform duration-300 pb-8 px-6 pt-2 shadow-2xl border-t border-slate-200 dark:border-slate-800" style="display: none; transform: translateY(100%);">
+        <div class="w-12 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full mx-auto mb-6"></div>
+        <div class="flex justify-between items-start mb-6">
+            <div>
+                <h3 id="mob-modal-ticker" class="text-2xl font-black text-primary">AAPL</h3>
+                <p id="mob-modal-name" class="text-sm text-slate-500 font-bold">Apple Inc.</p>
+            </div>
+            <div id="mob-modal-exchange" class="text-[10px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-500">NasdaqGS</div>
+        </div>
+        <div id="mob-asset-chart-container" class="bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 mb-6">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-1.5 h-1.5 rounded-full bg-primary font-black"></div>
+                    <h4 class="text-[9px] font-black uppercase tracking-widest text-slate-400">1-Month Performance</h4>
+                </div>
+                <div id="mob-modal-perf-badge" class="px-2 py-0.5 rounded text-[9px] font-black shadow-sm"></div>
+            </div>
+            <div class="h-[140px] w-full relative">
+                <canvas id="mob-asset-detail-chart"></canvas>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-x-4 gap-y-3" id="mob-modal-content">
+            <!-- Details here -->
+        </div>
+    </div>
+
     <!-- Bottom Tab Bar -->
     <div class="mob-tab-bar">
         <a href="/dashboard" class="mob-tab-item">
@@ -108,34 +137,6 @@
     </div>
 </div>
 
-<!-- Bottom Sheet Detail -->
-<div id="mob-detail-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200]" style="display: none;" onclick="closeMobDetail()"></div>
-<div id="mob-detail-sheet" class="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#111722] rounded-t-3xl z-[201] transition-transform duration-300 pb-8 px-6 pt-2 shadow-2xl border-t border-slate-200 dark:border-slate-800" style="display: none; transform: translateY(100%);">
-    <div class="w-12 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full mx-auto mb-6"></div>
-    <div class="flex justify-between items-start mb-6">
-        <div>
-            <h3 id="mob-modal-ticker" class="text-2xl font-black text-primary">AAPL</h3>
-            <p id="mob-modal-name" class="text-sm text-slate-500 font-bold">Apple Inc.</p>
-        </div>
-        <div id="mob-modal-exchange" class="text-[10px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-500">NasdaqGS</div>
-    </div>
-    <div id="mob-asset-chart-container" class="bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 mb-6">
-        <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center gap-2">
-                <div class="w-1.5 h-1.5 rounded-full bg-primary font-black"></div>
-                <h4 class="text-[9px] font-black uppercase tracking-widest text-slate-400">1-Month Performance</h4>
-            </div>
-            <div id="mob-modal-perf-badge" class="px-2 py-0.5 rounded text-[9px] font-black shadow-sm"></div>
-        </div>
-        <div class="h-[140px] w-full relative">
-            <canvas id="mob-asset-detail-chart"></canvas>
-        </div>
-    </div>
-
-    <div class="grid grid-cols-2 gap-x-4 gap-y-3" id="mob-modal-content">
-        <!-- Details here -->
-    </div>
-</div>
 
 <script>
     // Global storage for accessibility
@@ -248,10 +249,40 @@
     window.removeFromWatchlist = removeFromWatchlist;
 
     async function showMobDetails(ticker, typeLabel) {
-        console.log('Mobile: Opening details for:', ticker);
+        console.log('Mobile: showMobDetails triggered for', ticker);
+        if (!ticker) return;
+
+        // 1. Open Modal Immediately with Loading State
+        const overlay = document.getElementById('mob-detail-overlay');
+        const sheet = document.getElementById('mob-detail-sheet');
+        const content = document.getElementById('mob-modal-content');
+        
+        if (overlay) overlay.style.display = 'block';
+        if (sheet) {
+            sheet.style.display = 'block';
+            sheet.style.transform = 'translateY(100%)'; // Reset if needed
+            setTimeout(() => { sheet.style.transform = 'translateY(0)'; }, 10);
+        }
+
+        // Reset UI to loading
+        document.getElementById('mob-modal-ticker').innerText = ticker;
+        document.getElementById('mob-modal-name').innerText = 'Caricamento...';
+        document.getElementById('mob-modal-exchange').innerText = '...';
+        if (content) {
+            content.innerHTML = `<div class="col-span-2 py-10 text-center text-slate-400 italic text-xs animate-pulse">Caricamento dati finanziari...</div>`;
+        }
+        if (window._mobDetailChart) window._mobDetailChart.destroy();
+
         try {
             const res = await fetch(`/api/assets/${ticker}/details`);
             const data = await res.json();
+            
+            if (data.error) {
+                console.warn('Backend returned error for details:', data.error);
+                if (content) content.innerHTML = `<div class="col-span-2 py-4 text-center text-rose-500 text-xs font-bold">${data.error}</div>`;
+                return;
+            }
+
             const sd = data.summaryDetail || {};
             const ap = data.assetProfile || {};
             const fp = data.fundProfile || {};
@@ -260,13 +291,12 @@
             // Get local asset data for targetPrice from memory instead of fetch
             const localAsset = (window.watchlist || []).find(a => a.ticker === ticker) || {};
 
-            document.getElementById('mob-modal-ticker').innerText = ticker;
             document.getElementById('mob-modal-name').innerText = ap.longName || data.quoteType?.longName || ticker;
-            document.getElementById('mob-modal-exchange').innerText = sd.exchange || 'Unknown';
+            document.getElementById('mob-modal-exchange').innerText = sd.exchange || 'Market Data';
             
-            const content = document.getElementById('mob-modal-content');
             let fields = [];
-            if (typeLabel.includes('ETF')) {
+            const typeLower = (typeLabel || '').toLowerCase();
+            if (typeLower.includes('etf')) {
                 const fees = fp.feesExpensesInvestment || {};
                 fields = [
                     { label: 'AUM', val: formatLarge(fees.totalNetAssets) },
@@ -296,8 +326,8 @@
                                        class="bg-transparent text-sm font-black text-primary outline-none w-24" 
                                        placeholder="None" value="${localAsset.targetPrice || ''}">
                             </div>
-                            <button onclick="window.saveAlertPrice('${ticker}', document.getElementById('mob-target-price-input').value)" 
-                                    class="bg-primary text-white text-[9px] font-black px-3 py-1.5 rounded-lg">SAVE</button>
+                            <button onclick="window.saveAlertPrice('${ticker.replace(/'/g, "\\'")}', document.getElementById('mob-target-price-input').value)" 
+                                    class="bg-primary text-white text-[9px] font-black px-3 py-1.5 rounded-lg active:scale-95 transition-transform">SAVE</button>
                         </div>
                     </div>
                     ${fields.map(f => `
@@ -307,8 +337,8 @@
                         </div>
                     `).join('')}
                     <div class="col-span-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/50">
-                        <button onclick="window.closeMobDetail(); window.removeFromWatchlist('${ticker}')" 
-                                class="w-full py-3 bg-rose-500/10 text-rose-500 rounded-xl text-xs font-black uppercase tracking-widest border border-rose-500/10 flex items-center justify-center gap-2">
+                        <button onclick="window.closeMobDetail(); window.removeFromWatchlist('${ticker.replace(/'/g, "\\'")}')" 
+                                class="w-full py-3 bg-rose-500/10 text-rose-500 rounded-xl text-xs font-black uppercase tracking-widest border border-rose-500/10 flex items-center justify-center gap-2 active:scale-95 transition-transform">
                             <span class="material-symbols-outlined text-sm">delete</span>
                             Remove from Watchlist
                         </button>
@@ -316,17 +346,12 @@
                 `;
             }
 
-            document.getElementById('mob-detail-overlay').style.display = 'block';
-            const sheet = document.getElementById('mob-detail-sheet');
-            if (sheet) {
-                sheet.style.display = 'block';
-                setTimeout(() => {
-                    sheet.style.transform = 'translateY(0)';
-                    renderMobAssetChart(ticker);
-                }, 50);
-            }
+            // Always try to render chart last
+            renderMobAssetChart(ticker);
+
         } catch (err) {
             console.error('Mobile details error:', err);
+            if (content) content.innerHTML = `<div class="col-span-2 py-4 text-center text-rose-500 text-xs font-bold">Network Error: ${err.message}</div>`;
         }
     }
     window.showMobDetails = showMobDetails;
