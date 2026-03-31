@@ -437,41 +437,55 @@
     function renderSuggestions(list) {
         const box = document.getElementById('mob-search-suggestions');
         if (!box) return;
-        if (!list.length) { box.classList.add('hidden'); return; }
-        box.innerHTML = list.map(s => `
-            <div class="px-4 py-4 hover:bg-slate-100 dark:hover:bg-slate-800 border-b border-slate-50 dark:border-slate-800 last:border-0" 
-                 onclick="window.addToWatchlist('${s.ticker.replace(/'/g, "\\'")}')">
-                <div class="flex justify-between">
-                    <span class="font-black text-primary">${s.ticker}</span>
-                    <span class="text-[9px] font-black uppercase bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded text-slate-500">${s.type}</span>
+        if (!list || !list.length) { box.classList.add('hidden'); return; }
+        box.innerHTML = list.map(s => {
+            const ticker = s.symbol || s.ticker;
+            const name = s.shortname || s.longname || s.name || ticker;
+            const type = s.quoteType || s.type || 'Equity';
+            return `
+                <div class="px-4 py-4 hover:bg-slate-100 dark:hover:bg-slate-800 border-b border-slate-50 dark:border-slate-800 last:border-0" 
+                     onclick="window.addToWatchlist('${ticker.replace(/'/g, "\\'")}')">
+                    <div class="flex justify-between">
+                        <span class="font-black text-primary">${ticker}</span>
+                        <span class="text-[9px] font-black uppercase bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded text-slate-500">${type}</span>
+                    </div>
+                    <div class="text-[11px] font-bold text-slate-500 truncate mt-1">${name}</div>
                 </div>
-                <div class="text-[11px] font-bold text-slate-500 truncate mt-1">${s.name}</div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
         box.classList.remove('hidden');
     }
 
-    // Initialize listeners
-    const searchInput = document.getElementById('mob-asset-search');
-    if (searchInput) {
-        let searchTimeout;
-        searchInput.addEventListener('input', () => {
-            clearTimeout(searchTimeout);
-            const q = searchInput.value.trim();
-            if (q.length < 2) { 
-                const box = document.getElementById('mob-search-suggestions');
-                if (box) box.classList.add('hidden'); 
-                return; 
-            }
-            searchTimeout = setTimeout(async () => {
-                const res = await fetch(`/api/market/search?q=${encodeURIComponent(q)}`);
-                const suggestions = await res.json();
-                renderSuggestions(suggestions);
-            }, 300);
-        });
-    }
-
     document.addEventListener('DOMContentLoaded', () => {
+        // Search Initialization
+        const searchInput = document.getElementById('mob-asset-search');
+        const suggestionsBox = document.getElementById('mob-search-suggestions');
+        if (searchInput) {
+            let searchTimeout;
+            searchInput.addEventListener('input', () => {
+                clearTimeout(searchTimeout);
+                const q = searchInput.value.trim();
+                if (q.length < 2) { 
+                    if (suggestionsBox) suggestionsBox.classList.add('hidden'); 
+                    return; 
+                }
+                searchTimeout = setTimeout(async () => {
+                    try {
+                        const res = await fetch(`/api/asset-search?query=${encodeURIComponent(q)}`);
+                        const suggestions = await res.json();
+                        renderSuggestions(suggestions);
+                    } catch (err) { console.error('Search error:', err); }
+                }, 300);
+            });
+        }
+
+        // Global click to close suggestions
+        document.addEventListener('click', (e) => {
+            if (searchInput && !searchInput.contains(e.target) && suggestionsBox && !suggestionsBox.contains(e.target)) {
+                suggestionsBox.classList.add('hidden');
+            }
+        });
+
         loadWatchlist();
     });
 </script>
