@@ -221,7 +221,7 @@
   async function mobSyncMarketStatus() {
     try {
       const res = await fetch('/api/market-status');
-      const s = await res.json();
+      window._mobMarketOpen = s.anyOpen;
       const dot = document.getElementById('mob-live-dot');
       const txt = document.getElementById('mob-live-text');
       if (dot) dot.className = 'mob-status-dot' + (s.anyOpen ? ' live' : '');
@@ -241,18 +241,21 @@
         return;
       }
       section.style.display = '';
-            const isPos = m.changePercent >= 0;
-            const color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-            const hasPre = m.preMarketChangePercent && Math.abs(m.preMarketChangePercent) > 0.01;
-            const hasPost = m.postMarketChangePercent && Math.abs(m.postMarketChangePercent) > 0.01;
-            
+            const preVal = (m.preMarketChangePercent && Math.abs(m.preMarketChangePercent) > 0.01 && !window._mobMarketOpen) 
+              ? `<span style="color:${m.preMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}; font-weight:900; margin-right:4px">(${m.preMarketChangePercent >= 0 ? '+' : ''}${m.preMarketChangePercent.toFixed(1)}%)</span>` 
+              : '';
+            const postVal = (m.postMarketChangePercent && Math.abs(m.postMarketChangePercent) > 0.01 && !window._mobMarketOpen)
+              ? `<span style="color:${m.postMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}; font-weight:900; margin-right:4px">(${m.postMarketChangePercent >= 0 ? '+' : ''}${m.postMarketChangePercent.toFixed(1)}%)</span>`
+              : '';
+
             return `
-              <div class="snap-start shrink-0 w-24 bg-white dark:bg-slate-50 border-r border-slate-200 dark:border-slate-300 py-2.5 flex flex-col items-center justify-center text-center"
+              <div class="snap-start shrink-0 w-28 bg-white dark:bg-slate-50 border-r border-slate-200 dark:border-slate-300 py-2.5 flex flex-col items-center justify-center text-center"
                    onclick="loadAssetChart('${m.ticker}')">
                 <span class="text-[11px] font-black text-black uppercase tracking-tight leading-none mb-1">${m.ticker}</span>
-                <span class="text-[10px] font-black" style="color:${color}; font-weight:900">${isPos ? '+' : ''}${m.changePercent.toFixed(1)}%</span>
-                ${hasPre ? `<div class="text-[8px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">Pre: <span style="color:${m.preMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">${m.preMarketChangePercent >= 0 ? '+' : ''}${m.preMarketChangePercent.toFixed(1)}%</span></div>` : ''}
-                ${hasPost ? `<div class="text-[8px] font-bold text-slate-400 mt-1 uppercase tracking-tighter Post: <span style="color:${m.postMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">${m.postMarketChangePercent >= 0 ? '+' : ''}${m.postMarketChangePercent.toFixed(1)}%</span></div>` : ''}
+                <div class="flex items-center justify-center text-[10px] font-black">
+                  ${preVal || postVal}
+                  <span style="color:${color}">${isPos ? '+' : ''}${m.changePercent.toFixed(1)}%</span>
+                </div>
               </div>`;
     } catch(e) {}
   }
@@ -316,17 +319,19 @@
             </div>
             <div class="mob-holding-values">
               <div class="mob-holding-value">${formatCurrency(price, a.currency, 2)}</div>
-              <div class="mob-holding-gain" style="color:${color}; font-weight:900">${isPos ? '+' : ''}${change.toFixed(1)}%</div>
-              ${(a.preMarketChangePercent && Math.abs(a.preMarketChangePercent) > 0.01) ? `
-                <div style="font-size:8px; font-weight:900; color:var(--mob-text-muted); text-align:right; margin-top:2px">
-                  PRE: <span style="color:${a.preMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">${a.preMarketChangePercent >= 0 ? '+' : ''}${a.preMarketChangePercent.toFixed(1)}%</span>
-                </div>
-              ` : ''}
-              ${(a.postMarketChangePercent && Math.abs(a.postMarketChangePercent) > 0.01) ? `
-                <div style="font-size:8px; font-weight:900; color:var(--mob-text-muted); text-align:right; margin-top:2px">
-                  POST: <span style="color:${a.postMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">${a.postMarketChangePercent >= 0 ? '+' : ''}${a.postMarketChangePercent.toFixed(1)}%</span>
-                </div>
-              ` : ''}
+              <div class="flex items-center justify-end gap-1.5 mt-0.5">
+                ${(a.preMarketChangePercent && Math.abs(a.preMarketChangePercent) > 0.01 && !window._mobMarketOpen) ? `
+                  <span style="font-size:10px; font-weight:900; color:${a.preMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">
+                    (${a.preMarketChangePercent >= 0 ? '+' : ''}${a.preMarketChangePercent.toFixed(1)}%)
+                  </span>
+                ` : ''}
+                ${(a.postMarketChangePercent && Math.abs(a.postMarketChangePercent) > 0.01 && !window._mobMarketOpen) ? `
+                  <span style="font-size:10px; font-weight:900; color:${a.postMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">
+                    (${a.postMarketChangePercent >= 0 ? '+' : ''}${a.postMarketChangePercent.toFixed(1)}%)
+                  </span>
+                ` : ''}
+                <div class="mob-holding-gain" style="color:${color}; font-weight:900; margin-top:0">${isPos ? '+' : ''}${change.toFixed(1)}%</div>
+              </div>
             </div>
           </div>`;
       };
