@@ -73,3 +73,40 @@
 2026-03-30T18:44:35.662Z [INFO] YF ✓ EURUSD=X: price=1.1467891 USD chg=-0.37%
 2026-03-30T18:44:35.694Z [INFO] Successfully updated EURUSD=X: 1.1467891 USD
 2026-03-30T18:44:35.716Z [INFO] Market data update cycle completed.
+2026-03-30T18:50:35.128Z [INFO] Updating market data for 1 assets...
+2026-03-30T18:50:35.164Z [INFO] Updating [EURUSD=X] using [YF]...
+2026-03-30T18:50:35.804Z [INFO] YF ✓ EURUSD=X: price=1.1467891 USD chg=-0.37%
+2026-03-30T18:50:35.833Z [INFO] Successfully updated EURUSD=X: 1.1467891 USD
+2026-03-30T18:50:35.851Z [INFO] Market data update cycle completed.
+2026-03-30T18:56:35.144Z [INFO] Updating market data for 1 assets...
+2026-03-30T18:56:35.174Z [INFO] Updating [EURUSD=X] using [YF]...
+2026-03-30T18:56:35.651Z [INFO] YF ✓ EURUSD=X: price=1.1466575 USD chg=-0.38%
+2026-03-30T18:56:35.682Z [INFO] Successfully updated EURUSD=X: 1.1466575 USD
+2026-03-30T18:56:35.697Z [INFO] Market data update cycle completed.
+2026-03-30T19:02:35.148Z [INFO] Updating market data for 1 assets...
+2026-03-30T19:02:35.189Z [INFO] Updating [EURUSD=X] using [YF]...
+2026-03-30T19:02:35.647Z [INFO] YF ✓ EURUSD=X: price=1.146526 USD chg=-0.39%
+2026-03-30T19:02:35.666Z [INFO] Successfully updated EURUSD=X: 1.146526 USD
+2026-03-30T19:02:35.680Z [INFO] Market data update cycle completed.
+2026-03-30T19:20:01.443Z [INFO] Updating market data for 1 assets...
+2026-03-30T19:20:01.484Z [INFO] Updating [EURUSD=X] using [YF]...
+2026-03-30T19:20:02.031Z [INFO] YF ✓ EURUSD=X: price=1.1458691 USD chg=-0.45%
+2026-03-30T19:20:02.052Z [INFO] Successfully updated EURUSD=X: 1.1458691 USD
+2026-03-30T19:20:02.106Z [INFO] Market data update cycle completed.
+2026-03-30T19:35:16.302Z [INFO] Updating market data for 1 assets...
+2026-03-30T19:35:16.316Z [INFO] Updating [EURUSD=X] using [YF]...
+2026-03-30T19:35:16.753Z [INFO] YF ✓ EURUSD=X: price=1.1461318 USD chg=-0.42%
+2026-03-30T19:35:16.772Z [INFO] Successfully updated EURUSD=X: 1.1461318 USD
+2026-03-30T19:35:16.955Z [INFO] Market data update cycle completed.
+2026-03-30T19:50:54.086Z [INFO] Updating market data for 1 assets...
+2026-03-30T19:50:54.102Z [INFO] Updating [EURUSD=X] using [YF]...
+2026-03-30T19:50:54.587Z [INFO] YF ✓ EURUSD=X: price=1.1462632 USD chg=-0.41%
+2026-03-30T19:50:54.602Z [INFO] Successfully updated EURUSD=X: 1.1462632 USD
+2026-03-30T19:50:54.647Z [INFO] Market data update cycle completed.
+2026-03-30T20:06:32.921Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-30T20:22:11.448Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-30T20:38:34.977Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-30T21:22:12.533Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-30T22:05:42.312Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-30T22:21:49.589Z [INFO] Skipping automatic market update: all markets are closed.
+2026-03-30T23:40:39.338Z [INFO] Skipping automatic market update: all markets are closed.

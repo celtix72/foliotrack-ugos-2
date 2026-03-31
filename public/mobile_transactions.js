@@ -64,6 +64,8 @@
                         <div id="t-search-results" class="mob-search-results" style="display:none"></div>
                         <input type="hidden" id="t-asset-ticker"/>
                         <input type="hidden" id="t-asset-currency"/>
+                        <input type="hidden" id="t-isin"/>
+                        <input type="hidden" id="t-source" value="YF"/>
                     </div>
 
                     <div class="mob-grid-2" id="t-stock-fields">
@@ -301,6 +303,12 @@
                 if (data.currency) {
                     document.getElementById('t-asset-currency').value = data.currency;
                 }
+                if (data.isin) {
+                    document.getElementById('t-isin').value = data.isin;
+                }
+                if (data.dataSource) {
+                    document.getElementById('t-source').value = data.dataSource;
+                }
             }
         } catch(e) {}
 
@@ -321,14 +329,16 @@
             portfolioId: pId,
             type: document.getElementById('t-type').value,
             date: document.getElementById('t-date').value,
-            ticker: document.getElementById('t-asset-ticker').value,
+            assetTicker: document.getElementById('t-asset-ticker').value,
             quantity: parseFloat(document.getElementById('t-qty').value) || 0,
             price: parseFloat(document.getElementById('t-price').value) || 0,
             amount: parseFloat(document.getElementById('t-amount').value) || 0,
             commission: parseFloat(document.getElementById('t-comm').value) || 0,
             tax: parseFloat(document.getElementById('t-tax').value) || 0,
-            fxRate: parseFloat(document.getElementById('t-fx').value) || 1,
-            destPortfolioId: document.getElementById('t-dest-portfolio')?.value || null
+            exchangeRate: parseFloat(document.getElementById('t-fx').value) || 1,
+            destinationPortfolioId: document.getElementById('t-dest-portfolio')?.value || null,
+            isin: document.getElementById('t-isin')?.value || null,
+            dataSource: document.getElementById('t-source')?.value || 'YF'
         };
 
         const method = id ? 'PUT' : 'POST';
@@ -376,6 +386,8 @@
         document.getElementById('t-fx').value = t.exchangeRate || t.fxRate || 1;
         document.getElementById('t-asset-ticker').value = t.assetTicker || t.ticker || '';
         document.getElementById('t-asset-search').value = t.assetTicker || t.ticker || '';
+        document.getElementById('t-isin').value = t.isin || '';
+        document.getElementById('t-source').value = t.dataSource || 'YF';
         
         // Find asset currency from current holdings if possible
         if (window.currentHoldings) {
