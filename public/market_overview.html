@@ -356,8 +356,8 @@ function renderAssets(filter = '') {
 
     if (countLabel) countLabel.textContent = `${filtered.length} ASSETS MONITORED`;
 
-    const openPositions = filtered.filter(a => a.hasPosition);
-    const watchlist = filtered.filter(a => !a.hasPosition);
+    const openPositions = filtered.filter(a => a.hasPosition).sort((a, b) => (b.changePercent || 0) - (a.changePercent || 0));
+    const watchlist = filtered.filter(a => !a.hasPosition).sort((a, b) => (b.changePercent || 0) - (a.changePercent || 0));
 
     if (watchCountEl) watchCountEl.textContent = `${watchlist.length} ASSETS`;
 
@@ -375,14 +375,14 @@ function renderAssets(filter = '') {
 
         return `
         <tr class="group transition-colors hover:bg-slate-50 dark:hover:bg-white/[0.02] ${alertClass} ${opacity}">
-            <td class="px-5 py-4">
+            <td class="px-5 py-1.5">
                 <div class="flex items-center gap-4">
                     <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-[10px] shrink-0 uppercase border border-primary/20">
                         ${a.ticker.substring(0,4)}
                     </div>
                     <div>
                         <div class="flex items-center gap-2">
-                            <p class="font-black text-sm text-slate-900 dark:text-white leading-none">${a.name}</p>
+                            <p class="font-black text-lg text-slate-900 dark:text-white leading-none">${a.name}</p>
                             ${!a.isMonitored ? '<span class="text-[8px] font-black bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-500 tracking-tighter uppercase">Inactive</span>' : ''}
                             ${a.lastUpdateError ? `<span class="px-1.5 py-0.5 rounded-full bg-rose-500 text-[8px] font-black text-white uppercase tracking-tighter" title="${a.lastUpdateError.replace(/"/g, '&quot;')}">Err</span>` : ''}
                         </div>
@@ -393,10 +393,10 @@ function renderAssets(filter = '') {
                     </div>
                 </div>
             </td>
-            <td class="px-5 py-4">
-                <p class="text-sm font-black text-slate-900 dark:text-white font-mono">${formatCurrency(price, a.currency)}</p>
+            <td class="px-5 py-1.5">
+                <p class="text-lg font-black text-slate-900 dark:text-white font-mono">${formatCurrency(price, a.currency)}</p>
             </td>
-            <td class="px-5 py-4">
+            <td class="px-5 py-1.5">
                 <div class="flex items-center gap-4">
                     <!-- Sparkline -->
                     <div class="hidden md:block">
@@ -405,7 +405,7 @@ function renderAssets(filter = '') {
                     <div class="flex flex-col">
                         <div class="flex items-center gap-1.5">
                             <span class="material-symbols-outlined text-xs text-${color}-500">${change >= 0 ? 'trending_up' : 'trending_down'}</span>
-                            <p class="text-xs font-black text-${color}-500 font-mono">${sign}${formatNumber(change, 1)}%</p>
+                            <p class="text-base font-black text-${color}-500 font-mono">${sign}${formatNumber(change, 1)}%</p>
                         </div>
                         ${(a.preMarketChangePercent && Math.abs(a.preMarketChangePercent) > 0.01) ? `
                             <div class="text-[9px] font-bold text-slate-400 mt-0.5 uppercase tracking-tighter">
@@ -420,7 +420,7 @@ function renderAssets(filter = '') {
                     </div>
                 </div>
             </td>
-            <td class="px-5 py-4 hidden sm:table-cell">
+            <td class="px-5 py-1.5 hidden sm:table-cell">
                 <div class="flex gap-4">
                     <div class="space-y-0.5">
                         <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Target</p>
@@ -432,7 +432,7 @@ function renderAssets(filter = '') {
                     </div>
                 </div>
             </td>
-            <td class="px-5 py-4 text-right">
+            <td class="px-5 py-1.5 text-right">
                 <div class="flex items-center justify-end gap-1">
                     <button onclick="loadAssetChart('${a.ticker}')" class="h-8 w-8 rounded-lg bg-violet-500/10 text-violet-500 hover:bg-violet-500 hover:text-white transition-all flex items-center justify-center">
                         <span class="material-symbols-outlined text-base">show_chart</span>
@@ -713,11 +713,11 @@ async function loadMovers() {
             const hasPost = m.postMarketChangePercent && Math.abs(m.postMarketChangePercent) > 0.01;
             
             return `
-                <div class="snap-start shrink-0 w-36 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 p-4 rounded-xl hover:border-primary transition-all cursor-pointer flex flex-col items-center justify-center text-center group shadow-sm" onclick="loadAssetChart('${m.ticker}')">
-                    <span class="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 group-hover:text-primary transition-colors">${m.ticker}</span>
-                    <div class="${isPos ? 'text-emerald-500' : 'text-rose-500'} font-bold">${isPos ? '+' : ''}${m.changePercent.toFixed(1)}%</div>
-                    ${hasPre ? `<div class="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">Pre: <span class="${m.preMarketChangePercent >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${m.preMarketChangePercent >= 0 ? '+' : ''}${m.preMarketChangePercent.toFixed(1)}%</span></div>` : ''}
-                    ${hasPost ? `<div class="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">Post: <span class="${m.postMarketChangePercent >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${m.postMarketChangePercent >= 0 ? '+' : ''}${m.postMarketChangePercent.toFixed(1)}%</span></div>` : ''}
+                <div class="snap-start shrink-0 w-36 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 p-2 rounded-xl hover:border-primary transition-all cursor-pointer flex flex-col items-center justify-center text-center group shadow-sm" onclick="loadAssetChart('${m.ticker}')">
+                    <span class="text-base font-black text-slate-400 uppercase tracking-[0.1em] mb-1 group-hover:text-primary transition-colors">${m.ticker}</span>
+                    <div class="${isPos ? 'text-emerald-500' : 'text-rose-500'} text-xl font-black leading-tight">${isPos ? '+' : ''}${m.changePercent.toFixed(1)}%</div>
+                    ${hasPre ? `<div class="text-[10px] font-bold text-slate-400 mt-0.5 uppercase tracking-tighter">Pre: <span class="${m.preMarketChangePercent >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${m.preMarketChangePercent >= 0 ? '+' : ''}${m.preMarketChangePercent.toFixed(1)}%</span></div>` : ''}
+                    ${hasPost ? `<div class="text-[10px] font-bold text-slate-400 mt-0.5 uppercase tracking-tighter">Post: <span class="${m.postMarketChangePercent >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${m.postMarketChangePercent >= 0 ? '+' : ''}${m.postMarketChangePercent.toFixed(1)}%</span></div>` : ''}
                 </div>
             `;
         }).join('');
