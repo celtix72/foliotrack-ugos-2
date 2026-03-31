@@ -25,9 +25,9 @@
         body.mobile-view-active #mobile-ui { display: flex !important; visibility: visible !important; opacity: 1 !important; }
     </style>
 </head>
-<body class="bg-background-light dark:bg-[#0b0f1a] text-slate-900 dark:text-slate-100 min-h-screen flex mobile-view-active">
+<body class="bg-background-light dark:bg-[#0b0f1a] text-slate-900 dark:text-slate-100 min-h-screen mobile-view-active">
 
-<div id="mobile-ui" class="flex flex-col h-screen w-full overflow-hidden">
+<div id="mobile-ui" class="flex flex-col fixed inset-0 w-full overflow-hidden" style="display: flex !important; height: 100dvh !important;">
     <!-- Header -->
     <div class="mob-header">
         <div class="mob-header-logo-container">
@@ -425,7 +425,8 @@
         if (!box) return;
         if (!list || !list.length) { box.classList.add('hidden'); return; }
         box.innerHTML = list.map(s => {
-            const ticker = s.symbol || s.ticker;
+            const ticker = s.symbol || s.ticker || '';
+            if (!ticker) return ''; 
             const name = s.shortname || s.longname || s.name || ticker;
             const type = s.quoteType || s.type || 'Equity';
             return `
@@ -438,7 +439,7 @@
                     <div class="text-[11px] font-bold text-slate-500 truncate mt-1">${name}</div>
                 </div>
             `;
-        }).join('');
+        }).filter(h => h !== '').join('');
         box.classList.remove('hidden');
     }
 
@@ -446,6 +447,7 @@
         // Search Initialization
         const searchInput = document.getElementById('mob-asset-search');
         const suggestionsBox = document.getElementById('mob-search-suggestions');
+        
         if (searchInput) {
             let searchTimeout;
             searchInput.addEventListener('input', () => {
