@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="/mobile.css">
     <script src="/theme.js"></script>
     <script src="/mobile_transactions.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <style>
         .mob-perf-badge { font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 6px; border-width: 1px; }
@@ -256,10 +257,8 @@
             const fp = data.fundProfile || {};
             const ks = data.defaultKeyStatistics || {};
             
-            // Get local asset data for targetPrice
-            const assetRes = await fetch(`/api/watchlist`);
-            const assets = await assetRes.json();
-            const localAsset = assets.find(a => a.ticker === ticker) || {};
+            // Get local asset data for targetPrice from memory instead of fetch
+            const localAsset = (window.watchlist || []).find(a => a.ticker === ticker) || {};
 
             document.getElementById('mob-modal-ticker').innerText = ticker;
             document.getElementById('mob-modal-name').innerText = ap.longName || data.quoteType?.longName || ticker;
@@ -476,10 +475,6 @@
         loadWatchlist();
     });
 </script>
-
-<!-- Scripts at the bottom to ensure DOM is ready -->
-<script src="/theme.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </body>
 </html>
