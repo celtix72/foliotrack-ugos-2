@@ -375,7 +375,7 @@ function renderAssets(filter = '') {
 
         return `
         <tr class="group transition-colors hover:bg-slate-50 dark:hover:bg-white/[0.02] ${alertClass} ${opacity}">
-            <td class="px-5 py-1.5">
+            <td class="px-5 py-1">
                 <div class="flex items-center gap-4">
                     <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-[10px] shrink-0 uppercase border border-primary/20">
                         ${a.ticker.substring(0,4)}
@@ -713,7 +713,7 @@ async function loadMovers() {
             const hasPost = m.postMarketChangePercent && Math.abs(m.postMarketChangePercent) > 0.01;
             
             return `
-                <div class="snap-start shrink-0 w-36 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 p-2 rounded-xl hover:border-primary transition-all cursor-pointer flex flex-col items-center justify-center text-center group shadow-sm" onclick="loadAssetChart('${m.ticker}')">
+                <div class="snap-start shrink-0 w-36 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 p-1.5 rounded-xl hover:border-primary transition-all cursor-pointer flex flex-col items-center justify-center text-center group shadow-sm" onclick="loadAssetChart('${m.ticker}')">
                     <span class="text-base font-black text-slate-400 uppercase tracking-[0.1em] mb-1 group-hover:text-primary transition-colors">${m.ticker}</span>
                     <div class="${isPos ? 'text-emerald-500' : 'text-rose-500'} text-xl font-black leading-tight">${isPos ? '+' : ''}${m.changePercent.toFixed(1)}%</div>
                     ${hasPre ? `<div class="text-[10px] font-bold text-slate-400 mt-0.5 uppercase tracking-tighter">Pre: <span class="${m.preMarketChangePercent >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${m.preMarketChangePercent >= 0 ? '+' : ''}${m.preMarketChangePercent.toFixed(1)}%</span></div>` : ''}

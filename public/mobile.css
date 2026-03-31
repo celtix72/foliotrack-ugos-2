@@ -469,7 +469,7 @@ body.mobile-view-active #mobile-ui {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 20px 10px;
+  padding: 16px 16px 8px;
 }
 
 .mob-section-title {
@@ -611,7 +611,7 @@ body.mobile-view-active #mobile-ui {
   padding: 4px 0 8px !important;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
 /* Swipe Actions */
@@ -654,7 +654,7 @@ body.mobile-view-active #mobile-ui {
   border-left: none !important;
   border-right: none !important;
   border-radius: 0 !important;
-  padding: 14px 20px;
+  padding: 10px 16px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -673,7 +673,7 @@ body.mobile-view-active #mobile-ui {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: calc(11px * var(--mob-scale, 1));
+  font-size: calc(13px * var(--mob-scale, 1));
   font-weight: 900;
   color: var(--mob-primary);
   flex-shrink: 0;
@@ -681,17 +681,17 @@ body.mobile-view-active #mobile-ui {
 }
 
 .mob-holding-info { flex: 1; min-width: 0; }
-.mob-holding-ticker { font-size: calc(13px * var(--mob-scale, 1)); font-weight: 800; }
-.mob-holding-name { font-size: calc(10px * var(--mob-scale, 1)); color: var(--mob-text-muted); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mob-holding-ticker { font-size: calc(15px * var(--mob-scale, 1)); font-weight: 800; }
+.mob-holding-name { font-size: calc(11px * var(--mob-scale, 1)); color: var(--mob-text-muted); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mob-holding-qty { font-size: calc(10px * var(--mob-scale, 1)); color: var(--mob-text-caption); }
 
 .mob-holding-values { text-align: right; flex-shrink: 0; }
-.mob-holding-value { font-size: calc(13px * var(--mob-scale, 1)); font-weight: 700; }
-.mob-holding-gain { font-size: calc(11px * var(--mob-scale, 1)); font-weight: 700; }
+.mob-holding-value { font-size: calc(15px * var(--mob-scale, 1)); font-weight: 700; }
+.mob-holding-gain { font-size: calc(13px * var(--mob-scale, 1)); font-weight: 700; }
 
 /* Large Item for Open Positions */
 .mob-holding-item.large {
-  padding: 18px 20px;
+  padding: 14px 16px;
 }
 .mob-holding-item.large .mob-holding-ticker {
   font-size: calc(16px * var(--mob-scale, 1));
