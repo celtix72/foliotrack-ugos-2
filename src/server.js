@@ -490,6 +490,8 @@ async function fetchAssetMetadata(ticker) {
             currentPrice: quote.regularMarketPrice || 0,
             changePercent: quote.regularMarketChangePercent || 0,
             changeValue: quote.regularMarketChange || 0,
+            preMarketChangePercent: quote.preMarketChangePercent || 0,
+            postMarketChangePercent: quote.postMarketChangePercent || 0,
             pe: quote.trailingPE || (summary.summaryDetail ? summary.summaryDetail.trailingPE : null),
             forwardPE: quote.forwardPE || (summary.summaryDetail ? summary.summaryDetail.forwardPE : null),
             dividendYield: quote.dividendYield || (summary.summaryDetail ? summary.summaryDetail.dividendYield : null),
@@ -4462,6 +4464,8 @@ async function updateMarketData(force = false) {
                     dividendYield: metadata.dividendYield || asset.dividendYield,
                     eps: metadata.eps || asset.eps,
                     beta: metadata.beta || asset.beta,
+                    preMarketChangePercent: metadata.preMarketChangePercent || 0,
+                    postMarketChangePercent: metadata.postMarketChangePercent || 0,
                     nextDividendDate: metadata.nextDividendDate || asset.nextDividendDate,
                     name: metadata.name || asset.name,
                     currency: metadata.currency || asset.currency,
@@ -4475,12 +4479,14 @@ async function updateMarketData(force = false) {
             if (updateData) {
                 database.db.prepare(`
                     UPDATE assets
-                    SET currentPrice=?, changePercent=?, changeValue=?, pe=?, forwardPE=?, dividendYield=?, eps=?, beta=?, nextDividendDate=?, name=?, currency=?, exchange=?, country=?, quoteDate=?, lastUpdateError=NULL, updatedAt=datetime('now')
+                    SET currentPrice=?, changePercent=?, changeValue=?, preMarketChangePercent=?, postMarketChangePercent=?, pe=?, forwardPE=?, dividendYield=?, eps=?, beta=?, nextDividendDate=?, name=?, currency=?, exchange=?, country=?, quoteDate=?, lastUpdateError=NULL, updatedAt=datetime('now')
                     WHERE ticker=?
                 `).run(
                     updateData.price,
                     updateData.change,
                     updateData.changeValue,
+                    updateData.preMarketChangePercent || 0,
+                    updateData.postMarketChangePercent || 0,
                     updateData.pe,
                     updateData.forwardPE,
                     updateData.dividendYield,

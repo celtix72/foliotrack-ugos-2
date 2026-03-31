@@ -241,16 +241,19 @@
         return;
       }
       section.style.display = '';
-      container.innerHTML = movers.map(m => {
-        const isPos = m.changePercent >= 0;
-        const color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-        return `
-          <div class="snap-start shrink-0 w-20 bg-white dark:bg-slate-50 border-r border-slate-200 dark:border-slate-300 py-2.5 flex flex-col items-center justify-center text-center"
-               onclick="loadAssetChart('${m.ticker}')">
-            <span class="text-[11px] font-black text-black uppercase tracking-tight leading-none mb-1">${m.ticker}</span>
-            <span class="text-[10px] font-black" style="color:${color}; font-weight:900">${isPos?'+':''}${m.changePercent.toFixed(1)}%</span>
-          </div>`;
-      }).join('');
+            const isPos = m.changePercent >= 0;
+            const color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+            const hasPre = m.preMarketChangePercent && Math.abs(m.preMarketChangePercent) > 0.01;
+            const hasPost = m.postMarketChangePercent && Math.abs(m.postMarketChangePercent) > 0.01;
+            
+            return `
+              <div class="snap-start shrink-0 w-24 bg-white dark:bg-slate-50 border-r border-slate-200 dark:border-slate-300 py-2.5 flex flex-col items-center justify-center text-center"
+                   onclick="loadAssetChart('${m.ticker}')">
+                <span class="text-[11px] font-black text-black uppercase tracking-tight leading-none mb-1">${m.ticker}</span>
+                <span class="text-[10px] font-black" style="color:${color}; font-weight:900">${isPos ? '+' : ''}${m.changePercent.toFixed(1)}%</span>
+                ${hasPre ? `<div class="text-[8px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">Pre: <span style="color:${m.preMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">${m.preMarketChangePercent >= 0 ? '+' : ''}${m.preMarketChangePercent.toFixed(1)}%</span></div>` : ''}
+                ${hasPost ? `<div class="text-[8px] font-bold text-slate-400 mt-1 uppercase tracking-tighter Post: <span style="color:${m.postMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">${m.postMarketChangePercent >= 0 ? '+' : ''}${m.postMarketChangePercent.toFixed(1)}%</span></div>` : ''}
+              </div>`;
     } catch(e) {}
   }
 
@@ -313,7 +316,17 @@
             </div>
             <div class="mob-holding-values">
               <div class="mob-holding-value">${formatCurrency(price, a.currency, 2)}</div>
-              <div class="mob-holding-gain" style="color:${color}; font-weight:900">${isPos?'+':''}${change.toFixed(1)}%</div>
+              <div class="mob-holding-gain" style="color:${color}; font-weight:900">${isPos ? '+' : ''}${change.toFixed(1)}%</div>
+              ${(a.preMarketChangePercent && Math.abs(a.preMarketChangePercent) > 0.01) ? `
+                <div style="font-size:8px; font-weight:900; color:var(--mob-text-muted); text-align:right; margin-top:2px">
+                  PRE: <span style="color:${a.preMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">${a.preMarketChangePercent >= 0 ? '+' : ''}${a.preMarketChangePercent.toFixed(1)}%</span>
+                </div>
+              ` : ''}
+              ${(a.postMarketChangePercent && Math.abs(a.postMarketChangePercent) > 0.01) ? `
+                <div style="font-size:8px; font-weight:900; color:var(--mob-text-muted); text-align:right; margin-top:2px">
+                  POST: <span style="color:${a.postMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">${a.postMarketChangePercent >= 0 ? '+' : ''}${a.postMarketChangePercent.toFixed(1)}%</span>
+                </div>
+              ` : ''}
             </div>
           </div>`;
       };

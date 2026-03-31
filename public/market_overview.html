@@ -402,9 +402,21 @@ function renderAssets(filter = '') {
                     <div class="hidden md:block">
                         <canvas id="sparkline-${a.ticker}" width="60" height="24" class="opacity-80"></canvas>
                     </div>
-                    <div class="flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-xs text-${color}-500">${change >= 0 ? 'trending_up' : 'trending_down'}</span>
-                        <p class="text-xs font-black text-${color}-500 font-mono">${sign}${formatNumber(change, 1)}%</p>
+                    <div class="flex flex-col">
+                        <div class="flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-xs text-${color}-500">${change >= 0 ? 'trending_up' : 'trending_down'}</span>
+                            <p class="text-xs font-black text-${color}-500 font-mono">${sign}${formatNumber(change, 1)}%</p>
+                        </div>
+                        ${(a.preMarketChangePercent && Math.abs(a.preMarketChangePercent) > 0.01) ? `
+                            <div class="text-[9px] font-bold text-slate-400 mt-0.5 uppercase tracking-tighter">
+                                Pre: <span class="${a.preMarketChangePercent >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${a.preMarketChangePercent >= 0 ? '+' : ''}${formatNumber(a.preMarketChangePercent, 1)}%</span>
+                            </div>
+                        ` : ''}
+                        ${(a.postMarketChangePercent && Math.abs(a.postMarketChangePercent) > 0.01) ? `
+                            <div class="text-[9px] font-bold text-slate-400 mt-0.5 uppercase tracking-tighter">
+                                Post: <span class="${a.postMarketChangePercent >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${a.postMarketChangePercent >= 0 ? '+' : ''}${formatNumber(a.postMarketChangePercent, 1)}%</span>
+                            </div>
+                        ` : ''}
                     </div>
                 </div>
             </td>
@@ -697,10 +709,15 @@ async function loadMovers() {
         if (carousel) carousel.innerHTML = movers.map(m => {
             const isPos = m.changePercent >= 0;
             const color = isPos ? 'emerald' : 'rose';
+            const hasPre = m.preMarketChangePercent && Math.abs(m.preMarketChangePercent) > 0.01;
+            const hasPost = m.postMarketChangePercent && Math.abs(m.postMarketChangePercent) > 0.01;
+            
             return `
                 <div class="snap-start shrink-0 w-36 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 p-4 rounded-xl hover:border-primary transition-all cursor-pointer flex flex-col items-center justify-center text-center group shadow-sm" onclick="loadAssetChart('${m.ticker}')">
                     <span class="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 group-hover:text-primary transition-colors">${m.ticker}</span>
                     <div class="${isPos ? 'text-emerald-500' : 'text-rose-500'} font-bold">${isPos ? '+' : ''}${m.changePercent.toFixed(1)}%</div>
+                    ${hasPre ? `<div class="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">Pre: <span class="${m.preMarketChangePercent >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${m.preMarketChangePercent >= 0 ? '+' : ''}${m.preMarketChangePercent.toFixed(1)}%</span></div>` : ''}
+                    ${hasPost ? `<div class="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">Post: <span class="${m.postMarketChangePercent >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${m.postMarketChangePercent >= 0 ? '+' : ''}${m.postMarketChangePercent.toFixed(1)}%</span></div>` : ''}
                 </div>
             `;
         }).join('');

@@ -145,6 +145,14 @@ function initDb() {
     } catch (e) {}
 
     try {
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN preMarketChangePercent REAL NOT NULL DEFAULT 0`).run();
+    } catch (e) {}
+
+    try {
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN postMarketChangePercent REAL NOT NULL DEFAULT 0`).run();
+    } catch (e) {}
+
+    try {
         dbConnection.prepare(`ALTER TABLE portfolios ADD COLUMN totalDividends REAL NOT NULL DEFAULT 0`).run();
     } catch (e) {}
 
