@@ -539,10 +539,16 @@
         const body = document.getElementById('portfolios-breakdown-body');
         body.innerHTML = '';
 
-        Object.values(individual).sort((a,b) => b.metrics.currentValue - a.metrics.currentValue).forEach(p => {
-            const m = p.metrics;
-            const roiColor = m.totalROI >= 0 ? 'text-emerald-500' : 'text-rose-500';
-            
+        Object.values(individual).sort((a,b) => (b.metrics?.currentValue || 0) - (a.metrics?.currentValue || 0)).forEach(p => {
+            const m = p.metrics || {};
+            const roi = m.totalROI || 0;
+            const twr = m.twr || 0;
+            const xirr = m.xirr || 0;
+
+            const roiColor = roi >= 0 ? 'text-emerald-500' : 'text-rose-500';
+            const twrColor = twr >= 0 ? 'text-emerald-500' : 'text-rose-500';
+            const xirrColor = xirr >= 0 ? 'text-emerald-500' : 'text-rose-500';
+
             const tr = document.createElement('tr');
             tr.className = 'hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors';
             tr.innerHTML = `
@@ -552,9 +558,11 @@
                         <span class="font-bold text-sm">${p.name}</span>
                     </div>
                 </td>
-                <td class="py-4 text-right font-black text-sm">${formatCurrency(m.currentValue, 'EUR', 0)}</td>
-                <td class="py-4 text-right font-black text-sm ${roiColor}">${formatNumber(m.totalROI * 100, 2)}%</td>
-                <td class="py-4 text-right font-bold text-sm text-slate-500">${formatNumber(m.sharpeRatio, 2)}</td>
+                <td class="py-4 text-right font-black text-sm">${formatCurrency(m.currentValue || 0, 'EUR', 0)}</td>
+                <td class="py-4 text-right font-black text-sm ${roiColor}">${formatNumber((roi) * 100, 2)}%</td>
+                <td class="py-4 text-right font-black text-sm ${twrColor}">${formatNumber((twr) * 100, 2)}%</td>
+                <td class="py-4 text-right font-black text-sm ${xirrColor}">${formatNumber((xirr) * 100, 2)}%</td>
+                <td class="py-4 text-right font-bold text-sm text-slate-500">${formatNumber(m.sharpeRatio || 0, 2)}</td>
                 <td class="py-4 text-right">
                     <div class="flex items-center justify-end gap-2">
                         <div class="w-16 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">

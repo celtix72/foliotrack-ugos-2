@@ -154,6 +154,22 @@
         </div>
       </div>
 
+      <!-- Performance Metrics Row -->
+      <div class="grid grid-cols-3 gap-3" style="margin-top: 8px;">
+        <div class="mob-hero-stat-box" style="padding: 10px 12px;">
+          <span class="mob-hero-stat-box-label" style="font-size: 8px;">ROI Simple</span>
+          <span class="mob-hero-stat-box-value" id="mob-p-roi" style="font-size: 13px;">--%</span>
+        </div>
+        <div class="mob-hero-stat-box" style="padding: 10px 12px;">
+          <span class="mob-hero-stat-box-label" style="font-size: 8px;">TWR (Time)</span>
+          <span class="mob-hero-stat-box-value" id="mob-p-twr" style="font-size: 13px;">--%</span>
+        </div>
+        <div class="mob-hero-stat-box" style="padding: 10px 12px;">
+          <span class="mob-hero-stat-box-label" style="font-size: 8px;">XIRR (Money)</span>
+          <span class="mob-hero-stat-box-value" id="mob-p-xirr" style="font-size: 13px;">--%</span>
+        </div>
+      </div>
+
       <!-- Chart -->
       <div class="mob-chart-card">
         <div class="mob-chart-title">Performance</div>
@@ -715,6 +731,23 @@
 
       if (el('mob-f-tax')) el('mob-f-tax').textContent = formatPrivacy(totalTax, currency, 'mob-f-tax', 0);
       if (el('mob-f-minus')) el('mob-f-minus').textContent = formatPrivacy(totalMinus, currency, 'mob-f-minus', 0);
+
+      // Performance Grid Populating
+      const roi = p.roi || 0;
+      const twr = p.twr || 0;
+      const xirr = p.xirr || 0;
+      if (el('mob-p-roi')) {
+          el('mob-p-roi').textContent = (roi * 100).toFixed(1) + '%';
+          el('mob-p-roi').style.color = roi >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+      }
+      if (el('mob-p-twr')) {
+          el('mob-p-twr').textContent = (twr * 100).toFixed(1) + '%';
+          el('mob-p-twr').style.color = twr >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+      }
+      if (el('mob-p-xirr')) {
+          el('mob-p-xirr').textContent = (xirr * 100).toFixed(1) + '%';
+          el('mob-p-xirr').style.color = xirr >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+      }
 
       const gain = p.totalGain || 0;
       const gainEl = el('mob-detail-gain');

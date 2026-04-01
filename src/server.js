@@ -4023,13 +4023,43 @@ app.get('/api/analytics/reports', async (req, res) => {
 
         for (const pid in monthlyIndividual) {
             const p = monthlyIndividual[pid];
+            const portfolioObj = portfolios.find(port => port.id == pid);
             p.history = normalizeRelative(p.history);
             const last = p.history[p.history.length - 1];
-            const costBasis = p.history[0].absoluteValue - p.history[0].profit;
             const roi = last.netDeposits > 0 ? (last.absoluteValue / last.netDeposits) - 1 : (last.absoluteValue / Math.max(1, last.absoluteValue - last.profit)) - 1;
             
+            // Calculate individual TWR
+            const indHistory = portfolioData.individual[pid];
+            let indTwr = 0;
+            if (indHistory.length >= 2) {
+                const subPeriods = [];
+                for (let i = 1; i < indHistory.length; i++) {
+                    const prev = indHistory[i-1];
+                    const curr = indHistory[i];
+                    subPeriods.push({
+                        startingValue: prev.value,
+                        endingValue: curr.value,
+                        netCashFlow: curr.netDeposits - prev.netDeposits
+                    });
+                }
+                indTwr = calculateTWR(subPeriods);
+            }
+
+            // Calculate individual XIRR
+            const pTxs = allTransactions.filter(t => t.portfolioId == pid && ['DEPOSIT', 'WITHDRAWAL'].includes(t.type));
+            const pFlows = pTxs.map(t => {
+                const rate = (portfolioObj && portfolioObj.currency === 'USD') ? (fxRates['USD']?.[t.date] || 1) : 1;
+                const amt = (t.amount || (t.quantity * t.price)) / rate;
+                return { date: new Date(t.date), amount: t.type === 'DEPOSIT' ? -amt : amt };
+            });
+            pFlows.push({ date: new Date(), amount: last.absoluteValue });
+            pFlows.sort((a,b) => a.date - b.date);
+            const indXirr = pFlows.length >= 2 ? (xirr(pFlows) || 0) : 0;
+
             p.metrics = {
                 totalROI: roi,
+                twr: indTwr,
+                xirr: indXirr,
                 currentValue: last.absoluteValue,
                 contribution: normalizedGlobal[normalizedGlobal.length-1].absoluteValue > 0 ? 
                     (last.absoluteValue / normalizedGlobal[normalizedGlobal.length-1].absoluteValue) : 0,

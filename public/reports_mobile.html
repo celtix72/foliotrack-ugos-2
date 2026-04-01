@@ -259,21 +259,42 @@
                 .sort((a,b) => b.metrics.currentValue - a.metrics.currentValue)
                 .map(p => {
                     const pm = p.metrics;
-                    const isPos = pm.totalROI >= 0;
+                    const roi = pm.totalROI || 0;
+                    const twr = pm.twr || 0;
+                    const xirr = pm.xirr || 0;
+                    const roiColor = roi >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+                    const twrColor = twr >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+                    const xirrColor = xirr >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
                     const pColor = (data.portfolios && data.portfolios.find(port => port.id == p.id)) ? data.portfolios.find(port => port.id == p.id).color : '#6366f1';
                     const pCurrency = (data.portfolios && data.portfolios.find(port => port.id == p.id)) ? data.portfolios.find(port => port.id == p.id).currency : 'EUR';
                     return `
-                      <div class="mob-portfolio-card" onclick="window.location.href='/portfolio?id=${p.id}'" style="margin: 0 16px 12px">
-                        <div class="mob-portfolio-icon" style="background-color:${pColor}">
-                          <span class="material-symbols-outlined">work</span>
+                      <div class="mob-portfolio-card" onclick="window.location.href='/portfolio?id=${p.id}'" style="margin: 0 16px 12px; flex-direction: column; align-items: stretch; gap: 12px;">
+                        <div style="display: flex; align-items: center; gap: 14px;">
+                          <div class="mob-portfolio-icon" style="background-color:${pColor}">
+                            <span class="material-symbols-outlined">work</span>
+                          </div>
+                          <div class="mob-portfolio-info">
+                            <div class="mob-portfolio-name">${p.name}</div>
+                            <div class="mob-portfolio-meta">Contrib: ${(pm.contribution*100).toFixed(1)}% · Sharpe: ${pm.sharpeRatio.toFixed(1)}</div>
+                          </div>
+                          <div class="mob-portfolio-values">
+                            <div class="mob-portfolio-net">${formatCurrency(pm.currentValue, pCurrency)}</div>
+                          </div>
                         </div>
-                        <div class="mob-portfolio-info">
-                          <div class="mob-portfolio-name">${p.name}</div>
-                          <div class="mob-portfolio-meta">Contrib: ${(pm.contribution*100).toFixed(1)}% · Sharpe: ${pm.sharpeRatio.toFixed(1)}</div>
-                        </div>
-                        <div class="mob-portfolio-values">
-                          <div class="mob-portfolio-net">${formatCurrency(pm.currentValue, pCurrency)}</div>
-                          <div class="mob-portfolio-change" style="color:${isPos?'var(--mob-emerald)':'var(--mob-rose)'}">${isPos?'▲':'▼'} ${Math.abs(pm.totalROI*100).toFixed(1)}%</div>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding-top: 10px; border-top: 1px solid var(--mob-border);">
+                          <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <span style="font-size: 8px; font-weight: 800; text-transform: uppercase; color: var(--mob-text-caption); letter-spacing: 0.05em;">ROI</span>
+                            <span style="font-size: 12px; font-weight: 900; color: ${roiColor}">${(roi * 100).toFixed(1)}%</span>
+                          </div>
+                          <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <span style="font-size: 8px; font-weight: 800; text-transform: uppercase; color: var(--mob-text-caption); letter-spacing: 0.05em;">TWR</span>
+                            <span style="font-size: 12px; font-weight: 900; color: ${twrColor}">${(twr * 100).toFixed(1)}%</span>
+                          </div>
+                          <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <span style="font-size: 8px; font-weight: 800; text-transform: uppercase; color: var(--mob-text-caption); letter-spacing: 0.05em;">XIRR</span>
+                            <span style="font-size: 12px; font-weight: 900; color: ${xirrColor}">${(xirr * 100).toFixed(1)}%</span>
+                          </div>
                         </div>
                       </div>`;
                 }).join('');
