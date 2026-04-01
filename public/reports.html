@@ -233,7 +233,7 @@
                 <tr class="text-[10px] font-bold uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800">
                     <th class="pb-4 font-bold">Portfolio</th>
                     <th class="pb-4 font-bold text-right">Current Value</th>
-                    <th class="pb-4 font-bold text-right">ROI</th>
+                    <th class="pb-4 font-bold text-right" id="roi-header-label">ROI</th>
                     <th class="pb-4 font-bold text-right">TWR</th>
                     <th class="pb-4 font-bold text-right">XIRR</th>
                     <th class="pb-4 font-bold text-right">Sharpe</th>
@@ -537,6 +537,8 @@
 
     function renderPortfoliosBreakdown(individual) {
         const body = document.getElementById('portfolios-breakdown-body');
+        const roiHeader = document.getElementById('roi-header-label');
+        if (roiHeader) roiHeader.textContent = `ROI (${currentRange === 'ALL' ? 'Tot' : currentRange})`;
         body.innerHTML = '';
 
         Object.values(individual).sort((a,b) => (b.metrics?.currentValue || 0) - (a.metrics?.currentValue || 0)).forEach(p => {

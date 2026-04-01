@@ -9,6 +9,21 @@ const axios      = require('axios');
 const fs         = require('fs');
 const { xirr, calculateTWR } = require('./utils/finance');
 
+/**
+ * Standard ROI calculation used across the app.
+ * @param {number} value - Current value (NAV).
+ * @param {number} netDeposits - Cumulative net deposits.
+ * @param {number} profit - Total profit (including dividends).
+ * @returns {number} ROI as a decimal.
+ */
+function calculateROI(value, netDeposits, profit) {
+    if (netDeposits > 0) return (value / netDeposits) - 1;
+    // Fallback if netDeposits is 0 or negative (e.g. only profits remain after withdrawals)
+    const costBasis = value - profit;
+    if (costBasis > 0) return (value / costBasis) - 1;
+    return 0;
+}
+
 const LOGS_DIR = path.join(__dirname, '../logs');
 const LOG_FILE = path.join(LOGS_DIR, 'app.log');
 
@@ -1634,8 +1649,7 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
     const perfData = await calculatePerformanceHistory(portfolioId, 'ALL', false);
     const pHistory = Array.isArray(perfData) ? perfData : (perfData.dataPoints || []);
     const lastPPoint = pHistory.at(-1) || { value: 0, profit: 0, netDeposits: 0 };
-
-    const roi = lastPPoint.netDeposits > 0 ? (lastPPoint.value / lastPPoint.netDeposits) - 1 : 0;
+    const roi = calculateROI(lastPPoint.value || 0, lastPPoint.netDeposits || 0, lastPPoint.profit || 0);
     const twr = calculateTWR(pHistory.map((pt, idx) => {
         const prev = pHistory[idx - 1] || { value: 0, netDeposits: 0 };
         return {
@@ -4026,7 +4040,7 @@ app.get('/api/analytics/reports', async (req, res) => {
             const portfolioObj = portfolios.find(port => port.id == pid);
             p.history = normalizeRelative(p.history);
             const last = p.history[p.history.length - 1];
-            const roi = last.netDeposits > 0 ? (last.absoluteValue / last.netDeposits) - 1 : (last.absoluteValue / Math.max(1, last.absoluteValue - last.profit)) - 1;
+            const roi = calculateROI(last.absoluteValue || 0, last.netDeposits || 0, last.profit || 0);
             
             // Calculate individual TWR
             const indHistory = portfolioData.individual[pid];

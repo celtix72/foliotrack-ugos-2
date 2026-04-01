@@ -284,7 +284,7 @@
                         
                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding-top: 10px; border-top: 1px solid var(--mob-border);">
                           <div style="display: flex; flex-direction: column; gap: 2px;">
-                            <span style="font-size: 8px; font-weight: 800; text-transform: uppercase; color: var(--mob-text-caption); letter-spacing: 0.05em;">ROI</span>
+                            <span style="font-size: 8px; font-weight: 800; text-transform: uppercase; color: var(--mob-text-caption); letter-spacing: 0.05em;">ROI (${mobCurrentRange === 'ALL' ? 'Tot' : mobCurrentRange})</span>
                             <span style="font-size: 12px; font-weight: 900; color: ${roiColor}">${(roi * 100).toFixed(1)}%</span>
                           </div>
                           <div style="display: flex; flex-direction: column; gap: 2px;">
