@@ -80,21 +80,21 @@
 
     <!-- Hero Card -->
     <div class="mob-hero">
-      <div class="mob-hero-label">Portfolio Netto</div>
-      <div class="flex items-center gap-2 mb-4 overflow-hidden">
+      <div class="mob-hero-label">Patrimonio</div>
+      <div class="flex items-baseline gap-2 mb-4 overflow-hidden">
         <div class="mob-hero-value" id="mob-total-net" style="margin-bottom:0; font-size: 28px;">€ 0</div>
-        <div id="mob-day-var" class="px-2 py-0.5 rounded-lg text-xs font-bold shadow-sm hidden" style="margin-top: 4px;"></div>
+        <div class="text-[14px] font-bold text-slate-500 opacity-60" id="mob-total-gross">(€ 0)</div>
+        <div id="mob-day-var" class="ml-auto px-2 py-0.5 rounded-lg text-[10px] font-black shadow-sm hidden"></div>
       </div>
-      <div class="text-[13px] font-bold text-slate-500 opacity-60 truncate mb-4" id="mob-total-gross">(€ 0)</div>
       
       <div class="grid grid-cols-2 gap-4">
-        <div class="mob-hero-stat-item !p-0 !bg-transparent border-0" id="mob-stat-winner">
-          <span class="mob-hero-stat-label">Top Winner</span>
-          <div id="mob-top-winner">--</div>
+        <div class="mob-hero-stat-item !p-0 !bg-transparent border-0">
+          <span class="mob-hero-stat-label">Migliori (1D)</span>
+          <div id="mob-top-winners" class="space-y-4 mt-2">--</div>
         </div>
-        <div class="mob-hero-stat-item !p-0 !bg-transparent border-0" id="mob-stat-loser">
-          <span class="mob-hero-stat-label">Top Loser</span>
-          <div id="mob-top-loser">--</div>
+        <div class="mob-hero-stat-item !p-0 !bg-transparent border-0">
+          <span class="mob-hero-stat-label">Peggiori (1D)</span>
+          <div id="mob-top-losers" class="space-y-4 mt-2">--</div>
         </div>
       </div>
     </div>
@@ -222,27 +222,29 @@
           }
       }
 
-      // Top Winner / Loser
-      const winnerEl = document.getElementById('mob-top-winner');
-      const loserEl = document.getElementById('mob-top-loser');
+      // Top Winners / Losers
+      const winnersEl = document.getElementById('mob-top-winners');
+      const losersEl  = document.getElementById('mob-top-losers');
       
-      const renderMiniAsset = (el, asset) => {
-        if (!el || !asset) return;
-        const isPos = asset.changePercent >= 0;
-        const color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-        const absVal = Math.floor(Math.abs(asset.absChange || 0));
-        el.innerHTML = `
-          <div class="flex flex-col">
-            <div class="flex items-center gap-1.5">
-              <span class="text-[11px] font-black">${asset.ticker}</span>
-              <span class="text-[11px] font-black" style="color:${color}">${isPos?'+':''}${asset.changePercent.toFixed(1)}%</span>
-            </div>
-            <div class="text-[10px] opacity-50 font-medium">${isPos?'+':'-'}€ ${absVal}</div>
-          </div>`;
+      const renderMiniAssetList = (el, assets) => {
+        if (!el || !assets || assets.length === 0) return;
+        el.innerHTML = assets.map(asset => {
+          const isPos = asset.changePercent >= 0;
+          const color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+          const absVal = Math.floor(Math.abs(asset.absChange || 0));
+          return `
+            <div class="flex flex-col">
+              <div class="flex items-center gap-1.5">
+                <span class="text-[15px] font-black leading-tight">${asset.ticker}</span>
+                <span class="text-[15px] font-black leading-tight" style="color:${color}">${isPos?'+':''}${asset.changePercent.toFixed(1)}%</span>
+              </div>
+              <div class="text-[11px] opacity-40 font-black">${isPos?'+':'-'}€ ${absVal}</div>
+            </div>`;
+        }).join('');
       };
 
-      if (winnerEl) renderMiniAsset(winnerEl, g.topWinner);
-      if (loserEl) renderMiniAsset(loserEl, g.topLoser);
+      if (winnersEl) renderMiniAssetList(winnersEl, g.topWinners);
+      if (losersEl) renderMiniAssetList(losersEl, g.topLosers);
 
       // Portfolios
       const pList = document.getElementById('mob-portfolio-list');
@@ -536,9 +538,13 @@
 
   // Init when mobile view is activated
   window.addEventListener('mobile-view-activated', mobInit);
+  // Force mobile preference if we are on this specific page
+  if (window.location.pathname.includes('dashboard_mobile')) {
+    localStorage.setItem('layout-preference', 'mobile');
+  }
   // If already active when DOM ready
   document.addEventListener('DOMContentLoaded', () => {
-    if (window._mobileViewActive) mobInit();
+    if (window._mobileViewActive || window.location.pathname.includes('mobile')) mobInit();
   });
 
   // Re-init charts after activation (canvas may need redraw)

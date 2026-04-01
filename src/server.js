@@ -1396,8 +1396,8 @@ app.get('/api/portfolios', async (req, res) => {
                 investedCapital: totalNetValueEUR - (lastPoint.profit || 0),
                 changeValue: globalChangeEUR,
                 changePercent: (totalValueEUR - globalChangeEUR) > 0 ? (globalChangeEUR / (totalValueEUR - globalChangeEUR)) * 100 : 0,
-                topWinner: heldAssets[0] || null,
-                topLoser: heldAssets.length > 1 ? heldAssets[heldAssets.length - 1] : null
+                topWinners: heldAssets.slice(0, 2),
+                topLosers: heldAssets.slice(-2).reverse()
             }
         });
     } catch (err) {
