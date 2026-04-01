@@ -329,75 +329,87 @@
             // Initial chart load
             initDashboardChart();
 
-            // Render Portfolios
-            const pContainer = document.getElementById('portfolio-container');
-            if (portfolios && portfolios.length > 0) {
-                pContainer.innerHTML = portfolios.map(p => {
-                    const isPos = p.changePercent >= 0;
-                    const roiPos = p.roi >= 0;
-                    const twrPos = p.twr >= 0;
-                    const xirrPos = p.xirr >= 0;
-                    
-                    return `
-                        <div class="bg-white dark:bg-[#111722] p-5 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col gap-4 group hover:border-primary transition-all cursor-pointer" onclick="window.location.href='/portfolio?id=${p.id}'">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-11 h-11 rounded-lg flex items-center justify-center text-white" style="background-color: ${p.color || '#6366f1'}">
-                                        <span class="material-symbols-outlined text-[20px]">work</span>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm font-bold text-slate-900 dark:text-slate-100">${p.name}</p>
-                                        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">${p.assetCount} Assets • ${p.currency}</p>
-                                    </div>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-sm font-black text-primary">${formatPrivacy(p.netValue || p.totalValue, p.currency, 'p-' + p.id)}</p>
-                                    <p class="${isPos ? 'text-emerald-500' : 'text-rose-500'} text-[10px] font-bold">
-                                        ${isPos ? '▲' : '▼'} ${Math.abs(p.changePercent).toFixed(1)}%
-                                        (${p.changeValue >= 0 ? '+' : ''}${Math.round(p.changeValue).toLocaleString('it-IT')} €)
-                                    </p>
-                                </div>
-                            </div>
-                            
-                            <!-- Metrics Row -->
-                            <div class="grid grid-cols-3 gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/50">
-                                <div class="space-y-0.5">
-                                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Simple ROI</p>
-                                    <p class="text-[10px] font-black ${roiPos ? 'text-emerald-500' : 'text-rose-500'}">
-                                        ${roiPos ? '+' : ''}${formatPrivacy(p.roi * 100, '%', 'stat')}
-                                    </p>
-                                </div>
-                                <div class="space-y-0.5">
-                                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Time-Weight (TWR)</p>
-                                    <p class="text-[10px] font-black ${twrPos ? 'text-emerald-500' : 'text-rose-500'}">
-                                        ${twrPos ? '+' : ''}${formatPrivacy(p.twr * 100, '%', 'stat')}
-                                    </p>
-                                </div>
-                                <div class="space-y-0.5">
-                                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Money-Weight (XIRR)</p>
-                                    <p class="text-[10px] font-black ${xirrPos ? 'text-emerald-500' : 'text-rose-500'}">
-                                        ${xirrPos ? '+' : ''}${formatPrivacy(p.xirr * 100, '%', 'stat')}
-                                    </p>
-                                </div>
-                            </div>
+    function createPortfolioCard(p) {
+        const isPos = p.changeValue >= 0;
+        const roiPos = p.roi >= 0;
+        const twrPos = p.twr >= 0;
+        const xirrPos = p.xirr >= 0;
+
+        return `
+            <div class="bg-white dark:bg-[#111722] p-5 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col gap-4 group hover:border-primary transition-all cursor-pointer" onclick="window.location.href='portfolio_detail.html?id=${p.id}'">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-11 h-11 rounded-lg flex items-center justify-center text-white" style="background-color: ${p.color || '#6366f1'}">
+                            <span class="material-symbols-outlined text-[20px]">work</span>
                         </div>
-                    `;
-                }).join('');
-            } else {
-                pContainer.innerHTML = '<p class="text-sm text-slate-500 col-span-2">No portfolios found.</p>';
-            }
+                        <div>
+                            <p class="text-sm font-bold text-slate-900 dark:text-slate-100">${p.name}</p>
+                            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">${p.assetCount} Assets • ${p.currency}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm font-black text-primary">${formatPrivacy(p.netValue || p.totalValue, p.currency, 'p-' + p.id)}</p>
+                        <p class="${isPos ? 'text-emerald-500' : 'text-rose-500'} text-[10px] font-bold">
+                            ${isPos ? '▲' : '▼'} ${Math.abs(p.changePercent).toFixed(1)}%
+                            (${p.changeValue >= 0 ? '+' : ''}${formatPrivacy(p.changeValue, p.currency, 'p-' + p.id)})
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/50">
+                    <div class="space-y-0.5">
+                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-tighter">ROI</p>
+                        <p class="text-[10px] font-black ${roiPos ? 'text-emerald-500' : 'text-rose-500'}">
+                            ${roiPos ? '+' : ''}${(p.roi * 100).toFixed(2)}%
+                        </p>
+                    </div>
+                    <div class="space-y-0.5 border-x border-slate-100 dark:border-slate-800/50 px-2 text-center">
+                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-tighter">TWR</p>
+                        <p class="text-[10px] font-black ${twrPos ? 'text-emerald-500' : 'text-rose-500'}">
+                            ${twrPos ? '+' : ''}${(p.twr * 100).toFixed(2)}%
+                        </p>
+                    </div>
+                    <div class="space-y-0.5 text-right">
+                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-tighter">XIRR</p>
+                        <p class="text-[10px] font-black ${xirrPos ? 'text-emerald-500' : 'text-rose-500'}">
+                            ${xirrPos ? '+' : ''}${(p.xirr * 100).toFixed(2)}%
+                        </p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderPortfolios(portfolios) {
+        const pContainer = document.getElementById('portfolio-container');
+        if (!pContainer) return;
+        if (portfolios && portfolios.length > 0) {
+            pContainer.innerHTML = portfolios.map(p => createPortfolioCard(p)).join('');
+        } else {
+            pContainer.innerHTML = '<p class="text-sm text-slate-500 col-span-2 text-center py-8">No portfolios found.</p>';
+        }
+    }
+
+            // Initial chart load
+            initDashboardChart();
+            initAllocationChart();
+
+            // Render Portfolios using shared logic
+            renderPortfolios(portfolios);
 
             // Render Markets
             const mContainer = document.getElementById('market-container');
-            mContainer.innerHTML = mockMarkets.map(m => `
-                <div class="p-4 rounded-xl bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 group hover:border-primary/50 transition-colors">
-                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">${m.name}</p>
-                    <div class="flex items-baseline justify-between">
-                        <span class="text-lg font-black tracking-tight">${m.val}</span>
-                        <span class="${m.perf >= 0 ? 'text-emerald-500' : 'text-rose-500'} text-[11px] font-bold">${m.perf >= 0 ? '+' : ''}${formatNumber(m.perf)}%</span>
+            if (mContainer) {
+                mContainer.innerHTML = mockMarkets.map(m => `
+                    <div class="p-4 rounded-xl bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 group hover:border-primary/50 transition-colors">
+                        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">${m.name}</p>
+                        <div class="flex items-baseline justify-between">
+                            <span class="text-lg font-black tracking-tight">${m.val}</span>
+                            <span class="${m.perf >= 0 ? 'text-emerald-500' : 'text-rose-500'} text-[11px] font-bold">${m.perf >= 0 ? '+' : ''}${formatNumber(m.perf)}%</span>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `).join('');
+            }
 
             // Load Dividend Alert
             loadDividendAlert();
@@ -799,31 +811,9 @@
 
                 // Re-render portfolios to apply privacy
                 const pContainer = document.getElementById('portfolio-container');
-                if (data.portfolios && data.portfolios.length > 0) {
-                    pContainer.innerHTML = data.portfolios.map(p => {
-                        const isPos = p.changePercent >= 0;
-                        return `
-                            <div class="bg-white dark:bg-[#111722] p-5 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between group hover:border-primary transition-all cursor-pointer" onclick="window.location.href='/portfolio?id=${p.id}'">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-11 h-11 rounded-lg flex items-center justify-center text-white" style="background-color: ${p.color || '#6366f1'}">
-                                        <span class="material-symbols-outlined text-[20px]">work</span>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm font-bold">${p.name}</p>
-                                        <p class="text-[11px] text-slate-500">${p.assetCount} Assets • ${p.currency}</p>
-                                    </div>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-sm font-black text-primary">${formatPrivacy(p.netValue || p.totalValue, p.currency, 'p-' + p.id)}</p>
-                                    <p class="text-[10px] text-slate-500 font-bold">Lordo: ${formatPrivacy(p.totalValue, p.currency, 'p-' + p.id)}</p>
-                                    <p class="${isPos ? 'text-emerald-500' : 'text-rose-500'} text-[11px] font-black">
-                                        ${formatPrivacy(p.changeValue || 0, p.currency, 'p-var')}
-                                    </p>
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
-                }
+            if (data.portfolios && data.portfolios.length > 0) {
+                pContainer.innerHTML = data.portfolios.map(p => createPortfolioCard(p)).join('');
+            }
             }
         });
 

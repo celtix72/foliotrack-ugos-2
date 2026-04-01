@@ -1349,44 +1349,20 @@ app.get('/api/portfolios', async (req, res) => {
             const prevValue = (p.totalValue || 0) - p.changeValue;
             p.changePercent = prevValue > 0 ? (p.changeValue / prevValue) * 100 : 0;
 
-            // 2. Performance Metrics
-            const pHistory = individual[p.id] || [];
-            const lastPPoint = pHistory.at(-1) || { value: 0, profit: 0, netDeposits: 0 };
-            
-            // ROI (Simple)
-            p.roi = lastPPoint.netDeposits > 0 ? (lastPPoint.value / lastPPoint.netDeposits) - 1 : 0;
-            
-            // TWR (Time-Weighted)
-            p.twr = calculateTWR(pHistory.map((pt, idx) => {
-                const prev = pHistory[idx - 1] || { value: 0, netDeposits: 0 };
-                return {
-                    startingValue: prev.value,
-                    endingValue: pt.value,
-                    netCashFlow: pt.netDeposits - prev.netDeposits
-                };
-            }).slice(1));
-
-            // XIRR (Money-Weighted)
-            const pFlows = allTransactions.filter(t => t.portfolioId === p.id && ['DEPOSIT', 'WITHDRAWAL'].includes(t.type)).map(t => {
-                const amt = (t.amount || (t.quantity * t.price)) / (p.currency === 'USD' ? (liveRate) : 1); // Approximation for simple dashboard
-                return {
-                    date: new Date(t.date),
-                    amount: t.type === 'DEPOSIT' ? -amt : amt
-                };
-            });
-            pFlows.push({ date: new Date(), amount: p.totalValue / (p.currency === 'USD' ? liveRate : 1) });
-            pFlows.sort((a,b) => a.date - b.date);
-            p.xirr = pFlows.length >= 2 ? (xirr(pFlows) || 0) : 0;
-
             // Normalize for global aggregates
             globalChangeEUR += p.changeValue / rate;
 
-            // Still need details for taxes
+            // 2. Full details fetch (now includes roi, twr, xirr from my previous update to getPortfolioDetails)
             const details = await getPortfolioDetails(p.id, liveRate);
-            p.totalTax = details.totalLatentTax;
-            p.netValue = p.totalValue - p.totalTax;
             
-            totalValueEUR += p.totalValue / rate;
+            // Sync values from details to the portfolio object p
+            p.roi = details.roi || 0;
+            p.twr = details.twr || 0;
+            p.xirr = details.xirr || 0;
+            p.totalTax = details.totalLatentTax || 0;
+            p.netValue = (p.totalValue || 0) - p.totalTax;
+            
+            totalValueEUR += (p.totalValue || 0) / rate;
             totalTaxEUR += p.totalTax / rate;
             totalNetValueEUR += p.netValue / rate;
         }
