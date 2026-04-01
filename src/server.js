@@ -1339,13 +1339,44 @@ app.get('/api/portfolios', async (req, res) => {
         let totalTaxEUR = 0;
         let globalChangeEUR = 0;
 
+        const allTransactions = database.db.prepare(`SELECT * FROM transactions ORDER BY date ASC`).all();
+
         for (const p of rows) {
             const rate = p.currency === 'USD' ? liveRate : 1;
             
-            // Use performance1D from DB (profit-based)
+            // 1. Basic Day Variation
             p.changeValue = p.performance1D || 0;
             const prevValue = (p.totalValue || 0) - p.changeValue;
             p.changePercent = prevValue > 0 ? (p.changeValue / prevValue) * 100 : 0;
+
+            // 2. Performance Metrics
+            const pHistory = individual[p.id] || [];
+            const lastPPoint = pHistory.at(-1) || { value: 0, profit: 0, netDeposits: 0 };
+            
+            // ROI (Simple)
+            p.roi = lastPPoint.netDeposits > 0 ? (lastPPoint.value / lastPPoint.netDeposits) - 1 : 0;
+            
+            // TWR (Time-Weighted)
+            p.twr = calculateTWR(pHistory.map((pt, idx) => {
+                const prev = pHistory[idx - 1] || { value: 0, netDeposits: 0 };
+                return {
+                    startingValue: prev.value,
+                    endingValue: pt.value,
+                    netCashFlow: pt.netDeposits - prev.netDeposits
+                };
+            }).slice(1));
+
+            // XIRR (Money-Weighted)
+            const pFlows = allTransactions.filter(t => t.portfolioId === p.id && ['DEPOSIT', 'WITHDRAWAL'].includes(t.type)).map(t => {
+                const amt = (t.amount || (t.quantity * t.price)) / (p.currency === 'USD' ? (liveRate) : 1); // Approximation for simple dashboard
+                return {
+                    date: new Date(t.date),
+                    amount: t.type === 'DEPOSIT' ? -amt : amt
+                };
+            });
+            pFlows.push({ date: new Date(), amount: p.totalValue / (p.currency === 'USD' ? liveRate : 1) });
+            pFlows.sort((a,b) => a.date - b.date);
+            p.xirr = pFlows.length >= 2 ? (xirr(pFlows) || 0) : 0;
 
             // Normalize for global aggregates
             globalChangeEUR += p.changeValue / rate;
@@ -1623,6 +1654,31 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
     const prevValue = totalValue - performance1D;
     const changePercent = prevValue > 0 ? (performance1D / prevValue) * 100 : 0;
 
+    // --- NEW: Performance Metrics ---
+    const perfData = await calculatePerformanceHistory(portfolioId, 'ALL', false);
+    const pHistory = Array.isArray(perfData) ? perfData : (perfData.dataPoints || []);
+    const lastPPoint = pHistory.at(-1) || { value: 0, profit: 0, netDeposits: 0 };
+
+    const roi = lastPPoint.netDeposits > 0 ? (lastPPoint.value / lastPPoint.netDeposits) - 1 : 0;
+    const twr = calculateTWR(pHistory.map((pt, idx) => {
+        const prev = pHistory[idx - 1] || { value: 0, netDeposits: 0 };
+        return {
+            startingValue: prev.value,
+            endingValue: pt.value,
+            netCashFlow: pt.netDeposits - prev.netDeposits
+        };
+    }).slice(1));
+
+    const pFlows = transactions.filter(t => ['DEPOSIT', 'WITHDRAWAL'].includes(t.type)).map(t => {
+        return {
+            date: new Date(t.date),
+            amount: t.type === 'DEPOSIT' ? -(t.amount || 0) : (t.amount || 0)
+        };
+    });
+    pFlows.push({ date: new Date(), amount: totalValue });
+    pFlows.sort((a,b) => a.date - b.date);
+    const xirrValue = pFlows.length >= 2 ? (xirr(pFlows) || 0) : 0;
+
     return {
         ...portfolio,
         totalValue,
@@ -1630,6 +1686,10 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
         performance1D,
         changeValue: performance1D,
         changePercent,
+        roi,
+        twr,
+        xirr: xirrValue,
+        totalLatentTax,
         transactions,
         holdings,
         allocation,
