@@ -2012,30 +2012,58 @@ app.get('/api/transactions', (req, res) => {
 });
 
 app.post('/api/transactions', async (req, res) => {
-    const { portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount, destinationPortfolioId, isin, dataSource } = req.body;
-
+    const { 
+        portfolioId, type, assetTicker, date, quantity, price, 
+        commission, tax, exchangeRate, amount, destinationPortfolioId, 
+        isin, dataSource, assetName, assetCurrency, assetType, assetExchange, assetCountry 
+    } = req.body;
+    
     if (!portfolioId) return res.status(400).send('portfolioId is required');
 
     const sanitizedTicker = sanitizeTicker(assetTicker);
 
     // Auto-create/update asset with ISIN and Data Source
     if (sanitizedTicker && sanitizedTicker !== 'CASH') {
-        const existingAsset = database.db.prepare(`SELECT id FROM assets WHERE ticker = ?`).get(sanitizedTicker);
+        const existingAsset = database.db.prepare(`SELECT id, dataSource FROM assets WHERE ticker = ?`).get(sanitizedTicker);
         if (existingAsset) {
-            database.db.prepare(`UPDATE assets SET isin = COALESCE(?, isin), dataSource = COALESCE(?, dataSource) WHERE ticker = ?`)
-                .run(isin || null, dataSource || null, sanitizedTicker);
+            database.db.prepare(`
+                UPDATE assets SET 
+                    isin = COALESCE(?, isin), 
+                    dataSource = COALESCE(?, dataSource),
+                    name = COALESCE(?, name),
+                    currency = COALESCE(?, currency)
+                WHERE ticker = ?
+            `).run(isin || null, dataSource || null, assetName || null, assetCurrency || null, sanitizedTicker);
         } else {
-            const metadata = await fetchAssetMetadata(sanitizedTicker).catch(() => null) || {};
+            let metadata = {};
+            // Only fetch metadata if NOT manual
+            if (dataSource !== 'MANUAL') {
+                try {
+                    metadata = await fetchAssetMetadata(sanitizedTicker) || {};
+                } catch(e) { metadata = {}; }
+            }
+            
             database.db.prepare(`
                 INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, country, isManual, dataSource, isin, updatedAt)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
             `).run(
-                sanitizedTicker, sanitizedTicker, metadata.name || sanitizedTicker, metadata.type || 'Stock', metadata.exchange || 'N/A', 
-                metadata.currency || 'USD', metadata.currentPrice || 0, metadata.changePercent || 0, metadata.pe || null, metadata.country || 'N/A', 0,
-                dataSource || 'YF', isin || null
+                sanitizedTicker, 
+                sanitizedTicker, 
+                assetName || metadata.name || sanitizedTicker, 
+                assetType || metadata.type || (dataSource === 'MANUAL' ? 'Manual' : 'Stock'), 
+                assetExchange || metadata.exchange || (dataSource === 'MANUAL' ? 'MANUAL' : 'N/A'), 
+                assetCurrency || metadata.currency || 'USD', 
+                metadata.currentPrice || price || 0, 
+                metadata.changePercent || 0, 
+                metadata.pe || null, 
+                assetCountry || metadata.country || (dataSource === 'MANUAL' ? 'Manual' : 'N/A'), 
+                (dataSource === 'MANUAL' ? 1 : 0),
+                dataSource || 'YF', 
+                isin || null
             );
         }
     }
+
 
     let finalQty = parseFloat(quantity || 0);
     let finalPrice = parseFloat(price || 0);
@@ -4419,7 +4447,7 @@ async function updateMarketData(force = false) {
 
     for (const asset of assets) {
         if (!asset.ticker || asset.ticker === 'CASH') continue;
-        if (asset.ticker.startsWith('CD_')) continue; // Skip constant-value deposit assets
+        if (asset.ticker.startsWith('CD_') || (asset.dataSource && asset.dataSource.toUpperCase() === 'MANUAL')) continue; // Skip constant-value or manual assets
         if (asset.isManual === 1 && (!asset.dataSource || asset.dataSource === 'YF')) continue;
         
         // If markets are closed, only update assets with 0 price (unless forced)

@@ -664,10 +664,27 @@
                 </div>
                 <div class="space-y-1 md:space-y-2">
                     <label class="text-xs md:text-sm font-medium">Data Source</label>
-                    <select id="t-source" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 md:py-2.5 md:px-4 text-sm">
+                    <select id="t-source" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 md:py-2.5 md:px-4 text-sm" onchange="toggleTransactionFields()">
                         <option value="YF" selected>Yahoo Finance</option>
                         <option value="B_ITA">Borsa Italiana</option>
+                        <option value="MANUAL">Manual</option>
                     </select>
+                </div>
+                <!-- Manual Fields (Name & Currency) -->
+                <div id="t-manual-fields" class="md:col-span-2 hidden grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-1 md:space-y-2">
+                        <label class="text-xs md:text-sm font-medium">Asset Name (Manual)</label>
+                        <input id="t-asset-name" type="text" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 md:py-2.5 md:px-4 text-sm" placeholder="Es. Conto Ifis..."/>
+                    </div>
+                    <div class="space-y-1 md:space-y-2">
+                        <label class="text-xs md:text-sm font-medium">Asset Currency (Manual)</label>
+                        <select id="t-asset-currency-manual" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 md:py-2.5 md:px-4 text-sm">
+                            <option value="EUR">EUR</option>
+                            <option value="USD">USD</option>
+                            <option value="GBP">GBP</option>
+                            <option value="CHF">CHF</option>
+                        </select>
+                    </div>
                 </div>
                 <div id="t-amount-field" class="space-y-1 md:space-y-2 hidden">
                     <label class="text-xs md:text-sm font-medium">Amount</label>
@@ -1451,6 +1468,8 @@
 
     function toggleTransactionFields() {
         const type = document.getElementById('t-type').value;
+        const source = document.getElementById('t-source').value;
+
         const isTrade = ['BUY', 'SELL'].includes(type);
         const isDividend = type === 'DIVIDEND';
         const isCash = ['DEPOSIT', 'WITHDRAWAL', 'TAX', 'DIVIDEND', 'TRANSFER'].includes(type);
@@ -1459,6 +1478,12 @@
         document.getElementById('t-stock-fields').style.display = (isTrade || isDividend) ? 'contents' : 'none';
         document.getElementById('t-amount-field').style.display = isCash ? 'block' : 'none';
         
+        // Manual Fields Visibility
+        const manualFields = document.getElementById('t-manual-fields');
+        if (manualFields) {
+            manualFields.classList.toggle('hidden', source !== 'MANUAL' || (!isTrade && !isDividend));
+        }
+
         if (isDividend) calculateNetDividend();
 
         // Auto-set CASH ticker for cash-only movements
@@ -1469,6 +1494,13 @@
             selectTAsset('CASH', portfolioCurrency);
         }
         
+        // Auto-select MANUAL if ticker starts with CD_
+        if (assetSearch.value.toUpperCase().startsWith('CD_') && source !== 'MANUAL') {
+            document.getElementById('t-source').value = 'MANUAL';
+            toggleTransactionFields();
+            return;
+        }
+
         // Update label for Amount when dividend is selected
         const amountLabel = document.querySelector('#t-amount-field label');
         if (amountLabel) {
@@ -1539,8 +1571,16 @@
 
     if (tSearchInput) {
         tSearchInput.addEventListener('input', () => {
-            clearTimeout(tTimeout);
+            const source = document.getElementById('t-source').value;
             const q = tSearchInput.value.trim();
+            
+            if (source === 'MANUAL') {
+                document.getElementById('t-asset-ticker').value = q.toUpperCase();
+                tResults.classList.add('hidden');
+                return;
+            }
+
+            clearTimeout(tTimeout);
             if (q.length < 2) return tResults.classList.add('hidden');
 
             tTimeout = setTimeout(async () => {
@@ -1557,15 +1597,23 @@
         });
     }
 
-    async function selectTAsset(ticker, currency) {
+    async function selectTAsset(ticker, currency, name) {
         // Fallback for search result currency
         let finalCurrency = currency && currency !== 'undefined' ? currency : 'USD';
         
         document.getElementById('t-asset-ticker').value = ticker;
         document.getElementById('t-asset-currency').value = finalCurrency;
         document.getElementById('t-asset-search').value = ticker;
+        if (name) document.getElementById('t-asset-name').value = name;
+        
         tResults.classList.add('hidden');
         
+        const source = document.getElementById('t-source').value;
+        if (source === 'MANUAL') {
+            checkFX();
+            return;
+        }
+
         // Show metadata block only for non-CASH assets
         const metaBox = document.getElementById('t-asset-metadata');
         if (metaBox) {
@@ -1597,6 +1645,11 @@
                     // Auto-populate price
                     if (data.currentPrice) {
                         document.getElementById('t-price').value = data.currentPrice;
+                    }
+
+                    if (data.dataSource) {
+                        document.getElementById('t-source').value = data.dataSource;
+                        toggleTransactionFields();
                     }
                 }
             } catch (err) { console.error(err); }
@@ -1631,6 +1684,7 @@
         if (!form) return;
         form.onsubmit = async (e) => {
             e.preventDefault();
+            const source = document.getElementById('t-source').value;
             const data = {
                 portfolioId: currentPortfolioId,
                 type: document.getElementById('t-type').value,
@@ -1644,7 +1698,9 @@
                 amount: document.getElementById('t-amount').value,
                 destinationPortfolioId: document.getElementById('t-dest-portfolio').value,
                 isin: document.getElementById('t-isin').value,
-                dataSource: document.getElementById('t-source').value
+                dataSource: source,
+                assetName: source === 'MANUAL' ? document.getElementById('t-asset-name').value : null,
+                assetCurrency: source === 'MANUAL' ? document.getElementById('t-asset-currency-manual').value : document.getElementById('t-asset-currency').value
             };
             const id = document.getElementById('t-id').value;
             const method = id ? 'PUT' : 'POST';
