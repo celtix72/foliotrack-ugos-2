@@ -160,31 +160,31 @@
 <span class="material-symbols-outlined text-primary">trending_up</span>
 </div>
 <h3 class="text-3xl font-black" id="metric-roi">--%</h3>
-<p class="text-xs text-slate-500 font-bold mt-2">Cumulative return</p>
+<p class="text-xs text-slate-500 font-bold mt-2">Simple Return (Money-Weighted)</p>
 </div>
 <div class="bg-white dark:bg-[#111722] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
 <div class="flex justify-between items-start mb-4 text-slate-500">
-<p class="text-xs font-bold uppercase tracking-widest">Annualized Return</p>
+<p class="text-xs font-bold uppercase tracking-widest">Time-Weighted (TWR)</p>
 <span class="material-symbols-outlined text-primary">analytics</span>
 </div>
-<h3 class="text-3xl font-black" id="metric-cagr">--%</h3>
-<p class="text-xs text-slate-500 font-bold mt-2">Time-weighted CAGR</p>
+<h3 class="text-3xl font-black" id="metric-twr">--%</h3>
+<p class="text-xs text-slate-500 font-bold mt-2">Geometric Return (CAGR)</p>
 </div>
 <div class="bg-white dark:bg-[#111722] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
 <div class="flex justify-between items-start mb-4 text-slate-500">
-<p class="text-xs font-bold uppercase tracking-widest">Sharpe Ratio</p>
+<p class="text-xs font-bold uppercase tracking-widest">Internal Rate (XIRR)</p>
 <span class="material-symbols-outlined text-primary">monitoring</span>
 </div>
-<h3 class="text-3xl font-black" id="metric-sharpe">--</h3>
-<p class="text-xs text-slate-500 font-bold mt-2">Risk-adjusted return</p>
+<h3 class="text-3xl font-black" id="metric-xirr">--%</h3>
+<p class="text-xs text-slate-500 font-bold mt-2">Annualized Return (MWR)</p>
 </div>
 <div class="bg-white dark:bg-[#111722] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
 <div class="flex justify-between items-start mb-4 text-slate-500">
-<p class="text-xs font-bold uppercase tracking-widest">Best Asset</p>
+<p class="text-xs font-bold uppercase tracking-widest">Sharpe Ratio</p>
 <span class="material-symbols-outlined text-primary">workspace_premium</span>
 </div>
-<h3 class="text-xl font-black truncate" id="metric-best">-</h3>
-<p class="text-xs text-slate-500 font-bold mt-2">Highest absolute P/L</p>
+<h3 class="text-xl font-black truncate" id="metric-sharpe">-</h3>
+<p class="text-xs text-slate-500 font-bold mt-2">Risk-adjusted return</p>
 </div>
 </section>
 <!-- Performance Chart Section -->
@@ -233,7 +233,7 @@
                 <tr class="text-[10px] font-bold uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800">
                     <th class="pb-4 font-bold">Portfolio</th>
                     <th class="pb-4 font-bold text-right">Current Value</th>
-                    <th class="pb-4 font-bold text-right">Total ROI</th>
+                    <th class="pb-4 font-bold text-right">Simple ROI</th>
                     <th class="pb-4 font-bold text-right">Sharpe Ratio</th>
                     <th class="pb-4 font-bold text-right">Contribution</th>
                 </tr>
@@ -415,29 +415,29 @@
 
     function renderMetrics(m) {
         const roiEl = document.getElementById('metric-roi');
-        const cagrEl = document.getElementById('metric-cagr');
+        const twrEl = document.getElementById('metric-twr');
+        const xirrEl = document.getElementById('metric-xirr');
         const sharpeEl = document.getElementById('metric-sharpe');
-        const bestEl = document.getElementById('metric-best');
 
         if (roiEl) {
             roiEl.textContent = formatNumber(m.totalROI * 100, 2) + '%';
             roiEl.classList.toggle('text-emerald-500', m.totalROI >= 0);
             roiEl.classList.toggle('text-rose-500', m.totalROI < 0);
         }
-        if (cagrEl) cagrEl.textContent = formatNumber(m.annualizedROI * 100, 2) + '%';
+        if (twrEl) twrEl.textContent = formatNumber(m.twr * 100, 2) + '%';
+        if (xirrEl) xirrEl.textContent = formatNumber(m.xirr * 100, 2) + '%';
         if (sharpeEl) sharpeEl.textContent = formatNumber(m.sharpeRatio, 2);
-        if (bestEl) bestEl.textContent = m.bestAsset;
     }
 
     function renderPerformanceChart(p) {
         const ctx = document.getElementById('performanceChart').getContext('2d');
         if (perfChart) perfChart.destroy();
 
-        const labels = p.portfolio.map(d => d.date);
+        const labels = p.twr.map(d => d.date);
         const datasets = [
             {
-                label: 'Your Total Portfolio',
-                data: p.portfolio.map(d => ({ x: d.date, y: d.value, events: d.events })),
+                label: 'Your Portfolio (TWR)',
+                data: p.twr.map(d => ({ x: d.date, y: d.value, events: d.events })),
                 borderColor: '#135bec',
                 backgroundColor: 'rgba(19, 91, 236, 0.1)',
                 borderWidth: 4,

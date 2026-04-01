@@ -7,6 +7,7 @@ const dotenv     = require('dotenv');
 const YahooFinance = require('yahoo-finance2').default;
 const axios      = require('axios');
 const fs         = require('fs');
+const { xirr, calculateTWR } = require('./utils/finance');
 
 const LOGS_DIR = path.join(__dirname, '../logs');
 const LOG_FILE = path.join(LOGS_DIR, 'app.log');
@@ -4054,6 +4055,55 @@ app.get('/api/analytics/reports', async (req, res) => {
         const currentProfit = normalizedGlobal[normalizedGlobal.length - 1]?.profit || 0;
         const totalROI = currentNetDeposits > 0 ? (currentTotalValue / currentNetDeposits) - 1 : (currentTotalValue / Math.max(1, currentTotalValue - currentProfit)) - 1;
 
+        // --- NEW: Financial Metrics (XIRR & TWR) ---
+        const externalTxs = allTransactions.filter(t => ['DEPOSIT', 'WITHDRAWAL'].includes(t.type));
+        const flows = [];
+        for (const t of externalTxs) {
+            const p = portfolios.find(port => port.id === t.portfolioId);
+            const rate = (p && p.currency === 'USD') ? (fxRates['USD']?.[t.date] || 1) : 1;
+            const amt = (t.amount || (t.quantity * t.price)) / rate;
+            flows.push({
+                date: new Date(t.date),
+                amount: t.type === 'DEPOSIT' ? -amt : amt
+            });
+        }
+        flows.push({ date: new Date(), amount: currentTotalValue });
+        flows.sort((a,b) => a.date - b.date);
+        const xirrValue = flows.length >= 2 ? (xirr(flows) || 0) : 0;
+
+        let twrSeries = [];
+        const twrValue = (() => {
+            const data = portfolioData.dataPoints;
+            if (data.length < 2) return 0;
+            const subPeriods = [];
+            let cumulativeTwr = 1;
+            twrSeries.push({ date: data[0].date, value: 100, events: data[0].events });
+
+            for (let i = 1; i < data.length; i++) {
+                const prev = data[i-1];
+                const curr = data[i];
+                const netFlow = curr.netDeposits - prev.netDeposits;
+                const hpr = prev.value > 0.01 ? (curr.value - netFlow - prev.value) / prev.value : 0;
+                cumulativeTwr *= Math.max(0, 1 + hpr);
+                
+                twrSeries.push({
+                    date: curr.date,
+                    value: Math.max(0, cumulativeTwr * 100),
+                    events: curr.events
+                });
+
+                subPeriods.push({
+                    startingValue: prev.value,
+                    endingValue: curr.value,
+                    netCashFlow: netFlow
+                });
+            }
+            return calculateTWR(subPeriods);
+        })();
+
+        // Downsample TWR series for comparison chart (monthly)
+        const monthlyTwr = downsampleToMonthly(twrSeries);
+
         // Best Asset (by absolute profit)
         let bestAsset = { ticker: '-', profit: -Infinity };
         for (const [ticker, a] of Object.entries(assetMap)) {
@@ -4120,7 +4170,8 @@ app.get('/api/analytics/reports', async (req, res) => {
 
         res.json({
             performance: {
-                portfolio: normalizedGlobal,
+                portfolio: normalizedGlobal, // This is ROI-based (Wealth-Weighted)
+                twr: monthlyTwr,             // This is true Time-Weighted Return
                 individual: monthlyIndividual,
                 sp500,
                 msci
@@ -4132,6 +4183,8 @@ app.get('/api/analytics/reports', async (req, res) => {
                 totalROI,
                 totalGain: currentProfit,
                 annualizedROI: Math.pow(1 + totalROI, 1 / (Math.max(1, monthlyGlobal.length) / 12)) - 1,
+                xirr: xirrValue,
+                twr: twrValue,
                 bestAsset: bestAsset.ticker === '-' ? '-' : `${bestAsset.name} (${bestAsset.ticker})`,
                 sharpeRatio: (() => {
                     const returns = [];
