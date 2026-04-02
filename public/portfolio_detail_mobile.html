@@ -915,23 +915,23 @@
                ontouchmove="handleTouchMove(event, this)" 
                ontouchend="handleTouchEnd(event, this)">
             
-            <div class="mob-holding-actions">
-              <div class="mob-action-btn bg-blue-ios" 
-                   onclick="event.stopPropagation(); duplicateTransaction('${t.id}')">
-                <span class="material-symbols-outlined">content_copy</span>
-                <span>Duplica</span>
+              <div class="mob-holding-actions">
+                <div class="mob-action-btn bg-blue-ios" 
+                     onclick="event.stopPropagation(); mobileDuplicateTransaction({id:'${t.id}', type:'${t.type}', date:'${t.date}', quantity:${t.quantity || 0}, price:${t.price || 0}, amount:${t.amount || 0}, commission:${t.commission || 0}, tax:${t.tax || 0}, exchangeRate:${t.exchangeRate || 1}, assetTicker:'${t.assetTicker || t.ticker || ''}'})">
+                  <span class="material-symbols-outlined">content_copy</span>
+                  <span>Duplica</span>
+                </div>
+                <div class="mob-action-btn bg-orange-ios" 
+                     onclick="event.stopPropagation(); mobileEditTransaction({id:'${t.id}', type:'${t.type}', date:'${t.date}', quantity:${t.quantity || 0}, price:${t.price || 0}, amount:${t.amount || 0}, commission:${t.commission || 0}, tax:${t.tax || 0}, exchangeRate:${t.exchangeRate || 1}, assetTicker:'${t.assetTicker || t.ticker || ''}'})">
+                  <span class="material-symbols-outlined">edit</span>
+                  <span>Modifica</span>
+                </div>
+                <div class="mob-action-btn bg-red-ios" 
+                     onclick="event.stopPropagation(); mobileDeleteTransaction('${t.id}')">
+                  <span class="material-symbols-outlined">delete</span>
+                  <span>Elimina</span>
+                </div>
               </div>
-              <div class="mob-action-btn bg-orange-ios" 
-                   onclick="event.stopPropagation(); editTransaction('${t.id}')">
-                <span class="material-symbols-outlined">edit</span>
-                <span>Modifica</span>
-              </div>
-              <div class="mob-action-btn bg-red-ios" 
-                   onclick="event.stopPropagation(); confirmDeleteTransaction('${t.id}')">
-                <span class="material-symbols-outlined">delete</span>
-                <span>Elimina</span>
-              </div>
-            </div>
 
             <div class="mob-holding-item mob-transaction-item" data-ticker="${t.assetTicker || ''}">
               <div class="mob-holding-logo" style="background:${col}22;color:${col}">
