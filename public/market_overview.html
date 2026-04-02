@@ -139,16 +139,23 @@
 <div class="p-8 space-y-6">
 
 <!-- Page Title + Search -->
-<div class="flex flex-col md:flex-row md:items-end justify-between gap-4 desktop-only">
-<div>
-<h1 class="text-3xl font-black tracking-tight">Market Monitor</h1>
-<p class="text-slate-500 dark:text-slate-400 mt-1 text-sm">Real-time tracking of your monitored assets and price alerts.</p>
-</div>
-<!-- Search/Filter -->
-<div class="relative">
-<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
-<input id="table-search" type="text" placeholder="Filter assets..." class="pl-9 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm w-64 shadow-sm" oninput="filterAssets(this.value)"/>
-</div>
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 desktop-only">
+    <div class="flex items-center gap-6">
+        <div>
+            <h1 class="text-3xl font-black tracking-tight">Market Monitor</h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-1 text-sm">Real-time tracking of your monitored assets and price alerts.</p>
+        </div>
+        <!-- Force Sync moved here -->
+        <button id="force-sync-btn" onclick="forceSync()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-all text-xs font-black uppercase tracking-widest h-fit">
+            <span class="material-symbols-outlined text-sm" id="sync-icon">sync</span>
+            <span>Force Sync</span>
+        </button>
+    </div>
+    <!-- Search/Filter -->
+    <div class="relative">
+        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+        <input id="table-search" type="text" placeholder="Filter assets..." class="pl-9 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm w-64 shadow-sm" oninput="filterAssets(this.value)"/>
+    </div>
 </div>
 
 <!-- Movers Carousel Section -->
@@ -174,25 +181,7 @@
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <div class="space-y-6">
 
-<!-- Add Asset Quick Input -->
-<div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex items-center gap-4">
-    <div class="flex-1 relative">
-        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-primary">add_circle</span>
-        <input id="asset-search-input" class="w-full bg-slate-50 dark:bg-slate-900/50 border-none rounded-xl py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/20" placeholder="Type Ticker to add (e.g. AAPL, BTC-USD)..." type="text" autocomplete="off"/>
-        <div id="search-results" class="absolute left-0 right-0 mt-2 bg-white dark:bg-[#1a2332] border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-50 hidden max-h-64 overflow-y-auto"></div>
-    </div>
-    <input type="hidden" id="asset-ticker"/>
-    <input type="hidden" id="asset-name"/>
-    <button onclick="quickAddAsset()" class="px-6 py-2.5 rounded-xl bg-primary text-white font-bold text-sm hover:shadow-lg hover:shadow-primary/20 transition-all">Add</button>
-</div>
-
-<!-- Force Sync -->
-<div class="flex justify-end">
-    <button id="force-sync-btn" onclick="forceSync()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-all text-xs font-black uppercase tracking-widest">
-        <span class="material-symbols-outlined text-sm" id="sync-icon">sync</span>
-        <span>Force Market Sync</span>
-    </button>
-</div>
+<!-- Unified List -->
 
 <!-- Unified List -->
 <div class="space-y-8">
@@ -208,6 +197,7 @@
                         <th class="px-5 py-3">Asset</th>
                         <th class="px-5 py-3">Price</th>
                         <th class="px-5 py-3">Performance</th>
+                        <th class="px-5 py-3">Daily Gain</th>
                         <th class="px-5 py-3 hidden sm:table-cell">Target/Stop</th>
                         <th class="px-5 py-3 text-right">Actions</th>
                     </tr>
@@ -236,6 +226,7 @@
                             <th class="px-5 py-3">Asset</th>
                             <th class="px-5 py-3">Price</th>
                             <th class="px-5 py-3">Performance</th>
+                            <th class="px-5 py-3">Daily Gain</th>
                             <th class="px-5 py-3 hidden sm:table-cell">Target/Stop</th>
                             <th class="px-5 py-3 text-right">Actions</th>
                         </tr>
@@ -373,6 +364,8 @@ function renderAssets(filter = '') {
         const stopLossHit = a.stopLoss > 0 && price <= a.stopLoss;
         const alertClass = targetReached ? 'bg-emerald-500/5' : (stopLossHit ? 'bg-rose-500/5' : '');
 
+        const dailyGain = (a.totalQuantity || 0) * (a.changeValue || 0);
+
         return `
         <tr class="group transition-colors hover:bg-slate-50 dark:hover:bg-white/[0.02] ${alertClass} ${opacity}">
             <td class="px-5 py-1">
@@ -420,6 +413,12 @@ function renderAssets(filter = '') {
                             </div>
                         ` : ''}
                     </div>
+                </div>
+            </td>
+            <td class="px-5 py-1.5">
+                <div class="flex flex-col">
+                    <p class="text-xs font-black uppercase tracking-widest text-slate-400 leading-none mb-1">Monetary</p>
+                    <p class="text-base font-black ${dailyGain >= 0 ? 'text-emerald-500' : 'text-rose-500'} font-mono">${formatCurrency(dailyGain, a.currency)}</p>
                 </div>
             </td>
             <td class="px-5 py-1.5 hidden sm:table-cell">
