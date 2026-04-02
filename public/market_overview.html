@@ -416,10 +416,7 @@ function renderAssets(filter = '') {
                 </div>
             </td>
             <td class="px-5 py-1.5">
-                <div class="flex flex-col">
-                    <p class="text-xs font-black uppercase tracking-widest text-slate-400 leading-none mb-1">Monetary</p>
-                    <p class="text-base font-black ${dailyGain >= 0 ? 'text-emerald-500' : 'text-rose-500'} font-mono">${formatCurrency(dailyGain, a.currency)}</p>
-                </div>
+                <p class="text-base font-black ${dailyGain >= 0 ? 'text-emerald-500' : 'text-rose-500'} font-mono">${formatCurrency(dailyGain, a.currency)}</p>
             </td>
             <td class="px-5 py-1.5 hidden sm:table-cell">
                 <div class="flex gap-4">
