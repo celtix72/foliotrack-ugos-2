@@ -144,6 +144,55 @@
     window.performanceData = {};
     window._mobDetailChart = null;
 
+    // ── Swipe Logic ──────────────────────────────────
+    let touchStartX = 0;
+    let touchMoveX = 0;
+    let currentSwipeEl = null;
+    const SWIPE_THRESHOLD = 50;
+    const ACTION_WIDTH = 130; // 2 buttons * 65px
+
+    window.handleTouchStart = function(e, container) {
+        touchStartX = e.touches[0].clientX;
+        touchMoveX = 0;
+        if (currentSwipeEl && currentSwipeEl !== container) {
+            resetSwipes(container);
+        }
+    };
+
+    window.handleTouchMove = function(e, container) {
+        const item = container.querySelector('.mob-item-content');
+        if (!item) return;
+        touchMoveX = e.touches[0].clientX;
+        let diff = touchMoveX - touchStartX;
+        if (diff > 0) diff = 0;
+        if (diff < -ACTION_WIDTH - 20) diff = -ACTION_WIDTH - 20;
+        item.style.transition = 'none';
+        item.style.transform = `translateX(${diff}px)`;
+    };
+
+    window.handleTouchEnd = function(e, container) {
+        const item = container.querySelector('.mob-item-content');
+        if (!item) return;
+        const diff = touchMoveX - touchStartX;
+        item.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
+        if (touchMoveX !== 0 && diff < -SWIPE_THRESHOLD) {
+            item.style.transform = `translateX(-${ACTION_WIDTH}px)`;
+            currentSwipeEl = container;
+        } else {
+            item.style.transform = 'translateX(0)';
+            currentSwipeEl = null;
+        }
+    };
+
+    function resetSwipes(except) {
+        document.querySelectorAll('.mob-holding-swipe-container').forEach(c => {
+            if (c === except) return;
+            const item = c.querySelector('.mob-item-content');
+            if (item) item.style.transform = 'translateX(0)';
+        });
+        currentSwipeEl = null;
+    }
+
     // Helper for large numbers
     function formatLarge(n) {
         if (!n) return null;
@@ -192,18 +241,36 @@
             const color = isPos ? 'text-emerald-500' : 'text-rose-500';
 
             return `
-                <div class="flex items-center justify-between p-4 bg-white dark:bg-[#111722] border-b border-slate-50 dark:border-slate-800/50 active:bg-slate-50 dark:active:bg-slate-800 transition-colors" 
-                     onclick="window.showMobDetails('${item.ticker.replace(/'/g, "\\'")}', '${item.type}')">
-                    <div class="flex flex-col min-w-0">
-                        <span class="text-sm font-black text-slate-900 dark:text-white leading-tight">${item.ticker}</span>
-                        <span class="text-[10px] font-bold text-slate-400 truncate max-w-[120px] uppercase tracking-tight">${item.name}</span>
-                    </div>
-                    <div class="flex items-center gap-3 text-right">
-                        <div class="flex flex-col">
-                            <span class="text-sm font-black">${window.formatCurrency ? window.formatCurrency(item.currentPrice, item.currency, 2) : (item.currentPrice?.toFixed(2) + ' ' + item.currency)}</span>
-                            <span class="text-[10px] font-bold ${color}">${isPos ? '+' : ''}${d1.toFixed(1)}%</span>
+                <div class="mob-holding-swipe-container" 
+                     ontouchstart="handleTouchStart(event, this)" 
+                     ontouchmove="handleTouchMove(event, this)" 
+                     ontouchend="handleTouchEnd(event, this)">
+                    
+                    <div class="mob-holding-actions">
+                        <div class="mob-action-btn bg-blue-ios" onclick="event.stopPropagation(); window.showMobDetails('${item.ticker.replace(/'/g, "\\'")}', '${item.type}'); resetSwipes()">
+                            <span class="material-symbols-outlined">info</span>
+                            <span>Dettagli</span>
                         </div>
-                        <span class="material-symbols-outlined text-slate-300 text-sm">chevron_right</span>
+                        <div class="mob-action-btn bg-red-ios" onclick="event.stopPropagation(); window.removeFromWatchlist('${item.ticker.replace(/'/g, "\\'")}')">
+                            <span class="material-symbols-outlined">delete</span>
+                            <span>Rimuovi</span>
+                        </div>
+                    </div>
+
+                    <div class="mob-item-content flex items-center justify-between p-4 bg-white dark:bg-[#111722] border-b border-slate-50 dark:border-slate-800/50 active:bg-slate-50 dark:active:bg-slate-800 transition-colors" 
+                         style="position:relative; z-index:2; transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);"
+                         onclick="window.showMobDetails('${item.ticker.replace(/'/g, "\\'")}', '${item.type}')">
+                        <div class="flex flex-col min-w-0">
+                            <span class="text-sm font-black text-slate-900 dark:text-white leading-tight">${item.ticker}</span>
+                            <span class="text-[10px] font-bold text-slate-400 truncate max-w-[120px] uppercase tracking-tight">${item.name}</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-right">
+                            <div class="flex flex-col">
+                                <span class="text-sm font-black">${window.formatCurrency ? window.formatCurrency(item.currentPrice, item.currency, 2) : (item.currentPrice?.toFixed(2) + ' ' + item.currency)}</span>
+                                <span class="text-[10px] font-bold ${color}">${isPos ? '+' : ''}${d1.toFixed(1)}%</span>
+                            </div>
+                            <span class="material-symbols-outlined text-slate-300 text-sm">chevron_right</span>
+                        </div>
                     </div>
                 </div>
             `;

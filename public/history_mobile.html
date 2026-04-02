@@ -255,25 +255,44 @@ let rawHistoryData = [];
                         // Layout logic: The main value should be the Realized Gain (colored green/red) and large
                         // The sub value should be the proceeds or type
                         html += `
-                            <div class="mob-holding-item" style="border: 1px solid var(--mob-border) !important; border-radius: 12px !important; margin-bottom: 8px;">
-                                <div class="mob-holding-logo">${logoChar}</div>
-                                <div class="mob-holding-info">
-                                    <div class="flex items-center gap-2">
-                                        <div class="mob-holding-ticker">${pos.ticker || pos.name}</div>
-                                        ${isTrade ? `
-                                            <div class="text-[10px] font-black ${pos.realizedGain >= 0 ? 'text-emerald-500' : 'text-rose-500'} flex items-center gap-0.5">
-                                                ${pos.realizedGain >= 0 ? '▲' : '▼'}${formatCurrency(pos.realizedGain, 'EUR', 0)}
-                                            </div>
-                                        ` : ''}
+                            <div class="mob-holding-swipe-container" 
+                                 ontouchstart="handleTouchStart(event, this)" 
+                                 ontouchmove="handleTouchMove(event, this)" 
+                                 ontouchend="handleTouchEnd(event, this)">
+                                
+                                <div class="mob-holding-actions">
+                                    <div class="mob-action-btn bg-orange-ios" 
+                                         onclick="event.stopPropagation(); editTransaction('${pos.id}')">
+                                        <span class="material-symbols-outlined">edit</span>
+                                        <span>Modifica</span>
                                     </div>
-                                    <div class="mob-holding-name">${pos.portfolioName} • ${isTrade ? pos.quantity + ' shrs' : pos.type}</div>
+                                    <div class="mob-action-btn bg-red-ios" 
+                                         onclick="event.stopPropagation(); confirmDeleteTransaction('${pos.id}')">
+                                        <span class="material-symbols-outlined">delete</span>
+                                        <span>Elimina</span>
+                                    </div>
                                 </div>
-                                <div class="mob-holding-values">
-                                    <div class="mob-holding-value" style="color: ${isTrade ? gainColor : 'inherit'}">
-                                        ${isTrade ? gainSign + formatCurrency(pos.realizedGain, 'EUR', 2) : formatCurrency(pos.totalProceeds, 'EUR', 2)}
+
+                                <div class="mob-holding-item" style="border: 1px solid var(--mob-border) !important; border-radius: 12px !important; margin-bottom: 8px;">
+                                    <div class="mob-holding-logo">${logoChar}</div>
+                                    <div class="mob-holding-info">
+                                        <div class="flex items-center gap-2">
+                                            <div class="mob-holding-ticker">${pos.ticker || pos.name}</div>
+                                            ${isTrade ? `
+                                                <div class="text-[10px] font-black ${pos.realizedGain >= 0 ? 'text-emerald-500' : 'text-rose-500'} flex items-center gap-0.5">
+                                                    ${pos.realizedGain >= 0 ? '▲' : '▼'}${formatCurrency(pos.realizedGain, 'EUR', 0)}
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                        <div class="mob-holding-name">${pos.portfolioName} • ${isTrade ? pos.quantity + ' shrs' : pos.type}</div>
                                     </div>
-                                    <div class="mob-holding-gain" style="color: var(--mob-text-muted); font-size: 11px;">
-                                        ${isTrade ? 'Proceeds: ' + formatCurrency(pos.totalProceeds, 'EUR', 2) : pos.type}
+                                    <div class="mob-holding-values">
+                                        <div class="mob-holding-value" style="color: ${isTrade ? gainColor : 'inherit'}">
+                                            ${isTrade ? gainSign + formatCurrency(pos.realizedGain, 'EUR', 2) : formatCurrency(pos.totalProceeds, 'EUR', 2)}
+                                        </div>
+                                        <div class="mob-holding-gain" style="color: var(--mob-text-muted); font-size: 11px;">
+                                            ${isTrade ? 'Proceeds: ' + formatCurrency(pos.totalProceeds, 'EUR', 2) : pos.type}
+                                        </div>
                                     </div>
                                 </div>
                             </div>

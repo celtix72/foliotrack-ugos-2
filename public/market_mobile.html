@@ -62,6 +62,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
 <script src="/asset_chart_component.js"></script>
+<script src="/mobile_transactions.js"></script>
 </head>
 <body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display min-h-screen flex mobile-view-active">
 <div id="mobile-ui">
@@ -186,6 +187,73 @@
 <!-- Mobile Market JS -->
 <script>
 (function() {
+  // ── Swipe Logic ──────────────────────────────────
+  let touchStartX = 0;
+  let touchMoveX = 0;
+  let currentSwipeEl = null;
+  const SWIPE_THRESHOLD = 50;
+  const ACTION_WIDTH = 195; // 3 buttons * 65px (Standard width for mobile actions)
+
+  window.handleTouchStart = function(e, container) {
+    touchStartX = e.touches[0].clientX;
+    touchMoveX = 0;
+    if (currentSwipeEl && currentSwipeEl !== container) {
+      resetSwipes(container);
+    }
+  };
+
+  window.handleTouchMove = function(e, container) {
+    const item = container.querySelector('.mob-holding-item');
+    if (!item) return;
+    touchMoveX = e.touches[0].clientX;
+    let diff = touchMoveX - touchStartX;
+    if (diff > 0) diff = 0;
+    if (diff < -ACTION_WIDTH - 20) diff = -ACTION_WIDTH - 20;
+    item.style.transition = 'none';
+    item.style.transform = `translateX(${diff}px)`;
+  };
+
+  window.handleTouchEnd = function(e, container) {
+    const item = container.querySelector('.mob-holding-item');
+    if (!item) return;
+    const diff = touchMoveX - touchStartX;
+    item.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
+    if (touchMoveX !== 0 && diff < -SWIPE_THRESHOLD) {
+      item.style.transform = `translateX(-${ACTION_WIDTH}px)`;
+      currentSwipeEl = container;
+    } else {
+      item.style.transform = 'translateX(0)';
+      currentSwipeEl = null;
+    }
+  };
+
+  function resetSwipes(except) {
+    document.querySelectorAll('.mob-holding-swipe-container').forEach(c => {
+      if (c === except) return;
+      const item = c.querySelector('.mob-holding-item');
+      if (item) item.style.transform = 'translateX(0)';
+    });
+    currentSwipeEl = null;
+  }
+
+  window.mobViewAssetDetails = function(ticker, name, currency) {
+    // Redirect to portfolio detail with filter or just show chart
+    // For now, consistent with other pages, we open the chart
+    openAssetChartModal(ticker, name, currency);
+  };
+
+  window.mobViewAssetTransactions = function(ticker) {
+    // Navigate to portfolio detail and auto-filter transactions
+    // Since we don't know the portfolio ID from here easily, 
+    // we can either search for it or just show a message.
+    // For now, let's just navigate to the FIRST portfolio that has this asset.
+    fetch(`/api/assets/${ticker}/portfolios`).then(r => r.json()).then(data => {
+        if (data && data.length > 0) {
+            window.location.href = `/portfolio_detail_mobile.html?id=${data[0].id}&ticker=${ticker}`;
+        }
+    });
+  };
+
   function mobSyncPrivacyIcon() {
     const icon = document.getElementById('mob-privacy-icon');
     if (icon) icon.innerText = window.privacyState?.enabled ? 'visibility_off' : 'visibility';
@@ -303,34 +371,72 @@
 
         const tag = getAssetTag(a.yfType || a.type, a.ticker);
 
-        return `
-          <div class="mob-holding-item" style="${alertBg}; ${alertBorder}" onclick="loadAssetChart('${a.ticker}')">
-            <div class="mob-holding-logo">${a.ticker.substring(0,3)}</div>
-            <div class="mob-holding-info">
-              <div class="flex items-center gap-2">
-                <div class="mob-holding-ticker">${a.ticker}</div>
-                <div class="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[8px] font-black uppercase tracking-tighter text-slate-500 border border-slate-200 dark:border-slate-700">${tag}</div>
-              </div>
-              <div class="mob-holding-name">${a.name || ''}</div>
-              <div style="display:flex; gap:8px; margin-top:4px">
-                  ${targetPrice > 0 ? `<div style="font-size:10px; font-weight:900; color:${targetReached?'var(--mob-emerald)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">target</span> TP: ${formatCurrency(targetPrice, a.currency, 2)}</div>` : ''}
-                  ${stopLoss > 0 ? `<div style="font-size:10px; font-weight:900; color:${stopLossHit?'var(--mob-rose)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">warning</span> SL: ${formatCurrency(stopLoss, a.currency, 2)}</div>` : ''}
-              </div>
+        const actions = a.hasPosition ? `
+          <div class="mob-holding-actions">
+            <div class="mob-action-btn bg-blue-ios" onclick="event.stopPropagation(); mobViewAssetTransactions('${a.ticker}')">
+              <span class="material-symbols-outlined">list</span>
+              <span>Trans</span>
             </div>
-            <div class="mob-holding-values">
-              <div class="mob-holding-value">${formatCurrency(price, a.currency, 2)}</div>
-              <div class="flex items-center justify-end gap-1.5 mt-0.5">
-                ${(a.preMarketChangePercent && Math.abs(a.preMarketChangePercent) > 0.01 && !window._mobMarketOpen) ? `
-                  <span style="font-size:10px; font-weight:900; color:${a.preMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">
-                    (${a.preMarketChangePercent >= 0 ? '+' : ''}${a.preMarketChangePercent.toFixed(1)}%)
-                  </span>
-                ` : ''}
-                ${(a.postMarketChangePercent && Math.abs(a.postMarketChangePercent) > 0.01 && !window._mobMarketOpen) ? `
-                  <span style="font-size:10px; font-weight:900; color:${a.postMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">
-                    (${a.postMarketChangePercent >= 0 ? '+' : ''}${a.postMarketChangePercent.toFixed(1)}%)
-                  </span>
-                ` : ''}
-                <div class="mob-holding-gain" style="color:${color}; font-weight:900; margin-top:0">${isPos ? '+' : ''}${change.toFixed(1)}%</div>
+            <div class="mob-action-btn bg-purple-ios" onclick="event.stopPropagation(); openAssetChartModal('${a.ticker}', '${(a.name || '').replace(/'/g, "\\'")}', '${a.currency}')">
+              <span class="material-symbols-outlined">show_chart</span>
+              <span>Grafico</span>
+            </div>
+            <div class="mob-action-btn bg-orange-ios" onclick="event.stopPropagation(); openManualModal('${a.ticker}', '${a.currency}', ${a.currentPrice}, '${a.type}', '${a.country}', '${a.dataSource}', '${a.isin}')">
+              <span class="material-symbols-outlined">edit_note</span>
+              <span>Modifica</span>
+            </div>
+          </div>
+        ` : `
+          <div class="mob-holding-actions">
+            <div class="mob-action-btn bg-purple-ios" onclick="event.stopPropagation(); openAssetChartModal('${a.ticker}', '${(a.name || '').replace(/'/g, "\\'")}', '${a.currency}')">
+              <span class="material-symbols-outlined">show_chart</span>
+              <span>Grafico</span>
+            </div>
+            <div class="mob-action-btn bg-orange-ios" onclick="event.stopPropagation(); openManualModal('${a.ticker}', '${a.currency}', ${a.currentPrice}, '${a.type}', '${a.country}', '${a.dataSource}', '${a.isin}')">
+              <span class="material-symbols-outlined">edit_note</span>
+              <span>Modifica</span>
+            </div>
+            <div class="mob-action-btn bg-red-ios" onclick="event.stopPropagation(); removeFromWatchlist('${a.ticker}')">
+              <span class="material-symbols-outlined">delete</span>
+              <span>Rimuovi</span>
+            </div>
+          </div>
+        `;
+
+        return `
+          <div class="mob-holding-swipe-container" 
+               ontouchstart="handleTouchStart(event, this)" 
+               ontouchmove="handleTouchMove(event, this)" 
+               ontouchend="handleTouchEnd(event, this)">
+            ${actions}
+            <div class="mob-holding-item" style="${alertBg}; ${alertBorder}" onclick="openAssetChartModal('${a.ticker}', '${(a.name || '').replace(/'/g, "\\'")}', '${a.currency}')">
+              <div class="mob-holding-logo">${a.ticker.substring(0,3)}</div>
+              <div class="mob-holding-info">
+                <div class="flex items-center gap-2">
+                  <div class="mob-holding-ticker">${a.ticker}</div>
+                  <div class="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[8px] font-black uppercase tracking-tighter text-slate-500 border border-slate-200 dark:border-slate-700">${tag}</div>
+                </div>
+                <div class="mob-holding-name">${a.name || ''}</div>
+                <div style="display:flex; gap:8px; margin-top:4px">
+                    ${targetPrice > 0 ? `<div style="font-size:10px; font-weight:900; color:${targetReached?'var(--mob-emerald)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">target</span> TP: ${formatCurrency(targetPrice, a.currency, 2)}</div>` : ''}
+                    ${stopLoss > 0 ? `<div style="font-size:10px; font-weight:900; color:${stopLossHit?'var(--mob-rose)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">warning</span> SL: ${formatCurrency(stopLoss, a.currency, 2)}</div>` : ''}
+                </div>
+              </div>
+              <div class="mob-holding-values">
+                <div class="mob-holding-value">${formatCurrency(price, a.currency, 2)}</div>
+                <div class="flex items-center justify-end gap-1.5 mt-0.5">
+                  ${(a.preMarketChangePercent && Math.abs(a.preMarketChangePercent) > 0.01 && !window._mobMarketOpen) ? `
+                    <span style="font-size:10px; font-weight:900; color:${a.preMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">
+                      (${a.preMarketChangePercent >= 0 ? '+' : ''}${a.preMarketChangePercent.toFixed(1)}%)
+                    </span>
+                  ` : ''}
+                  ${(a.postMarketChangePercent && Math.abs(a.postMarketChangePercent) > 0.01 && !window._mobMarketOpen) ? `
+                    <span style="font-size:10px; font-weight:900; color:${a.postMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">
+                      (${a.postMarketChangePercent >= 0 ? '+' : ''}${a.postMarketChangePercent.toFixed(1)}%)
+                    </span>
+                  ` : ''}
+                  <div class="mob-holding-gain" style="color:${color}; font-weight:900; margin-top:0">${isPos ? '+' : ''}${change.toFixed(1)}%</div>
+                </div>
               </div>
             </div>
           </div>`;
@@ -388,6 +494,14 @@
         mobLoadAssets();
       }
     } catch(e) {}
+  };
+
+  window.removeFromWatchlist = async function(ticker) {
+    if (!confirm(`Rimuovere ${ticker} dalla watchlist?`)) return;
+    try {
+      await fetch(`/api/watchlist/${ticker}`, { method: 'DELETE' });
+      mobLoadAssets();
+    } catch(e) { console.error('Error removing from watchlist:', e); }
   };
 
   function mobInit() {

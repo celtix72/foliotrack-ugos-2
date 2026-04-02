@@ -145,7 +145,7 @@
     <!-- Portfolio List -->
     <div class="mob-section-header">
       <span class="mob-section-title">I Tuoi Portafogli</span>
-      <span class="mob-section-link" onclick="window.location.href='/portfolio'">Vedi tutti →</span>
+      <span class="mob-section-link" onclick="openPortfolioModal()">+ Aggiungi</span>
     </div>
     <div class="mob-portfolio-list" id="mob-portfolio-list">
       <div style="text-align:center;padding:24px">
@@ -155,6 +155,80 @@
 
     <!-- Bottom spacer -->
     <div style="height: 20px"></div>
+  </div>
+
+  <!-- Portfolio Modal -->
+  <div id="portfolio-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[10000] flex items-center justify-center p-4" style="display:none">
+      <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
+          <div class="px-5 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <h3 id="portfolio-modal-title" class="font-bold text-lg">Nuovo Portafoglio</h3>
+              <button onclick="closePortfolioModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                  <span class="material-symbols-outlined">close</span>
+              </button>
+          </div>
+          <form id="portfolio-form" class="p-5 space-y-3 overflow-y-auto custom-scrollbar">
+              <input type="hidden" id="p-id"/>
+              <div class="space-y-2">
+                  <label class="text-sm font-medium">Nome Portafoglio</label>
+                  <input id="p-name" required class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3" placeholder="e.g. Retirement"/>
+              </div>
+              <div class="space-y-2">
+                  <label class="text-sm font-medium">Tipo Portafoglio</label>
+                  <select id="p-type" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3">
+                      <option value="Investimento">Investimento (Market Tracking)</option>
+                      <option value="Conto Deposito">Conto Deposito (Cash & Interests)</option>
+                  </select>
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                  <div class="space-y-2">
+                      <label class="text-sm font-medium">Valuta</label>
+                      <select id="p-currency" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3">
+                          <option value="EUR">EUR</option>
+                          <option value="USD">USD</option>
+                          <option value="GBP">GBP</option>
+                      </select>
+                  </div>
+                  <div class="space-y-2">
+                      <label class="text-sm font-medium">Data Inizio</label>
+                      <input id="p-date" type="date" required class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3"/>
+                  </div>
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                  <div class="space-y-2">
+                      <label class="text-sm font-medium">Cash Iniziale</label>
+                      <input id="p-cash" type="number" step="any" required class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3" placeholder="0.00"/>
+                  </div>
+                  <div class="space-y-2">
+                      <label class="text-sm font-medium">Colore Brand</label>
+                      <input id="p-color" type="color" class="w-full h-[42px] bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-1 px-1 cursor-pointer" value="#6366f1"/>
+                  </div>
+              </div>
+              <div class="pt-4 flex gap-3">
+                  <div class="flex-1"></div>
+                  <button type="button" onclick="closePortfolioModal()" class="px-5 py-2 rounded-lg font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Annulla</button>
+                  <button type="submit" class="px-5 py-2 bg-primary text-white rounded-lg font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">Salva</button>
+              </div>
+          </form>
+      </div>
+  </div>
+
+  <!-- Confirm Modal -->
+  <div id="general-confirm-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[10000] flex items-center justify-center p-4" style="display:none">
+      <div class="bg-white dark:bg-[#111722] border border-rose-500/30 rounded-2xl w-full max-w-sm shadow-2xl p-5 space-y-4 max-h-[90vh] overflow-y-auto">
+          <div class="flex items-center gap-4">
+              <div class="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center shrink-0">
+                  <span class="material-symbols-outlined text-rose-500 text-2xl">warning</span>
+              </div>
+              <div>
+                  <p id="confirm-modal-title" class="font-bold text-rose-500">Conferma Azione</p>
+                  <p id="confirm-modal-body" class="text-sm text-slate-500 dark:text-slate-400 mt-1">Sei sicuro di voler procedere?</p>
+              </div>
+          </div>
+          <div class="flex gap-3">
+              <button onclick="closeConfirmModal()" class="flex-1 py-2.5 rounded-lg font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors">Annulla</button>
+              <button id="confirm-modal-btn" class="flex-1 py-2.5 bg-rose-600 text-white rounded-lg font-bold hover:bg-rose-700 transition-all shadow-lg shadow-rose-600/20">Elimina</button>
+          </div>
+      </div>
   </div>
 
   <!-- ── Bottom Tab Bar ── -->
@@ -186,6 +260,55 @@
   let mobPerfChart = null;
   let mobAllocChart = null;
   let mobCurrentRange = '1M';
+
+  // ── Swipe Logic ──────────────────────────────────
+  let touchStartX = 0;
+  let touchMoveX = 0;
+  let currentSwipeEl = null;
+  const SWIPE_THRESHOLD = 50;
+  const ACTION_WIDTH = 130; // 2 buttons * 65px
+
+  window.handleTouchStart = function(e, container) {
+    touchStartX = e.touches[0].clientX;
+    touchMoveX = 0;
+    if (currentSwipeEl && currentSwipeEl !== container) {
+      resetSwipes(container);
+    }
+  };
+
+  window.handleTouchMove = function(e, container) {
+    const item = container.querySelector('.mob-portfolio-card');
+    if (!item) return;
+    touchMoveX = e.touches[0].clientX;
+    let diff = touchMoveX - touchStartX;
+    if (diff > 0) diff = 0;
+    if (diff < -ACTION_WIDTH - 20) diff = -ACTION_WIDTH - 20;
+    item.style.transition = 'none';
+    item.style.transform = `translateX(${diff}px)`;
+  };
+
+  window.handleTouchEnd = function(e, container) {
+    const item = container.querySelector('.mob-portfolio-card');
+    if (!item) return;
+    const diff = touchMoveX - touchStartX;
+    item.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
+    if (touchMoveX !== 0 && diff < -SWIPE_THRESHOLD) {
+      item.style.transform = `translateX(-${ACTION_WIDTH}px)`;
+      currentSwipeEl = container;
+    } else {
+      item.style.transform = 'translateX(0)';
+      currentSwipeEl = null;
+    }
+  };
+
+  function resetSwipes(except) {
+    document.querySelectorAll('.mob-holding-swipe-container').forEach(c => {
+      if (c === except) return;
+      const item = c.querySelector('.mob-portfolio-card');
+      if (item) item.style.transform = 'translateX(0)';
+    });
+    currentSwipeEl = null;
+  }
 
   function mobSyncPrivacyIcon() {
     const icon = document.getElementById('mob-privacy-icon');
@@ -262,36 +385,53 @@
             const xirrColor = xirr >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
 
             return `
-              <div class="mob-portfolio-card" onclick="window.location.href='/portfolio_detail_mobile.html?id=${p.id}'" style="flex-direction: column; align-items: stretch; gap: 12px;">
-                <div style="display: flex; align-items: center; gap: 14px;">
-                  <div class="mob-portfolio-icon" style="background-color:${p.color||'#6366f1'}">
-                    <span class="material-symbols-outlined">work</span>
+              <div class="mob-holding-swipe-container" 
+                   ontouchstart="handleTouchStart(event, this)" 
+                   ontouchmove="handleTouchMove(event, this)" 
+                   ontouchend="handleTouchEnd(event, this)">
+                
+                <div class="mob-holding-actions">
+                  <div class="mob-action-btn bg-orange-ios" onclick="event.stopPropagation(); mobEditPortfolio(${p.id})">
+                    <span class="material-symbols-outlined">edit</span>
+                    <span>Modifica</span>
                   </div>
-                  <div class="mob-portfolio-info">
-                    <div class="mob-portfolio-name">${p.name}</div>
-                    <div class="mob-portfolio-meta">${p.assetCount || 0} Assets · ${p.currency} ${p.type === 'Conto Deposito' ? '<span style="color:var(--mob-amber); font-weight:900; background:rgba(245,158,11,0.1); padding:1px 4px; border-radius:4px; font-size:8px; vertical-align:middle; margin-left:4px">DEPOSITO</span>' : ''}</div>
-                  </div>
-                  <div class="mob-portfolio-values">
-                    <div class="mob-portfolio-net">${formatPrivacy(p.totalValue, p.currency, 'mob-p-'+p.id, 0)}</div>
-                    <div class="mob-portfolio-change" style="color: ${isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">
-                      ${isPos?'+':''}${formatPrivacy(p.changeValue || 0, p.currency, 'mob-var', 0)}
-                    </div>
+                  <div class="mob-action-btn bg-red-ios" onclick="event.stopPropagation(); mobDeletePortfolio(${p.id}, '${p.name.replace(/'/g, "\\'")}')">
+                    <span class="material-symbols-outlined">delete</span>
+                    <span>Elimina</span>
                   </div>
                 </div>
-                
-                <!-- Performance Grid -->
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding-top: 10px; border-top: 1px solid var(--mob-border);">
-                  <div style="display: flex; flex-direction: column; gap: 2px;">
-                    <span style="font-size: 8px; font-weight: 800; text-transform: uppercase; color: var(--mob-text-caption); letter-spacing: 0.05em;">ROI (Tot)</span>
-                    <span style="font-size: 12px; font-weight: 900; color: ${roiColor}">${(roi * 100).toFixed(1)}%</span>
+
+                <div class="mob-portfolio-card" onclick="window.location.href='/portfolio_detail_mobile.html?id=${p.id}'" style="position:relative; z-index:2; transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); flex-direction: column; align-items: stretch; gap: 12px;">
+                  <div style="display: flex; align-items: center; gap: 14px;">
+                    <div class="mob-portfolio-icon" style="background-color:${p.color||'#6366f1'}">
+                      <span class="material-symbols-outlined">work</span>
+                    </div>
+                    <div class="mob-portfolio-info">
+                      <div class="mob-portfolio-name">${p.name}</div>
+                      <div class="mob-portfolio-meta">${p.assetCount || 0} Assets · ${p.currency} ${p.type === 'Conto Deposito' ? '<span style="color:var(--mob-amber); font-weight:900; background:rgba(245,158,11,0.1); padding:1px 4px; border-radius:4px; font-size:8px; vertical-align:middle; margin-left:4px">DEPOSITO</span>' : ''}</div>
+                    </div>
+                    <div class="mob-portfolio-values">
+                      <div class="mob-portfolio-net">${formatPrivacy(p.totalValue, p.currency, 'mob-p-'+p.id, 0)}</div>
+                      <div class="mob-portfolio-change" style="color: ${roi >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">
+                        ${roi >= 0 ?'+':''}${(roi * 100).toFixed(1)}%
+                      </div>
+                    </div>
                   </div>
-                  <div style="display: flex; flex-direction: column; gap: 2px;">
-                    <span style="font-size: 8px; font-weight: 800; text-transform: uppercase; color: var(--mob-text-caption); letter-spacing: 0.05em;">TWR</span>
-                    <span style="font-size: 12px; font-weight: 900; color: ${twrColor}">${(twr * 100).toFixed(1)}%</span>
-                  </div>
-                  <div style="display: flex; flex-direction: column; gap: 2px;">
-                    <span style="font-size: 8px; font-weight: 800; text-transform: uppercase; color: var(--mob-text-caption); letter-spacing: 0.05em;">XIRR</span>
-                    <span style="font-size: 12px; font-weight: 900; color: ${xirrColor}">${(xirr * 100).toFixed(1)}%</span>
+                  
+                  <!-- Performance Grid -->
+                  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding-top: 10px; border-top: 1px solid var(--mob-border);">
+                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                      <span style="font-size: 8px; font-weight: 800; text-transform: uppercase; color: var(--mob-text-caption); letter-spacing: 0.05em;">ROI (Tot)</span>
+                      <span style="font-size: 12px; font-weight: 900; color: ${roiColor}">${(roi * 100).toFixed(1)}%</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                      <span style="font-size: 8px; font-weight: 800; text-transform: uppercase; color: var(--mob-text-caption); letter-spacing: 0.05em;">TWR</span>
+                      <span style="font-size: 12px; font-weight: 900; color: ${twrColor}">${(twr * 100).toFixed(1)}%</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                      <span style="font-size: 8px; font-weight: 800; text-transform: uppercase; color: var(--mob-text-caption); letter-spacing: 0.05em;">XIRR</span>
+                      <span style="font-size: 12px; font-weight: 900; color: ${xirrColor}">${(xirr * 100).toFixed(1)}%</span>
+                    </div>
                   </div>
                 </div>
               </div>`;
@@ -343,6 +483,81 @@
       if (ms) ms.textContent = `EU:${s.EU?'🟢':'🔴'} US:${s.US?'🟢':'🔴'}`;
     } catch(e) {}
   }
+
+  // ── Portfolio Modal Logic ─────────────────────────
+  window.openPortfolioModal = function() {
+    document.getElementById('portfolio-modal-title').innerText = 'Nuovo Portafoglio';
+    document.getElementById('portfolio-form').reset();
+    document.getElementById('p-id').value = '';
+    document.getElementById('portfolio-modal').style.display = 'flex';
+  };
+
+  window.closePortfolioModal = function() {
+    document.getElementById('portfolio-modal').style.display = 'none';
+  };
+
+  window.mobEditPortfolio = async function(id) {
+    try {
+      const res = await fetch(`/api/portfolios/${id}`);
+      const p = await res.json();
+      document.getElementById('portfolio-modal-title').innerText = 'Modifica Portafoglio';
+      document.getElementById('p-id').value = p.id;
+      document.getElementById('p-name').value = p.name;
+      document.getElementById('p-type').value = p.type || 'Investimento';
+      document.getElementById('p-currency').value = p.currency || 'EUR';
+      document.getElementById('p-date').value = p.startDate ? p.startDate.split('T')[0] : '';
+      document.getElementById('p-cash').value = p.initialCash || 0;
+      document.getElementById('p-color').value = p.color || '#6366f1';
+      document.getElementById('portfolio-modal').style.display = 'flex';
+      resetSwipes();
+    } catch(e) { console.error('Error loading portfolio for edit:', e); }
+  };
+
+  document.getElementById('portfolio-form').onsubmit = async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('p-id').value;
+    const body = {
+      name: document.getElementById('p-name').value,
+      type: document.getElementById('p-type').value,
+      currency: document.getElementById('p-currency').value,
+      startDate: document.getElementById('p-date').value,
+      initialCash: parseFloat(document.getElementById('p-cash').value),
+      color: document.getElementById('p-color').value
+    };
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? `/api/portfolios/${id}` : '/api/portfolios';
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (res.ok) {
+        closePortfolioModal();
+        mobUpdateDashboard();
+      }
+    } catch(e) { console.error('Error saving portfolio:', e); }
+  };
+
+  window.mobDeletePortfolio = function(id, name) {
+    document.getElementById('confirm-modal-title').innerText = 'Elimina Portafoglio';
+    document.getElementById('confirm-modal-body').innerText = `Sei sicuro di voler eliminare il portafoglio "${name}"? Questa azione è irreversibile e cancellerà tutte le transazioni associate.`;
+    document.getElementById('confirm-modal-btn').onclick = async () => {
+      try {
+        const res = await fetch(`/api/portfolios/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          closeConfirmModal();
+          mobUpdateDashboard();
+        }
+      } catch(e) { console.error('Error deleting portfolio:', e); }
+    };
+    document.getElementById('general-confirm-modal').style.display = 'flex';
+    resetSwipes();
+  };
+
+  window.closeConfirmModal = function() {
+    document.getElementById('general-confirm-modal').style.display = 'none';
+  };
 
   function mobInitPerfChart() {
     if (mobPerfChart) { mobPerfChart.destroy(); mobPerfChart = null; }
