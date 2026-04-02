@@ -197,7 +197,7 @@
                         <th class="px-5 py-3">Asset</th>
                         <th class="px-5 py-3">Price</th>
                         <th class="px-5 py-3">Performance</th>
-                        <th class="px-5 py-3">Daily Gain</th>
+                        <th class="px-5 py-3" id="th-total-daily-gain">Daily Gain</th>
                         <th class="px-5 py-3 hidden sm:table-cell">Target/Stop</th>
                         <th class="px-5 py-3 text-right">Actions</th>
                     </tr>
@@ -322,10 +322,20 @@
 
 <script>
 let allAssets = [];
+let usdEurRate = 1.0;
 
 // ─── Data loading ─────────────────────────────────────────────────────────────
 async function loadAssets() {
     try {
+        // Fetch exchange rate
+        const exRes = await fetch('/api/market/exchange-rate');
+        const exData = await exRes.json();
+        if (exData && exData.rate) {
+            // Note: server returns EURUSD rate (1 EUR = X USD)
+            // To get EUR from USD, we divide by rate.
+            usdEurRate = exData.rate;
+        }
+
         const res = await fetch('/api/assets');
         allAssets = await res.json();
         renderAssets();
@@ -351,6 +361,28 @@ function renderAssets(filter = '') {
     const watchlist = filtered.filter(a => !a.hasPosition).sort((a, b) => (b.changePercent || 0) - (a.changePercent || 0));
 
     if (watchCountEl) watchCountEl.textContent = `${watchlist.length} ASSETS`;
+
+    // Calculate Total Daily Gain in EUR for Open Positions
+    let totalDailyGainEUR = 0;
+    openPositions.forEach(a => {
+        let gain = (a.totalQuantity || 0) * (a.changeValue || 0);
+        if (a.currency === 'USD') {
+            gain = gain / usdEurRate;
+        }
+        totalDailyGainEUR += gain;
+    });
+
+    const totalGainHeader = document.getElementById('th-total-daily-gain');
+    if (totalGainHeader) {
+        const color = totalDailyGainEUR >= 0 ? 'text-emerald-500' : 'text-rose-500';
+        const sign = totalDailyGainEUR >= 0 ? '+' : '';
+        totalGainHeader.innerHTML = `
+            <div class="flex flex-col">
+                <span>Daily Gain</span>
+                <span class="text-[10px] font-mono ${color} leading-none mt-1">${sign}${formatCurrency(totalDailyGainEUR, 'EUR')}</span>
+            </div>
+        `;
+    }
 
     const renderRow = (a) => {
         const price = a.currentPrice || 0;
