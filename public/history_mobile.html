@@ -110,9 +110,9 @@ let rawHistoryData = [];
                 
                 // Set default collapsed state: collapse all initial years
                 const years = [...new Set(rawHistoryData.map(d => d.year))];
-                collapsedGroups = new Set(years);
+                mobCollapsedGroups = new Set(years);
                 
-                renderHistory();
+                renderMobileView();
             } catch (err) { console.error('Error loading history:', err); }
         }
     let rawMobDivData = [];
@@ -122,12 +122,9 @@ let rawHistoryData = [];
 
     async function loadMobileData() {
         try {
-            // Already loaded rawHistoryData in desktop logic, now load dividends
             const res = await fetch('/api/analytics/dividends');
             rawMobDivData = await res.json();
             
-            // Set defaults: collapse all except current year maybe? Or just leave it to default rendering (starts uncollapsed or we can set it)
-            // User requested grouped by year. Let's start with collapsed years except the latest
             const currentYear = new Date().getFullYear().toString();
             
             // For history
@@ -148,6 +145,55 @@ let rawHistoryData = [];
         document.getElementById('mob-pill-history').classList.toggle('active', tab === 'history');
         document.getElementById('mob-pill-dividends').classList.toggle('active', tab === 'dividends');
         renderMobileView();
+    }
+
+    // ── Swipe Logic ──────────────────────────────────
+    let touchStartX = 0;
+    let touchMoveX = 0;
+    let currentSwipeEl = null;
+    const SWIPE_THRESHOLD = 50;
+    const ACTION_WIDTH = 195; // 3 buttons * 65px
+
+    window.handleTouchStart = function(e, container) {
+        touchStartX = e.touches[0].clientX;
+        touchMoveX = 0;
+        if (currentSwipeEl && currentSwipeEl !== container) {
+            resetSwipes(container);
+        }
+    };
+
+    window.handleTouchMove = function(e, container) {
+        const item = container.querySelector('.mob-holding-item');
+        if (!item) return;
+        touchMoveX = e.touches[0].clientX;
+        let diff = touchMoveX - touchStartX;
+        if (diff > 0) diff = 0;
+        if (diff < -ACTION_WIDTH - 20) diff = -ACTION_WIDTH - 20;
+        item.style.transition = 'none';
+        item.style.transform = `translateX(${diff}px)`;
+    };
+
+    window.handleTouchEnd = function(e, container) {
+        const item = container.querySelector('.mob-holding-item');
+        if (!item) return;
+        const diff = touchMoveX - touchStartX;
+        item.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
+        if (touchMoveX !== 0 && diff < -SWIPE_THRESHOLD) {
+            item.style.transform = `translateX(-${ACTION_WIDTH}px)`;
+            currentSwipeEl = container;
+        } else {
+            item.style.transform = 'translateX(0)';
+            currentSwipeEl = null;
+        }
+    };
+
+    function resetSwipes(except) {
+        document.querySelectorAll('.mob-holding-swipe-container').forEach(c => {
+            if (c === except) return;
+            const item = c.querySelector('.mob-holding-item');
+            if (item) item.style.transform = 'translateX(0)';
+        });
+        currentSwipeEl = null;
     }
 
     function mobToggleGroup(key) {
@@ -274,19 +320,43 @@ let rawHistoryData = [];
                     g.items.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(d => {
                         const logoChar = d.assetTicker ? d.assetTicker.substring(0,2) : 'DI';
                         html += `
-                            <div class="mob-holding-item" style="border: 1px solid var(--mob-border) !important; border-radius: 12px !important; margin-bottom: 8px;">
-                                <div class="mob-holding-logo" style="color:var(--mob-emerald); background:rgba(16, 185, 129, 0.1);">${logoChar}</div>
-                                <div class="mob-holding-info">
-                                    <div class="flex items-center gap-2">
-                                        <div class="mob-holding-ticker">${d.assetTicker}</div>
-                                        <div class="text-[10px] font-black text-emerald-500 flex items-center gap-0.5">
-                                            ▲${formatCurrency(d.amount, 'EUR', 0)}
-                                        </div>
+                            <div class="mob-holding-swipe-container" 
+                                 ontouchstart="handleTouchStart(event, this)" 
+                                 ontouchmove="handleTouchMove(event, this)" 
+                                 ontouchend="handleTouchEnd(event, this)">
+                                
+                                <div class="mob-holding-actions">
+                                    <div class="mob-action-btn bg-blue-ios" 
+                                         onclick="event.stopPropagation(); duplicateTransaction('${d.id}')">
+                                        <span class="material-symbols-outlined">content_copy</span>
+                                        <span>Duplica</span>
                                     </div>
-                                    <div class="mob-holding-name">${d.portfolioName} • ${d.date}</div>
+                                    <div class="mob-action-btn bg-orange-ios" 
+                                         onclick="event.stopPropagation(); editTransaction('${d.id}')">
+                                        <span class="material-symbols-outlined">edit</span>
+                                        <span>Modifica</span>
+                                    </div>
+                                    <div class="mob-action-btn bg-red-ios" 
+                                         onclick="event.stopPropagation(); confirmDeleteTransaction('${d.id}')">
+                                        <span class="material-symbols-outlined">delete</span>
+                                        <span>Elimina</span>
+                                    </div>
                                 </div>
-                                <div class="mob-holding-values">
-                                    <div class="mob-holding-value" style="color: var(--mob-emerald)">+${formatCurrency(d.amount, 'EUR', 2)}</div>
+
+                                <div class="mob-holding-item" style="border: 1px solid var(--mob-border) !important; border-radius: 12px !important; margin-bottom: 8px;">
+                                    <div class="mob-holding-logo" style="color:var(--mob-emerald); background:rgba(16, 185, 129, 0.1);">${logoChar}</div>
+                                    <div class="mob-holding-info">
+                                        <div class="flex items-center gap-2">
+                                            <div class="mob-holding-ticker">${d.assetTicker}</div>
+                                            <div class="text-[10px] font-black text-emerald-500 flex items-center gap-0.5">
+                                                ▲${formatCurrency(d.amount, 'EUR', 0)}
+                                            </div>
+                                        </div>
+                                        <div class="mob-holding-name">${d.portfolioName} • ${d.date}</div>
+                                    </div>
+                                    <div class="mob-holding-values">
+                                        <div class="mob-holding-value" style="color: var(--mob-emerald)">+${formatCurrency(d.amount, 'EUR', 2)}</div>
+                                    </div>
                                 </div>
                             </div>
                         `;
@@ -297,6 +367,19 @@ let rawHistoryData = [];
             container.innerHTML = html || '<div class="mob-empty"><span class="material-symbols-outlined">payments</span><div class="mob-empty-title">No Dividends</div></div>';
         }
     }
+
+    // Shared Edit/Duplicate/Delete helpers for mobile_transactions.js
+    window.editTransaction = function(id) {
+        const t = rawMobDivData.find(tx => tx.id == id);
+        if (t) mobileEditTransaction(t);
+    };
+    window.duplicateTransaction = function(id) {
+        const t = rawMobDivData.find(tx => tx.id == id);
+        if (t) mobileDuplicateTransaction(t);
+    };
+    window.confirmDeleteTransaction = function(id) {
+        mobileDeleteTransaction(id);
+    };
 
     // Hook into global privacy toggle
     window.addEventListener('privacy-changed', renderMobileView);

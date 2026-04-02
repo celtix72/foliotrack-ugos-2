@@ -150,7 +150,7 @@
         loadPortfoliosForTransfer();
     };
 
-    async function loadPortfoliosForTransfer() {
+    async function loadPortfoliosForTransfer(selectedId = null) {
         try {
             const res = await fetch('/api/portfolios');
             const data = await res.json();
@@ -160,11 +160,12 @@
                 const portfolios = data.portfolios || data;
                 select.innerHTML = '<option value="">— Seleziona Target —</option>' + 
                     portfolios.filter(p => p.id != currentP).map(p => `<option value="${p.id}">${p.name} (${p.currency})</option>`).join('');
+                if (selectedId) select.value = selectedId;
             }
         } catch(e) {}
     }
 
-    async function loadAllPortfolios() {
+    async function loadAllPortfolios(selectedId = null) {
         try {
             const res = await fetch('/api/portfolios');
             const data = await res.json();
@@ -173,18 +174,22 @@
                 const portfolios = data.portfolios || data;
                 select.innerHTML = portfolios.map(p => `<option value="${p.id}">${p.name} (${p.currency})</option>`).join('');
                 
-                // Default selection
-                const currentP = window.mobCurrentPortfolioId || window.currentPortfolioId;
-                if (currentP) {
-                    select.value = currentP;
-                } else if (portfolios.length > 0) {
-                    select.value = portfolios[0].id;
+                // Set explicitly if provided, otherwise default logic
+                if (selectedId) {
+                    select.value = selectedId;
+                } else {
+                    const currentP = window.mobCurrentPortfolioId || window.currentPortfolioId;
+                    if (currentP) {
+                        select.value = currentP;
+                    } else if (portfolios.length > 0) {
+                        select.value = portfolios[0].id;
+                    }
                 }
             }
         } catch(e) {}
     }
 
-    window.openTransactionModal = function(ticker = '') {
+    window.openTransactionModal = async function(ticker = '', portfolioId = null) {
         injectMobileModal();
         const modal = document.getElementById('transaction-modal');
         if (modal) {
@@ -195,7 +200,8 @@
             if (fab) fab.style.display = 'flex';
             
             // Populate and set default portfolio
-            loadAllPortfolios();
+            await loadAllPortfolios(portfolioId);
+            await loadPortfoliosForTransfer();
         }
         
         const form = document.getElementById('transaction-form');
@@ -426,9 +432,11 @@
     }
 
     // Shared Edit/Duplicate/Delete helpers
-    window.mobileEditTransaction = function(t) {
+    window.mobileEditTransaction = async function(t) {
         injectMobileModal();
-        openTransactionModal();
+        // Open modal without ticker to avoid triggering handleMobileAssetSearch with wrong source
+        await openTransactionModal('', t.portfolioId);
+        
         document.getElementById('t-modal-title').innerText = "Modifica Transazione";
         document.getElementById('t-id').value = t.id;
         document.getElementById('t-type').value = t.type;
@@ -443,18 +451,29 @@
         document.getElementById('t-asset-search').value = t.assetTicker || t.ticker || '';
         document.getElementById('t-isin').value = t.isin || '';
         document.getElementById('t-source').value = t.dataSource || 'YF';
+        if (t.assetName) document.getElementById('t-asset-name').value = t.assetName;
+        if (t.assetCurrency) document.getElementById('t-asset-currency').value = t.assetCurrency;
+        
+        if (t.type === 'TRANSFER' && t.destinationPortfolioId) {
+            await loadPortfoliosForTransfer(t.destinationPortfolioId);
+        }
         
         // Find asset currency from current holdings if possible
         if (window.currentHoldings) {
             const h = window.currentHoldings.find(hold => hold.ticker === (t.assetTicker || t.ticker));
             if (h) document.getElementById('t-asset-currency').value = h.currency;
+        } else if (!t.assetCurrency && (t.assetTicker || t.ticker)) {
+            // If no holdings available, trigger a silent search to get currency if it's NOT a manual asset
+            if (t.dataSource !== 'MANUAL') {
+                handleMobileAssetSearch(t.assetTicker || t.ticker, true);
+            }
         }
         
         toggleTransactionFields();
     };
 
-    window.mobileDuplicateTransaction = function(t) {
-        mobileEditTransaction(t);
+    window.mobileDuplicateTransaction = async function(t) {
+        await mobileEditTransaction(t);
         document.getElementById('t-id').value = '';
         document.getElementById('t-modal-title').innerText = "Duplica Transazione";
         document.getElementById('t-date').value = new Date().toISOString().split('T')[0];

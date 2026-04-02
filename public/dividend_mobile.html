@@ -595,21 +595,107 @@
                 }
             }
 
+            // ── Swipe Logic ──────────────────────────────────
+            let touchStartX = 0;
+            let touchMoveX = 0;
+            let currentSwipeEl = null;
+            const SWIPE_THRESHOLD = 50;
+            const ACTION_WIDTH = 195; // 3 buttons * 65px
+
+            window.handleTouchStart = function(e, container) {
+                touchStartX = e.touches[0].clientX;
+                touchMoveX = 0;
+                if (currentSwipeEl && currentSwipeEl !== container) {
+                    resetSwipes(container);
+                }
+            };
+
+            window.handleTouchMove = function(e, container) {
+                const item = container.querySelector('.mob-holding-item');
+                if (!item) return;
+                touchMoveX = e.touches[0].clientX;
+                let diff = touchMoveX - touchStartX;
+                if (diff > 0) diff = 0;
+                if (diff < -ACTION_WIDTH - 20) diff = -ACTION_WIDTH - 20;
+                item.style.transition = 'none';
+                item.style.transform = `translateX(${diff}px)`;
+            };
+
+            window.handleTouchEnd = function(e, container) {
+                const item = container.querySelector('.mob-holding-item');
+                if (!item) return;
+                const diff = touchMoveX - touchStartX;
+                item.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
+                if (touchMoveX !== 0 && diff < -SWIPE_THRESHOLD) {
+                    item.style.transform = `translateX(-${ACTION_WIDTH}px)`;
+                    currentSwipeEl = container;
+                } else {
+                    item.style.transform = 'translateX(0)';
+                    currentSwipeEl = null;
+                }
+            };
+
+            function resetSwipes(except) {
+                document.querySelectorAll('.mob-holding-swipe-container').forEach(c => {
+                    if (c === except) return;
+                    const item = c.querySelector('.mob-holding-item');
+                    if (item) item.style.transform = 'translateX(0)';
+                });
+                currentSwipeEl = null;
+            }
+
             function renderMobRow(d) {
                 const letters = d.assetTicker ? d.assetTicker.substring(0, 3).toUpperCase() : '???';
                 return `
-                    <div class="mob-holding-item">
-                        <div class="mob-holding-logo">${letters}</div>
-                        <div class="mob-holding-info">
-                            <div class="mob-holding-ticker">${d.assetTicker}</div>
-                            <div class="mob-holding-name">${d.portfolioName} · ${d.date}</div>
+                    <div class="mob-holding-swipe-container" 
+                         ontouchstart="handleTouchStart(event, this)" 
+                         ontouchmove="handleTouchMove(event, this)" 
+                         ontouchend="handleTouchEnd(event, this)">
+                        
+                        <div class="mob-holding-actions">
+                            <div class="mob-action-btn bg-blue-ios" 
+                                 onclick="event.stopPropagation(); duplicateTransaction('${d.id}')">
+                                <span class="material-symbols-outlined">content_copy</span>
+                                <span>Duplica</span>
+                            </div>
+                            <div class="mob-action-btn bg-orange-ios" 
+                                 onclick="event.stopPropagation(); editTransaction('${d.id}')">
+                                <span class="material-symbols-outlined">edit</span>
+                                <span>Modifica</span>
+                            </div>
+                            <div class="mob-action-btn bg-red-ios" 
+                                 onclick="event.stopPropagation(); confirmDeleteTransaction('${d.id}')">
+                                <span class="material-symbols-outlined">delete</span>
+                                <span>Elimina</span>
+                            </div>
                         </div>
-                        <div class="mob-holding-values">
-                            <div class="mob-holding-value text-emerald-500" style="font-weight:800">+${formatCurrency(d.amount, 'EUR', 0)}</div>
+
+                        <div class="mob-holding-item">
+                            <div class="mob-holding-logo">${letters}</div>
+                            <div class="mob-holding-info">
+                                <div class="mob-holding-ticker">${d.assetTicker}</div>
+                                <div class="mob-holding-name">${d.portfolioName} · ${d.date}</div>
+                            </div>
+                            <div class="mob-holding-values">
+                                <div class="mob-holding-value text-emerald-500" style="font-weight:800">+${formatCurrency(d.amount, 'EUR', 0)}</div>
+                            </div>
                         </div>
                     </div>
                 `;
             }
+
+            // Shared Edit/Duplicate/Delete helpers for mobile_transactions.js
+            window.editTransaction = function(id) {
+                const t = rawDivData.find(tx => tx.id == id);
+                if (t) mobileEditTransaction(t);
+            };
+            window.duplicateTransaction = function(id) {
+                const t = rawDivData.find(tx => tx.id == id);
+                if (t) mobileDuplicateTransaction(t);
+            };
+            window.confirmDeleteTransaction = function(id) {
+                mobileDeleteTransaction(id);
+            };
 
             document.addEventListener('DOMContentLoaded', loadMobData);
             window.addEventListener('mobile-view-activated', loadMobData);
