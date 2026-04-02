@@ -190,6 +190,8 @@
     }
 
     window.openTransactionModal = async function(ticker = '', portfolioId = null) {
+        if (!portfolioId && window.mobCurrentPortfolioId) portfolioId = window.mobCurrentPortfolioId;
+        
         injectMobileModal();
         const modal = document.getElementById('transaction-modal');
         if (modal) {
@@ -208,7 +210,13 @@
         if (form) form.reset();
         
         document.getElementById('t-id').value = '';
-        document.getElementById('t-modal-title').innerText = "Nuova Transazione";
+        const portSelect = document.getElementById('t-portfolio');
+        let title = "Nuova Transazione";
+        if (portSelect && portSelect.selectedIndex >= 0) {
+            const portName = portSelect.options[portSelect.selectedIndex].text.split(' (')[0];
+            title = `Nuova Transazione in ${portName}`;
+        }
+        document.getElementById('t-modal-title').innerText = title;
         document.getElementById('t-date').value = new Date().toISOString().split('T')[0];
         
         if (ticker) {

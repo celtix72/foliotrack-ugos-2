@@ -1480,7 +1480,8 @@
 
     window.openTransactionModal = function() {
         document.getElementById('t-id').value = '';
-        document.getElementById('t-modal-title').innerText = "New Transaction";
+        const pName = document.getElementById('title-portfolio-name')?.innerText || "";
+        document.getElementById('t-modal-title').innerText = pName ? `New Transaction in ${pName}` : "New Transaction";
         document.getElementById('transaction-form').reset();
         const modal = document.getElementById('transaction-modal');
         if (modal) {
