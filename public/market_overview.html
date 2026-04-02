@@ -616,57 +616,6 @@ async function fetchBorsaItalianaHistory(ticker, isin) {
     }
 }
 
-// ─── Search Logic ─────────────────────────────────────────────────────────────
-const searchInput = document.getElementById('asset-search-input');
-const resultsContainer = document.getElementById('search-results');
-let searchTimeout;
-
-searchInput.addEventListener('input', () => {
-    clearTimeout(searchTimeout);
-    const q = searchInput.value.trim();
-    if (q.length < 2) { resultsContainer.classList.add('hidden'); return; }
-    searchTimeout = setTimeout(async () => {
-        try {
-            const res = await fetch(`/api/asset-search?query=${encodeURIComponent(q)}`);
-            const quotes = await res.json();
-            if (quotes && quotes.length > 0) {
-                resultsContainer.innerHTML = quotes.filter(q => q.symbol).map(q => {
-                    const sym = q.symbol.replace(/'/g, "\\'");
-                    const nm = (q.shortname || q.longname || q.symbol).replace(/'/g, "\\'");
-                    return `<div class="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer border-b border-slate-100 dark:border-slate-800" onclick="selectAsset('${sym}','${nm}','${q.quoteType}','${q.currency}','${q.exchange}')">
-                        <div class="flex justify-between items-center"><span class="font-bold text-primary text-sm">${q.symbol}</span></div>
-                        <p class="text-xs text-slate-500 truncate">${q.shortname||q.longname}</p>
-                    </div>`;
-                }).join('');
-                resultsContainer.classList.remove('hidden');
-            }
-        } catch (err) { console.error(err); }
-    }, 300);
-});
-
-function selectAsset(symbol, name, type, currency, exchange) {
-    document.getElementById('asset-ticker').value = symbol;
-    document.getElementById('asset-name').value   = name;
-    document.getElementById('asset-search-input').value = symbol;
-    resultsContainer.classList.add('hidden');
-}
-
-async function quickAddAsset() {
-    const ticker = document.getElementById('asset-ticker').value || document.getElementById('asset-search-input').value.trim();
-    if (!ticker) return;
-    try {
-        const res = await fetch('/api/assets', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ticker, name: document.getElementById('asset-name').value })
-        });
-        if (res.ok) { 
-            loadAssets(); 
-            document.getElementById('asset-ticker').value = '';
-            document.getElementById('asset-search-input').value = '';
-        }
-    } catch (err) { console.error(err); }
-}
 
 async function forceSync() {
     const btn = document.getElementById('force-sync-btn');
