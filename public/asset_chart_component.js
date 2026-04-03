@@ -116,7 +116,8 @@
         </div>`;
         const div = document.createElement('div');
         div.innerHTML = modalHtml;
-        document.body.appendChild(div.firstElementChild);
+        const target = document.getElementById('mobile-ui') || document.body;
+        target.appendChild(div.firstElementChild);
 
         // close on backdrop click
         document.getElementById('asset-chart-modal').addEventListener('click', function(e) {
@@ -209,9 +210,9 @@
         // Update active range button
         document.querySelectorAll('.chart-range-btn').forEach(b => {
             const isMatch = b.dataset.range === range;
-            b.style.backgroundColor = isMatch ? 'var(--mob-brand)' : 'transparent';
+            b.style.backgroundColor = isMatch ? 'var(--mob-primary)' : 'transparent';
             b.style.color = isMatch ? 'white' : 'var(--mob-text-muted)';
-            b.style.borderColor = isMatch ? 'var(--mob-brand)' : 'rgba(148,163,184,0.2)';
+            b.style.borderColor = isMatch ? 'var(--mob-primary)' : 'rgba(148,163,184,0.2)';
         });
 
         // Show loading
@@ -505,6 +506,10 @@
                 });
             }
 
+            const isDark = document.documentElement.classList.contains('dark');
+            const tickColor = isDark ? '#94a3b8' : '#64748b';
+            const gridColor = isDark ? 'rgba(148,163,184,0.1)' : 'rgba(0,0,0,0.05)';
+
             _assetChartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -560,16 +565,16 @@
                     },
                     scales: {
                         x: {
-                            ticks: { maxTicksLimit: 8, maxRotation: 0, font: { size: 10 }, color: '#94a3b8' },
-                            grid: { color: 'rgba(148,163,184,0.1)' }
+                            ticks: { maxTicksLimit: 8, maxRotation: 0, font: { size: 10 }, color: tickColor },
+                            grid: { color: gridColor }
                         },
                         y: {
                             ticks: {
                                 callback: v => v.toFixed(2),
-                                color: '#94a3b8',
+                                color: tickColor,
                                 font: { size: 10 }
                             },
-                            grid: { color: 'rgba(148,163,184,0.1)' },
+                            grid: { color: gridColor },
                             // SCALE strictly on the min/max of the period, including TP/SL
                             min: adjustedMin * 0.99,
                             max: adjustedMax * 1.01

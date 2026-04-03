@@ -16,10 +16,12 @@
     .custom-scrollbar::-webkit-scrollbar { width: 4px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
-    .tab-active { background: white; color: #135bec; font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     .dark .tab-active { background: #1e293b; color: #135bec; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Hide global add transaction FAB */
+    #global-mob-fab { display: none !important; }
 
     /* Indices Ticker Styles */
     .ticker-container {

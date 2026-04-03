@@ -20,9 +20,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <style>
         .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-        .tab-active { background: white; color: #135bec; font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .dark .tab-active { background: #1e293b; color: #135bec; }
         
+        /* Hide global add transaction FAB */
+        #global-mob-fab { display: none !important; }
+
         /* Force visibility of #mobile-ui when mobile view is active */
         body.mobile-view-active #mobile-ui { display: flex !important; visibility: visible !important; opacity: 1 !important; }
     </style>
