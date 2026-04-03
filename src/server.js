@@ -4077,7 +4077,11 @@ app.get('/api/analytics/reports', async (req, res) => {
             const portfolioObj = portfolios.find(port => port.id == pid);
             p.history = normalizeRelative(p.history);
             const last = p.history[p.history.length - 1];
-            const roi = calculateROI(last.absoluteValue || 0, last.netDeposits || 0, last.profit || 0);
+            const first = p.history[0];
+            const periodProfit = first ? last.profit - first.profit : last.profit;
+            const periodNetFlow = first ? last.netDeposits - first.netDeposits : last.netDeposits;
+            const periodStartValue = first ? first.absoluteValue : 0;
+            const roi = calculateROI(last.absoluteValue || 0, periodStartValue + periodNetFlow, periodProfit);
             
             // Calculate individual TWR
             const indHistory = portfolioData.individual[pid];
@@ -4168,9 +4172,12 @@ app.get('/api/analytics/reports', async (req, res) => {
 
         // 4. Metrics
         const currentTotalValue = normalizedGlobal[normalizedGlobal.length - 1]?.absoluteValue || 0;
-        const currentNetDeposits = normalizedGlobal[normalizedGlobal.length - 1]?.netDeposits || 0;
-        const currentProfit = normalizedGlobal[normalizedGlobal.length - 1]?.profit || 0;
-        const totalROI = currentNetDeposits > 0 ? (currentTotalValue / currentNetDeposits) - 1 : (currentTotalValue / Math.max(1, currentTotalValue - currentProfit)) - 1;
+        const firstGlobal = normalizedGlobal[0];
+        const lastGlobal = normalizedGlobal[normalizedGlobal.length - 1];
+        const gPeriodNetFlow = firstGlobal ? lastGlobal.netDeposits - firstGlobal.netDeposits : lastGlobal.netDeposits;
+        const gPeriodStartValue = firstGlobal ? firstGlobal.absoluteValue : 0;
+        const gPeriodProfit = firstGlobal ? lastGlobal.profit - firstGlobal.profit : lastGlobal.profit;
+        const totalROI = calculateROI(currentTotalValue, gPeriodStartValue + gPeriodNetFlow, gPeriodProfit);
 
         // --- NEW: Financial Metrics (XIRR & TWR) ---
         const externalTxs = allTransactions.filter(t => ['DEPOSIT', 'WITHDRAWAL'].includes(t.type));
