@@ -1058,9 +1058,18 @@ app.get('/api/market/indices', async (req, res) => {
 app.get('/api/watchlist', (req, res) => {
     try {
         const rows = database.db.prepare(`
-            SELECT * FROM assets 
-            WHERE inWatchlist = 1 
-            ORDER BY ticker ASC
+            SELECT a.*, 
+                   CASE WHEN t.balance IS NOT NULL AND t.balance > 0.0001 THEN 1 ELSE 0 END as hasPosition
+            FROM assets a
+            LEFT JOIN (
+                SELECT assetTicker, 
+                       SUM(CASE WHEN type = 'BUY' THEN quantity WHEN type = 'SELL' THEN -quantity ELSE 0 END) as balance
+                FROM transactions 
+                GROUP BY assetTicker
+            ) t ON a.ticker = t.assetTicker
+            WHERE (a.inWatchlist = 1 OR (a.isMonitored = 1 AND (t.balance IS NULL OR t.balance <= 0.0001)))
+              AND a.ticker != 'CASH'
+            ORDER BY a.ticker ASC
         `).all();
         res.json(rows);
     } catch (err) {
@@ -1117,7 +1126,8 @@ app.post('/api/watchlist', async (req, res) => {
 
 app.delete('/api/watchlist/:ticker', (req, res) => {
     try {
-        database.db.prepare(`UPDATE assets SET inWatchlist = 0 WHERE ticker = ?`).run(req.params.ticker.toUpperCase());
+        const ticker = req.params.ticker.toUpperCase();
+        database.db.prepare(`UPDATE assets SET inWatchlist = 0, isMonitored = 0 WHERE ticker = ?`).run(ticker);
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -1131,7 +1141,18 @@ app.get('/api/watchlist/performance', async (req, res) => {
             return res.json(watchlistPerformanceCache.data);
         }
 
-        const watchlist = database.db.prepare('SELECT ticker FROM assets WHERE inWatchlist = 1').all();
+        const watchlist = database.db.prepare(`
+            SELECT a.ticker 
+            FROM assets a
+            LEFT JOIN (
+                SELECT assetTicker, 
+                       SUM(CASE WHEN type = 'BUY' THEN quantity WHEN type = 'SELL' THEN -quantity ELSE 0 END) as balance
+                FROM transactions 
+                GROUP BY assetTicker
+            ) t ON a.ticker = t.assetTicker
+            WHERE (a.inWatchlist = 1 OR (a.isMonitored = 1 AND (t.balance IS NULL OR t.balance <= 0.0001)))
+              AND a.ticker != 'CASH'
+        `).all();
         const results = {};
         
         const nowDate = new Date();
