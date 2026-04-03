@@ -15,17 +15,15 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <style>
-        .mob-perf-badge { font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 6px; border-width: 1px; }
-        .mob-watchlist-item { background: var(--mob-bg-card); border-radius: 16px; padding: 16px; margin-bottom: 12px; border: 1px solid var(--mob-border); }
-        .mob-detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--mob-border); }
-        .mob-detail-label { font-size: 10px; text-transform: uppercase; font-weight: 800; color: var(--mob-text-caption); }
-        .mob-detail-value { font-size: 13px; font-weight: 800; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .tab-active { background: white; color: #135bec; font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .dark .tab-active { background: #1e293b; color: #135bec; }
         
         /* Force visibility of #mobile-ui when mobile view is active */
         body.mobile-view-active #mobile-ui { display: flex !important; visibility: visible !important; opacity: 1 !important; }
     </style>
 </head>
-<body class="bg-background-light dark:bg-[#0b0f1a] text-slate-900 dark:text-slate-100 min-h-screen mobile-view-active">
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display min-h-screen mobile-view-active">
 
 <div id="mobile-ui" class="flex flex-col fixed inset-0 w-full overflow-hidden" style="display: flex !important; height: 100dvh !important;">
     <!-- Header -->
@@ -67,28 +65,37 @@
     </div>
 
     <!-- Content -->
-    <div class="mob-scroll p-4" id="mob-watchlist-scroll">
-        <!-- Search -->
-        <div class="relative mb-6">
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-sm">search</span>
-            <input type="text" id="mob-asset-search" placeholder="Search ticker..." 
-                   class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20">
-            <div id="mob-search-suggestions" class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl z-[100] hidden overflow-hidden"></div>
+    <div class="mob-scroll" id="mob-watchlist-scroll">
+        
+        <!-- Search Bar matching Market style but always visible here -->
+        <div class="p-4 border-b border-slate-100 dark:border-slate-800/50 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md sticky top-0 z-[50]">
+            <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-sm">search</span>
+                <input type="text" id="mob-asset-search" placeholder="Cerca ticker (es. AAPL)..." 
+                       class="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/20">
+                <div id="mob-search-suggestions" class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-[100] hidden overflow-hidden max-h-60 overflow-y-auto"></div>
+            </div>
         </div>
 
-        <div id="mob-watchlist-container">
+        <div class="mob-section-header">
+            <span class="mob-section-title">La Tua Watchlist</span>
+            <span id="mob-watchlist-count" class="mob-header-subtitle">0 Assets</span>
+        </div>
+
+        <div id="mob-watchlist-container" class="mob-holdings-list">
             <!-- Items injected here -->
         </div>
 
         <div id="mob-watchlist-empty" class="py-20 text-center hidden">
-            <span class="material-symbols-outlined text-6xl text-slate-200 dark:text-slate-800 mb-4">visibility_off</span>
-            <p class="text-slate-500 font-bold">Watchlist empty</p>
+            <span class="material-symbols-outlined text-6xl text-slate-200 dark:text-slate-800 mb-4 font-variation-settings-fill">visibility_off</span>
+            <p class="text-slate-500 font-bold">Watchlist vuota</p>
+            <p class="text-slate-400 text-[10px] mt-1 font-bold uppercase tracking-wider">Aggiungi un asset per iniziare</p>
         </div>
         
-        <div style="height: 80px"></div>
+        <div style="height: 100px"></div>
     </div>
 
-    <!-- Bottom Sheet Detail (Moved inside mobile-ui and increased z-index) -->
+    <!-- Bottom Sheet Detail -->
     <div id="mob-detail-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[10000]" style="display: none;" onclick="window.closeMobDetail()"></div>
     <div id="mob-detail-sheet" class="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#111722] rounded-t-3xl z-[10001] transition-transform duration-300 pb-8 px-6 pt-2 shadow-2xl border-t border-slate-200 dark:border-slate-800" style="display: none; transform: translateY(100%);">
         <div class="w-12 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full mx-auto mb-6"></div>
@@ -103,7 +110,7 @@
             <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-2">
                     <div class="w-1.5 h-1.5 rounded-full bg-primary font-black"></div>
-                    <h4 class="text-[9px] font-black uppercase tracking-widest text-slate-400">1-Month Performance</h4>
+                    <h4 class="text-[9px] font-black uppercase tracking-widest text-slate-400">Trend 1 mese</h4>
                 </div>
                 <div id="mob-modal-perf-badge" class="px-2 py-0.5 rounded text-[9px] font-black shadow-sm"></div>
             </div>
@@ -139,17 +146,17 @@
 
 
 <script>
-    // Global storage for accessibility
+    // Global storage
     window.watchlist = [];
     window.performanceData = {};
     window._mobDetailChart = null;
 
-    // ── Swipe Logic ──────────────────────────────────
+    // ── Swipe Logic
     let touchStartX = 0;
     let touchMoveX = 0;
     let currentSwipeEl = null;
     const SWIPE_THRESHOLD = 50;
-    const ACTION_WIDTH = 130; // 2 buttons * 65px
+    const ACTION_WIDTH = 195; // 3 buttons * 65px
 
     window.handleTouchStart = function(e, container) {
         touchStartX = e.touches[0].clientX;
@@ -160,7 +167,7 @@
     };
 
     window.handleTouchMove = function(e, container) {
-        const item = container.querySelector('.mob-item-content');
+        const item = container.querySelector('.mob-holding-item');
         if (!item) return;
         touchMoveX = e.touches[0].clientX;
         let diff = touchMoveX - touchStartX;
@@ -171,7 +178,7 @@
     };
 
     window.handleTouchEnd = function(e, container) {
-        const item = container.querySelector('.mob-item-content');
+        const item = container.querySelector('.mob-holding-item');
         if (!item) return;
         const diff = touchMoveX - touchStartX;
         item.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
@@ -187,13 +194,13 @@
     function resetSwipes(except) {
         document.querySelectorAll('.mob-holding-swipe-container').forEach(c => {
             if (c === except) return;
-            const item = c.querySelector('.mob-item-content');
+            const item = c.querySelector('.mob-holding-item');
             if (item) item.style.transform = 'translateX(0)';
         });
         currentSwipeEl = null;
     }
 
-    // Helper for large numbers
+    // Helper functions
     function formatLarge(n) {
         if (!n) return null;
         if (n >= 1e12) return (n / 1e12).toFixed(1) + 'T';
@@ -204,14 +211,22 @@
     function formatNum(n) { return n ? n.toFixed(2) : null; }
     function formatPct(n) { return n ? (n * 100).toFixed(1) + '%' : null; }
 
+    const getAssetTag = (type, ticker) => {
+        const t = (type || '').toUpperCase();
+        const tk = (ticker || '').toUpperCase();
+        if (tk.startsWith('CD_')) return 'CD';
+        if (t.includes('ETF')) return 'ETF';
+        if (t.includes('BOND') || t.includes('FIXED INCOME') || tk.startsWith('BTP')) return 'Bond';
+        return 'Az';
+    };
+
     async function loadWatchlist() {
-        console.log('Mobile: loadWatchlist starting...');
         try {
             const resW = await fetch('/api/watchlist');
             window.watchlist = await resW.json();
-            console.log('Mobile: Watchlist loaded:', window.watchlist.length, 'items');
             renderWatchlist();
 
+            // Load performance in background
             const resP = await fetch('/api/watchlist/performance');
             window.performanceData = await resP.json();
             renderWatchlist();
@@ -224,9 +239,11 @@
     function renderWatchlist() {
         const container = document.getElementById('mob-watchlist-container');
         const empty = document.getElementById('mob-watchlist-empty');
+        const countEl = document.getElementById('mob-watchlist-count');
         const watchlist = window.watchlist || [];
-        const performanceData = window.performanceData || {};
         
+        if (countEl) countEl.textContent = `${watchlist.length} Assets`;
+
         if (!watchlist || watchlist.length === 0) {
             if (container) container.innerHTML = '';
             if (empty) empty.classList.remove('hidden');
@@ -234,11 +251,19 @@
         }
         if (empty) empty.classList.add('hidden');
 
-        // Combined simplified list
-        container.innerHTML = watchlist.map(item => {
-            const d1 = item.changePercent || 0;
-            const isPos = d1 >= 0;
-            const color = isPos ? 'text-emerald-500' : 'text-rose-500';
+        container.innerHTML = watchlist.map(a => {
+            const price = a.currentPrice || 0;
+            const change = a.changePercent || 0;
+            const isPos = change >= 0;
+            const color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+            const tag = getAssetTag(a.yfType || a.type, a.ticker);
+
+            const targetPrice = a.targetPrice || 0;
+            const stopLoss = a.stopLoss || 0;
+            const targetReached = targetPrice > 0 && price >= targetPrice;
+            const stopLossHit = stopLoss > 0 && price <= stopLoss;
+            const alertBg = targetReached ? 'background:rgba(16,185,129,0.08)' : (stopLossHit ? 'background:rgba(244,63,94,0.08)' : '');
+            const alertBorder = targetReached ? 'border-color:rgba(16,185,129,0.3) !important' : (stopLossHit ? 'border-color:rgba(244,63,94,0.3) !important' : '');
 
             return `
                 <div class="mob-holding-swipe-container" 
@@ -247,29 +272,39 @@
                      ontouchend="handleTouchEnd(event, this)">
                     
                     <div class="mob-holding-actions">
-                        <div class="mob-action-btn bg-blue-ios" onclick="event.stopPropagation(); window.showMobDetails('${item.ticker.replace(/'/g, "\\'")}', '${item.type}'); resetSwipes()">
-                            <span class="material-symbols-outlined">info</span>
-                            <span>Dettagli</span>
+                        <div class="mob-action-btn bg-purple-ios" onclick="event.stopPropagation(); window.showMobDetails('${a.ticker.replace(/'/g, "\\'")}', '${a.type}'); resetSwipes()">
+                            <span class="material-symbols-outlined">show_chart</span>
+                            <span>Grafico</span>
                         </div>
-                        <div class="mob-action-btn bg-red-ios" onclick="event.stopPropagation(); window.removeFromWatchlist('${item.ticker.replace(/'/g, "\\'")}')">
+                        <div class="mob-action-btn bg-orange-ios" onclick="event.stopPropagation(); openManualModal('${a.ticker}', '${a.currency}', ${a.currentPrice}, '${a.type}', '${a.country}', '${a.dataSource}', '${a.isin}')">
+                            <span class="material-symbols-outlined">edit_note</span>
+                            <span>Modifica</span>
+                        </div>
+                        <div class="mob-action-btn bg-red-ios" onclick="event.stopPropagation(); window.removeFromWatchlist('${a.ticker.replace(/'/g, "\\'")}')">
                             <span class="material-symbols-outlined">delete</span>
                             <span>Rimuovi</span>
                         </div>
                     </div>
 
-                    <div class="mob-item-content flex items-center justify-between p-4 bg-white dark:bg-[#111722] border-b border-slate-50 dark:border-slate-800/50 active:bg-slate-50 dark:active:bg-slate-800 transition-colors" 
-                         style="position:relative; z-index:2; transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);"
-                         onclick="window.showMobDetails('${item.ticker.replace(/'/g, "\\'")}', '${item.type}')">
-                        <div class="flex flex-col min-w-0">
-                            <span class="text-sm font-black text-slate-900 dark:text-white leading-tight">${item.ticker}</span>
-                            <span class="text-[10px] font-bold text-slate-400 truncate max-w-[120px] uppercase tracking-tight">${item.name}</span>
-                        </div>
-                        <div class="flex items-center gap-3 text-right">
-                            <div class="flex flex-col">
-                                <span class="text-sm font-black">${window.formatCurrency ? window.formatCurrency(item.currentPrice, item.currency, 2) : (item.currentPrice?.toFixed(2) + ' ' + item.currency)}</span>
-                                <span class="text-[10px] font-bold ${color}">${isPos ? '+' : ''}${d1.toFixed(1)}%</span>
+                    <div class="mob-holding-item large" style="${alertBg}; ${alertBorder}" onclick="window.showMobDetails('${a.ticker.replace(/'/g, "\\'")}', '${a.type}')">
+                        <div class="mob-holding-logo">${a.ticker.substring(0,3)}</div>
+                        <div class="mob-holding-info">
+                            <div class="flex items-center gap-2">
+                                <div class="mob-holding-ticker">${a.ticker}</div>
+                                <div class="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[8px] font-black uppercase tracking-tighter text-slate-500 border border-slate-200 dark:border-slate-700">${tag}</div>
                             </div>
-                            <span class="material-symbols-outlined text-slate-300 text-sm">chevron_right</span>
+                            <div class="mob-holding-name">${a.name || ''}</div>
+                            <div style="display:flex; gap:8px; margin-top:4px">
+                                ${targetPrice > 0 ? `<div style="font-size:9px; font-weight:900; color:${targetReached?'var(--mob-emerald)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:11px">target</span> TP: ${formatCurrency(targetPrice, a.currency, 2)}</div>` : ''}
+                                ${stopLoss > 0 ? `<div style="font-size:9px; font-weight:900; color:${stopLossHit?'var(--mob-rose)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:11px">warning</span> SL: ${formatCurrency(stopLoss, a.currency, 2)}</div>` : ''}
+                            </div>
+                        </div>
+                        <div class="mob-holding-values">
+                            <div class="mob-holding-value">${formatCurrency(price, a.currency, 2)}</div>
+                            <div class="flex items-center justify-end gap-1.5 mt-0.5">
+                                <div class="mob-holding-gain" style="color:${color}; font-weight:900; margin-top:0">${isPos ? '+' : ''}${change.toFixed(1)}%</div>
+                                <span class="material-symbols-outlined text-slate-300 text-xs translate-x-1">chevron_right</span>
+                            </div>
                         </div>
                     </div>
                 </div>
