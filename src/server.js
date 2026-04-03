@@ -4076,12 +4076,15 @@ app.get('/api/analytics/reports', async (req, res) => {
             const p = monthlyIndividual[pid];
             const portfolioObj = portfolios.find(port => port.id == pid);
             p.history = normalizeRelative(p.history);
-            const last = p.history[p.history.length - 1];
-            const first = p.history[0];
-            const periodProfit = first ? last.profit - first.profit : last.profit;
-            const periodNetFlow = first ? last.netDeposits - first.netDeposits : last.netDeposits;
+            const last = p.history.length > 0 ? p.history[p.history.length - 1] : null;
+            const first = p.history.length > 0 ? p.history[0] : null;
+            
+            const periodProfit = (first && last) ? last.profit - first.profit : (last ? last.profit : 0);
+            const periodNetFlow = (first && last) ? last.netDeposits - first.netDeposits : (last ? last.netDeposits : 0);
             const periodStartValue = first ? first.absoluteValue : 0;
-            const roi = calculateROI(last.absoluteValue || 0, periodStartValue + periodNetFlow, periodProfit);
+            const currentVal = last ? last.absoluteValue : 0;
+            
+            const roi = calculateROI(currentVal, periodStartValue + periodNetFlow, periodProfit);
             
             // Calculate individual TWR
             const indHistory = portfolioData.individual[pid];
@@ -4171,12 +4174,17 @@ app.get('/api/analytics/reports', async (req, res) => {
         }
 
         // 4. Metrics
-        const currentTotalValue = normalizedGlobal[normalizedGlobal.length - 1]?.absoluteValue || 0;
-        const firstGlobal = normalizedGlobal[0];
-        const lastGlobal = normalizedGlobal[normalizedGlobal.length - 1];
-        const gPeriodNetFlow = firstGlobal ? lastGlobal.netDeposits - firstGlobal.netDeposits : lastGlobal.netDeposits;
+        const lastGlobal = normalizedGlobal.length > 0 ? normalizedGlobal[normalizedGlobal.length - 1] : null;
+        const firstGlobal = normalizedGlobal.length > 0 ? normalizedGlobal[0] : null;
+
+        const currentTotalValue = lastGlobal ? lastGlobal.absoluteValue : 0;
+        const currentProfit = lastGlobal ? lastGlobal.profit : 0;
+        const currentNetDeposits = lastGlobal ? lastGlobal.netDeposits : 0;
+
+        const gPeriodNetFlow = (firstGlobal && lastGlobal) ? lastGlobal.netDeposits - firstGlobal.netDeposits : (lastGlobal ? lastGlobal.netDeposits : 0);
         const gPeriodStartValue = firstGlobal ? firstGlobal.absoluteValue : 0;
-        const gPeriodProfit = firstGlobal ? lastGlobal.profit - firstGlobal.profit : lastGlobal.profit;
+        const gPeriodProfit = (firstGlobal && lastGlobal) ? lastGlobal.profit - firstGlobal.profit : (lastGlobal ? lastGlobal.profit : 0);
+        
         const totalROI = calculateROI(currentTotalValue, gPeriodStartValue + gPeriodNetFlow, gPeriodProfit);
 
         // --- NEW: Financial Metrics (XIRR & TWR) ---
