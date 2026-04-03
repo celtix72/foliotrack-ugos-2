@@ -299,8 +299,11 @@
         const container = document.getElementById('mob-watchlist-container');
         const empty = document.getElementById('mob-watchlist-empty');
         const countEl = document.getElementById('mob-watchlist-count');
-        const watchlist = window.watchlist || [];
+        let watchlist = window.watchlist || [];
         
+        // Dynamic sorting: Highest changePercent first
+        watchlist.sort((a, b) => (b.changePercent || 0) - (a.changePercent || 0));
+
         if (countEl) countEl.textContent = `${watchlist.length} Assets`;
 
         if (!watchlist || watchlist.length === 0) {
@@ -407,7 +410,6 @@
                                     </span>
                                 ` : ''}
                                 <div class="mob-holding-gain" style="color:${color}; font-weight:900; margin-top:0">${isPos ? '+' : ''}${change.toFixed(1)}%</div>
-                                <span class="material-symbols-outlined text-slate-300 text-xs translate-x-1">chevron_right</span>
                             </div>
                         </div>
                     </div>
