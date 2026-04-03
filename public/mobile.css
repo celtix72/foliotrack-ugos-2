@@ -654,7 +654,7 @@ body.mobile-view-active #mobile-ui {
   border-left: none !important;
   border-right: none !important;
   border-radius: 0 !important;
-  padding: 10px 16px;
+  padding: 6px 16px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -689,9 +689,8 @@ body.mobile-view-active #mobile-ui {
 .mob-holding-value { font-size: calc(15px * var(--mob-scale, 1)); font-weight: 700; }
 .mob-holding-gain { font-size: calc(13px * var(--mob-scale, 1)); font-weight: 700; }
 
-/* Large Item for Open Positions */
 .mob-holding-item.large {
-  padding: 14px 16px;
+  padding: 8px 16px;
 }
 .mob-holding-item.large .mob-holding-ticker {
   font-size: calc(16px * var(--mob-scale, 1));
