@@ -637,6 +637,9 @@
 
             const status = data;
             
+            // Set global mobile market open flag for page-level components
+            window._mobMarketOpen = status.anyOpen;
+
             if (liveIndicator) {
                 const dot = liveIndicator.querySelector('.header-live-dot');
                 const text = liveIndicator.querySelector('.header-live-text');

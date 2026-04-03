@@ -701,6 +701,10 @@
             }
         });
 
+        window.addEventListener('market-data-updated', () => {
+            loadWatchlist();
+        });
+
         async function mobSyncMarketStatus() {
             try {
                 const res = await fetch('/api/market-status');
