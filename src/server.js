@@ -1073,7 +1073,24 @@ app.get('/api/watchlist', (req, res) => {
               AND a.ticker != 'CASH'
             ORDER BY a.ticker ASC
         `).all();
-        res.json(rows);
+        
+        const today = new Date().toISOString().split('T')[0];
+        const result = rows.map(a => {
+            let sparkline = [];
+            if (historicalPricesCache[a.ticker]) {
+                const history = historicalPricesCache[a.ticker];
+                const dates = Object.keys(history).sort();
+                sparkline = dates.slice(-7).map(d => history[d]);
+            }
+            const isToday = a.quoteDate === today;
+            return { 
+                ...a, 
+                sparkline,
+                changePercent: isToday ? (a.changePercent || 1) : 0,
+                changeValue: isToday ? (a.changeValue || 0) : 0
+            };
+        });
+        res.json(result);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -1120,19 +1137,7 @@ app.post('/api/watchlist', async (req, res) => {
         }
 
         res.json(asset);
-
-        // Async: scarica 1 anno di prezzi storici per il nuovo asset in watchlist
-        setImmediate(async () => {
-            try {
-                const p1 = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
-                const hist = await yahooFinance.historical(normalizedTicker, {
-                    period1: p1, period2: new Date(), interval: '1d'
-                }).catch(() => []);
-                console.log(`[Watchlist] Historical sync ${normalizedTicker}: ${(hist||[]).length} records`);
-            } catch (e) {
-                console.warn(`[Watchlist] Historical fetch failed for ${normalizedTicker}:`, e.message);
-            }
-        });
+        triggerHistoryRebuild(null);
     } catch (err) {
         console.error('Watchlist add error:', err);
         res.status(500).json({ error: err.message });
@@ -2699,22 +2704,29 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
         ? database.db.prepare('SELECT * FROM portfolios').all()
         : database.db.prepare(`SELECT * FROM portfolios WHERE id IN (${pIdsInput.join(',')})`).all();
 
-    if (portfolios.length === 0) {
-        return includeIndividual ? { dataPoints: [], individual: {} } : [];
-    }
-
     const pIds = portfolios.map(p => p.id);
-    const allTransactions = database.db.prepare(`
+    const allTransactions = pIds.length > 0 ? database.db.prepare(`
         SELECT * FROM transactions 
         WHERE portfolioId IN (${pIds.join(',')}) 
         ORDER BY date ASC
-    `).all();
+    `).all() : [];
 
     const assetMetadataCache = {};
     const allAssets = database.db.prepare('SELECT ticker, currency, currentPrice, type, isin, dataSource FROM assets').all();
     for (const a of allAssets) assetMetadataCache[a.ticker] = a;
 
-    const rawTickers = [...new Set(allTransactions.map(t => t.assetTicker).filter(t => t && t !== 'CASH'))];
+    const portfolioTickers = allTransactions.map(t => t.assetTicker);
+    const watchlistTickers = isGlobal 
+        ? database.db.prepare('SELECT ticker FROM assets WHERE inWatchlist = 1').all().map(a => a.ticker)
+        : [];
+    const rawTickers = [...new Set([...portfolioTickers, ...watchlistTickers].filter(t => t && t !== 'CASH'))];
+    
+    logger.info(`Performance history sync: processing ${rawTickers.length} tickers (Portfolios: ${portfolioTickers.length}, Watchlist: ${watchlistTickers.length})`);
+
+    if (portfolios.length === 0 && watchlistTickers.length === 0) {
+        return includeIndividual ? { dataPoints: [], individual: {} } : [];
+    }
+
     const hasNonEur = isGlobal || portfolios.some(p => p.currency !== 'EUR') || rawTickers.some(t => assetMetadataCache[t]?.currency === 'USD');
     const uniqueTickers = [...rawTickers];
     if (hasNonEur && !uniqueTickers.includes('EURUSD=X')) {
@@ -2948,6 +2960,9 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
 
 
     await Promise.all(uniqueTickers.map(ticker => fetchTickerData(ticker)));
+    
+    // Update global cache for sparklines and other lookups
+    historicalPricesCache = { ...historicalPricesCache, ...historicalPrices };
 
     // Post-process EURUSD=X into the special fxRates['USD'] map for simulation efficiency
     if (historicalPrices['EURUSD=X']) {
@@ -4070,6 +4085,8 @@ app.get('/api/analytics/reports', async (req, res) => {
         };
 
         const normalizedGlobal = normalizeRelative(monthlyGlobal);
+        const lastGlobal = normalizedGlobal.length > 0 ? normalizedGlobal[normalizedGlobal.length - 1] : null;
+        const firstGlobal = normalizedGlobal.length > 0 ? normalizedGlobal[0] : null;
         const riskFreeMonthly = 0.002;
 
         for (const pid in monthlyIndividual) {
@@ -4110,7 +4127,7 @@ app.get('/api/analytics/reports', async (req, res) => {
                 const amt = (t.amount || (t.quantity * t.price)) / rate;
                 return { date: new Date(t.date), amount: t.type === 'DEPOSIT' ? -amt : amt };
             });
-            pFlows.push({ date: new Date(), amount: last.absoluteValue });
+            pFlows.push({ date: new Date(), amount: currentVal });
             pFlows.sort((a,b) => a.date - b.date);
             const indXirr = pFlows.length >= 2 ? (xirr(pFlows) || 0) : 0;
 
@@ -4118,9 +4135,9 @@ app.get('/api/analytics/reports', async (req, res) => {
                 totalROI: roi,
                 twr: indTwr,
                 xirr: indXirr,
-                currentValue: last.absoluteValue,
-                contribution: normalizedGlobal[normalizedGlobal.length-1].absoluteValue > 0 ? 
-                    (last.absoluteValue / normalizedGlobal[normalizedGlobal.length-1].absoluteValue) : 0,
+                currentValue: currentVal,
+                contribution: (lastGlobal && lastGlobal.absoluteValue > 0) ? 
+                    (currentVal / lastGlobal.absoluteValue) : 0,
                 sharpeRatio: (() => {
                     const returns = [];
                     for (let i = 1; i < p.history.length; i++) {
@@ -4174,8 +4191,6 @@ app.get('/api/analytics/reports', async (req, res) => {
         }
 
         // 4. Metrics
-        const lastGlobal = normalizedGlobal.length > 0 ? normalizedGlobal[normalizedGlobal.length - 1] : null;
-        const firstGlobal = normalizedGlobal.length > 0 ? normalizedGlobal[0] : null;
 
         const currentTotalValue = lastGlobal ? lastGlobal.absoluteValue : 0;
         const currentProfit = lastGlobal ? lastGlobal.profit : 0;

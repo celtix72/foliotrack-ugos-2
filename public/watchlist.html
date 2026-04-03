@@ -101,6 +101,7 @@
                         <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Type</th>
                         <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Price</th>
                         <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">1D</th>
+                        <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">History</th>
                         <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">1W</th>
                         <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">1M</th>
                         <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">1Y</th>
@@ -246,6 +247,9 @@
                                 <div class="text-sm font-bold">${formatCurrency(item.currentPrice, item.currency, 2)}</div>
                             </td>
                             <td class="px-6 py-5 text-center">${renderPerf(d1)}</td>
+                            <td class="px-6 py-5 text-center">
+                                <canvas id="sparkline-${item.ticker}" width="60" height="24" class="opacity-80 mx-auto"></canvas>
+                            </td>
                             <td class="px-6 py-5 text-center">${renderPerf(perf.perf1W)}</td>
                             <td class="px-6 py-5 text-center">${renderPerf(perf.perf1M)}</td>
                             <td class="px-6 py-5 text-center">${renderPerf(perf.perf1Y)}</td>
@@ -269,6 +273,47 @@
         tbody.innerHTML = renderSection(equities, 'Equity') + 
                           renderSection(etfs, 'ETF') + 
                           renderSection(other, 'Other');
+
+        // Draw sparklines
+        watchlist.forEach(item => {
+            if (item.sparkline && item.sparkline.length > 1) {
+                const canvas = document.getElementById(`sparkline-${item.ticker}`);
+                if (canvas) {
+                    const color = (item.changePercent || 0) >= 0 ? '#10b981' : '#f43f5e';
+                    drawSparkline(canvas, item.sparkline, color);
+                }
+            }
+        });
+    }
+
+    function drawSparkline(canvas, data, color) {
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        ctx.clearRect(0, 0, width, height);
+        const min = Math.min(...data);
+        const max = Math.max(...data);
+        const range = max - min || 1;
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        data.forEach((val, i) => {
+            const x = (i / (data.length - 1)) * width;
+            const y = height - ((val - min) / range) * (height - 4) - 2;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+        ctx.lineTo(width, height);
+        ctx.lineTo(0, height);
+        ctx.closePath();
+        const grad = ctx.createLinearGradient(0, 0, 0, height);
+        grad.addColorStop(0, color + '33');
+        grad.addColorStop(1, color + '00');
+        ctx.fillStyle = grad;
+        ctx.fill();
     }
 
     function renderPerf(val) {
