@@ -282,11 +282,12 @@
   async function mobSyncMarketStatus() {
     try {
       const res = await fetch('/api/market-status');
+      const s = await res.json();
       window._mobMarketOpen = s.anyOpen;
-      const dot = document.getElementById('mob-live-dot');
-      const txt = document.getElementById('mob-live-text');
-      if (dot) dot.className = 'mob-status-dot' + (s.anyOpen ? ' live' : '');
-      if (txt) txt.textContent = s.anyOpen ? 'Live' : 'Closed';
+      const dotEu = document.getElementById('mob-dot-eu');
+      const dotUs = document.getElementById('mob-dot-us');
+      if (dotEu) { dotEu.className = 'mob-market-dot' + (s.euOpen ? ' live' : ''); }
+      if (dotUs) { dotUs.className = 'mob-market-dot' + (s.usOpen ? ' live' : ''); }
     } catch(e) {}
   }
 

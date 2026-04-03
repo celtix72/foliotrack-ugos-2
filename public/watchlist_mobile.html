@@ -396,6 +396,16 @@
                         <div class="mob-holding-values">
                             <div class="mob-holding-value">${formatCurrency(price, a.currency, 2)}</div>
                             <div class="flex items-center justify-end gap-1.5 mt-0.5">
+                                ${(a.preMarketChangePercent && Math.abs(a.preMarketChangePercent) > 0.01 && !window._mobMarketOpen) ? `
+                                    <span style="font-size:10px; font-weight:900; color:${a.preMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">
+                                        (${a.preMarketChangePercent >= 0 ? '+' : ''}${a.preMarketChangePercent.toFixed(1)}%)
+                                    </span>
+                                ` : ''}
+                                ${(a.postMarketChangePercent && Math.abs(a.postMarketChangePercent) > 0.01 && !window._mobMarketOpen) ? `
+                                    <span style="font-size:10px; font-weight:900; color:${a.postMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">
+                                        (${a.postMarketChangePercent >= 0 ? '+' : ''}${a.postMarketChangePercent.toFixed(1)}%)
+                                    </span>
+                                ` : ''}
                                 <div class="mob-holding-gain" style="color:${color}; font-weight:900; margin-top:0">${isPos ? '+' : ''}${change.toFixed(1)}%</div>
                                 <span class="material-symbols-outlined text-slate-300 text-xs translate-x-1">chevron_right</span>
                             </div>
@@ -690,6 +700,25 @@
                 suggestionsBox.classList.add('hidden');
             }
         });
+
+        async function mobSyncMarketStatus() {
+            try {
+                const res = await fetch('/api/market-status');
+                const s = await res.json();
+                window._mobMarketOpen = s.anyOpen;
+                
+                const dotEu = document.getElementById('mob-dot-eu');
+                const dotUs = document.getElementById('mob-dot-us');
+                if (dotEu) dotEu.className = 'mob-market-dot' + (s.euOpen ? ' live' : '');
+                if (dotUs) dotUs.className = 'mob-market-dot' + (s.usOpen ? ' live' : '');
+                
+                // Refresh list to update pre/post market visibility
+                if (window.watchlist && window.watchlist.length > 0) renderWatchlist();
+            } catch(e) {}
+        }
+
+        mobSyncMarketStatus();
+        setInterval(mobSyncMarketStatus, 30000);
 
         loadWatchlist();
     });
