@@ -209,40 +209,11 @@
         </div>
     </div>
 
-    <!-- Section 2: Watchlist -->
-    <div id="section-watchlist" class="space-y-4">
-        <div class="flex items-center justify-between px-2 group cursor-pointer" onclick="toggleWatchlist()">
-            <div class="flex items-center gap-2">
-                <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-slate-600 transition-colors">Watchlist / Monitoring</h3>
-                <span id="watchlist-toggle-icon" class="material-symbols-outlined text-sm text-slate-400 transition-transform group-hover:text-slate-600">expand_more</span>
-            </div>
-            <p id="watchlist-count" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">0 Assets</p>
-        </div>
-        <div id="watchlist-container" class="hidden">
-            <div class="overflow-hidden bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-                            <th class="px-5 py-3">Asset</th>
-                            <th class="px-5 py-3">Price</th>
-                            <th class="px-5 py-3">Performance</th>
-                            <th class="px-5 py-3">Daily Gain</th>
-                            <th class="px-5 py-3 hidden sm:table-cell">Target/Stop</th>
-                            <th class="px-5 py-3 text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="list-watchlist" class="divide-y divide-slate-100 dark:divide-slate-800">
-                        <!-- Watchlist assets will be rendered here -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
 </div>
 
 <!-- Summary -->
 <div class="flex items-center justify-between px-2">
-    <p id="asset-count-label" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">0 Assets Monitored</p>
+    <p id="asset-count-label" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">0 POSITIONS</p>
     <div class="flex items-center gap-4">
         <div class="flex items-center gap-1.5">
             <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
@@ -347,20 +318,15 @@ async function loadAssets() {
 // ─── Unified List Rendering ──────────────────────────────────────────────────
 function renderAssets(filter = '') {
     const listPos = document.getElementById('list-positions');
-    const listWatch = document.getElementById('list-watchlist');
     const countLabel = document.getElementById('asset-count-label');
-    const watchCountEl = document.getElementById('watchlist-count');
 
     const filtered = (filter
         ? allAssets.filter(a => (a.name + a.ticker).toLowerCase().includes(filter.toLowerCase()))
         : allAssets).filter(a => a.ticker !== 'CASH');
 
-    if (countLabel) countLabel.textContent = `${filtered.length} ASSETS MONITORED`;
-
     const openPositions = filtered.filter(a => a.hasPosition).sort((a, b) => (b.changePercent || 0) - (a.changePercent || 0));
-    const watchlist = filtered.filter(a => !a.hasPosition).sort((a, b) => (b.changePercent || 0) - (a.changePercent || 0));
 
-    if (watchCountEl) watchCountEl.textContent = `${watchlist.length} ASSETS`;
+    if (countLabel) countLabel.textContent = `${openPositions.length} POSITIONS`;
 
     // Calculate Total Daily Gain in EUR for Open Positions
     let totalDailyGainEUR = 0;
@@ -487,15 +453,7 @@ function renderAssets(filter = '') {
         if (openPositions.length) {
             listPos.innerHTML = openPositions.map(renderRow).join('');
         } else {
-            listPos.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500 italic bg-white dark:bg-[#111722]">No open positions.</td></tr>`;
-        }
-    }
-
-    if (listWatch) {
-        if (watchlist.length) {
-            listWatch.innerHTML = watchlist.map(renderRow).join('');
-        } else {
-            listWatch.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500 italic bg-white dark:bg-[#111722]">Watchlist is empty.</td></tr>`;
+            listPos.innerHTML = `<tr><td colspan="6" class="px-6 py-12 text-center text-slate-500 italic bg-white dark:bg-[#111722]">No open positions.</td></tr>`;
         }
     }
 
@@ -548,19 +506,6 @@ function drawSparkline(canvas, data, color) {
     ctx.fill();
 }
 
-function toggleWatchlist() {
-    const container = document.getElementById('watchlist-container');
-    const icon = document.getElementById('watchlist-toggle-icon');
-    const isHidden = container.classList.contains('hidden');
-    
-    if (isHidden) {
-        container.classList.remove('hidden');
-        icon.style.transform = 'rotate(180deg)';
-    } else {
-        container.classList.add('hidden');
-        icon.style.transform = 'rotate(0deg)';
-    }
-}
 
 function filterAssets(val) { renderAssets(val); }
 

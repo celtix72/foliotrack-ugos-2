@@ -151,13 +151,6 @@
     </div>
     <div class="mob-holdings-list" id="mob-list-positions"></div>
 
-    <!-- Section 2: Watchlist -->
-    <div class="mob-section-header">
-      <span class="mob-section-title">Watchlist / Monitor</span>
-      <span id="mob-watch-count" class="mob-header-subtitle">0 Assets</span>
-    </div>
-    <div class="mob-holdings-list" id="mob-list-watchlist"></div>
-
     <div style="height:32px"></div>
   </div>
 
@@ -334,15 +327,11 @@
       const assets = (await res.json()).filter(a => a.ticker !== 'CASH');
       
       const posContainer = document.getElementById('mob-list-positions');
-      const watchContainer = document.getElementById('mob-list-watchlist');
       const posCountEl = document.getElementById('mob-pos-count');
-      const watchCountEl = document.getElementById('mob-watch-count');
 
       const openPos = assets.filter(a => a.hasPosition).sort((a, b) => (b.changePercent || 0) - (a.changePercent || 0));
-      const watchlist = assets.filter(a => !a.hasPosition).sort((a, b) => (b.changePercent || 0) - (a.changePercent || 0));
 
       if (posCountEl) posCountEl.textContent = `${openPos.length} Assets`;
-      if (watchCountEl) watchCountEl.textContent = `${watchlist.length} Assets`;
 
       const getAssetTag = (type, ticker) => {
         const t = (type || '').toUpperCase();
@@ -443,7 +432,6 @@
       };
 
       if (posContainer) posContainer.innerHTML = openPos.map(a => renderCard(a, true)).join('') || '<div class="mob-empty">Nessuna posizione</div>';
-      if (watchContainer) watchContainer.innerHTML = watchlist.map(a => renderCard(a, false)).join('') || '<div class="mob-empty">Watchlist vuota</div>';
 
     } catch(e) { console.error('[MOB] Market load error:', e); }
   }
@@ -496,13 +484,6 @@
     } catch(e) {}
   };
 
-  window.removeFromWatchlist = async function(ticker) {
-    if (!confirm(`Rimuovere ${ticker} dalla watchlist?`)) return;
-    try {
-      await fetch(`/api/watchlist/${ticker}`, { method: 'DELETE' });
-      mobLoadAssets();
-    } catch(e) { console.error('Error removing from watchlist:', e); }
-  };
 
   function mobInit() {
     if (!window._mobileViewActive) return;
