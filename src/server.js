@@ -978,7 +978,9 @@ app.put('/api/assets/:id', (req, res) => {
     if (changePercent !== undefined) { updates.push("changePercent = ?"); params.push(changePercent); }
     if (pe !== undefined) { updates.push("pe = ?"); params.push(pe); }
     if (targetPrice !== undefined) { updates.push("targetPrice = ?"); params.push(targetPrice); }
+    if (req.body.targetPrice2 !== undefined) { updates.push("targetPrice2 = ?"); params.push(req.body.targetPrice2); }
     if (stopLoss !== undefined) { updates.push("stopLoss = ?"); params.push(stopLoss); }
+    if (req.body.volatilityAlert !== undefined) { updates.push("volatilityAlert = ?"); params.push(req.body.volatilityAlert); }
     if (isMonitored !== undefined) { updates.push("isMonitored = ?"); params.push(isMonitored); }
     if (dataSource !== undefined) { updates.push("dataSource = ?"); params.push(dataSource); }
     if (isin !== undefined) { updates.push("isin = ?"); params.push(isin); }

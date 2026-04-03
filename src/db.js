@@ -76,7 +76,8 @@ function initDb() {
         quoteDate     TEXT,
         changeValue   REAL    NOT NULL DEFAULT 0,
         isVirtualHistory INTEGER NOT NULL DEFAULT 0,
-        hasHistoryInconsistency INTEGER NOT NULL DEFAULT 0,
+        targetPrice2  REAL,
+        volatilityAlert INTEGER,
         updatedAt     TEXT    NOT NULL DEFAULT (datetime('now'))
       );
 
@@ -141,7 +142,15 @@ function initDb() {
     } catch (e) {}
 
     try {
-        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN hasHistoryInconsistency INTEGER NOT NULL DEFAULT 0`).run();
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN targetPrice2 REAL`).run();
+    } catch (e) {}
+
+    try {
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN volatilityAlert INTEGER`).run();
+    } catch (e) {}
+
+    try {
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN volatilityAlert INTEGER DEFAULT 5`).run();
     } catch (e) {}
 
     try {
