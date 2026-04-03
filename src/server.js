@@ -1120,6 +1120,19 @@ app.post('/api/watchlist', async (req, res) => {
         }
 
         res.json(asset);
+
+        // Async: scarica 1 anno di prezzi storici per il nuovo asset in watchlist
+        setImmediate(async () => {
+            try {
+                const p1 = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
+                const hist = await yahooFinance.historical(normalizedTicker, {
+                    period1: p1, period2: new Date(), interval: '1d'
+                }).catch(() => []);
+                console.log(`[Watchlist] Historical sync ${normalizedTicker}: ${(hist||[]).length} records`);
+            } catch (e) {
+                console.warn(`[Watchlist] Historical fetch failed for ${normalizedTicker}:`, e.message);
+            }
+        });
     } catch (err) {
         console.error('Watchlist add error:', err);
         res.status(500).json({ error: err.message });
@@ -1129,7 +1142,8 @@ app.post('/api/watchlist', async (req, res) => {
 app.delete('/api/watchlist/:ticker', (req, res) => {
     try {
         const ticker = req.params.ticker.toUpperCase();
-        database.db.prepare(`UPDATE assets SET inWatchlist = 0, isMonitored = 0 WHERE ticker = ?`).run(ticker);
+        // Do NOT touch isMonitored: assets in portfolio must keep receiving price updates.
+        database.db.prepare(`UPDATE assets SET inWatchlist = 0 WHERE ticker = ?`).run(ticker);
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });

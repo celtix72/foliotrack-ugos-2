@@ -1,0 +1,49 @@
+
+> progetto_foliotracker2@1.0.0 dev
+> node src/server.js
+
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+2026-04-03T16:18:47.677Z [INFO] Updating market data for 9 assets...
+2026-04-03T16:18:47.689Z [INFO] Updating [EURUSD=X] using [YF]...
+Please consider completing the survey at https://bit.ly/yahoo-finance-api-feedback if you haven't already; for more info see https://github.com/gadicc/yahoo-finance2/issues/764#issuecomment-2056623851.  This will only be shown once, but you can suppress this message in future with `new YahooFinance({ suppressNotices: ['yahooSurvey'] })`.
+2026-04-03T16:18:47.704Z [INFO] FolioTrack server running on port 3000
+2026-04-03T16:18:47.713Z [INFO] Database: /Users/mauro/Documents/Progetto_FolioTracker2/foliotrack.db
+2026-04-03T16:18:49.552Z [INFO] YF ✓ EURUSD=X: price=1.1523392 USD chg=-0.18%
+2026-04-03T16:18:49.578Z [INFO] Successfully updated EURUSD=X: 1.1523392 USD
+2026-04-03T16:18:49.595Z [INFO] Updating [AAPL] using [YF]...
+2026-04-03T16:18:49.876Z [INFO] YF ✓ AAPL: price=255.92 USD chg=0.11%
+2026-04-03T16:18:49.890Z [INFO] Successfully updated AAPL: 255.92 USD
+2026-04-03T16:18:49.903Z [INFO] Updating [BTC-USD] using [YF]...
+2026-04-03T16:18:50.178Z [INFO] YF ✓ BTC-USD: price=66892.25 USD chg=0.03%
+2026-04-03T16:18:50.201Z [INFO] Successfully updated BTC-USD: 66892.25 USD
+2026-04-03T16:18:50.219Z [INFO] Updating [NVDA] using [YF]...
+2026-04-03T16:18:50.503Z [INFO] YF ✓ NVDA: price=177.39 USD chg=0.93%
+2026-04-03T16:18:50.526Z [INFO] Successfully updated NVDA: 177.39 USD
+2026-04-03T16:18:50.542Z [INFO] Updating [PEPE-USD] using [YF]...
+2026-04-03T16:18:50.817Z [INFO] YF ✓ PEPE-USD: price=0.0000061956575 USD chg=0.00%
+2026-04-03T16:18:50.843Z [INFO] Successfully updated PEPE-USD: 0.0000061956575 USD
+2026-04-03T16:18:50.858Z [INFO] Updating [GOOGL] using [YF]...
+2026-04-03T16:18:51.150Z [INFO] YF ✓ GOOGL: price=295.77 USD chg=-0.54%
+2026-04-03T16:18:51.174Z [INFO] Successfully updated GOOGL: 295.77 USD
+2026-04-03T16:18:51.190Z [INFO] Updating [AAPL.SW] using [YF]...
+2026-04-03T16:18:51.466Z [INFO] YF ✓ AAPL.SW: price=203.08 CHF chg=1.67%
+2026-04-03T16:18:51.489Z [INFO] Successfully updated AAPL.SW: 203.08 CHF
+2026-04-03T16:18:51.505Z [INFO] Updating [TSLA] using [YF]...
+2026-04-03T16:18:51.782Z [INFO] YF ✓ TSLA: price=360.59 USD chg=-5.42%
+2026-04-03T16:18:51.803Z [INFO] Successfully updated TSLA: 360.59 USD
+2026-04-03T16:18:51.914Z [INFO] Market data update cycle completed.
+2026-04-03T16:19:33.131Z [INFO] Calculating history for Test Portfolio...
+2026-04-03T16:19:33.155Z [INFO] Calculating history for Test Portfolio...
+2 {
+  date: 2026-04-02T23:00:00.000Z,
+  high: 1.1551345586776733,
+  volume: 0,
+  open: 1.1546010971069336,
+  low: 1.1522064208984375,
+  close: null,
+  adjclose: null
+}
+2026-04-03T16:19:47.646Z [INFO] Recording daily snapshots for portfolios and dashboard...
+2026-04-03T16:19:47.673Z [INFO] Daily snapshots completed.
+2026-04-03T16:21:33.094Z [INFO] Calculating history for Test Portfolio...
+2026-04-03T16:21:33.133Z [INFO] Calculating history for Test Portfolio...
