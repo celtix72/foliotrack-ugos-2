@@ -318,11 +318,47 @@
             const tag = getAssetTag(a.yfType || a.type, a.ticker);
 
             const targetPrice = a.targetPrice || 0;
+            const targetPrice2 = a.targetPrice2 || 0;
             const stopLoss = a.stopLoss || 0;
+            const volThreshold = a.volatilityAlert || 0;
+
             const targetReached = targetPrice > 0 && price >= targetPrice;
+            const target2Reached = targetPrice2 > 0 && price >= targetPrice2;
             const stopLossHit = stopLoss > 0 && price <= stopLoss;
-            const alertBg = targetReached ? 'background:rgba(16,185,129,0.08)' : (stopLossHit ? 'background:rgba(244,63,94,0.08)' : '');
-            const alertBorder = targetReached ? 'border-color:rgba(16,185,129,0.3) !important' : (stopLossHit ? 'border-color:rgba(244,63,94,0.3) !important' : '');
+            const volAlertTriggered = volThreshold > 0 && Math.abs(change) >= volThreshold;
+
+            const alertBg = (targetReached || target2Reached) ? 'background:rgba(16,185,129,0.06)' : (stopLossHit ? 'background:rgba(244,63,94,0.06)' : '');
+            const alertBorder = (targetReached || target2Reached) ? 'border-color:rgba(16,185,129,0.2) !important' : (stopLossHit ? 'border-color:rgba(244,63,94,0.2) !important' : '');
+
+            let alertTags = '';
+            if (targetPrice > 0) {
+                alertTags += `
+                    <div class="flex items-center gap-1 px-1.5 py-0.5 rounded-md ${targetReached ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'} text-[8px] font-black uppercase">
+                        <span class="material-symbols-outlined text-[10px]">${targetReached ? 'check_circle' : 'notifications_active'}</span>
+                        TP1: ${formatCurrency(targetPrice, a.currency, 2)}
+                    </div>`;
+            }
+            if (targetPrice2 > 0) {
+                alertTags += `
+                    <div class="flex items-center gap-1 px-1.5 py-0.5 rounded-md ${target2Reached ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'} text-[8px] font-black uppercase">
+                        <span class="material-symbols-outlined text-[10px]">${target2Reached ? 'check_circle' : 'notifications_active'}</span>
+                        TP2: ${formatCurrency(targetPrice2, a.currency, 2)}
+                    </div>`;
+            }
+            if (volThreshold > 0) {
+                alertTags += `
+                    <div class="flex items-center gap-1 px-1.5 py-0.5 rounded-md ${volAlertTriggered ? 'bg-amber-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'} text-[8px] font-black uppercase">
+                        <span class="material-symbols-outlined text-[10px]">${volAlertTriggered ? 'priority_high' : 'bolt'}</span>
+                        VOL: ${volThreshold}%
+                    </div>`;
+            }
+            if (stopLoss > 0) {
+                alertTags += `
+                    <div class="flex items-center gap-1 px-1.5 py-0.5 rounded-md ${stopLossHit ? 'bg-rose-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'} text-[8px] font-black uppercase">
+                        <span class="material-symbols-outlined text-[10px]">${stopLossHit ? 'dangerous' : 'gpp_maybe'}</span>
+                        SL: ${formatCurrency(stopLoss, a.currency, 2)}
+                    </div>`;
+            }
 
             return `
                 <div class="mob-holding-swipe-container" 
@@ -353,9 +389,8 @@
                                 <div class="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[8px] font-black uppercase tracking-tighter text-slate-500 border border-slate-200 dark:border-slate-700">${tag}</div>
                             </div>
                             <div class="mob-holding-name">${a.name || ''}</div>
-                            <div style="display:flex; gap:8px; margin-top:4px">
-                                ${targetPrice > 0 ? `<div style="font-size:9px; font-weight:900; color:${targetReached?'var(--mob-emerald)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:11px">target</span> TP: ${formatCurrency(targetPrice, a.currency, 2)}</div>` : ''}
-                                ${stopLoss > 0 ? `<div style="font-size:9px; font-weight:900; color:${stopLossHit?'var(--mob-rose)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:11px">warning</span> SL: ${formatCurrency(stopLoss, a.currency, 2)}</div>` : ''}
+                            <div class="flex flex-wrap gap-1.5 mt-1.5">
+                                ${alertTags}
                             </div>
                         </div>
                         <div class="mob-holding-values">
