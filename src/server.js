@@ -3179,15 +3179,22 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                     }
                 }
             }
-            let totalNetDeps = 0;
             for (const p of portfolios) {
-                let pNet = portfolioStates[p.id].netDeposits;
-                if (p.currency === 'USD') {
-                    const rate = fxRates['USD']?.[dateStr] || 1;
-                    pNet /= rate;
+                const rec = historyRecords.find(r => r.portfolioId === p.id);
+                if (rec && includeIndividual) {
+                    const rate = (p.currency === 'USD') ? (fxRates['USD']?.[dateStr] || 1) : 1;
+                    const pValEUR = (rec.totalValue || 0) / rate;
+                    const pProfitEUR = pValEUR - portfolioStates[p.id].netDepositsEUR;
+                    
+                    individualHistories[p.id].push({
+                        date: dateStr,
+                        value: pValEUR,
+                        profit: pProfitEUR,
+                        netDeposits: portfolioStates[p.id].netDepositsEUR
+                    });
                 }
-                totalNetDeps += pNet;
             }
+
             dayProfit = dayValue - totalNetDeps;
         } else {
             for (const p of portfolios) {

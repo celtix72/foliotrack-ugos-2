@@ -333,11 +333,11 @@
         const renderBadge = (label, val, pct) => {
             const isPos = (val || 0) >= 0;
             const sign = isPos ? '+' : '';
-            const color = isPos ? 'text-emerald-500 bg-emerald-500/10' : 'text-rose-500 bg-rose-500/10';
+            const color = isPos ? 'text-emerald-500 border-emerald-500/20' : 'text-rose-500 border-rose-500/20';
+            const bg = isPos ? 'bg-emerald-500/10' : 'bg-rose-500/10';
             
-            // Custom simplified format to match user request: +€120 (±X.X%)
             const absVal = Math.abs(val || 0);
-            const formattedVal = formatNumber(absVal, 2);
+            const formattedVal = formatNumber(absVal, 0);
             const symbol = p.currency === 'EUR' ? '€' : (p.currency === 'USD' ? '$' : p.currency);
             
             // Privacy protection
@@ -345,11 +345,11 @@
             const displayVal = isPrivate ? '****' : `${sign}${symbol}${formattedVal}`;
 
             return `
-                <div class="flex flex-col gap-0.5 shrink-0">
-                    <span class="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none">${label}</span>
-                    <div class="px-1.5 py-0.5 rounded text-[9px] font-black ${color} whitespace-nowrap leading-none flex items-center gap-1">
-                        <span>${displayVal}</span>
-                        <span class="opacity-60 text-[8px]">(${sign}${Math.abs(pct || 0).toFixed(1)}%)</span>
+                <div class="flex flex-col gap-1.5 flex-1 min-w-0">
+                    <span class="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider leading-none">${label}</span>
+                    <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-black ${bg} ${color} w-fit shadow-sm border border-current opacity-90 transition-all hover:opacity-100 hover:scale-105">
+                        <span class="text-[12px] leading-none">${displayVal}</span>
+                        <span class="text-[10px] opacity-60 leading-none">(${sign}${(pct || 0).toFixed(1)}%)</span>
                     </div>
                 </div>
             `;
