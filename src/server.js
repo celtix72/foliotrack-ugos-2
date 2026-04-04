@@ -3003,6 +3003,8 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
         portfolios.forEach(p => individualHistories[p.id] = []);
     }
 
+    const startDateStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
+
     for (const p of portfolios) {
         // Reduced logging - only log if it's a heavy calculation (many assets or long range)
         if (uniqueTickers.length > 10 || (range !== '1W' && range !== '1M')) {
@@ -3019,7 +3021,6 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
         };
         
         // Fast-forward initial state to startDate
-        const startDateStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
         const initialTx = allTransactions.filter(t => t.portfolioId === p.id && t.date < startDateStr);
         for (const t of initialTx) {
             const qty = t.quantity || 0, price = t.price || 0, comm = t.commission || 0, tax = t.tax || 0, fx = t.exchangeRate || 1, amount = t.amount || 0;
@@ -3179,22 +3180,31 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                     }
                 }
             }
+            let totalNetDeps = 0;
             for (const p of portfolios) {
                 const rec = historyRecords.find(r => r.portfolioId === p.id);
+                const state = portfolioStates[p.id];
+                
+                let pNet = state.netDeposits;
+                if (p.currency === 'USD') {
+                    const rate = fxRates['USD']?.[dateStr] || 1;
+                    pNet /= rate;
+                }
+                totalNetDeps += pNet;
+
                 if (rec && includeIndividual) {
                     const rate = (p.currency === 'USD') ? (fxRates['USD']?.[dateStr] || 1) : 1;
                     const pValEUR = (rec.totalValue || 0) / rate;
-                    const pProfitEUR = pValEUR - portfolioStates[p.id].netDepositsEUR;
+                    const pProfitEUR = pValEUR - state.netDepositsEUR;
                     
                     individualHistories[p.id].push({
                         date: dateStr,
                         value: pValEUR,
                         profit: pProfitEUR,
-                        netDeposits: portfolioStates[p.id].netDepositsEUR
+                        netDeposits: state.netDepositsEUR
                     });
                 }
             }
-
             dayProfit = dayValue - totalNetDeps;
         } else {
             for (const p of portfolios) {

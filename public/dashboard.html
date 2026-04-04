@@ -328,7 +328,12 @@
 
             // Initial chart load
             initDashboardChart();
+            initAllocationChart();
 
+            // Render Portfolios using shared logic
+            renderPortfolios(portfolios);
+
+            // Render Markets
     function createPortfolioCard(p) {
         const renderBadge = (label, val, pct) => {
             const isPos = (val || 0) >= 0;
@@ -364,7 +369,7 @@
                         </div>
                         <div class="min-w-0">
                             <p class="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">${p.name}</p>
-                            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">${p.assetCount} Assets • ${p.currency}</p>
+                            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">${p.assetCount || 0} Assets • ${p.currency}</p>
                         </div>
                     </div>
                     <div class="text-right">
@@ -391,13 +396,6 @@
             pContainer.innerHTML = '<p class="text-sm text-slate-500 col-span-2 text-center py-8">No portfolios found.</p>';
         }
     }
-
-            // Initial chart load
-            initDashboardChart();
-            initAllocationChart();
-
-            // Render Portfolios using shared logic
-            renderPortfolios(portfolios);
 
             // Render Markets
             const mContainer = document.getElementById('market-container');
