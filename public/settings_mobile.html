@@ -202,6 +202,18 @@
                   </div>
               </div>
 
+              <!-- News Sources Row -->
+              <div class="mob-settings-row" onclick="toggleMobSection('mob-news-sources-config')">
+                  <div class="mob-settings-icon bg-blue-500"><span class="material-symbols-outlined text-white">newspaper</span></div>
+                  <div class="mob-settings-label">News Sources</div>
+                  <div class="mob-settings-value"><span id="mob-news-sources-config-icon" class="material-symbols-outlined text-[14px] transition-transform">expand_more</span></div>
+              </div>
+              <div id="mob-news-sources-config" class="hidden bg-slate-50/50 dark:bg-black/20 px-5 py-4 space-y-4 border-t border-slate-100 dark:border-slate-800">
+                  <div id="mob-news-sources-list" class="space-y-4">
+                      <p class="text-[10px] text-slate-500 italic">Loading sources...</p>
+                  </div>
+              </div>
+
               <!-- Yahoo Finance Info -->
               <div class="mob-settings-row">
                   <div class="mob-settings-icon bg-purple-500"><span class="material-symbols-outlined text-white">finance</span></div>
@@ -373,6 +385,46 @@
             }
             
             loadBackups();
+            loadNewsSources();
+        };
+
+        const loadNewsSources = async () => {
+            const list = document.getElementById('mob-news-sources-list');
+            if (!list) return;
+            try {
+                const res = await fetch('/api/news/sources');
+                const sources = await res.json();
+                if (sources.length === 0) {
+                    list.innerHTML = '<p class="text-[10px] text-slate-500 italic">No news sources cached yet.</p>';
+                    return;
+                }
+                list.innerHTML = sources.map(s => {
+                    const id = 'mob_source_' + s.name.replace(/\\W/g, '');
+                    return `
+                    <div class="flex items-center justify-between" onclick="document.getElementById('${id}').click()">
+                        <span class="text-xs font-bold truncate max-w-[150px]">${s.name}</span>
+                        <div class="mob-toggle">
+                            <input type="checkbox" id="${id}" data-publisher="${s.name}" class="mob-news-source-toggle" onclick="event.stopPropagation()" ${s.isEnabled ? 'checked' : ''}>
+                            <div class="mob-toggle-slider"></div>
+                        </div>
+                    </div>
+                    `;
+                }).join('');
+
+                document.querySelectorAll('.mob-news-source-toggle').forEach(el => {
+                    el.addEventListener('change', async () => {
+                        const disabledSources = [];
+                        document.querySelectorAll('.mob-news-source-toggle:not(:checked)').forEach(cb => {
+                            disabledSources.push(cb.dataset.publisher);
+                        });
+                        await fetch('/api/news/sources', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ disabledSources })
+                        });
+                    });
+                });
+            } catch (err) { console.error(err); }
         };
 
         const saveSettings = () => {

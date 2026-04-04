@@ -4606,6 +4606,58 @@ app.post('/api/reset-data', (req, res) => {
 });
 
 // ════════════════════════════════════════════════════════════════════════════
+// NEWS API ENDPOINTS
+// ════════════════════════════════════════════════════════════════════════════
+
+app.get('/api/news', (req, res) => {
+    try {
+        const settings = database.getSettings();
+        let disabledSources = [];
+        try { disabledSources = JSON.parse(settings.disabledNewsSources || '[]'); } catch (e) {}
+
+        const placeholders = disabledSources.map(() => '?').join(',');
+        const query = disabledSources.length > 0
+            ? `SELECT * FROM global_news WHERE publisher NOT IN (${placeholders}) ORDER BY publishedAt DESC LIMIT 20`
+            : `SELECT * FROM global_news ORDER BY publishedAt DESC LIMIT 20`;
+            
+        const rows = database.db.prepare(query).all(...disabledSources);
+        res.json(rows);
+    } catch (err) {
+        logger.error('/api/news error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/news/sources', (req, res) => {
+    try {
+        const settings = database.getSettings();
+        let disabledSources = [];
+        try { disabledSources = JSON.parse(settings.disabledNewsSources || '[]'); } catch (e) {}
+
+        const rows = database.db.prepare(`SELECT DISTINCT publisher FROM global_news ORDER BY publisher ASC`).all();
+        const sources = rows.map(r => ({
+            name: r.publisher,
+            isEnabled: !disabledSources.includes(r.publisher)
+        }));
+        res.json(sources);
+    } catch (err) {
+        logger.error('/api/news/sources error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/news/sources', express.json(), (req, res) => {
+    try {
+        const { disabledSources } = req.body;
+        if (!Array.isArray(disabledSources)) return res.status(400).json({ error: 'Must be an array' });
+        database.setSetting('disabledNewsSources', JSON.stringify(disabledSources));
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ════════════════════════════════════════════════════════════════════════════
 // STATIC FILES  (must come AFTER all API routes)
 // ════════════════════════════════════════════════════════════════════════════
 
@@ -4841,6 +4893,66 @@ let lastUpdateTime = Date.now();
 let lastBackupDate = ''; // 'YYYY-MM-DD'
 let lastSnapshotDate = ''; // 'YYYY-MM-DD'
 let lastTelegramStatusTime = 0;
+
+// ─── News Sync Engine ───────────────────────────────────────────────────────
+async function syncNews() {
+    try {
+        logger.info('Starting Financial News Sync...');
+        
+        // 1. Get tickers from Watchlist or active Portfolios
+        const allTrackedAssets = database.db.prepare(`
+            SELECT ticker FROM assets 
+            WHERE inWatchlist = 1 OR ticker IN (SELECT DISTINCT assetTicker FROM transactions WHERE assetTicker IS NOT NULL)
+        `).all().filter(a => a.ticker && a.ticker !== 'CASH' && !a.ticker.startsWith('CD_'));
+        
+        const tickers = [...new Set(allTrackedAssets.map(a => a.ticker))];
+        let newsSaved = 0;
+
+        for (const t of tickers) {
+            try {
+                const results = await yahooFinance.search(t, { newsCount: 5 });
+                if (results && results.news) {
+                    for (const n of results.news) {
+                        const uuid = n.uuid;
+                        const title = n.title;
+                        const publisher = n.publisher;
+                        const link = n.link;
+                        const publishedAt = n.providerPublishTime || Math.floor(Date.now() / 1000);
+                        
+                        const stmt = database.db.prepare(`
+                            INSERT OR IGNORE INTO global_news (uuid, ticker, title, publisher, link, publishedAt)
+                            VALUES (?, ?, ?, ?, ?, ?)
+                        `);
+                        const info = stmt.run(uuid, t, title, publisher, link, publishedAt);
+                        if (info.changes > 0) newsSaved++;
+                    }
+                }
+            } catch (e) {
+                logger.warn(`Failed to fetch news for ${t}: ${e.message}`);
+            }
+        }
+        
+        // 2. Obsolescence: Limit global_news to 100 latest items
+        database.db.prepare(`
+            DELETE FROM global_news 
+            WHERE uuid NOT IN (
+                SELECT uuid FROM global_news ORDER BY publishedAt DESC LIMIT 100
+            )
+        `).run();
+        
+        logger.info(`News Sync completed. Saved ${newsSaved} new articles.`);
+    } catch (err) {
+        logger.error('Error during news sync:', err);
+    }
+}
+
+setInterval(() => {
+    syncNews().catch(e => logger.error(e));
+}, 2 * 60 * 60 * 1000); // 2 hours
+
+setTimeout(syncNews, 10000); // Run first sync 10s after startup
+
+
 
 setInterval(async () => {
     const settings = database.getSettings();

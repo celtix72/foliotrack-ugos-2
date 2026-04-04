@@ -142,6 +142,17 @@
       </div>
     </div>
 
+    <!-- Financial News -->
+    <div class="mob-section-header" style="margin-top:16px;">
+      <span class="mob-section-title">Financial News</span>
+      <span class="mob-section-link text-blue-500 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>Live Feed</span>
+    </div>
+    <div class="overflow-x-auto custom-scrollbar pb-3 -mx-5 px-5">
+        <div class="flex gap-3" id="mob-news-container" style="min-width: max-content;">
+            <div class="animate-pulse flex space-x-4"><div class="h-24 w-[280px] bg-slate-200 dark:bg-slate-800 rounded-2xl"></div></div>
+        </div>
+    </div>
+
     <!-- Portfolio List -->
     <div class="mob-section-header">
       <span class="mob-section-title">I Tuoi Portafogli</span>
@@ -778,6 +789,38 @@
     mobInitPerfChart();
     mobInitAllocChart();
     mobSyncPrivacyIcon();
+    loadMobNews();
+  }
+
+  async function loadMobNews() {
+      const container = document.getElementById('mob-news-container');
+      if (!container) return;
+      try {
+          const res = await fetch('/api/news');
+          const news = await res.json();
+          if (!news || news.length === 0) {
+              container.innerHTML = '<p class="text-[12px] text-slate-500 italic">No recent news found.</p>';
+              return;
+          }
+          container.innerHTML = news.map(n => {
+              const dateStr = new Date(n.publishedAt * 1000).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+              return `
+                  <a href="${n.link}" target="_blank" rel="noopener noreferrer" class="bg-white dark:bg-[#111722] p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800/80 flex flex-col gap-2 w-[280px] shrink-0">
+                      <div class="flex items-center justify-between">
+                          <span class="text-[9px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2 py-0.5 rounded">${n.ticker}</span>
+                          <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate ml-2">${dateStr}</span>
+                      </div>
+                      <h4 class="text-[13px] font-bold leading-snug line-clamp-2 mt-1">${n.title}</h4>
+                      <div class="mt-auto pt-2 flex items-center justify-between border-t border-slate-100 dark:border-slate-800/50">
+                          <span class="text-[10px] text-slate-500 font-bold truncate">${n.publisher}</span>
+                          <span class="material-symbols-outlined text-[14px] text-slate-400">open_in_new</span>
+                      </div>
+                  </a>
+              `;
+          }).join('');
+      } catch (err) {
+          console.error('Failed to load mobile news:', err);
+      }
   }
 
   // Init when mobile view is activated

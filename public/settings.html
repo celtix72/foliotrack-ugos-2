@@ -308,6 +308,25 @@
     </div>
 </section>
 
+<!-- News Sources Filtering -->
+<section class="space-y-2">
+    <div class="flex items-center justify-between cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-900/50 p-2 -mx-2 rounded-xl transition-colors" onclick="toggleSection('news-sources-content')">
+        <h2 class="text-lg font-bold border-l-4 border-blue-500 pl-3">News Sources</h2>
+        <span id="news-sources-content-icon" class="material-symbols-outlined text-slate-400 group-hover:text-blue-500 transition-transform">expand_more</span>
+    </div>
+    <div id="news-sources-content" class="hidden">
+        <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-5">
+            <div>
+                <p class="font-bold text-sm">Dashboard News Providers</p>
+                <p class="text-[10px] text-slate-400">Toggle the publishers you want to see in your financial news feed.</p>
+            </div>
+            <div id="news-sources-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <p class="text-xs text-slate-400 italic">Loading sources...</p>
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- Telegram Notifications -->
 <section class="space-y-2">
     <div class="flex items-center justify-between cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-900/50 p-2 -mx-2 rounded-xl transition-colors" onclick="toggleSection('telegram-settings-content')">
@@ -880,6 +899,47 @@
                 }
             }
             if (typeof loadBackups === 'function') loadBackups();
+
+            // Load News Sources
+            async function loadNewsSources() {
+                try {
+                    const res = await fetch('/api/news/sources');
+                    const sources = await res.json();
+                    const container = document.getElementById('news-sources-list');
+                    if (!container) return;
+                    if (sources.length === 0) {
+                        container.innerHTML = '<p class="text-[10px] text-slate-500 italic">No news sources cached yet.</p>';
+                        return;
+                    }
+                    container.innerHTML = sources.map(s => {
+                        const id = 'source_' + s.name.replace(/\\W/g, '');
+                        return `
+                        <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+                            <span class="font-bold text-xs truncate max-w-[150px]" title="${s.name}">${s.name}</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="${id}" data-publisher="${s.name}" class="news-source-toggle sr-only peer" ${s.isEnabled ? 'checked' : ''}>
+                                <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-blue-500"></div>
+                            </label>
+                        </div>
+                        `;
+                    }).join('');
+
+                    document.querySelectorAll('.news-source-toggle').forEach(el => {
+                        el.addEventListener('change', async () => {
+                            const disabledSources = [];
+                            document.querySelectorAll('.news-source-toggle:not(:checked)').forEach(cb => {
+                                disabledSources.push(cb.dataset.publisher);
+                            });
+                            await fetch('/api/news/sources', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ disabledSources })
+                            });
+                        });
+                    });
+                } catch (e) { console.error(e); }
+            }
+            loadNewsSources();
         };
 
         window.setTheme = (theme) => {

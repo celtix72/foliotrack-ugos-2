@@ -252,6 +252,16 @@ function initDb() {
         isCustom    INTEGER NOT NULL DEFAULT 0,
         createdAt   TEXT    NOT NULL DEFAULT (datetime('now'))
       );
+
+      CREATE TABLE IF NOT EXISTS global_news (
+        uuid        TEXT    PRIMARY KEY,
+        ticker      TEXT    NOT NULL,
+        title       TEXT    NOT NULL,
+        publisher   TEXT    NOT NULL,
+        link        TEXT    NOT NULL,
+        publishedAt INTEGER NOT NULL,
+        createdAt   TEXT    NOT NULL DEFAULT (datetime('now'))
+      );
     `);
 
     // Standardized asset types remapping
@@ -295,6 +305,7 @@ function initDb() {
         telegramEnabled: 'false',
         marketStatusTelegramEnabled: 'false',
         marketStatusInterval: '60',
+        disabledNewsSources: '[]',
         schemaVersion: '1.0'
     };
 
