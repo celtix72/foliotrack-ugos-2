@@ -4076,7 +4076,6 @@ app.get('/api/analytics/reports', async (req, res) => {
 
         const [sp500, msci] = await Promise.all([fetchBenchmark('^GSPC'), fetchBenchmark('URTH')]);
 
-        // Downsample to Monthly for Comparison Chart (Matches Benchmark interval)
         const downsampleToMonthly = (daily) => {
             const monthly = [];
             let currentMonthEvents = [];
@@ -4089,6 +4088,7 @@ app.get('/api/analytics/reports', async (req, res) => {
                 if (!next || next.date.substring(0, 7) !== mStr) {
                     monthly.push({
                         ...day,
+                        date: mStr,
                         events: [...currentMonthEvents]
                     });
                     currentMonthEvents = [];
