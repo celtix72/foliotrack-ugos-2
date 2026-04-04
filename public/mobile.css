@@ -622,6 +622,7 @@ body.mobile-view-active #mobile-ui {
   color: inherit;
   -webkit-tap-highlight-color: transparent;
   transition: background 0.15s;
+  border: 5px solid red !important;
   height: auto !important;
   min-height: 0 !important;
 }
