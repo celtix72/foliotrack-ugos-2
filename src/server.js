@@ -3121,15 +3121,6 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                 const dayTx = allTransactions.filter(t => t.portfolioId === p.id && t.date === dateStr);
                 for (const t of dayTx) {
                     const amount = t.amount || 0;
-                    if (t.type === 'DEPOSIT') {
-                        state.netDeposits += amount;
-                        const rateOnDate = (p.currency === 'USD') ? (fxRates['USD']?.[dateStr] || 1) : 1;
-                        state.netDepositsEUR += amount / rateOnDate;
-                    } else if (t.type === 'WITHDRAWAL') {
-                        state.netDeposits -= amount;
-                        const rateOnDate = (p.currency === 'USD') ? (fxRates['USD']?.[dateStr] || 1) : 1;
-                        state.netDepositsEUR -= amount / rateOnDate;
-                    }
                     
                     if (['BUY', 'SELL', 'DIVIDEND', 'DEPOSIT', 'WITHDRAWAL'].includes(t.type)) {
                         const ticker = t.assetTicker || 'CASH';
@@ -3146,10 +3137,28 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                     const qty = t.quantity || 0, price = t.price || 0, comm = t.commission || 0, tax = t.tax || 0, fx = t.exchangeRate || 1;
                     const effectAmt = amount ? Math.abs(amount) : (qty * price) / fx;
                     switch (t.type) {
-                        case 'DEPOSIT':    state.cash += effectAmt; state.netDeposits += effectAmt; break;
-                        case 'WITHDRAWAL': state.cash -= effectAmt; state.netDeposits -= effectAmt; break;
+                        case 'DEPOSIT': {
+                            state.cash += effectAmt; 
+                            state.netDeposits += effectAmt; 
+                            const rateOnDate = (p.currency === 'USD') ? (fxRates['USD']?.[dateStr] || 1) : 1;
+                            state.netDepositsEUR += effectAmt / rateOnDate;
+                            break;
+                        }
+                        case 'WITHDRAWAL': {
+                            state.cash -= effectAmt; 
+                            state.netDeposits -= effectAmt; 
+                            const rateOnDate = (p.currency === 'USD') ? (fxRates['USD']?.[dateStr] || 1) : 1;
+                            state.netDepositsEUR -= effectAmt / rateOnDate;
+                            break;
+                        }
                         case 'TAX':        state.cash -= effectAmt; break;
-                        case 'TRANSFER':   state.cash -= effectAmt; state.netDeposits -= effectAmt; break;
+                        case 'TRANSFER': {
+                            state.cash -= effectAmt; 
+                            state.netDeposits -= effectAmt; 
+                            const rateOnDate = (p.currency === 'USD') ? (fxRates['USD']?.[dateStr] || 1) : 1;
+                            state.netDepositsEUR -= effectAmt / rateOnDate;
+                            break;
+                        }
                         case 'DIVIDEND': {
                             const divAmt = amount ? amount : (Math.abs(amount || (qty * price - comm - tax))) / fx;
                             state.cash += divAmt; 
@@ -3205,6 +3214,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                     });
                 }
             }
+            dayNetDeposits = totalNetDeps;
             dayProfit = dayValue - totalNetDeps;
         } else {
             for (const p of portfolios) {
