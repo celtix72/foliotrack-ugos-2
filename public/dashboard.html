@@ -337,7 +337,7 @@
             
             // Custom simplified format to match user request: +€120 (±X.X%)
             const absVal = Math.abs(val || 0);
-            const formattedVal = formatNumber(absVal, 0);
+            const formattedVal = formatNumber(absVal, 2);
             const symbol = p.currency === 'EUR' ? '€' : (p.currency === 'USD' ? '$' : p.currency);
             
             // Privacy protection

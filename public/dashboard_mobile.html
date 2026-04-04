@@ -383,8 +383,8 @@
               const color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
               const bg = isPos ? 'rgba(16,185,129,0.08)' : 'rgba(244,63,94,0.08)';
               
-              const absVal = Math.floor(Math.abs(v));
-              const formattedVal = formatNumber(absVal, 0);
+              const absVal = Math.abs(v);
+              const formattedVal = formatNumber(absVal, 2);
               const symbol = p.currency === 'EUR' ? '€' : (p.currency === 'USD' ? '$' : p.currency);
               
               const isPrivate = window.privacyState && window.privacyState.enabled;
