@@ -4899,27 +4899,33 @@ async function syncNews() {
     try {
         logger.info('Starting Financial News Sync...');
         
-        // 1. Get tickers from Watchlist or active Portfolios
+        // 1. Get tickers and names from Watchlist or active Portfolios
         const allTrackedAssets = database.db.prepare(`
-            SELECT ticker FROM assets 
+            SELECT ticker, name FROM assets 
             WHERE inWatchlist = 1 OR ticker IN (SELECT DISTINCT assetTicker FROM transactions WHERE assetTicker IS NOT NULL)
         `).all().filter(a => a.ticker && a.ticker !== 'CASH' && !a.ticker.startsWith('CD_'));
         
-        const tickers = [...new Set(allTrackedAssets.map(a => a.ticker))];
+        const assets = allTrackedAssets; // Use the objects directly
         let newsSaved = 0;
 
-        for (const t of tickers) {
+        // Clear existing news to ensure a clean start with the new filtering
+        database.db.prepare(`DELETE FROM global_news`).run();
+
+        for (const asset of assets) {
+            const t = asset.ticker;
+            const name = asset.name || '';
+            const tickerBase = t.split('.')[0].toUpperCase();
+            const tickerFull = t.toUpperCase();
+
             try {
-                const results = await yahooFinance.search(t, { newsCount: 5 });
+                const results = await yahooFinance.search(t, { newsCount: 10 });
                 if (results && results.news) {
                     for (const n of results.news) {
-                        // Coerce all values to SQLite-safe types
                         const uuid = String(n.uuid || '');
                         const title = String(n.title || '');
                         const publisher = String(n.publisher || 'Unknown');
                         const link = String(n.link || '');
                         
-                        // providerPublishTime can be a Date object or a Unix timestamp number
                         let publishedAt;
                         if (n.providerPublishTime instanceof Date) {
                             publishedAt = Math.floor(n.providerPublishTime.getTime() / 1000);
@@ -4929,7 +4935,22 @@ async function syncNews() {
                             publishedAt = Math.floor(Date.now() / 1000);
                         }
 
-                        if (!uuid || !title || !link) continue; // skip incomplete articles
+                        if (!uuid || !title || !link) continue; 
+
+                        // Strict Relevance Filter
+                        const related = (n.relatedTickers || []).map(rt => rt.toUpperCase());
+                        const upperTitle = title.toUpperCase();
+                        
+                        let isRelevant = false;
+                        if (related.length > 0) {
+                            isRelevant = related.includes(tickerFull) || related.includes(tickerBase);
+                        } else {
+                            isRelevant = upperTitle.includes(tickerFull) || 
+                                         upperTitle.includes(tickerBase) || 
+                                         (name && upperTitle.includes(name.toUpperCase()));
+                        }
+
+                        if (!isRelevant) continue;
                         
                         const stmt = database.db.prepare(`
                             INSERT OR IGNORE INTO global_news (uuid, ticker, title, publisher, link, publishedAt)
@@ -5045,5 +5066,6 @@ module.exports = {
     app,
     calculatePerformanceHistory,
     updateMarketData,
-    getEurUsdRate
+    getEurUsdRate,
+    syncNews
 };
