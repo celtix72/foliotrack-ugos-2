@@ -255,17 +255,7 @@
         </div>
     </section>
 </div>
-<div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
-<!-- Portfolio Summary -->
-<div class="xl:col-span-2 space-y-4">
-<div class="flex items-center justify-between mb-2">
-    <h3 class="text-lg font-bold">Portfolio Performance</h3>
-</div>
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="portfolio-container">
-<!-- Cards will be injected here -->
-</div>
-</div>
-</div>
+
 <!-- Market Overview -->
 <section class="space-y-4 pb-8">
 <div class="flex items-center justify-between">
@@ -329,73 +319,6 @@
             // Initial chart load
             initDashboardChart();
             initAllocationChart();
-
-            // Render Portfolios using shared logic
-            renderPortfolios(portfolios);
-
-            // Render Markets
-    function createPortfolioCard(p) {
-        const renderBadge = (label, val, pct) => {
-            const isPos = (val || 0) >= 0;
-            const sign = isPos ? '+' : '';
-            const color = isPos ? 'text-emerald-500 border-emerald-500/20' : 'text-rose-500 border-rose-500/20';
-            const bg = isPos ? 'bg-emerald-500/10' : 'bg-rose-500/10';
-            
-            const absVal = Math.abs(val || 0);
-            const formattedVal = formatNumber(absVal, 0);
-            const symbol = p.currency === 'EUR' ? '€' : (p.currency === 'USD' ? '$' : p.currency);
-            
-            // Privacy protection
-            const isPrivate = window.privacyState && window.privacyState.enabled;
-            const displayVal = isPrivate ? '****' : `${sign}${symbol}${formattedVal}`;
-
-            return `
-                <div class="flex flex-col gap-1.5 flex-1 min-w-0">
-                    <span class="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider leading-none">${label}</span>
-                    <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-black ${bg} ${color} w-fit shadow-sm border border-current opacity-90 transition-all hover:opacity-100 hover:scale-105">
-                        <span class="text-[12px] leading-none">${displayVal}</span>
-                        <span class="text-[10px] opacity-60 leading-none">(${sign}${(pct || 0).toFixed(1)}%)</span>
-                    </div>
-                </div>
-            `;
-        };
-
-        return `
-            <div class="bg-white dark:bg-[#111722] p-5 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col gap-4 group hover:border-primary transition-all cursor-pointer" onclick="window.location.href='portfolio_detail.html?id=${p.id}'">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-4">
-                        <div class="w-11 h-11 rounded-lg flex items-center justify-center text-white" style="background-color: ${p.color || '#6366f1'}">
-                            <span class="material-symbols-outlined text-[20px]">work</span>
-                        </div>
-                        <div class="min-w-0">
-                            <p class="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">${p.name}</p>
-                            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">${p.assetCount || 0} Assets • ${p.currency}</p>
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-sm font-black text-primary">${formatPrivacy(p.netValue || p.totalValue, p.currency, 'p-' + p.id, 0)}</p>
-                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Total Value</p>
-                    </div>
-                </div>
-                
-                <div class="flex flex-wrap items-center gap-3 pt-3 border-t border-slate-100 dark:border-slate-800/50">
-                    ${renderBadge('1D', p.changeValue, p.changePercent)}
-                    ${renderBadge('1W', p.changeValue1W, p.changePercent1W)}
-                    ${renderBadge('1M', p.changeValue1M, p.changePercent1M)}
-                </div>
-            </div>
-        `;
-    }
-
-    function renderPortfolios(portfolios) {
-        const pContainer = document.getElementById('portfolio-container');
-        if (!pContainer) return;
-        if (portfolios && portfolios.length > 0) {
-            pContainer.innerHTML = portfolios.map(p => createPortfolioCard(p)).join('');
-        } else {
-            pContainer.innerHTML = '<p class="text-sm text-slate-500 col-span-2 text-center py-8">No portfolios found.</p>';
-        }
-    }
 
             // Render Markets
             const mContainer = document.getElementById('market-container');
