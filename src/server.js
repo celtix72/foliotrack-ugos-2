@@ -4913,17 +4913,29 @@ async function syncNews() {
                 const results = await yahooFinance.search(t, { newsCount: 5 });
                 if (results && results.news) {
                     for (const n of results.news) {
-                        const uuid = n.uuid;
-                        const title = n.title;
-                        const publisher = n.publisher;
-                        const link = n.link;
-                        const publishedAt = n.providerPublishTime || Math.floor(Date.now() / 1000);
+                        // Coerce all values to SQLite-safe types
+                        const uuid = String(n.uuid || '');
+                        const title = String(n.title || '');
+                        const publisher = String(n.publisher || 'Unknown');
+                        const link = String(n.link || '');
+                        
+                        // providerPublishTime can be a Date object or a Unix timestamp number
+                        let publishedAt;
+                        if (n.providerPublishTime instanceof Date) {
+                            publishedAt = Math.floor(n.providerPublishTime.getTime() / 1000);
+                        } else if (typeof n.providerPublishTime === 'number') {
+                            publishedAt = n.providerPublishTime;
+                        } else {
+                            publishedAt = Math.floor(Date.now() / 1000);
+                        }
+
+                        if (!uuid || !title || !link) continue; // skip incomplete articles
                         
                         const stmt = database.db.prepare(`
                             INSERT OR IGNORE INTO global_news (uuid, ticker, title, publisher, link, publishedAt)
                             VALUES (?, ?, ?, ?, ?, ?)
                         `);
-                        const info = stmt.run(uuid, t, title, publisher, link, publishedAt);
+                        const info = stmt.run(uuid, String(t), title, publisher, link, publishedAt);
                         if (info.changes > 0) newsSaved++;
                     }
                 }
