@@ -376,13 +376,30 @@
           pList.innerHTML = '<div class="mob-empty"><span class="material-symbols-outlined">work_off</span><div class="mob-empty-title">Nessun portafoglio</div></div>';
         } else {
           pList.innerHTML = portfolios.map(p => {
-            const isPos = p.changeValue >= 0;
-            const roi = p.roi || 0;
-            const twr = p.twr || 0;
-            const xirr = p.xirr || 0;
-            const roiColor = roi >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-            const twrColor = twr >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-            const xirrColor = xirr >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+            const renderBadge = (label, val, pct) => {
+              const v = val || 0;
+              const isPos = v >= 0;
+              const sign = isPos ? '+' : '';
+              const color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+              const bg = isPos ? 'rgba(16,185,129,0.08)' : 'rgba(244,63,94,0.08)';
+              
+              const absVal = Math.floor(Math.abs(v));
+              const formattedVal = formatNumber(absVal, 0);
+              const symbol = p.currency === 'EUR' ? '€' : (p.currency === 'USD' ? '$' : p.currency);
+              
+              const isPrivate = window.privacyState && window.privacyState.enabled;
+              const displayVal = isPrivate ? '****' : `${sign}${symbol}${formattedVal}`;
+
+              return `
+                <div style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0;">
+                  <span style="font-size: 7px; font-weight: 800; text-transform: uppercase; color: var(--mob-text-caption); letter-spacing: 0.05em; line-height: 1;">${label}</span>
+                  <div style="background: ${bg}; color: ${color}; padding: 3px 6px; border-radius: 6px; font-size: 9px; font-weight: 900; white-space: nowrap; display: flex; align-items: center; gap: 3px; width: fit-content; line-height: 1;">
+                    <span>${displayVal}</span>
+                    <span style="opacity: 0.6; font-size: 8px;">(${sign}${(pct || 0).toFixed(1)}%)</span>
+                  </div>
+                </div>
+              `;
+            };
 
             return `
               <div class="mob-holding-swipe-container" 
@@ -410,28 +427,16 @@
                       <div class="mob-portfolio-name">${p.name}</div>
                       <div class="mob-portfolio-meta">${p.assetCount || 0} Assets · ${p.currency} ${p.type === 'Conto Deposito' ? '<span style="color:var(--mob-amber); font-weight:900; background:rgba(245,158,11,0.1); padding:1px 4px; border-radius:4px; font-size:8px; vertical-align:middle; margin-left:4px">DEPOSITO</span>' : ''}</div>
                     </div>
-                    <div class="mob-portfolio-values">
+                    <div class="mob-portfolio-values" style="margin-left: auto; text-align: right;">
                       <div class="mob-portfolio-net">${formatPrivacy(p.totalValue, p.currency, 'mob-p-'+p.id, 0)}</div>
-                      <div class="mob-portfolio-change" style="color: ${roi >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">
-                        ${roi >= 0 ?'+':''}${(roi * 100).toFixed(1)}%
-                      </div>
+                      <div style="font-size: 8px; font-weight: 800; text-transform: uppercase; color: var(--mob-text-caption); letter-spacing: 0.05em; margin-top: -2px;">Total Value</div>
                     </div>
                   </div>
                   
-                  <!-- Performance Grid -->
-                  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding-top: 10px; border-top: 1px solid var(--mob-border);">
-                    <div style="display: flex; flex-direction: column; gap: 2px;">
-                      <span style="font-size: 8px; font-weight: 800; text-transform: uppercase; color: var(--mob-text-caption); letter-spacing: 0.05em;">ROI (Tot)</span>
-                      <span style="font-size: 12px; font-weight: 900; color: ${roiColor}">${(roi * 100).toFixed(1)}%</span>
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 2px;">
-                      <span style="font-size: 8px; font-weight: 800; text-transform: uppercase; color: var(--mob-text-caption); letter-spacing: 0.05em;">TWR</span>
-                      <span style="font-size: 12px; font-weight: 900; color: ${twrColor}">${(twr * 100).toFixed(1)}%</span>
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 2px;">
-                      <span style="font-size: 8px; font-weight: 800; text-transform: uppercase; color: var(--mob-text-caption); letter-spacing: 0.05em;">XIRR</span>
-                      <span style="font-size: 12px; font-weight: 900; color: ${xirrColor}">${(xirr * 100).toFixed(1)}%</span>
-                    </div>
+                  <div style="display: flex; items-center; gap: 8px; padding-top: 10px; border-top: 1px solid var(--mob-border); overflow-x: auto; scrollbar-width: none;">
+                    ${renderBadge('1D', p.changeValue, p.changePercent)}
+                    ${renderBadge('1W', p.changeValue1W, p.changePercent1W)}
+                    ${renderBadge('1M', p.changeValue1M, p.changePercent1M)}
                   </div>
                 </div>
               </div>`;
