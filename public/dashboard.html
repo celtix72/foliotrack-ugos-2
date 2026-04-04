@@ -330,10 +330,30 @@
             initDashboardChart();
 
     function createPortfolioCard(p) {
-        const isPos = p.changeValue >= 0;
-        const roiPos = p.roi >= 0;
-        const twrPos = p.twr >= 0;
-        const xirrPos = p.xirr >= 0;
+        const renderBadge = (label, val, pct) => {
+            const isPos = (val || 0) >= 0;
+            const sign = isPos ? '+' : '';
+            const color = isPos ? 'text-emerald-500 bg-emerald-500/10' : 'text-rose-500 bg-rose-500/10';
+            
+            // Custom simplified format to match user request: +€120 (±X.X%)
+            const absVal = Math.abs(val || 0);
+            const formattedVal = formatNumber(absVal, 0);
+            const symbol = p.currency === 'EUR' ? '€' : (p.currency === 'USD' ? '$' : p.currency);
+            
+            // Privacy protection
+            const isPrivate = window.privacyState && window.privacyState.enabled;
+            const displayVal = isPrivate ? '****' : `${sign}${symbol}${formattedVal}`;
+
+            return `
+                <div class="flex flex-col gap-0.5 shrink-0">
+                    <span class="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none">${label}</span>
+                    <div class="px-1.5 py-0.5 rounded text-[9px] font-black ${color} whitespace-nowrap leading-none flex items-center gap-1">
+                        <span>${displayVal}</span>
+                        <span class="opacity-60 text-[8px]">(${sign}${Math.abs(pct || 0).toFixed(1)}%)</span>
+                    </div>
+                </div>
+            `;
+        };
 
         return `
             <div class="bg-white dark:bg-[#111722] p-5 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col gap-4 group hover:border-primary transition-all cursor-pointer" onclick="window.location.href='portfolio_detail.html?id=${p.id}'">
@@ -342,39 +362,21 @@
                         <div class="w-11 h-11 rounded-lg flex items-center justify-center text-white" style="background-color: ${p.color || '#6366f1'}">
                             <span class="material-symbols-outlined text-[20px]">work</span>
                         </div>
-                        <div>
-                            <p class="text-sm font-bold text-slate-900 dark:text-slate-100">${p.name}</p>
+                        <div class="min-w-0">
+                            <p class="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">${p.name}</p>
                             <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">${p.assetCount} Assets • ${p.currency}</p>
                         </div>
                     </div>
                     <div class="text-right">
-                        <p class="text-sm font-black text-primary">${formatPrivacy(p.netValue || p.totalValue, p.currency, 'p-' + p.id)}</p>
-                        <p class="${isPos ? 'text-emerald-500' : 'text-rose-500'} text-[10px] font-bold">
-                            ${isPos ? '▲' : '▼'} ${Math.abs(p.changePercent).toFixed(1)}%
-                            (${p.changeValue >= 0 ? '+' : ''}${formatPrivacy(p.changeValue, p.currency, 'p-' + p.id)})
-                        </p>
+                        <p class="text-sm font-black text-primary">${formatPrivacy(p.netValue || p.totalValue, p.currency, 'p-' + p.id, 0)}</p>
+                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Total Value</p>
                     </div>
                 </div>
                 
-                <div class="grid grid-cols-3 gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/50">
-                    <div class="space-y-0.5">
-                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-tighter">ROI</p>
-                        <p class="text-[10px] font-black ${roiPos ? 'text-emerald-500' : 'text-rose-500'}">
-                            ${roiPos ? '+' : ''}${(p.roi * 100).toFixed(2)}%
-                        </p>
-                    </div>
-                    <div class="space-y-0.5 border-x border-slate-100 dark:border-slate-800/50 px-2 text-center">
-                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-tighter">TWR</p>
-                        <p class="text-[10px] font-black ${twrPos ? 'text-emerald-500' : 'text-rose-500'}">
-                            ${twrPos ? '+' : ''}${(p.twr * 100).toFixed(2)}%
-                        </p>
-                    </div>
-                    <div class="space-y-0.5 text-right">
-                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-tighter">XIRR</p>
-                        <p class="text-[10px] font-black ${xirrPos ? 'text-emerald-500' : 'text-rose-500'}">
-                            ${xirrPos ? '+' : ''}${(p.xirr * 100).toFixed(2)}%
-                        </p>
-                    </div>
+                <div class="flex flex-wrap items-center gap-3 pt-3 border-t border-slate-100 dark:border-slate-800/50">
+                    ${renderBadge('1D', p.changeValue, p.changePercent)}
+                    ${renderBadge('1W', p.changeValue1W, p.changePercent1W)}
+                    ${renderBadge('1M', p.changeValue1M, p.changePercent1M)}
                 </div>
             </div>
         `;

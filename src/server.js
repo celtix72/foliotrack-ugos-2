@@ -1406,10 +1406,33 @@ app.get('/api/portfolios', async (req, res) => {
             const prevValue = (p.totalValue || 0) - p.changeValue;
             p.changePercent = prevValue > 0 ? (p.changeValue / prevValue) * 100 : 0;
 
+            // 2. Historical variations (1W, 1M)
+            const history = individual[p.id] || [];
+            if (history.length > 0) {
+                const last = history[history.length - 1];
+                
+                const d7 = new Date(today); d7.setDate(today.getDate() - 7);
+                const d7Str = d7.toISOString().split('T')[0];
+                const firstW = history.findLast(h => h.date <= d7Str) || history[0];
+                
+                const d30 = new Date(today); d30.setMonth(today.getMonth() - 1);
+                const d30Str = d30.toISOString().split('T')[0];
+                const firstM = history.findLast(h => h.date <= d30Str) || history[0];
+                
+                p.changeValue1W = last.profit - firstW.profit;
+                p.changePercent1W = firstW.value > 0 ? (p.changeValue1W / firstW.value) * 100 : 0;
+
+                p.changeValue1M = last.profit - firstM.profit;
+                p.changePercent1M = firstM.value > 0 ? (p.changeValue1M / firstM.value) * 100 : 0;
+            } else {
+                p.changeValue1W = 0; p.changePercent1W = 0;
+                p.changeValue1M = 0; p.changePercent1M = 0;
+            }
+
             // Normalize for global aggregates
             globalChangeEUR += p.changeValue / rate;
 
-            // 2. Full details fetch (now includes roi, twr, xirr from my previous update to getPortfolioDetails)
+            // 3. Full details fetch (now includes roi, twr, xirr)
             const details = await getPortfolioDetails(p.id, liveRate);
             
             // Sync values from details to the portfolio object p
