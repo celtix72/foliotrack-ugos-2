@@ -79,7 +79,14 @@ const https = require('https');
 // ─── Telegram Utility ────────────────────────────────────────────────────────
 function escapeV2(text) {
     if (typeof text !== 'string') text = String(text || '');
+    // MarkdownV2 requires escaping these characters outside of pre/code spans
     return text.replace(/([_*\[\]()~`>#+\-=|{}.!\\])/g, '\\$1');
+}
+
+function escapeCodeV2(text) {
+    if (typeof text !== 'string') text = String(text || '');
+    // Inside pre/code spans, only \ and ` need escaping
+    return text.replace(/([\\`])/g, '\\$1');
 }
 
 function formatMarketValueV2(value) {
@@ -276,13 +283,13 @@ async function sendMarketStatusTelegram() {
         const totalSign = totalVarEUR >= 0 ? '+' : '-';
         const totalAbs = Math.abs(totalVarEUR).toFixed(0);
         
-        let msg = `📊 *1D: ${escapeV2(totalSign + '€' + totalAbs)}* ${singleEmoji} *Net: ${escapeV2('€' + Math.round(totalValEUR).toLocaleString('it-IT'))}* 💰\n\n`;
+        let msg = `📊 *1D: ${escapeV2(totalSign + '€' + totalLineValue)}* ${singleEmoji} *Net: ${escapeV2('€' + Math.round(totalValEUR).toLocaleString('it-IT'))}* 💰\n\n`;
 
         for (const [name, cat] of Object.entries(categories)) {
             if (cat.assets.length === 0) continue;
             
             const catTotalFormatted = formatVariationV2(cat.totalVar);
-            const catHeader = `\`${cat.emoji} ${escapeV2(name).padEnd(16)}\` ${escapeV2(catTotalFormatted)}`;
+            const catHeader = `\`${escapeCodeV2(cat.emoji + ' ' + name.padEnd(16))}\` ${escapeV2(catTotalFormatted)}`;
             msg += catHeader + '\n';
             
             cat.assets.sort((a, b) => b.varEUR - a.varEUR);
@@ -298,10 +305,10 @@ async function sendMarketStatusTelegram() {
                 
                 const row = [
                     icon,
-                    `\`${escapeV2(sym)}\``,
-                    `\`${escapeV2(cSym + mktVal.padStart(7))}\``,
-                    `\`${escapeV2(valChange.padStart(8))}\``,
-                    `\`${escapeV2(pctChange.padStart(8))}\``,
+                    `\`${escapeCodeV2(sym)}\``,
+                    `\`${escapeCodeV2(cSym + mktVal.padStart(7))}\``,
+                    `\`${escapeCodeV2(valChange.padStart(8))}\``,
+                    `\`${escapeCodeV2(pctChange.padStart(8))}\``,
                     endIcon
                 ].join(' ');
                 
@@ -311,9 +318,9 @@ async function sendMarketStatusTelegram() {
         }
 
         const now = new Date();
-        const ts = now.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }) + ' ' + 
+        const tsFormatted = now.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }) + ' ' + 
                    now.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-        msg += `\`${escapeV2(ts)}\` \n`;
+        msg += `\`${escapeCodeV2(tsFormatted)}\` \n`;
 
         await sendTelegramMessage(msg);
     } catch (e) {
