@@ -247,15 +247,15 @@ async function sendMarketStatusTelegram() {
                 
                 const price = a.currentPrice < 10 ? a.currentPrice.toFixed(4) : a.currentPrice.toFixed(1);
                 const cSym = a.currency === 'USD' ? '$' : (a.currency === 'EUR' ? '€' : a.currency);
-                const priceStr = `${cSym}${price}`.padStart(9);
+                const priceStr = `${cSym}${price}`.padStart(8);
                 
                 const valChgStr = fmtVal(a.changeValue * a.totalQty, 8);
                 const pSign = a.changePercent >= 0 ? '+' : '-';
                 const pVal = Math.abs(a.changePercent).toFixed(1);
-                const pctChgStr = `${pSign}${pVal}%`.padStart(7);
+                const pctChgStr = `${pSign}${pVal}%`.padStart(6);
                 const endIcon = a.changeValue >= 0 ? '🟢' : '🔴';
                 
-                msg += `\`${icon}  ${sym} ${priceStr}  ${valChgStr}  ${pctChgStr}\`  ${endIcon}\n`;
+                msg += `\`${icon} ${sym} ${priceStr} ${valChgStr} ${pctChgStr}\` ${endIcon}\n`;
             }
             msg += '\n';
         }
