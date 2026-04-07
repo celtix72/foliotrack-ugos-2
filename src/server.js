@@ -211,20 +211,9 @@ async function sendMarketStatusTelegram() {
             HAVING totalQty > 0.0001
         `).all();
 
-        const portfolios = database.db.prepare('SELECT id, totalValue, performance1D, currency FROM portfolios').all();
-        let totalValEUR = 0;
-        let totalVarEUR = 0;
-        for (const p of portfolios) {
-            let val = p.totalValue || 0;
-            let var1D = p.performance1D || 0;
-
-            if (p.currency === 'USD' && liveRate > 0) {
-                val /= liveRate;
-                var1D /= liveRate;
-            }
-            totalValEUR += val;
-            totalVarEUR += var1D;
-        }
+        const stats = await getAllPortfolioStats(liveRate);
+        const totalNetValue = stats.totalNetValue || 0;
+        const totalVarEUR = stats.totalChange || 0;
 
         const fmtVal = (val, pad = 7) => {
             const rounded = Math.round(val);
@@ -283,7 +272,7 @@ async function sendMarketStatusTelegram() {
         const totalSign = totalVarEUR >= 0 ? '+' : '-';
         const totalAbs = Math.abs(totalVarEUR).toFixed(0);
         
-        let msg = `📊 1D: *${escapeV2(totalSign + '€' + totalAbs)}* ${singleEmoji}         Net: *${escapeV2('€' + Math.round(totalValEUR).toLocaleString('it-IT'))}* 💰\n\n`;
+        let msg = `📊 1D: *${escapeV2(totalSign + '€' + totalAbs)}* ${singleEmoji}         Netto: *${escapeV2('€' + Math.round(totalNetValue).toLocaleString('it-IT'))}* 💰\n\n`;
 
         for (const [name, cat] of Object.entries(categories)) {
             if (cat.assets.length === 0) continue;
