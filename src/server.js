@@ -1408,42 +1408,19 @@ async function getAllPortfolioStats(liveRate = null) {
 
 app.get('/api/portfolios', async (req, res) => {
     try {
-            FROM assets a
-            JOIN (
-                SELECT assetTicker, 
-                       SUM(CASE WHEN type = 'BUY' THEN quantity ELSE -quantity END) as netQty 
-                FROM transactions 
-                WHERE assetTicker IS NOT NULL AND assetTicker != 'CASH'
-                GROUP BY assetTicker 
-                HAVING netQty > 0.001
-            ) h ON a.ticker = h.assetTicker
-        `).all();
-
-        const todayStr = new Date().toISOString().split('T')[0];
-        const heldAssets = heldAssetsRaw.map(a => {
-            const isToday = a.quoteDate === todayStr;
-            const changePct = isToday ? (a.changePercent || 0) : 0;
-            const rate = (a.currency === 'USD') ? liveRate : 1;
-            const absChange = (a.currentPrice * changePct / 100) * a.netQty / rate;
-            return { ticker: a.ticker, name: a.name, changePercent: changePct, absChange };
-        }).sort((a,b) => b.changePercent - a.changePercent);
-
-        // Ground Truth from Simulation
-        const lastPoint = globalPoints.at(-1) || { value: 0, profit: 0, netDeposits: 0 };
-
-        // Hero Source of Truth: Data aggregated from portfolios after recalculateAll
+        const stats = await getAllPortfolioStats();
         res.json({
-            portfolios: rows,
+            portfolios: stats.portfolios,
             global: {
-                totalValue: totalValueEUR, // Use live database valuation
-                totalNetValue: totalNetValueEUR, // Use live database valuation
-                totalTax: totalTaxEUR,
-                totalGain: lastPoint.profit || 0,
-                investedCapital: totalNetValueEUR - (lastPoint.profit || 0),
-                changeValue: globalChangeEUR,
-                changePercent: (totalValueEUR - globalChangeEUR) > 0 ? (globalChangeEUR / (totalValueEUR - globalChangeEUR)) * 100 : 0,
-                topWinners: heldAssets.slice(0, 2),
-                topLosers: heldAssets.slice(-2).reverse()
+                totalValue: stats.totalValue,
+                totalNetValue: stats.totalNetValue,
+                totalTax: stats.totalTax,
+                totalGain: stats.totalGain,
+                investedCapital: stats.investedCapital,
+                changeValue: stats.totalChange,
+                changePercent: stats.changePercent,
+                topWinners: stats.topWinners,
+                topLosers: stats.topLosers
             }
         });
     } catch (err) {
