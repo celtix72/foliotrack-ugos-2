@@ -77,6 +77,41 @@ dotenv.config();
 const https = require('https');
 
 // ─── Telegram Utility ────────────────────────────────────────────────────────
+function escapeV2(text) {
+    if (typeof text !== 'string') text = String(text || '');
+    return text.replace(/([_*\[\]()~`>#+\-=|{}.!\\])/g, '\\$1');
+}
+
+function formatMarketValueV2(value) {
+    const num = Number(value);
+    if (isNaN(num)) return '0.0';
+    if (num > 100) return num.toFixed(1);
+    if (num >= 10) return num.toFixed(2);
+    if (num >= 1) return num.toFixed(3);
+    return num.toFixed(4);
+}
+
+function formatVariationV2(value, isPercent = false) {
+    const sign = value >= 0 ? '+' : '-';
+    const absValue = Math.abs(value);
+    if (isPercent) {
+        return `${sign}${absValue.toFixed(2)}%`;
+    }
+    return `${sign}€${absValue.toFixed(0)}`;
+}
+
+function getPerformanceIcon(changePct) {
+    if (changePct >= 5) return '🚀';
+    if (changePct >= 2) return '💰';
+    if (changePct >= 1) return '✅';
+    if (changePct > 0) return '📈';
+    if (changePct === 0) return '⚪';
+    if (changePct >= -1) return '📉';
+    if (changePct >= -3) return '💣';
+    if (changePct > -6) return '💀';
+    return '❌';
+}
+
 async function sendTelegramMessage(text) {
     const settings = database.getSettings();
     const token = settings.telegramBotToken;
@@ -88,7 +123,7 @@ async function sendTelegramMessage(text) {
     const data = JSON.stringify({
         chat_id: chatId,
         text: text,
-        parse_mode: 'Markdown'
+        parse_mode: 'MarkdownV2'
     });
 
     const options = {
@@ -222,44 +257,64 @@ async function sendMarketStatusTelegram() {
         }
 
         const getBigEmoji = (val) => {
-            if (val > 3000) return '🚀🚀🚀';
-            if (val > 1000) return '💰💰💰';
-            if (val > 0) return '📈';
-            if (val < -3000) return '☠️☠️☠️';
-            if (val < -1000) return '💣💣';
-            return '📉';
+            const abs = Math.abs(val);
+            if (val > 0) {
+                if (abs < 300) return '🟢';
+                if (abs < 1000) return '🟢🟢';
+                if (abs < 3000) return '💰💰💰';
+                return '🚀🚀🚀';
+            } else if (val < 0) {
+                if (abs < 300) return '🔴';
+                if (abs < 1000) return '🔴🔴';
+                if (abs < 3000) return '💣💣';
+                return '☠️☠️☠️';
+            }
+            return '⚪';
         };
 
-        let msg = `📊 *DAY: ${Math.round(totalVarEUR).toLocaleString('it-IT')} ${getBigEmoji(totalVarEUR)}*\n\n`;
+        const emoji = getBigEmoji(totalVarEUR);
+        const totalSign = totalVarEUR >= 0 ? '+' : '-';
+        const totalAbs = Math.abs(totalVarEUR).toFixed(0);
+        const totalLine = `${emoji} *${totalSign}€${totalAbs}*`;
+        
+        let msg = `📊 *REPORT DAY:* ${escapeV2(totalLine).padStart(30)}\n\n`;
 
         for (const [name, cat] of Object.entries(categories)) {
             if (cat.assets.length === 0) continue;
             
-            const catHeaderVar = Math.round(cat.totalVar).toLocaleString('it-IT');
-            const catSign = cat.totalVar >= 0 ? '+' : '-';
-            msg += `\`${cat.emoji} ${name.padEnd(20)} ${catSign}€${catHeaderVar.replace('-', '')}\`\n`;
+            const catTotalFormatted = formatVariationV2(cat.totalVar);
+            const catHeader = `\`${cat.emoji} ${escapeV2(name).padEnd(16)}\` ${escapeV2(catTotalFormatted)}`;
+            msg += catHeader + '\n';
             
-            cat.assets.sort((a, b) => Math.abs(b.varEUR) - Math.abs(a.varEUR));
+            cat.assets.sort((a, b) => b.varEUR - a.varEUR);
 
-            let catRows = '';
             for (const a of cat.assets) {
-                const icon = getAssetIcon(a.changePercent, a.varEUR);
-                const sym = extractSimpleSymbol(a.ticker).substring(0, 8).padEnd(8);
-                
-                const price = a.currentPrice < 10 ? a.currentPrice.toFixed(4) : a.currentPrice.toFixed(1);
+                const icon = getPerformanceIcon(a.changePercent);
+                const sym = extractSimpleSymbol(a.ticker).padEnd(8);
+                const mktVal = formatMarketValueV2(a.currentPrice);
+                const valChange = formatVariationV2(a.varEUR);
+                const pctChange = formatVariationV2(a.changePercent, true);
                 const cSym = a.currency === 'USD' ? '$' : (a.currency === 'EUR' ? '€' : a.currency);
-                const priceStr = `${cSym}${price}`.padStart(8);
+                const endIcon = a.changeValue === 0 ? '⚪' : (a.changeValue > 0 ? '🟢' : '🔴');
                 
-                const valChgStr = fmtVal(a.changeValue * a.totalQty, 8);
-                const pSign = a.changePercent >= 0 ? '+' : '-';
-                const pVal = Math.abs(a.changePercent).toFixed(1);
-                const pctChgStr = `${pSign}${pVal}%`.padStart(6);
-                const endIcon = a.changeValue >= 0 ? '🟢' : '🔴';
+                const row = [
+                    icon,
+                    `\`${escapeV2(sym)}\``,
+                    `\`${escapeV2(cSym + mktVal.padStart(7))}\``,
+                    `\`${escapeV2(valChange.padStart(8))}\``,
+                    `\`${escapeV2(pctChange.padStart(8))}\``,
+                    endIcon
+                ].join(' ');
                 
-                catRows += `${icon} ${sym} ${priceStr} ${valChgStr} ${pctChgStr} ${endIcon}\n`;
+                msg += row + '\n';
             }
-            msg += `\`\`\`\n${catRows}\`\`\``;
+            msg += '\n';
         }
+
+        const now = new Date();
+        const ts = now.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }) + ' ' + 
+                   now.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+        msg += `\`${escapeV2(ts)}\` \n`;
 
         await sendTelegramMessage(msg);
     } catch (e) {
@@ -269,15 +324,6 @@ async function sendMarketStatusTelegram() {
 
 async function sendTelegramDailyReport() {
     await sendMarketStatusTelegram(); // Unify with the new requested format
-}
-
-function getAssetIcon(pct, varEur) {
-    if (pct >= 5) return '🚀';
-    if (pct >= 1.5) return '✅';
-    if (pct >= 0) return '📈';
-    if (pct >= -1) return '📉';
-    if (pct >= -10) return '💣';
-    return '❌';
 }
 
 const yahooFinance = new YahooFinance({ suppressNotices: ['ripHistorical'] });
@@ -4401,8 +4447,8 @@ app.post('/api/market-sync', async (req, res) => {
 // ─── Telegram Test Endpoints ────────────────────────────────────────────────
 app.post('/api/settings/telegram/test-tp', async (req, res) => {
     try {
-        const msg = `🎯 *TEST: TARGET RAGGIUNTO*\n\n*Titolo:* AAPL\n*Prezzo Attuale:* 190.50\n*Target:* 190.00`;
-        await sendTelegramMessage(msg);
+        const msg = `🎯 *TARGET RAGGIUNTO TEST*\n\n*Titolo:* AAPL\n*Prezzo Attuale:* 190.50\n*Target:* 190.00`;
+        await sendTelegramMessage(escapeV2(msg));
         res.json({ success: true, message: 'Test TP sent' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -4411,8 +4457,8 @@ app.post('/api/settings/telegram/test-tp', async (req, res) => {
 
 app.post('/api/settings/telegram/test-sl', async (req, res) => {
     try {
-        const msg = `⚠️ *TEST: STOP LOSS*\n\n*Titolo:* TSLA\n*Prezzo Attuale:* 165.20\n*Soglia SL:* 170.00`;
-        await sendTelegramMessage(msg);
+        const msg = `⚠️ *STOP LOSS TEST*\n\n*Titolo:* TSLA\n*Prezzo Attuale:* 165.20\n*Soglia SL:* 170.00`;
+        await sendTelegramMessage(escapeV2(msg));
         res.json({ success: true, message: 'Test SL sent' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -4754,7 +4800,7 @@ async function updateMarketData(force = false) {
                         `).run('TARGET_PROFIT', 'TARGET PROFIT', `${asset.ticker}: ${newPrice} (Target TP: ${asset.targetPrice})`, asset.ticker);
                         
                         // Telegram Notification
-                        const msg = `🏆 *TARGET PROFIT*\n\n*Titolo:* ${asset.ticker}\n*Prezzo Attuale:* ${newPrice}\n*Target TP:* ${asset.targetPrice}`;
+                        const msg = `🏆 *TARGET PROFIT*\n\n*Titolo:* ${escapeV2(asset.ticker)}\n*Prezzo Attuale:* ${newPrice}\n*Target TP:* ${asset.targetPrice}`;
                         sendTelegramMessage(msg).catch(e => logger.error('Telegram Target Alert failed', e));
                     }
                 }
@@ -4770,7 +4816,7 @@ async function updateMarketData(force = false) {
                         `).run('STOP_LOSS', 'STOP LOSS', `${asset.ticker}: ${newPrice} (Soglia SL: ${asset.stopLoss})`, asset.ticker);
                         
                         // Telegram Notification
-                        const msg = `⚠️ *STOP LOSS*\n\n*Titolo:* ${asset.ticker}\n*Prezzo Attuale:* ${newPrice}\n*Soglia SL:* ${asset.stopLoss}`;
+                        const msg = `⚠️ *STOP LOSS*\n\n*Titolo:* ${escapeV2(asset.ticker)}\n*Prezzo Attuale:* ${newPrice}\n*Soglia SL:* ${asset.stopLoss}`;
                         sendTelegramMessage(msg).catch(e => logger.error('Telegram Stop Alert failed', e));
                     }
                 }
