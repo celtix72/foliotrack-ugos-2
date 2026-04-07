@@ -241,6 +241,7 @@ async function sendMarketStatusTelegram() {
             
             cat.assets.sort((a, b) => Math.abs(b.varEUR) - Math.abs(a.varEUR));
 
+            let catRows = '';
             for (const a of cat.assets) {
                 const icon = getAssetIcon(a.changePercent, a.varEUR);
                 const sym = extractSimpleSymbol(a.ticker).substring(0, 8).padEnd(8);
@@ -255,9 +256,9 @@ async function sendMarketStatusTelegram() {
                 const pctChgStr = `${pSign}${pVal}%`.padStart(6);
                 const endIcon = a.changeValue >= 0 ? '🟢' : '🔴';
                 
-                msg += `\`${icon} ${sym} ${priceStr} ${valChgStr} ${pctChgStr}\` ${endIcon}\n`;
+                catRows += `${icon} ${sym} ${priceStr} ${valChgStr} ${pctChgStr} ${endIcon}\n`;
             }
-            msg += '\n';
+            msg += `\`\`\`\n${catRows}\`\`\``;
         }
 
         await sendTelegramMessage(msg);
