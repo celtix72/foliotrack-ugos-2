@@ -1312,78 +1312,102 @@ app.delete('/api/notifications', (req, res) => {
 // PORTFOLIOS API
 // ════════════════════════════════════════════════════════════════════════════
 
-app.get('/api/portfolios', async (req, res) => {
-    try {
-        const liveRate = await getEurUsdRate();
-        database.recalculateAll(liveRate);
-        const rows = database.db.prepare(`SELECT * FROM portfolios ORDER BY createdAt ASC`).all();
+async function getAllPortfolioStats(liveRate = null) {
+    if (!liveRate) {
+        liveRate = await getEurUsdRate();
+    }
+    database.recalculateAll(liveRate);
+    const rows = database.db.prepare(`SELECT * FROM portfolios ORDER BY createdAt ASC`).all();
+    
+    // SINGLE SOURCE OF TRUTH: Use Performance Engine for all dashboard metrics
+    const perfData = await calculatePerformanceHistory(null, 'ALL', false, true);
+    const globalPoints = perfData.dataPoints || [];
+    const individual = perfData.individual || {};
+
+    let totalValueEUR = 0;
+    let totalNetValueEUR = 0;
+    let totalTaxEUR = 0;
+    let globalChangeEUR = 0;
+
+    const today = new Date();
+    for (const p of rows) {
+        const rate = p.currency === 'USD' ? liveRate : 1;
         
-        // SINGLE SOURCE OF TRUTH: Use Performance Engine for all dashboard metrics
-        // includeIndividual=true gets history for each portfolio in one simulation pass
-        const perfData = await calculatePerformanceHistory(null, 'ALL', false, true);
-        const globalPoints = perfData.dataPoints || [];
-        const individual = perfData.individual || {};
+        p.changeValue = p.performance1D || 0;
+        const prevValue = (p.totalValue || 0) - p.changeValue;
+        p.changePercent = prevValue > 0 ? (p.changeValue / prevValue) * 100 : 0;
 
-        let totalValueEUR = 0;
-        let totalNetValueEUR = 0;
-        let totalTaxEUR = 0;
-        let globalChangeEUR = 0;
-
-        const allTransactions = database.db.prepare(`SELECT * FROM transactions ORDER BY date ASC`).all();
-
-        const today = new Date();
-        for (const p of rows) {
-            const rate = p.currency === 'USD' ? liveRate : 1;
-            
-            // 1. Basic Day Variation
-            p.changeValue = p.performance1D || 0;
-            const prevValue = (p.totalValue || 0) - p.changeValue;
-            p.changePercent = prevValue > 0 ? (p.changeValue / prevValue) * 100 : 0;
-
-            // 2. Historical variations (1W, 1M)
-            const history = individual[p.id] || [];
-            if (history.length > 0) {
-                const last = history[history.length - 1];
-                
-                const d7 = new Date(today); d7.setDate(today.getDate() - 7);
-                const d7Str = d7.toISOString().split('T')[0];
-                const firstW = history.findLast(h => h.date <= d7Str) || history[0];
-                
-                const d30 = new Date(today); d30.setMonth(today.getMonth() - 1);
-                const d30Str = d30.toISOString().split('T')[0];
-                const firstM = history.findLast(h => h.date <= d30Str) || history[0];
-                
-                p.changeValue1W = last.profit - firstW.profit;
-                p.changePercent1W = firstW.value > 0 ? (p.changeValue1W / firstW.value) * 100 : 0;
-
-                p.changeValue1M = last.profit - firstM.profit;
-                p.changePercent1M = firstM.value > 0 ? (p.changeValue1M / firstM.value) * 100 : 0;
-            } else {
-                p.changeValue1W = 0; p.changePercent1W = 0;
-                p.changeValue1M = 0; p.changePercent1M = 0;
-            }
-
-            // Normalize for global aggregates
-            globalChangeEUR += p.changeValue / rate;
-
-            // 3. Full details fetch (now includes roi, twr, xirr)
-            const details = await getPortfolioDetails(p.id, liveRate);
-            
-            // Sync values from details to the portfolio object p
-            p.roi = details.roi || 0;
-            p.twr = details.twr || 0;
-            p.xirr = details.xirr || 0;
-            p.totalTax = details.totalLatentTax || 0;
-            p.netValue = (p.totalValue || 0) - p.totalTax;
-            
-            totalValueEUR += (p.totalValue || 0) / rate;
-            totalTaxEUR += p.totalTax / rate;
-            totalNetValueEUR += p.netValue / rate;
+        const history = individual[p.id] || [];
+        if (history.length > 0) {
+            const last = history[history.length - 1];
+            const d7 = new Date(today); d7.setDate(today.getDate() - 7);
+            const d7Str = d7.toISOString().split('T')[0];
+            const firstW = history.findLast(h => h.date <= d7Str) || history[0];
+            const d30 = new Date(today); d30.setMonth(today.getMonth() - 1);
+            const d30Str = d30.toISOString().split('T')[0];
+            const firstM = history.findLast(h => h.date <= d30Str) || history[0];
+            p.changeValue1W = last.profit - firstW.profit;
+            p.changePercent1W = firstW.value > 0 ? (p.changeValue1W / firstW.value) * 100 : 0;
+            p.changeValue1M = last.profit - firstM.profit;
+            p.changePercent1M = firstM.value > 0 ? (p.changeValue1M / firstM.value) * 100 : 0;
+        } else {
+            p.changeValue1W = 0; p.changePercent1W = 0;
+            p.changeValue1M = 0; p.changePercent1M = 0;
         }
 
-        // Top Winner/Loser from current holdings
-        const heldAssetsRaw = database.db.prepare(`
-            SELECT a.ticker, a.name, a.changePercent, a.currentPrice, a.currency, a.quoteDate, h.netQty
+        globalChangeEUR += p.changeValue / rate;
+        const details = await getPortfolioDetails(p.id, liveRate);
+        p.roi = details.roi || 0;
+        p.twr = details.twr || 0;
+        p.xirr = details.xirr || 0;
+        p.totalTax = details.totalLatentTax || 0;
+        p.netValue = (p.totalValue || 0) - p.totalTax;
+        
+        totalValueEUR += (p.totalValue || 0) / rate;
+        totalTaxEUR += p.totalTax / rate;
+        totalNetValueEUR += p.netValue / rate;
+    }
+
+    const heldAssetsRaw = database.db.prepare(`
+        SELECT a.ticker, a.name, a.changePercent, a.currentPrice, a.currency, a.quoteDate, h.netQty
+        FROM assets a
+        JOIN (
+            SELECT assetTicker, 
+                   SUM(CASE WHEN type = 'BUY' THEN quantity ELSE -quantity END) as netQty 
+            FROM transactions 
+            WHERE assetTicker IS NOT NULL AND assetTicker != 'CASH'
+            GROUP BY assetTicker 
+            HAVING netQty > 0.001
+        ) h ON a.ticker = h.assetTicker
+    `).all();
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const heldAssets = heldAssetsRaw.map(a => {
+        const isToday = a.quoteDate === todayStr;
+        const changePct = isToday ? (a.changePercent || 0) : 0;
+        const rate = (a.currency === 'USD') ? liveRate : 1;
+        const absChange = (a.currentPrice * changePct / 100) * a.netQty / rate;
+        return { ticker: a.ticker, name: a.name, changePercent: changePct, absChange };
+    }).sort((a,b) => b.changePercent - a.changePercent);
+
+    const lastPoint = globalPoints.at(-1) || { value: 0, profit: 0, netDeposits: 0 };
+
+    return {
+        portfolios: rows,
+        totalValue: totalValueEUR,
+        totalNetValue: totalNetValueEUR,
+        totalTax: totalTaxEUR,
+        totalChange: globalChangeEUR,
+        totalGain: lastPoint.profit || 0,
+        investedCapital: totalNetValueEUR - (lastPoint.profit || 0),
+        changePercent: (totalValueEUR - globalChangeEUR) > 0 ? (globalChangeEUR / (totalValueEUR - globalChangeEUR)) * 100 : 0,
+        topWinners: heldAssets.slice(0, 2),
+        topLosers: heldAssets.slice(-2).reverse()
+    };
+}
+
+app.get('/api/portfolios', async (req, res) => {
+    try {
             FROM assets a
             JOIN (
                 SELECT assetTicker, 
