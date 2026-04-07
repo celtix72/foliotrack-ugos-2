@@ -4744,7 +4744,16 @@ async function updateMarketData(force = false) {
         }
         logger.info('Markets are closed, but fetching quotes for assets with 0.00€ price...');
     }
-    const assets = database.db.prepare(`SELECT * FROM assets`).all();
+    const assets = database.db.prepare(`
+        SELECT a.* 
+        FROM assets a
+        LEFT JOIN (
+            SELECT assetTicker, SUM(CASE WHEN type = 'BUY' THEN quantity WHEN type = 'SELL' THEN -quantity ELSE 0 END) as balance
+            FROM transactions
+            GROUP BY assetTicker
+        ) t ON a.ticker = t.assetTicker
+        WHERE a.inWatchlist = 1 OR IFNULL(t.balance, 0) > 0.0001
+    `).all();
     if (assets.length === 0) return;
     logger.info(`Updating market data for ${assets.length} assets...`);
 
@@ -4901,8 +4910,14 @@ async function syncNews() {
         
         // 1. Get tickers and names from Watchlist or active Portfolios
         const allTrackedAssets = database.db.prepare(`
-            SELECT ticker, name FROM assets 
-            WHERE inWatchlist = 1 OR ticker IN (SELECT DISTINCT assetTicker FROM transactions WHERE assetTicker IS NOT NULL)
+            SELECT a.ticker, a.name 
+            FROM assets a
+            LEFT JOIN (
+                SELECT assetTicker, SUM(CASE WHEN type = 'BUY' THEN quantity WHEN type = 'SELL' THEN -quantity ELSE 0 END) as balance
+                FROM transactions
+                GROUP BY assetTicker
+            ) t ON a.ticker = t.assetTicker
+            WHERE a.inWatchlist = 1 OR IFNULL(t.balance, 0) > 0.0001
         `).all().filter(a => a.ticker && a.ticker !== 'CASH' && !a.ticker.startsWith('CD_'));
         
         const assets = allTrackedAssets; // Use the objects directly
