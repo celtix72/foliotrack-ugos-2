@@ -152,98 +152,10 @@ function getNetDeposits(portfolioId) {
 }
 
 async function sendMarketStatusTelegram() {
-    const portfolios = database.db.prepare('SELECT id, name, totalValue, performance1D, currency FROM portfolios').all();
-    const liveRate = await getEurUsdRate();
-    
-    let totalValEUR = 0;
-    let totalVarEUR = 0;
-    let positivePortfolios = [];
-    
-    for (const p of portfolios) {
-        let val = p.totalValue || 0;
-        let var1D = p.performance1D || 0;
-        
-        if (p.currency === 'USD' && liveRate > 0) {
-            val /= liveRate;
-            var1D /= liveRate;
-        }
-        totalValEUR += val;
-        totalVarEUR += var1D;
-        
-        if (var1D > 0) {
-            positivePortfolios.push({ name: p.name, variation: var1D });
-        }
-    }
-    
-    const fmt = (val) => {
-        const rounded = Math.round(val);
-        const sign = rounded > 0 ? '+' : '';
-        return `€ ${sign}${rounded.toLocaleString('it-IT')}`;
-    };
-
-    const fmtVal = (val, pad = 8) => {
-        const rounded = Math.round(val);
-        const sign = rounded >= 0 ? '+' : '-';
-        const absVal = Math.abs(rounded).toLocaleString('it-IT');
-        return `${sign}${absVal}`.padStart(pad);
-    };
-
-    let msg = `📊 *STATO MERCATI*\n\n`;
-    msg += `💰 *Netto:* ${fmt(totalValEUR).replace('+', '')}\n`;
-    const varEmoji = totalVarEUR >= 0 ? '📈' : '📉';
-    msg += `${varEmoji} *Var. 1D:* ${fmt(totalVarEUR).replace(' € ', ' ')}\n\n`;
-    
-    if (positivePortfolios.length > 0) {
-        msg += `📂 *Portafogli (>0):*\n`;
-        for (const pp of positivePortfolios) {
-            msg += `• ${pp.name}: ${fmt(pp.variation)}\n`;
-        }
-        msg += `\n`;
-    }
-
-    const today = new Date().toISOString().split('T')[0];
-    const movers = database.db.prepare(`
-        SELECT a.*, h.balance
-        FROM assets a
-        JOIN (
-            SELECT assetTicker, 
-                   SUM(CASE WHEN type = 'BUY' THEN quantity WHEN type = 'SELL' THEN -quantity ELSE 0 END) as balance 
-            FROM transactions 
-            GROUP BY assetTicker 
-            HAVING balance > 0.0001
-        ) h ON a.ticker = h.assetTicker
-        WHERE a.quoteDate = ?
-        ORDER BY ABS(a.changePercent) DESC
-        LIMIT 10
-    `).all(today);
-    
-    if (movers.length > 0) {
-        msg += `\`🔵 ASSETS\` ${fmt(totalVarEUR)}\n`;
-        const extractSimpleSymbol = (s) => s.split('.')[0].split(':')[0];
-        
-        for (const m of movers) {
-            const sym = extractSimpleSymbol(m.ticker).substring(0, 8).padEnd(8);
-            const mktVal = Math.round(m.currentPrice * m.balance);
-            const cSym = m.currency === 'USD' ? '$' : (m.currency === 'EUR' ? '€' : m.currency);
-            
-            const mktValStr = `${cSym}${mktVal.toLocaleString('it-IT')}`.padStart(7);
-            const valChgStr = fmtVal(m.changeValue * m.balance, 7);
-            const pSign = m.changePercent >= 0 ? '+' : '-';
-            const pVal = Math.abs(m.changePercent).toFixed(1);
-            const pctChgStr = `${pSign}${pVal}%`.padStart(7);
-            const endIcon = m.changeValue === 0 ? '⚪' : (m.changeValue > 0 ? '🟢' : '🔴');
-            
-            msg += `🔵 \`${sym}\` \`${mktValStr}\` \`${valChgStr}\` \`${pctChgStr}\` ${endIcon}\n`;
-        }
-    }
-    
-    await sendTelegramMessage(msg);
-}
-
-async function sendTelegramDailyReport() {
     try {
-        const settings = database.getSettings();
-        const enabled = settings.telegramEnabled === 'true';
+        const settings = database.db.prepare(`SELECT key, value FROM settings`).all();
+        const settingsMap = Object.fromEntries(settings.map(s => [s.key, s.value]));
+        const enabled = settingsMap.telegramEnabled === 'true';
         if (!enabled) return;
 
         const liveRate = await getEurUsdRate();
@@ -272,41 +184,32 @@ async function sendTelegramDailyReport() {
             totalVarEUR += var1D;
         }
 
-        const fmt = (val) => {
-            const rounded = Math.round(val);
-            const sign = rounded > 0 ? '+' : '';
-            return `€ ${sign}${rounded.toLocaleString('it-IT')}`;
-        };
-
         const fmtVal = (val, pad = 7) => {
             const rounded = Math.round(val);
             const sign = rounded >= 0 ? '+' : '-';
             const absVal = Math.abs(rounded).toLocaleString('it-IT');
-            return `${sign}${absVal}`.padStart(pad);
+            return `${sign}€${absVal}`.padStart(pad);
         };
 
         const extractSimpleSymbol = (s) => s.split('.')[0].split(':')[0];
 
-        // Categories mapping
         const categories = {
-            'OBBLIGAZIONI': { emoji: '🟠', assets: [], totalVar: 0 },
-            'ETF MONETARI': { emoji: '🟣', assets: [], totalVar: 0 },
+            'OBBL': { emoji: '🟠', assets: [], totalVar: 0 },
+            'ETF OBBL': { emoji: '🟣', assets: [], totalVar: 0 },
             'AZIONI': { emoji: '🔵', assets: [], totalVar: 0 },
-            'ETF AZIONARI': { emoji: '🟢', assets: [], totalVar: 0 }
+            'ETF AZ': { emoji: '🟢', assets: [], totalVar: 0 }
         };
 
         const typeToCat = {
-            'Bond': 'OBBLIGAZIONI',
-            'ETF Obblig': 'OBBLIGAZIONI',
-            'ETF Monetario': 'ETF MONETARI',
-            'Deposito Vincolato': 'ETF MONETARI',
+            'Bond': 'OBBL',
+            'ETF Obblig': 'OBBL',
+            'ETF Monetario': 'ETF OBBL',
+            'Deposito Vincolato': 'ETF OBBL',
             'Azioni': 'AZIONI',
-            'ETF Azionario': 'ETF AZIONARI'
+            'ETF Azionario': 'ETF AZ'
         };
 
         for (const a of assets) {
-            if (!a.changeValue || a.changeValue === 0) continue; 
-
             const catName = typeToCat[a.type] || 'AZIONI';
             const cat = categories[catName];
             if (!cat) continue;
@@ -318,69 +221,62 @@ async function sendTelegramDailyReport() {
             cat.totalVar += varEUR;
         }
 
-        const EMOJI_LIMITS = { low: 300, medium: 1000, high: 3000 };
-        const getDynamicEmoji = (val) => {
-            if (val > 0) {
-                if (val < EMOJI_LIMITS.low) return '🟢';
-                if (val < EMOJI_LIMITS.medium) return '🟢🟢';
-                if (val < EMOJI_LIMITS.high) return '💰💰💰';
-                return '🚀🚀🚀';
-            } else if (val < 0) {
-                const abs = Math.abs(val);
-                if (abs < EMOJI_LIMITS.low) return '🔴';
-                if (abs < EMOJI_LIMITS.medium) return '🔴🔴';
-                if (abs < EMOJI_LIMITS.high) return '💣💣';
-                return '☠️☠️☠️';
-            }
-            return '⚪';
+        const getBigEmoji = (val) => {
+            if (val > 3000) return '🚀🚀🚀';
+            if (val > 1000) return '💰💰💰';
+            if (val > 0) return '📈';
+            if (val < -3000) return '☠️☠️☠️';
+            if (val < -1000) return '💣💣';
+            return '📉';
         };
 
-        let msg = `📊 *REPORT DAY*\n\n`;
-        msg += `💰 *Netto:* ${fmt(totalValEUR).replace('+', '')}\n`;
-        msg += `${getDynamicEmoji(totalVarEUR)} *Var. 1D:* ${fmt(totalVarEUR).replace(' € ', ' ')}\n\n`;
+        let msg = `📊 *DAY: ${Math.round(totalVarEUR).toLocaleString('it-IT')} ${getBigEmoji(totalVarEUR)}*\n\n`;
 
         for (const [name, cat] of Object.entries(categories)) {
             if (cat.assets.length === 0) continue;
             
-            msg += `\`${cat.emoji} ${name}\` ${fmt(cat.totalVar)}\n`;
+            const catHeaderVar = Math.round(cat.totalVar).toLocaleString('it-IT');
+            const catSign = cat.totalVar >= 0 ? '+' : '-';
+            msg += `\`${cat.emoji} ${name.padEnd(20)} ${catSign}€${catHeaderVar.replace('-', '')}\`\n`;
             
-            // Sort assets by absolute variation descending
             cat.assets.sort((a, b) => Math.abs(b.varEUR) - Math.abs(a.varEUR));
 
             for (const a of cat.assets) {
+                const icon = getAssetIcon(a.changePercent, a.varEUR);
                 const sym = extractSimpleSymbol(a.ticker).substring(0, 8).padEnd(8);
-                const mktVal = Math.round(a.currentPrice * a.totalQty);
-                const cSym = a.currency === 'USD' ? '$' : (a.currency === 'EUR' ? '€' : a.currency);
                 
-                const mktValStr = `${cSym}${mktVal.toLocaleString('it-IT')}`.padStart(7);
-                const valChgStr = fmtVal(a.changeValue * a.totalQty, 7);
+                const price = a.currentPrice < 10 ? a.currentPrice.toFixed(4) : a.currentPrice.toFixed(1);
+                const cSym = a.currency === 'USD' ? '$' : (a.currency === 'EUR' ? '€' : a.currency);
+                const priceStr = `${cSym}${price}`.padStart(9);
+                
+                const valChgStr = fmtVal(a.changeValue * a.totalQty, 8);
                 const pSign = a.changePercent >= 0 ? '+' : '-';
                 const pVal = Math.abs(a.changePercent).toFixed(1);
                 const pctChgStr = `${pSign}${pVal}%`.padStart(7);
-                const endIcon = a.changeValue === 0 ? '⚪' : (a.changeValue > 0 ? '🟢' : '🔴');
+                const endIcon = a.changeValue >= 0 ? '🟢' : '🔴';
                 
-                msg += `${cat.emoji} \`${sym}\` \`${mktValStr}\` \`${valChgStr}\` \`${pctChgStr}\` ${endIcon}\n`;
+                msg += `\`${icon}  ${sym} ${priceStr}  ${valChgStr}  ${pctChgStr}\`  ${endIcon}\n`;
             }
             msg += '\n';
         }
 
-        const now = new Date();
-        const fullTS = now.toLocaleString('it-IT');
-        msg += `_${fullTS}_`;
-
         await sendTelegramMessage(msg);
     } catch (e) {
-        logger.error('Failed to generate Telegram daily report', e);
+        logger.error('Failed to send Market Status Telegram', e);
     }
 }
 
+async function sendTelegramDailyReport() {
+    await sendMarketStatusTelegram(); // Unify with the new requested format
+}
+
 function getAssetIcon(pct, varEur) {
-    if (pct > 5) return '🚀';
-    if (varEur > 200) return '💰';
-    if (pct > 1) return '✅';
+    if (pct >= 5) return '🚀';
+    if (pct >= 1.5) return '✅';
     if (pct >= 0) return '📈';
-    if (pct < -1.5) return '💣';
-    return '📉';
+    if (pct >= -1) return '📉';
+    if (pct >= -10) return '💣';
+    return '❌';
 }
 
 const yahooFinance = new YahooFinance({ suppressNotices: ['ripHistorical'] });
