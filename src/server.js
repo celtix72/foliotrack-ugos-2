@@ -303,14 +303,9 @@ async function sendMarketStatusTelegram() {
                 const cSym = a.currency === 'USD' ? '$' : (a.currency === 'EUR' ? '€' : a.currency);
                 const endIcon = a.changeValue === 0 ? '⚪' : (a.changeValue > 0 ? '🟢' : '🔴');
                 
-                const row = [
-                    icon,
-                    `\`${escapeCodeV2(sym)}\``,
-                    `\`${escapeCodeV2(cSym + mktVal.padStart(7))}\``,
-                    `\`${escapeCodeV2(valChange.padStart(8))}\``,
-                    `\`${escapeCodeV2(pctChange.padStart(8))}\``,
-                    endIcon
-                ].join(' ');
+                // Consolidate columns into a single monospaced block to save entities
+                const rowData = `${sym} ${cSym + mktVal.padStart(7)} ${valChange.padStart(8)} ${pctChange.padStart(8)}`;
+                const row = `${icon} \`${escapeCodeV2(rowData)}\` ${endIcon}`;
                 
                 msg += row + '\n';
             }
