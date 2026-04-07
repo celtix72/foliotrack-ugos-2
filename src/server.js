@@ -283,7 +283,7 @@ async function sendMarketStatusTelegram() {
         const totalSign = totalVarEUR >= 0 ? '+' : '-';
         const totalAbs = Math.abs(totalVarEUR).toFixed(0);
         
-        let msg = `📊 *1D: ${escapeV2(totalSign + '€' + totalLineValue)}* ${singleEmoji} *Net: ${escapeV2('€' + Math.round(totalValEUR).toLocaleString('it-IT'))}* 💰\n\n`;
+        let msg = `📊 *1D: ${escapeV2(totalSign + '€' + totalAbs)}* ${singleEmoji} *Net: ${escapeV2('€' + Math.round(totalValEUR).toLocaleString('it-IT'))}* 💰\n\n`;
 
         for (const [name, cat] of Object.entries(categories)) {
             if (cat.assets.length === 0) continue;
