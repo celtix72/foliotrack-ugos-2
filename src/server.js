@@ -395,7 +395,7 @@ async function sendMarketStatusTelegram() {
         const catVarStr = Math.round(Math.abs(cat.totalVar)).toLocaleString('it-IT');
         msg += `${cat.emoji} *${catName}* \`${escapeCodeV2(catSign + '€' + catVarStr)}\`\n`;
         
-        cat.assets.sort((a,b) => b.value - a.value).forEach(a => {
+        cat.assets.sort((a,b) => b.chgPct - a.chgPct).forEach(a => {
             const sym = extractSimpleSymbol(a.ticker).padEnd(8);
             const chgPct = a.chgPct || 0;
             const valChange = a.diff || 0;
