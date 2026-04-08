@@ -270,18 +270,14 @@ async function sendMarketStatusTelegram() {
     const todayStr = new Date().toISOString().split('T')[0];
     const marketStatus = getMarketStatus();
 
-    // 1. FILTERING: Remove assets not yet valued today (unless in watchlist and user wants them)
-    // The user specifically asked to remove assets not updated today.
+    // 1. FILTERING: Use only assets updated today
     const activeAssets = stats.assets.filter(a => {
-        // Exclude if quoteDate is not today
         if (a.quoteDate !== todayStr) return false;
-        // Optionally exclude very small values
         if (a.value < 1 && !a.inWatchlist) return false;
         return true;
     });
 
-    // RECALCULATE Day Variation based on filtered active assets only
-    // This makes the "Report DAY" summary accurate to only what changed today.
+    // RECALCULATE Day Variation based on filtered active assets
     let filteredDayChange = 0;
     activeAssets.forEach(a => {
         // Simple approximation of day change for filtered items
@@ -295,16 +291,15 @@ async function sendMarketStatusTelegram() {
     const totalChange = filteredDayChange;
     const totalChangePct = (totalVal - totalChange) > 0 ? (totalChange / (totalVal - totalChange)) * 100 : 0;
 
-    let message = `📊 *STATO MERCATI*\n\n`;
-    
-    // Header
-    const sign = totalChange >= 0 ? '\\+' : '';
+    // 2. V33.1 HEADER FORMAT
+    const cSign = totalChange >= 0 ? '+' : '';
     const emoji = totalChange >= 0 ? '🟢' : '🔴';
 
-    message += `💰 *Valore Totale:* ${escape(totalVal.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}€\n`;
-    message += `${emoji} *Variazione:* ${sign}${escape(totalChange.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}€ \\(${sign}${escape(totalChangePct.toFixed(2))}%\\) \n\n`;
+    let message = `💰 *Variazione Odierna Portafoglio*\n`;
+    message += `📈 *Valore:* \`${escapeCodeV2(totalVal.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}€\`\n`;
+    message += `${emoji} *Day:* \`${escapeCodeV2(cSign + totalChange.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}€ (${cSign + totalChangePct.toFixed(2)}%)\`\n\n`;
 
-    // 2. CATEGORIZATION
+    // 3. V33.1 CATEGORIZATION & TABLE LAYOUT
     const categories = [
         { name: 'OBBLIGAZIONI', types: ['BOND', 'OBBL'] },
         { name: 'ETF OBBL', types: ['ETF BOND', 'ETF OBBL'] },
@@ -312,18 +307,16 @@ async function sendMarketStatusTelegram() {
         { name: 'ETF AZ.', types: ['ETF STOCK', 'ETF AZ'] }
     ];
 
-    let categoriesFound = false;
     categories.forEach(cat => {
         const catAssets = activeAssets.filter(a => cat.types.includes(a.type?.toUpperCase()));
         if (catAssets.length === 0) return;
-        categoriesFound = true;
 
         message += `🔳 *${cat.name}*\n`;
         message += `\`\`\`\n`;
         catAssets.sort((a,b) => b.value - a.value).forEach(a => {
-            const ticker = a.ticker.length > 8 ? a.ticker.substring(0, 8) : a.ticker.padEnd(8);
+            const sym = a.ticker.split('.')[0].substring(0, 8).padEnd(8);
             
-            // Market Logic
+            // US/EU Market Logic
             const isUS = a.ticker.indexOf('.') === -1;
             const marketOpen = isUS ? marketStatus.usOpen : marketStatus.euOpen;
             
@@ -339,34 +332,43 @@ async function sendMarketStatusTelegram() {
                 }
             }
 
-            const cSign = chgPct >= 0 ? '+' : '';
-            const cStr = (cSign + chgPct.toFixed(2) + '%').padStart(7);
-            const valStr = a.value.toLocaleString('it-IT', { maximumFractionDigits: 0 }).padStart(6);
+            const valChange = (a.value - (a.value / (1 + chgPct/100)));
+            const vSign = valChange >= 0 ? '+' : '';
             
-            message += `${ticker} ${valStr}€ ${cStr}${label}\n`;
+            const mktVal = a.value.toLocaleString('it-IT', { maximumFractionDigits: 0 });
+            const vChangeStr = (vSign + valChange.toLocaleString('it-IT', { maximumFractionDigits: 0 })).padStart(8);
+            const pChangeStr = (vSign + chgPct.toFixed(2) + '%').padStart(8);
+            
+            const rowData = `${sym} ${mktVal.padStart(6)}€ ${vChangeStr} ${pChangeStr}${label}`;
+            message += `${rowData}\n`;
         });
         message += `\`\`\`\n`;
     });
 
-    // Others / Watchlist if not categorized
     const categorizedTickers = [].concat(...categories.map(c => activeAssets.filter(a => c.types.includes(a.type?.toUpperCase())).map(a => a.ticker)));
     const others = activeAssets.filter(a => !categorizedTickers.includes(a.ticker));
     
     if (others.length > 0) {
-        message += `💠 *ALTRO*\n`;
+        message += `💠 *ALTRO / WATCHLIST*\n`;
         message += `\`\`\`\n`;
         others.sort((a,b) => b.value - a.value).forEach(a => {
-            const ticker = a.ticker.length > 8 ? a.ticker.substring(0, 8) : a.ticker.padEnd(8);
+            const sym = a.ticker.split('.')[0].substring(0, 8).padEnd(8);
             const chgPct = a.changePercent || 0;
-            const cSign = chgPct >= 0 ? '+' : '';
-            const cStr = (cSign + chgPct.toFixed(2) + '%').padStart(7);
-            const valStr = a.value.toLocaleString('it-IT', { maximumFractionDigits: 0 }).padStart(6);
-            message += `${ticker} ${valStr}€ ${cStr}\n`;
+            const valChange = (a.value - (a.value / (1 + chgPct/100)));
+            const vSign = valChange >= 0 ? '+' : '';
+            
+            const mktVal = a.value.toLocaleString('it-IT', { maximumFractionDigits: 0 });
+            const vChangeStr = (vSign + valChange.toLocaleString('it-IT', { maximumFractionDigits: 0 })).padStart(8);
+            const pChangeStr = (vSign + chgPct.toFixed(2) + '%').padStart(8);
+            
+            message += `${sym} ${mktVal.padStart(6)}€ ${vChangeStr} ${pChangeStr}\n`;
         });
         message += `\`\`\`\n`;
     }
 
-    message += `🕒 _Aggiornato alle ${escape(new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }))}_`;
+    const tsFormatted = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }) + ' ' + 
+                       new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+    message += `🕒 \`${tsFormatted}\``;
 
     try {
         await sendTelegramMessage(message);
