@@ -311,17 +311,9 @@ async function sendMarketStatusTelegram() {
         return true;
     };
 
-    // 1. FILTERING: Include items with today's quote OR those in closed markets (to see US assets)
+    // 1. FILTERING: Include all assets with open positions (matches Market page)
     const activeAssets = stats.assets.filter(a => {
         if (a.value < 1) return false; // Must be in portfolio
-
-        const isUS = isUSMarket(a);
-        const marketOpen = isUS ? marketStatus.US : marketStatus.EU;
-        
-        // If market is open, we only want fresh data
-        if (marketOpen && a.quoteDate !== todayStr) return false;
-        
-        // If market is closed, we allow display (will show as 🔘 or ⚪)
         return true;
     });
 
