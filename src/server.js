@@ -268,7 +268,6 @@ async function sendMarketStatusTelegram() {
     const escape = escapeV2;
     const stats = await calculateMarketStats();
     const todayStr = new Date().toISOString().split('T')[0];
-    const marketStatus = getMarketStatus();
 
     // 1. FILTERING: Use only assets updated today
     const activeAssets = stats.assets.filter(a => {
@@ -280,7 +279,6 @@ async function sendMarketStatusTelegram() {
     // RECALCULATE Day Variation based on filtered active assets
     let filteredDayChange = 0;
     activeAssets.forEach(a => {
-        // Simple approximation of day change for filtered items
         const val = a.value || 0;
         const cp = a.changePercent || 0;
         const prevVal = val / (1 + cp/100);
@@ -291,84 +289,30 @@ async function sendMarketStatusTelegram() {
     const totalChange = filteredDayChange;
     const totalChangePct = (totalVal - totalChange) > 0 ? (totalChange / (totalVal - totalChange)) * 100 : 0;
 
-    // 2. V33.1 HEADER FORMAT
-    const cSign = totalChange >= 0 ? '+' : '';
+    // 2. V33.12 LAYOUT RESTORATION
+    let message = `📊 *STATO MERCATI*\n\n`;
+    
+    // Header
+    const sign = totalChange >= 0 ? '+' : '';
     const emoji = totalChange >= 0 ? '🟢' : '🔴';
 
-    let message = `💰 *Variazione Odierna Portafoglio*\n`;
-    message += `📈 *Valore:* \`${escapeCodeV2(totalVal.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}€\`\n`;
-    message += `${emoji} *Day:* \`${escapeCodeV2(cSign + totalChange.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}€ (${cSign + totalChangePct.toFixed(2)}%)\`\n\n`;
+    message += `💰 *Valore Totale:* ${escape(totalVal.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}€\n`;
+    message += `${emoji} *Variazione:* ${sign}${escape(totalChange.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}€ (${sign}${escape(totalChangePct.toFixed(2))}%) \n\n`;
 
-    // 3. V33.1 CATEGORIZATION & TABLE LAYOUT
-    const categories = [
-        { name: 'OBBLIGAZIONI', types: ['BOND', 'OBBL'] },
-        { name: 'ETF OBBL', types: ['ETF BOND', 'ETF OBBL'] },
-        { name: 'AZIONI', types: ['STOCK', 'AZI'] },
-        { name: 'ETF AZ.', types: ['ETF STOCK', 'ETF AZ'] }
-    ];
-
-    categories.forEach(cat => {
-        const catAssets = activeAssets.filter(a => cat.types.includes(a.type?.toUpperCase()));
-        if (catAssets.length === 0) return;
-
-        message += `🔳 *${cat.name}*\n`;
-        message += `\`\`\`\n`;
-        catAssets.sort((a,b) => b.value - a.value).forEach(a => {
-            const sym = a.ticker.split('.')[0].substring(0, 8).padEnd(8);
-            
-            // US/EU Market Logic
-            const isUS = a.ticker.indexOf('.') === -1;
-            const marketOpen = isUS ? marketStatus.usOpen : marketStatus.euOpen;
-            
-            let chgPct = a.changePercent || 0;
-            let label = '';
-            
-            if (!marketOpen) {
-                if (a.preMarketChangePercent && a.preMarketChangePercent !== 0) {
-                    chgPct = a.preMarketChangePercent;
-                    label = 'p';
-                } else {
-                    chgPct = 0;
-                }
-            }
-
-            const valChange = (a.value - (a.value / (1 + chgPct/100)));
-            const vSign = valChange >= 0 ? '+' : '';
-            
-            const mktVal = a.value.toLocaleString('it-IT', { maximumFractionDigits: 0 });
-            const vChangeStr = (vSign + valChange.toLocaleString('it-IT', { maximumFractionDigits: 0 })).padStart(8);
-            const pChangeStr = (vSign + chgPct.toFixed(2) + '%').padStart(8);
-            
-            const rowData = `${sym} ${mktVal.padStart(6)}€ ${vChangeStr} ${pChangeStr}${label}`;
-            message += `${rowData}\n`;
+    // Active Assets Section (Top Asset style from v33.12)
+    if (activeAssets.length > 0) {
+        message += `📈 *Top Asset:*\n`;
+        activeAssets.sort((a,b) => b.value - a.value).slice(0, 8).forEach(a => {
+            const aSign = a.changePercent >= 0 ? '+' : '';
+            const aEmoji = a.changePercent >= 0 ? '🔼' : '🔽';
+            const ticker = escape(a.ticker);
+            const price = escape(a.currentPrice.toLocaleString('it-IT', { minimumFractionDigits: 2 }));
+            const chg = escape(a.changePercent.toFixed(2));
+            message += `${aEmoji} \`${ticker}\`: ${price} (${aSign}${chg}%)\n`;
         });
-        message += `\`\`\`\n`;
-    });
-
-    const categorizedTickers = [].concat(...categories.map(c => activeAssets.filter(a => c.types.includes(a.type?.toUpperCase())).map(a => a.ticker)));
-    const others = activeAssets.filter(a => !categorizedTickers.includes(a.ticker));
-    
-    if (others.length > 0) {
-        message += `💠 *ALTRO / WATCHLIST*\n`;
-        message += `\`\`\`\n`;
-        others.sort((a,b) => b.value - a.value).forEach(a => {
-            const sym = a.ticker.split('.')[0].substring(0, 8).padEnd(8);
-            const chgPct = a.changePercent || 0;
-            const valChange = (a.value - (a.value / (1 + chgPct/100)));
-            const vSign = valChange >= 0 ? '+' : '';
-            
-            const mktVal = a.value.toLocaleString('it-IT', { maximumFractionDigits: 0 });
-            const vChangeStr = (vSign + valChange.toLocaleString('it-IT', { maximumFractionDigits: 0 })).padStart(8);
-            const pChangeStr = (vSign + chgPct.toFixed(2) + '%').padStart(8);
-            
-            message += `${sym} ${mktVal.padStart(6)}€ ${vChangeStr} ${pChangeStr}\n`;
-        });
-        message += `\`\`\`\n`;
     }
 
-    const tsFormatted = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }) + ' ' + 
-                       new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-    message += `🕒 \`${tsFormatted}\``;
+    message += `\n🕒 _Aggiornato alle ${escape(new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }))}_`;
 
     try {
         await sendTelegramMessage(message);
