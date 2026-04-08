@@ -297,11 +297,11 @@ async function sendMarketStatusTelegram() {
     const escape = escapeV2;
     const stats = await calculateMarketStats();
     const todayStr = new Date().toISOString().split('T')[0];
+    const marketStatus = getMarketStatus();
 
     // 1. FILTERING: Use only assets with open positions updated today
     const activeAssets = stats.assets.filter(a => {
         if (a.quoteDate !== todayStr) return false;
-        // Exclude watchlist-only assets (value < 1)
         if (a.value < 1) return false; 
         return true;
     });
@@ -324,22 +324,40 @@ async function sendMarketStatusTelegram() {
         'ETF Azionario': 'ETF AZ'
     };
 
+    // Helper for market detection
+    const isUSMarket = (ticker) => {
+        if (!ticker) return true;
+        return ticker.indexOf('.') === -1;
+    };
+
     // Calculate total variation based on filtered assets
     let filteredDayChange = 0;
     activeAssets.forEach(a => {
         const catName = typeToCat[a.type] || 'AZIONI';
-        const val = a.value || 0;
-        const cp = a.changePercent || 0;
-        const prevVal = val / (1 + cp/100);
-        const diff = val - prevVal;
+        const isUS = isUSMarket(a.ticker);
+        const marketOpen = isUS ? marketStatus.usOpen : marketStatus.euOpen;
+
+        let chgPct = a.changePercent || 0;
+        let diff = 0;
+
+        // Logic for closed market / pre-market
+        if (!marketOpen && a.preMarketChangePercent && a.preMarketChangePercent !== 0) {
+            chgPct = a.preMarketChangePercent;
+            diff = a.value - (a.value / (1 + chgPct/100));
+        } else {
+            const val = a.value || 0;
+            const cp = a.changePercent || 0;
+            const prevVal = val / (1 + cp/100);
+            diff = val - prevVal;
+        }
         
         filteredDayChange += diff;
         
         if (categories[catName]) {
-            categories[catName].assets.push({ ...a, diff });
+            categories[catName].assets.push({ ...a, diff, chgPct, marketOpen });
             categories[catName].totalVar += diff;
         } else {
-            categories['AZIONI'].assets.push({ ...a, diff });
+            categories['AZIONI'].assets.push({ ...a, diff, chgPct, marketOpen });
             categories['AZIONI'].totalVar += diff;
         }
     });
@@ -365,13 +383,22 @@ async function sendMarketStatusTelegram() {
         
         cat.assets.sort((a,b) => b.value - a.value).forEach(a => {
             const sym = extractSimpleSymbol(a.ticker).padEnd(8);
-            const chgPct = a.changePercent || 0;
+            const chgPct = a.chgPct || 0;
             const valChange = a.diff || 0;
             
             const vSign = valChange >= 0 ? '+' : '';
             const cSignAsset = chgPct >= 0 ? '+' : '';
             const vIcon = getPerformanceIcon(chgPct);
-            const statusIcon = valChange === 0 ? '⚪' : (valChange > 0 ? '🟢' : '🔴');
+            
+            // Emoji logic: ⚪ for pre-market, 🔘 for closed market, 🟢/🔴 for open market
+            let statusIcon = valChange === 0 ? '🔘' : (valChange > 0 ? '🟢' : '🔴');
+            if (!a.marketOpen) {
+                if (a.preMarketChangePercent && a.preMarketChangePercent !== 0) {
+                    statusIcon = '⚪'; // Pre-market
+                } else {
+                    statusIcon = '🔘'; // Closed
+                }
+            }
 
             const cSym = a.currency === 'USD' ? '$' : '€';
             const mktVal = a.currentPrice.toLocaleString('it-IT', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
