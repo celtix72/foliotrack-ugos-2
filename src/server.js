@@ -393,14 +393,17 @@ async function sendMarketStatusTelegram() {
 
         const catSign = cat.totalVar >= 0 ? '+' : '-';
         const catVarStr = Math.round(Math.abs(cat.totalVar)).toLocaleString('it-IT');
-        msg += `${cat.emoji} *${catName}* \`${escapeCodeV2(catSign + '€' + catVarStr)}\`\n`;
+        // Alinea il subtotale alla colonna 18 (sym=8 + curr=2+6 + spc=2)
+        // Emoji(2) + Space(1) + catName.length
+        const headerPadding = " ".repeat(Math.max(1, 18 - (2 + 1 + catName.length)));
+        msg += `${cat.emoji} *${catName}* \`${escapeCodeV2(headerPadding)}\` *${escapeV2(catSign + '€' + catVarStr)}*\n`;
         
         cat.assets.sort((a,b) => b.chgPct - a.chgPct).forEach(a => {
             const sym = extractSimpleSymbol(a.ticker).padEnd(8);
             const chgPct = a.chgPct || 0;
             const valChange = a.diff || 0;
             
-            const vSign = valChange >= 0 ? '+' : '';
+            const vSign = valChange >= 0 ? '+' : '-';
             const cSignAsset = chgPct >= 0 ? '+' : '';
             const vIcon = getPerformanceIcon(chgPct);
             
