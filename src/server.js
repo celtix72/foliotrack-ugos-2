@@ -393,10 +393,12 @@ async function sendMarketStatusTelegram() {
 
         const catSign = cat.totalVar >= 0 ? '+' : '-';
         const catVarStr = Math.round(Math.abs(cat.totalVar)).toLocaleString('it-IT');
-        // Alinea il subtotale alla colonna 18 (sym=8 + curr=2+6 + spc=2)
-        // Emoji(2) + Space(1) + catName.length
-        const headerPadding = " ".repeat(Math.max(1, 18 - (2 + 1 + catName.length)));
-        msg += `${cat.emoji} *${catName}* \`${escapeCodeV2(headerPadding)}\` *${escapeV2(catSign + '€' + catVarStr)}*\n`;
+        
+        // Per allineamento perfetto, l'intera riga deve essere monospaced.
+        // Emojis (2) + ' ' (1) = 3. Target variation column = 18.
+        // Quindi pad di 15 per arrivare a 18.
+        const headerLabel = catName.padEnd(15);
+        msg += `*${cat.emoji}* \`${escapeCodeV2(headerLabel + catSign + '€' + catVarStr)}\`\n`;
         
         cat.assets.sort((a,b) => b.chgPct - a.chgPct).forEach(a => {
             const sym = extractSimpleSymbol(a.ticker).padEnd(8);
