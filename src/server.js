@@ -298,10 +298,11 @@ async function sendMarketStatusTelegram() {
     const stats = await calculateMarketStats();
     const todayStr = new Date().toISOString().split('T')[0];
 
-    // 1. FILTERING: Use only assets updated today
+    // 1. FILTERING: Use only assets with open positions updated today
     const activeAssets = stats.assets.filter(a => {
         if (a.quoteDate !== todayStr) return false;
-        if (a.value < 1 && !a.inWatchlist) return false;
+        // Exclude watchlist-only assets (value < 1)
+        if (a.value < 1) return false; 
         return true;
     });
 
