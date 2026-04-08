@@ -386,7 +386,7 @@ async function sendMarketStatusTelegram() {
     const totalValStr = Math.round(totalVal).toLocaleString('it-IT');
 
     // 1D: <market_var> ( <pre_var> ) <emoji>        💰 <valore>
-    let msg = `1D: *${escapeV2(mSign + '€' + mVarStr)}* (${escapeV2(pSign + '€' + pVarStr)}) ${bigEmoji}        💰 *${escapeV2('€' + totalValStr)}*\n\n`;
+    let msg = `1D: *${escapeV2(mSign + '€' + mVarStr)}* \(${escapeV2(pSign + '€' + pVarStr)}\) ${bigEmoji}        💰 *${escapeV2('€' + totalValStr)}*\n\n`;
 
     // 3. CATEGORIES & RICH ROWS (V33.11 style)
     for (const [catName, cat] of Object.entries(categories)) {
