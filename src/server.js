@@ -338,34 +338,30 @@ async function sendMarketStatusTelegram() {
     };
 
     // Calculate total variation based on filtered assets
-    let filteredDayChange = 0;
+    let marketChange = 0;
+    let preMarketChange = 0;
+
     activeAssets.forEach(a => {
         const catName = typeToCat[a.type] || 'AZIONI';
         const isUS = isUSMarket(a.ticker);
         const marketOpen = isUS ? marketStatus.US : marketStatus.EU;
 
-        let chgPct = a.changePercent || 0;
+        let chgPct = 0;
         let diff = 0;
-
-        // Use today's variation if quote is from today, otherwise 0 for old quotes
         const isToday = a.quoteDate === todayStr;
 
-        // Logic for closed market / pre-market
         if (!marketOpen && a.preMarketChangePercent && a.preMarketChangePercent !== 0) {
             chgPct = a.preMarketChangePercent;
             diff = a.value - (a.value / (1 + chgPct/100));
+            preMarketChange += diff;
         } else if (isToday) {
+            chgPct = a.changePercent || 0;
             const val = a.value || 0;
-            const cp = a.changePercent || 0;
-            const prevVal = val / (1 + cp/100);
+            const prevVal = val / (1 + chgPct/100);
             diff = val - prevVal;
-        } else {
-            // Yesterday's quote in closed market (US)
-            chgPct = 0;
-            diff = 0;
+            if (marketOpen) marketChange += diff;
+            else preMarketChange += diff;
         }
-        
-        filteredDayChange += diff;
         
         if (categories[catName]) {
             categories[catName].assets.push({ ...a, diff, chgPct, marketOpen });
@@ -377,17 +373,20 @@ async function sendMarketStatusTelegram() {
     });
 
     const totalVal = stats.totalNetValue || 0;
-    const totalChange = filteredDayChange;
+    const totalChange = marketChange + preMarketChange;
     const totalChangePct = (totalVal - totalChange) > 0 ? (totalChange / (totalVal - totalChange)) * 100 : 0;
 
     // 2. V33.11 RICH HEADER FORMAT
     const bigEmoji = getBigEmoji(totalChange);
-    const sign = totalChange >= 0 ? '+' : '-';
-    const totalVarStr = Math.round(Math.abs(totalChange)).toLocaleString('it-IT');
+    const mSign = marketChange >= 0 ? '+' : '';
+    const pSign = preMarketChange >= 0 ? '+' : '';
+    
+    const mVarStr = Math.round(Math.abs(marketChange)).toLocaleString('it-IT');
+    const pVarStr = Math.round(Math.abs(preMarketChange)).toLocaleString('it-IT');
     const totalValStr = Math.round(totalVal).toLocaleString('it-IT');
 
-    // 1D: <variazione> <emoji>        💰 <valore>
-    let msg = `1D: *${escapeV2(sign + '€' + totalVarStr)}* ${bigEmoji}        💰 *${escapeV2('€' + totalValStr)}*\n\n`;
+    // 1D: <market_var> ( <pre_var> ) <emoji>        💰 <valore>
+    let msg = `1D: *${escapeV2(mSign + '€' + mVarStr)}* (${escapeV2(pSign + '€' + pVarStr)}) ${bigEmoji}        💰 *${escapeV2('€' + totalValStr)}*\n\n`;
 
     // 3. CATEGORIES & RICH ROWS (V33.11 style)
     for (const [catName, cat] of Object.entries(categories)) {
@@ -417,11 +416,16 @@ async function sendMarketStatusTelegram() {
             }
 
             const cSym = a.currency === 'USD' ? '$' : '€';
-            const mktVal = a.currentPrice.toLocaleString('it-IT', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-            const vChangeStr = (vSign + '€' + Math.round(Math.abs(valChange)).toLocaleString('it-IT')).padStart(7);
-            const pChangeStr = (cSignAsset + chgPct.toFixed(2) + '%').padStart(8);
+            // Per quotazioni < 10 usa 2 decimali, altrimenti 1
+            const decimals = a.currentPrice < 10 ? 2 : 1;
+            const mktVal = a.currentPrice.toLocaleString('it-IT', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
             
-            const rowData = `${sym} ${cSym.padStart(2)} ${mktVal.padStart(6)} ${vChangeStr} ${pChangeStr}`;
+            const vChangeStr = (vSign + '€' + Math.round(Math.abs(valChange)).toLocaleString('it-IT')).padStart(7);
+            // Usa un solo decimale nel valore di variazione percentuale
+            const pChangeStr = (cSignAsset + chgPct.toFixed(1) + '%').padStart(7);
+            
+            // Rimosso uno spazio tra Ticker (sym) e simbolo Euro (cSym)
+            const rowData = `${sym}${cSym.padStart(2)} ${mktVal.padStart(6)} ${vChangeStr} ${pChangeStr}`;
             msg += `${vIcon} \`${escapeCodeV2(rowData)}\` ${statusIcon}\n`;
         });
         msg += '\n';
