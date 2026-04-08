@@ -247,8 +247,13 @@ async function calculateMarketStats() {
             totalChangePercent: stats.changePercent,
             assets: assets.map(a => ({
                 ticker: a.ticker,
+                name: a.name,
+                type: a.type,
                 currentPrice: a.currentPrice,
                 changePercent: a.changePercent,
+                preMarketChangePercent: a.preMarketChangePercent,
+                quoteDate: a.quoteDate,
+                currency: a.currency,
                 value: (a.currentPrice * a.netQty) / (a.currency === 'USD' ? liveRate : 1),
                 inWatchlist: a.inWatchlist === 1
             }))
@@ -262,40 +267,112 @@ async function calculateMarketStats() {
 async function sendMarketStatusTelegram() {
     const escape = escapeV2;
     const stats = await calculateMarketStats();
-    
+    const todayStr = new Date().toISOString().split('T')[0];
+    const marketStatus = getMarketStatus();
+
+    // 1. FILTERING: Remove assets not yet valued today (unless in watchlist and user wants them)
+    // The user specifically asked to remove assets not updated today.
+    const activeAssets = stats.assets.filter(a => {
+        // Exclude if quoteDate is not today
+        if (a.quoteDate !== todayStr) return false;
+        // Optionally exclude very small values
+        if (a.value < 1 && !a.inWatchlist) return false;
+        return true;
+    });
+
+    // RECALCULATE Day Variation based on filtered active assets only
+    // This makes the "Report DAY" summary accurate to only what changed today.
+    let filteredDayChange = 0;
+    activeAssets.forEach(a => {
+        // Simple approximation of day change for filtered items
+        const val = a.value || 0;
+        const cp = a.changePercent || 0;
+        const prevVal = val / (1 + cp/100);
+        filteredDayChange += (val - prevVal);
+    });
+
+    const totalVal = stats.totalNetValue || 0;
+    const totalChange = filteredDayChange;
+    const totalChangePct = (totalVal - totalChange) > 0 ? (totalChange / (totalVal - totalChange)) * 100 : 0;
+
     let message = `📊 *STATO MERCATI*\n\n`;
     
     // Header
-    const totalVal = stats.totalNetValue || 0;
-    const totalChange = stats.totalChange || 0;
-    const totalChangePct = stats.totalChangePercent || 0;
     const sign = totalChange >= 0 ? '\\+' : '';
     const emoji = totalChange >= 0 ? '🟢' : '🔴';
 
     message += `💰 *Valore Totale:* ${escape(totalVal.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}€\n`;
     message += `${emoji} *Variazione:* ${sign}${escape(totalChange.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}€ \\(${sign}${escape(totalChangePct.toFixed(2))}%\\) \n\n`;
 
-    // Active Assets Section
-    const activeAssets = stats.assets.filter(a => a.value > 10 || a.inWatchlist);
-    if (activeAssets.length > 0) {
-        message += `📈 *Top Asset:*\n`;
-        activeAssets.sort((a,b) => b.value - a.value).slice(0, 8).forEach(a => {
-            const aSign = a.changePercent >= 0 ? '\\+' : '';
-            const aEmoji = a.changePercent >= 0 ? '🔼' : '🔽';
-            const ticker = escape(a.ticker);
-            const price = escape(a.currentPrice.toLocaleString('it-IT', { minimumFractionDigits: 2 }));
-            const chg = escape(a.changePercent.toFixed(2));
-            message += `${aEmoji} \`${ticker}\`: ${price} \\(${aSign}${chg}%\\)\n`;
+    // 2. CATEGORIZATION
+    const categories = [
+        { name: 'OBBLIGAZIONI', types: ['BOND', 'OBBL'] },
+        { name: 'ETF OBBL', types: ['ETF BOND', 'ETF OBBL'] },
+        { name: 'AZIONI', types: ['STOCK', 'AZI'] },
+        { name: 'ETF AZ.', types: ['ETF STOCK', 'ETF AZ'] }
+    ];
+
+    let categoriesFound = false;
+    categories.forEach(cat => {
+        const catAssets = activeAssets.filter(a => cat.types.includes(a.type?.toUpperCase()));
+        if (catAssets.length === 0) return;
+        categoriesFound = true;
+
+        message += `🔳 *${cat.name}*\n`;
+        message += `\`\`\`\n`;
+        catAssets.sort((a,b) => b.value - a.value).forEach(a => {
+            const ticker = a.ticker.length > 8 ? a.ticker.substring(0, 8) : a.ticker.padEnd(8);
+            
+            // Market Logic
+            const isUS = a.ticker.indexOf('.') === -1;
+            const marketOpen = isUS ? marketStatus.usOpen : marketStatus.euOpen;
+            
+            let chgPct = a.changePercent || 0;
+            let label = '';
+            
+            if (!marketOpen) {
+                if (a.preMarketChangePercent && a.preMarketChangePercent !== 0) {
+                    chgPct = a.preMarketChangePercent;
+                    label = 'p';
+                } else {
+                    chgPct = 0;
+                }
+            }
+
+            const cSign = chgPct >= 0 ? '+' : '';
+            const cStr = (cSign + chgPct.toFixed(2) + '%').padStart(7);
+            const valStr = a.value.toLocaleString('it-IT', { maximumFractionDigits: 0 }).padStart(6);
+            
+            message += `${ticker} ${valStr}€ ${cStr}${label}\n`;
         });
+        message += `\`\`\`\n`;
+    });
+
+    // Others / Watchlist if not categorized
+    const categorizedTickers = [].concat(...categories.map(c => activeAssets.filter(a => c.types.includes(a.type?.toUpperCase())).map(a => a.ticker)));
+    const others = activeAssets.filter(a => !categorizedTickers.includes(a.ticker));
+    
+    if (others.length > 0) {
+        message += `💠 *ALTRO*\n`;
+        message += `\`\`\`\n`;
+        others.sort((a,b) => b.value - a.value).forEach(a => {
+            const ticker = a.ticker.length > 8 ? a.ticker.substring(0, 8) : a.ticker.padEnd(8);
+            const chgPct = a.changePercent || 0;
+            const cSign = chgPct >= 0 ? '+' : '';
+            const cStr = (cSign + chgPct.toFixed(2) + '%').padStart(7);
+            const valStr = a.value.toLocaleString('it-IT', { maximumFractionDigits: 0 }).padStart(6);
+            message += `${ticker} ${valStr}€ ${cStr}\n`;
+        });
+        message += `\`\`\`\n`;
     }
 
-    message += `\n🕒 _Aggiornato alle ${escape(new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }))}_`;
+    message += `🕒 _Aggiornato alle ${escape(new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }))}_`;
 
     try {
         await sendTelegramMessage(message);
     } catch (err) {
         logger.error('sendMarketStatusTelegram failed', err);
-        throw err; // Propagate error for debug caller
+        throw err;
     }
 }
 
