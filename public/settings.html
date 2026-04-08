@@ -389,6 +389,20 @@
                     <button onclick="sendTestTelegram('status')" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2">
                         <span class="material-symbols-outlined text-sm">query_stats</span> Test Market Status
                     </button>
+                    <button onclick="toggleTelegramLogs()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-sm">terminal</span> View Telegram Logs
+                    </button>
+                </div>
+            </div>
+
+            <!-- Telegram Logs Section (Hidden by default) -->
+            <div id="telegram-logs-section" class="hidden pt-6 border-t border-slate-200 dark:border-slate-800">
+                <div class="flex items-center justify-between mb-4">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Telegram Event Logs</p>
+                    <button onclick="loadTelegramLogs()" class="text-[#0088cc] hover:underline text-[10px] font-bold uppercase tracking-widest">Refresh Logs</button>
+                </div>
+                <div id="telegram-logs-container" class="bg-slate-900 rounded-xl p-4 font-mono text-[10px] overflow-y-auto max-h-60 space-y-1">
+                    <p class="text-slate-500 italic">No logs available.</p>
                 </div>
             </div>
         </div>
@@ -1819,6 +1833,44 @@
         populateLogDates();
         loadLogs();
         setInterval(loadLogs, 15000);
+
+        // Telegram Logs Logic
+        window.toggleTelegramLogs = function() {
+            const section = document.getElementById('telegram-logs-section');
+            if (section.classList.contains('hidden')) {
+                section.classList.remove('hidden');
+                loadTelegramLogs();
+            } else {
+                section.classList.add('hidden');
+            }
+        };
+
+        window.loadTelegramLogs = async function() {
+            const container = document.getElementById('telegram-logs-container');
+            if (!container) return;
+            
+            try {
+                const res = await fetch('/api/logs/telegram');
+                const lines = await res.json();
+                
+                if (lines.length === 0) {
+                    container.innerHTML = '<p class="text-slate-500 italic">No Telegram logs found.</p>';
+                    return;
+                }
+
+                container.innerHTML = lines.map(line => {
+                    let color = 'text-slate-400';
+                    if (line.includes('[SENDING]')) color = 'text-indigo-400';
+                    if (line.includes('[RESPONSE] Status: 200')) color = 'text-emerald-400';
+                    if (line.includes('[RESPONSE]') && !line.includes('Status: 200')) color = 'text-rose-400 font-bold';
+                    if (line.includes('[REQ ERROR]') || line.includes('[PARSE ERROR]')) color = 'text-rose-500 font-bold bg-rose-500/10';
+
+                    return `<div class="${color} border-b border-white/5 pb-1 mb-1 break-words">${line}</div>`;
+                }).join('');
+            } catch (err) {
+                container.innerHTML = `<p class="text-rose-500 italic">Error: ${err.message}</p>`;
+            }
+        };
 
         // --- NEW AUDIT FUNCTIONS ---
         window.editTransactionAudit = async function(id) {

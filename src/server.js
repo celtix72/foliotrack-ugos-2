@@ -26,6 +26,7 @@ function calculateROI(value, netDeposits, profit) {
 
 const LOGS_DIR = path.join(__dirname, '../logs');
 const LOG_FILE = path.join(LOGS_DIR, 'app.log');
+const TELEGRAM_LOG_FILE = path.join(LOGS_DIR, 'telegram.log');
 
 // Daily-rotating log helper
 function getRotatedLogFile(date) {
@@ -69,6 +70,23 @@ const logger = {
         const line = `${new Date().toISOString()} [WARN] ${msg}\n`;
         process.stdout.write(line);
         writeLog('WARN', msg);
+    }
+};
+
+const telegramLogger = {
+    log: (msg) => {
+        const ts = new Date().toISOString();
+        const line = `${ts} ${msg}\n`;
+        try {
+            if (!fs.existsSync(LOGS_DIR)) fs.mkdirSync(LOGS_DIR, { recursive: true });
+            fs.appendFileSync(TELEGRAM_LOG_FILE, line);
+            // Limit to 5000 lines
+            const raw = fs.readFileSync(TELEGRAM_LOG_FILE, 'utf8');
+            const lines = raw.split('\n');
+            if (lines.length > 5000) {
+                fs.writeFileSync(TELEGRAM_LOG_FILE, lines.slice(-4000).join('\n') + '\n');
+            }
+        } catch (e) { /* ignore */ }
     }
 };
 
@@ -125,7 +143,13 @@ async function sendTelegramMessage(message) {
     const chatId = settings.telegramChatId;
     const enabled = settings.telegramEnabled === 'true';
 
-    if (!enabled || !token || !chatId) return;
+    telegramLogger.log(`[ATTEMPT] Enabled: ${enabled}, Token set: ${!!token}, ChatID set: ${!!chatId}`);
+
+    if (!enabled || !token || !chatId) {
+        if (!enabled) telegramLogger.log(`[SKIPPED] Telegram is globally disabled.`);
+        else telegramLogger.log(`[SKIPPED] Missing Token or ChatID.`);
+        return;
+    }
 
     const payload = {
         chat_id: chatId,
@@ -148,10 +172,12 @@ async function sendTelegramMessage(message) {
     };
 
     return new Promise((resolve, reject) => {
+        telegramLogger.log(`[SENDING] Payload: ${data}`);
         const req = https.request(options, (res) => {
             let body = '';
             res.on('data', (d) => body += d);
             res.on('end', () => {
+                telegramLogger.log(`[RESPONSE] Status: ${res.statusCode}, Body: ${body}`);
                 try {
                     const parsed = JSON.parse(body);
                     if (parsed.ok) resolve(parsed);
@@ -160,12 +186,14 @@ async function sendTelegramMessage(message) {
                         reject(new Error(parsed.description));
                     }
                 } catch (e) {
+                    telegramLogger.log(`[PARSE ERROR] Body: ${body}`);
                     reject(e);
                 }
             });
         });
 
         req.on('error', (e) => {
+            telegramLogger.log(`[REQ ERROR] ${e.message}`);
             logger.error(`Telegram request error: ${e.message}`);
             reject(e);
         });
@@ -267,6 +295,7 @@ async function sendMarketStatusTelegram() {
         await sendTelegramMessage(message);
     } catch (err) {
         logger.error('sendMarketStatusTelegram failed', err);
+        throw err; // Propagate error for debug caller
     }
 }
 
@@ -4429,8 +4458,23 @@ app.get('/api/debug/telegram-market', async (req, res) => {
         if (settings.telegramEnabled !== 'true') {
             return res.json({ success: false, error: 'Telegram is globally disabled in settings.' });
         }
+        if (!settings.telegramBotToken || !settings.telegramChatId) {
+            return res.json({ success: false, error: 'Missing Bot Token or Chat ID in settings.' });
+        }
         await sendMarketStatusTelegram();
-        res.json({ success: true, message: 'Notification triggered. Check your Telegram chat.' });
+        res.json({ success: true, message: 'Notification sent successfully.' });
+    } catch (err) {
+        logger.error('Debug Telegram failed', err);
+        res.json({ success: false, error: err.message || 'Unknown error' });
+    }
+});
+
+app.get('/api/logs/telegram', (req, res) => {
+    try {
+        if (!fs.existsSync(TELEGRAM_LOG_FILE)) return res.json([]);
+        const content = fs.readFileSync(TELEGRAM_LOG_FILE, 'utf8');
+        const lines = content.trim().split('\n').filter(Boolean);
+        res.json(lines.slice(-200).reverse()); // Last 200 lines
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
