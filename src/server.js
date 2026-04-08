@@ -300,16 +300,22 @@ async function sendMarketStatusTelegram() {
     const marketStatus = getMarketStatus();
 
     // Helper for market detection
-    const isUSMarket = (ticker) => {
-        if (!ticker) return true;
-        return ticker.indexOf('.') === -1;
+    const isUSMarket = (a) => {
+        const ticker = a.ticker || '';
+        const type = a.type || '';
+        // 1. Tickers with dots (.MI, .DE, .AS, etc.) are European/Other
+        if (ticker.includes('.')) return false;
+        // 2. Bonds and Bond ETFs in this portfolio are primarily European/BTM
+        if (type.includes('Bond') || type.includes('Obblig')) return false;
+        // 3. Fallback for tickers without dots (AAPL, MSFT) to US
+        return true;
     };
 
     // 1. FILTERING: Include items with today's quote OR those in closed markets (to see US assets)
     const activeAssets = stats.assets.filter(a => {
         if (a.value < 1) return false; // Must be in portfolio
 
-        const isUS = isUSMarket(a.ticker);
+        const isUS = isUSMarket(a);
         const marketOpen = isUS ? marketStatus.US : marketStatus.EU;
         
         // If market is open, we only want fresh data
@@ -343,7 +349,7 @@ async function sendMarketStatusTelegram() {
 
     activeAssets.forEach(a => {
         const catName = typeToCat[a.type] || 'AZIONI';
-        const isUS = isUSMarket(a.ticker);
+        const isUS = isUSMarket(a);
         const marketOpen = isUS ? marketStatus.US : marketStatus.EU;
 
         let chgPct = 0;
