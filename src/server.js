@@ -119,7 +119,7 @@ function getPerformanceIcon(changePct) {
     return '❌';
 }
 
-async function sendTelegramMessage(text) {
+async function sendTelegramMessage(message) {
     const settings = database.getSettings();
     const token = settings.telegramBotToken;
     const chatId = settings.telegramChatId;
@@ -127,11 +127,14 @@ async function sendTelegramMessage(text) {
 
     if (!enabled || !token || !chatId) return;
 
-    const data = JSON.stringify({
+    const payload = {
         chat_id: chatId,
-        text: text,
-        parse_mode: 'MarkdownV2'
-    });
+        text: message, // Caller must ensure it is properly escaped for MarkdownV2
+        parse_mode: 'MarkdownV2',
+        disable_notification: false
+    };
+
+    const data = JSON.stringify(payload);
 
     const options = {
         hostname: 'api.telegram.org',
@@ -193,151 +196,77 @@ function getNetDeposits(portfolioId) {
     return simpleNet ? (simpleNet.net || 0) : 0;
 }
 
-async function sendMarketStatusTelegram() {
+async function calculateMarketStats() {
     try {
-        const settings = database.db.prepare(`SELECT key, value FROM settings`).all();
-        const settingsMap = Object.fromEntries(settings.map(s => [s.key, s.value]));
-        const enabled = settingsMap.telegramEnabled === 'true';
-        if (!enabled) return;
-
         const liveRate = await getEurUsdRate();
-        const mStatus = getMarketStatus();
+        const stats = await getAllPortfolioStats(liveRate);
         const assets = database.db.prepare(`
-            SELECT 
-                a.ticker, a.name, a.type, a.currency, a.currentPrice, a.changePercent, a.changeValue,
-                a.preMarketChangePercent, a.postMarketChangePercent,
-                SUM(CASE WHEN t.type = 'BUY' THEN t.quantity WHEN t.type = 'SELL' THEN -t.quantity ELSE 0 END) as totalQty
-            FROM transactions t
-            JOIN assets a ON t.assetTicker = a.ticker
-            GROUP BY t.assetTicker
-            HAVING totalQty > 0.0001
+            SELECT a.*, 
+                   IFNULL(h.netQty, 0) as netQty
+            FROM assets a
+            LEFT JOIN (
+                SELECT assetTicker, 
+                       SUM(CASE WHEN t.type = 'BUY' THEN t.quantity WHEN t.type = 'SELL' THEN -t.quantity ELSE 0 END) as netQty 
+                FROM transactions t
+                GROUP BY assetTicker
+            ) h ON a.ticker = h.assetTicker
+            WHERE h.netQty > 0.001 OR a.inWatchlist = 1
         `).all();
 
-        const stats = await getAllPortfolioStats(liveRate);
-        const totalNetValue = stats.totalNetValue || 0;
-        const totalVarEUR = stats.totalChange || 0;
-
-        const fmtVal = (val, pad = 7) => {
-            const rounded = Math.round(val);
-            const sign = rounded >= 0 ? '+' : '-';
-            const absVal = Math.abs(rounded).toLocaleString('it-IT');
-            return `${sign}€${absVal}`.padStart(pad);
+        return {
+            totalNetValue: stats.totalNetValue,
+            totalChange: stats.totalChange,
+            totalChangePercent: stats.changePercent,
+            assets: assets.map(a => ({
+                ticker: a.ticker,
+                currentPrice: a.currentPrice,
+                changePercent: a.changePercent,
+                value: (a.currentPrice * a.netQty) / (a.currency === 'USD' ? liveRate : 1),
+                inWatchlist: a.inWatchlist === 1
+            }))
         };
+    } catch (err) {
+        logger.error('calculateMarketStats error', err);
+        return { totalNetValue: 0, totalChange: 0, totalChangePercent: 0, assets: [] };
+    }
+}
 
-        const extractSimpleSymbol = (s) => s.split('.')[0].split(':')[0];
+async function sendMarketStatusTelegram() {
+    const escape = escapeV2;
+    const stats = await calculateMarketStats();
+    
+    let message = `📊 *STATO MERCATI*\n\n`;
+    
+    // Header
+    const totalVal = stats.totalNetValue || 0;
+    const totalChange = stats.totalChange || 0;
+    const totalChangePct = stats.totalChangePercent || 0;
+    const sign = totalChange >= 0 ? '+' : '';
+    const emoji = totalChange >= 0 ? '🟢' : '🔴';
 
-        const categories = {
-            'OBBL': { emoji: '🟠', assets: [], totalVar: 0 },
-            'ETF OBBL': { emoji: '🟣', assets: [], totalVar: 0 },
-            'AZIONI': { emoji: '🔵', assets: [], totalVar: 0 },
-            'ETF AZ': { emoji: '🟢', assets: [], totalVar: 0 }
-        };
+    message += `💰 *Valore Totale:* ${escape(totalVal.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}€\n`;
+    message += `${emoji} *Variazione:* ${sign}${escape(totalChange.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}€ (${sign}${escape(totalChangePct.toFixed(2))}%) \n\n`;
 
-        const typeToCat = {
-            'Bond': 'OBBL',
-            'ETF Obblig': 'OBBL',
-            'ETF Monetario': 'ETF OBBL',
-            'Deposito Vincolato': 'ETF OBBL',
-            'Azioni': 'AZIONI',
-            'ETF Azionario': 'ETF AZ'
-        };
+    // Active Assets Section
+    const activeAssets = stats.assets.filter(a => a.value > 10 || a.inWatchlist);
+    if (activeAssets.length > 0) {
+        message += `📈 *Top Asset:*\n`;
+        activeAssets.sort((a,b) => b.value - a.value).slice(0, 8).forEach(a => {
+            const aSign = a.changePercent >= 0 ? '+' : '';
+            const aEmoji = a.changePercent >= 0 ? '🔼' : '🔽';
+            const ticker = escape(a.ticker);
+            const price = escape(a.currentPrice.toLocaleString('it-IT', { minimumFractionDigits: 2 }));
+            const chg = escape(a.changePercent.toFixed(2));
+            message += `${aEmoji} \`${ticker}\`: ${price} \\(${aSign}${chg}%\\)\n`;
+        });
+    }
 
-        const getTickerMarket = (ticker) => {
-            if (ticker.endsWith('.MI')) return 'MIL';
-            if (ticker.endsWith('.DE') || ticker.endsWith('.F') || ticker.endsWith('.MU')) return 'GER';
-            return 'USA';
-        };
+    message += `\n🕒 _Aggiornato alle ${escape(new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }))}_`;
 
-        for (const a of assets) {
-            const catName = typeToCat[a.type] || 'AZIONI';
-            const cat = categories[catName];
-            if (!cat) continue;
-
-            // Determine if the specific market is open
-            const market = getTickerMarket(a.ticker);
-            const isMarketOpen = market === 'USA' ? mStatus.US : mStatus.EU; // Simplified: EU encompasses MIL and GER
-            
-            let displayPercent = a.changePercent || 0;
-            let displayValue = a.changeValue || 0;
-            let isPreMarket = false;
-
-            if (!isMarketOpen) {
-                // If market is closed, check for pre-market data
-                if (a.preMarketChangePercent && a.preMarketChangePercent !== 0) {
-                    displayPercent = a.preMarketChangePercent;
-                    displayValue = (a.currentPrice * (a.preMarketChangePercent / 100));
-                    isPreMarket = true;
-                } else {
-                    // Reset to 0 if no pre-market and market is closed
-                    displayPercent = 0;
-                    displayValue = 0;
-                }
-            }
-            
-            let varEUR = (a.totalQty || 0) * displayValue;
-            if (a.currency === 'USD' && liveRate > 0) varEUR /= liveRate;
-            
-            cat.assets.push({ ...a, displayPercent, displayValue, varEUR, isPreMarket });
-            cat.totalVar += varEUR;
-        }
-
-        const getBigEmoji = (val) => {
-            const abs = Math.abs(val);
-            if (val > 0) {
-                if (abs < 300) return '🟢';
-                if (abs < 1000) return '🟢🟢';
-                if (abs < 3000) return '💰💰💰';
-                return '🚀🚀🚀';
-            } else if (val < 0) {
-                if (abs < 300) return '🔴';
-                if (abs < 1000) return '🔴🔴';
-                if (abs < 3000) return '💣💣';
-                return '☠️☠️☠️';
-            }
-            return '⚪';
-        };
-
-        const singleEmoji = totalVarEUR >= 0 ? '🟢' : '🔴';
-        const totalSign = totalVarEUR >= 0 ? '+' : '-';
-        const totalAbs = Math.abs(totalVarEUR).toFixed(0);
-        
-        let msg = `📊 1D: *${escapeV2(totalSign + '€' + totalAbs)}* ${singleEmoji}         Netto: *${escapeV2('€' + Math.round(totalNetValue).toLocaleString('it-IT'))}* 💰\n\n`;
-
-        for (const [name, cat] of Object.entries(categories)) {
-            if (cat.assets.length === 0) continue;
-            
-            const catTotalFormatted = formatVariationV2(cat.totalVar);
-            const catHeader = `\`${escapeCodeV2(cat.emoji + ' ' + name.padEnd(16))}\` ${escapeV2(catTotalFormatted)}`;
-            msg += catHeader + '\n';
-            
-            cat.assets.sort((a, b) => b.varEUR - a.varEUR);
-
-            for (const a of cat.assets) {
-                const icon = a.isPreMarket ? '🌓' : getPerformanceIcon(a.displayPercent);
-                const sym = extractSimpleSymbol(a.ticker).padEnd(8);
-                const mktVal = formatMarketValueV2(a.currentPrice);
-                const valChange = formatVariationV2(a.varEUR);
-                const pctChange = formatVariationV2(a.displayPercent, true);
-                const cSym = a.currency === 'USD' ? '$' : (a.currency === 'EUR' ? '€' : a.currency);
-                const endIcon = a.displayValue === 0 ? '⚪' : (a.displayValue > 0 ? '🟢' : '🔴');
-                
-                // Consolidate columns into a single monospaced block to save entities
-                const rowData = `${sym} ${cSym + mktVal.padStart(7)} ${valChange.padStart(8)} ${pctChange.padStart(8)}`;
-                const row = `${icon} \`${escapeCodeV2(rowData)}\` ${endIcon}`;
-                
-                msg += row + '\n';
-            }
-            msg += '\n';
-        }
-
-        const now = new Date();
-        const tsFormatted = now.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }) + ' ' + 
-                   now.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-        msg += `\`${escapeCodeV2(tsFormatted)}\` \n`;
-
-        await sendTelegramMessage(msg);
-    } catch (e) {
-        logger.error('Failed to send Market Status Telegram', e);
+    try {
+        await sendTelegramMessage(message);
+    } catch (err) {
+        logger.error('sendMarketStatusTelegram failed', err);
     }
 }
 
@@ -4494,6 +4423,19 @@ app.post('/api/settings/telegram/test-status', async (req, res) => {
     }
 });
 
+app.get('/api/debug/telegram-market', async (req, res) => {
+    try {
+        const settings = database.getSettings();
+        if (settings.telegramEnabled !== 'true') {
+            return res.json({ success: false, error: 'Telegram is globally disabled in settings.' });
+        }
+        await sendMarketStatusTelegram();
+        res.json({ success: true, message: 'Notification triggered. Check your Telegram chat.' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/backups/restore', async (req, res) => {
     try {
         const { filename } = req.body;
@@ -4864,6 +4806,7 @@ async function updateMarketData(force = false) {
 let lastUpdateTime = Date.now();
 let lastBackupDate = ''; // 'YYYY-MM-DD'
 let lastSnapshotDate = ''; // 'YYYY-MM-DD'
+let lastDailyReportDate = ''; // 'YYYY-MM-DD'
 let lastTelegramStatusTime = 0;
 
 // ─── News Sync Engine ───────────────────────────────────────────────────────
@@ -4968,6 +4911,7 @@ setTimeout(syncNews, 10000); // Run first sync 10s after startup
 setInterval(async () => {
     const settings = database.getSettings();
     const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
     const status = getMarketStatus();
     
     // 1. Market Data Update
@@ -4980,6 +4924,8 @@ setInterval(async () => {
     // 2. Telegram Periodic Status
     const tgStatusEnabled = settings.marketStatusTelegramEnabled === 'true';
     const tgIntervalMin = parseInt(settings.marketStatusInterval || 60);
+
+    // Periodic during market hours
     if (tgStatusEnabled && status.anyOpen && tgIntervalMin > 0) {
         if (Date.now() - lastTelegramStatusTime >= tgIntervalMin * 60 * 1000) {
             logger.info('Sending periodic market status to Telegram...');
@@ -4988,9 +4934,17 @@ setInterval(async () => {
         }
     }
 
+    // Daily Summary at 22:15 CET
+    const nowHour = now.getHours();
+    const nowMin = now.getMinutes();
+    if (tgStatusEnabled && nowHour === 22 && nowMin === 15 && lastDailyReportDate !== todayStr) {
+        logger.info('Sending daily summary to Telegram (Scheduled)...');
+        sendMarketStatusTelegram().catch(e => logger.error('Scheduled Telegram report failed', e));
+        lastDailyReportDate = todayStr;
+    }
+
     // 2. Scheduled Backups
     const backupFreq = settings.backupFrequency; // 'Daily', 'Weekly', 'None'
-    const todayStr = now.toISOString().split('T')[0];
     
     if (backupFreq && backupFreq !== 'None' && lastBackupDate !== todayStr) {
         let shouldBackup = false;
@@ -5045,5 +4999,6 @@ module.exports = {
     calculatePerformanceHistory,
     updateMarketData,
     getEurUsdRate,
-    syncNews
+    syncNews,
+    sendMarketStatusTelegram
 };
