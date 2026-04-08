@@ -282,13 +282,13 @@ function getBigEmoji(val) {
     if (val > 0) {
         if (abs < 300) return '🟢';
         if (abs < 1000) return '🟢🟢';
-        if (abs < 3000) return '💰💰💰';
-        return '🚀🚀🚀';
+        if (abs < 3000) return '💰💰';
+        return '🚀🚀';
     } else if (val < 0) {
         if (abs < 300) return '🔴';
         if (abs < 1000) return '🔴🔴';
         if (abs < 3000) return '💣💣';
-        return '☠️☠️☠️';
+        return '☠️☠️';
     }
     return '⚪';
 }
