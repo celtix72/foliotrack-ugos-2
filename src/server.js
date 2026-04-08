@@ -392,8 +392,8 @@ async function sendMarketStatusTelegram() {
     const totalValStr = Math.round(totalVal).toLocaleString('it-IT');
 
     // Due righe: 1 DAY e NET. con formattazione monospaced per l'allineamento
-    let msg = `1 DAY: \`${escapeCodeV2(mSign + '€' + mVarStr)}\` ${bigEmoji}   P\.MKT: \`${escapeCodeV2(pSign + '€' + pVarStr)}\` \n`;
-    msg += `NET\. : \`${escapeCodeV2('€' + totalValStr)}\` \n\n`;
+    let msg = `1 DAY: \`${escapeCodeV2(mSign + '€' + mVarStr)}\` ${bigEmoji}   ${escapeV2('P.MKT:')} \`${escapeCodeV2(pSign + '€' + pVarStr)}\` \n`;
+    msg += `${escapeV2('NET. :')} \`${escapeCodeV2('€' + totalValStr)}\` \n\n`;
 
     // 3. CATEGORIES & RICH ROWS (V33.11 style)
     for (const [catName, cat] of Object.entries(categories)) {
