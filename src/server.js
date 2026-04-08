@@ -200,10 +200,11 @@ async function sendMarketStatusTelegram() {
         const enabled = settingsMap.telegramEnabled === 'true';
         if (!enabled) return;
 
-        const liveRate = await getEurUsdRate();
+        const mStatus = getMarketStatus();
         const assets = database.db.prepare(`
             SELECT 
                 a.ticker, a.name, a.type, a.currency, a.currentPrice, a.changePercent, a.changeValue,
+                a.preMarketChangePercent, a.postMarketChangePercent,
                 SUM(CASE WHEN t.type = 'BUY' THEN t.quantity WHEN t.type = 'SELL' THEN -t.quantity ELSE 0 END) as totalQty
             FROM transactions t
             JOIN assets a ON t.assetTicker = a.ticker
@@ -240,15 +241,42 @@ async function sendMarketStatusTelegram() {
             'ETF Azionario': 'ETF AZ'
         };
 
+        const getTickerMarket = (ticker) => {
+            if (ticker.endsWith('.MI')) return 'MIL';
+            if (ticker.endsWith('.DE') || ticker.endsWith('.F') || ticker.endsWith('.MU')) return 'GER';
+            return 'USA';
+        };
+
         for (const a of assets) {
             const catName = typeToCat[a.type] || 'AZIONI';
             const cat = categories[catName];
             if (!cat) continue;
+
+            // Determine if the specific market is open
+            const market = getTickerMarket(a.ticker);
+            const isMarketOpen = market === 'USA' ? mStatus.US : mStatus.EU; // Simplified: EU encompasses MIL and GER
             
-            let varEUR = (a.totalQty || 0) * (a.changeValue || 0);
+            let displayPercent = a.changePercent || 0;
+            let displayValue = a.changeValue || 0;
+            let isPreMarket = false;
+
+            if (!isMarketOpen) {
+                // If market is closed, check for pre-market data
+                if (a.preMarketChangePercent && a.preMarketChangePercent !== 0) {
+                    displayPercent = a.preMarketChangePercent;
+                    displayValue = (a.currentPrice * (a.preMarketChangePercent / 100));
+                    isPreMarket = true;
+                } else {
+                    // Reset to 0 if no pre-market and market is closed
+                    displayPercent = 0;
+                    displayValue = 0;
+                }
+            }
+            
+            let varEUR = (a.totalQty || 0) * displayValue;
             if (a.currency === 'USD' && liveRate > 0) varEUR /= liveRate;
             
-            cat.assets.push({ ...a, varEUR });
+            cat.assets.push({ ...a, displayPercent, displayValue, varEUR, isPreMarket });
             cat.totalVar += varEUR;
         }
 
@@ -284,13 +312,13 @@ async function sendMarketStatusTelegram() {
             cat.assets.sort((a, b) => b.varEUR - a.varEUR);
 
             for (const a of cat.assets) {
-                const icon = getPerformanceIcon(a.changePercent);
+                const icon = a.isPreMarket ? '🌓' : getPerformanceIcon(a.displayPercent);
                 const sym = extractSimpleSymbol(a.ticker).padEnd(8);
                 const mktVal = formatMarketValueV2(a.currentPrice);
                 const valChange = formatVariationV2(a.varEUR);
-                const pctChange = formatVariationV2(a.changePercent, true);
+                const pctChange = formatVariationV2(a.displayPercent, true);
                 const cSym = a.currency === 'USD' ? '$' : (a.currency === 'EUR' ? '€' : a.currency);
-                const endIcon = a.changeValue === 0 ? '⚪' : (a.changeValue > 0 ? '🟢' : '🔴');
+                const endIcon = a.displayValue === 0 ? '⚪' : (a.displayValue > 0 ? '🟢' : '🔴');
                 
                 // Consolidate columns into a single monospaced block to save entities
                 const rowData = `${sym} ${cSym + mktVal.padStart(7)} ${valChange.padStart(8)} ${pctChange.padStart(8)}`;
