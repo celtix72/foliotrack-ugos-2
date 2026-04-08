@@ -264,11 +264,39 @@ async function calculateMarketStats() {
     }
 }
 
+// Helper functions from v33.11 for Rich Formatting
+function getPerformanceIcon(changePct) {
+    if (changePct >= 5) return '🚀';
+    if (changePct >= 2) return '💰';
+    if (changePct >= 1) return '✅';
+    if (changePct > 0) return '📈';
+    if (changePct === 0) return '⚪';
+    if (changePct >= -1) return '📉';
+    if (changePct >= -3) return '💣';
+    if (changePct > -6) return '💀';
+    return '❌';
+}
+
+function getBigEmoji(val) {
+    const abs = Math.abs(val);
+    if (val > 0) {
+        if (abs < 300) return '🟢';
+        if (abs < 1000) return '🟢🟢';
+        if (abs < 3000) return '💰💰💰';
+        return '🚀🚀🚀';
+    } else if (val < 0) {
+        if (abs < 300) return '🔴';
+        if (abs < 1000) return '🔴🔴';
+        if (abs < 3000) return '💣💣';
+        return '☠️☠️☠️';
+    }
+    return '⚪';
+}
+
 async function sendMarketStatusTelegram() {
     const escape = escapeV2;
     const stats = await calculateMarketStats();
     const todayStr = new Date().toISOString().split('T')[0];
-    const marketStatus = getMarketStatus();
 
     // 1. FILTERING: Use only assets updated today
     const activeAssets = stats.assets.filter(a => {
@@ -276,13 +304,6 @@ async function sendMarketStatusTelegram() {
         if (a.value < 1 && !a.inWatchlist) return false;
         return true;
     });
-
-    // Helper functions from v33.11
-    const fmtAbsVal = (val, pad = 7) => {
-        const rounded = Math.round(val);
-        const absVal = Math.abs(rounded).toLocaleString('it-IT');
-        return `€${absVal}`.padStart(pad);
-    };
 
     const extractSimpleSymbol = (s) => s.split('.')[0].split(':')[0].substring(0, 8);
 
@@ -314,10 +335,10 @@ async function sendMarketStatusTelegram() {
         filteredDayChange += diff;
         
         if (categories[catName]) {
-            categories[catName].assets.push(a);
+            categories[catName].assets.push({ ...a, diff });
             categories[catName].totalVar += diff;
         } else {
-            categories['AZIONI'].assets.push(a);
+            categories['AZIONI'].assets.push({ ...a, diff });
             categories['AZIONI'].totalVar += diff;
         }
     });
@@ -326,48 +347,38 @@ async function sendMarketStatusTelegram() {
     const totalChange = filteredDayChange;
     const totalChangePct = (totalVal - totalChange) > 0 ? (totalChange / (totalVal - totalChange)) * 100 : 0;
 
-    // 2. V33.11 HEADER FORMAT
-    const cSign = totalChange >= 0 ? '+' : '';
-    const emoji = totalChange >= 0 ? '🟢' : '🔴';
+    // 2. V33.11 RICH HEADER FORMAT
+    const bigEmoji = getBigEmoji(totalChange);
+    const sign = totalChange >= 0 ? '+' : '';
+    const totalVarStr = Math.round(Math.abs(totalChange)).toLocaleString('it-IT');
 
-    let msg = `💰 *Variazione Odierna Portafoglio*\n`;
-    msg += `📈 *Valore:* \`${escapeCodeV2(totalVal.toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 0 }))}€\`\n`;
-    msg += `${emoji} *Day:* \`${escapeCodeV2(cSign + totalChange.toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 0 }))}€ (${cSign + totalChangePct.toFixed(2)}%)\`\n\n`;
+    let msg = `📊 *REPORT DAY:*                ${bigEmoji} ${escape(sign)}€${escape(totalVarStr)}\n\n`;
 
-    // 3. CATEGORIES & ROWS (V33.11 style)
+    // 3. CATEGORIES & RICH ROWS (V33.11 style)
     for (const [catName, cat] of Object.entries(categories)) {
         if (cat.assets.length === 0) continue;
 
-        const catSign = cat.totalVar >= 0 ? '+' : '';
-        const catVarStr = Math.round(cat.totalVar).toLocaleString('it-IT');
+        const catSign = cat.totalVar >= 0 ? '+' : '-';
+        const catVarStr = Math.round(Math.abs(cat.totalVar)).toLocaleString('it-IT');
         msg += `${cat.emoji} *${catName}* \`${escapeCodeV2(catSign + '€' + catVarStr)}\`\n`;
         
         cat.assets.sort((a,b) => b.value - a.value).forEach(a => {
             const sym = extractSimpleSymbol(a.ticker).padEnd(8);
+            const chgPct = a.changePercent || 0;
+            const valChange = a.diff || 0;
             
-            // US/EU Market Logic
-            const isUS = a.ticker.indexOf('.') === -1;
-            const marketOpen = isUS ? marketStatus.usOpen : marketStatus.euOpen;
-            
-            let chgPct = a.changePercent || 0;
-            let label = '';
-            if (!marketOpen) {
-                if (a.preMarketChangePercent && a.preMarketChangePercent !== 0) {
-                    chgPct = a.preMarketChangePercent;
-                    label = 'p';
-                } else chgPct = 0;
-            }
-
-            const valChange = a.value - (a.value / (1 + chgPct/100));
             const vSign = valChange >= 0 ? '+' : '';
             const cSignAsset = chgPct >= 0 ? '+' : '';
+            const vIcon = getPerformanceIcon(chgPct);
+            const statusIcon = valChange === 0 ? '⚪' : (valChange > 0 ? '🟢' : '🔴');
 
-            const mktVal = a.value.toLocaleString('it-IT', { maximumFractionDigits: 0 });
-            const vChangeStr = (vSign + Math.round(valChange).toLocaleString('it-IT')).padStart(7);
+            const cSym = a.currency === 'USD' ? '$' : '€';
+            const mktVal = a.currentPrice.toLocaleString('it-IT', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+            const vChangeStr = (vSign + '€' + Math.round(Math.abs(valChange)).toLocaleString('it-IT')).padStart(7);
             const pChangeStr = (cSignAsset + chgPct.toFixed(2) + '%').padStart(8);
             
-            const rowData = `${sym} ${mktVal.padStart(6)}€ ${vChangeStr} ${pChangeStr}${label}`;
-            msg += `• \`${escapeCodeV2(rowData)}\` \n`;
+            const rowData = `${sym} ${cSym.padStart(2)} ${mktVal.padStart(6)} ${vChangeStr} ${pChangeStr}`;
+            msg += `${vIcon} \`${escapeCodeV2(rowData)}\` ${statusIcon}\n`;
         });
         msg += '\n';
     }
