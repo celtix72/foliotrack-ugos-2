@@ -382,10 +382,12 @@ async function sendMarketStatusTelegram() {
 
     // 2. V33.11 RICH HEADER FORMAT
     const bigEmoji = getBigEmoji(totalChange);
-    const sign = totalChange >= 0 ? '+' : '';
+    const sign = totalChange >= 0 ? '+' : '-';
     const totalVarStr = Math.round(Math.abs(totalChange)).toLocaleString('it-IT');
+    const totalValStr = Math.round(totalVal).toLocaleString('it-IT');
 
-    let msg = `📊 *REPORT DAY:*                ${bigEmoji} ${escape(sign)}€${escape(totalVarStr)}\n\n`;
+    // 1D: <variazione> <emoji>        💰 <valore>
+    let msg = `1D: *${escapeV2(sign + '€' + totalVarStr)}* ${bigEmoji}        💰 *${escapeV2('€' + totalValStr)}*\n\n`;
 
     // 3. CATEGORIES & RICH ROWS (V33.11 style)
     for (const [catName, cat] of Object.entries(categories)) {
