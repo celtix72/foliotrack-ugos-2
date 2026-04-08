@@ -241,18 +241,18 @@ async function sendMarketStatusTelegram() {
     const totalVal = stats.totalNetValue || 0;
     const totalChange = stats.totalChange || 0;
     const totalChangePct = stats.totalChangePercent || 0;
-    const sign = totalChange >= 0 ? '+' : '';
+    const sign = totalChange >= 0 ? '\\+' : '';
     const emoji = totalChange >= 0 ? '🟢' : '🔴';
 
     message += `💰 *Valore Totale:* ${escape(totalVal.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}€\n`;
-    message += `${emoji} *Variazione:* ${sign}${escape(totalChange.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}€ (${sign}${escape(totalChangePct.toFixed(2))}%) \n\n`;
+    message += `${emoji} *Variazione:* ${sign}${escape(totalChange.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}€ \\(${sign}${escape(totalChangePct.toFixed(2))}%\\) \n\n`;
 
     // Active Assets Section
     const activeAssets = stats.assets.filter(a => a.value > 10 || a.inWatchlist);
     if (activeAssets.length > 0) {
         message += `📈 *Top Asset:*\n`;
         activeAssets.sort((a,b) => b.value - a.value).slice(0, 8).forEach(a => {
-            const aSign = a.changePercent >= 0 ? '+' : '';
+            const aSign = a.changePercent >= 0 ? '\\+' : '';
             const aEmoji = a.changePercent >= 0 ? '🔼' : '🔽';
             const ticker = escape(a.ticker);
             const price = escape(a.currentPrice.toLocaleString('it-IT', { minimumFractionDigits: 2 }));
