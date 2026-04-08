@@ -297,7 +297,7 @@ async function sendMarketStatusTelegram() {
     const emoji = totalChange >= 0 ? '🟢' : '🔴';
 
     message += `💰 *Valore Totale:* ${escape(totalVal.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}€\n`;
-    message += `${emoji} *Variazione:* ${sign}${escape(totalChange.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}€ (${sign}${escape(totalChangePct.toFixed(2))}%) \n\n`;
+    message += `${emoji} *Variazione:* ${escape(sign)}${escape(totalChange.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}€ ${escape('(')}${escape(sign)}${escape(totalChangePct.toFixed(2))}%${escape(')')} \n\n`;
 
     // Active Assets Section (Top Asset style from v33.12)
     if (activeAssets.length > 0) {
@@ -308,7 +308,7 @@ async function sendMarketStatusTelegram() {
             const ticker = escape(a.ticker);
             const price = escape(a.currentPrice.toLocaleString('it-IT', { minimumFractionDigits: 2 }));
             const chg = escape(a.changePercent.toFixed(2));
-            message += `${aEmoji} \`${ticker}\`: ${price} (${aSign}${chg}%)\n`;
+            message += `${aEmoji} \`${ticker}\`: ${price} ${escape('(')}${escape(aSign)}${chg}%${escape(')')}\n`;
         });
     }
 
