@@ -4573,8 +4573,12 @@ app.post('/api/market-sync', async (req, res) => {
 // ─── Telegram Test Endpoints ────────────────────────────────────────────────
 app.post('/api/settings/telegram/test-tp', async (req, res) => {
     try {
-        const msg = `🎯 *TARGET RAGGIUNTO TEST*\n\n*Titolo:* AAPL\n*Prezzo Attuale:* 190.50\n*Target:* 190.00`;
-        await sendTelegramMessage(escapeV2(msg));
+        const tsFormatted = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+        const msg = `🏆 *TARGET PROFIT*\n\n` +
+                    `\`${escapeCodeV2('AAPL     $ 190,50')}\`\n` +
+                    `*Target:* \`${escapeCodeV2('$ 190,00')}\`\n\n` +
+                    `🕒 \`${escapeCodeV2(tsFormatted)}\``;
+        await sendTelegramMessage(msg);
         res.json({ success: true, message: 'Test TP sent' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -4583,9 +4587,27 @@ app.post('/api/settings/telegram/test-tp', async (req, res) => {
 
 app.post('/api/settings/telegram/test-sl', async (req, res) => {
     try {
-        const msg = `⚠️ *STOP LOSS TEST*\n\n*Titolo:* TSLA\n*Prezzo Attuale:* 165.20\n*Soglia SL:* 170.00`;
-        await sendTelegramMessage(escapeV2(msg));
+        const tsFormatted = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+        const msg = `⚠️ *STOP LOSS*\n\n` +
+                    `\`${escapeCodeV2('TSLA     $ 165,20')}\`\n` +
+                    `*Soglia:* \`${escapeCodeV2('$ 170,00')}\`\n\n` +
+                    `🕒 \`${escapeCodeV2(tsFormatted)}\``;
+        await sendTelegramMessage(msg);
         res.json({ success: true, message: 'Test SL sent' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/settings/telegram/test-volatility', async (req, res) => {
+    try {
+        const tsFormatted = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+        const msg = `📊 *VOLATILITY ALERT*\n\n` +
+                    `📈 \`${escapeCodeV2('BTC.USD  $ 68.340,50')}\`\n` +
+                    `*Var.:* \`${escapeCodeV2('+5,20%')}\` (Soglia: 5%)\n\n` +
+                    `🕒 \`${escapeCodeV2(tsFormatted)}\``;
+        await sendTelegramMessage(msg);
+        res.json({ success: true, message: 'Test Volatility sent' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -4942,6 +4964,10 @@ async function updateMarketData(force = false) {
 
                 // Alert Checks
                 const newPrice = updateData.price;
+                const settings = database.getSettings();
+                const tsFormatted = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+
+                // 1. TARGET PROFIT
                 if (asset.targetPrice > 0 && newPrice >= asset.targetPrice) {
                     const existing = database.db.prepare(`
                         SELECT id FROM notifications 
@@ -4953,11 +4979,21 @@ async function updateMarketData(force = false) {
                             VALUES (?, ?, ?, ?)
                         `).run('TARGET_PROFIT', 'TARGET PROFIT', `${asset.ticker}: ${newPrice} (Target TP: ${asset.targetPrice})`, asset.ticker);
                         
-                        // Telegram Notification
-                        const msg = `🏆 *TARGET PROFIT*\n\n*Titolo:* ${escapeV2(asset.ticker)}\n*Prezzo Attuale:* ${newPrice}\n*Target TP:* ${asset.targetPrice}`;
+                        const sym = asset.ticker.padEnd(8);
+                        const cur = asset.currency === 'USD' ? '$' : '€';
+                        const priceStr = newPrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        const targetStr = asset.targetPrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        
+                        const msg = `🏆 *TARGET PROFIT*\n\n` +
+                                    `\`${escapeCodeV2(sym + ' ' + cur + ' ' + priceStr)}\`\n` +
+                                    `*Target:* \`${escapeCodeV2(cur + ' ' + targetStr)}\`\n\n` +
+                                    `🕒 \`${escapeCodeV2(tsFormatted)}\``;
+                                    
                         sendTelegramMessage(msg).catch(e => logger.error('Telegram Target Alert failed', e));
                     }
                 }
+
+                // 2. STOP LOSS
                 if (asset.stopLoss > 0 && newPrice <= asset.stopLoss) {
                     const existing = database.db.prepare(`
                         SELECT id FROM notifications 
@@ -4969,9 +5005,52 @@ async function updateMarketData(force = false) {
                             VALUES (?, ?, ?, ?)
                         `).run('STOP_LOSS', 'STOP LOSS', `${asset.ticker}: ${newPrice} (Soglia SL: ${asset.stopLoss})`, asset.ticker);
                         
-                        // Telegram Notification
-                        const msg = `⚠️ *STOP LOSS*\n\n*Titolo:* ${escapeV2(asset.ticker)}\n*Prezzo Attuale:* ${newPrice}\n*Soglia SL:* ${asset.stopLoss}`;
+                        const sym = asset.ticker.padEnd(8);
+                        const cur = asset.currency === 'USD' ? '$' : '€';
+                        const priceStr = newPrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        const stopStr = asset.stopLoss.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        
+                        const msg = `⚠️ *STOP LOSS*\n\n` +
+                                    `\`${escapeCodeV2(sym + ' ' + cur + ' ' + priceStr)}\`\n` +
+                                    `*Soglia:* \`${escapeCodeV2(cur + ' ' + stopStr)}\`\n\n` +
+                                    `🕒 \`${escapeCodeV2(tsFormatted)}\``;
+                                    
                         sendTelegramMessage(msg).catch(e => logger.error('Telegram Stop Alert failed', e));
+                    }
+                }
+
+                // 3. VOLATILITY ALERT
+                const volEnabled = settings.volatilityNotificationsEnabled === 'true';
+                if (volEnabled) {
+                    const threshold = parseFloat(asset.volatilityAlert || settings.volatilityThreshold || 5);
+                    const currentChange = Math.abs(updateData.change || 0);
+                    
+                    if (currentChange >= threshold) {
+                        const existing = database.db.prepare(`
+                            SELECT id FROM notifications 
+                            WHERE ticker = ? AND type = 'VOLATILITY' AND date(date) = date('now')
+                        `).get(asset.ticker);
+                        
+                        if (!existing) {
+                            database.db.prepare(`
+                                INSERT INTO notifications (type, title, message, ticker)
+                                VALUES (?, ?, ?, ?)
+                            `).run('VOLATILITY', 'VOLATILITY ALERT', `${asset.ticker}: ${updateData.change}% (Soglia: ${threshold}%)`, asset.ticker);
+                            
+                            const sym = asset.ticker.padEnd(8);
+                            const cur = asset.currency === 'USD' ? '$' : '€';
+                            const priceStr = newPrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                            const changeSign = (updateData.change || 0) >= 0 ? '+' : '';
+                            const changeStr = changeSign + (updateData.change || 0).toFixed(2) + '%';
+                            const vIcon = (updateData.change || 0) >= 0 ? '📈' : '📉';
+                            
+                            const msg = `📊 *VOLATILITY ALERT*\n\n` +
+                                        `${vIcon} \`${escapeCodeV2(sym + ' ' + cur + ' ' + priceStr)}\`\n` +
+                                        `*Var.:* \`${escapeCodeV2(changeStr)}\` (Soglia: ${threshold}%)\n\n` +
+                                        `🕒 \`${escapeCodeV2(tsFormatted)}\``;
+                                        
+                            sendTelegramMessage(msg).catch(e => logger.error('Telegram Volatility Alert failed', e));
+                        }
                     }
                 }
             }
