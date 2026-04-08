@@ -200,6 +200,7 @@ async function sendMarketStatusTelegram() {
         const enabled = settingsMap.telegramEnabled === 'true';
         if (!enabled) return;
 
+        const liveRate = await getEurUsdRate();
         const mStatus = getMarketStatus();
         const assets = database.db.prepare(`
             SELECT 
