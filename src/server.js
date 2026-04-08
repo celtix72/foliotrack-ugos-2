@@ -299,10 +299,23 @@ async function sendMarketStatusTelegram() {
     const todayStr = new Date().toISOString().split('T')[0];
     const marketStatus = getMarketStatus();
 
-    // 1. FILTERING: Use only assets with open positions updated today
+    // Helper for market detection
+    const isUSMarket = (ticker) => {
+        if (!ticker) return true;
+        return ticker.indexOf('.') === -1;
+    };
+
+    // 1. FILTERING: Include items with today's quote OR those in closed markets (to see US assets)
     const activeAssets = stats.assets.filter(a => {
-        if (a.quoteDate !== todayStr) return false;
-        if (a.value < 1) return false; 
+        if (a.value < 1) return false; // Must be in portfolio
+
+        const isUS = isUSMarket(a.ticker);
+        const marketOpen = isUS ? marketStatus.US : marketStatus.EU;
+        
+        // If market is open, we only want fresh data
+        if (marketOpen && a.quoteDate !== todayStr) return false;
+        
+        // If market is closed, we allow display (will show as 🔘 or ⚪)
         return true;
     });
 
@@ -324,31 +337,32 @@ async function sendMarketStatusTelegram() {
         'ETF Azionario': 'ETF AZ'
     };
 
-    // Helper for market detection
-    const isUSMarket = (ticker) => {
-        if (!ticker) return true;
-        return ticker.indexOf('.') === -1;
-    };
-
     // Calculate total variation based on filtered assets
     let filteredDayChange = 0;
     activeAssets.forEach(a => {
         const catName = typeToCat[a.type] || 'AZIONI';
         const isUS = isUSMarket(a.ticker);
-        const marketOpen = isUS ? marketStatus.usOpen : marketStatus.euOpen;
+        const marketOpen = isUS ? marketStatus.US : marketStatus.EU;
 
         let chgPct = a.changePercent || 0;
         let diff = 0;
+
+        // Use today's variation if quote is from today, otherwise 0 for old quotes
+        const isToday = a.quoteDate === todayStr;
 
         // Logic for closed market / pre-market
         if (!marketOpen && a.preMarketChangePercent && a.preMarketChangePercent !== 0) {
             chgPct = a.preMarketChangePercent;
             diff = a.value - (a.value / (1 + chgPct/100));
-        } else {
+        } else if (isToday) {
             const val = a.value || 0;
             const cp = a.changePercent || 0;
             const prevVal = val / (1 + cp/100);
             diff = val - prevVal;
+        } else {
+            // Yesterday's quote in closed market (US)
+            chgPct = 0;
+            diff = 0;
         }
         
         filteredDayChange += diff;
@@ -391,13 +405,13 @@ async function sendMarketStatusTelegram() {
             const vIcon = getPerformanceIcon(chgPct);
             
             // Emoji logic: ⚪ for pre-market, 🔘 for closed market, 🟢/🔴 for open market
-            let statusIcon = valChange === 0 ? '🔘' : (valChange > 0 ? '🟢' : '🔴');
-            if (!a.marketOpen) {
-                if (a.preMarketChangePercent && a.preMarketChangePercent !== 0) {
-                    statusIcon = '⚪'; // Pre-market
-                } else {
-                    statusIcon = '🔘'; // Closed
-                }
+            let statusIcon = '🔘'; 
+            if (a.marketOpen) {
+                statusIcon = valChange >= 0 ? '🟢' : '🔴';
+            } else if (a.preMarketChangePercent && a.preMarketChangePercent !== 0) {
+                statusIcon = '⚪'; // Pre-market
+            } else {
+                statusIcon = '🔘'; // Closed
             }
 
             const cSym = a.currency === 'USD' ? '$' : '€';
