@@ -1339,6 +1339,21 @@ app.get('/api/assets/:ticker/history', async (req, res) => {
     }
 });
 
+app.get('/api/assets/:ticker/portfolios', (req, res) => {
+    const { ticker } = req.params;
+    try {
+        const rows = database.db.prepare(`
+            SELECT DISTINCT p.id, p.name 
+            FROM portfolios p
+            JOIN transactions t ON p.id = t.portfolioId
+            WHERE t.assetTicker = ?
+        `).all(ticker);
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.get('/api/assets/:ticker/details', async (req, res) => {
     const { ticker } = req.params;
     try {

@@ -223,7 +223,9 @@
                              ontouchmove="handleTouchMove(event, this)" 
                              ontouchend="handleTouchEnd(event, this)">
                             <div class="mob-holding-actions">
-                                <div class="mob-action-btn bg-rose-500" onclick="removeNotification(${n.id})">
+                                <div class="mob-action-btn bg-rose-500" 
+                                     ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
+                                     onclick="event.stopPropagation(); removeNotification(${n.id})">
                                     <span class="material-symbols-outlined">delete</span>
                                     <span>Rimuovi</span>
                                 </div>
@@ -347,7 +349,11 @@
             const item = container.querySelector('.notification-item');
             if (!item) return;
             const diff = touchMoveX - touchStartX;
+            
             item.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
+            
+            // If movement occurred and was beyond threshold, keep actions open.
+            // Otherwise (including simple tap), reset to 0. (Tap-to-close)
             if (touchMoveX !== 0 && diff < -SWIPE_THRESHOLD) {
                 item.style.transform = `translateX(-${ACTION_WIDTH}px)`;
                 currentSwipeEl = container;

@@ -625,7 +625,11 @@
                 const item = container.querySelector('.mob-holding-item');
                 if (!item) return;
                 const diff = touchMoveX - touchStartX;
+                
                 item.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
+                
+                // If movement occurred and was beyond threshold, keep actions open.
+                // Otherwise (including simple tap), reset to 0. (Tap-to-close)
                 if (touchMoveX !== 0 && diff < -SWIPE_THRESHOLD) {
                     item.style.transform = `translateX(-${ACTION_WIDTH}px)`;
                     currentSwipeEl = container;
@@ -654,16 +658,19 @@
                         
                         <div class="mob-holding-actions">
                             <div class="mob-action-btn bg-blue-ios" 
+                                 ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
                                  onclick="event.stopPropagation(); duplicateTransaction('${d.id}')">
                                 <span class="material-symbols-outlined">content_copy</span>
                                 <span>Duplica</span>
                             </div>
                             <div class="mob-action-btn bg-orange-ios" 
+                                 ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
                                  onclick="event.stopPropagation(); editTransaction('${d.id}')">
                                 <span class="material-symbols-outlined">edit</span>
                                 <span>Modifica</span>
                             </div>
                             <div class="mob-action-btn bg-red-ios" 
+                                 ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
                                  onclick="event.stopPropagation(); confirmDeleteTransaction('${d.id}')">
                                 <span class="material-symbols-outlined">delete</span>
                                 <span>Elimina</span>
