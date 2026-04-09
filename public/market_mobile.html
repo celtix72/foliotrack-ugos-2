@@ -151,7 +151,7 @@
       <span class="mob-section-title">Posizioni Aperte</span>
       <span id="mob-pos-count" class="mob-header-subtitle">0 Assets</span>
     </div>
-    <div class="mob-holdings-list" id="mob-list-positions"></div>
+    <div class="mob-list-edge" id="mob-list-positions"></div>
 
     <div style="height:32px"></div>
   </div>
@@ -383,38 +383,30 @@
 
         const actions = a.hasPosition ? `
           <div class="mob-holding-actions">
-            <div class="mob-action-btn bg-blue-ios" 
-                 ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
-                 onclick="event.stopPropagation(); mobViewAssetTransactions('${a.ticker}')">
+            <div class="mob-action-btn bg-blue-ios" onclick="event.stopPropagation(); mobViewAssetTransactions('${a.ticker}')">
               <span class="material-symbols-outlined">list</span>
               <span>Trans</span>
             </div>
-            <div class="mob-action-btn bg-purple-ios" 
-                 ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
-                 onclick="event.stopPropagation(); openAssetChartModal('${a.ticker}', '${(a.name || '').replace(/'/g, "\\'")}', '${a.currency}')">
+            <div class="mob-action-btn bg-purple-ios" onclick="event.stopPropagation(); window.showMobDetails('${a.ticker.replace(/'/g, "\\'")}', '${a.name ? a.name.replace(/'/g, "\\'") : ''}', '${a.currency || 'EUR'}')">
               <span class="material-symbols-outlined">show_chart</span>
               <span>Grafico</span>
             </div>
-            <div class="mob-action-btn bg-orange-ios" 
-                 onclick="event.stopPropagation(); openManualModal('${a.ticker}', '${a.currency}', ${a.currentPrice}, '${a.type}', '${(a.country || '').replace(/'/g, "\\'")}', '${a.dataSource}', '${a.isin}')">
+            <div class="mob-action-btn bg-orange-ios" onclick="event.stopPropagation(); openManualModal('${a.ticker}', '${a.currency}', ${a.currentPrice}, '${a.type}', '${(a.country || '').replace(/'/g, "\\'")}', '${a.dataSource}', '${a.isin}')">
               <span class="material-symbols-outlined">edit_note</span>
               <span>Modifica</span>
             </div>
           </div>
         ` : `
           <div class="mob-holding-actions">
-            <div class="mob-action-btn bg-purple-ios" 
-                 onclick="event.stopPropagation(); openAssetChartModal('${a.ticker}', '${(a.name || '').replace(/'/g, "\\'")}', '${a.currency}')">
+            <div class="mob-action-btn bg-purple-ios" onclick="event.stopPropagation(); window.showMobDetails('${a.ticker.replace(/'/g, "\\'")}', '${a.name ? a.name.replace(/'/g, "\\'") : ''}', '${a.currency || 'EUR'}')">
               <span class="material-symbols-outlined">show_chart</span>
               <span>Grafico</span>
             </div>
-            <div class="mob-action-btn bg-orange-ios" 
-                 onclick="event.stopPropagation(); openManualModal('${a.ticker}', '${a.currency}', ${a.currentPrice}, '${a.type}', '${(a.country || '').replace(/'/g, "\\'")}', '${a.dataSource}', '${a.isin}')">
+            <div class="mob-action-btn bg-orange-ios" onclick="event.stopPropagation(); openManualModal('${a.ticker}', '${a.currency}', ${a.currentPrice}, '${a.type}', '${(a.country || '').replace(/'/g, "\\'")}', '${a.dataSource}', '${a.isin}')">
               <span class="material-symbols-outlined">edit_note</span>
               <span>Modifica</span>
             </div>
-            <div class="mob-action-btn bg-red-ios" 
-                 onclick="event.stopPropagation(); removeFromWatchlist('${a.ticker}')">
+            <div class="mob-action-btn bg-red-ios" onclick="event.stopPropagation(); removeFromWatchlist('${a.ticker}')">
               <span class="material-symbols-outlined">delete</span>
               <span>Rimuovi</span>
             </div>
@@ -427,15 +419,15 @@
                ontouchmove="handleTouchMove(event, this)" 
                ontouchend="handleTouchEnd(event, this)">
             ${actions}
-            <div class="mob-holding-item" style="${alertBg}; ${alertBorder}" onclick="openAssetChartModal('${a.ticker}', '${(a.name || '').replace(/'/g, "\\'")}', '${a.currency}')">
+            <div class="mob-holding-item" style="${alertBg}; ${alertBorder}" onclick="window.showMobDetails('${a.ticker.replace(/'/g, "\\'")}', '${a.name ? a.name.replace(/'/g, "\\'") : ''}', '${a.currency || 'EUR'}')">
               <div class="mob-holding-logo">${a.ticker.substring(0,3)}</div>
               <div class="mob-holding-info">
                 <div class="flex items-center gap-2">
                   <div class="mob-holding-ticker">${a.ticker}</div>
-                  <div class="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[8px] font-black uppercase tracking-tighter text-slate-500 border border-slate-200 dark:border-slate-700">${tag}</div>
+                  <div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700">${tag}</div>
                 </div>
                 <div class="mob-holding-name">${a.name || ''}</div>
-                <div style="display:flex; gap:8px; margin-top:4px; flex-wrap:wrap">
+                <div class="flex flex-wrap gap-1.5 mt-1">
                     ${targetPrice > 0 ? `<div style="font-size:10px; font-weight:900; color:${targetReached?'var(--mob-emerald)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">${targetReached?'check_circle':'target'}</span> TP: ${formatCurrency(targetPrice, a.currency, 2)}</div>` : ''}
                     ${volThreshold > 0 ? `<div style="font-size:10px; font-weight:900; color:${volAlertTriggered?'var(--mob-amber)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">${volAlertTriggered?'priority_high':'bolt'}</span> VOL: ${volThreshold}%</div>` : ''}
                     ${stopLoss > 0 ? `<div style="font-size:10px; font-weight:900; color:${stopLossHit?'var(--mob-rose)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">${stopLossHit?'dangerous':'warning'}</span> SL: ${formatCurrency(stopLoss, a.currency, 2)}</div>` : ''}

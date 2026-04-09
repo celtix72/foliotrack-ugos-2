@@ -88,7 +88,7 @@
             <span id="mob-watchlist-count" class="mob-header-subtitle">0 Assets</span>
         </div>
 
-        <div id="mob-watchlist-container" class="mob-holdings-list">
+        <div id="mob-watchlist-container" class="mob-list-edge">
             <!-- Items injected here -->
         </div>
 
@@ -331,10 +331,10 @@
                         <div class="mob-holding-info">
                             <div class="flex items-center gap-2">
                                 <div class="mob-holding-ticker">${a.ticker}</div>
-                                <div class="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[8px] font-black uppercase tracking-tighter text-slate-500 border border-slate-200 dark:border-slate-700">${tag}</div>
+                                <div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700">${tag}</div>
                             </div>
                             <div class="mob-holding-name">${a.name || ''}</div>
-                            <div class="flex flex-wrap gap-1.5 mt-1.5">
+                            <div class="flex flex-wrap gap-1.5 mt-1">
                                 ${alertTags}
                             </div>
                         </div>
