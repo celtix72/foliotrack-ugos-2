@@ -21,7 +21,6 @@
 </head>
 <body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex mobile-view-active">
 <div id="mobile-ui">
-  <!-- ── Top Header ── -->
   <!-- ── Mobile Header ── -->
   <div class="mob-header">
     <div class="mob-header-logo-container">
@@ -30,13 +29,7 @@
       </div>
       <div class="mob-header-logo-text">M2T</div>
     </div>
-
-    <!-- Page Title (HS) -->
-    <div class="mob-header-title" style="display:none">HS</div>
-
     <div style="flex:1"></div>
-
-    <!-- EU / US Market Status Pill -->
     <div class="mob-header-market-pill">
       <div class="mob-market-item">
         <span>EU</span>
@@ -47,11 +40,7 @@
         <span id="mob-dot-us" class="mob-market-dot"></span>
       </div>
     </div>
-
-    <!-- Day Variation Pill -->
     <div id="mob-header-var-day" class="mob-header-var-pill">--</div>
-
-    <!-- Action Buttons -->
     <div class="mob-header-actions">
       <a href="/notifications" class="mob-icon-btn relative" title="Notifications">
         <span class="material-symbols-outlined">notifications</span>
@@ -101,43 +90,43 @@
     </a>
   </div>
 </div>
-<script>
-let rawHistoryData = [];
-        async function loadHistory() {
-            try {
-                const res = await fetch('/api/analytics/history');
-                rawHistoryData = await res.json();
-                
-                // Set default collapsed state: collapse all initial years
-                const years = [...new Set(rawHistoryData.map(d => d.year))];
-                mobCollapsedGroups = new Set(years);
-                
-                renderMobileView();
-            } catch (err) { console.error('Error loading history:', err); }
-        }
-    let mobCollapsedGroups = new Set();
-    let isMobDataLoaded = false;
 
-    async function loadMobileData() {
+<script>
+    let rawHistoryData = [];
+    let isMobDataLoaded = false;
+    let mobCollapsedGroups = new Set();
+
+    async function loadHistoryData() {
         try {
-            const currentYear = new Date().getFullYear().toString();
+            const res = await fetch('/api/analytics/history');
+            const data = await res.json();
+            rawHistoryData = Array.isArray(data) ? data : [];
             
-            // For history
-            const histYears = [...new Set(rawHistoryData.map(d => d.year))];
-            histYears.forEach(y => { if (y !== currentYear) mobCollapsedGroups.add('hist_'+y); });
+            const currentYear = new Date().getFullYear().toString();
+            const years = [...new Set(rawHistoryData.map(d => d.year))];
+            
+            // Auto-collapse past years
+            years.forEach(y => {
+                if (y.toString() !== currentYear) {
+                    mobCollapsedGroups.add('hist_' + y);
+                }
+            });
             
             isMobDataLoaded = true;
             renderMobileView();
-        } catch (err) { console.error('Error loading mobile data:', err); }
+        } catch (err) {
+            console.error('Error loading history:', err);
+            isMobDataLoaded = true; // Set true to remove spinner even on error
+            renderMobileView();
+        }
     }
-
 
     // ── Swipe Logic ──────────────────────────────────
     let touchStartX = 0;
     let touchMoveX = 0;
     let currentSwipeEl = null;
     const SWIPE_THRESHOLD = 50;
-    const ACTION_WIDTH = 195; // 3 buttons * 65px
+    const ACTION_WIDTH = 130; // 2 buttons * 65px
 
     window.handleTouchStart = function(e, container) {
         touchStartX = e.touches[0].clientX;
@@ -158,23 +147,19 @@ let rawHistoryData = [];
         item.style.transform = `translateX(${diff}px)`;
     };
 
-        window.handleTouchEnd = function(e, container) {
-            const item = container.querySelector('.mob-holding-item');
-            if (!item) return;
-            const diff = touchMoveX - touchStartX;
-            
-            item.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
-            
-            // If movement occurred and was beyond threshold, keep actions open.
-            // Otherwise (including simple tap), reset to 0. (Tap-to-close)
-            if (touchMoveX !== 0 && diff < -SWIPE_THRESHOLD) {
-                item.style.transform = `translateX(-${ACTION_WIDTH}px)`;
-                currentSwipeEl = container;
-            } else {
-                item.style.transform = 'translateX(0)';
-                currentSwipeEl = null;
-            }
-        };
+    window.handleTouchEnd = function(e, container) {
+        const item = container.querySelector('.mob-holding-item');
+        if (!item) return;
+        const diff = touchMoveX - touchStartX;
+        item.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
+        if (touchMoveX !== 0 && diff < -SWIPE_THRESHOLD) {
+            item.style.transform = `translateX(-${ACTION_WIDTH}px)`;
+            currentSwipeEl = container;
+        } else {
+            item.style.transform = 'translateX(0)';
+            currentSwipeEl = null;
+        }
+    };
 
     function resetSwipes(except) {
         document.querySelectorAll('.mob-holding-swipe-container').forEach(c => {
@@ -197,110 +182,90 @@ let rawHistoryData = [];
     function renderMobileView() {
         if (!isMobDataLoaded) return;
         const container = document.getElementById('mob-history-list');
-        
-            // Group rawHistoryData by year
-            const groups = {};
-            rawHistoryData.forEach(pos => {
-                const y = pos.year;
-                if (!groups[y]) groups[y] = { items: [], totalGain: 0, count: 0 };
-                groups[y].items.push(pos);
-                groups[y].totalGain += pos.realizedGain;
-                groups[y].count++;
-            });
-            
-            const sortedYears = Object.keys(groups).sort((a,b) => b - a);
-            let html = '';
-            
-            sortedYears.forEach(year => {
-                const g = groups[year];
-                const key = 'hist_' + year;
-                const isCollapsed = mobCollapsedGroups.has(key);
-                const colorRaw = g.totalGain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-                const sign = g.totalGain >= 0 ? '+' : '';
-                
-                html += `
-                    <div class="mob-section-header" onclick="mobToggleGroup('${key}')" style="cursor:pointer">
-                        <div class="mob-section-title flex items-center gap-2">
-                            <span class="material-symbols-outlined" style="font-size: 20px;">${isCollapsed ? 'chevron_right' : 'expand_more'}</span>
-                            ${year} <span style="font-size:11px; color:var(--mob-text-muted); font-weight:normal;">(${g.count})</span>
-                        </div>
-                        <div class="mob-section-link" style="color: ${colorRaw}; font-size: 18px; font-weight: 900;">
-                            ${sign}${formatCurrency(g.totalGain, 'EUR', 0)}
-                        </div>
-                    </div>
-                `;
-                
-                if (!isCollapsed) {
-                    html += `<div class="mob-list-edge">`;
-                    g.items.forEach(pos => {
-                        const isTrade = ['BUY', 'SELL'].includes(pos.type);
-                        const gainColor = pos.realizedGain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-                        const gainSign = pos.realizedGain >= 0 ? '+' : '';
-                        
-                        // Icon letter
-                        const logoChar = pos.ticker ? pos.ticker.substring(0,2) : pos.type.substring(0,2);
-                        
-                        html += `
-                            <div class="mob-holding-swipe-container" 
-                                 ontouchstart="handleTouchStart(event, this)" 
-                                 ontouchmove="handleTouchMove(event, this)" 
-                                 ontouchend="handleTouchEnd(event, this)">
-                                
-                                <div class="mob-holding-actions">
-                                    <div class="mob-action-btn bg-orange-ios" 
-                                         onclick="event.stopPropagation(); editTransaction('${pos.id}')">
-                                        <span class="material-symbols-outlined">edit</span>
-                                        <span>Modifica</span>
-                                    </div>
-                                    <div class="mob-action-btn bg-red-ios" 
-                                         onclick="event.stopPropagation(); confirmDeleteTransaction('${pos.id}')">
-                                        <span class="material-symbols-outlined">delete</span>
-                                        <span>Elimina</span>
-                                    </div>
-                                </div>
+        if (!container) return;
 
-                                <div class="mob-holding-item">
-                                    <div class="mob-holding-logo">${logoChar}</div>
-                                    <div class="mob-holding-info">
-                                        <div class="flex items-center gap-2">
-                                            <div class="mob-holding-ticker">${pos.ticker || pos.name}</div>
-                                            <div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter ${pos.realizedGain >= 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'}">${isTrade ? pos.type : 'CLOSED'}</div>
-                                        </div>
-                                        <div class="mob-holding-name">${pos.portfolioName} • ${isTrade ? pos.quantity + ' shrs' : pos.type}</div>
+        // Group rawHistoryData by year
+        const groups = {};
+        rawHistoryData.forEach(pos => {
+            const y = pos.year || 'Unknown';
+            if (!groups[y]) groups[y] = { items: [], totalGain: 0, count: 0 };
+            groups[y].items.push(pos);
+            groups[y].totalGain += pos.realizedGain || 0;
+            groups[y].count++;
+        });
+        
+        const sortedYears = Object.keys(groups).sort((a,b) => b - a);
+        let html = '';
+        
+        sortedYears.forEach(year => {
+            const g = groups[year];
+            const key = 'hist_' + year;
+            const isCollapsed = mobCollapsedGroups.has(key);
+            const colorRaw = g.totalGain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+            const sign = g.totalGain >= 0 ? '+' : '';
+            
+            html += `
+                <div class="mob-section-header" onclick="mobToggleGroup('${key}')" style="cursor:pointer">
+                    <div class="mob-section-title flex items-center gap-2">
+                        <span class="material-symbols-outlined" style="font-size: 20px;">${isCollapsed ? 'chevron_right' : 'expand_more'}</span>
+                        ${year} <span style="font-size:11px; color:var(--mob-text-muted); font-weight:normal;">(${g.count})</span>
+                    </div>
+                    <div class="mob-section-link" style="color: ${colorRaw}; font-size: 18px; font-weight: 900;">
+                        ${sign}${formatCurrency(g.totalGain, 'EUR', 0)}
+                    </div>
+                </div>
+            `;
+            
+            if (!isCollapsed) {
+                html += `<div class="mob-list-edge">`;
+                g.items.forEach(pos => {
+                    const isTrade = ['BUY', 'SELL'].includes(pos.type);
+                    const gainColor = pos.realizedGain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+                    const gainSign = pos.realizedGain >= 0 ? '+' : '';
+                    const logoChar = pos.ticker ? pos.ticker.substring(0,2) : (pos.type ? pos.type.substring(0,2) : '??');
+                    
+                    html += `
+                        <div class="mob-holding-swipe-container" 
+                                ontouchstart="handleTouchStart(event, this)" 
+                                ontouchmove="handleTouchMove(event, this)" 
+                                ontouchend="handleTouchEnd(event, this)">
+                            <div class="mob-holding-actions">
+                                <div class="mob-action-btn bg-orange-ios" onclick="event.stopPropagation(); editTransaction('${pos.id}')">
+                                    <span class="material-symbols-outlined">edit</span>
+                                    <span>Modifica</span>
+                                </div>
+                                <div class="mob-action-btn bg-red-ios" onclick="event.stopPropagation(); confirmDeleteTransaction('${pos.id}')">
+                                    <span class="material-symbols-outlined">delete</span>
+                                    <span>Elimina</span>
+                                </div>
+                            </div>
+                            <div class="mob-holding-item">
+                                <div class="mob-holding-logo">${logoChar}</div>
+                                <div class="mob-holding-info">
+                                    <div class="flex items-center gap-2">
+                                        <div class="mob-holding-ticker">${pos.ticker || pos.name}</div>
+                                        <div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter ${pos.realizedGain >= 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'}">${isTrade ? pos.type : 'CLOSED'}</div>
                                     </div>
-                                    <div class="mob-holding-values">
-                                        <div class="mob-holding-value" style="color: ${isTrade ? gainColor : 'inherit'}">
-                                            ${isTrade ? gainSign + formatCurrency(pos.realizedGain, 'EUR', 2) : formatCurrency(pos.totalProceeds, 'EUR', 2)}
-                                        </div>
-                                        <div class="mob-holding-gain" style="color: var(--mob-text-muted); font-size: 11px;">
-                                            Proceeds: ${formatCurrency(pos.totalProceeds, 'EUR', 2)}
-                                        </div>
+                                    <div class="mob-holding-name">${pos.portfolioName || 'N/A'} • ${isTrade ? pos.quantity + ' shrs' : pos.type}</div>
+                                </div>
+                                <div class="mob-holding-values">
+                                    <div class="mob-holding-value" style="color: ${isTrade ? gainColor : 'inherit'}">
+                                        ${isTrade ? gainSign + formatCurrency(pos.realizedGain, 'EUR', 2) : formatCurrency(pos.totalProceeds, 'EUR', 2)}
+                                    </div>
+                                    <div class="mob-holding-gain" style="color: var(--mob-text-muted); font-size: 11px;">
+                                        Proceeds: ${formatCurrency(pos.totalProceeds, 'EUR', 2)}
                                     </div>
                                 </div>
                             </div>
-                        `;
-                    });
-                    html += `</div>`;
-                }
-            });
-            container.innerHTML = html || '<div class="mob-empty"><span class="material-symbols-outlined">inbox</span><div class="mob-empty-title">No Closed Positions</div></div>';
-        } else {
-            // Dividends Tab
-            // Group rawMobDivData by year
-            const groups = {};
-            rawMobDivData.forEach(d => {
-                const y = d.date.split('-')[0];
-                if (!groups[y]) groups[y] = { items: [], total: 0, count: 0 };
-                groups[y].items.push(d);
-                groups[y].total += d.amount;
-                groups[y].count++;
-            });
-            
-            const sortedYears = Object.keys(groups).sort((a,b) => b - a);
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            }
+        });
         container.innerHTML = html || '<div class="mob-empty"><span class="material-symbols-outlined">inbox</span><div class="mob-empty-title">No Closed Positions</div></div>';
     }
 
-    // Shared Edit/Duplicate/Delete helpers for mobile_transactions.js
     window.editTransaction = function(id) {
         const t = rawHistoryData.find(tx => tx.id == id);
         if (t) mobileEditTransaction(t);
@@ -313,14 +278,10 @@ let rawHistoryData = [];
         mobileDeleteTransaction(id);
     };
 
-    // Hook into global privacy toggle
     window.addEventListener('privacy-changed', renderMobileView);
-
-    // After history loads its things, load mobile things
-    const origLoadHistory = loadHistory;
-    loadHistory = async function() {
-        await origLoadHistory();
-        await loadMobileData();
-    };
-document.addEventListener("DOMContentLoaded", () => { loadHistory(); });
-</script></body></html>
+    document.addEventListener("DOMContentLoaded", () => {
+        loadHistoryData();
+    });
+</script>
+</body>
+</html>
