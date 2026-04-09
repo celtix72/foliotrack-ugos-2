@@ -667,24 +667,28 @@
                                  ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
                                  onclick="event.stopPropagation(); editTransaction('${d.id}')">
                                 <span class="material-symbols-outlined">edit</span>
-                                <span>Modifica</span>
+                                <span style="font-size:10px">Modifica</span>
                             </div>
                             <div class="mob-action-btn bg-red-ios" 
                                  ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
                                  onclick="event.stopPropagation(); confirmDeleteTransaction('${d.id}')">
                                 <span class="material-symbols-outlined">delete</span>
-                                <span>Elimina</span>
+                                <span style="font-size:10px">Elimina</span>
                             </div>
                         </div>
 
                         <div class="mob-holding-item">
-                            <div class="mob-holding-logo">${letters}</div>
+                            <div class="mob-holding-logo" style="background:var(--mob-surface-2); color:var(--mob-primary)">${letters}</div>
                             <div class="mob-holding-info">
-                                <div class="mob-holding-ticker">${d.assetTicker}</div>
-                                <div class="mob-holding-name">${d.portfolioName} · ${d.date}</div>
+                                <div class="flex items-center gap-2">
+                                    <div class="mob-holding-ticker">${d.assetTicker}</div>
+                                    <div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20">DIVIDEND</div>
+                                </div>
+                                <div class="mob-holding-name">${d.portfolioName} • ${d.date}</div>
                             </div>
                             <div class="mob-holding-values">
-                                <div class="mob-holding-value text-emerald-500" style="font-weight:800">+${formatCurrency(d.amount, 'EUR', 0)}</div>
+                                <div class="mob-holding-value" style="color:var(--mob-emerald); font-weight:800">+${formatCurrency(d.amount, 'EUR', 2)}</div>
+                                <div class="mob-holding-gain text-[10px]" style="color: var(--mob-text-caption)">Total: ${formatCurrency(d.amount, 'EUR', 0)}</div>
                             </div>
                         </div>
                     </div>

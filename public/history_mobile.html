@@ -284,11 +284,7 @@ let rawHistoryData = [];
                                     <div class="mob-holding-info">
                                         <div class="flex items-center gap-2">
                                             <div class="mob-holding-ticker">${pos.ticker || pos.name}</div>
-                                            ${isTrade ? `
-                                                <div class="text-[10px] font-black ${pos.realizedGain >= 0 ? 'text-emerald-500' : 'text-rose-500'} flex items-center gap-0.5">
-                                                    ${pos.realizedGain >= 0 ? '▲' : '▼'}${formatCurrency(pos.realizedGain, 'EUR', 0)}
-                                                </div>
-                                            ` : ''}
+                                            <div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter ${pos.realizedGain >= 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'}">${isTrade ? pos.type : 'CLOSED'}</div>
                                         </div>
                                         <div class="mob-holding-name">${pos.portfolioName} • ${isTrade ? pos.quantity + ' shrs' : pos.type}</div>
                                     </div>
@@ -297,7 +293,7 @@ let rawHistoryData = [];
                                             ${isTrade ? gainSign + formatCurrency(pos.realizedGain, 'EUR', 2) : formatCurrency(pos.totalProceeds, 'EUR', 2)}
                                         </div>
                                         <div class="mob-holding-gain" style="color: var(--mob-text-muted); font-size: 11px;">
-                                            ${isTrade ? 'Proceeds: ' + formatCurrency(pos.totalProceeds, 'EUR', 2) : pos.type}
+                                            Proceeds: ${formatCurrency(pos.totalProceeds, 'EUR', 2)}
                                         </div>
                                     </div>
                                 </div>
@@ -372,18 +368,17 @@ let rawHistoryData = [];
                                 </div>
 
                                 <div class="mob-holding-item" style="border: 1px solid var(--mob-border) !important; border-radius: 12px !important; margin-bottom: 8px;">
-                                    <div class="mob-holding-logo" style="color:var(--mob-emerald); background:rgba(16, 185, 129, 0.1);">${logoChar}</div>
+                                    <div class="mob-holding-logo" style="background:var(--mob-surface-2); color:var(--mob-primary)">${logoChar}</div>
                                     <div class="mob-holding-info">
                                         <div class="flex items-center gap-2">
                                             <div class="mob-holding-ticker">${d.assetTicker}</div>
-                                            <div class="text-[10px] font-black text-emerald-500 flex items-center gap-0.5">
-                                                ▲${formatCurrency(d.amount, 'EUR', 0)}
-                                            </div>
+                                            <div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20">DIVIDEND</div>
                                         </div>
                                         <div class="mob-holding-name">${d.portfolioName} • ${d.date}</div>
                                     </div>
                                     <div class="mob-holding-values">
                                         <div class="mob-holding-value" style="color: var(--mob-emerald)">+${formatCurrency(d.amount, 'EUR', 2)}</div>
+                                        <div class="mob-holding-gain text-[10px]" style="color: var(--mob-text-caption)">Total: ${formatCurrency(d.amount, 'EUR', 0)}</div>
                                     </div>
                                 </div>
                             </div>

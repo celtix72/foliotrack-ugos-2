@@ -910,8 +910,16 @@
     const container = document.getElementById('mob-transactions-list');
     if (!container) return;
     try {
-      const typeColors = { BUY:'var(--mob-emerald)', SELL:'var(--mob-rose)', DEPOSIT:'var(--mob-emerald)', WITHDRAWAL:'var(--mob-rose)', DIVIDEND:'var(--mob-amber)', TAX:'var(--mob-rose)', TRANSFER:'var(--mob-text-muted)' };
       const typeIcons = { BUY:'shopping_cart', SELL:'sell', DEPOSIT:'arrow_downward', WITHDRAWAL:'arrow_upward', DIVIDEND:'payments', TAX:'account_balance', TRANSFER:'swap_horiz' };
+      const typeColors = { 
+        BUY: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20', 
+        SELL: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20', 
+        DEPOSIT: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20', 
+        WITHDRAWAL: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20', 
+        DIVIDEND: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20', 
+        TAX: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20', 
+        TRANSFER: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20' 
+      };
 
       if (txs.length === 0) {
         container.innerHTML = '<div class="mob-empty"><span class="material-symbols-outlined">receipt_long</span><div class="mob-empty-title">Nessuna transazione</div></div>';
@@ -919,9 +927,10 @@
       }
 
       container.innerHTML = txs.slice(0,50).map(t => {
-        const col = typeColors[t.type] || 'var(--mob-text)';
         const icon = typeIcons[t.type] || 'receipt';
+        const badgeStyle = typeColors[t.type] || 'bg-slate-500/10 text-slate-500 border-slate-500/20';
         const date = new Date(t.date).toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit', year:'2-digit' });
+        
         let total = t.amount;
         if (!total && t.quantity && t.price) {
           if (t.type === 'DIVIDEND') {
@@ -930,7 +939,10 @@
             total = (t.quantity * t.price + (t.commission || 0) + (t.tax || 0)) / (t.exchangeRate || 1);
           }
         }
+        
         const tSign = ['BUY', 'WITHDRAWAL', 'TAX', 'TRANSFER'].includes(t.type) ? '-' : '+';
+        const valColor = ['BUY', 'WITHDRAWAL', 'TAX', 'TRANSFER'].includes(t.type) ? 'var(--mob-rose)' : 'var(--mob-emerald)';
+        
         return `
           <div class="mob-holding-swipe-container" 
                ontouchstart="handleTouchStart(event, this)" 
@@ -958,18 +970,20 @@
                 </div>
               </div>
 
-            <div class="mob-holding-item mob-transaction-item" data-ticker="${t.assetTicker || ''}">
-              <div class="mob-holding-logo" style="background:${col}22;color:${col}">
+            <div class="mob-holding-item" data-ticker="${t.assetTicker || ''}">
+              <div class="mob-holding-logo" style="background:var(--mob-surface-2); color:var(--mob-primary)">
                 <span class="material-symbols-outlined" style="font-size:20px">${icon}</span>
               </div>
               <div class="mob-holding-info">
-                <div class="mob-holding-ticker" style="color:${col}">${t.type}</div>
-                <div class="mob-holding-name">${t.assetTicker || t.ticker || '—'}</div>
-                <div class="mob-holding-qty">${date}</div>
+                <div class="flex items-center gap-2">
+                  <div class="mob-holding-ticker">${t.assetTicker || t.ticker || '—'}</div>
+                  <div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter ${badgeStyle}">${t.type}</div>
+                </div>
+                <div class="mob-holding-name">${date}${t.quantity ? ' • ' + formatNumber(t.quantity, 2) + ' shrs' : ''}</div>
               </div>
               <div class="mob-holding-values">
-                <div class="mob-holding-value">${tSign}${formatPrivacy(total || 0, currency, 'mob-tx-'+t.id, 0)}</div>
-                <div style="font-size:10px;color:var(--mob-text-caption)">${t.quantity ? 'x'+formatNumber(t.quantity,2) : ''}</div>
+                <div class="mob-holding-value" style="color:${valColor}">${tSign}${formatPrivacy(total || 0, currency, 'mob-tx-'+t.id, 0)}</div>
+                <div class="mob-holding-gain" style="font-size:10px; color:var(--mob-text-caption)">${t.price ? '@' + formatCurrency(t.price, t.currency || currency, 2) : ''}</div>
               </div>
             </div>
           </div>`;
