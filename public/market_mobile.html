@@ -355,11 +355,25 @@
         // Alert state
         const targetPrice = a.targetPrice || 0;
         const stopLoss = a.stopLoss || 0;
+        const volThreshold = a.volatilityAlert || 0;
+
         const targetReached = targetPrice > 0 && price >= targetPrice;
         const stopLossHit = stopLoss > 0 && price <= stopLoss;
+        const volAlertTriggered = volThreshold > 0 && Math.abs(change) >= volThreshold;
         
-        const alertBg = targetReached ? 'background:rgba(16,185,129,0.15)' : (stopLossHit ? 'background:rgba(244,63,94,0.15)' : '');
-        const alertBorder = targetReached ? 'border:1px solid rgba(16,185,129,0.3)' : (stopLossHit ? 'border:1px solid rgba(244,63,94,0.3)' : '');
+        let alertBg = '';
+        let alertBorder = '';
+        
+        if (targetReached) {
+            alertBg = 'background: linear-gradient(rgba(16,185,129,0.12), rgba(16,185,129,0.12)), var(--mob-surface)';
+            alertBorder = 'border-color: rgba(16,185,129,0.3) !important';
+        } else if (stopLossHit) {
+            alertBg = 'background: linear-gradient(rgba(244,63,94,0.12), rgba(244,63,94,0.12)), var(--mob-surface)';
+            alertBorder = 'border-color: rgba(244,63,94,0.3) !important';
+        } else if (volAlertTriggered) {
+            alertBg = 'background: linear-gradient(rgba(245,158,11,0.12), rgba(245,158,11,0.12)), var(--mob-surface)';
+            alertBorder = 'border-color: rgba(245,158,11,0.3) !important';
+        }
 
         const tag = getAssetTag(a.yfType || a.type, a.ticker);
 
@@ -409,9 +423,10 @@
                   <div class="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[8px] font-black uppercase tracking-tighter text-slate-500 border border-slate-200 dark:border-slate-700">${tag}</div>
                 </div>
                 <div class="mob-holding-name">${a.name || ''}</div>
-                <div style="display:flex; gap:8px; margin-top:4px">
-                    ${targetPrice > 0 ? `<div style="font-size:10px; font-weight:900; color:${targetReached?'var(--mob-emerald)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">target</span> TP: ${formatCurrency(targetPrice, a.currency, 2)}</div>` : ''}
-                    ${stopLoss > 0 ? `<div style="font-size:10px; font-weight:900; color:${stopLossHit?'var(--mob-rose)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">warning</span> SL: ${formatCurrency(stopLoss, a.currency, 2)}</div>` : ''}
+                <div style="display:flex; gap:8px; margin-top:4px; flex-wrap:wrap">
+                    ${targetPrice > 0 ? `<div style="font-size:10px; font-weight:900; color:${targetReached?'var(--mob-emerald)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">${targetReached?'check_circle':'target'}</span> TP: ${formatCurrency(targetPrice, a.currency, 2)}</div>` : ''}
+                    ${volThreshold > 0 ? `<div style="font-size:10px; font-weight:900; color:${volAlertTriggered?'var(--mob-amber)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">${volAlertTriggered?'priority_high':'bolt'}</span> VOL: ${volThreshold}%</div>` : ''}
+                    ${stopLoss > 0 ? `<div style="font-size:10px; font-weight:900; color:${stopLossHit?'var(--mob-rose)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">${stopLossHit?'dangerous':'warning'}</span> SL: ${formatCurrency(stopLoss, a.currency, 2)}</div>` : ''}
                 </div>
               </div>
               <div class="mob-holding-values">
