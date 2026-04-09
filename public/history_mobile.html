@@ -247,7 +247,7 @@ let rawHistoryData = [];
                 `;
                 
                 if (!isCollapsed) {
-                    html += `<div style="padding: 0 16px;">`;
+                    html += `<div class="mob-list-edge">`;
                     g.items.forEach(pos => {
                         const isTrade = ['BUY', 'SELL'].includes(pos.type);
                         const gainColor = pos.realizedGain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
@@ -256,8 +256,6 @@ let rawHistoryData = [];
                         // Icon letter
                         const logoChar = pos.ticker ? pos.ticker.substring(0,2) : pos.type.substring(0,2);
                         
-                        // Layout logic: The main value should be the Realized Gain (colored green/red) and large
-                        // The sub value should be the proceeds or type
                         html += `
                             <div class="mob-holding-swipe-container" 
                                  ontouchstart="handleTouchStart(event, this)" 
@@ -266,20 +264,18 @@ let rawHistoryData = [];
                                 
                                 <div class="mob-holding-actions">
                                     <div class="mob-action-btn bg-orange-ios" 
-                                         ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
                                          onclick="event.stopPropagation(); editTransaction('${pos.id}')">
                                         <span class="material-symbols-outlined">edit</span>
                                         <span>Modifica</span>
                                     </div>
                                     <div class="mob-action-btn bg-red-ios" 
-                                         ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
                                          onclick="event.stopPropagation(); confirmDeleteTransaction('${pos.id}')">
                                         <span class="material-symbols-outlined">delete</span>
                                         <span>Elimina</span>
                                     </div>
                                 </div>
 
-                                <div class="mob-holding-item" style="border: 1px solid var(--mob-border) !important; border-radius: 12px !important; margin-bottom: 8px;">
+                                <div class="mob-holding-item">
                                     <div class="mob-holding-logo">${logoChar}</div>
                                     <div class="mob-holding-info">
                                         <div class="flex items-center gap-2">

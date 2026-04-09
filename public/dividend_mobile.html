@@ -658,19 +658,16 @@
                         
                         <div class="mob-holding-actions">
                             <div class="mob-action-btn bg-blue-ios" 
-                                 ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
                                  onclick="event.stopPropagation(); duplicateTransaction('${d.id}')">
                                 <span class="material-symbols-outlined">content_copy</span>
                                 <span>Duplica</span>
                             </div>
                             <div class="mob-action-btn bg-orange-ios" 
-                                 ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
                                  onclick="event.stopPropagation(); editTransaction('${d.id}')">
                                 <span class="material-symbols-outlined">edit</span>
                                 <span style="font-size:10px">Modifica</span>
                             </div>
                             <div class="mob-action-btn bg-red-ios" 
-                                 ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
                                  onclick="event.stopPropagation(); confirmDeleteTransaction('${d.id}')">
                                 <span class="material-symbols-outlined">delete</span>
                                 <span style="font-size:10px">Elimina</span>
