@@ -799,20 +799,17 @@
             
             <div class="mob-holding-actions">
               <div class="mob-action-btn bg-blue-ios" 
-                   ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
                    onclick="event.stopPropagation(); mobViewAssetTransactions('${h.ticker}')">
                 <span class="material-symbols-outlined">list</span>
                 <span>Trans</span>
               </div>
               <div class="mob-action-btn bg-purple-ios" 
-                   ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
                    onclick="event.stopPropagation(); openAssetChartModal('${h.ticker}', '${(h.name || '').replace(/'/g, "\\'")}', '${currency}')">
                 <span class="material-symbols-outlined">show_chart</span>
                 <span>Grafico</span>
               </div>
               <div class="mob-action-btn bg-orange-ios" 
-                   ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
-                   onclick="event.stopPropagation(); openManualModal('${h.ticker}', '${currency}', ${h.currentPrice}, '${type}', '${country}', '${dataSource}', '${isin}')">
+                   onclick="event.stopPropagation(); openManualModal('${h.ticker}', '${currency}', ${h.currentPrice}, '${type}', '${(country || '').replace(/'/g, "\\")}', '${dataSource}', '${isin}')">
                 <span class="material-symbols-outlined">edit_note</span>
                 <span>Modifica</span>
               </div>
@@ -893,19 +890,16 @@
             
               <div class="mob-holding-actions">
                 <div class="mob-action-btn bg-blue-ios" 
-                     ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
                      onclick="event.stopPropagation(); duplicateTransaction('${t.id}')">
                   <span class="material-symbols-outlined">content_copy</span>
                   <span>Duplica</span>
                 </div>
                 <div class="mob-action-btn bg-orange-ios" 
-                     ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
                      onclick="event.stopPropagation(); editTransaction('${t.id}')">
                   <span class="material-symbols-outlined">edit</span>
                   <span>Modifica</span>
                 </div>
                 <div class="mob-action-btn bg-red-ios" 
-                     ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
                      onclick="event.stopPropagation(); confirmDeleteTransaction('${t.id}')">
                   <span class="material-symbols-outlined">delete</span>
                   <span>Elimina</span>

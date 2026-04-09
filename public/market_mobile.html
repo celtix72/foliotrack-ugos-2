@@ -396,8 +396,7 @@
               <span>Grafico</span>
             </div>
             <div class="mob-action-btn bg-orange-ios" 
-                 ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
-                 onclick="event.stopPropagation(); openManualModal('${a.ticker}', '${a.currency}', ${a.currentPrice}, '${a.type}', '${a.country}', '${a.dataSource}', '${a.isin}')">
+                 onclick="event.stopPropagation(); openManualModal('${a.ticker}', '${a.currency}', ${a.currentPrice}, '${a.type}', '${(a.country || '').replace(/'/g, "\\'")}', '${a.dataSource}', '${a.isin}')">
               <span class="material-symbols-outlined">edit_note</span>
               <span>Modifica</span>
             </div>
@@ -405,19 +404,16 @@
         ` : `
           <div class="mob-holding-actions">
             <div class="mob-action-btn bg-purple-ios" 
-                 ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
                  onclick="event.stopPropagation(); openAssetChartModal('${a.ticker}', '${(a.name || '').replace(/'/g, "\\'")}', '${a.currency}')">
               <span class="material-symbols-outlined">show_chart</span>
               <span>Grafico</span>
             </div>
             <div class="mob-action-btn bg-orange-ios" 
-                 ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
-                 onclick="event.stopPropagation(); openManualModal('${a.ticker}', '${a.currency}', ${a.currentPrice}, '${a.type}', '${a.country}', '${a.dataSource}', '${a.isin}')">
+                 onclick="event.stopPropagation(); openManualModal('${a.ticker}', '${a.currency}', ${a.currentPrice}, '${a.type}', '${(a.country || '').replace(/'/g, "\\'")}', '${a.dataSource}', '${a.isin}')">
               <span class="material-symbols-outlined">edit_note</span>
               <span>Modifica</span>
             </div>
             <div class="mob-action-btn bg-red-ios" 
-                 ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
                  onclick="event.stopPropagation(); removeFromWatchlist('${a.ticker}')">
               <span class="material-symbols-outlined">delete</span>
               <span>Rimuovi</span>
