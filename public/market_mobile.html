@@ -534,6 +534,9 @@
     mobSyncPrivacyIcon();
     if (window._mobileViewActive) mobLoadAssets();
   });
+  window.addEventListener('market-data-updated', () => {
+    if (window._mobileViewActive) mobLoadAssets();
+  });
 })();
 </script>
 </body>

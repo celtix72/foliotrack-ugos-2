@@ -498,6 +498,134 @@
         } catch(e) {}
     };
 
+    // ── Manual Asset Update Modal ─────────────────────────
+    window.injectManualUpdateModal = function() {
+        if (!document.body || document.getElementById('manual-update-modal')) return;
+
+        const html = `
+        <div id="manual-update-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[10000] flex items-center justify-center mob-modal-overlay" style="display:none">
+            <div class="bg-white dark:bg-[#111722] w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform transition-all max-h-[90vh] flex flex-col">
+                <div class="px-5 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
+                    <h3 class="font-black text-lg">Modifica Asset</h3>
+                    <button onclick="closeManualModal()" class="text-slate-400 hover:text-rose-500 transition-colors">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <div class="p-5 space-y-3 overflow-y-auto custom-scrollbar">
+                    <input type="hidden" id="manual-ticker"/>
+                    <div class="space-y-2">
+                        <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Prezzo (<span id="manual-currency-label">EUR</span>)</label>
+                        <input id="manual-price" type="number" step="any" placeholder="0.00" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold text-lg"/>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Data Effettiva</label>
+                        <input id="manual-date" type="date" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold"/>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Sorgente</label>
+                            <select id="manual-source" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold" onchange="toggleManualISIN()">
+                                <option value="YF">Yahoo Finance</option>
+                                <option value="B_ITA">Borsa Italiana</option>
+                                <option value="MANUAL">Manuale</option>
+                            </select>
+                        </div>
+                        <div id="manual-isin-field" class="space-y-2 hidden">
+                            <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">ISIN</label>
+                            <input id="manual-isin" type="text" placeholder="e.g. IT000..." class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold"/>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Tipo Asset</label>
+                            <select id="manual-type" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold">
+                                <option value="">Invariato</option>
+                                <option value="Azioni">Azioni</option>
+                                <option value="Bond">Bond</option>
+                                <option value="ETF Azionario">ETF Azionario</option>
+                                <option value="ETF Monetario">ETF Monetario</option>
+                                <option value="ETF Obblig">ETF Obblig</option>
+                                <option value="Deposito Vincolato">Deposito Vincolato</option>
+                                <option value="Cash">Cash</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Area/Paese</label>
+                            <input id="manual-country" type="text" placeholder="e.g. US, Europe" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold"/>
+                        </div>
+                    </div>
+                    <div class="pt-2 flex gap-3">
+                        <button onclick="closeManualModal()" class="flex-1 py-3 rounded-xl font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Annulla</button>
+                        <button onclick="saveManualUpdate()" class="flex-1 py-3 rounded-xl font-bold bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">Salva</button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+        const div = document.createElement('div');
+        div.innerHTML = html;
+        document.body.appendChild(div.firstElementChild);
+    };
+
+    window.openManualModal = function(ticker, currency, currentPrice, type, country, dataSource, isin) {
+        injectManualUpdateModal();
+        const modal = document.getElementById('manual-update-modal');
+        if (!modal) return;
+        document.getElementById('manual-ticker').value = ticker || '';
+        document.getElementById('manual-currency-label').innerText = currency || 'EUR';
+        document.getElementById('manual-price').value = currentPrice || 0;
+        document.getElementById('manual-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('manual-type').value = type || '';
+        document.getElementById('manual-country').value = country || '';
+        const sourceEl = document.getElementById('manual-source');
+        if (sourceEl) sourceEl.value = dataSource || 'YF';
+        document.getElementById('manual-isin').value = isin || '';
+        
+        toggleManualISIN();
+        modal.style.display = 'flex';
+        document.body.classList.add('modal-open');
+    };
+
+    window.toggleManualISIN = function() {
+        const source = document.getElementById('manual-source')?.value;
+        const field = document.getElementById('manual-isin-field');
+        if (field) {
+            if (source === 'B_ITA') field.classList.remove('hidden');
+            else field.classList.add('hidden');
+        }
+    };
+
+    window.closeManualModal = function() {
+        const modal = document.getElementById('manual-update-modal');
+        if (modal) modal.style.display = 'none';
+        document.body.classList.remove('modal-open');
+    };
+
+    window.saveManualUpdate = async function() {
+        const ticker = document.getElementById('manual-ticker').value;
+        const price = document.getElementById('manual-price').value;
+        const date = document.getElementById('manual-date').value;
+        const type = document.getElementById('manual-type').value;
+        const country = document.getElementById('manual-country').value;
+        const dataSource = document.getElementById('manual-source').value;
+        const isin = document.getElementById('manual-isin').value;
+
+        try {
+            const res = await fetch('/api/assets/manual-update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ticker, price, date, type, country, dataSource, isin })
+            });
+            if (res.ok) {
+                closeManualModal();
+                const currentP = window.mobCurrentPortfolioId || window.currentPortfolioId;
+                refreshAllMobileData(currentP);
+            } else {
+                const errData = await res.json();
+                alert('Aggiornamento fallito: ' + (errData.error || errData.message || 'Errore sconosciuto'));
+            }
+        } catch (err) { console.error('Manual update error:', err); }
+    };
+
     // Auto-inject on mobile view
     function autoInit() {
         if (window._mobileViewActive || document.body.classList.contains('mobile-view-active') || window.innerWidth < 1024) {
