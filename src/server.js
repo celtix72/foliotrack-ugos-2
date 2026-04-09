@@ -281,14 +281,12 @@ function getBigEmoji(val) {
     const abs = Math.abs(val);
     if (val > 0) {
         if (abs < 300) return '🟢';
-        if (abs < 1000) return '🟢🟢';
-        if (abs < 3000) return '💰💰';
-        return '🚀🚀';
+        if (abs < 1000) return '💰';
+        return '🚀';
     } else if (val < 0) {
         if (abs < 300) return '🔴';
-        if (abs < 1000) return '🔴🔴';
-        if (abs < 3000) return '💣💣';
-        return '☠️☠️';
+        if (abs < 1000) return '💣';
+        return '☠️';
     }
     return '⚪';
 }
@@ -376,15 +374,17 @@ async function sendMarketStatusTelegram() {
 
     // 2. V33.11 RICH HEADER FORMAT
     const bigEmoji = getBigEmoji(totalChange);
-    const mSign = marketChange >= 0 ? '+' : '';
-    const pSign = preMarketChange >= 0 ? '+' : '';
     
-    const mVarStr = Math.round(Math.abs(marketChange)).toLocaleString('it-IT');
+    const tSign = totalChange >= 0 ? '+' : '-';
+    const pSign = preMarketChange >= 0 ? '+' : '-';
+    
+    const tVarStr = Math.round(Math.abs(totalChange)).toLocaleString('it-IT');
     const pVarStr = Math.round(Math.abs(preMarketChange)).toLocaleString('it-IT');
     const totalValStr = Math.round(totalVal).toLocaleString('it-IT');
 
     // Due righe: 1 DAY e NET. con formattazione monospaced per l'allineamento
-    let msg = `1 DAY: \`${escapeCodeV2(mSign + '€' + mVarStr)}\` ${bigEmoji}   ${escapeV2('P.MKT:')} \`${escapeCodeV2(pSign + '€' + pVarStr)}\` \n`;
+    // Variazioni totali (1 DAY e P.MKT) evidenziate in grassetto tramite * attorno al blocco mono
+    let msg = `1 DAY: *\`${escapeCodeV2(tSign + '€' + tVarStr)}\`* ${bigEmoji}   ${escapeV2('P.MKT:')} *\`${escapeCodeV2(pSign + '€' + pVarStr)}\`* \n`;
     msg += `${escapeV2('NET. :')} \`${escapeCodeV2('€' + totalValStr)}\` \n\n`;
 
     // 3. CATEGORIES & RICH ROWS (V33.11 style)
@@ -398,7 +398,8 @@ async function sendMarketStatusTelegram() {
         // Emojis (2) + ' ' (1) = 3. Target variation column = 18.
         // Quindi pad di 15 per arrivare a 18.
         const headerLabel = catName.padEnd(15);
-        msg += `*${cat.emoji}* \`${escapeCodeV2(headerLabel + catSign + '€' + catVarStr)}\`\n`;
+        // Variazione subtotal evidenziata in grassetto
+        msg += `*${cat.emoji}* *\`${escapeCodeV2(headerLabel + catSign + '€' + catVarStr)}\`*\n`;
         
         cat.assets.sort((a,b) => b.chgPct - a.chgPct).forEach(a => {
             const sym = extractSimpleSymbol(a.ticker).padEnd(8);
