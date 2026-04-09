@@ -63,10 +63,10 @@
     </div>
   </div>
 
-  <!-- ── Tabs section for History / Dividends ── -->
-  <div class="mob-tabs" style="padding-bottom: 10px;">
-    <div class="mob-tab-pill active" id="mob-pill-history" onclick="mobSwitchTab('history')">Closed Positions</div>
-    <div class="mob-tab-pill" id="mob-pill-dividends" onclick="mobSwitchTab('dividends')">Dividends</div>
+  <!-- Page Title -->
+  <div class="mob-header-title-container px-4 py-2">
+    <div class="text-[10px] font-black uppercase tracking-widest text-slate-500 opacity-70">Trading History</div>
+    <div class="text-xl font-black">Closed Positions</div>
   </div>
 
   <!-- ── Scrollable Content ── -->
@@ -115,37 +115,22 @@ let rawHistoryData = [];
                 renderMobileView();
             } catch (err) { console.error('Error loading history:', err); }
         }
-    let rawMobDivData = [];
-    let currentMobTab = 'history'; 
     let mobCollapsedGroups = new Set();
     let isMobDataLoaded = false;
 
     async function loadMobileData() {
         try {
-            const res = await fetch('/api/analytics/dividends');
-            rawMobDivData = await res.json();
-            
             const currentYear = new Date().getFullYear().toString();
             
             // For history
             const histYears = [...new Set(rawHistoryData.map(d => d.year))];
             histYears.forEach(y => { if (y !== currentYear) mobCollapsedGroups.add('hist_'+y); });
             
-            // For dividends
-            const divYears = [...new Set(rawMobDivData.map(d => d.date.split('-')[0]))];
-            divYears.forEach(y => { if (y !== currentYear) mobCollapsedGroups.add('div_'+y); });
-            
             isMobDataLoaded = true;
             renderMobileView();
         } catch (err) { console.error('Error loading mobile data:', err); }
     }
 
-    function mobSwitchTab(tab) {
-        currentMobTab = tab;
-        document.getElementById('mob-pill-history').classList.toggle('active', tab === 'history');
-        document.getElementById('mob-pill-dividends').classList.toggle('active', tab === 'dividends');
-        renderMobileView();
-    }
 
     // ── Swipe Logic ──────────────────────────────────
     let touchStartX = 0;
@@ -213,7 +198,6 @@ let rawHistoryData = [];
         if (!isMobDataLoaded) return;
         const container = document.getElementById('mob-history-list');
         
-        if (currentMobTab === 'history') {
             // Group rawHistoryData by year
             const groups = {};
             rawHistoryData.forEach(pos => {
@@ -313,87 +297,16 @@ let rawHistoryData = [];
             });
             
             const sortedYears = Object.keys(groups).sort((a,b) => b - a);
-            let html = '';
-            
-            sortedYears.forEach(year => {
-                const g = groups[year];
-                const key = 'div_' + year;
-                const isCollapsed = mobCollapsedGroups.has(key);
-                
-                html += `
-                    <div class="mob-section-header" onclick="mobToggleGroup('${key}')" style="cursor:pointer">
-                        <div class="mob-section-title flex items-center gap-2">
-                            <span class="material-symbols-outlined" style="font-size: 20px;">${isCollapsed ? 'chevron_right' : 'expand_more'}</span>
-                            ${year} <span style="font-size:11px; color:var(--mob-text-muted); font-weight:normal;">(${g.count})</span>
-                        </div>
-                        <div class="mob-section-link" style="color: var(--mob-emerald); font-size: 18px; font-weight: 900;">
-                            +${formatCurrency(g.total, 'EUR', 0)}
-                        </div>
-                    </div>
-                `;
-                
-                if (!isCollapsed) {
-                    html += `<div style="padding: 0 16px;">`;
-                    g.items.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(d => {
-                        const logoChar = d.assetTicker ? d.assetTicker.substring(0,2) : 'DI';
-                        html += `
-                            <div class="mob-holding-swipe-container" 
-                                 ontouchstart="handleTouchStart(event, this)" 
-                                 ontouchmove="handleTouchMove(event, this)" 
-                                 ontouchend="handleTouchEnd(event, this)">
-                                
-                                <div class="mob-holding-actions">
-                                    <div class="mob-action-btn bg-blue-ios" 
-                                         ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
-                                         onclick="event.stopPropagation(); duplicateTransaction('${d.id}')">
-                                        <span class="material-symbols-outlined">content_copy</span>
-                                        <span>Duplica</span>
-                                    </div>
-                                    <div class="mob-action-btn bg-orange-ios" 
-                                         ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
-                                         onclick="event.stopPropagation(); editTransaction('${d.id}')">
-                                        <span class="material-symbols-outlined">edit</span>
-                                        <span>Modifica</span>
-                                    </div>
-                                    <div class="mob-action-btn bg-red-ios" 
-                                         ontouchstart="event.stopPropagation()" ontouchend="event.stopPropagation()"
-                                         onclick="event.stopPropagation(); confirmDeleteTransaction('${d.id}')">
-                                        <span class="material-symbols-outlined">delete</span>
-                                        <span>Elimina</span>
-                                    </div>
-                                </div>
-
-                                <div class="mob-holding-item" style="border: 1px solid var(--mob-border) !important; border-radius: 12px !important; margin-bottom: 8px;">
-                                    <div class="mob-holding-logo" style="background:var(--mob-surface-2); color:var(--mob-primary)">${logoChar}</div>
-                                    <div class="mob-holding-info">
-                                        <div class="flex items-center gap-2">
-                                            <div class="mob-holding-ticker">${d.assetTicker}</div>
-                                            <div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20">DIVIDEND</div>
-                                        </div>
-                                        <div class="mob-holding-name">${d.portfolioName} • ${d.date}</div>
-                                    </div>
-                                    <div class="mob-holding-values">
-                                        <div class="mob-holding-value" style="color: var(--mob-emerald)">+${formatCurrency(d.amount, 'EUR', 2)}</div>
-                                        <div class="mob-holding-gain text-[10px]" style="color: var(--mob-text-caption)">Total: ${formatCurrency(d.amount, 'EUR', 0)}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    html += `</div>`;
-                }
-            });
-            container.innerHTML = html || '<div class="mob-empty"><span class="material-symbols-outlined">payments</span><div class="mob-empty-title">No Dividends</div></div>';
-        }
+        container.innerHTML = html || '<div class="mob-empty"><span class="material-symbols-outlined">inbox</span><div class="mob-empty-title">No Closed Positions</div></div>';
     }
 
     // Shared Edit/Duplicate/Delete helpers for mobile_transactions.js
     window.editTransaction = function(id) {
-        const t = rawMobDivData.find(tx => tx.id == id);
+        const t = rawHistoryData.find(tx => tx.id == id);
         if (t) mobileEditTransaction(t);
     };
     window.duplicateTransaction = function(id) {
-        const t = rawMobDivData.find(tx => tx.id == id);
+        const t = rawHistoryData.find(tx => tx.id == id);
         if (t) mobileDuplicateTransaction(t);
     };
     window.confirmDeleteTransaction = function(id) {

@@ -557,7 +557,7 @@
                 }
 
                 if (groupBy === 'none') {
-                    container.innerHTML = `<div class="mob-holdings-list">` + 
+                    container.innerHTML = `<div class="mob-list-edge">` + 
                         filtered.sort((a,b) => new Date(b.date) - new Date(a.date))
                         .map(d => renderMobRow(d)).join('') + 
                         `</div>`;
@@ -587,7 +587,7 @@
                                     <span class="material-symbols-outlined text-sm opacity-30 transition-transform ${isCollapsed ? 'rotate-180' : ''}">${isCollapsed ? 'expand_more' : 'expand_less'}</span>
                                 </div>
                             </div>
-                            <div class="mob-holdings-list" style="${isCollapsed ? 'display:none' : ''}">
+                            <div class="mob-list-edge" style="${isCollapsed ? 'display:none' : ''}">
                                 ${group.items.sort((a,b) => new Date(b.date) - new Date(a.date)).map(d => renderMobRow(d)).join('')}
                             </div>
                         `;
@@ -679,7 +679,7 @@
                             <div class="mob-holding-info">
                                 <div class="flex items-center gap-2">
                                     <div class="mob-holding-ticker">${d.assetTicker}</div>
-                                    <div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20">DIVIDEND</div>
+                                    <div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">DIVIDEND</div>
                                 </div>
                                 <div class="mob-holding-name">${d.portfolioName} • ${d.date}</div>
                             </div>
