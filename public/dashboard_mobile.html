@@ -445,19 +445,19 @@
                 </div>
 
                 <div class="mob-holding-item" onclick="mobGoToPortfolio(${p.id})" style="padding: 4px 16px; gap: 12px; height: 50px;">
-                  <div class="mob-holding-logo" style="background-color:${p.color||'var(--mob-primary)'}; color: white; width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+                  <div class="mob-holding-logo" style="background-color:${p.color||'var(--mob-primary)'}; color: white; width: 36px; height: 36px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
                     <span class="material-symbols-outlined" style="font-size: 20px; font-variation-settings: 'FILL' 1;">work</span>
                   </div>
                   <div class="mob-holding-info" style="flex: 1; min-width: 0;">
-                    <div class="mob-holding-ticker" style="font-size: 14px; font-weight: 800; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--mob-text);">${p.name}</div>
-                    <div class="mob-holding-name" style="font-size: 10px; font-weight: 500; color: var(--mob-text-muted); opacity: 0.8;">${p.assetCount || 0} Assets${p.type === 'Conto Deposito' ? ' • DEPOSITO' : ''}</div>
+                    <div class="mob-holding-ticker" style="font-size: 15px; font-weight: 800; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--mob-text);">${p.name}</div>
+                    <div class="mob-holding-name" style="font-size: 11px; font-weight: 500; color: var(--mob-text-muted); opacity: 0.8;">${p.assetCount || 0} Assets${p.type === 'Conto Deposito' ? ' • DEPOSITO' : ''}</div>
                   </div>
                   
-                  <div class="mob-holding-values" style="text-align: right; flex-shrink: 0; display: flex; align-items: center; gap: 8px;">
-                    <div class="mob-holding-value" style="font-size: 12px; font-weight: 800; color: ${gainColor};">
+                  <div class="mob-holding-values" style="text-align: right; flex-shrink: 0; display: flex; align-items: center; gap: 10px;">
+                    <div class="mob-holding-value" style="font-size: 13px; font-weight: 800; color: ${gainColor};">
                         ${sign}${formatPrivacy(v, p.currency, 'mob-dv1-'+p.id, 0)}
                     </div>
-                    <div style="font-size: 15px; font-weight: 900; color: var(--mob-primary);">
+                    <div style="font-size: 16px; font-weight: 900; color: var(--mob-primary);">
                         ${formatPrivacy(p.totalValue, p.currency, 'mob-p-'+p.id, 0)}
                     </div>
                   </div>
