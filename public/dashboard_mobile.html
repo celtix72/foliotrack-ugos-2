@@ -426,11 +426,11 @@
               const displayVal = isPrivate ? '****' : `${sign}${symbol}${formattedVal}`;
 
               return `
-                <div class="flex flex-col gap-1 flex-1 min-width-0">
-                  <span class="text-[8px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-widest leading-none">${label}</span>
-                  <div class="px-1.5 py-1 rounded-md border text-[10px] font-black tracking-tighter flex items-center gap-1 w-fit leading-none ${colorClass}">
+                <div class="flex flex-col gap-0.5 flex-1 min-width-0">
+                  <span class="text-[7px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider leading-none">${label}</span>
+                  <div class="px-1.5 py-0.5 rounded-md border text-[10px] font-black tracking-tighter flex items-center gap-1 w-fit leading-none ${colorClass}">
                     <span>${displayVal}</span>
-                    <span class="opacity-60 text-[9px]">(${sign}${(pct || 0).toFixed(1)}%)</span>
+                    <span class="opacity-60 text-[8px]">(${(pct || 0).toFixed(1)}%)</span>
                   </div>
                 </div>
               `;
@@ -455,22 +455,22 @@
                   </div>
                 </div>
 
-                <div class="mob-portfolio-card" onclick="window.location.href='/portfolio_detail_mobile.html?id=${p.id}'" style="position:relative; z-index:2; transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); flex-direction: column; align-items: stretch; gap: 12px; padding: 14px 16px;">
-                  <div class="flex items-center gap-3">
-                    <div class="mob-portfolio-icon" style="background-color:${p.color||'#6366f1'}; width: 40px; height: 40px; border-radius: 12px;">
-                      <span class="material-symbols-outlined" style="font-size: 20px;">work</span>
+                <div class="mob-portfolio-card" onclick="window.location.href='/portfolio_detail_mobile.html?id=${p.id}'" style="position:relative; z-index:2; transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 14px;">
+                  <div class="flex items-center gap-2.5">
+                    <div class="mob-portfolio-icon" style="background-color:${p.color||'#6366f1'}; width: 36px; height: 36px; border-radius: 10px;">
+                      <span class="material-symbols-outlined" style="font-size: 18px;">work</span>
                     </div>
                     <div class="mob-portfolio-info">
-                      <div class="mob-portfolio-name" style="font-size: 15px; font-weight: 800;">${p.name}</div>
-                      <div class="mob-portfolio-meta" style="font-size: 10px; font-weight: 700; color: var(--mob-text-caption);">${p.assetCount || 0} Assets · ${p.currency} ${p.type === 'Conto Deposito' ? '<span style="color:var(--mob-amber); font-weight:900; background:rgba(245,158,11,0.1); padding:1px 4px; border-radius:4px; font-size:8px; vertical-align:middle; margin-left:4px">DEPOSITO</span>' : ''}</div>
+                      <div class="mob-portfolio-name" style="font-size: 14px; font-weight: 800; line-height: 1.2;">${p.name}</div>
+                      <div class="mob-portfolio-meta" style="font-size: 9px; font-weight: 700; color: var(--mob-text-caption);">${p.assetCount || 0} Assets · ${p.currency} ${p.type === 'Conto Deposito' ? '<span style="color:var(--mob-amber); font-weight:900; background:rgba(245,158,11,0.1); padding:1px 4px; border-radius:4px; font-size:7px; vertical-align:middle; margin-left:4px">DEPOSITO</span>' : ''}</div>
                     </div>
                     <div class="mob-portfolio-values" style="margin-left: auto; text-align: right;">
-                      <div class="mob-portfolio-net" style="font-size: 16px; font-weight: 900;">${formatPrivacy(p.totalValue, p.currency, 'mob-p-'+p.id, 0)}</div>
-                      <div style="font-size: 8px; font-weight: 800; text-transform: uppercase; color: var(--mob-text-caption); tracking-widest; margin-top: -2px;">Total Value</div>
+                      <div class="mob-portfolio-net" style="font-size: 15px; font-weight: 900;">${formatPrivacy(p.totalValue, p.currency, 'mob-p-'+p.id, 0)}</div>
+                      <div style="font-size: 7px; font-weight: 800; text-transform: uppercase; color: var(--mob-text-caption); tracking-widest; margin-top: -1px;">Total Value</div>
                     </div>
                   </div>
                   
-                  <div class="flex items-center gap-2 pt-2.5 border-t border-slate-100 dark:border-slate-800/50">
+                  <div class="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/50">
                     ${renderBadge('1D', p.changeValue, p.changePercent)}
                     ${renderBadge('1W', p.changeValue1W, p.changePercent1W)}
                     ${renderBadge('1M', p.changeValue1M, p.changePercent1M)}
