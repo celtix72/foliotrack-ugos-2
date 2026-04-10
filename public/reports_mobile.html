@@ -284,25 +284,19 @@
                         
                         <!-- Card 2: Metrics -->
                         <div class="bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/60 rounded-b-xl px-3 py-1 flex items-center justify-between gap-1" style="border-top: 1px solid var(--mob-border);">
-                          <div class="flex flex-col gap-0 items-center flex-1">
-                            <span class="text-[6px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-widest">ROI</span>
-                            <div class="text-[11px] font-bold ${roi >= 0 ? 'text-emerald-500' : 'text-rose-500'} leading-none">
-                              ${(roi * 100).toFixed(1)}%
-                            </div>
+                          <div class="flex flex-col items-center flex-1" style="gap:0;">
+                            <span class="text-[6px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-widest leading-none">ROI</span>
+                            <div class="text-[11px] font-bold leading-none ${roi >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${(roi * 100).toFixed(1)}%</div>
                           </div>
                           <div class="w-[1px] h-3 bg-slate-200 dark:bg-slate-800"></div>
-                          <div class="flex flex-col gap-0 items-center flex-1">
-                            <span class="text-[6px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-widest">TWR</span>
-                            <div class="text-[11px] font-bold ${twr >= 0 ? 'text-emerald-500' : 'text-rose-500'} leading-none">
-                              ${(twr * 100).toFixed(1)}%
-                            </div>
+                          <div class="flex flex-col items-center flex-1" style="gap:0;">
+                            <span class="text-[6px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-widest leading-none">TWR</span>
+                            <div class="text-[11px] font-bold leading-none ${twr >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${(twr * 100).toFixed(1)}%</div>
                           </div>
                           <div class="w-[1px] h-3 bg-slate-200 dark:bg-slate-800"></div>
-                          <div class="flex flex-col gap-0 items-center flex-1">
-                            <span class="text-[6px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-widest">XIRR</span>
-                            <div class="text-[11px] font-bold ${xirr >= 0 ? 'text-emerald-500' : 'text-rose-500'} leading-none">
-                              ${(xirr * 100).toFixed(1)}%
-                            </div>
+                          <div class="flex flex-col items-center flex-1" style="gap:0;">
+                            <span class="text-[6px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-widest leading-none">XIRR</span>
+                            <div class="text-[11px] font-bold leading-none ${xirr >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${(xirr * 100).toFixed(1)}%</div>
                           </div>
                         </div>
                       </div>`;
