@@ -237,7 +237,7 @@
             
             const gainEl = document.getElementById('mob-total-gain');
             if (gainEl) {
-                gainEl.textContent = formatCurrency(m.totalGain, 'EUR');
+                gainEl.textContent = formatCurrency(m.totalGain, 'EUR', 0);
                 gainEl.style.color = m.totalGain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
             }
 
@@ -270,8 +270,8 @@
                     return `
                       <div class="mb-4">
                         <!-- Card 1: Summary -->
-                        <div class="mob-holding-item" onclick="window.location.href='/portfolio_detail_mobile.html?id=${p.id}'" style="padding: 6px 16px; gap: 12px; height: 52px; border-radius: 12px 12px 0 0; border-bottom: none;">
-                          <div class="mob-portfolio-icon" style="background-color:${pColor}; width: 36px; height: 36px; border-radius: 10px;">
+                        <div class="mob-holding-item" onclick="window.location.href='/portfolio_detail_mobile.html?id=${p.id}'" style="padding: 4px 16px; gap: 12px; height: 50px; border-radius: 12px 12px 0 0; border-bottom: none;">
+                          <div class="mob-portfolio-icon" style="background-color:${pColor}; width: 34px; height: 34px; border-radius: 10px;">
                             <span class="material-symbols-outlined" style="font-size: 18px;">work</span>
                           </div>
                           <div class="mob-portfolio-info">
@@ -279,29 +279,29 @@
                             <div class="mob-portfolio-meta" style="font-size: 11px; font-weight: 500; color: var(--mob-text-muted); opacity: 0.8;">Contrib: ${(pm.contribution*100).toFixed(1)}% · Sharpe: ${pm.sharpeRatio.toFixed(1)}</div>
                           </div>
                           <div class="mob-portfolio-values" style="margin-left: auto; text-align: right;">
-                            <div class="mob-portfolio-net" style="font-size: 15px; font-weight: 900; color: var(--mob-primary);">${formatCurrency(pm.currentValue, pCurrency)}</div>
+                            <div class="mob-portfolio-net" style="font-size: 15px; font-weight: 900; color: var(--mob-primary);">${formatCurrency(pm.currentValue, pCurrency, 0)}</div>
                           </div>
                         </div>
                         
                         <!-- Card 2: Metrics -->
-                        <div class="bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/60 rounded-b-xl p-3 flex items-center justify-between gap-2" style="border-top: 1px solid var(--mob-border);">
-                          <div class="flex flex-col gap-1 items-center flex-1">
-                            <span class="text-[8px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-widest">ROI</span>
-                            <div class="text-[12px] font-bold ${roi >= 0 ? 'text-emerald-500' : 'text-rose-500'}">
+                        <div class="bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/60 rounded-b-xl p-1.5 flex items-center justify-between gap-2" style="border-top: 1px solid var(--mob-border);">
+                          <div class="flex flex-col gap-0.5 items-center flex-1">
+                            <span class="text-[7px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-widest">ROI</span>
+                            <div class="text-[11px] font-bold ${roi >= 0 ? 'text-emerald-500' : 'text-rose-500'}">
                               ${(roi * 100).toFixed(1)}%
                             </div>
                           </div>
-                          <div class="w-[1px] h-6 bg-slate-200 dark:bg-slate-800"></div>
-                          <div class="flex flex-col gap-1 items-center flex-1">
-                            <span class="text-[8px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-widest">TWR</span>
-                            <div class="text-[12px] font-bold ${twr >= 0 ? 'text-emerald-500' : 'text-rose-500'}">
+                          <div class="w-[1px] h-4 bg-slate-200 dark:bg-slate-800"></div>
+                          <div class="flex flex-col gap-0.5 items-center flex-1">
+                            <span class="text-[7px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-widest">TWR</span>
+                            <div class="text-[11px] font-bold ${twr >= 0 ? 'text-emerald-500' : 'text-rose-500'}">
                               ${(twr * 100).toFixed(1)}%
                             </div>
                           </div>
-                          <div class="w-[1px] h-6 bg-slate-200 dark:bg-slate-800"></div>
-                          <div class="flex flex-col gap-1 items-center flex-1">
-                            <span class="text-[8px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-widest">XIRR</span>
-                            <div class="text-[12px] font-bold ${xirr >= 0 ? 'text-emerald-500' : 'text-rose-500'}">
+                          <div class="w-[1px] h-4 bg-slate-200 dark:bg-slate-800"></div>
+                          <div class="flex flex-col gap-0.5 items-center flex-1">
+                            <span class="text-[7px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-widest">XIRR</span>
+                            <div class="text-[11px] font-bold ${xirr >= 0 ? 'text-emerald-500' : 'text-rose-500'}">
                               ${(xirr * 100).toFixed(1)}%
                             </div>
                           </div>
@@ -327,20 +327,20 @@
             const isCurr = g.year === currentYear;
             const totalRealized = g.realized + g.dividends;
             return `
-                <div style="display: flex; flex-direction: column; gap: 8px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--mob-border);">
+                <div style="display: flex; flex-direction: column; gap: 6px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--mob-border);">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-weight: 900; font-size: 16px;">${g.year} ${isCurr ? '<span style="font-size: 10px; color: var(--mob-primary); margin-left: 4px;">NOW</span>' : ''}</span>
-                        <span style="font-weight: 900; font-size: 14px;">${formatCurrency(totalRealized, 'EUR')}</span>
+                        <span style="font-weight: 900; font-size: 14px;">${formatCurrency(totalRealized, 'EUR', 0)}</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--mob-text-dim);">
-                        <span>Sales: <span style="color: ${g.realized >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">${formatCurrency(g.realized, 'EUR')}</span></span>
-                        <span>Div: <span style="color: var(--mob-emerald)">${formatCurrency(g.dividends, 'EUR')}</span></span>
+                        <span>Sales: <span style="color: ${g.realized >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">${formatCurrency(g.realized, 'EUR', 0)}</span></span>
+                        <span>Div: <span style="color: var(--mob-emerald)">${formatCurrency(g.dividends, 'EUR', 0)}</span></span>
                     </div>
                     ${isCurr ? `
                     <div style="margin-top: 4px; padding: 8px; background: rgba(0,0,0,0.05); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-size: 10px; font-weight: 700; color: var(--mob-text-dim); text-transform: uppercase;">Unrealized (Open)</span>
                         <span style="font-weight: 900; font-size: 14px; color: ${g.unrealized >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">
-                            ${formatCurrency(g.unrealized, 'EUR')}
+                            ${formatCurrency(g.unrealized, 'EUR', 0)}
                         </span>
                     </div>
                     ` : ''}
