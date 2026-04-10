@@ -379,8 +379,10 @@ body.mobile-view-active #mobile-ui {
 .mob-scroll {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
+  overscroll-behavior-x: none;
   padding-bottom: calc(var(--mob-tab-h) + var(--mob-safe-bottom) + 12px);
 }
 
