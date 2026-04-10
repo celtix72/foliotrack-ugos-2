@@ -458,7 +458,7 @@
                         const isPrivate = window.privacyState && window.privacyState.enabled;
                         if (isPrivate) return `<div class="text-[9px] font-black opacity-30 italic">****</div>`;
                         return `<div class="px-1.5 py-0.5 rounded-md border text-[9px] font-black tracking-tighter flex items-center gap-1 w-fit leading-none ${colorClass}">
-                          <span>${sign}${p.changePercent.toFixed(1)}%</span>
+                          <span>${sign}${formatPrivacy(v, p.currency, 'mob-dv1-'+p.id, 0)}</span>
                         </div>`;
                     })()}
                   </div>
