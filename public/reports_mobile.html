@@ -176,8 +176,7 @@
         <canvas id="mob-div-chart"></canvas>
       </div>
       <div id="mob-yield-box" class="mt-4 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10 hidden">
-            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">M2T</p>
- Yield: <span id="mob-yield-percent">--%</span></p>
+            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">M2T Yield: <span id="mob-yield-percent">--%</span></p>
       </div>
     </div>
 
@@ -267,7 +266,6 @@
                     const xirrColor = xirr >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
                     const pColor = (data.portfolios && data.portfolios.find(port => port.id == p.id)) ? data.portfolios.find(port => port.id == p.id).color : '#6366f1';
                     const pCurrency = (data.portfolios && data.portfolios.find(port => port.id == p.id)) ? data.portfolios.find(port => port.id == p.id).currency : 'EUR';
-                    return `
                     return `
                       <div class="mb-1.5">
                         <!-- Card 1: Summary -->
