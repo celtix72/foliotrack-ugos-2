@@ -390,13 +390,14 @@ body.mobile-view-active #mobile-ui {
 
 /* ─── Hero Card ─────────────────────────────────────────────────────────── */
 .mob-hero {
-  margin: 16px 0 8px !important;
+  margin: 0 0 0 !important;
   background: var(--mob-hero-bg);
   border: 1px solid var(--mob-border);
   border-left: none !important;
   border-right: none !important;
+  border-top: none !important;
   border-radius: 0 !important;
-  padding: 24px 20px 20px;
+  padding: 20px 16px 16px;
   position: relative;
   overflow: hidden;
 }
@@ -472,7 +473,7 @@ body.mobile-view-active #mobile-ui {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 16px 8px;
+  padding: 14px 16px 6px;
 }
 
 .mob-section-title {
@@ -566,7 +567,7 @@ body.mobile-view-active #mobile-ui {
 .mob-portfolio-list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0;
 }
 
 .mob-portfolio-card {

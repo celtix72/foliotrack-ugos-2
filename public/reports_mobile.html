@@ -267,8 +267,8 @@
                     const pColor = (data.portfolios && data.portfolios.find(port => port.id == p.id)) ? data.portfolios.find(port => port.id == p.id).color : '#6366f1';
                     const pCurrency = (data.portfolios && data.portfolios.find(port => port.id == p.id)) ? data.portfolios.find(port => port.id == p.id).currency : 'EUR';
                     return `
-                      <div style="margin: 0 16px 8px; border-radius: 12px; overflow: hidden; border: 1px solid var(--mob-border);">
-                        <div onclick="window.location.href='/portfolio_detail_mobile.html?id=${p.id}'" style="background: var(--mob-surface); padding: 8px 12px; display: flex; align-items: center; gap: 10px; min-height: 50px; cursor: pointer; -webkit-tap-highlight-color: transparent;">
+                      <div style="margin: 0; border-radius: 0; overflow: hidden; border: none; border-top: 1px solid var(--mob-border);">
+                        <div onclick="window.location.href='/portfolio_detail_mobile.html?id=${p.id}'" style="background: var(--mob-surface); padding: 8px 16px; display: flex; align-items: center; gap: 12px; min-height: 50px; cursor: pointer; -webkit-tap-highlight-color: transparent;">
                           <div style="background-color:${pColor}; width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0;">
                             <span class="material-symbols-outlined" style="font-size: 16px;">work</span>
                           </div>
@@ -280,7 +280,7 @@
                             <div style="font-size: 15px; font-weight: 900; color: var(--mob-primary);">${formatCurrency(pm.currentValue, pCurrency, 0)}</div>
                           </div>
                         </div>
-                        <div style="background: var(--mob-surface-2); border-top: 1px solid var(--mob-border); padding: 5px 8px; display: flex; align-items: center; justify-content: space-around;">
+                        <div style="background: var(--mob-surface-2); border-top: 1px solid var(--mob-border); border-bottom: 1px solid var(--mob-border); padding: 5px 16px; display: flex; align-items: center; justify-content: space-around;">
                           <div style="display:flex; flex-direction:column; align-items:center; gap:1px; flex:1;">
                             <span style="font-size:7px; font-weight:900; text-transform:uppercase; letter-spacing:0.08em; color:var(--mob-text-muted); line-height:1;">ROI</span>
                             <span style="font-size:12px; font-weight:800; line-height:1; color:${roi >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'};">${(roi * 100).toFixed(1)}%</span>
