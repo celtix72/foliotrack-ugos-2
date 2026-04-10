@@ -113,6 +113,7 @@ body.mobile-view-active #mobile-ui {
   overflow: hidden;
   z-index: 9000;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: none;
 }
 
 /* ─── Mobile Header ─────────────────────────────────────────────────────── */
@@ -560,11 +561,9 @@ body.mobile-view-active #mobile-ui {
 }
 
 /* ─── Portfolio Cards List ──────────────────────────────────────────────── */
-.mob-portfolio-list {
-  padding: 4px 0 8px !important;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 2px;
 }
 
 .mob-portfolio-card {
