@@ -563,6 +563,7 @@ body.mobile-view-active #mobile-ui {
 }
 
 /* ─── Portfolio Cards List ──────────────────────────────────────────────── */
+.mob-portfolio-list {
   display: flex;
   flex-direction: column;
   gap: 2px;
