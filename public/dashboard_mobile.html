@@ -420,6 +420,11 @@
           pList.innerHTML = '<div class="mob-empty"><span class="material-symbols-outlined">work_off</span><div class="mob-empty-title">Nessun portafoglio</div></div>';
         } else {
           pList.innerHTML = portfolios.map(p => {
+            const v = p.changeValue || 0;
+            const isPos = v >= 0;
+            const sign = (isPos && v !== 0) ? '+' : '';
+            const gainColor = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+            
             return `
               <div class="mob-holding-swipe-container" 
                    ontouchstart="handleTouchStart(event, this)" 
@@ -439,36 +444,26 @@
                   </div>
                 </div>
 
-                <div class="mob-portfolio-card" onclick="mobGoToPortfolio(${p.id})" style="position:relative; z-index:2; transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); display: flex; align-items: center; gap: 10px; padding: 10px 14px;">
-                  <div class="mob-portfolio-icon" style="background-color:${p.color||'#6366f1'}; width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: white;">
-                    <span class="material-symbols-outlined" style="font-size: 18px;">work</span>
+                <div class="mob-holding-item" onclick="mobGoToPortfolio(${p.id})" style="padding: 8px 16px; gap: 12px; height: 62px;">
+                  <div class="mob-holding-logo" style="background-color:${p.color||'var(--mob-primary)'}; color: white; width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+                    <span class="material-symbols-outlined" style="font-size: 22px; font-variation-settings: 'FILL' 1;">work</span>
                   </div>
-                  <div class="mob-portfolio-info" style="flex: 1; min-width: 0;">
-                    <div class="mob-portfolio-name" style="font-size: 14px; font-weight: 800; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.name}</div>
-                    <div class="mob-portfolio-meta" style="font-size: 9px; font-weight: 700; color: var(--mob-text-caption);">${p.assetCount || 0} Assets${p.type === 'Conto Deposito' ? ' · DEPOSITO' : ''}</div>
+                  <div class="mob-holding-info" style="flex: 1; min-width: 0;">
+                    <div class="mob-holding-ticker" style="font-size: 15px; font-weight: 800; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--mob-text);">${p.name}</div>
+                    <div class="mob-holding-name" style="font-size: 11px; font-weight: 500; color: var(--mob-text-muted); opacity: 0.8;">${p.assetCount || 0} Assets${p.type === 'Conto Deposito' ? ' • DEPOSITO' : ''}</div>
                   </div>
                   
-                  <!-- 1D Variation -->
-                  <div style="flex-shrink: 0;">
-                    ${(() => {
-                        const v = p.changeValue || 0;
-                        const isPos = v >= 0;
-                        const sign = isPos ? '+' : '';
-                        const colorClass = isPos ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20';
-                        const isPrivate = window.privacyState && window.privacyState.enabled;
-                        if (isPrivate) return `<div class="text-[9px] font-black opacity-30 italic">****</div>`;
-                        return `<div class="px-1.5 py-0.5 rounded-md border text-[9px] font-black tracking-tighter flex items-center gap-1 w-fit leading-none ${colorClass}">
-                          <span>${sign}${formatPrivacy(v, p.currency, 'mob-dv1-'+p.id, 0)}</span>
-                        </div>`;
-                    })()}
-                  </div>
-
-                  <!-- Total Value -->
-                  <div class="mob-portfolio-values" style="text-align: right; min-width: 75px; flex-shrink: 0;">
-                    <div class="mob-portfolio-net" style="font-size: 15px; font-weight: 900; color: var(--mob-primary); line-height: 1;">${formatPrivacy(p.totalValue, p.currency, 'mob-p-'+p.id, 0)}</div>
+                  <div class="mob-holding-values" style="text-align: right; flex-shrink: 0;">
+                    <div class="mob-holding-value" style="font-size: 15px; font-weight: 800; color: ${gainColor}; line-height: 1.1;">
+                        ${sign}${formatPrivacy(v, p.currency, 'mob-dv1-'+p.id, 0)}
+                    </div>
+                    <div class="mob-holding-gain" style="font-size: 12px; font-weight: 700; color: var(--mob-text-muted); opacity: 0.9; margin-top: 1px;">
+                        ${formatPrivacy(p.totalValue, p.currency, 'mob-p-'+p.id, 0)}
+                    </div>
                   </div>
                 </div>
               </div>`;
+          }).join('');
           }).join('');
         }
       }
