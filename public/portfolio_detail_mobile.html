@@ -774,7 +774,7 @@
         const volAlertTriggered = volThreshold > 0 && Math.abs(h.changePercent || 0) >= volThreshold;
 
         const dvVal = h.changeValue || 0;
-        const dvPct = h.changePercent || 0;
+        // const dvPct = h.changePercent || 0; // Not used but could be
         const dvIsPos = dvVal >= 0;
         
         let alertBg = '';
@@ -790,6 +790,16 @@
             alertBg = 'background: linear-gradient(rgba(245,158,11,0.12), rgba(245,158,11,0.12)), var(--mob-surface)';
             alertBorder = 'border-color: rgba(245,158,11,0.3) !important';
         }
+
+        const getAssetTag = (type, ticker) => {
+            const t = (type || '').toUpperCase();
+            const tk = (ticker || '').toUpperCase();
+            if (tk.startsWith('CD_')) return 'CD';
+            if (t.includes('ETF')) return 'ETF';
+            if (t.includes('BOND') || t.includes('FIXED INCOME') || tk.startsWith('BTP')) return 'Bond';
+            return 'Az';
+        };
+        const tag = getAssetTag(h.yfType || h.type, h.ticker);
 
         return `
           <div class="mob-holding-swipe-container" 
@@ -820,12 +830,10 @@
               <div class="mob-holding-info">
                 <div class="flex items-center gap-2">
                   <div class="mob-holding-ticker">${h.ticker}</div>
-                  <div class="text-[10px] font-black ${isPos ? 'text-emerald-500' : 'text-rose-500'} flex items-center gap-0.5">
-                  ${isPos ? '▲' : '▼'}${Math.abs(pct).toFixed(1)}% ${h.hasPosition && dvVal !== 0 ? `(${dvVal >= 0 ? '+' : ''}${Math.round(dvVal)})` : ''}
-                </div>
+                  <div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700">${tag}</div>
                 </div>
                 <div class="mob-holding-name">${h.name || ''}</div>
-                <div style="display:flex; gap:8px; margin-top:4px; flex-wrap:wrap">
+                <div class="flex flex-wrap gap-1.5 mt-1">
                   ${targetPrice > 0 ? `<div style="font-size:10px; font-weight:900; color:${targetReached?'var(--mob-emerald)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">${targetReached?'check_circle':'target'}</span> TP: ${formatCurrency(targetPrice, h.currency, 2)}</div>` : ''}
                   ${volThreshold > 0 ? `<div style="font-size:10px; font-weight:900; color:${volAlertTriggered?'var(--mob-amber)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">${volAlertTriggered?'priority_high':'bolt'}</span> VOL: ${volThreshold}%</div>` : ''}
                   ${stopLoss > 0 ? `<div style="font-size:10px; font-weight:900; color:${stopLossHit?'var(--mob-rose)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">${stopLossHit?'dangerous':'warning'}</span> SL: ${formatCurrency(stopLoss, h.currency, 2)}</div>` : ''}
@@ -833,7 +841,10 @@
               </div>
               <div class="mob-holding-values">
                 <div class="mob-holding-value">${formatPrivacy(h.currentValue, currency, 'mob-hv-'+h.ticker, 0)}</div>
-                <div class="mob-holding-gain" style="color:${pct>=0?'var(--mob-emerald)':'var(--mob-rose)'}">${formatPrivacy(h.unrealizedGain, currency, 'mob-h-gain', 0)}</div>
+                <div class="flex items-center justify-end gap-1.5 mt-0.5">
+                    ${(h.hasPosition && dvVal !== 0) ? `<span style="font-size:10px; font-weight:900; color:${dvIsPos?'var(--mob-emerald)':'var(--mob-rose)'}">${dvIsPos?'+':''}${formatPrivacy(dvVal, currency, 'mob-hdv-'+h.ticker, 0)}</span>` : ''}
+                    <div class="mob-holding-gain" style="color:${isPos?'var(--mob-emerald)':'var(--mob-rose)'}">${isPos?'+':''}${pct.toFixed(1)}%</div>
+                </div>
               </div>
             </div>
           </div>
@@ -919,7 +930,9 @@
               </div>
               <div class="mob-holding-values">
                 <div class="mob-holding-value" style="color:${valColor}">${tSign}${formatPrivacy(total || 0, currency, 'mob-tx-'+t.id, 0)}</div>
-                <div class="mob-holding-gain" style="font-size:10px; color:var(--mob-text-caption)">${t.price ? '@' + formatCurrency(t.price, t.currency || currency, 2) : ''}</div>
+                <div class="flex items-center justify-end gap-1.5 mt-0.5">
+                   <div class="mob-holding-gain" style="font-size:10px; color:var(--mob-text-caption)">${t.price ? '@' + formatCurrency(t.price, t.currency || currency, 2) : ''}</div>
+                </div>
               </div>
             </div>
           </div>`;
