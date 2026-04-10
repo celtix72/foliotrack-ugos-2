@@ -268,15 +268,14 @@
                     const pColor = (data.portfolios && data.portfolios.find(port => port.id == p.id)) ? data.portfolios.find(port => port.id == p.id).color : '#6366f1';
                     const pCurrency = (data.portfolios && data.portfolios.find(port => port.id == p.id)) ? data.portfolios.find(port => port.id == p.id).currency : 'EUR';
                     return `
-                    return `
                       <div class="mob-portfolio-card" onclick="window.location.href='/portfolio_detail_mobile.html?id=${p.id}'" style="margin: 0 0 1px; flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 14px; border-left: none; border-right: none; border-radius: 0;">
                         <div class="flex items-center gap-2.5">
                           <div class="mob-portfolio-icon" style="background-color:${pColor}; width: 36px; height: 36px; border-radius: 10px;">
                             <span class="material-symbols-outlined" style="font-size: 18px;">work</span>
                           </div>
                           <div class="mob-portfolio-info">
-                            <div class="mob-portfolio-name" style="font-size: 14px; font-weight: 800; line-height: 1.2;">${p.name}</div>
-                            <div class="mob-portfolio-meta" style="font-size: 9px; font-weight: 700; color: var(--mob-text-caption);">Contrib: ${(pm.contribution*100).toFixed(1)}% · Sharpe: ${pm.sharpeRatio.toFixed(1)}</div>
+                            <div class="mob-portfolio-name" style="font-size: 15px; font-weight: 800; line-height: 1.2;">${p.name}</div>
+                            <div class="mob-portfolio-meta" style="font-size: 11px; font-weight: 500; color: var(--mob-text-caption); opacity: 0.8;">Contrib: ${(pm.contribution*100).toFixed(1)}% · Sharpe: ${pm.sharpeRatio.toFixed(1)}</div>
                           </div>
                           <div class="mob-portfolio-values" style="margin-left: auto; text-align: right;">
                             <div class="mob-portfolio-net" style="font-size: 15px; font-weight: 900;">${formatCurrency(pm.currentValue, pCurrency)}</div>
