@@ -9,6 +9,14 @@ const axios      = require('axios');
 const fs         = require('fs');
 const { xirr, calculateTWR } = require('./utils/finance');
 
+// ─── Application Version ─────────────────────────────────────────────────────
+const now = new Date();
+const month = String(now.getMonth() + 1).padStart(2, '0');
+const day = String(now.getDate()).padStart(2, '0');
+const hour = String(now.getHours()).padStart(2, '0');
+const min = String(now.getMinutes()).padStart(2, '0');
+const APP_VERSION = `v.${month}${day}${hour}:${min}`;
+
 /**
  * Standard ROI calculation used across the app.
  * @param {number} value - Current value (NAV).
@@ -438,7 +446,7 @@ async function sendMarketStatusTelegram() {
 
     const tsFormatted = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }) + ' ' + 
                        new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-    msg += `🕒 \`${escapeCodeV2(tsFormatted)}\``;
+    msg += `🕒 \`${escapeCodeV2(tsFormatted)}\` · \`${escapeCodeV2(APP_VERSION)}\``;
 
     try {
         await sendTelegramMessage(msg);
@@ -462,6 +470,10 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.get('/api/app-version', (req, res) => {
+    res.json({ version: APP_VERSION });
+});
 
 // ─── CACHING LAYER ──────────────────────────────────────────────────────────
 let historicalPricesCache = {}; // { ticker: { date: price } }

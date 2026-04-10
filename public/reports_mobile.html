@@ -268,32 +268,38 @@
                     const pColor = (data.portfolios && data.portfolios.find(port => port.id == p.id)) ? data.portfolios.find(port => port.id == p.id).color : '#6366f1';
                     const pCurrency = (data.portfolios && data.portfolios.find(port => port.id == p.id)) ? data.portfolios.find(port => port.id == p.id).currency : 'EUR';
                     return `
-                      <div class="mob-portfolio-card" onclick="window.location.href='/portfolio?id=${p.id}'" style="margin: 0 16px 12px; flex-direction: column; align-items: stretch; gap: 12px;">
-                        <div style="display: flex; align-items: center; gap: 14px;">
-                          <div class="mob-portfolio-icon" style="background-color:${pColor}">
-                            <span class="material-symbols-outlined">work</span>
+                      <div class="mob-portfolio-card" onclick="window.location.href='/portfolio_detail_mobile.html?id=${p.id}'" style="margin: 0 0 1px; flex-direction: column; align-items: stretch; gap: 12px; padding: 14px 16px; border-left: none; border-right: none; border-radius: 0;">
+                        <div class="flex items-center gap-3">
+                          <div class="mob-portfolio-icon" style="background-color:${pColor}; width: 40px; height: 40px; border-radius: 12px;">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">work</span>
                           </div>
                           <div class="mob-portfolio-info">
-                            <div class="mob-portfolio-name">${p.name}</div>
-                            <div class="mob-portfolio-meta">Contrib: ${(pm.contribution*100).toFixed(1)}% · Sharpe: ${pm.sharpeRatio.toFixed(1)}</div>
+                            <div class="mob-portfolio-name" style="font-size: 15px; font-weight: 800;">${p.name}</div>
+                            <div class="mob-portfolio-meta" style="font-size: 10px; font-weight: 700; color: var(--mob-text-caption);">Contrib: ${(pm.contribution*100).toFixed(1)}% · Sharpe: ${pm.sharpeRatio.toFixed(1)}</div>
                           </div>
-                          <div class="mob-portfolio-values">
-                            <div class="mob-portfolio-net">${formatCurrency(pm.currentValue, pCurrency)}</div>
+                          <div class="mob-portfolio-values" style="margin-left: auto; text-align: right;">
+                            <div class="mob-portfolio-net" style="font-size: 16px; font-weight: 900;">${formatCurrency(pm.currentValue, pCurrency)}</div>
                           </div>
                         </div>
                         
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding-top: 10px; border-top: 1px solid var(--mob-border);">
-                          <div style="display: flex; flex-direction: column; gap: 2px;">
-                            <span style="font-size: 8px; font-weight: 800; text-transform: uppercase; color: var(--mob-text-caption); letter-spacing: 0.05em;">ROI (${mobCurrentRange === 'ALL' ? 'Tot' : mobCurrentRange})</span>
-                            <span style="font-size: 12px; font-weight: 900; color: ${roiColor}">${(roi * 100).toFixed(1)}%</span>
+                        <div class="flex items-center gap-2 pt-2.5 border-t border-slate-100 dark:border-slate-800/50">
+                          <div class="flex flex-col gap-1 flex-1 min-width-0">
+                            <span class="text-[8px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-widest leading-none">ROI (${mobCurrentRange === 'ALL' ? 'Tot' : mobCurrentRange})</span>
+                            <div class="px-1.5 py-1 rounded-md border text-[10px] font-black tracking-tighter flex items-center gap-1 w-fit leading-none ${roi >= 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'}">
+                              <span>${(roi * 100).toFixed(1)}%</span>
+                            </div>
                           </div>
-                          <div style="display: flex; flex-direction: column; gap: 2px;">
-                            <span style="font-size: 8px; font-weight: 800; text-transform: uppercase; color: var(--mob-text-caption); letter-spacing: 0.05em;">TWR</span>
-                            <span style="font-size: 12px; font-weight: 900; color: ${twrColor}">${(twr * 100).toFixed(1)}%</span>
+                          <div class="flex flex-col gap-1 flex-1 min-width-0">
+                            <span class="text-[8px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-widest leading-none">TWR</span>
+                            <div class="px-1.5 py-1 rounded-md border text-[10px] font-black tracking-tighter flex items-center gap-1 w-fit leading-none ${twr >= 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'}">
+                              <span>${(twr * 100).toFixed(1)}%</span>
+                            </div>
                           </div>
-                          <div style="display: flex; flex-direction: column; gap: 2px;">
-                            <span style="font-size: 8px; font-weight: 800; text-transform: uppercase; color: var(--mob-text-caption); letter-spacing: 0.05em;">XIRR</span>
-                            <span style="font-size: 12px; font-weight: 900; color: ${xirrColor}">${(xirr * 100).toFixed(1)}%</span>
+                          <div class="flex flex-col gap-1 flex-1 min-width-0">
+                            <span class="text-[8px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-widest leading-none">XIRR</span>
+                            <div class="px-1.5 py-1 rounded-md border text-[10px] font-black tracking-tighter flex items-center gap-1 w-fit leading-none ${xirr >= 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'}">
+                              <span>${(xirr * 100).toFixed(1)}%</span>
+                            </div>
                           </div>
                         </div>
                       </div>`;

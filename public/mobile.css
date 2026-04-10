@@ -614,7 +614,7 @@ body.mobile-view-active #mobile-ui {
 .mob-news-card {
   background: var(--mob-surface);
   border-bottom: 1px solid var(--mob-border);
-  padding: 14px 20px;
+  padding: 14px 16px;
   display: flex;
   align-items: flex-start;
   gap: 12px;
@@ -622,7 +622,6 @@ body.mobile-view-active #mobile-ui {
   color: inherit;
   -webkit-tap-highlight-color: transparent;
   transition: background 0.15s;
-  border: 5px solid red !important;
   height: auto !important;
   min-height: 0 !important;
 }
@@ -1349,8 +1348,8 @@ html:not(.dark) .mobile-view-active .mob-hero.fiscal {
 .mob-settings-row {
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 12px 20px;
+    gap: 12px;
+    padding: 14px 16px;
     min-height: 52px;
     text-decoration: none;
     color: inherit;
@@ -1367,7 +1366,7 @@ html:not(.dark) .mobile-view-active .mob-hero.fiscal {
     position: absolute;
     bottom: 0;
     right: 0;
-    left: 20px; /* Full width separator starting from padding */
+    left: 16px; /* Full width separator starting from padding */
     height: 1px;
     background: var(--mob-border);
 }
@@ -1742,7 +1741,7 @@ html:not(.dark) .mobile-view-active .mob-hero.fiscal {
 }
 
 .mob-search-item {
-  padding: 14px 18px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--mob-border);
   transition: background 0.2s;
 }
