@@ -338,13 +338,21 @@
   };
 
   function resetSwipes(except) {
-    document.querySelectorAll('.mob-holding-swipe-container').forEach(c => {
-      if (c === except) return;
+    document.querySelectorAll('.mob-scroll .mob-holding-swipe-container').forEach(c => {
+      if (except && c === except) return;
       const item = c.querySelector('.mob-portfolio-card');
       if (item) item.style.transform = 'translateX(0)';
     });
     currentSwipeEl = null;
   }
+
+  window.mobGoToPortfolio = function(id) {
+    if (currentSwipeEl) {
+      resetSwipes();
+      return;
+    }
+    window.location.href = `/portfolio_detail_mobile.html?id=${id}`;
+  };
 
   function mobSyncPrivacyIcon() {
     const icon = document.getElementById('mob-privacy-icon');
@@ -431,7 +439,7 @@
                   </div>
                 </div>
 
-                <div class="mob-portfolio-card" onclick="window.location.href='/portfolio_detail_mobile.html?id=${p.id}'" style="position:relative; z-index:2; transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); display: flex; align-items: center; gap: 10px; padding: 10px 14px;">
+                <div class="mob-portfolio-card" onclick="mobGoToPortfolio(${p.id})" style="position:relative; z-index:2; transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); display: flex; align-items: center; gap: 10px; padding: 10px 14px;">
                   <div class="mob-portfolio-icon" style="background-color:${p.color||'#6366f1'}; width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: white;">
                     <span class="material-symbols-outlined" style="font-size: 18px;">work</span>
                   </div>

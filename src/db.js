@@ -457,8 +457,7 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
             assetValue += shares * priceInPCurr;
 
             // Calculate daily market variation
-            const today = new Date().toISOString().split('T')[0];
-            if (asset && asset.changeValue && asset.quoteDate === today) {
+            if (asset && asset.changeValue) {
                 const changeInPCurr = (aCurr !== portfolio.currency && rate !== 0)
                     ? asset.changeValue / rate
                     : asset.changeValue;

@@ -1546,8 +1546,7 @@ async function getAllPortfolioStats(liveRate = null) {
 
     const todayStr = new Date().toISOString().split('T')[0];
     const heldAssets = heldAssetsRaw.map(a => {
-        const isToday = a.quoteDate === todayStr;
-        const changePct = isToday ? (a.changePercent || 0) : 0;
+        const changePct = a.changePercent || 0;
         const rate = (a.currency === 'USD') ? liveRate : 1;
         const absChange = (a.currentPrice * changePct / 100) * a.netQty / rate;
         return { ticker: a.ticker, name: a.name, changePercent: changePct, absChange };
