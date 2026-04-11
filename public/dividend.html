@@ -188,8 +188,9 @@
                                     <th class="px-5 py-3">Asset</th>
                                     <th class="px-5 py-3">Data</th>
                                     <th class="px-5 py-3">Fonte</th>
-                                    <th class="px-5 py-3 text-right">Singolo</th>
-                                    <th class="px-5 py-3 text-right">Ammontare</th>
+                                    <th class="px-5 py-3 text-right">Lordo (U)</th>
+                                    <th class="px-5 py-3 text-right">DivNetto</th>
+                                    <th class="px-5 py-3 text-right">DivLordo</th>
                                     <th class="px-5 py-3 text-right">Attesi Anno</th>
                                     <th class="px-5 py-3 text-right">Yield</th>
                                     <th class="px-5 py-3"></th>
@@ -250,7 +251,8 @@
                                     <th class="px-5 py-3">Asset</th>
                                     <th class="px-5 py-3">Portafoglio</th>
                                     <th class="px-5 py-3 text-right">Data</th>
-                                    <th class="px-5 py-3 text-right">Importo</th>
+                                    <th class="px-5 py-3 text-right">DivNetto</th>
+                                    <th class="px-5 py-3 text-right">DivLordo</th>
                                 </tr>
                             </thead>
                             <tbody id="dividends-table-body" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
@@ -411,16 +413,33 @@
         }
 
         function renderRow(d) {
+            const letters = d.assetTicker ? d.assetTicker.substring(0, 4).toUpperCase() : '???';
+            const divNetto = d.amount || 0;
+            const divLordo = divNetto + (d.tax || 0);
+
             return `
-            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                <td class="px-5 py-3 border-y border-slate-100 dark:border-slate-800/50">
-                    <span class="font-bold text-xs">${d.assetTicker}</span>
+            <tr class="group hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
+                <td class="px-5 py-2">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-[10px] shrink-0 uppercase border border-primary/20">
+                            ${letters}
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <p class="font-black text-lg text-slate-900 dark:text-white leading-none">${d.assetTicker}</p>
+                            </div>
+                            <p class="text-[9px] text-slate-400 uppercase font-black tracking-widest mt-1">
+                                ${d.assetTicker} • ${d.portfolioName}
+                            </p>
+                        </div>
+                    </div>
                 </td>
-                <td class="px-5 py-3 border-y border-slate-100 dark:border-slate-800/50">
+                <td class="px-5 py-2">
                     <span class="px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-[10px] font-bold text-slate-500">${d.portfolioName}</span>
                 </td>
-                <td class="px-5 py-3 border-y border-slate-100 dark:border-slate-800/50 text-right font-mono text-[10px] font-bold text-slate-400">${d.date}</td>
-                <td class="px-5 py-3 border-y border-slate-100 dark:border-slate-800/50 text-right font-black font-mono text-xs text-emerald-500">${formatCurrency(d.amount, 'EUR')}</td>
+                <td class="px-5 py-2 text-right font-mono text-[10px] font-bold text-slate-400">${d.date}</td>
+                <td class="px-5 py-2 text-right font-black font-mono text-base text-emerald-500">+${formatCurrency(divNetto, 'EUR')}</td>
+                <td class="px-5 py-2 text-right font-bold font-mono text-[11px] text-slate-500">${formatCurrency(divLordo, 'EUR')}</td>
             </tr>
             `;
         }
@@ -780,14 +799,26 @@
 
                     return `
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                        <td class="px-6 py-3 min-w-[150px]">
-                            <div class="font-bold text-xs">${a.ticker}</div>
-                            <div class="text-[10px] text-slate-400 truncate max-w-[150px]">${(a.name && a.name !== 'null') ? a.name : a.ticker}</div>
+                        <td class="px-6 py-2 min-w-[200px]">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-[10px] shrink-0 uppercase border border-primary/20">
+                                    ${a.ticker.substring(0,4)}
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <p class="font-black text-lg text-slate-900 dark:text-white leading-none">${(a.name && a.name !== 'null') ? a.name : a.ticker}</p>
+                                    </div>
+                                    <p class="text-[9px] text-slate-400 uppercase font-black tracking-widest mt-1">
+                                        ${a.ticker}
+                                    </p>
+                                </div>
+                            </div>
                         </td>
-                        <td class="px-6 py-3 font-mono text-[10px] text-slate-500">${a.date}</td>
-                        <td class="px-6 py-3">${badge}</td>
-                        <td class="px-6 py-3 text-right font-mono text-xs font-bold text-slate-500">${a.amount ? '€' + a.amount.toFixed(2) : '—'}</td>
-                        <td class="px-6 py-3 text-right font-mono text-xs font-black text-slate-800 dark:text-slate-100">${fmt(a.totalAmount)}</td>
+                        <td class="px-6 py-2 font-mono text-[10px] text-slate-500">${a.date}</td>
+                        <td class="px-6 py-2">${badge}</td>
+                        <td class="px-6 py-2 text-right font-mono text-[10px] font-bold text-slate-500">${a.amount ? '€' + a.amount.toFixed(2) : '—'}</td>
+                        <td class="px-6 py-2 text-right font-mono text-xs font-black text-slate-800 dark:text-slate-100">${fmt(a.totalAmount)}</td>
+                        <td class="px-6 py-2 text-right font-mono text-xs font-black text-slate-500">${fmt(a.totalAmount)}</td>
                         <td class="px-6 py-3 text-right font-mono text-xs font-bold text-primary">${fmt(a.annualProjected)}</td>
                         <td class="px-6 py-3 text-right font-mono text-xs font-bold text-amber-500">${a.yield ? (a.yield*100).toFixed(2)+'%' : '—'}</td>
                         <td class="px-6 py-3 text-right">${actionsHtml}</td>
