@@ -528,17 +528,18 @@
                          ontouchend="handleTouchEnd(event, this)">
                         ${actions}
                         <div class="mob-holding-item" onclick="event.stopPropagation(); ${isProjected ? `openEditModal(${a.id})` : ''}">
-                            <div class="mob-holding-logo" style="background:var(--mob-surface-2); color:var(--mob-primary)">${letters}</div>
-                            <div class="mob-holding-info">
+                            <div class="mob-holding-logo" style="background:var(--mob-surface-2); color:var(--mob-primary); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:10px;">${letters}</div>
+                            <div class="mob-holding-info" style="flex:1; min-width:0;">
                                 <div class="flex items-center gap-2">
-                                    <div class="mob-holding-ticker">${a.ticker}</div>
+                                    <div class="mob-holding-ticker" style="font-size:15px; font-weight:800; color:var(--mob-text);">${a.ticker}</div>
                                     ${badge}
                                 </div>
-                                <div class="mob-holding-name">${(a.name && a.name !== 'null') ? a.name : a.ticker} • ${a.date}</div>
+                                <div class="mob-holding-name" style="font-size:11px; font-weight:500; color:var(--mob-text-muted); opacity:0.8;">${(a.name && a.name !== 'null') ? a.name : a.ticker} • ${a.date}</div>
                             </div>
-                            <div class="mob-holding-values">
-                                <div class="mob-holding-value" style="color:var(--mob-blue-ios); font-weight:800">${formatCurrency(a.totalAmount, 'EUR', 2)}</div>
-                                <div class="mob-holding-gain" style="color: var(--mob-amber); font-weight:900; margin-top:0">${a.yield ? (a.yield * 100).toFixed(1) + '% YLD' : ''}</div>
+                            <div class="mob-holding-values" style="text-align:right; flex-shrink:0;">
+                                <div class="mob-holding-value" style="font-size:14px; font-weight:800; color:var(--mob-blue-ios)">${formatCurrency(a.totalAmount, 'EUR', 0)}</div>
+                                <div style="font-size:10px; font-weight:700; color:var(--mob-text-caption);">Net: ${formatCurrency(a.totalAmount, 'EUR', 0)}</div>
+                                <div style="font-size:10px; font-weight:900; color:var(--mob-amber); margin-top:1px;">${a.yield ? (a.yield * 100).toFixed(1) + '% YLD' : ''}</div>
                             </div>
                         </div>
                     </div>
@@ -664,6 +665,9 @@
 
             function renderMobRow(d) {
                 const letters = d.assetTicker ? d.assetTicker.substring(0, 3).toUpperCase() : '???';
+                const divNetto = d.amount || 0;
+                const divLordo = divNetto + (d.tax || 0);
+                
                 return `
                     <div class="mob-holding-swipe-container" 
                          ontouchstart="handleTouchStart(event, this)" 
@@ -689,17 +693,18 @@
                         </div>
 
                         <div class="mob-holding-item">
-                            <div class="mob-holding-logo" style="background:var(--mob-surface-2); color:var(--mob-primary)">${letters}</div>
-                            <div class="mob-holding-info">
+                            <div class="mob-holding-logo" style="background:var(--mob-surface-2); color:var(--mob-primary); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:10px;">${letters}</div>
+                            <div class="mob-holding-info" style="flex:1; min-width:0;">
                                 <div class="flex items-center gap-2">
-                                    <div class="mob-holding-ticker">${d.assetTicker}</div>
+                                    <div class="mob-holding-ticker" style="font-size:15px; font-weight:800; color:var(--mob-text);">${d.assetTicker}</div>
                                     <div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">DIVIDEND</div>
                                 </div>
-                                <div class="mob-holding-name">${d.portfolioName} • ${d.date}</div>
+                                <div class="mob-holding-name" style="font-size:11px; font-weight:500; color:var(--mob-text-muted); opacity:0.8;">${d.portfolioName} • ${d.date}</div>
                             </div>
-                            <div class="mob-holding-values">
-                                <div class="mob-holding-value" style="color:var(--mob-emerald); font-weight:800">+${formatCurrency(d.amount, 'EUR', 2)}</div>
-                                <div class="mob-holding-gain text-[10px]" style="color: var(--mob-text-caption)">Total: ${formatCurrency(d.amount, 'EUR', 0)}</div>
+                            <div class="mob-holding-values" style="text-align:right; flex-shrink:0;">
+                                <div class="mob-holding-value" style="font-size:14px; font-weight:800; color:var(--mob-emerald);">+${formatCurrency(divNetto, 'EUR', 0)}</div>
+                                <div style="font-size:10px; font-weight:700; color:var(--mob-text-caption);">Lordo: ${formatCurrency(divLordo, 'EUR', 0)}</div>
+                                <div style="font-size:10px; font-weight:500; color:var(--mob-text-muted); opacity:0.7; margin-top:1px;">Netto: ${formatCurrency(divNetto, 'EUR', 0)}</div>
                             </div>
                         </div>
                     </div>
