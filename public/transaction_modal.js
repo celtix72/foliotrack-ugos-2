@@ -23,7 +23,7 @@
     // ─── HTML Template ──────────────────────────────────────────────────────────
     function _getModalHtml() {
         return `
-<div id="transaction-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] hidden items-center justify-center p-3 md:p-4 overflow-y-auto">
+<div id="transaction-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[10000] hidden items-center justify-center p-3 md:p-4 overflow-y-auto">
     <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-xl shadow-2xl max-h-[95vh] flex flex-col my-auto">
 
         <!-- Header -->
