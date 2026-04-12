@@ -187,8 +187,9 @@
                 <div id="tm-amount-wrap" class="hidden space-y-1.5">
                     <label class="text-[10px] font-black uppercase tracking-widest text-slate-500" id="tm-amount-label">Importo Totale</label>
                     <input id="tm-amount" type="number" step="any" placeholder="0.00"
-                        class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 px-3 text-sm font-bold font-mono focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
-                    <p class="text-[10px] text-slate-400 italic" id="tm-amount-hint"></p>
+                        class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 px-3 text-sm font-bold font-mono focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                        oninput="if(typeof tmCalcFromAmount === 'function') tmCalcFromAmount()" />
+                    <p class="text-[10px] text-slate-400 italic mt-1" id="tm-amount-hint"></p>
                 </div>
 
                 <!-- Portafoglio Destinazione (solo TRANSFER) -->
@@ -332,14 +333,14 @@
         // Commissioni + Tax: solo BUY, SELL
         _toggleField('tm-comm-tax-wrap', isTrade);
 
-        // Importo totale: cash-only e DIVIDEND (auto-calc)
+        // Importo totale: cash-only e DIVIDEND (modificabile)
         _toggleField('tm-amount-wrap', isCashOnly || isDividend);
         const amountLabel = document.getElementById('tm-amount-label');
         const amountHint = document.getElementById('tm-amount-hint');
         const amountInput = document.getElementById('tm-amount');
         if (amountLabel) amountLabel.innerText = isDividend ? 'Netto Dividendo (€)' : 'Importo';
-        if (amountInput) amountInput.readOnly = isDividend;
-        if (amountHint) amountHint.innerText = isDividend ? 'Calcolato automaticamente da Qty × Prezzo − Tax' : '';
+        if (amountInput) amountInput.readOnly = false;
+        if (amountHint) amountHint.innerText = isDividend ? 'Inserisci il Totale Netto o le Tasse per auto-calcolare il Dividendo Unitario.' : '';
 
         // Portafoglio destinazione: solo TRANSFER
         _toggleField('tm-dest-wrap', isTransfer);
@@ -400,6 +401,10 @@
     window.tmCalcNet = function () {
         const type = document.getElementById('tm-type')?.value;
         if (type !== 'DIVIDEND') return;
+        
+        // Prevent looping when called from tmCalcFromAmount
+        if (window._tmIsCalculating) return;
+
         const qty = parseFloat(document.getElementById('tm-qty')?.value) || 0;
         const price = parseFloat(document.getElementById('tm-price')?.value) || 0;
         const tax = parseFloat(document.getElementById('tm-tax')?.value) || 0;
@@ -407,7 +412,36 @@
         const gross = (qty * price) / fx;
         const net = gross - (tax / fx);
         const amountEl = document.getElementById('tm-amount');
-        if (amountEl) amountEl.value = net.toFixed(2);
+        if (amountEl) {
+            window._tmIsCalculating = true;
+            amountEl.value = net.toFixed(2);
+            window._tmIsCalculating = false;
+        }
+    };
+
+    // ─── Calc Unit Price From Amount ──────────────────────────────────────────────
+    window.tmCalcFromAmount = function () {
+        const type = document.getElementById('tm-type')?.value;
+        if (type !== 'DIVIDEND') return;
+        
+        if (window._tmIsCalculating) return;
+
+        const qty = parseFloat(document.getElementById('tm-qty')?.value) || 0;
+        if (qty <= 0) return;
+        
+        const net = parseFloat(document.getElementById('tm-amount')?.value) || 0;
+        const tax = parseFloat(document.getElementById('tm-tax')?.value) || 0;
+        const fx = parseFloat(document.getElementById('tm-fx')?.value) || 1;
+        
+        // net = (qty * price) / fx - (tax / fx) => price = (net * fx + tax) / qty
+        const price = (net * fx + tax) / qty;
+        
+        const priceEl = document.getElementById('tm-price');
+        if (priceEl) {
+            window._tmIsCalculating = true;
+            priceEl.value = price.toFixed(6);
+            window._tmIsCalculating = false;
+        }
     };
 
     // ─── Asset Search ────────────────────────────────────────────────────────────
@@ -771,9 +805,12 @@
 
     // ─── Holdings Lookup ─────────────────────────────────────────────────────────
     function _getOwnedQuantity(ticker) {
-        const holdings = window.currentHoldings || window.mobCurrentHoldings || [];
+        const pId = document.getElementById('tm-portfolio')?.value;
+        const currentHoldings = window.currentHoldings || window.mobCurrentHoldings || window._portfolioData?.holdings || [];
+        const cacheHoldings = pId && window._tmHoldingsCache ? window._tmHoldingsCache[pId] : [];
+        const holdings = currentHoldings.length > 0 ? currentHoldings : cacheHoldings;
         const h = holdings.find(x => x.ticker === ticker);
-        return h ? (h.totalQuantity || h.quantity || 0) : 0;
+        return h ? (h.shares || h.totalQuantity || h.quantity || 0) : 0;
     }
 
     // ─── Refresh helpers ─────────────────────────────────────────────────────────
