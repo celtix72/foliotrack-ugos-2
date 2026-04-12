@@ -30,6 +30,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
     <script src="/asset_chart_component.js"></script>
+    <script src="/transaction_modal.js"></script>
 </head>
 <body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex">
 <!-- Sidebar -->
@@ -617,128 +618,7 @@
     </div>
 </div>
 
-<!-- Transaction Modal -->
-<div id="transaction-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-2 md:p-4">
-    <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl max-h-[95vh] flex flex-col">
-        <div class="px-4 py-3 md:px-6 md:py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-            <h3 id="t-modal-title" class="font-bold text-base md:text-lg">New Transaction</h3>
-            <button onclick="closeTransactionModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-                <span class="material-symbols-outlined">close</span>
-            </button>
-        </div>
-        <form id="transaction-form" class="p-4 md:p-6 space-y-4 md:space-y-6 overflow-y-auto custom-scrollbar">
-            <input type="hidden" id="t-id"/>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                <div class="space-y-1 md:space-y-2">
-                    <label class="text-xs md:text-sm font-medium">Type</label>
-                    <select id="t-type" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 md:py-2.5 md:px-4 text-sm" onchange="toggleTransactionFields()">
-                        <option value="BUY">BUY</option>
-                        <option value="SELL">SELL</option>
-                        <option value="DIVIDEND">DIVIDEND</option>
-                        <option value="DEPOSIT">DEPOSIT</option>
-                        <option value="WITHDRAWAL">WITHDRAWAL</option>
-                        <option value="TAX">TAX</option>
-                        <option value="TRANSFER">TRANSFER</option>
-                    </select>
-                </div>
-                <div class="space-y-1 md:space-y-2">
-                    <label class="text-xs md:text-sm font-medium">Date</label>
-                    <input id="t-date" type="date" required class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 md:py-2.5 md:px-4 text-sm"/>
-                </div>
-                <div id="t-dest-portfolio-field" class="space-y-1 md:space-y-2 hidden md:col-span-2">
-                    <label class="text-xs md:text-sm font-medium">Destination Portfolio (for Transfer)</label>
-                    <select id="t-dest-portfolio" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 md:py-2.5 md:px-4 text-sm">
-                        <option value="">— Select Target —</option>
-                    </select>
-                </div>
-                <div id="t-asset-field" class="space-y-1 md:space-y-2 relative md:col-span-2">
-                    <label class="text-xs md:text-sm font-medium">Asset (Search)</label>
-                    <input id="t-asset-search" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 md:py-2.5 md:px-4 text-sm" placeholder="Ticker..." autocomplete="off"/>
-                    <div id="t-search-results" class="absolute left-0 right-0 mt-1 bg-white dark:bg-[#1a2332] border rounded-lg shadow-xl z-50 hidden max-h-48 overflow-y-auto"></div>
-                    
-                    <!-- Metadata Display Block -->
-                    <div id="t-asset-metadata" class="hidden mt-3 p-3 md:p-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl grid grid-cols-3 gap-2 md:gap-4">
-                        <div>
-                            <p class="text-[9px] md:text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-0.5 md:mb-1">Mercato</p>
-                            <p id="t-meta-exchange" class="text-[10px] md:text-xs font-bold truncate">-</p>
-                        </div>
-                        <div>
-                            <p class="text-[9px] md:text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-0.5 md:mb-1">Tipologia</p>
-                            <p id="t-meta-type" class="text-[10px] md:text-xs font-bold truncate">-</p>
-                        </div>
-                        <div>
-                            <p class="text-[9px] md:text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-0.5 md:mb-1">Area Geog.</p>
-                            <p id="t-meta-country" class="text-[10px] md:text-xs font-bold truncate">-</p>
-                        </div>
-                    </div>
-
-                    <input type="hidden" id="t-asset-ticker"/>
-                    <input type="hidden" id="t-asset-currency"/>
-                </div>
-                <div class="space-y-1 md:space-y-2">
-                    <label class="text-xs md:text-sm font-medium">ISIN (Ticker 2)</label>
-                    <input id="t-isin" type="text" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 md:py-2.5 md:px-4 text-sm" placeholder="IT000..." autocomplete="off"/>
-                </div>
-                <div class="space-y-1 md:space-y-2">
-                    <label class="text-xs md:text-sm font-medium">Data Source</label>
-                    <select id="t-source" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 md:py-2.5 md:px-4 text-sm" onchange="toggleTransactionFields()">
-                        <option value="YF" selected>Yahoo Finance</option>
-                        <option value="B_ITA">Borsa Italiana</option>
-                        <option value="MANUAL">Manual</option>
-                    </select>
-                </div>
-                <!-- Manual Fields (Name & Currency) -->
-                <div id="t-manual-fields" class="md:col-span-2 hidden grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="space-y-1 md:space-y-2">
-                        <label class="text-xs md:text-sm font-medium">Asset Name (Manual)</label>
-                        <input id="t-asset-name" type="text" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 md:py-2.5 md:px-4 text-sm" placeholder="Es. Conto Ifis..."/>
-                    </div>
-                    <div class="space-y-1 md:space-y-2">
-                        <label class="text-xs md:text-sm font-medium">Asset Currency (Manual)</label>
-                        <select id="t-asset-currency-manual" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 md:py-2.5 md:px-4 text-sm">
-                            <option value="EUR">EUR</option>
-                            <option value="USD">USD</option>
-                            <option value="GBP">GBP</option>
-                            <option value="CHF">CHF</option>
-                        </select>
-                    </div>
-                </div>
-                <div id="t-amount-field" class="space-y-1 md:space-y-2 hidden">
-                    <label class="text-xs md:text-sm font-medium">Amount</label>
-                    <input id="t-amount" type="number" step="any" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 md:py-2.5 md:px-4 text-sm"/>
-                </div>
-                <div id="t-stock-fields" class="contents">
-                    <div class="space-y-1 md:space-y-2">
-                        <label class="text-xs md:text-sm font-medium">Quantity</label>
-                        <input id="t-qty" type="number" step="any" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 md:py-2.5 md:px-4 text-sm"/>
-                    </div>
-                    <div class="space-y-1 md:space-y-2">
-                        <label class="text-xs md:text-sm font-medium">Price</label>
-                        <input id="t-price" type="number" step="any" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 md:py-2.5 md:px-4 text-sm" onchange="checkFX()"/>
-                    </div>
-                </div>
-                <div class="space-y-1 md:space-y-2">
-                    <label class="text-xs md:text-sm font-medium">Comm</label>
-                    <input id="t-comm" type="number" step="any" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 md:py-2.5 md:px-4 text-sm" value="0"/>
-                </div>
-                <div class="space-y-1 md:space-y-2">
-                    <label class="text-xs md:text-sm font-medium">Tax</label>
-                    <input id="t-tax" type="number" step="any" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 md:py-2.5 md:px-4 text-sm" value="0"/>
-                </div>
-                <div id="t-fx-field" class="space-y-1 md:space-y-2 md:col-span-2 hidden">
-                    <div class="p-3 md:p-4 bg-primary/5 border rounded-xl flex items-center justify-between">
-                        <span class="text-[10px] md:text-xs text-slate-500">Asset: <span id="asset-curr-label">?</span> • Portfolio: <span id="p-curr-label">?</span></span>
-                        <input id="t-fx" type="number" step="any" class="w-20 md:w-24 text-right bg-white dark:bg-slate-800 border-slate-200 rounded py-1 px-2 font-bold text-xs md:text-sm" value="1"/>
-                    </div>
-                </div>
-            </div>
-            <div class="pt-2 md:pt-4 flex gap-3 md:gap-4">
-                <button type="button" onclick="closeTransactionModal()" class="flex-1 py-2.5 md:py-3 rounded-lg font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm md:text-base">Abort</button>
-                <button type="submit" class="flex-1 py-2.5 md:py-3 bg-emerald-600 text-white rounded-lg font-bold shadow-lg hover:bg-emerald-700 text-sm md:text-base">Submit</button>
-            </div>
-        </form>
-    </div>
-</div>
+<!-- Transaction Modal is injected by /transaction_modal.js -->
 
 <!-- Import Modal -->
 <div id="import-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-start justify-center pt-8 pb-8 px-4 overflow-y-auto">
@@ -1512,80 +1392,16 @@
         };
     }
 
-    window.openTransactionModal = function() {
-        document.getElementById('t-id').value = '';
-        const pName = document.getElementById('title-portfolio-name')?.innerText || "";
-        document.getElementById('t-modal-title').innerText = pName ? `New Transaction in ${pName}` : "New Transaction";
-        document.getElementById('transaction-form').reset();
-        const modal = document.getElementById('transaction-modal');
-        if (modal) {
-            modal.classList.remove('hidden');
-            modal.style.display = 'flex'; // Force visibility
-            modal.style.zIndex = '9999';   // Ensure top-most
-        }
-        document.getElementById('t-date').value = new Date().toISOString().split('T')[0];
-        toggleTransactionFields();
-    };
-    window.closeTransactionModal = function() {
-        const modal = document.getElementById('transaction-modal');
-        if (modal) {
-            modal.classList.add('hidden');
-            modal.style.display = 'none';
-        }
-        document.getElementById('transaction-form').reset();
-        if (document.getElementById('t-fx-field')) document.getElementById('t-fx-field').classList.add('hidden');
-        if (document.getElementById('t-asset-metadata')) {
-            document.getElementById('t-asset-metadata').classList.add('hidden');
-        }
+    // openTransactionModal & closeTransactionModal are defined in transaction_modal.js (loaded in <head>)
+    // We wrap here to inject the current portfolio context automatically
+    const _origOpenTM = window.openTransactionModal;
+    window.openTransactionModal = function(options) {
+        const pid = (typeof options === 'object' && options?.portfolioId) ? options.portfolioId : currentPortfolioId;
+        if (typeof _origOpenTM === 'function') _origOpenTM({ portfolioId: pid });
     };
 
-    function toggleTransactionFields() {
-        const type = document.getElementById('t-type').value;
-        const source = document.getElementById('t-source').value;
 
-        const isTrade = ['BUY', 'SELL'].includes(type);
-        const isDividend = type === 'DIVIDEND';
-        const isCash = ['DEPOSIT', 'WITHDRAWAL', 'TAX', 'DIVIDEND', 'TRANSFER'].includes(type);
-        
-        document.getElementById('t-asset-field').style.display = (isTrade || isDividend || isCash) ? 'block' : 'none';
-        document.getElementById('t-stock-fields').style.display = (isTrade || isDividend) ? 'contents' : 'none';
-        document.getElementById('t-amount-field').style.display = isCash ? 'block' : 'none';
-        
-        // Manual Fields Visibility
-        const manualFields = document.getElementById('t-manual-fields');
-        if (manualFields) {
-            manualFields.classList.toggle('hidden', source !== 'MANUAL' || (!isTrade && !isDividend));
-        }
-
-        if (isDividend) calculateNetDividend();
-
-        // Auto-set CASH ticker for cash-only movements
-        const assetSearch = document.getElementById('t-asset-search');
-        const assetTicker = document.getElementById('t-asset-ticker');
-        if (['DEPOSIT', 'WITHDRAWAL', 'TAX', 'TRANSFER'].includes(type) && !assetTicker.value) {
-            assetSearch.value = 'CASH';
-            selectTAsset('CASH', portfolioCurrency);
-        }
-        
-        // Auto-select MANUAL if ticker starts with CD_
-        if (assetSearch.value.toUpperCase().startsWith('CD_') && source !== 'MANUAL') {
-            document.getElementById('t-source').value = 'MANUAL';
-            toggleTransactionFields();
-            return;
-        }
-
-        // Update label for Amount when dividend is selected
-        const amountLabel = document.querySelector('#t-amount-field label');
-        if (amountLabel) {
-            amountLabel.textContent = isDividend ? 'Net Dividend' : 'Amount';
-        }
-
-        // Show/Hide destination portfolio for transfers
-        document.getElementById('t-dest-portfolio-field').classList.toggle('hidden', type !== 'TRANSFER');
-        if (type === 'TRANSFER' && document.getElementById('t-dest-portfolio').children.length <= 1) {
-            loadAllPortfoliosForSelect();
-        }
-    }
+    // toggleTransactionFields, calculateNetDividend, checkFX, selectTAsset: all handled by transaction_modal.js
 
     async function loadAllPortfoliosForSelect() {
         try {
@@ -1752,45 +1568,7 @@
         } catch (err) { console.error(err); }
     }
 
-    function _wireTransactionForm() {
-        const form = document.getElementById('transaction-form');
-        if (!form) return;
-        form.onsubmit = async (e) => {
-            e.preventDefault();
-            const source = document.getElementById('t-source').value;
-            const data = {
-                portfolioId: currentPortfolioId,
-                type: document.getElementById('t-type').value,
-                assetTicker: document.getElementById('t-asset-ticker').value,
-                date: document.getElementById('t-date').value,
-                quantity: document.getElementById('t-qty').value,
-                price: document.getElementById('t-price').value,
-                commission: document.getElementById('t-comm').value,
-                tax: document.getElementById('t-tax').value,
-                exchangeRate: document.getElementById('t-fx').value,
-                amount: document.getElementById('t-amount').value,
-                destinationPortfolioId: document.getElementById('t-dest-portfolio').value,
-                isin: document.getElementById('t-isin').value,
-                dataSource: source,
-                assetName: source === 'MANUAL' ? document.getElementById('t-asset-name').value : null,
-                assetCurrency: source === 'MANUAL' ? document.getElementById('t-asset-currency-manual').value : document.getElementById('t-asset-currency').value
-            };
-            const id = document.getElementById('t-id').value;
-            const method = id ? 'PUT' : 'POST';
-            const url = id ? `/api/transactions/${id}` : '/api/transactions';
-
-            try {
-                await fetch(url, {
-                    method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                closeTransactionModal();
-                loadPortfolioDetails();
-                window.dispatchEvent(new CustomEvent('portfolios-updated'));
-            } catch (err) { console.error(err); }
-        };
-    }
+    // _wireTransactionForm: handled by transaction_modal.js via handleTransactionSubmit()
 
     let pendingDeleteAction = null;
 
@@ -1832,112 +1610,15 @@
     window.editTransaction = async function(id) {
         const t = currentTransactions.find(tx => tx.id === id);
         if (!t) return;
-
-        document.getElementById('t-id').value = t.id;
-        document.getElementById('t-type').value = t.type;
-        document.getElementById('t-date').value = t.date;
-        document.getElementById('t-qty').value = t.quantity || 0;
-        document.getElementById('t-price').value = t.price || 0;
-        document.getElementById('t-comm').value = t.commission || 0;
-        document.getElementById('t-tax').value = t.tax || 0;
-        document.getElementById('t-fx').value = t.exchangeRate || 1;
-        document.getElementById('t-amount').value = t.amount || 0;
-        document.getElementById('t-asset-ticker').value = t.assetTicker || '';
-        document.getElementById('t-asset-search').value = t.assetTicker || '';
-        
-        // Fetch asset metadata for isin and source
-        if (t.assetTicker && t.assetTicker !== 'CASH') {
-            fetch(`/api/validate-ticker?ticker=${t.assetTicker}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data && data.valid) {
-                        document.getElementById('t-isin').value = data.isin || '';
-                        document.getElementById('t-source').value = data.dataSource || 'YF';
-                    }
-                }).catch(console.error);
-        } else {
-            document.getElementById('t-isin').value = '';
-            document.getElementById('t-source').value = 'YF';
-        }
-
-        // Determine asset currency for FX display
-        let assetCurr = portfolioCurrency;
-        if (t.assetTicker === 'CASH' || !t.assetTicker) {
-            assetCurr = portfolioCurrency;
-        } else {
-            const h = currentHoldings.find(hold => hold.ticker === t.assetTicker);
-            if (h) assetCurr = h.currency;
-        }
-        document.getElementById('t-asset-currency').value = assetCurr;
-        
-        document.getElementById('t-modal-title').innerText = "Edit Transaction";
-        const editModal = document.getElementById('transaction-modal');
-        if (editModal) {
-            editModal.classList.remove('hidden');
-            editModal.style.display = 'flex';
-            editModal.style.zIndex = '9999';
-        }
-        toggleTransactionFields();
-        checkFX(true); // Pass true to avoid overwriting existing FX rate
-    }
+        // Use the unified modal, passing the transaction object
+        await window.mobileEditTransaction(t);
+    };
 
     window.duplicateTransaction = async function(id) {
         const t = currentTransactions.find(tx => tx.id === id);
         if (!t) return;
-
-        // Reset ID for NEW transaction
-        document.getElementById('t-id').value = '';
-        
-        // Fill data from original
-        document.getElementById('t-type').value = t.type;
-        document.getElementById('t-qty').value = t.quantity || 0;
-        document.getElementById('t-price').value = t.price || 0;
-        document.getElementById('t-comm').value = t.commission || 0;
-        document.getElementById('t-tax').value = t.tax || 0;
-        document.getElementById('t-fx').value = t.exchangeRate || 1;
-        document.getElementById('t-amount').value = t.amount || 0;
-        document.getElementById('t-asset-ticker').value = t.assetTicker || '';
-        document.getElementById('t-asset-search').value = t.assetTicker || '';
-
-        // Requirement: Date must be today
-        document.getElementById('t-date').value = new Date().toISOString().split('T')[0];
-        
-        // Fetch asset metadata for isin and source (like edit)
-        if (t.assetTicker && t.assetTicker !== 'CASH') {
-            fetch(`/api/validate-ticker?ticker=${t.assetTicker}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data && data.valid) {
-                        document.getElementById('t-isin').value = data.isin || '';
-                        document.getElementById('t-source').value = data.dataSource || 'YF';
-                    }
-                }).catch(console.error);
-        } else {
-            document.getElementById('t-isin').value = '';
-            document.getElementById('t-source').value = 'YF';
-        }
-
-        // Determine asset currency for FX display
-        let assetCurr = portfolioCurrency;
-        if (t.assetTicker === 'CASH' || !t.assetTicker) {
-            assetCurr = portfolioCurrency;
-        } else {
-            const h = currentHoldings.find(hold => hold.ticker === t.assetTicker);
-            if (h) assetCurr = h.currency;
-        }
-        document.getElementById('t-asset-currency').value = assetCurr;
-        
-        document.getElementById('t-modal-title').innerText = "Duplicate Transaction";
-        const modal = document.getElementById('transaction-modal');
-        if (modal) {
-            modal.classList.remove('hidden');
-            modal.style.display = 'flex';
-            modal.style.zIndex = '9999';
-        }
-        
-        toggleTransactionFields();
-        checkFX(true);
-    }
+        await mobileDuplicateTransaction(t);
+    };
 
     async function deletePortfolio() {
         const id = document.getElementById('p-id').value;
