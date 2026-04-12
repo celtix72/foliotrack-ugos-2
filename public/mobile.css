@@ -570,45 +570,6 @@ body.mobile-view-active #mobile-ui {
   gap: 0;
 }
 
-.mob-portfolio-card {
-  background: var(--mob-surface);
-  border: 1px solid var(--mob-border);
-  border-left: none !important;
-  border-right: none !important;
-  border-radius: 0 !important;
-  padding: 16px 20px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition: transform 0.12s, border-color 0.2s;
-  text-decoration: none;
-  color: inherit;
-}
-.mob-portfolio-card:active { transform: scale(0.97); border-color: var(--mob-primary); }
-
-.mob-portfolio-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  flex-shrink: 0;
-}
-.mob-portfolio-icon .material-symbols-outlined { font-size: calc(22px * var(--mob-scale, 1)); }
-
-.mob-portfolio-info { flex: 1; min-width: 0; }
-.mob-portfolio-name { font-size: calc(14px * var(--mob-scale, 1)); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mob-portfolio-meta { font-size: calc(11px * var(--mob-scale, 1)); color: var(--mob-text-muted); font-weight: 500; }
-
-.mob-portfolio-values { text-align: right; flex-shrink: 0; }
-.mob-portfolio-net { font-size: calc(14px * var(--mob-scale, 1)); font-weight: 800; color: var(--mob-primary); }
-.mob-portfolio-gross { font-size: calc(10px * var(--mob-scale, 1)); color: var(--mob-text-caption); font-weight: 600; }
-.mob-portfolio-change { font-size: calc(11px * var(--mob-scale, 1)); font-weight: 700; }
-
 /* ─── News List ─── */
 .mob-news-list {
   display: block;

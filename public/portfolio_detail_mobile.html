@@ -480,20 +480,25 @@
         return;
       }
       container.innerHTML = portfolios.map(p => {
-        const isPos = p.changePercent >= 0;
+        const changeVal = p.changeValue || 0;
+        const isPos = changeVal >= 0;
+        const sign = (isPos && changeVal !== 0) ? '+' : '';
+        const gainColor = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+
         return `
-          <div class="mob-portfolio-card" onclick="mobOpenPortfolio(${p.id})">
-            <div class="mob-portfolio-icon" style="background-color:${p.color||'#6366f1'}">
-              <span class="material-symbols-outlined">work</span>
+          <div class="mob-holding-item mb-2" onclick="mobOpenPortfolio(${p.id})">
+            <div class="mob-holding-logo" style="background-color:${p.color||'var(--mob-primary)'}; color: white;">
+              <span class="material-symbols-outlined" style="font-size: 20px; font-variation-settings: 'FILL' 1;">work</span>
             </div>
-            <div class="mob-portfolio-info">
-              <div class="mob-portfolio-name">${p.name}</div>
-              <div class="mob-portfolio-meta">${p.assetCount} Assets · ${p.currency}</div>
+            <div class="mob-holding-info">
+              <div class="mob-holding-ticker truncate">${p.name}</div>
+              <div class="mob-holding-name">${p.assetCount || 0} Assets${p.type === 'Conto Deposito' ? ' • DEPOSITO' : ''}</div>
             </div>
-            <div class="mob-portfolio-values">
-              <div class="mob-portfolio-net">${formatPrivacy(p.netValue||p.totalValue, p.currency, 'mob-pn-'+p.id, 0)}</div>
-              <div class="mob-portfolio-gross">Lordo: ${formatPrivacy(p.totalValue, p.currency, 'mob-pg-'+p.id, 0)}</div>
-              <div class="mob-portfolio-change" style="color:${isPos?'var(--mob-emerald)':'var(--mob-rose)'}">${isPos?'▲':'▼'} ${Math.abs(p.changePercent).toFixed(1)}%</div>
+            <div class="mob-holding-values">
+              <div class="mob-holding-value text-primary dark:text-primary">${formatPrivacy(p.totalValue, p.currency, 'mob-p-'+p.id, 0)}</div>
+              <div class="flex items-center justify-end mt-0.5">
+                <div class="mob-holding-gain" style="color: ${gainColor};">${sign}${formatPrivacy(changeVal, p.currency, 'mob-dv1-'+p.id, 0)}</div>
+              </div>
             </div>
           </div>`;
       }).join('');
