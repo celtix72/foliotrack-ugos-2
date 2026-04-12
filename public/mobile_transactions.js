@@ -177,13 +177,6 @@
         } catch (err) { console.error('Manual update error:', err); }
     };
 
-    // Auto-inject on mobile view
-    function autoInit() {
-        if (window._mobileViewActive || document.body.classList.contains('mobile-view-active') || window.innerWidth < 1024) {
-            injectMobileModal();
-        }
-    }
-
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', autoInit);
     } else {
