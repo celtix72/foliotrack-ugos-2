@@ -89,7 +89,9 @@
                         <input id="tm-asset-search" type="text" autocomplete="off"
                             placeholder="Es. AAPL, ISP.MI..."
                             class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 px-3 text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                            oninput="handleTMAssetInput(this.value)" />
+                            oninput="handleTMAssetInput(this.value)"
+                            onfocus="handleTMAssetFocus()"
+                            onclick="handleTMAssetFocus()" />
                         <div id="tm-search-results" class="hidden absolute left-0 right-0 top-full mt-1 z-50 bg-white dark:bg-[#1a2332] border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-48 overflow-y-auto"></div>
                         <input type="hidden" id="tm-asset-ticker" />
                         <input type="hidden" id="tm-asset-currency" value="EUR" />
@@ -409,8 +411,16 @@
     };
 
     // ─── Asset Search ────────────────────────────────────────────────────────────
+    window.handleTMAssetFocus = function() {
+        const type = document.getElementById('tm-type')?.value;
+        if (['SELL', 'DIVIDEND'].includes(type) && !document.getElementById('tm-asset-search').value) {
+            handleTMAssetInput('');
+        }
+    };
+
     window.handleTMAssetInput = function (query) {
         const source = document.getElementById('tm-source')?.value || 'YF';
+        const type = document.getElementById('tm-type')?.value;
 
         if (source === 'MANUAL' || source === 'B_ITA') {
             document.getElementById('tm-asset-ticker').value = query.trim().toUpperCase();
@@ -419,6 +429,43 @@
         }
 
         clearTimeout(_searchTimeout);
+        
+        // Modalità posizioni aperte per SELL e DIVIDEND
+        if (['SELL', 'DIVIDEND'].includes(type)) {
+            const holdings = window.currentHoldings || window.mobCurrentHoldings || window._portfolioData?.holdings || [];
+            
+            // Filtra per open positions ed eventuale query testuale
+            const filtered = holdings.filter(h => {
+                if ((h.totalQuantity || h.quantity || 0) <= 0) return false;
+                if (!query) return true;
+                const sym = (h.ticker || '').toLowerCase();
+                const nm = (h.name || '').toLowerCase();
+                const q = query.toLowerCase();
+                return sym.includes(q) || nm.includes(q);
+            });
+            
+            const container = document.getElementById('tm-search-results');
+            if (!container) return;
+            if (filtered.length === 0) { _hideSearchResults(); return; }
+            
+            container.innerHTML = filtered.map(h => {
+                const sym = h.ticker;
+                const name = h.name || sym;
+                const curr = h.currency || '';
+                const qty = h.totalQuantity || h.quantity || 0;
+                return `<div class="px-4 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-sm transition-colors border-b border-slate-100 dark:border-slate-800/50 last:border-0"
+                    onclick="selectTMAsset('${sym.replace(/'/g, "\\'")}', '${curr.replace(/'/g, "\\'")}', '${name.replace(/'/g, "\\'")}')">
+                    <div class="flex items-center justify-between">
+                        <span class="font-black text-slate-900 dark:text-white">${sym} <span class="text-slate-400 text-xs ml-1 font-bold">(${qty} possedute)</span></span>
+                        <span class="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">${curr}</span>
+                    </div>
+                    <div class="text-[11px] text-slate-400 mt-0.5 truncate">${name}</div>
+                </div>`;
+            }).join('');
+            container.classList.remove('hidden');
+            return;
+        }
+
         if (!query || query.length < 2) { _hideSearchResults(); return; }
 
         _searchTimeout = setTimeout(async () => {
