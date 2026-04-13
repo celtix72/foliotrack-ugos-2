@@ -191,6 +191,40 @@
                     <p class="text-[10px] text-slate-400 italic mt-1" id="tm-amount-hint"></p>
                 </div>
 
+                <!-- Alert & Stop Loss (Desktop: grid, Mobile: col) -->
+                <div id="tm-alerts-wrap" class="hidden mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <p class="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-3">Impostazioni Asset (Notifiche Alert)</p>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div class="space-y-1.5">
+                            <label class="mob-input-label">Target Price 1</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 font-black text-slate-400 text-xs tm-alerts-curr">€</span>
+                                <input id="tm-tp" type="number" step="any" placeholder="0.00" class="mob-input-field pl-7 font-mono" />
+                            </div>
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="mob-input-label">Target Price 2</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 font-black text-slate-400 text-xs tm-alerts-curr">€</span>
+                                <input id="tm-tp2" type="number" step="any" placeholder="0.00" class="mob-input-field pl-7 font-mono" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1.5">
+                            <label class="mob-input-label">Stop Loss</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 font-black text-slate-400 text-xs tm-alerts-curr">€</span>
+                                <input id="tm-sl" type="number" step="any" placeholder="0.00" class="mob-input-field pl-7 font-mono" />
+                            </div>
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="mob-input-label">Volatilità Alert (%)</label>
+                            <input id="tm-vol" type="number" step="1" value="0" min="0" max="20" class="mob-input-field font-mono" />
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Portafoglio Destinazione (solo TRANSFER) -->
                 <div id="tm-dest-wrap" class="hidden space-y-1.5">
                     <label class="mob-input-label">Portafoglio Destinazione</label>
@@ -323,6 +357,9 @@
 
         // Quantità + Prezzo: BUY, SELL, DIVIDEND
         _toggleField('tm-qty-price-wrap', needsAsset);
+        
+        // Pannello Target Price & Stop Loss
+        _toggleField('tm-alerts-wrap', needsAsset);
 
         // Labels dinamiche
         if (isDividend) {
@@ -589,12 +626,28 @@
                     document.getElementById('tm-meta-type').innerText = data.type || 'N/A';
                     document.getElementById('tm-meta-price').innerText = data.currentPrice ? `${data.currentPrice} ${data.currency || ''}` : '—';
                 }
-                if (data.currency) document.getElementById('tm-asset-currency').value = data.currency;
+                if (data.currency) {
+                    document.getElementById('tm-asset-currency').value = data.currency;
+                    document.querySelectorAll('.tm-alerts-curr').forEach(el => el.innerText = data.currency === 'USD' ? '$' : (data.currency === 'EUR' ? '€' : data.currency));
+                }
                 if (data.isin) document.getElementById('tm-isin').value = data.isin;
                 if (data.dataSource && document.getElementById('tm-source')) {
                     document.getElementById('tm-source').value = data.dataSource;
                     toggleTransactionFields();
                 }
+
+                // Load TP / SL
+                try {
+                    const aRes = await fetch(`/api/assets`);
+                    const allAssets = await aRes.json();
+                    const aInfo = allAssets.find(a => a.ticker === ticker);
+                    if (aInfo) {
+                        document.getElementById('tm-tp').value = aInfo.targetPrice || '';
+                        document.getElementById('tm-tp2').value = aInfo.targetPrice2 || '';
+                        document.getElementById('tm-sl').value = aInfo.stopLoss || '';
+                        document.getElementById('tm-vol').value = aInfo.volatilityAlert || 0;
+                    }
+                } catch(e) {}
 
                 const type = document.getElementById('tm-type')?.value;
                 // Auto-populate price for BUY, SELL, DIVIDEND
@@ -659,6 +712,21 @@
                 body: JSON.stringify(payload)
             });
             if (res.ok) {
+                // Salva eventuali modifiche a Target Price e Stop Loss
+                if (payload.assetTicker && payload.assetTicker !== 'CASH' && !document.getElementById('tm-alerts-wrap').classList.contains('hidden')) {
+                    const tp = parseFloat(document.getElementById('tm-tp')?.value) || 0;
+                    const tp2 = parseFloat(document.getElementById('tm-tp2')?.value) || 0;
+                    const sl = parseFloat(document.getElementById('tm-sl')?.value) || 0;
+                    const vol = parseInt(document.getElementById('tm-vol')?.value) || 0;
+                    try {
+                        await fetch(`/api/assets/${encodeURIComponent(payload.assetTicker)}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ targetPrice: tp, targetPrice2: tp2, stopLoss: sl, volatilityAlert: vol })
+                        });
+                    } catch(e) { console.error('Failed to save asset alerts', e); }
+                }
+
                 if (window.showNotification) window.showNotification(id ? 'Transazione modificata!' : 'Transazione inserita!', 'success');
                 closeTransactionModal();
                 _refreshAfterSave(portfolioId);
@@ -773,6 +841,22 @@
 
         const aIsin = t.isin || metadata.isin || '';
         document.getElementById('tm-isin').value = aIsin;
+
+        try {
+            const aRes = await fetch(`/api/assets`);
+            const allAssets = await aRes.json();
+            const aInfo = allAssets.find(a => a.ticker === (t.assetTicker || t.ticker));
+            if (aInfo) {
+                document.getElementById('tm-tp').value = aInfo.targetPrice || '';
+                document.getElementById('tm-tp2').value = aInfo.targetPrice2 || '';
+                document.getElementById('tm-sl').value = aInfo.stopLoss || '';
+                document.getElementById('tm-vol').value = aInfo.volatilityAlert || 0;
+            }
+        } catch(e) {}
+        
+        if (aCurr) {
+            document.querySelectorAll('.tm-alerts-curr').forEach(el => el.innerText = aCurr === 'USD' ? '$' : (aCurr === 'EUR' ? '€' : aCurr));
+        }
 
         if (t.type === 'TRANSFER' && t.destinationPortfolioId) {
             await _loadDestPortfolios();
