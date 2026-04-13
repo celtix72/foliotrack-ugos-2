@@ -40,9 +40,9 @@
         </div>
 
         <!-- Body -->
-        <form id="tm-form" class="flex flex-col flex-1 min-h-0" onsubmit="handleTransactionSubmit(event)">
+        <form id="tm-form" class="block overflow-hidden" onsubmit="handleTransactionSubmit(event)">
             <input type="hidden" id="tm-id" />
-            <div class="p-5 space-y-4 flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+            <div class="p-5 space-y-4 overflow-y-auto custom-scrollbar" style="max-height: calc(95vh - 140px);">
 
                 <!-- Row 1: Portafoglio + Tipo -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
