@@ -18,7 +18,10 @@
         fab.className = 'mob-fab';
         fab.style.display = 'flex';
         fab.innerHTML = '<span class="material-symbols-outlined">add</span>';
-        fab.onclick = () => openTransactionModal();
+        fab.onclick = () => {
+            const pId = window.mobCurrentPortfolioId || window.currentPortfolioId;
+            openTransactionModal({ portfolioId: pId });
+        };
         document.body.appendChild(fab);
         fabInjected = true;
     }
