@@ -724,7 +724,7 @@
     };
 
     async function _openForEdit(t, isDuplicate = false) {
-        await openTransactionModal({ portfolioId: t.portfolioId });
+        await openTransactionModal({ portfolioId: t.portfolioId, type: t.type });
 
         document.getElementById('tm-id').value = isDuplicate ? '' : (t.id || '');
         document.getElementById('tm-title').innerText = isDuplicate ? 'Duplica Transazione' : 'Modifica Transazione';

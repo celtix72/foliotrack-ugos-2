@@ -2207,10 +2207,14 @@ app.get('/api/transactions/audit', async (req, res) => {
 });
 
 app.get('/api/transactions', (req, res) => {
-    const { portfolioId, assetTicker } = req.query;
+    const { portfolioId, assetTicker, id } = req.query;
     let query = `SELECT * FROM transactions WHERE 1=1 `;
     let params = [];
     
+    if (id) {
+        query += `AND id = ? `;
+        params.push(id);
+    }
     if (portfolioId) {
         query += `AND portfolioId = ? `;
         params.push(portfolioId);
