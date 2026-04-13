@@ -23,38 +23,37 @@
     // ─── HTML Template ──────────────────────────────────────────────────────────
     function _getModalHtml() {
         return `
-<div id="transaction-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 md:p-4 overflow-y-auto" style="z-index: 10000">
-    <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-xl shadow-2xl max-h-[95vh] flex flex-col my-auto">
-
+<div id="transaction-modal" class="mob-modal-overlay hidden" style="z-index: 20000">
+    <div class="mob-modal-content">
         <!-- Header -->
-        <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
+        <div class="mob-modal-header">
             <div class="flex items-center gap-3">
                 <div class="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
                     <span class="material-symbols-outlined text-primary text-lg" id="tm-header-icon">swap_horiz</span>
                 </div>
-                <h3 id="tm-title" class="font-black text-base text-slate-900 dark:text-white">Nuova Transazione</h3>
+                <h3 id="tm-title" class="mob-modal-title text-slate-900 dark:text-white">Nuova Transazione</h3>
             </div>
-            <button type="button" onclick="closeTransactionModal()" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all">
+            <button type="button" onclick="closeTransactionModal()" class="mob-modal-close">
                 <span class="material-symbols-outlined text-lg">close</span>
             </button>
         </div>
 
-        <!-- Body -->
-        <form id="tm-form" class="flex flex-col flex-1 min-h-0 overflow-hidden" onsubmit="handleTransactionSubmit(event)">
+        <!-- Form Body -->
+        <form id="tm-form" class="flex flex-col flex-1 min-h-0" onsubmit="handleTransactionSubmit(event)">
             <input type="hidden" id="tm-id" />
-            <div class="p-5 space-y-4 flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+            <div class="mob-modal-body custom-scrollbar">
 
                 <!-- Row 1: Portafoglio + Tipo -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div id="tm-portfolio-wrap" class="space-y-1.5">
-                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-500">Portafoglio</label>
-                        <select id="tm-portfolio" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 px-3 text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+                        <label class="mob-input-label">Portafoglio</label>
+                        <select id="tm-portfolio" class="mob-input-field">
                             <option value="">— Caricamento... —</option>
                         </select>
                     </div>
                     <div class="space-y-1.5">
-                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-500">Tipo Transazione</label>
-                        <select id="tm-type" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 px-3 text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" onchange="toggleTransactionFields()">
+                        <label class="mob-input-label">Tipo Transazione</label>
+                        <select id="tm-type" class="mob-input-field" onchange="toggleTransactionFields()">
                             <option value="BUY">🟢 ACQUISTO</option>
                             <option value="SELL">🔴 VENDITA</option>
                             <option value="DIVIDEND">💵 DIVIDENDO</option>
@@ -69,12 +68,12 @@
                 <!-- Row 2: Data + Sorgente Dati (solo BUY) -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="space-y-1.5">
-                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-500">Data</label>
-                        <input id="tm-date" type="date" required class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 px-3 text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
+                        <label class="mob-input-label">Data</label>
+                        <input id="tm-date" type="date" required class="mob-input-field" />
                     </div>
                     <div id="tm-source-wrap" class="space-y-1.5 hidden">
-                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-500">Sorgente Dati</label>
-                        <select id="tm-source" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 px-3 text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" onchange="toggleTransactionFields()">
+                        <label class="mob-input-label">Sorgente Dati</label>
+                        <select id="tm-source" class="mob-input-field" onchange="toggleTransactionFields()">
                             <option value="YF">📈 Yahoo Finance</option>
                             <option value="B_ITA">🇮🇹 Borsa Italiana</option>
                             <option value="MANUAL">✏️ Manuale</option>
@@ -85,10 +84,10 @@
                 <!-- Asset Search (BUY / SELL / DIVIDEND) -->
                 <div id="tm-asset-wrap" class="hidden space-y-3">
                     <div class="space-y-1.5 relative">
-                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-500">Asset (Ticker)</label>
+                        <label class="mob-input-label">Asset (Ticker)</label>
                         <input id="tm-asset-search" type="text" autocomplete="off"
                             placeholder="Es. AAPL, ISP.MI..."
-                            class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 px-3 text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                            class="mob-input-field"
                             oninput="handleTMAssetInput(this.value)"
                             onfocus="handleTMAssetFocus()"
                             onclick="handleTMAssetFocus()" />
@@ -99,21 +98,21 @@
 
                     <!-- ISIN (solo B_ITA) -->
                     <div id="tm-isin-wrap" class="hidden space-y-1.5">
-                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-500">ISIN (Borsa Italiana)</label>
+                        <label class="mob-input-label">ISIN (Borsa Italiana)</label>
                         <input id="tm-isin" type="text" placeholder="Es. IT0000072618"
-                            class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 px-3 text-sm font-mono font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
+                            class="mob-input-field font-mono" />
                     </div>
 
                     <!-- Manual Asset Fields -->
                     <div id="tm-manual-wrap" class="hidden grid grid-cols-2 gap-4">
                         <div class="space-y-1.5">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-500">Nome Asset</label>
+                            <label class="mob-input-label">Nome Asset</label>
                             <input id="tm-asset-name" type="text" placeholder="Es. Conto Deposito Fineco"
-                                class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 px-3 text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
+                                class="mob-input-field" />
                         </div>
                         <div class="space-y-1.5">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-500">Valuta</label>
-                            <select id="tm-asset-currency-manual" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 px-3 text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" onchange="tmCheckFX()">
+                            <label class="mob-input-label">Valuta</label>
+                            <select id="tm-asset-currency-manual" class="mob-input-field" onchange="tmCheckFX()">
                                 <option value="EUR">EUR</option>
                                 <option value="USD">USD</option>
                                 <option value="GBP">GBP</option>
@@ -142,15 +141,15 @@
                 <!-- Quantità + Prezzo (BUY / SELL / DIVIDEND) -->
                 <div id="tm-qty-price-wrap" class="hidden grid grid-cols-2 gap-4">
                     <div class="space-y-1.5">
-                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-500" id="tm-qty-label">Quantità</label>
+                        <label class="mob-input-label" id="tm-qty-label">Quantità</label>
                         <input id="tm-qty" type="number" step="any" placeholder="0"
-                            class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 px-3 text-sm font-bold font-mono focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                            class="mob-input-field font-mono"
                             oninput="tmCalcNet()" />
                     </div>
                     <div class="space-y-1.5">
-                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-500" id="tm-price-label">Prezzo</label>
+                        <label class="mob-input-label" id="tm-price-label">Prezzo</label>
                         <input id="tm-price" type="number" step="any" placeholder="0.00"
-                            class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 px-3 text-sm font-bold font-mono focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                            class="mob-input-field font-mono"
                             oninput="tmCalcNet()" />
                     </div>
                 </div>
@@ -171,31 +170,31 @@
                 <!-- Commissioni + Tax (solo BUY / SELL) -->
                 <div id="tm-comm-tax-wrap" class="hidden grid grid-cols-2 gap-4">
                     <div class="space-y-1.5">
-                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-500">Commissioni</label>
+                        <label class="mob-input-label">Commissioni</label>
                         <input id="tm-comm" type="number" step="any" value="0"
-                            class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 px-3 text-sm font-bold font-mono focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
+                            class="mob-input-field font-mono" />
                     </div>
                     <div class="space-y-1.5">
-                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-500">Tax / Ritenuta</label>
+                        <label class="mob-input-label">Tax / Ritenuta</label>
                         <input id="tm-tax" type="number" step="any" value="0"
-                            class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 px-3 text-sm font-bold font-mono focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                            class="mob-input-field font-mono"
                             oninput="tmCalcNet()" />
                     </div>
                 </div>
 
                 <!-- Importo Totale (DEPOSIT / WITHDRAWAL / TAX / TRANSFER / DIVIDEND auto-calc) -->
                 <div id="tm-amount-wrap" class="hidden space-y-1.5">
-                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-500" id="tm-amount-label">Importo Totale</label>
+                    <label class="mob-input-label" id="tm-amount-label">Importo Totale</label>
                     <input id="tm-amount" type="number" step="any" placeholder="0.00"
-                        class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 px-3 text-sm font-bold font-mono focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                        class="mob-input-field font-mono"
                         oninput="if(typeof tmCalcFromAmount === 'function') tmCalcFromAmount()" />
                     <p class="text-[10px] text-slate-400 italic mt-1" id="tm-amount-hint"></p>
                 </div>
 
                 <!-- Portafoglio Destinazione (solo TRANSFER) -->
                 <div id="tm-dest-wrap" class="hidden space-y-1.5">
-                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-500">Portafoglio Destinazione</label>
-                    <select id="tm-dest-portfolio" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 px-3 text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+                    <label class="mob-input-label">Portafoglio Destinazione</label>
+                    <select id="tm-dest-portfolio" class="mob-input-field">
                         <option value="">— Seleziona Target —</option>
                     </select>
                 </div>
@@ -203,12 +202,11 @@
             </div>
 
             <!-- Footer -->
-            <div class="px-5 py-4 border-t border-slate-200 dark:border-slate-800 flex items-center gap-3 shrink-0 bg-slate-50/50 dark:bg-slate-900/30">
-                <button type="button" onclick="closeTransactionModal()" class="flex-1 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-sm">
+            <div class="mob-modal-footer">
+                <button type="button" onclick="closeTransactionModal()" class="mob-btn mob-btn-secondary">
                     Annulla
                 </button>
-                <button type="submit" id="tm-submit-btn"
-                    class="flex-1 py-2.5 rounded-xl font-black text-white bg-emerald-500 hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 transition-all text-sm flex items-center justify-center gap-2">
+                <button type="submit" id="tm-submit-btn" class="mob-btn mob-btn-primary flex items-center justify-center gap-2">
                     <span class="material-symbols-outlined text-base" id="tm-submit-icon">check_circle</span>
                     <span id="tm-submit-label">Conferma</span>
                 </button>
@@ -216,13 +214,12 @@
         </form>
     </div>
 </div>
-`;
+        `;
     }
 
     // ─── Inject Modal DOM ────────────────────────────────────────────────────────
     window.injectTransactionModal = function () {
-        if (_injected || document.getElementById('transaction-modal')) {
-            _injected = true;
+        if (document.getElementById('transaction-modal')) {
             return;
         }
         const div = document.createElement('div');
@@ -280,7 +277,9 @@
 
         // Show
         modal.classList.remove('hidden');
-        modal.style.display = 'flex';
+        modal.classList.add('flex');
+        // Give time for display:flex to apply before active for transition
+        setTimeout(() => modal.classList.add('active'), 10);
         document.body.classList.add('modal-open');
     };
 
@@ -288,8 +287,12 @@
     window.closeTransactionModal = function () {
         const modal = document.getElementById('transaction-modal');
         if (modal) {
-            modal.classList.add('hidden');
-            modal.style.display = 'none';
+            modal.classList.remove('active');
+            // Give time for transition before hiding
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 250);
         }
         document.body.classList.remove('modal-open');
         _hideSearchResults();
