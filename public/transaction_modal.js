@@ -731,7 +731,15 @@
         document.getElementById('tm-submit-label').innerText = isDuplicate ? 'Inserisci Copia' : 'Salva Modifiche';
 
         document.getElementById('tm-type').value = t.type || 'BUY';
-        document.getElementById('tm-date').value = isDuplicate ? new Date().toISOString().split('T')[0] : (t.date || '');
+
+        let formattedDate = '';
+        if (isDuplicate) {
+            formattedDate = new Date().toISOString().split('T')[0];
+        } else if (t.date) {
+            formattedDate = t.date.includes('T') ? t.date.split('T')[0] : t.date;
+        }
+        document.getElementById('tm-date').value = formattedDate;
+
         document.getElementById('tm-qty').value = t.quantity || 0;
         document.getElementById('tm-price').value = t.price || 0;
         document.getElementById('tm-comm').value = t.commission || 0;
@@ -740,15 +748,31 @@
         document.getElementById('tm-amount').value = t.amount || 0;
         document.getElementById('tm-asset-ticker').value = t.assetTicker || t.ticker || '';
         document.getElementById('tm-asset-search').value = t.assetTicker || t.ticker || '';
-        document.getElementById('tm-isin').value = t.isin || '';
 
-        const source = t.dataSource || 'YF';
-        document.getElementById('tm-source').value = source;
-        if (t.assetName) document.getElementById('tm-asset-name').value = t.assetName;
-        if (t.assetCurrency) {
-            document.getElementById('tm-asset-currency').value = t.assetCurrency;
-            document.getElementById('tm-asset-currency-manual').value = t.assetCurrency;
+        // Assicuriamoci di recuperare eventuali metadati mancanti dall'API per i campi manuali o B_ITA
+        let metadata = {};
+        if (t.assetTicker && t.assetTicker !== 'CASH') {
+            try {
+                const res = await fetch(`/api/validate-ticker?ticker=${encodeURIComponent(t.assetTicker)}`);
+                const data = await res.json();
+                if (data && data.valid) metadata = data;
+            } catch (e) { console.error('Fallito recupero metadati asset', e); }
         }
+
+        const source = t.dataSource || metadata.dataSource || 'YF';
+        document.getElementById('tm-source').value = source;
+        const aName = t.assetName || metadata.name || '';
+        if (aName) document.getElementById('tm-asset-name').value = aName;
+        
+        const aCurr = t.assetCurrency || metadata.currency || '';
+        if (aCurr) {
+            document.getElementById('tm-asset-currency').value = aCurr;
+            const manCurEl = document.getElementById('tm-asset-currency-manual');
+            if (manCurEl) manCurEl.value = aCurr;
+        }
+
+        const aIsin = t.isin || metadata.isin || '';
+        document.getElementById('tm-isin').value = aIsin;
 
         if (t.type === 'TRANSFER' && t.destinationPortfolioId) {
             await _loadDestPortfolios();
