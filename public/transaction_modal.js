@@ -44,7 +44,7 @@
             <div class="mob-modal-body custom-scrollbar">
 
                 <!-- Row 1: Portafoglio + Tipo -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
                     <div id="tm-portfolio-wrap" class="space-y-1.5">
                         <label class="mob-input-label">Portafoglio</label>
                         <select id="tm-portfolio" class="mob-input-field">
@@ -66,7 +66,7 @@
                 </div>
 
                 <!-- Row 2: Data + Sorgente Dati (solo BUY) -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
                     <div class="space-y-1.5">
                         <label class="mob-input-label">Data</label>
                         <input id="tm-date" type="date" required class="mob-input-field" />
@@ -333,7 +333,7 @@
     };
 
     // ─── Toggle Field Visibility ─────────────────────────────────────────────────
-    window.toggleTransactionFields = function () {
+    window.toggleTransactionFields = function (skipFXFetch = false) {
         const type = (document.getElementById('tm-type')?.value || 'BUY').toUpperCase();
         const source = (document.getElementById('tm-source')?.value || 'YF');
 
@@ -404,7 +404,7 @@
         const icons = { BUY: 'add_shopping_cart', SELL: 'sell', DIVIDEND: 'payments', DEPOSIT: 'account_balance', WITHDRAWAL: 'money_off', TAX: 'receipt_long', TRANSFER: 'swap_horiz' };
         document.getElementById('tm-header-icon').innerText = icons[type] || 'swap_horiz';
 
-        tmCheckFX();
+        tmCheckFX(skipFXFetch);
         tmCalcNet();
     };
 
@@ -864,8 +864,13 @@
             if (destEl) destEl.value = t.destinationPortfolioId;
         }
 
-        toggleTransactionFields();
-        await tmCheckFX(true); // skip auto-fetch to preserve existing rate
+        toggleTransactionFields(true); // skip auto-fetch to preserve existing rate
+        
+        // Restore manual amount if it was overridden by tmCalcNet
+        const amountValue = t.amount || 0;
+        if (amountValue && t.type === 'DIVIDEND') {
+            document.getElementById('tm-amount').value = amountValue;
+        }
     }
 
     // ─── Portfolio Selectors ─────────────────────────────────────────────────────
