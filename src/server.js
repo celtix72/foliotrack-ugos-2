@@ -1948,6 +1948,52 @@ app.get('/api/portfolios/:id/export', (req, res) => {
     res.status(200).send(csvContent);
 });
 
+app.get('/api/export-all-transactions', (req, res) => {
+    try {
+        const transactions = database.db.prepare(`
+            SELECT t.*, p.name as portfolioName 
+            FROM transactions t
+            JOIN portfolios p ON t.portfolioId = p.id
+            ORDER BY t.date ASC, t.id ASC
+        `).all();
+
+        if (transactions.length === 0) {
+            return res.status(400).send('No transactions to export');
+        }
+
+        const headers = ['Portfolio', 'Type', 'Asset', 'Date', 'Quantity', 'Price', 'Commission', 'Tax', 'FX Rate', 'Amount'];
+        const rows = transactions.map(t => [
+            t.portfolioName,
+            t.type,
+            t.assetTicker || '',
+            t.date,
+            t.quantity,
+            t.price,
+            t.commission,
+            t.tax,
+            t.exchangeRate,
+            t.amount
+        ]);
+
+        let csvContent = headers.join(',') + '\n';
+        rows.forEach(row => {
+            csvContent += row.map(value => {
+                if (typeof value === 'string') {
+                    return `"${value.replace(/"/g, '""')}"`;
+                }
+                return value;
+            }).join(',') + '\n';
+        });
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename=all_transactions_export_${new Date().toISOString().split('T')[0]}.csv`);
+        res.status(200).send(csvContent);
+    } catch (err) {
+        console.error('Export all error:', err);
+        res.status(500).send('Export error: ' + err.message);
+    }
+});
+
 
 app.post('/api/portfolios', (req, res) => {
     console.log('POST /api/portfolios:', req.body);
