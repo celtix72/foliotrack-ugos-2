@@ -167,9 +167,9 @@
                     </div>
                 </div>
 
-                <!-- Commissioni + Tax (solo BUY / SELL) -->
+                <!-- Commissioni + Tax (BUY/SELL) | Tax/Ritenuta (DIVIDEND) -->
                 <div id="tm-comm-tax-wrap" class="hidden grid grid-cols-2 gap-4">
-                    <div class="space-y-1.5">
+                    <div id="tm-comm-wrap" class="space-y-1.5">
                         <label class="mob-input-label">Commissioni</label>
                         <input id="tm-comm" type="number" step="any" value="0"
                             class="mob-input-field font-mono" />
@@ -370,8 +370,9 @@
             document.getElementById('tm-price-label').innerText = 'Prezzo';
         }
 
-        // Commissioni + Tax: solo BUY, SELL
-        _toggleField('tm-comm-tax-wrap', isTrade);
+        // Commissioni + Tax: BUY/SELL mostrano entrambi; DIVIDEND mostra solo Tax
+        _toggleField('tm-comm-tax-wrap', isTrade || isDividend);
+        _toggleField('tm-comm-wrap', isTrade); // nascondi commissioni per DIVIDEND
 
         // Importo totale: cash-only e DIVIDEND (modificabile)
         _toggleField('tm-amount-wrap', isCashOnly || isDividend);

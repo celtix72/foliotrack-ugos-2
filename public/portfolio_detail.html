@@ -1397,7 +1397,8 @@
     const _origOpenTM = window.openTransactionModal;
     window.openTransactionModal = function(options) {
         const pid = (typeof options === 'object' && options?.portfolioId) ? options.portfolioId : currentPortfolioId;
-        if (typeof _origOpenTM === 'function') _origOpenTM({ portfolioId: pid });
+        const type = (typeof options === 'object' && options?.type) ? options.type : undefined;
+        if (typeof _origOpenTM === 'function') _origOpenTM({ portfolioId: pid, type: type });
     };
 
 
@@ -1451,10 +1452,17 @@
     }
 
     window.editTransaction = async function(id) {
-        const t = currentTransactions.find(tx => tx.id === id);
+        const t = currentTransactions.find(tx => tx.id === id || tx.id === parseInt(id));
         if (!t) return;
-        // Use the unified modal, passing the transaction object
-        await window.mobileEditTransaction(t);
+        // Temporarily restore original openTransactionModal so _openForEdit inside
+        // transaction_modal.js calls the correct base implementation (not this wrapper)
+        const _savedWrapper = window.openTransactionModal;
+        window.openTransactionModal = _origOpenTM;
+        try {
+            await window.mobileEditTransaction(t);
+        } finally {
+            window.openTransactionModal = _savedWrapper;
+        }
     };
 
     window.duplicateTransaction = async function(id) {
