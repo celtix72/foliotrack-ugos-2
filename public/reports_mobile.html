@@ -105,9 +105,14 @@
           <div class="mob-chart-title">Performance Comparison</div>
           <div class="mob-chart-subtitle">Portfolio vs Benchmarks</div>
         </div>
-        <button onclick="window.print()" class="mob-icon-btn" title="Export PDF">
-          <span class="material-symbols-outlined">download</span>
-        </button>
+        <div class="flex items-center gap-2">
+            <button onclick="window.location.href='/api/export-all-transactions'" class="mob-icon-btn text-emerald-500" title="Export CSV">
+              <span class="material-symbols-outlined">csv</span>
+            </button>
+            <button onclick="window.print()" class="mob-icon-btn" title="Export PDF">
+              <span class="material-symbols-outlined">download</span>
+            </button>
+        </div>
       </div>
       
       <!-- Range Selector -->
