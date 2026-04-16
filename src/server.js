@@ -1217,8 +1217,7 @@ app.get('/api/watchlist', (req, res) => {
                 FROM transactions 
                 GROUP BY assetTicker
             ) t ON a.ticker = t.assetTicker
-            WHERE (a.inWatchlist = 1 OR (a.isMonitored = 1 AND (t.balance IS NULL OR t.balance <= 0.0001)))
-              AND a.ticker != 'CASH'
+            WHERE a.inWatchlist = 1 AND a.ticker != 'CASH'
             ORDER BY a.ticker ASC
         `).all();
         
@@ -1296,12 +1295,22 @@ app.delete('/api/watchlist/:ticker', (req, res) => {
     try {
         const ticker = req.params.ticker.toUpperCase();
         
-        // Check if the asset exists in any transactions
-        const hasTransactions = database.db.prepare(`SELECT 1 FROM transactions WHERE assetTicker = ? LIMIT 1`).get(ticker);
+        // 1. Check if the asset exists in any transactions
+        const txData = database.db.prepare(`
+            SELECT 
+                COUNT(*) as count,
+                SUM(CASE WHEN type='BUY' THEN quantity WHEN type='SELL' THEN -quantity ELSE 0 END) as balance
+            FROM transactions WHERE assetTicker = ?
+        `).get(ticker);
+        
+        const hasTransactions = txData && txData.count > 0;
+        const balance = txData ? (txData.balance || 0) : 0;
         
         if (hasTransactions) {
             // Keep metadata for portfolio but mark not in watchlist
-            database.db.prepare(`UPDATE assets SET inWatchlist = 0 WHERE ticker = ?`).run(ticker);
+            // If balance is 0 (sold), we can also stop monitoring background prices
+            const isMonitored = balance > 0.0001 ? 1 : 0;
+            database.db.prepare(`UPDATE assets SET inWatchlist = 0, isMonitored = ? WHERE ticker = ?`).run(isMonitored ? 1 : 0, ticker);
         } else {
             // physically DELETE if not used in portfolio
             database.db.prepare(`DELETE FROM assets WHERE ticker = ?`).run(ticker);
@@ -1329,8 +1338,7 @@ app.get('/api/watchlist/performance', async (req, res) => {
                 FROM transactions 
                 GROUP BY assetTicker
             ) t ON a.ticker = t.assetTicker
-            WHERE (a.inWatchlist = 1 OR (a.isMonitored = 1 AND (t.balance IS NULL OR t.balance <= 0.0001)))
-              AND a.ticker != 'CASH'
+            WHERE a.inWatchlist = 1 AND a.ticker != 'CASH'
         `).all();
         const results = {};
         
