@@ -3443,27 +3443,8 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
             }
             dayNetDeposits = totalNetDeps;
             dayProfit = dayValue - totalNetDeps;
-
-            let benchmarkProfit = 0;
-            if (benchmarkStartPrice && benchmarkData && benchmarkData[dateStr]) {
-                const currentBenchPrice = benchmarkData[dateStr];
-                const gainPct = (currentBenchPrice / benchmarkStartPrice) - 1;
-                benchmarkProfit = dayNetDeposits * gainPct;
-            }
-
-            const dayProfitNoDiv = dayProfit - dayDividends;
-
-            dataPoints.push({ 
-                date: dateStr, 
-                value: dayValue, 
-                profit: dayProfit, 
-                profitNoDiv: dayProfitNoDiv,
-                cash: dayCash, 
-                assets: dayAssets, 
-                netDeposits: dayNetDeposits, 
-                benchProfit: benchmarkProfit,
-                events: dayEvents 
-            });
+        } else {
+            for (const p of portfolios) {
                 const state = portfolioStates[p.id];
                 const dayTx = allTransactions.filter(t => t.portfolioId === p.id && t.date === dateStr);
 
@@ -3648,6 +3629,15 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
             }
         }
 
+
+        
+        let benchmarkProfit = 0;
+        if (benchmarkStartPrice && benchmarkData && benchmarkData[dateStr]) {
+            const currentBenchPrice = benchmarkData[dateStr];
+            const gainPct = (currentBenchPrice / benchmarkStartPrice) - 1;
+            benchmarkProfit = dayNetDeposits * gainPct;
+        }
+
         if (!isFinite(dayValue) || isNaN(dayValue)) {
             // Log exactly which portfolio and asset caused the issue if possible
             logger.warn(`Invalid math dayValue detected on ${dateStr}! Cash: ${dayCash}, Assets: ${dayAssets}, profit: ${dayProfit}. Attempting recovery...`);
@@ -3676,6 +3666,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
             netDeposits: !isFinite(dayNetDeposits) ? 0 : Math.round(dayNetDeposits),
             cash: !isFinite(dayCash) ? 0 : Math.round(dayCash),
             assets: !isFinite(dayAssets) ? 0 : Math.round(dayAssets),
+            benchProfit: benchmarkProfit,
             events: dayEvents
         });
         currentDate.setDate(currentDate.getDate() + 1);
