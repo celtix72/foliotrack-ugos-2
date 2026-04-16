@@ -500,7 +500,13 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null, variationOverr
 
 function recalculateAll(liveEurUsdRate = null, variationOverrides = null) {
     const ids = dbConnection.prepare(`SELECT id FROM portfolios`).all();
-    for (const { id } of ids) recalculatePortfolio(id, liveEurUsdRate, variationOverrides);
+    for (const { id } of ids) {
+        try {
+            recalculatePortfolio(id, liveEurUsdRate, variationOverrides);
+        } catch (err) {
+            console.error(`[DB] Error recalculating portfolio ${id}:`, err);
+        }
+    }
 }
 
 function savePortfolioSnapshot(portfolioId = null, eurUsdRate = 1.0) {
