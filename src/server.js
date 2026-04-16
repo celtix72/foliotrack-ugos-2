@@ -2923,12 +2923,12 @@ app.get('/api/market/exchange-rate', async (req, res) => {
 /**
  * Shared helper to calculate performance data points for one or more portfolios.
  */
-async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefresh = false, includeIndividual = false) {
+async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefresh = false, includeIndividual = false, benchmarkTicker = null) {
     const pIdsInput = portfolioIds === null ? null : (Array.isArray(portfolioIds) ? portfolioIds : [portfolioIds]);
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
     const rangeKey = range || 'ALL';
-    const cacheKey = `history_${pIdsInput ? pIdsInput.sort().join(',') : 'global'}_${rangeKey}_${includeIndividual}`;
+    const cacheKey = `history_${pIdsInput ? pIdsInput.sort().join(',') : 'global'}_${rangeKey}_${includeIndividual}_${benchmarkTicker || 'none'}`;
 
     // 1. Check Cache (1 minute TTL for dashboard-level history)
     const CACHE_SHORT_TTL = 60 * 1000; 
@@ -2966,6 +2966,9 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
 
     const hasNonEur = isGlobal || portfolios.some(p => p.currency !== 'EUR') || rawTickers.some(t => assetMetadataCache[t]?.currency === 'USD');
     const uniqueTickers = [...rawTickers];
+    if (benchmarkTicker && !uniqueTickers.includes(benchmarkTicker)) {
+        uniqueTickers.push(benchmarkTicker);
+    }
     if (hasNonEur && !uniqueTickers.includes('EURUSD=X')) {
         uniqueTickers.push('EURUSD=X');
     }
@@ -3208,6 +3211,17 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
 
     const dataPoints = [];
     let currentDate = new Date(startDate);
+    
+    // Benchmark tracking variables
+    const benchmarkData = benchmarkTicker ? historicalPrices[benchmarkTicker] : null;
+    let benchmarkStartPrice = null;
+    if (benchmarkData) {
+        // Find first available price for benchmark in range
+        const dates = Object.keys(benchmarkData).sort();
+        const startStr = formatDate(startDate);
+        const actualStart = dates.find(d => d >= startStr) || dates[0];
+        benchmarkStartPrice = benchmarkData[actualStart];
+    }
 
     // Initial state and metadata caching per portfolio
     const portfolioStates = {};
@@ -3429,8 +3443,27 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
             }
             dayNetDeposits = totalNetDeps;
             dayProfit = dayValue - totalNetDeps;
-        } else {
-            for (const p of portfolios) {
+
+            let benchmarkProfit = 0;
+            if (benchmarkStartPrice && benchmarkData && benchmarkData[dateStr]) {
+                const currentBenchPrice = benchmarkData[dateStr];
+                const gainPct = (currentBenchPrice / benchmarkStartPrice) - 1;
+                benchmarkProfit = dayNetDeposits * gainPct;
+            }
+
+            const dayProfitNoDiv = dayProfit - dayDividends;
+
+            dataPoints.push({ 
+                date: dateStr, 
+                value: dayValue, 
+                profit: dayProfit, 
+                profitNoDiv: dayProfitNoDiv,
+                cash: dayCash, 
+                assets: dayAssets, 
+                netDeposits: dayNetDeposits, 
+                benchProfit: benchmarkProfit,
+                events: dayEvents 
+            });
                 const state = portfolioStates[p.id];
                 const dayTx = allTransactions.filter(t => t.portfolioId === p.id && t.date === dateStr);
 
@@ -3748,14 +3781,14 @@ app.get('/api/analytics/portfolio-performance/:id', async (req, res) => {
 
 app.get('/api/analytics/global-performance', async (req, res) => {
     try {
-        const { range } = req.query;
-        const cacheKey = `global_perf_${range || 'ALL'}`;
+        const { range, benchmark } = req.query;
+        const cacheKey = `global_perf_${range || 'ALL'}_${benchmark || 'none'}`;
 
         if (performanceResultsCache[cacheKey] && (Date.now() - performanceResultsCache[cacheKey].timestamp < CACHE_TTL)) {
             return res.json(performanceResultsCache[cacheKey].data);
         }
 
-        const dataPoints = await calculatePerformanceHistory(null, range);
+        const dataPoints = await calculatePerformanceHistory(null, range, false, false, benchmark);
 
         let changePercent = 0;
         if (dataPoints.length > 1) {

@@ -127,6 +127,7 @@
         <div class="mob-chart-title" style="margin-bottom:0">Performance</div>
         <div class="mob-chart-subtitle" style="margin-bottom:0">Net worth aggregato</div>
       </div>
+      </div>
       <div class="mob-chart-range-bar" id="mob-range-bar">
         <div class="mob-range-btn" onclick="mobSetRange('1W')" data-range="1W">1W</div>
         <div class="mob-range-btn active" onclick="mobSetRange('1M')" data-range="1M">1M</div>
@@ -135,7 +136,28 @@
         <div class="mob-range-btn" onclick="mobSetRange('1Y')" data-range="1Y">1Y</div>
         <div class="mob-range-btn" onclick="mobSetRange('ALL')" data-range="ALL">ALL</div>
       </div>
-      <div class="mob-chart-canvas-wrapper">
+      
+      <!-- Mobile Chart Options -->
+      <div class="flex items-center justify-between mt-3 px-1">
+          <label class="flex items-center gap-2 cursor-pointer">
+              <div class="relative w-7 h-3.5 bg-slate-200 dark:bg-slate-800 rounded-full transition-colors">
+                  <input type="checkbox" id="mob-toggle-net-worth" checked onchange="mobToggleNetWorth()" class="sr-only peer">
+                  <div class="absolute left-0.5 top-0.5 w-2.5 h-2.5 bg-white rounded-full transition-transform peer-checked:translate-x-3.5 peer-checked:bg-primary"></div>
+              </div>
+              <span class="text-[9px] font-black uppercase tracking-widest text-slate-500">Patrimonio</span>
+          </label>
+          <div class="flex items-center gap-2">
+              <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Bench:</span>
+              <select id="mob-benchmark-selector" onchange="mobUpdatePerfChart()" class="bg-transparent border-none text-[10px] font-black text-primary focus:ring-0 p-0 uppercase">
+                  <option value="">Nessuno</option>
+                  <option value="FTSEMIB.MI">FTSE MIB</option>
+                  <option value="IWDA.AS">WORLD</option>
+                  <option value="CSPX.AS">S&P 500</option>
+              </select>
+          </div>
+      </div>
+
+      <div class="mob-chart-canvas-wrapper mt-2">
         <canvas id="mob-perf-chart"></canvas>
       </div>
     </div>
@@ -617,6 +639,13 @@
             pointRadius: 0, pointHoverRadius: 6,
             pointHoverBackgroundColor: '#f59e0b', pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2,
             yAxisID: 'y1'
+          },
+          {
+            label: 'Benchmark', data: [],
+            borderColor: '#94a3b8', backgroundColor: 'transparent',
+            fill: false, tension: 0.4, borderWidth: 1.5, borderDash: [3, 3],
+            pointRadius: 0, hidden: true,
+            yAxisID: 'y1'
           }
         ]
       },
@@ -673,14 +702,30 @@
         }
       }
     });
+
+    // Restore Visibility Preference
+    const showNetWorth = localStorage.getItem('dashboard_show_net_worth') !== 'false';
+    const toggle = document.getElementById('mob-toggle-net-worth');
+    if (toggle) toggle.checked = showNetWorth;
+    mobPerfChart.setDatasetVisibility(0, showNetWorth);
+
     mobUpdatePerfChart();
   }
+
+  window.mobToggleNetWorth = function() {
+    if (!mobPerfChart) return;
+    const checked = document.getElementById('mob-toggle-net-worth').checked;
+    mobPerfChart.setDatasetVisibility(0, checked);
+    mobPerfChart.update();
+    localStorage.setItem('dashboard_show_net_worth', checked);
+  };
 
   async function mobUpdatePerfChart() {
     if (!mobPerfChart) return;
     const isDark = document.documentElement.classList.contains('dark');
+    const benchmark = document.getElementById('mob-benchmark-selector')?.value || '';
     try {
-      const res = await fetch(`/api/analytics/global-performance?range=${mobCurrentRange}`);
+      const res = await fetch(`/api/analytics/global-performance?range=${mobCurrentRange}&benchmark=${benchmark}`);
       const result = await res.json();
       const dataPoints = result.dataPoints || (Array.isArray(result) ? result : []);
       
@@ -693,6 +738,13 @@
       mobPerfChart.data.datasets[0].data = dataPoints.map(d => d.value);
       mobPerfChart.data.datasets[1].data = dataPoints.map(d => d.profit);
       mobPerfChart.data.datasets[2].data = dataPoints.map(d => d.profitNoDiv);
+      
+      if (benchmark) {
+        mobPerfChart.data.datasets[3].data = dataPoints.map(d => d.benchProfit || 0);
+        mobPerfChart.setDatasetVisibility(3, true);
+      } else {
+        mobPerfChart.setDatasetVisibility(3, false);
+      }
 
       // Year Markers (Annotations)
       const annotations = {};
