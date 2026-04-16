@@ -1602,7 +1602,7 @@ async function getAllPortfolioStats(liveRateInput = null) {
             p.changeValue1W = last.profit - firstW.profit;
             p.changePercent1W = firstW.value > 0 ? (p.changeValue1W / firstW.value) * 100 : 0;
             p.changeValue1M = last.profit - firstM.profit;
-            p.changePercent1M = firstM.value > 0 ? (p.changeValue1M / firstM.value) ? 0 : (p.changeValue1M / firstM.value) * 100;
+            p.changePercent1M = firstM.value > 0 ? (p.changeValue1M / firstM.value) * 100 : 0;
         } else {
             p.changeValue1W = 0; p.changePercent1W = 0;
             p.changeValue1M = 0; p.changePercent1M = 0;
