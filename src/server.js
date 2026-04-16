@@ -1663,6 +1663,9 @@ async function getAllPortfolioStats(liveRate = null) {
 
 app.get('/api/portfolios', async (req, res) => {
     try {
+        // DEBUG CHECK: If you see this, the route is reached and server is updated.
+        return res.json({ debug: true, version: APP_VERSION });
+        
         const stats = await getAllPortfolioStats();
         res.json({
             portfolios: stats.portfolios,
@@ -1680,6 +1683,12 @@ app.get('/api/portfolios', async (req, res) => {
             }
         });
     } catch (err) {
+        const errorDetails = `[${new Date().toISOString()}] API Error /api/portfolios:\nMessage: ${err.message}\nStack: ${err.stack}\n\n`;
+        try {
+            fs.appendFileSync(path.join(__dirname, '../scratch/api_crash.log'), errorDetails);
+        } catch (e) {
+            console.error("Failed to write crash log:", e);
+        }
         console.error('API Error /api/portfolios:', err);
         res.status(500).json({ error: err.message, stack: err.stack });
     }
