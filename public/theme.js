@@ -592,7 +592,6 @@
     window.addEventListener('portfolios-updated', () => {
         console.log("[Theme] portfolios-updated event received, refreshing UI...");
         updateSidebarContents();
-        updateMarketStatusUI();
     });
 
     window.refreshSidebarPortfolios = () => { _sidebarLoading = false; updateSidebarContents(); };

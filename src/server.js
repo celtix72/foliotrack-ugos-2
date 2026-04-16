@@ -1620,8 +1620,6 @@ async function getAllPortfolioStats(liveRateInput = null) {
         totalNetValueEUR += p.netValue / rate;
     }
 
-    // DIAGNOSTIC LOG
-    logger.info(`[STAT_DEBUG] globalChangeEUR=${globalChangeEUR.toFixed(2)}, globalChangePrePostEUR=${globalChangePrePostEUR.toFixed(2)}, totalValueEUR=${totalValueEUR.toFixed(2)}`);
 
     const heldAssetsRaw = database.db.prepare(`
         SELECT a.ticker, a.name, a.changePercent, a.currentPrice, a.currency, a.quoteDate, SUM(h.netQty) as totalNetQty
