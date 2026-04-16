@@ -32,7 +32,11 @@ function initDb() {
         currentCash REAL    NOT NULL DEFAULT 0,
         totalValue  REAL    NOT NULL DEFAULT 0,
         performance1D REAL  NOT NULL DEFAULT 0,
+        performance1DPrePost REAL NOT NULL DEFAULT 0,
+        totalDividends REAL NOT NULL DEFAULT 0,
+        investedCapital REAL NOT NULL DEFAULT 0,
         assetCount  INTEGER NOT NULL DEFAULT 0,
+        color       TEXT,
         createdAt   TEXT    NOT NULL DEFAULT (datetime('now'))
       );
 
@@ -90,6 +94,26 @@ function initDb() {
     // Migration: Add type to portfolios if it doesn't exist
     try {
         dbConnection.prepare(`ALTER TABLE portfolios ADD COLUMN type TEXT NOT NULL DEFAULT 'Investimento'`).run();
+    } catch (e) {}
+
+    // Migration: Add performance1DPrePost to portfolios if it doesn't exist
+    try {
+        dbConnection.prepare(`ALTER TABLE portfolios ADD COLUMN performance1DPrePost REAL NOT NULL DEFAULT 0`).run();
+    } catch (e) {}
+
+    // Migration: Add totalDividends to portfolios if it doesn't exist
+    try {
+        dbConnection.prepare(`ALTER TABLE portfolios ADD COLUMN totalDividends REAL NOT NULL DEFAULT 0`).run();
+    } catch (e) {}
+
+    // Migration: Add investedCapital to portfolios if it doesn't exist
+    try {
+        dbConnection.prepare(`ALTER TABLE portfolios ADD COLUMN investedCapital REAL NOT NULL DEFAULT 0`).run();
+    } catch (e) {}
+
+    // Migration: Add color to portfolios if it doesn't exist
+    try {
+        dbConnection.prepare(`ALTER TABLE portfolios ADD COLUMN color TEXT`).run();
     } catch (e) {}
 
     // Migration: Add country to assets if it doesn't exist
