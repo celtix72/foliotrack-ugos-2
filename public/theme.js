@@ -698,6 +698,12 @@
             // 2. Portfolio Variation
             const pRes = await fetch('/api/portfolios');
             const pData = await pRes.json();
+            
+            if (!pData.global) {
+                console.warn("[Theme] No global stats found in portfolio response");
+                return;
+            }
+
             const change = pData.global.changeValue || 0;
             const isPos = change >= 0;
             const formatted = window.formatPrivacy(change, 'EUR', 'h-var', 0);

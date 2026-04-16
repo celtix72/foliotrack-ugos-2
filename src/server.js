@@ -646,40 +646,46 @@ function getMarketStatus() {
  * Prevents showing yesterday's variation as "today's" in the morning.
  */
 function calculateVariationOverrides(marketStatus) {
-    const assets = database.db.prepare('SELECT ticker, type, currentPrice, changePercent, changeValue, preMarketChangePercent, postMarketChangePercent, quoteDate FROM assets').all();
-    const todayStr = new Date().toISOString().split('T')[0];
     const overrides = { regular: {}, prePost: {} };
-    
-    assets.forEach(a => {
-        if (!a.ticker || a.ticker === 'CASH') return;
-        const isUS = isUSMarket(a);
-        const openedToday = isUS ? marketStatus.US_openedToday : marketStatus.EU_openedToday;
-        const preMktActive = isUS ? marketStatus.US_preMarketActive : false;
-        const postMktActive = isUS ? marketStatus.US_afterHoursActive : false;
-        const isToday = a.quoteDate === todayStr;
+    try {
+        const assets = database.db.prepare('SELECT ticker, type, currentPrice, changePercent, changeValue, preMarketChangePercent, postMarketChangePercent, quoteDate FROM assets').all();
+        const todayStr = new Date().toISOString().split('T')[0];
+        
+        assets.forEach(a => {
+            if (!a.ticker || a.ticker === 'CASH') return;
+            const isUS = isUSMarket(a);
+            const openedToday = isUS ? marketStatus.US_openedToday : marketStatus.EU_openedToday;
+            const preMktActive = isUS ? marketStatus.US_preMarketActive : false;
+            const postMktActive = isUS ? marketStatus.US_afterHoursActive : false;
+            const isToday = a.quoteDate === todayStr;
 
-        // 1. Regular Session Variation
-        if (openedToday && isToday) {
-            overrides.regular[a.ticker] = a.changeValue || 0;
-        } else if (!openedToday && isToday && isUS && !preMktActive) {
-            // Case: Post-market or early morning of a day that has data.
-            // If US hasn't opened TODAY yet but has today's date, it might be post-market from late night.
-            overrides.regular[a.ticker] = a.changeValue || 0;
-        } else {
-            overrides.regular[a.ticker] = 0;
-        }
+            // 1. Regular Session Variation
+            if (openedToday && isToday) {
+                overrides.regular[a.ticker] = a.changeValue || 0;
+            } else if (!openedToday && isToday && isUS && !preMktActive) {
+                overrides.regular[a.ticker] = a.changeValue || 0;
+            } else {
+                overrides.regular[a.ticker] = 0;
+            }
 
-        // 2. Pre/Post Market Variation
-        if (preMktActive && a.preMarketChangePercent) {
-            const chgPct = a.preMarketChangePercent;
-            overrides.prePost[a.ticker] = a.currentPrice - (a.currentPrice / (1 + chgPct/100));
-        } else if (postMktActive && a.postMarketChangePercent) {
-            const chgPct = a.postMarketChangePercent;
-            overrides.prePost[a.ticker] = a.currentPrice - (a.currentPrice / (1 + chgPct/100));
-        } else {
-            overrides.prePost[a.ticker] = 0;
-        }
-    });
+            // 2. Pre/Post Market Variation (Safety against Division by Zero)
+            let ppVal = 0;
+            if (preMktActive && (a.preMarketChangePercent || a.preMarketChangePercent === 0)) {
+                const chgPct = a.preMarketChangePercent;
+                if (chgPct > -99.9) {
+                    ppVal = a.currentPrice - (a.currentPrice / (1 + chgPct/100));
+                }
+            } else if (postMktActive && (a.postMarketChangePercent || a.postMarketChangePercent === 0)) {
+                const chgPct = a.postMarketChangePercent;
+                if (chgPct > -99.9) {
+                    ppVal = a.currentPrice - (a.currentPrice / (1 + chgPct/100));
+                }
+            }
+            overrides.prePost[a.ticker] = (isNaN(ppVal) || !isFinite(ppVal)) ? 0 : ppVal;
+        });
+    } catch (err) {
+        console.error("[Overrides] Critical error calculating overrides:", err);
+    }
     return overrides;
 }
 
@@ -1559,10 +1565,11 @@ async function getAllPortfolioStats(liveRate = null) {
     let globalChangePrePostEUR = 0;
 
     for (const p of rows) {
-        const rate = p.currency === 'USD' ? liveRate : 1;
+        const rawRate = p.currency === 'USD' ? liveRate : 1;
+        const rate = (rawRate && rawRate > 0) ? rawRate : 1;
         
-        p.changeValue = p.performance1D || 0;
-        p.changeValuePrePost = p.performance1DPrePost || 0;
+        p.changeValue = (isNaN(p.performance1D) || !isFinite(p.performance1D)) ? 0 : (p.performance1D || 0);
+        p.changeValuePrePost = (isNaN(p.performance1DPrePost) || !isFinite(p.performance1DPrePost)) ? 0 : (p.performance1DPrePost || 0);
 
         const prevValue = (p.totalValue || 0) - p.changeValue - p.changeValuePrePost;
         p.changePercent = prevValue > 0 ? (p.changeValue / prevValue) * 100 : 0;
@@ -1645,6 +1652,7 @@ async function getAllPortfolioStats(liveRate = null) {
         totalNetValue: totalNetValueEUR,
         totalTax: totalTaxEUR,
         totalChange: globalChangeEUR,
+        totalChangePrePost: globalChangePrePostEUR,
         totalGain: lastPoint.profit || 0,
         investedCapital: totalNetValueEUR - (lastPoint.profit || 0),
         changePercent: (totalValueEUR - globalChangeEUR) > 0 ? (globalChangeEUR / (totalValueEUR - globalChangeEUR)) * 100 : 0,
@@ -1665,6 +1673,7 @@ app.get('/api/portfolios', async (req, res) => {
                 totalGain: stats.totalGain,
                 investedCapital: stats.investedCapital,
                 changeValue: stats.totalChange,
+                changeValuePrePost: stats.totalChangePrePost,
                 changePercent: stats.changePercent,
                 topWinners: stats.topWinners,
                 topLosers: stats.topLosers
@@ -1672,7 +1681,7 @@ app.get('/api/portfolios', async (req, res) => {
         });
     } catch (err) {
         console.error('API Error /api/portfolios:', err);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: err.message, stack: err.stack });
     }
 });
 
@@ -3616,14 +3625,20 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                     if (dateStr === todayStr && overrides) {
                         const assetMetaForOverride = assetMetadataCache[ticker];
                         const actualChg = (assetMetaForOverride && assetMetaForOverride.changeValue) || 0;
-                        const targetChg = overrides.regular ? (overrides.regular[ticker] ?? actualChg) : actualChg;
+                        const regMap = overrides.regular || {};
+                        const targetChg = regMap.hasOwnProperty(ticker) ? regMap[ticker] : actualChg;
+                        
                         effectivePrice = price - (actualChg - targetChg);
 
                         // Calculate Pre/Post for the chart (though we usually only show 1D on chart)
-                        if (overrides.prePost && overrides.prePost[ticker]) {
-                            prePostAdjustment = overrides.prePost[ticker] / rate;
+                        const ppMap = overrides.prePost || {};
+                        if (ppMap[ticker]) {
+                            const safeRate = (rate && rate > 0) ? rate : 1;
+                            prePostAdjustment = (ppMap[ticker] || 0) / safeRate;
                         }
                     }
+                    if (isNaN(effectivePrice) || !isFinite(effectivePrice)) effectivePrice = price;
+                    if (isNaN(prePostAdjustment) || !isFinite(prePostAdjustment)) prePostAdjustment = 0;
                     pAssets += shares * (effectivePrice / rate);
                 }
 
