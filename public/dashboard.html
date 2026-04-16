@@ -468,14 +468,24 @@
             const heroVar = document.getElementById('hero-day-var');
             if (heroVar) {
                 const change = globalData.changeValue || 0;
-                const isPos = change >= 0;
-                const formatted = formatPrivacy(change, 'EUR', 'h-var', 0);
-                if (formatted === '****') {
+                const changePP = globalData.globalChangePrePostEUR || 0;
+                const isPos = (change + changePP) >= 0;
+                
+                const formattedReg = formatPrivacy(change, 'EUR', 'h-var', 0);
+                const formattedPP = formatPrivacy(changePP, 'EUR', 'h-pp', 0);
+
+                if (formattedReg === '****') {
                     heroVar.classList.add('hidden');
                 } else {
-                    const sign = isPos ? '+' : '';
+                    const signReg = change >= 0 ? '+' : '';
+                    const signPP = changePP >= 0 ? '+' : '';
                     heroVar.className = `px-2.5 py-1 rounded-lg text-sm font-bold shadow-sm ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`;
-                    heroVar.innerHTML = `${sign}${formatted}`;
+                    
+                    let html = `${signReg}${formattedReg}`;
+                    if (changePP !== 0) {
+                        html += ` <span class="opacity-60 text-[10px] ml-1">(${signPP}${formattedPP})</span>`;
+                    }
+                    heroVar.innerHTML = html;
                     heroVar.classList.remove('hidden');
                 }
             }
@@ -535,17 +545,26 @@
     function createPortfolioCard(p) {
         const isPrivate = window.privacyState && window.privacyState.enabled;
         
-        // 1D logic
+        // 1D and PrePost logic
         const val1d = p.changeValue || 0;
         const pct1d = p.changePercent || 0;
+        const valPP = p.changeValuePrePost || 0;
+        const pctPP = p.changePercentPrePost || 0;
+
         const isPos1D = val1d >= 0;
         const sign1D = isPos1D ? '+' : '';
         const color1D = isPos1D ? 'text-emerald-500' : 'text-rose-500';
         const bg1D = isPos1D ? 'bg-emerald-500/10' : 'bg-rose-500/10';
         const rawFmt1D = formatNumber(Math.abs(val1d), 0);
         const symbol = p.currency === 'EUR' ? '€' : (p.currency === 'USD' ? '$' : p.currency);
+        
         const displayVal1D = isPrivate ? '****' : `${sign1D}${symbol}${rawFmt1D}`;
         const displayPct1D = isPrivate ? '****' : `${sign1D}${Math.abs(pct1d).toFixed(2)}%`;
+
+        // Pre/Post Formatting
+        const signPP = valPP >= 0 ? '+' : '';
+        const rawFmtPP = formatNumber(Math.abs(valPP), 0);
+        const displayValPP = isPrivate ? '****' : `(${signPP}${symbol}${rawFmtPP})`;
 
         const totalValStr = formatPrivacy(p.totalValue, p.currency, 'p-' + p.id, 0);
 
@@ -569,7 +588,10 @@
                     <div class="text-right">
                         <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Performance 1D</p>
                         <div class="flex flex-col md:flex-row md:items-baseline justify-end gap-1 md:gap-2">
-                            <span class="text-xl md:text-2xl font-black tracking-tight ${color1D}">${displayVal1D}</span>
+                            <div class="flex flex-col items-end">
+                                <span class="text-xl md:text-2xl font-black tracking-tight ${color1D}">${displayVal1D}</span>
+                                ${valPP !== 0 ? `<span class="text-[10px] font-bold text-slate-400 -mt-1">${displayValPP}</span>` : ''}
+                            </div>
                             <span class="text-[10px] md:text-xs font-bold px-1.5 py-0.5 rounded-md ${bg1D} ${color1D}">${displayPct1D}</span>
                         </div>
                     </div>

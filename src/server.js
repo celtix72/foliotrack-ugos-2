@@ -320,6 +320,7 @@ async function sendMarketStatusTelegram() {
     const stats = await calculateMarketStats();
     const todayStr = new Date().toISOString().split('T')[0];
     const marketStatus = getMarketStatus();
+    const overrides = calculateVariationOverrides(marketStatus);
 
     // 1. FILTERING: Include all assets with open positions (matches Market page)
     const activeAssets = stats.assets.filter(a => {
@@ -330,10 +331,10 @@ async function sendMarketStatusTelegram() {
     const extractSimpleSymbol = (s) => s.split('.')[0].split(':')[0].substring(0, 8);
 
     const categories = {
-        'OBBL': { emoji: '🟠', assets: [], totalVar: 0 },
-        'ETF OBBL': { emoji: '🟣', assets: [], totalVar: 0 },
-        'AZIONI': { emoji: '🔵', assets: [], totalVar: 0 },
-        'ETF AZ': { emoji: '🟢', assets: [], totalVar: 0 }
+        'OBBL': { emoji: '🟠', assets: [], totalVar: 0, totalVarPP: 0 },
+        'ETF OBBL': { emoji: '🟣', assets: [], totalVar: 0, totalVarPP: 0 },
+        'AZIONI': { emoji: '🔵', assets: [], totalVar: 0, totalVarPP: 0 },
+        'ETF AZ': { emoji: '🟢', assets: [], totalVar: 0, totalVarPP: 0 }
     };
 
     const typeToCat = {
@@ -345,98 +346,85 @@ async function sendMarketStatusTelegram() {
         'ETF Azionario': 'ETF AZ'
     };
 
-    // Calculate total variation based on filtered assets
+    // Calculate total variation based on split overrides
     let marketChange = 0;
-    let preMarketChange = 0;
+    let prePostChange = 0;
 
     activeAssets.forEach(a => {
         const catName = typeToCat[a.type] || 'AZIONI';
         const isUS = isUSMarket(a);
-        const marketOpen   = isUS ? marketStatus.US : marketStatus.EU;
-        const openedToday  = isUS ? marketStatus.US_openedToday : marketStatus.EU_openedToday;
-        const preMktActive = isUS ? marketStatus.US_preMarketActive : false;
+        const ticker = a.ticker;
+        
+        let diffReg = 0;
+        let diffPP = 0;
 
-        let chgPct = 0;
-        let diff = 0;
-        const isToday = a.quoteDate === todayStr;
-
-        if (marketOpen || (isToday && openedToday)) {
-            // Case 1: Market is open OR it's evening/afternoon and we have today's closing/current data
-            chgPct = a.changePercent || 0;
-            const val = a.value || 0;
-            const prevVal = val / (1 + chgPct/100);
-            diff = val - prevVal;
-            if (marketOpen) marketChange += diff;
-            else preMarketChange += diff; // Actually just "closed today" change
-        } else if (preMktActive && a.preMarketChangePercent && a.preMarketChangePercent !== 0) {
-            // Case 2: Morning, market not opened yet today, but Pre-Market is relevant
-            chgPct = a.preMarketChangePercent;
-            diff = a.value - (a.value / (1 + chgPct/100));
-            preMarketChange += diff;
-        } else {
-            // Case 3: Morning, market not opened yet, no relevant pre-market or it's too early
-            // All variations are 0 to avoid showing yesterday's move
-            chgPct = 0;
-            diff = 0;
+        if (overrides.regular && overrides.regular.hasOwnProperty(ticker)) {
+            const chgReg = overrides.regular[ticker];
+            diffReg = (a.quantity || 0) * chgReg;
         }
+        if (overrides.prePost && overrides.prePost.hasOwnProperty(ticker)) {
+            const chgPP = overrides.prePost[ticker];
+            diffPP = (a.quantity || 0) * chgPP;
+        }
+
+        marketChange += diffReg;
+        prePostChange += diffPP;
         
         if (categories[catName]) {
-            categories[catName].assets.push({ ...a, diff, chgPct, marketOpen });
-            categories[catName].totalVar += diff;
+            categories[catName].assets.push({ ...a, diffReg, diffPP });
+            categories[catName].totalVar += diffReg;
+            categories[catName].totalVarPP += diffPP;
         } else {
-            categories['AZIONI'].assets.push({ ...a, diff, chgPct, marketOpen });
-            categories['AZIONI'].totalVar += diff;
+            categories['AZIONI'].assets.push({ ...a, diffReg, diffPP });
+            categories['AZIONI'].totalVar += diffReg;
+            categories['AZIONI'].totalVarPP += diffPP;
         }
     });
 
     const totalVal = stats.totalNetValue || 0;
-    const totalChange = marketChange + preMarketChange;
-    const totalChangePct = (totalVal - totalChange) > 0 ? (totalChange / (totalVal - totalChange)) * 100 : 0;
-
-    // 2. V33.11 RICH HEADER FORMAT
-    const bigEmoji = getBigEmoji(totalChange);
+    const bigEmoji = getBigEmoji(marketChange + prePostChange);
     
-    const tSign = totalChange >= 0 ? '+' : '-';
-    const pSign = preMarketChange >= 0 ? '+' : '-';
+    const tSign = marketChange >= 0 ? '+' : '';
+    const pSign = prePostChange >= 0 ? '+' : '';
     
-    const tVarStr = Math.round(Math.abs(totalChange)).toLocaleString('it-IT');
-    const pVarStr = Math.round(Math.abs(preMarketChange)).toLocaleString('it-IT');
+    const tVarStr = Math.round(marketChange).toLocaleString('it-IT');
+    const pVarStr = Math.round(prePostChange).toLocaleString('it-IT');
     const totalValStr = Math.round(totalVal).toLocaleString('it-IT');
 
-    // Due righe: 1 DAY e NET. con formattazione monospaced per l'allineamento
-    // Variazioni totali (1 DAY e P.MKT) evidenziate in grassetto tramite * attorno al blocco mono
-    let msg = `1 DAY: *\`${escapeCodeV2(tSign + '€' + tVarStr)}\`* ${bigEmoji}   ${escapeV2('P.MKT:')} *\`${escapeCodeV2(pSign + '€' + pVarStr)}\`* \n`;
+    // Header with split variation
+    let msg = `1 DAY: *\`${escapeCodeV2(tSign + '€' + tVarStr)}\`* ${bigEmoji}   ${escapeV2('EXT:')} *\`${escapeCodeV2('(' + pSign + '€' + pVarStr + ')')}\`* \n`;
     msg += `${escapeV2('NET. :')} \`${escapeCodeV2('€' + totalValStr)}\` \n\n`;
 
     // 3. CATEGORIES & RICH ROWS (V33.11 style)
     for (const [catName, cat] of Object.entries(categories)) {
         if (cat.assets.length === 0) continue;
 
-        const catSign = cat.totalVar >= 0 ? '+' : '-';
-        const catVarStr = Math.round(Math.abs(cat.totalVar)).toLocaleString('it-IT');
+        const catSign = cat.totalVar >= 0 ? '+' : '';
+        const catPPSign = cat.totalVarPP >= 0 ? '+' : '';
+        const catVarStr = Math.round(cat.totalVar).toLocaleString('it-IT');
+        const catVarPPStr = Math.round(cat.totalVarPP).toLocaleString('it-IT');
         
-        // Per allineamento perfetto, l'intera riga deve essere monospaced.
-        // Emojis (2) + ' ' (1) = 3. Target variation column = 18.
-        // Quindi pad di 15 per arrivare a 18.
-        const headerLabel = catName.padEnd(15);
-        // Variazione subtotal evidenziata in grassetto
-        msg += `*${cat.emoji}* *\`${escapeCodeV2(headerLabel + catSign + '€' + catVarStr)}\`*\n`;
+        const headerLabel = catName.padEnd(12);
+        msg += `*${cat.emoji}* *\`${escapeCodeV2(headerLabel + (cat.totalVar >= 0 ? '+' : '') + '€' + catVarStr)}\`*  *\`(${catPPSign + '€' + catVarPPStr})\`*\n`;
         
-        cat.assets.sort((a,b) => b.chgPct - a.chgPct).forEach(a => {
+        cat.assets.sort((a,b) => (b.diffReg + b.diffPP) - (a.diffReg + a.diffPP)).forEach(a => {
             const sym = extractSimpleSymbol(a.ticker).padEnd(8);
-            const chgPct = a.chgPct || 0;
-            const valChange = a.diff || 0;
+            const valChange = a.diffReg || 0;
+            const valPP = a.diffPP || 0;
             
-            const vSign = valChange >= 0 ? '+' : '-';
-            const cSignAsset = chgPct >= 0 ? '+' : '';
-            const vIcon = getPerformanceIcon(chgPct);
+            const vSign = valChange >= 0 ? '+' : '';
+            const vpSign = valPP >= 0 ? '+' : '';
+            const combinedPct = a.changePercent + (a.preMarketChangePercent || a.postMarketChangePercent || 0);
+            const vIcon = getPerformanceIcon(combinedPct);
             
-            // Emoji logic: ⚪ for pre-market, 🔘 for closed market, 🟢/🔴 for open market
+            // Emoji logic: ⚪/🟡 for pre/post, 🟢/🔴 for open market, 🔘 for closed
             let statusIcon = '🔘'; 
-            if (a.marketOpen) {
+            const isUS = isUSMarket(a);
+            const mktOpen = isUS ? marketStatus.US : marketStatus.EU;
+            if (mktOpen) {
                 statusIcon = valChange >= 0 ? '🟢' : '🔴';
-            } else if (a.preMarketChangePercent && a.preMarketChangePercent !== 0) {
-                statusIcon = '⚪'; // Pre-market
+            } else if (valPP !== 0) {
+                statusIcon = '🟡'; // Pre/Post active
             } else {
                 statusIcon = '🔘'; // Closed
             }
@@ -645,6 +633,7 @@ function getMarketStatus() {
         EU_openedToday: !isWeekend && cetNow >= milHrs.open,
         US_openedToday: !isWeekend && cetNow >= usHrs.open,
         US_preMarketActive: !isWeekend && cetNow >= '10:00' && cetNow < usHrs.open,
+        US_afterHoursActive: !isWeekend && (cetNow > usHrs.close || cetNow < '02:05'),
         isWeekend,
         anyOpen: milOpen || gerOpen || usOpen
     };
@@ -657,28 +646,38 @@ function getMarketStatus() {
  * Prevents showing yesterday's variation as "today's" in the morning.
  */
 function calculateVariationOverrides(marketStatus) {
-    const assets = database.db.prepare('SELECT ticker, type, currentPrice, changePercent, changeValue, preMarketChangePercent, quoteDate FROM assets').all();
+    const assets = database.db.prepare('SELECT ticker, type, currentPrice, changePercent, changeValue, preMarketChangePercent, postMarketChangePercent, quoteDate FROM assets').all();
     const todayStr = new Date().toISOString().split('T')[0];
-    const overrides = {};
+    const overrides = { regular: {}, prePost: {} };
     
     assets.forEach(a => {
         if (!a.ticker || a.ticker === 'CASH') return;
         const isUS = isUSMarket(a);
         const openedToday = isUS ? marketStatus.US_openedToday : marketStatus.EU_openedToday;
         const preMktActive = isUS ? marketStatus.US_preMarketActive : false;
+        const postMktActive = isUS ? marketStatus.US_afterHoursActive : false;
         const isToday = a.quoteDate === todayStr;
 
+        // 1. Regular Session Variation
         if (openedToday && isToday) {
-            // Normal case: use DB value (session started today)
-            overrides[a.ticker] = a.changeValue || 0;
-        } else if (preMktActive && a.preMarketChangePercent && a.preMarketChangePercent !== 0) {
-            // Morning, pre-market active for US title
-            const chgPct = a.preMarketChangePercent;
-            const diff = a.currentPrice - (a.currentPrice / (1 + chgPct/100));
-            overrides[a.ticker] = diff;
+            overrides.regular[a.ticker] = a.changeValue || 0;
+        } else if (!openedToday && isToday && isUS && !preMktActive) {
+            // Case: Post-market or early morning of a day that has data.
+            // If US hasn't opened TODAY yet but has today's date, it might be post-market from late night.
+            overrides.regular[a.ticker] = a.changeValue || 0;
         } else {
-            // Morning before open: 0 variation
-            overrides[a.ticker] = 0;
+            overrides.regular[a.ticker] = 0;
+        }
+
+        // 2. Pre/Post Market Variation
+        if (preMktActive && a.preMarketChangePercent) {
+            const chgPct = a.preMarketChangePercent;
+            overrides.prePost[a.ticker] = a.currentPrice - (a.currentPrice / (1 + chgPct/100));
+        } else if (postMktActive && a.postMarketChangePercent) {
+            const chgPct = a.postMarketChangePercent;
+            overrides.prePost[a.ticker] = a.currentPrice - (a.currentPrice / (1 + chgPct/100));
+        } else {
+            overrides.prePost[a.ticker] = 0;
         }
     });
     return overrides;
@@ -691,7 +690,7 @@ async function recalculateAllPortfoliosWithOverrides(liveRate = null) {
     if (!liveRate) liveRate = await getEurUsdRate();
     const marketStatus = getMarketStatus();
     const overrides = calculateVariationOverrides(marketStatus);
-    database.recalculateAll(liveRate, overrides);
+    database.recalculateAll(liveRate, overrides); // Updated database logic to handle {regular, prePost}
     return { liveRate, marketStatus, overrides };
 }
 
@@ -1557,12 +1556,17 @@ async function getAllPortfolioStats(liveRate = null) {
     let globalChangeEUR = 0;
 
     const today = new Date();
+    let globalChangePrePostEUR = 0;
+
     for (const p of rows) {
         const rate = p.currency === 'USD' ? liveRate : 1;
         
         p.changeValue = p.performance1D || 0;
-        const prevValue = (p.totalValue || 0) - p.changeValue;
+        p.changeValuePrePost = p.performance1DPrePost || 0;
+
+        const prevValue = (p.totalValue || 0) - p.changeValue - p.changeValuePrePost;
         p.changePercent = prevValue > 0 ? (p.changeValue / prevValue) * 100 : 0;
+        p.changePercentPrePost = prevValue > 0 ? (p.changeValuePrePost / prevValue) * 100 : 0;
 
         const history = individual[p.id] || [];
         if (history.length > 0) {
@@ -1583,6 +1587,8 @@ async function getAllPortfolioStats(liveRate = null) {
         }
 
         globalChangeEUR += p.changeValue / rate;
+        globalChangePrePostEUR += p.changeValuePrePost / rate;
+
         const details = await getPortfolioDetails(p.id, liveRate);
         p.roi = details.roi || 0;
         p.twr = details.twr || 0;
@@ -3606,11 +3612,17 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                         rate = lastFx ? lastFx.exchangeRate : 1;
                     }
                     let effectivePrice = price;
-                    if (dateStr === todayStr && overrides[ticker] !== undefined) {
+                    let prePostAdjustment = 0;
+                    if (dateStr === todayStr && overrides) {
                         const assetMetaForOverride = assetMetadataCache[ticker];
                         const actualChg = (assetMetaForOverride && assetMetaForOverride.changeValue) || 0;
-                        const targetChg = overrides[ticker];
+                        const targetChg = overrides.regular ? (overrides.regular[ticker] ?? actualChg) : actualChg;
                         effectivePrice = price - (actualChg - targetChg);
+
+                        // Calculate Pre/Post for the chart (though we usually only show 1D on chart)
+                        if (overrides.prePost && overrides.prePost[ticker]) {
+                            prePostAdjustment = overrides.prePost[ticker] / rate;
+                        }
                     }
                     pAssets += shares * (effectivePrice / rate);
                 }

@@ -408,6 +408,7 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null, variationOverr
     let assetValue = 0;
     let assetCount = 0;
     let performance1D = 0;
+    let performance1DPrePost = 0;
     for (const [ticker, h] of Object.entries(holdings)) {
         const shares = h.shares;
         if (shares <= 0.0001) continue;
@@ -456,18 +457,26 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null, variationOverr
                 : price;
             assetValue += shares * priceInPCurr;
 
-            // Calculate daily market variation
-            let chgVal = (asset && asset.changeValue) ? asset.changeValue : 0;
-            // Apply override if present (crucial for morning reset)
-            if (variationOverrides && variationOverrides.hasOwnProperty(ticker)) {
-                chgVal = variationOverrides[ticker];
+            // Calculate daily market variations
+            let chgReg = (asset && asset.changeValue) ? asset.changeValue : 0;
+            let chgPrePost = 0;
+
+            if (variationOverrides) {
+                if (variationOverrides.regular && variationOverrides.regular.hasOwnProperty(ticker)) {
+                    chgReg = variationOverrides.regular[ticker];
+                }
+                if (variationOverrides.prePost && variationOverrides.prePost.hasOwnProperty(ticker)) {
+                    chgPrePost = variationOverrides.prePost[ticker];
+                }
             }
 
-            if (chgVal !== 0) {
-                const changeInPCurr = (aCurr !== portfolio.currency && rate !== 0)
-                    ? chgVal / rate
-                    : chgVal;
+            if (chgReg !== 0) {
+                const changeInPCurr = (aCurr !== portfolio.currency && rate !== 0) ? chgReg / rate : chgReg;
                 performance1D += shares * changeInPCurr;
+            }
+            if (chgPrePost !== 0) {
+                const changeInPCurr = (aCurr !== portfolio.currency && rate !== 0) ? chgPrePost / rate : chgPrePost;
+                performance1DPrePost += shares * changeInPCurr;
             }
         }
     }
@@ -480,12 +489,13 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null, variationOverr
     const finalTotalValue = (isNaN(totalValue) || !isFinite(totalValue)) ? 0 : totalValue;
     const finalDividends = (isNaN(totalDividends) || !isFinite(totalDividends)) ? 0 : totalDividends;
     const finalPerf1D = (isNaN(performance1D) || !isFinite(performance1D)) ? 0 : performance1D;
+    const finalPerf1DPrePost = (isNaN(performance1DPrePost) || !isFinite(performance1DPrePost)) ? 0 : performance1DPrePost;
 
     dbConnection.prepare(`
         UPDATE portfolios
-        SET currentCash = ?, totalValue = ?, totalDividends = ?, assetCount = ?, performance1D = ?
+        SET currentCash = ?, totalValue = ?, totalDividends = ?, assetCount = ?, performance1D = ?, performance1DPrePost = ?
         WHERE id = ?
-    `).run(finalCash, finalTotalValue, finalDividends, assetCount, finalPerf1D, portfolioId);
+    `).run(finalCash, finalTotalValue, finalDividends, assetCount, finalPerf1D, finalPerf1DPrePost, portfolioId);
 }
 
 function recalculateAll(liveEurUsdRate = null, variationOverrides = null) {
