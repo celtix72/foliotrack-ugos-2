@@ -349,7 +349,7 @@
                                 ${a.changePercent >= 0 ? '+' : ''}${a.changePercent.toFixed(2)}%
                             </p>
                         </div>
-                        <button onclick="removeFromWatchlist('${a.ticker}')" class="absolute -right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-500 transition-all">
+                        <button onclick="removeFromWatchlist('${a.ticker}', ${!!a.hasPosition})" class="absolute -right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-500 transition-all">
                             <span class="material-symbols-outlined text-xs">close</span>
                         </button>
                     </div>`).join('')) + `</div></div>`;
@@ -416,10 +416,27 @@
         } catch (err) { alert('Error: ' + err.message); }
     }
 
-    window.removeFromWatchlist = async function(ticker) {
-        if (!confirm(`Remove ${ticker}?`)) return;
-        const res = await fetch(`/api/watchlist/${ticker}`, { method: 'DELETE' });
-        if (res.ok) updateSidebarContents();
+    window.removeFromWatchlist = async function(ticker, hasPosition = false) {
+        if (hasPosition) {
+            alert(`L'asset ${ticker} ha posizioni aperte in uno o più portafogli.\n\nPer rimuoverlo completamente, devi prima eliminare tutte le singole transazioni associate a questo ticker.`);
+            return;
+        }
+        
+        if (!confirm(`Rimuovere ${ticker} dalla watchlist?`)) return;
+        
+        try {
+            const res = await fetch(`/api/watchlist/${ticker}`, { method: 'DELETE' });
+            if (res.ok) {
+                // Trigger global update
+                updateSidebarContents();
+                window.dispatchEvent(new CustomEvent('market-data-updated'));
+            } else {
+                const err = await res.json();
+                alert('Errore: ' + (err.error || 'Impossibile rimuovere asset'));
+            }
+        } catch (err) {
+            alert('Errore di connessione: ' + err.message);
+        }
     }
 
     // ─── Sidebar Toggle ──────────────────────────────────────────────────────

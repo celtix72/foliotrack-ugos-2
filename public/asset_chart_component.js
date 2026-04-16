@@ -260,10 +260,15 @@
                 if (delBtn) {
                     delBtn.style.display = assetInfo.isMonitored ? 'block' : 'none';
                     delBtn.onclick = () => {
-                        if (confirm(`Remove ${assetInfo.ticker} from Watchlist?`)) {
-                            window.removeFromWatchlist(assetInfo.ticker);
-                            closeAssetChartModal();
+                        const hasPos = transactions && transactions.length > 0;
+                        if (hasPos) {
+                            alert(`L'asset ${assetInfo.ticker} ha posizioni aperte.\n\nPer rimuoverlo completamente, devi prima eliminare tutte le singole transazioni associate.`);
+                            return;
                         }
+                        
+                        // Otherwise use the global/standard removeFromWatchlist
+                        window.removeFromWatchlist(assetInfo.ticker, false);
+                        closeAssetChartModal();
                     };
                 }
             }

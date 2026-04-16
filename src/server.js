@@ -1295,9 +1295,19 @@ app.post('/api/watchlist', async (req, res) => {
 app.delete('/api/watchlist/:ticker', (req, res) => {
     try {
         const ticker = req.params.ticker.toUpperCase();
-        // Do NOT touch isMonitored: assets in portfolio must keep receiving price updates.
-        database.db.prepare(`UPDATE assets SET inWatchlist = 0 WHERE ticker = ?`).run(ticker);
-        res.json({ success: true });
+        
+        // Check if the asset exists in any transactions
+        const hasTransactions = database.db.prepare(`SELECT 1 FROM transactions WHERE assetTicker = ? LIMIT 1`).get(ticker);
+        
+        if (hasTransactions) {
+            // Keep metadata for portfolio but mark not in watchlist
+            database.db.prepare(`UPDATE assets SET inWatchlist = 0 WHERE ticker = ?`).run(ticker);
+        } else {
+            // physically DELETE if not used in portfolio
+            database.db.prepare(`DELETE FROM assets WHERE ticker = ?`).run(ticker);
+        }
+        
+        res.json({ success: true, deleted: !hasTransactions });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

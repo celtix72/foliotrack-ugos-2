@@ -407,7 +407,7 @@
               <span class="material-symbols-outlined">edit_note</span>
               <span>Modifica</span>
             </div>
-            <div class="mob-action-btn bg-red-ios" onclick="event.stopPropagation(); removeFromWatchlist('${a.ticker}')">
+            <div class="mob-action-btn bg-red-ios" onclick="event.stopPropagation(); removeFromWatchlist('${a.ticker}', ${!!a.hasPosition})">
               <span class="material-symbols-outlined">delete</span>
               <span>Rimuovi</span>
             </div>
