@@ -1542,16 +1542,15 @@ app.delete('/api/notifications', (req, res) => {
 // PORTFOLIOS API
 // ════════════════════════════════════════════════════════════════════════════
 
-async function getAllPortfolioStats(liveRate = null) {
+async function getAllPortfolioStats(liveRateInput = null) {
+    let liveRate = liveRateInput;
     if (!liveRate) {
         liveRate = await getEurUsdRate();
     }
     const { overrides, marketStatus } = await recalculateAllPortfoliosWithOverrides(liveRate);
     const rows = database.db.prepare(`SELECT * FROM portfolios ORDER BY createdAt ASC`).all();
     
-    // SINGLE SOURCE OF TRUTH: Use Performance Engine for all dashboard metrics
-    // Note: calculatePerformanceHistory would need similar overrides if it should be super precise, 
-    // but for now performance1D of portfolios table is our primary real-time metric.
+    // Calculate global points for chart separately
     const perfData = await calculatePerformanceHistory(null, 'ALL', false, true);
     const globalPoints = perfData.dataPoints || [];
     const individual = perfData.individual || {};
@@ -1560,9 +1559,9 @@ async function getAllPortfolioStats(liveRate = null) {
     let totalNetValueEUR = 0;
     let totalTaxEUR = 0;
     let globalChangeEUR = 0;
+    let globalChangePrePostEUR = 0;
 
     const today = new Date();
-    let globalChangePrePostEUR = 0;
 
     for (const p of rows) {
         const rawRate = p.currency === 'USD' ? liveRate : 1;
@@ -1619,20 +1618,19 @@ async function getAllPortfolioStats(liveRate = null) {
             GROUP BY assetTicker 
             HAVING netQty > 0.001
         ) h ON a.ticker = h.assetTicker
+        GROUP BY a.ticker
     `).all();
 
     const todayStr = new Date().toISOString().split('T')[0];
     const heldAssets = heldAssetsRaw.map(a => {
         let changePct = a.changePercent || 0;
-        
-        // Manual override for heldAssets list to be consistent
         const isUS = isUSMarket(a);
         const openedToday = isUS ? marketStatus.US_openedToday : marketStatus.EU_openedToday;
         const preMktActive = isUS ? marketStatus.US_preMarketActive : false;
         const isToday = a.quoteDate === todayStr;
 
         if (!(openedToday && isToday)) {
-            if (preMktActive && a.preMarketChangePercent && a.preMarketChangePercent !== 0) {
+            if (preMktActive && a.preMarketChangePercent) {
                 changePct = a.preMarketChangePercent;
             } else {
                 changePct = 0;

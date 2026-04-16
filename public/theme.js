@@ -736,6 +736,9 @@
                 mobVar.innerHTML = `<span>${sign}${formatted}</span>`;
             }
 
+            // Emit event so dashboard.html can refresh its hero section
+            window.dispatchEvent(new CustomEvent('portfolios-updated', { detail: pData }));
+
         } catch (err) { 
             console.error("Header update error:", err); 
             // Show Error State (Blinking Red)

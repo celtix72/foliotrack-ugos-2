@@ -442,87 +442,136 @@
         }
     }
 
-    async function loadDashboard() {
+    async function loadDashboard(prefetchedData = null) {
         try {
-            const res = await fetch('/api/portfolios');
-            const data = await res.json();
-            const portfolios = data.portfolios || [];
-            const globalData = data.global || { totalValue: 0, totalNetValue: 0, totalTax: 0, changePercent: 0 };
-            window._dashboardData = data; // Cache data for privacy toggles
+            const data = prefetchedData || await (await fetch('/api/portfolios')).json();
+            window._dashboardData = data;
+            updateDashboardUI(data);
             
-            document.getElementById('total-net-worth').innerText = formatPrivacy(globalData.totalNetValue, 'EUR', 'networth', 0);
-            document.getElementById('total-gross-worth').innerText = formatPrivacy(globalData.totalValue, 'EUR', 'gross', 0);
-            document.getElementById('total-gain-value').innerText = formatPrivacy(globalData.totalGain, 'EUR', 'gain', 0);
-
-            // TAX & GAIN derived from gross - net
-            const taxAmt = (globalData.totalValue || 0) - (globalData.totalNetValue || 0);
-            const gainAmt = globalData.totalGain ?? 0;
-            const gainEl = document.getElementById('total-gain-value');
-            if (gainEl) {
-                const isGainPos = gainAmt >= 0;
-                gainEl.className = `text-xl font-bold tracking-tight ${isGainPos ? 'text-emerald-500' : 'text-rose-500'}`;
-                const sign = isGainPos ? '+' : '';
-                gainEl.innerText = sign + formatPrivacy(gainAmt, 'EUR', 'gain', 0);
-            }
-            // Update hero variation
-            const heroVar = document.getElementById('hero-day-var');
-            if (heroVar) {
-                const change = globalData.changeValue || 0;
-                const changePP = globalData.changeValuePrePost || 0;
-                const totalMove = change + changePP;
-                const isPos = totalMove >= 0;
+            // Initial Chart/Market Load (only once or on full fetch)
+            if (!prefetchedData) {
+                initDashboardChart();
+                initAllocationChart();
+                loadDividendAlert();
                 
-                const formattedReg = formatPrivacy(change, 'EUR', 'h-var', 0);
-                const formattedPP = formatPrivacy(changePP, 'EUR', 'h-pp', 0);
-
-                if (formattedReg === '****') {
-                    heroVar.classList.add('hidden');
-                } else {
-                    const signReg = change >= 0 ? '+' : '';
-                    const signPP = changePP >= 0 ? '+' : '';
-                    heroVar.className = `px-2.5 py-1 rounded-lg text-sm font-bold shadow-sm ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`;
-                    
-                    let html = `${signReg}${formattedReg}`;
-                    if (changePP !== 0) {
-                        html += ` <span class="opacity-60 text-[10px] ml-1">(${signPP}${formattedPP})</span>`;
-                    }
-                    heroVar.innerHTML = html;
-                    heroVar.classList.remove('hidden');
+                // Render Markets once
+                const mContainer = document.getElementById('market-container');
+                if (mContainer) {
+                    mContainer.innerHTML = mockMarkets.map(m => `
+                        <div class="p-4 rounded-xl bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 group hover:border-primary/50 transition-colors">
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">${m.name}</p>
+                            <div class="flex items-baseline justify-between">
+                                <span class="text-lg font-black tracking-tight">${m.val}</span>
+                                <span class="${m.perf >= 0 ? 'text-emerald-500' : 'text-rose-500'} text-[11px] font-bold">${m.perf >= 0 ? '+' : ''}${formatNumber(m.perf)}%</span>
+                            </div>
+                        </div>
+                    `).join('');
                 }
             }
+        } catch (err) {
+            console.error('Failed to load dashboard:', err);
+        }
+    }
 
-            // Initial chart load
-            initDashboardChart();
-            initAllocationChart();
+    function updateDashboardUI(data) {
+        const portfolios = data.portfolios || [];
+        const globalData = data.global;
+        if (!globalData) return;
 
-            // Render Markets
-            const mContainer = document.getElementById('market-container');
-            if (mContainer) {
-                mContainer.innerHTML = mockMarkets.map(m => `
-                    <div class="p-4 rounded-xl bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 group hover:border-primary/50 transition-colors">
-                        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">${m.name}</p>
-                        <div class="flex items-baseline justify-between">
-                            <span class="text-lg font-black tracking-tight">${m.val}</span>
-                            <span class="${m.perf >= 0 ? 'text-emerald-500' : 'text-rose-500'} text-[11px] font-bold">${m.perf >= 0 ? '+' : ''}${formatNumber(m.perf)}%</span>
+        // Hero Numbers
+        document.getElementById('total-net-worth').innerText = formatPrivacy(globalData.totalNetValue, 'EUR', 'networth');
+        document.getElementById('total-gross-worth').innerText = formatPrivacy(globalData.totalValue, 'EUR', 'gross');
+        
+        const gainAmt = globalData.totalGain || 0;
+        const gainEl = document.getElementById('total-gain-value');
+        if (gainEl) {
+            const isGainPos = gainAmt >= 0;
+            gainEl.className = `text-xl font-bold tracking-tight ${isGainPos ? 'text-emerald-500' : 'text-rose-500'}`;
+            const sign = isGainPos ? '+' : '';
+            gainEl.innerText = sign + formatPrivacy(gainAmt, 'EUR', 'gain', 0);
+        }
+
+        const heroVar = document.getElementById('hero-day-var');
+        if (heroVar) {
+            const changeReg = globalData.totalChange || globalData.changeValue || 0;
+            const changePP = globalData.totalChangePrePost || globalData.changeValuePrePost || 0;
+            const totalMove = changeReg + changePP;
+            const isPos = totalMove >= 0;
+            
+            const formattedReg = formatPrivacy(changeReg, 'EUR', 'h-var', 0);
+            const formattedPP = formatPrivacy(changePP, 'EUR', 'h-pp', 0);
+
+            if (formattedReg === '****') {
+                heroVar.classList.add('hidden');
+            } else {
+                const signReg = changeReg >= 0 ? '+' : '';
+                const signPP = changePP >= 0 ? '+' : '';
+                heroVar.className = `px-2.5 py-1 rounded-lg text-sm font-bold shadow-sm ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`;
+                
+                let html = `${signReg}${formattedReg}`;
+                if (changePP !== 0) {
+                    html += ` <span class="opacity-60 text-[10px] ml-1">(${signPP}${formattedPP})</span>`;
+                }
+                heroVar.innerHTML = html;
+                heroVar.classList.remove('hidden');
+            }
+        }
+
+        // Render Portfolios Grid
+        const pContainer = document.getElementById('portfolio-container');
+        if (pContainer) {
+            pContainer.innerHTML = portfolios.map(p => createPortfolioCard(p)).join('') || '<div class="col-span-full py-12 text-center text-slate-500 italic">No portfolios found.</div>';
+        }
+
+        // Render Sidebar
+        renderSidebarPortfolios(portfolios);
+
+        // Update Winners/Losers
+        const winnersContainer = document.getElementById('top-winners');
+        const losersContainer = document.getElementById('top-losers');
+        if (winnersContainer && losersContainer) {
+            winnersContainer.innerHTML = (globalData.topWinners || []).map(a => `
+                <div class="flex items-center justify-between group">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 font-bold text-xs ring-1 ring-emerald-500/20">
+                            ${a.ticker.substring(0,2)}
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-xs font-bold text-slate-700 dark:text-slate-200 group-hover:text-primary transition-colors">${a.ticker}</span>
+                            <span class="text-[9px] text-slate-400 font-medium truncate w-16">${a.name || ''}</span>
                         </div>
                     </div>
-                `).join('');
-            }
+                    <div class="text-right flex flex-col">
+                        <span class="text-xs font-bold text-emerald-500">+${a.changePercent.toFixed(2)}%</span>
+                        <span class="text-[10px] text-emerald-500/60 font-medium">+${formatPrivacy(a.absChange, 'EUR', 'winner', 0)}</span>
+                    </div>
+                </div>
+            `).join('') || '<div class="text-xs text-slate-400 italic">Nessun dato</div>';
 
-            // Load Dividend Alert
-            loadDividendAlert();
-
-            // Render Portfolios Grid
-            const pContainer = document.getElementById('portfolio-container');
-            if (pContainer) {
-                pContainer.innerHTML = portfolios.map(p => createPortfolioCard(p)).join('') || '<div class="col-span-full py-12 text-center text-slate-500 italic">No portfolios found.</div>';
-            }
-
-            // Render Sidebar
-            renderSidebarPortfolios(portfolios);
-
-        } catch (err) { console.error(err); }
+            losersContainer.innerHTML = (globalData.topLosers || []).map(a => `
+                <div class="flex items-center justify-between group">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-500 font-bold text-xs ring-1 ring-rose-500/20">
+                            ${a.ticker.substring(0,2)}
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-xs font-bold text-slate-700 dark:text-slate-200 group-hover:text-primary transition-colors">${a.ticker}</span>
+                            <span class="text-[9px] text-slate-400 font-medium truncate w-16">${a.name || ''}</span>
+                        </div>
+                    </div>
+                    <div class="text-right flex flex-col">
+                        <span class="text-xs font-bold text-rose-500">${a.changePercent.toFixed(2)}%</span>
+                        <span class="text-[10px] text-rose-500/60 font-medium">${formatPrivacy(a.absChange, 'EUR', 'loser', 0)}</span>
+                    </div>
+                </div>
+            `).join('') || '<div class="text-xs text-slate-400 italic">Nessun dato</div>';
+        }
     }
+
+    // Listener per aggiornamenti real-time da theme.js
+    window.addEventListener('portfolios-updated', (e) => {
+        if (e.detail) updateDashboardUI(e.detail);
+    });
 
     function renderSidebarPortfolios(portfolios) {
         const sidebar = document.getElementById('sidebar-portfolios');
