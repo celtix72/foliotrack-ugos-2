@@ -337,7 +337,7 @@ function setSetting(key, value) {
     dbConnection.prepare(`INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)`).run(key, String(value));
 }
 
-function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
+function recalculatePortfolio(portfolioId, liveEurUsdRate = null, variationOverrides = null) {
     const portfolio = dbConnection.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(portfolioId);
     if (!portfolio) return;
 
@@ -457,10 +457,16 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
             assetValue += shares * priceInPCurr;
 
             // Calculate daily market variation
-            if (asset && asset.changeValue) {
+            let chgVal = (asset && asset.changeValue) ? asset.changeValue : 0;
+            // Apply override if present (crucial for morning reset)
+            if (variationOverrides && variationOverrides.hasOwnProperty(ticker)) {
+                chgVal = variationOverrides[ticker];
+            }
+
+            if (chgVal !== 0) {
                 const changeInPCurr = (aCurr !== portfolio.currency && rate !== 0)
-                    ? asset.changeValue / rate
-                    : asset.changeValue;
+                    ? chgVal / rate
+                    : chgVal;
                 performance1D += shares * changeInPCurr;
             }
         }
@@ -482,9 +488,9 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null) {
     `).run(finalCash, finalTotalValue, finalDividends, assetCount, finalPerf1D, portfolioId);
 }
 
-function recalculateAll(liveEurUsdRate = null) {
+function recalculateAll(liveEurUsdRate = null, variationOverrides = null) {
     const ids = dbConnection.prepare(`SELECT id FROM portfolios`).all();
-    for (const { id } of ids) recalculatePortfolio(id, liveEurUsdRate);
+    for (const { id } of ids) recalculatePortfolio(id, liveEurUsdRate, variationOverrides);
 }
 
 function savePortfolioSnapshot(portfolioId = null, eurUsdRate = 1.0) {

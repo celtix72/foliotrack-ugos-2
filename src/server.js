@@ -299,23 +299,23 @@ function getBigEmoji(val) {
     return '⚪';
 }
 
+// Helper for market detection (global)
+const isUSMarket = (a) => {
+    const ticker = a.ticker || '';
+    const type = a.type || '';
+    // 1. Tickers with dots (.MI, .DE, .AS, etc.) are European/Other
+    if (ticker.includes('.')) return false;
+    // 2. Bonds and Bond ETFs in this portfolio are primarily European/BTM
+    if (type.includes('Bond') || type.includes('Obblig')) return false;
+    // 3. Fallback for tickers without dots (AAPL, MSFT) to US
+    return true;
+};
+
 async function sendMarketStatusTelegram() {
     const escape = escapeV2;
     const stats = await calculateMarketStats();
     const todayStr = new Date().toISOString().split('T')[0];
     const marketStatus = getMarketStatus();
-
-    // Helper for market detection
-    const isUSMarket = (a) => {
-        const ticker = a.ticker || '';
-        const type = a.type || '';
-        // 1. Tickers with dots (.MI, .DE, .AS, etc.) are European/Other
-        if (ticker.includes('.')) return false;
-        // 2. Bonds and Bond ETFs in this portfolio are primarily European/BTM
-        if (type.includes('Bond') || type.includes('Obblig')) return false;
-        // 3. Fallback for tickers without dots (AAPL, MSFT) to US
-        return true;
-    };
 
     // 1. FILTERING: Include all assets with open positions (matches Market page)
     const activeAssets = stats.assets.filter(a => {
@@ -348,23 +348,32 @@ async function sendMarketStatusTelegram() {
     activeAssets.forEach(a => {
         const catName = typeToCat[a.type] || 'AZIONI';
         const isUS = isUSMarket(a);
-        const marketOpen = isUS ? marketStatus.US : marketStatus.EU;
+        const marketOpen   = isUS ? marketStatus.US : marketStatus.EU;
+        const openedToday  = isUS ? marketStatus.US_openedToday : marketStatus.EU_openedToday;
+        const preMktActive = isUS ? marketStatus.US_preMarketActive : false;
 
         let chgPct = 0;
         let diff = 0;
         const isToday = a.quoteDate === todayStr;
 
-        if (!marketOpen && a.preMarketChangePercent && a.preMarketChangePercent !== 0) {
-            chgPct = a.preMarketChangePercent;
-            diff = a.value - (a.value / (1 + chgPct/100));
-            preMarketChange += diff;
-        } else if (isToday) {
+        if (marketOpen || (isToday && openedToday)) {
+            // Case 1: Market is open OR it's evening/afternoon and we have today's closing/current data
             chgPct = a.changePercent || 0;
             const val = a.value || 0;
             const prevVal = val / (1 + chgPct/100);
             diff = val - prevVal;
             if (marketOpen) marketChange += diff;
-            else preMarketChange += diff;
+            else preMarketChange += diff; // Actually just "closed today" change
+        } else if (preMktActive && a.preMarketChangePercent && a.preMarketChangePercent !== 0) {
+            // Case 2: Morning, market not opened yet today, but Pre-Market is relevant
+            chgPct = a.preMarketChangePercent;
+            diff = a.value - (a.value / (1 + chgPct/100));
+            preMarketChange += diff;
+        } else {
+            // Case 3: Morning, market not opened yet, no relevant pre-market or it's too early
+            // All variations are 0 to avoid showing yesterday's move
+            chgPct = 0;
+            diff = 0;
         }
         
         if (categories[catName]) {
@@ -623,14 +632,52 @@ function getMarketStatus() {
     const gerOpen = checkOpen(MARKET_HOURS.GER);
     const usOpen  = checkOpen(MARKET_HOURS.USA);
 
+    const milHrs = MARKET_HOURS.MIL;
+    const usHrs  = MARKET_HOURS.USA;
+
     const status = {
         EU: milOpen || gerOpen,
         US: usOpen,
+        EU_openedToday: !isWeekend && cetNow >= milHrs.open,
+        US_openedToday: !isWeekend && cetNow >= usHrs.open,
+        US_preMarketActive: !isWeekend && cetNow >= '10:00' && cetNow < usHrs.open,
         isWeekend,
         anyOpen: milOpen || gerOpen || usOpen
     };
 
     return status;
+}
+
+/**
+ * Calculates variation overrides based on current market status.
+ * Prevents showing yesterday's variation as "today's" in the morning.
+ */
+function calculateVariationOverrides(marketStatus) {
+    const assets = database.db.prepare('SELECT ticker, type, currentPrice, changePercent, changeValue, preMarketChangePercent, quoteDate FROM assets').all();
+    const todayStr = new Date().toISOString().split('T')[0];
+    const overrides = {};
+    
+    assets.forEach(a => {
+        if (!a.ticker || a.ticker === 'CASH') return;
+        const isUS = isUSMarket(a);
+        const openedToday = isUS ? marketStatus.US_openedToday : marketStatus.EU_openedToday;
+        const preMktActive = isUS ? marketStatus.US_preMarketActive : false;
+        const isToday = a.quoteDate === todayStr;
+
+        if (openedToday && isToday) {
+            // Normal case: use DB value (session started today)
+            overrides[a.ticker] = a.changeValue || 0;
+        } else if (preMktActive && a.preMarketChangePercent && a.preMarketChangePercent !== 0) {
+            // Morning, pre-market active for US title
+            const chgPct = a.preMarketChangePercent;
+            const diff = a.currentPrice - (a.currentPrice / (1 + chgPct/100));
+            overrides[a.ticker] = diff;
+        } else {
+            // Morning before open: 0 variation
+            overrides[a.ticker] = 0;
+        }
+    });
+    return overrides;
 }
 
 async function getEurUsdRate() {
@@ -1479,10 +1526,15 @@ async function getAllPortfolioStats(liveRate = null) {
     if (!liveRate) {
         liveRate = await getEurUsdRate();
     }
-    database.recalculateAll(liveRate);
+    const marketStatus = getMarketStatus();
+    const overrides = calculateVariationOverrides(marketStatus);
+
+    database.recalculateAll(liveRate, overrides);
     const rows = database.db.prepare(`SELECT * FROM portfolios ORDER BY createdAt ASC`).all();
     
     // SINGLE SOURCE OF TRUTH: Use Performance Engine for all dashboard metrics
+    // Note: calculatePerformanceHistory would need similar overrides if it should be super precise, 
+    // but for now performance1D of portfolios table is our primary real-time metric.
     const perfData = await calculatePerformanceHistory(null, 'ALL', false, true);
     const globalPoints = perfData.dataPoints || [];
     const individual = perfData.individual || {};
@@ -1546,7 +1598,22 @@ async function getAllPortfolioStats(liveRate = null) {
 
     const todayStr = new Date().toISOString().split('T')[0];
     const heldAssets = heldAssetsRaw.map(a => {
-        const changePct = a.changePercent || 0;
+        let changePct = a.changePercent || 0;
+        
+        // Manual override for heldAssets list to be consistent
+        const isUS = isUSMarket(a);
+        const openedToday = isUS ? marketStatus.US_openedToday : marketStatus.EU_openedToday;
+        const preMktActive = isUS ? marketStatus.US_preMarketActive : false;
+        const isToday = a.quoteDate === todayStr;
+
+        if (!(openedToday && isToday)) {
+            if (preMktActive && a.preMarketChangePercent && a.preMarketChangePercent !== 0) {
+                changePct = a.preMarketChangePercent;
+            } else {
+                changePct = 0;
+            }
+        }
+
         const rate = (a.currency === 'USD') ? liveRate : 1;
         const absChange = (a.currentPrice * changePct / 100) * a.netQty / rate;
         return { ticker: a.ticker, name: a.name, changePercent: changePct, absChange };
