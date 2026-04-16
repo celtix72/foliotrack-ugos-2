@@ -219,7 +219,7 @@
             
             if (!isCollapsed) {
                 html += `<div class="mob-list-edge">`;
-                g.items.forEach(pos => {
+                g.items.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(pos => {
                     const isTrade = ['BUY', 'SELL'].includes(pos.type);
                     const gainColor = pos.realizedGain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
                     const gainSign = pos.realizedGain >= 0 ? '+' : '';

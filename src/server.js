@@ -3784,8 +3784,8 @@ app.get('/api/analytics/history', (req, res) => {
             allClosed = allClosed.concat(closed);
         }
 
-        // Sort by year desc, then realized gain desc
-        allClosed.sort((a, b) => b.year - a.year || b.realizedGain - a.realizedGain);
+        // Sort by date desc (most recent first)
+        allClosed.sort((a, b) => new Date(b.date) - new Date(a.date));
         res.json(allClosed);
     } catch (err) {
         console.error(err);

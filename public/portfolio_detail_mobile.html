@@ -882,7 +882,8 @@
         return;
       }
 
-      container.innerHTML = txs.slice(0,50).map(t => {
+      const sortedTxs = [...txs].sort((a,b) => new Date(b.date) - new Date(a.date));
+      container.innerHTML = sortedTxs.slice(0,50).map(t => {
         const icon = typeIcons[t.type] || 'receipt';
         const badgeStyle = typeColors[t.type] || 'bg-slate-500/10 text-slate-500 border-slate-500/20';
         const date = new Date(t.date).toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit', year:'2-digit' });

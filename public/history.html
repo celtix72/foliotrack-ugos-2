@@ -211,7 +211,7 @@
 
             // 2. Grouping & Sorting
             if (groupBy === 'none') {
-                body.innerHTML = filtered.map(pos => renderRow(pos)).join('');
+                body.innerHTML = filtered.sort((a,b) => new Date(b.date) - new Date(a.date)).map(pos => renderRow(pos)).join('');
             } else {
                 // Group the data
                 const groups = {};
@@ -271,7 +271,7 @@
                     `;
                     
                     if (!isCollapsed) {
-                        group.items.forEach(pos => {
+                        group.items.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(pos => {
                             html += renderRow(pos);
                         });
                     }
