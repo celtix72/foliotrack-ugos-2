@@ -382,12 +382,12 @@
     if (icon) icon.innerText = window.privacyState?.enabled ? 'visibility_off' : 'visibility';
   }
 
-  async function mobUpdateDashboard() {
+  async function mobUpdateDashboard(prefetchedData = null) {
     try {
-      const res = await fetch('/api/portfolios');
-      const data = await res.json();
+      const data = prefetchedData || await (await fetch('/api/portfolios')).json();
       const g = data.global || {};
       const portfolios = data.portfolios || [];
+      window._dashboardData = data; 
 
       // Hero numbers
       const mobNet = document.getElementById('mob-total-net');
@@ -461,7 +461,6 @@
             const gainColor = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
 
             const signPP = vPP >= 0 ? '+' : '';
-            const symbol = p.currency === 'EUR' ? '€' : p.currency;
             
             return `
               <div class="mob-holding-swipe-container" 
@@ -949,6 +948,10 @@
   });
 
   // Auto-refresh on market update
+  window.addEventListener('portfolios-updated', (e) => {
+    if (e.detail) mobUpdateDashboard(e.detail);
+  });
+
   window.addEventListener('market-data-updated', () => {
     console.log("[Dashboard] Auto-refreshing UI...");
     if (window._mobileViewActive) {

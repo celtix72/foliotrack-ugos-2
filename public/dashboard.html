@@ -493,13 +493,15 @@
 
         const heroVar = document.getElementById('hero-day-var');
         if (heroVar) {
-            const changeReg = globalData.totalChange || globalData.changeValue || 0;
-            const changePP = globalData.totalChangePrePost || globalData.changeValuePrePost || 0;
+            const changeReg = globalData.changeValue || globalData.totalChange || 0;
+            const changePP = globalData.changeValuePrePost || globalData.totalChangePrePost || 0;
             const totalMove = changeReg + changePP;
             const isPos = totalMove >= 0;
             
             const formattedReg = formatPrivacy(changeReg, 'EUR', 'h-var', 0);
             const formattedPP = formatPrivacy(changePP, 'EUR', 'h-pp', 0);
+
+            console.info(`[DSH_DEBUG] Hero Var: Reg=${changeReg}, PP=${changePP}, Total=${totalMove}`);
 
             if (formattedReg === '****') {
                 heroVar.classList.add('hidden');
@@ -520,6 +522,8 @@
         // Render Portfolios Grid
         const pContainer = document.getElementById('portfolio-container');
         if (pContainer) {
+            const sumP = portfolios.reduce((acc, p) => acc + (p.changeValue || 0) + (p.changeValuePrePost || 0), 0);
+            console.info(`[DSH_DEBUG] Portfolios Sum: ${sumP} (Aggregated from ${portfolios.length} items)`);
             pContainer.innerHTML = portfolios.map(p => createPortfolioCard(p)).join('') || '<div class="col-span-full py-12 text-center text-slate-500 italic">No portfolios found.</div>';
         }
 

@@ -1547,10 +1547,16 @@ async function getAllPortfolioStats(liveRateInput = null) {
     if (!liveRate) {
         liveRate = await getEurUsdRate();
     }
+    
     const { overrides, marketStatus } = await recalculateAllPortfoliosWithOverrides(liveRate);
     const rows = database.db.prepare(`SELECT * FROM portfolios ORDER BY createdAt ASC`).all();
     
-    // Calculate global points for chart separately
+    // Get FX Variation metadata for EURUSD
+    const fxData = database.db.prepare("SELECT changePercent FROM assets WHERE ticker='EURUSD=X'").get() || { changePercent: 0 };
+    const eurUsdChangePct = fxData.changePercent || 0;
+    const rateToday = liveRate;
+    const rateYesterday = rateToday / (1 + eurUsdChangePct/100);
+
     const perfData = await calculatePerformanceHistory(null, 'ALL', false, true);
     const globalPoints = perfData.dataPoints || [];
     const individual = perfData.individual || {};
@@ -1564,15 +1570,25 @@ async function getAllPortfolioStats(liveRateInput = null) {
     const today = new Date();
 
     for (const p of rows) {
-        const rawRate = p.currency === 'USD' ? liveRate : 1;
-        const rate = (rawRate && rawRate > 0) ? rawRate : 1;
+        const rate = (p.currency === 'USD') ? rateToday : 1;
+        const prevRate = (p.currency === 'USD') ? rateYesterday : 1;
         
         p.changeValue = (isNaN(p.performance1D) || !isFinite(p.performance1D)) ? 0 : (p.performance1D || 0);
         p.changeValuePrePost = (isNaN(p.performance1DPrePost) || !isFinite(p.performance1DPrePost)) ? 0 : (p.performance1DPrePost || 0);
 
-        const prevValue = (p.totalValue || 0) - p.changeValue - p.changeValuePrePost;
-        p.changePercent = prevValue > 0 ? (p.changeValue / prevValue) * 100 : 0;
-        p.changePercentPrePost = prevValue > 0 ? (p.changeValuePrePost / prevValue) * 100 : 0;
+        const vCurr = p.totalValue || 0;
+        const vDelta = p.changeValue + p.changeValuePrePost;
+        const vPrev = vCurr - vDelta;
+
+        // Calculate real EUR variation including FX move on whole equity
+        const vCurrEUR = vCurr / rate;
+        const vPrevEUR = vPrev / prevRate;
+        const vDeltaEUR_Total = vCurrEUR - vPrevEUR;
+        
+        // Split between regular/PP for the Hero pill
+        const ratioReg = vDelta !== 0 ? (p.changeValue / vDelta) : 1;
+        globalChangeEUR += vDeltaEUR_Total * ratioReg;
+        globalChangePrePostEUR += vDeltaEUR_Total * (1 - ratioReg);
 
         const history = individual[p.id] || [];
         if (history.length > 0) {
@@ -1586,29 +1602,29 @@ async function getAllPortfolioStats(liveRateInput = null) {
             p.changeValue1W = last.profit - firstW.profit;
             p.changePercent1W = firstW.value > 0 ? (p.changeValue1W / firstW.value) * 100 : 0;
             p.changeValue1M = last.profit - firstM.profit;
-            p.changePercent1M = firstM.value > 0 ? (p.changeValue1M / firstM.value) * 100 : 0;
+            p.changePercent1M = firstM.value > 0 ? (p.changeValue1M / firstM.value) ? 0 : (p.changeValue1M / firstM.value) * 100;
         } else {
             p.changeValue1W = 0; p.changePercent1W = 0;
             p.changeValue1M = 0; p.changePercent1M = 0;
         }
 
-        globalChangeEUR += p.changeValue / rate;
-        globalChangePrePostEUR += p.changeValuePrePost / rate;
-
-        const details = await getPortfolioDetails(p.id, liveRate);
+        const details = await getPortfolioDetails(p.id, rateToday);
         p.roi = details.roi || 0;
         p.twr = details.twr || 0;
         p.xirr = details.xirr || 0;
         p.totalTax = details.totalLatentTax || 0;
         p.netValue = (p.totalValue || 0) - p.totalTax;
         
-        totalValueEUR += (p.totalValue || 0) / rate;
+        totalValueEUR += vCurrEUR;
         totalTaxEUR += p.totalTax / rate;
         totalNetValueEUR += p.netValue / rate;
     }
 
+    // DIAGNOSTIC LOG
+    logger.info(`[STAT_DEBUG] globalChangeEUR=${globalChangeEUR.toFixed(2)}, globalChangePrePostEUR=${globalChangePrePostEUR.toFixed(2)}, totalValueEUR=${totalValueEUR.toFixed(2)}`);
+
     const heldAssetsRaw = database.db.prepare(`
-        SELECT a.ticker, a.name, a.changePercent, a.currentPrice, a.currency, a.quoteDate, h.netQty
+        SELECT a.ticker, a.name, a.changePercent, a.currentPrice, a.currency, a.quoteDate, SUM(h.netQty) as totalNetQty
         FROM assets a
         JOIN (
             SELECT assetTicker, 
@@ -1637,8 +1653,8 @@ async function getAllPortfolioStats(liveRateInput = null) {
             }
         }
 
-        const rate = (a.currency === 'USD') ? liveRate : 1;
-        const absChange = (a.currentPrice * changePct / 100) * a.netQty / rate;
+        const rate = (a.currency === 'USD') ? rateToday : 1;
+        const absChange = (a.currentPrice * changePct / 100) * a.totalNetQty / rate;
         return { ticker: a.ticker, name: a.name, changePercent: changePct, absChange };
     }).sort((a,b) => b.changePercent - a.changePercent);
 
