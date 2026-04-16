@@ -400,8 +400,9 @@
 
       if (mobDayVar) {
           const change = g.changeValue || 0;
-          const changePP = g.globalChangePrePostEUR || 0;
-          const isPosTotal = (change + changePP) >= 0;
+          const changePP = g.changeValuePrePost || 0;
+          const totalMove = change + changePP;
+          const isPosTotal = totalMove >= 0;
           
           const formattedReg = formatPrivacy(change, 'EUR', 'mob-h-var', 0);
           const formattedPP = formatPrivacy(changePP, 'EUR', 'mob-h-pp', 0);

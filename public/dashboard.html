@@ -468,8 +468,9 @@
             const heroVar = document.getElementById('hero-day-var');
             if (heroVar) {
                 const change = globalData.changeValue || 0;
-                const changePP = globalData.globalChangePrePostEUR || 0;
-                const isPos = (change + changePP) >= 0;
+                const changePP = globalData.changeValuePrePost || 0;
+                const totalMove = change + changePP;
+                const isPos = totalMove >= 0;
                 
                 const formattedReg = formatPrivacy(change, 'EUR', 'h-var', 0);
                 const formattedPP = formatPrivacy(changePP, 'EUR', 'h-pp', 0);

@@ -1655,7 +1655,9 @@ async function getAllPortfolioStats(liveRate = null) {
         totalChangePrePost: globalChangePrePostEUR,
         totalGain: lastPoint.profit || 0,
         investedCapital: totalNetValueEUR - (lastPoint.profit || 0),
-        changePercent: (totalValueEUR - globalChangeEUR) > 0 ? (globalChangeEUR / (totalValueEUR - globalChangeEUR)) * 100 : 0,
+        changePercent: (totalValueEUR - globalChangeEUR - globalChangePrePostEUR) > 0 
+            ? ((globalChangeEUR + globalChangePrePostEUR) / (totalValueEUR - globalChangeEUR - globalChangePrePostEUR)) * 100 
+            : 0,
         topWinners: heldAssets.slice(0, 2),
         topLosers: heldAssets.slice(-2).reverse()
     };
