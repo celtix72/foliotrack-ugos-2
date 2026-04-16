@@ -303,11 +303,15 @@ function getBigEmoji(val) {
 const isUSMarket = (a) => {
     const ticker = a.ticker || '';
     const type = a.type || '';
-    // 1. Tickers with dots (.MI, .DE, .AS, etc.) are European/Other
+    const isin = a.isin || '';
+    // 1. ISIN prefix is the most reliable (US...)
+    if (isin.startsWith('US')) return true;
+    if (isin.startsWith('IT') || isin.startsWith('IE') || isin.startsWith('LU') || isin.startsWith('DE')) return false;
+    // 2. Tickers with dots (.MI, .DE, .AS, etc.) are European/Other
     if (ticker.includes('.')) return false;
-    // 2. Bonds and Bond ETFs in this portfolio are primarily European/BTM
+    // 3. Bonds and Bond ETFs in this portfolio are primarily European/BTM
     if (type.includes('Bond') || type.includes('Obblig')) return false;
-    // 3. Fallback for tickers without dots (AAPL, MSFT) to US
+    // 4. Fallback for tickers without dots (AAPL, MSFT) to US
     return true;
 };
 
@@ -680,6 +684,17 @@ function calculateVariationOverrides(marketStatus) {
     return overrides;
 }
 
+/**
+ * Centralized helper to refresh all portfolio statistics while applying morning reset overrides.
+ */
+async function recalculateAllPortfoliosWithOverrides(liveRate = null) {
+    if (!liveRate) liveRate = await getEurUsdRate();
+    const marketStatus = getMarketStatus();
+    const overrides = calculateVariationOverrides(marketStatus);
+    database.recalculateAll(liveRate, overrides);
+    return { liveRate, marketStatus, overrides };
+}
+
 async function getEurUsdRate() {
     if (Date.now() - eurUsdCache.timestamp < EUR_USD_TTL) {
         return eurUsdCache.rate;
@@ -968,7 +983,7 @@ app.post('/api/assets/manual-update', async (req, res) => {
     );
     
     const liveRate = await getEurUsdRate();
-    database.recalculateAll(liveRate);
+    await recalculateAllPortfoliosWithOverrides(liveRate);
     clearPerformanceCache();
     res.json({ success: true });
 });
@@ -1526,10 +1541,7 @@ async function getAllPortfolioStats(liveRate = null) {
     if (!liveRate) {
         liveRate = await getEurUsdRate();
     }
-    const marketStatus = getMarketStatus();
-    const overrides = calculateVariationOverrides(marketStatus);
-
-    database.recalculateAll(liveRate, overrides);
+    const { overrides, marketStatus } = await recalculateAllPortfoliosWithOverrides(liveRate);
     const rows = database.db.prepare(`SELECT * FROM portfolios ORDER BY createdAt ASC`).all();
     
     // SINGLE SOURCE OF TRUTH: Use Performance Engine for all dashboard metrics
@@ -2927,6 +2939,8 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
     const pIdsInput = portfolioIds === null ? null : (Array.isArray(portfolioIds) ? portfolioIds : [portfolioIds]);
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
+    const marketStatus = getMarketStatus();
+    const overrides = calculateVariationOverrides(marketStatus);
     const rangeKey = range || 'ALL';
     const cacheKey = `history_${pIdsInput ? pIdsInput.sort().join(',') : 'global'}_${rangeKey}_${includeIndividual}_${benchmarkTicker || 'none'}`;
 
@@ -3591,7 +3605,14 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                         const lastFx = allTransactions.filter(t => t.assetTicker === ticker && t.date <= dateStr && t.exchangeRate).at(-1);
                         rate = lastFx ? lastFx.exchangeRate : 1;
                     }
-                    pAssets += shares * (price / rate);
+                    let effectivePrice = price;
+                    if (dateStr === todayStr && overrides[ticker] !== undefined) {
+                        const assetMetaForOverride = assetMetadataCache[ticker];
+                        const actualChg = (assetMetaForOverride && assetMetaForOverride.changeValue) || 0;
+                        const targetChg = overrides[ticker];
+                        effectivePrice = price - (actualChg - targetChg);
+                    }
+                    pAssets += shares * (effectivePrice / rate);
                 }
 
                 let pValue = (state.cash + pAssets);
@@ -5236,7 +5257,7 @@ async function updateMarketData(force = false) {
         }
     }
     const liveRate = await getEurUsdRate();
-    database.recalculateAll(liveRate);
+    await recalculateAllPortfoliosWithOverrides(liveRate);
     globalLastMarketUpdate = Date.now();
     logger.info(`Market data update cycle completed.`);
 }
