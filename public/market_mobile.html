@@ -237,10 +237,12 @@
   }
 
   window.mobViewAssetDetails = function(ticker, name, currency) {
-    // Redirect to portfolio detail with filter or just show chart
-    // For now, consistent with other pages, we open the chart
-    openAssetChartModal(ticker, name, currency);
+    // Consistent with other pages, we open the chart
+    if (typeof openAssetChartModal === 'function') {
+        openAssetChartModal(ticker, name, currency);
+    }
   };
+  window.showMobDetails = window.mobViewAssetDetails;
 
   window.mobViewAssetTransactions = function(ticker) {
     // Navigate to portfolio detail and auto-filter transactions
@@ -319,7 +321,7 @@
 
             return `
               <div class="snap-start shrink-0 w-28 bg-white dark:bg-[#111722] border-r border-slate-200 dark:border-slate-800 py-0.5 flex flex-col items-center justify-center text-center"
-                   onclick="loadAssetChart('${m.ticker}')">
+                   onclick="window.showMobDetails('${m.ticker}')">
                 <span class="text-[11px] font-black text-black uppercase tracking-tight leading-none mb-1">${m.ticker}</span>
                 <div class="flex items-center justify-center text-[10px] font-black">
                   ${preVal || postVal}
