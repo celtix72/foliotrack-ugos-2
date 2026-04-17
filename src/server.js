@@ -934,6 +934,44 @@ app.get('/api/assets', (req, res) => {
         ORDER BY a.name ASC
     `).all();
 
+    // 1. Calculate holdings per portfolio to get specific PMCs
+    const portfolioHoldings = {}; 
+    const allP = database.db.prepare(`SELECT id, name, color FROM portfolios`).all();
+    for (const p of allP) {
+        const txs = database.db.prepare(`
+            SELECT type, assetTicker, quantity, price, commission, tax 
+            FROM transactions 
+            WHERE portfolioId = ? 
+            ORDER BY date ASC
+        `).all(p.id);
+        
+        const pOpenMap = {};
+        for (const t of txs) {
+            if (!t.assetTicker || t.assetTicker === 'CASH') continue;
+            const ticker = t.assetTicker;
+            if (t.type === 'BUY') {
+                if (!pOpenMap[ticker]) pOpenMap[ticker] = { qty: 0, cost: 0 };
+                pOpenMap[ticker].qty += t.quantity;
+                pOpenMap[ticker].cost += (t.quantity * t.price + t.commission + t.tax);
+            } else if (t.type === 'SELL') {
+                if (pOpenMap[ticker] && pOpenMap[ticker].qty > 0) {
+                    const pmc = pOpenMap[ticker].cost / pOpenMap[ticker].qty;
+                    pOpenMap[ticker].qty -= t.quantity;
+                    pOpenMap[ticker].cost -= t.quantity * pmc;
+                    if (pOpenMap[ticker].qty <= 0.0001) delete pOpenMap[ticker];
+                }
+            }
+        }
+        for (const [ticker, data] of Object.entries(pOpenMap)) {
+            if (!portfolioHoldings[ticker]) portfolioHoldings[ticker] = [];
+            portfolioHoldings[ticker].push({
+                name: p.name,
+                color: p.color,
+                pmc: data.cost / data.qty
+            });
+        }
+    }
+
     const today = new Date().toISOString().split('T')[0];
 
     // Add sparkline data (last 7 days from cache)
@@ -945,11 +983,23 @@ app.get('/api/assets', (req, res) => {
             sparkline = dates.slice(-7).map(d => history[d]);
         }
         const isToday = a.quoteDate === today;
+
+        // Attach portfoliosInfo
+        const portfoliosInfo = (portfolioHoldings[a.ticker] || []).map(ph => {
+            const roi = (a.currentPrice > 0 && ph.pmc > 0) ? ((a.currentPrice - ph.pmc) / ph.pmc) * 100 : 0;
+            return {
+                name: ph.name,
+                color: ph.color,
+                roi: roi
+            };
+        });
+
         return { 
             ...a, 
             sparkline,
             changePercent: isToday ? a.changePercent : 0,
-            changeValue: isToday ? a.changeValue : 0
+            changeValue: isToday ? a.changeValue : 0,
+            portfoliosInfo
         };
     });
 

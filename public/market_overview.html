@@ -379,6 +379,16 @@ function renderAssets(filter = '') {
                             ${a.ticker} • ${a.exchange || 'Market'}
                             <span class="inline-block ml-1 px-1.5 py-0.5 rounded text-[8px] font-black leading-none ${a.dataSource === 'B_ITA' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400'}">${a.dataSource === 'B_ITA' ? 'BI' : 'YF'}</span>
                         </p>
+                        ${(a.portfoliosInfo && a.portfoliosInfo.length > 0) ? `
+                            <div class="flex flex-wrap gap-1 mt-1.5">
+                                ${a.portfoliosInfo.map(p => `
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-black tracking-tighter uppercase leading-none" 
+                                          style="background-color: ${p.color || '#64748b'}15; color: ${p.color || '#64748b'}; border: 1px solid ${p.color || '#64748b'}30;">
+                                        ${p.name}: ${p.roi >= 0 ? '+' : ''}${formatNumber(p.roi, 1)}%
+                                    </span>
+                                `).join('')}
+                            </div>
+                        ` : ''}
                     </div>
                 </div>
             </td>
