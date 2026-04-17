@@ -604,7 +604,12 @@ async function fetchAssetMetadata(ticker) {
             beta: quote.beta || (summary.summaryDetail ? summary.summaryDetail.beta : null),
             nextDividendDate: (summary.calendarEvents && summary.calendarEvents.exDividendDate) ? new Date(summary.calendarEvents.exDividendDate).toISOString().split('T')[0] : (quote.dividendDate ? new Date(quote.dividendDate * 1000).toISOString().split('T')[0] : null),
             quoteDate: quote.regularMarketTime ? new Date(quote.regularMarketTime).toISOString().split('T')[0] : null,
-            isin: quote.isin || (summary.summaryDetail ? summary.summaryDetail.isin : null) || (summary.defaultKeyStatistics ? summary.defaultKeyStatistics.isin : null) || null
+            isin: (function() {
+                let i = quote.isin || (summary.summaryDetail ? summary.summaryDetail.isin : null) || (summary.defaultKeyStatistics ? summary.defaultKeyStatistics.isin : null);
+                if (!i) return null;
+                i = String(i).trim().toUpperCase();
+                return i.length >= 10 ? i : null;
+            })()
         };
     } catch (e) {
         console.error(`Metadata fetch error for ${ticker}:`, e.message);
@@ -1290,6 +1295,17 @@ app.post('/api/watchlist', async (req, res) => {
             // 3. Mark existing asset as inWatchlist
             database.db.prepare(`UPDATE assets SET inWatchlist = 1 WHERE ticker = ?`).run(normalizedTicker);
             asset.inWatchlist = 1;
+
+            // 4. Optimization: If missing ISIN, try to fetch it now
+            if (!asset.isin) {
+                try {
+                    const metadata = await fetchAssetMetadata(normalizedTicker);
+                    if (metadata && metadata.isin) {
+                        database.db.prepare(`UPDATE assets SET isin = ? WHERE ticker = ?`).run(metadata.isin, normalizedTicker);
+                        asset.isin = metadata.isin;
+                    }
+                } catch (e) { console.error('Silent metadata update failed for watchlist asset:', e.message); }
+            }
         }
 
         res.json(asset);

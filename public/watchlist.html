@@ -257,7 +257,7 @@
                                         <span class="material-symbols-outlined text-sm">info</span>
                                     </button>
                                     ${typeLabel === 'ETF' ? `
-                                    <a href="${item.isin ? `https://www.justetf.com/it/etf-profile.html?isin=${item.isin}` : `https://www.justetf.com/it/find-etf.html?query=${item.ticker}`}" target="_blank" class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white transition-all flex items-center justify-center border border-amber-500/10" title="JustETF">
+                                    <a href="${(item.isin && item.isin.trim() !== '') ? `https://www.justetf.com/it/etf-profile.html?isin=${item.isin}` : `https://www.justetf.com/it/find-etf.html?query=${item.ticker}`}" target="_blank" class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white transition-all flex items-center justify-center border border-amber-500/10" title="JustETF">
                                         <span class="material-symbols-outlined text-sm">open_in_new</span>
                                     </a>
                                     ` : ''}
