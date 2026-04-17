@@ -249,6 +249,13 @@
                 const grid = document.getElementById('chart-modal-grid');
                 const dataArea = document.getElementById('chart-modal-data-area');
                 
+                const sd = detailsData?.summaryDetail || {};
+                const ks = detailsData?.defaultKeyStatistics || {};
+                const ce = detailsData?.calendarEvents || {};
+                const nextDiv = ce.dividendDate || ce.exDividendDate;
+                const tType = (assetInfo && assetInfo.type ? assetInfo.type.toUpperCase() : '');
+                const isEquity = tType === 'AZIONI' || tType === 'EQUITY' || tType === 'STOCK' || tType === 'COMMON STOCK' || sd.trailingPE;
+
                 const formatNum = n => n ? parseFloat(n).toFixed(2) : '—';
                 const formatPct = n => n ? (parseFloat(n) * 100).toFixed(1) + '%' : '—';
 
@@ -309,61 +316,6 @@
                 }).join('');
                 
                 dataArea.style.display = 'block';
-
-            // Populate Metrics if YF data is available
-            const metricsDiv = document.getElementById('chart-modal-metrics');
-            const sd = detailsData?.summaryDetail || {};
-            const ks = detailsData?.defaultKeyStatistics || {};
-            const ce = detailsData?.calendarEvents || {};
-            
-            const nextDiv = ce.dividendDate || ce.exDividendDate;
-            const tType = (assetInfo && assetInfo.type ? assetInfo.type.toUpperCase() : '');
-            const isEquity = tType === 'AZIONI' || tType === 'EQUITY' || tType === 'STOCK' || tType === 'COMMON STOCK' || sd.trailingPE;
-
-            if (isEquity && Object.keys(detailsData).length > 0) {
-                const formatNum = n => n ? parseFloat(n).toFixed(2) : '—';
-                const formatPct = n => n ? (n * 100).toFixed(2) + '%' : '—';
-                
-                const fields = [
-                    { label: 'ISIN', val: detailsData.dbIsin || '—' },
-                    { label: 'P/E Ratio', val: formatNum(sd.trailingPE) },
-                    { label: 'Forward P/E', val: formatNum(sd.forwardPE) },
-                    { label: 'Div. Yield', val: formatPct(sd.dividendYield) },
-                    { label: 'EPS (Tra.)', val: formatNum(ks.trailingEps) },
-                    { label: 'Beta (5Y)', val: formatNum(sd.beta) },
-                    { label: 'Ex-Date', val: nextDiv ? new Date(nextDiv).toLocaleDateString('it-IT') : '—' }
-                ];
-
-                metricsDiv.innerHTML = `<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">` + 
-                    fields.map(f => `
-                        <div style="display: flex; flex-direction: column; gap: 4px;">
-                            <span style="font-size: 8px; font-weight: 900; color: var(--mob-text-muted); text-transform: uppercase; letter-spacing: 0.05em;">${f.label}</span>
-                            <span style="font-size: 13px; font-weight: 900; color: var(--mob-text);" class="dark:text-white">${f.val}</span>
-                        </div>
-                    `).join('') + `</div>`;
-                metricsDiv.style.display = 'block';
-            } else if (Object.keys(detailsData).length > 0) {
-                // ETF/Others fallback
-                const formatNum = n => n ? parseFloat(n).toFixed(2) : '—';
-                const fields = [
-                    { label: 'ISIN', val: detailsData.dbIsin || '—' },
-                    { label: 'Prev Close', val: formatNum(sd.previousClose) },
-                    { label: 'Open', val: formatNum(sd.open) },
-                    { label: 'Day Low', val: formatNum(sd.dayLow) },
-                    { label: 'Day High', val: formatNum(sd.dayHigh) },
-                    { label: 'Vol.', val: sd.volume ? sd.volume.toLocaleString() : '—' },
-                    { label: 'Assets', val: ks.totalAssets ? (ks.totalAssets/1e9).toFixed(2) + 'B' : '—' }
-                ];
-                metricsDiv.innerHTML = `<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">` + 
-                    fields.map(f => `
-                        <div style="display: flex; flex-direction: column; gap: 4px;">
-                            <span style="font-size: 8px; font-weight: 900; color: var(--mob-text-muted); text-transform: uppercase; letter-spacing: 0.05em;">${f.label}</span>
-                            <span style="font-size: 13px; font-weight: 900; color: var(--mob-text);" class="dark:text-white">${f.val}</span>
-                        </div>
-                    `).join('') + `</div>`;
-                metricsDiv.style.display = 'block';
-            } else {
-                metricsDiv.style.display = 'none';
             }
 
             if (!_allChartData.length) {
