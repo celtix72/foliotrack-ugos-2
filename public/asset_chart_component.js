@@ -45,63 +45,34 @@
                     </div>
                 </div>
                 
-                <!-- Chart Area -->
-                <div style="padding: 16px; flex: 1; min-height: 220px; display: flex; flex-direction: column; background: var(--mob-bg); overflow: hidden;">
+                <!-- Chart Area (Compact) -->
+                <div style="padding: 10px 16px; flex: 1; min-height: 180px; display: flex; flex-direction: column; background: var(--mob-bg); overflow: hidden;">
                     <div id="chart-modal-loading" style="display: none; flex: 1; align-items: center; justify-content: center;">
-                        <span class="material-symbols-outlined animate-spin" style="font-size: 32px; color: var(--mob-primary);">progress_activity</span>
+                        <span class="material-symbols-outlined animate-spin" style="font-size: 24px; color: var(--mob-primary);">progress_activity</span>
                     </div>
                     <div id="chart-modal-empty" style="display: none; flex: 1; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8;">
-                        <span class="material-symbols-outlined" style="font-size: 40px;">bar_chart_off</span>
-                        <p style="font-weight: bold; margin-top: 8px; font-size: 12px;">No historical data.</p>
+                        <span class="material-symbols-outlined" style="font-size: 32px;">bar_chart_off</span>
+                        <p style="font-weight: bold; margin-top: 8px; font-size: 11px;">No historical data.</p>
                     </div>
-                    <div id="chart-modal-content" style="display: none; flex: 1; min-height: 200px; position: relative;">
+                    <div id="chart-modal-content" style="display: none; flex: 1; min-height: 160px; position: relative;">
                         <canvas id="asset-history-chart" style="width: 100% !important; height: 100% !important;"></canvas>
                     </div>
                 </div>
 
-                <!-- Metrics Area (High Density Grid) -->
-                <div id="chart-modal-metrics" style="display: none; padding: 16px 20px; border-top: 1px solid rgba(148,163,184,0.1); background: var(--mob-surface);">
-                </div>
-
-                <!-- Price Alerts Section (Upgraded) -->
-                <div style="padding: 20px; border-top: 1px solid rgba(148,163,184,0.1); background: var(--mob-surface);">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
-                        <div>
-                            <label style="display: block; font-size: 9px; font-weight: 900; color: var(--mob-text-muted); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.05em;">Target Price 1</label>
-                            <div style="position: relative;">
-                                <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-weight: 900; color: #94a3b8; font-size: 12px;" class="tp-curr-sym">€</span>
-                                <input type="number" id="modal-tp-input" step="any" style="width: 100%; padding: 10px 10px 10px 28px; border: 1px solid rgba(148,163,184,0.2); background: rgba(148,163,184,0.05); color: var(--mob-text); border-radius: 12px; font-size: 13px; font-weight: 900;" placeholder="0.00">
-                            </div>
-                        </div>
-                        <div>
-                            <label style="display: block; font-size: 9px; font-weight: 900; color: var(--mob-text-muted); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.05em;">Target Price 2</label>
-                            <div style="position: relative;">
-                                <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-weight: 900; color: #94a3b8; font-size: 12px;" class="tp-curr-sym">€</span>
-                                <input type="number" id="modal-tp2-input" step="any" style="width: 100%; padding: 10px 10px 10px 28px; border: 1px solid rgba(148,163,184,0.2); background: rgba(148,163,184,0.05); color: var(--mob-text); border-radius: 12px; font-size: 13px; font-weight: 900;" placeholder="0.00">
-                            </div>
-                        </div>
-                        <div>
-                            <label style="display: block; font-size: 9px; font-weight: 900; color: var(--mob-text-muted); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.05em;">Stop Loss</label>
-                            <div style="position: relative;">
-                                <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-weight: 900; color: #94a3b8; font-size: 12px;" class="sl-curr-sym">€</span>
-                                <input type="number" id="modal-sl-input" step="any" style="width: 100%; padding: 10px 10px 10px 28px; border: 1px solid rgba(148,163,184,0.2); background: rgba(148,163,184,0.05); color: var(--mob-text); border-radius: 12px; font-size: 13px; font-weight: 900;" placeholder="0.00">
-                            </div>
-                        </div>
-                        <div>
-                            <label style="display: block; font-size: 9px; font-weight: 900; color: var(--mob-text-muted); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.05em;">Volatility Alert (%)</label>
-                            <div style="display: flex; align-items: center; gap: 8px; border: 1px solid rgba(148,163,184,0.2); background: rgba(148,163,184,0.05); padding: 5px; border-radius: 12px;">
-                                <button onclick="window.stepVol(-1)" style="width: 28px; height: 28px; border-radius: 8px; border: none; background: rgba(148,163,184,0.1); color: var(--mob-text); font-weight: bold;">-</button>
-                                <input type="number" id="modal-vol-input" value="0" min="0" max="20" style="flex: 1; text-align: center; background: transparent; border: none; color: var(--mob-text); font-weight: 900; font-size: 13px;">
-                                <button onclick="window.stepVol(1)" style="width: 28px; height: 28px; border-radius: 8px; border: none; background: rgba(148,163,184,0.1); color: var(--mob-text); font-weight: bold;">+</button>
-                            </div>
-                        </div>
+                <!-- Unified Data Grid (Indicators + Targets) -->
+                <div id="chart-modal-data-area" style="display: none; padding: 16px; border-top: 1px solid rgba(148,163,184,0.1); background: var(--mob-surface);">
+                    <div id="chart-modal-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 14px; margin-bottom: 16px;">
+                        <!-- Content injected by loadAssetChart -->
                     </div>
-                    <button id="modal-save-alerts-btn" onclick="saveModalAlerts()" style="width: 100%; background: var(--mob-primary); color: white; padding: 14px; border-radius: 14px; border: none; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 12px; letter-spacing: 1px; box-shadow: 0 4px 15px rgba(19,91,236,0.3);">
-                        Save Notifications
-                    </button>
-                    <button id="modal-remove-watchlist-btn" style="width: 100%; background: rgba(244,63,94,0.1); color: var(--mob-rose); margin-top: 10px; padding: 12px; border-radius: 14px; border: 1px solid rgba(244,63,94,0.2); font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 11px; display: none;">
-                        Remove from Watchlist
-                    </button>
+
+                    <div style="display: flex; gap: 8px;">
+                        <button id="modal-save-alerts-btn" onclick="saveModalAlerts()" style="flex: 2; background: var(--mob-primary); color: white; padding: 10px; border-radius: 10px; border: none; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; box-shadow: 0 4px 12px rgba(19,91,236,0.2);">
+                            Save Notifications
+                        </button>
+                        <button id="modal-remove-watchlist-btn" style="flex: 1; background: rgba(244,63,94,0.1); color: var(--mob-rose); padding: 10px; border-radius: 10px; border: 1px solid rgba(244,63,94,0.2); font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 10px; display: none;">
+                            Remove
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Footer Info -->
@@ -248,15 +219,14 @@
                 document.getElementById('chart-modal-subtitle').textContent = 
                     `${assetInfo.name} • ${assetInfo.exchange || 'Market'}`;
 
-                // Pre-fill TP/SL inputs
-                document.getElementById('modal-tp-input').value = assetInfo.targetPrice || '';
-                document.getElementById('modal-tp2-input').value = assetInfo.targetPrice2 || '';
-                document.getElementById('modal-sl-input').value = assetInfo.stopLoss || '';
-                document.getElementById('modal-vol-input').value = assetInfo.volatilityAlert || 0;
-
                 const currSym = _chartCurrency === 'EUR' ? '€' : (_chartCurrency === 'USD' ? '$' : _chartCurrency);
-                document.querySelectorAll('.tp-curr-sym').forEach(el => el.textContent = currSym);
-                document.querySelectorAll('.sl-curr-sym').forEach(el => el.textContent = currSym);
+                // We'll use these later in the unified grid
+                window._assetTargets = [
+                    { label: 'Target 1', type: 'input', id: 'modal-tp-input', val: assetInfo.targetPrice, symbol: currSym },
+                    { label: 'Target 2', type: 'input', id: 'modal-tp2-input', val: assetInfo.targetPrice2, symbol: currSym },
+                    { label: 'Stop Loss', type: 'input', id: 'modal-sl-input', val: assetInfo.stopLoss, symbol: currSym },
+                    { label: 'Vol. %', type: 'vol', id: 'modal-vol-input', val: assetInfo.volatilityAlert }
+                ];
 
                 // Handle Watchlist logic for Delete button Visibility
                 const delBtn = document.getElementById('modal-remove-watchlist-btn');
@@ -274,7 +244,71 @@
                         closeAssetChartModal();
                     };
                 }
-            }
+
+                // Populate Unified Grid
+                const grid = document.getElementById('chart-modal-grid');
+                const dataArea = document.getElementById('chart-modal-data-area');
+                
+                const formatNum = n => n ? parseFloat(n).toFixed(2) : '—';
+                const formatPct = n => n ? (parseFloat(n) * 100).toFixed(1) + '%' : '—';
+
+                let indicatorFields = [];
+                if (isEquity && Object.keys(detailsData).length > 0) {
+                    indicatorFields = [
+                        { label: 'ISIN', val: detailsData.dbIsin || '—' },
+                        { label: 'P/E Ratio', val: formatNum(sd.trailingPE) },
+                        { label: 'Forward P/E', val: formatNum(sd.forwardPE) },
+                        { label: 'Div. Yield', val: formatPct(sd.dividendYield) },
+                        { label: 'EPS (Tra.)', val: formatNum(ks.trailingEps) },
+                        { label: 'Beta (5Y)', val: formatNum(sd.beta) },
+                        { label: 'Ex-Date', val: nextDiv ? new Date(nextDiv).toLocaleDateString('it-IT') : '—' }
+                    ];
+                } else if (Object.keys(detailsData).length > 0) {
+                    indicatorFields = [
+                        { label: 'ISIN', val: detailsData.dbIsin || '—' },
+                        { label: 'Prev Close', val: formatNum(sd.previousClose) },
+                        { label: 'Open', val: formatNum(sd.open) },
+                        { label: 'Day Low', val: formatNum(sd.dayLow) },
+                        { label: 'Day High', val: formatNum(sd.dayHigh) },
+                        { label: 'Yield', val: formatPct(sd.trailingAnnualDividendYield || sd.dividendYield) }
+                    ];
+                }
+
+                const allFields = [...indicatorFields, ...(window._assetTargets || [])];
+
+                grid.innerHTML = allFields.map(f => {
+                    if (f.type === 'input') {
+                        return `
+                            <div style="display: flex; flex-direction: column; gap: 3px;">
+                                <span style="font-size: 8px; font-weight: 900; color: var(--mob-text-muted); text-transform: uppercase;">${f.label}</span>
+                                <div style="position: relative;">
+                                    <span style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-weight: 900; color: #94a3b8; font-size: 10px;">${f.symbol}</span>
+                                    <input type="number" id="${f.id}" value="${f.val || ''}" step="any" style="width: 100%; padding: 6px 6px 6px 18px; border: 1px solid rgba(148,163,184,0.2); background: rgba(148,163,184,0.05); color: var(--mob-text); border-radius: 8px; font-size: 12px; font-weight: 900;" placeholder="0.00">
+                                </div>
+                            </div>
+                        `;
+                    }
+                    if (f.type === 'vol') {
+                        return `
+                            <div style="display: flex; flex-direction: column; gap: 3px;">
+                                <span style="font-size: 8px; font-weight: 900; color: var(--mob-text-muted); text-transform: uppercase;">${f.label}</span>
+                                <div style="display: flex; align-items: center; gap: 4px; border: 1px solid rgba(148,163,184,0.2); background: rgba(148,163,184,0.05); padding: 3px; border-radius: 8px;">
+                                    <button onclick="window.stepVol(-1)" style="width: 20px; height: 20px; border-radius: 5px; border: none; background: rgba(148,163,184,0.1); color: var(--mob-text); font-weight: bold; font-size: 10px;">-</button>
+                                    <input type="number" id="${f.id}" value="${f.val || 0}" min="0" max="20" style="flex: 1; text-align: center; background: transparent; border: none; color: var(--mob-text); font-weight: 900; font-size: 11px;">
+                                    <button onclick="window.stepVol(1)" style="width: 20px; height: 20px; border-radius: 5px; border: none; background: rgba(148,163,184,0.1); color: var(--mob-text); font-weight: bold; font-size: 10px;">+</button>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    return `
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <span style="font-size: 8px; font-weight: 900; color: var(--mob-text-muted); text-transform: uppercase; letter-spacing: 0.05em;">${f.label}</span>
+                            <span style="font-size: 12px; font-weight: 900; color: var(--mob-text);" class="dark:text-white">${f.val}</span>
+                        </div>
+                    `;
+                }).join('');
+                
+                dataArea.style.display = 'block';
 
             // Populate Metrics if YF data is available
             const metricsDiv = document.getElementById('chart-modal-metrics');
