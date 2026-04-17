@@ -199,14 +199,14 @@
 
         <div class="space-y-2">
             <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Data Source</label>
-            <select id="asset-data-source" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-4 font-bold" onchange="toggleAddISIN()">
+            <select id="asset-data-source" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-4 font-bold">
                 <option value="YF">Yahoo Finance</option>
                 <option value="B_ITA">Borsa Italiana</option>
             </select>
         </div>
 
-        <div id="add-isin-field" class="space-y-2 hidden">
-            <label class="text-sm font-medium text-slate-700 dark:text-slate-300">ISIN (for B_ITA)</label>
+        <div id="add-isin-field" class="space-y-2">
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300">ISIN Code</label>
             <input id="asset-isin" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2.5 px-4" placeholder="e.g. IT000..." type="text"/>
         </div>
         
@@ -292,8 +292,8 @@
                         <option value="B_ITA">Borsa Italiana</option>
                     </select>
                 </div>
-                <div id="manual-isin-field" class="space-y-2 hidden">
-                    <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">ISIN</label>
+                <div id="manual-isin-field" class="space-y-2">
+                    <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">ISIN Code</label>
                     <input id="manual-isin" type="text" placeholder="e.g. IT000..." class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold"/>
                 </div>
             </div>
@@ -572,10 +572,7 @@
     });
 
     window.toggleAddISIN = function() {
-        const source = document.getElementById('asset-data-source').value;
-        const field = document.getElementById('add-isin-field');
-        if (source === 'B_ITA') field.classList.remove('hidden');
-        else field.classList.add('hidden');
+        // No longer needed - ISIN always visible
     }
 
     window.openManualModal = function(ticker, currency, currentPrice, type = '', country = '', dataSource = 'YF', isin = '') {
@@ -597,13 +594,7 @@
     }
 
     window.toggleManualISIN = function() {
-        const source = document.getElementById('manual-source').value;
-        const field = document.getElementById('manual-isin-field');
-        if (source === 'B_ITA') {
-            field.classList.remove('hidden');
-        } else {
-            field.classList.add('hidden');
-        }
+        // Always visible now
     }
 
     window.closeManualModal = function() {

@@ -349,8 +349,8 @@
         // Asset search block
         _toggleField('tm-asset-wrap', needsAsset);
 
-        // ISIN: solo BUY + B_ITA
-        _toggleField('tm-isin-wrap', type === 'BUY' && source === 'B_ITA');
+        // ISIN: solo BUY
+        _toggleField('tm-isin-wrap', type === 'BUY');
 
         // Campi manuali: solo BUY + MANUAL
         _toggleField('tm-manual-wrap', type === 'BUY' && source === 'MANUAL');
