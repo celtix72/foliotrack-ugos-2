@@ -603,7 +603,8 @@ async function fetchAssetMetadata(ticker) {
             eps: quote.epsTrailingTwelveMonths || (summary.defaultKeyStatistics ? summary.defaultKeyStatistics.trailingEps : null),
             beta: quote.beta || (summary.summaryDetail ? summary.summaryDetail.beta : null),
             nextDividendDate: (summary.calendarEvents && summary.calendarEvents.exDividendDate) ? new Date(summary.calendarEvents.exDividendDate).toISOString().split('T')[0] : (quote.dividendDate ? new Date(quote.dividendDate * 1000).toISOString().split('T')[0] : null),
-            quoteDate: quote.regularMarketTime ? new Date(quote.regularMarketTime).toISOString().split('T')[0] : null
+            quoteDate: quote.regularMarketTime ? new Date(quote.regularMarketTime).toISOString().split('T')[0] : null,
+            isin: quote.isin || (summary.summaryDetail ? summary.summaryDetail.isin : null) || (summary.defaultKeyStatistics ? summary.defaultKeyStatistics.isin : null) || null
         };
     } catch (e) {
         console.error(`Metadata fetch error for ${ticker}:`, e.message);
@@ -1093,7 +1094,7 @@ app.post('/api/assets', async (req, res) => {
                     nextDividendDate: metadata.nextDividendDate,
                     country:      metadata.country,
                     dataSource:   dataSource || 'YF',
-                    isin:         isin || null
+                    isin:         isin || metadata.isin || null
                 };
             }
         }
@@ -1265,8 +1266,8 @@ app.post('/api/watchlist', async (req, res) => {
             const metadata = await fetchAssetMetadata(normalizedTicker);
             if (metadata) {
                 database.db.prepare(`
-                    INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, changeValue, pe, country, updatedAt, inWatchlist)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), 1)
+                    INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, changeValue, pe, country, isin, updatedAt, inWatchlist)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), 1)
                 `).run(
                     normalizedTicker,
                     normalizedTicker,
@@ -1278,7 +1279,8 @@ app.post('/api/watchlist', async (req, res) => {
                     metadata.changePercent,
                     metadata.changeValue || 0,
                     metadata.pe,
-                    metadata.country
+                    metadata.country,
+                    metadata.isin || null
                 );
                 asset = database.db.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(normalizedTicker);
             } else {
@@ -2455,7 +2457,7 @@ app.post('/api/transactions', async (req, res) => {
                 assetCountry || metadata.country || (dataSource === 'MANUAL' ? 'Manual' : 'N/A'), 
                 (dataSource === 'MANUAL' ? 1 : 0),
                 dataSource || 'YF', 
-                isin || null
+                isin || metadata.isin || null
             );
         }
     }
