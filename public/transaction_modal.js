@@ -22,68 +22,78 @@
 
     // ─── HTML Template ──────────────────────────────────────────────────────────
     function _getModalHtml() {
+        const isDark = document.documentElement.classList.contains('dark');
+        const backdropColor = isDark ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.7)';
+
         return `
-<div id="transaction-modal" class="mob-modal-overlay hidden" style="z-index: 20000">
-    <div class="mob-modal-content">
+<div id="transaction-modal" 
+     style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 20000; align-items: center; justify-content: center; background-color: ${backdropColor}; backdrop-filter: blur(12px); padding: 0.5rem; flex-direction: column;"
+     class="flex">
+    <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800" 
+         style="width: 100%; max-width: 800px; max-height: 94vh; position: relative; z-index: 20001; display: flex; flex-direction: column; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden;">
+        
         <!-- Header -->
-        <div class="mob-modal-header">
+        <div style="padding: 16px 20px; border-bottom: 1px solid rgba(148,163,184,0.1); display: flex; justify-content: space-between; align-items: center; background: var(--mob-surface);">
             <div class="flex items-center gap-3">
                 <div class="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <span class="material-symbols-outlined text-primary text-lg" id="tm-header-icon">swap_horiz</span>
+                    <span class="material-symbols-outlined text-primary text-xl" id="tm-header-icon">swap_horiz</span>
                 </div>
-                <h3 id="tm-title" class="mob-modal-title text-slate-900 dark:text-white">Nuova Transazione</h3>
+                <div>
+                    <h3 id="tm-title" class="font-black text-sm md:text-lg dark:text-white" style="margin: 0;">Nuova Transazione</h3>
+                    <p class="text-[9px] text-slate-400 uppercase tracking-widest font-bold" style="margin: 2px 0 0 0;">Dettagli Operazione</p>
+                </div>
             </div>
-            <button type="button" onclick="closeTransactionModal()" class="mob-modal-close">
-                <span class="material-symbols-outlined text-lg">close</span>
+            <button type="button" onclick="closeTransactionModal()" style="background: rgba(148,163,184,0.1); border: none; border-radius: 50%; cursor: pointer; color: #94a3b8; padding: 6px; display: flex;">
+                <span class="material-symbols-outlined" style="font-size: 18px;">close</span>
             </button>
         </div>
 
         <!-- Form Body -->
         <form id="tm-form" class="flex flex-col flex-1 min-h-0" onsubmit="handleTransactionSubmit(event)">
             <input type="hidden" id="tm-id" />
-            <div class="mob-modal-body custom-scrollbar">
+            <div class="mob-modal-body custom-scrollbar" style="padding: 20px; overflow-y: auto;">
 
                 <!-- Row 1: Portafoglio + Tipo -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                    <div id="tm-portfolio-wrap" class="space-y-1.5">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                    <div id="tm-portfolio-wrap">
                         <label class="mob-input-label">Portafoglio</label>
                         <select id="tm-portfolio" class="mob-input-field">
                             <option value="">— Caricamento... —</option>
                         </select>
                     </div>
-                    <div class="space-y-1.5">
+                    <div>
                         <label class="mob-input-label">Tipo Transazione</label>
                         <select id="tm-type" class="mob-input-field" onchange="toggleTransactionFields()">
-                            <option value="BUY">🟢 ACQUISTO</option>
-                            <option value="SELL">🔴 VENDITA</option>
-                            <option value="DIVIDEND">💵 DIVIDENDO</option>
-                            <option value="DEPOSIT">📥 DEPOSITO</option>
-                            <option value="WITHDRAWAL">📤 PRELIEVO</option>
-                            <option value="TAX">🏛 TAX</option>
-                            <option value="TRANSFER">↔️ TRASFERIMENTO</option>
+                            <option value="BUY">ACQUISTO</option>
+                            <option value="SELL">VENDITA</option>
+                            <option value="DIVIDEND">DIVIDENDO</option>
+                            <option value="DEPOSIT">DEPOSITO</option>
+                            <option value="WITHDRAWAL">PRELIEVO</option>
+                            <option value="TAX">TAX</option>
+                            <option value="TRANSFER">TRASFERIMENTO</option>
                         </select>
                     </div>
                 </div>
 
-                <!-- Row 2: Data + Sorgente Dati (solo BUY) -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                    <div class="space-y-1.5">
+                <!-- Row 2: Data + Sorgente Dati -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                    <div>
                         <label class="mob-input-label">Data</label>
                         <input id="tm-date" type="date" required class="mob-input-field" />
                     </div>
-                    <div id="tm-source-wrap" class="space-y-1.5 hidden">
+                    <div id="tm-source-wrap" class="hidden">
                         <label class="mob-input-label">Sorgente Dati</label>
                         <select id="tm-source" class="mob-input-field" onchange="toggleTransactionFields()">
-                            <option value="YF">📈 Yahoo Finance</option>
-                            <option value="B_ITA">🇮🇹 Borsa Italiana</option>
-                            <option value="MANUAL">✏️ Manuale</option>
+                            <option value="YF">Yahoo Finance</option>
+                            <option value="B_ITA">Borsa Italiana</option>
+                            <option value="MANUAL">Manuale</option>
                         </select>
                     </div>
                 </div>
 
                 <!-- Asset Search (BUY / SELL / DIVIDEND) -->
-                <div id="tm-asset-wrap" class="hidden space-y-3">
-                    <div class="space-y-1.5 relative">
+                <div id="tm-asset-wrap" class="hidden" style="margin-bottom: 1rem;">
+                    <div class="relative" style="margin-bottom: 0.75rem;">
                         <label class="mob-input-label">Asset (Ticker)</label>
                         <input id="tm-asset-search" type="text" autocomplete="off"
                             placeholder="Es. AAPL, ISP.MI..."
@@ -97,20 +107,20 @@
                     </div>
 
                     <!-- ISIN (solo B_ITA) -->
-                    <div id="tm-isin-wrap" class="hidden space-y-1.5">
+                    <div id="tm-isin-wrap" class="hidden" style="margin-bottom: 0.75rem;">
                         <label class="mob-input-label">ISIN (Borsa Italiana)</label>
                         <input id="tm-isin" type="text" placeholder="Es. IT0000072618"
                             class="mob-input-field font-mono" />
                     </div>
 
                     <!-- Manual Asset Fields -->
-                    <div id="tm-manual-wrap" class="hidden grid grid-cols-2 gap-4">
-                        <div class="space-y-1.5">
+                    <div id="tm-manual-wrap" class="hidden" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0.75rem;">
+                        <div>
                             <label class="mob-input-label">Nome Asset</label>
                             <input id="tm-asset-name" type="text" placeholder="Es. Conto Deposito Fineco"
                                 class="mob-input-field" />
                         </div>
-                        <div class="space-y-1.5">
+                        <div>
                             <label class="mob-input-label">Valuta</label>
                             <select id="tm-asset-currency-manual" class="mob-input-field" onchange="tmCheckFX()">
                                 <option value="EUR">EUR</option>
@@ -121,32 +131,32 @@
                         </div>
                     </div>
 
-                    <!-- Asset Metadata -->
+                    <!-- Asset Metadata (Styled as Grid Row) -->
                     <div id="tm-asset-meta" class="hidden p-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-xl grid grid-cols-3 gap-3">
                         <div>
-                            <p class="text-[9px] uppercase tracking-wider text-slate-400 font-bold mb-0.5">Mercato</p>
+                            <p class="text-[8px] uppercase tracking-wider text-slate-400 font-black mb-0.5">Mercato</p>
                             <p id="tm-meta-exchange" class="text-[11px] font-black text-slate-700 dark:text-slate-200 truncate">—</p>
                         </div>
                         <div>
-                            <p class="text-[9px] uppercase tracking-wider text-slate-400 font-bold mb-0.5">Tipologia</p>
+                            <p class="text-[8px] uppercase tracking-wider text-slate-400 font-black mb-0.5">Tipologia</p>
                             <p id="tm-meta-type" class="text-[11px] font-black text-slate-700 dark:text-slate-200 truncate">—</p>
                         </div>
                         <div>
-                            <p class="text-[9px] uppercase tracking-wider text-slate-400 font-bold mb-0.5">Prezzo Att.</p>
+                            <p class="text-[8px] uppercase tracking-wider text-slate-400 font-black mb-0.5">Prezzo Att.</p>
                             <p id="tm-meta-price" class="text-[11px] font-black text-primary truncate">—</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Quantità + Prezzo (BUY / SELL / DIVIDEND) -->
-                <div id="tm-qty-price-wrap" class="hidden grid grid-cols-2 gap-4">
-                    <div class="space-y-1.5">
+                <!-- Quantità + Prezzo -->
+                <div id="tm-qty-price-wrap" class="hidden" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
                         <label class="mob-input-label" id="tm-qty-label">Quantità</label>
                         <input id="tm-qty" type="number" step="any" placeholder="0"
                             class="mob-input-field font-mono"
                             oninput="tmCalcNet()" />
                     </div>
-                    <div class="space-y-1.5">
+                    <div>
                         <label class="mob-input-label" id="tm-price-label">Prezzo</label>
                         <input id="tm-price" type="number" step="any" placeholder="0.00"
                             class="mob-input-field font-mono"
@@ -154,27 +164,28 @@
                     </div>
                 </div>
 
-                <!-- FX Rate (solo se asset in valuta diversa dal portafoglio) -->
-                <div id="tm-fx-wrap" class="hidden">
+                <!-- FX Rate -->
+                <div id="tm-fx-wrap" class="hidden" style="margin-bottom: 1rem;">
                     <div class="p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl flex items-center justify-between gap-4">
                         <div>
-                            <p class="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">Cambio FX</p>
-                            <p class="text-[11px] text-slate-500 mt-0.5"><span id="tm-fx-from">USD</span> / <span id="tm-fx-to">EUR</span></p>
+                            <p class="text-[9px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">Cambio FX</p>
+                            <p class="text-[11px] text-slate-500 mt-0.5 font-bold uppercase tracking-tight"><span id="tm-fx-from">USD</span> / <span id="tm-fx-to">EUR</span></p>
                         </div>
                         <input id="tm-fx" type="number" step="any" value="1"
-                            class="w-28 text-right bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2 font-bold font-mono text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none"
+                            style="width: 120px; text-align: right;" 
+                            class="mob-input-field font-mono"
                             oninput="tmCalcNet()" />
                     </div>
                 </div>
 
-                <!-- Commissioni + Tax (BUY/SELL) | Tax/Ritenuta (DIVIDEND) -->
-                <div id="tm-comm-tax-wrap" class="hidden grid grid-cols-2 gap-4">
-                    <div id="tm-comm-wrap" class="space-y-1.5">
+                <!-- Commissioni + Tax -->
+                <div id="tm-comm-tax-wrap" class="hidden" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div id="tm-comm-wrap">
                         <label class="mob-input-label">Commissioni</label>
                         <input id="tm-comm" type="number" step="any" value="0"
                             class="mob-input-field font-mono" />
                     </div>
-                    <div class="space-y-1.5">
+                    <div>
                         <label class="mob-input-label">Tax / Ritenuta</label>
                         <input id="tm-tax" type="number" step="any" value="0"
                             class="mob-input-field font-mono"
@@ -182,51 +193,53 @@
                     </div>
                 </div>
 
-                <!-- Importo Totale (DEPOSIT / WITHDRAWAL / TAX / TRANSFER / DIVIDEND auto-calc) -->
-                <div id="tm-amount-wrap" class="hidden space-y-1.5">
+                <!-- Importo Totale -->
+                <div id="tm-amount-wrap" class="hidden" style="margin-bottom: 1rem;">
                     <label class="mob-input-label" id="tm-amount-label">Importo Totale</label>
                     <input id="tm-amount" type="number" step="any" placeholder="0.00"
                         class="mob-input-field font-mono"
                         oninput="if(typeof tmCalcFromAmount === 'function') tmCalcFromAmount()" />
-                    <p class="text-[10px] text-slate-400 italic mt-1" id="tm-amount-hint"></p>
+                    <p class="text-[10px] text-slate-400 font-bold italic mt-1.5" id="tm-amount-hint"></p>
                 </div>
 
-                <!-- Alert & Stop Loss (Desktop: grid, Mobile: col) -->
-                <div id="tm-alerts-wrap" class="hidden mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-                    <p class="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-3">Impostazioni Asset (Notifiche Alert)</p>
-                    <div class="grid grid-cols-2 gap-4 mb-4">
-                        <div class="space-y-1.5">
-                            <label class="mob-input-label">Target Price 1</label>
+                <!-- Alert & Stop Loss (Unified 4-Column Grid) -->
+                <div id="tm-alerts-wrap" class="hidden mt-6 pt-5 border-t border-slate-100 dark:border-slate-800">
+                    <p class="text-[9px] uppercase font-black tracking-widest text-slate-400 mb-4">Monitoraggio Asset (TG & SL)</p>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 14px;">
+                        <!-- TG1 -->
+                        <div style="display: flex; flex-direction: column; gap: 3px;">
+                            <span class="mob-input-label" style="font-size: 8px; margin-bottom: 0;">TG1</span>
                             <div class="relative">
-                                <span class="absolute left-3 top-1/2 -translate-y-1/2 font-black text-slate-400 text-xs tm-alerts-curr">€</span>
-                                <input id="tm-tp" type="number" step="any" placeholder="0.00" class="mob-input-field pl-7 font-mono" />
+                                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 font-black text-slate-400 text-[10px] tm-alerts-curr">€</span>
+                                <input id="tm-tp" type="number" step="any" placeholder="0.00" class="mob-input-field font-mono" style="padding: 6px 6px 6px 20px; font-size: 12px;" />
                             </div>
                         </div>
-                        <div class="space-y-1.5">
-                            <label class="mob-input-label">Target Price 2</label>
+                        <!-- TG2 -->
+                        <div style="display: flex; flex-direction: column; gap: 3px;">
+                            <span class="mob-input-label" style="font-size: 8px; margin-bottom: 0;">TG2</span>
                             <div class="relative">
-                                <span class="absolute left-3 top-1/2 -translate-y-1/2 font-black text-slate-400 text-xs tm-alerts-curr">€</span>
-                                <input id="tm-tp2" type="number" step="any" placeholder="0.00" class="mob-input-field pl-7 font-mono" />
+                                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 font-black text-slate-400 text-[10px] tm-alerts-curr">€</span>
+                                <input id="tm-tp2" type="number" step="any" placeholder="0.00" class="mob-input-field font-mono" style="padding: 6px 6px 6px 20px; font-size: 12px;" />
                             </div>
                         </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-1.5">
-                            <label class="mob-input-label">Stop Loss</label>
+                        <!-- SL -->
+                        <div style="display: flex; flex-direction: column; gap: 3px;">
+                            <span class="mob-input-label" style="font-size: 8px; margin-bottom: 0;">SL</span>
                             <div class="relative">
-                                <span class="absolute left-3 top-1/2 -translate-y-1/2 font-black text-slate-400 text-xs tm-alerts-curr">€</span>
-                                <input id="tm-sl" type="number" step="any" placeholder="0.00" class="mob-input-field pl-7 font-mono" />
+                                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 font-black text-slate-400 text-[10px] tm-alerts-curr">€</span>
+                                <input id="tm-sl" type="number" step="any" placeholder="0.00" class="mob-input-field font-mono" style="padding: 6px 6px 6px 20px; font-size: 12px;" />
                             </div>
                         </div>
-                        <div class="space-y-1.5">
-                            <label class="mob-input-label">Volatilità Alert (%)</label>
-                            <input id="tm-vol" type="number" step="1" value="0" min="0" max="20" class="mob-input-field font-mono" />
+                        <!-- VOL% -->
+                        <div style="display: flex; flex-direction: column; gap: 3px;">
+                            <span class="mob-input-label" style="font-size: 8px; margin-bottom: 0;">VOL%</span>
+                            <input id="tm-vol" type="number" step="1" value="0" min="0" max="20" class="mob-input-field font-mono" style="padding: 6px; font-size: 12px; text-align: center;" />
                         </div>
                     </div>
                 </div>
 
-                <!-- Portafoglio Destinazione (solo TRANSFER) -->
-                <div id="tm-dest-wrap" class="hidden space-y-1.5">
+                <!-- Portafoglio Destinazione -->
+                <div id="tm-dest-wrap" class="hidden" style="margin-top: 1rem;">
                     <label class="mob-input-label">Portafoglio Destinazione</label>
                     <select id="tm-dest-portfolio" class="mob-input-field">
                         <option value="">— Seleziona Target —</option>
@@ -236,11 +249,11 @@
             </div>
 
             <!-- Footer -->
-            <div class="mob-modal-footer">
-                <button type="button" onclick="closeTransactionModal()" class="mob-btn mob-btn-secondary">
+            <div style="padding: 16px 20px; border-top: 1px solid rgba(148,163,184,0.1); background: var(--mob-surface); display: flex; gap: 10px;">
+                <button type="button" onclick="closeTransactionModal()" class="mob-btn" style="flex: 1; background: rgba(148,163,184,0.1); color: var(--mob-text-muted); border: none; font-weight: 900; text-transform: uppercase; font-size: 11px;">
                     Annulla
                 </button>
-                <button type="submit" id="tm-submit-btn" class="mob-btn mob-btn-primary flex items-center justify-center gap-2">
+                <button type="submit" id="tm-submit-btn" class="mob-btn" style="flex: 2; background: var(--mob-primary); color: white; border: none; font-weight: 900; text-transform: uppercase; font-size: 11px; box-shadow: 0 4px 12px rgba(19,91,236,0.2); display: flex; items-center; justify-center; gap: 8px;">
                     <span class="material-symbols-outlined text-base" id="tm-submit-icon">check_circle</span>
                     <span id="tm-submit-label">Conferma</span>
                 </button>
