@@ -313,7 +313,7 @@
                         `;
                     }
                     if (f.type === 'spacer') {
-                        return '<div class="hidden md:block"></div>';
+                        return '<div></div>';
                     }
                     return `
                         <div style="display: flex; flex-direction: column; gap: 4px;">
