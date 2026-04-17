@@ -256,6 +256,11 @@
                                     <button onclick="showDetails('${item.ticker}', '${typeLabel}')" class="w-8 h-8 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all flex items-center justify-center border border-primary/10">
                                         <span class="material-symbols-outlined text-sm">info</span>
                                     </button>
+                                    ${typeLabel === 'ETF' ? `
+                                    <a href="https://www.justetf.com/it/find-etf.html?query=${item.ticker}" target="_blank" class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white transition-all flex items-center justify-center border border-amber-500/10" title="JustETF">
+                                        <span class="material-symbols-outlined text-sm">open_in_new</span>
+                                    </a>
+                                    ` : ''}
                                     <button onclick="removeFromWatchlist('${item.ticker}')" class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center border border-rose-500/10">
                                         <span class="material-symbols-outlined text-sm">delete</span>
                                     </button>
@@ -367,7 +372,7 @@
                     { label: 'P/E Ratio', val: ftFormatPE(sd.trailingPE) },
                     { label: 'Forward P/E', val: ftFormatPE(sd.forwardPE) },
                     { label: 'Dividend Yield', val: ftFormatYield(sd.dividendYield) },
-                    { label: 'EPS (Trailing)', val: ftFormatEPS(ks.trailingEps, item.currency) },
+                    { label: 'EPS (Trailing)', val: ftFormatEPS(ks.trailingEps, sd.currency || 'USD') },
                     { label: 'Beta', val: ftFormatBeta(sd.beta) },
                     { label: 'Prossimo Stacco', val: ftFormatDate(nextDiv) }
                 ];

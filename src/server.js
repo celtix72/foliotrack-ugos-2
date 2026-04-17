@@ -592,7 +592,14 @@ async function fetchAssetMetadata(ticker) {
             postMarketChangePercent: quote.postMarketChangePercent || 0,
             pe: quote.trailingPE || (summary.summaryDetail ? summary.summaryDetail.trailingPE : null),
             forwardPE: quote.forwardPE || (summary.summaryDetail ? summary.summaryDetail.forwardPE : null),
-            dividendYield: quote.dividendYield || (summary.summaryDetail ? summary.summaryDetail.dividendYield : null),
+            dividendYield: (function() {
+                let y = quote.dividendYield || (summary.summaryDetail ? summary.summaryDetail.dividendYield : null);
+                if (y === null || y === undefined) return null;
+                // If y > 0.2 (20%), and it's from a standard quote, it's likely already a percentage (e.g. 2.5 meaning 2.5%).
+                // Most dividend yields are < 20% (0.2). If it's e.g. 3.0, it's definitely a percentage.
+                if (y > 0.2) return y / 100; 
+                return y;
+            })(),
             eps: quote.epsTrailingTwelveMonths || (summary.defaultKeyStatistics ? summary.defaultKeyStatistics.trailingEps : null),
             beta: quote.beta || (summary.summaryDetail ? summary.summaryDetail.beta : null),
             nextDividendDate: (summary.calendarEvents && summary.calendarEvents.exDividendDate) ? new Date(summary.calendarEvents.exDividendDate).toISOString().split('T')[0] : (quote.dividendDate ? new Date(quote.dividendDate * 1000).toISOString().split('T')[0] : null),
