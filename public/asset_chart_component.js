@@ -288,6 +288,7 @@
                 const formatPct = n => n ? (n * 100).toFixed(2) + '%' : '—';
                 
                 const fields = [
+                    { label: 'ISIN', val: detailsData.dbIsin || '—' },
                     { label: 'P/E Ratio', val: formatNum(sd.trailingPE) },
                     { label: 'Forward P/E', val: formatNum(sd.forwardPE) },
                     { label: 'Div. Yield', val: formatPct(sd.dividendYield) },
@@ -308,6 +309,7 @@
                 // ETF/Others fallback
                 const formatNum = n => n ? parseFloat(n).toFixed(2) : '—';
                 const fields = [
+                    { label: 'ISIN', val: detailsData.dbIsin || '—' },
                     { label: 'Prev Close', val: formatNum(sd.previousClose) },
                     { label: 'Open', val: formatNum(sd.open) },
                     { label: 'Day Low', val: formatNum(sd.dayLow) },

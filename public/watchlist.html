@@ -357,6 +357,7 @@
             if (typeLabel === 'ETF') {
                 const fees = fp.feesExpensesInvestment || {};
                 fields = [
+                    { label: 'ISIN', val: data.dbIsin || 'N/A' },
                     { label: 'Asset Totali (AUM)', val: formatLarge(fees.totalNetAssets) },
                     { label: 'TER (Expense Ratio)', val: ftFormatYield(fees.annualReportExpenseRatio) },
                     { label: 'Categoria', val: fp.categoryName || 'N/A' },
@@ -369,6 +370,7 @@
             } else {
                 const nextDiv = data.calendarEvents?.dividendDate || data.calendarEvents?.exDividendDate;
                 fields = [
+                    { label: 'ISIN', val: data.dbIsin || 'N/A' },
                     { label: 'P/E Ratio', val: ftFormatPE(sd.trailingPE) },
                     { label: 'Forward P/E', val: ftFormatPE(sd.forwardPE) },
                     { label: 'Dividend Yield', val: ftFormatYield(sd.dividendYield) },

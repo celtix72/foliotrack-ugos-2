@@ -1482,7 +1482,15 @@ app.get('/api/assets/:ticker/details', async (req, res) => {
         const summary = await yahooFinance.quoteSummary(ticker, {
             modules: ['summaryDetail', 'financialData', 'defaultKeyStatistics', 'assetProfile', 'calendarEvents', 'fundProfile']
         });
-        res.json(summary);
+        
+        // Enrich with ISIN from DB
+        const asset = database.db.prepare(`SELECT isin FROM assets WHERE ticker = ?`).get(ticker);
+        const enriched = { 
+            ...summary, 
+            dbIsin: asset ? asset.isin : null 
+        };
+        
+        res.json(enriched);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
