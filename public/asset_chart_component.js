@@ -45,7 +45,7 @@
                 <!-- Chart Area -->
                 <div style="padding: 16px; flex: 1; min-height: 220px; display: flex; flex-direction: column; background: var(--mob-bg); overflow: hidden;">
                     <div id="chart-modal-loading" style="display: none; flex: 1; align-items: center; justify-content: center;">
-                        <span class="material-symbols-outlined animate-spin" style="font-size: 32px; color: var(--mob-brand);">progress_activity</span>
+                        <span class="material-symbols-outlined animate-spin" style="font-size: 32px; color: var(--mob-primary);">progress_activity</span>
                     </div>
                     <div id="chart-modal-empty" style="display: none; flex: 1; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8;">
                         <span class="material-symbols-outlined" style="font-size: 40px;">bar_chart_off</span>
@@ -93,7 +93,7 @@
                             </div>
                         </div>
                     </div>
-                    <button id="modal-save-alerts-btn" onclick="saveModalAlerts()" style="width: 100%; background: var(--mob-brand); color: white; padding: 14px; border-radius: 14px; border: none; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 12px; letter-spacing: 1px; box-shadow: 0 4px 15px rgba(19,91,236,0.3);">
+                    <button id="modal-save-alerts-btn" onclick="saveModalAlerts()" style="width: 100%; background: var(--mob-primary); color: white; padding: 14px; border-radius: 14px; border: none; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 12px; letter-spacing: 1px; box-shadow: 0 4px 15px rgba(19,91,236,0.3);">
                         Save Notifications
                     </button>
                     <button id="modal-remove-watchlist-btn" style="width: 100%; background: rgba(244,63,94,0.1); color: var(--mob-rose); margin-top: 10px; padding: 12px; border-radius: 14px; border: 1px solid rgba(244,63,94,0.2); font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 11px; display: none;">
