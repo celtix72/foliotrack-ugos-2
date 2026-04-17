@@ -375,21 +375,25 @@ function renderAssets(filter = '') {
                             ${!a.isMonitored ? '<span class="text-[8px] font-black bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-500 tracking-tighter uppercase">Inactive</span>' : ''}
                             ${a.lastUpdateError ? `<span class="px-1.5 py-0.5 rounded-full bg-rose-500 text-[8px] font-black text-white uppercase tracking-tighter" title="${a.lastUpdateError.replace(/"/g, '&quot;')}">Err</span>` : ''}
                         </div>
-                        <p class="text-[9px] text-slate-400 uppercase font-black tracking-widest mt-1 flex items-center gap-1.5 flex-wrap">
+                        <p class="text-[9px] text-slate-400 uppercase font-black tracking-widest mt-1.5 flex items-center gap-2 flex-wrap">
                             ${(a.portfoliosInfo && a.portfoliosInfo.length > 0) ? a.portfoliosInfo.map(p => `
-                                <span class="flex items-center shrink-0">
-                                    <span class="px-1 py-0.5 rounded-l text-[7px] font-black tracking-tighter uppercase border border-r-0" 
-                                          style="background-color: ${p.color || '#64748b'}15; color: ${p.color || '#64748b'}; border-color: ${p.color || '#64748b'}30;">
+                                <span class="flex items-center gap-1 shrink-0">
+                                    <span class="px-1.5 py-0.5 rounded text-[7px] font-black tracking-tighter uppercase" 
+                                          style="background-color: ${p.color || '#64748b'}15; color: ${p.color || '#64748b'}; border: 1px solid ${p.color || '#64748b'}30;">
                                         ${p.name}
                                     </span>
-                                    <span class="px-1 py-0.5 rounded-r text-[7px] font-black tracking-tighter uppercase border" 
-                                          style="background-color: ${p.roi >= 0 ? 'rgba(16,185,129,0.1)' : 'rgba(244,63,94,0.1)'}; color: ${p.roi >= 0 ? '#10b981' : '#f43f5e'}; border-color: ${p.roi >= 0 ? 'rgba(16,185,129,0.2)' : 'rgba(244,63,94,0.2)'};">
+                                    <span class="font-bold text-[8px]" style="color: ${p.roi >= 0 ? '#10b981' : '#f43f5e'};">
                                         ${p.roi >= 0 ? '+' : ''}${formatNumber(p.roi, 1)}%
                                     </span>
                                 </span>
-                            `).join('') : ''}
-                            <span class="shrink-0 flex items-center gap-1">
-                                ${a.ticker} • ${a.exchange || 'Market'}
+                            `).join('<span class="text-slate-200 dark:text-slate-800">•</span>') : ''}
+
+                            ${(a.portfoliosInfo && a.portfoliosInfo.length > 0) ? '<span class="text-slate-300 dark:text-slate-700 mx-1">|</span>' : ''}
+
+                            <span class="shrink-0 flex items-center gap-2">
+                                <span class="text-slate-500">${a.ticker}</span>
+                                <span class="text-slate-300 dark:text-slate-700">•</span>
+                                <span>${a.exchange || 'Market'}</span>
                                 <span class="px-1.5 py-0.5 rounded text-[8px] font-black leading-none ${a.dataSource === 'B_ITA' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400'}">${a.dataSource === 'B_ITA' ? 'BI' : 'YF'}</span>
                             </span>
                         </p>

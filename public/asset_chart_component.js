@@ -222,10 +222,10 @@
                 const currSym = _chartCurrency === 'EUR' ? '€' : (_chartCurrency === 'USD' ? '$' : _chartCurrency);
                 // We'll use these later in the unified grid
                 window._assetTargets = [
-                    { label: 'Target 1', type: 'input', id: 'modal-tp-input', val: assetInfo.targetPrice, symbol: currSym },
-                    { label: 'Target 2', type: 'input', id: 'modal-tp2-input', val: assetInfo.targetPrice2, symbol: currSym },
-                    { label: 'Stop Loss', type: 'input', id: 'modal-sl-input', val: assetInfo.stopLoss, symbol: currSym },
-                    { label: 'Vol. %', type: 'vol', id: 'modal-vol-input', val: assetInfo.volatilityAlert }
+                    { label: 'TG1', type: 'input', id: 'modal-tp-input', val: assetInfo.targetPrice, symbol: currSym },
+                    { label: 'TG2', type: 'input', id: 'modal-tp2-input', val: assetInfo.targetPrice2, symbol: currSym },
+                    { label: 'SL', type: 'input', id: 'modal-sl-input', val: assetInfo.stopLoss, symbol: currSym },
+                    { label: 'VOL %', type: 'vol', id: 'modal-vol-input', val: assetInfo.volatilityAlert }
                 ];
 
                 // Handle Watchlist logic for Delete button Visibility
@@ -281,6 +281,11 @@
                     ];
                 }
 
+                // Ensure targets always start on a new row (4 columns)
+                while (indicatorFields.length % 4 !== 0) {
+                    indicatorFields.push({ label: '', val: '', type: 'spacer' });
+                }
+
                 const allFields = [...indicatorFields, ...(window._assetTargets || [])];
 
                 grid.innerHTML = allFields.map(f => {
@@ -306,6 +311,9 @@
                                 </div>
                             </div>
                         `;
+                    }
+                    if (f.type === 'spacer') {
+                        return '<div class="hidden md:block"></div>';
                     }
                     return `
                         <div style="display: flex; flex-direction: column; gap: 4px;">
