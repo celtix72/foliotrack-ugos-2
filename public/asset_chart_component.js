@@ -14,12 +14,15 @@
         const existing = document.getElementById('asset-chart-modal');
         if (existing) existing.remove();
 
+        const isDark = document.documentElement.classList.contains('dark');
+        const backdropColor = isDark ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.7)';
+
         const modalHtml = `
         <div id="asset-chart-modal" 
-             style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999; align-items: center; justify-content: center; background-color: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); padding: 0.5rem; flex-direction: column;"
+             style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999; align-items: center; justify-content: center; background-color: ${backdropColor}; backdrop-filter: blur(12px); padding: 0.5rem; flex-direction: column;"
              class="flex">
-            <div class="bg-white dark:bg-[#111722]" 
-                 style="width: 100%; max-width: 900px; max-height: 94vh; position: relative; z-index: 10000; display: flex; flex-direction: column; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); overflow: hidden;">
+            <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800" 
+                 style="width: 100%; max-width: 900px; max-height: 94vh; position: relative; z-index: 10000; display: flex; flex-direction: column; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden;">
                 
                 <!-- Header -->
                 <div style="padding: 16px 20px; border-bottom: 1px solid rgba(148,163,184,0.1); display: flex; justify-content: space-between; align-items: center; background: var(--mob-surface); ">
@@ -515,7 +518,7 @@
 
             const isDark = document.documentElement.classList.contains('dark');
             const tickColor = isDark ? '#94a3b8' : '#64748b';
-            const gridColor = isDark ? 'rgba(148,163,184,0.1)' : 'rgba(0,0,0,0.05)';
+            const gridColor = isDark ? 'rgba(148,163,184,0.1)' : 'rgba(148,163,184,0.15)';
 
             _assetChartInstance = new Chart(ctx, {
                 type: 'line',

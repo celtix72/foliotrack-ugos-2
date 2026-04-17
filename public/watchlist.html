@@ -18,6 +18,7 @@
     </style>
     <script src="/theme.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/asset_chart_component.js"></script>
 </head>
 <body class="bg-background-light dark:bg-[#0b0f1a] text-slate-900 dark:text-slate-100 min-h-screen flex">
 
@@ -119,45 +120,6 @@
     </main>
 </div>
 
-<!-- Asset Detail Modal -->
-<div id="detail-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
-    <div class="bg-white dark:bg-[#111722] w-full max-w-2xl rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div class="p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start">
-            <div>
-                <div class="flex items-center gap-3 mb-1">
-                    <h3 id="modal-ticker" class="text-3xl font-black tracking-tighter text-primary">AAPL</h3>
-                    <span id="modal-exchange" class="text-[10px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-500">NasdaqGS</span>
-                </div>
-                <p id="modal-name" class="text-slate-500 font-bold">Apple Inc.</p>
-            </div>
-            <button onclick="closeDetailModal()" class="w-10 h-10 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 flex items-center justify-center transition-all">
-                <span class="material-symbols-outlined">close</span>
-            </button>
-        </div>
-        <!-- Chart Section -->
-        <div class="px-8 pt-8 pb-0">
-            <div class="bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 p-6">
-                <div class="flex items-center justify-between mb-6">
-                    <div class="flex items-center gap-3">
-                        <div class="w-1.5 h-1.5 rounded-full bg-primary"></div>
-                        <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">1-Month Performance</h4>
-                    </div>
-                    <div id="modal-perf-badge" class="px-2.5 py-1 rounded-lg text-[10px] font-black shadow-sm"></div>
-                </div>
-                <div class="h-[180px] w-full relative">
-                    <canvas id="asset-detail-chart"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <div class="p-8 grid grid-cols-3 gap-x-6 gap-y-4" id="modal-content">
-            <!-- Details will be injected here -->
-        </div>
-        <div class="p-6 bg-slate-50 dark:bg-slate-800/30 flex justify-end px-8">
-            <button onclick="closeDetailModal()" class="px-6 py-2 bg-slate-200 dark:bg-slate-700 font-bold rounded-xl text-sm">Close</button>
-        </div>
-    </div>
-</div>
 
 <script>
     let watchlist = [];
@@ -230,7 +192,7 @@
                                     'bg-slate-500/10 text-slate-500 border-slate-500/20';
 
                     return `
-                        <tr class="border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
+                        <tr class="border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group cursor-pointer" ondblclick="openAssetChartModal('${item.ticker}')">
                             <td class="px-6 py-5">
                                 <div class="text-sm font-black text-slate-900 dark:text-white">${item.ticker}</div>
                                 <div class="text-[10px] font-bold text-slate-400 uppercase tracking-tight truncate max-w-[180px]">${item.name}</div>
@@ -252,19 +214,16 @@
                             <td class="px-6 py-5 text-center">${renderPerf(perf.perf1Y)}</td>
                             <td class="px-6 py-5 text-right font-bold text-emerald-500 text-xs">${ftFormatYield(item.dividendYield)}</td>
                             <td class="px-6 py-5 text-right">
-                                <div class="flex items-center justify-end gap-2">
-                                    <button onclick="showDetails('${item.ticker}', '${typeLabel}')" class="w-8 h-8 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all flex items-center justify-center border border-primary/10">
-                                        <span class="material-symbols-outlined text-sm">info</span>
-                                    </button>
-                                    ${typeLabel === 'ETF' ? `
-                                    <a href="${(item.isin && item.isin.trim() !== '') ? `https://www.justetf.com/it/etf-profile.html?isin=${item.isin}` : `https://www.justetf.com/it/find-etf.html?query=${item.ticker}`}" target="_blank" class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white transition-all flex items-center justify-center border border-amber-500/10" title="JustETF">
-                                        <span class="material-symbols-outlined text-sm">open_in_new</span>
-                                    </a>
-                                    ` : ''}
-                                    <button onclick="removeFromWatchlist('${item.ticker}')" class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center border border-rose-500/10">
-                                        <span class="material-symbols-outlined text-sm">delete</span>
-                                    </button>
-                                </div>
+                                    <div class="flex items-center justify-end gap-2">
+                                        ${typeLabel === 'ETF' ? `
+                                        <a href="${(item.isin && item.isin.trim() !== '') ? `https://www.justetf.com/it/etf-profile.html?isin=${item.isin}` : `https://www.justetf.com/it/find-etf.html?query=${item.ticker}`}" target="_blank" class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white transition-all flex items-center justify-center border border-amber-500/10" title="JustETF">
+                                            <span class="material-symbols-outlined text-sm">open_in_new</span>
+                                        </a>
+                                        ` : ''}
+                                        <button onclick="removeFromWatchlist('${item.ticker}')" class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center border border-rose-500/10">
+                                            <span class="material-symbols-outlined text-sm">delete</span>
+                                        </button>
+                                    </div>
                             </td>
                         </tr>
                     `;
@@ -336,151 +295,6 @@
         }
     }
 
-    async function showDetails(ticker, typeLabel) {
-        try {
-            const res = await fetch(`/api/assets/${ticker}/details`);
-            const data = await res.json();
-            
-            const sd = data.summaryDetail || {};
-            const fd = data.financialData || {};
-            const ks = data.defaultKeyStatistics || {};
-            const ap = data.assetProfile || {};
-            const fp = data.fundProfile || {};
-            
-            document.getElementById('modal-ticker').innerText = ticker;
-            document.getElementById('modal-name').innerText = ap.longName || (data.quoteType && data.quoteType.longName) || ticker;
-            document.getElementById('modal-exchange').innerText = sd.exchange || 'Unknown';
-            
-            const content = document.getElementById('modal-content');
-            let fields = [];
-
-            if (typeLabel === 'ETF') {
-                const fees = fp.feesExpensesInvestment || {};
-                fields = [
-                    { label: 'ISIN', val: data.dbIsin || 'N/A' },
-                    { label: 'Asset Totali (AUM)', val: formatLarge(fees.totalNetAssets) },
-                    { label: 'TER (Expense Ratio)', val: ftFormatYield(fees.annualReportExpenseRatio) },
-                    { label: 'Categoria', val: fp.categoryName || 'N/A' },
-                    { label: 'Tipo Legale', val: fp.legalType || 'N/A' },
-                    { label: 'Inception Date', val: ftFormatDate(ks.fundInceptionDate) },
-                    { label: 'Yield (Trebbiato)', val: ftFormatYield(sd.dividendYield) },
-                    { label: 'Beta (3Y)', val: ftFormatBeta(sd.beta) },
-                    { label: 'Volume Medio (10D)', val: formatLarge(sd.averageVolume10days) }
-                ];
-            } else {
-                const nextDiv = data.calendarEvents?.dividendDate || data.calendarEvents?.exDividendDate;
-                fields = [
-                    { label: 'ISIN', val: data.dbIsin || 'N/A' },
-                    { label: 'P/E Ratio', val: ftFormatPE(sd.trailingPE) },
-                    { label: 'Forward P/E', val: ftFormatPE(sd.forwardPE) },
-                    { label: 'Dividend Yield', val: ftFormatYield(sd.dividendYield) },
-                    { label: 'EPS (Trailing)', val: ftFormatEPS(ks.trailingEps, sd.currency || 'USD') },
-                    { label: 'Beta', val: ftFormatBeta(sd.beta) },
-                    { label: 'Prossimo Stacco', val: ftFormatDate(nextDiv) }
-                ];
-            }
-
-            content.innerHTML = fields.map(f => `
-                <div class="space-y-1 py-1 border-b border-slate-50 dark:border-slate-800/50">
-                    <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">${f.label}</p>
-                    <p class="text-sm font-black text-slate-800 dark:text-slate-200">${f.val || 'N/A'}</p>
-                </div>
-            `).join('');
-            
-            document.getElementById('modal-perf-badge').innerHTML = ''; // Reset
-            document.getElementById('detail-modal').classList.remove('hidden');
-            renderAssetChart(ticker);
-        } catch (err) {
-            alert('Error loading details: ' + err.message);
-        }
-    }
-
-    async function renderAssetChart(ticker) {
-        if (detailChart) detailChart.destroy();
-        const canvas = document.getElementById('asset-detail-chart');
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        const isDark = document.documentElement.classList.contains('dark');
-        
-        try {
-            const res = await fetch(`/api/assets/${ticker}/history?range=1M`);
-            const data = await res.json();
-            
-            if (!data || data.length === 0) return;
-
-            const labels = data.map(d => {
-                const date = new Date(d.date);
-                return date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
-            });
-            const prices = data.map(d => d.price);
-            
-            const startPrice = prices[0];
-            const endPrice = prices[prices.length - 1];
-            const change = ((endPrice - startPrice) / startPrice) * 100;
-            const isPos = change >= 0;
-            
-            const badge = document.getElementById('modal-perf-badge');
-            badge.className = `px-2.5 py-1 rounded-lg text-[10px] font-black shadow-sm ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`;
-            badge.innerHTML = `${isPos ? '▲' : '▼'} ${Math.abs(change).toFixed(1)}%`;
-
-            detailChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Price',
-                        data: prices,
-                        borderColor: '#135bec',
-                        backgroundColor: 'rgba(19, 91, 236, 0.05)',
-                        fill: true,
-                        tension: 0.4,
-                        borderWidth: 2,
-                        pointRadius: 0,
-                        pointHoverRadius: 4,
-                        pointHoverBackgroundColor: '#135bec',
-                        pointHoverBorderColor: '#fff',
-                        pointHoverBorderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { 
-                        legend: { display: false },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                            backgroundColor: isDark ? '#1e293b' : '#fff',
-                            titleColor: isDark ? '#f1f5f9' : '#1e293b',
-                            bodyColor: isDark ? '#f1f5f9' : '#1e293b',
-                            borderColor: isDark ? '#334155' : '#e2e8f0',
-                            borderWidth: 1
-                        }
-                    },
-                    scales: {
-                        x: { display: false },
-                        y: {
-                            display: true,
-                            position: 'right',
-                            grid: { color: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)' },
-                            ticks: {
-                                color: isDark ? '#64748b' : '#94a3b8',
-                                font: { size: 9, weight: 'bold' }
-                            }
-                        }
-                    }
-                }
-            });
-        } catch (err) { console.error(err); }
-    }
-
-    function closeDetailModal() {
-        document.getElementById('detail-modal').classList.add('hidden');
-        if (detailChart) {
-            detailChart.destroy();
-            detailChart = null;
-        }
-    }
 
     function formatNum(n) { return n ? n.toFixed(2) : null; }
     function formatPct(n) { return n ? (n * 100).toFixed(1) + '%' : null; }

@@ -29,7 +29,8 @@
 
 /* Light theme overrides */
 .mobile-view-active.light-mode #mobile-ui,
-html:not(.dark) .mobile-view-active #mobile-ui {
+html:not(.dark) .mobile-view-active #mobile-ui,
+html:not(.dark) :root {
   --mob-bg: #f0f4f8;
   --mob-surface: #ffffff;
   --mob-surface-2: #f1f5f9;
