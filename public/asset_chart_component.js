@@ -510,45 +510,92 @@
                 });
             }
 
-            // Calculate Holding Periods (dotted line and shaded area)
+            // Calculate Performance Visualization (PMC Basis + Gain/Loss Area)
             const firstDate = labels[0];
-            let currentQty = transactions
-                .filter(t => t.date < firstDate)
-                .reduce((acc, t) => {
-                    if (t.type === 'BUY') return acc + (parseFloat(t.quantity) || 0);
-                    if (t.type === 'SELL') return acc - (parseFloat(t.quantity) || 0);
-                    return acc;
-                }, 0);
+            let currentQty = 0;
+            let currentTotalCost = 0;
 
-            const holdingPrices = labels.map((date, idx) => {
-                let heldDuringDay = currentQty > 0.0001;
+            // 1. Pre-calculate historical PMC before chart range
+            const historicalTx = transactions.filter(t => t.date < firstDate);
+            historicalTx.sort((a,b) => new Date(a.date) - new Date(b.date)).forEach(t => {
+                const q = parseFloat(t.quantity) || 0;
+                const p = parseFloat(t.price) || 0;
+                if (t.type === 'BUY') {
+                    currentTotalCost += q * p;
+                    currentQty += q;
+                } else if (t.type === 'SELL' && currentQty > 0) {
+                    const avgPrice = currentTotalCost / currentQty;
+                    currentTotalCost -= q * avgPrice;
+                    currentQty -= q;
+                }
+            });
+
+            const basisPrices = []; // PMC line
+            const heldPrices = [];  // Current price line for filling
+
+            labels.forEach((date, idx) => {
+                const dayBeforeQty = currentQty;
                 const dayTx = transactions.filter(t => t.date === date);
+                
                 dayTx.forEach(t => {
-                    if (t.type === 'BUY') currentQty += (parseFloat(t.quantity) || 0);
-                    if (t.type === 'SELL') currentQty -= (parseFloat(t.quantity) || 0);
+                    const q = parseFloat(t.quantity) || 0;
+                    const p = parseFloat(t.price) || 0;
+                    if (t.type === 'BUY') {
+                        currentTotalCost += q * p;
+                        currentQty += q;
+                    } else if (t.type === 'SELL' && currentQty > 0) {
+                        const avgPrice = currentTotalCost / currentQty;
+                        currentTotalCost -= q * avgPrice;
+                        currentQty -= q;
+                    }
                 });
-                // We show holding indicator if any quantity was held at start or end of day
-                // Use a small epsilon for floating point safety
-                return (heldDuringDay || currentQty > 0.0001) ? prices[idx] : null;
+
+                const isHolding = dayBeforeQty > 0.0001 || currentQty > 0.0001;
+                if (isHolding) {
+                    const avgPrice = currentQty > 0 ? (currentTotalCost / currentQty) : (currentTotalCost / dayBeforeQty); // handle case where sold today
+                    basisPrices.push(avgPrice);
+                    heldPrices.push(prices[idx]);
+                } else {
+                    basisPrices.push(null);
+                    heldPrices.push(null);
+                }
             });
 
             const isDark = document.documentElement.classList.contains('dark');
             const tickColor = isDark ? '#94a3b8' : '#64748b';
             const gridColor = isDark ? 'rgba(148,163,184,0.1)' : 'rgba(148,163,184,0.15)';
 
-            // Add holding dataset at the beginning so it's behind markers but can be highlighted
-            tradeDatasets.unshift({
-                label: 'Holding',
-                data: holdingPrices,
-                borderColor: 'rgba(59, 130, 246, 0.4)',
-                backgroundColor: isDark ? 'rgba(59, 130, 246, 0.08)' : 'rgba(59, 130, 246, 0.05)',
-                borderWidth: 1.5,
-                borderDash: [4, 4],
-                fill: 'origin',
+            // Clean up old tradeDatasets to add our new ones at the bottom (z-layer)
+            // But we want markers on top, area at bottom
+            const perfAreaSet = {
+                label: 'Performance',
+                data: heldPrices,
+                borderColor: 'transparent',
+                backgroundColor: 'transparent', // controlled by fill above/below
+                fill: {
+                    target: '+1', // Fill towards Basis set (which we'll unshift after this)
+                    above: isDark ? 'rgba(16, 185, 129, 0.25)' : 'rgba(16, 185, 129, 0.15)',
+                    below: isDark ? 'rgba(239, 68, 68, 0.25)' : 'rgba(239, 68, 68, 0.15)'
+                },
                 pointRadius: 0,
                 tension: 0.1,
                 yAxisID: 'y'
-            });
+            };
+
+            const basisSet = {
+                label: 'Avg Cost Basis',
+                data: basisPrices,
+                borderColor: isDark ? 'rgba(148, 163, 184, 0.5)' : 'rgba(100, 116, 139, 0.5)',
+                borderWidth: 1.5,
+                borderDash: [5, 5],
+                pointRadius: 0,
+                fill: false,
+                tension: 0,
+                yAxisID: 'y'
+            };
+
+            // unshift ensures these are at the start of datasets array (behind others)
+            tradeDatasets.unshift(perfAreaSet, basisSet);
 
             _assetChartInstance = new Chart(ctx, {
                 type: 'line',
