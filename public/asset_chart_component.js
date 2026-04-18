@@ -510,9 +510,45 @@
                 });
             }
 
+            // Calculate Holding Periods (dotted line and shaded area)
+            const firstDate = labels[0];
+            let currentQty = transactions
+                .filter(t => t.date < firstDate)
+                .reduce((acc, t) => {
+                    if (t.type === 'BUY') return acc + (parseFloat(t.quantity) || 0);
+                    if (t.type === 'SELL') return acc - (parseFloat(t.quantity) || 0);
+                    return acc;
+                }, 0);
+
+            const holdingPrices = labels.map((date, idx) => {
+                let heldDuringDay = currentQty > 0.0001;
+                const dayTx = transactions.filter(t => t.date === date);
+                dayTx.forEach(t => {
+                    if (t.type === 'BUY') currentQty += (parseFloat(t.quantity) || 0);
+                    if (t.type === 'SELL') currentQty -= (parseFloat(t.quantity) || 0);
+                });
+                // We show holding indicator if any quantity was held at start or end of day
+                // Use a small epsilon for floating point safety
+                return (heldDuringDay || currentQty > 0.0001) ? prices[idx] : null;
+            });
+
             const isDark = document.documentElement.classList.contains('dark');
             const tickColor = isDark ? '#94a3b8' : '#64748b';
             const gridColor = isDark ? 'rgba(148,163,184,0.1)' : 'rgba(148,163,184,0.15)';
+
+            // Add holding dataset at the beginning so it's behind markers but can be highlighted
+            tradeDatasets.unshift({
+                label: 'Holding',
+                data: holdingPrices,
+                borderColor: 'rgba(59, 130, 246, 0.4)',
+                backgroundColor: isDark ? 'rgba(59, 130, 246, 0.08)' : 'rgba(59, 130, 246, 0.05)',
+                borderWidth: 1.5,
+                borderDash: [4, 4],
+                fill: 'origin',
+                pointRadius: 0,
+                tension: 0.1,
+                yAxisID: 'y'
+            });
 
             _assetChartInstance = new Chart(ctx, {
                 type: 'line',
