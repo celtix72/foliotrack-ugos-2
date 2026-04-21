@@ -109,11 +109,155 @@ function escapeV2(text) {
     return text.replace(/([_*\[\]()~`>#+\-=|{}.!\\])/g, '\\$1');
 }
 
+/**
+ * Helper to escape text specifically for code blocks in MarkdownV2.
+ * In code blocks, only \ and ` need escaping.
+ */
 function escapeCodeV2(text) {
     if (typeof text !== 'string') text = String(text || '');
-    // Inside pre/code spans, only \ and ` need escaping
     return text.replace(/([\\`])/g, '\\$1');
 }
+
+/**
+ * Efficiently reads the last N lines from a file.
+ */
+function getLastLogLines(filePath, lineCount = 100) {
+    try {
+        if (!fs.existsSync(filePath)) return `File non trovato: ${filePath}`;
+        const stats = fs.statSync(filePath);
+        const bufferSize = 1024 * 64; // 64KB chunks
+        const buffer = Buffer.alloc(bufferSize);
+        let lines = [];
+        let pos = stats.size;
+        let fd = fs.openSync(filePath, 'r');
+
+        try {
+            while (pos > 0 && lines.length <= lineCount) {
+                const readSize = Math.min(pos, bufferSize);
+                pos -= readSize;
+                fs.readSync(fd, buffer, 0, readSize, pos);
+                const chunk = buffer.slice(0, readSize).toString('utf8');
+                const chunkLines = chunk.split('\n');
+                
+                if (lines.length > 0 && chunk[chunk.length - 1] !== '\n') {
+                    // Prepend first line of 'lines' to the last line of 'chunkLines'
+                    chunkLines[chunkLines.length - 1] += lines[0];
+                    lines.shift();
+                }
+                lines = chunkLines.concat(lines);
+            }
+        } finally {
+            fs.closeSync(fd);
+        }
+
+        return lines.slice(-(lineCount + 1)).join('\n').trim();
+    } catch (e) {
+        return `Errore durante la lettura dei log: ${e.message}`;
+    }
+}
+
+/**
+ * Handles processing of a single Telegram message command.
+ */
+async function processTelegramCommand(message) {
+    const text = (message.text || '').trim();
+    const chatId = message.chat.id;
+    const settings = database.getSettings();
+    
+    // Security: Only respond to the configured chat
+    if (String(chatId) !== String(settings.telegramChatId)) {
+        telegramLogger.log(`[SECURITY] Ignored message from unauthorized chat: ${chatId}`);
+        return;
+    }
+
+    const cmd = text.split(' ')[0].toLowerCase().replace('/', '');
+    telegramLogger.log(`[COMMAND] Received: ${cmd}`);
+
+    switch (cmd) {
+        case 'help':
+        case 'aiuto': {
+            const helpMsg = `${escapeV2('ℹ️')} *${escapeV2('Comandi Disponibili')}*\n\n` +
+                          `• \`HELP\`: Mostra questo messaggio\n` +
+                          `• \`Version\`: Mostra la versione dell'app\n` +
+                          `• \`Log\`: Restituisce le ultime 100 righe di log\n`;
+            await sendTelegramMessage(helpMsg);
+            break;
+        }
+        case 'version':
+        case 'versione': {
+            const verMsg = `${escapeV2('🚀')} *${escapeV2('Versione Applicazione')}*\n\n` +
+                         `Versione attuale: \`${escapeCodeV2(APP_VERSION)}\``;
+            await sendTelegramMessage(verMsg);
+            break;
+        }
+        case 'log':
+        case 'logs': {
+            const logContent = getLastLogLines(LOG_FILE, 100);
+            const header = `${escapeV2('📄')} *${escapeV2('Ultimi Log (100 righe)')}*\n\n`;
+            
+            // Telegram messages are limited to 4096 chars. Truncate if needed.
+            // We use a code block for the log content.
+            const maxLogLen = 3500;
+            let finalLog = logContent;
+            if (finalLog.length > maxLogLen) {
+                finalLog = '... [troncato] ...\n' + finalLog.substring(finalLog.length - maxLogLen);
+            }
+
+            const msg = header + `\`\`\`\n${escapeCodeV2(finalLog)}\n\`\`\``;
+            await sendTelegramMessage(msg);
+            break;
+        }
+    }
+}
+
+/**
+ * Background loop to poll for Telegram updates.
+ */
+let telegramPollingActive = false;
+async function startTelegramPolling() {
+    if (telegramPollingActive) return;
+    telegramPollingActive = true;
+    
+    telegramLogger.log('[SERVICE] Telegram polling started.');
+
+    while (true) {
+        const settings = database.getSettings();
+        const token = settings.telegramBotToken;
+        const enabled = settings.telegramEnabled === 'true';
+
+        if (!enabled || !token) {
+            await new Promise(r => setTimeout(r, 30000)); // Sleep longer if disabled
+            continue;
+        }
+
+        try {
+            let lastUpdateId = parseInt(settings.telegramLastUpdateId || '0');
+            const url = `https://api.telegram.org/bot${token}/getUpdates?offset=${lastUpdateId + 1}&timeout=20`;
+            
+            // Note: Using a longer timeout for long polling if possible, 
+            // but here we use a standard axios get with a reasonable house-keeping loop.
+            const response = await axios.get(url, { timeout: 30000 });
+            const data = response.data;
+
+            if (data.ok && data.result.length > 0) {
+                for (const update of data.result) {
+                    if (update.message) {
+                        await processTelegramCommand(update.message);
+                    }
+                    lastUpdateId = update.update_id;
+                }
+                database.setSetting('telegramLastUpdateId', lastUpdateId);
+            }
+        } catch (e) {
+            telegramLogger.log(`[POLLING ERROR] ${e.message}`);
+            // Wait a bit before retrying on error
+            await new Promise(r => setTimeout(r, 10000));
+        }
+        
+        await new Promise(r => setTimeout(r, 2000)); // Small delay between polls
+    }
+}
+
 
 function formatMarketValueV2(value) {
     const num = Number(value);
@@ -5599,6 +5743,9 @@ if (require.main === module) {
     app.listen(PORT, '0.0.0.0', () => {
         logger.info(`FolioTrack server running on port ${PORT}`);
         logger.info(`Database: ${require('./db').db.name}`);
+        
+        // Start Telegram command listener
+        startTelegramPolling().catch(e => logger.error('Telegram polling failed at startup', e));
     });
 }
 
