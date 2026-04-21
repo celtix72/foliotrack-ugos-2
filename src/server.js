@@ -253,6 +253,7 @@ async function calculateMarketStats() {
             totalNetValue: stats.totalNetValue,
             totalChange: stats.totalChange,
             totalChangePercent: stats.changePercent,
+            liveRate: liveRate,
             assets: assets.map(a => ({
                 ticker: a.ticker,
                 name: a.name,
@@ -262,6 +263,7 @@ async function calculateMarketStats() {
                 preMarketChangePercent: a.preMarketChangePercent,
                 quoteDate: a.quoteDate,
                 currency: a.currency,
+                quantity: a.netQty,
                 value: (a.currentPrice * a.netQty) / (a.currency === 'USD' ? liveRate : 1),
                 inWatchlist: a.inWatchlist === 1
             }))
@@ -361,10 +363,12 @@ async function sendMarketStatusTelegram() {
         if (overrides.regular && overrides.regular.hasOwnProperty(ticker)) {
             const chgReg = overrides.regular[ticker];
             diffReg = (a.quantity || 0) * chgReg;
+            if (a.currency === 'USD') diffReg /= stats.liveRate;
         }
         if (overrides.prePost && overrides.prePost.hasOwnProperty(ticker)) {
             const chgPP = overrides.prePost[ticker];
             diffPP = (a.quantity || 0) * chgPP;
+            if (a.currency === 'USD') diffPP /= stats.liveRate;
         }
 
         marketChange += diffReg;
