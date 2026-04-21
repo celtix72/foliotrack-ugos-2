@@ -435,8 +435,10 @@ async function sendMarketStatusTelegram() {
             const mktVal = a.currentPrice.toLocaleString('it-IT', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
             
             const vChangeStr = (vSign + '€' + Math.round(Math.abs(valChange)).toLocaleString('it-IT')).padStart(7);
-            // Usa un solo decimale nel valore di variazione percentuale
-            const pChangeStr = (cSignAsset + chgPct.toFixed(1) + '%').padStart(7);
+            
+            // Fix: correctly define sign and percentage for the row
+            const pSignChar = combinedPct >= 0 ? '+' : '';
+            const pChangeStr = (pSignChar + Math.abs(combinedPct).toFixed(1) + '%').padStart(7);
             
             // Rimosso uno spazio tra Ticker (sym) e simbolo Euro (cSym)
             const rowData = `${sym}${cSym.padStart(2)} ${mktVal.padStart(6)} ${vChangeStr} ${pChangeStr}`;
@@ -447,7 +449,7 @@ async function sendMarketStatusTelegram() {
 
     const tsFormatted = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }) + ' ' + 
                        new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-    msg += `🕒 \`${escapeCodeV2(tsFormatted)}\` · \`${escapeCodeV2(APP_VERSION)}\``;
+    msg += `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\` · \`${escapeCodeV2(APP_VERSION)}\``;
 
     try {
         await sendTelegramMessage(msg);
@@ -4905,10 +4907,10 @@ app.post('/api/market-sync', async (req, res) => {
 app.post('/api/settings/telegram/test-tp', async (req, res) => {
     try {
         const tsFormatted = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-        const msg = `🏆 *TARGET PROFIT*\n\n` +
+        const msg = `${escapeV2('🏆')} *${escapeV2('TARGET PROFIT')}*\n\n` +
                     `\`${escapeCodeV2('AAPL     $ 190,50')}\`\n` +
-                    `*Target:* \`${escapeCodeV2('$ 190,00')}\`\n\n` +
-                    `🕒 \`${escapeCodeV2(tsFormatted)}\``;
+                    `*${escapeV2('Target:')}* \`${escapeCodeV2('$ 190,00')}\`\n\n` +
+                    `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\``;
         await sendTelegramMessage(msg);
         res.json({ success: true, message: 'Test TP sent' });
     } catch (err) {
@@ -4919,10 +4921,10 @@ app.post('/api/settings/telegram/test-tp', async (req, res) => {
 app.post('/api/settings/telegram/test-sl', async (req, res) => {
     try {
         const tsFormatted = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-        const msg = `⚠️ *STOP LOSS*\n\n` +
+        const msg = `${escapeV2('⚠️')} *${escapeV2('STOP LOSS')}*\n\n` +
                     `\`${escapeCodeV2('TSLA     $ 165,20')}\`\n` +
-                    `*Soglia:* \`${escapeCodeV2('$ 170,00')}\`\n\n` +
-                    `🕒 \`${escapeCodeV2(tsFormatted)}\``;
+                    `*${escapeV2('Soglia:')}* \`${escapeCodeV2('$ 170,00')}\`\n\n` +
+                    `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\``;
         await sendTelegramMessage(msg);
         res.json({ success: true, message: 'Test SL sent' });
     } catch (err) {
@@ -4933,10 +4935,10 @@ app.post('/api/settings/telegram/test-sl', async (req, res) => {
 app.post('/api/settings/telegram/test-volatility', async (req, res) => {
     try {
         const tsFormatted = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-        const msg = `📊 *VOLATILITY ALERT*\n\n` +
-                    `📈 \`${escapeCodeV2('BTC.USD  $ 68.340,50')}\`\n` +
-                    `*Var.:* \`${escapeCodeV2('+5,20%')}\` (Soglia: 5%)\n\n` +
-                    `🕒 \`${escapeCodeV2(tsFormatted)}\``;
+        const msg = `${escapeV2('📊')} *${escapeV2('VOLATILITY ALERT')}*\n\n` +
+                    `${escapeV2('📈')} \`${escapeCodeV2('BTC.USD  $ 68.340,50')}\`\n` +
+                    `*${escapeV2('Var.:')}* \`${escapeCodeV2('+5,20%')}\` ${escapeV2('(Soglia: 5%)')}\n\n` +
+                    `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\``;
         await sendTelegramMessage(msg);
         res.json({ success: true, message: 'Test Volatility sent' });
     } catch (err) {
@@ -5315,10 +5317,10 @@ async function updateMarketData(force = false) {
                         const priceStr = newPrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                         const targetStr = asset.targetPrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                         
-                        const msg = `🏆 *TARGET PROFIT*\n\n` +
+                        const msg = `${escapeV2('🏆')} *${escapeV2('TARGET PROFIT')}*\n\n` +
                                     `\`${escapeCodeV2(sym + ' ' + cur + ' ' + priceStr)}\`\n` +
-                                    `*Target:* \`${escapeCodeV2(cur + ' ' + targetStr)}\`\n\n` +
-                                    `🕒 \`${escapeCodeV2(tsFormatted)}\``;
+                                    `*${escapeV2('Target:')}* \`${escapeCodeV2(cur + ' ' + targetStr)}\`\n\n` +
+                                    `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\``;
                                     
                         sendTelegramMessage(msg).catch(e => logger.error('Telegram Target Alert failed', e));
                     }
@@ -5341,10 +5343,10 @@ async function updateMarketData(force = false) {
                         const priceStr = newPrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                         const stopStr = asset.stopLoss.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                         
-                        const msg = `⚠️ *STOP LOSS*\n\n` +
+                        const msg = `${escapeV2('⚠️')} *${escapeV2('STOP LOSS')}*\n\n` +
                                     `\`${escapeCodeV2(sym + ' ' + cur + ' ' + priceStr)}\`\n` +
-                                    `*Soglia:* \`${escapeCodeV2(cur + ' ' + stopStr)}\`\n\n` +
-                                    `🕒 \`${escapeCodeV2(tsFormatted)}\``;
+                                    `*${escapeV2('Soglia:')}* \`${escapeCodeV2(cur + ' ' + stopStr)}\`\n\n` +
+                                    `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\``;
                                     
                         sendTelegramMessage(msg).catch(e => logger.error('Telegram Stop Alert failed', e));
                     }
@@ -5375,10 +5377,10 @@ async function updateMarketData(force = false) {
                             const changeStr = changeSign + (updateData.change || 0).toFixed(2) + '%';
                             const vIcon = (updateData.change || 0) >= 0 ? '📈' : '📉';
                             
-                            const msg = `📊 *VOLATILITY ALERT*\n\n` +
-                                        `${vIcon} \`${escapeCodeV2(sym + ' ' + cur + ' ' + priceStr)}\`\n` +
-                                        `*Var.:* \`${escapeCodeV2(changeStr)}\` (Soglia: ${threshold}%)\n\n` +
-                                        `🕒 \`${escapeCodeV2(tsFormatted)}\``;
+                            const msg = `${escapeV2('📊')} *${escapeV2('VOLATILITY ALERT')}*\n\n` +
+                                        `${escapeV2(vIcon)} \`${escapeCodeV2(sym + ' ' + cur + ' ' + priceStr)}\`\n` +
+                                        `*${escapeV2('Var.:')}* \`${escapeCodeV2(changeStr)}\` ${escapeV2('(Soglia: ' + threshold + '%)')}\n\n` +
+                                        `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\``;
                                         
                             sendTelegramMessage(msg).catch(e => logger.error('Telegram Volatility Alert failed', e));
                         }
