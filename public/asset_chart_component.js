@@ -277,6 +277,7 @@
                         { label: 'Open', val: formatNum(sd.open) },
                         { label: 'Day Low', val: formatNum(sd.dayLow) },
                         { label: 'Day High', val: formatNum(sd.dayHigh) },
+                        { label: 'Daily Var', val: (assetInfo.changePercent ? `${assetInfo.changePercent > 0 ? '+' : ''}${assetInfo.changePercent.toFixed(2)}%` : '—'), type: 'var', isPos: assetInfo.changePercent >= 0 },
                         { label: 'Yield', val: formatPct(sd.trailingAnnualDividendYield || sd.dividendYield) }
                     ];
                 }
@@ -318,7 +319,7 @@
                     return `
                         <div style="display: flex; flex-direction: column; gap: 4px;">
                             <span style="font-size: 8px; font-weight: 900; color: var(--mob-text-muted); text-transform: uppercase; letter-spacing: 0.05em;">${f.label}</span>
-                            <span style="font-size: 12px; font-weight: 900; color: var(--mob-text);" class="dark:text-white">${f.val}</span>
+                            <span style="font-size: 12px; font-weight: 900; color: ${f.type === 'var' ? (f.isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)') : 'var(--mob-text)'};" class="${f.type === 'var' ? '' : 'dark:text-white'}">${f.val}</span>
                         </div>
                     `;
                 }).join('');
@@ -355,7 +356,28 @@
             const labels = displayData.map(d => d.date);
             const prices = displayData.map(d => d.price);
             
-            // Map BUY/SELL points
+            // Calculate daily variations
+            const dailyVars = displayData.map((d, i) => {
+                const fullIdx = _allChartData.findIndex(ad => ad.date === d.date);
+                if (fullIdx > 0) {
+                    const prev = _allChartData[fullIdx - 1];
+                    const diff = d.price - prev.price;
+                    return { 
+                        pct: (diff / prev.price) * 100, 
+                        val: diff 
+                    };
+                }
+                return { pct: 0, val: 0 };
+            });
+
+            // Update Header with latest variation
+            if (dailyVars.length > 0) {
+                const latestVar = dailyVars[dailyVars.length - 1];
+                const vColor = latestVar.pct >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+                const vSign = latestVar.pct >= 0 ? '+' : '';
+                const headerTitle = document.getElementById('chart-modal-title');
+                headerTitle.innerHTML = `History: ${_chartTicker} <span style="margin-left: 8px; color: ${vColor}; font-size: 0.8em; font-weight: 900;">${vSign}${latestVar.pct.toFixed(2)}% (${vSign}${latestVar.val.toFixed(2)} ${_chartCurrency})</span>`;
+            }
             // We'll create a dictionary of transactions by date for easy lookup
             const tradesByDate = {};
             transactions.forEach(t => {
@@ -634,6 +656,14 @@
                                     if (trade) {
                                         return ` ${trade.type}: ${_chartTicker} (${trade.quantity} @ ${trade.price.toFixed(2)})`;
                                     }
+                                }
+                                // Default price & variation
+                                if (context.dataset.label === _chartTicker) {
+                                    const idx = context.dataIndex;
+                                    const v = dailyVars[idx];
+                                    const sign = v.pct >= 0 ? '+' : '';
+                                    const price = context.parsed.y.toFixed(2);
+                                    return ` Price: ${price} ${_chartCurrency} (${sign}${v.pct.toFixed(2)}%)`;
                                 }
                                 return null;
                             },
