@@ -364,7 +364,13 @@ function initDb() {
         dbConnection.prepare(
             `INSERT INTO users (username, password_hash, role, display_name) VALUES (?, ?, ?, ?)`
         ).run('mauro', hash, 'admin', 'Mauro');
+    } else {
+        // Ensure mauro is always admin
+        try {
+            dbConnection.prepare(`UPDATE users SET role = 'admin' WHERE username = 'mauro'`).run();
+        } catch (e) {}
     }
+
 
     // ─── Seed: associate all existing portfolios to mauro ───────────────────
     try {

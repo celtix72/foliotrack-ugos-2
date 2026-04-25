@@ -621,7 +621,7 @@ const app  = express();
 const PORT = process.env.PORT || 3000;
 
 // ─── JWT / Auth configuration ─────────────────────────────────────────────────
-const JWT_SECRET = process.env.JWT_SECRET || 'foliotrack_secret_change_in_production_' + Math.random().toString(36).slice(2);
+const JWT_SECRET = process.env.JWT_SECRET || 'foliotrack_secret_development_static_12345';
 const JWT_COOKIE = 'ft_token';
 const JWT_EXPIRY = '7d';
 
@@ -638,17 +638,19 @@ app.use(cookieParser());
  */
 function requireAuth(req, res, next) {
     const token = req.cookies[JWT_COOKIE] || (req.headers.authorization || '').replace('Bearer ', '');
+    const isApi = req.originalUrl.startsWith('/api/');
+
     if (!token) {
-        if (req.accepts('html')) return res.redirect('/login');
-        return res.status(401).json({ error: 'Non autenticato' });
+        if (isApi) return res.status(401).json({ error: 'Non autenticato' });
+        return res.redirect('/login');
     }
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
         req.user = decoded;
         next();
     } catch (e) {
-        if (req.accepts('html')) return res.redirect('/login');
-        return res.status(401).json({ error: 'Token non valido o scaduto' });
+        if (isApi) return res.status(401).json({ error: 'Token non valido o scaduto' });
+        return res.redirect('/login');
     }
 }
 
