@@ -3,6 +3,7 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
+const bcrypt = require('bcryptjs');
 
 // Store DB file next to src/, in the project root, or via ENV
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'foliotrack.db');
@@ -286,6 +287,22 @@ function initDb() {
         publishedAt INTEGER NOT NULL,
         createdAt   TEXT    NOT NULL DEFAULT (datetime('now'))
       );
+
+      CREATE TABLE IF NOT EXISTS users (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        username      TEXT    NOT NULL UNIQUE COLLATE NOCASE,
+        password_hash TEXT    NOT NULL,
+        role          TEXT    NOT NULL DEFAULT 'user',
+        display_name  TEXT,
+        last_login    TEXT,
+        created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS portfolio_users (
+        portfolio_id  INTEGER NOT NULL REFERENCES portfolios(id) ON DELETE CASCADE,
+        user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE(portfolio_id, user_id)
+      );
     `);
 
     // Standardized asset types remapping
@@ -338,6 +355,29 @@ function initDb() {
     );
     for (const [key, value] of Object.entries(defaultSettings)) {
         insertSetting.run(key, value);
+    }
+
+    // ─── Seed: default admin user (mauro / pippo) ───────────────────────────
+    const existingAdmin = dbConnection.prepare(`SELECT id FROM users WHERE username = 'mauro'`).get();
+    if (!existingAdmin) {
+        const hash = bcrypt.hashSync('pippo', 10);
+        dbConnection.prepare(
+            `INSERT INTO users (username, password_hash, role, display_name) VALUES (?, ?, ?, ?)`
+        ).run('mauro', hash, 'admin', 'Mauro');
+    }
+
+    // ─── Seed: associate all existing portfolios to mauro ───────────────────
+    try {
+        const mauroUser = dbConnection.prepare(`SELECT id FROM users WHERE username = 'mauro'`).get();
+        if (mauroUser) {
+            const portfolios = dbConnection.prepare(`SELECT id FROM portfolios`).all();
+            const insertPU = dbConnection.prepare(
+                `INSERT OR IGNORE INTO portfolio_users (portfolio_id, user_id) VALUES (?, ?)`
+            );
+            portfolios.forEach(p => insertPU.run(p.id, mauroUser.id));
+        }
+    } catch (e) {
+        // Non-critical: will be retried on next boot if portfolios exist
     }
 }
 
@@ -599,6 +639,83 @@ function savePortfolioSnapshot(portfolioId = null, eurUsdRate = 1.0) {
     `).run(portfolioId, date, Math.round(totalValue), Math.round(cashValue), Math.round(assetValue), Math.round(netDeposits));
 }
 
+// ─── Auth helper functions ───────────────────────────────────────────────────
+
+/**
+ * Creates a new user. Returns the created user object or throws on error.
+ */
+function createUser(username, password, role = 'user', displayName = '') {
+    const hash = bcrypt.hashSync(password, 10);
+    const result = dbConnection.prepare(
+        `INSERT INTO users (username, password_hash, role, display_name) VALUES (?, ?, ?, ?)`
+    ).run(username, hash, role, displayName || username);
+    return dbConnection.prepare(`SELECT id, username, role, display_name, created_at FROM users WHERE id = ?`).get(result.lastInsertRowid);
+}
+
+/**
+ * Verifies credentials. Returns user object on success, null on failure.
+ */
+function verifyUser(username, password) {
+    const user = dbConnection.prepare(`SELECT * FROM users WHERE username = ?`).get(username);
+    if (!user) return null;
+    const valid = bcrypt.compareSync(password, user.password_hash);
+    if (!valid) return null;
+    // Update last_login
+    dbConnection.prepare(`UPDATE users SET last_login = datetime('now') WHERE id = ?`).run(user.id);
+    return { id: user.id, username: user.username, role: user.role, display_name: user.display_name };
+}
+
+/**
+ * Returns all users (without password hashes).
+ */
+function getAllUsers() {
+    return dbConnection.prepare(`SELECT id, username, role, display_name, last_login, created_at FROM users ORDER BY id`).all();
+}
+
+/**
+ * Returns portfolios accessible by a user. Admin sees all.
+ */
+function getUserPortfolios(userId, role) {
+    if (role === 'admin') {
+        return dbConnection.prepare(`SELECT id FROM portfolios`).all().map(r => r.id);
+    }
+    return dbConnection.prepare(
+        `SELECT portfolio_id as id FROM portfolio_users WHERE user_id = ?`
+    ).all(userId).map(r => r.id);
+}
+
+/**
+ * Associates a portfolio with a user (idempotent).
+ */
+function addPortfolioUser(portfolioId, userId) {
+    dbConnection.prepare(
+        `INSERT OR IGNORE INTO portfolio_users (portfolio_id, user_id) VALUES (?, ?)`
+    ).run(portfolioId, userId);
+}
+
+/**
+ * Deletes a user and their portfolio associations.
+ */
+function deleteUser(userId) {
+    dbConnection.prepare(`DELETE FROM portfolio_users WHERE user_id = ?`).run(userId);
+    dbConnection.prepare(`DELETE FROM users WHERE id = ?`).run(userId);
+}
+
+/**
+ * Updates a user's role.
+ */
+function updateUserRole(userId, role) {
+    dbConnection.prepare(`UPDATE users SET role = ? WHERE id = ?`).run(role, userId);
+}
+
+/**
+ * Updates a user's password.
+ */
+function updateUserPassword(userId, newPassword) {
+    const hash = bcrypt.hashSync(newPassword, 10);
+    dbConnection.prepare(`UPDATE users SET password_hash = ? WHERE id = ?`).run(hash, userId);
+}
+
 module.exports = { 
     get db() { return dbConnection; }, 
     initDb, 
@@ -606,5 +723,13 @@ module.exports = {
     setSetting, 
     recalculatePortfolio, 
     recalculateAll,
-    savePortfolioSnapshot
+    savePortfolioSnapshot,
+    createUser,
+    verifyUser,
+    getAllUsers,
+    getUserPortfolios,
+    addPortfolioUser,
+    deleteUser,
+    updateUserRole,
+    updateUserPassword
 };

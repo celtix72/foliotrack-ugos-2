@@ -1,12 +1,14 @@
 'use strict';
 
-const express    = require('express');
-const cors       = require('cors');
-const path       = require('path');
-const dotenv     = require('dotenv');
+const express      = require('express');
+const cors         = require('cors');
+const path         = require('path');
+const dotenv       = require('dotenv');
 const YahooFinance = require('yahoo-finance2').default;
-const axios      = require('axios');
-const fs         = require('fs');
+const axios        = require('axios');
+const fs           = require('fs');
+const jwt          = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
 const { xirr, calculateTWR } = require('./utils/finance');
 
 // ─── Application Version ─────────────────────────────────────────────────────
@@ -618,13 +620,157 @@ const backupManager = require('./backup_manager');
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
+// ─── JWT / Auth configuration ─────────────────────────────────────────────────
+const JWT_SECRET = process.env.JWT_SECRET || 'foliotrack_secret_change_in_production_' + Math.random().toString(36).slice(2);
+const JWT_COOKIE = 'ft_token';
+const JWT_EXPIRY = '7d';
+
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
+// ─── Auth Middleware ─────────────────────────────────────────────────────────
+
+/**
+ * Verifies JWT from cookie or Authorization header.
+ * Attaches req.user = { id, username, role, display_name } on success.
+ */
+function requireAuth(req, res, next) {
+    const token = req.cookies[JWT_COOKIE] || (req.headers.authorization || '').replace('Bearer ', '');
+    if (!token) {
+        if (req.accepts('html')) return res.redirect('/login');
+        return res.status(401).json({ error: 'Non autenticato' });
+    }
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.user = decoded;
+        next();
+    } catch (e) {
+        if (req.accepts('html')) return res.redirect('/login');
+        return res.status(401).json({ error: 'Token non valido o scaduto' });
+    }
+}
+
+/**
+ * Requires admin role after requireAuth.
+ */
+function requireAdmin(req, res, next) {
+    if (!req.user || req.user.role !== 'admin') {
+        if (req.accepts('html')) return res.redirect('/dashboard');
+        return res.status(403).json({ error: 'Accesso negato: richiesto ruolo admin' });
+    }
+    next();
+}
+
+// ─── Auth API Routes ─────────────────────────────────────────────────────────
+
+// POST /api/auth/login
+app.post('/api/auth/login', (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) {
+        return res.status(400).json({ error: 'Username e password obbligatori' });
+    }
+    const user = database.verifyUser(username, password);
+    if (!user) {
+        return res.status(401).json({ error: 'Credenziali non valide' });
+    }
+    const token = jwt.sign(
+        { id: user.id, username: user.username, role: user.role, display_name: user.display_name },
+        JWT_SECRET,
+        { expiresIn: JWT_EXPIRY }
+    );
+    res.cookie(JWT_COOKIE, token, {
+        httpOnly: true,
+        sameSite: 'Lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        secure: process.env.NODE_ENV === 'production'
+    });
+    logger.info(`[AUTH] Login: ${user.username} (${user.role})`);
+    return res.json({ ok: true, user: { username: user.username, role: user.role, display_name: user.display_name } });
+});
+
+// POST /api/auth/logout
+app.post('/api/auth/logout', (req, res) => {
+    res.clearCookie(JWT_COOKIE);
+    return res.json({ ok: true });
+});
+
+// GET /api/auth/me
+app.get('/api/auth/me', requireAuth, (req, res) => {
+    return res.json({ user: req.user });
+});
+
+// ─── Admin API Routes ────────────────────────────────────────────────────────
+
+// GET /api/admin/users
+app.get('/api/admin/users', requireAuth, requireAdmin, (req, res) => {
+    const users = database.getAllUsers();
+    res.json(users);
+});
+
+// POST /api/admin/users — create new user
+app.post('/api/admin/users', requireAuth, requireAdmin, (req, res) => {
+    const { username, password, role, display_name } = req.body;
+    if (!username || !password) return res.status(400).json({ error: 'username e password obbligatori' });
+    try {
+        const user = database.createUser(username, password, role || 'user', display_name || username);
+        logger.info(`[AUTH] Admin ${req.user.username} created user: ${username} (${role || 'user'})`);
+        res.status(201).json(user);
+    } catch (e) {
+        res.status(409).json({ error: 'Username già esistente' });
+    }
+});
+
+// DELETE /api/admin/users/:id
+app.delete('/api/admin/users/:id', requireAuth, requireAdmin, (req, res) => {
+    const userId = parseInt(req.params.id);
+    if (userId === req.user.id) return res.status(400).json({ error: 'Non puoi eliminare il tuo account' });
+    database.deleteUser(userId);
+    logger.info(`[AUTH] Admin ${req.user.username} deleted user id: ${userId}`);
+    res.json({ ok: true });
+});
+
+// PATCH /api/admin/users/:id/role
+app.patch('/api/admin/users/:id/role', requireAuth, requireAdmin, (req, res) => {
+    const userId = parseInt(req.params.id);
+    const { role } = req.body;
+    if (!['admin', 'user'].includes(role)) return res.status(400).json({ error: 'Ruolo non valido' });
+    database.updateUserRole(userId, role);
+    res.json({ ok: true });
+});
+
+// PATCH /api/admin/users/:id/password
+app.patch('/api/admin/users/:id/password', requireAuth, requireAdmin, (req, res) => {
+    const userId = parseInt(req.params.id);
+    const { password } = req.body;
+    if (!password || password.length < 4) return res.status(400).json({ error: 'Password troppo corta (min 4 caratteri)' });
+    database.updateUserPassword(userId, password);
+    res.json({ ok: true });
+});
+
+// GET /api/admin/stats
+app.get('/api/admin/stats', requireAuth, requireAdmin, (req, res) => {
+    const db = database.db;
+    const userCount = db.prepare('SELECT COUNT(*) as c FROM users').get().c;
+    const portfolioCount = db.prepare('SELECT COUNT(*) as c FROM portfolios').get().c;
+    const assetCount = db.prepare('SELECT COUNT(*) as c FROM assets').get().c;
+    const txCount = db.prepare('SELECT COUNT(*) as c FROM transactions').get().c;
+    const notifCount = db.prepare('SELECT COUNT(*) as c FROM notifications WHERE isRead = 0').get().c;
+    res.json({ userCount, portfolioCount, assetCount, txCount, notifCount, version: APP_VERSION });
+});
+
+// GET /api/admin/logs — last 200 lines of log
+app.get('/api/admin/logs', requireAuth, requireAdmin, (req, res) => {
+    const lines = getLastLogLines(LOG_FILE, 200);
+    res.json({ logs: lines });
+});
+
+// GET /api/app-version (public)
 app.get('/api/app-version', (req, res) => {
     res.json({ version: APP_VERSION });
 });
+
 
 // ─── CACHING LAYER ──────────────────────────────────────────────────────────
 let historicalPricesCache = {}; // { ticker: { date: price } }
@@ -1925,6 +2071,21 @@ async function getAllPortfolioStats(liveRateInput = null) {
         topLosers: heldAssets.slice(-2).reverse()
     };
 }
+
+// ─── Global API Authentication Guard ─────────────────────────────────────────
+// Protects ALL /api/* routes except the explicitly public ones
+const PUBLIC_API_PATHS = new Set([
+    '/api/auth/login',
+    '/api/auth/logout',
+    '/api/app-version'
+]);
+app.use('/api/', (req, res, next) => {
+    const fullPath = req.path === '/' ? '/api/' : `/api${req.path}`;
+    // Allow public paths
+    if (PUBLIC_API_PATHS.has(req.baseUrl + req.path) || PUBLIC_API_PATHS.has('/api' + req.path)) return next();
+    // Apply auth check
+    return requireAuth(req, res, next);
+});
 
 app.get('/api/portfolios', async (req, res) => {
     try {
@@ -5269,58 +5430,81 @@ const isMobile = (req) => {
     return /Mobile|Android|iPhone|iPad|IEMobile|Opera Mini/i.test(ua);
 };
 
-// ─── HTML page routes ───────────────────────────────────────────────────────
-app.get('/dashboard', (req, res) => {
+// ─── HTML page routes ────────────────────────────────────────────────────────
+
+// Public: Login page (no auth required)
+app.get('/login', (req, res) => {
+    // If already logged in, redirect to dashboard
+    const token = req.cookies[JWT_COOKIE];
+    if (token) {
+        try { jwt.verify(token, JWT_SECRET); return res.redirect('/dashboard'); } catch(_) {}
+    }
+    res.sendFile(path.join(__dirname, '../public', 'login.html'));
+});
+
+// Admin panel (requires auth + admin role)
+app.get('/admin', requireAuth, requireAdmin, (req, res) => {
+    res.sendFile(path.join(__dirname, '../public', 'admin.html'));
+});
+
+// Protected app pages
+app.get('/dashboard', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'dashboard_mobile.html' : 'dashboard.html';
     res.sendFile(path.join(__dirname, '../public', file));
 });
 
-app.get('/portfolio', (req, res) => {
+app.get('/portfolio', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'portfolio_detail_mobile.html' : 'portfolio_detail.html';
     res.sendFile(path.join(__dirname, '../public', file));
 });
 
-app.get('/market', (req, res) => {
+app.get('/market', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'market_mobile.html' : 'market_overview.html';
     res.sendFile(path.join(__dirname, '../public', file));
 });
 
-app.get('/reports', (req, res) => {
+app.get('/reports', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'reports_mobile.html' : 'reports.html';
     res.sendFile(path.join(__dirname, '../public', file));
 });
 
-app.get('/history', (req, res) => {
+app.get('/history', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'history_mobile.html' : 'history.html';
     res.sendFile(path.join(__dirname, '../public', file));
 });
 
-app.get('/dividend', (req, res) => {
+app.get('/dividend', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'dividend_mobile.html' : 'dividend.html';
     res.sendFile(path.join(__dirname, '../public', file));
 });
 
-app.get('/settings', (req, res) => {
+app.get('/settings', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'settings_mobile.html' : 'settings.html';
     res.sendFile(path.join(__dirname, '../public', file));
 });
 
-app.get('/notifications', (req, res) => {
+app.get('/notifications', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'notifications_mobile.html' : 'notifications.html';
     res.sendFile(path.join(__dirname, '../public', file));
 });
 
-app.get('/watchlist', (req, res) => {
+app.get('/watchlist', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'watchlist_mobile.html' : 'watchlist.html';
     res.sendFile(path.join(__dirname, '../public', file));
 });
 
 // Legacy /assets route → redirect to /market
-app.get('/assets', (req, res) => res.redirect('/market'));
+app.get('/assets', requireAuth, (req, res) => res.redirect('/market'));
 
-// Default → dashboard
-app.get('/', (req, res) => res.redirect('/dashboard'));
-app.use((req, res) => res.redirect('/dashboard'));
+// Default → login (for unauthenticated), dashboard (for authenticated)
+app.get('/', (req, res) => {
+    const token = req.cookies[JWT_COOKIE];
+    if (token) {
+        try { jwt.verify(token, JWT_SECRET); return res.redirect('/dashboard'); } catch(_) {}
+    }
+    return res.redirect('/login');
+});
+app.use((req, res) => res.redirect('/login'));
 
 // ════════════════════════════════════════════════════════════════════════════
 // RESET DATA
