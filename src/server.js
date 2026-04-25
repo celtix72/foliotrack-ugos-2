@@ -686,7 +686,7 @@ app.post('/api/auth/login', (req, res) => {
         httpOnly: true,
         sameSite: 'Lax',
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        secure: process.env.NODE_ENV === 'production'
+        secure: req.secure || req.headers['x-forwarded-proto'] === 'https'
     });
     logger.info(`[AUTH] Login: ${user.username} (${user.role})`);
     return res.json({ ok: true, user: { username: user.username, role: user.role, display_name: user.display_name } });
