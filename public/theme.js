@@ -232,8 +232,20 @@
     applyTheme(localFont, localSize, localTheme, localMobFont, localMobSize);
 
     fetch(`/api/settings?t=${Date.now()}`)
-        .then(res => res.json())
+        .then(async res => {
+            const contentType = res.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+                return res.json();
+            } else {
+                const text = await res.text();
+                throw new Error(`Expected JSON but got ${contentType}. Preview: ${text.substring(0, 50)}`);
+            }
+        })
         .then(settings => {
+            if (settings && settings.error) {
+                console.warn("Settings API returned error (likely unauthenticated):", settings.error);
+                return; // Do not apply or overwrite local settings
+            }
             window.privacyState.enabled = settings.privacyMode === 'true';
             const privacyIcon = document.getElementById('header-privacy-icon');
             if (privacyIcon) {
