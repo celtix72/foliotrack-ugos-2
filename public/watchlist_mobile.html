@@ -29,6 +29,12 @@
         /* Force visibility of #mobile-ui when mobile view is active */
         body.mobile-view-active #mobile-ui { display: flex !important; visibility: visible !important; opacity: 1 !important; }
     </style>
+    <script src="/auth.js"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            if (window.ftAuth) ftAuth.initAuthGuard();
+        });
+    </script>
 </head>
 <body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display min-h-screen mobile-view-active">
 

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>M2T - Admin Panel</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="stylesheet" href="/dist/output.css">
+    <link rel="stylesheet" href="/mobile.css">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script src="/theme.js"></script>
+    <script src="/auth.js"></script>
+</head>
+<body class="bg-background-light dark:bg-[#0b0f1a] text-slate-900 dark:text-slate-100 min-h-screen flex flex-col">
+    <!-- Top Header -->
+    <header class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-50">
+        <div class="flex items-center gap-6">
+            <a href="/dashboard" class="flex items-center justify-center w-10 h-10 bg-primary/10 text-primary rounded-xl hover:bg-primary/20 transition-colors">
+                <span class="material-symbols-outlined">arrow_back</span>
+            </a>
+            <h1 class="text-xl font-black tracking-tight text-slate-900 dark:text-white">Admin Panel</h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="text-right hidden sm:block">
+                <p class="text-xs font-bold" id="header-user-name">User</p>
+                <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter" id="header-user-role">Role</p>
+            </div>
+            <button onclick="ftAuth.logout()" class="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-500 transition-colors">
+                <span class="material-symbols-outlined text-sm">logout</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 p-8 space-y-8 overflow-y-auto">
+        <!-- Dashboard Stats -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="stats-container">
+            <div class="bg-white dark:bg-[#111722] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm animate-pulse">
+               <div class="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/2 mb-2"></div>
+               <div class="h-8 bg-slate-200 dark:bg-slate-800 rounded w-full"></div>
+            </div>
+            <!-- More Pulse -->
+            <div class="bg-white dark:bg-[#111722] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm animate-pulse"><div class="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/2 mb-2"></div><div class="h-8 bg-slate-200 dark:bg-slate-800 rounded w-full"></div></div>
+            <div class="bg-white dark:bg-[#111722] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm animate-pulse"><div class="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/2 mb-2"></div><div class="h-8 bg-slate-200 dark:bg-slate-800 rounded w-full"></div></div>
+            <div class="bg-white dark:bg-[#111722] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm animate-pulse"><div class="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/2 mb-2"></div><div class="h-8 bg-slate-200 dark:bg-slate-800 rounded w-full"></div></div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- User Management -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-bold flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">group</span> Users
+                    </h2>
+                    <button onclick="openCreateUserModal()" class="flex items-center gap-2 px-4 py-2 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-primary/90 transition-all shadow-md shadow-primary/20">
+                        <span class="material-symbols-outlined text-sm">add</span> Create User
+                    </button>
+                </div>
+                
+                <div class="bg-white dark:bg-[#111722] rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 dark:bg-slate-900/50 text-[10px] uppercase font-black tracking-widest text-slate-500">
+                            <tr>
+                                <th class="px-6 py-4">ID</th>
+                                <th class="px-6 py-4">Username</th>
+                                <th class="px-6 py-4">Display Name</th>
+                                <th class="px-6 py-4">Role</th>
+                                <th class="px-6 py-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body" class="divide-y divide-slate-100 dark:divide-slate-800/60">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Server Logs -->
+            <div class="space-y-6 flex flex-col h-[500px]">
+                <h2 class="text-lg font-bold flex items-center gap-2 shrink-0">
+                    <span class="material-symbols-outlined text-primary">terminal</span> Server Logs
+                </h2>
+                <div class="flex-1 bg-slate-900 border border-slate-800 rounded-2xl p-4 overflow-hidden shadow-sm relative flex flex-col">
+                    <button onclick="loadLogs()" class="absolute top-2 right-2 w-8 h-8 rounded-lg bg-slate-800 text-slate-300 flex items-center justify-center hover:text-white transition-colors">
+                        <span class="material-symbols-outlined text-sm">refresh</span>
+                    </button>
+                    <pre id="log-output" class="flex-1 overflow-auto text-[10px] font-mono text-emerald-400 p-2 custom-scrollbar"><code class="block whitespace-pre-wrap">Loading logs...</code></pre>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Create User Modal -->
+    <div id="user-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex flex-col items-center justify-center pt-8 pb-8 px-4">
+        <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden mt-auto mb-auto">
+            <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <h3 class="font-bold text-lg">Create New User</h3>
+                <button onclick="closeModal('user-modal')" class="text-slate-400 hover:text-white transition-colors"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <form id="create-user-form" class="p-6 space-y-4">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Username</label>
+                    <input type="text" id="new-user-username" required class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-primary outline-none">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Display Name</label>
+                    <input type="text" id="new-user-display" required class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-primary outline-none">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Password</label>
+                    <input type="password" id="new-user-password" required class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-primary outline-none">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Role</label>
+                    <select id="new-user-role" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-primary outline-none">
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div id="new-user-error" class="hidden text-xs text-rose-500 font-bold p-2 bg-rose-500/10 rounded-lg border border-rose-500/20"></div>
+                <button type="submit" class="w-full bg-primary hover:bg-primary/90 text-white font-bold text-xs uppercase tracking-widest py-3 rounded-lg mt-2 transition-colors">Create User</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Password Modal -->
+    <div id="password-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex flex-col items-center justify-center pt-8 pb-8 px-4">
+        <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden mt-auto mb-auto">
+            <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <h3 class="font-bold text-lg text-rose-500 flex items-center gap-2"><span class="material-symbols-outlined">key</span> Change Password</h3>
+                <button onclick="closeModal('password-modal')" class="text-slate-400 hover:text-white transition-colors"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <form id="change-password-form" class="p-6 space-y-4">
+                <input type="hidden" id="change-pwd-userid">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">New Password for <span id="change-pwd-username" class="text-white"></span></label>
+                    <input type="password" id="change-pwd-input" required minlength="4" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-rose-500 outline-none placeholder-slate-500">
+                </div>
+                <div id="change-pwd-error" class="hidden text-xs text-rose-500 font-bold p-2 bg-rose-500/10 rounded-lg border border-rose-500/20"></div>
+                <button type="submit" class="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs uppercase tracking-widest py-3 rounded-lg mt-2 transition-colors">Confirm Setup</button>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = await ftAuth.initAuthGuard();
+            // Optional: double check if admin here
+            if (user && user.role !== 'admin') window.location.href = '/dashboard';
+            
+            loadStats();
+            loadLogs();
+            loadUsers();
+        });
+
+        async function fetchAdmin(endpoint, options = {}) {
+            const res = await fetch(endpoint, options);
+            if (res.status === 401 || res.status === 403) {
+                ftAuth.logout();
+                return null;
+            }
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Server error');
+            }
+            return res.json();
+        }
+
+        async function loadStats() {
+            try {
+                const stats = await fetchAdmin('/api/admin/stats');
+                if (!stats) return;
+
+                const c = document.getElementById('stats-container');
+                c.innerHTML = `
+                    <div class="bg-white dark:bg-[#111722] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group">
+                        <div class="absolute -right-4 -top-4 w-24 h-24 bg-primary/5 rounded-full transition-transform group-hover:scale-150"></div>
+                        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">App Version</p>
+                        <p class="text-2xl font-black text-primary">${stats.version}</p>
+                    </div>
+                    <div class="bg-white dark:bg-[#111722] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group">
+                        <div class="absolute -right-4 -top-4 w-24 h-24 bg-emerald-500/5 rounded-full transition-transform group-hover:scale-150"></div>
+                        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Portfolios / Assets</p>
+                        <p class="text-2xl font-black">${stats.portfolioCount} <span class="text-xl text-slate-400">/ ${stats.assetCount}</span></p>
+                    </div>
+                    <div class="bg-white dark:bg-[#111722] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group">
+                        <div class="absolute -right-4 -top-4 w-24 h-24 bg-rose-500/5 rounded-full transition-transform group-hover:scale-150"></div>
+                        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Transactions</p>
+                        <p class="text-2xl font-black">${stats.txCount}</p>
+                    </div>
+                    <div class="bg-white dark:bg-[#111722] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group">
+                        <div class="absolute -right-4 -top-4 w-24 h-24 bg-amber-500/5 rounded-full transition-transform group-hover:scale-150"></div>
+                        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Users</p>
+                        <p class="text-2xl font-black">${stats.userCount}</p>
+                    </div>
+                `;
+            } catch (err) {}
+        }
+
+        async function loadLogs() {
+            try {
+                const data = await fetchAdmin('/api/admin/logs');
+                if (!data) return;
+                const area = document.getElementById('log-output');
+                if (area) {
+                    area.innerHTML = `<code class="block whitespace-pre-wrap">${data.logs}</code>`;
+                    area.scrollTop = area.scrollHeight;
+                }
+            } catch (err) {}
+        }
+
+        async function loadUsers() {
+            try {
+                const users = await fetchAdmin('/api/admin/users');
+                if (!users) return;
+                
+                const myId = ftAuth.getUser() ? ftAuth.getUser().id : -1;
+                const tbody = document.getElementById('users-table-body');
+                tbody.innerHTML = users.map(u => {
+                    const isMe = u.id === myId;
+                    const roleBadge = u.role === 'admin' 
+                        ? `<span class="px-2 py-0.5 rounded text-[9px] font-black tracking-widest bg-rose-500/10 text-rose-500 uppercase border border-rose-500/20">Admin</span>`
+                        : `<span class="px-2 py-0.5 rounded text-[9px] font-black tracking-widest bg-slate-500/10 text-slate-500 uppercase border border-slate-500/20">User</span>`;
+
+                    return `
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                            <td class="px-6 py-4 font-mono text-xs text-slate-500 opacity-60">#${u.id}</td>
+                            <td class="px-6 py-4 font-bold ${isMe ? 'text-primary' : ''}">${u.username} ${isMe ? '<span class="text-[9px] uppercase tracking-widest text-slate-500 ml-1">(You)</span>' : ''}</td>
+                            <td class="px-6 py-4 text-xs font-semibold">${u.display_name}</td>
+                            <td class="px-6 py-4">${roleBadge}</td>
+                            <td class="px-6 py-4 text-right space-x-2">
+                                <button onclick="openPasswordModal(${u.id}, '${u.username}')" class="w-8 h-8 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-amber-500 hover:bg-amber-500/10 transition-colors inline-flex items-center justify-center" title="Change Password">
+                                    <span class="material-symbols-outlined text-[16px]">key</span>
+                                </button>
+                                ${!isMe ? `<button onclick="deleteUser(${u.id}, '${u.username}')" class="w-8 h-8 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-rose-500 hover:bg-rose-500/10 transition-colors inline-flex items-center justify-center" title="Delete User">
+                                    <span class="material-symbols-outlined text-[16px]">delete</span>
+                                </button>` : ''}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {}
+        }
+
+        // Modals
+        function openCreateUserModal() {
+            document.getElementById('new-user-error').classList.add('hidden');
+            document.getElementById('create-user-form').reset();
+            document.getElementById('user-modal').classList.remove('hidden');
+        }
+        function openPasswordModal(id, username) {
+            document.getElementById('change-pwd-error').classList.add('hidden');
+            document.getElementById('change-password-form').reset();
+            document.getElementById('change-pwd-userid').value = id;
+            document.getElementById('change-pwd-username').innerText = username;
+            document.getElementById('password-modal').classList.remove('hidden');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        // Forms 
+        document.getElementById('create-user-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const errEl = document.getElementById('new-user-error');
+            try {
+                await fetchAdmin('/api/admin/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: document.getElementById('new-user-username').value,
+                        display_name: document.getElementById('new-user-display').value,
+                        password: document.getElementById('new-user-password').value,
+                        role: document.getElementById('new-user-role').value
+                    })
+                });
+                closeModal('user-modal');
+                loadUsers();
+                loadStats();
+            } catch (err) {
+                errEl.innerText = err.message;
+                errEl.classList.remove('hidden');
+            }
+        });
+
+        document.getElementById('change-password-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const errEl = document.getElementById('change-pwd-error');
+            const id = document.getElementById('change-pwd-userid').value;
+            const password = document.getElementById('change-pwd-input').value;
+            try {
+                await fetchAdmin(`/api/admin/users/${id}/password`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+                closeModal('password-modal');
+            } catch (err) {
+                errEl.innerText = err.message;
+                errEl.classList.remove('hidden');
+            }
+        });
+
+        async function deleteUser(id, username) {
+            if (!confirm(`Sei sicuro di voler eliminare l'utente ${username}? Questa operazione NON è in grado di eliminare i portafogli associati (verranno orfanati).`)) return;
+            try {
+                await fetchAdmin(`/api/admin/users/${id}`, { method: 'DELETE' });
+                loadUsers();
+                loadStats();
+            } catch (err) {
+                alert('Errore: ' + err.message);
+            }
+        }
+    </script>
+</body>
+</html>
