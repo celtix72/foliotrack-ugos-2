@@ -1064,63 +1064,79 @@ function clearPerformanceCache() {
 
 // ─── BORSA ITALIANA SCRAPER ──────────────────────────────────────────────────
  async function B_ITA(isin, assetType = '') {
-    const searchUrl = `https://www.borsaitaliana.it/borsa/search/scheda.html?code=${isin}&lang=it`;
     let attempts = 0;
     const maxAttempts = 3;
+
+    const headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/120.0.0.0',
+        'Accept-Language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7'
+    };
+    const finalUrl = `https://www.borsaitaliana.it/borsa/search/scheda.html?code=${isin}&lang=it`;
 
     while (attempts < maxAttempts) {
         attempts++;
         try {
-            const response = await axios.get(searchUrl, {
+            // Step 1: Get the Token from the summary-chart page
+            let summaryUrl = `https://grafici.borsaitaliana.it/summary-chart/${isin}-MOTX?lang=it`;
+            let summaryResp;
+            try {
+                summaryResp = await axios.get(summaryUrl, { headers, timeout: 10000 });
+            } catch (e) {
+                // Try fallback without -MOTX suffix
+                summaryUrl = `https://grafici.borsaitaliana.it/summary-chart/${isin}?lang=it`;
+                summaryResp = await axios.get(summaryUrl, { headers, timeout: 10000 });
+            }
+
+            const tokenMatch = summaryResp.data.match(/token="([^"]+)"/);
+            if (!tokenMatch) {
+                throw new Error("Token not found in B_ITA summary-chart HTML");
+            }
+            const token = tokenMatch[1];
+
+            // Step 2: Get Current Price using the dynamic token API
+            const apiUrl = `https://grafici.borsaitaliana.it/api/instruments/${isin},XMIL,ISIN/history/period?period=1M&adjustment=true&add-last-price=true`;
+            
+            const resp = await axios.get(apiUrl, {
                 headers: {
-                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/120.0.0.0'
+                    ...headers,
+                    'Authorization': `Bearer ${token}`,
+                    'Referer': summaryUrl,
+                    'Accept': 'application/json, text/plain, */*'
                 },
-                timeout: 20000 // Increased to 20s
+                timeout: 15000
             });
-            const html = response.data;
-            const finalUrl = response.request.res.responseUrl || searchUrl;
 
-            // Scraping Logic using robust Regex
-            let price = null;
-            // Primary pattern: span with -formatPrice class
-            const priceMatch = html.match(/-formatPrice\">\s*<strong>\s*([\d,.]+)\s*<\/strong>/i);
-            if (priceMatch && priceMatch[1]) {
-                price = parseFloat(priceMatch[1].replace(/\./g, '').replace(',', '.'));
-            } else {
-                // Secondary fallback pattern
-                const priceMatchAlt = html.match(/<strong>\s*([\d,.]+)\s*<\/span>\s*<\/strong>/i);
-                if (priceMatchAlt && priceMatchAlt[1]) {
-                    price = parseFloat(priceMatchAlt[1].replace(/\./g, '').replace(',', '.'));
+            if (resp.data && resp.data.history && resp.data.history.historyDt && resp.data.history.historyDt.length > 0) {
+                const dtArr = resp.data.history.historyDt;
+                const price = dtArr[dtArr.length - 1].closePx;
+                let variation = null;
+
+                if (dtArr.length > 1) {
+                    const prevPrice = dtArr[dtArr.length - 2].closePx;
+                    if (price && prevPrice) {
+                        variation = ((price - prevPrice) / prevPrice) * 100;
+                    }
+                }
+
+                if (price !== undefined && price !== null) {
+                    return {
+                        success: true,
+                        price: parseFloat(price),
+                        variation: variation !== null ? parseFloat(variation) : null,
+                        url: finalUrl,
+                        isin
+                    };
                 }
             }
 
-            // Variation: look for percentage pattern specifically in the -percPrice span
-            let variation = null;
-            // Primary pattern for variation: span with -percPrice class
-            const varMatch = html.match(/-percPrice\">\s*<strong>\s*([+-]?[\d,.]+)\s*%\s*<\/strong>/i);
-            if (varMatch && varMatch[1]) {
-                variation = parseFloat(varMatch[1].replace(',', '.'));
-            } else {
-                // Fallback for variation
-                const varMatchAlt = html.match(/([+-]?[\d,.]+)\s*%\s*<\/span>/i);
-                if (varMatchAlt && varMatchAlt[1]) {
-                    variation = parseFloat(varMatchAlt[1].replace(',', '.'));
-                }
-            }
-
-            if (!price && attempts < maxAttempts) {
+            if (attempts < maxAttempts) {
                 logger.warn(`B_ITA Scraper: No price found for ${isin} on attempt ${attempts}. Retrying...`);
                 await new Promise(r => setTimeout(r, 2000));
                 continue;
             }
 
-            return { 
-                success: !!price, 
-                price, 
-                variation, 
-                url: finalUrl,
-                isin
-            };
+            return { success: false, error: 'Price not found in API response', url: finalUrl, isin };
+
         } catch (err) {
             if (attempts < maxAttempts) {
                 logger.warn(`B_ITA Scraper attempt ${attempts} failed for ${isin}: ${err.message}. Retrying...`);
@@ -1128,7 +1144,7 @@ function clearPerformanceCache() {
                 continue;
             }
             console.error(`B_ITA Scraper error for ${isin} after ${maxAttempts} attempts:`, err.message);
-            return { success: false, error: err.message, url: searchUrl, isin };
+            return { success: false, error: err.message, url: finalUrl, isin };
         }
     }
 }
