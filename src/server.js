@@ -623,14 +623,29 @@ const app  = express();
 const PORT = process.env.PORT || 3000;
 
 // Nodemailer setup
-const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.ethereal.email',
-    port: process.env.SMTP_PORT || 587,
-    auth: {
-        user: process.env.SMTP_USER || '',
-        pass: process.env.SMTP_PASS || ''
-    }
-});
+let transporterInstance = null;
+function getTransporter() {
+    if (transporterInstance) return transporterInstance;
+    const settings = database.getSettings();
+    const smtpHost = settings.smtp_host || process.env.SMTP_HOST || 'smtp.ethereal.email';
+    const smtpPort = parseInt(settings.smtp_port) || parseInt(process.env.SMTP_PORT) || 587;
+    const smtpUser = settings.smtp_user || process.env.SMTP_USER || '';
+    const smtpPass = settings.smtp_pass || process.env.SMTP_PASS || '';
+    const smtpFrom = settings.smtp_from || process.env.SMTP_FROM || smtpUser || 'noreply@foliotrack.com';
+    
+    transporterInstance = nodemailer.createTransport({
+        host: smtpHost,
+        port: smtpPort,
+        secure: smtpPort === 465,
+        auth: {
+            user: smtpUser,
+            pass: smtpPass
+        }
+    });
+    // Add the from address to the instance for easy access
+    transporterInstance.defaultFrom = smtpFrom;
+    return transporterInstance;
+}
 
 // ─── JWT / Auth configuration ─────────────────────────────────────────────────
 const JWT_SECRET = process.env.JWT_SECRET || 'foliotrack_secret_development_static_12345';
@@ -747,8 +762,9 @@ app.post('/api/auth/register', async (req, res) => {
     try {
         const user = database.createUser(username, generatedPassword, email, 'free', username, 1);
         
-        await transporter.sendMail({
-            from: process.env.SMTP_FROM || '"M2T Tracker" <noreply@m2t.io>',
+        const mailer = getTransporter();
+        await mailer.sendMail({
+            from: `"M2T Portfolio" <${mailer.defaultFrom}>`,
             to: email,
             subject: 'Il tuo nuovo account M2T Tracker',
             text: `Benvenuto ${username},\n\nIl tuo account è stato creato.\nLa tua password temporanea è: ${generatedPassword}\n\nTi verrà chiesto di cambiarla al primo accesso.\nQuesta password è valida per 24 ore.`
@@ -808,8 +824,9 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 
     try {
         const resetLink = `http://${req.headers.host}/login?reset_token=${resetToken}`;
-        await transporter.sendMail({
-            from: process.env.SMTP_FROM || '"M2T Tracker" <noreply@m2t.io>',
+        const mailer = getTransporter();
+        await mailer.sendMail({
+            from: `"M2T Portfolio" <${mailer.defaultFrom}>`,
             to: email,
             subject: 'Ripristino password M2T Tracker',
             text: `Ciao ${user.username},\n\nHai richiesto il ripristino della password.\nClicca qui per impostare una nuova password:\n${resetLink}\n\nIl link è valido per 1 ora.`
@@ -868,8 +885,73 @@ app.post('/api/admin/roles', requireAuth, requireAdmin, (req, res) => {
 
 // GET /api/admin/users
 app.get('/api/admin/users', requireAuth, requireAdmin, (req, res) => {
-    const users = database.getAllUsers();
-    res.json(users);
+    try {
+        const users = database.getAllUsers();
+        res.json(users);
+    } catch (e) {
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// GET /api/admin/smtp-settings
+app.get('/api/admin/smtp-settings', requireAuth, requireAdmin, (req, res) => {
+    try {
+        const settings = database.getSettings();
+        res.json({
+            smtp_host: settings.smtp_host || '',
+            smtp_port: settings.smtp_port || '',
+            smtp_user: settings.smtp_user || '',
+            smtp_from: settings.smtp_from || ''
+            // Never send the password back to the client for security, 
+            // even if it's admin. Use a placeholder if it exists.
+            // But for this app, maybe it's fine. 
+            // I'll skip password for GET.
+        });
+    } catch (e) {
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// POST /api/admin/smtp-settings
+app.post('/api/admin/smtp-settings', requireAuth, requireAdmin, (req, res) => {
+    const { smtp_host, smtp_port, smtp_user, smtp_pass, smtp_from } = req.body;
+    try {
+        if (smtp_host !== undefined) database.setSetting('smtp_host', smtp_host);
+        if (smtp_port !== undefined) database.setSetting('smtp_port', smtp_port);
+        if (smtp_user !== undefined) database.setSetting('smtp_user', smtp_user);
+        if (smtp_pass !== undefined && smtp_pass !== '') database.setSetting('smtp_pass', smtp_pass);
+        if (smtp_from !== undefined) database.setSetting('smtp_from', smtp_from);
+        
+        // Invalidate transporter
+        transporterInstance = null;
+        
+        logger.info(`[ADMIN] SMTP settings updated by ${req.user.username}`);
+        res.json({ ok: true });
+    } catch (e) {
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// POST /api/admin/smtp-test
+app.post('/api/admin/smtp-test', requireAuth, requireAdmin, async (req, res) => {
+    const { to } = req.body;
+    if (!to) return res.status(400).json({ error: 'Recipient email required' });
+    
+    try {
+        const mailer = getTransporter();
+        await mailer.sendMail({
+            from: `"M2T Admin Test" <${mailer.defaultFrom}>`,
+            to,
+            subject: 'M2T SMTP Test Message',
+            text: 'This is a test email from your FolioTracker Admin Panel. Your SMTP settings are working correctly!',
+            html: '<b>This is a test email from your FolioTracker Admin Panel.</b><br><br>Your SMTP settings are working correctly!'
+        });
+        logger.info(`[ADMIN] SMTP Test email sent to ${to}`);
+        res.json({ ok: true });
+    } catch (e) {
+        logger.error(`[ADMIN] SMTP Test failed: ${e.message}`);
+        res.status(500).json({ error: `SMTP Error: ${e.message}` });
+    }
 });
 
 // POST /api/admin/users — create new user

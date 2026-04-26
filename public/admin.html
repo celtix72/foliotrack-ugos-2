@@ -103,7 +103,7 @@
             </div>
 
             <!-- Server Logs -->
-            <div class="space-y-6 flex flex-col h-[500px]">
+            <div class="space-y-6 flex flex-col h-[400px]">
                 <h2 class="text-lg font-bold flex items-center gap-2 shrink-0">
                     <span class="material-symbols-outlined text-primary">terminal</span> Server Logs
                 </h2>
@@ -112,6 +112,53 @@
                         <span class="material-symbols-outlined text-sm">refresh</span>
                     </button>
                     <pre id="log-output" class="flex-1 overflow-auto text-[10px] font-mono text-emerald-400 p-2 custom-scrollbar"><code class="block whitespace-pre-wrap">Loading logs...</code></pre>
+                </div>
+            </div>
+
+            <!-- SMTP Settings -->
+            <div class="space-y-6">
+                <h2 class="text-lg font-bold flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">mail</span> SMTP Settings
+                </h2>
+                <div class="bg-white dark:bg-[#111722] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="col-span-2">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">SMTP Host</label>
+                            <input type="text" id="smtp-host" placeholder="smtp.example.com" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-primary outline-none">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Port</label>
+                            <input type="number" id="smtp-port" placeholder="587" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-primary outline-none">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">From Email</label>
+                            <input type="email" id="smtp-from" placeholder="noreply@m2t.io" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-primary outline-none">
+                        </div>
+                        <div class="col-span-2">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Username</label>
+                            <input type="text" id="smtp-user" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-primary outline-none">
+                        </div>
+                        <div class="col-span-2">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Password</label>
+                            <input type="password" id="smtp-pass" placeholder="••••••••" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-primary outline-none">
+                            <p class="text-[9px] text-slate-500 mt-1 italic">Lascia vuoto per non cambiare.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 pt-2">
+                        <button onclick="saveSmtpSettings()" class="flex-1 py-2 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-primary/90 transition-all shadow-sm">
+                            Salva Impostazioni
+                        </button>
+                    </div>
+                    <div class="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">Test Email</label>
+                        <div class="flex gap-2">
+                            <input type="email" id="smtp-test-recipient" placeholder="destinatario@test.com" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-xs outline-none">
+                            <button id="btn-test-smtp" onclick="sendTestEmail()" class="px-4 py-2 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-slate-300 dark:hover:bg-slate-700 transition-all">
+                                Test
+                            </button>
+                        </div>
+                        <p id="smtp-status" class="text-[9px] font-bold hidden"></p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -185,6 +232,7 @@
             loadLogs();
             loadUsers();
             loadRoles();
+            loadSmtpSettings();
         });
 
         async function fetchAdmin(endpoint, options = {}) {
@@ -421,6 +469,76 @@
             } catch (err) {
                 alert('Errore: ' + err.message);
                 loadRoles(); 
+            }
+        };
+
+        // --- SMTP Settings ---
+        async function loadSmtpSettings() {
+            try {
+                const settings = await fetchAdmin('/api/admin/smtp-settings');
+                document.getElementById('smtp-host').value = settings.smtp_host || '';
+                document.getElementById('smtp-port').value = settings.smtp_port || '';
+                document.getElementById('smtp-user').value = settings.smtp_user || '';
+                document.getElementById('smtp-from').value = settings.smtp_from || '';
+            } catch (err) {
+                console.error('Failed to load SMTP settings:', err);
+            }
+        }
+
+        window.saveSmtpSettings = async function() {
+            const host = document.getElementById('smtp-host').value;
+            const port = document.getElementById('smtp-port').value;
+            const user = document.getElementById('smtp-user').value;
+            const from = document.getElementById('smtp-from').value;
+            const pass = document.getElementById('smtp-pass').value;
+
+            try {
+                await fetchAdmin('/api/admin/smtp-settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        smtp_host: host, 
+                        smtp_port: port, 
+                        smtp_user: user, 
+                        smtp_from: from, 
+                        smtp_pass: pass 
+                    })
+                });
+                alert('Impostazioni SMTP salvate con successo.');
+                document.getElementById('smtp-pass').value = ''; // Clear password field
+            } catch (err) {
+                alert('Errore nel salvataggio: ' + err.message);
+            }
+        };
+
+        window.sendTestEmail = async function() {
+            const to = document.getElementById('smtp-test-recipient').value;
+            if (!to) {
+                alert('Inserisci un destinatario per il test.');
+                return;
+            }
+
+            const btn = document.getElementById('btn-test-smtp');
+            const status = document.getElementById('smtp-status');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="animate-spin material-symbols-outlined text-[10px]">refresh</span> Inviando...';
+            status.classList.add('hidden');
+
+            try {
+                await fetchAdmin('/api/admin/smtp-test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ to })
+                });
+                status.innerText = 'Test inviato con successo!';
+                status.className = 'text-[9px] font-bold text-emerald-500 block';
+            } catch (err) {
+                status.innerText = 'Errore Test: ' + err.message;
+                status.className = 'text-[9px] font-bold text-rose-500 block';
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Test';
             }
         };
     </script>
