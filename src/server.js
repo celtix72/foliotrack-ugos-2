@@ -1473,32 +1473,51 @@ app.delete('/api/history/:id', requireAuth, (req, res) => {
 // ASSETS API
 // ════════════════════════════════════════════════════════════════════════════
 
-app.get('/api/assets', (req, res) => {
-    // Return all assets except CASH, with a flag indicating if they have an active position
+app.get('/api/assets', requireAuth, (req, res) => {
+    const userId = req.user.id;
+    // Return all assets except CASH, with a flag indicating if they have an active position for THIS user
     const rows = database.db.prepare(`
-        SELECT a.*, 
+        SELECT a.id, a.ticker, a.name, a.type, a.exchange, a.currency, a.currentPrice, 
+               a.changePercent, a.changeValue, a.pe, a.country, a.isManual, a.updatedAt, 
+               a.dataSource, a.isin, a.lastUpdateError, a.quoteDate, a.forwardPE, 
+               a.dividendYield, a.eps, a.beta, a.nextDividendDate, 
+               a.preMarketChangePercent, a.postMarketChangePercent,
                CASE WHEN t.balance IS NOT NULL AND t.balance > 0.0001 THEN 1 ELSE 0 END as hasPosition,
                IFNULL(t.balance, 0) as totalQuantity,
-               IFNULL(t.totalCostAsset, 0) as totalCostAssetCurr
+               IFNULL(t.totalCostAsset, 0) as totalCostAssetCurr,
+               CASE WHEN uw.user_id IS NOT NULL THEN 1 ELSE 0 END as inWatchlist,
+               uw.targetPrice as userTargetPrice,
+               uw.stopLoss as userStopLoss,
+               uw.volatilityAlert as userVolatilityAlert
         FROM assets a
         LEFT JOIN (
-            SELECT assetTicker, 
-                   SUM(CASE WHEN type = 'BUY' THEN quantity WHEN type = 'SELL' THEN -quantity ELSE 0 END) as balance,
+            SELECT t.assetTicker, 
+                   SUM(CASE WHEN t.type = 'BUY' THEN t.quantity WHEN t.type = 'SELL' THEN -t.quantity ELSE 0 END) as balance,
                    SUM(CASE 
-                        WHEN type = 'BUY' THEN (quantity * price + commission + tax)
-                        WHEN type = 'SELL' THEN -(quantity * (SELECT AVG(price) FROM transactions t2 WHERE t2.assetTicker = transactions.assetTicker AND t2.type = 'BUY'))
+                        WHEN t.type = 'BUY' THEN (t.quantity * t.price + t.commission + t.tax)
+                        WHEN t.type = 'SELL' THEN -(t.quantity * (SELECT AVG(t2.price) FROM transactions t2 JOIN portfolio_users pu2 ON t2.portfolioId = pu2.portfolio_id WHERE t2.assetTicker = t.assetTicker AND t2.type = 'BUY' AND pu2.user_id = ?))
                         ELSE 0 
                    END) as totalCostAsset
-            FROM transactions 
-            GROUP BY assetTicker
+            FROM transactions t
+            JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
+            WHERE pu.user_id = ?
+            GROUP BY t.assetTicker
         ) t ON a.ticker = t.assetTicker
+        LEFT JOIN user_watchlist uw ON a.ticker = uw.ticker AND uw.user_id = ?
         WHERE a.ticker != 'CASH' AND (a.type != 'Cash' OR a.type IS NULL) 
+        -- Only show what matters to the user in Market Overview
+        AND (hasPosition = 1 OR inWatchlist = 1)
         ORDER BY a.name ASC
-    `).all();
+    `).all(userId, userId, userId);
 
-    // 1. Calculate holdings per portfolio to get specific PMCs
+    // 1. Calculate holdings per portfolio to get specific PMCs (Filtered by user)
     const portfolioHoldings = {}; 
-    const allP = database.db.prepare(`SELECT id, name, color FROM portfolios`).all();
+    const allP = database.db.prepare(`
+        SELECT p.id, p.name, p.color 
+        FROM portfolios p
+        JOIN portfolio_users pu ON p.id = pu.portfolio_id
+        WHERE pu.user_id = ?
+    `).all(userId);
     for (const p of allP) {
         const txs = database.db.prepare(`
             SELECT type, assetTicker, quantity, price, commission, tax 
@@ -1561,6 +1580,10 @@ app.get('/api/assets', (req, res) => {
             sparkline,
             changePercent: isToday ? a.changePercent : 0,
             changeValue: isToday ? a.changeValue : 0,
+            // Override global alert settings with user-specific ones
+            targetPrice: a.userTargetPrice !== null ? a.userTargetPrice : a.targetPrice,
+            stopLoss: a.userStopLoss !== null ? a.userStopLoss : a.stopLoss,
+            volatilityAlert: a.userVolatilityAlert !== null ? a.userVolatilityAlert : a.volatilityAlert,
             portfoliosInfo
         };
     });
@@ -1762,7 +1785,7 @@ app.put('/api/assets/:id', requireAuth, (req, res) => {
     }
 
     // 2. Update User Alerts (Private)
-    const ticker = req.params.id; // Usually the ticker or ID
+    const tickerParam = req.params.id; 
     const watchUpdates = [];
     const watchParams = [];
     if (targetPrice !== undefined) { watchUpdates.push("targetPrice = ?"); watchParams.push(targetPrice); }
@@ -1770,13 +1793,21 @@ app.put('/api/assets/:id', requireAuth, (req, res) => {
     if (volatilityAlert !== undefined) { watchUpdates.push("volatilityAlert = ?"); watchParams.push(volatilityAlert); }
     
     if (watchUpdates.length > 0) {
-        watchParams.push(req.user.id);
-        watchParams.push(ticker);
-        database.db.prepare(`
-            UPDATE user_watchlist 
-            SET ${watchUpdates.join(', ')} 
-            WHERE user_id = ? AND ticker = (SELECT ticker FROM assets WHERE id = ? OR ticker = ?)
-        `).run(...watchParams, ticker, ticker);
+        try {
+            // First ensure the row exists
+            const actualTickerRow = database.db.prepare(`SELECT ticker FROM assets WHERE id = ? OR ticker = ?`).get(tickerParam, tickerParam);
+            if (actualTickerRow) {
+                const ticker = actualTickerRow.ticker;
+                database.db.prepare(`INSERT OR IGNORE INTO user_watchlist (user_id, ticker) VALUES (?, ?)`).run(req.user.id, ticker);
+                database.db.prepare(`
+                    UPDATE user_watchlist 
+                    SET ${watchUpdates.join(', ')} 
+                    WHERE user_id = ? AND ticker = ?
+                `).run(...watchParams, req.user.id, ticker);
+            }
+        } catch (e) {
+            logger.error('Error updating user watchlist in PUT /api/assets', e);
+        }
     }
 
     res.json({ success: true });
@@ -2049,15 +2080,17 @@ app.get('/api/assets/:ticker/history', async (req, res) => {
     }
 });
 
-app.get('/api/assets/:ticker/portfolios', (req, res) => {
+app.get('/api/assets/:ticker/portfolios', requireAuth, (req, res) => {
     const { ticker } = req.params;
+    const userId = req.user.id;
     try {
         const rows = database.db.prepare(`
             SELECT DISTINCT p.id, p.name 
             FROM portfolios p
             JOIN transactions t ON p.id = t.portfolioId
-            WHERE t.assetTicker = ?
-        `).all(ticker);
+            JOIN portfolio_users pu ON p.id = pu.portfolio_id
+            WHERE t.assetTicker = ? AND pu.user_id = ?
+        `).all(ticker, userId);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -3257,27 +3290,28 @@ app.put('/api/transactions/:id', requireAuth, async (req, res) => {
 });
 
 // Get market movers (assets with today's quotes, sorted by % change)
-app.get('/api/market/movers', async (req, res) => {
+app.get('/api/market/movers', requireAuth, async (req, res) => {
     try {
+        const userId = req.user.id;
         const todayStr = new Date().toISOString().split('T')[0];
-        // Only return assets that have open positions (assetCount from portfolios or based on transactions)
-        // or just all monitored assets that updated today. 
-        // User requested: "riporta solo gli ASSET che hanno posizioni aperte"
         
+        // Return assets that have open positions for THIS user
         const rows = database.db.prepare(`
             SELECT a.* 
             FROM assets a
             JOIN (
-                SELECT assetTicker, 
-                       SUM(CASE WHEN type = 'BUY' THEN quantity WHEN type = 'SELL' THEN -quantity ELSE 0 END) as balance 
-                FROM transactions 
-                GROUP BY assetTicker 
+                SELECT t.assetTicker, 
+                       SUM(CASE WHEN t.type = 'BUY' THEN t.quantity WHEN t.type = 'SELL' THEN -t.quantity ELSE 0 END) as balance 
+                FROM transactions t
+                JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
+                WHERE pu.user_id = ?
+                GROUP BY t.assetTicker 
                 HAVING balance > 0.0001
             ) t ON a.ticker = t.assetTicker
             WHERE a.quoteDate = ?
             ORDER BY ABS(a.changePercent) DESC
             LIMIT 10
-        `).all(todayStr);
+        `).all(userId, todayStr);
 
         res.json(rows);
     } catch (err) {
@@ -5517,22 +5551,7 @@ app.get('/api/market-status', (req, res) => {
     });
 });
 
-app.get('/api/market/movers', (req, res) => {
-    try {
-        // Get assets with non-zero price, ordered by absolute change percent
-        // We filter out CASH and assets without a price.
-        const rows = database.db.prepare(`
-            SELECT DISTINCT a.* FROM assets a
-            WHERE a.ticker != 'CASH' 
-            AND a.currentPrice > 0
-            ORDER BY ABS(a.changePercent) DESC
-            LIMIT 10
-        `).all();
-        res.json(rows);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
+
 
 app.post('/api/market-sync', async (req, res) => {
     try {
