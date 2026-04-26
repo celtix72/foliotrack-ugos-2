@@ -63,11 +63,12 @@
                         <table class="w-full text-left text-sm">
                             <thead class="bg-slate-50 dark:bg-slate-900/50 text-[10px] uppercase font-black tracking-widest text-slate-500">
                                 <tr>
-                                    <th class="px-6 py-4">ID</th>
                                     <th class="px-6 py-4">Username</th>
-                                    <th class="px-6 py-4">Display Name</th>
-                                    <th class="px-6 py-4">Role</th>
-                                    <th class="px-6 py-4 text-right">Actions</th>
+                                    <th class="px-6 py-4">Mail</th>
+                                    <th class="px-6 py-4 text-center">Data Creazione</th>
+                                    <th class="px-6 py-4 text-center">Ruolo</th>
+                                    <th class="px-6 py-4 text-center">Ultimo Accesso</th>
+                                    <th class="px-6 py-4 text-right">Azioni</th>
                                 </tr>
                             </thead>
                             <tbody id="users-table-body" class="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -133,12 +134,17 @@
                     <input type="text" id="new-user-display" required class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-primary outline-none">
                 </div>
                 <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Email</label>
+                    <input type="email" id="new-user-email" required class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-primary outline-none">
+                </div>
+                <div>
                     <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Password</label>
                     <input type="password" id="new-user-password" required class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-primary outline-none">
                 </div>
                 <div>
                     <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Role</label>
                     <select id="new-user-role" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-primary outline-none">
+                        <option value="free" selected>Free</option>
                         <option value="user">User</option>
                         <option value="admin">Admin</option>
                     </select>
@@ -246,17 +252,28 @@
                 const tbody = document.getElementById('users-table-body');
                 tbody.innerHTML = users.map(u => {
                     const isMe = u.id === myId;
-                    const roleBadge = u.role === 'admin' 
-                        ? `<span class="px-2 py-0.5 rounded text-[9px] font-black tracking-widest bg-rose-500/10 text-rose-500 uppercase border border-rose-500/20">Admin</span>`
-                        : `<span class="px-2 py-0.5 rounded text-[9px] font-black tracking-widest bg-slate-500/10 text-slate-500 uppercase border border-slate-500/20">User</span>`;
-
+                    const creationDate = u.created_at ? new Date(u.created_at).toLocaleDateString() : '--';
+                    const lastLogin = u.last_login ? new Date(u.last_login).toLocaleString() : 'Mai';
+                    
                     return `
                         <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                            <td class="px-6 py-4 font-mono text-xs text-slate-500 opacity-60">#${u.id}</td>
-                            <td class="px-6 py-4 font-bold ${isMe ? 'text-primary' : ''}">${u.username} ${isMe ? '<span class="text-[9px] uppercase tracking-widest text-slate-500 ml-1">(You)</span>' : ''}</td>
-                            <td class="px-6 py-4 text-xs font-semibold">${u.display_name}</td>
-                            <td class="px-6 py-4">${roleBadge}</td>
-                            <td class="px-6 py-4 text-right space-x-2">
+                            <td class="px-6 py-4">
+                                <div class="flex flex-col">
+                                    <span class="font-bold ${isMe ? 'text-primary' : ''}">${u.username}</span>
+                                    <span class="text-[10px] text-slate-500 font-mono">#${u.id} ${isMe ? '(You)' : ''}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-xs font-semibold">${u.email || '--'}</td>
+                            <td class="px-6 py-4 text-xs text-center">${creationDate}</td>
+                            <td class="px-6 py-4 text-center">
+                                <select onchange="updateUserRole(${u.id}, this.value)" class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded px-2 py-1 text-[10px] font-bold uppercase outline-none focus:ring-1 focus:ring-primary">
+                                    <option value="free" ${u.role === 'free' ? 'selected' : ''}>Free</option>
+                                    <option value="user" ${u.role === 'user' ? 'selected' : ''}>User</option>
+                                    <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
+                                </select>
+                            </td>
+                            <td class="px-6 py-4 text-[10px] text-center font-medium text-slate-500">${lastLogin}</td>
+                            <td class="px-6 py-4 text-right space-x-2 whitespace-nowrap">
                                 <button onclick="openPasswordModal(${u.id}, '${u.username}')" class="w-8 h-8 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-amber-500 hover:bg-amber-500/10 transition-colors inline-flex items-center justify-center" title="Change Password">
                                     <span class="material-symbols-outlined text-[16px]">key</span>
                                 </button>
@@ -298,6 +315,7 @@
                     body: JSON.stringify({
                         username: document.getElementById('new-user-username').value,
                         display_name: document.getElementById('new-user-display').value,
+                        email: document.getElementById('new-user-email').value,
                         password: document.getElementById('new-user-password').value,
                         role: document.getElementById('new-user-role').value
                     })
@@ -328,6 +346,21 @@
                 errEl.classList.remove('hidden');
             }
         });
+
+        window.updateUserRole = async function(id, role) {
+            try {
+                await fetchAdmin(`/api/admin/users/${id}/role`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ role })
+                });
+                // Reload users to confirm
+                loadUsers();
+            } catch (err) {
+                alert('Errore: ' + err.message);
+                loadUsers();
+            }
+        };
 
         async function deleteUser(id, username) {
             if (!confirm(`Sei sicuro di voler eliminare l'utente ${username}? Questa operazione NON è in grado di eliminare i portafogli associati (verranno orfanati).`)) return;

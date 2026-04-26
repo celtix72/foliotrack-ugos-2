@@ -898,7 +898,7 @@ app.delete('/api/admin/users/:id', requireAuth, requireAdmin, (req, res) => {
 app.patch('/api/admin/users/:id/role', requireAuth, requireAdmin, (req, res) => {
     const userId = parseInt(req.params.id);
     const { role } = req.body;
-    if (!['admin', 'user'].includes(role)) return res.status(400).json({ error: 'Ruolo non valido' });
+    if (!['admin', 'user', 'free'].includes(role)) return res.status(400).json({ error: 'Ruolo non valido' });
     database.updateUserRole(userId, role);
     res.json({ ok: true });
 });

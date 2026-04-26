@@ -96,14 +96,29 @@
         if (headerUserRole) headerUserRole.textContent = isAdmin ? 'Admin' : 'M2T';
 
         // ── Mobile header ─────────────────────────────────────────────────
-        const mobileUserName = document.getElementById('mobile-user-name');
+        const mobileUserName = document.getElementById('mobile-user-name') || document.getElementById('mob-user-name');
+        const mobileUserEmail = document.getElementById('mob-user-email');
+        const mobileUserRole = document.getElementById('mob-user-role');
         const mobileLogoutBtn = document.getElementById('mobile-logout-btn');
-        const mobileAdminLink = document.getElementById('mobile-admin-link');
         if (mobileUserName) mobileUserName.textContent = displayName;
+        if (mobileUserEmail) mobileUserEmail.textContent = user.email || '';
+        if (mobileUserRole) mobileUserRole.textContent = isAdmin ? 'Admin' : (user.role || 'User');
         if (mobileLogoutBtn) mobileLogoutBtn.onclick = logout;
-        if (mobileAdminLink) {
-            mobileAdminLink.style.display = isAdmin ? '' : 'none';
-        }
+
+        // ── Admin Links Visibility ──────────────────────────────────────────
+        const adminLinks = [
+            document.getElementById('sidebar-admin-link'),
+            document.getElementById('mobile-admin-link'),
+            document.getElementById('mobile-admin-link-header')
+        ];
+        adminLinks.forEach(link => {
+            if (link) link.style.display = isAdmin ? '' : 'none';
+        });
+        
+        // Support for class-based toggling if used elsewhere
+        document.querySelectorAll('.admin-only').forEach(el => {
+            el.style.display = isAdmin ? '' : 'none';
+        });
     }
 
     /**

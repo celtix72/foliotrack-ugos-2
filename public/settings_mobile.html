@@ -67,6 +67,9 @@
         <span class="material-symbols-outlined">notifications</span>
         <span id="mob-notification-badge" class="mob-badge" style="display: none;">0</span>
       </a>
+      <a id="mobile-admin-link-header" href="/admin" class="mob-icon-btn" title="Admin Panel" style="display: none;">
+        <span class="material-symbols-outlined">admin_panel_settings</span>
+      </a>
       <a href="/settings" class="mob-icon-btn" title="Settings">
         <span class="material-symbols-outlined">settings</span>
       </a>
@@ -97,6 +100,11 @@
                   <input type="password" id="mob-pwd-new" placeholder="Nuova Password" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs">
                   <button onclick="changePasswordMob()" class="w-full py-2 bg-primary text-white text-[10px] font-black uppercase rounded-lg shadow-sm">Aggiorna Password</button>
                   <p id="mob-pwd-msg" class="text-[10px] font-bold text-center hidden"></p>
+              </div>
+              <div id="mobile-admin-link" class="mob-settings-row" onclick="window.location.href='/admin'" style="display: none;">
+                  <div class="mob-settings-icon bg-indigo-500"><span class="material-symbols-outlined text-white">admin_panel_settings</span></div>
+                  <div class="mob-settings-label font-bold text-primary">Pannello Admin</div>
+                  <span class="material-symbols-outlined">chevron_right</span>
               </div>
               <div class="mob-settings-row" onclick="logoutMob()">
                   <div class="mob-settings-icon bg-rose-500"><span class="material-symbols-outlined text-white">logout</span></div>

@@ -707,6 +707,16 @@ function verifyUser(username, password) {
     if (!user) return null;
     const valid = bcrypt.compareSync(password, user.password_hash);
     if (!valid) return null;
+    
+    // Check if temporary password has expired (24h)
+    if (user.must_change_password === 1) {
+        const createdAt = new Date(user.created_at + 'Z'); // Ensure UTC
+        const now = new Date();
+        if ((now - createdAt) > 24 * 60 * 60 * 1000) {
+            return null; // Expired
+        }
+    }
+
     // Update last_login
     dbConnection.prepare(`UPDATE users SET last_login = datetime('now') WHERE id = ?`).run(user.id);
     return { id: user.id, username: user.username, email: user.email, role: user.role, display_name: user.display_name, must_change_password: user.must_change_password };
