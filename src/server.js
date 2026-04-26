@@ -2243,7 +2243,8 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null) {
     const rateToday = liveRate;
     const rateYesterday = rateToday / (1 + eurUsdChangePct/100);
 
-    const perfData = await calculatePerformanceHistory(null, 'ALL', false, true);
+    const pIds = rows.map(r => r.id);
+    const perfData = await calculatePerformanceHistory(pIds, 'ALL', false, true, null, userId);
     const globalPoints = perfData.dataPoints || [];
     const individual = perfData.individual || {};
 
@@ -2307,19 +2308,20 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null) {
     }
 
 
-    const heldAssetsRaw = database.db.prepare(`
+    const heldAssetsRaw = userId ? database.db.prepare(`
         SELECT a.ticker, a.name, a.changePercent, a.currentPrice, a.currency, a.quoteDate, SUM(h.netQty) as totalNetQty
         FROM assets a
         JOIN (
-            SELECT assetTicker, 
-                   SUM(CASE WHEN type = 'BUY' THEN quantity ELSE -quantity END) as netQty 
-            FROM transactions 
-            WHERE assetTicker IS NOT NULL AND assetTicker != 'CASH'
-            GROUP BY assetTicker 
+            SELECT t.assetTicker, 
+                   SUM(CASE WHEN t.type = 'BUY' THEN t.quantity ELSE -t.quantity END) as netQty 
+            FROM transactions t
+            JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
+            WHERE pu.user_id = ? AND t.assetTicker IS NOT NULL AND t.assetTicker != 'CASH'
+            GROUP BY t.assetTicker 
             HAVING netQty > 0.001
         ) h ON a.ticker = h.assetTicker
         GROUP BY a.ticker
-    `).all();
+    `).all(userId) : [];
 
     const todayStr = new Date().toISOString().split('T')[0];
     const heldAssets = heldAssetsRaw.map(a => {
@@ -3704,14 +3706,14 @@ app.get('/api/market/exchange-rate', async (req, res) => {
 /**
  * Shared helper to calculate performance data points for one or more portfolios.
  */
-async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefresh = false, includeIndividual = false, benchmarkTicker = null) {
+async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefresh = false, includeIndividual = false, benchmarkTicker = null, userId = null) {
     const pIdsInput = portfolioIds === null ? null : (Array.isArray(portfolioIds) ? portfolioIds : [portfolioIds]);
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
     const marketStatus = getMarketStatus();
     const overrides = calculateVariationOverrides(marketStatus);
     const rangeKey = range || 'ALL';
-    const cacheKey = `history_${pIdsInput ? pIdsInput.sort().join(',') : 'global'}_${rangeKey}_${includeIndividual}_${benchmarkTicker || 'none'}`;
+    const cacheKey = `history_${pIdsInput ? pIdsInput.sort().join(',') : 'global'}_${userId || 'none'}_${rangeKey}_${includeIndividual}_${benchmarkTicker || 'none'}`;
 
     // 1. Check Cache (1 minute TTL for dashboard-level history)
     const CACHE_SHORT_TTL = 60 * 1000; 
@@ -3719,10 +3721,12 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
         return performanceResultsCache[cacheKey].data;
     }
 
-    const isGlobal = !pIdsInput || pIdsInput.length === 0;
+    const isGlobal = pIdsInput === null;
     const portfolios = isGlobal 
         ? database.db.prepare('SELECT * FROM portfolios').all()
-        : database.db.prepare(`SELECT * FROM portfolios WHERE id IN (${pIdsInput.join(',')})`).all();
+        : (pIdsInput.length > 0 
+            ? database.db.prepare(`SELECT * FROM portfolios WHERE id IN (${pIdsInput.join(',')})`).all()
+            : []);
 
     const pIds = portfolios.map(p => p.id);
     const allTransactions = pIds.length > 0 ? database.db.prepare(`
@@ -3736,9 +3740,9 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
     for (const a of allAssets) assetMetadataCache[a.ticker] = a;
 
     const portfolioTickers = allTransactions.map(t => t.assetTicker);
-    const watchlistTickers = isGlobal 
-        ? database.db.prepare('SELECT ticker FROM assets WHERE inWatchlist = 1').all().map(a => a.ticker)
-        : [];
+    const watchlistTickers = userId 
+        ? database.db.prepare('SELECT ticker FROM user_watchlist WHERE user_id = ?').all(userId).map(a => a.ticker)
+        : (isGlobal ? database.db.prepare('SELECT ticker FROM assets WHERE isMonitored = 1').all().map(a => a.ticker) : []);
     const rawTickers = [...new Set([...portfolioTickers, ...watchlistTickers].filter(t => t && t !== 'CASH'))];
     
     logger.info(`Performance history sync: processing ${rawTickers.length} tickers (Portfolios: ${portfolioTickers.length}, Watchlist: ${watchlistTickers.length})`);
@@ -4587,8 +4591,7 @@ app.get('/api/analytics/global-performance', requireAuth, async (req, res) => {
             WHERE pu.user_id = ?
         `).all(req.user.id);
         const pIds = userPortfolios.map(p => p.id);
-
-        const dataPoints = await calculatePerformanceHistory(pIds, range, false, false, benchmark);
+        const dataPoints = await calculatePerformanceHistory(pIds, range, false, false, benchmark, req.user.id);
 
         let changePercent = 0;
         if (dataPoints.length > 1) {
