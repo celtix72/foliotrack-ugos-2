@@ -30,58 +30,71 @@
     /* Compact Desktop Styles */
     @media (min-width: 1024px) {
         #transaction-modal .tm-container {
-            max-width: 480px !important;
-            border-radius: 12px !important;
+            max-width: 420px !important;
+            border-radius: 8px !important;
         }
         #transaction-modal .tm-header {
-            padding: 8px 12px !important;
+            padding: 6px 10px !important;
         }
         #transaction-modal .tm-header-icon-wrap {
-            width: 28px !important;
-            height: 28px !important;
+            width: 22px !important;
+            height: 22px !important;
         }
         #transaction-modal .tm-header-icon-wrap span {
-            font-size: 16px !important;
+            font-size: 14px !important;
         }
         #transaction-modal #tm-title {
-            font-size: 13px !important;
+            font-size: 12px !important;
+        }
+        #transaction-modal #tm-title + p {
+            display: none !important; /* Hide subtitle to save space */
         }
         #transaction-modal .tm-body {
-            padding: 12px !important;
-        }
-        #transaction-modal .tm-row {
-            gap: 8px !important;
-            margin-bottom: 8px !important;
-        }
-        #transaction-modal .mob-input-label {
-            font-size: 9px !important;
-            margin-bottom: 2px !important;
-        }
-        #transaction-modal .mob-input-field {
-            padding: 6px 10px !important;
-            font-size: 12px !important;
-            border-radius: 8px !important;
-            height: auto !important;
-        }
-        #transaction-modal .tm-footer {
             padding: 8px 12px !important;
         }
+        #transaction-modal .tm-row {
+            gap: 6px !important;
+            margin-bottom: 6px !important;
+        }
+        #transaction-modal .mob-input-label {
+            font-size: 8px !important;
+            margin-bottom: 1px !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.05em !important;
+        }
+        #transaction-modal .mob-input-field {
+            padding: 4px 8px !important;
+            font-size: 11px !important;
+            border-radius: 6px !important;
+            height: 28px !important;
+        }
+        #transaction-modal .tm-footer {
+            padding: 6px 10px !important;
+        }
         #transaction-modal .mob-btn {
-            padding: 8px !important;
-            font-size: 9px !important;
-            border-radius: 8px !important;
+            padding: 6px !important;
+            font-size: 8px !important;
+            border-radius: 6px !important;
+            height: 28px !important;
         }
         #transaction-modal #tm-asset-meta {
-            padding: 8px !important;
-            gap: 6px !important;
+            padding: 4px 8px !important;
+            gap: 4px !important;
+            margin-bottom: 6px !important;
+        }
+        #transaction-modal #tm-asset-meta p {
+            font-size: 8px !important;
         }
         #transaction-modal #tm-alerts-wrap {
-            margin-top: 12px !important;
-            padding-top: 8px !important;
+            margin-top: 8px !important;
+            padding-top: 6px !important;
         }
         #transaction-modal #tm-alerts-wrap p {
             font-size: 8px !important;
-            margin-bottom: 8px !important;
+            margin-bottom: 4px !important;
+        }
+        #transaction-modal #tm-search-results {
+            max-height: 120px !important;
         }
     }
 </style>
@@ -112,8 +125,8 @@
             <input type="hidden" id="tm-id" />
             <div class="tm-body mob-modal-body custom-scrollbar" style="padding: 20px; overflow-y: auto;">
 
-                <!-- Row 1: Portafoglio + Tipo -->
-                <div class="tm-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                <!-- Row 1: Portafoglio + Tipo + Sorgente -->
+                <div class="tm-row" style="display: grid; grid-template-columns: 1.8fr 1.2fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
                     <div id="tm-portfolio-wrap">
                         <label class="mob-input-label">Portafoglio</label>
                         <select id="tm-portfolio" class="mob-input-field">
@@ -121,7 +134,7 @@
                         </select>
                     </div>
                     <div>
-                        <label class="mob-input-label">Tipo Transazione</label>
+                        <label class="mob-input-label">Tipo</label>
                         <select id="tm-type" class="mob-input-field" onchange="toggleTransactionFields()">
                             <option value="BUY">ACQUISTO</option>
                             <option value="SELL">VENDITA</option>
@@ -132,174 +145,87 @@
                             <option value="TRANSFER">TRASFERIMENTO</option>
                         </select>
                     </div>
-                </div>
-
-                <!-- Row 2: Data + Sorgente Dati -->
-                <div class="tm-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
-                    <div>
-                        <label class="mob-input-label">Data</label>
-                        <input id="tm-date" type="date" required class="mob-input-field" />
-                    </div>
                     <div id="tm-source-wrap" class="hidden">
-                        <label class="mob-input-label">Sorgente Dati</label>
+                        <label class="mob-input-label">Sorgente</label>
                         <select id="tm-source" class="mob-input-field" onchange="toggleTransactionFields()">
-                            <option value="YF">Yahoo Finance</option>
-                            <option value="B_ITA">Borsa Italiana</option>
-                            <option value="MANUAL">Manuale</option>
+                            <option value="YF">Yahoo</option>
+                            <option value="B_ITA">B_ITA</option>
+                            <option value="MANUAL">Manual</option>
                         </select>
                     </div>
                 </div>
 
-                <!-- Asset Search (BUY / SELL / DIVIDEND) -->
-                <div id="tm-asset-wrap" class="hidden" style="margin-bottom: 1rem;">
-                    <div class="relative" style="margin-bottom: 0.75rem;">
-                        <label class="mob-input-label">Asset (Ticker)</label>
-                        <input id="tm-asset-search" type="text" autocomplete="off"
-                            placeholder="Es. AAPL, ISP.MI..."
-                            class="mob-input-field"
-                            oninput="handleTMAssetInput(this.value)"
-                            onfocus="handleTMAssetFocus()"
-                            onclick="handleTMAssetFocus()" />
+                <!-- Row 2: Data + Asset Search -->
+                <div class="tm-row" style="display: grid; grid-template-columns: 1fr 2fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+                    <div>
+                        <label class="mob-input-label">Data</label>
+                        <input id="tm-date" type="date" required class="mob-input-field" />
+                    </div>
+                    <div id="tm-asset-wrap" class="hidden relative">
+                        <label class="mob-input-label">Asset (Ticker / Cerca)</label>
+                        <input id="tm-asset-search" type="text" autocomplete="off" placeholder="AAPL, ISP.MI..." class="mob-input-field" oninput="handleTMAssetInput(this.value)" onfocus="handleTMAssetFocus()" onclick="handleTMAssetFocus()" />
                         <div id="tm-search-results" class="hidden absolute left-0 right-0 top-full mt-1 z-50 bg-white dark:bg-[#1a2332] border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-48 overflow-y-auto"></div>
                         <input type="hidden" id="tm-asset-ticker" />
                         <input type="hidden" id="tm-asset-currency" value="EUR" />
                     </div>
+                </div>
 
-                    <!-- ISIN (solo B_ITA) -->
-                    <div id="tm-isin-wrap" class="hidden" style="margin-bottom: 0.75rem;">
-                        <label class="mob-input-label">ISIN (Borsa Italiana)</label>
-                        <input id="tm-isin" type="text" placeholder="Es. IT0000072618"
-                            class="mob-input-field font-mono" />
+                <!-- Row 3: Meta (ISIN / Manual) + Asset Info -->
+                <div id="tm-meta-row" class="tm-row hidden" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+                    <div id="tm-isin-wrap" class="hidden">
+                        <label class="mob-input-label">ISIN</label>
+                        <input id="tm-isin" type="text" placeholder="ISIN" class="mob-input-field font-mono" />
                     </div>
-
-                    <!-- Manual Asset Fields -->
-                    <div id="tm-manual-wrap" class="hidden" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0.75rem;">
-                        <div>
-                            <label class="mob-input-label">Nome Asset</label>
-                            <input id="tm-asset-name" type="text" placeholder="Es. Conto Deposito Fineco"
-                                class="mob-input-field" />
-                        </div>
-                        <div>
-                            <label class="mob-input-label">Valuta</label>
-                            <select id="tm-asset-currency-manual" class="mob-input-field" onchange="tmCheckFX()">
-                                <option value="EUR">EUR</option>
-                                <option value="USD">USD</option>
-                                <option value="GBP">GBP</option>
-                                <option value="CHF">CHF</option>
-                            </select>
-                        </div>
+                    <div id="tm-manual-name-wrap" class="hidden">
+                        <label class="mob-input-label">Nome Asset</label>
+                        <input id="tm-asset-name" type="text" placeholder="Nome" class="mob-input-field" />
                     </div>
-
-                    <!-- Asset Metadata (Styled as Grid Row) -->
-                    <div id="tm-asset-meta" class="hidden p-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-xl grid grid-cols-3 gap-3">
-                        <div>
-                            <p class="text-[8px] uppercase tracking-wider text-slate-400 font-black mb-0.5">Mercato</p>
-                            <p id="tm-meta-exchange" class="text-[11px] font-black text-slate-700 dark:text-slate-200 truncate">—</p>
-                        </div>
-                        <div>
-                            <p class="text-[8px] uppercase tracking-wider text-slate-400 font-black mb-0.5">Tipologia</p>
-                            <p id="tm-meta-type" class="text-[11px] font-black text-slate-700 dark:text-slate-200 truncate">—</p>
-                        </div>
-                        <div>
-                            <p class="text-[8px] uppercase tracking-wider text-slate-400 font-black mb-0.5">Prezzo Att.</p>
-                            <p id="tm-meta-price" class="text-[11px] font-black text-primary truncate">—</p>
-                        </div>
+                    <div id="tm-manual-curr-wrap" class="hidden">
+                        <label class="mob-input-label">Valuta</label>
+                        <select id="tm-asset-currency-manual" class="mob-input-field" onchange="tmCheckFX()">
+                            <option value="EUR">EUR</option>
+                            <option value="USD">USD</option>
+                            <option value="GBP">GBP</option>
+                        </select>
                     </div>
                 </div>
 
-                <!-- Quantità + Prezzo -->
-                <div id="tm-qty-price-wrap" class="tm-row hidden" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                    <div>
-                        <label class="mob-input-label" id="tm-qty-label">Quantità</label>
-                        <input id="tm-qty" type="number" step="any" placeholder="0"
-                            class="mob-input-field font-mono"
-                            oninput="tmCalcNet()" />
-                    </div>
-                    <div>
-                        <label class="mob-input-label" id="tm-price-label">Prezzo</label>
-                        <input id="tm-price" type="number" step="any" placeholder="0.00"
-                            class="mob-input-field font-mono"
-                            oninput="tmCalcNet()" />
+                <!-- Row 4: Asset Meta Badges (Super Compact) -->
+                <div id="tm-asset-meta" class="hidden tm-row p-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-lg flex justify-between gap-4 mb-2">
+                    <div class="flex gap-2 items-center"><span class="text-[7px] uppercase text-slate-400 font-black">Mercato:</span><span id="tm-meta-exchange" class="text-[10px] font-black text-slate-700 dark:text-slate-200">—</span></div>
+                    <div class="flex gap-2 items-center"><span class="text-[7px] uppercase text-slate-400 font-black">Tipo:</span><span id="tm-meta-type" class="text-[10px] font-black text-slate-700 dark:text-slate-200">—</span></div>
+                    <div class="flex gap-2 items-center"><span class="text-[7px] uppercase text-slate-400 font-black">Prezzo:</span><span id="tm-meta-price" class="text-[10px] font-black text-primary">—</span></div>
+                </div>
+
+                <!-- Row 5: Qty + Price + FX + Tax (4 Columns) -->
+                <div id="tm-qty-price-row" class="tm-row hidden" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem; margin-bottom: 0.75rem;">
+                    <div><label class="mob-input-label" id="tm-qty-label">Quantità</label><input id="tm-qty" type="number" step="any" placeholder="0" class="mob-input-field font-mono" oninput="tmCalcNet()" /></div>
+                    <div><label class="mob-input-label" id="tm-price-label">Prezzo</label><input id="tm-price" type="number" step="any" placeholder="0.00" class="mob-input-field font-mono" oninput="tmCalcNet()" /></div>
+                    <div id="tm-fx-inline-wrap"><label class="mob-input-label">FX (<span id="tm-fx-from">USD</span>)</label><input id="tm-fx" type="number" step="any" value="1" class="mob-input-field font-mono" oninput="tmCalcNet()" /></div>
+                    <div><label class="mob-input-label">Tax</label><input id="tm-tax" type="number" step="any" value="0" class="mob-input-field font-mono" oninput="tmCalcNet()" /></div>
+                </div>
+
+                <!-- Row 6: Commissioni + Importo -->
+                <div id="tm-comm-amount-row" class="tm-row hidden" style="display: grid; grid-template-columns: 1fr 2fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+                    <div id="tm-comm-wrap"><label class="mob-input-label">Commissioni</label><input id="tm-comm" type="number" step="any" value="0" class="mob-input-field font-mono" oninput="tmCalcNet()" /></div>
+                    <div id="tm-amount-wrap"><label class="mob-input-label" id="tm-amount-label">Importo Totale</label>
+                        <div class="relative"><input id="tm-amount" type="number" step="any" placeholder="0.00" class="mob-input-field font-mono bg-slate-50 dark:bg-slate-900/50" oninput="if(typeof tmCalcFromAmount === 'function') tmCalcFromAmount()" /><p class="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] text-slate-400 font-bold italic" id="tm-amount-hint"></p></div>
                     </div>
                 </div>
 
-                <!-- FX Rate -->
-                <div id="tm-fx-wrap" class="hidden" style="margin-bottom: 1rem;">
-                    <div class="p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl flex items-center justify-between gap-4">
-                        <div>
-                            <p class="text-[9px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">Cambio FX</p>
-                            <p class="text-[11px] text-slate-500 mt-0.5 font-bold uppercase tracking-tight"><span id="tm-fx-from">USD</span> / <span id="tm-fx-to">EUR</span></p>
-                        </div>
-                        <input id="tm-fx" type="number" step="any" value="1"
-                            style="width: 120px; text-align: right;" 
-                            class="mob-input-field font-mono"
-                            oninput="tmCalcNet()" />
+                <!-- Alert & Stop Loss (Super tight) -->
+                <div id="tm-alerts-wrap" class="hidden mt-1 pt-1 border-t border-slate-100 dark:border-slate-800">
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
+                        <div class="relative"><span class="absolute left-1.5 top-1/2 -translate-y-1/2 text-[8px] text-slate-400 tm-alerts-curr">€</span><input id="tm-tp" type="number" placeholder="TG1" class="mob-input-field font-mono" style="padding-left:14px;" /></div>
+                        <div class="relative"><span class="absolute left-1.5 top-1/2 -translate-y-1/2 text-[8px] text-slate-400 tm-alerts-curr">€</span><input id="tm-tp2" type="number" placeholder="TG2" class="mob-input-field font-mono" style="padding-left:14px;" /></div>
+                        <div class="relative"><span class="absolute left-1.5 top-1/2 -translate-y-1/2 text-[8px] text-slate-400 tm-alerts-curr">€</span><input id="tm-sl" type="number" placeholder="SL" class="mob-input-field font-mono" style="padding-left:14px;" /></div>
+                        <input id="tm-vol" type="number" placeholder="VOL%" class="mob-input-field font-mono text-center" />
                     </div>
                 </div>
 
-                <!-- Commissioni + Tax -->
-                <div id="tm-comm-tax-wrap" class="tm-row hidden" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                    <div id="tm-comm-wrap">
-                        <label class="mob-input-label">Commissioni</label>
-                        <input id="tm-comm" type="number" step="any" value="0"
-                            class="mob-input-field font-mono" />
-                    </div>
-                    <div>
-                        <label class="mob-input-label">Tax / Ritenuta</label>
-                        <input id="tm-tax" type="number" step="any" value="0"
-                            class="mob-input-field font-mono"
-                            oninput="tmCalcNet()" />
-                    </div>
-                </div>
-
-                <!-- Importo Totale -->
-                <div id="tm-amount-wrap" class="hidden" style="margin-bottom: 1rem;">
-                    <label class="mob-input-label" id="tm-amount-label">Importo Totale</label>
-                    <input id="tm-amount" type="number" step="any" placeholder="0.00"
-                        class="mob-input-field font-mono"
-                        oninput="if(typeof tmCalcFromAmount === 'function') tmCalcFromAmount()" />
-                    <p class="text-[10px] text-slate-400 font-bold italic mt-1.5" id="tm-amount-hint"></p>
-                </div>
-
-                <!-- Alert & Stop Loss (Unified 4-Column Grid) -->
-                <div id="tm-alerts-wrap" class="hidden mt-6 pt-5 border-t border-slate-100 dark:border-slate-800">
-                    <p class="text-[9px] uppercase font-black tracking-widest text-slate-400 mb-4">Monitoraggio Asset (TG & SL)</p>
-                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 14px;">
-                        <!-- TG1 -->
-                        <div style="display: flex; flex-direction: column; gap: 3px;">
-                            <span class="mob-input-label" style="font-size: 8px; margin-bottom: 0;">TG1</span>
-                            <div class="relative">
-                                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 font-black text-slate-400 text-[10px] tm-alerts-curr">€</span>
-                                <input id="tm-tp" type="number" step="any" placeholder="0.00" class="mob-input-field font-mono" style="padding-left: 20px;" />
-                            </div>
-                        </div>
-                        <!-- TG2 -->
-                        <div style="display: flex; flex-direction: column; gap: 3px;">
-                            <span class="mob-input-label" style="font-size: 8px; margin-bottom: 0;">TG2</span>
-                            <div class="relative">
-                                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 font-black text-slate-400 text-[10px] tm-alerts-curr">€</span>
-                                <input id="tm-tp2" type="number" step="any" placeholder="0.00" class="mob-input-field font-mono" style="padding-left: 20px;" />
-                            </div>
-                        </div>
-                        <!-- SL -->
-                        <div style="display: flex; flex-direction: column; gap: 3px;">
-                            <span class="mob-input-label" style="font-size: 8px; margin-bottom: 0;">SL</span>
-                            <div class="relative">
-                                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 font-black text-slate-400 text-[10px] tm-alerts-curr">€</span>
-                                <input id="tm-sl" type="number" step="any" placeholder="0.00" class="mob-input-field font-mono" style="padding-left: 20px;" />
-                            </div>
-                        </div>
-                        <!-- VOL% -->
-                        <div style="display: flex; flex-direction: column; gap: 3px;">
-                            <span class="mob-input-label" style="font-size: 8px; margin-bottom: 0;">VOL%</span>
-                            <input id="tm-vol" type="number" step="1" value="0" min="0" max="20" class="mob-input-field font-mono" style="text-align: center;" />
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Portafoglio Destinazione -->
-                <div id="tm-dest-wrap" class="hidden" style="margin-top: 1rem;">
-                    <label class="mob-input-label">Portafoglio Destinazione</label>
+                <!-- Target Transfer -->
+                <div id="tm-dest-wrap" class="hidden" style="margin-top: 0.5rem;">
+                    <label class="mob-input-label">Target Transfer</label>
                     <select id="tm-dest-portfolio" class="mob-input-field">
                         <option value="">— Seleziona Target —</option>
                     </select>
@@ -427,36 +353,29 @@
         const isTransfer = type === 'TRANSFER';
         const needsAsset = isTrade || isDividend;
 
-        // Sorgente dati: solo BUY
+        // Row-level visibility
         _toggleField('tm-source-wrap', type === 'BUY');
-
-        // Asset search block
         _toggleField('tm-asset-wrap', needsAsset);
-
-        // ISIN: solo BUY
-        _toggleField('tm-isin-wrap', type === 'BUY');
-
-        // Campi manuali: solo BUY + MANUAL
-        _toggleField('tm-manual-wrap', type === 'BUY' && source === 'MANUAL');
-
-        // Quantità + Prezzo: BUY, SELL, DIVIDEND
-        _toggleField('tm-qty-price-wrap', needsAsset);
-        
-        // Pannello Target Price & Stop Loss
+        _toggleField('tm-meta-row', (type === 'BUY' && source === 'B_ITA') || (type === 'BUY' && source === 'MANUAL'));
+        _toggleField('tm-isin-wrap', type === 'BUY' && source === 'B_ITA');
+        _toggleField('tm-manual-name-wrap', type === 'BUY' && source === 'MANUAL');
+        _toggleField('tm-manual-curr-wrap', type === 'BUY' && source === 'MANUAL');
+        _toggleField('tm-qty-price-row', needsAsset);
+        _toggleField('tm-comm-amount-row', isTrade || isDividend || isCashOnly);
         _toggleField('tm-alerts-wrap', needsAsset);
 
         // Labels dinamiche
         if (isDividend) {
-            document.getElementById('tm-qty-label').innerText = 'Quantità Posseduta';
-            document.getElementById('tm-price-label').innerText = 'Dividendo Unitario (€)';
+            document.getElementById('tm-qty-label').innerText = 'Quantità';
+            document.getElementById('tm-price-label').innerText = 'Dividendo (€)';
         } else {
             document.getElementById('tm-qty-label').innerText = 'Quantità';
             document.getElementById('tm-price-label').innerText = 'Prezzo';
         }
 
-        // Commissioni + Tax: BUY/SELL mostrano entrambi; DIVIDEND mostra solo Tax
-        _toggleField('tm-comm-tax-wrap', isTrade || isDividend);
-        _toggleField('tm-comm-wrap', isTrade); // nascondi commissioni per DIVIDEND
+        // Specific sub-field logic
+        _toggleField('tm-comm-wrap', isTrade);
+        _toggleField('tm-fx-inline-wrap', needsAsset); // Show FX input if asset is present
 
         // Importo totale: cash-only e DIVIDEND (modificabile)
         _toggleField('tm-amount-wrap', isCashOnly || isDividend);
@@ -507,8 +426,8 @@
         _toggleField('tm-fx-wrap', needsFX);
 
         if (needsFX) {
-            document.getElementById('tm-fx-from').innerText = assetCurr;
-            document.getElementById('tm-fx-to').innerText = portfolioCurr;
+            const fromEl = document.getElementById('tm-fx-from');
+            if (fromEl) fromEl.innerText = assetCurr;
             if (!skipFetch) {
                 try {
                     const res = await fetch(`/api/fx-rate?from=${portfolioCurr}&to=${assetCurr}`);
@@ -634,7 +553,7 @@
                     const name = h.name || sym;
                     const curr = h.currency || '';
                     const qty = h.shares || h.totalQuantity || h.quantity || 0;
-                    return `<div class="px-4 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-sm transition-colors border-b border-slate-100 dark:border-slate-800/50 last:border-0"
+                    return `<div class="px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-xs transition-colors border-b border-slate-100 dark:border-slate-800/50 last:border-0"
                         onclick="selectTMAsset('${sym.replace(/'/g, "\\'")}', '${curr.replace(/'/g, "\\'")}', '${name.replace(/'/g, "\\'")}')">
                         <div class="flex items-center justify-between">
                             <span class="font-black text-slate-900 dark:text-white">${sym} <span class="text-slate-400 text-xs ml-1 font-bold">(${qty} possedute)</span></span>
