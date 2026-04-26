@@ -284,21 +284,36 @@
      *   editData     {Object} full transaction object for editing
      */
     window.openTransactionModal = async function (options = {}) {
-        injectTransactionModal();
-        const modal = document.getElementById('transaction-modal');
-        if (!modal) return;
+        try {
+            injectTransactionModal();
+            const modal = document.getElementById('transaction-modal');
+            if (!modal) {
+                console.error('[TM] Modal element not found after injection');
+                return;
+            }
 
-        // Reset form
-        const form = document.getElementById('tm-form');
-        if (form) form.reset();
-        document.getElementById('tm-id').value = '';
-        document.getElementById('tm-asset-ticker').value = '';
-        document.getElementById('tm-asset-currency').value = 'EUR';
-        document.getElementById('tm-fx').value = '1';
-        document.getElementById('tm-comm').value = '0';
-        document.getElementById('tm-tax').value = '0';
-        document.getElementById('tm-amount').value = '';
-        _hideSearchResults();
+            // Show immediately to avoid lag feeling
+            modal.style.setProperty('display', 'flex', 'important');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => modal.classList.add('active'), 10);
+            document.body.classList.add('modal-open');
+
+            // Reset form
+            const form = document.getElementById('tm-form');
+            if (form) form.reset();
+            const tmId = document.getElementById('tm-id');
+            if (tmId) tmId.value = '';
+            
+            // ... reset other fields safely ...
+            ['tm-asset-ticker', 'tm-amount', 'tm-comm', 'tm-tax', 'tm-tp', 'tm-tp2', 'tm-sl'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = (id === 'tm-comm' || id === 'tm-tax') ? '0' : '';
+            });
+            const fx = document.getElementById('tm-fx');
+            if (fx) fx.value = '1';
+            
+            _hideSearchResults();
 
         // Set default date = today
         document.getElementById('tm-date').value = new Date().toISOString().split('T')[0];
@@ -321,13 +336,9 @@
         }
 
         toggleTransactionFields();
-
-        // Show
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        // Give time for display:flex to apply before active for transition
-        setTimeout(() => modal.classList.add('active'), 10);
-        document.body.classList.add('modal-open');
+        } catch (err) {
+            console.error('[TM] Error opening modal:', err);
+        }
     };
 
     // ─── Close Modal ─────────────────────────────────────────────────────────────
@@ -337,6 +348,7 @@
             modal.classList.remove('active');
             // Give time for transition before hiding
             setTimeout(() => {
+                modal.style.display = 'none';
                 modal.classList.add('hidden');
                 modal.classList.remove('flex');
             }, 250);
