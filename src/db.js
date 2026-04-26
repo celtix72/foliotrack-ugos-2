@@ -291,10 +291,14 @@ function initDb() {
       CREATE TABLE IF NOT EXISTS users (
         id            INTEGER PRIMARY KEY AUTOINCREMENT,
         username      TEXT    NOT NULL UNIQUE COLLATE NOCASE,
+        email         TEXT    UNIQUE,
         password_hash TEXT    NOT NULL,
-        role          TEXT    NOT NULL DEFAULT 'user',
+        role          TEXT    NOT NULL DEFAULT 'free',
         display_name  TEXT,
         last_login    TEXT,
+        must_change_password INTEGER NOT NULL DEFAULT 1,
+        reset_token   TEXT,
+        reset_token_expiry TEXT,
         created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
       );
 
@@ -384,6 +388,12 @@ function initDb() {
     for (const [key, value] of Object.entries(defaultSettings)) {
         insertSetting.run(key, value);
     }
+
+    // ─── Migrations: Add user columns if they don't exist ────────────────────────
+    try { dbConnection.prepare(`ALTER TABLE users ADD COLUMN email TEXT UNIQUE`).run(); } catch (e) {}
+    try { dbConnection.prepare(`ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 1`).run(); } catch (e) {}
+    try { dbConnection.prepare(`ALTER TABLE users ADD COLUMN reset_token TEXT`).run(); } catch (e) {}
+    try { dbConnection.prepare(`ALTER TABLE users ADD COLUMN reset_token_expiry TEXT`).run(); } catch (e) {}
 
     // ─── Seed: default admin user (mauro / pippo) ───────────────────────────
     const existingAdmin = dbConnection.prepare(`SELECT id FROM users WHERE username = 'mauro'`).get();
