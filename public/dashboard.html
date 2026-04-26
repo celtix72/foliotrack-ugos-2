@@ -1111,51 +1111,55 @@
             if (typeof updateDashboardChart === 'function') updateDashboardChart();
             if (typeof updateAllocationChart === 'function') updateAllocationChart();
         });
+
+        // Portfolio Modal Logic
+        window.openPortfolioModal = function() {
+            document.getElementById('portfolio-modal-title').innerText = 'New Portfolio';
+            document.getElementById('portfolio-form').reset();
+            document.getElementById('p-id').value = '';
+            document.getElementById('portfolio-modal').classList.remove('hidden');
+        };
+
+        window.closePortfolioModal = function() {
+            document.getElementById('portfolio-modal').classList.add('hidden');
+        };
+
+        const pForm = document.getElementById('portfolio-form');
+        if (pForm) {
+            pForm.onsubmit = async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('p-id').value;
+                const data = {
+                    name: document.getElementById('p-name').value,
+                    type: document.getElementById('p-type').value,
+                    currency: document.getElementById('p-currency').value,
+                    startDate: document.getElementById('p-date').value,
+                    initialCash: parseFloat(document.getElementById('p-cash').value),
+                    color: document.getElementById('p-color').value
+                };
+                const method = id ? 'PUT' : 'POST';
+                const url = id ? `/api/portfolios/${id}` : '/api/portfolios';
+                try {
+                    const res = await fetch(url, {
+                        method,
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    if (res.ok) {
+                        closePortfolioModal();
+                        loadDashboard();
+                    } else {
+                        const errText = await res.text();
+                        alert('Failed to save portfolio: ' + errText);
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Error saving portfolio: ' + err.message);
+                }
+            };
+        }
     });
 
-    // Portfolio Modal Logic
-    window.openPortfolioModal = function() {
-        document.getElementById('portfolio-modal-title').innerText = 'New Portfolio';
-        document.getElementById('portfolio-form').reset();
-        document.getElementById('p-id').value = '';
-        document.getElementById('portfolio-modal').classList.remove('hidden');
-    };
-
-    window.closePortfolioModal = function() {
-        document.getElementById('portfolio-modal').classList.add('hidden');
-    };
-
-    document.getElementById('portfolio-form').onsubmit = async (e) => {
-        e.preventDefault();
-        const id = document.getElementById('p-id').value;
-        const data = {
-            name: document.getElementById('p-name').value,
-            type: document.getElementById('p-type').value,
-            currency: document.getElementById('p-currency').value,
-            startDate: document.getElementById('p-date').value,
-            initialCash: parseFloat(document.getElementById('p-cash').value),
-            color: document.getElementById('p-color').value
-        };
-        const method = id ? 'PUT' : 'POST';
-        const url = id ? `/api/portfolios/${id}` : '/api/portfolios';
-        try {
-            const res = await fetch(url, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            if (res.ok) {
-                closePortfolioModal();
-                loadDashboard();
-            } else {
-                const errText = await res.text();
-                alert('Failed to save portfolio: ' + errText);
-            }
-        } catch (err) {
-            console.error(err);
-            alert('Error saving portfolio: ' + err.message);
-        }
-    };
 </script>
 
 <!-- Portfolio Modal -->
