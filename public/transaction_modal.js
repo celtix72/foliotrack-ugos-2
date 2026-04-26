@@ -30,53 +30,58 @@
     /* Compact Desktop Styles */
     @media (min-width: 1024px) {
         #transaction-modal .tm-container {
-            max-width: 580px !important;
-            border-radius: 16px !important;
+            max-width: 480px !important;
+            border-radius: 12px !important;
         }
         #transaction-modal .tm-header {
-            padding: 12px 16px !important;
+            padding: 8px 12px !important;
         }
         #transaction-modal .tm-header-icon-wrap {
-            width: 32px !important;
-            height: 32px !important;
+            width: 28px !important;
+            height: 28px !important;
         }
         #transaction-modal .tm-header-icon-wrap span {
-            font-size: 18px !important;
+            font-size: 16px !important;
         }
         #transaction-modal #tm-title {
-            font-size: 14px !important;
+            font-size: 13px !important;
         }
         #transaction-modal .tm-body {
-            padding: 16px !important;
+            padding: 12px !important;
         }
         #transaction-modal .tm-row {
-            gap: 12px !important;
-            margin-bottom: 12px !important;
+            gap: 8px !important;
+            margin-bottom: 8px !important;
         }
         #transaction-modal .mob-input-label {
-            font-size: 10px !important;
-            margin-bottom: 4px !important;
+            font-size: 9px !important;
+            margin-bottom: 2px !important;
         }
         #transaction-modal .mob-input-field {
-            padding: 8px 12px !important;
-            font-size: 13px !important;
-            border-radius: 10px !important;
+            padding: 6px 10px !important;
+            font-size: 12px !important;
+            border-radius: 8px !important;
+            height: auto !important;
         }
         #transaction-modal .tm-footer {
-            padding: 12px 16px !important;
+            padding: 8px 12px !important;
         }
         #transaction-modal .mob-btn {
-            padding: 10px !important;
-            font-size: 10px !important;
-            border-radius: 10px !important;
+            padding: 8px !important;
+            font-size: 9px !important;
+            border-radius: 8px !important;
         }
         #transaction-modal #tm-asset-meta {
-            padding: 10px !important;
-            gap: 8px !important;
+            padding: 8px !important;
+            gap: 6px !important;
         }
         #transaction-modal #tm-alerts-wrap {
-            margin-top: 16px !important;
-            padding-top: 12px !important;
+            margin-top: 12px !important;
+            padding-top: 8px !important;
+        }
+        #transaction-modal #tm-alerts-wrap p {
+            font-size: 8px !important;
+            margin-bottom: 8px !important;
         }
     }
 </style>
