@@ -67,12 +67,12 @@
 
         <!-- Action Buttons -->
         <div class="mob-header-actions">
+            <a href="/admin" id="mob-admin-link" class="mob-icon-btn text-amber-500" title="Admin Panel" style="display:none">
+                <span class="material-symbols-outlined">admin_panel_settings</span>
+            </a>
             <a href="/notifications" class="mob-icon-btn relative" title="Notifications">
                 <span class="material-symbols-outlined">notifications</span>
                 <span id="mob-notification-badge" class="mob-badge" style="display: none;">0</span>
-            </a>
-            <a id="mobile-admin-link-header" href="/admin" class="mob-icon-btn" title="Admin Panel" style="display: none;">
-                <span class="material-symbols-outlined">admin_panel_settings</span>
             </a>
             <a href="/settings" class="mob-icon-btn" title="Settings">
                 <span class="material-symbols-outlined">settings</span>
@@ -470,6 +470,11 @@
 
         mobSyncMarketStatus();
         setInterval(mobSyncMarketStatus, 30000);
+
+        if (window.ftAuth && ftAuth.getUser()?.role === 'admin') {
+            const adminLink = document.getElementById('mob-admin-link');
+            if (adminLink) adminLink.style.display = 'flex';
+        }
 
         loadWatchlist();
     });

@@ -164,13 +164,14 @@ function getLastLogLines(filePath, lineCount = 100) {
 async function processTelegramCommand(message) {
     const text = (message.text || '').trim();
     const chatId = message.chat.id;
-    const settings = database.getSettings();
+    const user = database.db.prepare(`SELECT * FROM users WHERE telegram_chat_id = ?`).get(String(chatId));
     
-    // Security: Only respond to the configured chat
-    if (String(chatId) !== String(settings.telegramChatId)) {
+    if (!user) {
         telegramLogger.log(`[SECURITY] Ignored message from unauthorized chat: ${chatId}`);
         return;
     }
+
+    const settings = database.getSettings(user.id);
 
     const cmd = text.split(' ')[0].toLowerCase().replace('/', '');
     telegramLogger.log(`[COMMAND] Received: ${cmd}`);
@@ -182,14 +183,14 @@ async function processTelegramCommand(message) {
                           `• \`HELP\`: Mostra questo messaggio\n` +
                           `• \`Version\`: Mostra la versione dell'app\n` +
                           `• \`Log\`: Restituisce le ultime 100 righe di log\n`;
-            await sendTelegramMessage(helpMsg);
+            await sendTelegramMessage(helpMsg, null, user.id);
             break;
         }
         case 'version':
         case 'versione': {
             const verMsg = `${escapeV2('🚀')} *${escapeV2('Versione Applicazione')}*\n\n` +
                          `Versione attuale: \`${escapeCodeV2(APP_VERSION)}\``;
-            await sendTelegramMessage(verMsg);
+            await sendTelegramMessage(verMsg, null, user.id);
             break;
         }
         case 'log':
@@ -206,7 +207,7 @@ async function processTelegramCommand(message) {
             }
 
             const msg = header + `\`\`\`\n${escapeCodeV2(finalLog)}\n\`\`\``;
-            await sendTelegramMessage(msg);
+            await sendTelegramMessage(msg, null, user.id);
             break;
         }
     }
@@ -223,7 +224,7 @@ async function startTelegramPolling() {
     telegramLogger.log('[SERVICE] Telegram polling started.');
 
     while (true) {
-        const settings = database.getSettings();
+        const settings = database.getSettings(1); // Use admin settings for global polling
         const token = settings.telegramBotToken;
         const enabled = settings.telegramEnabled === 'true';
 
@@ -248,7 +249,7 @@ async function startTelegramPolling() {
                     }
                     lastUpdateId = update.update_id;
                 }
-                database.setSetting('telegramLastUpdateId', lastUpdateId);
+                database.setSetting(1, 'telegramLastUpdateId', lastUpdateId);
             }
         } catch (e) {
             telegramLogger.log(`[POLLING ERROR] ${e.message}`);
@@ -291,17 +292,17 @@ function getPerformanceIcon(changePct) {
     return '❌';
 }
 
-async function sendTelegramMessage(message) {
-    const settings = database.getSettings();
+async function sendTelegramMessage(message, customChatId = null, userId = null) {
+    const settings = database.getSettings(userId || 1); // Fallback to admin settings if no user
     const token = settings.telegramBotToken;
-    const chatId = settings.telegramChatId;
+    const chatId = customChatId || settings.telegramChatId;
     const enabled = settings.telegramEnabled === 'true';
 
-    telegramLogger.log(`[ATTEMPT] Enabled: ${enabled}, Token set: ${!!token}, ChatID set: ${!!chatId}`);
+    telegramLogger.log(`[ATTEMPT] User: ${userId}, Enabled: ${enabled}, Token set: ${!!token}, ChatID set: ${!!chatId}, Custom: ${!!customChatId}`);
 
     if (!enabled || !token || !chatId) {
-        if (!enabled) telegramLogger.log(`[SKIPPED] Telegram is globally disabled.`);
-        else telegramLogger.log(`[SKIPPED] Missing Token or ChatID.`);
+        if (!enabled) telegramLogger.log(`[SKIPPED] Telegram is disabled for user ${userId}.`);
+        else telegramLogger.log(`[SKIPPED] Missing Token or ChatID for user ${userId}.`);
         return;
     }
 
@@ -378,22 +379,27 @@ function getNetDeposits(portfolioId) {
     return simpleNet ? (simpleNet.net || 0) : 0;
 }
 
-async function calculateMarketStats() {
+async function calculateMarketStats(userId) {
+    if (!userId) return { totalNetValue: 0, totalChange: 0, totalChangePercent: 0, assets: [] };
     try {
         const liveRate = await getEurUsdRate();
-        const stats = await getAllPortfolioStats(liveRate);
+        const stats = await getAllPortfolioStats(userId, liveRate);
         const assets = database.db.prepare(`
             SELECT a.*, 
-                   IFNULL(h.netQty, 0) as netQty
+                   IFNULL(h.netQty, 0) as netQty,
+                   CASE WHEN uw.ticker IS NOT NULL THEN 1 ELSE 0 END as inWatchlist
             FROM assets a
             LEFT JOIN (
-                SELECT assetTicker, 
+                SELECT t.assetTicker, 
                        SUM(CASE WHEN t.type = 'BUY' THEN t.quantity WHEN t.type = 'SELL' THEN -t.quantity ELSE 0 END) as netQty 
                 FROM transactions t
-                GROUP BY assetTicker
+                JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
+                WHERE pu.user_id = ?
+                GROUP BY t.assetTicker
             ) h ON a.ticker = h.assetTicker
-            WHERE h.netQty > 0.001 OR a.inWatchlist = 1
-        `).all();
+            LEFT JOIN user_watchlist uw ON a.ticker = uw.ticker AND uw.user_id = ?
+            WHERE h.netQty > 0.001 OR uw.ticker IS NOT NULL
+        `).all(userId, userId);
 
         return {
             totalNetValue: stats.totalNetValue,
@@ -463,149 +469,115 @@ const isUSMarket = (a) => {
     return true;
 };
 
-async function sendMarketStatusTelegram() {
-    const escape = escapeV2;
-    const stats = await calculateMarketStats();
-    const todayStr = new Date().toISOString().split('T')[0];
-    const marketStatus = getMarketStatus();
-    const overrides = calculateVariationOverrides(marketStatus);
+async function sendMarketStatusTelegram(targetUserId = null) {
+    const users = targetUserId 
+        ? database.db.prepare(`SELECT id FROM users WHERE id = ?`).all(targetUserId)
+        : database.db.prepare(`SELECT id FROM users WHERE telegram_chat_id IS NOT NULL`).all();
 
-    // 1. FILTERING: Include all assets with open positions (matches Market page)
-    const activeAssets = stats.assets.filter(a => {
-        if (a.value < 1) return false; // Must be in portfolio
-        return true;
-    });
-
-    const extractSimpleSymbol = (s) => s.split('.')[0].split(':')[0].substring(0, 8);
-
-    const categories = {
-        'OBBL': { emoji: '🟠', assets: [], totalVar: 0, totalVarPP: 0 },
-        'ETF OBBL': { emoji: '🟣', assets: [], totalVar: 0, totalVarPP: 0 },
-        'AZIONI': { emoji: '🔵', assets: [], totalVar: 0, totalVarPP: 0 },
-        'ETF AZ': { emoji: '🟢', assets: [], totalVar: 0, totalVarPP: 0 }
-    };
-
-    const typeToCat = {
-        'Bond': 'OBBL',
-        'ETF Obblig': 'OBBL',
-        'ETF Monetario': 'ETF OBBL',
-        'Deposito Vincolato': 'ETF OBBL',
-        'Azioni': 'AZIONI',
-        'ETF Azionario': 'ETF AZ'
-    };
-
-    // Calculate total variation based on split overrides
-    let marketChange = 0;
-    let prePostChange = 0;
-
-    activeAssets.forEach(a => {
-        const catName = typeToCat[a.type] || 'AZIONI';
-        const isUS = isUSMarket(a);
-        const ticker = a.ticker;
+    for (const userRow of users) {
+        const userId = userRow.id;
+        const userSettings = database.getSettings(userId);
         
-        let diffReg = 0;
-        let diffPP = 0;
+        // Skip if not forced and disabled for this user
+        if (!targetUserId && userSettings.marketStatusTelegramEnabled !== 'true') continue;
 
-        if (overrides.regular && overrides.regular.hasOwnProperty(ticker)) {
-            const chgReg = overrides.regular[ticker];
-            diffReg = (a.quantity || 0) * chgReg;
-            if (a.currency === 'USD') diffReg /= stats.liveRate;
-        }
-        if (overrides.prePost && overrides.prePost.hasOwnProperty(ticker)) {
-            const chgPP = overrides.prePost[ticker];
-            diffPP = (a.quantity || 0) * chgPP;
-            if (a.currency === 'USD') diffPP /= stats.liveRate;
-        }
+        try {
+            const escape = escapeV2;
+            const stats = await calculateMarketStats(userId);
+            const marketStatus = getMarketStatus();
+            const overrides = calculateVariationOverrides(marketStatus);
 
-        marketChange += diffReg;
-        prePostChange += diffPP;
-        
-        if (categories[catName]) {
-            categories[catName].assets.push({ ...a, diffReg, diffPP });
-            categories[catName].totalVar += diffReg;
-            categories[catName].totalVarPP += diffPP;
-        } else {
-            categories['AZIONI'].assets.push({ ...a, diffReg, diffPP });
-            categories['AZIONI'].totalVar += diffReg;
-            categories['AZIONI'].totalVarPP += diffPP;
-        }
-    });
+            // 1. FILTERING: Include all assets with open positions
+            const activeAssets = stats.assets.filter(a => a.value >= 1);
+            if (activeAssets.length === 0) continue;
 
-    const totalVal = stats.totalNetValue || 0;
-    const bigEmoji = getBigEmoji(marketChange + prePostChange);
-    
-    const tSign = marketChange >= 0 ? '+' : '';
-    const pSign = prePostChange >= 0 ? '+' : '';
-    
-    const tVarStr = Math.round(marketChange).toLocaleString('it-IT');
-    const pVarStr = Math.round(prePostChange).toLocaleString('it-IT');
-    const totalValStr = Math.round(totalVal).toLocaleString('it-IT');
+            const extractSimpleSymbol = (s) => s.split('.')[0].split(':')[0].substring(0, 8);
 
-    // Header with split variation
-    let msg = `1 DAY: *\`${escapeCodeV2(tSign + '€' + tVarStr)}\`* ${bigEmoji}   ${escapeV2('EXT:')} *\`${escapeCodeV2('(' + pSign + '€' + pVarStr + ')')}\`* \n`;
-    msg += `${escapeV2('NET. :')} \`${escapeCodeV2('€' + totalValStr)}\` \n\n`;
+            const categories = {
+                'OBBL': { emoji: '🟠', assets: [], totalVar: 0, totalVarPP: 0 },
+                'ETF OBBL': { emoji: '🟣', assets: [], totalVar: 0, totalVarPP: 0 },
+                'AZIONI': { emoji: '🔵', assets: [], totalVar: 0, totalVarPP: 0 },
+                'ETF AZ': { emoji: '🟢', assets: [], totalVar: 0, totalVarPP: 0 }
+            };
 
-    // 3. CATEGORIES & RICH ROWS (V33.11 style)
-    for (const [catName, cat] of Object.entries(categories)) {
-        if (cat.assets.length === 0) continue;
+            const typeToCat = {
+                'Bond': 'OBBL',
+                'ETF Obblig': 'OBBL',
+                'ETF Monetario': 'ETF OBBL',
+                'Deposito Vincolato': 'ETF OBBL',
+                'Azioni': 'AZIONI',
+                'ETF Azionario': 'ETF AZ'
+            };
 
-        const catSign = cat.totalVar >= 0 ? '+' : '';
-        const catPPSign = cat.totalVarPP >= 0 ? '+' : '';
-        const catVarStr = Math.round(cat.totalVar).toLocaleString('it-IT');
-        const catVarPPStr = Math.round(cat.totalVarPP).toLocaleString('it-IT');
-        
-        const headerLabel = catName.padEnd(12);
-        msg += `*${cat.emoji}* *\`${escapeCodeV2(headerLabel + (cat.totalVar >= 0 ? '+' : '') + '€' + catVarStr)}\`*  *\`(${catPPSign + '€' + catVarPPStr})\`*\n`;
-        
-        cat.assets.sort((a,b) => (b.diffReg + b.diffPP) - (a.diffReg + a.diffPP)).forEach(a => {
-            const sym = extractSimpleSymbol(a.ticker).padEnd(8);
-            const valChange = a.diffReg || 0;
-            const valPP = a.diffPP || 0;
+            let marketChange = 0;
+            let prePostChange = 0;
+
+            activeAssets.forEach(a => {
+                const catName = typeToCat[a.type] || 'AZIONI';
+                const ticker = a.ticker;
+                
+                let diffReg = 0;
+                let diffPP = 0;
+
+                if (overrides.regular && overrides.regular.hasOwnProperty(ticker)) {
+                    diffReg = (a.quantity || 0) * overrides.regular[ticker];
+                    if (a.currency === 'USD') diffReg /= stats.liveRate;
+                }
+                if (overrides.prePost && overrides.prePost.hasOwnProperty(ticker)) {
+                    diffPP = (a.quantity || 0) * overrides.prePost[ticker];
+                    if (a.currency === 'USD') diffPP /= stats.liveRate;
+                }
+
+                marketChange += diffReg;
+                prePostChange += diffPP;
+                
+                if (categories[catName]) {
+                    categories[catName].assets.push({ ...a, diffReg, diffPP });
+                    categories[catName].totalVar += diffReg;
+                    categories[catName].totalVarPP += diffPP;
+                } else {
+                    categories['AZIONI'].assets.push({ ...a, diffReg, diffPP });
+                    categories['AZIONI'].totalVar += diffReg;
+                    categories['AZIONI'].totalVarPP += diffPP;
+                }
+            });
+
+            const totalVal = stats.totalNetValue || 0;
+            const bigEmoji = getBigEmoji(marketChange + prePostChange);
             
-            const vSign = valChange >= 0 ? '+' : '';
-            const vpSign = valPP >= 0 ? '+' : '';
-            const combinedPct = a.changePercent + (a.preMarketChangePercent || a.postMarketChangePercent || 0);
-            const vIcon = getPerformanceIcon(combinedPct);
-            
-            // Emoji logic: ⚪/🟡 for pre/post, 🟢/🔴 for open market, 🔘 for closed
-            let statusIcon = '🔘'; 
-            const isUS = isUSMarket(a);
-            const mktOpen = isUS ? marketStatus.US : marketStatus.EU;
-            if (mktOpen) {
-                statusIcon = valChange >= 0 ? '🟢' : '🔴';
-            } else if (valPP !== 0) {
-                statusIcon = '🟡'; // Pre/Post active
-            } else {
-                statusIcon = '🔘'; // Closed
+            const tSign = marketChange >= 0 ? '+' : '';
+            const pSign = prePostChange >= 0 ? '+' : '';
+            const tVarStr = Math.round(marketChange).toLocaleString('it-IT');
+            const pVarStr = Math.round(prePostChange).toLocaleString('it-IT');
+            const totalValStr = Math.round(totalVal).toLocaleString('it-IT');
+
+            let msg = `1 DAY: *\`${escapeCodeV2(tSign + '€' + tVarStr)}\`* ${bigEmoji}   ${escapeV2('EXT:')} *\`${escapeCodeV2('(' + pSign + '€' + pVarStr + ')')}\`* \n`;
+            msg += `${escapeV2('NET. :')} \`${escapeCodeV2('€' + totalValStr)}\` \n\n`;
+
+            for (const [catName, cat] of Object.entries(categories)) {
+                if (cat.assets.length === 0) continue;
+                const catPPSign = cat.totalVarPP >= 0 ? '+' : '';
+                const catVarStr = Math.round(cat.totalVar).toLocaleString('it-IT');
+                const catVarPPStr = Math.round(cat.totalVarPP).toLocaleString('it-IT');
+                msg += `*${cat.emoji}* *\`${escapeCodeV2(catName.padEnd(12) + (cat.totalVar >= 0 ? '+' : '') + '€' + catVarStr)}\`*  *\`(${catPPSign + '€' + catVarPPStr})\`*\n`;
+                
+                cat.assets.sort((a,b) => (b.diffReg + b.diffPP) - (a.diffReg + a.diffPP)).forEach(a => {
+                    const combinedPct = a.changePercent + (a.preMarketChangePercent || a.postMarketChangePercent || 0);
+                    const statusIcon = (getMarketStatus()[isUSMarket(a) ? 'US' : 'EU']) ? (a.diffReg >= 0 ? '🟢' : '🔴') : (a.diffPP !== 0 ? '🟡' : '🔘');
+                    const rowData = `${extractSimpleSymbol(a.ticker).padEnd(8)}${(a.currency === 'USD' ? '$' : '€').padStart(2)} ${a.currentPrice.toLocaleString('it-IT', { minimumFractionDigits: a.currentPrice < 10 ? 2 : 1, maximumFractionDigits: a.currentPrice < 10 ? 2 : 1 }).padStart(6)} ${(a.diffReg >= 0 ? '+' : '-') + '€' + Math.round(Math.abs(a.diffReg)).toLocaleString('it-IT').padStart(7)} ${(combinedPct >= 0 ? '+' : '') + Math.abs(combinedPct).toFixed(1) + '%'}`;
+                    msg += `${getPerformanceIcon(combinedPct)} \`${escapeCodeV2(rowData)}\` ${statusIcon}\n`;
+                });
+                msg += '\n';
             }
-
-            const cSym = a.currency === 'USD' ? '$' : '€';
-            // Per quotazioni < 10 usa 2 decimali, altrimenti 1
-            const decimals = a.currentPrice < 10 ? 2 : 1;
-            const mktVal = a.currentPrice.toLocaleString('it-IT', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
             
-            const vChangeStr = (vSign + '€' + Math.round(Math.abs(valChange)).toLocaleString('it-IT')).padStart(7);
-            
-            // Fix: correctly define sign and percentage for the row
-            const pSignChar = combinedPct >= 0 ? '+' : '';
-            const pChangeStr = (pSignChar + Math.abs(combinedPct).toFixed(1) + '%').padStart(7);
-            
-            // Rimosso uno spazio tra Ticker (sym) e simbolo Euro (cSym)
-            const rowData = `${sym}${cSym.padStart(2)} ${mktVal.padStart(6)} ${vChangeStr} ${pChangeStr}`;
-            msg += `${vIcon} \`${escapeCodeV2(rowData)}\` ${statusIcon}\n`;
-        });
-        msg += '\n';
-    }
+            const tsFormatted = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }) + ' ' + 
+                               new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+            msg += `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\` · \`${escapeCodeV2(APP_VERSION)}\``;
 
-    const tsFormatted = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }) + ' ' + 
-                       new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-    msg += `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\` · \`${escapeCodeV2(APP_VERSION)}\``;
-
-    try {
-        await sendTelegramMessage(msg);
-    } catch (err) {
-        logger.error('sendMarketStatusTelegram failed', err);
-        throw err;
+            await sendTelegramMessage(msg, null, userId);
+        } catch (err) {
+            logger.error(`sendMarketStatusTelegram failed for user ${userId}`, err);
+        }
     }
 }
 
@@ -626,7 +598,7 @@ const PORT = process.env.PORT || 3000;
 let transporterInstance = null;
 function getTransporter() {
     if (transporterInstance) return transporterInstance;
-    const settings = database.getSettings();
+    const settings = database.getSettings(1); // Use admin settings for SMTP
     const smtpHost = settings.smtp_host || process.env.SMTP_HOST || 'smtp.ethereal.email';
     const smtpPort = parseInt(settings.smtp_port) || parseInt(process.env.SMTP_PORT) || 587;
     const smtpUser = settings.smtp_user || process.env.SMTP_USER || '';
@@ -690,6 +662,25 @@ function requireAdmin(req, res, next) {
         return res.status(403).json({ error: 'Accesso negato: richiesto ruolo admin' });
     }
     next();
+}
+
+/**
+ * Ensures the authenticated user has access to the portfolio.
+ * Looks for portfolioId in req.params or req.body.
+ */
+function requirePortfolioAccess(req, res, next) {
+    const portfolioId = req.params.portfolioId || req.params.id || req.body.portfolioId;
+    if (!portfolioId) return next();
+
+    try {
+        const access = database.db.prepare('SELECT 1 FROM portfolio_users WHERE portfolio_id = ? AND user_id = ?').get(portfolioId, req.user.id);
+        if (!access && req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Accesso negato a questo portafoglio' });
+        }
+        next();
+    } catch (e) {
+        res.status(500).json({ error: 'Errore verifica permessi' });
+    }
 }
 
 // ─── Auth API Routes ─────────────────────────────────────────────────────────
@@ -1411,21 +1402,27 @@ const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 // HISTORY API
 // ════════════════════════════════════════════════════════════════════════════
 
-app.get('/api/history', (req, res) => {
+app.get('/api/history', requireAuth, (req, res) => {
     const { portfolioId } = req.query;
-    let query = `SELECT * FROM portfolio_history `;
-    let params = [];
-    if (portfolioId === 'null' || portfolioId === '') {
-        query += `WHERE portfolioId IS NULL `;
-    } else if (portfolioId) {
-        query += `WHERE portfolioId = ? `;
+    
+    // Isolation: Only portfolios the user has access to
+    let query = `
+        SELECT h.* FROM portfolio_history h
+        JOIN portfolio_users pu ON h.portfolioId = pu.portfolio_id
+        WHERE pu.user_id = ?
+    `;
+    let params = [req.user.id];
+    
+    if (portfolioId && portfolioId !== 'null' && portfolioId !== '') {
+        query += ` AND h.portfolioId = ? `;
         params.push(portfolioId);
     }
-    query += `ORDER BY date DESC`;
+    
+    query += ` ORDER BY date DESC`;
     res.json(database.db.prepare(query).all(...params));
 });
 
-app.post('/api/history', (req, res) => {
+app.post('/api/history', requireAuth, requirePortfolioAccess, (req, res) => {
     const { id, portfolioId, date, totalValue, cashValue, assetValue } = req.body;
     const rTotal = Math.round(totalValue || 0);
     const rCash  = Math.round(cashValue || 0);
@@ -1455,9 +1452,21 @@ app.post('/api/history', (req, res) => {
     }
 });
 
-app.delete('/api/history/:id', (req, res) => {
-    database.db.prepare(`DELETE FROM portfolio_history WHERE id = ?`).run(req.params.id);
-    res.json({ success: true });
+app.delete('/api/history/:id', requireAuth, (req, res) => {
+    try {
+        const row = database.db.prepare(`
+            SELECT h.* FROM portfolio_history h
+            JOIN portfolio_users pu ON h.portfolioId = pu.portfolio_id
+            WHERE h.id = ? AND pu.user_id = ?
+        `).get(req.params.id, req.user.id);
+
+        if (!row && req.user.role !== 'admin') return res.status(403).json({ error: 'Access denied' });
+
+        database.db.prepare(`DELETE FROM portfolio_history WHERE id = ?`).run(req.params.id);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // app.use(cors()); // Moved to top
@@ -1665,7 +1674,7 @@ app.post('/api/assets/import-history', (req, res) => {
     }
 });
 
-app.post('/api/assets', async (req, res) => {
+app.post('/api/assets', requireAuth, async (req, res) => {
     try {
         let { ticker, name, type, currency, exchange, pe, currentPrice, changePercent, isin, dataSource } = req.body;
         ticker = sanitizeTicker(ticker);
@@ -1733,11 +1742,12 @@ app.post('/api/assets', async (req, res) => {
     }
 });
 
-app.put('/api/assets/:id', (req, res) => {
-    const { targetPrice, stopLoss, isMonitored, dataSource, isin, name, type, exchange, currency, currentPrice, changePercent, pe } = req.body;
+app.put('/api/assets/:id', requireAuth, (req, res) => {
+    const { targetPrice, stopLoss, volatilityAlert, isMonitored, dataSource, isin, name, type, exchange, currency, currentPrice, changePercent, pe } = req.body;
+    
+    // 1. Update Asset Metadata (Global)
     const updates = [];
     const params = [];
-
     if (name !== undefined) { updates.push("name = ?"); params.push(name); }
     if (type !== undefined) { updates.push("type = ?"); params.push(type); }
     if (exchange !== undefined) { updates.push("exchange = ?"); params.push(exchange); }
@@ -1745,30 +1755,42 @@ app.put('/api/assets/:id', (req, res) => {
     if (currentPrice !== undefined) { updates.push("currentPrice = ?"); params.push(currentPrice); }
     if (changePercent !== undefined) { updates.push("changePercent = ?"); params.push(changePercent); }
     if (pe !== undefined) { updates.push("pe = ?"); params.push(pe); }
-    if (targetPrice !== undefined) { updates.push("targetPrice = ?"); params.push(targetPrice); }
-    if (req.body.targetPrice2 !== undefined) { updates.push("targetPrice2 = ?"); params.push(req.body.targetPrice2); }
-    if (stopLoss !== undefined) { updates.push("stopLoss = ?"); params.push(stopLoss); }
-    if (req.body.volatilityAlert !== undefined) { updates.push("volatilityAlert = ?"); params.push(req.body.volatilityAlert); }
     if (isMonitored !== undefined) { updates.push("isMonitored = ?"); params.push(isMonitored); }
     if (dataSource !== undefined) { updates.push("dataSource = ?"); params.push(dataSource); }
     if (isin !== undefined) { updates.push("isin = ?"); params.push(isin); }
-
-    // Clear error if data source or ISIN is changed
-    if (dataSource !== undefined || isin !== undefined) {
-        updates.push("lastUpdateError = NULL");
-        updates.push("updatedAt = datetime('now')");
-    }
-
+    
     if (updates.length > 0) {
         params.push(req.params.id);
         params.push(req.params.id);
-        const sql = `UPDATE assets SET ${updates.join(', ')} WHERE id = ? OR ticker = ?`;
-        database.db.prepare(sql).run(...params);
-        
-        // Auto-rebuild history if metadata changed (currency, ticker, etc.)
-        triggerHistoryRebuild(null); 
+        database.db.prepare(`UPDATE assets SET ${updates.join(', ')} WHERE id = ? OR ticker = ?`).run(...params);
     }
-    res.json(database.db.prepare(`SELECT * FROM assets WHERE id = ? OR ticker = ?`).get(req.params.id, req.params.id));
+
+    // 2. Update User Alerts (Private)
+    const ticker = req.params.id; // Usually the ticker or ID
+    const watchUpdates = [];
+    const watchParams = [];
+    if (targetPrice !== undefined) { watchUpdates.push("targetPrice = ?"); watchParams.push(targetPrice); }
+    if (stopLoss !== undefined) { watchUpdates.push("stopLoss = ?"); watchParams.push(stopLoss); }
+    if (volatilityAlert !== undefined) { watchUpdates.push("volatilityAlert = ?"); watchParams.push(volatilityAlert); }
+    
+    if (watchUpdates.length > 0) {
+        watchParams.push(req.user.id);
+        watchParams.push(ticker);
+        database.db.prepare(`
+            UPDATE user_watchlist 
+            SET ${watchUpdates.join(', ')} 
+            WHERE user_id = ? AND ticker = (SELECT ticker FROM assets WHERE id = ? OR ticker = ?)
+        `).run(...watchParams, ticker, ticker);
+    }
+
+    res.json({ success: true });
+});
+app.delete('/api/assets/:id', requireAuth, (req, res) => {
+    // Assets are global, but we can delete from the user's watchlist
+    try {
+        database.db.prepare(`DELETE FROM user_watchlist WHERE user_id = ? AND ticker = (SELECT ticker FROM assets WHERE id = ? OR ticker = ?)`).run(req.user.id, req.params.id, req.params.id);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // ─── MARKET SEARCH API ───────────────────────────────────────────────────────
@@ -1825,21 +1847,26 @@ app.get('/api/market/indices', async (req, res) => {
 
 // ─── WATCHLIST API ──────────────────────────────────────────────────────────
 
-app.get('/api/watchlist', (req, res) => {
+app.get('/api/watchlist', requireAuth, (req, res) => {
     try {
         const rows = database.db.prepare(`
             SELECT a.*, 
+                   uw.targetPrice as userTargetPrice,
+                   uw.stopLoss as userStopLoss,
+                   uw.volatilityAlert as userVolatilityAlert,
                    CASE WHEN t.balance IS NOT NULL AND t.balance > 0.0001 THEN 1 ELSE 0 END as hasPosition
             FROM assets a
+            JOIN user_watchlist uw ON a.ticker = uw.ticker
             LEFT JOIN (
                 SELECT assetTicker, 
                        SUM(CASE WHEN type = 'BUY' THEN quantity WHEN type = 'SELL' THEN -quantity ELSE 0 END) as balance
                 FROM transactions 
+                WHERE portfolioId IN (SELECT portfolio_id FROM portfolio_users WHERE user_id = ?)
                 GROUP BY assetTicker
             ) t ON a.ticker = t.assetTicker
-            WHERE a.inWatchlist = 1 AND a.ticker != 'CASH'
+            WHERE uw.user_id = ? AND a.ticker != 'CASH'
             ORDER BY a.ticker ASC
-        `).all();
+        `).all(req.user.id, req.user.id);
         
         const today = new Date().toISOString().split('T')[0];
         const result = rows.map(a => {
@@ -1852,8 +1879,12 @@ app.get('/api/watchlist', (req, res) => {
             const isToday = a.quoteDate === today;
             return { 
                 ...a, 
+                targetPrice: a.userTargetPrice,
+                stopLoss: a.userStopLoss,
+                volatilityAlert: a.userVolatilityAlert,
+                inWatchlist: 1,
                 sparkline,
-                changePercent: isToday ? (a.changePercent || 1) : 0,
+                changePercent: isToday ? (a.changePercent || 0) : 0,
                 changeValue: isToday ? (a.changeValue || 0) : 0
             };
         });
@@ -1863,8 +1894,8 @@ app.get('/api/watchlist', (req, res) => {
     }
 });
 
-app.post('/api/watchlist', async (req, res) => {
-    const { ticker } = req.body;
+app.post('/api/watchlist', requireAuth, async (req, res) => {
+    const { ticker, targetPrice, stopLoss, volatilityAlert } = req.body;
     if (!ticker) return res.status(400).send('Ticker is required');
 
     try {
@@ -1878,44 +1909,28 @@ app.post('/api/watchlist', async (req, res) => {
             const metadata = await fetchAssetMetadata(normalizedTicker);
             if (metadata) {
                 database.db.prepare(`
-                    INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, changeValue, pe, country, isin, updatedAt, inWatchlist)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), 1)
+                    INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, changeValue, pe, country, isin, updatedAt)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
                 `).run(
-                    normalizedTicker,
-                    normalizedTicker,
-                    metadata.name,
-                    metadata.type,
-                    metadata.exchange,
-                    metadata.currency,
-                    metadata.currentPrice,
-                    metadata.changePercent,
-                    metadata.changeValue || 0,
-                    metadata.pe,
-                    metadata.country,
-                    metadata.isin || null
+                    normalizedTicker, normalizedTicker, metadata.name, metadata.type, metadata.exchange, metadata.currency, metadata.currentPrice, metadata.changePercent, metadata.changeValue || 0, metadata.pe, metadata.country, metadata.isin || null
                 );
                 asset = database.db.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(normalizedTicker);
             } else {
                 return res.status(404).send('Ticker not found on Yahoo Finance');
             }
-        } else {
-            // 3. Mark existing asset as inWatchlist
-            database.db.prepare(`UPDATE assets SET inWatchlist = 1 WHERE ticker = ?`).run(normalizedTicker);
-            asset.inWatchlist = 1;
-
-            // 4. Optimization: If missing ISIN, try to fetch it now
-            if (!asset.isin) {
-                try {
-                    const metadata = await fetchAssetMetadata(normalizedTicker);
-                    if (metadata && metadata.isin) {
-                        database.db.prepare(`UPDATE assets SET isin = ? WHERE ticker = ?`).run(metadata.isin, normalizedTicker);
-                        asset.isin = metadata.isin;
-                    }
-                } catch (e) { console.error('Silent metadata update failed for watchlist asset:', e.message); }
-            }
         }
 
-        res.json(asset);
+        // 3. Add to user_watchlist
+        database.db.prepare(`
+            INSERT INTO user_watchlist (user_id, ticker, targetPrice, stopLoss, volatilityAlert)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(user_id, ticker) DO UPDATE SET
+                targetPrice = COALESCE(excluded.targetPrice, targetPrice),
+                stopLoss = COALESCE(excluded.stopLoss, stopLoss),
+                volatilityAlert = COALESCE(excluded.volatilityAlert, volatilityAlert)
+        `).run(req.user.id, normalizedTicker, targetPrice, stopLoss, volatilityAlert);
+
+        res.json({ ok: true, ticker: normalizedTicker });
         triggerHistoryRebuild(null);
     } catch (err) {
         console.error('Watchlist add error:', err);
@@ -1923,55 +1938,25 @@ app.post('/api/watchlist', async (req, res) => {
     }
 });
 
-app.delete('/api/watchlist/:ticker', (req, res) => {
+app.delete('/api/watchlist/:ticker', requireAuth, (req, res) => {
     try {
         const ticker = req.params.ticker.toUpperCase();
-        
-        // 1. Check if the asset exists in any transactions
-        const txData = database.db.prepare(`
-            SELECT 
-                COUNT(*) as count,
-                SUM(CASE WHEN type='BUY' THEN quantity WHEN type='SELL' THEN -quantity ELSE 0 END) as balance
-            FROM transactions WHERE assetTicker = ?
-        `).get(ticker);
-        
-        const hasTransactions = txData && txData.count > 0;
-        const balance = txData ? (txData.balance || 0) : 0;
-        
-        if (hasTransactions) {
-            // Keep metadata for portfolio but mark not in watchlist
-            // If balance is 0 (sold), we can also stop monitoring background prices
-            const isMonitored = balance > 0.0001 ? 1 : 0;
-            database.db.prepare(`UPDATE assets SET inWatchlist = 0, isMonitored = ? WHERE ticker = ?`).run(isMonitored ? 1 : 0, ticker);
-        } else {
-            // physically DELETE if not used in portfolio
-            database.db.prepare(`DELETE FROM assets WHERE ticker = ?`).run(ticker);
-        }
-        
-        res.json({ success: true, deleted: !hasTransactions });
+        database.db.prepare('DELETE FROM user_watchlist WHERE user_id = ? AND ticker = ?').run(req.user.id, ticker);
+        res.json({ ok: true });
     } catch (err) {
+        console.error('Watchlist delete error:', err);
         res.status(500).json({ error: err.message });
     }
 });
 
-app.get('/api/watchlist/performance', async (req, res) => {
+app.get('/api/watchlist/performance', requireAuth, async (req, res) => {
     try {
-        const now = Date.now();
-        if (now - watchlistPerformanceCache.lastUpdated < WATCHLIST_PERF_CACHE_TTL) {
-            return res.json(watchlistPerformanceCache.data);
-        }
-
         const watchlist = database.db.prepare(`
             SELECT a.ticker 
             FROM assets a
-            LEFT JOIN (
-                SELECT assetTicker, 
-                       SUM(CASE WHEN type = 'BUY' THEN quantity WHEN type = 'SELL' THEN -quantity ELSE 0 END) as balance
-                FROM transactions 
-                GROUP BY assetTicker
-            ) t ON a.ticker = t.assetTicker
-            WHERE a.inWatchlist = 1 AND a.ticker != 'CASH'
-        `).all();
+            JOIN user_watchlist uw ON a.ticker = uw.ticker
+            WHERE uw.user_id = ? AND a.ticker != 'CASH'
+        `).all(req.user.id);
         const results = {};
         
         const nowDate = new Date();
@@ -2147,49 +2132,50 @@ app.delete('/api/assets/:id', (req, res) => {
 
 // ─── NOTIFICATIONS API ──────────────────────────────────────────────────────
 
-app.get('/api/notifications', (req, res) => {
+app.get('/api/notifications', requireAuth, (req, res) => {
     try {
         const rows = database.db.prepare(`
             SELECT * FROM notifications 
+            WHERE user_id = ?
             ORDER BY date DESC 
             LIMIT 50
-        `).all();
+        `).all(req.user.id);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-app.post('/api/notifications/:id/read', (req, res) => {
+app.post('/api/notifications/:id/read', requireAuth, (req, res) => {
     try {
-        database.db.prepare(`UPDATE notifications SET isRead = 1 WHERE id = ?`).run(req.params.id);
+        database.db.prepare(`UPDATE notifications SET isRead = 1 WHERE id = ? AND user_id = ?`).run(req.params.id, req.user.id);
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-app.post('/api/notifications/read-all', (req, res) => {
+app.post('/api/notifications/read-all', requireAuth, (req, res) => {
     try {
-        database.db.prepare(`UPDATE notifications SET isRead = 1`).run();
+        database.db.prepare(`UPDATE notifications SET isRead = 1 WHERE user_id = ?`).run(req.user.id);
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-app.delete('/api/notifications/:id', (req, res) => {
+app.delete('/api/notifications/:id', requireAuth, (req, res) => {
     try {
-        database.db.prepare(`DELETE FROM notifications WHERE id = ?`).run(req.params.id);
+        database.db.prepare(`DELETE FROM notifications WHERE id = ? AND user_id = ?`).run(req.params.id, req.user.id);
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-app.delete('/api/notifications', (req, res) => {
+app.delete('/api/notifications', requireAuth, (req, res) => {
     try {
-        database.db.prepare(`DELETE FROM notifications`).run();
+        database.db.prepare(`DELETE FROM notifications WHERE user_id = ?`).run(req.user.id);
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -2200,14 +2186,27 @@ app.delete('/api/notifications', (req, res) => {
 // PORTFOLIOS API
 // ════════════════════════════════════════════════════════════════════════════
 
-async function getAllPortfolioStats(liveRateInput = null) {
+async function getAllPortfolioStats(userId = null, liveRateInput = null) {
     let liveRate = liveRateInput;
     if (!liveRate) {
         liveRate = await getEurUsdRate();
     }
     
+    // Note: recalculateAllPortfoliosWithOverrides still runs globally for now,
+    // but we filter which results we aggregate for the user.
     const { overrides, marketStatus } = await recalculateAllPortfoliosWithOverrides(liveRate);
-    const rows = database.db.prepare(`SELECT * FROM portfolios ORDER BY createdAt ASC`).all();
+    
+    let rows;
+    if (userId) {
+        rows = database.db.prepare(`
+            SELECT p.* FROM portfolios p
+            JOIN portfolio_users pu ON p.id = pu.portfolio_id
+            WHERE pu.user_id = ?
+            ORDER BY p.createdAt ASC
+        `).all(userId);
+    } else {
+        rows = database.db.prepare(`SELECT * FROM portfolios ORDER BY createdAt ASC`).all();
+    }
     
     // Get FX Variation metadata for EURUSD
     const fxData = database.db.prepare("SELECT changePercent FROM assets WHERE ticker='EURUSD=X'").get() || { changePercent: 0 };
@@ -2348,9 +2347,9 @@ app.use('/api/', (req, res, next) => {
     return requireAuth(req, res, next);
 });
 
-app.get('/api/portfolios', async (req, res) => {
+app.get('/api/portfolios', requireAuth, async (req, res) => {
     try {
-        const stats = await getAllPortfolioStats();
+        const stats = await getAllPortfolioStats(req.user.id);
         res.json({
             portfolios: stats.portfolios,
             global: {
@@ -2642,7 +2641,7 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
     };
 }
 
-app.get('/api/portfolios/:id', async (req, res) => {
+app.get('/api/portfolios/:id', requireAuth, requirePortfolioAccess, async (req, res) => {
     try {
         const data = await getPortfolioDetails(req.params.id);
         res.json(data);
@@ -2651,9 +2650,13 @@ app.get('/api/portfolios/:id', async (req, res) => {
     }
 });
 
-app.get('/api/analytics/global-allocation', async (req, res) => {
+app.get('/api/analytics/global-allocation', requireAuth, async (req, res) => {
     try {
-        const portfolios = database.db.prepare('SELECT id FROM portfolios').all();
+        const portfolios = database.db.prepare(`
+            SELECT p.id FROM portfolios p
+            JOIN portfolio_users pu ON p.id = pu.portfolio_id
+            WHERE pu.user_id = ?
+        `).all(req.user.id);
         const liveRate = await getEurUsdRate();
         const typeMap = {};
         let totalGrossValue = 0;
@@ -2776,7 +2779,7 @@ app.get('/api/export-all-transactions', (req, res) => {
 });
 
 
-app.post('/api/portfolios', (req, res) => {
+app.post('/api/portfolios', requireAuth, (req, res) => {
     console.log('POST /api/portfolios:', req.body);
     const { name, type, currency, startDate, initialCash, color, losses } = req.body;
 
@@ -2786,29 +2789,41 @@ app.post('/api/portfolios', (req, res) => {
     const start = startDate || new Date().toISOString().split('T')[0];
     const pColor = color || '#6366f1';
 
-    const result = database.db.prepare(`
-        INSERT INTO portfolios (name, type, currency, startDate, initialCash, currentCash, totalValue, color)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(name, type || 'Investimento', currency || 'EUR', start, cash, cash, cash, pColor);
+    database.db.transaction(() => {
+        const result = database.db.prepare(`
+            INSERT INTO portfolios (name, type, currency, startDate, initialCash, currentCash, totalValue, color)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(name, type || 'Investimento', currency || 'EUR', start, cash, cash, cash, pColor);
 
-    const portfolioId = result.lastInsertRowid;
-    triggerHistoryRebuild(portfolioId);
-    
-    // Handle initial losses if provided
-    if (losses && typeof losses === 'object') {
-        const stmt = database.db.prepare(`INSERT OR REPLACE INTO portfolio_losses (portfolioId, asset_type, amount) VALUES (?, ?, ?)`);
-        for (const [type, amount] of Object.entries(losses)) {
-            stmt.run(portfolioId, type, parseFloat(amount) || 0);
+        const portfolioId = result.lastInsertRowid;
+        
+        // Associate with user
+        database.db.prepare(`INSERT INTO portfolio_users (portfolio_id, user_id) VALUES (?, ?)`).run(portfolioId, req.user.id);
+        
+        triggerHistoryRebuild(portfolioId);
+        
+        // Handle initial losses if provided
+        if (losses && typeof losses === 'object') {
+            const stmt = database.db.prepare(`INSERT OR REPLACE INTO portfolio_losses (portfolioId, asset_type, amount) VALUES (?, ?, ?)`);
+            for (const [type, amount] of Object.entries(losses)) {
+                stmt.run(portfolioId, type, parseFloat(amount) || 0);
+            }
         }
-    }
+    })();
 
-    const created = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(portfolioId);
+    const created = database.db.prepare(`
+        SELECT p.* FROM portfolios p 
+        JOIN portfolio_users pu ON p.id = pu.portfolio_id 
+        WHERE p.name = ? AND pu.user_id = ?
+        ORDER BY p.id DESC LIMIT 1
+    `).get(name, req.user.id);
+
     console.log('Created portfolio:', created);
     clearPerformanceCache();
     res.status(201).json(created);
 });
 
-app.put('/api/portfolios/:id', async (req, res) => {
+app.put('/api/portfolios/:id', requireAuth, requirePortfolioAccess, async (req, res) => {
     const existing = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(req.params.id);
     if (!existing) return res.status(404).send('Portfolio not found');
 
@@ -2841,12 +2856,12 @@ app.put('/api/portfolios/:id', async (req, res) => {
     res.json(database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(req.params.id));
 });
 
-app.delete('/api/portfolios/:id', (req, res) => {
+app.delete('/api/portfolios/:id', requireAuth, requirePortfolioAccess, (req, res) => {
     const row = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(req.params.id);
     if (!row) return res.status(404).send('Portfolio not found');
-    // ON DELETE CASCADE removes transactions automatically
+    
     database.db.prepare(`DELETE FROM portfolios WHERE id = ?`).run(req.params.id);
-    console.log(`Deleted portfolio ${req.params.id}`);
+    console.log(`Deleted portfolio ${req.params.id} by user ${req.user.id}`);
     
     // Trigger global rebuild to update aggregate charts
     triggerHistoryRebuild(null);
@@ -2855,7 +2870,7 @@ app.delete('/api/portfolios/:id', (req, res) => {
     res.json(row);
 });
 
-app.post('/api/portfolios/:id/reconcile', async (req, res) => {
+app.post('/api/portfolios/:id/reconcile', requireAuth, requirePortfolioAccess, async (req, res) => {
     const { actualCash, date } = req.body;
     const portfolioId = req.params.id;
 
@@ -3033,17 +3048,23 @@ app.get('/api/transactions/audit', async (req, res) => {
     }
 });
 
-app.get('/api/transactions', (req, res) => {
+app.get('/api/transactions', requireAuth, (req, res) => {
     const { portfolioId, assetTicker, id } = req.query;
-    let query = `SELECT * FROM transactions WHERE 1=1 `;
-    let params = [];
+    
+    // Isolation: Filter by portfolios user has access to
+    let query = `
+        SELECT t.* FROM transactions t
+        JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
+        WHERE pu.user_id = ?
+    `;
+    let params = [req.user.id];
     
     if (id) {
-        query += `AND id = ? `;
+        query += `AND t.id = ? `;
         params.push(id);
     }
     if (portfolioId) {
-        query += `AND portfolioId = ? `;
+        query += `AND t.portfolioId = ? `;
         params.push(portfolioId);
     }
     if (assetTicker) {
@@ -3055,7 +3076,7 @@ app.get('/api/transactions', (req, res) => {
     res.json(database.db.prepare(query).all(...params));
 });
 
-app.post('/api/transactions', async (req, res) => {
+app.post('/api/transactions', requireAuth, requirePortfolioAccess, async (req, res) => {
     const { 
         portfolioId, type, assetTicker, date, quantity, price, 
         commission, tax, exchangeRate, amount, destinationPortfolioId, 
@@ -3153,14 +3174,23 @@ app.post('/api/transactions', async (req, res) => {
     triggerHistoryRebuild(portfolioId);
     
     // Auto-refresh dividend projections (non-blocking)
-    refreshDividendProjections().catch(e => logger.error("Background Dividend Refresh Error:", e));
+    refreshDividendProjections(req.user.id).catch(e => logger.error("Background Dividend Refresh Error:", e));
 
     res.status(201).json(database.db.prepare(`SELECT * FROM transactions WHERE id = ?`).get(result.lastInsertRowid));
 });
 
-app.delete('/api/transactions/:id', async (req, res) => {
-    const row = database.db.prepare(`SELECT * FROM transactions WHERE id = ?`).get(req.params.id);
-    if (!row) return res.status(404).send('Transaction not found');
+app.delete('/api/transactions/:id', requireAuth, async (req, res) => {
+    const row = database.db.prepare(`
+        SELECT t.* FROM transactions t
+        JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
+        WHERE t.id = ? AND pu.user_id = ?
+    `).get(req.params.id, req.user.id);
+    
+    if (!row && req.user.role !== 'admin') return res.status(404).send('Transaction not found or access denied');
+    
+    const finalRow = row || database.db.prepare(`SELECT * FROM transactions WHERE id = ?`).get(req.params.id);
+    if (!finalRow) return res.status(404).send('Transaction not found');
+
     
     database.db.prepare(`DELETE FROM transactions WHERE id = ?`).run(req.params.id);
     const liveRate = await getEurUsdRate();
@@ -3184,24 +3214,34 @@ app.delete('/api/transactions/:id', async (req, res) => {
     triggerHistoryRebuild(row.portfolioId);
 
     // Auto-refresh dividend projections (non-blocking)
-    refreshDividendProjections().catch(e => logger.error("Background Dividend Refresh Error:", e));
+    refreshDividendProjections(req.user.id).catch(e => logger.error("Background Dividend Refresh Error:", e));
 
     res.json(row);
 });
 
-app.put('/api/transactions/:id', async (req, res) => {
+app.put('/api/transactions/:id', requireAuth, async (req, res) => {
     const { type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount } = req.body;
-    const existing = database.db.prepare(`SELECT * FROM transactions WHERE id = ?`).get(req.params.id);
-    if (!existing) return res.status(404).send('Transaction not found');
+    
+    // Check ownership
+    const existing = database.db.prepare(`
+        SELECT t.* FROM transactions t
+        JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
+        WHERE t.id = ? AND pu.user_id = ?
+    `).get(req.params.id, req.user.id);
+    
+    if (!existing && req.user.role !== 'admin') return res.status(404).send('Transaction not found or access denied');
+    
+    const finalExisting = existing || database.db.prepare(`SELECT * FROM transactions WHERE id = ?`).get(req.params.id);
+    if (!finalExisting) return res.status(404).send('Transaction not found');
 
     database.db.prepare(`
         UPDATE transactions 
         SET type = ?, assetTicker = ?, date = ?, quantity = ?, price = ?, commission = ?, tax = ?, exchangeRate = ?, amount = ?
         WHERE id = ?
     `).run(
-        type || existing.type,
-        sanitizeTicker(assetTicker) || existing.assetTicker,
-        date || existing.date,
+        type || finalExisting.type,
+        sanitizeTicker(assetTicker) || finalExisting.assetTicker,
+        date || finalExisting.date,
         parseFloat(quantity || 0),
         parseFloat(price || 0),
         parseFloat(commission || 0),
@@ -3211,14 +3251,11 @@ app.put('/api/transactions/:id', async (req, res) => {
         req.params.id
     );
 
-    database.recalculatePortfolio(existing.portfolioId);
+    database.recalculatePortfolio(finalExisting.portfolioId);
     clearPerformanceCache();
 
-    // Auto-rebuild history for this portfolio
-    triggerHistoryRebuild(existing.portfolioId);
-
-    // Auto-refresh dividend projections (non-blocking)
-    refreshDividendProjections().catch(e => logger.error("Background Dividend Refresh Error:", e));
+    triggerHistoryRebuild(finalExisting.portfolioId);
+    refreshDividendProjections(req.user.id).catch(e => logger.error("Background Dividend Refresh Error:", e));
 
     res.json({ success: true });
 });
@@ -3562,36 +3599,36 @@ app.get('/api/fx-rate', async (req, res) => {
 // ════════════════════════════════════════════════════════════════════════════
 
 // ─── Taxation Rates API ──────────────────────────────────────────────────
-app.get('/api/tax-rates', (req, res) => {
+app.get('/api/tax-rates', requireAuth, (req, res) => {
     try {
-        const rates = database.db.prepare(`SELECT * FROM tax_rates ORDER BY asset_type ASC`).all();
+        const rates = database.db.prepare(`SELECT * FROM tax_rates WHERE user_id = ? ORDER BY asset_type ASC`).all(req.user.id);
         res.json(rates);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/tax-rates', (req, res) => {
+app.post('/api/tax-rates', requireAuth, (req, res) => {
     try {
         const { rates } = req.body;
         if (!Array.isArray(rates)) return res.status(400).json({ error: 'Formato non valido' });
         
         database.db.transaction(() => {
-            database.db.prepare(`DELETE FROM tax_rates`).run();
-            const stmt = database.db.prepare(`INSERT INTO tax_rates (asset_type, rate) VALUES (?, ?)`);
-            for (const r of rates) if (r.asset_type) stmt.run(r.asset_type, parseFloat(r.rate) || 0);
+            database.db.prepare(`DELETE FROM tax_rates WHERE user_id = ?`).run(req.user.id);
+            const stmt = database.db.prepare(`INSERT INTO tax_rates (user_id, asset_type, rate) VALUES (?, ?, ?)`);
+            for (const r of rates) if (r.asset_type) stmt.run(req.user.id, r.asset_type, parseFloat(r.rate) || 0);
         })();
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.get('/api/settings', (req, res) => {
-    res.json(database.getSettings());
+app.get('/api/settings', requireAuth, (req, res) => {
+    res.json(database.getSettings(req.user.id));
 });
 
-app.put('/api/settings', (req, res) => {
+app.put('/api/settings', requireAuth, (req, res) => {
     for (const [key, value] of Object.entries(req.body)) {
-        database.setSetting(key, value);
+        database.setSetting(req.user.id, key, value);
     }
-    res.json(database.getSettings());
+    res.json(database.getSettings(req.user.id));
 });
 
 app.post('/api/telegram/send-report', async (req, res) => {
@@ -4477,7 +4514,7 @@ async function triggerHistoryRebuild(portfolioId = null) {
 
 // ─── ANALYTICS ENDPOINTS ──────────────────────────────────────────────────────
 
-app.get('/api/analytics/portfolio-performance/:id', async (req, res) => {
+app.get('/api/analytics/portfolio-performance/:id', requireAuth, requirePortfolioAccess, async (req, res) => {
     try {
         const { range } = req.query;
         const portfolioId = req.params.id;
@@ -4505,16 +4542,23 @@ app.get('/api/analytics/portfolio-performance/:id', async (req, res) => {
     }
 });
 
-app.get('/api/analytics/global-performance', async (req, res) => {
+app.get('/api/analytics/global-performance', requireAuth, async (req, res) => {
     try {
         const { range, benchmark } = req.query;
-        const cacheKey = `global_perf_${range || 'ALL'}_${benchmark || 'none'}`;
+        const cacheKey = `global_perf_${req.user.id}_${range || 'ALL'}_${benchmark || 'none'}`;
 
         if (performanceResultsCache[cacheKey] && (Date.now() - performanceResultsCache[cacheKey].timestamp < CACHE_TTL)) {
             return res.json(performanceResultsCache[cacheKey].data);
         }
 
-        const dataPoints = await calculatePerformanceHistory(null, range, false, false, benchmark);
+        const userPortfolios = database.db.prepare(`
+            SELECT p.id FROM portfolios p
+            JOIN portfolio_users pu ON p.id = pu.portfolio_id
+            WHERE pu.user_id = ?
+        `).all(req.user.id);
+        const pIds = userPortfolios.map(p => p.id);
+
+        const dataPoints = await calculatePerformanceHistory(pIds, range, false, false, benchmark);
 
         let changePercent = 0;
         if (dataPoints.length > 1) {
@@ -4535,9 +4579,13 @@ app.get('/api/analytics/global-performance', async (req, res) => {
 // ─── HISTORY ENDPOINT ──────────────────────────────────────────────────────────
 
 
-app.get('/api/analytics/history', (req, res) => {
+app.get('/api/analytics/history', requireAuth, (req, res) => {
     try {
-        const portfolios = database.db.prepare('SELECT id, name, currency FROM portfolios').all();
+        const portfolios = database.db.prepare(`
+            SELECT p.id, p.name, p.currency FROM portfolios p
+            JOIN portfolio_users pu ON p.id = pu.portfolio_id
+            WHERE pu.user_id = ?
+        `).all(req.user.id);
         let allClosed = [];
 
         for (const p of portfolios) {
@@ -4619,9 +4667,13 @@ app.get('/api/analytics/history', (req, res) => {
     }
 });
 
-app.get('/api/analytics/dividends', (req, res) => {
+app.get('/api/analytics/dividends', requireAuth, (req, res) => {
     try {
-        const portfolios = database.db.prepare('SELECT id, name, currency FROM portfolios').all();
+        const portfolios = database.db.prepare(`
+            SELECT p.id, p.name, p.currency FROM portfolios p
+            JOIN portfolio_users pu ON p.id = pu.portfolio_id
+            WHERE pu.user_id = ?
+        `).all(req.user.id);
         let allDividends = [];
 
         for (const p of portfolios) {
@@ -4648,40 +4700,40 @@ app.get('/api/dividends/manual-projections', (req, res) => {
     }
 });
 
-app.post('/api/dividends/projections', (req, res) => {
+app.post('/api/dividends/projections', requireAuth, (req, res) => {
     try {
         const { ticker, exDate, amount } = req.body;
         if (!ticker || !exDate || !amount) return res.status(400).json({ error: 'Missing fields' });
         const year = parseInt(exDate.substring(0, 4));
         database.db.prepare(`
-            INSERT INTO dividend_projections (ticker, name, exDate, amount, totalAmount, yield, tag, year, isCustom)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
-        `).run(ticker, null, exDate, parseFloat(amount), parseFloat(amount), 0, 'MANUALE', year);
+            INSERT INTO dividend_projections (user_id, ticker, name, exDate, amount, totalAmount, yield, tag, year, isCustom)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+        `).run(req.user.id, ticker, null, exDate, parseFloat(amount), parseFloat(amount), 0, 'MANUALE', year);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.put('/api/dividends/projections/:id', (req, res) => {
+app.put('/api/dividends/projections/:id', requireAuth, (req, res) => {
     try {
         const { exDate, amount } = req.body;
         const year = parseInt(exDate.substring(0, 4));
         database.db.prepare(`
             UPDATE dividend_projections 
             SET exDate = ?, amount = ?, totalAmount = ?, year = ?, tag = 'MANUALE', isCustom = 1
-            WHERE id = ?
-        `).run(exDate, parseFloat(amount), parseFloat(amount), year, req.params.id);
+            WHERE id = ? AND user_id = ?
+        `).run(exDate, parseFloat(amount), parseFloat(amount), year, req.params.id, req.user.id);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.delete('/api/dividends/projections/:id', (req, res) => {
+app.delete('/api/dividends/projections/:id', requireAuth, (req, res) => {
     try {
-        database.db.prepare(`DELETE FROM dividend_projections WHERE id = ?`).run(req.params.id);
+        database.db.prepare(`DELETE FROM dividend_projections WHERE id = ? AND user_id = ?`).run(req.params.id, req.user.id);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/dividends/projections/:id/confirm', async (req, res) => {
+app.post('/api/dividends/projections/:id/confirm', requireAuth, requirePortfolioAccess, async (req, res) => {
     try {
         const { portfolioId, ticker, amount, date } = req.body;
         if (!portfolioId || !ticker || !amount || !date) {
@@ -4693,7 +4745,7 @@ app.post('/api/dividends/projections/:id/confirm', async (req, res) => {
             VALUES (?, 'DIVIDEND', ?, ?, ?, 0, 0, 0, 0, 1)
         `).run(portfolioId, ticker, date, parseFloat(amount));
         
-        database.db.prepare(`DELETE FROM dividend_projections WHERE id = ?`).run(req.params.id);
+        database.db.prepare(`DELETE FROM dividend_projections WHERE id = ? AND user_id = ?`).run(req.params.id, req.user.id);
         database.recalculatePortfolio(portfolioId);
         
         res.json({ success: true });
@@ -4704,7 +4756,8 @@ app.post('/api/dividends/projections/:id/confirm', async (req, res) => {
  * Core function to recalculate and refresh dividend projections in the database.
  * This can be called manually or automatically after transactions (BUY/SELL).
  */
-async function refreshDividendProjections() {
+async function refreshDividendProjections(userId) {
+    if (!userId) return 0;
     try {
         const now = new Date();
         const currentYear = now.getFullYear();
@@ -4712,7 +4765,7 @@ async function refreshDividendProjections() {
         const liveRate = await getEurUsdRate();
         const BOND_TYPES = ['Bond', 'ETF Obblig', 'Deposito Vincolato', 'ETF Monetario'];
 
-        // Get open positions (only assets currently held)
+        // Get open positions (only assets currently held by this user)
         const openPositions = database.db.prepare(`
             SELECT * FROM (
                 SELECT COALESCE(NULLIF(NULLIF(t.assetTicker, 'null'), ''), 'Sconosciuto') as ticker,
@@ -4721,16 +4774,21 @@ async function refreshDividendProjections() {
                        a.currency as currency,
                        COALESCE(a.name, 'N/A') as name
                 FROM transactions t
+                JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
                 LEFT JOIN assets a ON t.assetTicker = a.ticker
+                WHERE pu.user_id = ?
                 GROUP BY ticker
             )
             WHERE balance > 0.0001
-        `).all();
+        `).all(userId);
 
         const allDivTx = database.db.prepare(`
             SELECT COALESCE(NULLIF(NULLIF(t.assetTicker, 'null'), ''), 'Sconosciuto') as ticker, t.date, t.amount, t.quantity, t.price, t.tax, t.exchangeRate, p.currency as portCurrency
-            FROM transactions t JOIN portfolios p ON t.portfolioId = p.id WHERE t.type = 'DIVIDEND'
-        `).all();
+            FROM transactions t 
+            JOIN portfolios p ON t.portfolioId = p.id 
+            JOIN portfolio_users pu ON p.id = pu.portfolio_id
+            WHERE t.type = 'DIVIDEND' AND pu.user_id = ?
+        `).all(userId);
 
         const toEUR = (amount, currency, exchangeRate) => {
             if (currency === 'USD' && liveRate > 0) return amount / liveRate;
@@ -4801,13 +4859,13 @@ async function refreshDividendProjections() {
         await Promise.all(projectionPromises);
 
         const tx = database.db.transaction((projs) => {
-            database.db.prepare(`DELETE FROM dividend_projections WHERE tag != 'MANUALE' AND year = ?`).run(currentYear);
+            database.db.prepare(`DELETE FROM dividend_projections WHERE tag != 'MANUALE' AND year = ? AND user_id = ?`).run(currentYear, userId);
             const insert = database.db.prepare(`
-                INSERT INTO dividend_projections (ticker, name, exDate, amount, totalAmount, yield, tag, year)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO dividend_projections (user_id, ticker, name, exDate, amount, totalAmount, yield, tag, year)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             `);
             for (const p of projs) {
-                insert.run(p.ticker, p.name, p.date, p.amount, p.totalAmount, p.yield, p.tag, currentYear);
+                insert.run(userId, p.ticker, p.name, p.date, p.amount, p.totalAmount, p.yield, p.tag, currentYear);
             }
         });
         tx(newProjections);
@@ -4818,9 +4876,9 @@ async function refreshDividendProjections() {
     }
 }
 
-app.post('/api/dividends/projections/reset', async (req, res) => {
+app.post('/api/dividends/projections/reset', requireAuth, async (req, res) => {
     try {
-        const count = await refreshDividendProjections();
+        const count = await refreshDividendProjections(req.user.id);
         res.json({ success: true, count });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -4836,16 +4894,22 @@ app.get('/api/analytics/dividend-projections', async (req, res) => {
         const openPositions = database.db.prepare(`
             SELECT COALESCE(NULLIF(NULLIF(t.assetTicker, 'null'), ''), 'Sconosciuto') as ticker,
                    a.name as name
-            FROM transactions t LEFT JOIN assets a ON t.assetTicker = a.ticker
+            FROM transactions t 
+            JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
+            LEFT JOIN assets a ON t.assetTicker = a.ticker
+            WHERE pu.user_id = ?
             GROUP BY ticker HAVING SUM(CASE WHEN t.type = 'BUY' THEN t.quantity WHEN t.type = 'SELL' THEN -t.quantity ELSE 0 END) > 0.0001
-        `).all();
+        `).all(req.user.id);
 
         const allDivTx = database.db.prepare(`
             SELECT COALESCE(NULLIF(NULLIF(t.assetTicker, 'null'), ''), 'Sconosciuto') as ticker, t.date, t.amount, t.quantity, t.price, t.tax, t.exchangeRate, p.currency as portCurrency
-            FROM transactions t JOIN portfolios p ON t.portfolioId = p.id WHERE t.type = 'DIVIDEND' AND t.date LIKE ?
-        `).all(currentYear + '-%');
+            FROM transactions t 
+            JOIN portfolios p ON t.portfolioId = p.id 
+            JOIN portfolio_users pu ON p.id = pu.portfolio_id
+            WHERE t.type = 'DIVIDEND' AND t.date LIKE ? AND pu.user_id = ?
+        `).all(currentYear + '-%', req.user.id);
 
-        const savedProjections = database.db.prepare(`SELECT * FROM dividend_projections WHERE year = ?`).all(currentYear);
+        const savedProjections = database.db.prepare(`SELECT * FROM dividend_projections WHERE year = ? AND user_id = ?`).all(currentYear, req.user.id);
 
         const listItems = [];
         const actualByMonth = Array(12).fill(0);
@@ -4925,7 +4989,7 @@ app.get('/api/analytics/dividend-projections', async (req, res) => {
  * Endpoint for the persistent Dashboard Dividend Alert.
  * Returns summary for the current month and year.
  */
-app.get('/api/analytics/current-month-dividends', async (req, res) => {
+app.get('/api/analytics/current-month-dividends', requireAuth, async (req, res) => {
     try {
         const now = new Date();
         const currentYear = now.getFullYear();
@@ -4933,19 +4997,21 @@ app.get('/api/analytics/current-month-dividends', async (req, res) => {
         const monthStr = currentMonth.toString().padStart(2, '0');
         const yearMonth = `${currentYear}-${monthStr}`;
 
-        // Get projected dividends for this month
+        // Get projected dividends for this month (filtered by user)
         const projections = database.db.prepare(`
-            SELECT SUM(totalAmount) as total, COUNT(*) as count 
-            FROM dividend_projections 
-            WHERE exDate LIKE ?
-        `).get(yearMonth + '%');
+            SELECT SUM(dp.totalAmount) as total, COUNT(*) as count 
+            FROM dividend_projections dp
+            JOIN portfolio_users pu ON dp.portfolioId = pu.portfolio_id
+            WHERE pu.user_id = ? AND dp.exDate LIKE ?
+        `).get(req.user.id, yearMonth + '%');
 
-        // Get already received dividends for this month from transactions
+        // Get already received dividends for this month from transactions (filtered by user)
         const received = database.db.prepare(`
-            SELECT SUM(amount) as total, COUNT(*) as count 
-            FROM transactions 
-            WHERE type = 'DIVIDEND' AND date LIKE ?
-        `).get(yearMonth + '%');
+            SELECT SUM(t.amount) as total, COUNT(*) as count 
+            FROM transactions t
+            JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
+            WHERE pu.user_id = ? AND t.type = 'DIVIDEND' AND t.date LIKE ?
+        `).get(req.user.id, yearMonth + '%');
 
         const totalAmount = (projections.total || 0) + (received.total || 0);
         const totalCount = (projections.count || 0) + (received.count || 0);
@@ -4968,12 +5034,21 @@ app.get('/api/analytics/current-month-dividends', async (req, res) => {
     }
 });
 
-app.get('/api/analytics/reports', async (req, res) => {
+app.get('/api/analytics/reports', requireAuth, async (req, res) => {
     try {
-        const portfolios = database.db.prepare('SELECT * FROM portfolios').all();
+        const portfolios = database.db.prepare(`
+            SELECT p.* FROM portfolios p
+            JOIN portfolio_users pu ON p.id = pu.portfolio_id
+            WHERE pu.user_id = ?
+        `).all(req.user.id);
         if (portfolios.length === 0) return res.json({ error: 'No portfolios found' });
 
-        const allTransactions = database.db.prepare('SELECT * FROM transactions ORDER BY date ASC').all();
+        const allTransactions = database.db.prepare(`
+            SELECT t.* FROM transactions t
+            JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
+            WHERE pu.user_id = ?
+            ORDER BY t.date ASC
+        `).all(req.user.id);
         const assets = database.db.prepare('SELECT * FROM assets').all();
         const assetMap = Object.fromEntries(assets.map(a => [a.ticker, a]));
 
@@ -5888,94 +5963,104 @@ async function updateMarketData(force = false) {
                 );
                 logger.info(`Successfully updated ${asset.ticker}: ${updateData.price} ${updateData.currency}`);
 
-                // Alert Checks
+                // Alert Checks (Per User)
                 const newPrice = updateData.price;
-                const settings = database.getSettings();
                 const tsFormatted = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
 
-                // 1. TARGET PROFIT
-                if (asset.targetPrice > 0 && newPrice >= asset.targetPrice) {
-                    const existing = database.db.prepare(`
-                        SELECT id FROM notifications 
-                        WHERE ticker = ? AND type = 'TARGET_PROFIT' AND date(date) = date('now')
-                    `).get(asset.ticker);
-                    if (!existing) {
-                        database.db.prepare(`
-                            INSERT INTO notifications (type, title, message, ticker)
-                            VALUES (?, ?, ?, ?)
-                        `).run('TARGET_PROFIT', 'TARGET PROFIT', `${asset.ticker}: ${newPrice} (Target TP: ${asset.targetPrice})`, asset.ticker);
-                        
-                        const sym = asset.ticker.padEnd(8);
-                        const cur = asset.currency === 'USD' ? '$' : '€';
-                        const priceStr = newPrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                        const targetStr = asset.targetPrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                        
-                        const msg = `${escapeV2('🏆')} *${escapeV2('TARGET PROFIT')}*\n\n` +
-                                    `\`${escapeCodeV2(sym + ' ' + cur + ' ' + priceStr)}\`\n` +
-                                    `*${escapeV2('Target:')}* \`${escapeCodeV2(cur + ' ' + targetStr)}\`\n\n` +
-                                    `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\``;
-                                    
-                        sendTelegramMessage(msg).catch(e => logger.error('Telegram Target Alert failed', e));
-                    }
-                }
+                // Get all user alerts for this ticker
+                const userAlerts = database.db.prepare(`
+                    SELECT uw.*, u.telegram_chat_id 
+                    FROM user_watchlist uw
+                    JOIN users u ON uw.user_id = u.id
+                    WHERE uw.ticker = ?
+                `).all(asset.ticker);
 
-                // 2. STOP LOSS
-                if (asset.stopLoss > 0 && newPrice <= asset.stopLoss) {
-                    const existing = database.db.prepare(`
-                        SELECT id FROM notifications 
-                        WHERE ticker = ? AND type = 'STOP_LOSS' AND date(date) = date('now')
-                    `).get(asset.ticker);
-                    if (!existing) {
-                        database.db.prepare(`
-                            INSERT INTO notifications (type, title, message, ticker)
-                            VALUES (?, ?, ?, ?)
-                        `).run('STOP_LOSS', 'STOP LOSS', `${asset.ticker}: ${newPrice} (Soglia SL: ${asset.stopLoss})`, asset.ticker);
-                        
-                        const sym = asset.ticker.padEnd(8);
-                        const cur = asset.currency === 'USD' ? '$' : '€';
-                        const priceStr = newPrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                        const stopStr = asset.stopLoss.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                        
-                        const msg = `${escapeV2('⚠️')} *${escapeV2('STOP LOSS')}*\n\n` +
-                                    `\`${escapeCodeV2(sym + ' ' + cur + ' ' + priceStr)}\`\n` +
-                                    `*${escapeV2('Soglia:')}* \`${escapeCodeV2(cur + ' ' + stopStr)}\`\n\n` +
-                                    `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\``;
-                                    
-                        sendTelegramMessage(msg).catch(e => logger.error('Telegram Stop Alert failed', e));
-                    }
-                }
-
-                // 3. VOLATILITY ALERT
-                const volEnabled = settings.volatilityNotificationsEnabled === 'true';
-                if (volEnabled) {
-                    const threshold = parseFloat(asset.volatilityAlert || settings.volatilityThreshold || 5);
-                    const currentChange = Math.abs(updateData.change || 0);
-                    
-                    if (currentChange >= threshold) {
+                for (const ua of userAlerts) {
+                    // 1. TARGET PROFIT
+                    if (ua.targetPrice > 0 && newPrice >= ua.targetPrice) {
                         const existing = database.db.prepare(`
                             SELECT id FROM notifications 
-                            WHERE ticker = ? AND type = 'VOLATILITY' AND date(date) = date('now')
-                        `).get(asset.ticker);
-                        
+                            WHERE ticker = ? AND user_id = ? AND type = 'TARGET_PROFIT' AND date(date) = date('now')
+                        `).get(asset.ticker, ua.user_id);
                         if (!existing) {
                             database.db.prepare(`
-                                INSERT INTO notifications (type, title, message, ticker)
-                                VALUES (?, ?, ?, ?)
-                            `).run('VOLATILITY', 'VOLATILITY ALERT', `${asset.ticker}: ${updateData.change}% (Soglia: ${threshold}%)`, asset.ticker);
+                                INSERT INTO notifications (type, title, message, ticker, user_id)
+                                VALUES (?, ?, ?, ?, ?)
+                            `).run('TARGET_PROFIT', 'TARGET PROFIT', `${asset.ticker}: ${newPrice} (Target TP: ${ua.targetPrice})`, asset.ticker, ua.user_id);
                             
                             const sym = asset.ticker.padEnd(8);
                             const cur = asset.currency === 'USD' ? '$' : '€';
                             const priceStr = newPrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                            const changeSign = (updateData.change || 0) >= 0 ? '+' : '';
-                            const changeStr = changeSign + (updateData.change || 0).toFixed(2) + '%';
-                            const vIcon = (updateData.change || 0) >= 0 ? '📈' : '📉';
+                            const targetStr = ua.targetPrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                             
-                            const msg = `${escapeV2('📊')} *${escapeV2('VOLATILITY ALERT')}*\n\n` +
-                                        `${escapeV2(vIcon)} \`${escapeCodeV2(sym + ' ' + cur + ' ' + priceStr)}\`\n` +
-                                        `*${escapeV2('Var.:')}* \`${escapeCodeV2(changeStr)}\` ${escapeV2('(Soglia: ' + threshold + '%)')}\n\n` +
+                            const msg = `${escapeV2('🏆')} *${escapeV2('TARGET PROFIT')}*\n\n` +
+                                        `\`${escapeCodeV2(sym + ' ' + cur + ' ' + priceStr)}\`\n` +
+                                        `*${escapeV2('Target:')}* \`${escapeCodeV2(cur + ' ' + targetStr)}\`\n\n` +
                                         `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\``;
                                         
-                            sendTelegramMessage(msg).catch(e => logger.error('Telegram Volatility Alert failed', e));
+                            sendTelegramMessage(msg, ua.telegram_chat_id, ua.user_id).catch(e => logger.error('Telegram Target Alert failed', e));
+                        }
+                    }
+
+                    // 2. STOP LOSS
+                    if (ua.stopLoss > 0 && newPrice <= ua.stopLoss) {
+                        const existing = database.db.prepare(`
+                            SELECT id FROM notifications 
+                            WHERE ticker = ? AND user_id = ? AND type = 'STOP_LOSS' AND date(date) = date('now')
+                        `).get(asset.ticker, ua.user_id);
+                        if (!existing) {
+                            database.db.prepare(`
+                                INSERT INTO notifications (type, title, message, ticker, user_id)
+                                VALUES (?, ?, ?, ?, ?)
+                            `).run('STOP_LOSS', 'STOP LOSS', `${asset.ticker}: ${newPrice} (Soglia SL: ${ua.stopLoss})`, asset.ticker, ua.user_id);
+                            
+                            const sym = asset.ticker.padEnd(8);
+                            const cur = asset.currency === 'USD' ? '$' : '€';
+                            const priceStr = newPrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                            const stopStr = ua.stopLoss.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                            
+                            const msg = `${escapeV2('⚠️')} *${escapeV2('STOP LOSS')}*\n\n` +
+                                        `\`${escapeCodeV2(sym + ' ' + cur + ' ' + priceStr)}\`\n` +
+                                        `*${escapeV2('Soglia:')}* \`${escapeCodeV2(cur + ' ' + stopStr)}\`\n\n` +
+                                        `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\``;
+                                        
+                            sendTelegramMessage(msg, ua.telegram_chat_id, ua.user_id).catch(e => logger.error('Telegram Stop Alert failed', e));
+                        }
+                    }
+
+                    // 3. VOLATILITY ALERT
+                    const userSettings = database.getSettings(ua.user_id);
+                    const volEnabled = userSettings.volatilityNotificationsEnabled === 'true';
+                    if (volEnabled) {
+                        const threshold = parseFloat(ua.volatilityAlert || userSettings.volatilityThreshold || 5);
+                        const currentChange = Math.abs(updateData.change || 0);
+                        
+                        if (currentChange >= threshold) {
+                            const existing = database.db.prepare(`
+                                SELECT id FROM notifications 
+                                WHERE ticker = ? AND user_id = ? AND type = 'VOLATILITY' AND date(date) = date('now')
+                            `).get(asset.ticker, ua.user_id);
+                            
+                            if (!existing) {
+                                database.db.prepare(`
+                                    INSERT INTO notifications (type, title, message, ticker, user_id)
+                                    VALUES (?, ?, ?, ?, ?)
+                                `).run('VOLATILITY', 'VOLATILITY ALERT', `${asset.ticker}: ${updateData.change}% (Soglia: ${threshold}%)`, asset.ticker, ua.user_id);
+                                
+                                const sym = asset.ticker.padEnd(8);
+                                const cur = asset.currency === 'USD' ? '$' : '€';
+                                const priceStr = newPrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                const changeSign = (updateData.change || 0) >= 0 ? '+' : '';
+                                const changeStr = changeSign + (updateData.change || 0).toFixed(2) + '%';
+                                const vIcon = (updateData.change || 0) >= 0 ? '📈' : '📉';
+                                
+                                const msg = `${escapeV2('📊')} *${escapeV2('VOLATILITY ALERT')}*\n\n` +
+                                            `${escapeV2(vIcon)} \`${escapeCodeV2(sym + ' ' + cur + ' ' + priceStr)}\`\n` +
+                                            `*${escapeV2('Var.:')}* \`${escapeCodeV2(changeStr)}\` ${escapeV2('(Soglia: ' + threshold + '%)')}\n\n` +
+                                            `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\``;
+                                            
+                                sendTelegramMessage(msg, ua.telegram_chat_id, ua.user_id).catch(e => logger.error('Telegram Volatility Alert failed', e));
+                            }
                         }
                     }
                 }

@@ -89,6 +89,9 @@
             <div id="mob-header-var-day" class="mob-header-var-pill">--</div>
 
             <div class="mob-header-actions">
+                <a href="/admin" id="mob-admin-link" class="mob-icon-btn text-amber-500" title="Admin Panel" style="display:none">
+                    <span class="material-symbols-outlined">admin_panel_settings</span>
+                </a>
                 <button onclick="clearAllNotifications()" class="mob-icon-btn text-rose-500" title="Clear All">
                     <span class="material-symbols-outlined">delete_sweep</span>
                 </button>
@@ -362,7 +365,13 @@
             currentSwipeEl = null;
         }
 
-        document.addEventListener('DOMContentLoaded', loadNotifications);
+        document.addEventListener('DOMContentLoaded', () => {
+            loadNotifications();
+            if (window.ftAuth && ftAuth.getUser()?.role === 'admin') {
+                const adminLink = document.getElementById('mob-admin-link');
+                if (adminLink) adminLink.style.display = 'flex';
+            }
+        });
     </script>
 </body>
 </html>

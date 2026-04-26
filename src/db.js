@@ -87,8 +87,10 @@ function initDb() {
       );
 
       CREATE TABLE IF NOT EXISTS settings (
-        key   TEXT PRIMARY KEY,
-        value TEXT NOT NULL
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        key     TEXT    NOT NULL,
+        value   TEXT    NOT NULL,
+        PRIMARY KEY (user_id, key)
       );
     `);
 
@@ -252,8 +254,10 @@ function initDb() {
 
       CREATE TABLE IF NOT EXISTS tax_rates (
         id         INTEGER PRIMARY KEY AUTOINCREMENT,
-        asset_type TEXT    NOT NULL UNIQUE,
-        rate       REAL    NOT NULL
+        user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        asset_type TEXT    NOT NULL,
+        rate       REAL    NOT NULL,
+        UNIQUE(user_id, asset_type)
       );
 
       CREATE TABLE IF NOT EXISTS portfolio_losses (
@@ -266,6 +270,7 @@ function initDb() {
 
       CREATE TABLE IF NOT EXISTS dividend_projections (
         id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         ticker      TEXT    NOT NULL,
         name        TEXT,
         exDate      TEXT    NOT NULL,
@@ -299,6 +304,7 @@ function initDb() {
         must_change_password INTEGER NOT NULL DEFAULT 1,
         reset_token   TEXT,
         reset_token_expiry TEXT,
+        telegram_chat_id TEXT,
         created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
       );
 
@@ -306,6 +312,15 @@ function initDb() {
         portfolio_id  INTEGER NOT NULL REFERENCES portfolios(id) ON DELETE CASCADE,
         user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         UNIQUE(portfolio_id, user_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS user_watchlist (
+        user_id         INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        ticker          TEXT    NOT NULL REFERENCES assets(ticker) ON DELETE CASCADE,
+        targetPrice     REAL,
+        stopLoss        REAL,
+        volatilityAlert REAL,
+        UNIQUE(user_id, ticker)
       );
 
       CREATE TABLE IF NOT EXISTS role_permissions (
@@ -316,6 +331,59 @@ function initDb() {
         UNIQUE(role, resource)
       );
     `);
+
+    // Migration: Add user_id to notifications
+    try {
+        dbConnection.prepare(`ALTER TABLE notifications ADD COLUMN user_id INTEGER REFERENCES users(id) ON DELETE CASCADE`).run();
+    } catch (e) {}
+
+    // Migration: Add telegram_chat_id to users
+    try {
+        dbConnection.prepare(`ALTER TABLE users ADD COLUMN telegram_chat_id TEXT`).run();
+    } catch (e) {}
+
+    // Data Migration for user 1 (mauro)
+    try {
+        const adminId = 1;
+        
+        // 1. Portfolio associations
+        dbConnection.prepare(`
+            INSERT OR IGNORE INTO portfolio_users (portfolio_id, user_id)
+            SELECT id, ? FROM portfolios
+        `).run(adminId);
+
+        // 2. Watchlist & Alerts migration
+        dbConnection.prepare(`
+            INSERT OR IGNORE INTO user_watchlist (user_id, ticker, targetPrice, stopLoss, volatilityAlert)
+            SELECT ?, ticker, targetPrice, stopLoss, volatilityAlert 
+            FROM assets 
+            WHERE inWatchlist = 1 OR targetPrice > 0 OR stopLoss > 0
+        `).run(adminId);
+
+        // 3. Notifications migration
+        dbConnection.prepare(`UPDATE notifications SET user_id = ? WHERE user_id IS NULL`).run(adminId);
+
+        // 4. Settings migration
+        try {
+            dbConnection.prepare(`ALTER TABLE settings ADD COLUMN user_id INTEGER`).run();
+        } catch (e) {}
+        dbConnection.prepare(`UPDATE settings SET user_id = ? WHERE user_id IS NULL`).run(adminId);
+
+        // 5. Tax Rates migration
+        try {
+            dbConnection.prepare(`ALTER TABLE tax_rates ADD COLUMN user_id INTEGER`).run();
+        } catch (e) {}
+        dbConnection.prepare(`UPDATE tax_rates SET user_id = ? WHERE user_id IS NULL`).run(adminId);
+
+        // 6. Dividend Projections migration
+        try {
+            dbConnection.prepare(`ALTER TABLE dividend_projections ADD COLUMN user_id INTEGER`).run();
+        } catch (e) {}
+        dbConnection.prepare(`UPDATE dividend_projections SET user_id = ? WHERE user_id IS NULL`).run(adminId);
+        
+    } catch (e) {
+        console.error('Database migration error:', e.message);
+    }
 
     // Migration: Add role_permissions defaults if empty
     try {
@@ -363,9 +431,12 @@ function initDb() {
     ];
 
     const insertTaxRate = dbConnection.prepare(
-        `INSERT OR IGNORE INTO tax_rates (asset_type, rate) VALUES (?, ?)`
+        `INSERT OR IGNORE INTO tax_rates (user_id, asset_type, rate) VALUES (?, ?, ?)`
     );
-    standardizedTaxRates.forEach(tr => insertTaxRate.run(tr.type, tr.rate));
+    const mauroId = dbConnection.prepare(`SELECT id FROM users WHERE username = 'mauro'`).get()?.id;
+    if (mauroId) {
+        standardizedTaxRates.forEach(tr => insertTaxRate.run(mauroId, tr.type, tr.rate));
+    }
 
     // ─── Default settings ────────────────────────────────────────────────────────
     const defaultSettings = {
@@ -383,10 +454,12 @@ function initDb() {
     };
 
     const insertSetting = dbConnection.prepare(
-        `INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`
+        `INSERT OR IGNORE INTO settings (user_id, key, value) VALUES (?, ?, ?)`
     );
-    for (const [key, value] of Object.entries(defaultSettings)) {
-        insertSetting.run(key, value);
+    if (mauroId) {
+        for (const [key, value] of Object.entries(defaultSettings)) {
+            insertSetting.run(mauroId, key, value);
+        }
     }
 
     // ─── Migrations: Add user columns if they don't exist ────────────────────────
@@ -433,19 +506,22 @@ initDb();
 
 // ─── Helper functions ────────────────────────────────────────────────────────
 
-function getSettings() {
-    const rows = dbConnection.prepare(`SELECT key, value FROM settings`).all();
+function getSettings(userId) {
+    if (!userId) return {};
+    const rows = dbConnection.prepare(`SELECT key, value FROM settings WHERE user_id = ?`).all(userId);
     const settings = Object.fromEntries(rows.map(r => [r.key, r.value]));
     
-    // Default values for new settings
+    // Default values for new settings if they don't exist for this user
     if (settings.volatilityNotificationsEnabled === undefined) settings.volatilityNotificationsEnabled = 'false';
     if (settings.volatilityThreshold === undefined) settings.volatilityThreshold = '5.0';
+    if (settings.updateFrequency === undefined) settings.updateFrequency = '5';
     
     return settings;
 }
 
-function setSetting(key, value) {
-    dbConnection.prepare(`INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)`).run(key, String(value));
+function setSetting(userId, key, value) {
+    if (!userId) return;
+    dbConnection.prepare(`INSERT OR REPLACE INTO settings (user_id, key, value) VALUES (?, ?, ?)`).run(userId, key, String(value));
 }
 
 function recalculatePortfolio(portfolioId, liveEurUsdRate = null, variationOverrides = null) {
