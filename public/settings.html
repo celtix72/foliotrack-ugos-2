@@ -146,17 +146,28 @@
         <span id="account-settings-content-icon" class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-transform">expand_more</span>
     </div>
     <div id="account-settings-content" class="hidden">
-        <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 flex flex-col md:flex-row items-center gap-6">
-            <div class="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
-                <span class="material-symbols-outlined text-3xl">person</span>
-            </div>
-            <div class="flex-1 text-center md:text-left">
-                <h3 class="font-bold text-lg">User</h3>
-                <p class="text-sm text-slate-500 dark:text-slate-400">user@m2t.io</p>
-                <div class="mt-2 flex flex-wrap gap-2 justify-center md:justify-start">
-                    <button class="px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90 transition-all shadow-sm shadow-primary/20">Change Password</button>
-                    <button class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700">Update Email</button>
+        <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 flex flex-col items-start gap-6">
+            <div class="flex flex-col md:flex-row items-center w-full gap-6">
+                <div class="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+                    <span class="material-symbols-outlined text-3xl">person</span>
                 </div>
+                <div class="flex-1 text-center md:text-left">
+                    <h3 class="font-bold text-lg" id="desktop-user-name">Loading...</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400" id="desktop-user-email">...</p>
+                    <div class="mt-1">
+                        <span id="desktop-user-role" class="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-black uppercase rounded"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="w-full mt-4">
+                <h4 class="font-bold text-sm mb-2 border-l-2 border-primary pl-2">Cambia Password</h4>
+                <div class="flex flex-col md:flex-row gap-4 w-full">
+                    <input type="password" id="desktop-pwd-current" placeholder="Password Corrente" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-4 text-sm focus:ring-primary/30">
+                    <input type="password" id="desktop-pwd-new" placeholder="Nuova Password" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-4 text-sm focus:ring-primary/30">
+                    <button onclick="changePasswordDesktop()" class="px-6 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90 transition-all shadow-sm shadow-primary/20">Aggiorna</button>
+                </div>
+                <p id="desktop-pwd-msg" class="text-xs font-bold mt-2 hidden"></p>
             </div>
         </div>
     </div>
@@ -2081,5 +2092,52 @@
     </div>
 </div>
 
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        fetch('/api/auth/me').then(res => res.json()).then(data => {
+            if (data && data.user) {
+                const u = data.user;
+                document.getElementById('desktop-user-name').textContent = u.display_name || u.username;
+                document.getElementById('desktop-user-email').textContent = u.email || 'Nessuna email';
+                document.getElementById('desktop-user-role').textContent = u.role;
+            }
+        }).catch(err => console.error('Error fetching user info', err));
+    });
+
+    window.changePasswordDesktop = async () => {
+        const cur = document.getElementById('desktop-pwd-current').value;
+        const newP = document.getElementById('desktop-pwd-new').value;
+        const msg = document.getElementById('desktop-pwd-msg');
+        
+        if (!cur || !newP) {
+            msg.textContent = 'Compila entrambi i campi';
+            msg.className = 'text-xs font-bold mt-2 text-rose-500';
+            msg.classList.remove('hidden');
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/auth/change-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ current_password: cur, new_password: newP })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                msg.textContent = 'Password aggiornata con successo!';
+                msg.className = 'text-xs font-bold mt-2 text-emerald-500';
+                document.getElementById('desktop-pwd-current').value = '';
+                document.getElementById('desktop-pwd-new').value = '';
+            } else {
+                msg.textContent = data.error || 'Errore';
+                msg.className = 'text-xs font-bold mt-2 text-rose-500';
+            }
+        } catch (e) {
+            msg.textContent = 'Errore di rete';
+            msg.className = 'text-xs font-bold mt-2 text-rose-500';
+        }
+        msg.classList.remove('hidden');
+    };
+</script>
 </body>
 </html>

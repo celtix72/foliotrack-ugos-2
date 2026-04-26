@@ -25,11 +25,13 @@
                 <span class="material-symbols-outlined text-3xl">query_stats</span>
             </div>
             <h1 class="text-3xl font-black tracking-tight mb-2">M2T <span class="text-primary tracking-tighter">Tracker</span></h1>
-            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Sign in to your portfolio</p>
+            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest" id="form-subtitle">Sign in to your portfolio</p>
         </div>
 
-        <!-- Login Card -->
+        <!-- Auth Card -->
         <div class="bg-white dark:bg-[#111722] rounded-3xl p-8 shadow-2xl shadow-slate-200/50 dark:shadow-black/50 border border-slate-200 dark:border-slate-800">
+            
+            <!-- Login Form -->
             <form id="login-form" class="space-y-6">
                 <!-- Username -->
                 <div class="space-y-2">
@@ -43,27 +45,111 @@
 
                 <!-- Password -->
                 <div class="space-y-2">
-                    <label class="text-[11px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                        <span class="material-symbols-outlined text-[14px]">lock</span> Password
-                    </label>
+                    <div class="flex justify-between items-center">
+                        <label class="text-[11px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[14px]">lock</span> Password
+                        </label>
+                        <a href="#" onclick="showForm('forgot')" class="text-[11px] font-bold text-primary hover:underline">Forgot?</a>
+                    </div>
                     <input type="password" id="password" required autocomplete="current-password"
                         class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none"
                         placeholder="Enter your password">
                 </div>
 
                 <!-- Error Message -->
-                <div id="error-msg" class="hidden rounded-lg bg-rose-500/10 border border-rose-500/20 px-4 py-3 text-xs font-bold text-rose-500 flex items-center gap-2">
+                <div id="login-error" class="hidden rounded-lg bg-rose-500/10 border border-rose-500/20 px-4 py-3 text-xs font-bold text-rose-500 flex items-center gap-2">
                     <span class="material-symbols-outlined text-[16px]">error</span>
-                    <span id="error-text">Credenziali non valide.</span>
+                    <span id="login-error-text">Credenziali non valide.</span>
                 </div>
 
                 <!-- Submit Button -->
-                <button type="submit" id="submit-btn"
+                <button type="submit" id="login-btn"
                     class="w-full bg-primary hover:bg-primary/90 text-white rounded-xl py-3.5 text-sm font-bold uppercase tracking-widest transition-all hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 relative">
-                    <span id="btn-text">Accedi</span>
+                    <span id="login-btn-text">Accedi</span>
                     <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
                 </button>
+
+                <div class="text-center mt-4">
+                    <p class="text-xs text-slate-500">Don't have an account? <a href="#" onclick="showForm('register')" class="text-primary font-bold hover:underline">Register</a></p>
+                </div>
             </form>
+
+            <!-- Register Form -->
+            <form id="register-form" class="space-y-6 hidden">
+                <div class="space-y-2">
+                    <label class="text-[11px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[14px]">person</span> Username
+                    </label>
+                    <input type="text" id="reg-username" required
+                        class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none"
+                        placeholder="Choose a username">
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-[11px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[14px]">mail</span> Email
+                    </label>
+                    <input type="email" id="reg-email" required
+                        class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none"
+                        placeholder="Enter your email">
+                </div>
+
+                <div id="reg-msg" class="hidden rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-4 py-3 text-xs font-bold text-emerald-500 flex items-center gap-2"></div>
+                <div id="reg-error" class="hidden rounded-lg bg-rose-500/10 border border-rose-500/20 px-4 py-3 text-xs font-bold text-rose-500 flex items-center gap-2"></div>
+
+                <button type="submit" id="reg-btn"
+                    class="w-full bg-primary hover:bg-primary/90 text-white rounded-xl py-3.5 text-sm font-bold uppercase tracking-widest transition-all hover:shadow-lg flex items-center justify-center gap-2">
+                    <span id="reg-btn-text">Registrati</span>
+                </button>
+
+                <div class="text-center mt-4">
+                    <p class="text-xs text-slate-500">Already have an account? <a href="#" onclick="showForm('login')" class="text-primary font-bold hover:underline">Login</a></p>
+                </div>
+            </form>
+
+            <!-- Forgot Password Form -->
+            <form id="forgot-form" class="space-y-6 hidden">
+                <div class="space-y-2">
+                    <label class="text-[11px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[14px]">mail</span> Email
+                    </label>
+                    <input type="email" id="forgot-email" required
+                        class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none"
+                        placeholder="Enter your email">
+                </div>
+
+                <div id="forgot-msg" class="hidden rounded-lg px-4 py-3 text-xs font-bold flex items-center gap-2"></div>
+
+                <button type="submit" id="forgot-btn"
+                    class="w-full bg-primary hover:bg-primary/90 text-white rounded-xl py-3.5 text-sm font-bold uppercase tracking-widest transition-all hover:shadow-lg flex items-center justify-center gap-2">
+                    <span id="forgot-btn-text">Invia Link</span>
+                </button>
+
+                <div class="text-center mt-4">
+                    <a href="#" onclick="showForm('login')" class="text-xs text-primary font-bold hover:underline">Back to Login</a>
+                </div>
+            </form>
+
+            <!-- Reset Password / Force Change Password Form -->
+            <form id="reset-form" class="space-y-6 hidden">
+                <p class="text-sm text-slate-500 mb-4" id="reset-description">Imposta la tua nuova password.</p>
+                <div class="space-y-2">
+                    <label class="text-[11px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[14px]">lock</span> Nuova Password
+                    </label>
+                    <input type="password" id="reset-password" required
+                        class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none"
+                        placeholder="Nuova password (min 4 caratteri)">
+                </div>
+
+                <div id="reset-msg" class="hidden rounded-lg px-4 py-3 text-xs font-bold flex items-center gap-2"></div>
+
+                <button type="submit" id="reset-btn"
+                    class="w-full bg-primary hover:bg-primary/90 text-white rounded-xl py-3.5 text-sm font-bold uppercase tracking-widest transition-all hover:shadow-lg flex items-center justify-center gap-2">
+                    <span id="reset-btn-text">Salva Password</span>
+                </button>
+            </form>
+
         </div>
         
         <div class="mt-8 text-center">
@@ -74,62 +160,188 @@
     </div>
 
     <script>
-        // Update theme icon explicitly for auth page logic
+        let currentUserId = null; // Used for forced password change
+
         function updateAuthThemeIcon() {
             const isDark = document.documentElement.classList.contains('dark');
             const icon = document.getElementById('auth-theme-icon');
             if (icon) icon.textContent = isDark ? 'light_mode' : 'dark_mode';
         }
-        
-        // Listen to native theme logic via mutation observer on HTML
         new MutationObserver(updateAuthThemeIcon).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
         updateAuthThemeIcon();
+
+        function showForm(formName) {
+            ['login', 'register', 'forgot', 'reset'].forEach(f => {
+                document.getElementById(f + '-form').classList.add('hidden');
+            });
+            document.getElementById(formName + '-form').classList.remove('hidden');
+            
+            const subtitles = {
+                'login': 'Sign in to your portfolio',
+                'register': 'Create a new account',
+                'forgot': 'Reset your password',
+                'reset': 'Set new password'
+            };
+            document.getElementById('form-subtitle').textContent = subtitles[formName];
+        }
+
+        // Check if there is a reset token in the URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const resetToken = urlParams.get('reset_token');
+        if (resetToken) {
+            showForm('reset');
+        }
+
+        // API Helpers
+        function showMessage(elId, isError, text) {
+            const el = document.getElementById(elId);
+            el.className = `rounded-lg px-4 py-3 text-xs font-bold flex items-center gap-2 ${isError ? 'bg-rose-500/10 border border-rose-500/20 text-rose-500' : 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-500'}`;
+            el.textContent = text;
+            el.classList.remove('hidden');
+        }
 
         // Login Logic
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const btnText = document.getElementById('btn-text');
-            const submitBtn = document.getElementById('submit-btn');
-            const errorMsg = document.getElementById('error-msg');
-            const errorText = document.getElementById('error-text');
-
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
+            const btn = document.getElementById('login-btn');
+            const btnText = document.getElementById('login-btn-text');
+            const usernameVal = document.getElementById('username').value;
+            const passwordVal = document.getElementById('password').value;
 
             btnText.textContent = 'Verificando...';
-            submitBtn.disabled = true;
-            submitBtn.classList.add('opacity-80');
-            errorMsg.classList.add('hidden');
+            btn.disabled = true;
+            document.getElementById('login-error').classList.add('hidden');
 
             try {
                 const res = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
+                    body: JSON.stringify({ username: usernameVal, password: passwordVal })
                 });
 
                 const data = await res.json();
-                if (!res.ok) {
-                    errorText.textContent = data.error || 'Errore di connessione.';
-                    errorMsg.classList.remove('hidden');
-                    btnText.textContent = 'Accedi';
-                    submitBtn.disabled = false;
-                    submitBtn.classList.remove('opacity-80');
+                
+                if (data.require_password_change) {
+                    currentUserId = data.user_id;
+                    showForm('reset');
+                    document.getElementById('reset-description').textContent = 'È richiesto il cambio password al primo accesso.';
                     return;
                 }
 
-                // Success
-                btnText.textContent = 'Successo, reindirizzamento...';
-                submitBtn.classList.replace('bg-primary', 'bg-emerald-500');
-                submitBtn.classList.replace('hover:bg-primary/90', 'hover:bg-emerald-600');
+                if (!res.ok) {
+                    showMessage('login-error', true, data.error || 'Errore');
+                    btnText.textContent = 'Accedi';
+                    btn.disabled = false;
+                    return;
+                }
+
+                btnText.textContent = 'Successo...';
                 setTimeout(() => window.location.href = '/dashboard', 300);
-                
             } catch (err) {
-                errorText.textContent = 'Errore di connessione al server.';
-                errorMsg.classList.remove('hidden');
+                showMessage('login-error', true, 'Errore di connessione');
                 btnText.textContent = 'Accedi';
-                submitBtn.disabled = false;
-                submitBtn.classList.remove('opacity-80');
+                btn.disabled = false;
+            }
+        });
+
+        // Register Logic
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('reg-btn');
+            const btnText = document.getElementById('reg-btn-text');
+            btn.disabled = true;
+            btnText.textContent = 'Registrazione in corso...';
+            
+            document.getElementById('reg-error').classList.add('hidden');
+            document.getElementById('reg-msg').classList.add('hidden');
+
+            try {
+                const res = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: document.getElementById('reg-username').value,
+                        email: document.getElementById('reg-email').value
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    showMessage('reg-error', true, data.error);
+                } else {
+                    showMessage('reg-msg', false, data.message);
+                    setTimeout(() => showForm('login'), 3000);
+                }
+            } catch (err) {
+                showMessage('reg-error', true, 'Errore di connessione');
+            }
+            btn.disabled = false;
+            btnText.textContent = 'Registrati';
+        });
+
+        // Forgot Password Logic
+        document.getElementById('forgot-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('forgot-btn');
+            const btnText = document.getElementById('forgot-btn-text');
+            btn.disabled = true;
+            btnText.textContent = 'Invio...';
+
+            try {
+                const res = await fetch('/api/auth/forgot-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: document.getElementById('forgot-email').value })
+                });
+                const data = await res.json();
+                showMessage('forgot-msg', !res.ok, data.message || data.error);
+            } catch (err) {
+                showMessage('forgot-msg', true, 'Errore di connessione');
+            }
+            btn.disabled = false;
+            btnText.textContent = 'Invia Link';
+        });
+
+        // Reset Password / Force Change Logic
+        document.getElementById('reset-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('reset-btn');
+            const btnText = document.getElementById('reset-btn-text');
+            const newPassword = document.getElementById('reset-password').value;
+            
+            btn.disabled = true;
+            btnText.textContent = 'Salvataggio...';
+
+            try {
+                let url = '/api/auth/change-password';
+                let body = { user_id: currentUserId, current_password: document.getElementById('password').value, new_password: newPassword };
+                
+                // If we are doing a token reset
+                if (resetToken) {
+                    url = '/api/auth/reset-password';
+                    body = { token: resetToken, new_password: newPassword };
+                }
+
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                
+                const data = await res.json();
+                if (!res.ok) {
+                    showMessage('reset-msg', true, data.error);
+                    btn.disabled = false;
+                    btnText.textContent = 'Salva Password';
+                } else {
+                    showMessage('reset-msg', false, 'Password aggiornata con successo! Effettua il login.');
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
+                }
+            } catch (err) {
+                showMessage('reset-msg', true, 'Errore di connessione');
+                btn.disabled = false;
+                btnText.textContent = 'Salva Password';
             }
         });
     </script>

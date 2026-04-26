@@ -45,33 +45,60 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- User Management -->
-            <div class="lg:col-span-2 space-y-6">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-lg font-bold flex items-center gap-2">
-                        <span class="material-symbols-outlined text-primary">group</span> Users
-                    </h2>
-                    <button onclick="openCreateUserModal()" class="flex items-center gap-2 px-4 py-2 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-primary/90 transition-all shadow-md shadow-primary/20">
-                        <span class="material-symbols-outlined text-sm">add</span> Create User
-                    </button>
-                </div>
+            <!-- Left Column: User & Role Management -->
+            <div class="lg:col-span-2 space-y-8">
                 
-                <div class="bg-white dark:bg-[#111722] rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
-                    <table class="w-full text-left text-sm">
-                        <thead class="bg-slate-50 dark:bg-slate-900/50 text-[10px] uppercase font-black tracking-widest text-slate-500">
-                            <tr>
-                                <th class="px-6 py-4">ID</th>
-                                <th class="px-6 py-4">Username</th>
-                                <th class="px-6 py-4">Display Name</th>
-                                <th class="px-6 py-4">Role</th>
-                                <th class="px-6 py-4 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="users-table-body" class="divide-y divide-slate-100 dark:divide-slate-800/60">
-                            <!-- Populated via JS -->
-                        </tbody>
-                    </table>
+                <!-- User Management -->
+                <div class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-bold flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">group</span> Users
+                        </h2>
+                        <button onclick="openCreateUserModal()" class="flex items-center gap-2 px-4 py-2 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-primary/90 transition-all shadow-md shadow-primary/20">
+                            <span class="material-symbols-outlined text-sm">add</span> Create User
+                        </button>
+                    </div>
+                    
+                    <div class="bg-white dark:bg-[#111722] rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-50 dark:bg-slate-900/50 text-[10px] uppercase font-black tracking-widest text-slate-500">
+                                <tr>
+                                    <th class="px-6 py-4">ID</th>
+                                    <th class="px-6 py-4">Username</th>
+                                    <th class="px-6 py-4">Display Name</th>
+                                    <th class="px-6 py-4">Role</th>
+                                    <th class="px-6 py-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body" class="divide-y divide-slate-100 dark:divide-slate-800/60">
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
+
+                <!-- Role Management -->
+                <div class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-bold flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">security</span> Role & Access Management
+                        </h2>
+                    </div>
+                    <div class="bg-white dark:bg-[#111722] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+                        <div class="mb-6 flex items-center gap-4">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Select Role</label>
+                            <select id="role-select" onchange="renderRolePermissions()" class="w-48 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-primary outline-none">
+                                <option value="free">Free</option>
+                                <option value="user">User</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                        <div id="permissions-container" class="space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
             <!-- Server Logs -->
@@ -151,6 +178,7 @@
             loadStats();
             loadLogs();
             loadUsers();
+            loadRoles();
         });
 
         async function fetchAdmin(endpoint, options = {}) {
@@ -311,6 +339,57 @@
                 alert('Errore: ' + err.message);
             }
         }
+
+        // --- Role Management ---
+        let allRolesData = [];
+
+        async function loadRoles() {
+            try {
+                allRolesData = await fetchAdmin('/api/admin/roles');
+                if (allRolesData) renderRolePermissions();
+            } catch (err) {}
+        }
+
+        window.renderRolePermissions = function() {
+            const role = document.getElementById('role-select').value;
+            const container = document.getElementById('permissions-container');
+            if (!allRolesData) return;
+
+            const myPerms = allRolesData.filter(p => p.role === role);
+            
+            if (myPerms.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-500">No permissions found for this role.</p>`;
+                return;
+            }
+
+            container.innerHTML = myPerms.map(p => `
+                <div class="flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-primary/50 transition-colors">
+                    <div>
+                        <p class="text-sm font-bold">${p.resource}</p>
+                        <p class="text-[10px] text-slate-500 uppercase tracking-widest">${p.resource.startsWith('page_') ? 'Page Access' : 'Settings Section'}</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" class="sr-only peer" ${p.is_enabled ? 'checked' : ''} onchange="togglePermission('${role}', '${p.resource}', this.checked)" ${role === 'admin' ? 'disabled' : ''}>
+                        <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-primary ${role === 'admin' ? 'opacity-50' : ''}"></div>
+                    </label>
+                </div>
+            `).join('');
+        };
+
+        window.togglePermission = async function(role, resource, isEnabled) {
+            try {
+                await fetchAdmin('/api/admin/roles', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ role, resource, is_enabled: isEnabled })
+                });
+                const perm = allRolesData.find(p => p.role === role && p.resource === resource);
+                if (perm) perm.is_enabled = isEnabled ? 1 : 0;
+            } catch (err) {
+                alert('Errore: ' + err.message);
+                loadRoles(); 
+            }
+        };
     </script>
 </body>
 </html>

@@ -303,7 +303,35 @@ function initDb() {
         user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         UNIQUE(portfolio_id, user_id)
       );
+
+      CREATE TABLE IF NOT EXISTS role_permissions (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        role        TEXT    NOT NULL,
+        resource    TEXT    NOT NULL,
+        is_enabled  INTEGER NOT NULL DEFAULT 1,
+        UNIQUE(role, resource)
+      );
     `);
+
+    // Migration: Add role_permissions defaults if empty
+    try {
+        const count = dbConnection.prepare('SELECT COUNT(*) as c FROM role_permissions').get().c;
+        if (count === 0) {
+            const defaultResources = [
+                'page_dashboard', 'page_portfolio', 'page_market', 'page_reports', 'page_history', 'page_dividend', 'page_watchlist', 'page_settings', 'page_notifications',
+                'setting_account', 'setting_appearance', 'setting_portfolio', 'setting_data_sources', 'setting_news', 'setting_telegram', 'setting_volatility', 'setting_backup', 'setting_diagnostic', 'setting_maintenance', 'setting_logs', 'setting_history_mgmt', 'setting_taxation', 'setting_audit', 'setting_danger_zone'
+            ];
+            const roles = ['admin', 'free', 'user'];
+            const stmt = dbConnection.prepare('INSERT INTO role_permissions (role, resource, is_enabled) VALUES (?, ?, ?)');
+            dbConnection.transaction(() => {
+                for (const r of roles) {
+                    for (const res of defaultResources) {
+                        stmt.run(r, res, 1);
+                    }
+                }
+            })();
+        }
+    } catch (e) {}
 
     // Standardized asset types remapping
     const remapSql = [
@@ -722,6 +750,24 @@ function updateUserPassword(userId, newPassword) {
     dbConnection.prepare(`UPDATE users SET password_hash = ? WHERE id = ?`).run(hash, userId);
 }
 
+// ─── PERMISSIONS EXPORTS ────────────────────────────────────────────────────────
+function getRolePermissions() {
+    return dbConnection.prepare('SELECT role, resource, is_enabled FROM role_permissions ORDER BY role, resource').all();
+}
+
+function updateRolePermission(role, resource, isEnabled) {
+    dbConnection.prepare('INSERT INTO role_permissions (role, resource, is_enabled) VALUES (?, ?, ?) ON CONFLICT(role, resource) DO UPDATE SET is_enabled = excluded.is_enabled').run(role, resource, isEnabled);
+}
+
+function getUserPermissions(role) {
+    const perms = dbConnection.prepare('SELECT resource, is_enabled FROM role_permissions WHERE role = ?').all(role);
+    const result = {};
+    for (const p of perms) {
+        result[p.resource] = p.is_enabled === 1;
+    }
+    return result;
+}
+
 module.exports = { 
     get db() { return dbConnection; }, 
     initDb, 
@@ -737,5 +783,10 @@ module.exports = {
     addPortfolioUser,
     deleteUser,
     updateUserRole,
-    updateUserPassword
+    updateUserPassword,
+
+    // Permissions
+    getRolePermissions,
+    updateRolePermission,
+    getUserPermissions
 };

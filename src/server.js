@@ -616,9 +616,21 @@ async function sendTelegramDailyReport() {
 const yahooFinance = new YahooFinance({ suppressNotices: ['ripHistorical'] });
 const database = require('./db');
 const backupManager = require('./backup_manager');
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
+
+// Nodemailer setup
+const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.ethereal.email',
+    port: process.env.SMTP_PORT || 587,
+    auth: {
+        user: process.env.SMTP_USER || '',
+        pass: process.env.SMTP_PASS || ''
+    }
+});
 
 // ─── JWT / Auth configuration ─────────────────────────────────────────────────
 const JWT_SECRET = process.env.JWT_SECRET || 'foliotrack_secret_development_static_12345';
@@ -677,6 +689,12 @@ app.post('/api/auth/login', (req, res) => {
     if (!user) {
         return res.status(401).json({ error: 'Credenziali non valide' });
     }
+
+    if (user.must_change_password === 1) {
+        // Return a special token or just a flag so the frontend knows to show change password modal
+        return res.json({ ok: false, require_password_change: true, user_id: user.id });
+    }
+
     const token = jwt.sign(
         { id: user.id, username: user.username, role: user.role, display_name: user.display_name },
         JWT_SECRET,
@@ -689,7 +707,7 @@ app.post('/api/auth/login', (req, res) => {
         secure: req.secure || req.headers['x-forwarded-proto'] === 'https'
     });
     logger.info(`[AUTH] Login: ${user.username} (${user.role})`);
-    return res.json({ ok: true, user: { username: user.username, role: user.role, display_name: user.display_name } });
+    return res.json({ ok: true, user: { username: user.username, email: user.email, role: user.role, display_name: user.display_name } });
 });
 
 // POST /api/auth/logout
@@ -700,10 +718,153 @@ app.post('/api/auth/logout', (req, res) => {
 
 // GET /api/auth/me
 app.get('/api/auth/me', requireAuth, (req, res) => {
-    return res.json({ user: req.user });
+    const dbUser = database.db.prepare('SELECT id, username, email, role, display_name, must_change_password FROM users WHERE id = ?').get(req.user.id);
+    if (!dbUser) return res.status(404).json({ error: 'Utente non trovato' });
+    return res.json({ user: dbUser });
+});
+
+// GET /api/auth/permissions
+app.get('/api/auth/permissions', requireAuth, (req, res) => {
+    try {
+        const perms = database.getUserPermissions(req.user.role);
+        res.json({ permissions: perms });
+    } catch (e) {
+        logger.error(`[AUTH] Error fetching permissions: ${e.message}`);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// POST /api/auth/register
+app.post('/api/auth/register', async (req, res) => {
+    const { username, email } = req.body;
+    if (!username || !email) return res.status(400).json({ error: 'Username ed email obbligatori' });
+    
+    const existing = database.db.prepare('SELECT id FROM users WHERE username = ? OR email = ?').get(username, email);
+    if (existing) return res.status(409).json({ error: 'Username o email già in uso' });
+
+    const generatedPassword = crypto.randomBytes(6).toString('hex'); // 12 chars
+
+    try {
+        const user = database.createUser(username, generatedPassword, email, 'free', username, 1);
+        
+        await transporter.sendMail({
+            from: process.env.SMTP_FROM || '"M2T Tracker" <noreply@m2t.io>',
+            to: email,
+            subject: 'Il tuo nuovo account M2T Tracker',
+            text: `Benvenuto ${username},\n\nIl tuo account è stato creato.\nLa tua password temporanea è: ${generatedPassword}\n\nTi verrà chiesto di cambiarla al primo accesso.\nQuesta password è valida per 24 ore.`
+        });
+
+        logger.info(`[AUTH] Registered new user: ${username}`);
+        res.json({ ok: true, message: 'Account creato. Controlla l\'email per la password.' });
+    } catch (e) {
+        logger.error(`[AUTH] Registration error: ${e.message}`);
+        res.status(500).json({ error: 'Errore durante la registrazione' });
+    }
+});
+
+// POST /api/auth/change-password
+app.post('/api/auth/change-password', async (req, res) => {
+    const { user_id, current_password, new_password } = req.body;
+    if (!new_password || new_password.length < 4) return res.status(400).json({ error: 'La nuova password deve essere di almeno 4 caratteri' });
+
+    let userId = user_id;
+    // se è loggato, usiamo il suo id
+    const token = req.cookies[JWT_COOKIE] || (req.headers.authorization || '').replace('Bearer ', '');
+    if (token) {
+        try {
+            const decoded = jwt.verify(token, JWT_SECRET);
+            userId = decoded.id;
+        } catch (e) {}
+    }
+
+    if (!userId) return res.status(401).json({ error: 'Non autorizzato' });
+
+    const user = database.db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+    if (!user) return res.status(404).json({ error: 'Utente non trovato' });
+
+    const bcrypt = require('bcryptjs');
+    const valid = bcrypt.compareSync(current_password, user.password_hash);
+    if (!valid) return res.status(401).json({ error: 'Password corrente errata' });
+
+    const hash = bcrypt.hashSync(new_password, 10);
+    database.db.prepare('UPDATE users SET password_hash = ?, must_change_password = 0 WHERE id = ?').run(hash, userId);
+    
+    logger.info(`[AUTH] User ${user.username} changed password`);
+    res.json({ ok: true });
+});
+
+// POST /api/auth/forgot-password
+app.post('/api/auth/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email obbligatoria' });
+
+    const user = database.db.prepare('SELECT id, username FROM users WHERE email = ?').get(email);
+    if (!user) return res.json({ ok: true, message: 'Se l\'email esiste riceverai un link di ripristino.' });
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const expiry = new Date(Date.now() + 3600000).toISOString(); // 1 ora
+
+    database.db.prepare('UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE id = ?').run(resetToken, expiry, user.id);
+
+    try {
+        const resetLink = `http://${req.headers.host}/login?reset_token=${resetToken}`;
+        await transporter.sendMail({
+            from: process.env.SMTP_FROM || '"M2T Tracker" <noreply@m2t.io>',
+            to: email,
+            subject: 'Ripristino password M2T Tracker',
+            text: `Ciao ${user.username},\n\nHai richiesto il ripristino della password.\nClicca qui per impostare una nuova password:\n${resetLink}\n\nIl link è valido per 1 ora.`
+        });
+    } catch (e) {
+        logger.error(`[AUTH] Error sending reset email: ${e.message}`);
+    }
+
+    res.json({ ok: true, message: 'Se l\'email esiste riceverai un link di ripristino.' });
+});
+
+// POST /api/auth/reset-password
+app.post('/api/auth/reset-password', (req, res) => {
+    const { token, new_password } = req.body;
+    if (!token || !new_password || new_password.length < 4) return res.status(400).json({ error: 'Token o password non validi' });
+
+    const user = database.db.prepare('SELECT id, reset_token_expiry FROM users WHERE reset_token = ?').get(token);
+    if (!user) return res.status(400).json({ error: 'Token non valido o scaduto' });
+
+    if (new Date() > new Date(user.reset_token_expiry)) {
+        return res.status(400).json({ error: 'Token scaduto' });
+    }
+
+    const bcrypt = require('bcryptjs');
+    const hash = bcrypt.hashSync(new_password, 10);
+    database.db.prepare('UPDATE users SET password_hash = ?, reset_token = NULL, reset_token_expiry = NULL, must_change_password = 0 WHERE id = ?').run(hash, user.id);
+    
+    logger.info(`[AUTH] User reset password via token`);
+    res.json({ ok: true });
 });
 
 // ─── Admin API Routes ────────────────────────────────────────────────────────
+
+// GET /api/admin/roles
+app.get('/api/admin/roles', requireAuth, requireAdmin, (req, res) => {
+    try {
+        const perms = database.getRolePermissions();
+        res.json(perms);
+    } catch (e) {
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// POST /api/admin/roles
+app.post('/api/admin/roles', requireAuth, requireAdmin, (req, res) => {
+    const { role, resource, is_enabled } = req.body;
+    if (!role || !resource) return res.status(400).json({ error: 'role and resource required' });
+    try {
+        database.updateRolePermission(role, resource, is_enabled ? 1 : 0);
+        logger.info(`[ADMIN] Role permission updated: ${role} -> ${resource} = ${is_enabled}`);
+        res.json({ ok: true });
+    } catch (e) {
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
 
 // GET /api/admin/users
 app.get('/api/admin/users', requireAuth, requireAdmin, (req, res) => {

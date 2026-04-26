@@ -82,10 +82,26 @@
               <div class="mob-settings-row">
                   <div class="mob-settings-icon bg-blue-ios"><span class="material-symbols-outlined text-white">person</span></div>
                   <div class="mob-settings-label">
-                      <div class="font-bold">User</div>
-                      <div class="text-[11px] text-slate-500">user@m2t.io</div>
+                      <div class="font-bold" id="mob-user-name">Loading...</div>
+                      <div class="text-[11px] text-slate-500" id="mob-user-email">...</div>
                   </div>
-                  <button class="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-[10px] font-black uppercase text-primary">Edit</button>
+                  <span id="mob-user-role" class="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-black uppercase rounded"></span>
+              </div>
+              <div class="mob-settings-row" onclick="toggleMobSection('mob-password-area')">
+                  <div class="mob-settings-icon bg-emerald-500"><span class="material-symbols-outlined text-white">lock</span></div>
+                  <div class="mob-settings-label">Cambia Password</div>
+                  <div class="mob-settings-value"><span id="mob-password-area-icon" class="material-symbols-outlined text-[14px] transition-transform">expand_more</span></div>
+              </div>
+              <div id="mob-password-area" class="hidden bg-slate-50/50 dark:bg-black/20 border-t border-slate-100 dark:border-slate-800 p-4 space-y-3">
+                  <input type="password" id="mob-pwd-current" placeholder="Password Corrente" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs">
+                  <input type="password" id="mob-pwd-new" placeholder="Nuova Password" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs">
+                  <button onclick="changePasswordMob()" class="w-full py-2 bg-primary text-white text-[10px] font-black uppercase rounded-lg shadow-sm">Aggiorna Password</button>
+                  <p id="mob-pwd-msg" class="text-[10px] font-bold text-center hidden"></p>
+              </div>
+              <div class="mob-settings-row" onclick="logoutMob()">
+                  <div class="mob-settings-icon bg-rose-500"><span class="material-symbols-outlined text-white">logout</span></div>
+                  <div class="mob-settings-label text-rose-500 font-bold">Logout</div>
+                  <span class="material-symbols-outlined text-rose-500">chevron_right</span>
               </div>
           </div>
       </div>
@@ -631,9 +647,61 @@
             });
         }
 
+        // Fetch User Info
+        fetch('/api/auth/me').then(res => res.json()).then(data => {
+            if (data && data.user) {
+                const u = data.user;
+                document.getElementById('mob-user-name').textContent = u.display_name || u.username;
+                document.getElementById('mob-user-email').textContent = u.email || 'Nessuna email';
+                document.getElementById('mob-user-role').textContent = u.role;
+            }
+        }).catch(err => console.error('Error fetching user info', err));
+
         // Initial fetch
         fetch('/api/settings').then(res => res.json()).then(updateUI);
     });
+
+    window.logoutMob = async () => {
+        if (confirm('Vuoi uscire?')) {
+            await fetch('/api/auth/logout', { method: 'POST' });
+            window.location.href = '/login';
+        }
+    };
+
+    window.changePasswordMob = async () => {
+        const cur = document.getElementById('mob-pwd-current').value;
+        const newP = document.getElementById('mob-pwd-new').value;
+        const msg = document.getElementById('mob-pwd-msg');
+        
+        if (!cur || !newP) {
+            msg.textContent = 'Compila entrambi i campi';
+            msg.className = 'text-[10px] font-bold text-center text-rose-500';
+            msg.classList.remove('hidden');
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/auth/change-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ current_password: cur, new_password: newP })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                msg.textContent = 'Password aggiornata con successo!';
+                msg.className = 'text-[10px] font-bold text-center text-emerald-500';
+                document.getElementById('mob-pwd-current').value = '';
+                document.getElementById('mob-pwd-new').value = '';
+            } else {
+                msg.textContent = data.error || 'Errore';
+                msg.className = 'text-[10px] font-bold text-center text-rose-500';
+            }
+        } catch (e) {
+            msg.textContent = 'Errore di rete';
+            msg.className = 'text-[10px] font-bold text-center text-rose-500';
+        }
+        msg.classList.remove('hidden');
+    };
 
     window.confirmRestore = (filename) => {
         if (confirm(`Restore backup "${filename}"? Server will restart.`)) {
