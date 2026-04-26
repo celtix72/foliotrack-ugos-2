@@ -1112,6 +1112,106 @@
             if (typeof updateAllocationChart === 'function') updateAllocationChart();
         });
     });
+
+    // Portfolio Modal Logic
+    window.openPortfolioModal = function() {
+        document.getElementById('portfolio-modal-title').innerText = 'New Portfolio';
+        document.getElementById('portfolio-form').reset();
+        document.getElementById('p-id').value = '';
+        document.getElementById('portfolio-modal').classList.remove('hidden');
+    };
+
+    window.closePortfolioModal = function() {
+        document.getElementById('portfolio-modal').classList.add('hidden');
+    };
+
+    document.getElementById('portfolio-form').onsubmit = async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('p-id').value;
+        const data = {
+            name: document.getElementById('p-name').value,
+            type: document.getElementById('p-type').value,
+            currency: document.getElementById('p-currency').value,
+            startDate: document.getElementById('p-date').value,
+            initialCash: parseFloat(document.getElementById('p-cash').value),
+            color: document.getElementById('p-color').value
+        };
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? `/api/portfolios/${id}` : '/api/portfolios';
+        try {
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (res.ok) {
+                closePortfolioModal();
+                loadDashboard();
+            } else {
+                const errText = await res.text();
+                alert('Failed to save portfolio: ' + errText);
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Error saving portfolio: ' + err.message);
+        }
+    };
 </script>
+
+<!-- Portfolio Modal -->
+<div id="portfolio-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <h3 id="portfolio-modal-title" class="font-bold text-lg">New Portfolio</h3>
+            <button onclick="closePortfolioModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <form id="portfolio-form" class="p-6 space-y-4">
+            <input type="hidden" id="p-id"/>
+            <div class="space-y-2">
+                <label class="text-sm font-medium">Portfolio Name</label>
+                <input id="p-name" required class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3" placeholder="e.g. Retirement"/>
+            </div>
+            <div class="space-y-2">
+                <label class="text-sm font-medium">Portfolio Type</label>
+                <select id="p-type" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3">
+                    <option value="Investimento">Investimento (Market Tracking)</option>
+                    <option value="Conto Deposito">Conto Deposito (Cash & Interests)</option>
+                </select>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <label class="text-sm font-medium">Currency</label>
+                    <select id="p-currency" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3">
+                        <option value="EUR">EUR</option>
+                        <option value="USD">USD</option>
+                        <option value="GBP">GBP</option>
+                    </select>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-medium">Start Date</label>
+                    <input id="p-date" type="date" required class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3"/>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <label class="text-sm font-medium">Initial Cash</label>
+                    <input id="p-cash" type="number" step="any" required class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3" placeholder="0.00"/>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-medium">Brand Color</label>
+                    <input id="p-color" type="color" class="w-full h-[42px] bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-1 px-1 cursor-pointer" value="#6366f1"/>
+                </div>
+            </div>
+            <div class="pt-4 flex gap-3">
+                <div class="flex-1"></div>
+                <button type="button" onclick="closePortfolioModal()" class="px-5 py-2 rounded-lg font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Cancel</button>
+                <button type="submit" class="px-5 py-2 bg-primary text-white rounded-lg font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">Save Portfolio</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 
 </body></html>

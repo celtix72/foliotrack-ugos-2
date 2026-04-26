@@ -5034,8 +5034,7 @@ app.get('/api/analytics/current-month-dividends', requireAuth, async (req, res) 
         const projections = database.db.prepare(`
             SELECT SUM(dp.totalAmount) as total, COUNT(*) as count 
             FROM dividend_projections dp
-            JOIN portfolio_users pu ON dp.portfolioId = pu.portfolio_id
-            WHERE pu.user_id = ? AND dp.exDate LIKE ?
+            WHERE dp.user_id = ? AND dp.exDate LIKE ?
         `).get(req.user.id, yearMonth + '%');
 
         // Get already received dividends for this month from transactions (filtered by user)
