@@ -390,7 +390,10 @@ function initDb() {
     }
 
     // ─── Migrations: Add user columns if they don't exist ────────────────────────
-    try { dbConnection.prepare(`ALTER TABLE users ADD COLUMN email TEXT UNIQUE`).run(); } catch (e) {}
+    try { 
+        dbConnection.prepare(`ALTER TABLE users ADD COLUMN email TEXT`).run();
+        try { dbConnection.prepare(`CREATE UNIQUE INDEX idx_users_email ON users(email)`).run(); } catch (e) {}
+    } catch (e) {}
     try { dbConnection.prepare(`ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 1`).run(); } catch (e) {}
     try { dbConnection.prepare(`ALTER TABLE users ADD COLUMN reset_token TEXT`).run(); } catch (e) {}
     try { dbConnection.prepare(`ALTER TABLE users ADD COLUMN reset_token_expiry TEXT`).run(); } catch (e) {}
