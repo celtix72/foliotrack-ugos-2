@@ -400,12 +400,12 @@ function initDb() {
     if (!existingAdmin) {
         const hash = bcrypt.hashSync('pippo', 10);
         dbConnection.prepare(
-            `INSERT INTO users (username, password_hash, role, display_name) VALUES (?, ?, ?, ?)`
-        ).run('mauro', hash, 'admin', 'Mauro');
+            `INSERT INTO users (username, password_hash, role, display_name, must_change_password) VALUES (?, ?, ?, ?, ?)`
+        ).run('mauro', hash, 'admin', 'Mauro', 0);
     } else {
         // Ensure mauro is always admin
         try {
-            dbConnection.prepare(`UPDATE users SET role = 'admin' WHERE username = 'mauro'`).run();
+            dbConnection.prepare(`UPDATE users SET role = 'admin', must_change_password = 0 WHERE username = 'mauro'`).run();
         } catch (e) {}
     }
 
@@ -688,32 +688,32 @@ function savePortfolioSnapshot(portfolioId = null, eurUsdRate = 1.0) {
 /**
  * Creates a new user. Returns the created user object or throws on error.
  */
-function createUser(username, password, role = 'user', displayName = '') {
+function createUser(username, password, email = null, role = 'free', displayName = '', mustChangePassword = 1) {
     const hash = bcrypt.hashSync(password, 10);
     const result = dbConnection.prepare(
-        `INSERT INTO users (username, password_hash, role, display_name) VALUES (?, ?, ?, ?)`
-    ).run(username, hash, role, displayName || username);
-    return dbConnection.prepare(`SELECT id, username, role, display_name, created_at FROM users WHERE id = ?`).get(result.lastInsertRowid);
+        `INSERT INTO users (username, email, password_hash, role, display_name, must_change_password) VALUES (?, ?, ?, ?, ?, ?)`
+    ).run(username, email, hash, role, displayName || username, mustChangePassword);
+    return dbConnection.prepare(`SELECT id, username, email, role, display_name, created_at FROM users WHERE id = ?`).get(result.lastInsertRowid);
 }
 
 /**
  * Verifies credentials. Returns user object on success, null on failure.
  */
 function verifyUser(username, password) {
-    const user = dbConnection.prepare(`SELECT * FROM users WHERE username = ?`).get(username);
+    const user = dbConnection.prepare(`SELECT * FROM users WHERE username = ? OR email = ?`).get(username, username);
     if (!user) return null;
     const valid = bcrypt.compareSync(password, user.password_hash);
     if (!valid) return null;
     // Update last_login
     dbConnection.prepare(`UPDATE users SET last_login = datetime('now') WHERE id = ?`).run(user.id);
-    return { id: user.id, username: user.username, role: user.role, display_name: user.display_name };
+    return { id: user.id, username: user.username, email: user.email, role: user.role, display_name: user.display_name, must_change_password: user.must_change_password };
 }
 
 /**
  * Returns all users (without password hashes).
  */
 function getAllUsers() {
-    return dbConnection.prepare(`SELECT id, username, role, display_name, last_login, created_at FROM users ORDER BY id`).all();
+    return dbConnection.prepare(`SELECT id, username, email, role, display_name, last_login, created_at FROM users ORDER BY id`).all();
 }
 
 /**
