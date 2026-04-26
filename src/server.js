@@ -877,7 +877,7 @@ app.post('/api/admin/users', requireAuth, requireAdmin, (req, res) => {
     const { username, password, role, display_name } = req.body;
     if (!username || !password) return res.status(400).json({ error: 'username e password obbligatori' });
     try {
-        const user = database.createUser(username, password, role || 'user', display_name || username);
+        const user = database.createUser(username, password, null, role || 'free', display_name || username, 0);
         logger.info(`[AUTH] Admin ${req.user.username} created user: ${username} (${role || 'user'})`);
         res.status(201).json(user);
     } catch (e) {
