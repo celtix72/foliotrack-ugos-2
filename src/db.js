@@ -780,7 +780,7 @@ function savePortfolioSnapshot(portfolioId = null, eurUsdRate = 1.0, userId = nu
             cashValue = excluded.cashValue,
             assetValue = excluded.assetValue,
             netDeposits = excluded.netDeposits
-    `).run(portfolioId, date, Math.round(totalValue), Math.round(cashValue), Math.round(assetValue), Math.round(netDeposits));
+    `).run(portfolioId, uId, date, Math.round(totalValue), Math.round(cashValue), Math.round(assetValue), Math.round(netDeposits));
 }
 
 // ─── Auth helper functions ───────────────────────────────────────────────────

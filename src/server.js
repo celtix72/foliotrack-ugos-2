@@ -2967,33 +2967,41 @@ app.post('/api/admin/rebuild-history', async (req, res) => {
         logger.info(`Rebuilding performance history: Step 3/4 - Recalculating for ${portfolios.length} portfolios...`);
         
         for (const p of portfolios) {
-            // true for forceRefresh and true for includeIndividual
+            const uId = database.db.prepare(`SELECT user_id FROM portfolio_users WHERE portfolio_id = ?`).get(p.id)?.user_id;
             const perfData = await calculatePerformanceHistory(p.id, 'ALL', true, true);
             const dataPoints = perfData.dataPoints || [];
             const insert = database.db.prepare(`
-                INSERT OR REPLACE INTO portfolio_history (portfolioId, date, totalValue, cashValue, assetValue, netDeposits)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT OR REPLACE INTO portfolio_history (portfolioId, user_id, date, totalValue, cashValue, assetValue, netDeposits)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             `);
             
             database.db.transaction(() => {
                 for (const pt of dataPoints) {
-                    insert.run(p.id, pt.date, pt.value, pt.cash || 0, pt.assets || 0, pt.netDeposits || 0);
+                    insert.run(p.id, uId, pt.date, pt.value, pt.cash || 0, pt.assets || 0, pt.netDeposits || 0);
                 }
             })();
         }
         
-        logger.info('Rebuilding performance history: Step 4/4 - Recalculating Global...');
-        const globalPoints = await calculatePerformanceHistory(null, 'ALL', true);
-        const insertGlobal = database.db.prepare(`
-            INSERT OR REPLACE INTO portfolio_history (portfolioId, date, totalValue, cashValue, assetValue, netDeposits)
-            VALUES (NULL, ?, ?, ?, ?, ?)
-        `);
-        
-        database.db.transaction(() => {
-            for (const pt of globalPoints) {
-                insertGlobal.run(pt.date, pt.value, pt.cash || 0, pt.assets || 0, pt.netDeposits || 0);
+        logger.info('Rebuilding performance history: Step 4/4 - Recalculating Global per user...');
+        const users = database.db.prepare('SELECT id FROM users').all();
+        for (const u of users) {
+            const userP = database.db.prepare(`SELECT portfolio_id FROM portfolio_users WHERE user_id = ?`).all(u.id);
+            const userPIds = userP.map(r => r.portfolio_id);
+            if (userPIds.length > 0) {
+                const perfDataGlobal = await calculatePerformanceHistory(userPIds, 'ALL', true, false, null, u.id);
+                const globalPoints = Array.isArray(perfDataGlobal) ? perfDataGlobal : (perfDataGlobal.dataPoints || []);
+                const insertGlobal = database.db.prepare(`
+                    INSERT OR REPLACE INTO portfolio_history (portfolioId, user_id, date, totalValue, cashValue, assetValue, netDeposits)
+                    VALUES (NULL, ?, ?, ?, ?, ?, ?)
+                `);
+                
+                database.db.transaction(() => {
+                    for (const pt of globalPoints) {
+                        insertGlobal.run(u.id, pt.date, pt.value, pt.cash || 0, pt.assets || 0, pt.netDeposits || 0);
+                    }
+                })();
             }
-        })();
+        }
 
         logger.info('Performance history rebuilt successfully.');
         res.json({ success: true, message: 'History rebuilt successfully' });
@@ -4519,16 +4527,17 @@ async function triggerHistoryRebuild(portfolioId = null) {
                     database.db.prepare('UPDATE portfolios SET startDate = ? WHERE id = ?').run(minTxDate, p.id);
                 }
 
+                const uId = database.db.prepare(`SELECT user_id FROM portfolio_users WHERE portfolio_id = ?`).get(p.id)?.user_id;
                 const perfData = await calculatePerformanceHistory(p.id, 'ALL', true, true);
                 const dataPoints = perfData.dataPoints || [];
                 const insert = database.db.prepare(`
-                    INSERT OR REPLACE INTO portfolio_history (portfolioId, date, totalValue, cashValue, assetValue, netDeposits)
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    INSERT OR REPLACE INTO portfolio_history (portfolioId, user_id, date, totalValue, cashValue, assetValue, netDeposits)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
                 `);
                 
                 database.db.transaction(() => {
                     for (const pt of dataPoints) {
-                        insert.run(p.id, pt.date, pt.value, pt.cash || 0, pt.assets || 0, pt.netDeposits || 0);
+                        insert.run(p.id, uId, pt.date, pt.value, pt.cash || 0, pt.assets || 0, pt.netDeposits || 0);
                     }
                 })();
             }
