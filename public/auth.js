@@ -58,6 +58,8 @@
         try {
             await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
         } catch (_) {}
+        // Clear all cached API data to prevent leaks between users
+        sessionStorage.clear();
         window.location.href = '/login';
     }
 

@@ -381,6 +381,14 @@ function initDb() {
         } catch (e) {}
         dbConnection.prepare(`UPDATE dividend_projections SET user_id = ? WHERE user_id IS NULL`).run(adminId);
         
+        try {
+            dbConnection.prepare(`ALTER TABLE portfolio_history ADD COLUMN user_id INTEGER`).run();
+        } catch (e) {}
+        dbConnection.prepare(`UPDATE portfolio_history SET user_id = ? WHERE user_id IS NULL`).run(adminId);
+        try {
+            dbConnection.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_global_history_user ON portfolio_history(date, user_id) WHERE portfolioId IS NULL`).run();
+        } catch (e) {}
+        
     } catch (e) {
         console.error('Database migration error:', e.message);
     }
@@ -533,6 +541,7 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null, variationOverr
     ).all(portfolioId);
 
     let cash = portfolio.initialCash || 0;
+    let investedCapital = portfolio.initialCash || 0;
     let totalDividends = 0;
     const holdings = {}; // { ticker: { shares: 0, totalCost: 0, totalCostAssetCurr: 0 } }
 
@@ -550,8 +559,13 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null, variationOverr
         const typeUC = (t.type || '').toUpperCase();
         if (['DEPOSIT', 'DEPOSITO', 'WITHDRAWAL', 'PRELIEVO', 'TAX', 'TRANSFER', 'RECONCILE'].includes(typeUC)) {
             const absAmount = amount ? Math.abs(amount) : (qty * price) / fx;
-            if (['DEPOSIT', 'DEPOSITO', 'RECONCILE'].includes(typeUC)) cash += absAmount;
-            else cash -= absAmount;
+            if (['DEPOSIT', 'DEPOSITO', 'RECONCILE'].includes(typeUC)) {
+                cash += absAmount;
+                if (typeUC !== 'RECONCILE') investedCapital += absAmount;
+            } else {
+                cash -= absAmount;
+                if (['WITHDRAWAL', 'PRELIEVO', 'TRANSFER'].includes(typeUC)) investedCapital -= absAmount;
+            }
             continue;
         }
 
@@ -680,9 +694,9 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null, variationOverr
 
     dbConnection.prepare(`
         UPDATE portfolios
-        SET currentCash = ?, totalValue = ?, totalDividends = ?, assetCount = ?, performance1D = ?, performance1DPrePost = ?
+        SET currentCash = ?, totalValue = ?, totalDividends = ?, assetCount = ?, performance1D = ?, performance1DPrePost = ?, investedCapital = ?
         WHERE id = ?
-    `).run(finalCash, finalTotalValue, finalDividends, assetCount, finalPerf1D, finalPerf1DPrePost, portfolioId);
+    `).run(finalCash, finalTotalValue, finalDividends, assetCount, finalPerf1D, finalPerf1DPrePost, investedCapital, portfolioId);
 }
 
 function recalculateAll(liveEurUsdRate = null, variationOverrides = null) {
@@ -696,9 +710,10 @@ function recalculateAll(liveEurUsdRate = null, variationOverrides = null) {
     }
 }
 
-function savePortfolioSnapshot(portfolioId = null, eurUsdRate = 1.0) {
+function savePortfolioSnapshot(portfolioId = null, eurUsdRate = 1.0, userId = null) {
     let totalValue = 0, cashValue = 0, assetValue = 0, netDeposits = 0;
     const date = new Date().toISOString().split('T')[0];
+    let uId = userId;
 
     if (portfolioId) {
         const p = dbConnection.prepare(`SELECT totalValue, currentCash FROM portfolios WHERE id = ?`).get(portfolioId);
@@ -707,22 +722,29 @@ function savePortfolioSnapshot(portfolioId = null, eurUsdRate = 1.0) {
             cashValue = p.currentCash || 0;
             assetValue = totalValue - cashValue;
             
+            // Get user_id if not provided
+            if (!uId) {
+                uId = dbConnection.prepare(`SELECT user_id FROM portfolio_users WHERE portfolio_id = ?`).get(portfolioId)?.user_id;
+            }
+
             // Calculate current netDeposits for this portfolio
             const txs = dbConnection.prepare(`SELECT type, amount, exchangeRate, quantity, price, commission, tax FROM transactions WHERE portfolioId = ?`).all(portfolioId);
             let netDep = 0;
             for (const t of txs) {
                 const amount = t.amount || ((t.quantity || 0) * (t.price || 0) + (t.commission || 0) + (t.tax || 0)) / (t.exchangeRate || 1);
-                if (t.type === 'DEPOSIT') netDep += amount;
-                if (t.type === 'WITHDRAWAL') netDep -= amount;
-                if (t.type === 'TRANSFER') netDep -= amount;
+                const typeUC = (t.type || '').toUpperCase();
+                if (['DEPOSIT', 'DEPOSITO'].includes(typeUC)) netDep += amount;
+                if (['WITHDRAWAL', 'PRELIEVO', 'TRANSFER'].includes(typeUC)) netDep -= amount;
             }
-            // For now, simplicity: netDeposits is used to identify profit. 
-            // Better to use portfolio and calculated netDeposits if available.
             netDeposits = netDep;
         } else return;
     } else {
         // Global Dashboard Snapshot - Convert to EUR for consistent aggregate history
-        const portfolios = dbConnection.prepare(`SELECT id, currency, totalValue, currentCash FROM portfolios`).all();
+        // If userId is provided, only aggregate that user's portfolios.
+        const portfolios = uId 
+            ? dbConnection.prepare(`SELECT p.id, p.currency, p.totalValue, p.currentCash FROM portfolios p JOIN portfolio_users pu ON p.id = pu.portfolio_id WHERE pu.user_id = ?`).all(uId)
+            : dbConnection.prepare(`SELECT id, currency, totalValue, currentCash FROM portfolios`).all();
+            
         for (const p of portfolios) {
             let tVal = (p.totalValue || 0);
             let cVal = (p.currentCash || 0);
@@ -732,18 +754,16 @@ function savePortfolioSnapshot(portfolioId = null, eurUsdRate = 1.0) {
             let pNetDep = 0;
             for (const t of txs) {
                 const amount = t.amount || ((t.quantity || 0) * (t.price || 0) + (t.commission || 0) + (t.tax || 0)) / (t.exchangeRate || 1);
-                if (t.type === 'DEPOSIT') pNetDep += amount;
-                if (t.type === 'WITHDRAWAL') pNetDep -= amount;
-                if (t.type === 'TRANSFER') pNetDep -= amount;
+                const typeUC = (t.type || '').toUpperCase();
+                if (['DEPOSIT', 'DEPOSITO'].includes(typeUC)) pNetDep += amount;
+                if (['WITHDRAWAL', 'PRELIEVO', 'TRANSFER'].includes(typeUC)) pNetDep -= amount;
             }
 
-            // Convert to EUR if native is USD
-            if (p.currency === 'USD' && eurUsdRate && eurUsdRate > 0) {
+            if (p.currency === 'USD' && eurUsdRate > 0) {
                 tVal /= eurUsdRate;
-                cVal /= eurUsdRate; 
+                cVal /= eurUsdRate;
                 pNetDep /= eurUsdRate;
             }
-            
             totalValue += tVal;
             cashValue += cVal;
             netDeposits += pNetDep;
@@ -752,9 +772,10 @@ function savePortfolioSnapshot(portfolioId = null, eurUsdRate = 1.0) {
     }
 
     dbConnection.prepare(`
-        INSERT INTO portfolio_history (portfolioId, date, totalValue, cashValue, assetValue, netDeposits)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO portfolio_history (portfolioId, user_id, date, totalValue, cashValue, assetValue, netDeposits)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(portfolioId, date) DO UPDATE SET
+            user_id = excluded.user_id,
             totalValue = excluded.totalValue,
             cashValue = excluded.cashValue,
             assetValue = excluded.assetValue,

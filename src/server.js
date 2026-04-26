@@ -1505,8 +1505,8 @@ app.get('/api/assets', requireAuth, (req, res) => {
         ) t ON a.ticker = t.assetTicker
         LEFT JOIN user_watchlist uw ON a.ticker = uw.ticker AND uw.user_id = ?
         WHERE a.ticker != 'CASH' AND (a.type != 'Cash' OR a.type IS NULL) 
-        -- Only show what matters to the user in Market Overview
-        AND (hasPosition = 1 OR inWatchlist = 1)
+        -- Only show what matters to the user in Market Overview: positions they own OR assets in their specific watchlist
+        AND (hasPosition = 1 OR (uw.user_id IS NOT NULL))
         ORDER BY a.name ASC
     `).all(userId, userId, userId);
 
@@ -2822,9 +2822,9 @@ app.post('/api/portfolios', requireAuth, (req, res) => {
 
     database.db.transaction(() => {
         const result = database.db.prepare(`
-            INSERT INTO portfolios (name, type, currency, startDate, initialCash, currentCash, totalValue, color)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(name, type || 'Investimento', currency || 'EUR', start, cash, cash, cash, pColor);
+            INSERT INTO portfolios (name, type, currency, startDate, initialCash, currentCash, totalValue, investedCapital, color)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(name, type || 'Investimento', currency || 'EUR', start, cash, cash, cash, cash, pColor);
 
         const portfolioId = result.lastInsertRowid;
         
@@ -3722,11 +3722,22 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
     }
 
     const isGlobal = pIdsInput === null;
-    const portfolios = isGlobal 
-        ? database.db.prepare('SELECT * FROM portfolios').all()
-        : (pIdsInput.length > 0 
+    let portfolios;
+    if (isGlobal) {
+        if (userId) {
+            portfolios = database.db.prepare(`
+                SELECT p.* FROM portfolios p 
+                JOIN portfolio_users pu ON p.id = pu.portfolio_id 
+                WHERE pu.user_id = ?
+            `).all(userId);
+        } else {
+            portfolios = database.db.prepare('SELECT * FROM portfolios').all();
+        }
+    } else {
+        portfolios = pIdsInput.length > 0 
             ? database.db.prepare(`SELECT * FROM portfolios WHERE id IN (${pIdsInput.join(',')})`).all()
-            : []);
+            : [];
+    }
 
     const pIds = portfolios.map(p => p.id);
     const allTransactions = pIds.length > 0 ? database.db.prepare(`
@@ -4522,19 +4533,27 @@ async function triggerHistoryRebuild(portfolioId = null) {
                 })();
             }
 
-            // Always rebuild global to keep it in sync
-            const perfDataGlobal = await calculatePerformanceHistory(null, 'ALL', true);
-            const globalPoints = Array.isArray(perfDataGlobal) ? perfDataGlobal : (perfDataGlobal.dataPoints || []);
-            const insertGlobal = database.db.prepare(`
-                INSERT OR REPLACE INTO portfolio_history (portfolioId, date, totalValue, cashValue, assetValue, netDeposits)
-                VALUES (NULL, ?, ?, ?, ?, ?)
-            `);
-            
-            database.db.transaction(() => {
-                for (const pt of globalPoints) {
-                    insertGlobal.run(pt.date, pt.value, pt.cash || 0, pt.assets || 0, pt.netDeposits || 0);
+            const users = database.db.prepare('SELECT id FROM users').all();
+            for (const u of users) {
+                logger.info(`Rebuilding global history for user ${u.id}...`);
+                const userP = database.db.prepare(`SELECT portfolio_id FROM portfolio_users WHERE user_id = ?`).all(u.id);
+                const userPIds = userP.map(r => r.portfolio_id);
+                
+                if (userPIds.length > 0) {
+                    const perfDataGlobal = await calculatePerformanceHistory(userPIds, 'ALL', true, false, null, u.id);
+                    const globalPoints = Array.isArray(perfDataGlobal) ? perfDataGlobal : (perfDataGlobal.dataPoints || []);
+                    const insertGlobal = database.db.prepare(`
+                        INSERT OR REPLACE INTO portfolio_history (portfolioId, user_id, date, totalValue, cashValue, assetValue, netDeposits)
+                        VALUES (NULL, ?, ?, ?, ?, ?, ?)
+                    `);
+                    
+                    database.db.transaction(() => {
+                        for (const pt of globalPoints) {
+                            insertGlobal.run(u.id, pt.date, pt.value, pt.cash || 0, pt.assets || 0, pt.netDeposits || 0);
+                        }
+                    })();
                 }
-            })();
+            }
 
             // Clear cache to ensure charts refresh with new historical points
             clearPerformanceCache();
@@ -4724,9 +4743,14 @@ app.get('/api/analytics/dividends', requireAuth, (req, res) => {
     }
 });
 
-app.get('/api/dividends/manual-projections', (req, res) => {
+app.get('/api/dividends/manual-projections', requireAuth, (req, res) => {
     try {
-        const data = database.db.prepare(`SELECT m.*, a.name FROM manual_dividend_projections m JOIN assets a ON m.ticker = a.ticker ORDER BY exDate ASC`).all();
+        const data = database.db.prepare(`
+            SELECT m.*, a.name FROM dividend_projections m 
+            JOIN assets a ON m.ticker = a.ticker 
+            WHERE m.user_id = ?
+            ORDER BY exDate ASC
+        `).all(req.user.id);
         res.json(data);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -5127,7 +5151,7 @@ app.get('/api/analytics/reports', requireAuth, async (req, res) => {
         const dateStrStart = startDate.toISOString().split('T')[0];
         const dateStrEnd = today.toISOString().split('T')[0];
 
-        const portfolioData = await calculatePerformanceHistory(null, range, false, true);
+        const portfolioData = await calculatePerformanceHistory(null, range, false, true, null, req.user.id);
         if (!portfolioData || !portfolioData.dataPoints || portfolioData.dataPoints.length === 0) {
              return res.json({ error: 'No performance data' });
         }
@@ -6270,9 +6294,12 @@ setInterval(async () => {
         logger.info(`Recording daily snapshots for portfolios and dashboard...`);
         try {
             const liveRate = await getEurUsdRate();
-            const portfolios = database.db.prepare(`SELECT id FROM portfolios`).all();
-            portfolios.forEach(p => database.savePortfolioSnapshot(p.id, liveRate));
-            database.savePortfolioSnapshot(null, liveRate); // Global snapshot
+            const users = database.db.prepare(`SELECT id FROM users`).all();
+            for (const u of users) {
+                const userPortfolios = database.db.prepare(`SELECT portfolio_id as id FROM portfolio_users WHERE user_id = ?`).all(u.id);
+                userPortfolios.forEach(p => database.savePortfolioSnapshot(p.id, liveRate, u.id));
+                database.savePortfolioSnapshot(null, liveRate, u.id); // Global snapshot per user
+            }
             lastSnapshotDate = todayStr;
             logger.info(`Daily snapshots completed.`);
         } catch (e) {

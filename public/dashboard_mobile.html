@@ -184,7 +184,10 @@
     <!-- Portfolio List -->
     <div class="mob-section-header">
       <span class="mob-section-title">I Tuoi Portafogli</span>
-      <span class="mob-section-link" onclick="openPortfolioModal()">+ Aggiungi</span>
+      <div class="flex gap-4">
+        <span class="mob-section-link text-emerald-500" onclick="openTransactionModal()">+ Transazione</span>
+        <span class="mob-section-link" onclick="openPortfolioModal()">+ Aggiungi</span>
+      </div>
     </div>
     <div class="mob-portfolio-list" id="mob-portfolio-list">
       <div style="text-align:center;padding:24px">
@@ -319,6 +322,7 @@
 
 <!-- Mobile Dashboard JS -->
 <script>
+window._mobileViewActive = true;
 (function() {
   let mobPerfChart = null;
   let mobAllocChart = null;
@@ -558,14 +562,19 @@
 
   // ── Portfolio Modal Logic ─────────────────────────
   window.openPortfolioModal = function() {
-    document.getElementById('portfolio-modal-title').innerText = 'Nuovo Portafoglio';
-    document.getElementById('portfolio-form').reset();
-    document.getElementById('p-id').value = '';
-    document.getElementById('portfolio-modal').style.display = 'flex';
+    const title = document.getElementById('portfolio-modal-title');
+    if (title) title.innerText = 'Nuovo Portafoglio';
+    const form = document.getElementById('portfolio-form');
+    if (form) form.reset();
+    const pid = document.getElementById('p-id');
+    if (pid) pid.value = '';
+    const modal = document.getElementById('portfolio-modal');
+    if (modal) modal.style.display = 'flex';
   };
 
   window.closePortfolioModal = function() {
-    document.getElementById('portfolio-modal').style.display = 'none';
+    const modal = document.getElementById('portfolio-modal');
+    if (modal) modal.style.display = 'none';
   };
 
   window.mobEditPortfolio = async function(id) {
@@ -974,4 +983,8 @@
   });
 })();
 </script>
+    <script>
+        // Force activation of mobile-specific logic in theme.js
+        window._mobileViewActive = true;
+    </script>
 </body></html>
