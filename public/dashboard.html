@@ -224,7 +224,32 @@
     </div>
 
     <div class="p-8 space-y-8">
-<div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <!-- Portfolios Overview (Moved UP) -->
+        <section class="space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold">I Tuoi Portafogli</h3>
+                <div class="flex gap-2">
+                    <button onclick="openTransactionModal()" class="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-emerald-700 transition-all shadow-md shadow-emerald-500/20">
+                        <span class="material-symbols-outlined text-sm">add_circle</span>
+                        Transazione
+                    </button>
+                    <button onclick="openImportModal()" class="flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-800 text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm">
+                        <span class="material-symbols-outlined text-sm">upload_file</span>
+                        Bulk Import
+                    </button>
+                    <button onclick="openPortfolioModal()" class="flex items-center gap-2 px-4 py-2 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-primary/90 transition-all shadow-md shadow-primary/20">
+                        <span class="material-symbols-outlined text-sm">add</span>
+                        Nuovo
+                    </button>
+                </div>
+            </div>
+            <div id="portfolio-container" class="flex flex-col gap-4">
+                <!-- JS filled -->
+                <div class="col-span-full py-12 text-center text-slate-500 italic">No portfolios found.</div>
+            </div>
+        </section>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
     <!-- Performance Chart (75%) -->
     <section class="lg:col-span-3 bg-white dark:bg-[#111722] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
         <div class="flex items-center justify-between mb-8">
@@ -291,30 +316,7 @@
     </section>
 </div>
 
-<!-- Portfolios Overview -->
-<section class="space-y-4 pb-8">
-    <div class="flex items-center justify-between">
-        <h3 class="text-lg font-bold">I Tuoi Portafogli</h3>
-        <div class="flex gap-2">
-            <button onclick="openTransactionModal()" class="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-emerald-700 transition-all shadow-md shadow-emerald-500/20">
-                <span class="material-symbols-outlined text-sm">add_circle</span>
-                Transazione
-            </button>
-            <button onclick="openImportModal()" class="flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-800 text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm">
-                <span class="material-symbols-outlined text-sm">upload_file</span>
-                Bulk Import
-            </button>
-            <button onclick="openPortfolioModal()" class="flex items-center gap-2 px-4 py-2 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-primary/90 transition-all shadow-md shadow-primary/20">
-                <span class="material-symbols-outlined text-sm">add</span>
-                Nuovo
-            </button>
-        </div>
-    </div>
-    <div id="portfolio-container" class="flex flex-col gap-4">
-        <!-- JS filled -->
-        <div class="col-span-full py-12 text-center text-slate-500 italic">No portfolios found.</div>
-    </div>
-</section>
+
 
 <!-- Market Overview -->
 <section class="space-y-4 pb-8">
