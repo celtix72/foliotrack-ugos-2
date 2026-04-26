@@ -887,16 +887,12 @@ app.get('/api/admin/users', requireAuth, requireAdmin, (req, res) => {
 // GET /api/admin/smtp-settings
 app.get('/api/admin/smtp-settings', requireAuth, requireAdmin, (req, res) => {
     try {
-        const settings = database.getSettings();
+        const settings = database.getSettings(1); // Admin settings are stored under user 1
         res.json({
             smtp_host: settings.smtp_host || '',
             smtp_port: settings.smtp_port || '',
             smtp_user: settings.smtp_user || '',
             smtp_from: settings.smtp_from || ''
-            // Never send the password back to the client for security, 
-            // even if it's admin. Use a placeholder if it exists.
-            // But for this app, maybe it's fine. 
-            // I'll skip password for GET.
         });
     } catch (e) {
         res.status(500).json({ error: 'Internal server error' });
@@ -907,11 +903,11 @@ app.get('/api/admin/smtp-settings', requireAuth, requireAdmin, (req, res) => {
 app.post('/api/admin/smtp-settings', requireAuth, requireAdmin, (req, res) => {
     const { smtp_host, smtp_port, smtp_user, smtp_pass, smtp_from } = req.body;
     try {
-        if (smtp_host !== undefined) database.setSetting('smtp_host', smtp_host);
-        if (smtp_port !== undefined) database.setSetting('smtp_port', smtp_port);
-        if (smtp_user !== undefined) database.setSetting('smtp_user', smtp_user);
-        if (smtp_pass !== undefined && smtp_pass !== '') database.setSetting('smtp_pass', smtp_pass);
-        if (smtp_from !== undefined) database.setSetting('smtp_from', smtp_from);
+        if (smtp_host !== undefined) database.setSetting(1, 'smtp_host', smtp_host);
+        if (smtp_port !== undefined) database.setSetting(1, 'smtp_port', smtp_port);
+        if (smtp_user !== undefined) database.setSetting(1, 'smtp_user', smtp_user);
+        if (smtp_pass !== undefined && smtp_pass !== '') database.setSetting(1, 'smtp_pass', smtp_pass);
+        if (smtp_from !== undefined) database.setSetting(1, 'smtp_from', smtp_from);
         
         // Invalidate transporter
         transporterInstance = null;

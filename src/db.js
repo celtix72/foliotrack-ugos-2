@@ -830,8 +830,15 @@ function addPortfolioUser(portfolioId, userId) {
  * Deletes a user and their portfolio associations.
  */
 function deleteUser(userId) {
-    dbConnection.prepare(`DELETE FROM portfolio_users WHERE user_id = ?`).run(userId);
-    dbConnection.prepare(`DELETE FROM users WHERE id = ?`).run(userId);
+    dbConnection.transaction(() => {
+        dbConnection.prepare(`DELETE FROM portfolio_users WHERE user_id = ?`).run(userId);
+        dbConnection.prepare(`DELETE FROM settings WHERE user_id = ?`).run(userId);
+        dbConnection.prepare(`DELETE FROM tax_rates WHERE user_id = ?`).run(userId);
+        dbConnection.prepare(`DELETE FROM dividend_projections WHERE user_id = ?`).run(userId);
+        dbConnection.prepare(`DELETE FROM user_watchlist WHERE user_id = ?`).run(userId);
+        dbConnection.prepare(`DELETE FROM notifications WHERE user_id = ?`).run(userId);
+        dbConnection.prepare(`DELETE FROM users WHERE id = ?`).run(userId);
+    })();
 }
 
 /**
