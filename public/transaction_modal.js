@@ -26,16 +26,70 @@
         const backdropColor = isDark ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.7)';
 
         return `
+<style>
+    /* Compact Desktop Styles */
+    @media (min-width: 1024px) {
+        #transaction-modal .tm-container {
+            max-width: 580px !important;
+            border-radius: 16px !important;
+        }
+        #transaction-modal .tm-header {
+            padding: 12px 16px !important;
+        }
+        #transaction-modal .tm-header-icon-wrap {
+            width: 32px !important;
+            height: 32px !important;
+        }
+        #transaction-modal .tm-header-icon-wrap span {
+            font-size: 18px !important;
+        }
+        #transaction-modal #tm-title {
+            font-size: 14px !important;
+        }
+        #transaction-modal .tm-body {
+            padding: 16px !important;
+        }
+        #transaction-modal .tm-row {
+            gap: 12px !important;
+            margin-bottom: 12px !important;
+        }
+        #transaction-modal .mob-input-label {
+            font-size: 10px !important;
+            margin-bottom: 4px !important;
+        }
+        #transaction-modal .mob-input-field {
+            padding: 8px 12px !important;
+            font-size: 13px !important;
+            border-radius: 10px !important;
+        }
+        #transaction-modal .tm-footer {
+            padding: 12px 16px !important;
+        }
+        #transaction-modal .mob-btn {
+            padding: 10px !important;
+            font-size: 10px !important;
+            border-radius: 10px !important;
+        }
+        #transaction-modal #tm-asset-meta {
+            padding: 10px !important;
+            gap: 8px !important;
+        }
+        #transaction-modal #tm-alerts-wrap {
+            margin-top: 16px !important;
+            padding-top: 12px !important;
+        }
+    }
+</style>
 <div id="transaction-modal" 
      style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 20000; align-items: center; justify-content: center; background-color: ${backdropColor}; backdrop-filter: blur(12px); padding: 0.5rem; flex-direction: column;"
      class="flex">
-    <div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800" 
+    <div class="tm-container bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800" 
          style="width: 100%; max-width: 800px; max-height: 94vh; position: relative; z-index: 20001; display: flex; flex-direction: column; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden;">
         
         <!-- Header -->
-        <div style="padding: 16px 20px; border-bottom: 1px solid rgba(148,163,184,0.1); display: flex; justify-content: space-between; align-items: center; background: var(--mob-surface);">
+        <div class="tm-header" style="padding: 16px 20px; border-bottom: 1px solid rgba(148,163,184,0.1); display: flex; justify-content: space-between; align-items: center; background: var(--mob-surface);">
             <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                <div class="tm-header-icon-wrap w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
                     <span class="material-symbols-outlined text-primary text-xl" id="tm-header-icon">swap_horiz</span>
                 </div>
                 <div>
@@ -51,10 +105,10 @@
         <!-- Form Body -->
         <form id="tm-form" class="flex flex-col flex-1 min-h-0" onsubmit="handleTransactionSubmit(event)">
             <input type="hidden" id="tm-id" />
-            <div class="mob-modal-body custom-scrollbar" style="padding: 20px; overflow-y: auto;">
+            <div class="tm-body mob-modal-body custom-scrollbar" style="padding: 20px; overflow-y: auto;">
 
                 <!-- Row 1: Portafoglio + Tipo -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                <div class="tm-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
                     <div id="tm-portfolio-wrap">
                         <label class="mob-input-label">Portafoglio</label>
                         <select id="tm-portfolio" class="mob-input-field">
@@ -76,7 +130,7 @@
                 </div>
 
                 <!-- Row 2: Data + Sorgente Dati -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                <div class="tm-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
                     <div>
                         <label class="mob-input-label">Data</label>
                         <input id="tm-date" type="date" required class="mob-input-field" />
@@ -149,7 +203,7 @@
                 </div>
 
                 <!-- Quantità + Prezzo -->
-                <div id="tm-qty-price-wrap" class="hidden" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div id="tm-qty-price-wrap" class="tm-row hidden" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                     <div>
                         <label class="mob-input-label" id="tm-qty-label">Quantità</label>
                         <input id="tm-qty" type="number" step="any" placeholder="0"
@@ -179,7 +233,7 @@
                 </div>
 
                 <!-- Commissioni + Tax -->
-                <div id="tm-comm-tax-wrap" class="hidden" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div id="tm-comm-tax-wrap" class="tm-row hidden" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                     <div id="tm-comm-wrap">
                         <label class="mob-input-label">Commissioni</label>
                         <input id="tm-comm" type="number" step="any" value="0"
@@ -211,7 +265,7 @@
                             <span class="mob-input-label" style="font-size: 8px; margin-bottom: 0;">TG1</span>
                             <div class="relative">
                                 <span class="absolute left-2.5 top-1/2 -translate-y-1/2 font-black text-slate-400 text-[10px] tm-alerts-curr">€</span>
-                                <input id="tm-tp" type="number" step="any" placeholder="0.00" class="mob-input-field font-mono" style="padding: 6px 6px 6px 20px; font-size: 12px;" />
+                                <input id="tm-tp" type="number" step="any" placeholder="0.00" class="mob-input-field font-mono" style="padding-left: 20px;" />
                             </div>
                         </div>
                         <!-- TG2 -->
@@ -219,7 +273,7 @@
                             <span class="mob-input-label" style="font-size: 8px; margin-bottom: 0;">TG2</span>
                             <div class="relative">
                                 <span class="absolute left-2.5 top-1/2 -translate-y-1/2 font-black text-slate-400 text-[10px] tm-alerts-curr">€</span>
-                                <input id="tm-tp2" type="number" step="any" placeholder="0.00" class="mob-input-field font-mono" style="padding: 6px 6px 6px 20px; font-size: 12px;" />
+                                <input id="tm-tp2" type="number" step="any" placeholder="0.00" class="mob-input-field font-mono" style="padding-left: 20px;" />
                             </div>
                         </div>
                         <!-- SL -->
@@ -227,13 +281,13 @@
                             <span class="mob-input-label" style="font-size: 8px; margin-bottom: 0;">SL</span>
                             <div class="relative">
                                 <span class="absolute left-2.5 top-1/2 -translate-y-1/2 font-black text-slate-400 text-[10px] tm-alerts-curr">€</span>
-                                <input id="tm-sl" type="number" step="any" placeholder="0.00" class="mob-input-field font-mono" style="padding: 6px 6px 6px 20px; font-size: 12px;" />
+                                <input id="tm-sl" type="number" step="any" placeholder="0.00" class="mob-input-field font-mono" style="padding-left: 20px;" />
                             </div>
                         </div>
                         <!-- VOL% -->
                         <div style="display: flex; flex-direction: column; gap: 3px;">
                             <span class="mob-input-label" style="font-size: 8px; margin-bottom: 0;">VOL%</span>
-                            <input id="tm-vol" type="number" step="1" value="0" min="0" max="20" class="mob-input-field font-mono" style="padding: 6px; font-size: 12px; text-align: center;" />
+                            <input id="tm-vol" type="number" step="1" value="0" min="0" max="20" class="mob-input-field font-mono" style="text-align: center;" />
                         </div>
                     </div>
                 </div>
@@ -249,7 +303,7 @@
             </div>
 
             <!-- Footer -->
-            <div style="padding: 16px 20px; border-top: 1px solid rgba(148,163,184,0.1); background: var(--mob-surface); display: flex; gap: 10px;">
+            <div class="tm-footer" style="padding: 16px 20px; border-top: 1px solid rgba(148,163,184,0.1); background: var(--mob-surface); display: flex; gap: 10px;">
                 <button type="button" onclick="closeTransactionModal()" class="mob-btn" style="flex: 1; background: rgba(148,163,184,0.1); color: var(--mob-text-muted); border: none; font-weight: 900; text-transform: uppercase; font-size: 11px;">
                     Annulla
                 </button>
