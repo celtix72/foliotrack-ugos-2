@@ -350,6 +350,14 @@ function initDb() {
         last_seen   TEXT    NOT NULL DEFAULT (datetime('now')),
         created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
       );
+
+      CREATE TABLE IF NOT EXISTS push_subscriptions (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        subscription TEXT    NOT NULL, -- JSON string
+        device_name TEXT,
+        created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+      );
     `);
 
     // Migration: Add user_id to notifications

@@ -4,7 +4,10 @@
   "description": "Portfolio and Market tracking terminal",
   "start_url": "/dashboard",
   "display": "standalone",
+  "orientation": "portrait",
   "scope": "/",
+  "lang": "it-IT",
+  "dir": "ltr",
   "background_color": "#0b0f1a",
   "theme_color": "#135bec",
   "icons": [

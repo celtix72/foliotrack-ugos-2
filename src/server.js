@@ -9,6 +9,7 @@ const axios        = require('axios');
 const fs           = require('fs');
 const jwt          = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
+const webpush      = require('web-push');
 const { xirr, calculateTWR } = require('./utils/finance');
 
 // ─── Application Version ─────────────────────────────────────────────────────
@@ -356,6 +357,39 @@ async function sendTelegramMessage(message, customChatId = null, userId = null) 
         req.write(data);
         req.end();
     });
+}
+
+/**
+ * Sends a web push notification to all subscriptions of a user.
+ */
+async function sendPushNotification(userId, title, body, data = {}) {
+    const subscriptions = database.db.prepare('SELECT id, subscription FROM push_subscriptions WHERE user_id = ?').all(userId);
+    if (subscriptions.length === 0) return;
+
+    const payload = JSON.stringify({
+        title,
+        body,
+        icon: '/logo.png',
+        badge: '/logo_cropped.png',
+        data: {
+            url: '/dashboard',
+            ...data
+        }
+    });
+
+    for (const sub of subscriptions) {
+        try {
+            const pushConfig = JSON.parse(sub.subscription);
+            await webpush.sendNotification(pushConfig, payload);
+        } catch (err) {
+            if (err.statusCode === 404 || err.statusCode === 410) {
+                logger.info(`Push subscription ${sub.id} expired/invalid, removing.`);
+                database.db.prepare('DELETE FROM push_subscriptions WHERE id = ?').run(sub.id);
+            } else {
+                logger.error(`Error sending push notification to sub ${sub.id}`, err);
+            }
+        }
+    }
 }
 
 function getNetDeposits(portfolioId) {
@@ -751,6 +785,50 @@ app.post('/api/auth/login', (req, res) => {
     logAudit(user.id, 'LOGIN_SUCCESS', { role: user.role }, req);
     logger.info(`[AUTH] Login: ${user.username} (${user.role})`);
     return res.json({ ok: true, user: { username: user.username, email: user.email, role: user.role, display_name: user.display_name } });
+});
+
+// ─── Web Push API Routes ─────────────────────────────────────────────────────
+
+// GET /api/push/vapid-public-key
+app.get('/api/push/vapid-public-key', requireAuth, (req, res) => {
+    const pubKey = process.env.VAPID_PUBLIC_KEY;
+    if (!pubKey) return res.status(500).json({ error: 'VAPID keys not configured' });
+    res.json({ publicKey: pubKey });
+});
+
+// POST /api/push/subscribe
+app.post('/api/push/subscribe', requireAuth, (req, res) => {
+    const { subscription, device_name } = req.body;
+    if (!subscription) return res.status(400).json({ error: 'Subscription data required' });
+
+    try {
+        const subStr = typeof subscription === 'string' ? subscription : JSON.stringify(subscription);
+        database.db.prepare(`
+            INSERT INTO push_subscriptions (user_id, subscription, device_name)
+            VALUES (?, ?, ?)
+        `).run(req.user.id, subStr, device_name || req.headers['user-agent']);
+        
+        res.json({ ok: true });
+    } catch (e) {
+        logger.error('Failed to save push subscription', e);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+// POST /api/push/unsubscribe
+app.post('/api/push/unsubscribe', requireAuth, (req, res) => {
+    const { subscription } = req.body;
+    if (!subscription) return res.status(400).json({ error: 'Subscription data required' });
+
+    try {
+        const subStr = typeof subscription === 'string' ? subscription : JSON.stringify(subscription);
+        database.db.prepare(`
+            DELETE FROM push_subscriptions WHERE user_id = ? AND subscription = ?
+        `).run(req.user.id, subStr);
+        res.json({ ok: true });
+    } catch (e) {
+        res.status(500).json({ error: 'Database error' });
+    }
 });
 
 // POST /api/auth/logout
@@ -6303,6 +6381,7 @@ async function updateMarketData(force = false) {
                                         `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\``;
                                         
                             sendTelegramMessage(msg, ua.telegram_chat_id, ua.user_id).catch(e => logger.error('Telegram Target Alert failed', e));
+                            sendPushNotification(ua.user_id, 'TARGET PROFIT 🏆', `${asset.ticker}: ${newPrice} (Target: ${ua.targetPrice})`, { ticker: asset.ticker }).catch(e => logger.error('Push Target Alert failed', e));
                         }
                     }
 
@@ -6329,6 +6408,7 @@ async function updateMarketData(force = false) {
                                         `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\``;
                                         
                             sendTelegramMessage(msg, ua.telegram_chat_id, ua.user_id).catch(e => logger.error('Telegram Stop Alert failed', e));
+                            sendPushNotification(ua.user_id, 'STOP LOSS ⚠️', `${asset.ticker}: ${newPrice} (Soglia: ${ua.stopLoss})`, { ticker: asset.ticker }).catch(e => logger.error('Push Stop Alert failed', e));
                         }
                     }
 
@@ -6364,6 +6444,7 @@ async function updateMarketData(force = false) {
                                             `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\``;
                                             
                                 sendTelegramMessage(msg, ua.telegram_chat_id, ua.user_id).catch(e => logger.error('Telegram Volatility Alert failed', e));
+                                sendPushNotification(ua.user_id, 'VOLATILITY ALERT 📊', `${asset.ticker}: ${changeStr} (Soglia: ${threshold}%)`, { ticker: asset.ticker }).catch(e => logger.error('Push Volatility Alert failed', e));
                             }
                         }
                     }

@@ -25,6 +25,7 @@
     </style>
     <script src="/theme.js"></script>
     <script src="/auth.js"></script>
+    <script src="/push-client.js"></script>
     <script>
         window.addEventListener('DOMContentLoaded', () => {
             if (window.ftAuth) ftAuth.initAuthGuard();
@@ -231,6 +232,21 @@
                       </div>
                   </div>
               </div>
+              
+              <!-- Web Push Notification Row -->
+              <div class="mob-settings-row">
+                  <div class="mob-settings-icon bg-blue-ios"><span class="material-symbols-outlined text-white">notifications</span></div>
+                  <div class="mob-settings-label">Notifiche Push (PWA)</div>
+                  <div class="mob-toggle">
+                      <input type="checkbox" id="mob-push-enabled-check" onclick="togglePushNotifications()">
+                      <div class="mob-toggle-slider"></div>
+                  </div>
+              </div>
+              <div class="px-5 py-2">
+                  <p class="text-[9px] text-slate-500 leading-relaxed italic">
+                      * Le notifiche push su iOS richiedono che l'app sia aggiunta alla HOME.
+                  </p>
+              </div>
 
               <!-- News Sources Row -->
               <div class="mob-settings-row" onclick="toggleMobSection('mob-news-sources-config')">
@@ -414,8 +430,32 @@
                 mobVolStatusLabel.className = 'mob-settings-value ' + (isVolActive ? 'text-amber-500' : 'text-slate-400');
             }
             
+            if (window.ftPush) {
+                ftPush.init().then(ready => {
+                    if (ready) {
+                        const pushCheck = document.getElementById('mob-push-enabled-check');
+                        if (pushCheck) pushCheck.checked = ftPush.isSubscribed;
+                    }
+                });
+            }
+
             loadBackups();
             loadNewsSources();
+        };
+
+        window.togglePushNotifications = async () => {
+            const pushCheck = document.getElementById('mob-push-enabled-check');
+            const enabling = pushCheck.checked;
+            
+            if (enabling) {
+                const success = await ftPush.subscribeUser();
+                if (!success) {
+                    pushCheck.checked = false;
+                    alert('Errore nell\'attivazione delle notifiche. Assicurati di aver aggiunto l\'app alla Home Screen.');
+                }
+            } else {
+                await ftPush.unsubscribeUser();
+            }
         };
 
         const loadNewsSources = async () => {

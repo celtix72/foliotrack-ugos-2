@@ -25,6 +25,7 @@
     </style>
     <script src="/theme.js"></script>
     <script src="/auth.js"></script>
+    <script src="/push-client.js"></script>
     <script>
         window.addEventListener('DOMContentLoaded', () => {
             if (window.ftAuth) ftAuth.initAuthGuard();
@@ -451,6 +452,29 @@
                         <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-amber-500"></div>
                     </label>
                 </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Web Push Notifications -->
+<section class="space-y-2">
+    <div class="flex items-center justify-between cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-900/50 p-2 -mx-2 rounded-xl transition-colors" onclick="toggleSection('push-settings-content')">
+        <h2 class="text-lg font-bold border-l-4 border-blue-500 pl-3">Web Push Notifications</h2>
+        <span id="push-settings-content-icon" class="material-symbols-outlined text-slate-400 group-hover:text-blue-500 transition-transform">expand_more</span>
+    </div>
+    <div id="push-settings-content" class="hidden">
+        <div class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-6">
+            <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+                <div>
+                    <div class="font-bold text-sm">Abilita Notifiche Push</div>
+                    <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Ricevi avvisi direttamente sul browser o PWA</div>
+                    <p class="text-[10px] text-slate-500 mt-2 italic">* Su iOS è necessario aggiungere l'app alla Home Screen.</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="push-enabled-check" class="sr-only peer" onclick="togglePushNotifications()">
+                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-500"></div>
+                </label>
             </div>
         </div>
     </div>
@@ -2229,7 +2253,31 @@
                 document.getElementById('desktop-user-role').textContent = u.role;
             }
         }).catch(err => console.error('Error fetching user info', err));
+
+        if (window.ftPush) {
+            ftPush.init().then(ready => {
+                if (ready) {
+                    const pushCheck = document.getElementById('push-enabled-check');
+                    if (pushCheck) pushCheck.checked = ftPush.isSubscribed;
+                }
+            });
+        }
     });
+
+    window.togglePushNotifications = async () => {
+        const pushCheck = document.getElementById('push-enabled-check');
+        const enabling = pushCheck.checked;
+        
+        if (enabling) {
+            const success = await ftPush.subscribeUser();
+            if (!success) {
+                pushCheck.checked = false;
+                alert('Errore nell\'attivazione delle notifiche. Assicurati che il browser supporti le notifiche push.');
+            }
+        } else {
+            await ftPush.unsubscribeUser();
+        }
+    };
 
     window.changePasswordDesktop = async () => {
         const cur = document.getElementById('desktop-pwd-current').value;
