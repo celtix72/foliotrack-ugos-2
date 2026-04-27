@@ -682,14 +682,14 @@ async function sendStatusNotification(targetUserId = null, eventType = 'STATUS')
             }
 
             if (topAsset) {
-                pushBody += `🏆 Top: ${topAsset.ticker} (+€${Math.round(maxDelta).toLocaleString('it-IT')})\n`;
+                pushBody += `🏆 ${topAsset.ticker} (+€${Math.round(maxDelta).toLocaleString('it-IT')})\n`;
             }
             if (worstAsset && minDelta < 0) {
-                pushBody += `📉 Worst: ${worstAsset.ticker} (-€${Math.round(Math.abs(minDelta)).toLocaleString('it-IT')})\n`;
+                pushBody += `📉 ${worstAsset.ticker} (-€${Math.round(Math.abs(minDelta)).toLocaleString('it-IT')})\n`;
             }
 
             notifyUser(userId, eventType, {
-                title: eventType === 'DAILY' ? 'DAILY REPORT 📊' : 'MARKET STATUS 📈',
+                title: eventType === 'DAILY' ? 'DAILY 📊' : 'MKT 📈',
                 body: pushBody.trim(),
                 telegramMessage: msg,
                 data: { url: '/dashboard' }
@@ -946,14 +946,14 @@ app.post('/api/notify/test', requireAuth, async (req, res) => {
             data: { url: '/dashboard' }
         },
         daily: {
-            title: 'DAILY REPORT 📊',
-            body: 'NET: €125.400 (+€1.250)\n📈 Su: Retirement, Trading\n🏆 Top: AAPL (+€850)\n📉 Worst: TSLA (-€200)',
+            title: 'DAILY 📊',
+            body: 'NET: €125.400 (+€1.250)\n📈 Su: Retirement, Trading\n🏆 AAPL (+€850)\n📉 TSLA (-€200)',
             telegramMessage: '*📊 DAILY REPORT*\n\nAsset: `Portfolio Globale`\nVariazione: `+€1.250,00` (+1.2%)',
             data: { url: '/dashboard' }
         },
         status: {
-            title: 'MARKET STATUS 📈',
-            body: 'NET: €125.400 (+€320)\n📈 Su: Retirement\n🏆 Top: MSFT (+€420)\n📉 Worst: AMZN (-€100)',
+            title: 'MKT 📈',
+            body: 'NET: €125.400 (+€320)\n📈 Su: Retirement\n🏆 MSFT (+€420)\n📉 AMZN (-€100)',
             telegramMessage: '*📈 MARKET STATUS*\n\nAggiornamento ore 16:30\nNet. Value: `€125.400`',
             data: { url: '/dashboard' }
         },
