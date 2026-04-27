@@ -911,6 +911,17 @@ app.post('/api/notify/test', requireAuth, async (req, res) => {
     const { event } = req.body;
     const userId = req.user.id;
     
+    // For DAILY and STATUS, use real data generation to verify the format
+    if (event === 'daily' || event === 'status') {
+        try {
+            await sendStatusNotification(userId, event.toUpperCase());
+            return res.json({ success: true });
+        } catch (err) {
+            logger.error(`Test notification failed for ${event}`, err);
+            return res.status(500).json({ error: err.message });
+        }
+    }
+    
     const testPayloads = {
         tp: {
             title: 'TARGET PROFIT COLPITO! 🎯',
@@ -928,18 +939,6 @@ app.post('/api/notify/test', requireAuth, async (req, res) => {
             title: 'ALLERTA VOLATILITÀ 📉',
             body: 'BTC-EUR variazione giornaliera: -8.5%',
             telegramMessage: '*📉 ALLERTA VOLATILITÀ*\n\nAsset: `BTC-EUR`\nVariazione: `-8.5%` (Soglia: 5%)',
-            data: { url: '/dashboard' }
-        },
-        daily: {
-            title: 'DAILY 📊',
-            body: 'NET: €125.400 (+€1.250)\n📈 Su: Retirement, Trading\n🏆 AAPL (+€850)\n📉 TSLA (-€200)',
-            telegramMessage: '*📊 DAILY REPORT*\n\nAsset: `Portfolio Globale`\nVariazione: `+€1.250,00` (+1.2%)',
-            data: { url: '/dashboard' }
-        },
-        status: {
-            title: 'MKT 📈',
-            body: 'NET: €125.400 (+€320)\n📈 Su: Retirement\n🏆 MSFT (+€420)\n📉 AMZN (-€100)',
-            telegramMessage: '*📈 MARKET STATUS*\n\nAggiornamento ore 16:30\nNet. Value: `€125.400`',
             data: { url: '/dashboard' }
         },
         dividend: {
