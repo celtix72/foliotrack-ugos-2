@@ -101,7 +101,7 @@
 <div id="transaction-modal" 
      style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 20000; align-items: center; justify-content: center; background-color: ${backdropColor}; backdrop-filter: blur(12px); padding: 0.5rem; flex-direction: column;"
      class="flex">
-    <div class="tm-container bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800" 
+    <div class="tm-container bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800" 
          style="width: 100%; max-width: 800px; max-height: 94vh; position: relative; z-index: 20001; display: flex; flex-direction: column; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden;">
         
         <!-- Header -->

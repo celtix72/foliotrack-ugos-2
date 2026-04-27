@@ -39,7 +39,7 @@
 </head>
 <body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display min-h-screen flex">
 <!-- Sidebar -->
-<aside class="w-72 border-r border-slate-200 dark:border-slate-800 flex flex-col h-screen sticky top-0 bg-white dark:bg-[#111722] shrink-0">
+<aside class="w-72 border-r border-slate-200 dark:border-slate-800 flex flex-col h-screen sticky top-0 bg-white dark:bg-surface-dark shrink-0">
 <div class="p-6 flex items-center gap-3">
 <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white">
 <span class="material-symbols-outlined">query_stats</span>
@@ -114,7 +114,7 @@
 <!-- Main Content -->
 <main class="flex-1 flex flex-col h-screen overflow-y-auto">
 <!-- Header -->
-<header class="h-20 flex items-center justify-between px-8 bg-white/50 dark:bg-background-dark/50 backdrop-blur-md sticky top-0 z-10 border-b border-slate-200 dark:border-slate-800">
+<header class="h-20 flex items-center justify-between px-8 bg-white/50 dark:bg-surface-dark/50 backdrop-blur-md sticky top-0 z-10 border-b border-slate-200 dark:border-slate-800">
 <div class="flex items-center gap-6">
 <h2 class="text-xl font-bold">Asset Management</h2>
 <div class="h-4 w-[1px] bg-slate-300 dark:bg-slate-700"></div>
@@ -147,7 +147,7 @@
 <p class="text-slate-500 dark:text-slate-400 mt-1">Track live asset prices and key metrics from global markets.</p>
 </section>
 <!-- Add New Asset Form -->
-<section class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
+<section class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2">
 <span class="material-symbols-outlined text-primary">analytics</span>
 <h3 class="font-bold text-lg">Add Monitored Asset</h3>
@@ -159,7 +159,7 @@
             <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Ticker / Search</label>
             <div class="relative">
                 <input id="asset-search-input" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg focus:ring-primary focus:border-primary py-2.5 px-4" placeholder="e.g. AAPL, BTC, TIT.MI" type="text" autocomplete="off"/>
-                <div id="search-results" class="absolute left-0 right-0 mt-1 bg-white dark:bg-[#1a2332] border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl z-50 hidden max-h-60 overflow-y-auto">
+                <div id="search-results" class="absolute left-0 right-0 mt-1 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl z-50 hidden max-h-60 overflow-y-auto">
                     <!-- Results will be injected here -->
                 </div>
             </div>
@@ -237,10 +237,10 @@
 <h3 class="text-xl font-bold">Current Holdings</h3>
 <div class="relative w-full md:w-80">
 <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
-<input id="table-search" class="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-[#111722] border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:ring-primary focus:border-primary" placeholder="Search assets..." type="text"/>
+<input id="table-search" class="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-surface-dark border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:ring-primary focus:border-primary" placeholder="Search assets..." type="text"/>
 </div>
 </div>
-<div class="bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
+<div class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
 <div class="overflow-x-auto">
 <table class="w-full text-left border-collapse">
 <thead>
@@ -277,7 +277,7 @@
 
 <!-- Manual Update Modal -->
 <div id="manual-update-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center hidden">
-    <div class="bg-white dark:bg-[#111722] w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform transition-all">
+    <div class="bg-white dark:bg-surface-dark w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform transition-all">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
             <h3 class="font-black text-lg">Update Asset Source</h3>
             <button onclick="closeManualModal()" class="text-slate-400 hover:text-rose-500 transition-colors">
@@ -641,5 +641,4 @@
         loadAssets();
     });
 </script>
-</body></html>
 </body></html>

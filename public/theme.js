@@ -207,13 +207,13 @@
             
             .sidebar-toggle-tab {
                 position: absolute; right: -12px; top: 100px; width: 24px; height: 24px;
-                background: white; border: 1px solid #e2e8f0; border-radius: 50%;
+                background: var(--mob-surface, white); border: 1px solid var(--mob-border, #e2e8f0); border-radius: 50%;
                 display: flex; align-items: center; justify-content: center;
                 cursor: pointer; z-index: 100; transition: all 0.2s;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.05); color: #64748b;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.05); color: var(--mob-text-muted, #64748b);
             }
-            .dark .sidebar-toggle-tab { background: #1e293b; border-color: #334155; color: #94a3b8; }
-            .sidebar-toggle-tab:hover { transform: scale(1.1); color: #135bec; border-color: #135bec; }
+            .dark .sidebar-toggle-tab { background: var(--mob-surface, #111722); border-color: var(--mob-border, #334155); color: var(--mob-text-muted, #94a3b8); }
+            .sidebar-toggle-tab:hover { transform: scale(1.1); color: var(--mob-primary, #135bec); border-color: var(--mob-primary, #135bec); }
             
             /* Mobile Var Day Header Style */
             .mob-header-var {
@@ -517,7 +517,7 @@
             if (!dropdown) {
                 dropdown = document.createElement('div');
                 dropdown.id = 'notification-dropdown';
-                dropdown.className = 'absolute right-0 mt-2 w-80 bg-white dark:bg-[#111722] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-[100] hidden overflow-hidden transform origin-top-right transition-all';
+                dropdown.className = 'absolute right-0 mt-2 w-80 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-[100] hidden overflow-hidden transform origin-top-right transition-all';
                 bellBtn.parentElement.appendChild(dropdown);
 
                 bellBtn.onclick = (e) => {
@@ -568,7 +568,7 @@
             modal.className = 'fixed inset-0 z-[10000] hidden';
             modal.innerHTML = `
                 <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="toggleMobileNotifications(false)"></div>
-                <div class="absolute bottom-0 left-0 right-0 bg-white dark:bg-[#111722] rounded-t-[32px] max-h-[80vh] flex flex-col overflow-hidden shadow-2xl border-t border-slate-200 dark:border-slate-800 focus:outline-none">
+                <div class="absolute bottom-0 left-0 right-0 bg-white dark:bg-surface-dark rounded-t-[32px] max-h-[80vh] flex flex-col overflow-hidden shadow-2xl border-t border-slate-200 dark:border-slate-800 focus:outline-none">
                     <div class="p-6 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
                         <h3 class="text-xl font-black">Notifiche</h3>
                         <button onclick="toggleMobileNotifications(false)" class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">

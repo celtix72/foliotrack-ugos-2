@@ -6,8 +6,12 @@ module.exports = {
     extend: {
       colors: {
         "primary": "#135bec",
-        "background-light": "#f6f6f8",
-        "background-dark": "#101622",
+        "background-light": "#f8fafc",
+        "background-dark": "#0b0f1a",
+        "surface-light": "#ffffff",
+        "surface-dark": "#111722",
+        "surface-light-2": "#f1f5f9",
+        "surface-dark-2": "#1a2235",
       },
       fontFamily: {
         "display": ["var(--app-font-family, 'JetBrains Mono')", "monospace"]

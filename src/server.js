@@ -5522,15 +5522,156 @@ app.get('/api/analytics/reports', requireAuth, async (req, res) => {
 // BACKUP API
 // ════════════════════════════════════════════════════════════════════════════
 
-app.get('/api/backups', (req, res) => {
+// ════════════════════════════════════════════════════════════════════════════
+// BACKUP API
+// ════════════════════════════════════════════════════════════════════════════
+
+// --- System Backups (SQLite - Admin Only) ---
+app.get('/api/backups', requireAuth, requireAdmin, (req, res) => {
     res.json(backupManager.listBackups());
 });
 
-app.post('/api/backups/manual', async (req, res) => {
+app.post('/api/backups/manual', requireAuth, requireAdmin, async (req, res) => {
     try {
         const metadata = await backupManager.createBackup(false);
         res.json(metadata);
     } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/backups/restore', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const { filename } = req.body;
+        if (!filename) return res.status(400).send('Filename required');
+        await backupManager.restoreBackup(filename);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/backups/:filename', requireAuth, requireAdmin, (req, res) => {
+    try {
+        backupManager.deleteBackup(req.params.filename);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- User Backups (JSON - Export/Import) ---
+app.get('/api/backups/export', requireAuth, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const data = {
+            version: '2.0',
+            exportedAt: new Date().toISOString(),
+            portfolios: [],
+            transactions: [],
+            settings: [],
+            tax_rates: [],
+            user_watchlist: [],
+            notifications: [],
+            dividend_projections: [],
+            portfolio_history: []
+        };
+
+        const portfolios = database.db.prepare(`
+            SELECT p.* FROM portfolios p 
+            JOIN portfolio_users pu ON p.id = pu.portfolio_id 
+            WHERE pu.user_id = ?
+        `).all(userId);
+        data.portfolios = portfolios;
+
+        const pIds = portfolios.map(p => p.id);
+        if (pIds.length > 0) {
+            const placeholders = pIds.map(() => '?').join(',');
+            data.transactions = database.db.prepare(`SELECT * FROM transactions WHERE portfolioId IN (${placeholders})`).all(...pIds);
+            data.portfolio_history = database.db.prepare(`SELECT * FROM portfolio_history WHERE portfolioId IN (${placeholders})`).all(...pIds);
+        }
+        
+        const globalHistory = database.db.prepare(`SELECT * FROM portfolio_history WHERE portfolioId IS NULL AND user_id = ?`).all(userId);
+        data.portfolio_history.push(...globalHistory);
+
+        data.settings = database.db.prepare(`SELECT * FROM settings WHERE user_id = ?`).all(userId);
+        data.tax_rates = database.db.prepare(`SELECT * FROM tax_rates WHERE user_id = ?`).all(userId);
+        data.user_watchlist = database.db.prepare(`SELECT * FROM user_watchlist WHERE user_id = ?`).all(userId);
+        data.notifications = database.db.prepare(`SELECT * FROM notifications WHERE user_id = ?`).all(userId);
+        data.dividend_projections = database.db.prepare(`SELECT * FROM dividend_projections WHERE user_id = ?`).all(userId);
+
+        res.setHeader('Content-disposition', `attachment; filename=foliotracker_export_${new Date().toISOString().split('T')[0]}.json`);
+        res.setHeader('Content-type', 'application/json');
+        res.send(JSON.stringify(data, null, 2));
+    } catch (err) {
+        logger.error('Export failed:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/backups/import', requireAuth, express.json({ limit: '50mb' }), async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const data = req.body;
+        if (!data || !data.portfolios) return res.status(400).json({ error: 'Invalid backup format' });
+
+        database.db.transaction(() => {
+            // 1. Portfolios & Transactions
+            const pIdMap = {}; // oldId -> newId
+            for (const p of data.portfolios) {
+                const oldId = p.id;
+                delete p.id;
+                const result = database.db.prepare(`
+                    INSERT INTO portfolios (name, type, currency, startDate, initialCash, currentCash, totalValue, performance1D, performance1DPrePost, totalDividends, investedCapital, assetCount, color)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                `).run(p.name, p.type, p.currency, p.startDate, p.initialCash, p.currentCash, p.totalValue, p.performance1D, p.performance1DPrePost, p.totalDividends, p.investedCapital, p.assetCount, p.color);
+                const newId = result.lastInsertRowid;
+                pIdMap[oldId] = newId;
+                
+                // Associate with current user
+                database.db.prepare(`INSERT INTO portfolio_users (portfolio_id, user_id) VALUES (?, ?)`).run(newId, userId);
+            }
+
+            for (const t of data.transactions) {
+                const newPId = pIdMap[t.portfolioId];
+                if (!newPId) continue;
+                database.db.prepare(`
+                    INSERT INTO transactions (portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                `).run(newPId, t.type, t.assetTicker, t.date, t.quantity, t.price, t.commission, t.tax, t.exchangeRate, t.amount);
+            }
+
+            // 2. Settings (Merge/Overwrite)
+            for (const s of data.settings) {
+                database.db.prepare(`INSERT OR REPLACE INTO settings (user_id, key, value) VALUES (?, ?, ?)`).run(userId, s.key, s.value);
+            }
+
+            // 3. Tax Rates
+            for (const tr of data.tax_rates) {
+                database.db.prepare(`INSERT OR REPLACE INTO tax_rates (user_id, asset_type, rate) VALUES (?, ?, ?)`).run(userId, tr.asset_type, tr.rate);
+            }
+
+            // 4. Watchlist
+            for (const w of data.user_watchlist) {
+                database.db.prepare(`INSERT OR REPLACE INTO user_watchlist (user_id, ticker, targetPrice, stopLoss, volatilityAlert) VALUES (?, ?, ?, ?, ?)`).run(userId, w.ticker, w.targetPrice, w.stopLoss, w.volatilityAlert);
+            }
+
+            // 5. Projections & History
+            for (const dp of data.dividend_projections) {
+                database.db.prepare(`INSERT INTO dividend_projections (user_id, ticker, name, exDate, amount, totalAmount, yield, tag, year, isCustom) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(userId, dp.ticker, dp.name, dp.exDate, dp.amount, dp.totalAmount, dp.yield, dp.tag, dp.year, dp.isCustom);
+            }
+
+            for (const ph of data.portfolio_history) {
+                const newPId = ph.portfolioId ? pIdMap[ph.portfolioId] : null;
+                // If it was a portfolio history point but the portfolio didn't import, skip
+                if (ph.portfolioId && !newPId) continue; 
+                database.db.prepare(`INSERT INTO portfolio_history (portfolioId, user_id, date, totalValue, cashValue, assetValue, netDeposits) VALUES (?, ?, ?, ?, ?, ?, ?)`).run(newPId, userId, ph.date, ph.totalValue, ph.cashValue, ph.assetValue, ph.netDeposits);
+            }
+        })();
+
+        res.json({ success: true, message: 'Data imported successfully' });
+    } catch (err) {
+        logger.error('Import failed:', err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -5595,6 +5736,93 @@ app.post('/api/market-sync', async (req, res) => {
         res.json({ success: true, message: 'Sync started' });
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// ══ PURGE PERFORMANCE HISTORY ══
+app.post('/api/admin/purge-performance', requireAuth, (req, res) => {
+    const userId = req.user.id;
+    const isAdmin = req.user.role === 'admin';
+    const scope = req.query.scope || 'user'; // 'user' or 'system'
+
+    try {
+        database.db.transaction(() => {
+            if (isAdmin && scope === 'system') {
+                const tables = ['portfolio_history', 'portfolio_losses', 'asset_quotes'];
+                for (const table of tables) {
+                    database.db.prepare(`DELETE FROM ${table}`).run();
+                }
+                logger.info('System-wide performance history purged by admin.');
+            } else {
+                // User-level purge
+                // 1. Portfolio history & losses for user portfolios
+                const pIds = database.db.prepare(`SELECT portfolio_id FROM portfolio_users WHERE user_id = ?`).all(userId).map(r => r.portfolio_id);
+                if (pIds.length > 0) {
+                    const placeholders = pIds.map(() => '?').join(',');
+                    database.db.prepare(`DELETE FROM portfolio_history WHERE portfolioId IN (${placeholders})`).run(...pIds);
+                    database.db.prepare(`DELETE FROM portfolio_losses WHERE portfolioId IN (${placeholders})`).run(...pIds);
+                }
+                // 2. Global history points
+                database.db.prepare(`DELETE FROM portfolio_history WHERE portfolioId IS NULL AND user_id = ?`).run(userId);
+                logger.info(`Performance history purged for user ${userId}.`);
+            }
+        })();
+        
+        clearPerformanceCache();
+        res.json({ success: true, message: 'Performance history purged. Portfolios and transactions were kept.' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ══ APPLICATION DATA RESET ══
+app.post('/api/reset-data', requireAuth, (req, res) => {
+    const userId = req.user.id;
+    const isAdmin = req.user.role === 'admin';
+    const scope = req.query.scope || 'user'; // 'user' or 'system'
+
+    logger.info(`Initiating data reset (Scope: ${scope}) for user ${userId}...`);
+    
+    try {
+        database.db.transaction(() => {
+            if (isAdmin && scope === 'system') {
+                // FULL SYSTEM WIPE (Existing logic)
+                const tables = [
+                    'notifications', 'portfolio_history', 'portfolio_losses', 'asset_quotes', 
+                    'dividend_projections', 'transactions', 'portfolios', 'assets', 
+                    'tax_rates', 'settings', 'test'
+                ];
+                for (const table of tables) {
+                    try { database.db.prepare(`DELETE FROM ${table}`).run(); } catch (e) {}
+                }
+                database.initDb();
+                logger.info('FULL SYSTEM RESET COMPLETED.');
+            } else {
+                // USER-LEVEL WIPE
+                const pIds = database.db.prepare(`SELECT portfolio_id FROM portfolio_users WHERE user_id = ?`).all(userId).map(r => r.portfolio_id);
+                for (const pId of pIds) {
+                    const usersCount = database.db.prepare(`SELECT COUNT(*) as c FROM portfolio_users WHERE portfolio_id = ?`).get(pId).c;
+                    if (usersCount <= 1) {
+                        database.db.prepare(`DELETE FROM portfolios WHERE id = ?`).run(pId);
+                    } else {
+                        database.db.prepare(`DELETE FROM portfolio_users WHERE portfolio_id = ? AND user_id = ?`).run(pId, userId);
+                    }
+                }
+                
+                const userTables = ['notifications', 'portfolio_history', 'dividend_projections', 'user_watchlist', 'tax_rates', 'settings'];
+                for (const table of userTables) {
+                    database.db.prepare(`DELETE FROM ${table} WHERE user_id = ?`).run(userId);
+                }
+                logger.info(`User-level data reset completed for user ${userId}.`);
+            }
+        })();
+
+        clearPerformanceCache();
+        lastUpdateTime = 0;
+        res.json({ success: true, message: scope === 'system' ? 'Application has been fully reset.' : 'Your data has been reset.' });
+    } catch (err) {
+        logger.error('RESET ERROR:', err);
+        res.status(500).json({ error: 'Reset failed: ' + err.message });
     }
 });
 
@@ -5678,79 +5906,9 @@ app.get('/api/logs/telegram', (req, res) => {
     }
 });
 
-app.post('/api/backups/restore', async (req, res) => {
-    try {
-        const { filename } = req.body;
-        if (!filename) return res.status(400).send('Filename required');
-        
-        // This will restart the app
-        await backupManager.restoreBackup(filename);
-        res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
 
-app.delete('/api/backups/:filename', (req, res) => {
-    try {
-        backupManager.deleteBackup(req.params.filename);
-        res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
 
-// ════════════════════════════════════════════════════════════════════════════
-// RESET DATA
-// ════════════════════════════════════════════════════════════════════════════
 
-// ══ PURGE PERFORMANCE HISTORY ONLY ══
-app.post('/api/admin/purge-performance', (req, res) => {
-    const tables = ['portfolio_history', 'portfolio_losses', 'asset_quotes'];
-    for (const table of tables) {
-        try { database.db.prepare(`DELETE FROM ${table}`).run(); } catch (e) {}
-    }
-    logger.info('Performance history purged.');
-    clearPerformanceCache();
-    res.json({ success: true, message: 'Performance history purged. Portfolios and transactions were kept.' });
-});
-
-// ══ FULL APPLICATION RESET ══
-app.post('/api/reset-data', (req, res) => {
-    logger.info('Initiating full application data reset...');
-    
-    // 1. Clear ALL tables in correct dependency order (transactions first due to FK)
-    const tables = [
-        'notifications', 'portfolio_history', 'portfolio_losses', 'asset_quotes', 
-        'dividend_projections', 'transactions', 'portfolios', 'assets', 
-        'tax_rates', 'settings', 'test'
-    ];
-    
-    try {
-        database.db.transaction(() => {
-            for (const table of tables) {
-                try {
-                    database.db.prepare(`DELETE FROM ${table}`).run();
-                } catch (err) {
-                    logger.warn(`Skip table ${table} during reset: ${err.message}`);
-                }
-            }
-        })();
-
-        // 2. Re-initialize default settings and tax rates
-        database.initDb();
-        
-        // 3. FORCE-CLEAR ALL MEMORY CACHES
-        clearPerformanceCache();
-        lastUpdateTime = 0; // Force immediate update of new assets (if any)
-        
-        logger.info('FULL RESET COMPLETED: All data wiped and re-initialized.');
-        res.json({ success: true, message: 'Application has been fully reset to factory defaults.' });
-    } catch (err) {
-        logger.error('CRITICAL ERROR DURING FULL RESET:', err);
-        res.status(500).json({ error: 'Full reset failed: ' + err.message });
-    }
-});
 
 // ════════════════════════════════════════════════════════════════════════════
 // NEWS API ENDPOINTS
