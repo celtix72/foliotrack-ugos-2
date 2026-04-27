@@ -242,9 +242,10 @@
                       <div class="mob-toggle-slider"></div>
                   </label>
               </div>
-              <!-- Debug Area (Visible for Debugging) -->
-              <div id="push-debug-info" class="px-4 py-2 text-[10px] font-mono text-rose-500 bg-rose-500/5 border-2 border-rose-500 rounded-lg m-2 break-all">
-                  DEBUG START: Waiting for JS...
+              <div id="mob-push-test-row" class="mob-settings-row border-t border-slate-50 dark:border-slate-800/50 hidden" onclick="sendTestPush()">
+                  <div class="mob-settings-icon bg-blue-500"><span class="material-symbols-outlined text-white">send_and_archive</span></div>
+                  <div class="mob-settings-label">Invia Notifica di Test</div>
+                  <div class="mob-settings-value text-blue-500">Invia <span class="material-symbols-outlined text-[14px]">chevron_right</span></div>
               </div>
               <div class="px-5 py-2">
                   <p class="text-[9px] text-slate-500 leading-relaxed italic">
@@ -438,20 +439,17 @@
             }
             
             if (window.ftPush) {
-                const debugEl = document.getElementById('push-debug-info');
-                if (debugEl) debugEl.classList.remove('hidden');
-                
                 ftPush.init().then(ready => {
-                    if (debugEl) debugEl.innerHTML += `<br>Init result: ${ready}`;
                     if (ready) {
                         const pushCheck = document.getElementById('mob-push-enabled-check');
                         if (pushCheck) pushCheck.checked = ftPush.isSubscribed;
-                        if (debugEl) debugEl.innerHTML += `<br>Subscribed: ${ftPush.isSubscribed}`;
-                    } else {
-                        if (debugEl) debugEl.innerHTML += `<br>Push NOT ready. HTTPS? ${location.protocol === 'https:'}`;
+                        
+                        const testRow = document.getElementById('mob-push-test-row');
+                        if (testRow) {
+                            if (ftPush.isSubscribed) testRow.classList.remove('hidden');
+                            else testRow.classList.add('hidden');
+                        }
                     }
-                }).catch(err => {
-                    if (debugEl) debugEl.innerHTML += `<br>Init Error: ${err.message}`;
                 });
             }
 
@@ -708,40 +706,40 @@
         }).catch(err => console.error('Error fetching user info', err));
 
         // Initial fetch
-        if (debugEl) debugEl.innerHTML += '<br>Fetching settings...';
-        fetch('/api/settings').then(res => res.json()).then(s => {
-            if (debugEl) debugEl.innerHTML += '<br>Settings OK';
-            updateUI(s);
-        }).catch(err => {
-            if (debugEl) debugEl.innerHTML += '<br>Fetch ERR: ' + err.message;
-        });
+        fetch('/api/settings').then(res => res.json()).then(updateUI);
     });
 
     window.togglePushNotifications = async () => {
-        const debugEl = document.getElementById('push-debug-info');
-        if (debugEl) debugEl.classList.remove('hidden');
-        
         try {
             const pushCheck = document.getElementById('mob-push-enabled-check');
             const enabling = pushCheck.checked;
-            if (debugEl) debugEl.innerHTML += `<br>Toggle clicked: ${enabling}`;
             
             if (enabling) {
                 const result = await ftPush.subscribeUser();
                 if (!result.success) {
                     pushCheck.checked = false;
-                    if (debugEl) debugEl.innerHTML += `<br>Subscribe fail: ${result.error}`;
                     alert('Errore: ' + result.error);
                 } else {
-                    if (debugEl) debugEl.innerHTML += `<br>Subscribe SUCCESS!`;
+                    const testRow = document.getElementById('mob-push-test-row');
+                    if (testRow) testRow.classList.remove('hidden');
                 }
             } else {
                 await ftPush.unsubscribeUser();
-                if (debugEl) debugEl.innerHTML += `<br>Unsubscribed`;
+                const testRow = document.getElementById('mob-push-test-row');
+                if (testRow) testRow.classList.add('hidden');
             }
         } catch (e) {
-            if (debugEl) debugEl.innerHTML += `<br>Critical: ${e.message}`;
             alert('Errore Critico: ' + e.message);
+        }
+    };
+
+    window.sendTestPush = async () => {
+        try {
+            const res = await fetch('/api/push/test', { method: 'POST' });
+            const data = await res.json();
+            if (!data.success) alert('Errore invio test: ' + (data.error || 'Unknown'));
+        } catch (e) {
+            alert('Errore di rete nell\'invio del test');
         }
     };
 

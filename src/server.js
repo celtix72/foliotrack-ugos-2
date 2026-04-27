@@ -836,9 +836,24 @@ app.post('/api/push/unsubscribe', requireAuth, (req, res) => {
         database.db.prepare(`
             DELETE FROM push_subscriptions WHERE user_id = ? AND subscription = ?
         `).run(req.user.id, subStr);
-        res.json({ ok: true });
+        res.json({ success: true });
     } catch (e) {
         res.status(500).json({ error: 'Database error' });
+    }
+});
+
+app.post('/api/push/test', requireAuth, async (req, res) => {
+    try {
+        const payload = JSON.stringify({
+            title: 'M2T Test Push',
+            body: 'Se vedi questa notifica, il sistema Push di FolioTracker è configurato correttamente! 🚀',
+            data: { url: '/settings' }
+        });
+        
+        await sendPushNotification(req.user.id, payload);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
@@ -1578,6 +1593,8 @@ const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 // ════════════════════════════════════════════════════════════════════════════
 // HISTORY API
 // ════════════════════════════════════════════════════════════════════════════
+
+
 
 app.get('/api/history', requireAuth, (req, res) => {
     const { portfolioId } = req.query;
