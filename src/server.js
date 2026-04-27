@@ -665,14 +665,14 @@ async function sendStatusNotification(targetUserId = null, eventType = 'STATUS')
             // First line (NET) becomes the Title for maximum compactness
             const pushTitle = `NET: ${abbreviatedNet} (${totalVarStr})`;
             
-            // Portfolios for the body: Top performers, at least 2 if possible
+            // Portfolios for the body: those with variation > 0 (positive or negative)
             let portfoliosForPush = [];
             if (stats.individualPortfolios && stats.individualPortfolios.length > 0) {
-                // Sort by EUR variation descending
-                const sorted = [...stats.individualPortfolios].sort((a, b) => (b.changeValueEUR || 0) - (a.changeValueEUR || 0));
+                // Sort by absolute EUR variation descending to show most significant moves first
+                const sorted = [...stats.individualPortfolios].sort((a, b) => Math.abs(b.changeValueEUR || 0) - Math.abs(a.changeValueEUR || 0));
                 
-                // Always take at least top 2, and others if positive
-                portfoliosForPush = sorted.filter((p, index) => index < 2 || (p.changeValueEUR || 0) > 0);
+                // Take those with variation != 0, ensuring at least 2 if available
+                portfoliosForPush = sorted.filter((p, index) => index < 2 || Math.abs(p.changeValueEUR || 0) >= 0.01);
             }
 
             let pushBody = '';
