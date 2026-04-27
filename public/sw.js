@@ -17,7 +17,7 @@ self.addEventListener('push', function(event) {
         };
     }
 
-    const title = data.title || 'M2T Alert';
+    const title = (data.title !== undefined && data.title !== null) ? data.title : 'M2T Alert';
     
     // Dynamic tag to allow different types of alerts to coexist on Apple Watch
     // If data.tag is provided (e.g. 'dividend', 'tp'), use it; otherwise fallback to general

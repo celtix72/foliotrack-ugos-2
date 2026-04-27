@@ -662,19 +662,27 @@ async function sendStatusNotification(targetUserId = null, eventType = 'STATUS')
             const totalVarStr = (totalVarEUR >= 0 ? '+' : '') + '€' + Math.round(totalVarEUR).toLocaleString('it-IT');
             const abbreviatedNet = (totalVal / 1000).toFixed(1) + 'K';
 
-            let pushBody = `NET: ${abbreviatedNet} (${totalVarStr})\n`;
+            // First line (NET) becomes the Title for maximum compactness
+            const pushTitle = `NET: ${abbreviatedNet} (${totalVarStr})`;
             
-            const upPortfolios = stats.individualPortfolios 
-                ? stats.individualPortfolios.filter(p => (p.changeValueEUR || 0) > 0) 
-                : [];
-            
-            upPortfolios.forEach(p => {
+            // Portfolios for the body: Top performers, at least 2 if possible
+            let portfoliosForPush = [];
+            if (stats.individualPortfolios && stats.individualPortfolios.length > 0) {
+                // Sort by EUR variation descending
+                const sorted = [...stats.individualPortfolios].sort((a, b) => (b.changeValueEUR || 0) - (a.changeValueEUR || 0));
+                
+                // Always take at least top 2, and others if positive
+                portfoliosForPush = sorted.filter((p, index) => index < 2 || (p.changeValueEUR || 0) > 0);
+            }
+
+            let pushBody = '';
+            portfoliosForPush.forEach(p => {
                 const pVarStr = (p.changeValueEUR >= 0 ? '+' : '') + '€' + Math.round(p.changeValueEUR).toLocaleString('it-IT');
                 pushBody += `${p.name} (${pVarStr})\n`;
             });
 
             notifyUser(userId, eventType, {
-                title: eventType === 'DAILY' ? 'DAILY 📊' : 'MKT 📈',
+                title: pushTitle,
                 body: pushBody.trim(),
                 telegramMessage: msg,
                 data: { url: '/dashboard' }
