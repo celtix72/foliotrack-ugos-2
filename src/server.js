@@ -659,9 +659,18 @@ async function sendStatusNotification(targetUserId = null, eventType = 'STATUS')
             const totalChangeStr = (stats.totalChange >= 0 ? '+' : '') + '€' + Math.round(stats.totalChange).toLocaleString('it-IT');
             const totalChangePPStr = (stats.totalChangePP >= 0 ? '+' : '') + '€' + Math.round(stats.totalChangePP).toLocaleString('it-IT');
 
+            // Build a compact body for Web Push equivalent to Telegram categories
+            let pushBody = `NET: €${totalValStr} (${totalChangeStr})\n`;
+            for (const [catName, cat] of Object.entries(categories)) {
+                if (cat.assets.length === 0) continue;
+                const catVarStr = Math.round(cat.totalVar + cat.totalVarPP).toLocaleString('it-IT');
+                const catSign = (cat.totalVar + cat.totalVarPP) >= 0 ? '+' : '';
+                pushBody += `${cat.emoji} ${catName}: ${catSign}€${catVarStr}\n`;
+            }
+
             notifyUser(userId, eventType, {
                 title: eventType === 'DAILY' ? 'DAILY REPORT 📊' : 'MARKET STATUS 📈',
-                body: `Variazione: ${totalChangeStr} (${totalChangePPStr})`,
+                body: pushBody.trim(),
                 telegramMessage: msg,
                 data: { url: '/dashboard' }
             });
@@ -918,13 +927,13 @@ app.post('/api/notify/test', requireAuth, async (req, res) => {
         },
         daily: {
             title: 'DAILY REPORT 📊',
-            body: 'Variazione: +€1,250.00 (+1.2%)',
+            body: 'NET: €125.400 (+€1.250)\n🟢 ETF AZ: +€850\n🔵 AZIONI: +€400',
             telegramMessage: '*📊 DAILY REPORT*\n\nAsset: `Portfolio Globale`\nVariazione: `+€1.250,00` (+1.2%)',
             data: { url: '/dashboard' }
         },
         status: {
             title: 'MARKET STATUS 📈',
-            body: 'Aggiornamento periodico orario portafoglio',
+            body: 'NET: €125.400 (+€320)\n🟢 ETF AZ: +€420\n🔵 AZIONI: -€100',
             telegramMessage: '*📈 MARKET STATUS*\n\nAggiornamento ore 16:30\nNet. Value: `€125.400`',
             data: { url: '/dashboard' }
         },
