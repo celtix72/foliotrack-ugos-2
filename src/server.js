@@ -6500,7 +6500,13 @@ async function updateMarketData(force = false) {
 // ─── Scheduler ──────────────────────────────────────────────────────────────
 let lastUpdateTime = Date.now();
 let lastBackupDate = ''; // 'YYYY-MM-DD'
-let lastSnapshotDate = ''; // 'YYYY-MM-DD'
+let lastSnapshotDate = '';
+try {
+    const row = database.db.prepare('SELECT MAX(date) as lastDate FROM portfolio_history').get();
+    if (row && row.lastDate) lastSnapshotDate = row.lastDate;
+} catch (e) {
+    logger.error('Failed to load lastSnapshotDate from DB', e);
+}
 let lastDailyReportDate = ''; // 'YYYY-MM-DD'
 let lastTelegramStatusTime = 0;
 

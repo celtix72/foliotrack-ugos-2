@@ -799,16 +799,28 @@ function savePortfolioSnapshot(portfolioId = null, eurUsdRate = 1.0, userId = nu
         assetValue = totalValue - cashValue;
     }
 
-    dbConnection.prepare(`
-        INSERT INTO portfolio_history (portfolioId, user_id, date, totalValue, cashValue, assetValue, netDeposits)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(portfolioId, date) DO UPDATE SET
-            user_id = excluded.user_id,
-            totalValue = excluded.totalValue,
-            cashValue = excluded.cashValue,
-            assetValue = excluded.assetValue,
-            netDeposits = excluded.netDeposits
-    `).run(portfolioId, uId, date, Math.round(totalValue), Math.round(cashValue), Math.round(assetValue), Math.round(netDeposits));
+    const stmt = portfolioId 
+        ? dbConnection.prepare(`
+            INSERT INTO portfolio_history (portfolioId, user_id, date, totalValue, cashValue, assetValue, netDeposits)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(portfolioId, date) DO UPDATE SET
+                user_id = excluded.user_id,
+                totalValue = excluded.totalValue,
+                cashValue = excluded.cashValue,
+                assetValue = excluded.assetValue,
+                netDeposits = excluded.netDeposits
+        `)
+        : dbConnection.prepare(`
+            INSERT INTO portfolio_history (portfolioId, user_id, date, totalValue, cashValue, assetValue, netDeposits)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(date, user_id) WHERE portfolioId IS NULL DO UPDATE SET
+                totalValue = excluded.totalValue,
+                cashValue = excluded.cashValue,
+                assetValue = excluded.assetValue,
+                netDeposits = excluded.netDeposits
+        `);
+
+    stmt.run(portfolioId, uId, date, Math.round(totalValue), Math.round(cashValue), Math.round(assetValue), Math.round(netDeposits));
 }
 
 // ─── Auth helper functions ───────────────────────────────────────────────────
