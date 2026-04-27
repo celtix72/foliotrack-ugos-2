@@ -391,6 +391,9 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        const debugEl = document.getElementById('push-debug-info');
+        if (debugEl) debugEl.innerHTML = 'DEBUG: DOMContentLoaded fired...';
+
         // --- Element Selections ---
         const themeToggle = document.getElementById('mob-theme-toggle');
         const privacyToggle = document.getElementById('mob-privacy-toggle');
@@ -456,35 +459,9 @@
         
         loadBackups();
         loadNewsSources();
-    });
-
-    window.togglePushNotifications = async () => {
-        const debugEl = document.getElementById('push-debug-info');
-        if (debugEl) debugEl.classList.remove('hidden');
         
-        try {
-            const pushCheck = document.getElementById('mob-push-enabled-check');
-            const enabling = pushCheck.checked;
-            if (debugEl) debugEl.innerHTML += `<br>Toggle clicked: ${enabling}`;
-            
-            if (enabling) {
-                const result = await ftPush.subscribeUser();
-                if (!result.success) {
-                    pushCheck.checked = false;
-                    if (debugEl) debugEl.innerHTML += `<br>Subscribe fail: ${result.error}`;
-                    alert('Errore: ' + result.error);
-                } else {
-                    if (debugEl) debugEl.innerHTML += `<br>Subscribe SUCCESS!`;
-                }
-            } else {
-                await ftPush.unsubscribeUser();
-                if (debugEl) debugEl.innerHTML += `<br>Unsubscribed`;
-            }
-        } catch (e) {
-            if (debugEl) debugEl.innerHTML += `<br>Critical: ${e.message}`;
-            alert('Errore Critico: ' + e.message);
-        }
-    };
+        // Initial fetch
+        fetch('/api/settings').then(res => res.json()).then(updateUI);
 
         const loadNewsSources = async () => {
             const list = document.getElementById('mob-news-sources-list');
@@ -734,8 +711,42 @@
         }).catch(err => console.error('Error fetching user info', err));
 
         // Initial fetch
-        fetch('/api/settings').then(res => res.json()).then(updateUI);
+        if (debugEl) debugEl.innerHTML += '<br>Fetching settings...';
+        fetch('/api/settings').then(res => res.json()).then(s => {
+            if (debugEl) debugEl.innerHTML += '<br>Settings OK';
+            updateUI(s);
+        }).catch(err => {
+            if (debugEl) debugEl.innerHTML += '<br>Fetch ERR: ' + err.message;
+        });
     });
+
+    window.togglePushNotifications = async () => {
+        const debugEl = document.getElementById('push-debug-info');
+        if (debugEl) debugEl.classList.remove('hidden');
+        
+        try {
+            const pushCheck = document.getElementById('mob-push-enabled-check');
+            const enabling = pushCheck.checked;
+            if (debugEl) debugEl.innerHTML += `<br>Toggle clicked: ${enabling}`;
+            
+            if (enabling) {
+                const result = await ftPush.subscribeUser();
+                if (!result.success) {
+                    pushCheck.checked = false;
+                    if (debugEl) debugEl.innerHTML += `<br>Subscribe fail: ${result.error}`;
+                    alert('Errore: ' + result.error);
+                } else {
+                    if (debugEl) debugEl.innerHTML += `<br>Subscribe SUCCESS!`;
+                }
+            } else {
+                await ftPush.unsubscribeUser();
+                if (debugEl) debugEl.innerHTML += `<br>Unsubscribed`;
+            }
+        } catch (e) {
+            if (debugEl) debugEl.innerHTML += `<br>Critical: ${e.message}`;
+            alert('Errore Critico: ' + e.message);
+        }
+    };
 
     window.logoutMob = async () => {
         if (confirm('Vuoi uscire?')) {
