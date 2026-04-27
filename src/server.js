@@ -6811,5 +6811,5 @@ module.exports = {
     updateMarketData,
     getEurUsdRate,
     syncNews,
-    sendMarketStatusTelegram
+    sendStatusNotification
 };
