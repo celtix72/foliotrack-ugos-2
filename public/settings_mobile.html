@@ -234,13 +234,13 @@
               </div>
               
               <!-- Web Push Notification Row -->
-              <div class="mob-settings-row">
+              <div class="mob-settings-row" onclick="document.getElementById('mob-push-enabled-check').click()">
                   <div class="mob-settings-icon bg-blue-ios"><span class="material-symbols-outlined text-white">notifications</span></div>
                   <div class="mob-settings-label">Notifiche Push (PWA)</div>
-                  <div class="mob-toggle">
-                      <input type="checkbox" id="mob-push-enabled-check" onclick="togglePushNotifications()">
+                  <label class="mob-toggle" onclick="event.stopPropagation()">
+                      <input type="checkbox" id="mob-push-enabled-check" onchange="togglePushNotifications()">
                       <div class="mob-toggle-slider"></div>
-                  </div>
+                  </label>
               </div>
               <!-- Debug Area (Visible for Debugging) -->
               <div id="push-debug-info" class="px-4 py-2 text-[10px] font-mono text-rose-500 bg-rose-500/5 border-2 border-rose-500 rounded-lg m-2 break-all">
