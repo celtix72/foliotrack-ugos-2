@@ -242,6 +242,10 @@
                       <div class="mob-toggle-slider"></div>
                   </div>
               </div>
+              <!-- Debug Area -->
+              <div id="push-debug-info" class="px-4 py-2 text-[9px] font-mono text-slate-400 break-all hidden bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800">
+                  DEBUG: Push Client Ready
+              </div>
               <div class="px-5 py-2">
                   <p class="text-[9px] text-slate-500 leading-relaxed italic">
                       * Le notifiche push su iOS richiedono che l'app sia aggiunta alla HOME.
@@ -431,11 +435,20 @@
             }
             
             if (window.ftPush) {
+                const debugEl = document.getElementById('push-debug-info');
+                if (debugEl) debugEl.classList.remove('hidden');
+                
                 ftPush.init().then(ready => {
+                    if (debugEl) debugEl.innerHTML += `<br>Init result: ${ready}`;
                     if (ready) {
                         const pushCheck = document.getElementById('mob-push-enabled-check');
                         if (pushCheck) pushCheck.checked = ftPush.isSubscribed;
+                        if (debugEl) debugEl.innerHTML += `<br>Subscribed: ${ftPush.isSubscribed}`;
+                    } else {
+                        if (debugEl) debugEl.innerHTML += `<br>Push NOT ready. HTTPS? ${location.protocol === 'https:'}`;
                     }
+                }).catch(err => {
+                    if (debugEl) debugEl.innerHTML += `<br>Init Error: ${err.message}`;
                 });
             }
 
@@ -446,20 +459,29 @@
     });
 
     window.togglePushNotifications = async () => {
+        const debugEl = document.getElementById('push-debug-info');
+        if (debugEl) debugEl.classList.remove('hidden');
+        
         try {
             const pushCheck = document.getElementById('mob-push-enabled-check');
             const enabling = pushCheck.checked;
+            if (debugEl) debugEl.innerHTML += `<br>Toggle clicked: ${enabling}`;
             
             if (enabling) {
                 const result = await ftPush.subscribeUser();
                 if (!result.success) {
                     pushCheck.checked = false;
+                    if (debugEl) debugEl.innerHTML += `<br>Subscribe fail: ${result.error}`;
                     alert('Errore: ' + result.error);
+                } else {
+                    if (debugEl) debugEl.innerHTML += `<br>Subscribe SUCCESS!`;
                 }
             } else {
                 await ftPush.unsubscribeUser();
+                if (debugEl) debugEl.innerHTML += `<br>Unsubscribed`;
             }
         } catch (e) {
+            if (debugEl) debugEl.innerHTML += `<br>Critical: ${e.message}`;
             alert('Errore Critico: ' + e.message);
         }
     };
