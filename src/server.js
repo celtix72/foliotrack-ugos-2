@@ -431,7 +431,15 @@ async function notifyUser(userId, event, payload, force = false) {
     // 3. Web Push
     const pushEnabled = force || settings[`notify_${eventKey}_push`] === 'true';
     if (pushEnabled) {
-        sendPushNotification(userId, payload.title, payload.body, payload.data || {}).catch(e => logger.error(`Push notify failed for ${event}`, e));
+        const pushPayload = {
+            ...payload,
+            tag: eventKey, // Pass event type as tag for Watch grouping
+            data: { 
+                ...(payload.data || {}), 
+                tag: eventKey 
+            }
+        };
+        sendPushNotification(userId, pushPayload.title, pushPayload.body, pushPayload.data).catch(e => logger.error(`Push notify failed for ${event}`, e));
     }
 }
 

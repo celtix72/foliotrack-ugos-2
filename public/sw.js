@@ -18,29 +18,34 @@ self.addEventListener('push', function(event) {
     }
 
     const title = data.title || 'M2T Alert';
+    
+    // Dynamic tag to allow different types of alerts to coexist on Apple Watch
+    // If data.tag is provided (e.g. 'dividend', 'tp'), use it; otherwise fallback to general
+    const notificationTag = data.tag || (data.data && data.data.tag) || 'm2t-general';
+
     const options = {
         body: data.body || 'New alert from FolioTracker',
         icon: data.icon || '/logo.png',
         badge: data.badge || '/logo_cropped.png',
-        vibrate: [200, 100, 200],
+        vibrate: [200, 100, 200, 100, 200], // More distinct vibration for Watch
         silent: false,
         renotify: true,
-        tag: 'm2t-alert',
+        tag: notificationTag,
+        timestamp: Date.now(),
         data: {
             url: data.data ? data.data.url : '/dashboard'
         },
         actions: [
             {
                 action: 'open',
-                title: 'Apri App'
-            },
-            {
-                action: 'close',
-                title: 'Chiudi'
+                title: 'Apri'
             }
         ]
     };
 
+    // Remove actions if simple notification is preferred for watchOS compatibility in some versions
+    // but usually 1-2 actions are fine.
+    
     event.waitUntil(self.registration.showNotification(title, options));
 });
 
