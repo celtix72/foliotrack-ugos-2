@@ -103,6 +103,17 @@ const telegramLogger = {
 
 dotenv.config();
 
+// ─── Web Push Setup ──────────────────────────────────────────────────────────
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:admin@foliotrack.io';
+
+if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
+    webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+} else {
+    logger.warn('Web Push VAPID keys not fully configured. Push notifications will not work.');
+}
+
 const https = require('https');
 
 // ─── Telegram Utility ────────────────────────────────────────────────────────
