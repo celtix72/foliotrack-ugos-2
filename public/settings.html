@@ -2265,17 +2265,21 @@
     });
 
     window.togglePushNotifications = async () => {
-        const pushCheck = document.getElementById('push-enabled-check');
-        const enabling = pushCheck.checked;
-        
-        if (enabling) {
-            const result = await ftPush.subscribeUser();
-            if (!result.success) {
-                pushCheck.checked = false;
-                alert('Errore: ' + result.error);
+        try {
+            const pushCheck = document.getElementById('push-enabled-check');
+            const enabling = pushCheck.checked;
+            
+            if (enabling) {
+                const result = await ftPush.subscribeUser();
+                if (!result.success) {
+                    pushCheck.checked = false;
+                    alert('Errore: ' + result.error);
+                }
+            } else {
+                await ftPush.unsubscribeUser();
             }
-        } else {
-            await ftPush.unsubscribeUser();
+        } catch (e) {
+            alert('Errore Critico: ' + e.message);
         }
     };
 

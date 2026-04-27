@@ -439,11 +439,14 @@
                 });
             }
 
-            loadBackups();
-            loadNewsSources();
         };
+        
+        loadBackups();
+        loadNewsSources();
+    });
 
-        window.togglePushNotifications = async () => {
+    window.togglePushNotifications = async () => {
+        try {
             const pushCheck = document.getElementById('mob-push-enabled-check');
             const enabling = pushCheck.checked;
             
@@ -456,7 +459,10 @@
             } else {
                 await ftPush.unsubscribeUser();
             }
-        };
+        } catch (e) {
+            alert('Errore Critico: ' + e.message);
+        }
+    };
 
         const loadNewsSources = async () => {
             const list = document.getElementById('mob-news-sources-list');

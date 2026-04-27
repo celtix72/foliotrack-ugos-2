@@ -8,8 +8,18 @@ const ftPush = {
     isSubscribed: false,
 
     async init() {
-        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-            console.warn('Push messaging is not supported');
+        if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+            console.warn('Push Notifications require HTTPS');
+            // We don't alert here yet, but we'll return false
+        }
+
+        if (!('serviceWorker' in navigator)) {
+            console.warn('Service Workers are not supported');
+            return false;
+        }
+
+        if (!('PushManager' in window)) {
+            console.warn('Push Manager is not supported');
             return false;
         }
 
@@ -21,11 +31,6 @@ const ftPush = {
             const subscription = await this.swRegistration.pushManager.getSubscription();
             this.isSubscribed = !(subscription === null);
             
-            if (this.isSubscribed) {
-                console.log('User IS subscribed.');
-            } else {
-                console.log('User is NOT subscribed.');
-            }
             return true;
         } catch (error) {
             console.error('Service Worker Error', error);
@@ -35,6 +40,17 @@ const ftPush = {
 
     async subscribeUser() {
         try {
+            if (!this.swRegistration) {
+                const supported = await this.init();
+                if (!supported || !this.swRegistration) {
+                    let msg = 'Push non supportato su questo browser o connessione non sicura (richiede HTTPS).';
+                    if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                        msg += ' ATTENZIONE: Stai usando HTTP, le notifiche richiedono HTTPS.';
+                    }
+                    throw new Error(msg);
+                }
+            }
+
             const response = await fetch('/api/push/vapid-public-key');
             if (!response.ok) {
                 const errData = await response.json().catch(() => ({}));
