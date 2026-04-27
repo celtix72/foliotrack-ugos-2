@@ -956,15 +956,15 @@ app.post('/api/notify/test', requireAuth, async (req, res) => {
     
     const testPayloads = {
         tp: {
-            title: 'TARGET PROFIT COLPITO! 🎯',
-            body: 'AAPL ha raggiunto il target di €260.00 (+15%)',
-            telegramMessage: '*🎯 TARGET PROFIT COLPITO*\n\nAsset: `AAPL`\nPrezzo: `€260.00`\nPerformance: `+15.0%`',
+            title: '🏆 TP: AAPL',
+            body: '260.00 € (Tgt: 250.00)',
+            telegramMessage: '*🎯 TARGET PROFIT*\n\nAsset: `AAPL`\nPrezzo: `€260.00`\nTarget: `€250.00`',
             data: { url: '/dashboard' }
         },
         sl: {
-            title: 'STOP LOSS ATTIVATO ⚠️',
-            body: 'TSLA è scesa sotto €150.00 (-10%)',
-            telegramMessage: '*⚠️ STOP LOSS ATTIVATO*\n\nAsset: `TSLA`\nPrezzo: `€150.00`\nPerformance: `-10.0%`',
+            title: '⚠️ SL: TSLA',
+            body: '150.00 € (Soglia: 155.00)',
+            telegramMessage: '*⚠️ STOP LOSS*\n\nAsset: `TSLA`\nPrezzo: `€150.00`\nSoglia: `€155.00`',
             data: { url: '/dashboard' }
         },
         vol: {
@@ -6598,8 +6598,8 @@ async function updateMarketData(force = false) {
                                         `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\``;
                                         
                             notifyUser(ua.user_id, 'TP', {
-                                title: 'TARGET PROFIT 🏆',
-                                body: `${asset.ticker}: ${newPrice} (Target: ${ua.targetPrice})`,
+                                title: `🏆 TP: ${asset.ticker}`,
+                                body: `${priceStr} ${cur} (Tgt: ${targetStr})`,
                                 telegramMessage: tgMsg,
                                 ticker: asset.ticker,
                                 data: { ticker: asset.ticker }
@@ -6625,8 +6625,8 @@ async function updateMarketData(force = false) {
                                         `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\``;
                                         
                             notifyUser(ua.user_id, 'SL', {
-                                title: 'STOP LOSS ⚠️',
-                                body: `${asset.ticker}: ${newPrice} (Soglia: ${ua.stopLoss})`,
+                                title: `⚠️ SL: ${asset.ticker}`,
+                                body: `${priceStr} ${cur} (Soglia: ${stopStr})`,
                                 telegramMessage: tgMsg,
                                 ticker: asset.ticker,
                                 data: { ticker: asset.ticker }
