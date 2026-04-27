@@ -53,7 +53,7 @@ function writeLog(level, msg) {
     try {
         if (!fs.existsSync(LOGS_DIR)) fs.mkdirSync(LOGS_DIR, { recursive: true });
         fs.appendFileSync(getRotatedLogFile(ts), line);
-        fs.appendFileSync(LOG_FILE, line); // keep master log too
+        fs.appendFileSync(LOG_FILE, line);
         // Trim master log to last 50000 lines to avoid unbounded growth
         try {
             const raw = fs.readFileSync(LOG_FILE, 'utf8');
@@ -403,6 +403,41 @@ async function sendPushNotification(userId, title, body, data = {}) {
     }
 }
 
+/**
+ * Unified Notification Center
+ * event: 'TP', 'SL', 'VOL', 'DAILY', 'STATUS', 'DIVIDEND'
+ */
+async function notifyUser(userId, event, payload) {
+    const settings = database.getSettings(userId);
+    const eventKey = event.toLowerCase();
+    
+    const notifyTelegram = settings[`notify_${eventKey}_telegram`] === 'true';
+    const notifyPush = settings[`notify_${eventKey}_push`] === 'true';
+    const telegramEnabled = settings.telegramEnabled === 'true';
+    
+    // 1. Log in internal notifications table
+    try {
+        database.db.prepare(`
+            INSERT INTO notifications (type, title, message, ticker, user_id)
+            VALUES (?, ?, ?, ?, ?)
+        `).run(event, payload.title, payload.body, payload.ticker || null, userId);
+    } catch (e) {
+        logger.error('Failed to log internal notification', e);
+    }
+
+    // 2. Send Telegram
+    if (notifyTelegram && telegramEnabled) {
+        // Use provided telegramMessage or fallback to body
+        const tgMsg = payload.telegramMessage || payload.body;
+        sendTelegramMessage(tgMsg, null, userId).catch(e => logger.error(`Telegram notify failed for ${event}`, e));
+    }
+
+    // 3. Send Web Push
+    if (notifyPush) {
+        sendPushNotification(userId, payload.title, payload.body, payload.data || {}).catch(e => logger.error(`Push notify failed for ${event}`, e));
+    }
+}
+
 function getNetDeposits(portfolioId) {
     const row = database.db.prepare(`
         SELECT 
@@ -514,7 +549,7 @@ const isUSMarket = (a) => {
     return true;
 };
 
-async function sendMarketStatusTelegram(targetUserId = null) {
+async function sendStatusNotification(targetUserId = null, eventType = 'STATUS') {
     const users = targetUserId 
         ? database.db.prepare(`SELECT id FROM users WHERE id = ?`).all(targetUserId)
         : database.db.prepare(`SELECT id FROM users WHERE telegram_chat_id IS NOT NULL`).all();
@@ -591,12 +626,8 @@ async function sendMarketStatusTelegram(targetUserId = null) {
             const bigEmoji = getBigEmoji(marketChange + prePostChange);
             
             const tSign = marketChange >= 0 ? '+' : '';
-            const pSign = prePostChange >= 0 ? '+' : '';
-            const tVarStr = Math.round(marketChange).toLocaleString('it-IT');
-            const pVarStr = Math.round(prePostChange).toLocaleString('it-IT');
-            const totalValStr = Math.round(totalVal).toLocaleString('it-IT');
-
-            let msg = `1 DAY: *\`${escapeCodeV2(tSign + '€' + tVarStr)}\`* ${bigEmoji}   ${escapeV2('EXT:')} *\`${escapeCodeV2('(' + pSign + '€' + pVarStr + ')')}\`* \n`;
+            let msg = `*${eventType === 'DAILY' ? '📊 DAILY REPORT' : '📈 MARKET STATUS'}*\n\n`;
+            const totalValStr = Math.round(stats.totalValue).toLocaleString('it-IT');
             msg += `${escapeV2('NET. :')} \`${escapeCodeV2('€' + totalValStr)}\` \n\n`;
 
             for (const [catName, cat] of Object.entries(categories)) {
@@ -608,7 +639,8 @@ async function sendMarketStatusTelegram(targetUserId = null) {
                 
                 cat.assets.sort((a,b) => (b.diffReg + b.diffPP) - (a.diffReg + a.diffPP)).forEach(a => {
                     const combinedPct = a.changePercent + (a.preMarketChangePercent || a.postMarketChangePercent || 0);
-                    const statusIcon = (getMarketStatus()[isUSMarket(a) ? 'US' : 'EU']) ? (a.diffReg >= 0 ? '🟢' : '🔴') : (a.diffPP !== 0 ? '🟡' : '🔘');
+                    const mktStatus = marketStatus[isUSMarket(a) ? 'US' : 'EU'];
+                    const statusIcon = mktStatus ? (a.diffReg >= 0 ? '🟢' : '🔴') : (a.diffPP !== 0 ? '🟡' : '🔘');
                     const rowData = `${extractSimpleSymbol(a.ticker).padEnd(8)}${(a.currency === 'USD' ? '$' : '€').padStart(2)} ${a.currentPrice.toLocaleString('it-IT', { minimumFractionDigits: a.currentPrice < 10 ? 2 : 1, maximumFractionDigits: a.currentPrice < 10 ? 2 : 1 }).padStart(6)} ${(a.diffReg >= 0 ? '+' : '-') + '€' + Math.round(Math.abs(a.diffReg)).toLocaleString('it-IT').padStart(7)} ${(combinedPct >= 0 ? '+' : '') + Math.abs(combinedPct).toFixed(1) + '%'}`;
                     msg += `${getPerformanceIcon(combinedPct)} \`${escapeCodeV2(rowData)}\` ${statusIcon}\n`;
                 });
@@ -619,9 +651,18 @@ async function sendMarketStatusTelegram(targetUserId = null) {
                                new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
             msg += `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\` · \`${escapeCodeV2(APP_VERSION)}\``;
 
-            await sendTelegramMessage(msg, null, userId);
+            const totalChangeStr = (stats.totalChange >= 0 ? '+' : '') + '€' + Math.round(stats.totalChange).toLocaleString('it-IT');
+            const totalChangePPStr = (stats.totalChangePP >= 0 ? '+' : '') + '€' + Math.round(stats.totalChangePP).toLocaleString('it-IT');
+
+            notifyUser(userId, eventType, {
+                title: eventType === 'DAILY' ? 'DAILY REPORT 📊' : 'MARKET STATUS 📈',
+                body: `Variazione: ${totalChangeStr} (${totalChangePPStr})`,
+                telegramMessage: msg,
+                data: { url: '/dashboard' }
+            });
+
         } catch (err) {
-            logger.error(`sendMarketStatusTelegram failed for user ${userId}`, err);
+            logger.error(`sendStatusNotification failed for user ${userId}`, err);
         }
     }
 }
@@ -3393,6 +3434,18 @@ app.post('/api/transactions', requireAuth, requirePortfolioAccess, async (req, r
         finalExRate, parseFloat(amount || 0)
     );
 
+    // Dividend Notification
+    if (type === 'DIVIDEND' && sanitizedTicker) {
+        const userId = req.user.id;
+        const netAmount = parseFloat(amount || 0) - parseFloat(tax || 0);
+        notifyUser(userId, 'DIVIDEND', {
+            title: 'DIVIDENDO RICEVUTO 💰',
+            body: `${sanitizedTicker}: +€${netAmount.toFixed(2)} (Netto)`,
+            telegramMessage: `*💰 DIVIDENDO RICEVUTO*\n\nAsset: \`${sanitizedTicker}\`\nImporto Netto: \`€${netAmount.toFixed(2)}\`\nData: \`${date}\``,
+            data: { url: '/dividend' }
+        });
+    }
+
     const liveRate = await getEurUsdRate();
 
     // Automation for TRANSFER: Create a DEPOSIT in the destination portfolio
@@ -6032,6 +6085,47 @@ app.post('/api/reset-data', requireAuth, (req, res) => {
     }
 });
 
+// Notification Settings Matrix
+app.get('/api/settings/notifications', requireAuth, (req, res) => {
+    try {
+        const settings = database.getSettings(req.user.id);
+        const matrix = {
+            tp: { telegram: settings.notify_tp_telegram === 'true', push: settings.notify_tp_push === 'true' },
+            sl: { telegram: settings.notify_sl_telegram === 'true', push: settings.notify_sl_push === 'true' },
+            vol: { telegram: settings.notify_vol_telegram === 'true', push: settings.notify_vol_push === 'true' },
+            daily: { telegram: settings.notify_daily_telegram === 'true', push: settings.notify_daily_push === 'true' },
+            status: { telegram: settings.notify_status_telegram === 'true', push: settings.notify_status_push === 'true' },
+            dividend: { telegram: settings.notify_dividend_telegram === 'true', push: settings.notify_dividend_push === 'true' }
+        };
+        res.json(matrix);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post('/api/settings/notifications', requireAuth, (req, res) => {
+    const matrix = req.body; // { tp: { telegram: true, push: false }, ... }
+    try {
+        const userId = req.user.id;
+        const updates = [];
+        for (const [event, channels] of Object.entries(matrix)) {
+            updates.push({ key: `notify_${event}_telegram`, value: String(channels.telegram) });
+            updates.push({ key: `notify_${event}_push`, value: String(channels.push) });
+        }
+        
+        database.db.transaction(() => {
+            const stmt = database.db.prepare('INSERT OR REPLACE INTO settings (user_id, key, value) VALUES (?, ?, ?)');
+            for (const u of updates) {
+                stmt.run(userId, u.key, u.value);
+            }
+        })();
+        
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // ─── Telegram Test Endpoints ────────────────────────────────────────────────
 app.post('/api/settings/telegram/test-tp', async (req, res) => {
     try {
@@ -6390,30 +6484,32 @@ async function updateMarketData(force = false) {
                 `).all(asset.ticker);
 
                 for (const ua of userAlerts) {
+                    const tsFormatted = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+                    
                     // 1. TARGET PROFIT
                     if (ua.targetPrice > 0 && newPrice >= ua.targetPrice) {
                         const existing = database.db.prepare(`
                             SELECT id FROM notifications 
-                            WHERE ticker = ? AND user_id = ? AND type = 'TARGET_PROFIT' AND date(date) = date('now')
+                            WHERE ticker = ? AND user_id = ? AND type = 'TP' AND date(date) = date('now')
                         `).get(asset.ticker, ua.user_id);
                         if (!existing) {
-                            database.db.prepare(`
-                                INSERT INTO notifications (type, title, message, ticker, user_id)
-                                VALUES (?, ?, ?, ?, ?)
-                            `).run('TARGET_PROFIT', 'TARGET PROFIT', `${asset.ticker}: ${newPrice} (Target TP: ${ua.targetPrice})`, asset.ticker, ua.user_id);
-                            
                             const sym = asset.ticker.padEnd(8);
                             const cur = asset.currency === 'USD' ? '$' : '€';
                             const priceStr = newPrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                             const targetStr = ua.targetPrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                             
-                            const msg = `${escapeV2('🏆')} *${escapeV2('TARGET PROFIT')}*\n\n` +
+                            const tgMsg = `${escapeV2('🏆')} *${escapeV2('TARGET PROFIT')}*\n\n` +
                                         `\`${escapeCodeV2(sym + ' ' + cur + ' ' + priceStr)}\`\n` +
                                         `*${escapeV2('Target:')}* \`${escapeCodeV2(cur + ' ' + targetStr)}\`\n\n` +
                                         `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\``;
                                         
-                            sendTelegramMessage(msg, ua.telegram_chat_id, ua.user_id).catch(e => logger.error('Telegram Target Alert failed', e));
-                            sendPushNotification(ua.user_id, 'TARGET PROFIT 🏆', `${asset.ticker}: ${newPrice} (Target: ${ua.targetPrice})`, { ticker: asset.ticker }).catch(e => logger.error('Push Target Alert failed', e));
+                            notifyUser(ua.user_id, 'TP', {
+                                title: 'TARGET PROFIT 🏆',
+                                body: `${asset.ticker}: ${newPrice} (Target: ${ua.targetPrice})`,
+                                telegramMessage: tgMsg,
+                                ticker: asset.ticker,
+                                data: { ticker: asset.ticker }
+                            });
                         }
                     }
 
@@ -6421,63 +6517,60 @@ async function updateMarketData(force = false) {
                     if (ua.stopLoss > 0 && newPrice <= ua.stopLoss) {
                         const existing = database.db.prepare(`
                             SELECT id FROM notifications 
-                            WHERE ticker = ? AND user_id = ? AND type = 'STOP_LOSS' AND date(date) = date('now')
+                            WHERE ticker = ? AND user_id = ? AND type = 'SL' AND date(date) = date('now')
                         `).get(asset.ticker, ua.user_id);
                         if (!existing) {
-                            database.db.prepare(`
-                                INSERT INTO notifications (type, title, message, ticker, user_id)
-                                VALUES (?, ?, ?, ?, ?)
-                            `).run('STOP_LOSS', 'STOP LOSS', `${asset.ticker}: ${newPrice} (Soglia SL: ${ua.stopLoss})`, asset.ticker, ua.user_id);
-                            
                             const sym = asset.ticker.padEnd(8);
                             const cur = asset.currency === 'USD' ? '$' : '€';
                             const priceStr = newPrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                             const stopStr = ua.stopLoss.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                             
-                            const msg = `${escapeV2('⚠️')} *${escapeV2('STOP LOSS')}*\n\n` +
+                            const tgMsg = `${escapeV2('⚠️')} *${escapeV2('STOP LOSS')}*\n\n` +
                                         `\`${escapeCodeV2(sym + ' ' + cur + ' ' + priceStr)}\`\n` +
                                         `*${escapeV2('Soglia:')}* \`${escapeCodeV2(cur + ' ' + stopStr)}\`\n\n` +
                                         `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\``;
                                         
-                            sendTelegramMessage(msg, ua.telegram_chat_id, ua.user_id).catch(e => logger.error('Telegram Stop Alert failed', e));
-                            sendPushNotification(ua.user_id, 'STOP LOSS ⚠️', `${asset.ticker}: ${newPrice} (Soglia: ${ua.stopLoss})`, { ticker: asset.ticker }).catch(e => logger.error('Push Stop Alert failed', e));
+                            notifyUser(ua.user_id, 'SL', {
+                                title: 'STOP LOSS ⚠️',
+                                body: `${asset.ticker}: ${newPrice} (Soglia: ${ua.stopLoss})`,
+                                telegramMessage: tgMsg,
+                                ticker: asset.ticker,
+                                data: { ticker: asset.ticker }
+                            });
                         }
                     }
 
                     // 3. VOLATILITY ALERT
                     const userSettings = database.getSettings(ua.user_id);
-                    const volEnabled = userSettings.volatilityNotificationsEnabled === 'true';
-                    if (volEnabled) {
-                        const threshold = parseFloat(ua.volatilityAlert || userSettings.volatilityThreshold || 5);
-                        const currentChange = Math.abs(updateData.change || 0);
+                    const threshold = parseFloat(ua.volatilityAlert || userSettings.volatilityThreshold || 5);
+                    const currentChange = Math.abs(updateData.change || 0);
+                    
+                    if (currentChange >= threshold) {
+                        const existing = database.db.prepare(`
+                            SELECT id FROM notifications 
+                            WHERE ticker = ? AND user_id = ? AND type = 'VOL' AND date(date) = date('now')
+                        `).get(asset.ticker, ua.user_id);
                         
-                        if (currentChange >= threshold) {
-                            const existing = database.db.prepare(`
-                                SELECT id FROM notifications 
-                                WHERE ticker = ? AND user_id = ? AND type = 'VOLATILITY' AND date(date) = date('now')
-                            `).get(asset.ticker, ua.user_id);
+                        if (!existing) {
+                            const sym = asset.ticker.padEnd(8);
+                            const cur = asset.currency === 'USD' ? '$' : '€';
+                            const priceStr = newPrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                            const changeSign = (updateData.change || 0) >= 0 ? '+' : '';
+                            const changeStr = changeSign + (updateData.change || 0).toFixed(2) + '%';
+                            const vIcon = (updateData.change || 0) >= 0 ? '📈' : '📉';
                             
-                            if (!existing) {
-                                database.db.prepare(`
-                                    INSERT INTO notifications (type, title, message, ticker, user_id)
-                                    VALUES (?, ?, ?, ?, ?)
-                                `).run('VOLATILITY', 'VOLATILITY ALERT', `${asset.ticker}: ${updateData.change}% (Soglia: ${threshold}%)`, asset.ticker, ua.user_id);
-                                
-                                const sym = asset.ticker.padEnd(8);
-                                const cur = asset.currency === 'USD' ? '$' : '€';
-                                const priceStr = newPrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                                const changeSign = (updateData.change || 0) >= 0 ? '+' : '';
-                                const changeStr = changeSign + (updateData.change || 0).toFixed(2) + '%';
-                                const vIcon = (updateData.change || 0) >= 0 ? '📈' : '📉';
-                                
-                                const msg = `${escapeV2('📊')} *${escapeV2('VOLATILITY ALERT')}*\n\n` +
-                                            `${escapeV2(vIcon)} \`${escapeCodeV2(sym + ' ' + cur + ' ' + priceStr)}\`\n` +
-                                            `*${escapeV2('Var.:')}* \`${escapeCodeV2(changeStr)}\` ${escapeV2('(Soglia: ' + threshold + '%)')}\n\n` +
-                                            `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\``;
-                                            
-                                sendTelegramMessage(msg, ua.telegram_chat_id, ua.user_id).catch(e => logger.error('Telegram Volatility Alert failed', e));
-                                sendPushNotification(ua.user_id, 'VOLATILITY ALERT 📊', `${asset.ticker}: ${changeStr} (Soglia: ${threshold}%)`, { ticker: asset.ticker }).catch(e => logger.error('Push Volatility Alert failed', e));
-                            }
+                            const tgMsg = `${escapeV2('📊')} *${escapeV2('VOLATILITY ALERT')}*\n\n` +
+                                        `${escapeV2(vIcon)} \`${escapeCodeV2(sym + ' ' + cur + ' ' + priceStr)}\`\n` +
+                                        `*${escapeV2('Var.:')}* \`${escapeCodeV2(changeStr)}\` ${escapeV2('(Soglia: ' + threshold + '%)')}\n\n` +
+                                        `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\``;
+                                        
+                            notifyUser(ua.user_id, 'VOL', {
+                                title: 'VOLATILITY ALERT 📊',
+                                body: `${asset.ticker}: ${changeStr} (Soglia: ${threshold}%)`,
+                                telegramMessage: tgMsg,
+                                ticker: asset.ticker,
+                                data: { ticker: asset.ticker }
+                            });
                         }
                     }
                 }
@@ -6626,26 +6719,33 @@ setInterval(async () => {
         lastUpdateTime = Date.now();
     }
 
-    // 2. Telegram Periodic Status
-    const tgStatusEnabled = settings.marketStatusTelegramEnabled === 'true';
-    const tgIntervalMin = parseInt(settings.marketStatusInterval || 60);
-
-    // Periodic during market hours
-    if (tgStatusEnabled && status.anyOpen && tgIntervalMin > 0) {
-        if (Date.now() - lastTelegramStatusTime >= tgIntervalMin * 60 * 1000) {
-            logger.info('Sending periodic market status to Telegram...');
-            sendMarketStatusTelegram().catch(e => logger.error('Periodic Telegram status failed', e));
-            lastTelegramStatusTime = Date.now();
+    // 2. Multi-User Notifications (Status & Daily)
+    const users = database.db.prepare('SELECT id FROM users').all();
+    for (const u of users) {
+        const uSettings = database.getSettings(u.id);
+        const tgIntervalMin = parseInt(uSettings.marketStatusInterval || 60);
+        const todayStr = now.toISOString().split('T')[0];
+        
+        // Status updates during market hours
+        if (status.anyOpen && tgIntervalMin > 0) {
+            const lastStatusKey = `last_status_time_${u.id}`;
+            const lastStatusTime = global[lastStatusKey] || 0;
+            if (Date.now() - lastStatusTime >= tgIntervalMin * 60 * 1000) {
+                sendStatusNotification(u.id, 'STATUS').catch(e => logger.error('Status notify failed', e));
+                global[lastStatusKey] = Date.now();
+            }
         }
-    }
 
-    // Daily Summary at 22:15 CET
-    const nowHour = now.getHours();
-    const nowMin = now.getMinutes();
-    if (tgStatusEnabled && nowHour === 22 && nowMin === 15 && lastDailyReportDate !== todayStr) {
-        logger.info('Sending daily summary to Telegram (Scheduled)...');
-        sendMarketStatusTelegram().catch(e => logger.error('Scheduled Telegram report failed', e));
-        lastDailyReportDate = todayStr;
+        // Daily Summary at 22:15 CET
+        const nowHour = now.getHours();
+        const nowMin = now.getMinutes();
+        if (nowHour === 22 && nowMin === 15) {
+            const lastDailyKey = `last_daily_date_${u.id}`;
+            if (global[lastDailyKey] !== todayStr) {
+                sendStatusNotification(u.id, 'DAILY').catch(e => logger.error('Daily notify failed', e));
+                global[lastDailyKey] = todayStr;
+            }
+        }
     }
 
     // 2. Scheduled Backups

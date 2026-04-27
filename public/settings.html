@@ -428,29 +428,111 @@
     </div>
 </section>
 
-<!-- Volatility Notifications -->
+<!-- Notification Center -->
 <section class="space-y-2">
-    <div class="flex items-center justify-between cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-900/50 p-2 -mx-2 rounded-xl transition-colors" onclick="toggleSection('volatility-settings-content')">
-        <h2 class="text-lg font-bold border-l-4 border-amber-500 pl-3">Volatility Notifications</h2>
-        <span id="volatility-settings-content-icon" class="material-symbols-outlined text-slate-400 group-hover:text-amber-500 transition-transform">expand_more</span>
+    <div class="flex items-center justify-between cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-900/50 p-2 -mx-2 rounded-xl transition-colors" onclick="toggleSection('notification-center-content')">
+        <h2 class="text-lg font-bold border-l-4 border-emerald-500 pl-3">Notification Center</h2>
+        <span id="notification-center-content-icon" class="material-symbols-outlined text-slate-400 group-hover:text-emerald-500 transition-transform">expand_more</span>
     </div>
-    <div id="volatility-settings-content" class="hidden">
+    <div id="notification-center-content" class="hidden">
         <div class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1.5">Variation Threshold (%)</label>
-                    <p class="text-[10px] text-slate-400 mb-3">Trigger notification if daily price change exceeds this value.</p>
-                    <input id="volatility-threshold" type="number" min="0.1" step="0.1" placeholder="5.0" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2.5 text-sm px-4 focus:ring-amber-500/30 focus:border-amber-500"/>
-                </div>
-                <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 self-end">
-                    <div>
-                        <div class="font-bold text-sm">Enable Alerts</div>
-                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Telegram & Toast</div>
-                    </div>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="volatility-enabled-check" class="sr-only peer">
-                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-amber-500"></div>
-                    </label>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
+                            <th class="pb-3 px-2">Tipo di Evento</th>
+                            <th class="pb-3 text-center px-4">Telegram</th>
+                            <th class="pb-3 text-center px-4">Web Push</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800/50">
+                        <!-- TP -->
+                        <tr>
+                            <td class="py-4 px-2">
+                                <div class="font-bold text-sm">Target Profit</div>
+                                <div class="text-[10px] text-slate-400 uppercase font-bold tracking-tighter mt-0.5">Avviso raggiungimento obiettivo</div>
+                            </td>
+                            <td class="py-4 text-center">
+                                <input type="checkbox" id="notify-tp-telegram" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
+                            </td>
+                            <td class="py-4 text-center">
+                                <input type="checkbox" id="notify-tp-push" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
+                            </td>
+                        </tr>
+                        <!-- SL -->
+                        <tr>
+                            <td class="py-4 px-2">
+                                <div class="font-bold text-sm text-rose-500">Stop Loss</div>
+                                <div class="text-[10px] text-slate-400 uppercase font-bold tracking-tighter mt-0.5">Soglia massima di perdita</div>
+                            </td>
+                            <td class="py-4 text-center">
+                                <input type="checkbox" id="notify-sl-telegram" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
+                            </td>
+                            <td class="py-4 text-center">
+                                <input type="checkbox" id="notify-sl-push" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
+                            </td>
+                        </tr>
+                        <!-- VOL -->
+                        <tr>
+                            <td class="py-4 px-2">
+                                <div class="font-bold text-sm">Volatilità</div>
+                                <div class="text-[10px] text-slate-400 uppercase font-bold tracking-tighter mt-0.5">Sbalzi repentini di prezzo</div>
+                            </td>
+                            <td class="py-4 text-center">
+                                <input type="checkbox" id="notify-vol-telegram" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
+                            </td>
+                            <td class="py-4 text-center">
+                                <input type="checkbox" id="notify-vol-push" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
+                            </td>
+                        </tr>
+                        <!-- DAILY -->
+                        <tr>
+                            <td class="py-4 px-2">
+                                <div class="font-bold text-sm">Report Giornaliero</div>
+                                <div class="text-[10px] text-slate-400 uppercase font-bold tracking-tighter mt-0.5">Riepilogo serale (22:15)</div>
+                            </td>
+                            <td class="py-4 text-center">
+                                <input type="checkbox" id="notify-daily-telegram" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
+                            </td>
+                            <td class="py-4 text-center">
+                                <input type="checkbox" id="notify-daily-push" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
+                            </td>
+                        </tr>
+                        <!-- STATUS -->
+                        <tr>
+                            <td class="py-4 px-2">
+                                <div class="font-bold text-sm">Stato Mercato</div>
+                                <div class="text-[10px] text-slate-400 uppercase font-bold tracking-tighter mt-0.5">Update periodico orario</div>
+                            </td>
+                            <td class="py-4 text-center">
+                                <input type="checkbox" id="notify-status-telegram" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
+                            </td>
+                            <td class="py-4 text-center">
+                                <input type="checkbox" id="notify-status-push" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
+                            </td>
+                        </tr>
+                        <!-- DIVIDEND -->
+                        <tr>
+                            <td class="py-4 px-2">
+                                <div class="font-bold text-sm text-indigo-500">Dividendi</div>
+                                <div class="text-[10px] text-slate-400 uppercase font-bold tracking-tighter mt-0.5">Stacco e accredito cedole</div>
+                            </td>
+                            <td class="py-4 text-center">
+                                <input type="checkbox" id="notify-dividend-telegram" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
+                            </td>
+                            <td class="py-4 text-center">
+                                <input type="checkbox" id="notify-dividend-push" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-transparent" onchange="saveNotificationMatrix()">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="pt-6 border-t border-slate-100 dark:border-slate-800">
+                <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1.5">Soglia Volatilità (%)</label>
+                <div class="flex items-center gap-4">
+                    <input id="volatility-threshold" type="number" min="0.1" step="0.1" placeholder="5.0" class="w-32 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2.5 text-sm px-4 focus:ring-emerald-500/30 focus:border-emerald-500" onchange="saveVolatilityThreshold()">
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-tight">Invia notifica se la variazione giornaliera<br>supera questo valore.</p>
                 </div>
             </div>
         </div>
@@ -2275,7 +2357,67 @@
                 }
             });
         }
+        
+        loadNotificationMatrix();
     });
+
+    async function loadNotificationMatrix() {
+        try {
+            const res = await fetch('/api/settings/notifications');
+            const matrix = await res.json();
+            if (res.ok) {
+                for (const [event, channels] of Object.entries(matrix)) {
+                    const tel = document.getElementById(`notify-${event}-telegram`);
+                    const psh = document.getElementById(`notify-${event}-push`);
+                    if (tel) tel.checked = channels.telegram;
+                    if (psh) psh.checked = channels.push;
+                }
+            }
+            
+            // Also load threshold
+            const resS = await fetch('/api/settings');
+            const settings = await resS.json();
+            const volInput = document.getElementById('volatility-threshold');
+            if (volInput) volInput.value = settings.volatilityThreshold || 5.0;
+        } catch (e) {
+            console.error('Error loading notification matrix', e);
+        }
+    }
+
+    async function saveNotificationMatrix() {
+        const events = ['tp', 'sl', 'vol', 'daily', 'status', 'dividend'];
+        const matrix = {};
+        events.forEach(ev => {
+            matrix[ev] = {
+                telegram: document.getElementById(`notify-${ev}-telegram`).checked,
+                push: document.getElementById(`notify-${ev}-push`).checked
+            };
+        });
+
+        try {
+            const res = await fetch('/api/settings/notifications', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(matrix)
+            });
+            if (!res.ok) alert('Errore nel salvataggio delle impostazioni');
+        } catch (e) {
+            alert('Errore di rete');
+        }
+    }
+
+    async function saveVolatilityThreshold() {
+        const val = document.getElementById('volatility-threshold').value;
+        try {
+            await fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ volatilityThreshold: val })
+            });
+        } catch (e) {
+            console.error('Error saving volatility threshold', e);
+        }
+    }
 
     function updatePushUI(subscribed) {
         const testRow = document.getElementById('push-test-row');

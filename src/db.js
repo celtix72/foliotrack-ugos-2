@@ -419,12 +419,36 @@ function initDb() {
         dbConnection.prepare(`UPDATE dividend_projections SET user_id = ? WHERE user_id IS NULL`).run(adminId);
         
         try {
-            dbConnection.prepare(`ALTER TABLE portfolio_history ADD COLUMN user_id INTEGER`).run();
-        } catch (e) {}
-        dbConnection.prepare(`UPDATE portfolio_history SET user_id = ? WHERE user_id IS NULL`).run(adminId);
-        try {
             dbConnection.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_global_history_user ON portfolio_history(date, user_id) WHERE portfolioId IS NULL`).run();
         } catch (e) {}
+        
+        // 7. Notification Matrix Migration
+        try {
+            const users = dbConnection.prepare('SELECT id, telegram_chat_id FROM users').all();
+            for (const u of users) {
+                const hasTelegram = !!u.telegram_chat_id;
+                const settings = [
+                    { k: 'notify_tp_telegram', v: hasTelegram ? 'true' : 'false' },
+                    { k: 'notify_tp_push', v: 'true' },
+                    { k: 'notify_sl_telegram', v: hasTelegram ? 'true' : 'false' },
+                    { k: 'notify_sl_push', v: 'true' },
+                    { k: 'notify_vol_telegram', v: hasTelegram ? 'true' : 'false' },
+                    { k: 'notify_vol_push', v: 'true' },
+                    { k: 'notify_daily_telegram', v: hasTelegram ? 'true' : 'false' },
+                    { k: 'notify_daily_push', v: 'true' },
+                    { k: 'notify_status_telegram', v: hasTelegram ? 'true' : 'false' },
+                    { k: 'notify_status_push', v: 'false' },
+                    { k: 'notify_dividend_telegram', v: hasTelegram ? 'true' : 'false' },
+                    { k: 'notify_dividend_push', v: 'true' }
+                ];
+                const insertStmt = dbConnection.prepare('INSERT OR IGNORE INTO settings (user_id, key, value) VALUES (?, ?, ?)');
+                for (const s of settings) {
+                    insertStmt.run(u.id, s.k, s.v);
+                }
+            }
+        } catch (e) {
+            console.error('Notification migration error:', e.message);
+        }
         
     } catch (e) {
         console.error('Database migration error:', e.message);
