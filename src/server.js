@@ -633,7 +633,7 @@ async function sendStatusNotification(targetUserId = null, eventType = 'STATUS')
             
             const tSign = marketChange >= 0 ? '+' : '';
             let msg = `*${eventType === 'DAILY' ? '📊 DAILY REPORT' : '📈 MARKET STATUS'}*\n\n`;
-            const totalValStr = Math.round(stats.totalValue).toLocaleString('it-IT');
+            const totalValStr = Math.round(totalVal).toLocaleString('it-IT');
             msg += `${escapeV2('NET. :')} \`${escapeCodeV2('€' + totalValStr)}\` \n\n`;
 
             for (const [catName, cat] of Object.entries(categories)) {
@@ -657,36 +657,21 @@ async function sendStatusNotification(targetUserId = null, eventType = 'STATUS')
                                new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
             msg += `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\` · \`${escapeCodeV2(APP_VERSION)}\``;
 
-            const totalChangeStr = (stats.totalChange >= 0 ? '+' : '') + '€' + Math.round(stats.totalChange).toLocaleString('it-IT');
+            // Compact Push Notification Body for iOS
+            const totalVarEUR = (stats.totalChange || 0) + (stats.totalChangePrePost || 0);
+            const totalVarStr = (totalVarEUR >= 0 ? '+' : '') + '€' + Math.round(totalVarEUR).toLocaleString('it-IT');
+            const abbreviatedNet = (totalVal / 1000).toFixed(1) + 'K';
 
-            // 2. Identify portfolios with positive variation (> 0)
-            const upPortfolios = stats.individualPortfolios ? stats.individualPortfolios.filter(p => (p.changeValue + p.changeValuePrePost) > 0) : [];
+            let pushBody = `NET: ${abbreviatedNet} (${totalVarStr})\n`;
             
-            // 3. Find Top and Worst asset by value delta (diffReg + diffPP)
-            let topAsset = null;
-            let worstAsset = null;
-            let maxDelta = -Infinity;
-            let minDelta = Infinity;
-
-            activeAssets.forEach(a => {
-                const delta = a.diffReg + a.diffPP;
-                if (delta > maxDelta) { maxDelta = delta; topAsset = a; }
-                if (delta < minDelta) { minDelta = delta; worstAsset = a; }
+            const upPortfolios = stats.individualPortfolios 
+                ? stats.individualPortfolios.filter(p => (p.changeValueEUR || 0) > 0) 
+                : [];
+            
+            upPortfolios.forEach(p => {
+                const pVarStr = (p.changeValueEUR >= 0 ? '+' : '') + '€' + Math.round(p.changeValueEUR).toLocaleString('it-IT');
+                pushBody += `${p.name} (${pVarStr})\n`;
             });
-
-            // Build the refined body
-            let pushBody = `NET: €${totalValStr} (${totalChangeStr})\n`;
-            
-            if (upPortfolios.length > 0) {
-                pushBody += `📈 Su: ${upPortfolios.map(p => p.name).join(', ')}\n`;
-            }
-
-            if (topAsset) {
-                pushBody += `🏆 ${topAsset.ticker} (+€${Math.round(maxDelta).toLocaleString('it-IT')})\n`;
-            }
-            if (worstAsset && minDelta < 0) {
-                pushBody += `📉 ${worstAsset.ticker} (-€${Math.round(Math.abs(minDelta)).toLocaleString('it-IT')})\n`;
-            }
 
             notifyUser(userId, eventType, {
                 title: eventType === 'DAILY' ? 'DAILY 📊' : 'MKT 📈',
@@ -2591,6 +2576,7 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null) {
         const vCurrEUR = vCurr / rate;
         const vPrevEUR = vPrev / prevRate;
         const vDeltaEUR_Total = vCurrEUR - vPrevEUR;
+        p.changeValueEUR = vDeltaEUR_Total;
         
         // Split between regular/PP for the Hero pill
         const ratioReg = vDelta !== 0 ? (p.changeValue / vDelta) : 1;
