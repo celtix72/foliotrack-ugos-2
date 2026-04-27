@@ -491,6 +491,7 @@ async function calculateMarketStats(userId) {
             totalChange: stats.totalChange,
             totalChangePercent: stats.changePercent,
             liveRate: liveRate,
+            individualPortfolios: stats.portfolios || [], // Added to support granular push info
             assets: assets.map(a => ({
                 ticker: a.ticker,
                 name: a.name,
@@ -657,15 +658,34 @@ async function sendStatusNotification(targetUserId = null, eventType = 'STATUS')
             msg += `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\` · \`${escapeCodeV2(APP_VERSION)}\``;
 
             const totalChangeStr = (stats.totalChange >= 0 ? '+' : '') + '€' + Math.round(stats.totalChange).toLocaleString('it-IT');
-            const totalChangePPStr = (stats.totalChangePP >= 0 ? '+' : '') + '€' + Math.round(stats.totalChangePP).toLocaleString('it-IT');
 
-            // Build a compact body for Web Push equivalent to Telegram categories
+            // 2. Identify portfolios with positive variation (> 0)
+            const upPortfolios = stats.individualPortfolios ? stats.individualPortfolios.filter(p => (p.changeValue + p.changeValuePrePost) > 0) : [];
+            
+            // 3. Find Top and Worst asset by value delta (diffReg + diffPP)
+            let topAsset = null;
+            let worstAsset = null;
+            let maxDelta = -Infinity;
+            let minDelta = Infinity;
+
+            activeAssets.forEach(a => {
+                const delta = a.diffReg + a.diffPP;
+                if (delta > maxDelta) { maxDelta = delta; topAsset = a; }
+                if (delta < minDelta) { minDelta = delta; worstAsset = a; }
+            });
+
+            // Build the refined body
             let pushBody = `NET: €${totalValStr} (${totalChangeStr})\n`;
-            for (const [catName, cat] of Object.entries(categories)) {
-                if (cat.assets.length === 0) continue;
-                const catVarStr = Math.round(cat.totalVar + cat.totalVarPP).toLocaleString('it-IT');
-                const catSign = (cat.totalVar + cat.totalVarPP) >= 0 ? '+' : '';
-                pushBody += `${cat.emoji} ${catName}: ${catSign}€${catVarStr}\n`;
+            
+            if (upPortfolios.length > 0) {
+                pushBody += `📈 Su: ${upPortfolios.map(p => p.name).join(', ')}\n`;
+            }
+
+            if (topAsset) {
+                pushBody += `🏆 Top: ${topAsset.ticker} (+€${Math.round(maxDelta).toLocaleString('it-IT')})\n`;
+            }
+            if (worstAsset && minDelta < 0) {
+                pushBody += `📉 Worst: ${worstAsset.ticker} (-€${Math.round(Math.abs(minDelta)).toLocaleString('it-IT')})\n`;
             }
 
             notifyUser(userId, eventType, {
@@ -927,13 +947,13 @@ app.post('/api/notify/test', requireAuth, async (req, res) => {
         },
         daily: {
             title: 'DAILY REPORT 📊',
-            body: 'NET: €125.400 (+€1.250)\n🟢 ETF AZ: +€850\n🔵 AZIONI: +€400',
+            body: 'NET: €125.400 (+€1.250)\n📈 Su: Retirement, Trading\n🏆 Top: AAPL (+€850)\n📉 Worst: TSLA (-€200)',
             telegramMessage: '*📊 DAILY REPORT*\n\nAsset: `Portfolio Globale`\nVariazione: `+€1.250,00` (+1.2%)',
             data: { url: '/dashboard' }
         },
         status: {
             title: 'MARKET STATUS 📈',
-            body: 'NET: €125.400 (+€320)\n🟢 ETF AZ: +€420\n🔵 AZIONI: -€100',
+            body: 'NET: €125.400 (+€320)\n📈 Su: Retirement\n🏆 Top: MSFT (+€420)\n📉 Worst: AMZN (-€100)',
             telegramMessage: '*📈 MARKET STATUS*\n\nAggiornamento ore 16:30\nNet. Value: `€125.400`',
             data: { url: '/dashboard' }
         },
