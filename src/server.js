@@ -683,6 +683,28 @@ async function sendStatusNotification(targetUserId = null, eventType = 'STATUS')
                 pushBody += `${icon} ${shortName} (${pVarStr})\n`;
             });
 
+            // Find Top and Worst asset by value delta
+            let topAsset = null;
+            let worstAsset = null;
+            let maxDelta = -Infinity;
+            let minDelta = Infinity;
+
+            // Actually, let's just find them from all assets in categories
+            for (const cat of Object.values(categories)) {
+                cat.assets.forEach(a => {
+                    const delta = (a.diffReg || 0) + (a.diffPP || 0);
+                    if (delta > maxDelta) { maxDelta = delta; topAsset = a; }
+                    if (delta < minDelta) { minDelta = delta; worstAsset = a; }
+                });
+            }
+
+            if (topAsset && maxDelta > 0) {
+                pushBody += `🏆 ${topAsset.ticker} (+€${Math.round(maxDelta).toLocaleString('it-IT')})\n`;
+            }
+            if (worstAsset && minDelta < 0) {
+                pushBody += `📉 ${worstAsset.ticker} (-€${Math.round(Math.abs(minDelta)).toLocaleString('it-IT')})\n`;
+            }
+
             notifyUser(userId, eventType, {
                 title: pushTitle,
                 body: pushBody.trim(),
