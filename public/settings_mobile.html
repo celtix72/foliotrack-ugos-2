@@ -448,10 +448,10 @@
             const enabling = pushCheck.checked;
             
             if (enabling) {
-                const success = await ftPush.subscribeUser();
-                if (!success) {
+                const result = await ftPush.subscribeUser();
+                if (!result.success) {
                     pushCheck.checked = false;
-                    alert('Errore nell\'attivazione delle notifiche. Assicurati di aver aggiunto l\'app alla Home Screen.');
+                    alert('Errore: ' + result.error);
                 }
             } else {
                 await ftPush.unsubscribeUser();

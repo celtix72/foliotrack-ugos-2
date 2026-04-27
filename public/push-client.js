@@ -36,7 +36,13 @@ const ftPush = {
     async subscribeUser() {
         try {
             const response = await fetch('/api/push/vapid-public-key');
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(`Server API Error: ${response.status} ${errData.error || ''}`);
+            }
             const { publicKey } = await response.json();
+            if (!publicKey) throw new Error('VAPID Public Key missing from server response');
+            
             const applicationServerKey = this.urlB64ToUint8Array(publicKey);
             
             const subscription = await this.swRegistration.pushManager.subscribe({
@@ -45,12 +51,14 @@ const ftPush = {
             });
 
             console.log('User is subscribed:', subscription);
-            await this.updateSubscriptionOnServer(subscription);
+            const saveRes = await this.updateSubscriptionOnServer(subscription);
+            if (!saveRes.ok) throw new Error('Failed to save subscription on server');
+            
             this.isSubscribed = true;
-            return true;
+            return { success: true };
         } catch (err) {
             console.error('Failed to subscribe the user: ', err);
-            return false;
+            return { success: false, error: err.message };
         }
     },
 
