@@ -982,7 +982,7 @@ app.post('/api/notify/test', requireAuth, async (req, res) => {
     };
 
     const payload = testPayloads[event] || { 
-        title: 'M2T TEST 🚀', 
+        title: 'FolioTracker TEST 🚀', 
         body: 'Se ricevi questo messaggio, il sistema di notifiche è configurato correttamente!' 
     };
 

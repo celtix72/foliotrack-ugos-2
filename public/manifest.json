@@ -1,6 +1,6 @@
 {
-  "name": "M2T FolioTracker",
-  "short_name": "M2T",
+  "name": "FolioTracker",
+  "short_name": " ",
   "description": "Portfolio and Market tracking terminal",
   "start_url": "/dashboard",
   "display": "standalone",
