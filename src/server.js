@@ -1281,10 +1281,52 @@ app.get('/api/admin/stats', requireAuth, requireAdmin, (req, res) => {
     res.json({ userCount, portfolioCount, assetCount, txCount, notifCount, version: APP_VERSION });
 });
 
-// GET /api/admin/logs — last 200 lines of log
+// GET /api/admin/logs — last log lines
 app.get('/api/admin/logs', requireAuth, requireAdmin, (req, res) => {
-    const lines = getLastLogLines(LOG_FILE, 200);
-    res.json({ logs: lines });
+    try {
+        const maxLines = parseInt(req.query.lines) || 200;
+        const dateParam = req.query.date; // YYYY-MM-DD
+
+        let content = '';
+        if (dateParam) {
+            const rotatedFile = getRotatedLogFile(new Date(dateParam));
+            if (fs.existsSync(rotatedFile)) {
+                content = fs.readFileSync(rotatedFile, 'utf8');
+            }
+        } else {
+            if (fs.existsSync(LOG_FILE)) {
+                content = fs.readFileSync(LOG_FILE, 'utf8');
+            }
+        }
+        
+        if (!content) return res.json({ logs: '' });
+        
+        const lines = content.trim().split('\n').filter(Boolean);
+        const tail = lines.slice(-maxLines).join('\n');
+        res.json({ logs: tail });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/admin/logs/dates — available log days
+app.get('/api/admin/logs/dates', requireAuth, requireAdmin, (req, res) => {
+    try {
+        if (!fs.existsSync(LOGS_DIR)) return res.json([]);
+        const files = fs.readdirSync(LOGS_DIR);
+        const dates = files
+            .filter(f => f.startsWith('app.log.'))
+            .map(f => f.replace('app.log.', ''))
+            .sort((a, b) => b.localeCompare(a));
+        
+        // Add today
+        const today = new Date().toISOString().split('T')[0];
+        if (!dates.includes(today)) dates.unshift(today);
+        
+        res.json(dates);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // ─── Security & Sessions Endpoints ───

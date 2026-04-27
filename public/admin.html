@@ -55,9 +55,41 @@
                     <span id="section-logs-arrow" class="material-symbols-outlined transition-transform rotate-180">expand_more</span>
                 </button>
                 <div id="section-logs" class="collapsible-content active px-6 pb-6 border-t border-slate-100 dark:border-slate-800 pt-6">
-                    <div class="flex flex-col h-[400px]">
-                        <div class="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-4 overflow-hidden shadow-sm relative flex flex-col">
-                            <button onclick="loadLogs()" class="absolute top-2 right-2 w-8 h-8 rounded-lg bg-slate-800 text-slate-300 flex items-center justify-center hover:text-white transition-colors z-10">
+                    <div class="flex flex-col gap-4">
+                        <!-- Filters -->
+                        <div class="flex flex-wrap items-center gap-4 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                            <div class="flex items-center gap-2">
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Giorno</label>
+                                <select id="log-date-select" onchange="loadLogs()" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-bold focus:ring-1 focus:ring-primary outline-none min-w-[120px]">
+                                    <option value="">Oggi</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Livello</label>
+                                <select id="log-level-filter" onchange="loadLogs()" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-bold focus:ring-1 focus:ring-primary outline-none">
+                                    <option value="">Tutti</option>
+                                    <option value="INFO">INFO</option>
+                                    <option value="WARN">WARN</option>
+                                    <option value="ERROR">ERROR</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Righe</label>
+                                <select id="log-lines-select" onchange="loadLogs()" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-bold focus:ring-1 focus:ring-primary outline-none">
+                                    <option value="200" selected>200</option>
+                                    <option value="500">500</option>
+                                    <option value="1000">1000</option>
+                                    <option value="2000">2000</option>
+                                </select>
+                            </div>
+                            <div class="ml-auto">
+                                <span id="log-status-label" class="text-[10px] font-black text-primary uppercase">Caricamento...</span>
+                            </div>
+                        </div>
+
+                        <!-- Log Display -->
+                        <div class="h-[500px] bg-slate-900 border border-slate-800 rounded-xl p-4 overflow-hidden shadow-sm relative flex flex-col">
+                            <button onclick="loadLogs()" class="absolute top-2 right-2 w-8 h-8 rounded-lg bg-slate-800 text-slate-300 flex items-center justify-center hover:text-white transition-colors z-10" title="Ricarica">
                                 <span class="material-symbols-outlined text-sm">refresh</span>
                             </button>
                             <pre id="log-output" class="flex-1 overflow-auto text-[10px] font-mono text-emerald-400 p-2 custom-scrollbar"><code class="block whitespace-pre-wrap">Loading logs...</code></pre>
@@ -343,6 +375,7 @@
             if (user && user.role !== 'admin') window.location.href = '/dashboard';
             
             loadStats();
+            loadLogDates();
             loadLogs();
             loadUsers();
             loadRoles();
@@ -351,6 +384,25 @@
             loadSessions();
             loadAuditLogs();
         });
+
+        async function loadLogDates() {
+            try {
+                const dates = await fetchAdmin('/api/admin/logs/dates');
+                const sel = document.getElementById('log-date-select');
+                if (!sel) return;
+                
+                const currentVal = sel.value;
+                sel.innerHTML = '<option value="">Oggi</option>';
+                
+                dates.forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d;
+                    opt.textContent = d;
+                    if (d === currentVal) opt.selected = true;
+                    sel.appendChild(opt);
+                });
+            } catch (e) { console.warn('Failed to load log dates', e); }
+        }
 
         window.toggleAdminSection = function(id) {
             const content = document.getElementById(id);
@@ -423,14 +475,50 @@
 
         async function loadLogs() {
             try {
-                const data = await fetchAdmin('/api/admin/logs');
+                const date = document.getElementById('log-date-select')?.value || '';
+                const lines = document.getElementById('log-lines-select')?.value || 200;
+                const level = document.getElementById('log-level-filter')?.value || '';
+                const statusLabel = document.getElementById('log-status-label');
+
+                if (statusLabel) statusLabel.innerText = 'CARICAMENTO...';
+
+                let url = `/api/admin/logs?lines=${lines}`;
+                if (date) url += `&date=${date}`;
+
+                const data = await fetchAdmin(url);
                 if (!data) return;
+
+                let logContent = data.logs || '';
+                
+                // Client-side Level Filter
+                if (level) {
+                    const levelTag = `[${level.toUpperCase()}]`;
+                    logContent = logContent.split('\n')
+                        .filter(line => line.includes(levelTag))
+                        .join('\n');
+                }
+
                 const area = document.getElementById('log-output');
                 if (area) {
-                    area.innerHTML = `<code class="block whitespace-pre-wrap">${data.logs}</code>`;
+                    // Syntax highlighting for logs
+                    const formatted = logContent.split('\n').map(line => {
+                        if (line.includes('[ERROR]')) return `<span class="text-rose-500 font-bold">${line}</span>`;
+                        if (line.includes('[WARN]')) return `<span class="text-amber-500">${line}</span>`;
+                        if (line.includes('[INFO]')) return `<span class="text-emerald-400">${line}</span>`;
+                        return line;
+                    }).join('\n');
+
+                    area.innerHTML = `<code class="block whitespace-pre-wrap">${formatted}</code>`;
                     area.scrollTop = area.scrollHeight;
                 }
-            } catch (err) {}
+
+                if (statusLabel) {
+                    const count = logContent.split('\n').filter(Boolean).length;
+                    statusLabel.innerText = `${count} RIGHE`;
+                }
+            } catch (err) {
+                console.error('Load logs error:', err);
+            }
         }
 
         async function loadUsers() {
