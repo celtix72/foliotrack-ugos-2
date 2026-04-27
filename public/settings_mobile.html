@@ -459,11 +459,8 @@
         
         loadBackups();
         loadNewsSources();
-        
-        // Initial fetch
-        fetch('/api/settings').then(res => res.json()).then(updateUI);
 
-        const loadNewsSources = async () => {
+        async function loadNewsSources() {
             const list = document.getElementById('mob-news-sources-list');
             if (!list) return;
             try {
