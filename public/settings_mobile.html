@@ -227,6 +227,7 @@
                           <div class="flex gap-4">
                               <div class="text-[9px] font-black text-slate-400 uppercase tracking-widest w-10 text-center">TG</div>
                               <div class="text-[9px] font-black text-slate-400 uppercase tracking-widest w-10 text-center">PUSH</div>
+                              <div class="text-[9px] font-black text-slate-400 uppercase tracking-widest w-8 text-center">TEST</div>
                           </div>
                       </div>
                       
@@ -236,6 +237,9 @@
                           <div class="flex gap-4">
                               <input type="checkbox" id="mob-notify-tp-telegram" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
                               <input type="checkbox" id="mob-notify-tp-push" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
+                              <button onclick="sendTestNotifyMob('tp')" class="w-8 flex items-center justify-center text-slate-300 active:text-emerald-500">
+                                  <span class="material-symbols-outlined text-sm">send</span>
+                              </button>
                           </div>
                       </div>
                       
@@ -244,6 +248,9 @@
                           <div class="flex gap-4">
                               <input type="checkbox" id="mob-notify-sl-telegram" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
                               <input type="checkbox" id="mob-notify-sl-push" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
+                              <button onclick="sendTestNotifyMob('sl')" class="w-8 flex items-center justify-center text-slate-300 active:text-emerald-500">
+                                  <span class="material-symbols-outlined text-sm">send</span>
+                              </button>
                           </div>
                       </div>
                       
@@ -252,6 +259,9 @@
                           <div class="flex gap-4">
                               <input type="checkbox" id="mob-notify-vol-telegram" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
                               <input type="checkbox" id="mob-notify-vol-push" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
+                              <button onclick="sendTestNotifyMob('vol')" class="w-8 flex items-center justify-center text-slate-300 active:text-emerald-500">
+                                  <span class="material-symbols-outlined text-sm">send</span>
+                              </button>
                           </div>
                       </div>
                       
@@ -260,6 +270,9 @@
                           <div class="flex gap-4">
                               <input type="checkbox" id="mob-notify-daily-telegram" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
                               <input type="checkbox" id="mob-notify-daily-push" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
+                              <button onclick="sendTestNotifyMob('daily')" class="w-8 flex items-center justify-center text-slate-300 active:text-emerald-500">
+                                  <span class="material-symbols-outlined text-sm">send</span>
+                              </button>
                           </div>
                       </div>
                       
@@ -268,6 +281,9 @@
                           <div class="flex gap-4">
                               <input type="checkbox" id="mob-notify-status-telegram" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
                               <input type="checkbox" id="mob-notify-status-push" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
+                              <button onclick="sendTestNotifyMob('status')" class="w-8 flex items-center justify-center text-slate-300 active:text-emerald-500">
+                                  <span class="material-symbols-outlined text-sm">send</span>
+                              </button>
                           </div>
                       </div>
                       
@@ -276,6 +292,9 @@
                           <div class="flex gap-4">
                               <input type="checkbox" id="mob-notify-dividend-telegram" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
                               <input type="checkbox" id="mob-notify-dividend-push" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
+                              <button onclick="sendTestNotifyMob('dividend')" class="w-8 flex items-center justify-center text-slate-300 active:text-emerald-500">
+                                  <span class="material-symbols-outlined text-sm">send</span>
+                              </button>
                           </div>
                       </div>
                   </div>
@@ -832,6 +851,20 @@
                 body: JSON.stringify({ volatilityThreshold: val })
             });
         } catch (e) { console.error(e); }
+    };
+
+    window.sendTestNotifyMob = async function(event) {
+        try {
+            const res = await fetch('/api/notify/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ event })
+            });
+            const data = await res.json();
+            if (!res.ok) alert('Errore invio test: ' + (data.error || 'Unknown'));
+        } catch (e) {
+            alert('Errore di rete');
+        }
     };
 
     function updateNotificationBadge() {

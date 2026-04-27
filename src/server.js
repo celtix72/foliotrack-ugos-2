@@ -407,13 +407,9 @@ async function sendPushNotification(userId, title, body, data = {}) {
  * Unified Notification Center
  * event: 'TP', 'SL', 'VOL', 'DAILY', 'STATUS', 'DIVIDEND'
  */
-async function notifyUser(userId, event, payload) {
+async function notifyUser(userId, event, payload, force = false) {
     const settings = database.getSettings(userId);
     const eventKey = event.toLowerCase();
-    
-    const notifyTelegram = settings[`notify_${eventKey}_telegram`] === 'true';
-    const notifyPush = settings[`notify_${eventKey}_push`] === 'true';
-    const telegramEnabled = settings.telegramEnabled === 'true';
     
     // 1. Log in internal notifications table
     try {
@@ -425,15 +421,16 @@ async function notifyUser(userId, event, payload) {
         logger.error('Failed to log internal notification', e);
     }
 
-    // 2. Send Telegram
-    if (notifyTelegram && telegramEnabled) {
-        // Use provided telegramMessage or fallback to body
+    // 2. Telegram
+    const tgEnabled = force || (settings.telegramEnabled === 'true' && settings[`notify_${eventKey}_telegram`] === 'true');
+    if (tgEnabled && settings.telegram_chat_id) {
         const tgMsg = payload.telegramMessage || payload.body;
         sendTelegramMessage(tgMsg, null, userId).catch(e => logger.error(`Telegram notify failed for ${event}`, e));
     }
 
-    // 3. Send Web Push
-    if (notifyPush) {
+    // 3. Web Push
+    const pushEnabled = force || settings[`notify_${eventKey}_push`] === 'true';
+    if (pushEnabled) {
         sendPushNotification(userId, payload.title, payload.body, payload.data || {}).catch(e => logger.error(`Push notify failed for ${event}`, e));
     }
 }
@@ -888,16 +885,59 @@ app.post('/api/push/unsubscribe', requireAuth, (req, res) => {
     }
 });
 
-app.post('/api/push/test', requireAuth, async (req, res) => {
+app.post('/api/notify/test', requireAuth, async (req, res) => {
+    const { event } = req.body;
+    const userId = req.user.id;
+    
+    const testPayloads = {
+        tp: {
+            title: 'TARGET PROFIT COLPITO! 🎯',
+            body: 'AAPL ha raggiunto il target di €260.00 (+15%)',
+            telegramMessage: '*🎯 TARGET PROFIT COLPITO*\n\nAsset: `AAPL`\nPrezzo: `€260.00`\nPerformance: `+15.0%`',
+            data: { url: '/dashboard' }
+        },
+        sl: {
+            title: 'STOP LOSS ATTIVATO ⚠️',
+            body: 'TSLA è scesa sotto €150.00 (-10%)',
+            telegramMessage: '*⚠️ STOP LOSS ATTIVATO*\n\nAsset: `TSLA`\nPrezzo: `€150.00`\nPerformance: `-10.0%`',
+            data: { url: '/dashboard' }
+        },
+        vol: {
+            title: 'ALLERTA VOLATILITÀ 📉',
+            body: 'BTC-EUR variazione giornaliera: -8.5%',
+            telegramMessage: '*📉 ALLERTA VOLATILITÀ*\n\nAsset: `BTC-EUR`\nVariazione: `-8.5%` (Soglia: 5%)',
+            data: { url: '/dashboard' }
+        },
+        daily: {
+            title: 'DAILY REPORT 📊',
+            body: 'Variazione: +€1,250.00 (+1.2%)',
+            telegramMessage: '*📊 DAILY REPORT*\n\nAsset: `Portfolio Globale`\nVariazione: `+€1.250,00` (+1.2%)',
+            data: { url: '/dashboard' }
+        },
+        status: {
+            title: 'MARKET STATUS 📈',
+            body: 'Aggiornamento periodico orario portafoglio',
+            telegramMessage: '*📈 MARKET STATUS*\n\nAggiornamento ore 16:30\nNet. Value: `€125.400`',
+            data: { url: '/dashboard' }
+        },
+        dividend: {
+            title: 'DIVIDENDO RICEVUTO 💰',
+            body: 'MSFT: +€12.50 (Netto)',
+            telegramMessage: '*💰 DIVIDENDO RICEVUTO*\n\nAsset: `MSFT`\nImporto Netto: `€12.50`',
+            data: { url: '/dividend' }
+        }
+    };
+
+    const payload = testPayloads[event] || { 
+        title: 'M2T TEST 🚀', 
+        body: 'Se ricevi questo messaggio, il sistema di notifiche è configurato correttamente!' 
+    };
+
     try {
-        await sendPushNotification(
-            req.user.id, 
-            'M2T Test Push', 
-            'Se vedi questa notifica, il sistema Push di FolioTracker è configurato correttamente! 🚀',
-            { url: '/settings' }
-        );
+        await notifyUser(userId, event || 'STATUS', payload, true); // true = force send
         res.json({ success: true });
     } catch (err) {
+        logger.error(`Test notification failed for ${event}`, err);
         res.status(500).json({ error: err.message });
     }
 });
