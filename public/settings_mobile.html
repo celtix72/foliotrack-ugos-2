@@ -866,7 +866,7 @@
         const val = document.getElementById('mob-volatility-threshold').value;
         try {
             await fetch('/api/settings', {
-                method: 'POST',
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ volatilityThreshold: val })
             });
@@ -878,7 +878,7 @@
         const variation = document.getElementById('mob-status-min-variation').value;
         try {
             await fetch('/api/settings', {
-                method: 'POST',
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     marketStatusInterval: interval,
