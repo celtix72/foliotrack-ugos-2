@@ -677,8 +677,10 @@ async function sendStatusNotification(targetUserId = null, eventType = 'STATUS')
 
             let pushBody = '';
             portfoliosForPush.forEach(p => {
-                const pVarStr = (p.changeValueEUR >= 0 ? '+' : '') + '€' + Math.round(p.changeValueEUR).toLocaleString('it-IT');
-                pushBody += `${p.name} (${pVarStr})\n`;
+                const icon = (p.changeValueEUR || 0) >= 0 ? '🟢' : '🔴';
+                const shortName = (p.name || '???').substring(0, 3).toUpperCase();
+                const pVarStr = (p.changeValueEUR >= 0 ? '+' : '') + '€' + Math.round(Math.abs(p.changeValueEUR)).toLocaleString('it-IT');
+                pushBody += `${icon} ${shortName} (${pVarStr})\n`;
             });
 
             notifyUser(userId, eventType, {
