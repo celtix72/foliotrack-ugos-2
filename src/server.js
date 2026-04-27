@@ -814,15 +814,20 @@ app.post('/api/push/subscribe', requireAuth, (req, res) => {
 
     try {
         const subStr = typeof subscription === 'string' ? subscription : JSON.stringify(subscription);
+        const endpoint = subscription.endpoint || '';
+        
+        // Remove existing subscriptions for this endpoint to avoid duplicates
+        database.db.prepare('DELETE FROM push_subscriptions WHERE endpoint = ?').run(endpoint);
+        
         database.db.prepare(`
-            INSERT INTO push_subscriptions (user_id, subscription, device_name)
-            VALUES (?, ?, ?)
-        `).run(req.user.id, subStr, device_name || req.headers['user-agent']);
+            INSERT INTO push_subscriptions (user_id, subscription, endpoint, device_name)
+            VALUES (?, ?, ?, ?)
+        `).run(req.user.id, subStr, endpoint, device_name || req.headers['user-agent']);
         
         res.json({ ok: true });
     } catch (e) {
         logger.error('Failed to save push subscription', e);
-        res.status(500).json({ error: 'Database error' });
+        res.status(500).json({ error: 'Database error: ' + e.message });
     }
 });
 
@@ -844,13 +849,12 @@ app.post('/api/push/unsubscribe', requireAuth, (req, res) => {
 
 app.post('/api/push/test', requireAuth, async (req, res) => {
     try {
-        const payload = JSON.stringify({
-            title: 'M2T Test Push',
-            body: 'Se vedi questa notifica, il sistema Push di FolioTracker è configurato correttamente! 🚀',
-            data: { url: '/settings' }
-        });
-        
-        await sendPushNotification(req.user.id, payload);
+        await sendPushNotification(
+            req.user.id, 
+            'M2T Test Push', 
+            'Se vedi questa notifica, il sistema Push di FolioTracker è configurato correttamente! 🚀',
+            { url: '/settings' }
+        );
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });

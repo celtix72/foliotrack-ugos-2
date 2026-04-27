@@ -356,9 +356,18 @@ function initDb() {
         user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         subscription TEXT    NOT NULL, -- JSON string
         device_name TEXT,
+        endpoint    TEXT    UNIQUE,
         created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
       );
     `);
+
+    // Migration: Add endpoint to push_subscriptions
+    try {
+        dbConnection.prepare(`ALTER TABLE push_subscriptions ADD COLUMN endpoint TEXT`).run();
+    } catch (e) {}
+    try {
+        dbConnection.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_push_endpoint ON push_subscriptions(endpoint)`).run();
+    } catch (e) {}
 
     // Migration: Add user_id to notifications
     try {

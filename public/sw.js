@@ -23,6 +23,9 @@ self.addEventListener('push', function(event) {
         icon: data.icon || '/logo.png',
         badge: data.badge || '/logo_cropped.png',
         vibrate: [200, 100, 200],
+        silent: false,
+        renotify: true,
+        tag: 'm2t-alert',
         data: {
             url: data.data ? data.data.url : '/dashboard'
         },
