@@ -100,7 +100,66 @@
                     </div>
                 </div>
 
+                <!-- Security & Access Management -->
+                <div class="space-y-6">
+                    <h2 class="text-lg font-bold flex items-center gap-2">
+                        <span class="material-symbols-outlined text-rose-500">shield_person</span> Security & Access
+                    </h2>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Active Sessions -->
+                        <div class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm overflow-hidden flex flex-col">
+                            <div class="flex items-center justify-between mb-4">
+                                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">Active Sessions</label>
+                                <button onclick="loadSessions()" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors">
+                                    <span class="material-symbols-outlined text-sm">refresh</span>
+                                </button>
+                            </div>
+                            <div class="flex-1 overflow-auto custom-scrollbar">
+                                <table class="w-full text-left text-[11px]">
+                                    <thead class="text-[9px] uppercase font-black text-slate-500 border-b border-slate-100 dark:border-slate-800 sticky top-0 bg-white dark:bg-surface-dark z-10">
+                                        <tr>
+                                            <th class="py-2">User</th>
+                                            <th class="py-2">IP Address</th>
+                                            <th class="py-2">Last Seen</th>
+                                            <th class="py-2 text-right pr-2">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="sessions-table-body" class="divide-y divide-slate-100 dark:divide-slate-800/60">
+                                        <!-- JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Audit Logs -->
+                        <div class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm overflow-hidden flex flex-col">
+                            <div class="flex items-center justify-between mb-4">
+                                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Security Audit Log</label>
+                                <button onclick="loadAuditLogs()" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors">
+                                    <span class="material-symbols-outlined text-sm">refresh</span>
+                                </button>
+                            </div>
+                            <div class="flex-1 overflow-auto custom-scrollbar">
+                                <table class="w-full text-left text-[10px]">
+                                    <thead class="text-[9px] uppercase font-black text-slate-500 border-b border-slate-100 dark:border-slate-800 sticky top-0 bg-white dark:bg-surface-dark z-10">
+                                        <tr>
+                                            <th class="py-2">Time</th>
+                                            <th class="py-2">User</th>
+                                            <th class="py-2">Event</th>
+                                            <th class="py-2">IP</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="audit-logs-body" class="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono">
+                                        <!-- JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
+
 
             <!-- Right Column: Maintenance, SMTP, Logs -->
             <div class="space-y-8">
@@ -276,7 +335,10 @@
             loadRoles();
             loadSmtpSettings();
             loadBackups();
+            loadSessions();
+            loadAuditLogs();
         });
+
 
 
         async function fetchAdmin(endpoint, options = {}) {
@@ -449,8 +511,7 @@
                 // Reload users to confirm
                 loadUsers();
             } catch (err) {
-                alert('Errore: ' + err.message);
-                loadUsers();
+                alert('Update failed: ' + err.message);
             }
         };
 
@@ -679,7 +740,70 @@
                 alert('Reset failed: ' + err.message);
             }
         }
+
+        async function loadSessions() {
+            const tbody = document.getElementById('sessions-table-body');
+            if (!tbody) return;
+            try {
+                const sessions = await fetchAdmin('/api/admin/sessions');
+                const myToken = ftAuth.getToken(); // Need to see if we can identify current session
+                
+                tbody.innerHTML = sessions.map(s => `
+                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
+                        <td class="py-3 font-bold text-slate-700 dark:text-slate-300">
+                            ${s.display_name || s.username}
+                            ${s.username === 'admin' ? '<span class="ml-1 text-[8px] px-1 bg-primary/20 text-primary rounded">YOU</span>' : ''}
+                        </td>
+                        <td class="py-3 text-slate-500">${s.ip_address || 'Unknown'}</td>
+                        <td class="py-3 text-slate-500">${new Date(s.last_seen).toLocaleString()}</td>
+                        <td class="py-3 text-right pr-2">
+                            <button onclick="killSession('${s.session_id}')" class="px-2 py-1 bg-rose-500/10 text-rose-500 rounded text-[9px] font-black uppercase hover:bg-rose-500/20 transition-all">Revoke</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-rose-500">Error loading sessions: ${err.message}</td></tr>`;
+            }
+        }
+
+        window.killSession = async function(sid) {
+            if (!confirm('Revoke this session? The user will be logged out immediately.')) return;
+            try {
+                await fetchAdmin(`/api/admin/sessions/${sid}`, { method: 'DELETE' });
+                await loadSessions();
+            } catch (err) {
+                alert('Failed to revoke session: ' + err.message);
+            }
+        };
+
+        async function loadAuditLogs() {
+            const tbody = document.getElementById('audit-logs-body');
+            if (!tbody) return;
+            try {
+                const logs = await fetchAdmin('/api/admin/audit-logs');
+                tbody.innerHTML = logs.map(l => `
+                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
+                        <td class="py-2 text-slate-400 whitespace-nowrap">${new Date(l.timestamp).toLocaleTimeString()}</td>
+                        <td class="py-2 font-bold ${l.username ? 'text-slate-700 dark:text-slate-300' : 'text-rose-500'}">${l.username || 'ANONYMOUS'}</td>
+                        <td class="py-2">
+                            <span class="px-1.5 py-0.5 rounded text-[8px] font-black ${getAuditEventColor(l.action)}">${l.action}</span>
+                        </td>
+                        <td class="py-2 text-slate-500">${l.ip_address || '-'}</td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-rose-500">Error loading audit logs: ${err.message}</td></tr>`;
+            }
+        }
+
+        function getAuditEventColor(action) {
+            if (action.includes('FAIL')) return 'bg-rose-500/10 text-rose-500';
+            if (action.includes('SUCCESS')) return 'bg-emerald-500/10 text-emerald-500';
+            if (action.includes('RESET') || action.includes('REVOKE')) return 'bg-amber-500/10 text-amber-500';
+            return 'bg-primary/10 text-primary';
+        }
     </script>
 </body>
 </html>
+
 

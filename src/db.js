@@ -330,6 +330,26 @@ function initDb() {
         is_enabled  INTEGER NOT NULL DEFAULT 1,
         UNIQUE(role, resource)
       );
+
+      CREATE TABLE IF NOT EXISTS audit_logs (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id     INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        action      TEXT    NOT NULL,
+        details     TEXT,
+        ip_address  TEXT,
+        user_agent  TEXT,
+        timestamp   TEXT    NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS user_sessions (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        session_id  TEXT    NOT NULL UNIQUE,
+        ip_address  TEXT,
+        user_agent  TEXT,
+        last_seen   TEXT    NOT NULL DEFAULT (datetime('now')),
+        created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+      );
     `);
 
     // Migration: Add user_id to notifications

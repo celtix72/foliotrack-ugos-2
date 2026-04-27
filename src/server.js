@@ -619,6 +619,21 @@ function getTransporter() {
     return transporterInstance;
 }
 
+// ─── Security Helpers ────────────────────────────────────────────────────────
+function logAudit(userId, action, details, req) {
+    try {
+        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+        const ua = req.headers['user-agent'];
+        database.db.prepare(`
+            INSERT INTO audit_logs (user_id, action, details, ip_address, user_agent)
+            VALUES (?, ?, ?, ?, ?)
+        `).run(userId, action, typeof details === 'string' ? details : JSON.stringify(details), ip, ua);
+    } catch (e) {
+        logger.error(`[AUDIT] Failed to log ${action}: ${e.message}`);
+    }
+}
+
+
 // ─── JWT / Auth configuration ─────────────────────────────────────────────────
 const JWT_SECRET = process.env.JWT_SECRET || 'foliotrack_secret_development_static_12345';
 const JWT_COOKIE = 'ft_token';
@@ -645,6 +660,19 @@ function requireAuth(req, res, next) {
     }
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
+        
+        // Session Check
+        if (decoded.sid) {
+            const session = database.db.prepare('SELECT id FROM user_sessions WHERE session_id = ?').get(decoded.sid);
+            if (!session) {
+                res.clearCookie(JWT_COOKIE);
+                if (isApi) return res.status(401).json({ error: 'Sessione revocata o scaduta' });
+                return res.redirect('/login?error=session_revoked');
+            }
+            // Update last seen
+            database.db.prepare("UPDATE user_sessions SET last_seen = datetime('now') WHERE session_id = ?").run(decoded.sid);
+        }
+
         req.user = decoded;
         next();
     } catch (e) {
@@ -652,6 +680,7 @@ function requireAuth(req, res, next) {
         return res.redirect('/login');
     }
 }
+
 
 /**
  * Requires admin role after requireAuth.
@@ -693,16 +722,22 @@ app.post('/api/auth/login', (req, res) => {
     }
     const user = database.verifyUser(username, password);
     if (!user) {
+        logAudit(null, 'LOGIN_FAIL', { username }, req);
         return res.status(401).json({ error: 'Credenziali non valide' });
     }
 
     if (user.must_change_password === 1) {
-        // Return a special token or just a flag so the frontend knows to show change password modal
         return res.json({ ok: false, require_password_change: true, user_id: user.id });
     }
 
+    // Create session
+    const sid = crypto.randomBytes(16).toString('hex');
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const ua = req.headers['user-agent'];
+    database.db.prepare('INSERT INTO user_sessions (user_id, session_id, ip_address, user_agent) VALUES (?, ?, ?, ?)').run(user.id, sid, ip, ua);
+
     const token = jwt.sign(
-        { id: user.id, username: user.username, role: user.role, display_name: user.display_name },
+        { id: user.id, username: user.username, role: user.role, display_name: user.display_name, sid: sid },
         JWT_SECRET,
         { expiresIn: JWT_EXPIRY }
     );
@@ -712,15 +747,27 @@ app.post('/api/auth/login', (req, res) => {
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         secure: req.secure || req.headers['x-forwarded-proto'] === 'https'
     });
+    
+    logAudit(user.id, 'LOGIN_SUCCESS', { role: user.role }, req);
     logger.info(`[AUTH] Login: ${user.username} (${user.role})`);
     return res.json({ ok: true, user: { username: user.username, email: user.email, role: user.role, display_name: user.display_name } });
 });
 
 // POST /api/auth/logout
 app.post('/api/auth/logout', (req, res) => {
+    const token = req.cookies[JWT_COOKIE];
+    if (token) {
+        try {
+            const decoded = jwt.verify(token, JWT_SECRET);
+            if (decoded.sid) {
+                database.db.prepare('DELETE FROM user_sessions WHERE session_id = ?').run(decoded.sid);
+            }
+        } catch (e) {}
+    }
     res.clearCookie(JWT_COOKIE);
     return res.json({ ok: true });
 });
+
 
 // GET /api/auth/me
 app.get('/api/auth/me', requireAuth, (req, res) => {
@@ -997,6 +1044,51 @@ app.get('/api/admin/logs', requireAuth, requireAdmin, (req, res) => {
     const lines = getLastLogLines(LOG_FILE, 200);
     res.json({ logs: lines });
 });
+
+// ─── Security & Sessions Endpoints ───
+
+// GET /api/admin/audit-logs
+app.get('/api/admin/audit-logs', requireAuth, requireAdmin, (req, res) => {
+    try {
+        const logs = database.db.prepare(`
+            SELECT l.*, u.username 
+            FROM audit_logs l 
+            LEFT JOIN users u ON l.user_id = u.id 
+            ORDER BY l.timestamp DESC LIMIT 100
+        `).all();
+        res.json(logs);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/admin/sessions
+app.get('/api/admin/sessions', requireAuth, requireAdmin, (req, res) => {
+    try {
+        const sessions = database.db.prepare(`
+            SELECT s.*, u.username, u.display_name
+            FROM user_sessions s
+            JOIN users u ON s.user_id = u.id
+            ORDER BY s.last_seen DESC
+        `).all();
+        res.json(sessions);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// DELETE /api/admin/sessions/:sid
+app.delete('/api/admin/sessions/:sid', requireAuth, requireAdmin, (req, res) => {
+    try {
+        const sid = req.params.sid;
+        database.db.prepare('DELETE FROM user_sessions WHERE session_id = ?').run(sid);
+        logAudit(req.user.id, 'SESSION_REVOKE', { sid }, req);
+        res.json({ ok: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 
 // GET /api/app-version (public)
 app.get('/api/app-version', (req, res) => {
@@ -5602,6 +5694,9 @@ app.get('/api/backups/export', requireAuth, async (req, res) => {
 
         res.setHeader('Content-disposition', `attachment; filename=foliotracker_export_${new Date().toISOString().split('T')[0]}.json`);
         res.setHeader('Content-type', 'application/json');
+        
+        logAudit(userId, 'DATA_EXPORT', { count: data.portfolios.length }, req);
+        
         res.send(JSON.stringify(data, null, 2));
     } catch (err) {
         logger.error('Export failed:', err);
@@ -5782,6 +5877,7 @@ app.post('/api/reset-data', requireAuth, (req, res) => {
     const scope = req.query.scope || 'user'; // 'user' or 'system'
 
     logger.info(`Initiating data reset (Scope: ${scope}) for user ${userId}...`);
+    logAudit(userId, 'DATA_RESET', { scope }, req);
     
     try {
         database.db.transaction(() => {
