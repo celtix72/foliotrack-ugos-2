@@ -559,11 +559,27 @@
                 </table>
             </div>
             
-            <div class="pt-6 border-t border-slate-100 dark:border-slate-800">
-                <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1.5">Soglia Volatilità (%)</label>
-                <div class="flex items-center gap-4">
-                    <input id="volatility-threshold" type="number" min="0.1" step="0.1" placeholder="5.0" class="w-32 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2.5 text-sm px-4 focus:ring-emerald-500/30 focus:border-emerald-500" onchange="saveVolatilityThreshold()">
-                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-tight">Invia notifica se la variazione giornaliera<br>supera questo valore.</p>
+            <div class="pt-6 border-t border-slate-100 dark:border-slate-800 grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1.5">Soglia Volatilità (%)</label>
+                    <div class="flex items-center gap-4">
+                        <input id="volatility-threshold" type="number" min="0.1" step="0.1" placeholder="5.0" class="w-32 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2.5 text-sm px-4 focus:ring-emerald-500/30 focus:border-emerald-500" onchange="saveVolatilityThreshold()">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-tight">Invia notifica se la variazione giornaliera<br>supera questo valore.</p>
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1.5">Configurazione Stato Mercato</label>
+                    <div class="flex items-center gap-4">
+                        <div class="space-y-1">
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Intervallo (Min)</span>
+                            <input id="status-interval" type="number" min="1" placeholder="60" class="w-24 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 text-sm px-3 focus:ring-emerald-500/30" onchange="saveStatusConfig()">
+                        </div>
+                        <div class="space-y-1">
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Min Variazione (€)</span>
+                            <input id="status-min-variation" type="number" min="0" placeholder="0" class="w-24 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 text-sm px-3 focus:ring-emerald-500/30" onchange="saveStatusConfig()">
+                        </div>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-tight mt-4">Invia solo se il valore totale<br>cambia almeno di X €.</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2405,11 +2421,17 @@
                 }
             }
             
-            // Also load threshold
+            // Also load threshold & Status Config
             const resS = await fetch('/api/settings');
             const settings = await resS.json();
             const volInput = document.getElementById('volatility-threshold');
             if (volInput) volInput.value = settings.volatilityThreshold || 5.0;
+            
+            const statusInt = document.getElementById('status-interval');
+            if (statusInt) statusInt.value = settings.marketStatusInterval || 60;
+            
+            const statusVar = document.getElementById('status-min-variation');
+            if (statusVar) statusVar.value = settings.marketStatusMinVariation || 0;
         } catch (e) {
             console.error('Error loading notification matrix', e);
         }
@@ -2448,6 +2470,21 @@
         } catch (e) {
             console.error('Error saving volatility threshold', e);
         }
+    }
+
+    async function saveStatusConfig() {
+        const interval = document.getElementById('status-interval').value;
+        const variation = document.getElementById('status-min-variation').value;
+        try {
+            await fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    marketStatusInterval: interval,
+                    marketStatusMinVariation: variation
+                })
+            });
+        } catch (e) { console.error(e); }
     }
 
     async function sendTestNotify(event) {

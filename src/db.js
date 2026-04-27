@@ -518,6 +518,7 @@ function initDb() {
         telegramEnabled: 'false',
         marketStatusTelegramEnabled: 'false',
         marketStatusInterval: '60',
+        marketStatusMinVariation: '0',
         disabledNewsSources: '[]',
         schemaVersion: '1.0'
     };

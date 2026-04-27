@@ -555,7 +555,7 @@ const isUSMarket = (a) => {
     return true;
 };
 
-async function sendStatusNotification(targetUserId = null, eventType = 'STATUS') {
+async function sendStatusNotification(targetUserId = null, eventType = 'STATUS', preCalculatedStats = null) {
     const users = targetUserId 
         ? database.db.prepare(`SELECT id FROM users WHERE id = ?`).all(targetUserId)
         : database.db.prepare(`SELECT id FROM users WHERE telegram_chat_id IS NOT NULL`).all();
@@ -569,7 +569,7 @@ async function sendStatusNotification(targetUserId = null, eventType = 'STATUS')
 
         try {
             const escape = escapeV2;
-            const stats = await calculateMarketStats(userId);
+            const stats = preCalculatedStats || await calculateMarketStats(userId);
             const marketStatus = getMarketStatus();
             const overrides = calculateVariationOverrides(marketStatus);
 
@@ -6823,10 +6823,21 @@ setInterval(async () => {
         // Status updates during market hours
         if (status.anyOpen && tgIntervalMin > 0) {
             const lastStatusKey = `last_status_time_${u.id}`;
+            const lastValueKey = `last_status_value_${u.id}`;
             const lastStatusTime = global[lastStatusKey] || 0;
+            const lastStatusValue = global[lastValueKey] || 0;
+            const minVar = parseFloat(uSettings.marketStatusMinVariation || 0);
+
             if (Date.now() - lastStatusTime >= tgIntervalMin * 60 * 1000) {
-                sendStatusNotification(u.id, 'STATUS').catch(e => logger.error('Status notify failed', e));
-                global[lastStatusKey] = Date.now();
+                const stats = await calculateMarketStats(u.id);
+                const currentVal = stats.totalNetValue || 0;
+
+                // Send only if variation threshold is met (or if it's the first notification)
+                if (lastStatusValue === 0 || Math.abs(currentVal - lastStatusValue) >= minVar) {
+                    sendStatusNotification(u.id, 'STATUS', stats).catch(e => logger.error('Status notify failed', e));
+                    global[lastStatusKey] = Date.now();
+                    global[lastValueKey] = currentVal;
+                }
             }
         }
 
