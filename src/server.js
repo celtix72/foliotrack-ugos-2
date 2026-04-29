@@ -5681,12 +5681,15 @@ app.get('/api/analytics/dividend-projections', async (req, res) => {
 
         const openPositions = database.db.prepare(`
             SELECT COALESCE(NULLIF(NULLIF(t.assetTicker, 'null'), ''), 'Sconosciuto') as ticker,
-                   a.name as name
+                   a.name as name,
+                   a.currentPrice,
+                   a.currency as assetCurrency,
+                   SUM(CASE WHEN t.type = 'BUY' THEN t.quantity WHEN t.type = 'SELL' THEN -t.quantity ELSE 0 END) as balance
             FROM transactions t 
             JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
             LEFT JOIN assets a ON t.assetTicker = a.ticker
             WHERE pu.user_id = ?
-            GROUP BY ticker HAVING SUM(CASE WHEN t.type = 'BUY' THEN t.quantity WHEN t.type = 'SELL' THEN -t.quantity ELSE 0 END) > 0.0001
+            GROUP BY ticker HAVING balance > 0.0001
         `).all(req.user.id);
 
         const allDivTx = database.db.prepare(`
@@ -5726,9 +5729,20 @@ app.get('/api/analytics/dividend-projections', async (req, res) => {
             tickersByMonth[m].add(d.ticker);
             
             const gross = amtEUR + toEUR(d.tax || 0, d.portCurrency, d.exchangeRate);
+            
+            // Calculate Real Yield for this specific payment relative to current position value
+            let realYield = 0;
+            if (pos && pos.currentPrice > 0 && pos.balance > 0) {
+                const priceInEUR = (pos.assetCurrency === 'USD' && liveRate > 0) ? pos.currentPrice / liveRate : pos.currentPrice;
+                const positionValueEUR = pos.balance * priceInEUR;
+                if (positionValueEUR > 0) {
+                    realYield = gross / positionValueEUR;
+                }
+            }
+
             listItems.push({
                 id: null, txId: d.txId, ticker: d.ticker, name: pos.name, date: d.date, tag: 'REGISTRATO',
-                amount: null, totalAmount: amtEUR, gross, tax: d.tax || 0, annualProjected: 0, yield: 0
+                amount: null, totalAmount: amtEUR, gross, tax: d.tax || 0, annualProjected: 0, yield: 0, realYield
             });
         });
 

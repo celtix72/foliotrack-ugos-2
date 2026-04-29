@@ -208,8 +208,8 @@
                                     <th class="px-3 py-2 text-right">Lordo (U)</th>
                                     <th class="px-3 py-2 text-right">Netto</th>
                                     <th class="px-3 py-2 text-right">Lordo Tot.</th>
-                                    <th class="px-3 py-2 text-right">Annuo Stima</th>
-                                    <th class="px-3 py-2 text-right">Yield</th>
+                                    <th class="px-3 py-2 text-right">Yield YF</th>
+                                    <th class="px-3 py-2 text-right">Yield Reale</th>
                                     <th class="px-3 py-2 text-right">Azioni</th>
                                 </tr>
                             </thead>
@@ -930,8 +930,8 @@
                         <td class="px-3 py-1.5 text-right font-mono font-bold text-slate-500">${a.amount ? '€' + a.amount.toFixed(2) : '—'}</td>
                         <td class="px-3 py-1.5 text-right font-mono font-black text-emerald-500">€${(a.totalAmount || 0).toFixed(2)}</td>
                         <td class="px-3 py-1.5 text-right font-mono font-black text-slate-400">€${(a.gross || a.totalAmount || 0).toFixed(2)}</td>
-                        <td class="px-3 py-1.5 text-right font-mono font-bold text-primary">${fmt(a.annualProjected)}</td>
-                        <td class="px-3 py-1.5 text-right font-mono font-bold text-amber-500">${a.yield ? (a.yield*100).toFixed(1)+'%' : '—'}</td>
+                        <td class="px-3 py-1.5 text-right font-mono font-bold text-amber-500">${a.yield ? (a.yield*100).toFixed(2)+'%' : '—'}</td>
+                        <td class="px-3 py-1.5 text-right font-mono font-black text-emerald-600">${a.realYield ? (a.realYield*100).toFixed(2)+'%' : '—'}</td>
                         <td class="px-3 py-1.5 text-right">${actionsHtml}</td>
                     </tr>`;
                 }).join('');
