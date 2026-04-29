@@ -101,7 +101,7 @@
       <div class="mob-hero-label">Patrimonio</div>
       <div class="flex items-baseline gap-2 mb-4 overflow-hidden">
         <div class="mob-hero-value" id="mob-total-net" style="margin-bottom:0; font-size: 28px;">€ 0</div>
-        <div class="text-[14px] font-bold text-slate-500 opacity-60" id="mob-total-gross">(€ 0)</div>
+        <div class="text-[14px] font-bold text-slate-500 opacity-80" id="mob-total-gross">(€ 0)</div>
         <div id="mob-day-var" class="ml-auto px-2 py-0.5 rounded-lg text-[10px] font-black shadow-sm hidden"></div>
       </div>
       
@@ -429,7 +429,7 @@ window._mobileViewActive = true;
               
               let html = `${signReg}${formattedReg}`;
               if (changePP !== 0) {
-                  html += ` <span class="opacity-50 text-[10px]">(${signPP}${formattedPP})</span>`;
+                  html += ` <span class="opacity-80 text-[10px]">(${signPP}${formattedPP})</span>`;
               }
               mobDayVar.innerHTML = html;
               mobDayVar.classList.remove('hidden');
@@ -452,7 +452,7 @@ window._mobileViewActive = true;
                 <span class="text-[15px] font-black leading-tight">${asset.ticker}</span>
                 <span class="text-[15px] font-black leading-tight" style="color:${color}">${isPos?'+':''}${asset.changePercent.toFixed(1)}%</span>
               </div>
-              <div class="text-[11px] opacity-40 font-black">${isPos?'+':'-'}€ ${absVal}</div>
+              <div class="text-[11px] opacity-70 font-black">${isPos?'+':'-'}€ ${absVal}</div>
             </div>`;
         }).join('');
       };
@@ -507,7 +507,7 @@ window._mobileViewActive = true;
                     <div class="mob-holding-value text-primary dark:text-primary">${formatPrivacy(p.totalValue, p.currency, 'mob-p-'+p.id, 0)}</div>
                     <div class="flex flex-col items-end mt-0.5">
                       <div class="mob-holding-gain" style="color: ${gainColor}; font-size: 13px;">${sign}${formatPrivacy(v, p.currency, 'mob-dv1-'+p.id, 0)}</div>
-                      ${vPP !== 0 ? `<div class="text-[10px] opacity-40 font-bold">(${signPP}${formatPrivacy(vPP, p.currency, 'mob-dvpp-'+p.id, 0)})</div>` : ''}
+                      ${vPP !== 0 ? `<div class="text-[10px] opacity-70 font-bold">(${signPP}${formatPrivacy(vPP, p.currency, 'mob-dvpp-'+p.id, 0)})</div>` : ''}
                     </div>
                   </div>
                 </div>

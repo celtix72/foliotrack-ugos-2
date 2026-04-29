@@ -747,7 +747,7 @@
                     <span class="flex items-center gap-1.5 ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'} font-bold px-3 py-1 rounded-full border ${isPos ? 'border-emerald-500/20' : 'border-rose-500/20'}">
                         <span class="material-symbols-outlined text-[16px]">${isPos ? 'trending_up' : 'trending_down'}</span>
                         ${sign}${formatted}
-                        ${changePP !== 0 ? '<span class="text-[10px] opacity-60 ml-0.5" title="Pre/Post Market Inc.">EXT</span>' : ''}
+                        ${changePP !== 0 ? '<span class="text-[10px] opacity-80 ml-0.5" title="Pre/Post Market Inc.">EXT</span>' : ''}
                     </span>
                  `;
             }

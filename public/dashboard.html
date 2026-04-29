@@ -529,7 +529,7 @@
                 
                 let html = `${signReg}${formattedReg}`;
                 if (changePP !== 0) {
-                    html += ` <span class="opacity-60 text-[10px] ml-1">(${signPP}${formattedPP})</span>`;
+                    html += ` <span class="opacity-80 text-[10px] ml-1">(${signPP}${formattedPP})</span>`;
                 }
                 heroVar.innerHTML = html;
                 heroVar.classList.remove('hidden');
@@ -564,7 +564,7 @@
                     </div>
                     <div class="text-right flex flex-col">
                         <span class="text-xs font-bold text-emerald-500">+${a.changePercent.toFixed(2)}%</span>
-                        <span class="text-[10px] text-emerald-500/60 font-medium">+${formatPrivacy(a.absChange, 'EUR', 'winner', 0)}</span>
+                        <span class="text-[10px] text-emerald-500/80 font-medium">+${formatPrivacy(a.absChange, 'EUR', 'winner', 0)}</span>
                     </div>
                 </div>
             `).join('') || '<div class="text-xs text-slate-400 italic">Nessun dato</div>';
@@ -582,7 +582,7 @@
                     </div>
                     <div class="text-right flex flex-col">
                         <span class="text-xs font-bold text-rose-500">${a.changePercent.toFixed(2)}%</span>
-                        <span class="text-[10px] text-rose-500/60 font-medium">${formatPrivacy(a.absChange, 'EUR', 'loser', 0)}</span>
+                        <span class="text-[10px] text-rose-500/80 font-medium">${formatPrivacy(a.absChange, 'EUR', 'loser', 0)}</span>
                     </div>
                 </div>
             `).join('') || '<div class="text-xs text-slate-400 italic">Nessun dato</div>';

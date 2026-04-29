@@ -363,7 +363,7 @@ function renderAssets(filter = '') {
         const change = a.changePercent || 0;
         const color = change >= 0 ? 'emerald' : 'rose';
         const sign = change >= 0 ? '+' : '';
-        const opacity = a.isMonitored ? '' : 'opacity-40';
+        const opacity = ''; // Removed opacity-40 for unmonitored assets to avoid "disabled" look
         
         // Alert highlights
         const targetReached = a.targetPrice > 0 && price >= a.targetPrice;
