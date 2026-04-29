@@ -133,8 +133,13 @@
                     <form id="manual-div-form" onsubmit="submitConfirmDividend(event)" class="space-y-3">
                         <input type="hidden" id="confirm-id">
                         <input type="hidden" id="confirm-tx-id">
-                        <input type="hidden" id="confirm-ticker">
-                        
+                        <div id="confirm-ticker-group">
+                            <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Ticker</label>
+                            <div id="confirm-ticker-display" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs font-black hidden"></div>
+                            <select id="confirm-ticker-select" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs font-bold outline-none">
+                                <option value="" disabled selected>Seleziona asset...</option>
+                            </select>
+                        </div>
                         <div id="confirm-portfolio-group">
                             <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Portafoglio</label>
                             <select id="confirm-portfolio" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs font-bold outline-none">
@@ -264,10 +269,11 @@
                     const projData = await projRes.json();
                     window.globalProjData = projData;
 
-                    if (projData.assets && projData.assets.filter(a => a.tag !== 'REGISTRATO').length === 0 && !window.hasTriedReset) {
-                        window.hasTriedReset = true;
+                    const hasTriedReset = sessionStorage.getItem('ft_div_reset_tried');
+                    if (projData.assets && projData.assets.filter(a => a.tag !== 'REGISTRATO').length === 0 && !hasTriedReset) {
+                        sessionStorage.setItem('ft_div_reset_tried', 'true');
                         if(confirm('Nessuna proiezione presente per quest\'anno. Vuoi ricalcolarle automaticamente in base al tuo portafoglio attuale?')) {
-                            window.resetProjections();
+                            window.resetProjections(true);
                             return;
                         }
                     }
@@ -305,6 +311,31 @@
                 } catch (err) { console.error('Error loading mobile dividends data:', err); }
             }
 
+            window.openManualModal = () => {
+                document.getElementById('manual-modal-title').innerText = 'Nuova Previsione';
+                document.getElementById('confirm-id').value = '';
+                document.getElementById('confirm-tx-id').value = '';
+                document.getElementById('confirm-ticker-display').classList.add('hidden');
+                const tSel = document.getElementById('confirm-ticker-select');
+                tSel.classList.remove('hidden');
+                tSel.value = '';
+                
+                // Populate ticker select if global data exists
+                if (window.globalProjData && window.globalProjData.openTickers) {
+                    tSel.innerHTML = '<option value="" disabled selected>Seleziona asset...</option>' + 
+                                     window.globalProjData.openTickers.map(t => `<option value="${t.ticker}">${t.ticker} - ${t.name}</option>`).join('');
+                }
+
+                document.getElementById('confirm-date').value = new Date().toISOString().split('T')[0];
+                document.getElementById('confirm-gross').value = '';
+                document.getElementById('confirm-tax').value = '0.00';
+                document.getElementById('confirm-portfolio-group').classList.add('hidden');
+                document.getElementById('confirm-portfolio').required = false;
+                document.getElementById('confirm-submit-btn').innerText = 'Salva Previsione';
+                document.getElementById('confirm-net-preview').innerText = '€ 0.00';
+                document.getElementById('manual-modal').classList.remove('hidden');
+            };
+
             window.openConfirmModal = async (id) => {
                 const proj = window.globalProjData.assets.find(a => a.id === id);
                 if (!proj) return;
@@ -312,7 +343,9 @@
                 document.getElementById('manual-modal-title').innerText = 'Conferma Dividendo';
                 document.getElementById('confirm-id').value = proj.id;
                 document.getElementById('confirm-tx-id').value = '';
-                document.getElementById('confirm-ticker').value = proj.ticker;
+                document.getElementById('confirm-ticker-display').innerText = proj.ticker;
+                document.getElementById('confirm-ticker-display').classList.remove('hidden');
+                document.getElementById('confirm-ticker-select').classList.add('hidden');
                 document.getElementById('confirm-date').value = proj.date;
                 document.getElementById('confirm-gross').value = (proj.totalAmount || 0).toFixed(2);
                 document.getElementById('confirm-tax').value = '0.00';
@@ -339,7 +372,9 @@
                 document.getElementById('manual-modal-title').innerText = 'Modifica Transazione';
                 document.getElementById('confirm-id').value = '';
                 document.getElementById('confirm-tx-id').value = item.txId;
-                document.getElementById('confirm-ticker').value = item.ticker;
+                document.getElementById('confirm-ticker-display').innerText = item.ticker;
+                document.getElementById('confirm-ticker-display').classList.remove('hidden');
+                document.getElementById('confirm-ticker-select').classList.add('hidden');
                 document.getElementById('confirm-date').value = item.date;
                 document.getElementById('confirm-gross').value = (item.gross || item.totalAmount || 0).toFixed(2);
                 document.getElementById('confirm-tax').value = (item.tax || 0).toFixed(2);
@@ -368,26 +403,41 @@
                 e.preventDefault();
                 const id = document.getElementById('confirm-id').value;
                 const txId = document.getElementById('confirm-tx-id').value;
-                const ticker = document.getElementById('confirm-ticker').value;
+                const ticker = id || txId ? document.getElementById('confirm-ticker-display').innerText : document.getElementById('confirm-ticker-select').value;
                 const portfolioId = document.getElementById('confirm-portfolio').value;
                 const date = document.getElementById('confirm-date').value;
                 const grossAmount = document.getElementById('confirm-gross').value;
                 const tax = document.getElementById('confirm-tax').value;
 
                 try {
-                    let url, method;
+                    let url, method, body;
+                    
                     if (txId) {
+                        // Modifica transazione esistente
                         url = `/api/dividends/transactions/${txId}`;
                         method = 'PUT';
-                    } else {
+                        body = JSON.stringify({ ticker, date, grossAmount, tax });
+                    } else if (id) {
+                        // Conferma proiezione esistente
                         url = `/api/dividends/projections/${id}/confirm`;
                         method = 'POST';
+                        body = JSON.stringify({ portfolioId, ticker, date, grossAmount, tax });
+                    } else {
+                        // Nuova proiezione manuale
+                        url = '/api/dividends/projections';
+                        method = 'POST';
+                        // Per le proiezioni manuali il backend si aspetta 'exDate' e 'amount' (unitario o totale?)
+                        // Vedendo il server.js: amount è l'importo unitario.
+                        // Ma noi qui abbiamo il lordo totale.
+                        // Restauro la logica originale per il manuale se necessario, o adatto.
+                        // In server.js POST /api/dividends/projections prende { ticker, exDate, amount }
+                        body = JSON.stringify({ ticker: document.getElementById('confirm-ticker-select')?.value, exDate: date, amount: grossAmount });
                     }
 
                     const res = await fetch(url, {
                         method,
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ portfolioId, ticker, date, grossAmount, tax })
+                        body
                     });
                     if (res.ok) {
                         window.closeManualModal();
@@ -409,8 +459,8 @@
                 } catch(e) { console.error(e); }
             };
 
-            window.resetProjections = async () => {
-                if(window.hasTriedReset || confirm('Le stime verranno rigenerate cancellando le attuali (tranne quelle "Manuali"). Procedere?')) {
+            window.resetProjections = async (skipConfirm = false) => {
+                if(skipConfirm || confirm('Le stime verranno rigenerate cancellando le attuali (tranne quelle "Manuali"). Procedere?')) {
                     const btn = document.getElementById('btn-recalc');
                     if(btn) btn.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">refresh</span>';
                     try {
