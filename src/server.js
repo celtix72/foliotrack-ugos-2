@@ -5399,19 +5399,27 @@ app.get('/api/analytics/dividends', requireAuth, (req, res) => {
         let allDividends = [];
 
         for (const p of portfolios) {
-            const divs = database.db.prepare("SELECT * FROM transactions WHERE portfolioId = ? AND type = 'DIVIDEND'").all(p.id);
+            const divs = database.db.prepare("SELECT * FROM transactions WHERE portfolioId = ? AND type = 'DIVIDEND' ORDER BY date DESC").all(p.id);
             allDividends = allDividends.concat(divs.map(d => ({
-                ...d,
+                id:          d.id,
+                assetTicker: d.assetTicker,
+                date:        d.date,
+                amount:      d.amount,          // Netto
+                tax:         d.tax || 0,        // Tassazione
+                gross:       (d.amount || 0) + (d.tax || 0), // Lordo calcolato
+                portfolioId: d.portfolioId,
                 portfolioName: p.name
             })));
         }
         // Return flat list for frontend to group/sort
+        allDividends.sort((a, b) => new Date(b.date) - new Date(a.date));
         res.json(allDividends);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: err.message });
     }
 });
+
 
 app.get('/api/dividends/manual-projections', requireAuth, (req, res) => {
     try {
@@ -5462,19 +5470,72 @@ app.delete('/api/dividends/projections/:id', requireAuth, (req, res) => {
 
 app.post('/api/dividends/projections/:id/confirm', requireAuth, requirePortfolioAccess, async (req, res) => {
     try {
-        const { portfolioId, ticker, amount, date } = req.body;
-        if (!portfolioId || !ticker || !amount || !date) {
+        const { portfolioId, ticker, grossAmount, tax, date } = req.body;
+        if (!portfolioId || !ticker || !date) {
             return res.status(400).json({ error: 'Missing fields' });
         }
+        const taxVal   = parseFloat(tax)   || 0;
+        const grossVal = parseFloat(grossAmount) || 0;
+        // Net amount (what hits the portfolio cash) = gross - tax
+        const netVal   = grossVal - taxVal;
         
         database.db.prepare(`
             INSERT INTO transactions (portfolioId, type, assetTicker, date, amount, quantity, price, commission, tax, exchangeRate)
-            VALUES (?, 'DIVIDEND', ?, ?, ?, 0, 0, 0, 0, 1)
-        `).run(portfolioId, ticker, date, parseFloat(amount));
+            VALUES (?, 'DIVIDEND', ?, ?, ?, 0, 0, 0, ?, 1)
+        `).run(portfolioId, ticker, date, netVal, taxVal);
         
         database.db.prepare(`DELETE FROM dividend_projections WHERE id = ? AND user_id = ?`).run(req.params.id, req.user.id);
         database.recalculatePortfolio(portfolioId);
         
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+/**
+ * PUT /api/dividends/transactions/:id
+ * Modifica un dividendo già confermato (transazione esistente).
+ */
+app.put('/api/dividends/transactions/:id', requireAuth, async (req, res) => {
+    try {
+        const { grossAmount, tax, date } = req.body;
+        const taxVal   = parseFloat(tax)   || 0;
+        const grossVal = parseFloat(grossAmount) || 0;
+        const netVal   = grossVal - taxVal;
+
+        // Verifica che la transazione appartenga a un portfolio dell'utente
+        const tx = database.db.prepare(`
+            SELECT t.id, t.portfolioId FROM transactions t
+            JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
+            WHERE t.id = ? AND pu.user_id = ? AND t.type = 'DIVIDEND'
+        `).get(req.params.id, req.user.id);
+
+        if (!tx) return res.status(404).json({ error: 'Transazione non trovata' });
+
+        database.db.prepare(`
+            UPDATE transactions SET date = ?, amount = ?, tax = ? WHERE id = ?
+        `).run(date, netVal, taxVal, tx.id);
+
+        database.recalculatePortfolio(tx.portfolioId);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+/**
+ * DELETE /api/dividends/transactions/:id
+ * Elimina un dividendo già confermato (transazione esistente).
+ */
+app.delete('/api/dividends/transactions/:id', requireAuth, async (req, res) => {
+    try {
+        const tx = database.db.prepare(`
+            SELECT t.id, t.portfolioId FROM transactions t
+            JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
+            WHERE t.id = ? AND pu.user_id = ? AND t.type = 'DIVIDEND'
+        `).get(req.params.id, req.user.id);
+
+        if (!tx) return res.status(404).json({ error: 'Transazione non trovata' });
+
+        database.db.prepare(`DELETE FROM transactions WHERE id = ?`).run(tx.id);
+        database.recalculatePortfolio(tx.portfolioId);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -5629,7 +5690,9 @@ app.get('/api/analytics/dividend-projections', async (req, res) => {
         `).all(req.user.id);
 
         const allDivTx = database.db.prepare(`
-            SELECT COALESCE(NULLIF(NULLIF(t.assetTicker, 'null'), ''), 'Sconosciuto') as ticker, t.date, t.amount, t.quantity, t.price, t.tax, t.exchangeRate, p.currency as portCurrency
+            SELECT t.id as txId,
+                   COALESCE(NULLIF(NULLIF(t.assetTicker, 'null'), ''), 'Sconosciuto') as ticker,
+                   t.date, t.amount, t.quantity, t.price, t.tax, t.exchangeRate, p.currency as portCurrency
             FROM transactions t 
             JOIN portfolios p ON t.portfolioId = p.id 
             JOIN portfolio_users pu ON p.id = pu.portfolio_id
@@ -5662,9 +5725,10 @@ app.get('/api/analytics/dividend-projections', async (req, res) => {
             totalReceived += amtEUR;
             tickersByMonth[m].add(d.ticker);
             
+            const gross = amtEUR + toEUR(d.tax || 0, d.portCurrency, d.exchangeRate);
             listItems.push({
-                id: null, ticker: d.ticker, name: pos.name, date: d.date, tag: 'REGISTRATO',
-                amount: null, totalAmount: amtEUR, annualProjected: 0, yield: 0
+                id: null, txId: d.txId, ticker: d.ticker, name: pos.name, date: d.date, tag: 'REGISTRATO',
+                amount: null, totalAmount: amtEUR, gross, tax: d.tax || 0, annualProjected: 0, yield: 0
             });
         });
 
