@@ -1848,6 +1848,276 @@ app.delete('/api/history/:id', requireAuth, (req, res) => {
 // app.use(express.urlencoded({ extended: true })); // Moved to top
 
 // ════════════════════════════════════════════════════════════════════════════
+// FUNDAMENTALS API  — PEG Ratio, FCF, indicatori fondamentali
+// ════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Cache in-memory per i dati fondamentali.
+ * TTL: 6 ore (i fondamentali non cambiano spesso).
+ */
+const fundamentalsCache = new Map();
+const FUNDAMENTALS_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+
+/**
+ * GET /api/fundamentals/:ticker
+ *
+ * Restituisce:
+ *  - pegRatio         : Forward PEG (P/E forward / EPS growth 5Y), da defaultKeyStatistics
+ *  - pegRatioTrend    : PEG per periodo forward da earningsTrend (0q, +1q, 0y, +1y)
+ *  - pegHistorical    : PEG storico calcolato manualmente (prezzo / EPS TTM / crescita EPS)
+ *  - fcfTTM           : Free Cash Flow TTM corrente
+ *  - operatingCFTTM   : Operating Cash Flow TTM corrente
+ *  - fcfAnnual        : Storico FCF annuale (fundamentalsTimeSeries)
+ *  - fcfQuarterly     : Storico FCF trimestrale (fundamentalsTimeSeries)
+ *  - financialData    : Margini, ROE, ROA, crescita ricavi/utili, target price
+ *  - earningsHistory  : Storico EPS effettivi (ultimi 4 quarter)
+ */
+app.get('/api/fundamentals/:ticker', requireAuth, async (req, res) => {
+    const ticker = (req.params.ticker || '').toUpperCase();
+    if (!ticker) return res.status(400).json({ error: 'Ticker mancante' });
+
+    // Check cache
+    const cached = fundamentalsCache.get(ticker);
+    if (cached && (Date.now() - cached.ts) < FUNDAMENTALS_CACHE_TTL_MS) {
+        logger.info(`[Fundamentals] Cache hit: ${ticker}`);
+        return res.json(cached.data);
+    }
+
+    logger.info(`[Fundamentals] Fetching data for: ${ticker}`);
+
+    const result = {
+        ticker,
+        fetchedAt: new Date().toISOString(),
+        pegRatio: null,
+        pegRatioTrend: [],
+        pegHistorical: [],
+        fcfTTM: null,
+        operatingCFTTM: null,
+        fcfAnnual: [],
+        fcfQuarterly: [],
+        financialData: {},
+        earningsHistory: [],
+        errors: []
+    };
+
+    // ── 1. defaultKeyStatistics: PEG forward + FCF TTM ──────────────────────
+    try {
+        const ks = await yahooFinance.quoteSummary(ticker, {
+            modules: ['defaultKeyStatistics']
+        });
+        const s = ks.defaultKeyStatistics || {};
+        result.pegRatio        = s.pegRatio       ?? null;
+        result.fcfTTM          = s.freeCashflow   ?? null;
+        result.operatingCFTTM  = s.operatingCashflow ?? null;
+        result.keyStats = {
+            forwardPE:      s.forwardPE       ?? null,
+            trailingEps:    s.trailingEps     ?? null,
+            forwardEps:     s.forwardEps      ?? null,
+            earningsGrowth: s.earningsGrowth  ?? null,
+            revenueGrowth:  s.revenueGrowth   ?? null,
+            priceToBook:    s.priceToBook     ?? null,
+            enterpriseValue:s.enterpriseValue ?? null,
+            enterpriseToEbitda:    s.enterpriseToEbitda    ?? null,
+            enterpriseToRevenue:   s.enterpriseToRevenue   ?? null,
+            '52WeekChange':        s['52WeekChange']        ?? null,
+            sharesOutstanding:     s.sharesOutstanding      ?? null,
+            bookValue:             s.bookValue              ?? null
+        };
+    } catch (e) {
+        logger.warn(`[Fundamentals] defaultKeyStatistics error for ${ticker}: ${e.message}`);
+        result.errors.push({ module: 'defaultKeyStatistics', error: e.message });
+    }
+
+    // ── 2. financialData: margini, crescita, target price ───────────────────
+    try {
+        const fd = await yahooFinance.quoteSummary(ticker, {
+            modules: ['financialData']
+        });
+        const f = fd.financialData || {};
+        result.fcfTTM         = result.fcfTTM ?? f.freeCashflow ?? null;
+        result.operatingCFTTM = result.operatingCFTTM ?? f.operatingCashflow ?? null;
+        result.financialData  = {
+            currentPrice:        f.currentPrice        ?? null,
+            targetMeanPrice:     f.targetMeanPrice      ?? null,
+            targetHighPrice:     f.targetHighPrice      ?? null,
+            targetLowPrice:      f.targetLowPrice       ?? null,
+            recommendationMean:  f.recommendationMean   ?? null,
+            recommendationKey:   f.recommendationKey    ?? null,
+            numberOfAnalysts:    f.numberOfAnalystOpinions ?? null,
+            ebitdaMargins:       f.ebitdaMargins        ?? null,
+            profitMargins:       f.profitMargins        ?? null,
+            grossMargins:        f.grossMargins         ?? null,
+            operatingMargins:    f.operatingMargins     ?? null,
+            returnOnAssets:      f.returnOnAssets       ?? null,
+            returnOnEquity:      f.returnOnEquity       ?? null,
+            totalCash:           f.totalCash            ?? null,
+            totalDebt:           f.totalDebt            ?? null,
+            totalRevenue:        f.totalRevenue         ?? null,
+            revenueGrowth:       f.revenueGrowth        ?? null,
+            earningsGrowth:      f.earningsGrowth       ?? null,
+            ebitda:              f.ebitda               ?? null,
+            debtToEquity:        f.debtToEquity         ?? null,
+            currentRatio:        f.currentRatio         ?? null,
+            quickRatio:          f.quickRatio           ?? null,
+            freeCashflow:        f.freeCashflow         ?? null,
+            operatingCashflow:   f.operatingCashflow    ?? null
+        };
+    } catch (e) {
+        logger.warn(`[Fundamentals] financialData error for ${ticker}: ${e.message}`);
+        result.errors.push({ module: 'financialData', error: e.message });
+    }
+
+    // ── 3. earningsTrend: PEG forward per periodo ───────────────────────────
+    try {
+        const et = await yahooFinance.quoteSummary(ticker, {
+            modules: ['earningsTrend']
+        });
+        const trend = et.earningsTrend?.trend || [];
+        result.pegRatioTrend = trend.map(t => ({
+            period:          t.period,
+            endDate:         t.endDate ? (t.endDate instanceof Date ? t.endDate.toISOString().split('T')[0] : t.endDate) : null,
+            pegRatio:        t.pegRatio        ?? null,
+            growth:          t.growth?.raw     ?? t.growth   ?? null,
+            epsEstimateMean: t.earningsEstimate?.avg?.raw ?? t.earningsEstimate?.avg ?? null,
+            epsEstimateHigh: t.earningsEstimate?.high?.raw ?? t.earningsEstimate?.high ?? null,
+            epsEstimateLow:  t.earningsEstimate?.low?.raw  ?? t.earningsEstimate?.low  ?? null,
+            revenueEstimateMean: t.revenueEstimate?.avg?.raw ?? t.revenueEstimate?.avg ?? null,
+        }));
+    } catch (e) {
+        logger.warn(`[Fundamentals] earningsTrend error for ${ticker}: ${e.message}`);
+        result.errors.push({ module: 'earningsTrend', error: e.message });
+    }
+
+    // ── 4. earningsHistory: storico EPS effettivi ───────────────────────────
+    try {
+        const eh = await yahooFinance.quoteSummary(ticker, {
+            modules: ['earningsHistory']
+        });
+        const history = eh.earningsHistory?.history || [];
+        result.earningsHistory = history.map(h => ({
+            period:          h.period,
+            date:            h.quarter ? (h.quarter instanceof Date ? h.quarter.toISOString().split('T')[0] : h.quarter) : null,
+            epsActual:       h.epsActual?.raw    ?? h.epsActual    ?? null,
+            epsEstimate:     h.epsEstimate?.raw  ?? h.epsEstimate  ?? null,
+            epsDifference:   h.epsDifference?.raw ?? h.epsDifference ?? null,
+            surprisePercent: h.surprisePercent?.raw ?? h.surprisePercent ?? null
+        }));
+    } catch (e) {
+        logger.warn(`[Fundamentals] earningsHistory error for ${ticker}: ${e.message}`);
+        result.errors.push({ module: 'earningsHistory', error: e.message });
+    }
+
+    // ── 5. FCF storico annuale (fundamentalsTimeSeries) ─────────────────────
+    try {
+        const from = new Date();
+        from.setFullYear(from.getFullYear() - 6); // Ultimi 6 anni
+        const cfAnnual = await yahooFinance.fundamentalsTimeSeries(ticker, {
+            period1: from.toISOString().split('T')[0],
+            type: 'annual',
+            module: 'cash-flow'
+        });
+        result.fcfAnnual = (cfAnnual || []).map(item => {
+            const fcf  = item.annualFreeCashFlow       ?? item.freeCashFlow       ?? null;
+            const ocf  = item.annualOperatingCashFlow  ?? item.operatingCashFlow  ?? item.cashFlowFromContinuingOperatingActivities ?? null;
+            const capex = item.annualCapitalExpenditure ?? item.capitalExpenditure ?? null;
+            return {
+                date:             item.date instanceof Date ? item.date.toISOString().split('T')[0] : (item.date ?? null),
+                freeCashFlow:     fcf,
+                operatingCashFlow: ocf,
+                capitalExpenditure: capex,
+                // Se FCF non è disponibile direttamente, calcolalo da OCF - CapEx
+                fcfCalculated:    (fcf === null && ocf !== null && capex !== null) ? ocf - capex : null
+            };
+        }).filter(i => i.date);
+    } catch (e) {
+        logger.warn(`[Fundamentals] fundamentalsTimeSeries annual cash-flow error for ${ticker}: ${e.message}`);
+        result.errors.push({ module: 'fundamentalsTimeSeries-annual', error: e.message });
+    }
+
+    // ── 6. FCF storico trimestrale (fundamentalsTimeSeries) ─────────────────
+    try {
+        const from = new Date();
+        from.setFullYear(from.getFullYear() - 3); // Ultimi 3 anni
+        const cfQuarterly = await yahooFinance.fundamentalsTimeSeries(ticker, {
+            period1: from.toISOString().split('T')[0],
+            type: 'quarterly',
+            module: 'cash-flow'
+        });
+        result.fcfQuarterly = (cfQuarterly || []).map(item => {
+            const fcf   = item.quarterlyFreeCashFlow       ?? item.freeCashFlow       ?? null;
+            const ocf   = item.quarterlyOperatingCashFlow  ?? item.operatingCashFlow  ?? item.cashFlowFromContinuingOperatingActivities ?? null;
+            const capex = item.quarterlyCapitalExpenditure ?? item.capitalExpenditure ?? null;
+            return {
+                date:              item.date instanceof Date ? item.date.toISOString().split('T')[0] : (item.date ?? null),
+                freeCashFlow:      fcf,
+                operatingCashFlow: ocf,
+                capitalExpenditure: capex,
+                fcfCalculated:     (fcf === null && ocf !== null && capex !== null) ? ocf - capex : null
+            };
+        }).filter(i => i.date);
+    } catch (e) {
+        logger.warn(`[Fundamentals] fundamentalsTimeSeries quarterly cash-flow error for ${ticker}: ${e.message}`);
+        result.errors.push({ module: 'fundamentalsTimeSeries-quarterly', error: e.message });
+    }
+
+    // ── 7. PEG storico calcolato manualmente ────────────────────────────────
+    // PEG = (Prezzo / EPS_trailing) / crescita_EPS_annua
+    // Richiede: storico prezzi annuale + earningsHistory per EPS
+    try {
+        if (result.earningsHistory.length >= 2) {
+            // Calcola crescita EPS annua dagli ultimi quarter disponibili
+            const validEps = result.earningsHistory.filter(h => h.epsActual !== null).reverse();
+            if (validEps.length >= 2) {
+                // EPS TTM = somma ultimi 4 quarter (se disponibili 4)
+                const last4 = validEps.slice(0, 4);
+                const epsTTM = last4.reduce((sum, h) => sum + (h.epsActual || 0), 0);
+
+                // Crescita EPS Y/Y: confronto last2 vs prev2
+                if (validEps.length >= 4) {
+                    const epsYoy1 = validEps[0].epsActual;
+                    const epsYoy2 = validEps[validEps.length > 4 ? 4 : validEps.length - 1].epsActual;
+                    if (epsYoy2 && epsYoy2 > 0 && epsYoy1 > 0) {
+                        const epsGrowthRate = (epsYoy1 - epsYoy2) / Math.abs(epsYoy2); // decimale
+                        const currentPrice = result.financialData.currentPrice;
+                        if (currentPrice && epsTTM > 0 && epsGrowthRate > 0) {
+                            const peTrailing = currentPrice / epsTTM;
+                            const pegCalc    = peTrailing / (epsGrowthRate * 100); // crescita in %
+                            result.pegHistorical.push({
+                                date:           new Date().toISOString().split('T')[0],
+                                peTrailing:     Math.round(peTrailing * 100) / 100,
+                                epsTTM:         Math.round(epsTTM * 100) / 100,
+                                epsGrowthRate:  Math.round(epsGrowthRate * 10000) / 100, // in %
+                                pegCalculated:  Math.round(pegCalc * 100) / 100,
+                                note:           'Calcolato da EPS trailing 4Q e crescita Y/Y'
+                            });
+                        }
+                    }
+                }
+            }
+        }
+    } catch (e) {
+        logger.warn(`[Fundamentals] PEG historical calc error for ${ticker}: ${e.message}`);
+        result.errors.push({ module: 'peg-historical-calc', error: e.message });
+    }
+
+    // Salva in cache
+    fundamentalsCache.set(ticker, { ts: Date.now(), data: result });
+
+    logger.info(`[Fundamentals] Done for ${ticker}: PEG=${result.pegRatio}, FCF TTM=${result.fcfTTM}, FCF annual records=${result.fcfAnnual.length}, quarterly=${result.fcfQuarterly.length}`);
+    res.json(result);
+});
+
+/**
+ * DELETE /api/fundamentals/:ticker/cache
+ * Invalida la cache per un ticker specifico (utile per forzare refresh).
+ */
+app.delete('/api/fundamentals/:ticker/cache', requireAuth, (req, res) => {
+    const ticker = (req.params.ticker || '').toUpperCase();
+    const deleted = fundamentalsCache.delete(ticker);
+    res.json({ ticker, cacheCleared: deleted });
+});
+
+// ════════════════════════════════════════════════════════════════════════════
 // ASSETS API
 // ════════════════════════════════════════════════════════════════════════════
 
