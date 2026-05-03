@@ -8,6 +8,11 @@
     
     // --- SPA-Like Fetch Caching (Stale-While-Revalidate) ---
     const originalFetch = window.fetch;
+    
+    // Global cache version to prevent SWR race conditions
+    // Incremented on any POST/PUT/DELETE
+    if (!sessionStorage.getItem('ft_cache_v')) sessionStorage.setItem('ft_cache_v', '0');
+
     window.fetch = async function(url, options = {}) {
         const isStringUrl = typeof url === 'string';
         const targetUrl = isStringUrl ? url : (url.url || '');
@@ -18,21 +23,27 @@
             if (method === 'GET') {
                 const cacheKey = 'ft_cache_' + targetUrl;
                 const cachedItemStr = sessionStorage.getItem(cacheKey);
+                const currentVersion = sessionStorage.getItem('ft_cache_v');
                 
                 if (cachedItemStr) {
                     try {
                         const cachedItem = JSON.parse(cachedItemStr);
                         // 5 minutes TTL for instant SPA-like reactivity
-                        if (Date.now() - cachedItem.timestamp < 300000) {
+                        // AND check if cache version matches
+                        if (Date.now() - cachedItem.timestamp < 300000 && cachedItem.v === currentVersion) {
                             
                             // Background fetch for strict Stale-While-Revalidate
                             originalFetch(url, options).then(async res => {
                                 if (res.ok) {
+                                    // RE-CHECK VERSION: If a write happened while we were fetching, DISCARD.
+                                    if (sessionStorage.getItem('ft_cache_v') !== currentVersion) return;
+
                                     const cloned = res.clone();
                                     const data = await cloned.json();
                                     sessionStorage.setItem(cacheKey, JSON.stringify({
                                         timestamp: Date.now(),
-                                        data: data
+                                        data: data,
+                                        v: currentVersion
                                     }));
                                 }
                             }).catch(e => console.error('Background SWR fetch failed:', e));
@@ -46,7 +57,7 @@
                     } catch(e) {}
                 }
                 
-                // Normal fetch if cache miss or expired
+                // Normal fetch if cache miss, expired, or version mismatch
                 const res = await originalFetch(url, options);
                 if (res.ok) {
                     const cloned = res.clone();
@@ -54,15 +65,20 @@
                         const data = await cloned.json();
                         sessionStorage.setItem(cacheKey, JSON.stringify({
                             timestamp: Date.now(),
-                            data: data
+                            data: data,
+                            v: sessionStorage.getItem('ft_cache_v')
                         }));
                     } catch(e) {}
                 }
                 return res;
             } else {
-                // Non-GET requests to /api/ (POST, PUT, DELETE) -> clear cache!
+                // Non-GET requests to /api/ (POST, PUT, DELETE) -> clear cache AND increment version!
                 const res = await originalFetch(url, options);
                 if (res.ok) {
+                    // Increment version to invalidate all in-flight SWR background fetches
+                    const newV = parseInt(sessionStorage.getItem('ft_cache_v') || '0') + 1;
+                    sessionStorage.setItem('ft_cache_v', newV.toString());
+
                     Object.keys(sessionStorage).forEach(key => {
                         if (key.startsWith('ft_cache_')) {
                             sessionStorage.removeItem(key);

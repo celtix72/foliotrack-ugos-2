@@ -2634,8 +2634,9 @@ app.post('/api/watchlist', requireAuth, async (req, res) => {
 app.delete('/api/watchlist/:ticker', requireAuth, (req, res) => {
     try {
         const ticker = req.params.ticker.toUpperCase();
-        database.db.prepare('DELETE FROM user_watchlist WHERE user_id = ? AND ticker = ?').run(req.user.id, ticker);
-        res.json({ ok: true });
+        const result = database.db.prepare('DELETE FROM user_watchlist WHERE user_id = ? AND ticker = ?').run(req.user.id, ticker);
+        logger.info(`Watchlist delete: user ${req.user.id}, ticker ${ticker}, affectedRows: ${result.changes}`);
+        res.json({ ok: true, changes: result.changes });
     } catch (err) {
         console.error('Watchlist delete error:', err);
         res.status(500).json({ error: err.message });

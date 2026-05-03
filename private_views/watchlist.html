@@ -307,9 +307,14 @@
     async function removeFromWatchlist(ticker) {
         if (!confirm(`Remove ${ticker} from watchlist?`)) return;
         try {
-            await fetch(`/api/watchlist/${ticker}`, { method: 'DELETE' });
-            watchlist = watchlist.filter(it => it.ticker !== ticker);
-            renderWatchlist();
+            const res = await fetch(`/api/watchlist/${ticker}`, { method: 'DELETE' });
+            if (res.ok) {
+                watchlist = watchlist.filter(it => it.ticker !== ticker);
+                renderWatchlist();
+            } else {
+                const err = await res.json();
+                alert('Failed to remove: ' + (err.error || res.statusText));
+            }
         } catch (err) {
             alert('Failed to remove: ' + err.message);
         }
