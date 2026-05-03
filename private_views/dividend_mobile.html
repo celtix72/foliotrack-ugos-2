@@ -96,27 +96,25 @@
             </div>
 
             <!-- Projected Assets (Collapsible) -->
-            <div class="mb-6">
-                <div class="bg-white dark:bg-slate-900/50 border-t border-b border-slate-200 dark:border-slate-800/60 shadow-sm overflow-hidden">
-                    <div class="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800/40">
-                        <button onclick="document.getElementById('mob-proj-list-content').classList.toggle('hidden')" class="flex items-center gap-2 hover:opacity-70 transition-opacity">
-                             <span class="text-[11px] font-black uppercase tracking-widest text-slate-500">Dettaglio Proiezioni</span>
-                             <span id="mob-proj-asset-count" class="text-[10px] font-bold text-primary bg-primary/10 px-1.5 rounded-sm">0</span>
-                             <span class="material-symbols-outlined text-sm text-slate-400">expand_more</span>
+            <div style="background: var(--mob-surface); border-top: 1px solid var(--mob-border); border-bottom: 1px solid var(--mob-border); margin: 8px 0;">
+                <div class="flex items-center justify-between" style="padding: 10px 16px; border-bottom: 1px solid var(--mob-border);">
+                    <button onclick="document.getElementById('mob-proj-list-content').classList.toggle('hidden'); this.querySelector('.mob-expand-icon').style.transform = document.getElementById('mob-proj-list-content').classList.contains('hidden') ? '' : 'rotate(180deg)'" class="flex items-center gap-2 hover:opacity-70 transition-opacity">
+                        <span class="material-symbols-outlined mob-expand-icon" style="font-size:20px; transition: transform 0.2s;">expand_more</span>
+                        <span class="text-[11px] font-black uppercase tracking-widest" style="color: var(--mob-text-muted);">Dettaglio Proiezioni</span>
+                        <span id="mob-proj-asset-count" class="text-[10px] font-bold text-primary bg-primary/10 px-1.5 rounded-sm">0</span>
+                    </button>
+                    <div class="flex items-center gap-2">
+                        <button id="btn-recalc" onclick="resetProjections()" class="text-slate-500 hover:text-primary transition-colors flex items-center justify-center p-1 rounded-md bg-slate-100 dark:bg-slate-800">
+                            <span class="material-symbols-outlined text-[16px]">refresh</span>
                         </button>
-                        <div class="flex items-center gap-2">
-                            <button id="btn-recalc" onclick="resetProjections()" class="text-slate-500 hover:text-primary transition-colors flex items-center justify-center p-1 rounded-md bg-slate-100 dark:bg-slate-800">
-                                <span class="material-symbols-outlined text-[16px]">refresh</span>
-                            </button>
-                            <button onclick="openManualModal()" class="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2 py-1 rounded-md">
-                                + Manuale
-                            </button>
-                        </div>
+                        <button onclick="openManualModal()" class="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2 py-1 rounded-md">
+                            + Manuale
+                        </button>
                     </div>
-                    <div id="mob-proj-list-content" class="hidden">
-                        <div id="mob-proj-body" class="mob-list-edge">
-                            <!-- JS Injected -->
-                        </div>
+                </div>
+                <div id="mob-proj-list-content" class="hidden">
+                    <div id="mob-proj-body" class="mob-list-edge" style="margin: 0 !important; border: none !important;">
+                        <!-- JS Injected -->
                     </div>
                 </div>
             </div>
@@ -178,13 +176,13 @@
 
 
             <!-- ── HISTORICAL SECTION ── -->
-            <div class="mob-section-header mt-8">
+            <div class="mob-section-header">
                 <h1 class="mob-section-title">Storico Dividendi</h1>
             </div>
 
             <!-- Historical KPIs -->
-            <div class="px-5 mb-4">
-                <div class="bg-white/5 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+            <div class="mob-chart-card" style="padding: 12px 16px;">
+                <div style="display:flex; align-items:center; justify-content:space-between;">
                     <div>
                         <p class="text-[9px] font-black uppercase text-emerald-500 tracking-widest mb-1">Totale Incassato</p>
                         <div id="mob-global-total" class="text-xl font-black text-emerald-500">€ 0</div>
@@ -196,35 +194,32 @@
             </div>
 
             <!-- Historical Chart -->
-            <div class="px-5 mb-4">
-                <div class="bg-white/5 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <div class="relative h-48">
-                        <canvas id="mob-historical-chart"></canvas>
-                    </div>
+            <div class="mob-chart-card">
+                <div class="mob-chart-title" style="margin-bottom:4px">Storico Annuale</div>
+                <div class="mob-chart-subtitle">Dividendi ricevuti per anno</div>
+                <div class="mob-chart-canvas-wrapper" style="height:160px">
+                    <canvas id="mob-historical-chart"></canvas>
                 </div>
             </div>
 
-            <div class="px-5 mb-6">
-                <details open class="group bg-white/5 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                    <summary class="flex items-center justify-between p-4 cursor-pointer select-none outline-none">
-                        <div class="flex items-center gap-2">
-                            <span class="text-[11px] font-black uppercase tracking-widest text-slate-500">Transazioni</span>
-                            <select id="mob-div-group-by" onchange="renderMobDividends()" onclick="event.stopPropagation()" class="bg-black/5 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-md text-[10px] py-1 pl-2 pr-6 focus:ring-0 cursor-pointer text-slate-600 dark:text-slate-300">
-                                <option value="year">Per Anno</option>
-                                <option value="portfolioName">Portafoglio</option>
-                                <option value="none">Lista</option>
-                            </select>
-                        </div>
-                        <div class="w-6 h-6 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center">
-                            <span class="material-symbols-outlined text-slate-500 text-sm group-open:rotate-180 transition-transform">expand_more</span>
-                        </div>
-                    </summary>
-                    <div id="mob-dividends-list" class="divide-y divide-slate-100 dark:divide-slate-800/30 border-t border-slate-200 dark:border-slate-800">
-                        <div style="text-align:center;padding:48px">
-                            <div class="mob-spinner" style="margin:0 auto"></div>
-                        </div>
+            <!-- Transactions section header -->
+            <div class="mob-section-header" style="cursor:pointer" onclick="document.getElementById('mob-dividends-list').closest('.mob-div-tx-wrap').classList.toggle('collapsed')">
+                <div class="mob-section-title flex items-center gap-2">
+                    <span class="material-symbols-outlined" style="font-size:20px">expand_more</span>
+                    Transazioni
+                </div>
+                <select id="mob-div-group-by" onchange="renderMobDividends()" onclick="event.stopPropagation()" class="bg-black/5 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-md text-[10px] py-1 pl-2 pr-4 focus:ring-0 cursor-pointer text-slate-600 dark:text-slate-300">
+                    <option value="year">Per Anno</option>
+                    <option value="portfolioName">Portafoglio</option>
+                    <option value="none">Lista</option>
+                </select>
+            </div>
+            <div class="mob-div-tx-wrap">
+                <div id="mob-dividends-list">
+                    <div style="text-align:center;padding:48px">
+                        <div class="mob-spinner" style="margin:0 auto"></div>
                     </div>
-                </details>
+                </div>
             </div>
 
             <div style="height:60px"></div>
@@ -755,12 +750,15 @@
                     container.innerHTML = keys.map(key => {
                         const group = groups[key];
                         const isCollapsed = collapsedGroups.has(key);
+                        const sign = group.total >= 0 ? '+' : '';
                         return `
-                            <div class="mob-section-header" style="margin-top:10px; cursor:pointer" onclick="toggleMobGroup('${key}')">
-                                <span class="text-[11px] font-black uppercase tracking-widest text-slate-500">${key.toUpperCase()}</span>
-                                <div class="flex items-center gap-2">
-                                    <span class="text-[11px] font-bold text-emerald-500">${formatCurrency(group.total, 'EUR', 0)}</span>
-                                    <span class="material-symbols-outlined text-sm opacity-30 transition-transform ${isCollapsed ? 'rotate-180' : ''}">${isCollapsed ? 'expand_more' : 'expand_less'}</span>
+                            <div class="mob-section-header" style="cursor:pointer" onclick="toggleMobGroup('${key}')">
+                                <div class="mob-section-title flex items-center gap-2">
+                                    <span class="material-symbols-outlined" style="font-size:20px">${isCollapsed ? 'chevron_right' : 'expand_more'}</span>
+                                    ${key.toUpperCase()} <span style="font-size:11px; color:var(--mob-text-muted); font-weight:normal;">(${group.items.length})</span>
+                                </div>
+                                <div class="mob-section-link" style="color: var(--mob-emerald); font-size: 18px; font-weight: 900;">
+                                    ${sign}${formatCurrency(group.total, 'EUR', 0)}
                                 </div>
                             </div>
                             <div class="mob-list-edge" style="${isCollapsed ? 'display:none' : ''}">

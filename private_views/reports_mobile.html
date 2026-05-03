@@ -150,7 +150,7 @@
     <div class="mob-section-header">
       <span class="mob-section-title">Annual Gains Summary</span>
     </div>
-    <div class="mob-chart-card" id="mob-annual-gains-container" style="padding: 16px;">
+    <div class="mob-list-edge" id="mob-annual-gains-container">
         <!-- Injected via JS -->
     </div>
 
@@ -331,27 +331,32 @@
         container.innerHTML = gains.map(g => {
             const isCurr = g.year === currentYear;
             const totalRealized = g.realized + g.dividends;
+            const isPos = totalRealized >= 0;
+            const gainColor = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+            const sign = isPos ? '+' : '';
             return `
-                <div style="display: flex; flex-direction: column; gap: 6px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--mob-border);">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-weight: 900; font-size: 16px;">${g.year} ${isCurr ? '<span style="font-size: 10px; color: var(--mob-primary); margin-left: 4px;">NOW</span>' : ''}</span>
-                        <span style="font-weight: 900; font-size: 14px;">${formatCurrency(totalRealized, 'EUR', 0)}</span>
+                <div class="mob-holding-swipe-container">
+                    <div class="mob-holding-item" style="flex-direction: column; align-items: stretch; gap: 6px; padding-top: 10px; padding-bottom: 10px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between;">
+                            <div class="mob-holding-ticker flex items-center gap-2">
+                                ${g.year}
+                                ${isCurr ? '<span style="font-size:9px; font-weight:900; color:var(--mob-primary); text-transform:uppercase; letter-spacing:0.08em;">NOW</span>' : ''}
+                            </div>
+                            <div class="mob-holding-value" style="color: ${gainColor};">${sign}${formatCurrency(totalRealized, 'EUR', 0)}</div>
+                        </div>
+                        <div style="display:flex; justify-content:space-between;">
+                            <span class="mob-holding-name">Sales: <span style="color:${g.realized >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">${formatCurrency(g.realized, 'EUR', 0)}</span></span>
+                            <span class="mob-holding-name">Div: <span style="color:var(--mob-emerald)">${formatCurrency(g.dividends, 'EUR', 0)}</span></span>
+                        </div>
+                        ${isCurr ? `
+                        <div style="display:flex; justify-content:space-between; background:var(--mob-surface-2); border-radius:8px; padding:6px 10px; margin-top:2px;">
+                            <span class="mob-holding-name" style="text-transform:uppercase; letter-spacing:0.05em;">Unrealized (Open)</span>
+                            <span class="mob-holding-gain" style="color:${g.unrealized >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}; font-size:13px;">${formatCurrency(g.unrealized, 'EUR', 0)}</span>
+                        </div>` : ''}
                     </div>
-                    <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--mob-text-dim);">
-                        <span>Sales: <span style="color: ${g.realized >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">${formatCurrency(g.realized, 'EUR', 0)}</span></span>
-                        <span>Div: <span style="color: var(--mob-emerald)">${formatCurrency(g.dividends, 'EUR', 0)}</span></span>
-                    </div>
-                    ${isCurr ? `
-                    <div style="margin-top: 4px; padding: 8px; background: rgba(0,0,0,0.05); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 10px; font-weight: 700; color: var(--mob-text-dim); text-transform: uppercase;">Unrealized (Open)</span>
-                        <span style="font-weight: 900; font-size: 14px; color: ${g.unrealized >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">
-                            ${formatCurrency(g.unrealized, 'EUR', 0)}
-                        </span>
-                    </div>
-                    ` : ''}
                 </div>
             `;
-        }).join('') || '<div class="text-xs italic text-center text-slate-400">No data available</div>';
+        }).join('') || '<div style="text-align:center;padding:24px;opacity:0.4;font-size:12px;">No data available</div>';
     }
 
     function mobRenderCharts(data) {
