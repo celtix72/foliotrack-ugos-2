@@ -328,18 +328,18 @@
                             <div class="mob-holding-value" style="color: var(--mob-primary);">${formatCurrency(pm.currentValue, pCurrency, 0)}</div>
                           </div>
                         </div>
-                        <div style="padding: 0 16px 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-                          <div style="flex:1; background: var(--mob-surface-2); padding: 6px; border-radius: 8px; display:flex; flex-direction:column; align-items:center; gap:2px;">
-                            <span style="font-size:9px; font-weight:800; text-transform:uppercase; color:var(--mob-text-muted);">ROI</span>
-                            <span style="font-size:13px; font-weight:900; color:${roi >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'};">${(roi * 100).toFixed(1)}%</span>
+                        <div style="padding: 0 16px 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                          <div style="flex:1; background: ${roi >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)'}; border: 1px solid ${roi >= 0 ? 'rgba(16, 185, 129, 0.25)' : 'rgba(244, 63, 94, 0.25)'}; padding: 8px 4px; border-radius: 10px; display:flex; flex-direction:column; align-items:center; gap:3px;">
+                            <span style="font-size:10px; font-weight:900; text-transform:uppercase; color:${roi >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}; opacity: 0.8;">ROI</span>
+                            <span style="font-size:15px; font-weight:900; color:${roi >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'};">${(roi * 100).toFixed(1)}%</span>
                           </div>
-                          <div style="flex:1; background: var(--mob-surface-2); padding: 6px; border-radius: 8px; display:flex; flex-direction:column; align-items:center; gap:2px;">
-                            <span style="font-size:9px; font-weight:800; text-transform:uppercase; color:var(--mob-text-muted);">TWR</span>
-                            <span style="font-size:13px; font-weight:900; color:${twr >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'};">${(twr * 100).toFixed(1)}%</span>
+                          <div style="flex:1; background: ${twr >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)'}; border: 1px solid ${twr >= 0 ? 'rgba(16, 185, 129, 0.25)' : 'rgba(244, 63, 94, 0.25)'}; padding: 8px 4px; border-radius: 10px; display:flex; flex-direction:column; align-items:center; gap:3px;">
+                            <span style="font-size:10px; font-weight:900; text-transform:uppercase; color:${twr >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}; opacity: 0.8;">TWR</span>
+                            <span style="font-size:15px; font-weight:900; color:${twr >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'};">${(twr * 100).toFixed(1)}%</span>
                           </div>
-                          <div style="flex:1; background: var(--mob-surface-2); padding: 6px; border-radius: 8px; display:flex; flex-direction:column; align-items:center; gap:2px;">
-                            <span style="font-size:9px; font-weight:800; text-transform:uppercase; color:var(--mob-text-muted);">XIRR</span>
-                            <span style="font-size:13px; font-weight:900; color:${xirr >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'};">${(xirr * 100).toFixed(1)}%</span>
+                          <div style="flex:1; background: ${xirr >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)'}; border: 1px solid ${xirr >= 0 ? 'rgba(16, 185, 129, 0.25)' : 'rgba(244, 63, 94, 0.25)'}; padding: 8px 4px; border-radius: 10px; display:flex; flex-direction:column; align-items:center; gap:3px;">
+                            <span style="font-size:10px; font-weight:900; text-transform:uppercase; color:${xirr >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}; opacity: 0.8;">XIRR</span>
+                            <span style="font-size:15px; font-weight:900; color:${xirr >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'};">${(xirr * 100).toFixed(1)}%</span>
                           </div>
                         </div>
                       </div>`;
