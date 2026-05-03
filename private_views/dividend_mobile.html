@@ -114,7 +114,7 @@
                         </div>
                     </div>
                     <div id="mob-proj-list-content" class="hidden">
-                        <div id="mob-proj-body" class="divide-y divide-slate-100 dark:divide-slate-800/30">
+                        <div id="mob-proj-body" class="mob-list-edge">
                             <!-- JS Injected -->
                         </div>
                     </div>
@@ -637,7 +637,7 @@
                 
                 countEl.innerText = assets.length;
                 bodyEl.innerHTML = assets.map(a => {
-                    const letters = a.ticker ? a.ticker.substring(0, 3).toUpperCase() : '???';
+                    const letters = a.ticker ? a.ticker.substring(0, 2).toUpperCase() : '??';
                     let badge = '';
                     if (a.tag === 'REGISTRATO') badge = '<div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">Ricevuto</div>';
                     else if (a.tag === 'YF') badge = '<div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20">YF</div>';
@@ -684,17 +684,19 @@
                          ontouchend="handleTouchEnd(event, this)">
                         ${actions}
                         <div class="mob-holding-item" onclick="event.stopPropagation(); ${clickAction}">
-                            <div class="mob-holding-logo" style="background:var(--mob-surface-2); color:var(--mob-primary); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:10px;">${letters}</div>
-                            <div class="mob-holding-info" style="flex:1; min-width:0;">
+                            <div class="mob-holding-logo">${letters}</div>
+                            <div class="mob-holding-info">
                                 <div class="flex items-center gap-2">
-                                    <div class="mob-holding-ticker" style="font-size:15px; font-weight:800; color:var(--mob-text);">${a.ticker}</div>
+                                    <div class="mob-holding-ticker">${a.ticker}</div>
                                     ${badge}
                                 </div>
-                                <div class="mob-holding-name" style="font-size:11px; font-weight:500; color:var(--mob-text-muted); opacity:0.8;">${(a.name && a.name !== 'null') ? a.name : a.ticker} • ${a.date}</div>
+                                <div class="mob-holding-name">${(a.name && a.name !== 'null') ? a.name : a.ticker} • ${a.date}</div>
                             </div>
-                            <div class="mob-holding-values" style="text-align:right; flex-shrink:0;">
-                                <div class="mob-holding-value" style="font-size:14px; font-weight:800; color:var(--mob-blue-ios)">€${(a.totalAmount || 0).toFixed(2)}</div>
-                                <div style="font-size:9px; font-weight:700; color:var(--mob-text-caption);">Lordo: €${(a.gross || a.totalAmount || 0).toFixed(2)}</div>
+                            <div class="mob-holding-values">
+                                <div class="mob-holding-value" style="color:var(--mob-primary)">€${(a.totalAmount || 0).toFixed(2)}</div>
+                                <div class="mob-holding-gain" style="color: var(--mob-text-muted); font-size: 11px;">
+                                    Lordo: €${(a.gross || a.totalAmount || 0).toFixed(2)}
+                                </div>
                                 <div class="flex flex-col items-end mt-1">
                                     ${a.yield ? `<div style="font-size:9px; font-weight:900; color:var(--mob-amber); opacity:0.8;">YLD YF: ${(a.yield * 100).toFixed(2)}%</div>` : ''}
                                     ${a.realYield ? `<div style="font-size:9px; font-weight:900; color:var(--mob-emerald); opacity:0.9;">YLD REALE: ${(a.realYield * 100).toFixed(2)}%</div>` : ''}
@@ -823,7 +825,7 @@
             }
 
             function renderMobRow(d) {
-                const letters = d.assetTicker ? d.assetTicker.substring(0, 3).toUpperCase() : '???';
+                const letters = d.assetTicker ? d.assetTicker.substring(0, 2).toUpperCase() : '??';
                 const divNetto = d.amount || 0;
                 const divLordo = divNetto + (d.tax || 0);
                 
@@ -852,18 +854,19 @@
                         </div>
 
                         <div class="mob-holding-item">
-                            <div class="mob-holding-logo" style="background:var(--mob-surface-2); color:var(--mob-primary); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:10px;">${letters}</div>
-                            <div class="mob-holding-info" style="flex:1; min-width:0;">
+                            <div class="mob-holding-logo">${letters}</div>
+                            <div class="mob-holding-info">
                                 <div class="flex items-center gap-2">
-                                    <div class="mob-holding-ticker" style="font-size:15px; font-weight:800; color:var(--mob-text);">${d.assetTicker}</div>
+                                    <div class="mob-holding-ticker">${d.assetTicker}</div>
                                     <div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">DIVIDEND</div>
                                 </div>
-                                <div class="mob-holding-name" style="font-size:11px; font-weight:500; color:var(--mob-text-muted); opacity:0.8;">${d.portfolioName} • ${d.date}</div>
+                                <div class="mob-holding-name">${d.portfolioName} • ${d.date}</div>
                             </div>
-                            <div class="mob-holding-values" style="text-align:right; flex-shrink:0;">
-                                <div class="mob-holding-value" style="font-size:14px; font-weight:800; color:var(--mob-emerald);">+${formatCurrency(divNetto, 'EUR', 0)}</div>
-                                <div style="font-size:10px; font-weight:700; color:var(--mob-text-caption);">Lordo: ${formatCurrency(divLordo, 'EUR', 0)}</div>
-                                <div style="font-size:10px; font-weight:500; color:var(--mob-text-muted); opacity:0.7; margin-top:1px;">Netto: ${formatCurrency(divNetto, 'EUR', 0)}</div>
+                            <div class="mob-holding-values">
+                                <div class="mob-holding-value" style="color: var(--mob-emerald)">+${formatCurrency(divNetto, 'EUR', 0)}</div>
+                                <div class="mob-holding-gain" style="color: var(--mob-text-muted); font-size: 11px;">
+                                    Lordo: ${formatCurrency(divLordo, 'EUR', 0)}
+                                </div>
                             </div>
                         </div>
                     </div>

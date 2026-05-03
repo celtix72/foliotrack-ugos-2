@@ -142,7 +142,7 @@
     <div class="mob-section-header">
       <span class="mob-section-title">Portafogli Breakdown</span>
     </div>
-    <div class="mob-portfolio-list" id="mob-portfolios-list">
+    <div class="mob-list-edge" id="mob-portfolios-list">
       <!-- Injected via JS -->
     </div>
 
@@ -282,20 +282,20 @@
                     const pColor = (data.portfolios && data.portfolios.find(port => port.id == p.id)) ? data.portfolios.find(port => port.id == p.id).color : '#6366f1';
                     const pCurrency = (data.portfolios && data.portfolios.find(port => port.id == p.id)) ? data.portfolios.find(port => port.id == p.id).currency : 'EUR';
                     return `
-                      <div style="margin: 0; border-radius: 0; overflow: hidden; border: none; border-top: 1px solid var(--mob-border);">
-                        <div onclick="window.location.href='/portfolio_detail_mobile.html?id=${p.id}'" style="background: var(--mob-surface); padding: 8px 16px; display: flex; align-items: center; gap: 12px; min-height: 50px; cursor: pointer; -webkit-tap-highlight-color: transparent;">
-                          <div style="background-color:${pColor}; width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0;">
+                      <div class="mob-holding-swipe-container">
+                        <div class="mob-holding-item" onclick="window.location.href='/portfolio_detail_mobile.html?id=${p.id}'">
+                          <div class="mob-holding-logo" style="background-color:${pColor}; color: white;">
                             <span class="material-symbols-outlined" style="font-size: 16px;">work</span>
                           </div>
-                          <div style="flex: 1; min-width: 0; overflow: hidden;">
-                            <div style="font-size: 15px; font-weight: 800; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.name}</div>
-                            <div style="font-size: 10px; font-weight: 500; color: var(--mob-text-muted); line-height: 1.2;">Contrib: ${(pm.contribution*100).toFixed(1)}% · Sharpe: ${pm.sharpeRatio.toFixed(1)}</div>
+                          <div class="mob-holding-info">
+                            <div class="mob-holding-ticker truncate">${p.name}</div>
+                            <div class="mob-holding-name">Contrib: ${(pm.contribution*100).toFixed(1)}% · Sharpe: ${pm.sharpeRatio.toFixed(1)}</div>
                           </div>
-                          <div style="margin-left: auto; text-align: right; flex-shrink: 0;">
-                            <div style="font-size: 15px; font-weight: 900; color: var(--mob-primary);">${formatCurrency(pm.currentValue, pCurrency, 0)}</div>
+                          <div class="mob-holding-values">
+                            <div class="mob-holding-value" style="color: var(--mob-primary);">${formatCurrency(pm.currentValue, pCurrency, 0)}</div>
                           </div>
                         </div>
-                        <div style="background: var(--mob-surface-2); border-top: 1px solid var(--mob-border); border-bottom: 1px solid var(--mob-border); padding: 5px 16px; display: flex; align-items: center; justify-content: space-around;">
+                        <div style="background: var(--mob-surface-2); border-top: 1px solid var(--mob-border); padding: 5px 16px; display: flex; align-items: center; justify-content: space-around;">
                           <div style="display:flex; flex-direction:column; align-items:center; gap:1px; flex:1;">
                             <span style="font-size:7px; font-weight:900; text-transform:uppercase; letter-spacing:0.08em; color:var(--mob-text-muted); line-height:1;">ROI</span>
                             <span style="font-size:12px; font-weight:800; line-height:1; color:${roi >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'};">${(roi * 100).toFixed(1)}%</span>
