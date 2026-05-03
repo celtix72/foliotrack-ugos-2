@@ -299,10 +299,9 @@
                     const total = rawDivData.reduce((sum, d) => sum + (d.amount || 0), 0);
                     const totalEl = document.getElementById('mob-global-total');
                     if (totalEl) totalEl.innerText = formatCurrency(total, 'EUR', 0);
-
-                    const currentYear = new Date().getFullYear().toString();
+                    const currentYearStr = new Date().getFullYear().toString();
                     const years = [...new Set(rawDivData.map(d => d.date.split('-')[0]))];
-                    collapsedGroups = new Set(years.filter(y => y !== currentYear));
+                    collapsedGroups = new Set(years.filter(y => y !== currentYearStr));
 
                     renderMobDividends();
                     renderMobHistoricalChart();
