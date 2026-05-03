@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>M2T - Reports</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="M2T">
+<link rel="manifest" href="/manifest.json">
+<link rel="stylesheet" href="/dist/output.css">
+<link rel="stylesheet" href="/mobile.css">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 10px;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/theme.js"></script>
+    <script src="/transaction_modal.js"></script>
+    <script src="/mobile_transactions.js"></script>
+    <script src="/auth.js"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            if (window.ftAuth) ftAuth.initAuthGuard();
+        });
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display min-h-screen flex mobile-view-active">
+<div id="mobile-ui">
+  <!-- ── Top Header ── -->
+  <!-- ── Mobile Header ── -->
+  <div class="mob-header">
+    <div class="mob-header-logo-container">
+      <div class="mob-header-logo-circle">
+        <span class="material-symbols-outlined">insights</span>
+      </div>
+      <div class="mob-header-logo-text">M2T</div>
+    </div>
+
+    <!-- Page Title (RP) -->
+    <div class="mob-header-title" style="display:none">RP</div>
+
+    <div style="flex:1"></div>
+
+    <!-- EU / US Market Status Pill -->
+    <div class="mob-header-market-pill">
+      <div class="mob-market-item">
+        <span>EU</span>
+        <span id="mob-dot-eu" class="mob-market-dot"></span>
+      </div>
+      <div class="mob-market-item">
+        <span>US</span>
+        <span id="mob-dot-us" class="mob-market-dot"></span>
+      </div>
+    </div>
+
+    <!-- Day Variation Pill -->
+    <div id="mob-header-var-day" class="mob-header-var-pill">--</div>
+
+    <!-- Action Buttons -->
+    <div class="mob-header-actions">
+      <a href="/admin" id="mob-admin-link" class="mob-icon-btn text-amber-500" title="Admin Panel" style="display:none">
+        <span class="material-symbols-outlined">admin_panel_settings</span>
+      </a>
+      <a href="/notifications" class="mob-icon-btn relative" title="Notifications">
+        <span class="material-symbols-outlined">notifications</span>
+        <span id="mob-notification-badge" class="mob-badge" style="display: none;">0</span>
+      </a>
+      <a href="/settings" class="mob-icon-btn" title="Settings">
+        <span class="material-symbols-outlined">settings</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Mobile Scrollable Content -->
+  <div class="mob-scroll" id="mob-reports-scroll">
+    <!-- Hero metrics -->
+    <div class="mob-hero">
+      <div class="mob-hero-label">TOTAL ROI</div>
+      <div class="mob-hero-value" id="mob-total-roi">--%</div>
+      <div class="mob-hero-stats">
+        <div class="mob-hero-stat-item">
+          <span class="mob-hero-stat-label">GAIN TOTALE</span>
+          <span class="mob-hero-stat-value" id="mob-total-gain">€ 0</span>
+        </div>
+        <div class="mob-hero-stat-item">
+          <span class="mob-hero-stat-label">ANNUALIZED</span>
+          <span class="mob-hero-stat-value" id="mob-cagr">--%</span>
+        </div>
+        <div class="mob-hero-stat-item">
+          <span class="mob-hero-stat-label">SHARPE</span>
+          <span class="mob-hero-stat-value" id="mob-sharpe">--</span>
+        </div>
+        <div class="mob-hero-stat-item">
+          <span class="mob-hero-stat-label">BEST ASSET</span>
+          <span class="mob-hero-stat-value" id="mob-best" style="font-size:12px">--</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Performance Chart -->
+    <div class="mob-chart-card">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <div class="mob-chart-title">Performance Comparison</div>
+          <div class="mob-chart-subtitle">Portfolio vs Benchmarks</div>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="window.location.href='/api/export-all-transactions'" class="mob-icon-btn text-emerald-500" title="Export CSV">
+              <span class="material-symbols-outlined">csv</span>
+            </button>
+            <button onclick="window.print()" class="mob-icon-btn" title="Export PDF">
+              <span class="material-symbols-outlined">download</span>
+            </button>
+        </div>
+      </div>
+      
+      <!-- Range Selector -->
+      <div class="mob-chart-range-bar" id="mob-reports-range-bar">
+        <div class="mob-range-btn" onclick="mobChangeRange('YTD')" data-range="YTD">YTD</div>
+        <div class="mob-range-btn active" onclick="mobChangeRange('1Y')" data-range="1Y">1Y</div>
+        <div class="mob-range-btn" onclick="mobChangeRange('3Y')" data-range="3Y">3Y</div>
+        <div class="mob-range-btn" onclick="mobChangeRange('5Y')" data-range="5Y">5Y</div>
+        <div class="mob-range-btn" onclick="mobChangeRange('ALL')" data-range="ALL">ALL</div>
+      </div>
+
+      <div class="mob-chart-canvas-wrapper" style="height: 180px;">
+        <canvas id="mob-perf-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- Portfolio Breakdown -->
+    <div class="mob-section-header">
+      <span class="mob-section-title">Portafogli Breakdown</span>
+    </div>
+    <div class="mob-list-edge" id="mob-portfolios-list">
+      <!-- Injected via JS -->
+    </div>
+
+    <!-- Annual Gains -->
+    <div class="mob-section-header">
+      <span class="mob-section-title">Annual Gains Summary</span>
+    </div>
+    <div class="mob-list-edge" id="mob-annual-gains-container">
+        <!-- Injected via JS -->
+    </div>
+
+    <!-- Diversification Types -->
+    <div class="mob-section-header">
+      <span class="mob-section-title">Asset Types</span>
+    </div>
+    <div class="mob-allocation-card">
+      <div class="mob-allocation-chart">
+        <canvas id="mob-asset-chart"></canvas>
+      </div>
+      <div class="mob-allocation-legend" id="mob-asset-legend"></div>
+    </div>
+
+    <!-- Diversification Geography -->
+    <div class="mob-section-header">
+      <span class="mob-section-title">Geography</span>
+    </div>
+    <div class="mob-allocation-card">
+      <div class="mob-allocation-chart">
+        <canvas id="mob-geo-chart"></canvas>
+      </div>
+      <div class="mob-allocation-legend" id="mob-geo-legend"></div>
+    </div>
+
+    <!-- Dividends -->
+    <div class="mob-section-header">
+      <span class="mob-section-title">Dividendi (12M)</span>
+    </div>
+    <div class="mob-chart-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
+        <div>
+          <div class="mob-chart-title">Total Income</div>
+        </div>
+        <div style="font-size:20px; font-weight:900; color:var(--mob-emerald)" id="mob-div-total">$0.00</div>
+      </div>
+      <div class="mob-chart-canvas-wrapper" style="height:120px">
+        <canvas id="mob-div-chart"></canvas>
+      </div>
+      <div id="mob-yield-box" class="mt-4 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10 hidden">
+            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">M2T Yield: <span id="mob-yield-percent">--%</span></p>
+      </div>
+    </div>
+
+    <!-- Bottom spacer -->
+    <div style="height: 40px"></div>
+  </div>
+
+  <!-- Mobile Tab Bar -->
+  <div class="mob-tab-bar">
+    <a href="/dashboard" class="mob-tab-item">
+      <span class="material-symbols-outlined">dashboard</span>
+    </a>
+    <a href="/market" class="mob-tab-item">
+      <span class="material-symbols-outlined">trending_up</span>
+    </a>
+    <a href="/watchlist" class="mob-tab-item">
+      <span class="material-symbols-outlined">visibility</span>
+    </a>
+    <a href="/history" class="mob-tab-item">
+      <span class="material-symbols-outlined">history</span>
+    </a>
+    <a href="/dividend" class="mob-tab-item">
+      <span class="material-symbols-outlined">payments</span>
+    </a>
+    <a href="/reports" class="mob-tab-item active">
+      <span class="material-symbols-outlined">pie_chart</span>
+    </a>
+  </div>
+</div>
+
+<script>
+    // ─── Mobile Reports Logic ────────────────────────────────────────────────
+    let mobPerfChart, mobAssetChart, mobGeoChart, mobDivChart;
+    let mobCurrentRange = '1Y';
+    let mobLastData = null;
+
+    window.mobChangeRange = function(range) {
+        mobCurrentRange = range;
+        document.querySelectorAll('#mob-reports-range-bar .mob-range-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.range === range);
+        });
+        mobSyncReports();
+    };
+
+    async function mobSyncReports() {
+        if (!window._mobileViewActive) return;
+        try {
+            const res = await fetch(`/api/analytics/reports?range=${mobCurrentRange}`);
+            const data = await res.json();
+            if (data.error) return;
+            mobLastData = data;
+
+            // Metrics
+            const m = data.metrics;
+            document.getElementById('mob-total-roi').textContent = (m.totalROI * 100).toFixed(1) + '%';
+            document.getElementById('mob-total-roi').style.color = m.totalROI >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+            
+            const gainEl = document.getElementById('mob-total-gain');
+            if (gainEl) {
+                gainEl.textContent = formatCurrency(m.totalGain, 'EUR', 0);
+                gainEl.style.color = m.totalGain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+            }
+
+            document.getElementById('mob-cagr').textContent = (m.annualizedROI * 100).toFixed(1) + '%';
+            document.getElementById('mob-sharpe').textContent = m.sharpeRatio.toFixed(1);
+            if (document.getElementById('mob-best')) document.getElementById('mob-best').textContent = m.bestAsset;
+            
+            // Yield
+            const yieldBox = document.getElementById('mob-yield-box');
+            const yieldVal = document.getElementById('mob-yield-percent');
+            if (yieldBox && yieldVal && m.dividendYield !== undefined) {
+                yieldVal.textContent = (m.dividendYield * 100).toFixed(1) + '%';
+                yieldBox.classList.remove('hidden');
+            }
+
+            // Portfolio List
+            const list = document.getElementById('mob-portfolios-list');
+            list.innerHTML = Object.values(data.performance.individual)
+                .sort((a,b) => b.metrics.currentValue - a.metrics.currentValue)
+                .map(p => {
+                    const pm = p.metrics;
+                    const roi = pm.totalROI || 0;
+                    const twr = pm.twr || 0;
+                    const xirr = pm.xirr || 0;
+                    const roiColor = roi >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+                    const twrColor = twr >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+                    const xirrColor = xirr >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+                    const pColor = (data.portfolios && data.portfolios.find(port => port.id == p.id)) ? data.portfolios.find(port => port.id == p.id).color : '#6366f1';
+                    const pCurrency = (data.portfolios && data.portfolios.find(port => port.id == p.id)) ? data.portfolios.find(port => port.id == p.id).currency : 'EUR';
+                    return `
+                      <div class="mob-holding-swipe-container">
+                        <div class="mob-holding-item" onclick="window.location.href='/portfolio_detail_mobile.html?id=${p.id}'">
+                          <div class="mob-holding-logo" style="background-color:${pColor}; color: white;">
+                            <span class="material-symbols-outlined" style="font-size: 16px;">work</span>
+                          </div>
+                          <div class="mob-holding-info">
+                            <div class="mob-holding-ticker truncate">${p.name}</div>
+                            <div class="mob-holding-name">Contrib: ${(pm.contribution*100).toFixed(1)}% · Sharpe: ${pm.sharpeRatio.toFixed(1)}</div>
+                          </div>
+                          <div class="mob-holding-values">
+                            <div class="mob-holding-value" style="color: var(--mob-primary);">${formatCurrency(pm.currentValue, pCurrency, 0)}</div>
+                          </div>
+                        </div>
+                        <div style="background: var(--mob-surface-2); border-top: 1px solid var(--mob-border); padding: 5px 16px; display: flex; align-items: center; justify-content: space-around;">
+                          <div style="display:flex; flex-direction:column; align-items:center; gap:1px; flex:1;">
+                            <span style="font-size:7px; font-weight:900; text-transform:uppercase; letter-spacing:0.08em; color:var(--mob-text-muted); line-height:1;">ROI</span>
+                            <span style="font-size:12px; font-weight:800; line-height:1; color:${roi >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'};">${(roi * 100).toFixed(1)}%</span>
+                          </div>
+                          <div style="width:1px; height:20px; background:var(--mob-border); flex-shrink:0;"></div>
+                          <div style="display:flex; flex-direction:column; align-items:center; gap:1px; flex:1;">
+                            <span style="font-size:7px; font-weight:900; text-transform:uppercase; letter-spacing:0.08em; color:var(--mob-text-muted); line-height:1;">TWR</span>
+                            <span style="font-size:12px; font-weight:800; line-height:1; color:${twr >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'};">${(twr * 100).toFixed(1)}%</span>
+                          </div>
+                          <div style="width:1px; height:20px; background:var(--mob-border); flex-shrink:0;"></div>
+                          <div style="display:flex; flex-direction:column; align-items:center; gap:1px; flex:1;">
+                            <span style="font-size:7px; font-weight:900; text-transform:uppercase; letter-spacing:0.08em; color:var(--mob-text-muted); line-height:1;">XIRR</span>
+                            <span style="font-size:12px; font-weight:800; line-height:1; color:${xirr >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'};">${(xirr * 100).toFixed(1)}%</span>
+                          </div>
+                        </div>
+                      </div>`;
+                }).join('');
+
+            // Charts
+            mobRenderCharts(data);
+            if (data.annualGains) mobRenderAnnualGains(data.annualGains);
+        } catch(e) {
+            console.error('Mobile Reports sync error:', e);
+        }
+    }
+
+    function mobRenderAnnualGains(gains) {
+        const container = document.getElementById('mob-annual-gains-container');
+        if (!container) return;
+        
+        const currentYear = new Date().getFullYear().toString();
+        
+        container.innerHTML = gains.map(g => {
+            const isCurr = g.year === currentYear;
+            const totalRealized = g.realized + g.dividends;
+            const isPos = totalRealized >= 0;
+            const gainColor = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+            const sign = isPos ? '+' : '';
+            return `
+                <div class="mob-holding-swipe-container">
+                    <div class="mob-holding-item" style="flex-direction: column; align-items: stretch; gap: 6px; padding-top: 10px; padding-bottom: 10px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between;">
+                            <div class="mob-holding-ticker flex items-center gap-2">
+                                ${g.year}
+                                ${isCurr ? '<span style="font-size:9px; font-weight:900; color:var(--mob-primary); text-transform:uppercase; letter-spacing:0.08em;">NOW</span>' : ''}
+                            </div>
+                            <div class="mob-holding-value" style="color: ${gainColor};">${sign}${formatCurrency(totalRealized, 'EUR', 0)}</div>
+                        </div>
+                        <div style="display:flex; justify-content:space-between;">
+                            <span class="mob-holding-name">Sales: <span style="color:${g.realized >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">${formatCurrency(g.realized, 'EUR', 0)}</span></span>
+                            <span class="mob-holding-name">Div: <span style="color:var(--mob-emerald)">${formatCurrency(g.dividends, 'EUR', 0)}</span></span>
+                        </div>
+                        ${isCurr ? `
+                        <div style="display:flex; justify-content:space-between; background:var(--mob-surface-2); border-radius:8px; padding:6px 10px; margin-top:2px;">
+                            <span class="mob-holding-name" style="text-transform:uppercase; letter-spacing:0.05em;">Unrealized (Open)</span>
+                            <span class="mob-holding-gain" style="color:${g.unrealized >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}; font-size:13px;">${formatCurrency(g.unrealized, 'EUR', 0)}</span>
+                        </div>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('') || '<div style="text-align:center;padding:24px;opacity:0.4;font-size:12px;">No data available</div>';
+    }
+
+    function mobRenderCharts(data) {
+        const colors = ['#135bec', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6'];
+        
+        // Performance
+        const pCtx = document.getElementById('mob-perf-chart').getContext('2d');
+        if (mobPerfChart) mobPerfChart.destroy();
+        
+        const isDark = document.documentElement.classList.contains('dark');
+        
+        mobPerfChart = new Chart(pCtx, {
+            type: 'line',
+            data: {
+                labels: data.performance.portfolio.map(d => new Date(d.date).toLocaleDateString('it-IT', {day:'2-digit',month:'2-digit'})),
+                datasets: [
+                    {
+                        label: 'Portfolio',
+                        data: data.performance.portfolio.map(d => d.value),
+                        borderColor: '#135bec',
+                        borderWidth: 2,
+                        fill: true,
+                        backgroundColor: isDark ? 'rgba(19, 91, 236, 0.1)' : 'rgba(19, 91, 236, 0.05)',
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 6,
+                        pointHoverBackgroundColor: '#135bec',
+                        pointHoverBorderColor: '#fff',
+                        pointHoverBorderWidth: 2
+                    },
+                    {
+                        label: 'S&P 500',
+                        data: data.performance.sp500.map(d => d.value),
+                        borderColor: '#10b981',
+                        borderWidth: 1.5,
+                        borderDash: [5, 5],
+                        fill: false,
+                        tension: 0.4,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'MSCI World',
+                        data: data.performance.msci.map(d => d.value),
+                        borderColor: '#f59e0b',
+                        borderWidth: 1.5,
+                        borderDash: [5, 5],
+                        fill: false,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: isDark ? 'rgba(30, 41, 59, 1)' : 'rgba(255, 255, 255, 1)',
+                        titleColor: isDark ? '#f1f5f9' : '#1e293b',
+                        bodyColor: isDark ? '#f1f5f9' : '#1e293b',
+                        borderColor: isDark ? '#334155' : '#e2e8f0',
+                        borderWidth: 1,
+                        padding: 10,
+                        callbacks: {
+                            label: (ctx) => null, // Hide numeric value from tooltip
+                            title: (items) => {
+                                const d = data.performance.portfolio[items[0].dataIndex];
+                                return (d && d.events && d.events.length > 0) ? items[0].label : null;
+                            },
+                            afterBody: (items) => {
+                                const index = items[0].dataIndex;
+                                const d = data.performance.portfolio[index];
+                                if (d && d.events && d.events.length > 0) {
+                                    const labels = { 'BUY': 'ACQUISTO', 'SELL': 'VENDITA', 'DEPOSIT': 'DEPOSITO', 'WITHDRAWAL': 'PRELIEVO', 'DIVIDEND': 'DIVIDENDO' };
+                                    return d.events.map(ev => {
+                                        const typeLabel = labels[ev.type] || ev.type;
+                                        return `${typeLabel}: ${ev.ticker || ev.assetName || ''}`;
+                                    });
+                                }
+                                return null;
+                            }
+                        }
+                    }
+                },
+                scales: { 
+                    x: { 
+                        ticks: { color: isDark?'#64748b':'#94a3b8', font: { size: 9 }, maxTicksLimit: 5 },
+                        grid: { display: false }
+                    },
+                    y: { 
+                        grid: { color: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' }, 
+                        ticks: { 
+                            color: isDark?'#64748b':'#94a3b8', 
+                            font: { size: 9 },
+                            callback: v => '€'+Math.round(v/1000)+'k'
+                        } 
+                    }
+                }
+            }
+        });
+
+        // Assets Doughnut
+        const aCtx = document.getElementById('mob-asset-chart').getContext('2d');
+        const assetData = Object.entries(data.diversification.assetType).sort((a,b) => b[1] - a[1]);
+        if (mobAssetChart) mobAssetChart.destroy();
+        mobAssetChart = new Chart(aCtx, {
+            type: 'doughnut',
+            data: {
+                labels: assetData.map(x => x[0]),
+                datasets: [{ data: assetData.map(x => x[1]), backgroundColor: colors, borderWidth: 0, hoverOffset: 4 }]
+            },
+            options: { cutout: '72%', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        });
+        document.getElementById('mob-asset-legend').innerHTML = assetData.slice(0,5).map((x,i) => `
+            <div class="mob-alloc-item">
+                <div class="mob-alloc-dot" style="background:${colors[i%colors.length]}"></div>
+                <span class="mob-alloc-type">${x[0]}</span>
+                <span class="mob-alloc-pct">${((x[1]/Object.values(data.diversification.assetType).reduce((a,b)=>a+b,0))*100).toFixed(0)}%</span>
+            </div>`).join('');
+
+        // Geo Doughnut
+        const gCtx = document.getElementById('mob-geo-chart').getContext('2d');
+        const geoData = Object.entries(data.diversification.geography).sort((a,b) => b[1] - a[1]);
+        if (mobGeoChart) mobGeoChart.destroy();
+        mobGeoChart = new Chart(gCtx, {
+            type: 'doughnut',
+            data: {
+                labels: geoData.map(x => x[0]),
+                datasets: [{ data: geoData.map(x => x[1]), backgroundColor: colors, borderWidth: 0, hoverOffset: 4 }]
+            },
+            options: { cutout: '72%', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        });
+        document.getElementById('mob-geo-legend').innerHTML = geoData.slice(0,5).map((x,i) => `
+            <div class="mob-alloc-item">
+                <div class="mob-alloc-dot" style="background:${colors[i%colors.length]}"></div>
+                <span class="mob-alloc-type">${x[0]}</span>
+                <span class="mob-alloc-pct">${((x[1]/Object.values(data.diversification.geography).reduce((a,b)=>a+b,0))*100).toFixed(0)}%</span>
+            </div>`).join('');
+
+        // Dividends
+        const dCtx = document.getElementById('mob-div-chart').getContext('2d');
+        if (mobDivChart) mobDivChart.destroy();
+        const totalDiv = data.dividends.reduce((s, x) => s + x.amount, 0);
+        document.getElementById('mob-div-total').textContent = formatCurrency(totalDiv, 'USD');
+        mobDivChart = new Chart(dCtx, {
+            type: 'bar',
+            data: {
+                labels: data.dividends.map(x => x.date),
+                datasets: [{ data: data.dividends.map(x => x.amount), backgroundColor: '#10b981', borderRadius: 4 }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { 
+                    x: { ticks: { font: { size: 8 } }, grid: { display: false } },
+                    y: { display: false }
+                }
+            }
+        });
+    }
+
+    window.addEventListener('mobile-view-activated', mobSyncReports);
+    
+    // Initial call
+    if (document.body.classList.contains('mobile-view-active') || window._mobileViewActive) {
+        mobSyncReports();
+        if (window.ftAuth && ftAuth.getUser()?.role === 'admin') {
+            const adminLink = document.getElementById('mob-admin-link');
+            if (adminLink) adminLink.style.display = 'flex';
+        }
+    }
+</script>
+</body></html>

@@ -83,31 +83,50 @@
 
   <!-- Mobile Scrollable Content -->
   <div class="mob-scroll" id="mob-reports-scroll">
-    <!-- Hero metrics -->
-    <div class="mob-hero">
-      <div class="mob-hero-label">TOTAL ROI</div>
-      <div class="mob-hero-value" id="mob-total-roi">--%</div>
-      <div class="mob-hero-stats">
-        <div class="mob-hero-stat-item">
-          <span class="mob-hero-stat-label">GAIN TOTALE</span>
-          <span class="mob-hero-stat-value" id="mob-total-gain">€ 0</span>
-        </div>
-        <div class="mob-hero-stat-item">
-          <span class="mob-hero-stat-label">ANNUALIZED</span>
-          <span class="mob-hero-stat-value" id="mob-cagr">--%</span>
-        </div>
-        <div class="mob-hero-stat-item">
-          <span class="mob-hero-stat-label">SHARPE</span>
-          <span class="mob-hero-stat-value" id="mob-sharpe">--</span>
-        </div>
-        <div class="mob-hero-stat-item">
-          <span class="mob-hero-stat-label">BEST ASSET</span>
-          <span class="mob-hero-stat-value" id="mob-best" style="font-size:12px">--</span>
-        </div>
-      </div>
+    <!-- TABS -->
+    <div class="mob-tabs" style="margin-bottom: 12px; padding: 16px 16px 4px 16px;">
+        <div class="mob-tab-pill active" onclick="switchRepTab('portafogli')" id="tab-portafogli">Portafogli</div>
+        <div class="mob-tab-pill" onclick="switchRepTab('performance')" id="tab-performance">Performance</div>
+        <div class="mob-tab-pill" onclick="switchRepTab('allocazione')" id="tab-allocazione">Allocazione</div>
     </div>
 
-    <!-- Performance Chart -->
+    <!-- VIEW: PORTAFOGLI -->
+    <div id="view-portafogli">
+        <div class="mob-section-header">
+            <span class="mob-section-title">Portafogli Breakdown</span>
+        </div>
+        <div class="mob-list-edge" id="mob-portfolios-list">
+            <!-- Injected via JS -->
+        </div>
+    </div>
+
+    <!-- VIEW: PERFORMANCE -->
+    <div id="view-performance" class="hidden">
+        <!-- Hero metrics (Performance summary) -->
+        <div class="mob-hero" style="margin-top: 0;">
+          <div class="mob-hero-label">TOTAL ROI</div>
+          <div class="mob-hero-value" id="mob-total-roi">--%</div>
+          <div class="mob-hero-stats">
+            <div class="mob-hero-stat-item">
+              <span class="mob-hero-stat-label">GAIN TOTALE</span>
+              <span class="mob-hero-stat-value" id="mob-total-gain">€ 0</span>
+            </div>
+            <div class="mob-hero-stat-item">
+              <span class="mob-hero-stat-label">ANNUALIZED</span>
+              <span class="mob-hero-stat-value" id="mob-cagr">--%</span>
+            </div>
+            <div class="mob-hero-stat-item">
+              <span class="mob-hero-stat-label">SHARPE</span>
+              <span class="mob-hero-stat-value" id="mob-sharpe">--</span>
+            </div>
+            <div class="mob-hero-stat-item">
+              <span class="mob-hero-stat-label">BEST ASSET</span>
+              <span class="mob-hero-stat-value" id="mob-best" style="font-size:12px">--</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Performance Chart -->
     <div class="mob-chart-card">
       <div class="flex items-center justify-between mb-3">
         <div>
@@ -138,62 +157,58 @@
       </div>
     </div>
 
-    <!-- Portfolio Breakdown -->
-    <div class="mob-section-header">
-      <span class="mob-section-title">Portafogli Breakdown</span>
-    </div>
-    <div class="mob-list-edge" id="mob-portfolios-list">
-      <!-- Injected via JS -->
-    </div>
-
-    <!-- Annual Gains -->
-    <div class="mob-section-header">
-      <span class="mob-section-title">Annual Gains Summary</span>
-    </div>
-    <div class="mob-list-edge" id="mob-annual-gains-container">
-        <!-- Injected via JS -->
-    </div>
-
-    <!-- Diversification Types -->
-    <div class="mob-section-header">
-      <span class="mob-section-title">Asset Types</span>
-    </div>
-    <div class="mob-allocation-card">
-      <div class="mob-allocation-chart">
-        <canvas id="mob-asset-chart"></canvas>
-      </div>
-      <div class="mob-allocation-legend" id="mob-asset-legend"></div>
-    </div>
-
-    <!-- Diversification Geography -->
-    <div class="mob-section-header">
-      <span class="mob-section-title">Geography</span>
-    </div>
-    <div class="mob-allocation-card">
-      <div class="mob-allocation-chart">
-        <canvas id="mob-geo-chart"></canvas>
-      </div>
-      <div class="mob-allocation-legend" id="mob-geo-legend"></div>
-    </div>
-
-    <!-- Dividends -->
-    <div class="mob-section-header">
-      <span class="mob-section-title">Dividendi (12M)</span>
-    </div>
-    <div class="mob-chart-card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
-        <div>
-          <div class="mob-chart-title">Total Income</div>
+        <!-- Annual Gains -->
+        <div class="mob-section-header">
+          <span class="mob-section-title">Annual Gains Summary</span>
         </div>
-        <div style="font-size:20px; font-weight:900; color:var(--mob-emerald)" id="mob-div-total">$0.00</div>
-      </div>
-      <div class="mob-chart-canvas-wrapper" style="height:120px">
-        <canvas id="mob-div-chart"></canvas>
-      </div>
-      <div id="mob-yield-box" class="mt-4 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10 hidden">
-            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">M2T Yield: <span id="mob-yield-percent">--%</span></p>
-      </div>
-    </div>
+        <div class="mob-list-edge" id="mob-annual-gains-container">
+            <!-- Injected via JS -->
+        </div>
+
+        <!-- Dividends -->
+        <div class="mob-section-header">
+          <span class="mob-section-title">Dividendi (12M)</span>
+        </div>
+        <div class="mob-chart-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
+            <div>
+              <div class="mob-chart-title">Total Income</div>
+            </div>
+            <div style="font-size:20px; font-weight:900; color:var(--mob-emerald)" id="mob-div-total">$0.00</div>
+          </div>
+          <div class="mob-chart-canvas-wrapper" style="height:120px">
+            <canvas id="mob-div-chart"></canvas>
+          </div>
+          <div id="mob-yield-box" class="mt-4 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10 hidden">
+                <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">M2T Yield: <span id="mob-yield-percent">--%</span></p>
+          </div>
+        </div>
+    </div> <!-- End view-performance -->
+
+    <!-- VIEW: ALLOCAZIONE -->
+    <div id="view-allocazione" class="hidden">
+        <!-- Diversification Types -->
+        <div class="mob-section-header">
+          <span class="mob-section-title">Asset Types</span>
+        </div>
+        <div class="mob-allocation-card">
+          <div class="mob-allocation-chart">
+            <canvas id="mob-asset-chart"></canvas>
+          </div>
+          <div class="mob-allocation-legend" id="mob-asset-legend"></div>
+        </div>
+
+        <!-- Diversification Geography -->
+        <div class="mob-section-header">
+          <span class="mob-section-title">Geography</span>
+        </div>
+        <div class="mob-allocation-card">
+          <div class="mob-allocation-chart">
+            <canvas id="mob-geo-chart"></canvas>
+          </div>
+          <div class="mob-allocation-legend" id="mob-geo-legend"></div>
+        </div>
+    </div> <!-- End view-allocazione -->
 
     <!-- Bottom spacer -->
     <div style="height: 40px"></div>
@@ -227,6 +242,24 @@
     let mobPerfChart, mobAssetChart, mobGeoChart, mobDivChart;
     let mobCurrentRange = '1Y';
     let mobLastData = null;
+
+    window.switchRepTab = function(tab) {
+        document.getElementById('tab-portafogli').classList.remove('active');
+        document.getElementById('tab-performance').classList.remove('active');
+        document.getElementById('tab-allocazione').classList.remove('active');
+        document.getElementById('view-portafogli').classList.add('hidden');
+        document.getElementById('view-performance').classList.add('hidden');
+        document.getElementById('view-allocazione').classList.add('hidden');
+        
+        document.getElementById('tab-' + tab).classList.add('active');
+        document.getElementById('view-' + tab).classList.remove('hidden');
+        
+        // Resize charts to prevent sizing bugs when unhiding
+        if (tab === 'performance' && mobPerfChart) mobPerfChart.resize();
+        if (tab === 'performance' && mobDivChart) mobDivChart.resize();
+        if (tab === 'allocazione' && mobAssetChart) mobAssetChart.resize();
+        if (tab === 'allocazione' && mobGeoChart) mobGeoChart.resize();
+    };
 
     window.mobChangeRange = function(range) {
         mobCurrentRange = range;

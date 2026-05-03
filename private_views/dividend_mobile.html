@@ -65,10 +65,17 @@
 
         <div class="mob-scroll" id="mob-dividend-scroll">
             
-            <!-- Hero Stats: KPIs -->
-            <div class="mob-hero">
-                <div class="mob-hero-label">Ricevuto nel <span id="mob-current-year">2026</span></div>
-                <div class="mob-hero-value" id="mob-total-actual">€ 0</div>
+            <!-- TABS -->
+            <div class="mob-tabs" style="margin-bottom: 12px; padding: 16px 16px 4px 16px;">
+                <div class="mob-tab-pill active" onclick="switchDivTab('proj')" id="tab-proj">Proiezioni <span id="tab-proj-year">2026</span></div>
+                <div class="mob-tab-pill" onclick="switchDivTab('hist')" id="tab-hist">Storico Completo</div>
+            </div>
+
+            <div id="view-proj">
+                <!-- Hero Stats: KPIs -->
+                <div class="mob-hero" style="margin-top: 0;">
+                    <div class="mob-hero-label">Ricevuto nel <span id="mob-current-year">2026</span></div>
+                    <div class="mob-hero-value" id="mob-total-actual">€ 0</div>
                 
                 <div class="grid grid-cols-2 gap-4 mt-6">
                     <div class="mob-hero-stat-item !p-2 !bg-white/5 border-0">
@@ -175,12 +182,10 @@
             </div>
 
 
-            <!-- ── HISTORICAL SECTION ── -->
-            <div class="mob-section-header">
-                <h1 class="mob-section-title">Storico Dividendi</h1>
-            </div>
+            </div> <!-- End view-proj -->
 
-            <!-- Historical KPIs -->
+            <div id="view-hist" class="hidden">
+                <!-- Historical KPIs -->
             <div class="mob-chart-card" style="padding: 12px 16px;">
                 <div style="display:flex; align-items:center; justify-content:space-between;">
                     <div>
@@ -221,6 +226,8 @@
                     </div>
                 </div>
             </div>
+
+            </div> <!-- End view-hist -->
 
             <div style="height:60px"></div>
         </div>
@@ -274,7 +281,9 @@
                         }
                     }
 
-                    document.getElementById('mob-current-year').innerText = projData.year || new Date().getFullYear();
+                    const currentYear = projData.year || new Date().getFullYear();
+                    document.getElementById('mob-current-year').innerText = currentYear;
+                    document.getElementById('tab-proj-year').innerText = currentYear;
                     document.getElementById('mob-total-actual').innerText = formatCurrency(projData.totalReceived || 0, 'EUR', 0);
                     document.getElementById('mob-total-projected').innerText = formatCurrency(projData.totalExpected || 0, 'EUR', 0);
                     document.getElementById('mob-total-remaining').innerText = formatCurrency(projData.totalRemaining || 0, 'EUR', 0);
@@ -882,6 +891,22 @@
             };
             window.confirmDeleteTransaction = function(id) {
                 mobileDeleteTransaction(id);
+            };
+
+            window.switchDivTab = function(tab) {
+                document.getElementById('tab-proj').classList.remove('active');
+                document.getElementById('tab-hist').classList.remove('active');
+                document.getElementById('view-proj').classList.add('hidden');
+                document.getElementById('view-hist').classList.add('hidden');
+                
+                if (tab === 'proj') {
+                    document.getElementById('tab-proj').classList.add('active');
+                    document.getElementById('view-proj').classList.remove('hidden');
+                } else {
+                    document.getElementById('tab-hist').classList.add('active');
+                    document.getElementById('view-hist').classList.remove('hidden');
+                    if (mobHistChartInstance) mobHistChartInstance.resize();
+                }
             };
 
             document.addEventListener('DOMContentLoaded', () => {

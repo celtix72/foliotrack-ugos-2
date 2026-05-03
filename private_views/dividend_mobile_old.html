@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>M2T - Dividends</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="M2T">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="stylesheet" href="/dist/output.css">
+    <link rel="stylesheet" href="/mobile.css">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/theme.js"></script>
+    <script src="/transaction_modal.js"></script>
+    <script src="/mobile_transactions.js"></script>
+    <script src="/auth.js"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            if (window.ftAuth) ftAuth.initAuthGuard();
+        });
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex mobile-view-active">
+    <div id="mobile-ui">
+        <div class="mob-header">
+            <div class="mob-header-logo-container">
+                <div class="mob-header-logo-circle">
+                    <span class="material-symbols-outlined">insights</span>
+                </div>
+                <div class="mob-header-logo-text">M2T</div>
+            </div>
+
+            <div style="flex:1"></div>
+
+            <!-- EU / US Market Status Pill -->
+            <div class="mob-header-market-pill">
+                <div class="mob-market-item">
+                    <span>EU</span>
+                    <span id="mob-dot-eu" class="mob-market-dot"></span>
+                </div>
+                <div class="mob-market-item">
+                    <span>US</span>
+                    <span id="mob-dot-us" class="mob-market-dot"></span>
+                </div>
+            </div>
+
+            <!-- Day Variation Pill -->
+            <div id="mob-header-var-day" class="mob-header-var-pill">--</div>
+
+            <div class="mob-header-actions">
+                <a href="/admin" id="mob-admin-link" class="mob-icon-btn text-amber-500" title="Admin Panel" style="display:none">
+                    <span class="material-symbols-outlined">admin_panel_settings</span>
+                </a>
+                <a href="/notifications" class="mob-icon-btn relative" title="Notifications">
+                    <span class="material-symbols-outlined">notifications</span>
+                    <span id="mob-notification-badge" class="mob-badge" style="display: none;">0</span>
+                </a>
+                <a href="/settings" class="mob-icon-btn" title="Settings">
+                    <span class="material-symbols-outlined">settings</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="mob-scroll" id="mob-dividend-scroll">
+            
+            <!-- Hero Stats: KPIs -->
+            <div class="mob-hero">
+                <div class="mob-hero-label">Ricevuto nel <span id="mob-current-year">2026</span></div>
+                <div class="mob-hero-value" id="mob-total-actual">€ 0</div>
+                
+                <div class="grid grid-cols-2 gap-4 mt-6">
+                    <div class="mob-hero-stat-item !p-2 !bg-white/5 border-0">
+                        <span class="mob-hero-stat-label">Proiezione Totale</span>
+                        <div id="mob-total-projected" class="text-blue-400 font-bold">€ 0</div>
+                    </div>
+                    <div class="mob-hero-stat-item !p-2 !bg-white/5 border-0">
+                        <span class="mob-hero-stat-label">Residuo Atteso</span>
+                        <div id="mob-total-remaining" class="text-amber-400 font-bold">€ 0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Distribution Chart Card -->
+            <div class="mob-chart-card">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <div class="mob-chart-title" style="margin-bottom:0">Distribuzione</div>
+                        <div class="mob-chart-subtitle" style="margin-bottom:0">Proiezioni mensili</div>
+                    </div>
+                </div>
+                <div class="relative h-64">
+                    <canvas id="mob-projection-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Projected Assets (Collapsible) -->
+            <div style="background: var(--mob-surface); border-top: 1px solid var(--mob-border); border-bottom: 1px solid var(--mob-border); margin: 8px 0;">
+                <div class="flex items-center justify-between" style="padding: 10px 16px; border-bottom: 1px solid var(--mob-border);">
+                    <button onclick="document.getElementById('mob-proj-list-content').classList.toggle('hidden'); this.querySelector('.mob-expand-icon').style.transform = document.getElementById('mob-proj-list-content').classList.contains('hidden') ? '' : 'rotate(180deg)'" class="flex items-center gap-2 hover:opacity-70 transition-opacity">
+                        <span class="material-symbols-outlined mob-expand-icon" style="font-size:20px; transition: transform 0.2s;">expand_more</span>
+                        <span class="text-[11px] font-black uppercase tracking-widest" style="color: var(--mob-text-muted);">Dettaglio Proiezioni</span>
+                        <span id="mob-proj-asset-count" class="text-[10px] font-bold text-primary bg-primary/10 px-1.5 rounded-sm">0</span>
+                    </button>
+                    <div class="flex items-center gap-2">
+                        <button id="btn-recalc" onclick="resetProjections()" class="text-slate-500 hover:text-primary transition-colors flex items-center justify-center p-1 rounded-md bg-slate-100 dark:bg-slate-800">
+                            <span class="material-symbols-outlined text-[16px]">refresh</span>
+                        </button>
+                        <button onclick="openManualModal()" class="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2 py-1 rounded-md">
+                            + Manuale
+                        </button>
+                    </div>
+                </div>
+                <div id="mob-proj-list-content" class="hidden">
+                    <div id="mob-proj-body" class="mob-list-edge" style="margin: 0 !important; border: none !important;">
+                        <!-- JS Injected -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual / Confirm Dividend Modal -->
+            <div id="manual-modal" class="fixed inset-0 bg-slate-900/50 dark:bg-black/60 backdrop-blur-sm hidden z-[100] flex items-center justify-center p-4">
+                <div class="bg-white dark:bg-surface-dark w-full max-w-sm rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-5">
+                    <div class="flex justify-between items-center mb-5">
+                        <h3 class="text-sm font-black tracking-tight" id="manual-modal-title">Confirm Dividend</h3>
+                        <button onclick="closeManualModal()" class="text-slate-400 hover:text-slate-200">
+                            <span class="material-symbols-outlined text-lg">close</span>
+                        </button>
+                    </div>
+                    <form id="manual-div-form" onsubmit="submitConfirmDividend(event)" class="space-y-3">
+                        <input type="hidden" id="confirm-id">
+                        <input type="hidden" id="confirm-tx-id">
+                        <div id="confirm-ticker-group">
+                            <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Ticker</label>
+                            <div id="confirm-ticker-display" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs font-black hidden"></div>
+                            <select id="confirm-ticker-select" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs font-bold outline-none">
+                                <option value="" disabled selected>Seleziona asset...</option>
+                            </select>
+                        </div>
+                        <div id="confirm-portfolio-group">
+                            <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Portafoglio</label>
+                            <select id="confirm-portfolio" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs font-bold outline-none">
+                                <option value="" disabled selected>Seleziona...</option>
+                            </select>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Data</label>
+                                <input type="date" id="confirm-date" required class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Lordo Tot. (€)</label>
+                                <input type="number" step="0.01" id="confirm-gross" required placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs font-mono outline-none">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Tassazione (€)</label>
+                            <input type="number" step="0.01" id="confirm-tax" required placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs font-mono outline-none">
+                        </div>
+
+                        <div class="pt-1">
+                            <div class="flex justify-between items-center px-1 text-[10px] font-bold mb-3">
+                                <span class="text-slate-500">NETTO ESTIMATO:</span>
+                                <span id="confirm-net-preview" class="text-emerald-500 font-black">€ 0.00</span>
+                            </div>
+                            <button type="submit" id="confirm-submit-btn" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg text-xs transition-colors shadow-sm">
+                                Conferma e Salva
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+
+            <!-- ── HISTORICAL SECTION ── -->
+            <div class="mob-section-header">
+                <h1 class="mob-section-title">Storico Dividendi</h1>
+            </div>
+
+            <!-- Historical KPIs -->
+            <div class="mob-chart-card" style="padding: 12px 16px;">
+                <div style="display:flex; align-items:center; justify-content:space-between;">
+                    <div>
+                        <p class="text-[9px] font-black uppercase text-emerald-500 tracking-widest mb-1">Totale Incassato</p>
+                        <div id="mob-global-total" class="text-xl font-black text-emerald-500">€ 0</div>
+                    </div>
+                    <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                        <span class="material-symbols-outlined text-sm">account_balance_wallet</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Historical Chart -->
+            <div class="mob-chart-card">
+                <div class="mob-chart-title" style="margin-bottom:4px">Storico Annuale</div>
+                <div class="mob-chart-subtitle">Dividendi ricevuti per anno</div>
+                <div class="mob-chart-canvas-wrapper" style="height:160px">
+                    <canvas id="mob-historical-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Transactions section header -->
+            <div class="mob-section-header" style="cursor:pointer" onclick="document.getElementById('mob-dividends-list').closest('.mob-div-tx-wrap').classList.toggle('collapsed')">
+                <div class="mob-section-title flex items-center gap-2">
+                    <span class="material-symbols-outlined" style="font-size:20px">expand_more</span>
+                    Dividendi Storico
+                </div>
+                <select id="mob-div-group-by" onchange="renderMobDividends()" onclick="event.stopPropagation()" class="bg-black/5 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-md text-[10px] py-1 pl-2 pr-4 focus:ring-0 cursor-pointer text-slate-600 dark:text-slate-300">
+                    <option value="year">Per Anno</option>
+                    <option value="portfolioName">Portafoglio</option>
+                    <option value="none">Lista</option>
+                </select>
+            </div>
+            <div class="mob-div-tx-wrap">
+                <div id="mob-dividends-list">
+                    <div style="text-align:center;padding:48px">
+                        <div class="mob-spinner" style="margin:0 auto"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="height:60px"></div>
+        </div>
+
+        <!-- ── Bottom Tab Bar ── -->
+        <div class="mob-tab-bar">
+            <a href="/dashboard" class="mob-tab-item">
+                <span class="material-symbols-outlined">dashboard</span>
+            </a>
+            <a href="/market" class="mob-tab-item">
+                <span class="material-symbols-outlined">trending_up</span>
+            </a>
+            <a href="/watchlist" class="mob-tab-item">
+                <span class="material-symbols-outlined">visibility</span>
+            </a>
+            <a href="/history" class="mob-tab-item">
+                <span class="material-symbols-outlined">history</span>
+            </a>
+            <a href="/dividend" class="mob-tab-item active">
+                <span class="material-symbols-outlined">payments</span>
+            </a>
+            <a href="/reports" class="mob-tab-item">
+                <span class="material-symbols-outlined">pie_chart</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            let rawDivData = [];
+            let collapsedGroups = new Set();
+            let currentGroupBy = 'year';
+            let mobProjChart = null;
+            window.globalProjData = null;
+            window.hasTriedReset = false;
+
+            async function loadMobData() {
+                try {
+                    // Load Projections
+                    const projRes = await fetch('/api/analytics/dividend-projections');
+                    const projData = await projRes.json();
+                    window.globalProjData = projData || { assets: [], months: [] };
+
+                    const hasTriedReset = sessionStorage.getItem('ft_div_reset_tried');
+                    const assets = projData.assets || [];
+                    if (assets.length === 0 && !hasTriedReset) {
+                        sessionStorage.setItem('ft_div_reset_tried', 'true');
+                        if(confirm('Nessuna proiezione presente per quest\'anno. Vuoi ricalcolarle automaticamente in base al tuo portafoglio attuale?')) {
+                            window.resetProjections(true);
+                            return;
+                        }
+                    }
+
+                    document.getElementById('mob-current-year').innerText = projData.year || new Date().getFullYear();
+                    document.getElementById('mob-total-actual').innerText = formatCurrency(projData.totalReceived || 0, 'EUR', 0);
+                    document.getElementById('mob-total-projected').innerText = formatCurrency(projData.totalExpected || 0, 'EUR', 0);
+                    document.getElementById('mob-total-remaining').innerText = formatCurrency(projData.totalRemaining || 0, 'EUR', 0);
+
+                    renderMobProjectionChart(projData.months || []);
+                    renderMobProjList(assets);
+
+                    // Load History
+                    const histRes = await fetch('/api/analytics/dividends');
+                    const histData = await histRes.json();
+                    rawDivData = Array.isArray(histData) ? histData : [];
+                    
+                    const total = rawDivData.reduce((sum, d) => sum + (d.amount || 0), 0);
+                    const totalEl = document.getElementById('mob-global-total');
+                    if (totalEl) totalEl.innerText = formatCurrency(total, 'EUR', 0);
+
+                    const currentYear = new Date().getFullYear().toString();
+                    const years = [...new Set(rawDivData.map(d => d.date.split('-')[0]))];
+                    collapsedGroups = new Set(years.filter(y => y !== currentYear));
+
+                    renderMobDividends();
+                    renderMobHistoricalChart();
+                } catch (err) { 
+                    console.error('Error loading mobile dividends data:', err); 
+                    const container = document.getElementById('mob-dividends-list');
+                    if (container) container.innerHTML = '<div style="text-align:center;padding:48px;opacity:0.5;font-size:13px;color:var(--mob-red-ios)">Errore caricamento dati</div>';
+                }
+            }
+
+            window.openManualModal = () => {
+                document.getElementById('manual-modal-title').innerText = 'Nuova Previsione';
+                document.getElementById('confirm-id').value = '';
+                document.getElementById('confirm-tx-id').value = '';
+                document.getElementById('confirm-ticker-display').classList.add('hidden');
+                const tSel = document.getElementById('confirm-ticker-select');
+                tSel.classList.remove('hidden');
+                tSel.value = '';
+                
+                // Populate ticker select if global data exists
+                if (window.globalProjData && window.globalProjData.openTickers) {
+                    tSel.innerHTML = '<option value="" disabled selected>Seleziona asset...</option>' + 
+                                     window.globalProjData.openTickers.map(t => `<option value="${t.ticker}">${t.ticker} - ${t.name}</option>`).join('');
+                }
+
+                document.getElementById('confirm-date').value = new Date().toISOString().split('T')[0];
+                document.getElementById('confirm-gross').value = '';
+                document.getElementById('confirm-tax').value = '0.00';
+                document.getElementById('confirm-portfolio-group').classList.add('hidden');
+                document.getElementById('confirm-portfolio').required = false;
+                document.getElementById('confirm-submit-btn').innerText = 'Salva Previsione';
+                document.getElementById('confirm-net-preview').innerText = '€ 0.00';
+                document.getElementById('manual-modal').classList.remove('hidden');
+            };
+
+            window.openConfirmModal = async (id) => {
+                const proj = window.globalProjData.assets.find(a => a.id === id);
+                if (!proj) return;
+                
+                document.getElementById('manual-modal-title').innerText = 'Conferma Dividendo';
+                document.getElementById('confirm-id').value = proj.id;
+                document.getElementById('confirm-tx-id').value = '';
+                document.getElementById('confirm-ticker-display').innerText = proj.ticker;
+                document.getElementById('confirm-ticker-display').classList.remove('hidden');
+                document.getElementById('confirm-ticker-select').classList.add('hidden');
+                document.getElementById('confirm-date').value = proj.date;
+                document.getElementById('confirm-gross').value = (proj.totalAmount || 0).toFixed(2);
+                document.getElementById('confirm-tax').value = '0.00';
+                document.getElementById('confirm-portfolio-group').classList.remove('hidden');
+                document.getElementById('confirm-portfolio').required = true;
+                document.getElementById('confirm-submit-btn').innerText = 'Conferma e Salva';
+                
+                try {
+                    const res = await fetch('/api/portfolios');
+                    const pData = await res.json();
+                    const sel = document.getElementById('confirm-portfolio');
+                    sel.innerHTML = '<option value="" disabled selected>Seleziona...</option>' + 
+                                    pData.portfolios.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+                } catch(e) { console.error(e); }
+
+                updateNetPreview();
+                document.getElementById('manual-modal').classList.remove('hidden');
+            };
+
+            window.openEditConfirmedModal = (txId) => {
+                const item = window.globalProjData.assets.find(a => a.txId === txId);
+                if (!item) return;
+
+                document.getElementById('manual-modal-title').innerText = 'Modifica Transazione';
+                document.getElementById('confirm-id').value = '';
+                document.getElementById('confirm-tx-id').value = item.txId;
+                document.getElementById('confirm-ticker-display').innerText = item.ticker;
+                document.getElementById('confirm-ticker-display').classList.remove('hidden');
+                document.getElementById('confirm-ticker-select').classList.add('hidden');
+                document.getElementById('confirm-date').value = item.date;
+                document.getElementById('confirm-gross').value = (item.gross || item.totalAmount || 0).toFixed(2);
+                document.getElementById('confirm-tax').value = (item.tax || 0).toFixed(2);
+                document.getElementById('confirm-portfolio-group').classList.add('hidden');
+                document.getElementById('confirm-portfolio').required = false;
+                document.getElementById('confirm-submit-btn').innerText = 'Aggiorna Transazione';
+
+                updateNetPreview();
+                document.getElementById('manual-modal').classList.remove('hidden');
+            };
+
+            function updateNetPreview() {
+                const gross = parseFloat(document.getElementById('confirm-gross').value) || 0;
+                const tax = parseFloat(document.getElementById('confirm-tax').value) || 0;
+                document.getElementById('confirm-net-preview').innerText = '€ ' + (gross - tax).toFixed(2);
+            }
+
+            document.getElementById('confirm-gross').addEventListener('input', updateNetPreview);
+            document.getElementById('confirm-tax').addEventListener('input', updateNetPreview);
+
+            window.closeManualModal = () => {
+                document.getElementById('manual-modal').classList.add('hidden');
+            };
+
+            window.submitConfirmDividend = async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('confirm-id').value;
+                const txId = document.getElementById('confirm-tx-id').value;
+                const ticker = id || txId ? document.getElementById('confirm-ticker-display').innerText : document.getElementById('confirm-ticker-select').value;
+                const portfolioId = document.getElementById('confirm-portfolio').value;
+                const date = document.getElementById('confirm-date').value;
+                const grossAmount = document.getElementById('confirm-gross').value;
+                const tax = document.getElementById('confirm-tax').value;
+
+                try {
+                    let url, method, body;
+                    
+                    if (txId) {
+                        // Modifica transazione esistente
+                        url = `/api/dividends/transactions/${txId}`;
+                        method = 'PUT';
+                        body = JSON.stringify({ ticker, date, grossAmount, tax });
+                    } else if (id) {
+                        // Conferma proiezione esistente
+                        url = `/api/dividends/projections/${id}/confirm`;
+                        method = 'POST';
+                        body = JSON.stringify({ portfolioId, ticker, date, grossAmount, tax });
+                    } else {
+                        // Nuova proiezione manuale
+                        url = '/api/dividends/projections';
+                        method = 'POST';
+                        // Per le proiezioni manuali il backend si aspetta 'exDate' e 'amount' (unitario o totale?)
+                        // Vedendo il server.js: amount è l'importo unitario.
+                        // Ma noi qui abbiamo il lordo totale.
+                        // Restauro la logica originale per il manuale se necessario, o adatto.
+                        // In server.js POST /api/dividends/projections prende { ticker, exDate, amount }
+                        body = JSON.stringify({ ticker: document.getElementById('confirm-ticker-select')?.value, exDate: date, amount: grossAmount });
+                    }
+
+                    const res = await fetch(url, {
+                        method,
+                        headers: { 'Content-Type': 'application/json' },
+                        body
+                    });
+                    if (res.ok) {
+                        window.closeManualModal();
+                        loadMobData();
+                    } else {
+                        const err = await res.json();
+                        alert('Errore: ' + (err.error || 'Invio fallito'));
+                    }
+                } catch (err) {
+                    console.error('Error saving dividend:', err);
+                }
+            };
+
+            window.deleteProjection = async (id) => {
+                if(!confirm('Cancellare questa proiezione?\nSe era automatica, sparirà fino al prossimo "Ricalcolo".')) return;
+                try {
+                    const res = await fetch('/api/dividends/projections/' + id, { method: 'DELETE' });
+                    if(res.ok) loadMobData();
+                } catch(e) { console.error(e); }
+            };
+
+            window.resetProjections = async (skipConfirm = false) => {
+                if(skipConfirm || confirm('Le stime verranno rigenerate cancellando le attuali (tranne quelle "Manuali"). Procedere?')) {
+                    const btn = document.getElementById('btn-recalc');
+                    if(btn) btn.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">refresh</span>';
+                    try {
+                        const res = await fetch('/api/dividends/projections/reset', { method: 'POST' });
+                        if(res.ok) loadMobData();
+                        else alert('Errore ricalcolo prevesioni.');
+                    } catch(e) { console.error(e); }
+                    if(btn) btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">refresh</span>';
+                }
+            };
+
+            window.deleteConfirmedDividend = async (txId) => {
+                if (!confirm('Eliminare definitivamente questa transazione?')) return;
+                try {
+                    const res = await fetch(`/api/dividends/transactions/${txId}`, { method: 'DELETE' });
+                    if (res.ok) loadMobData();
+                } catch(e) { console.error(e); }
+            };
+
+            function renderMobProjectionChart(months) {
+                const ctx = document.getElementById('mob-projection-chart').getContext('2d');
+                if (mobProjChart) mobProjChart.destroy();
+
+                const isDark = document.documentElement.classList.contains('dark');
+                const textColor = isDark ? '#94a3b8' : '#64748b';
+                const gridColor = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)';
+                const tickersData = months.map(m => m.tickers.join(', '));
+
+                mobProjChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: months.map(m => m.name),
+                        datasets: [
+                            {
+                                label: 'Ricevuto',
+                                data: months.map(m => m.actual),
+                                backgroundColor: 'rgba(16,185,129,0.75)', // Green
+                                borderRadius: 4,
+                                borderSkipped: false
+                            },
+                            {
+                                label: 'Proiettato',
+                                data: months.map(m => m.display),
+                                backgroundColor: 'rgba(6,182,212,0.6)', // Cyan
+                                borderColor: 'rgba(6,182,212,1)',
+                                borderWidth: 1,
+                                borderRadius: 4,
+                                borderSkipped: false
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        layout: { padding: { top: 25, bottom: 20 } },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { 
+                                intersect: false, 
+                                mode: 'index',
+                                backgroundColor: isDark ? '#1e293b' : '#fff',
+                                titleColor: isDark ? '#f1f5f9' : '#1e293b',
+                                bodyColor: isDark ? '#f1f5f9' : '#1e293b',
+                                borderColor: isDark ? '#334155' : '#e2e8f0',
+                                borderWidth: 1,
+                                callbacks: {
+                                    afterBody: (context) => {
+                                        const idx = context[0].dataIndex;
+                                        if (tickersData[idx]) return '\nAsset: ' + tickersData[idx];
+                                        return '';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { 
+                                stacked: true, 
+                                grid: { display: false }, 
+                                ticks: { color: textColor, font: { size: 9, weight: 'bold' } } 
+                            },
+                            y: { 
+                                stacked: true, 
+                                grid: { color: gridColor }, 
+                                ticks: { color: textColor, font: { size: 9 }, callback: v => '€' + v } 
+                            }
+                        }
+                    },
+                    plugins: [{
+                        id: 'barLabelsAndTickers',
+                        afterDatasetsDraw(chart) {
+                            const {ctx} = chart;
+                            ctx.save();
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'bottom';
+                            ctx.font = 'bold 8px sans-serif';
+                            ctx.fillStyle = textColor;
+
+                            const chartData = chart.data;
+                            const meta0 = chart.getDatasetMeta(0);
+                            const meta1 = chart.getDatasetMeta(1);
+                            const xAxis = chart.scales.x;
+
+                            chartData.labels.forEach((label, i) => {
+                                const val0 = chartData.datasets[0].data[i] || 0;
+                                const val1 = chartData.datasets[1].data[i] || 0;
+                                const total = val0 + val1;
+                                
+                                const xPos = xAxis.getPixelForTick(i);
+
+                                if (total > 0) {
+                                    const topY = Math.min(meta0.data[i].y, meta1.data[i].y);
+                                    ctx.fillText('€' + Math.round(total), xPos, topY - 5);
+                                }
+                            });
+                            ctx.restore();
+                        }
+                    }]
+                });
+            }
+
+            let mobHistChartInstance = null;
+            
+            function renderMobHistoricalChart() {
+                if (mobHistChartInstance) mobHistChartInstance.destroy();
+                const ctx = document.getElementById('mob-historical-chart').getContext('2d');
+                
+                const grouped = {};
+                rawDivData.forEach(d => {
+                    const year = d.date.split('-')[0];
+                    grouped[year] = (grouped[year] || 0) + d.amount;
+                });
+                const labels = Object.keys(grouped).sort();
+                const data = labels.map(y => grouped[y]);
+
+                const isDark = document.documentElement.classList.contains('dark');
+                const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+                const textColor = isDark ? '#94a3b8' : '#64748b';
+
+                mobHistChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Incassato',
+                            data: data,
+                            backgroundColor: 'rgba(16,185,129,0.7)',
+                            hoverBackgroundColor: 'rgba(16,185,129,1)',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: textColor, font: { size: 10, weight: 'bold' } }
+                            },
+                            y: {
+                                grid: { color: gridColor },
+                                ticks: {
+                                    color: textColor,
+                                    font: { size: 10 },
+                                    callback: v => '€' + Math.round(v).toLocaleString('it-IT')
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function renderMobProjList(assets) {
+                const countEl = document.getElementById('mob-proj-asset-count');
+                const bodyEl = document.getElementById('mob-proj-body');
+                
+                countEl.innerText = assets.length;
+                bodyEl.innerHTML = assets.map(a => {
+                    const letters = a.ticker ? a.ticker.substring(0, 2).toUpperCase() : '??';
+                    let badge = '';
+                    if (a.tag === 'REGISTRATO') badge = '<div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">Ricevuto</div>';
+                    else if (a.tag === 'YF') badge = '<div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20">YF</div>';
+                    else if (a.tag === 'SIMULATO') badge = '<div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-amber-500/10 text-amber-600 border-amber-500/20">Simulato</div>';
+                    else if (a.tag === 'STORICO') badge = '<div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-slate-500/10 text-slate-500 border-slate-500/20">Storico</div>';
+                    else if (a.tag === 'MANUALE') badge = '<div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20">Manuale</div>';
+
+                    let actions = '';
+                    let clickAction = '';
+                    if (a.tag === 'REGISTRATO') {
+                        clickAction = `openEditConfirmedModal(${a.txId})`;
+                        actions = `
+                            <div class="mob-holding-actions">
+                                <div class="mob-action-btn bg-orange-ios" onclick="event.stopPropagation(); openEditConfirmedModal(${a.txId})">
+                                    <span class="material-symbols-outlined">edit</span>
+                                    <span>Modifica</span>
+                                </div>
+                                <div class="mob-action-btn bg-red-ios" onclick="event.stopPropagation(); deleteConfirmedDividend(${a.txId})">
+                                    <span class="material-symbols-outlined">delete</span>
+                                    <span>Elimina</span>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        clickAction = `openConfirmModal(${a.id})`;
+                        actions = `
+                            <div class="mob-holding-actions">
+                                <div class="mob-action-btn bg-emerald-500" onclick="event.stopPropagation(); openConfirmModal(${a.id})">
+                                    <span class="material-symbols-outlined">check_circle</span>
+                                    <span>Conferma</span>
+                                </div>
+                                <div class="mob-action-btn bg-red-ios" onclick="event.stopPropagation(); deleteProjection(${a.id})">
+                                    <span class="material-symbols-outlined">delete</span>
+                                    <span>Elimina</span>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    return `
+                    <div class="mob-holding-swipe-container" 
+                         ontouchstart="handleTouchStart(event, this)" 
+                         ontouchmove="handleTouchMove(event, this)" 
+                         ontouchend="handleTouchEnd(event, this)">
+                        ${actions}
+                        <div class="mob-holding-item" onclick="event.stopPropagation(); ${clickAction}">
+                            <div class="mob-holding-logo">${letters}</div>
+                            <div class="mob-holding-info">
+                                <div class="flex items-center gap-2">
+                                    <div class="mob-holding-ticker">${a.ticker}</div>
+                                    ${badge}
+                                </div>
+                                <div class="mob-holding-name">${(a.name && a.name !== 'null') ? a.name : a.ticker} • ${a.date}</div>
+                            </div>
+                            <div class="mob-holding-values">
+                                <div class="mob-holding-value" style="color:var(--mob-primary)">€${(a.totalAmount || 0).toFixed(2)}</div>
+                                <div class="mob-holding-gain" style="color: var(--mob-text-muted); font-size: 11px;">
+                                    Lordo: €${(a.gross || a.totalAmount || 0).toFixed(2)}
+                                </div>
+                                <div class="flex flex-col items-end mt-1">
+                                    ${a.yield ? `<div style="font-size:9px; font-weight:900; color:var(--mob-amber); opacity:0.8;">YLD YF: ${(a.yield * 100).toFixed(2)}%</div>` : ''}
+                                    ${a.realYield ? `<div style="font-size:9px; font-weight:900; color:var(--mob-emerald); opacity:0.9;">YLD REALE: ${(a.realYield * 100).toFixed(2)}%</div>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `}).join('');
+            }
+
+            window.toggleMobGroup = (key) => {
+                if (collapsedGroups.has(key)) collapsedGroups.delete(key);
+                else collapsedGroups.add(key);
+                renderMobDividends();
+            }
+
+            window.renderMobDividends = () => {
+                const container = document.getElementById('mob-dividends-list');
+                const groupByEl = document.getElementById('mob-div-group-by');
+                if (!container || !groupByEl) return;
+
+                const groupBy = groupByEl.value;
+
+                if (groupBy !== currentGroupBy) {
+                    collapsedGroups = new Set();
+                    currentGroupBy = groupBy;
+                }
+
+                let filtered = rawDivData;
+
+                if (filtered.length === 0) {
+                    container.innerHTML = '<div style="text-align:center;padding:48px;opacity:0.5;font-size:13px">Nessun dividendo trovato</div>';
+                    return;
+                }
+
+                if (groupBy === 'none') {
+                    container.innerHTML = `<div class="mob-list-edge">` + 
+                        filtered.sort((a,b) => new Date(b.date) - new Date(a.date))
+                        .map(d => renderMobRow(d)).join('') + 
+                        `</div>`;
+                } else {
+                    const groups = {};
+                    filtered.forEach(d => {
+                        let key = d[groupBy];
+                        if (groupBy === 'year') key = d.date.split('-')[0];
+                        if (!groups[key]) groups[key] = { items: [], total: 0 };
+                        groups[key].items.push(d);
+                        groups[key].total += d.amount;
+                    });
+
+                    const keys = Object.keys(groups).sort((a, b) => {
+                        if (groupBy === 'year') return b - a;
+                        return a.localeCompare(b);
+                    });
+
+                    container.innerHTML = keys.map(key => {
+                        const group = groups[key];
+                        const isCollapsed = collapsedGroups.has(key);
+                        const sign = group.total >= 0 ? '+' : '';
+                        return `
+                            <div class="mob-section-header" style="cursor:pointer" onclick="toggleMobGroup('${key}')">
+                                <div class="mob-section-title flex items-center gap-2">
+                                    <span class="material-symbols-outlined" style="font-size:20px">${isCollapsed ? 'chevron_right' : 'expand_more'}</span>
+                                    ${key.toUpperCase()} <span style="font-size:11px; color:var(--mob-text-muted); font-weight:normal;">(${group.items.length})</span>
+                                </div>
+                                <div class="mob-section-link" style="color: var(--mob-emerald); font-size: 18px; font-weight: 900;">
+                                    ${sign}${formatCurrency(group.total, 'EUR', 0)}
+                                </div>
+                            </div>
+                            <div class="mob-list-edge" style="${isCollapsed ? 'display:none' : ''}">
+                                ${group.items.sort((a,b) => new Date(b.date) - new Date(a.date)).map(d => renderMobRow(d)).join('')}
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+
+            // ── Swipe Logic ──────────────────────────────────
+            let touchStartX = 0;
+            let touchMoveX = 0;
+            let currentSwipeEl = null;
+            const SWIPE_THRESHOLD = 50;
+            const ACTION_WIDTH = 195; // 3 buttons * 65px
+
+            window.handleTouchStart = function(e, container) {
+                touchStartX = e.touches[0].clientX;
+                touchMoveX = 0;
+                if (currentSwipeEl && currentSwipeEl !== container) {
+                    resetSwipes(container);
+                }
+            };
+
+            window.handleTouchMove = function(e, container) {
+                const item = container.querySelector('.mob-holding-item');
+                if (!item) return;
+                touchMoveX = e.touches[0].clientX;
+                let diff = touchMoveX - touchStartX;
+                if (diff > 0) diff = 0;
+                if (diff < -ACTION_WIDTH - 20) diff = -ACTION_WIDTH - 20;
+                item.style.transition = 'none';
+                item.style.transform = `translateX(${diff}px)`;
+            };
+
+            window.handleTouchEnd = function(e, container) {
+                const item = container.querySelector('.mob-holding-item');
+                if (!item) return;
+                const diff = touchMoveX - touchStartX;
+                
+                item.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
+                
+                // If movement occurred and was beyond threshold, keep actions open.
+                // Otherwise (including simple tap), reset to 0. (Tap-to-close)
+                if (touchMoveX !== 0 && diff < -SWIPE_THRESHOLD) {
+                    item.style.transform = `translateX(-${ACTION_WIDTH}px)`;
+                    currentSwipeEl = container;
+                } else {
+                    item.style.transform = 'translateX(0)';
+                    currentSwipeEl = null;
+                }
+            };
+
+            function resetSwipes(except) {
+                document.querySelectorAll('.mob-holding-swipe-container').forEach(c => {
+                    if (c === except) return;
+                    const item = c.querySelector('.mob-holding-item');
+                    if (item) item.style.transform = 'translateX(0)';
+                });
+                currentSwipeEl = null;
+            }
+
+            function renderMobRow(d) {
+                const letters = d.assetTicker ? d.assetTicker.substring(0, 2).toUpperCase() : '??';
+                const divNetto = d.amount || 0;
+                const divLordo = divNetto + (d.tax || 0);
+                
+                return `
+                    <div class="mob-holding-swipe-container" 
+                         ontouchstart="handleTouchStart(event, this)" 
+                         ontouchmove="handleTouchMove(event, this)" 
+                         ontouchend="handleTouchEnd(event, this)">
+                        
+                        <div class="mob-holding-actions">
+                            <div class="mob-action-btn bg-blue-ios" 
+                                 onclick="event.stopPropagation(); duplicateTransaction('${d.id}')">
+                                <span class="material-symbols-outlined">content_copy</span>
+                                <span>Duplica</span>
+                            </div>
+                            <div class="mob-action-btn bg-orange-ios" 
+                                 onclick="event.stopPropagation(); editTransaction('${d.id}')">
+                                <span class="material-symbols-outlined">edit</span>
+                                <span>Modifica</span>
+                            </div>
+                            <div class="mob-action-btn bg-red-ios" 
+                                 onclick="event.stopPropagation(); confirmDeleteTransaction('${d.id}')">
+                                <span class="material-symbols-outlined">delete</span>
+                                <span>Elimina</span>
+                            </div>
+                        </div>
+
+                        <div class="mob-holding-item">
+                            <div class="mob-holding-logo">${letters}</div>
+                            <div class="mob-holding-info">
+                                <div class="flex items-center gap-2">
+                                    <div class="mob-holding-ticker">${d.assetTicker}</div>
+                                    <div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">DIVIDEND</div>
+                                </div>
+                                <div class="mob-holding-name">${d.portfolioName} • ${d.date}</div>
+                            </div>
+                            <div class="mob-holding-values">
+                                <div class="mob-holding-value" style="color: var(--mob-emerald)">+${formatCurrency(divNetto, 'EUR', 0)}</div>
+                                <div class="mob-holding-gain" style="color: var(--mob-text-muted); font-size: 11px;">
+                                    Lordo: ${formatCurrency(divLordo, 'EUR', 0)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Shared Edit/Duplicate/Delete helpers for mobile_transactions.js
+            window.editTransaction = function(id) {
+                const t = rawDivData.find(tx => tx.id == id);
+                if (t) mobileEditTransaction(t);
+            };
+            window.duplicateTransaction = function(id) {
+                const t = rawDivData.find(tx => tx.id == id);
+                if (t) mobileDuplicateTransaction(t);
+            };
+            window.confirmDeleteTransaction = function(id) {
+                mobileDeleteTransaction(id);
+            };
+
+            document.addEventListener('DOMContentLoaded', () => {
+                loadMobData();
+                if (window.ftAuth && ftAuth.getUser()?.role === 'admin') {
+                    const adminLink = document.getElementById('mob-admin-link');
+                    if (adminLink) adminLink.style.display = 'flex';
+                }
+            });
+            window.addEventListener('mobile-view-activated', loadMobData);
+        })();
+    </script>
+</body>
+</html>
