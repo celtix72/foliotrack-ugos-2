@@ -773,6 +773,9 @@ function logAudit(userId, action, details, req) {
 
 // ─── JWT / Auth configuration ─────────────────────────────────────────────────
 const JWT_SECRET = process.env.JWT_SECRET || 'foliotrack_secret_development_static_12345';
+if (!process.env.JWT_SECRET) {
+    console.warn('\x1b[31m%s\x1b[0m', 'CRITICAL SECURITY WARNING: JWT_SECRET is not set. Using default development secret!');
+}
 const JWT_COOKIE = 'ft_token';
 const JWT_EXPIRY = '7d';
 
@@ -880,7 +883,7 @@ app.post('/api/auth/login', (req, res) => {
     );
     res.cookie(JWT_COOKIE, token, {
         httpOnly: true,
-        sameSite: 'Lax',
+        sameSite: 'Strict',
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         secure: req.secure || req.headers['x-forwarded-proto'] === 'https'
     });
@@ -6772,53 +6775,53 @@ app.get('/login', (req, res) => {
 
 // Admin panel (requires auth + admin role)
 app.get('/admin', requireAuth, requireAdmin, (req, res) => {
-    res.sendFile(path.join(__dirname, '../public', 'admin.html'));
+    res.sendFile(path.join(__dirname, '../private_views', 'admin.html'));
 });
 
 // Protected app pages
 app.get('/dashboard', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'dashboard_mobile.html' : 'dashboard.html';
-    res.sendFile(path.join(__dirname, '../public', file));
+    res.sendFile(path.join(__dirname, '../private_views', file));
 });
 
 app.get('/portfolio', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'portfolio_detail_mobile.html' : 'portfolio_detail.html';
-    res.sendFile(path.join(__dirname, '../public', file));
+    res.sendFile(path.join(__dirname, '../private_views', file));
 });
 
 app.get('/market', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'market_mobile.html' : 'market_overview.html';
-    res.sendFile(path.join(__dirname, '../public', file));
+    res.sendFile(path.join(__dirname, '../private_views', file));
 });
 
 app.get('/reports', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'reports_mobile.html' : 'reports.html';
-    res.sendFile(path.join(__dirname, '../public', file));
+    res.sendFile(path.join(__dirname, '../private_views', file));
 });
 
 app.get('/history', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'history_mobile.html' : 'history.html';
-    res.sendFile(path.join(__dirname, '../public', file));
+    res.sendFile(path.join(__dirname, '../private_views', file));
 });
 
 app.get('/dividend', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'dividend_mobile.html' : 'dividend.html';
-    res.sendFile(path.join(__dirname, '../public', file));
+    res.sendFile(path.join(__dirname, '../private_views', file));
 });
 
 app.get('/settings', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'settings_mobile.html' : 'settings.html';
-    res.sendFile(path.join(__dirname, '../public', file));
+    res.sendFile(path.join(__dirname, '../private_views', file));
 });
 
 app.get('/notifications', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'notifications_mobile.html' : 'notifications.html';
-    res.sendFile(path.join(__dirname, '../public', file));
+    res.sendFile(path.join(__dirname, '../private_views', file));
 });
 
 app.get('/watchlist', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'watchlist_mobile.html' : 'watchlist.html';
-    res.sendFile(path.join(__dirname, '../public', file));
+    res.sendFile(path.join(__dirname, '../private_views', file));
 });
 
 // Legacy /assets route → redirect to /market
