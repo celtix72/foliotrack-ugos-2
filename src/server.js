@@ -1391,6 +1391,54 @@ app.delete('/api/admin/sessions/:sid', requireAuth, requireAdmin, (req, res) => 
     }
 });
 
+// GET /api/admin/security-settings
+app.get('/api/admin/security-settings', requireAuth, requireAdmin, (req, res) => {
+    try {
+        const settings = database.getSettings();
+        res.json({
+            max_attempts: parseInt(settings.auth_max_attempts || '5'),
+            ban_duration: parseInt(settings.auth_ban_duration_minutes || '30')
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/admin/security-settings
+app.post('/api/admin/security-settings', requireAuth, requireAdmin, express.json(), (req, res) => {
+    try {
+        const { max_attempts, ban_duration } = req.body;
+        database.setSetting('auth_max_attempts', max_attempts.toString());
+        database.setSetting('auth_ban_duration_minutes', ban_duration.toString());
+        logAudit(req.user.id, 'SECURITY_SETTINGS_UPDATE', { max_attempts, ban_duration }, req);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/admin/banned-ips
+app.get('/api/admin/banned-ips', requireAuth, requireAdmin, (req, res) => {
+    try {
+        const ips = database.getBannedIps();
+        res.json(ips);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// DELETE /api/admin/banned-ips/:ip
+app.delete('/api/admin/banned-ips/:ip', requireAuth, requireAdmin, (req, res) => {
+    try {
+        const ip = req.params.ip;
+        database.resetLoginFailures(ip);
+        logAudit(req.user.id, 'IP_UNBAN', { ip }, req);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 
 // GET /api/app-version (public)
 app.get('/api/app-version', (req, res) => {
