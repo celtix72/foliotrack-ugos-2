@@ -267,10 +267,11 @@
                     // Load Projections
                     const projRes = await fetch('/api/analytics/dividend-projections');
                     const projData = await projRes.json();
-                    window.globalProjData = projData;
+                    window.globalProjData = projData || { assets: [], months: [] };
 
                     const hasTriedReset = sessionStorage.getItem('ft_div_reset_tried');
-                    if (projData.assets && projData.assets.filter(a => a.tag !== 'REGISTRATO').length === 0 && !hasTriedReset) {
+                    const assets = projData.assets || [];
+                    if (assets.length === 0 && !hasTriedReset) {
                         sessionStorage.setItem('ft_div_reset_tried', 'true');
                         if(confirm('Nessuna proiezione presente per quest\'anno. Vuoi ricalcolarle automaticamente in base al tuo portafoglio attuale?')) {
                             window.resetProjections(true);
@@ -278,27 +279,20 @@
                         }
                     }
 
-                    document.getElementById('mob-current-year').innerText = projData.year;
+                    document.getElementById('mob-current-year').innerText = projData.year || new Date().getFullYear();
                     document.getElementById('mob-total-actual').innerText = formatCurrency(projData.totalReceived || 0, 'EUR', 0);
                     document.getElementById('mob-total-projected').innerText = formatCurrency(projData.totalExpected || 0, 'EUR', 0);
                     document.getElementById('mob-total-remaining').innerText = formatCurrency(projData.totalRemaining || 0, 'EUR', 0);
 
-                    renderMobProjectionChart(projData.months);
-                    renderMobProjList(projData.assets);
-
-                    const manualSelect = document.getElementById('manual-ticker');
-                    if (manualSelect && projData.openTickers) {
-                        const currentVal = manualSelect.value;
-                        const options = projData.openTickers.map(t => `<option value="${t.ticker}">${t.ticker} - ${t.name}</option>`).join('');
-                        manualSelect.innerHTML = `<option value="" disabled selected>Seleziona un asset...</option>` + options;
-                        if (currentVal && projData.openTickers.find(t => t.ticker === currentVal)) manualSelect.value = currentVal;
-                    }
+                    renderMobProjectionChart(projData.months || []);
+                    renderMobProjList(assets);
 
                     // Load History
                     const histRes = await fetch('/api/analytics/dividends');
-                    rawDivData = await histRes.json();
+                    const histData = await histRes.json();
+                    rawDivData = Array.isArray(histData) ? histData : [];
                     
-                    const total = rawDivData.reduce((sum, d) => sum + d.amount, 0);
+                    const total = rawDivData.reduce((sum, d) => sum + (d.amount || 0), 0);
                     const totalEl = document.getElementById('mob-global-total');
                     if (totalEl) totalEl.innerText = formatCurrency(total, 'EUR', 0);
 
@@ -308,7 +302,11 @@
 
                     renderMobDividends();
                     renderMobHistoricalChart();
-                } catch (err) { console.error('Error loading mobile dividends data:', err); }
+                } catch (err) { 
+                    console.error('Error loading mobile dividends data:', err); 
+                    const container = document.getElementById('mob-dividends-list');
+                    if (container) container.innerHTML = '<div style="text-align:center;padding:48px;opacity:0.5;font-size:13px;color:var(--mob-red-ios)">Errore caricamento dati</div>';
+                }
             }
 
             window.openManualModal = () => {
@@ -639,6 +637,7 @@
                 
                 countEl.innerText = assets.length;
                 bodyEl.innerHTML = assets.map(a => {
+                    const letters = a.ticker ? a.ticker.substring(0, 3).toUpperCase() : '???';
                     let badge = '';
                     if (a.tag === 'REGISTRATO') badge = '<div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">Ricevuto</div>';
                     else if (a.tag === 'YF') badge = '<div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20">YF</div>';
