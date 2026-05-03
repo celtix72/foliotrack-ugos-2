@@ -350,6 +350,13 @@ function initDb() {
         last_seen   TEXT    NOT NULL DEFAULT (datetime('now')),
         created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
       );
+      
+      CREATE TABLE IF NOT EXISTS failed_logins (
+        ip_address   TEXT PRIMARY KEY,
+        attempts     INTEGER NOT NULL DEFAULT 0,
+        last_attempt TEXT NOT NULL DEFAULT (datetime('now')),
+        banned_until TEXT
+      );
 
       CREATE TABLE IF NOT EXISTS push_subscriptions (
         id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -874,23 +881,50 @@ function createUser(username, password, email = null, role = 'free', displayName
  * Verifies credentials. Returns user object on success, null on failure.
  */
 function verifyUser(username, password) {
-    const user = dbConnection.prepare(`SELECT * FROM users WHERE username = ? OR email = ?`).get(username, username);
+    const user = dbConnection.prepare('SELECT * FROM users WHERE username = ?').get(username);
     if (!user) return null;
-    const valid = bcrypt.compareSync(password, user.password_hash);
-    if (!valid) return null;
-    
-    // Check if temporary password has expired (24h)
-    if (user.must_change_password === 1) {
-        const createdAt = new Date(user.created_at + 'Z'); // Ensure UTC
-        const now = new Date();
-        if ((now - createdAt) > 24 * 60 * 60 * 1000) {
-            return null; // Expired
-        }
+    if (bcrypt.compareSync(password, user.password_hash)) {
+        dbConnection.prepare(`UPDATE users SET last_login = datetime('now') WHERE id = ?`).run(user.id);
+        return { id: user.id, username: user.username, email: user.email, role: user.role, display_name: user.display_name, must_change_password: user.must_change_password };
     }
+    return null;
+}
 
-    // Update last_login
-    dbConnection.prepare(`UPDATE users SET last_login = datetime('now') WHERE id = ?`).run(user.id);
-    return { id: user.id, username: user.username, email: user.email, role: user.role, display_name: user.display_name, must_change_password: user.must_change_password };
+/**
+ * Brute force protection helpers
+ */
+function getLoginFailures(ip) {
+    return dbConnection.prepare('SELECT * FROM failed_logins WHERE ip_address = ?').get(ip) || { attempts: 0, banned_until: null };
+}
+
+function recordLoginFailure(ip, maxAttempts, banMinutes) {
+    const now = new Date();
+    const existing = dbConnection.prepare('SELECT attempts FROM failed_logins WHERE ip_address = ?').get(ip);
+    
+    if (!existing) {
+        dbConnection.prepare('INSERT INTO failed_logins (ip_address, attempts, last_attempt) VALUES (?, 1, datetime(\'now\'))').run(ip);
+    } else {
+        const newAttempts = existing.attempts + 1;
+        let bannedUntil = null;
+        if (newAttempts >= maxAttempts) {
+            const banDate = new Date(now.getTime() + banMinutes * 60000);
+            bannedUntil = banDate.toISOString();
+        }
+        dbConnection.prepare('UPDATE failed_logins SET attempts = ?, last_attempt = datetime(\'now\'), banned_until = ? WHERE ip_address = ?')
+            .run(newAttempts, bannedUntil, ip);
+    }
+}
+
+function resetLoginFailures(ip) {
+    dbConnection.prepare('DELETE FROM failed_logins WHERE ip_address = ?').run(ip);
+}
+
+function getBannedIps() {
+    return dbConnection.prepare('SELECT * FROM failed_logins WHERE banned_until IS NOT NULL AND banned_until > datetime(\'now\')').all();
+}
+
+function unbanIp(ip) {
+    dbConnection.prepare('DELETE FROM failed_logins WHERE ip_address = ?').run(ip);
 }
 
 /**
@@ -979,6 +1013,11 @@ module.exports = {
     savePortfolioSnapshot,
     createUser,
     verifyUser,
+    getLoginFailures,
+    recordLoginFailure,
+    resetLoginFailures,
+    getBannedIps,
+    unbanIp,
     getAllUsers,
     getUserPortfolios,
     addPortfolioUser,

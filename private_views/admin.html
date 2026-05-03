@@ -181,6 +181,44 @@
                 </button>
                 <div id="section-security" class="collapsible-content px-6 pb-6 border-t border-slate-100 dark:border-slate-800 pt-6">
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Login Protection Settings -->
+                        <div class="space-y-4 bg-slate-50 dark:bg-slate-900/40 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                            <label class="text-[10px] font-black text-primary uppercase tracking-widest block">Impostazioni Brute-Force</label>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Max Tentativi</label>
+                                    <input type="number" id="security-max-attempts" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm outline-none">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Durata Ban (Min)</label>
+                                    <input type="number" id="security-ban-duration" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm outline-none">
+                                </div>
+                            </div>
+                            <button onclick="saveSecuritySettings()" class="w-full py-2 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm">Salva Impostazioni</button>
+                        </div>
+
+                        <!-- Banned IPs -->
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">IP Bannati</label>
+                                <button onclick="loadBannedIps()" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors">
+                                    <span class="material-symbols-outlined text-sm">refresh</span>
+                                </button>
+                            </div>
+                            <div class="h-32 overflow-auto custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-xl">
+                                <table class="w-full text-left text-[11px]">
+                                    <thead class="text-[9px] uppercase font-black text-slate-500 border-b border-slate-100 dark:border-slate-800 sticky top-0 bg-white dark:bg-surface-dark z-10">
+                                        <tr>
+                                            <th class="px-3 py-2">IP Address</th>
+                                            <th class="py-2">Fino al</th>
+                                            <th class="py-2 text-right pr-3">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="banned-ips-body" class="divide-y divide-slate-100 dark:divide-slate-800/60"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
                         <!-- Sessions -->
                         <div class="space-y-4">
                             <div class="flex items-center justify-between">
@@ -383,6 +421,8 @@
             loadBackups();
             loadSessions();
             loadAuditLogs();
+            loadSecuritySettings();
+            loadBannedIps();
         });
 
         async function loadLogDates() {
@@ -421,7 +461,12 @@
                 if (id === 'section-stats') loadStats();
                 if (id === 'section-users') loadUsers();
                 if (id === 'section-roles') loadRoles();
-                if (id === 'section-security') { loadSessions(); loadAuditLogs(); }
+                if (id === 'section-security') { 
+                    loadSessions(); 
+                    loadAuditLogs(); 
+                    loadSecuritySettings();
+                    loadBannedIps();
+                }
                 if (id === 'section-maintenance') loadBackups();
                 if (id === 'section-smtp') loadSmtpSettings();
             }
@@ -925,6 +970,59 @@
             if (action.includes('RESET') || action.includes('REVOKE')) return 'bg-amber-500/10 text-amber-500';
             return 'bg-primary/10 text-primary';
         }
+
+        // --- Security Management Functions ---
+        async function loadSecuritySettings() {
+            try {
+                const s = await fetchAdmin('/api/admin/security-settings');
+                document.getElementById('security-max-attempts').value = s.max_attempts;
+                document.getElementById('security-ban-duration').value = s.ban_duration;
+            } catch (e) { console.error('Failed to load security settings', e); }
+        }
+
+        window.saveSecuritySettings = async function() {
+            const max = document.getElementById('security-max-attempts').value;
+            const dur = document.getElementById('security-ban-duration').value;
+            try {
+                await fetchAdmin('/api/admin/security-settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ max_attempts: max, ban_duration: dur })
+                });
+                alert('Impostazioni di sicurezza salvate.');
+            } catch (e) { alert('Errore: ' + e.message); }
+        };
+
+        async function loadBannedIps() {
+            const tbody = document.getElementById('banned-ips-body');
+            if (!tbody) return;
+            try {
+                const ips = await fetchAdmin('/api/admin/banned-ips');
+                if (ips.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="py-4 text-center text-slate-500 italic">Nessun IP bannato</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = ips.map(i => `
+                    <tr class="hover:bg-rose-50/10 dark:hover:bg-rose-500/5 transition-colors">
+                        <td class="py-2 px-3 font-mono text-xs text-rose-500">${i.ip_address}</td>
+                        <td class="py-2 text-[10px] text-slate-500">${new Date(i.banned_until).toLocaleString()}</td>
+                        <td class="py-2 text-right pr-3">
+                            <button onclick="unbanIp('${i.ip_address}')" class="p-1 hover:bg-emerald-500/10 text-emerald-500 rounded transition-colors" title="Unban">
+                                <span class="material-symbols-outlined text-sm">lock_open</span>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) { tbody.innerHTML = `<tr><td colspan="3" class="py-4 text-center text-rose-500">${e.message}</td></tr>`; }
+        }
+
+        window.unbanIp = async function(ip) {
+            if (!confirm(`Sbloccare l'IP ${ip}?`)) return;
+            try {
+                await fetchAdmin(`/api/admin/banned-ips/${ip}`, { method: 'DELETE' });
+                loadBannedIps();
+            } catch (e) { alert('Errore: ' + e.message); }
+        };
     </script>
 </body>
 </html>

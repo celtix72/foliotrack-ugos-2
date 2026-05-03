@@ -860,11 +860,27 @@ app.post('/api/auth/login', (req, res) => {
     if (!username || !password) {
         return res.status(400).json({ error: 'Username e password obbligatori' });
     }
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    
+    // Brute force protection
+    const settings = database.getSettings();
+    const maxAttempts = parseInt(settings.auth_max_attempts || '5');
+    const banMinutes = parseInt(settings.auth_ban_duration_minutes || '30');
+    
+    const failures = database.getLoginFailures(ip);
+    if (failures.banned_until && new Date(failures.banned_until) > new Date()) {
+        return res.status(403).json({ error: `Troppi tentativi falliti. IP bannato fino a: ${new Date(failures.banned_until).toLocaleString()}` });
+    }
+
     const user = database.verifyUser(username, password);
     if (!user) {
+        database.recordLoginFailure(ip, maxAttempts, banMinutes);
         logAudit(null, 'LOGIN_FAIL', { username }, req);
         return res.status(401).json({ error: 'Credenziali non valide' });
     }
+
+    // Success: reset failures
+    database.resetLoginFailures(ip);
 
     if (user.must_change_password === 1) {
         return res.json({ ok: false, require_password_change: true, user_id: user.id });
@@ -872,7 +888,6 @@ app.post('/api/auth/login', (req, res) => {
 
     // Create session
     const sid = crypto.randomBytes(16).toString('hex');
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     const ua = req.headers['user-agent'];
     database.db.prepare('INSERT INTO user_sessions (user_id, session_id, ip_address, user_agent) VALUES (?, ?, ?, ?)').run(user.id, sid, ip, ua);
 
