@@ -282,32 +282,16 @@
 
             let alertTags = '';
             if (targetPrice > 0) {
-                alertTags += `
-                    <div class="flex items-center gap-1 px-1.5 py-0.5 rounded-md ${targetReached ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'} text-[8px] font-black uppercase">
-                        <span class="material-symbols-outlined text-[10px]">${targetReached ? 'check_circle' : 'notifications_active'}</span>
-                        TP1: ${formatCurrency(targetPrice, a.currency, 2)}
-                    </div>`;
+                alertTags += `<div style="font-size:10px; font-weight:900; color:${targetReached?'var(--mob-emerald)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">${targetReached?'check_circle':'target'}</span> TP1: ${formatCurrency(targetPrice, a.currency, 2)}</div>`;
             }
             if (targetPrice2 > 0) {
-                alertTags += `
-                    <div class="flex items-center gap-1 px-1.5 py-0.5 rounded-md ${target2Reached ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'} text-[8px] font-black uppercase">
-                        <span class="material-symbols-outlined text-[10px]">${target2Reached ? 'check_circle' : 'notifications_active'}</span>
-                        TP2: ${formatCurrency(targetPrice2, a.currency, 2)}
-                    </div>`;
+                alertTags += `<div style="font-size:10px; font-weight:900; color:${target2Reached?'var(--mob-emerald)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">${target2Reached?'check_circle':'target'}</span> TP2: ${formatCurrency(targetPrice2, a.currency, 2)}</div>`;
             }
             if (volThreshold > 0) {
-                alertTags += `
-                    <div class="flex items-center gap-1 px-1.5 py-0.5 rounded-md ${volAlertTriggered ? 'bg-amber-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'} text-[8px] font-black uppercase">
-                        <span class="material-symbols-outlined text-[10px]">${volAlertTriggered ? 'priority_high' : 'bolt'}</span>
-                        VOL: ${volThreshold}%
-                    </div>`;
+                alertTags += `<div style="font-size:10px; font-weight:900; color:${volAlertTriggered?'var(--mob-amber)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">${volAlertTriggered?'priority_high':'bolt'}</span> VOL: ${volThreshold}%</div>`;
             }
             if (stopLoss > 0) {
-                alertTags += `
-                    <div class="flex items-center gap-1 px-1.5 py-0.5 rounded-md ${stopLossHit ? 'bg-rose-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'} text-[8px] font-black uppercase">
-                        <span class="material-symbols-outlined text-[10px]">${stopLossHit ? 'dangerous' : 'gpp_maybe'}</span>
-                        SL: ${formatCurrency(stopLoss, a.currency, 2)}
-                    </div>`;
+                alertTags += `<div style="font-size:10px; font-weight:900; color:${stopLossHit?'var(--mob-rose)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">${stopLossHit?'dangerous':'warning'}</span> SL: ${formatCurrency(stopLoss, a.currency, 2)}</div>`;
             }
 
             return `
