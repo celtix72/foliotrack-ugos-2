@@ -260,7 +260,7 @@
     // For now, let's just navigate to the FIRST portfolio that has this asset.
     fetch(`/api/assets/${ticker}/portfolios`).then(r => r.json()).then(data => {
         if (data && data.length > 0) {
-            window.location.href = `/portfolio_detail_mobile.html?id=${data[0].id}&ticker=${ticker}`;
+            window.location.href = `/portfolio?id=${data[0].id}&ticker=${ticker}`;
         }
     });
   };
