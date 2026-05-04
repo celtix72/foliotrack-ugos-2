@@ -486,6 +486,13 @@
         const _showDailyGain = !showLogo && a.hasPosition && _chgVal !== 0;
         const _dgColor = _chgVal >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
         const _dgSign = _chgVal >= 0 ? '+' : '';
+        // Total position values
+        const _totalVal = (a.currentPrice || 0) * (a.totalQuantity || 0);
+        const _totalGain = _totalVal - (a.totalCostAssetCurr || 0);
+        const _totGainIsPos = _totalGain >= 0;
+        const _totGainColor = _totGainIsPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        const _totGainSign = (_totGainIsPos && Math.abs(_totalGain) >= 0.5) ? '+' : '';
+        const _showTotals = !showLogo && a.hasPosition && _totalVal > 0;
 
         return `
           <div class="mob-holding-swipe-container" 
@@ -521,6 +528,11 @@
                     <span class="mob-holding-gain" style="color:${color}; font-weight:900; margin-top:0">${isPos ? '+' : ''}${change.toFixed(1)}%</span>
                     <span class="mob-holding-value">${fmtPriceCompact(price, a.currency, price >= 100 ? 0 : price >= 10 ? 1 : 2)}</span>
                   </div>
+                  ${_showTotals ? `<div class="mob-compact-values" style="margin-top:1px; opacity:0.65">
+                    <span class="mob-cv-gain" style="color:${_totGainColor}; font-size:10px; font-weight:800">${_totGainSign}${fmtPriceCompact(_totalGain, a.currency, 0)}</span>
+                    <span></span>
+                    <span style="text-align:right; font-size:11px; font-weight:700; color:var(--mob-text); white-space:nowrap; padding-left:8px">${fmtPriceCompact(_totalVal, a.currency, 0)}</span>
+                  </div>` : ''}
                 `}
               </div>
             </div>
