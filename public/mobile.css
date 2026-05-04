@@ -1447,8 +1447,6 @@ html:not(.dark) .mobile-view-active .mob-hero.fiscal {
   font-weight: 900;
   letter-spacing: -0.2px;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   padding-right: 6px; /* gap before % column */
 }
 .mob-compact-values .mob-holding-gain {

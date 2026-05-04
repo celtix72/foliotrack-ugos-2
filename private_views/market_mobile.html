@@ -528,8 +528,8 @@
                     <span class="mob-holding-gain" style="color:${color}; font-weight:900; margin-top:0">${isPos ? '+' : ''}${change.toFixed(1)}%</span>
                     <span class="mob-holding-value">${fmtPriceCompact(price, a.currency, price >= 100 ? 0 : price >= 10 ? 1 : 2)}</span>
                   </div>
-                  ${_showTotals ? `<div class="mob-compact-values" style="margin-top:2px; opacity:0.75">
-                    <span class="mob-cv-gain" style="color:${_totGainColor}; font-size:calc(11px * var(--mob-scale,1)); font-weight:500">${_totGainSign}${fmtPriceCompact(_totalGain, a.currency, 0)}</span>
+                  ${_showTotals ? `<div class="mob-compact-values" style="margin-top:2px; opacity:0.85">
+                    <span style="display:inline-flex; justify-content:flex-end; padding-right:6px"><span style="background:${_totGainIsPos ? 'rgba(16,185,129,0.15)' : 'rgba(244,63,94,0.15)'}; color:${_totGainColor}; font-size:calc(11px * var(--mob-scale,1)); font-weight:700; white-space:nowrap; border-radius:4px; padding:1px 5px; letter-spacing:-0.2px">${_totGainSign}${fmtPriceCompact(_totalGain, a.currency, 0)}</span></span>
                     <span></span>
                     <span style="text-align:right; font-size:calc(11px * var(--mob-scale,1)); font-weight:500; color:var(--mob-text-muted); white-space:nowrap; padding-left:8px">${fmtPriceCompact(_totalVal, a.currency, 0)}</span>
                   </div>` : ''}
