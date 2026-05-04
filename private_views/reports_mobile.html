@@ -316,7 +316,7 @@
                     const pCurrency = (data.portfolios && data.portfolios.find(port => port.id == p.id)) ? data.portfolios.find(port => port.id == p.id).currency : 'EUR';
                     return `
                       <div class="mob-holding-swipe-container">
-                        <div class="mob-holding-item" onclick="window.location.href='/portfolio_detail_mobile.html?id=${p.id}'">
+                        <div class="mob-holding-item" onclick="window.location.href='/portfolio?id=${p.id}'">
                           <div class="mob-holding-logo" style="background-color:${pColor}; color: white;">
                             <span class="material-symbols-outlined" style="font-size: 16px;">work</span>
                           </div>
