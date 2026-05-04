@@ -468,14 +468,11 @@
               <span class="material-symbols-outlined">edit_note</span>
               <span>Modifica</span>
             </div>
-            <div class="mob-action-btn bg-red-ios" onclick="event.stopPropagation(); removeFromWatchlist('${a.ticker}', ${!!a.hasPosition})">
-              <span class="material-symbols-outlined">delete</span>
-              <span>Rimuovi</span>
-            </div>
-          </div>
-        `;
-
-        const showLogo = _marketViewMode !== 'compact';
+            <div class="mob-action-btn bg-red-ios" onclick="event.stopPropagation(); removeFromWatchlist(        const showLogo = _marketViewMode !== 'compact';
+        const _chgVal = (a.changeValue || 0) * (a.totalQuantity || 0);
+        const _showDailyGain = !showLogo && a.hasPosition && _chgVal !== 0;
+        const _dgColor = _chgVal >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        const _dgSign = _chgVal >= 0 ? '+' : '';
 
         return `
           <div class="mob-holding-swipe-container" 
@@ -483,7 +480,7 @@
                ontouchmove="handleTouchMove(event, this)" 
                ontouchend="handleTouchEnd(event, this)">
             ${actions}
-            <div class="mob-holding-item" style="${alertBg}; ${alertBorder}" onclick="window.showMobDetails('${a.ticker.replace(/'/g, "\\'")}\'', '${a.name ? a.name.replace(/'/g, "\\'") : ''}', '${a.currency || 'EUR'}')">
+            <div class="mob-holding-item" style="${alertBg}; ${alertBorder}" onclick="window.showMobDetails('${a.ticker.replace(/'/g, "\\'")}\\'', '${a.name ? a.name.replace(/'/g, "\\'") : ''}', '${a.currency || 'EUR'}')">
               ${showLogo ? `<div class="mob-holding-logo">${a.ticker.substring(0,3)}</div>` : ''}
               <div class="mob-holding-info">
                 <div class="flex items-center gap-2">
@@ -511,6 +508,12 @@
                     </span>
                   ` : ''}
                   <div class="mob-holding-gain" style="color:${color}; font-weight:900; margin-top:0">${isPos ? '+' : ''}${change.toFixed(1)}%</div>
+                </div>
+                ${_showDailyGain ? `<div style="font-size:10px; font-weight:900; color:${_dgColor}; text-align:right; margin-top:1px; letter-spacing:-0.2px">${_dgSign}${formatCurrency(_chgVal, a.currency, 0)}</div>` : ''}
+              </div>
+            </div>
+          </div>`;
+      };le="color:${color}; font-weight:900; margin-top:0">${isPos ? '+' : ''}${change.toFixed(1)}%</div>
                 </div>
               </div>
             </div>
