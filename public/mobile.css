@@ -1433,7 +1433,34 @@ html:not(.dark) .mobile-view-active .mob-hero.fiscal {
   background-color: var(--mob-surface-2);
 }
 
+/* ─── Compact Market View: 3-column aligned values ─────────────────────── */
+.mob-compact-values {
+  display: grid;
+  grid-template-columns: 54px 48px 62px;
+  align-items: center;
+  gap: 0;
+  /* Fixed total width guarantees identical column positions across all rows */
+}
+.mob-compact-values .mob-cv-gain {
+  text-align: right;
+  font-size: calc(13px * var(--mob-scale, 1));
+  font-weight: 900;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mob-compact-values .mob-holding-gain {
+  text-align: right;
+  white-space: nowrap;
+}
+.mob-compact-values .mob-holding-value {
+  text-align: right;
+  white-space: nowrap;
+}
+
 /* Custom Toggle Switch */
+
 .mob-toggle {
     position: relative;
     display: inline-block;
