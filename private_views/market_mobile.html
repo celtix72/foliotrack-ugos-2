@@ -501,25 +501,26 @@
                 </div>
               </div>
               <div class="mob-holding-values">
-                <div class="mob-holding-value">${formatCurrency(price, a.currency, 2)}</div>
-                <div class="flex items-center justify-end gap-1.5 mt-0.5">
-                  ${(a.preMarketChangePercent && Math.abs(a.preMarketChangePercent) > 0.01 && !window._mobMarketOpen) ? `
-                    <span style="font-size:10px; font-weight:900; color:${a.preMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">
-                      (${a.preMarketChangePercent >= 0 ? '+' : ''}${a.preMarketChangePercent.toFixed(1)}%)
-                    </span>
-                  ` : ''}
-                  ${(a.postMarketChangePercent && Math.abs(a.postMarketChangePercent) > 0.01 && !window._mobMarketOpen) ? `
-                    <span style="font-size:10px; font-weight:900; color:${a.postMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">
-                      (${a.postMarketChangePercent >= 0 ? '+' : ''}${a.postMarketChangePercent.toFixed(1)}%)
-                    </span>
-                  ` : ''}
-                  <div class="mob-holding-gain" style="color:${color}; font-weight:900; margin-top:0">${isPos ? '+' : ''}${change.toFixed(1)}%</div>
-                </div>
-                ${_showDailyGain ? `<div style="font-size:10px; font-weight:900; color:${_dgColor}; text-align:right; margin-top:1px; letter-spacing:-0.2px">${_dgSign}${formatCurrency(_chgVal, a.currency, 0)}</div>` : ''}
+                ${showLogo ? `
+                  <div class="mob-holding-value">${formatCurrency(price, a.currency, price >= 100 ? 0 : price >= 10 ? 1 : 2)}</div>
+                  <div class="flex items-center justify-end gap-1.5 mt-0.5">
+                    ${(a.preMarketChangePercent && Math.abs(a.preMarketChangePercent) > 0.01 && !window._mobMarketOpen) ? `<span style="font-size:10px; font-weight:900; color:${a.preMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">(${a.preMarketChangePercent >= 0 ? '+' : ''}${a.preMarketChangePercent.toFixed(1)}%)</span>` : ''}
+                    ${(a.postMarketChangePercent && Math.abs(a.postMarketChangePercent) > 0.01 && !window._mobMarketOpen) ? `<span style="font-size:10px; font-weight:900; color:${a.postMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">(${a.postMarketChangePercent >= 0 ? '+' : ''}${a.postMarketChangePercent.toFixed(1)}%)</span>` : ''}
+                    <div class="mob-holding-gain" style="color:${color}; font-weight:900; margin-top:0">${isPos ? '+' : ''}${change.toFixed(1)}%</div>
+                  </div>
+                ` : `
+                  <div class="flex items-center justify-end gap-2 flex-wrap">
+                    ${_showDailyGain ? `<span style="font-size:11px; font-weight:900; color:${_dgColor}; letter-spacing:-0.2px">${_dgSign}${formatCurrency(_chgVal, a.currency, 0)}</span>` : ''}
+                    <span class="mob-holding-gain" style="color:${color}; font-weight:900; margin-top:0">${isPos ? '+' : ''}${change.toFixed(1)}%</span>
+                    <span class="mob-holding-value" style="font-size:13px">${formatCurrency(price, a.currency, price >= 100 ? 0 : price >= 10 ? 1 : 2)}</span>
+                  </div>
+                `}
               </div>
             </div>
           </div>`;
       };
+
+
 
 
 
