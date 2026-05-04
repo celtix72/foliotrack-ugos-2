@@ -303,6 +303,13 @@
     return name;
   }
 
+  // Formats price with currency symbol at the end: "182€", "42,3$", "4,87£"
+  function fmtPriceCompact(price, currency, dec) {
+    const sym = currency === 'USD' ? '$' : currency === 'GBP' ? '£' : '€';
+    const n = price.toLocaleString('it-IT', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+    return n + sym;
+  }
+
   window.mobViewAssetTransactions = function(ticker) {
     // Navigate to portfolio detail and auto-filter transactions
     // Since we don't know the portfolio ID from here easily, 
@@ -512,7 +519,7 @@
                   <div class="mob-compact-values">
                     <span class="mob-cv-gain" style="color:${_dgColor}">${_showDailyGain ? _dgSign + formatCurrency(_chgVal, a.currency, 0) : ''}</span>
                     <span class="mob-holding-gain" style="color:${color}; font-weight:900; margin-top:0">${isPos ? '+' : ''}${change.toFixed(1)}%</span>
-                    <span class="mob-holding-value">${formatCurrency(price, a.currency, price >= 100 ? 0 : price >= 10 ? 1 : 2)}</span>
+                    <span class="mob-holding-value">${fmtPriceCompact(price, a.currency, price >= 100 ? 0 : price >= 10 ? 1 : 2)}</span>
                   </div>
                 `}
               </div>

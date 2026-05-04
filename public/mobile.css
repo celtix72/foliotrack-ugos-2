@@ -1436,7 +1436,7 @@ html:not(.dark) .mobile-view-active .mob-hero.fiscal {
 /* ─── Compact Market View: 3-column aligned values ─────────────────────── */
 .mob-compact-values {
   display: grid;
-  grid-template-columns: 54px 48px 62px;
+  grid-template-columns: 54px 48px 72px;
   align-items: center;
   gap: 0;
   /* Fixed total width guarantees identical column positions across all rows */
@@ -1457,6 +1457,7 @@ html:not(.dark) .mobile-view-active .mob-hero.fiscal {
 .mob-compact-values .mob-holding-value {
   text-align: right;
   white-space: nowrap;
+  padding-left: 8px; /* extra breathing room vs % column */
 }
 
 /* Custom Toggle Switch */
