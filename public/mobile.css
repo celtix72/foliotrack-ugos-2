@@ -691,10 +691,10 @@ body.mobile-view-active #mobile-ui {
   border-left: none !important;
   border-right: none !important;
   border-radius: 0 !important;
-  padding: 6px 16px;
+  padding: 6px 10px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -703,14 +703,14 @@ body.mobile-view-active #mobile-ui {
 .mob-holding-item:active { transform: scale(0.97); }
 
 .mob-holding-logo {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   background: var(--mob-primary-dim);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: calc(13px * var(--mob-scale, 1));
+  font-size: calc(11px * var(--mob-scale, 1));
   font-weight: 900;
   color: var(--mob-primary);
   flex-shrink: 0;
@@ -727,7 +727,7 @@ body.mobile-view-active #mobile-ui {
 .mob-holding-gain { font-size: calc(13px * var(--mob-scale, 1)); font-weight: 700; }
 
 .mob-holding-item.large {
-  padding: 8px 16px;
+  padding: 8px 10px;
 }
 .mob-holding-item.large .mob-holding-ticker {
   font-size: calc(16px * var(--mob-scale, 1));
@@ -740,9 +740,9 @@ body.mobile-view-active #mobile-ui {
   font-size: calc(14px * var(--mob-scale, 1));
 }
 .mob-holding-item.large .mob-holding-logo {
-  width: 44px;
-  height: 44px;
-  font-size: calc(12px * var(--mob-scale, 1));
+  width: 40px;
+  height: 40px;
+  font-size: calc(11px * var(--mob-scale, 1));
 }
 
 /* ─── Allocation Donut ───────────────────────────────────────────────────── */
@@ -1425,8 +1425,8 @@ html:not(.dark) .mobile-view-active .mob-hero.fiscal {
   background: var(--mob-surface) !important;
   border: none !important;
   border-radius: 0 !important;
-  padding-left: 20px;
-  padding-right: 20px;
+  padding-left: 12px;
+  padding-right: 12px;
 }
 
 .mob-list-edge .mob-holding-swipe-container {

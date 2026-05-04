@@ -205,6 +205,20 @@
     function formatNum(n) { return n ? n.toFixed(2) : null; }
     function formatPct(n) { return n ? (n * 100).toFixed(1) + '%' : null; }
 
+    // Abbreviates long asset names for compact display
+    function abbreviateName(name, maxLen = 22) {
+        if (!name) return '';
+        name = name
+            .replace(/\b(Incorporated|Corporation|Limited|Company|Group)\b/gi, '')
+            .replace(/\b(Inc\.|Corp\.|Ltd\.|Co\.|S\.p\.A\.|N\.V\.|PLC|S\.A\.|GmbH|AG|LLC|LP|SE|ASA|AB)\b/gi, '')
+            .replace(/\b(UCITS|Accumulating|Distributing|Acc\.|Dist\.|ETF Fund|SICAV)\b/gi, '')
+            .replace(/[,\s.]+$/, '')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+        if (name.length > maxLen) name = name.substring(0, maxLen).trim() + '\u2026';
+        return name;
+    }
+
     const getAssetTag = (type, ticker) => {
         const t = (type || '').toUpperCase();
         const tk = (ticker || '').toUpperCase();
@@ -315,7 +329,7 @@
                                 <div class="mob-holding-ticker">${a.ticker}</div>
                                 <div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700">${tag}</div>
                             </div>
-                            <div class="mob-holding-name">${a.name || ''}</div>
+                            <div class="mob-holding-name">${abbreviateName(a.name) || ''}</div>
                             <div class="flex flex-wrap gap-1.5 mt-1">
                                 ${alertTags}
                             </div>

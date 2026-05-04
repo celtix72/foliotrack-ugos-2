@@ -253,6 +253,21 @@
   };
   window.showMobDetails = window.mobViewAssetDetails;
 
+  // Abbreviates long asset names for compact display
+  function abbreviateName(name, maxLen = 22) {
+    if (!name) return '';
+    // Remove common legal suffixes
+    name = name
+      .replace(/\b(Incorporated|Corporation|Limited|Company|Group)\b/gi, '')
+      .replace(/\b(Inc\.|Corp\.|Ltd\.|Co\.|S\.p\.A\.|N\.V\.|PLC|S\.A\.|GmbH|AG|LLC|LP|SE|ASA|AB)\b/gi, '')
+      .replace(/\b(UCITS|Accumulating|Distributing|Acc\.|Dist\.|ETF Fund|SICAV)\b/gi, '')
+      .replace(/[,\s.]+$/, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+    if (name.length > maxLen) name = name.substring(0, maxLen).trim() + '\u2026';
+    return name;
+  }
+
   window.mobViewAssetTransactions = function(ticker) {
     // Navigate to portfolio detail and auto-filter transactions
     // Since we don't know the portfolio ID from here easily, 
@@ -438,7 +453,7 @@
                   <div class="mob-holding-ticker">${a.ticker}</div>
                   <div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700">${tag}</div>
                 </div>
-                <div class="mob-holding-name">${a.name || ''}</div>
+                <div class="mob-holding-name">${abbreviateName(a.name) || ''}</div>
                 <div class="flex flex-wrap gap-1.5 mt-1">
                     ${targetPrice > 0 ? `<div style="font-size:10px; font-weight:900; color:${targetReached?'var(--mob-emerald)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">${targetReached?'check_circle':'target'}</span> TP: ${formatCurrency(targetPrice, a.currency, 2)}</div>` : ''}
                     ${volThreshold > 0 ? `<div style="font-size:10px; font-weight:900; color:${volAlertTriggered?'var(--mob-amber)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">${volAlertTriggered?'priority_high':'bolt'}</span> VOL: ${volThreshold}%</div>` : ''}
