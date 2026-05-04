@@ -159,7 +159,20 @@
     <!-- Section 1: Open Positions -->
     <div class="mob-section-header">
       <span class="mob-section-title">Posizioni Aperte</span>
-      <span id="mob-pos-count" class="mob-header-subtitle">0 Assets</span>
+      <div class="flex items-center gap-2">
+        <span id="mob-pos-count" class="mob-header-subtitle">0 Assets</span>
+        <!-- View mode toggle -->
+        <div class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 gap-0.5">
+          <button id="btn-view-normal" onclick="setMarketView('normal')" title="Vista normale"
+                  class="p-1 rounded-md transition-all">
+            <span class="material-symbols-outlined" style="font-size:15px">view_list</span>
+          </button>
+          <button id="btn-view-compact" onclick="setMarketView('compact')" title="Vista compatta"
+                  class="p-1 rounded-md transition-all">
+            <span class="material-symbols-outlined" style="font-size:15px">density_small</span>
+          </button>
+        </div>
+      </div>
     </div>
     <div class="mob-list-edge" id="mob-list-positions"></div>
 
@@ -243,6 +256,28 @@
       if (item) item.style.transform = 'translateX(0)';
     });
     currentSwipeEl = null;
+  }
+
+  // ── View Mode (Normal / Compact) ────────────────────────────────────────
+  let _marketViewMode = localStorage.getItem('market_view_mode') || 'normal';
+
+  window.setMarketView = function(mode) {
+    _marketViewMode = mode;
+    localStorage.setItem('market_view_mode', mode);
+    updateViewToggle();
+    mobLoadAssets();
+  };
+
+  function updateViewToggle() {
+    const btnN = document.getElementById('btn-view-normal');
+    const btnC = document.getElementById('btn-view-compact');
+    const isCompact = _marketViewMode === 'compact';
+    if (btnN) btnN.className = isCompact
+      ? 'p-1 rounded-md transition-all text-slate-400 dark:text-slate-500'
+      : 'p-1 rounded-md transition-all bg-white dark:bg-slate-700 text-primary shadow-sm';
+    if (btnC) btnC.className = isCompact
+      ? 'p-1 rounded-md transition-all bg-white dark:bg-slate-700 text-primary shadow-sm'
+      : 'p-1 rounded-md transition-all text-slate-400 dark:text-slate-500';
   }
 
   window.mobViewAssetDetails = function(ticker, name, currency) {
@@ -440,14 +475,16 @@
           </div>
         `;
 
+        const showLogo = _marketViewMode !== 'compact';
+
         return `
           <div class="mob-holding-swipe-container" 
                ontouchstart="handleTouchStart(event, this)" 
                ontouchmove="handleTouchMove(event, this)" 
                ontouchend="handleTouchEnd(event, this)">
             ${actions}
-            <div class="mob-holding-item" style="${alertBg}; ${alertBorder}" onclick="window.showMobDetails('${a.ticker.replace(/'/g, "\\'")}', '${a.name ? a.name.replace(/'/g, "\\'") : ''}', '${a.currency || 'EUR'}')">
-              <div class="mob-holding-logo">${a.ticker.substring(0,3)}</div>
+            <div class="mob-holding-item" style="${alertBg}; ${alertBorder}" onclick="window.showMobDetails('${a.ticker.replace(/'/g, "\\'")}\'', '${a.name ? a.name.replace(/'/g, "\\'") : ''}', '${a.currency || 'EUR'}')">
+              ${showLogo ? `<div class="mob-holding-logo">${a.ticker.substring(0,3)}</div>` : ''}
               <div class="mob-holding-info">
                 <div class="flex items-center gap-2">
                   <div class="mob-holding-ticker">${a.ticker}</div>
@@ -479,6 +516,7 @@
             </div>
           </div>`;
       };
+
 
       if (posContainer) posContainer.innerHTML = openPos.map(a => renderCard(a, true)).join('') || '<div class="mob-empty">Nessuna posizione</div>';
 
@@ -541,6 +579,7 @@
     mobLoadIndices();
     mobLoadMovers();
     mobLoadAssets();
+    updateViewToggle();
   }
 
   window.addEventListener('mobile-view-activated', mobInit);
