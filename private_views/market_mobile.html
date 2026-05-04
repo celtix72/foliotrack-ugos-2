@@ -517,7 +517,7 @@
                   </div>
                 ` : `
                   <div class="mob-compact-values">
-                    <span class="mob-cv-gain" style="color:${_dgColor}">${_showDailyGain ? _dgSign + formatCurrency(_chgVal, a.currency, 0) : ''}</span>
+                    <span class="mob-cv-gain" style="color:${_dgColor}">${_showDailyGain ? _dgSign + fmtPriceCompact(_chgVal, a.currency, 0) : ''}</span>
                     <span class="mob-holding-gain" style="color:${color}; font-weight:900; margin-top:0">${isPos ? '+' : ''}${change.toFixed(1)}%</span>
                     <span class="mob-holding-value">${fmtPriceCompact(price, a.currency, price >= 100 ? 0 : price >= 10 ? 1 : 2)}</span>
                   </div>
