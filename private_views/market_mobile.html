@@ -468,7 +468,13 @@
               <span class="material-symbols-outlined">edit_note</span>
               <span>Modifica</span>
             </div>
-            <div class="mob-action-btn bg-red-ios" onclick="event.stopPropagation(); removeFromWatchlist(        const showLogo = _marketViewMode !== 'compact';
+            <div class="mob-action-btn bg-red-ios" onclick="event.stopPropagation(); removeFromWatchlist('${a.ticker}', ${!!a.hasPosition})">
+              <span class="material-symbols-outlined">delete</span>
+              <span>Rimuovi</span>
+            </div>
+          </div>
+        `;
+        const showLogo = _marketViewMode !== 'compact';
         const _chgVal = (a.changeValue || 0) * (a.totalQuantity || 0);
         const _showDailyGain = !showLogo && a.hasPosition && _chgVal !== 0;
         const _dgColor = _chgVal >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
@@ -513,12 +519,8 @@
               </div>
             </div>
           </div>`;
-      };le="color:${color}; font-weight:900; margin-top:0">${isPos ? '+' : ''}${change.toFixed(1)}%</div>
-                </div>
-              </div>
-            </div>
-          </div>`;
       };
+
 
 
       if (posContainer) posContainer.innerHTML = openPos.map(a => renderCard(a, true)).join('') || '<div class="mob-empty">Nessuna posizione</div>';
