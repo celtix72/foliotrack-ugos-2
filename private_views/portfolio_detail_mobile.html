@@ -798,7 +798,7 @@
         const stopLossHit = stopLoss > 0 && price <= stopLoss;
         const volAlertTriggered = volThreshold > 0 && Math.abs(h.changePercent || 0) >= volThreshold;
 
-        const dvVal = h.changeValue || 0;
+        const dvVal = (h.changeValuePortfolio || 0) * (h.shares || 0);
         // const dvPct = h.changePercent || 0; // Not used but could be
         const dvIsPos = dvVal >= 0;
         
@@ -867,7 +867,7 @@
               <div class="mob-holding-values">
                 <div class="mob-holding-value">${formatPrivacy(h.currentValue, currency, 'mob-hv-'+h.ticker, 0)}</div>
                 <div class="flex items-center justify-end gap-1.5 mt-0.5">
-                    ${(h.hasPosition && dvVal !== 0) ? `<span style="font-size:10px; font-weight:900; color:${dvIsPos?'var(--mob-emerald)':'var(--mob-rose)'}">${dvIsPos?'+':''}${formatPrivacy(dvVal, currency, 'mob-hdv-'+h.ticker, 0)}</span>` : ''}
+                    ${(h.shares > 0 && dvVal !== 0) ? `<span style="font-size:10px; font-weight:900; color:${dvIsPos?'var(--mob-emerald)':'var(--mob-rose)'}">${dvIsPos?'+':''}${formatPrivacy(dvVal, currency, 'mob-hdv-'+h.ticker, 0)}</span>` : ''}
                     <div class="mob-holding-gain" style="color:${isPos?'var(--mob-emerald)':'var(--mob-rose)'}">${isPos?'+':''}${pct.toFixed(1)}%</div>
                 </div>
               </div>
