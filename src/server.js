@@ -2195,7 +2195,7 @@ app.get('/api/assets', requireAuth, (req, res) => {
                a.changePercent, a.changeValue, a.pe, a.country, a.isManual, a.updatedAt, 
                a.dataSource, a.isin, a.lastUpdateError, a.quoteDate, a.forwardPE, 
                a.dividendYield, a.eps, a.beta, a.nextDividendDate, 
-               a.preMarketChangePercent, a.postMarketChangePercent,
+               a.preMarketChangePercent, a.postMarketChangePercent, a.isMonitored,
                CASE WHEN t.balance IS NOT NULL AND t.balance > 0.0001 THEN 1 ELSE 0 END as hasPosition,
                IFNULL(t.balance, 0) as totalQuantity,
                IFNULL(t.totalCostAsset, 0) as totalCostAssetCurr,

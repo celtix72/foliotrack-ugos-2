@@ -500,7 +500,7 @@
                ontouchmove="handleTouchMove(event, this)" 
                ontouchend="handleTouchEnd(event, this)">
             ${actions}
-            <div class="mob-holding-item" style="${alertBg}; ${alertBorder}" onclick="window.showMobDetails('${a.ticker.replace(/'/g, "\\'")}\\'', '${a.name ? a.name.replace(/'/g, "\\'") : ''}', '${a.currency || 'EUR'}')">
+            <div class="mob-holding-item" style="${alertBg}; ${alertBorder}" onclick="window.showMobDetails('${a.ticker.replace(/'/g, "\\'")}', '${a.name ? a.name.replace(/'/g, "\\'") : ''}', '${a.currency || 'EUR'}')">
               ${showLogo ? `<div class="mob-holding-logo">${a.ticker.substring(0,3)}</div>` : ''}
               <div class="mob-holding-info">
                 <div class="flex items-center gap-2">
