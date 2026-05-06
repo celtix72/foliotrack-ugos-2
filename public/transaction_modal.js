@@ -85,14 +85,6 @@
         #transaction-modal #tm-asset-meta p {
             font-size: 8px !important;
         }
-        #transaction-modal #tm-alerts-wrap {
-            margin-top: 8px !important;
-            padding-top: 6px !important;
-        }
-        #transaction-modal #tm-alerts-wrap p {
-            font-size: 8px !important;
-            margin-bottom: 4px !important;
-        }
         #transaction-modal #tm-search-results {
             max-height: 120px !important;
         }
@@ -197,31 +189,30 @@
                     <div class="flex gap-2 items-center"><span class="text-[7px] uppercase font-black" style="color: var(--mob-text-muted);">Prezzo:</span><span id="tm-meta-price" class="text-[10px] font-black text-primary">—</span></div>
                 </div>
 
-                <!-- Row 5: Qty + Price + FX + Tax (4 Columns) -->
-                <div id="tm-qty-price-row" class="tm-row hidden" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem; margin-bottom: 0.75rem;">
+                <!-- Row 5: Qty + Price -->
+                <div id="tm-qty-price-row" class="tm-row hidden" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
                     <div><label class="mob-input-label" id="tm-qty-label">Quantità</label><input id="tm-qty" type="number" step="any" placeholder="0" class="mob-input-field font-mono" oninput="tmCalcNet()" /></div>
                     <div><label class="mob-input-label" id="tm-price-label">Prezzo</label><input id="tm-price" type="number" step="any" placeholder="0.00" class="mob-input-field font-mono" oninput="tmCalcNet()" /></div>
-                    <div id="tm-fx-inline-wrap"><label class="mob-input-label">FX (<span id="tm-fx-from">USD</span>)</label><input id="tm-fx" type="number" step="any" value="1" class="mob-input-field font-mono" oninput="tmCalcNet()" /></div>
-                    <div><label class="mob-input-label">Tax</label><input id="tm-tax" type="number" step="any" value="0" class="mob-input-field font-mono" oninput="tmCalcNet()" /></div>
                 </div>
 
-                <!-- Row 6: Commissioni + Importo -->
-                <div id="tm-comm-amount-row" class="tm-row hidden" style="display: grid; grid-template-columns: 1fr 2fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+                <!-- Row 6: Comm + Tax -->
+                <div id="tm-comm-tax-row" class="tm-row hidden" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
                     <div id="tm-comm-wrap"><label class="mob-input-label">Commissioni</label><input id="tm-comm" type="number" step="any" value="0" class="mob-input-field font-mono" oninput="tmCalcNet()" /></div>
+                    <div id="tm-tax-wrap">
+                        <label class="mob-input-label">Tax</label>
+                        <input id="tm-tax" type="number" step="any" value="0" class="mob-input-field font-mono" oninput="tmCalcNet()" />
+                    </div>
+                </div>
+
+                <!-- Row 7: FX + Amount -->
+                <div id="tm-fx-amount-row" class="tm-row hidden" style="display: grid; grid-template-columns: 1fr 2fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+                    <div id="tm-fx-wrap"><label class="mob-input-label">FX (<span id="tm-fx-from">USD</span>)</label><input id="tm-fx" type="number" step="any" value="1" class="mob-input-field font-mono" oninput="tmCalcNet()" /></div>
                     <div id="tm-amount-wrap"><label class="mob-input-label" id="tm-amount-label">Importo Totale</label>
                         <div class="relative"><input id="tm-amount" type="number" step="any" placeholder="0.00" class="mob-input-field font-mono" style="background: var(--mob-surface-2);" oninput="if(typeof tmCalcFromAmount === 'function') tmCalcFromAmount()" /><p class="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] font-bold italic" style="color: var(--mob-text-muted);" id="tm-amount-hint"></p></div>
                     </div>
                 </div>
 
-                <!-- Alert & Stop Loss (Super tight) -->
-                <div id="tm-alerts-wrap" class="hidden mt-1 pt-1 border-t" style="border-color: var(--mob-border);">
-                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
-                        <div class="relative"><span class="absolute left-1.5 top-1/2 -translate-y-1/2 text-[8px] tm-alerts-curr" style="color: var(--mob-text-muted);">€</span><input id="tm-tp" type="number" placeholder="TG1" class="mob-input-field font-mono" style="padding-left:14px;" /></div>
-                        <div class="relative"><span class="absolute left-1.5 top-1/2 -translate-y-1/2 text-[8px] tm-alerts-curr" style="color: var(--mob-text-muted);">€</span><input id="tm-tp2" type="number" placeholder="TG2" class="mob-input-field font-mono" style="padding-left:14px;" /></div>
-                        <div class="relative"><span class="absolute left-1.5 top-1/2 -translate-y-1/2 text-[8px] tm-alerts-curr" style="color: var(--mob-text-muted);">€</span><input id="tm-sl" type="number" placeholder="SL" class="mob-input-field font-mono" style="padding-left:14px;" /></div>
-                        <input id="tm-vol" type="number" placeholder="VOL%" class="mob-input-field font-mono text-center" />
-                    </div>
-                </div>
+
 
                 <!-- Target Transfer -->
                 <div id="tm-dest-wrap" class="hidden" style="margin-top: 0.5rem;">
@@ -291,7 +282,7 @@
             if (tmId) tmId.value = '';
             
             // ... reset other fields safely ...
-            ['tm-asset-ticker', 'tm-amount', 'tm-comm', 'tm-tax', 'tm-tp', 'tm-tp2', 'tm-sl'].forEach(id => {
+            ['tm-asset-ticker', 'tm-amount', 'tm-comm', 'tm-tax'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.value = (id === 'tm-comm' || id === 'tm-tax') ? '0' : '';
             });
@@ -360,9 +351,11 @@
         _toggleField('tm-isin-wrap', type === 'BUY' && source === 'B_ITA');
         _toggleField('tm-manual-name-wrap', type === 'BUY' && source === 'MANUAL');
         _toggleField('tm-manual-curr-wrap', type === 'BUY' && source === 'MANUAL');
+        
         _toggleField('tm-qty-price-row', needsAsset);
-        _toggleField('tm-comm-amount-row', isTrade || isDividend || isCashOnly);
-        _toggleField('tm-alerts-wrap', needsAsset);
+        _toggleField('tm-comm-tax-row', isTrade || isDividend || type === 'TAX');
+        _toggleField('tm-fx-amount-row', isTrade || isDividend || isCashOnly);
+
 
         // Labels dinamiche
         if (isDividend) {
@@ -375,7 +368,7 @@
 
         // Specific sub-field logic
         _toggleField('tm-comm-wrap', isTrade);
-        _toggleField('tm-fx-inline-wrap', needsAsset); // Show FX input if asset is present
+        // Note: tm-fx-wrap visibility is also handled by tmCheckFX based on currency difference
 
         // Importo totale: cash-only e DIVIDEND (modificabile)
         _toggleField('tm-amount-wrap', isCashOnly || isDividend);
@@ -640,18 +633,7 @@
                     toggleTransactionFields();
                 }
 
-                // Load TP / SL
-                try {
-                    const aRes = await fetch(`/api/assets`);
-                    const allAssets = await aRes.json();
-                    const aInfo = allAssets.find(a => a.ticker === ticker);
-                    if (aInfo) {
-                        document.getElementById('tm-tp').value = aInfo.targetPrice || '';
-                        document.getElementById('tm-tp2').value = aInfo.targetPrice2 || '';
-                        document.getElementById('tm-sl').value = aInfo.stopLoss || '';
-                        document.getElementById('tm-vol').value = aInfo.volatilityAlert || 0;
-                    }
-                } catch(e) {}
+
 
                 const type = document.getElementById('tm-type')?.value;
                 // Auto-populate price for BUY, SELL, DIVIDEND
@@ -716,20 +698,7 @@
                 body: JSON.stringify(payload)
             });
             if (res.ok) {
-                // Salva eventuali modifiche a Target Price e Stop Loss
-                if (payload.assetTicker && payload.assetTicker !== 'CASH' && !document.getElementById('tm-alerts-wrap').classList.contains('hidden')) {
-                    const tp = parseFloat(document.getElementById('tm-tp')?.value) || 0;
-                    const tp2 = parseFloat(document.getElementById('tm-tp2')?.value) || 0;
-                    const sl = parseFloat(document.getElementById('tm-sl')?.value) || 0;
-                    const vol = parseInt(document.getElementById('tm-vol')?.value) || 0;
-                    try {
-                        await fetch(`/api/assets/${encodeURIComponent(payload.assetTicker)}`, {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ targetPrice: tp, targetPrice2: tp2, stopLoss: sl, volatilityAlert: vol })
-                        });
-                    } catch(e) { console.error('Failed to save asset alerts', e); }
-                }
+
 
                 if (window.showNotification) window.showNotification(id ? 'Transazione modificata!' : 'Transazione inserita!', 'success');
                 closeTransactionModal();
@@ -846,21 +815,7 @@
         const aIsin = t.isin || metadata.isin || '';
         document.getElementById('tm-isin').value = aIsin;
 
-        try {
-            const aRes = await fetch(`/api/assets`);
-            const allAssets = await aRes.json();
-            const aInfo = allAssets.find(a => a.ticker === (t.assetTicker || t.ticker));
-            if (aInfo) {
-                document.getElementById('tm-tp').value = aInfo.targetPrice || '';
-                document.getElementById('tm-tp2').value = aInfo.targetPrice2 || '';
-                document.getElementById('tm-sl').value = aInfo.stopLoss || '';
-                document.getElementById('tm-vol').value = aInfo.volatilityAlert || 0;
-            }
-        } catch(e) {}
-        
-        if (aCurr) {
-            document.querySelectorAll('.tm-alerts-curr').forEach(el => el.innerText = aCurr === 'USD' ? '$' : (aCurr === 'EUR' ? '€' : aCurr));
-        }
+
 
         if (t.type === 'TRANSFER' && t.destinationPortfolioId) {
             await _loadDestPortfolios();
