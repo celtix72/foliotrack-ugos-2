@@ -2187,7 +2187,7 @@ app.delete('/api/fundamentals/:ticker/cache', requireAuth, (req, res) => {
 // ASSETS API
 // ════════════════════════════════════════════════════════════════════════════
 
-app.get('/api/assets', requireAuth, (req, res) => {
+app.get('/api/assets', requireAuth, async (req, res) => {
     const userId = req.user.id;
     // Return all assets except CASH, with a flag indicating if they have an active position for THIS user
     const rows = database.db.prepare(`
@@ -2227,14 +2227,14 @@ app.get('/api/assets', requireAuth, (req, res) => {
     // 1. Calculate holdings per portfolio to get specific PMCs (Filtered by user)
     const portfolioHoldings = {}; 
     const allP = database.db.prepare(`
-        SELECT p.id, p.name, p.color 
+        SELECT p.id, p.name, p.color, p.currency 
         FROM portfolios p
         JOIN portfolio_users pu ON p.id = pu.portfolio_id
         WHERE pu.user_id = ?
     `).all(userId);
     for (const p of allP) {
         const txs = database.db.prepare(`
-            SELECT type, assetTicker, quantity, price, commission, tax 
+            SELECT type, assetTicker, quantity, price, commission, tax, exchangeRate, amount 
             FROM transactions 
             WHERE portfolioId = ? 
             ORDER BY date ASC
@@ -2245,14 +2245,20 @@ app.get('/api/assets', requireAuth, (req, res) => {
             if (!t.assetTicker || t.assetTicker === 'CASH') continue;
             const ticker = t.assetTicker;
             if (t.type === 'BUY') {
-                if (!pOpenMap[ticker]) pOpenMap[ticker] = { qty: 0, cost: 0 };
+                if (!pOpenMap[ticker]) pOpenMap[ticker] = { qty: 0, cost: 0, costBase: 0 };
+                const fx = t.exchangeRate || 1;
+                const costBase = t.amount ? Math.abs(t.amount) : ((t.quantity * t.price + t.commission + t.tax) / fx);
+
                 pOpenMap[ticker].qty += t.quantity;
                 pOpenMap[ticker].cost += (t.quantity * t.price + t.commission + t.tax);
+                pOpenMap[ticker].costBase += costBase;
             } else if (t.type === 'SELL') {
                 if (pOpenMap[ticker] && pOpenMap[ticker].qty > 0) {
                     const pmc = pOpenMap[ticker].cost / pOpenMap[ticker].qty;
+                    const pmcBase = pOpenMap[ticker].costBase / pOpenMap[ticker].qty;
                     pOpenMap[ticker].qty -= t.quantity;
                     pOpenMap[ticker].cost -= t.quantity * pmc;
+                    pOpenMap[ticker].costBase -= t.quantity * pmcBase;
                     if (pOpenMap[ticker].qty <= 0.0001) delete pOpenMap[ticker];
                 }
             }
@@ -2262,11 +2268,15 @@ app.get('/api/assets', requireAuth, (req, res) => {
             portfolioHoldings[ticker].push({
                 name: p.name,
                 color: p.color,
+                currency: p.currency,
+                qty: data.qty,
+                costBase: data.costBase,
                 pmc: data.cost / data.qty
             });
         }
     }
 
+    const liveRate = await getEurUsdRate();
     const today = new Date().toISOString().split('T')[0];
 
     // Add sparkline data (last 7 days from cache)
@@ -2279,9 +2289,29 @@ app.get('/api/assets', requireAuth, (req, res) => {
         }
         const isToday = a.quoteDate === today;
 
-        // Attach portfoliosInfo
+        let totalGainEUR = 0;
+        
+        // Attach portfoliosInfo and compute totalGainEUR
         const portfoliosInfo = (portfolioHoldings[a.ticker] || []).map(ph => {
             const roi = (a.currentPrice > 0 && ph.pmc > 0) ? ((a.currentPrice - ph.pmc) / ph.pmc) * 100 : 0;
+            
+            const currentValAsset = ph.qty * (a.currentPrice || 0);
+            let currentValBase = currentValAsset;
+            if (a.currency === 'USD' && ph.currency === 'EUR') {
+                currentValBase = currentValAsset / liveRate;
+            } else if (a.currency === 'EUR' && ph.currency === 'USD') {
+                currentValBase = currentValAsset * liveRate;
+            }
+            
+            const gainBase = currentValBase - ph.costBase;
+            
+            let gainEUR = gainBase;
+            if (ph.currency === 'USD') {
+                gainEUR = gainBase / liveRate;
+            }
+            
+            totalGainEUR += gainEUR;
+            
             return {
                 name: ph.name,
                 color: ph.color,
@@ -2298,7 +2328,8 @@ app.get('/api/assets', requireAuth, (req, res) => {
             targetPrice: a.userTargetPrice !== null ? a.userTargetPrice : a.targetPrice,
             stopLoss: a.userStopLoss !== null ? a.userStopLoss : a.stopLoss,
             volatilityAlert: a.userVolatilityAlert !== null ? a.userVolatilityAlert : a.volatilityAlert,
-            portfoliosInfo
+            portfoliosInfo,
+            totalGainEUR
         };
     });
 

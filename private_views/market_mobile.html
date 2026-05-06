@@ -483,7 +483,8 @@
         const _dgSign = _chgVal >= 0 ? '+' : '';
         // Total position values
         const _totalVal = (a.currentPrice || 0) * (a.totalQuantity || 0);
-        const _totalGain = _totalVal - (a.totalCostAssetCurr || 0);
+        const _totalGain = a.totalGainEUR !== undefined ? a.totalGainEUR : (_totalVal - (a.totalCostAssetCurr || 0));
+        const _totalGainCurrency = a.totalGainEUR !== undefined ? 'EUR' : a.currency;
         const _totGainIsPos = _totalGain >= 0;
         const _totGainColor = _totGainIsPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
         const _totGainSign = (_totGainIsPos && Math.abs(_totalGain) >= 0.5) ? '+' : '';
@@ -524,7 +525,7 @@
                     <span class="mob-holding-value">${fmtPriceCompact(price, a.currency, price >= 100 ? 0 : price >= 10 ? 1 : 2)}</span>
                   </div>
                   ${_showTotals ? `<div class="mob-compact-values" style="margin-top:2px; opacity:0.85">
-                    <span style="display:inline-flex; justify-content:flex-end; padding-right:6px"><span style="background:${_totGainIsPos ? 'rgba(16,185,129,0.15)' : 'rgba(244,63,94,0.15)'}; color:${_totGainColor}; font-size:calc(11px * var(--mob-scale,1)); font-weight:700; white-space:nowrap; border-radius:4px; padding:1px 5px; letter-spacing:-0.2px">${_totGainSign}${fmtPriceCompact(_totalGain, a.currency, 0)}</span></span>
+                    <span style="display:inline-flex; justify-content:flex-end; padding-right:6px"><span style="background:${_totGainIsPos ? 'rgba(16,185,129,0.15)' : 'rgba(244,63,94,0.15)'}; color:${_totGainColor}; font-size:calc(11px * var(--mob-scale,1)); font-weight:700; white-space:nowrap; border-radius:4px; padding:1px 5px; letter-spacing:-0.2px">${_totGainSign}${fmtPriceCompact(_totalGain, _totalGainCurrency, 0)}</span></span>
                     <span></span>
                     <span style="text-align:right; font-size:calc(11px * var(--mob-scale,1)); font-weight:500; color:var(--mob-text-muted); white-space:nowrap; padding-left:8px">${fmtPriceCompact(_totalVal, a.currency, 0)}</span>
                   </div>` : ''}
