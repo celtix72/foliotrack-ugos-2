@@ -222,6 +222,13 @@
 
       <!-- Transactions (hidden initially) -->
       <div id="mob-transactions-view" style="display:none">
+        <!-- Search Bar -->
+        <div class="mb-4 relative">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">search</span>
+            <input type="text" id="mob-transactions-search" placeholder="Cerca ticker o nome..." 
+                   class="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+                   oninput="mobFilterTransactionsSearch()">
+        </div>
         <!-- Filter Info Bar -->
         <div id="mob-tx-filter-info" class="mob-ios-grouped hidden" style="background:rgba(19,91,236,0.1); border-color:rgba(19,91,236,0.3); border-radius:12px; margin-bottom:0 !important">
             <div style="padding:10px 16px; display:flex; justify-content:space-between; align-items:center">
@@ -636,6 +643,35 @@
       if (container) container.style.display = '';
       it.style.backgroundColor = '';
     });
+    if (typeof window.mobFilterTransactionsSearch === 'function') {
+        window.mobFilterTransactionsSearch();
+    }
+  };
+
+  window.mobFilterTransactionsSearch = function() {
+      const searchTerm = (document.getElementById('mob-transactions-search')?.value || '').toLowerCase();
+      const items = document.querySelectorAll('#mob-transactions-list .mob-transaction-item');
+      
+      // If there is an active ticker filter from "mobViewAssetTransactions", we shouldn't show items that don't match that ticker.
+      // But actually, searching works on top of it.
+      const activeFilterInfo = document.getElementById('mob-tx-filter-info');
+      const isTickerFilterActive = activeFilterInfo && !activeFilterInfo.classList.contains('hidden');
+      const activeTicker = isTickerFilterActive ? document.getElementById('mob-tx-filter-ticker')?.textContent : null;
+
+      items.forEach(it => {
+          const container = it.closest('.mob-holding-swipe-container');
+          if (!container) return;
+          
+          const searchData = it.getAttribute('data-search') || '';
+          const matchesSearch = searchData.includes(searchTerm);
+          const matchesTickerFilter = !isTickerFilterActive || it.dataset.ticker === activeTicker;
+          
+          if (matchesSearch && matchesTickerFilter) {
+              container.style.display = '';
+          } else {
+              container.style.display = 'none';
+          }
+      });
   };
 
   // ── Portfolio Detail ──────────────────────────────
@@ -875,6 +911,10 @@
           </div>
         `;
       }).join('');
+      
+      if (typeof window.mobFilterTransactionsSearch === 'function') {
+          window.mobFilterTransactionsSearch();
+      }
     } catch(e) {
       console.error('[MOB] Holdings load error:', e);
       if (container) container.innerHTML = '<div class="mob-empty"><span class="material-symbols-outlined">error</span><div class="mob-empty-title">Errore nel caricamento</div></div>';
@@ -919,8 +959,11 @@
         const tSign = ['BUY', 'WITHDRAWAL', 'TAX', 'TRANSFER'].includes(t.type) ? '-' : '+';
         const valColor = ['BUY', 'WITHDRAWAL', 'TAX', 'TRANSFER'].includes(t.type) ? 'var(--mob-rose)' : 'var(--mob-emerald)';
         
+        const holding = currentHoldings.find(h => h.ticker === t.assetTicker);
+        const name = holding ? holding.name : '';
+
         return `
-          <div class="mob-holding-swipe-container" 
+          <div class="mob-holding-swipe-container mob-transaction-item" data-ticker="${t.assetTicker || ''}" data-search="${(t.assetTicker || '').toLowerCase()} ${(name || '').toLowerCase()}"
                ontouchstart="handleTouchStart(event, this)" 
                ontouchmove="handleTouchMove(event, this)" 
                ontouchend="handleTouchEnd(event, this)">
@@ -963,6 +1006,10 @@
             </div>
           </div>`;
       }).join('');
+
+      if (typeof window.mobFilterTransactionsSearch === 'function') {
+          window.mobFilterTransactionsSearch();
+      }
     } catch(e) {
       console.error('[MOB] Transactions load error:', e);
     }

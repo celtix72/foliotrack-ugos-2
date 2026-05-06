@@ -370,6 +370,14 @@
         </div>
 
         <div id="view-transactions" class="space-y-4 hidden">
+            <div class="flex items-center justify-end">
+                <div class="relative w-full max-w-xs">
+                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">search</span>
+                    <input type="text" id="transactions-search" placeholder="Search by ticker or name..." 
+                           class="w-full pl-9 pr-4 py-2 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-lg text-xs focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+                           oninput="filterTransactionsDesktop()">
+                </div>
+            </div>
             <div class="overflow-hidden bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
                 <table class="w-full text-left border-collapse">
                     <thead>
@@ -1181,6 +1189,15 @@
         const fullLogBody = document.getElementById('full-transactions-body');
         if (!fullLogBody) return;
 
+        window.filterTransactionsDesktop = function() {
+            const searchTerm = (document.getElementById('transactions-search')?.value || '').toLowerCase();
+            const rows = document.querySelectorAll('#full-transactions-body tr');
+            rows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        };
+
         const sorted = [...transactions].sort((a, b) => {
             let valA, valB;
             if (transactionsSort.col === 'date') {
@@ -1243,6 +1260,9 @@
         }).join('') : '<tr><td colspan="9" class="px-6 py-12 text-center text-slate-500 italic">No transactions recorded yet.</td></tr>';
 
         updateSortIndicators('transactions', transactionsSort);
+        if (typeof window.filterTransactionsDesktop === 'function') {
+            window.filterTransactionsDesktop();
+        }
     }
 
     function updateSortIndicators(type, state) {
