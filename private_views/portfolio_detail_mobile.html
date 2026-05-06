@@ -577,6 +577,7 @@
   };
 
   window.handleTouchEnd = function(e, container) {
+    if (e.target.closest('.mob-action-btn')) return;
     const item = container.querySelector('.mob-holding-item');
     if (!item) return;
     const diff = touchMoveX - touchStartX;
