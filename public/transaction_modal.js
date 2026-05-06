@@ -101,18 +101,18 @@
 <div id="transaction-modal" 
      style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 20000; align-items: center; justify-content: center; background-color: ${backdropColor}; backdrop-filter: blur(12px); padding: 0.5rem; flex-direction: column;"
      class="flex">
-    <div class="tm-container bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800" 
-         style="width: 100%; max-width: 800px; max-height: 94vh; position: relative; z-index: 20001; display: flex; flex-direction: column; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden;">
+    <div class="tm-container" 
+         style="width: 100%; max-width: 800px; max-height: 94vh; position: relative; z-index: 20001; display: flex; flex-direction: column; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; background: var(--mob-surface); border: 1px solid var(--mob-border); color: var(--mob-text);">
         
         <!-- Header -->
-        <div class="tm-header" style="padding: 16px 20px; border-bottom: 1px solid rgba(148,163,184,0.1); display: flex; justify-content: space-between; align-items: center; background: var(--mob-surface);">
+        <div class="tm-header" style="padding: 16px 20px; border-bottom: 1px solid var(--mob-border); display: flex; justify-content: space-between; align-items: center; background: var(--mob-surface);">
             <div class="flex items-center gap-3">
                 <div class="tm-header-icon-wrap w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
                     <span class="material-symbols-outlined text-primary text-xl" id="tm-header-icon">swap_horiz</span>
                 </div>
                 <div>
-                    <h3 id="tm-title" class="font-black text-sm md:text-lg dark:text-white" style="margin: 0;">Nuova Transazione</h3>
-                    <p class="text-[9px] text-slate-400 uppercase tracking-widest font-bold" style="margin: 2px 0 0 0;">Dettagli Operazione</p>
+                    <h3 id="tm-title" class="font-black text-sm md:text-lg" style="margin: 0; color: var(--mob-text);">Nuova Transazione</h3>
+                    <p class="text-[9px] uppercase tracking-widest font-bold" style="margin: 2px 0 0 0; color: var(--mob-text-muted);">Dettagli Operazione</p>
                 </div>
             </div>
             <button type="button" onclick="closeTransactionModal()" style="background: rgba(148,163,184,0.1); border: none; border-radius: 50%; cursor: pointer; color: #94a3b8; padding: 6px; display: flex;">
@@ -191,10 +191,10 @@
                 </div>
 
                 <!-- Row 4: Asset Meta Badges (Super Compact) -->
-                <div id="tm-asset-meta" class="hidden tm-row p-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-lg flex justify-between gap-4 mb-2">
-                    <div class="flex gap-2 items-center"><span class="text-[7px] uppercase text-slate-400 font-black">Mercato:</span><span id="tm-meta-exchange" class="text-[10px] font-black text-slate-700 dark:text-slate-200">—</span></div>
-                    <div class="flex gap-2 items-center"><span class="text-[7px] uppercase text-slate-400 font-black">Tipo:</span><span id="tm-meta-type" class="text-[10px] font-black text-slate-700 dark:text-slate-200">—</span></div>
-                    <div class="flex gap-2 items-center"><span class="text-[7px] uppercase text-slate-400 font-black">Prezzo:</span><span id="tm-meta-price" class="text-[10px] font-black text-primary">—</span></div>
+                <div id="tm-asset-meta" class="hidden tm-row p-2 rounded-lg flex justify-between gap-4 mb-2" style="background: var(--mob-surface-2); border: 1px solid var(--mob-border);">
+                    <div class="flex gap-2 items-center"><span class="text-[7px] uppercase font-black" style="color: var(--mob-text-muted);">Mercato:</span><span id="tm-meta-exchange" class="text-[10px] font-black" style="color: var(--mob-text);">—</span></div>
+                    <div class="flex gap-2 items-center"><span class="text-[7px] uppercase font-black" style="color: var(--mob-text-muted);">Tipo:</span><span id="tm-meta-type" class="text-[10px] font-black" style="color: var(--mob-text);">—</span></div>
+                    <div class="flex gap-2 items-center"><span class="text-[7px] uppercase font-black" style="color: var(--mob-text-muted);">Prezzo:</span><span id="tm-meta-price" class="text-[10px] font-black text-primary">—</span></div>
                 </div>
 
                 <!-- Row 5: Qty + Price + FX + Tax (4 Columns) -->
@@ -209,16 +209,16 @@
                 <div id="tm-comm-amount-row" class="tm-row hidden" style="display: grid; grid-template-columns: 1fr 2fr; gap: 0.75rem; margin-bottom: 0.75rem;">
                     <div id="tm-comm-wrap"><label class="mob-input-label">Commissioni</label><input id="tm-comm" type="number" step="any" value="0" class="mob-input-field font-mono" oninput="tmCalcNet()" /></div>
                     <div id="tm-amount-wrap"><label class="mob-input-label" id="tm-amount-label">Importo Totale</label>
-                        <div class="relative"><input id="tm-amount" type="number" step="any" placeholder="0.00" class="mob-input-field font-mono bg-slate-50 dark:bg-slate-900/50" oninput="if(typeof tmCalcFromAmount === 'function') tmCalcFromAmount()" /><p class="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] text-slate-400 font-bold italic" id="tm-amount-hint"></p></div>
+                        <div class="relative"><input id="tm-amount" type="number" step="any" placeholder="0.00" class="mob-input-field font-mono" style="background: var(--mob-surface-2);" oninput="if(typeof tmCalcFromAmount === 'function') tmCalcFromAmount()" /><p class="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] font-bold italic" style="color: var(--mob-text-muted);" id="tm-amount-hint"></p></div>
                     </div>
                 </div>
 
                 <!-- Alert & Stop Loss (Super tight) -->
-                <div id="tm-alerts-wrap" class="hidden mt-1 pt-1 border-t border-slate-100 dark:border-slate-800">
+                <div id="tm-alerts-wrap" class="hidden mt-1 pt-1 border-t" style="border-color: var(--mob-border);">
                     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
-                        <div class="relative"><span class="absolute left-1.5 top-1/2 -translate-y-1/2 text-[8px] text-slate-400 tm-alerts-curr">€</span><input id="tm-tp" type="number" placeholder="TG1" class="mob-input-field font-mono" style="padding-left:14px;" /></div>
-                        <div class="relative"><span class="absolute left-1.5 top-1/2 -translate-y-1/2 text-[8px] text-slate-400 tm-alerts-curr">€</span><input id="tm-tp2" type="number" placeholder="TG2" class="mob-input-field font-mono" style="padding-left:14px;" /></div>
-                        <div class="relative"><span class="absolute left-1.5 top-1/2 -translate-y-1/2 text-[8px] text-slate-400 tm-alerts-curr">€</span><input id="tm-sl" type="number" placeholder="SL" class="mob-input-field font-mono" style="padding-left:14px;" /></div>
+                        <div class="relative"><span class="absolute left-1.5 top-1/2 -translate-y-1/2 text-[8px] tm-alerts-curr" style="color: var(--mob-text-muted);">€</span><input id="tm-tp" type="number" placeholder="TG1" class="mob-input-field font-mono" style="padding-left:14px;" /></div>
+                        <div class="relative"><span class="absolute left-1.5 top-1/2 -translate-y-1/2 text-[8px] tm-alerts-curr" style="color: var(--mob-text-muted);">€</span><input id="tm-tp2" type="number" placeholder="TG2" class="mob-input-field font-mono" style="padding-left:14px;" /></div>
+                        <div class="relative"><span class="absolute left-1.5 top-1/2 -translate-y-1/2 text-[8px] tm-alerts-curr" style="color: var(--mob-text-muted);">€</span><input id="tm-sl" type="number" placeholder="SL" class="mob-input-field font-mono" style="padding-left:14px;" /></div>
                         <input id="tm-vol" type="number" placeholder="VOL%" class="mob-input-field font-mono text-center" />
                     </div>
                 </div>
@@ -234,7 +234,7 @@
             </div>
 
             <!-- Footer -->
-            <div class="tm-footer" style="padding: 16px 20px; border-top: 1px solid rgba(148,163,184,0.1); background: var(--mob-surface); display: flex; gap: 10px;">
+            <div class="tm-footer" style="padding: 16px 20px; border-top: 1px solid var(--mob-border); background: var(--mob-surface); display: flex; gap: 10px;">
                 <button type="button" onclick="closeTransactionModal()" class="mob-btn" style="flex: 1; background: rgba(148,163,184,0.1); color: var(--mob-text-muted); border: none; font-weight: 900; text-transform: uppercase; font-size: 11px;">
                     Annulla
                 </button>
