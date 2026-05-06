@@ -80,7 +80,7 @@
                     sessionStorage.setItem('ft_cache_v', newV.toString());
 
                     Object.keys(sessionStorage).forEach(key => {
-                        if (key.startsWith('ft_cache_')) {
+                        if (key.startsWith('ft_cache_') && key !== 'ft_cache_v') {
                             sessionStorage.removeItem(key);
                         }
                     });

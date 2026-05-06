@@ -304,21 +304,9 @@
         return `<span class="performance-chip border ${color}">${isPos ? '+' : ''}${val.toFixed(1)}%</span>`;
     }
 
-    async function removeFromWatchlist(ticker) {
-        if (!confirm(`Remove ${ticker} from watchlist?`)) return;
-        try {
-            const res = await fetch(`/api/watchlist/${ticker}`, { method: 'DELETE' });
-            if (res.ok) {
-                watchlist = watchlist.filter(it => it.ticker !== ticker);
-                renderWatchlist();
-            } else {
-                const err = await res.json();
-                alert('Failed to remove: ' + (err.error || res.statusText));
-            }
-        } catch (err) {
-            alert('Failed to remove: ' + err.message);
-        }
-    }
+    window.addEventListener('market-data-updated', () => {
+        loadWatchlist();
+    });
 
 
     function formatNum(n) { return n ? n.toFixed(2) : null; }

@@ -357,22 +357,7 @@
     }
     window.renderWatchlist = renderWatchlist;
 
-    async function removeFromWatchlist(ticker) {
-        if (!confirm(`Remove ${ticker}?`)) return;
-        try {
-            const res = await fetch(`/api/watchlist/${ticker}`, { method: 'DELETE' });
-            if (res.ok) {
-                window.watchlist = (window.watchlist || []).filter(it => it.ticker !== ticker);
-                renderWatchlist();
-            } else {
-                const err = await res.json();
-                alert('Error: ' + (err.error || res.statusText));
-            }
-        } catch (err) {
-            alert('Error: ' + err.message);
-        }
-    }
-    window.removeFromWatchlist = removeFromWatchlist;
+
 
     async function showMobDetails(ticker, name, currency) {
         if (typeof openAssetChartModal === 'function') {
