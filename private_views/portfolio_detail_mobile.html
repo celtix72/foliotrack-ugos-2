@@ -1215,7 +1215,7 @@
       mobLoadPortfolioDetail(mobCurrentPortfolioId);
       const ticker = params.get('ticker');
       if (ticker) {
-        setTimeout(() => loadAssetChart(ticker), 500);
+        setTimeout(() => { if(typeof window.mobViewAssetTransactions === 'function') window.mobViewAssetTransactions(ticker); }, 500);
       }
     } else {
       mobLoadPortfolioList();
