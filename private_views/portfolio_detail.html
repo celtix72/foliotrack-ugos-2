@@ -921,16 +921,16 @@
             const assetsVal = totalVal - cashVal;
             const dayGain = p.changeValue || 0;
 
-            // Use 'NUM' to get only the number from formatPrivacy (respecting privacy mode)
+            // Use '' to get only the number from formatPrivacy (respecting privacy mode)
             // and handle symbols separately in the HTML spans
-            document.getElementById('p-total-value').innerText = formatPrivacy(totalVal, 'NUM', 'p-total', 0);
-            document.getElementById('p-cash-value').innerText = formatPrivacy(cashVal, 'NUM', 'p-cash', 0);
-            document.getElementById('p-assets-value').innerText = formatPrivacy(assetsVal, 'NUM', 'p-assets', 0);
+            document.getElementById('p-total-value').innerText = formatPrivacy(totalVal, '', 'p-total', 0);
+            document.getElementById('p-cash-value').innerText = formatPrivacy(cashVal, '', 'p-cash', 0);
+            document.getElementById('p-assets-value').innerText = formatPrivacy(assetsVal, '', 'p-assets', 0);
             
             const dayGainEl = document.getElementById('p-day-gain');
             if (dayGainEl) {
                 const isPos = dayGain >= 0;
-                const formatted = formatPrivacy(dayGain, 'NUM', 'p-day-gain', 0);
+                const formatted = formatPrivacy(dayGain, '', 'p-day-gain', 0);
                 dayGainEl.innerText = (isPos ? '+' : '') + formatted;
                 dayGainEl.className = `text-2xl font-black tracking-tight ${isPos ? 'text-emerald-500' : 'text-rose-500'}`;
             }
