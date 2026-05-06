@@ -210,7 +210,7 @@
   let touchMoveX = 0;
   let currentSwipeEl = null;
   const SWIPE_THRESHOLD = 50;
-  const ACTION_WIDTH = 195; // 3 buttons * 65px (Standard width for mobile actions)
+  const ACTION_WIDTH = 130; // 2 buttons * 65px (Standard width for mobile actions)
 
   window.handleTouchStart = function(e, container) {
     touchStartX = e.touches[0].clientX;
@@ -456,10 +456,7 @@
               <span class="material-symbols-outlined">list</span>
               <span>Trans</span>
             </div>
-            <div class="mob-action-btn bg-purple-ios" onclick="event.stopPropagation(); window.showMobDetails('${a.ticker.replace(/'/g, "\\'")}', '${a.name ? a.name.replace(/'/g, "\\'") : ''}', '${a.currency || 'EUR'}')">
-              <span class="material-symbols-outlined">show_chart</span>
-              <span>Grafico</span>
-            </div>
+
             <div class="mob-action-btn bg-orange-ios" onclick="event.stopPropagation(); openManualModal('${a.ticker}', '${a.currency}', ${a.currentPrice}, '${a.type}', '${(a.country || '').replace(/'/g, "\\'")}', '${a.dataSource}', '${a.isin}')">
               <span class="material-symbols-outlined">edit_note</span>
               <span>Modifica</span>
@@ -467,10 +464,7 @@
           </div>
         ` : `
           <div class="mob-holding-actions">
-            <div class="mob-action-btn bg-purple-ios" onclick="event.stopPropagation(); window.showMobDetails('${a.ticker.replace(/'/g, "\\'")}', '${a.name ? a.name.replace(/'/g, "\\'") : ''}', '${a.currency || 'EUR'}')">
-              <span class="material-symbols-outlined">show_chart</span>
-              <span>Grafico</span>
-            </div>
+
             <div class="mob-action-btn bg-orange-ios" onclick="event.stopPropagation(); openManualModal('${a.ticker}', '${a.currency}', ${a.currentPrice}, '${a.type}', '${(a.country || '').replace(/'/g, "\\'")}', '${a.dataSource}', '${a.isin}')">
               <span class="material-symbols-outlined">edit_note</span>
               <span>Modifica</span>
