@@ -188,32 +188,42 @@
                 <h1 id="title-portfolio-name" class="text-4xl font-black">---</h1>
                 <span id="p-type-badge" class="hidden ml-3 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest bg-amber-500/20 text-amber-500 border border-amber-500/30">DEPOSITO</span>
             </div>
-            <div class="flex flex-col gap-4">
-                <div class="flex flex-wrap items-center gap-6">
-                    <div class="flex items-center gap-2">
-                        <p class="text-3xl font-black tracking-tight"><span id="total-value-label">0.00</span> <span id="portfolio-currency-code" class="text-sm text-slate-400 font-bold">EUR</span></p>
-                    </div>
-                    <div id="header-perf-badge" class="hidden"></div>
-                    <div id="p-detail-day-var" class="px-2 py-0.5 rounded-lg text-xs font-bold shadow-sm hidden"></div>
-                    <div class="h-8 w-px bg-slate-200 dark:bg-slate-800 mx-2 hidden md:block"></div>
-                    <div class="flex items-center gap-2">
-                        <p class="text-sm font-bold text-slate-500">Cash: <span id="cash-balance-label">0.00</span></p>
-                    </div>
-                </div>
-                
-                <!-- Performance Metrics Grid -->
-                <div class="flex flex-wrap gap-8 py-3 px-5 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800/50 w-fit">
+            <div class="flex flex-col gap-4 mt-2">
+                <div class="flex flex-wrap items-end gap-x-12 gap-y-4">
+                    <!-- Totale Lordo -->
                     <div class="flex flex-col">
-                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Simple ROI</span>
-                        <span id="p-detail-roi" class="text-sm font-black text-slate-900 dark:text-slate-100">--%</span>
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Totale Lordo</span>
+                        <div class="flex items-baseline gap-2">
+                            <span id="p-total-value" class="text-4xl font-black tracking-tight text-slate-900 dark:text-white">0.00</span>
+                            <span class="p-currency-code text-sm text-slate-400 font-bold">EUR</span>
+                        </div>
                     </div>
+                    
+                    <!-- Gain Giornaliero -->
                     <div class="flex flex-col">
-                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Time-Weight (TWR)</span>
-                        <span id="p-detail-twr" class="text-sm font-black text-slate-900 dark:text-slate-100">--%</span>
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Gain Giornaliero</span>
+                        <div class="flex items-baseline gap-2">
+                            <span id="p-day-gain" class="text-2xl font-black tracking-tight">0.00</span>
+                            <span class="p-currency-code text-sm text-slate-400 font-bold">EUR</span>
+                        </div>
                     </div>
+
+                    <!-- Valore Titoli -->
                     <div class="flex flex-col">
-                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Money-Weight (XIRR)</span>
-                        <span id="p-detail-xirr" class="text-sm font-black text-slate-900 dark:text-slate-100">--%</span>
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Valore Titoli</span>
+                        <div class="flex items-baseline gap-2">
+                            <span id="p-assets-value" class="text-2xl font-black tracking-tight text-slate-700 dark:text-slate-200">0.00</span>
+                            <span class="p-currency-code text-sm text-slate-400 font-bold">EUR</span>
+                        </div>
+                    </div>
+
+                    <!-- Valore Cash -->
+                    <div class="flex flex-col">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Valore Cash</span>
+                        <div class="flex items-baseline gap-2">
+                            <span id="p-cash-value" class="text-2xl font-black tracking-tight text-slate-700 dark:text-slate-200">0.00</span>
+                            <span class="p-currency-code text-sm text-slate-400 font-bold">EUR</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -905,60 +915,25 @@
             }
             document.getElementById('title-portfolio-icon-bg').style.backgroundColor = portfolioColor;
             
-            document.getElementById('total-value-label').innerText = formatPrivacy(p.totalValue, p.currency, 'p-total', 0);
-            document.getElementById('portfolio-currency-code').innerText = p.currency;
-            document.getElementById('cash-balance-label').innerText = formatPrivacy(p.currentCash, p.currency, 'p-cash', 0);
+            // Update New Header Fields
+            const totalVal = p.totalValue || 0;
+            const cashVal = p.currentCash || 0;
+            const assetsVal = totalVal - cashVal;
+            const dayGain = p.changeValue || 0;
 
-            // Update hero variation
-            const heroVar = document.getElementById('p-detail-day-var');
-            if (heroVar) {
-                const change = p.changeValue || 0;
-                const isPos = change >= 0;
-                const formatted = formatPrivacy(change, p.currency, 'h-var', 0);
-                if (formatted === '****') {
-                    heroVar.classList.add('hidden');
-                } else {
-                    const sign = isPos ? '+' : '';
-                    heroVar.className = `px-2 py-0.5 rounded-lg text-xs font-bold shadow-sm ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`;
-                    heroVar.innerHTML = `${sign}${formatted}`;
-                    heroVar.classList.remove('hidden');
-                }
-            }
-
-            const perfBadge = document.getElementById('header-perf-badge');
-            if (perfBadge) {
-                const change = p.changeValue || 0;
-                const isPos = change >= 0;
-                perfBadge.className = `flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold text-xs ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`;
-                const formatted = formatPrivacy(change, p.currency, 'h-perf', 0);
-                const sign = (formatted !== '****' && isPos) ? '+' : '';
-                perfBadge.innerHTML = `
-                    <span class="material-symbols-outlined text-sm font-bold">${isPos ? 'trending_up' : 'trending_down'}</span>
-                    ${sign}${formatted}
-                `;
-                perfBadge.classList.remove('hidden');
-            }
-
-            // Update Performance Metrics
-            const roiEl = document.getElementById('p-detail-roi');
-            const twrEl = document.getElementById('p-detail-twr');
-            const xirrEl = document.getElementById('p-detail-xirr');
+            document.getElementById('p-total-value').innerText = formatPrivacy(totalVal, p.currency, 'p-total', 0);
+            document.getElementById('p-cash-value').innerText = formatPrivacy(cashVal, p.currency, 'p-cash', 0);
+            document.getElementById('p-assets-value').innerText = formatPrivacy(assetsVal, p.currency, 'p-assets', 0);
             
-            if (roiEl) {
-                const val = (p.roi || 0) * 100;
-                roiEl.innerText = (val >= 0 ? '+' : '') + formatPrivacy(val, '%', 'stat');
-                roiEl.className = `text-sm font-black ${val >= 0 ? 'text-emerald-500' : 'text-rose-500'}`;
+            const dayGainEl = document.getElementById('p-day-gain');
+            if (dayGainEl) {
+                const isPos = dayGain >= 0;
+                const formatted = formatPrivacy(dayGain, p.currency, 'p-day-gain', 0);
+                dayGainEl.innerText = (isPos ? '+' : '') + formatted;
+                dayGainEl.className = `text-2xl font-black tracking-tight ${isPos ? 'text-emerald-500' : 'text-rose-500'}`;
             }
-            if (twrEl) {
-                const val = (p.twr || 0) * 100;
-                twrEl.innerText = (val >= 0 ? '+' : '') + formatPrivacy(val, '%', 'stat');
-                twrEl.className = `text-sm font-black ${val >= 0 ? 'text-emerald-500' : 'text-rose-500'}`;
-            }
-            if (xirrEl) {
-                const val = (p.xirr || 0) * 100;
-                xirrEl.innerText = (val >= 0 ? '+' : '') + formatPrivacy(val, '%', 'stat');
-                xirrEl.className = `text-sm font-black ${val >= 0 ? 'text-emerald-500' : 'text-rose-500'}`;
-            }
+
+            document.querySelectorAll('.p-currency-code').forEach(el => el.innerText = p.currency);
             
             document.querySelectorAll('.log-currency-label').forEach(el => el.innerText = p.currency);
 
