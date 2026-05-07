@@ -168,10 +168,10 @@
     };
 
     window.openAssetChartModal = function(ticker, name, currency) {
-        window.loadAssetChart(ticker, '1y');
+        window.loadAssetChart(ticker, '1m');
     };
 
-    window.loadAssetChart = async function(ticker, range = '1y') {
+    window.loadAssetChart = async function(ticker, range = '1m') {
         ensureModalExists();
         if (ticker) _chartTicker = ticker;
         if (!_chartTicker) return;
@@ -214,6 +214,17 @@
 
             const assetInfo = allAssets.find(a => a.ticker === _chartTicker);
             
+            // Append latest live price if valid and not already the last point
+            if (assetInfo && assetInfo.currentPrice > 0) {
+                const todayStr = new Date().toISOString().split('T')[0];
+                const lastPoint = _allChartData[_allChartData.length - 1];
+                if (lastPoint && lastPoint.date === todayStr) {
+                    lastPoint.price = assetInfo.currentPrice;
+                } else if (!lastPoint || lastPoint.date < todayStr) {
+                    _allChartData.push({ date: todayStr, price: assetInfo.currentPrice });
+                }
+            }
+
             if (assetInfo) {
                 _chartCurrency = assetInfo.currency || 'EUR';
                 document.getElementById('chart-modal-subtitle').textContent = 
