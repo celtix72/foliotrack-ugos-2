@@ -6046,7 +6046,7 @@ app.get('/api/analytics/current-month-dividends', requireAuth, async (req, res) 
 
 app.get('/api/analytics/reports', requireAuth, async (req, res) => {
     try {
-        const { range, tagIds } = req.query;
+        const { range = '1Y', tagIds } = req.query;
         const tags = tagIds ? tagIds.split(',').map(Number) : null;
 
         let tagFilter = '';
@@ -6078,7 +6078,6 @@ app.get('/api/analytics/reports', requireAuth, async (req, res) => {
         const assetMap = Object.fromEntries(assets.map(a => [a.ticker, a]));
 
         const today = new Date();
-        const range = req.query.range || '1Y'; // Default to 1 Year
 
         let startDate;
         switch (range) {
