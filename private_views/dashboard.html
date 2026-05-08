@@ -256,6 +256,9 @@
             <div>
                 <h3 class="text-lg font-bold">Performance</h3>
                 <p class="text-xs text-slate-500">Aggregated net worth across all connected platforms</p>
+                <div id="tag-filter-container" class="flex flex-wrap gap-2 mt-4">
+                    <!-- JS filled tags -->
+                </div>
             </div>
             <div class="flex gap-1 bg-slate-50 dark:bg-slate-900/50 p-1 rounded-lg border border-slate-100 dark:border-slate-800" id="chart-range-buttons">
                 <button data-range="1W" onclick="setChartRange('1W')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">1W</button>
@@ -459,9 +462,50 @@
         }
     }
 
+    let allTags = [];
+    let selectedTagIds = JSON.parse(localStorage.getItem('selectedTagIds') || '[]');
+
+    async function loadTags() {
+        try {
+            const res = await fetch('/api/tags');
+            allTags = await res.json();
+            renderTagFilters();
+        } catch (err) {
+            console.error('Failed to load tags:', err);
+        }
+    }
+
+    function renderTagFilters() {
+        const container = document.getElementById('tag-filter-container');
+        if (!container) return;
+        
+        container.innerHTML = allTags.map(tag => {
+            const isSelected = selectedTagIds.includes(tag.id);
+            return `
+                <button onclick="toggleTagFilter(${tag.id})" 
+                        class="px-3 py-1 rounded-full text-[10px] font-bold border transition-all ${isSelected ? 'bg-primary text-white border-primary shadow-sm shadow-primary/20' : 'bg-slate-50 dark:bg-slate-900 text-slate-500 border-slate-200 dark:border-slate-800 hover:border-primary/50'}">
+                    ${tag.name}
+                </button>
+            `;
+        }).join('') + (allTags.length === 0 ? '<span class="text-[10px] text-slate-400 italic">Nessun tag definito. Usa le impostazioni portafoglio per aggiungerli.</span>' : '');
+    }
+
+    function toggleTagFilter(tagId) {
+        if (selectedTagIds.includes(tagId)) {
+            selectedTagIds = selectedTagIds.filter(id => id !== tagId);
+        } else {
+            selectedTagIds.push(tagId);
+        }
+        localStorage.setItem('selectedTagIds', JSON.stringify(selectedTagIds));
+        renderTagFilters();
+        loadDashboard();
+        updateDashboardChart();
+    }
+
     async function loadDashboard(prefetchedData = null) {
         try {
-            const data = prefetchedData || await (await fetch('/api/portfolios')).json();
+            const url = selectedTagIds.length > 0 ? `/api/portfolios?tagIds=${selectedTagIds.join(',')}` : '/api/portfolios';
+            const data = prefetchedData || await (await fetch(url)).json();
             window._dashboardData = data;
             updateDashboardUI(data);
             
@@ -649,7 +693,9 @@
                         <div class="flex items-center gap-2">
                             <p class="text-base md:text-lg font-black tracking-tight text-slate-900 dark:text-slate-100 truncate">${p.name}</p>
                             ${p.type === 'Conto Deposito' ? '<span class="text-[9px] font-black bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded border border-amber-500/30 shrink-0">DEPOSITO</span>' : ''}
-                            ${p.include_in_totals === 0 ? '<span class="text-[9px] font-black bg-slate-500/10 text-slate-500 px-1.5 py-0.5 rounded border border-slate-500/30 shrink-0">ESCLUSO</span>' : ''}
+                        </div>
+                        <div class="flex flex-wrap gap-1 mt-1">
+                            ${(p.tags || []).map(t => `<span class="text-[8px] font-black px-1.5 py-0.5 rounded-full border border-slate-200 dark:border-slate-700" style="background-color: ${t.color}20; color: ${t.color}">${t.name}</span>`).join('')}
                         </div>
                         <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5 truncate">${p.assetCount || 0} Assets • ${p.currency}</p>
                     </div>
@@ -890,7 +936,9 @@
         const isDark = document.documentElement.classList.contains('dark');
         const benchmark = document.getElementById('benchmark-selector')?.value || '';
         try {
-            const res = await fetch(`/api/analytics/global-performance?range=${currentChartRange}&benchmark=${benchmark}`);
+            let url = `/api/analytics/global-performance?range=${currentChartRange}&benchmark=${benchmark}`;
+            if (selectedTagIds.length > 0) url += `&tagIds=${selectedTagIds.join(',')}`;
+            const res = await fetch(url);
             const result = await res.json();
             
             // Handle both { dataPoints: [...] } and direct array [...] responses for robustness
@@ -1066,6 +1114,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         loadDashboard();
+        loadTags();
         initDashboardChart();
         loadNews();
         initAllocationChart();
@@ -1121,17 +1170,91 @@
         });
 
         // Portfolio Modal Logic
-        window.openPortfolioModal = function() {
-            const title = document.getElementById('portfolio-modal-title');
-            if (title) title.innerText = 'New Portfolio';
-            const form = document.getElementById('portfolio-form');
-            if (form) form.reset();
-            const pcolor = document.getElementById('p-color');
-            if (pcolor) pcolor.value = '#6366f1';
-            const pinclude = document.getElementById('p-include');
-            if (pinclude) pinclude.checked = true;
-            const modal = document.getElementById('portfolio-modal');
-            if (modal) modal.classList.remove('hidden');
+        window.openPortfolioModal = async function(id = null) {
+            if (id) {
+                try {
+                    const res = await fetch(`/api/portfolios/${id}`);
+                    const p = await res.json();
+                    document.getElementById('p-id').value = p.id;
+                    document.getElementById('p-name').value = p.name;
+                    document.getElementById('p-type').value = p.type;
+                    document.getElementById('p-currency').value = p.currency;
+                    document.getElementById('p-date').value = p.startDate.split('T')[0];
+                    document.getElementById('p-cash').value = p.initialCash;
+                    document.getElementById('p-include').checked = p.include_in_totals;
+                    document.getElementById('p-color').value = p.color || '#6366f1';
+                    document.getElementById('portfolio-modal-title').innerText = "Edit Portfolio";
+                    
+                    await renderPortfolioTags(id);
+                    document.getElementById('portfolio-modal').classList.remove('hidden');
+                } catch (err) { console.error('Failed to load portfolio:', err); }
+            } else {
+                document.getElementById('p-id').value = '';
+                document.getElementById('portfolio-form').reset();
+                document.getElementById('p-type').value = 'Investimento';
+                document.getElementById('p-currency').value = 'EUR';
+                document.getElementById('p-date').value = new Date().toISOString().split('T')[0];
+                document.getElementById('p-cash').value = 0;
+                document.getElementById('p-color').value = '#6366f1';
+                document.getElementById('p-include').checked = true;
+                document.getElementById('portfolio-modal-title').innerText = "New Portfolio";
+                await renderPortfolioTags();
+                document.getElementById('portfolio-modal').classList.remove('hidden');
+            }
+        };
+
+        async function renderPortfolioTags(portfolioId = null) {
+            const list = document.getElementById('p-tag-list');
+            if (!list) return;
+            if (allTags.length === 0) await loadTags();
+            let pTags = [];
+            if (portfolioId && window._dashboardData) {
+                const p = window._dashboardData.portfolios.find(x => x.id == portfolioId);
+                if (p) pTags = (p.tags || []).map(t => t.id);
+            }
+            list.innerHTML = allTags.map(tag => `
+                <label class="flex items-center gap-2 cursor-pointer group">
+                    <input type="checkbox" name="p-tags" value="${tag.id}" ${pTags.includes(tag.id) ? 'checked' : ''} class="sr-only peer">
+                    <div class="px-2 py-1 rounded-lg text-[10px] font-bold border transition-all peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 group-hover:border-primary/50">${tag.name}</div>
+                </label>
+            `).join('') || '<span class="text-[10px] text-slate-400 italic">No tags defined.</span>';
+        }
+
+        window.openTagManager = function() {
+            document.getElementById('tag-manager-modal').classList.remove('hidden');
+            document.getElementById('tag-manager-modal').classList.add('flex');
+            renderTagManagerList();
+        };
+
+        window.closeTagManager = function() {
+            document.getElementById('tag-manager-modal').classList.add('hidden');
+            document.getElementById('tag-manager-modal').classList.remove('flex');
+            renderPortfolioTags(document.getElementById('p-id').value);
+            renderTagFilters();
+        };
+
+        function renderTagManagerList() {
+            const list = document.getElementById('tag-manager-list');
+            list.innerHTML = allTags.map(tag => `
+                <div class="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                    <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background-color: ${tag.color}"></div><span class="text-sm font-medium">${tag.name}</span></div>
+                    <button onclick="deleteTag(${tag.id})" class="text-rose-500 hover:text-rose-600"><span class="material-symbols-outlined text-sm">delete</span></button>
+                </div>
+            `).join('') || '<div class="text-center text-slate-500 italic text-sm">No tags yet.</div>';
+        }
+
+        window.createNewTag = async function() {
+            const name = document.getElementById('new-tag-name').value;
+            const color = document.getElementById('new-tag-color').value;
+            if (!name) return;
+            const res = await fetch('/api/tags', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, color }) });
+            if (res.ok) { document.getElementById('new-tag-name').value = ''; await loadTags(); renderTagManagerList(); }
+        };
+
+        window.deleteTag = async function(id) {
+            if (!confirm('Eliminare questo TAG?')) return;
+            const res = await fetch(`/api/tags/${id}`, { method: 'DELETE' });
+            if (res.ok) { await loadTags(); renderTagManagerList(); selectedTagIds = selectedTagIds.filter(tid => tid !== id); localStorage.setItem('selectedTagIds', JSON.stringify(selectedTagIds)); renderTagFilters(); }
         };
 
         window.closePortfolioModal = function() {
@@ -1144,6 +1267,7 @@
             pForm.onsubmit = async (e) => {
                 e.preventDefault();
                 const id = document.getElementById('p-id').value;
+                const selectedTags = Array.from(document.querySelectorAll('input[name="p-tags"]:checked')).map(cb => parseInt(cb.value));
                 const data = {
                     name: document.getElementById('p-name').value,
                     type: document.getElementById('p-type').value,
@@ -1151,7 +1275,8 @@
                     startDate: document.getElementById('p-date').value,
                     initialCash: parseFloat(document.getElementById('p-cash').value),
                     color: document.getElementById('p-color').value,
-                    include_in_totals: document.getElementById('p-include').checked
+                    include_in_totals: document.getElementById('p-include').checked,
+                    tags: selectedTags
                 };
                 const method = id ? 'PUT' : 'POST';
                 const url = id ? `/api/portfolios/${id}` : '/api/portfolios';
@@ -1224,10 +1349,18 @@
                     <input id="p-color" type="color" class="w-full h-[42px] bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-1 px-1 cursor-pointer" value="#6366f1"/>
                 </div>
             </div>
-            <div class="flex items-center gap-3 pt-2">
-                <input type="checkbox" id="p-include" checked class="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary bg-slate-50 dark:bg-slate-900"/>
-                <label for="p-include" class="text-sm font-medium cursor-pointer">Include in global totals & reports</label>
+            
+            <!-- Tags Selection -->
+            <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                    <label class="text-sm font-medium">Tags (Groups)</label>
+                    <button type="button" onclick="openTagManager()" class="text-[10px] font-black uppercase text-primary hover:underline">Manage Tags</button>
+                </div>
+                <div id="p-tag-list" class="flex flex-wrap gap-2 p-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl">
+                    <!-- JS filled tags -->
+                </div>
             </div>
+
             <div class="pt-4 flex gap-3">
                 <div class="flex-1"></div>
                 <button type="button" onclick="closePortfolioModal()" class="px-5 py-2 rounded-lg font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Cancel</button>
@@ -1238,4 +1371,26 @@
 </div>
 
 
-</body></html>
+<!-- Tag Manager Modal -->
+<div id="tag-manager-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <h3 class="font-bold">Manage Tags</h3>
+            <button onclick="closeTagManager()" class="text-slate-400 hover:text-slate-600">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="p-6 space-y-4">
+            <div class="flex gap-2">
+                <input id="new-tag-name" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-1.5 px-3 text-sm" placeholder="New tag name..."/>
+                <input id="new-tag-color" type="color" class="w-10 h-9 rounded-lg cursor-pointer" value="#64748b"/>
+                <button onclick="createNewTag()" class="bg-primary text-white p-1.5 rounded-lg">
+                    <span class="material-symbols-outlined">add</span>
+                </button>
+            </div>
+            <div id="tag-manager-list" class="space-y-2 max-h-60 overflow-y-auto">
+                <!-- JS filled -->
+            </div>
+        </div>
+    </div>
+</div>

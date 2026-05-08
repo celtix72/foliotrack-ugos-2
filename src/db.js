@@ -93,6 +93,20 @@ function initDb() {
         value   TEXT    NOT NULL,
         PRIMARY KEY (user_id, key)
       );
+
+      CREATE TABLE IF NOT EXISTS tags (
+        id      INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        name    TEXT    NOT NULL,
+        color   TEXT    DEFAULT '#64748b',
+        UNIQUE(user_id, name)
+      );
+
+      CREATE TABLE IF NOT EXISTS portfolio_tags (
+        portfolio_id INTEGER NOT NULL REFERENCES portfolios(id) ON DELETE CASCADE,
+        tag_id       INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+        PRIMARY KEY (portfolio_id, tag_id)
+      );
     `);
 
     // Migration: Add type to portfolios if it doesn't exist
@@ -199,6 +213,24 @@ function initDb() {
 
     try {
         dbConnection.prepare(`ALTER TABLE portfolios ADD COLUMN include_in_totals INTEGER NOT NULL DEFAULT 1`).run();
+    } catch (e) {}
+
+    // Migration: tags and portfolio_tags tables
+    try {
+        dbConnection.exec(`
+            CREATE TABLE IF NOT EXISTS tags (
+                id      INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                name    TEXT    NOT NULL,
+                color   TEXT    DEFAULT '#64748b',
+                UNIQUE(user_id, name)
+            );
+            CREATE TABLE IF NOT EXISTS portfolio_tags (
+                portfolio_id INTEGER NOT NULL REFERENCES portfolios(id) ON DELETE CASCADE,
+                tag_id       INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+                PRIMARY KEY (portfolio_id, tag_id)
+            );
+        `);
     } catch (e) {}
 
     // --- New Equity Metrics Migrations ---

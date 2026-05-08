@@ -29,8 +29,10 @@
     <script src="/mobile_transactions.js"></script>
     <script src="/auth.js"></script>
     <script>
-        window.addEventListener('DOMContentLoaded', () => {
-            if (window.ftAuth) ftAuth.initAuthGuard();
+        document.addEventListener('DOMContentLoaded', () => {
+    mobLoadTags();
+    mobLoadReportData();
+    if (window.ftAuth) ftAuth.initAuthGuard();
         });
     </script>
 </head>
@@ -88,6 +90,11 @@
         <div class="mob-tab-pill active" onclick="switchRepTab('portafogli')" id="tab-portafogli">Portafogli</div>
         <div class="mob-tab-pill" onclick="switchRepTab('performance')" id="tab-performance">Performance</div>
         <div class="mob-tab-pill" onclick="switchRepTab('allocazione')" id="tab-allocazione">Allocazione</div>
+    </div>
+
+    <!-- Tag Filters -->
+    <div class="px-4 pb-2 overflow-x-auto no-scrollbar flex gap-2" id="mob-tag-filters">
+        <!-- JS filled -->
     </div>
 
     <!-- VIEW: PORTAFOGLI -->
@@ -242,6 +249,8 @@
     let mobPerfChart, mobAssetChart, mobGeoChart, mobDivChart;
     let mobCurrentRange = '1Y';
     let mobLastData = null;
+    let allTags = [];
+    let selectedTagIds = JSON.parse(localStorage.getItem('selectedTagIds') || '[]');
 
     window.switchRepTab = function(tab) {
         document.getElementById('tab-portafogli').classList.remove('active');
@@ -266,13 +275,47 @@
         document.querySelectorAll('#mob-reports-range-bar .mob-range-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.range === range);
         });
-        mobSyncReports();
+        mobLoadReportData();
     };
 
-    async function mobSyncReports() {
+    async function mobLoadTags() {
+      try {
+        const res = await fetch('/api/tags');
+        allTags = await res.json();
+        mobRenderTagFilters();
+      } catch (e) { console.error('Error loading tags:', e); }
+    }
+
+    function mobRenderTagFilters() {
+      const container = document.getElementById('mob-tag-filters');
+      if (!container) return;
+      container.innerHTML = allTags.map(tag => {
+        const isSelected = selectedTagIds.includes(tag.id);
+        return `
+          <button onclick="mobToggleTagFilter(${tag.id})" 
+                  class="px-4 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${isSelected ? 'bg-primary text-white shadow-md' : 'bg-white/10 text-white/70 border border-white/10'}">
+            ${tag.name}
+          </button>`;
+      }).join('');
+    }
+
+    function mobToggleTagFilter(tagId) {
+      if (selectedTagIds.includes(tagId)) {
+        selectedTagIds = selectedTagIds.filter(id => id !== tagId);
+      } else {
+        selectedTagIds.push(tagId);
+      }
+      localStorage.setItem('selectedTagIds', JSON.stringify(selectedTagIds));
+      mobRenderTagFilters();
+      mobLoadReportData();
+    }
+
+    async function mobLoadReportData() {
         if (!window._mobileViewActive) return;
         try {
-            const res = await fetch(`/api/analytics/reports?range=${mobCurrentRange}`);
+            let url = `/api/analytics/reports?range=${mobCurrentRange}`;
+            if (selectedTagIds.length > 0) url += `&tagIds=${selectedTagIds.join(',')}`;
+            const res = await fetch(url);
             const data = await res.json();
             if (data.error) return;
             mobLastData = data;

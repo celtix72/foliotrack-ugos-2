@@ -2961,14 +2961,63 @@ app.delete('/api/notifications', requireAuth, (req, res) => {
 // PORTFOLIOS API
 // ════════════════════════════════════════════════════════════════════════════
 
-async function getAllPortfolioStats(userId = null, liveRateInput = null) {
+// ─── Tags APIs ──────────────────────────────────────────────────────────────
+app.get('/api/tags', requireAuth, (req, res) => {
+    try {
+        const tags = database.db.prepare('SELECT * FROM tags WHERE user_id = ? ORDER BY name ASC').all(req.user.id);
+        res.json(tags);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/tags', requireAuth, (req, res) => {
+    const { name, color } = req.body;
+    if (!name) return res.status(400).json({ error: 'Tag name is required' });
+    try {
+        const result = database.db.prepare('INSERT INTO tags (user_id, name, color) VALUES (?, ?, ?)')
+            .run(req.user.id, name, color || '#64748b');
+        res.status(201).json({ id: result.lastInsertRowid, name, color: color || '#64748b' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/tags/:id', requireAuth, (req, res) => {
+    const { name, color } = req.body;
+    try {
+        database.db.prepare('UPDATE tags SET name = ?, color = ? WHERE id = ? AND user_id = ?')
+            .run(name, color, req.params.id, req.user.id);
+        res.json({ id: req.params.id, name, color });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/tags/:id', requireAuth, (req, res) => {
+    try {
+        database.db.prepare('DELETE FROM tags WHERE id = ? AND user_id = ?').run(req.params.id, req.user.id);
+        res.status(204).end();
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds = null) {
     let liveRate = liveRateInput;
     if (!liveRate) {
         liveRate = await getEurUsdRate();
     }
     
-    // Note: recalculateAllPortfoliosWithOverrides still runs globally for now,
-    // but we filter which results we aggregate for the user.
+    // Determine which portfolios to include based on tags if provided
+    let portfolioFilterSql = '';
+    let params = [userId];
+    if (tagIds && tagIds.length > 0) {
+        const placeholders = tagIds.map(() => '?').join(',');
+        portfolioFilterSql = ` AND p.id IN (SELECT portfolio_id FROM portfolio_tags WHERE tag_id IN (${placeholders}))`;
+        params = [...params, ...tagIds];
+    }
+
     const { overrides, marketStatus } = await recalculateAllPortfoliosWithOverrides(liveRate);
     
     let rows;
@@ -2976,11 +3025,20 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null) {
         rows = database.db.prepare(`
             SELECT p.* FROM portfolios p
             JOIN portfolio_users pu ON p.id = pu.portfolio_id
-            WHERE pu.user_id = ?
+            WHERE pu.user_id = ? ${portfolioFilterSql}
             ORDER BY p.createdAt ASC
-        `).all(userId);
+        `).all(...params);
     } else {
         rows = database.db.prepare(`SELECT * FROM portfolios ORDER BY createdAt ASC`).all();
+    }
+
+    // Load tags for each portfolio
+    for (const p of rows) {
+        p.tags = database.db.prepare(`
+            SELECT t.* FROM tags t
+            JOIN portfolio_tags pt ON t.id = pt.tag_id
+            WHERE pt.portfolio_id = ?
+        `).all(p.id);
     }
     
     // Get FX Variation metadata for EURUSD
@@ -2990,7 +3048,7 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null) {
     const rateYesterday = rateToday / (1 + eurUsdChangePct/100);
 
     const pIds = rows.map(r => r.id);
-    const perfData = await calculatePerformanceHistory(pIds, 'ALL', false, true, null, userId);
+    const perfData = await calculatePerformanceHistory(pIds, 'ALL', false, true, null, userId, tagIds);
     const globalPoints = perfData.dataPoints || [];
     const individual = perfData.individual || {};
 
@@ -3134,7 +3192,8 @@ app.use('/api/', (req, res, next) => {
 
 app.get('/api/portfolios', requireAuth, async (req, res) => {
     try {
-        const stats = await getAllPortfolioStats(req.user.id);
+        const tagIds = req.query.tagIds ? req.query.tagIds.split(',').map(Number) : null;
+        const stats = await getAllPortfolioStats(req.user.id, null, tagIds);
         res.json({
             portfolios: stats.portfolios,
             global: {
@@ -3153,6 +3212,18 @@ app.get('/api/portfolios', requireAuth, async (req, res) => {
     } catch (err) {
         console.error('API Error /api/portfolios:', err);
         res.status(500).json({ error: err.message, stack: err.stack });
+    }
+});
+
+app.get('/api/performance', requireAuth, async (req, res) => {
+    try {
+        const { range, benchmark, tagIds } = req.query;
+        const tags = tagIds ? tagIds.split(',').map(Number) : null;
+        const data = await calculatePerformanceHistory(null, range || '1Y', false, true, benchmark, req.user.id, tags);
+        res.json(data);
+    } catch (err) {
+        console.error('API Error /api/performance:', err);
+        res.status(500).json({ error: err.message });
     }
 });
 
@@ -3566,7 +3637,7 @@ app.get('/api/export-all-transactions', (req, res) => {
 
 app.post('/api/portfolios', requireAuth, (req, res) => {
     console.log('POST /api/portfolios:', req.body);
-    const { name, type, currency, startDate, initialCash, color, include_in_totals, losses } = req.body;
+    const { name, type, currency, startDate, initialCash, color, include_in_totals, tags, losses } = req.body;
 
     if (!name) return res.status(400).json({ error: 'Portfolio name is required' });
 
@@ -3584,6 +3655,14 @@ app.post('/api/portfolios', requireAuth, (req, res) => {
         
         // Associate with user
         database.db.prepare(`INSERT INTO portfolio_users (portfolio_id, user_id) VALUES (?, ?)`).run(portfolioId, req.user.id);
+        
+        // Handle tags
+        if (tags && Array.isArray(tags)) {
+            const stmt = database.db.prepare('INSERT INTO portfolio_tags (portfolio_id, tag_id) VALUES (?, ?)');
+            for (const tId of tags) {
+                stmt.run(portfolioId, tId);
+            }
+        }
         
         triggerHistoryRebuild(portfolioId);
         
@@ -3612,7 +3691,7 @@ app.put('/api/portfolios/:id', requireAuth, requirePortfolioAccess, async (req, 
     const existing = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(req.params.id);
     if (!existing) return res.status(404).send('Portfolio not found');
 
-    const { name, type, currency, startDate, initialCash, color, include_in_totals, losses } = req.body;
+    const { name, type, currency, startDate, initialCash, color, include_in_totals, tags, losses } = req.body;
     database.db.prepare(`
         UPDATE portfolios SET name=?, type=?, currency=?, startDate=?, initialCash=?, color=?, include_in_totals=? WHERE id=?
     `).run(
@@ -3625,6 +3704,15 @@ app.put('/api/portfolios/:id', requireAuth, requirePortfolioAccess, async (req, 
         include_in_totals !== false ? 1 : 0,
         req.params.id
     );
+
+    // Update tags
+    database.db.prepare('DELETE FROM portfolio_tags WHERE portfolio_id = ?').run(req.params.id);
+    if (tags && Array.isArray(tags)) {
+        const stmt = database.db.prepare('INSERT INTO portfolio_tags (portfolio_id, tag_id) VALUES (?, ?)');
+        for (const tId of tags) {
+            stmt.run(req.params.id, tId);
+        }
+    }
 
     triggerHistoryRebuild(req.params.id);
 
@@ -4481,14 +4569,14 @@ app.get('/api/market/exchange-rate', async (req, res) => {
 /**
  * Shared helper to calculate performance data points for one or more portfolios.
  */
-async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefresh = false, includeIndividual = false, benchmarkTicker = null, userId = null) {
+async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefresh = false, includeIndividual = false, benchmarkTicker = null, userId = null, tagIds = null) {
     const pIdsInput = portfolioIds === null ? null : (Array.isArray(portfolioIds) ? portfolioIds : [portfolioIds]);
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
     const marketStatus = getMarketStatus();
     const overrides = calculateVariationOverrides(marketStatus);
     const rangeKey = range || 'ALL';
-    const cacheKey = `history_${pIdsInput ? pIdsInput.sort().join(',') : 'global'}_${userId || 'none'}_${rangeKey}_${includeIndividual}_${benchmarkTicker || 'none'}`;
+    const cacheKey = `history_${pIdsInput ? pIdsInput.sort().join(',') : 'global'}_${userId || 'none'}_${rangeKey}_${includeIndividual}_${benchmarkTicker || 'none'}_${tagIds ? tagIds.sort().join(',') : 'all'}`;
 
     // 1. Check Cache (1 minute TTL for dashboard-level history)
     const CACHE_SHORT_TTL = 60 * 1000; 
@@ -4499,12 +4587,20 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
     const isGlobal = pIdsInput === null;
     let portfolios;
     if (isGlobal) {
+        let tagFilter = '';
+        let params = [userId];
+        if (tagIds && tagIds.length > 0) {
+            const placeholders = tagIds.map(() => '?').join(',');
+            tagFilter = ` AND p.id IN (SELECT portfolio_id FROM portfolio_tags WHERE tag_id IN (${placeholders}))`;
+            params = [...params, ...tagIds];
+        }
+
         if (userId) {
             portfolios = database.db.prepare(`
                 SELECT p.* FROM portfolios p 
                 JOIN portfolio_users pu ON p.id = pu.portfolio_id 
-                WHERE pu.user_id = ?
-            `).all(userId);
+                WHERE pu.user_id = ? ${tagFilter}
+            `).all(...params);
         } else {
             portfolios = database.db.prepare('SELECT * FROM portfolios').all();
         }
@@ -5376,8 +5472,9 @@ app.get('/api/analytics/portfolio-performance/:id', requireAuth, requirePortfoli
 
 app.get('/api/analytics/global-performance', requireAuth, async (req, res) => {
     try {
-        const { range, benchmark } = req.query;
-        const cacheKey = `global_perf_${req.user.id}_${range || 'ALL'}_${benchmark || 'none'}`;
+        const { range, benchmark, tagIds } = req.query;
+        const tags = tagIds ? tagIds.split(',').map(Number) : null;
+        const cacheKey = `global_perf_${req.user.id}_${range || 'ALL'}_${benchmark || 'none'}_${tagIds || 'all'}`;
 
         if (performanceResultsCache[cacheKey] && (Date.now() - performanceResultsCache[cacheKey].timestamp < CACHE_TTL)) {
             return res.json(performanceResultsCache[cacheKey].data);
@@ -5389,7 +5486,7 @@ app.get('/api/analytics/global-performance', requireAuth, async (req, res) => {
             WHERE pu.user_id = ?
         `).all(req.user.id);
         const pIds = userPortfolios.map(p => p.id);
-        const dataPoints = await calculatePerformanceHistory(pIds, range, false, false, benchmark, req.user.id);
+        const dataPoints = await calculatePerformanceHistory(pIds, range, false, false, benchmark, req.user.id, tags);
 
         let changePercent = 0;
         if (dataPoints.length > 1) {
@@ -5949,20 +6046,34 @@ app.get('/api/analytics/current-month-dividends', requireAuth, async (req, res) 
 
 app.get('/api/analytics/reports', requireAuth, async (req, res) => {
     try {
+        const { range, tagIds } = req.query;
+        const tags = tagIds ? tagIds.split(',').map(Number) : null;
+
+        let tagFilter = '';
+        let params = [req.user.id];
+        if (tags && tags.length > 0) {
+            const placeholders = tags.map(() => '?').join(',');
+            tagFilter = ` AND p.id IN (SELECT portfolio_id FROM portfolio_tags WHERE tag_id IN (${placeholders}))`;
+            params = [...params, ...tags];
+        } else {
+            // Default to older include_in_totals flag if no tags specified
+            tagFilter = ' AND p.include_in_totals != 0';
+        }
+
         const portfolios = database.db.prepare(`
             SELECT p.* FROM portfolios p
             JOIN portfolio_users pu ON p.id = pu.portfolio_id
-            WHERE pu.user_id = ? AND p.include_in_totals != 0
-        `).all(req.user.id);
+            WHERE pu.user_id = ? ${tagFilter}
+        `).all(...params);
         if (portfolios.length === 0) return res.json({ error: 'No portfolios found' });
 
         const allTransactions = database.db.prepare(`
             SELECT t.* FROM transactions t
             JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
             JOIN portfolios p ON t.portfolioId = p.id
-            WHERE pu.user_id = ? AND p.include_in_totals != 0
+            WHERE pu.user_id = ? ${tagFilter}
             ORDER BY t.date ASC
-        `).all(req.user.id);
+        `).all(...params);
         const assets = database.db.prepare('SELECT * FROM assets').all();
         const assetMap = Object.fromEntries(assets.map(a => [a.ticker, a]));
 

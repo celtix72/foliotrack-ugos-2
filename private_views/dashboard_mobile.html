@@ -58,6 +58,11 @@
       <div class="mob-header-logo-text">M2T</div>
     </div>
 
+    <!-- Tag Filters -->
+    <div class="px-4 pb-4 overflow-x-auto no-scrollbar flex gap-2" id="mob-tag-filters">
+        <!-- JS filled -->
+    </div>
+
     <!-- Page Title (DH) -->
     <div class="mob-header-title" style="display:none">DH</div>
 
@@ -270,10 +275,18 @@
                       <input id="p-color" type="color" class="w-full h-[42px] bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-1 px-1 cursor-pointer" value="#6366f1"/>
                   </div>
               </div>
-              <div class="flex items-center gap-3 pt-1 pb-2">
-                  <input type="checkbox" id="p-include" checked class="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary bg-slate-50 dark:bg-slate-900"/>
-                  <label for="p-include" class="text-[13px] font-medium cursor-pointer">Includi nei totali globali e report</label>
+
+              <!-- Tags Selection -->
+              <div class="space-y-2 mt-4">
+                  <div class="flex items-center justify-between">
+                      <label class="text-sm font-medium">Tag (Gruppi)</label>
+                      <button type="button" onclick="mobOpenTagManager()" class="text-[10px] font-black uppercase text-primary">Gestisci</button>
+                  </div>
+                  <div id="p-tag-list" class="flex flex-wrap gap-2 p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
+                      <!-- JS filled tags -->
+                  </div>
               </div>
+
               <div class="pt-4 flex gap-3">
                   <div class="flex-1"></div>
                   <button type="button" onclick="closePortfolioModal()" class="px-5 py-2 rounded-lg font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Annulla</button>
@@ -323,6 +336,30 @@
       <span class="material-symbols-outlined">pie_chart</span>
     </a>
   </div>
+</div>
+
+<!-- Mobile Tag Manager Modal -->
+<div id="tag-manager-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <h3 class="font-bold">Gestisci Tag</h3>
+            <button onclick="mobCloseTagManager()" class="text-slate-400">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="p-6 space-y-4">
+            <div class="flex gap-2">
+                <input id="new-tag-name" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-1.5 px-3 text-sm" placeholder="Nome tag..."/>
+                <input id="new-tag-color" type="color" class="w-10 h-9 rounded-lg cursor-pointer" value="#64748b"/>
+                <button onclick="mobCreateNewTag()" class="bg-primary text-white p-1.5 rounded-lg">
+                    <span class="material-symbols-outlined">add</span>
+                </button>
+            </div>
+            <div id="tag-manager-list" class="space-y-2 max-h-60 overflow-y-auto">
+                <!-- JS filled -->
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Mobile Dashboard JS -->
@@ -399,9 +436,47 @@ window._mobileViewActive = true;
     if (icon) icon.innerText = window.privacyState?.enabled ? 'visibility_off' : 'visibility';
   }
 
+  let allTags = [];
+  let selectedTagIds = JSON.parse(localStorage.getItem('selectedTagIds') || '[]');
+
+  async function mobLoadTags() {
+    try {
+      const res = await fetch('/api/tags');
+      allTags = await res.json();
+      mobRenderTagFilters();
+    } catch (e) { console.error('Error loading tags:', e); }
+  }
+
+  function mobRenderTagFilters() {
+    const container = document.getElementById('mob-tag-filters');
+    if (!container) return;
+    container.innerHTML = allTags.map(tag => {
+      const isSelected = selectedTagIds.includes(tag.id);
+      return `
+        <button onclick="mobToggleTagFilter(${tag.id})" 
+                class="px-4 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${isSelected ? 'bg-primary text-white shadow-md' : 'bg-white/10 text-white/70 border border-white/10'}">
+          ${tag.name}
+        </button>`;
+    }).join('');
+  }
+
+  function mobToggleTagFilter(tagId) {
+    if (selectedTagIds.includes(tagId)) {
+      selectedTagIds = selectedTagIds.filter(id => id !== tagId);
+    } else {
+      selectedTagIds.push(tagId);
+    }
+    localStorage.setItem('selectedTagIds', JSON.stringify(selectedTagIds));
+    mobRenderTagFilters();
+    mobLoadTags();
+    mobUpdateDashboard();
+  }
+
   async function mobUpdateDashboard(prefetchedData = null) {
     try {
-      const data = prefetchedData || await (await fetch('/api/portfolios')).json();
+      let url = '/api/portfolios';
+      if (selectedTagIds.length > 0) url += `?tagIds=${selectedTagIds.join(',')}`;
+      const data = prefetchedData || await (await fetch(url)).json();
       const g = data.global || {};
       const portfolios = data.portfolios || [];
       window._dashboardData = data; 
@@ -505,9 +580,11 @@ window._mobileViewActive = true;
                   <div class="mob-holding-info">
                     <div class="flex items-center gap-1.5 min-w-0">
                       <div class="mob-holding-ticker truncate">${p.name}</div>
-                      ${p.include_in_totals === 0 ? '<div class="text-[8px] font-black bg-slate-500/10 text-slate-500 px-1 py-0.5 rounded border border-slate-500/30 shrink-0 uppercase tracking-tighter">Escluso</div>' : ''}
                     </div>
-                    <div class="mob-holding-name">${p.assetCount || 0} Assets${p.type === 'Conto Deposito' ? ' • DEPOSITO' : ''}</div>
+                    <div class="flex flex-wrap gap-1 mt-1">
+                      ${(p.tags || []).map(t => `<span class="text-[7px] font-black px-1 py-0.5 rounded-full border border-white/10" style="background-color: ${t.color}30; color: ${t.color}">${t.name}</span>`).join('')}
+                    </div>
+                    <div class="mob-holding-name mt-1">${p.assetCount || 0} Assets${p.type === 'Conto Deposito' ? ' • DEPOSITO' : ''}</div>
                   </div>
                   
                   <div class="mob-holding-values">
@@ -573,11 +650,8 @@ window._mobileViewActive = true;
     const title = document.getElementById('portfolio-modal-title');
     if (title) title.innerText = 'Nuovo Portafoglio';
     const form = document.getElementById('portfolio-form');
-    if (form) form.reset();
-    const pid = document.getElementById('p-id');
     if (pid) pid.value = '';
-    const pinclude = document.getElementById('p-include');
-    if (pinclude) pinclude.checked = true;
+    mobRenderPortfolioTags();
     const modal = document.getElementById('portfolio-modal');
     if (modal) modal.style.display = 'flex';
   };
@@ -599,7 +673,7 @@ window._mobileViewActive = true;
       document.getElementById('p-date').value = p.startDate ? p.startDate.split('T')[0] : '';
       document.getElementById('p-cash').value = p.initialCash || 0;
       document.getElementById('p-color').value = p.color || '#6366f1';
-      document.getElementById('p-include').checked = p.include_in_totals !== 0;
+      mobRenderPortfolioTags(id);
       document.getElementById('portfolio-modal').style.display = 'flex';
       resetSwipes();
     } catch(e) { console.error('Error loading portfolio for edit:', e); }
@@ -615,7 +689,7 @@ window._mobileViewActive = true;
       startDate: document.getElementById('p-date').value,
       initialCash: parseFloat(document.getElementById('p-cash').value),
       color: document.getElementById('p-color').value,
-      include_in_totals: document.getElementById('p-include').checked
+      tags: Array.from(document.querySelectorAll('input[name="p-tags"]:checked')).map(cb => parseInt(cb.value))
     };
     const method = id ? 'PUT' : 'POST';
     const url = id ? `/api/portfolios/${id}` : '/api/portfolios';
@@ -627,9 +701,64 @@ window._mobileViewActive = true;
       });
       if (res.ok) {
         closePortfolioModal();
+        mobLoadTags();
         mobUpdateDashboard();
       }
     } catch(e) { console.error('Error saving portfolio:', e); }
+  };
+
+  async function mobRenderPortfolioTags(portfolioId = null) {
+    const list = document.getElementById('p-tag-list');
+    if (!list) return;
+    if (allTags.length === 0) await mobLoadTags();
+    let pTags = [];
+    if (portfolioId && window._dashboardData) {
+      const p = window._dashboardData.portfolios.find(x => x.id == portfolioId);
+      if (p) pTags = (p.tags || []).map(t => t.id);
+    }
+    list.innerHTML = allTags.map(tag => `
+      <label class="flex items-center gap-2 cursor-pointer group">
+          <input type="checkbox" name="p-tags" value="${tag.id}" ${pTags.includes(tag.id) ? 'checked' : ''} class="sr-only peer">
+          <div class="px-2 py-1 rounded-lg text-[10px] font-bold border transition-all peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 group-hover:border-primary/50">${tag.name}</div>
+      </label>
+    `).join('') || '<span class="text-[10px] text-slate-400 italic">Nessun tag definito.</span>';
+  }
+
+  window.mobOpenTagManager = function() {
+    document.getElementById('tag-manager-modal').classList.remove('hidden');
+    document.getElementById('tag-manager-modal').classList.add('flex');
+    mobRenderTagManagerList();
+  };
+
+  window.mobCloseTagManager = function() {
+    document.getElementById('tag-manager-modal').classList.add('hidden');
+    document.getElementById('tag-manager-modal').classList.remove('flex');
+    mobRenderPortfolioTags(document.getElementById('p-id').value);
+    mobRenderTagFilters();
+  };
+
+  function mobRenderTagManagerList() {
+    const list = document.getElementById('tag-manager-list');
+    list.innerHTML = allTags.map(tag => `
+      <div class="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+        <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background-color: ${tag.color}"></div><span class="text-sm font-medium">${tag.name}</span></div>
+        <button onclick="mobDeleteTag(${tag.id})" class="text-rose-500 hover:text-rose-600"><span class="material-symbols-outlined text-sm">delete</span></button>
+      </div>
+    `).join('') || '<div class="text-center text-slate-500 italic text-sm">Nessun tag.</div>';
+  }
+
+  window.mobCreateNewTag = async function() {
+    const name = document.getElementById('new-tag-name').value;
+    const color = document.getElementById('new-tag-color').value;
+    if (!name) return;
+    const res = await fetch('/api/tags', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, color }) });
+    if (res.ok) { document.getElementById('new-tag-name').value = ''; await mobLoadTags(); mobRenderTagManagerList(); }
+  };
+
+  window.mobDeleteTag = async function(id) {
+    if (!confirm('Eliminare questo TAG?')) return;
+    const res = await fetch(`/api/tags/${id}`, { method: 'DELETE' });
+    if (res.ok) { await mobLoadTags(); mobRenderTagManagerList(); selectedTagIds = selectedTagIds.filter(tid => tid !== id); localStorage.setItem('selectedTagIds', JSON.stringify(selectedTagIds)); mobRenderTagFilters(); }
   };
 
   window.mobDeletePortfolio = function(id, name) {
