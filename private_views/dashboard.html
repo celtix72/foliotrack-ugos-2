@@ -16,6 +16,7 @@
     </style>
     <script src="/theme.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
     <script src="/transaction_modal.js"></script>
@@ -808,7 +809,8 @@
         if (!ctx) return;
 
         try {
-
+            let url = '/api/analytics/global-allocation';
+            if (selectedPortfolioIds.length > 0) url += `?portfolioIds=${selectedPortfolioIds.join(',')}`;
             
             const res = await fetch(url);
             const data = await res.json();
