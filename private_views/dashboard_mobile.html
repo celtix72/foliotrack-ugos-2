@@ -31,6 +31,7 @@
             background: #1e293b;
             border-radius: 10px;
         }
+        .mob-tag-scroll::-webkit-scrollbar { display: none; }
     </style>
     <script src="/theme.js"></script>
     <script src="/transaction_modal.js"></script>
@@ -48,7 +49,6 @@
 </head>
 <body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex mobile-view-active">
 <div id="mobile-ui">
-  <!-- ── Top Header ── -->
   <!-- ── Mobile Header ── -->
   <div class="mob-header">
     <div class="mob-header-logo-container">
@@ -57,90 +57,50 @@
       </div>
       <div class="mob-header-logo-text">M2T</div>
     </div>
-
-    <!-- Page Title (DH) -->
-    <div class="mob-header-title" style="display:none">DH</div>
-
     <div style="flex:1"></div>
-
-    <!-- EU / US Market Status Pill -->
     <div class="mob-header-market-pill">
-      <div class="mob-market-item">
-        <span>EU</span>
-        <span id="mob-dot-eu" class="mob-market-dot"></span>
-      </div>
-      <div class="mob-market-item">
-        <span>US</span>
-        <span id="mob-dot-us" class="mob-market-dot"></span>
-      </div>
+      <div class="mob-market-item"><span>EU</span><span id="mob-dot-eu" class="mob-market-dot"></span></div>
+      <div class="mob-market-item"><span>US</span><span id="mob-dot-us" class="mob-market-dot"></span></div>
     </div>
-
-    <!-- Day Variation Pill -->
     <div id="mob-header-var-day" class="mob-header-var-pill">--</div>
-
-    <!-- Action Buttons -->
     <div class="mob-header-actions">
-      <a href="/notifications" class="mob-icon-btn relative" title="Notifications">
-        <span class="material-symbols-outlined">notifications</span>
-        <span id="mob-notification-badge" class="mob-badge" style="display: none;">0</span>
-      </a>
-      <a id="mobile-admin-link" href="/admin" class="mob-icon-btn" title="Admin Panel" style="display: none;">
-        <span class="material-symbols-outlined">admin_panel_settings</span>
-      </a>
-      <a href="/settings" class="mob-icon-btn" title="Settings">
-        <span class="material-symbols-outlined">settings</span>
-      </a>
+      <a href="/notifications" class="mob-icon-btn relative"><span class="material-symbols-outlined">notifications</span><span id="mob-notification-badge" class="mob-badge" style="display: none;">0</span></a>
+      <a id="mobile-admin-link" href="/admin" class="mob-icon-btn" style="display: none;"><span class="material-symbols-outlined">admin_panel_settings</span></a>
+      <a href="/settings" class="mob-icon-btn"><span class="material-symbols-outlined">settings</span></a>
     </div>
   </div>
 
-  <!-- ── Scrollable Content ── -->
   <div class="mob-scroll" id="mob-dashboard-scroll">
-
     <!-- Hero Card -->
     <div class="mob-hero">
       <div class="mob-hero-label">Patrimonio</div>
-      <div class="flex items-baseline gap-2 mb-4 overflow-hidden">
-        <div class="mob-hero-value" id="mob-total-net" style="margin-bottom:0; font-size: 28px;">€ 0</div>
+      <div class="flex items-baseline gap-2 mb-4">
+        <div class="mob-hero-value" id="mob-total-net" style="font-size: 28px;">€ 0</div>
         <div class="text-[14px] font-bold text-slate-500 opacity-80" id="mob-total-gross">(€ 0)</div>
         <div id="mob-day-var" class="ml-auto px-2 py-0.5 rounded-lg text-[10px] font-black shadow-sm hidden"></div>
       </div>
-      
       <div class="grid grid-cols-2 gap-4">
-        <div class="mob-hero-stat-item !p-0 !bg-transparent border-0">
+        <div class="mob-hero-stat-item !p-0 !bg-transparent">
           <span class="mob-hero-stat-label">Migliori (1D)</span>
           <div id="mob-top-winners" class="space-y-4 mt-2">--</div>
         </div>
-        <div class="mob-hero-stat-item !p-0 !bg-transparent border-0">
+        <div class="mob-hero-stat-item !p-0 !bg-transparent">
           <span class="mob-hero-stat-label">Peggiori (1D)</span>
           <div id="mob-top-losers" class="space-y-4 mt-2">--</div>
         </div>
       </div>
     </div>
     
-    <!-- Tag Filters (Moved here) -->
-    <div class="px-4 pb-4 overflow-x-auto no-scrollbar flex gap-2 mt-2" id="mob-tag-filters">
-        <!-- JS filled -->
+    <!-- Portfolio Filters -->
+    <div class="px-4 pb-4 overflow-x-auto no-scrollbar flex gap-2 mt-2 mob-tag-scroll" id="mob-portfolio-filters">
+        <!-- Filled by JS -->
     </div>
 
-    <!-- Dividend Alert Banner (Mobile) -->
-    <div id="mob-dividend-alert" class="hidden mt-2 mb-4 bg-amber-500/10 dark:bg-amber-500/5 border-t border-b border-amber-500/20 p-4 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/20">
-          <span class="material-symbols-outlined" style="font-size:18px">payments</span>
-        </div>
-        <div>
-          <div class="text-[15px] font-black text-slate-900 dark:text-white uppercase tracking-tight" id="mob-div-alert-title">Dividendi di Marzo</div>
-          <div class="text-[11px] text-slate-500 dark:text-slate-400 font-medium" id="mob-div-alert-msg">Hai 3 pagamenti previsti.</div>
-        </div>
-      </div>
-      <a href="/dividend" class="text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest px-2 py-1">DETTAGLI</a>
-    </div>
-
-    <!-- Performance Chart -->
+    <!-- Chart -->
     <div class="mob-chart-card">
       <div class="flex items-baseline gap-2 mb-3">
-        <div class="mob-chart-title" style="margin-bottom:0">Performance</div>
-        <div class="mob-chart-subtitle" style="margin-bottom:0">Net worth aggregato</div>
+        <div class="mob-chart-title">Performance</div>
+        <div class="mob-chart-subtitle">Aggregato</div>
       </div>
       <div class="mob-chart-range-bar" id="mob-range-bar">
         <div class="mob-range-btn" onclick="mobSetRange('1W')" data-range="1W">1W</div>
@@ -150,1083 +110,259 @@
         <div class="mob-range-btn" onclick="mobSetRange('1Y')" data-range="1Y">1Y</div>
         <div class="mob-range-btn" onclick="mobSetRange('ALL')" data-range="ALL">ALL</div>
       </div>
-      
-      <!-- Mobile Chart Options -->
-      <div class="flex items-center justify-between mt-3 px-1">
-          <label class="flex items-center gap-2 cursor-pointer">
-              <div class="relative w-7 h-3.5 bg-slate-200 dark:bg-slate-800 rounded-full transition-colors">
-                  <input type="checkbox" id="mob-toggle-net-worth" checked onchange="mobToggleNetWorth()" class="sr-only peer">
-                  <div class="absolute left-0.5 top-0.5 w-2.5 h-2.5 bg-white rounded-full transition-transform peer-checked:translate-x-3.5 peer-checked:bg-primary"></div>
-              </div>
-              <span class="text-[9px] font-black uppercase tracking-widest text-slate-500">Patrimonio</span>
-          </label>
-          <div class="flex items-center gap-2">
-              <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Bench:</span>
-              <select id="mob-benchmark-selector" onchange="mobUpdatePerfChart()" class="bg-transparent border-none text-[10px] font-black text-primary focus:ring-0 p-0 uppercase">
-                  <option value="">Nessuno</option>
-                  <option value="FTSEMIB.MI">FTSE MIB</option>
-                  <option value="IWDA.AS">WORLD</option>
-                  <option value="CSPX.AS">S&P 500</option>
-              </select>
-          </div>
-      </div>
-
       <div class="mob-chart-canvas-wrapper mt-2">
         <canvas id="mob-perf-chart"></canvas>
       </div>
     </div>
 
-    <!-- Asset Allocation -->
-    <div class="mob-allocation-card">
-      <div class="mob-allocation-chart">
-        <canvas id="mob-alloc-chart"></canvas>
-      </div>
-      <div class="mob-allocation-legend" id="mob-alloc-legend">
-        <!-- filled by JS -->
-      </div>
-    </div>
-
-
     <!-- Portfolio List -->
     <div class="mob-section-header">
-      <span class="mob-section-title">I Tuoi Portafogli</span>
+      <span class="mob-section-title">Portafogli</span>
       <div class="flex gap-4">
-        <span class="mob-section-link text-emerald-500" onclick="openTransactionModal()">+ Transazione</span>
-        <span class="mob-section-link" onclick="openPortfolioModal()">+ Aggiungi</span>
+        <span class="mob-section-link text-emerald-500" onclick="openTransactionModal()">+ Trans</span>
+        <span class="mob-section-link" onclick="openPortfolioModal()">+ Nuovo</span>
       </div>
     </div>
-    <div class="mob-portfolio-list" id="mob-portfolio-list">
-      <div style="text-align:center;padding:24px">
-        <div class="mob-spinner" style="margin:0 auto"></div>
-      </div>
-    </div>
+    <div class="mob-portfolio-list" id="mob-portfolio-list"></div>
 
-    <!-- Financial News (Repositioned) -->
-    <div class="mob-section-header" style="margin-top:24px;">
-      <span class="mob-section-title">Financial News</span>
-      <span class="mob-section-link text-blue-500 flex items-center gap-1 font-black uppercase text-[9px] tracking-widest animate-pulse">
-        <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Live Feed
-      </span>
+    <!-- Footer -->
+    <div class="px-8 py-8 flex flex-col items-center opacity-30">
+      <div class="text-[9px] font-black uppercase tracking-widest text-slate-500" id="mob-app-version">v. 2.0</div>
     </div>
-    <div class="custom-scrollbar" style="max-height: 400px; overflow-y: auto;">
-        <div class="mob-news-list" id="mob-news-container">
-            <div class="mob-news-card animate-pulse">
-                <div class="flex-1">
-                    <div class="h-3 w-20 bg-slate-100 dark:bg-slate-800/80 rounded mb-2"></div>
-                    <div class="h-4 w-full bg-slate-100 dark:bg-slate-800/80 rounded"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Version Footer -->
-    <div class="px-8 py-8 flex flex-col items-center justify-center opacity-30">
-      <div class="w-8 h-[1px] bg-slate-500 mb-2"></div>
-      <div class="text-[9px] font-black uppercase tracking-widest text-slate-500" id="mob-app-version">v. --:--</div>
-    </div>
-
-    <!-- Bottom spacer -->
-    <div style="height: 20px"></div>
   </div>
 
   <!-- Portfolio Modal -->
   <div id="portfolio-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[10000] flex items-center justify-center p-4" style="display:none">
-      <div class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
+      <div class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md overflow-hidden flex flex-col shadow-2xl">
           <div class="px-5 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-              <h3 id="portfolio-modal-title" class="font-bold text-lg">Nuovo Portafoglio</h3>
-              <button onclick="closePortfolioModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-                  <span class="material-symbols-outlined">close</span>
-              </button>
+              <h3 id="portfolio-modal-title" class="font-bold">Nuovo Portafoglio</h3>
+              <button onclick="closePortfolioModal()"><span class="material-symbols-outlined">close</span></button>
           </div>
           <form id="portfolio-form" class="p-5 space-y-3 overflow-y-auto custom-scrollbar">
               <input type="hidden" id="p-id"/>
-              <div class="space-y-2">
-                  <label class="text-sm font-medium">Nome Portafoglio</label>
-                  <input id="p-name" required class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3" placeholder="e.g. Retirement"/>
+              <div class="space-y-1">
+                  <label class="text-xs font-bold text-slate-400 uppercase">Nome</label>
+                  <input id="p-name" required class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3"/>
               </div>
-              <div class="space-y-2">
-                  <label class="text-sm font-medium">Tipo Portafoglio</label>
+              <div class="space-y-1">
+                  <label class="text-xs font-bold text-slate-400 uppercase">Tipo</label>
                   <select id="p-type" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3">
-                      <option value="Investimento">Investimento (Market Tracking)</option>
-                      <option value="Conto Deposito">Conto Deposito (Cash & Interests)</option>
+                      <option value="Investimento">Investimento</option>
+                      <option value="Conto Deposito">Conto Deposito</option>
                   </select>
               </div>
-              <div class="grid grid-cols-2 gap-4">
-                  <div class="space-y-2">
-                      <label class="text-sm font-medium">Valuta</label>
-                      <select id="p-currency" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3">
-                          <option value="EUR">EUR</option>
-                          <option value="USD">USD</option>
-                          <option value="GBP">GBP</option>
-                      </select>
+              <div class="grid grid-cols-2 gap-3">
+                  <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-400 uppercase">Valuta</label>
+                    <select id="p-currency" class="w-full bg-slate-50 dark:bg-slate-900 rounded-lg py-2 px-3"><option value="EUR">EUR</option><option value="USD">USD</option></select>
                   </div>
-                  <div class="space-y-2">
-                      <label class="text-sm font-medium">Data Inizio</label>
-                      <input id="p-date" type="date" required class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3"/>
+                  <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-400 uppercase">Colore</label>
+                    <input id="p-color" type="color" class="w-full h-[40px] bg-slate-50 dark:bg-slate-900 rounded-lg py-1 px-1" value="#6366f1"/>
                   </div>
               </div>
-              <div class="grid grid-cols-2 gap-4">
-                  <div class="space-y-2">
-                      <label class="text-sm font-medium">Cash Iniziale</label>
-                      <input id="p-cash" type="number" step="any" required class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3" placeholder="0.00"/>
+              <div class="grid grid-cols-2 gap-3">
+                  <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-400 uppercase">Data</label>
+                    <input id="p-date" type="date" required class="w-full bg-slate-50 dark:bg-slate-900 rounded-lg py-2 px-3"/>
                   </div>
-                  <div class="space-y-2">
-                      <label class="text-sm font-medium">Colore Brand</label>
-                      <input id="p-color" type="color" class="w-full h-[42px] bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-1 px-1 cursor-pointer" value="#6366f1"/>
-                  </div>
-              </div>
-
-              <!-- Tags Selection (Simplified) -->
-              <div class="space-y-2">
-                  <div class="flex items-center justify-between">
-                      <label class="text-sm font-medium">Tags (Groups)</label>
-                      <button type="button" onclick="mobOpenTagManager()" class="text-[10px] font-black uppercase text-primary hover:underline">Gestisci Tags</button>
-                  </div>
-                  <div class="flex flex-col gap-2 p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
-                      <div class="flex items-center gap-2">
-                          <span class="px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-600">ALL</span>
-                          <span class="text-[10px] text-slate-400 font-medium italic">(Obbligatorio)</span>
-                      </div>
-                      <div class="flex flex-col gap-1.5 mt-1 border-t border-slate-200 dark:border-slate-800 pt-2">
-                          <label class="text-[10px] font-bold text-slate-400 uppercase">Tag Aggiuntivo</label>
-                          <select id="p-additional-tag" class="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-800 rounded-lg py-1.5 px-3 text-xs">
-                              <option value="">Nessuno</option>
-                              <!-- JS filled -->
-                          </select>
-                      </div>
+                  <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-400 uppercase">Cash</label>
+                    <input id="p-cash" type="number" step="any" required class="w-full bg-slate-50 dark:bg-slate-900 rounded-lg py-2 px-3"/>
                   </div>
               </div>
-
-              <!-- Fiscal Management (Minusvalenze) -->
-              <div class="border-t border-slate-200 dark:border-slate-800 pt-4 mt-2">
-                  <button type="button" onclick="document.getElementById('fiscal-management').classList.toggle('hidden')" class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-primary transition-colors mb-4">
-                      <span class="material-symbols-outlined text-sm">account_balance_wallet</span>
-                      Gestione Fiscale (Minusvalenze)
-                      <span class="material-symbols-outlined text-sm">expand_more</span>
-                  </button>
-                  <div id="fiscal-management" class="hidden space-y-3 pb-2">
-                      <div id="minusvalenze-list" class="grid grid-cols-2 gap-x-4 gap-y-3">
-                          <!-- Dynamic losses inputs will be injected here -->
-                      </div>
-                  </div>
-              </div>
-
               <div class="pt-4 flex gap-3">
-                  <div class="flex-1"></div>
-                  <button type="button" onclick="closePortfolioModal()" class="px-5 py-2 rounded-lg font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Annulla</button>
-                  <button type="submit" class="px-5 py-2 bg-primary text-white rounded-lg font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">Salva</button>
+                  <button type="button" onclick="closePortfolioModal()" class="flex-1 py-2 rounded-lg font-bold text-slate-500">Annulla</button>
+                  <button type="submit" class="flex-1 py-2 bg-primary text-white rounded-lg font-bold shadow-lg shadow-primary/20">Salva</button>
               </div>
           </form>
       </div>
   </div>
 
-  <!-- Confirm Modal -->
-  <div id="general-confirm-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[10000] flex items-center justify-center p-4" style="display:none">
-      <div class="bg-white dark:bg-surface-dark border border-rose-500/30 rounded-2xl w-full max-w-sm shadow-2xl p-5 space-y-4 max-h-[90vh] overflow-y-auto">
-          <div class="flex items-center gap-4">
-              <div class="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center shrink-0">
-                  <span class="material-symbols-outlined text-rose-500 text-2xl">warning</span>
-              </div>
-              <div>
-                  <p id="confirm-modal-title" class="font-black text-rose-500 text-[17px] uppercase tracking-tight">Conferma Azione</p>
-                  <p id="confirm-modal-body" class="text-[13px] text-slate-500 dark:text-slate-400 font-medium mt-1 leading-tight">Sei sicuro di voler procedere?</p>
-              </div>
-          </div>
-          <div class="flex gap-3">
-              <button onclick="closeConfirmModal()" class="flex-1 py-2.5 rounded-lg font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors">Annulla</button>
-              <button id="confirm-modal-btn" class="flex-1 py-2.5 bg-rose-600 text-white rounded-lg font-bold hover:bg-rose-700 transition-all shadow-lg shadow-rose-600/20">Elimina</button>
-          </div>
-      </div>
-  </div>
-
-  <!-- ── Bottom Tab Bar ── -->
+  <!-- Bottom Nav -->
   <div class="mob-tab-bar">
-    <a href="/dashboard" class="mob-tab-item active">
-      <span class="material-symbols-outlined">dashboard</span>
-    </a>
-    <a href="/market" class="mob-tab-item">
-      <span class="material-symbols-outlined">trending_up</span>
-    </a>
-    <a href="/watchlist" class="mob-tab-item">
-      <span class="material-symbols-outlined">visibility</span>
-    </a>
-    <a href="/history" class="mob-tab-item">
-      <span class="material-symbols-outlined">history</span>
-    </a>
-    <a href="/dividend" class="mob-tab-item">
-      <span class="material-symbols-outlined">payments</span>
-    </a>
-    <a href="/reports" class="mob-tab-item">
-      <span class="material-symbols-outlined">pie_chart</span>
-    </a>
+    <a href="/dashboard" class="mob-tab-item active"><span class="material-symbols-outlined">dashboard</span></a>
+    <a href="/market" class="mob-tab-item"><span class="material-symbols-outlined">trending_up</span></a>
+    <a href="/watchlist" class="mob-tab-item"><span class="material-symbols-outlined">visibility</span></a>
+    <a href="/history" class="mob-tab-item"><span class="material-symbols-outlined">history</span></a>
+    <a href="/dividend" class="mob-tab-item"><span class="material-symbols-outlined">payments</span></a>
+    <a href="/reports" class="mob-tab-item"><span class="material-symbols-outlined">pie_chart</span></a>
   </div>
 </div>
 
-<!-- Mobile Tag Manager Modal -->
-<div id="tag-manager-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
-        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-            <h3 class="font-bold">Gestisci Tag</h3>
-            <button onclick="mobCloseTagManager()" class="text-slate-400">
-                <span class="material-symbols-outlined">close</span>
-            </button>
-        </div>
-        <div class="p-6 space-y-4">
-            <div class="flex gap-2">
-                <input id="new-tag-name" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-1.5 px-3 text-sm" placeholder="Nome tag..."/>
-                <input id="new-tag-color" type="color" class="w-10 h-9 rounded-lg cursor-pointer" value="#64748b"/>
-                <button onclick="mobCreateNewTag()" class="bg-primary text-white p-1.5 rounded-lg">
-                    <span class="material-symbols-outlined">add</span>
-                </button>
-            </div>
-            <div id="tag-manager-list" class="space-y-2 max-h-60 overflow-y-auto">
-                <!-- JS filled -->
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Mobile Dashboard JS -->
 <script>
-window._mobileViewActive = true;
-(function() {
   let mobPerfChart = null;
-  let mobAllocChart = null;
   let mobCurrentRange = '1M';
+  let selectedPortfolioIds = JSON.parse(localStorage.getItem('selectedPortfolioIds') || '[]');
 
-  // ── Swipe Logic ──────────────────────────────────
-  let touchStartX = 0;
-  let touchMoveX = 0;
-  let currentSwipeEl = null;
-  const SWIPE_THRESHOLD = 50;
-  const ACTION_WIDTH = 130; // 2 buttons * 65px
-
-  window.handleTouchStart = function(e, container) {
-    touchStartX = e.touches[0].clientX;
-    touchMoveX = 0;
-    if (currentSwipeEl && currentSwipeEl !== container) {
-      resetSwipes(container);
-    }
-  };
-
-  window.handleTouchMove = function(e, container) {
-    const item = container.querySelector('.mob-holding-item');
-    if (!item) return;
-    touchMoveX = e.touches[0].clientX;
-    let diff = touchMoveX - touchStartX;
-    if (diff > 0) diff = 0;
-    if (diff < -ACTION_WIDTH - 20) diff = -ACTION_WIDTH - 20;
-    item.style.transition = 'none';
-    item.style.transform = `translateX(${diff}px)`;
-  };
-
-  window.handleTouchEnd = function(e, container) {
-    const item = container.querySelector('.mob-holding-item');
-    if (!item) return;
-    const diff = touchMoveX - touchStartX;
-    
-    item.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
-    
-    // If movement occurred and was beyond threshold, keep actions open.
-    // Otherwise (including simple tap), reset to 0. (Tap-to-close)
-    if (touchMoveX !== 0 && diff < -SWIPE_THRESHOLD) {
-      item.style.transform = `translateX(-${ACTION_WIDTH}px)`;
-      currentSwipeEl = container;
-    } else {
-      item.style.transform = 'translateX(0)';
-      currentSwipeEl = null;
-    }
-  };
-
-  function resetSwipes(except) {
-    document.querySelectorAll('.mob-scroll .mob-holding-swipe-container').forEach(c => {
-      if (except && c === except) return;
-      const item = c.querySelector('.mob-holding-item');
-      if (item) item.style.transform = 'translateX(0)';
-    });
-    currentSwipeEl = null;
+  function mobRenderPortfolioFilters() {
+      const container = document.getElementById('mob-portfolio-filters');
+      if (!container || !window._dashboardData) return;
+      const portfolios = window._dashboardData.portfolios || [];
+      container.innerHTML = portfolios.map(p => {
+          const isSelected = selectedPortfolioIds.includes(p.id);
+          const style = isSelected 
+              ? `background-color: ${p.color || 'var(--primary)'}; color: white; border-color: ${p.color || 'var(--primary)'};` 
+              : `background-color: rgba(255,255,255,0.05); color: #94a3b8; border-color: rgba(255,255,255,0.1);`;
+          return `<button onclick="mobTogglePortfolioFilter(${p.id})" style="${style}" class="px-4 py-1.5 rounded-full text-[10px] font-bold transition-all shrink-0 border">${p.name}</button>`;
+      }).join('') || '<span class="text-[10px] text-slate-400 italic px-2">Nessun portafoglio.</span>';
   }
 
-  window.mobGoToPortfolio = function(id) {
-    if (currentSwipeEl) {
-      resetSwipes();
-      return;
-    }
-    window.location.href = `/portfolio?id=${id}`;
-  };
-
-  function mobSyncPrivacyIcon() {
-    const icon = document.getElementById('mob-privacy-icon');
-    if (icon) icon.innerText = window.privacyState?.enabled ? 'visibility_off' : 'visibility';
-  }
-
-  let allTags = [];
-  let selectedTagIds = JSON.parse(localStorage.getItem('selectedTagIds') || '[]');
-
-  async function mobLoadTags() {
-    try {
-      const res = await fetch('/api/tags');
-      allTags = await res.json();
-      mobRenderTagFilters();
-    } catch (e) { console.error('Error loading tags:', e); }
-  }
-
-  function mobRenderTagFilters() {
-    const container = document.getElementById('mob-tag-filters');
-    if (!container) return;
-    container.innerHTML = allTags.map(tag => {
-      const isSelected = selectedTagIds.includes(tag.id);
-      // Gray when unselected, colored when selected
-      const style = isSelected 
-        ? `background-color: ${tag.color || 'var(--primary)'}; color: white; border-color: ${tag.color || 'var(--primary)'};` 
-        : `background-color: rgba(0,0,0,0.05); color: #64748b; border-color: rgba(0,0,0,0.05);`;
-      
-      return `
-        <button onclick="mobToggleTagFilter(${tag.id})" 
-                style="${style}"
-                class="px-4 py-1.5 rounded-full text-[10px] font-bold transition-all shrink-0 border">
-          ${tag.name}
-        </button>`;
-    }).join('') + (allTags.length === 0 ? '<span class="text-[10px] text-slate-400 italic px-2">Nessun tag.</span>' : '');
-  }
-
-  function mobToggleTagFilter(tagId) {
-    if (selectedTagIds.includes(tagId)) {
-      selectedTagIds = selectedTagIds.filter(id => id !== tagId);
-    } else {
-      selectedTagIds.push(tagId);
-    }
-    localStorage.setItem('selectedTagIds', JSON.stringify(selectedTagIds));
-    mobRenderTagFilters();
-    
-    if (window._dashboardData) {
-        mobUpdateDashboard(window._dashboardData);
-        mobUpdatePerfChart();
-        mobInitAllocChart();
-    }
+  window.mobTogglePortfolioFilter = function(pId) {
+      if (selectedPortfolioIds.includes(pId)) {
+          selectedPortfolioIds = selectedPortfolioIds.filter(id => id !== pId);
+      } else {
+          selectedPortfolioIds.push(pId);
+      }
+      localStorage.setItem('selectedPortfolioIds', JSON.stringify(selectedPortfolioIds));
+      mobRenderPortfolioFilters();
+      mobUpdateDashboard(window._dashboardData);
+      mobUpdateChart();
   }
 
   async function mobUpdateDashboard(prefetchedData = null) {
-    try {
-      // Always load ALL portfolios
-      const url = '/api/portfolios';
-      const data = prefetchedData || await (await fetch(url)).json();
-      const portfolios = data.portfolios || [];
-      window._dashboardData = data; 
-
-      // Filter metrics by selected tags
-      let filteredPortfolios = portfolios;
-      if (selectedTagIds.length > 0) {
-          filteredPortfolios = portfolios.filter(p => (p.tags || []).some(t => selectedTagIds.includes(t.id)));
-      }
-
-      const g = {
-          totalNetValue: filteredPortfolios.reduce((sum, p) => sum + (parseFloat(p.netValue) || parseFloat(p.totalValue) || 0), 0),
-          totalValue: filteredPortfolios.reduce((sum, p) => sum + (parseFloat(p.totalValue) || 0), 0),
-          changeReg: filteredPortfolios.reduce((sum, p) => sum + (parseFloat(p.changeValue) || 0), 0),
-          changePP: filteredPortfolios.reduce((sum, p) => sum + (parseFloat(p.changeValuePrePost) || 0), 0),
-          topWinners: data.global?.topWinners || [],
-          topLosers: data.global?.topLosers || []
-      };
-
-      const mobNet = document.getElementById('mob-total-net');
-      const mobGross = document.getElementById('mob-total-gross');
-      const mobDayVar = document.getElementById('mob-day-var');
-
-      if (mobNet) mobNet.textContent = formatPrivacy(g.totalNetValue, 'EUR', 'mob-net', 0);
-      if (mobGross) mobGross.textContent = '(' + formatPrivacy(g.totalValue, 'EUR', 'mob-gross', 0) + ')';
-
-      if (mobDayVar) {
-          const totalMove = g.changeReg + g.changePP;
-          const isPosTotal = totalMove >= 0;
-          
-          const formattedReg = formatPrivacy(g.changeReg, 'EUR', 'mob-h-var', 0);
-          const formattedPP = formatPrivacy(g.changePP, 'EUR', 'mob-h-pp', 0);
-
-          if (formattedReg === '****') {
-              mobDayVar.classList.add('hidden');
-          } else {
-              const signReg = g.changeReg >= 0 ? '+' : '';
-              const signPP = g.changePP >= 0 ? '+' : '';
-              mobDayVar.className = `px-2 py-0.5 rounded-lg text-xs font-bold shadow-sm ${isPosTotal ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`;
-              
-              let html = `${signReg}${formattedReg}`;
-              if (g.changePP !== 0) {
-                  html += ` <span class="opacity-80 text-[10px]">(${signPP}${formattedPP})</span>`;
-              }
-              mobDayVar.innerHTML = html;
-              mobDayVar.classList.remove('hidden');
-          }
-      }
-
-      // Top Winners / Losers
-      const winnersEl = document.getElementById('mob-top-winners');
-      const losersEl  = document.getElementById('mob-top-losers');
-      
-      const renderMiniAssetList = (el, assets) => {
-        if (!el || !assets || assets.length === 0) return;
-        el.innerHTML = assets.map(asset => {
-          const isPos = asset.changePercent >= 0;
-          const color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-          const absVal = Math.floor(Math.abs(asset.absChange || 0));
-          return `
-            <div class="flex flex-col">
-              <div class="flex items-center gap-1.5">
-                <span class="text-[15px] font-black leading-tight">${asset.ticker}</span>
-                <span class="text-[15px] font-black leading-tight" style="color:${color}">${isPos?'+':''}${asset.changePercent.toFixed(1)}%</span>
-              </div>
-              <div class="text-[11px] opacity-70 font-black">${isPos?'+':'-'}€ ${absVal}</div>
-            </div>`;
-        }).join('');
-      };
-
-      if (winnersEl) renderMiniAssetList(winnersEl, g.topWinners);
-      if (losersEl) renderMiniAssetList(losersEl, g.topLosers);
-
-      // Portfolios
-      const pList = document.getElementById('mob-portfolio-list');
-      if (pList) {
-        if (portfolios.length === 0) {
-          pList.innerHTML = '<div class="mob-empty"><span class="material-symbols-outlined">work_off</span><div class="mob-empty-title">Nessun portafoglio</div></div>';
-        } else {
-          pList.innerHTML = portfolios.map(p => {
-            const v = p.changeValue || 0;
-            const vPP = p.changeValuePrePost || 0;
-            const isPos = v >= 0;
-            const sign = (isPos && v !== 0) ? '+' : '';
-            const gainColor = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-
-            const signPP = vPP >= 0 ? '+' : '';
-            
-            return `
-              <div class="mob-holding-swipe-container" 
-                   ontouchstart="handleTouchStart(event, this)" 
-                   ontouchmove="handleTouchMove(event, this)" 
-                   ontouchend="handleTouchEnd(event, this)">
-                
-                <div class="mob-holding-actions">
-                  <div class="mob-action-btn bg-orange-ios" 
-                       onclick="event.stopPropagation(); mobEditPortfolio(${p.id})">
-                    <span class="material-symbols-outlined">edit</span>
-                    <span>Modifica</span>
-                  </div>
-                  <div class="mob-action-btn bg-red-ios" 
-                       onclick="event.stopPropagation(); mobDeletePortfolio(${p.id}, '${p.name.replace(/'/g, "\\'")}')">
-                    <span class="material-symbols-outlined">delete</span>
-                    <span>Elimina</span>
-                  </div>
-                </div>
-
-                <div class="mob-holding-item" onclick="mobGoToPortfolio(${p.id})">
-                  <div class="mob-holding-logo" style="background-color:${p.color||'var(--mob-primary)'}; color: white;">
-                    <span class="material-symbols-outlined" style="font-size: 20px; font-variation-settings: 'FILL' 1;">work</span>
-                  </div>
-                  <div class="mob-holding-info">
-                    <div class="flex items-center gap-1.5 min-w-0">
-                      <div class="mob-holding-ticker truncate">${p.name}</div>
-                    </div>
-                    <div class="flex flex-wrap gap-1 mt-1">
-                      ${(p.tags || []).map(t => `<span class="text-[7px] font-black px-1 py-0.5 rounded-full border border-white/10" style="background-color: ${t.color}30; color: ${t.color}">${t.name}</span>`).join('')}
-                    </div>
-                    <div class="mob-holding-name mt-1">${p.assetCount || 0} Assets${p.type === 'Conto Deposito' ? ' • DEPOSITO' : ''}</div>
-                  </div>
-                  
-                  <div class="mob-holding-values">
-                    <div class="mob-holding-value text-primary dark:text-primary">${formatPrivacy(p.totalValue, p.currency, 'mob-p-'+p.id, 0)}</div>
-                    <div class="flex flex-col items-end mt-0.5">
-                      <div class="mob-holding-gain" style="color: ${gainColor}; font-size: 13px;">${sign}${formatPrivacy(v, p.currency, 'mob-dv1-'+p.id, 0)}</div>
-                      ${vPP !== 0 ? `<div class="text-[10px] opacity-70 font-bold">(${signPP}${formatPrivacy(vPP, p.currency, 'mob-dvpp-'+p.id, 0)})</div>` : ''}
-                    </div>
-                  </div>
-                </div>
-              </div>`;
-          }).join('');
-        }
-      }
-
-      // Sync header dot
-      mobSyncMarketStatus();
-
-      // Load Dividend Alert
-      mobLoadDividendAlert();
-    } catch(e) { console.error('[MOB] Dashboard update error:', e); }
-  }
-
-  async function mobLoadDividendAlert() {
-    const container = document.getElementById('mob-dividend-alert');
-    const titleEl = document.getElementById('mob-div-alert-title');
-    const msgEl = document.getElementById('mob-div-alert-msg');
-    if (!container || !titleEl || !msgEl) return;
-
-    try {
-      const res = await fetch('/api/analytics/current-month-dividends');
-      const data = await res.json();
-
-      if (data.hasDividends) {
-        titleEl.innerText = `Dividendi di ${data.monthName}`;
-        msgEl.innerText = `Hai ${data.count} ${data.count === 1 ? 'pagamento previsto' : 'pagamenti previsti'} (${formatCurrency(data.amount, 'EUR', 0)}).`;
-        container.classList.remove('hidden');
-        container.style.display = 'flex';
-      } else {
-        container.classList.add('hidden');
-        container.style.display = 'none';
-      }
-    } catch (err) {
-      console.error('Failed to load mobile dividend alert:', err);
-    }
-  }
-
-  async function mobSyncMarketStatus() {
-    try {
-      const res = await fetch('/api/market-status');
-      const s = await res.json();
-      const dot = document.getElementById('mob-live-dot');
-      const txt = document.getElementById('mob-live-text');
-      const ms = document.getElementById('mob-market-status');
-      if (dot) { dot.className = 'mob-status-dot' + (s.anyOpen ? ' live' : ''); }
-      if (txt) txt.textContent = s.anyOpen ? 'Live' : 'Closed';
-      if (ms) ms.textContent = `EU:${s.EU?'🟢':'🔴'} US:${s.US?'🟢':'🔴'}`;
-    } catch(e) {}
-  }
-
-  // ── Portfolio Modal Logic ─────────────────────────
-  window.openPortfolioModal = async function() {
-    const listContainer = document.getElementById('minusvalenze-list');
-    listContainer.innerHTML = '<p class="text-[10px] text-slate-400 italic">Recupero categorie...</p>';
-    
-    let categories = [];
-    try {
-        const res = await fetch('/api/tax-rates');
-        categories = await res.json();
-    } catch (err) { console.error(err); }
-
-    document.getElementById('portfolio-modal-title').innerText = 'Nuovo Portafoglio';
-    document.getElementById('p-id').value = '';
-    document.getElementById('portfolio-form').reset();
-    mobRenderPortfolioTags();
-
-    listContainer.innerHTML = categories.map(c => `
-        <div class="space-y-1">
-            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">${c.asset_type}</label>
-            <input data-type="${c.asset_type}" type="number" step="any" class="minusvalenza-input w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-1.5 px-3 text-sm" value="0" placeholder="0.00"/>
-        </div>
-    `).join('') || '<p class="text-[10px] text-slate-400 italic">Nessuna categoria.</p>';
-
-    const modal = document.getElementById('portfolio-modal');
-    if (modal) modal.style.display = 'flex';
-  };
-
-  window.closePortfolioModal = function() {
-    const modal = document.getElementById('portfolio-modal');
-    if (modal) modal.style.display = 'none';
-  };
-
-  window.mobEditPortfolio = async function(id) {
-    const listContainer = document.getElementById('minusvalenze-list');
-    listContainer.innerHTML = '<p class="text-[10px] text-slate-400 italic">Recupero dati...</p>';
-    
-    let categories = [];
-    try {
-        const res = await fetch('/api/tax-rates');
-        categories = await res.json();
-    } catch (err) { console.error(err); }
-
-    try {
-      const res = await fetch(`/api/portfolios/${id}`);
-      const p = await res.json();
-      document.getElementById('portfolio-modal-title').innerText = 'Modifica Portafoglio';
-      document.getElementById('p-id').value = p.id;
-      document.getElementById('p-name').value = p.name;
-      document.getElementById('p-type').value = p.type || 'Investimento';
-      document.getElementById('p-currency').value = p.currency || 'EUR';
-      document.getElementById('p-date').value = p.startDate ? p.startDate.split('T')[0] : '';
-      document.getElementById('p-cash').value = p.initialCash || 0;
-      document.getElementById('p-color').value = p.color || '#6366f1';
-      mobRenderPortfolioTags(id);
-
-      const lossesMap = {};
-      (p.losses || []).forEach(l => { lossesMap[l.asset_type] = l.loss_amount; });
-      
-      listContainer.innerHTML = categories.map(c => `
-          <div class="space-y-1">
-              <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">${c.asset_type}</label>
-              <input data-type="${c.asset_type}" type="number" step="any" class="minusvalenza-input w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-1.5 px-3 text-sm" value="${lossesMap[c.asset_type] || 0}" placeholder="0.00"/>
-          </div>
-      `).join('') || '<p class="text-[10px] text-slate-400 italic">Nessuna categoria.</p>';
-
-      document.getElementById('portfolio-modal').style.display = 'flex';
-      resetSwipes();
-    } catch(e) { console.error('Error loading portfolio for edit:', e); }
-  };
-
-  document.getElementById('portfolio-form').onsubmit = async (e) => {
-    e.preventDefault();
-    const id = document.getElementById('p-id').value;
-
-    const losses = {};
-    document.querySelectorAll('.minusvalenza-input').forEach(input => {
-      const type = input.getAttribute('data-type');
-      const val = parseFloat(input.value) || 0;
-      if (type) losses[type] = val;
-    });
-
-    const additionalTagId = document.getElementById('p-additional-tag').value;
-    const allTag = allTags.find(t => t.name === 'ALL');
-    const selectedTags = [];
-    if (allTag) selectedTags.push(allTag.id);
-    if (additionalTagId) selectedTags.push(parseInt(additionalTagId));
-
-    const body = {
-      name: document.getElementById('p-name').value,
-      type: document.getElementById('p-type').value,
-      currency: document.getElementById('p-currency').value,
-      startDate: document.getElementById('p-date').value,
-      initialCash: parseFloat(document.getElementById('p-cash').value),
-      color: document.getElementById('p-color').value,
-      tags: selectedTags,
-      losses: losses
-    };
-    const method = id ? 'PUT' : 'POST';
-    const url = id ? `/api/portfolios/${id}` : '/api/portfolios';
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      if (res.ok) {
-        closePortfolioModal();
-        mobLoadTags();
-        mobUpdateDashboard();
-      } else {
-        const errText = await res.text();
-        alert('Failed to save: ' + errText);
-      }
-    } catch (err) { console.error(err); }
-  };
-
-  async function mobRenderPortfolioTags(portfolioId = null) {
-    const select = document.getElementById('p-additional-tag');
-    if (!select) return;
-    if (allTags.length === 0) await mobLoadTags();
-    
-    let currentAdditionalTagId = null;
-    if (portfolioId && window._dashboardData) {
-        const p = window._dashboardData.portfolios.find(x => x.id == portfolioId);
-        if (p) {
-            const addTag = (p.tags || []).find(t => t.name !== 'ALL');
-            if (addTag) currentAdditionalTagId = addTag.id;
-        }
-    }
-
-    const otherTags = allTags.filter(t => t.name !== 'ALL');
-    select.innerHTML = '<option value="">Nessuno</option>' + otherTags.map(tag => `
-        <option value="${tag.id}" ${currentAdditionalTagId == tag.id ? 'selected' : ''}>${tag.name}</option>
-    `).join('');
-  }
-
-  window.mobOpenTagManager = function() {
-    document.getElementById('tag-manager-modal').classList.remove('hidden');
-    document.getElementById('tag-manager-modal').classList.add('flex');
-    mobRenderTagManagerList();
-  };
-
-  window.mobCloseTagManager = function() {
-    document.getElementById('tag-manager-modal').classList.add('hidden');
-    document.getElementById('tag-manager-modal').classList.remove('flex');
-    mobRenderPortfolioTags(document.getElementById('p-id').value);
-    mobRenderTagFilters();
-  };
-
-  function mobRenderTagManagerList() {
-    const list = document.getElementById('tag-manager-list');
-    list.innerHTML = allTags.map(tag => `
-      <div class="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-        <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background-color: ${tag.color}"></div><span class="text-sm font-medium">${tag.name}</span></div>
-        <button onclick="mobDeleteTag(${tag.id})" class="text-rose-500 hover:text-rose-600"><span class="material-symbols-outlined text-sm">delete</span></button>
-      </div>
-    `).join('') || '<div class="text-center text-slate-500 italic text-sm">Nessun tag.</div>';
-  }
-
-  window.mobCreateNewTag = async function() {
-    const name = document.getElementById('new-tag-name').value;
-    const color = document.getElementById('new-tag-color').value;
-    if (!name) return;
-    const res = await fetch('/api/tags', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, color }) });
-    if (res.ok) { document.getElementById('new-tag-name').value = ''; await mobLoadTags(); mobRenderTagManagerList(); }
-  };
-
-  window.mobDeleteTag = async function(id) {
-    if (!confirm('Eliminare questo TAG?')) return;
-    const res = await fetch(`/api/tags/${id}`, { method: 'DELETE' });
-    if (res.ok) { await mobLoadTags(); mobRenderTagManagerList(); selectedTagIds = selectedTagIds.filter(tid => tid !== id); localStorage.setItem('selectedTagIds', JSON.stringify(selectedTagIds)); mobRenderTagFilters(); }
-  };
-
-  window.mobDeletePortfolio = function(id, name) {
-    document.getElementById('confirm-modal-title').innerText = 'Elimina Portafoglio';
-    document.getElementById('confirm-modal-body').innerText = `Sei sicuro di voler eliminare il portafoglio "${name}"? Questa azione è irreversibile e cancellerà tutte le transazioni associate.`;
-    document.getElementById('confirm-modal-btn').onclick = async () => {
       try {
-        const res = await fetch(`/api/portfolios/${id}`, { method: 'DELETE' });
-        if (res.ok) {
-          closeConfirmModal();
-          mobUpdateDashboard();
-        }
-      } catch(e) { console.error('Error deleting portfolio:', e); }
-    };
-    document.getElementById('general-confirm-modal').style.display = 'flex';
-    resetSwipes();
-  };
-
-  window.closeConfirmModal = function() {
-    document.getElementById('general-confirm-modal').style.display = 'none';
-  };
-
-  function mobInitPerfChart() {
-    if (mobPerfChart) { mobPerfChart.destroy(); mobPerfChart = null; }
-    const ctx = document.getElementById('mob-perf-chart')?.getContext('2d');
-    if (!ctx) return;
-    const isDark = document.documentElement.classList.contains('dark');
-    mobPerfChart = new Chart(ctx, {
-      type: 'line',
-      data: { 
-        labels: [], 
-        datasets: [
-          {
-            label: 'Net Worth', data: [],
-            borderColor: '#135bec', backgroundColor: 'rgba(19,91,236,0.12)',
-            fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0, pointHoverRadius: 6,
-            pointHoverBackgroundColor: '#135bec', pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2
-          },
-          {
-            label: 'Net Profit/Loss', data: [],
-            borderColor: '#10b981', backgroundColor: 'transparent',
-            fill: false, tension: 0.4, borderWidth: 2, borderDash: [5, 5],
-            pointRadius: 0, pointHoverRadius: 6,
-            pointHoverBackgroundColor: '#10b981', pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2,
-            yAxisID: 'y1'
-          },
-          {
-            label: 'Net Gain (No Div)', data: [],
-            borderColor: '#f59e0b', backgroundColor: 'transparent',
-            fill: false, tension: 0.4, borderWidth: 2, borderDash: [2, 2],
-            pointRadius: 0, pointHoverRadius: 6,
-            pointHoverBackgroundColor: '#f59e0b', pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2,
-            yAxisID: 'y1'
-          },
-          {
-            label: 'Benchmark', data: [],
-            borderColor: '#94a3b8', backgroundColor: 'transparent',
-            fill: false, tension: 0.4, borderWidth: 1.5, borderDash: [3, 3],
-            pointRadius: 0, hidden: true,
-            yAxisID: 'y1'
+          const data = prefetchedData || await (await fetch('/api/portfolios')).json();
+          window._dashboardData = data;
+          const portfolios = data.portfolios || [];
+          
+          let filtered = portfolios;
+          if (selectedPortfolioIds.length > 0) {
+              filtered = portfolios.filter(p => selectedPortfolioIds.includes(p.id));
           }
-        ]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            mode: 'index', intersect: false,
-            backgroundColor: isDark ? '#1e293b' : '#fff',
-            titleColor: isDark ? '#f1f5f9' : '#1e293b',
-            bodyColor: isDark ? '#f1f5f9' : '#1e293b',
-            borderColor: isDark ? '#334155' : '#e2e8f0',
-            borderWidth: 1, padding: 10,
-            callbacks: {
-              label: () => null,
-              title: (items) => {
-                  const d = mobPerfChart.rawPoints ? mobPerfChart.rawPoints[items[0].dataIndex] : null;
-                  return (d && d.events && d.events.length > 0) ? items[0].label : null;
-              },
-              afterBody: (items) => {
-                  const d = mobPerfChart.rawPoints ? mobPerfChart.rawPoints[items[0].dataIndex] : null;
-                  if (d && d.events && d.events.length > 0) {
-                      const labels = { 'BUY': 'ACQUISTO', 'SELL': 'VENDITA', 'DEPOSIT': 'DEPOSITO', 'WITHDRAWAL': 'PRELIEVO', 'DIVIDEND': 'DIVIDENDO' };
-                      return d.events.map(ev => {
-                          const typeLabel = labels[ev.type] || ev.type;
-                          return `${typeLabel}: ${ev.ticker || ev.assetName || ''}`;
-                      });
-                  }
-                  return null;
-              }
-            }
-          },
-          zoom: { zoom: { wheel:{enabled:false}, pinch:{enabled:true}, mode:'x' }, pan:{enabled:true, mode:'x'} },
-          annotation: { annotations: {} }
-        },
-        scales: {
-          x: { ticks: { color: isDark?'#64748b':'#94a3b8', font:{size:9}, maxTicksLimit: 5 }, grid: { display: false } },
-          y: { 
-            ticks: { 
-              color: isDark?'#64748b':'#94a3b8', font:{size:9}, 
-              callback: v => '€'+Math.round(v/1000)+'k' 
-            }, 
-            grid: { color: isDark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.04)' } 
-          },
-          y1: {
-            position: 'right',
-            ticks: {
-              color: '#10b981', font: { size: 9 },
-              callback: v => '€'+Math.round(v/1000)+'k'
-            },
-            grid: { drawOnChartArea: false }
-          }
-        }
-      }
-    });
 
-    // Restore Visibility Preference
-    const showNetWorth = localStorage.getItem('dashboard_show_net_worth') !== 'false';
-    const toggle = document.getElementById('mob-toggle-net-worth');
-    if (toggle) toggle.checked = showNetWorth;
-    mobPerfChart.setDatasetVisibility(0, showNetWorth);
-
-    mobUpdatePerfChart();
-  }
-
-  window.mobToggleNetWorth = function() {
-    if (!mobPerfChart) return;
-    const checked = document.getElementById('mob-toggle-net-worth').checked;
-    mobPerfChart.setDatasetVisibility(0, checked);
-    mobPerfChart.update();
-    localStorage.setItem('dashboard_show_net_worth', checked);
-  };
-
-  async function mobUpdatePerfChart() {
-    if (!mobPerfChart) return;
-    const isDark = document.documentElement.classList.contains('dark');
-    const benchmark = document.getElementById('mob-benchmark-selector')?.value || '';
-    try {
-      const res = await fetch(`/api/analytics/global-performance?range=${mobCurrentRange}&benchmark=${benchmark}`);
-      const result = await res.json();
-      const dataPoints = result.dataPoints || (Array.isArray(result) ? result : []);
-      
-      mobPerfChart.rawPoints = dataPoints;
-      mobPerfChart.data.labels = dataPoints.map(d => {
-        const dt = new Date(d.date);
-        return dt.toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit' });
-      });
-      
-      mobPerfChart.data.datasets[0].data = dataPoints.map(d => d.value);
-      mobPerfChart.data.datasets[1].data = dataPoints.map(d => d.profit);
-      mobPerfChart.data.datasets[2].data = dataPoints.map(d => d.profitNoDiv);
-      
-      if (benchmark) {
-        mobPerfChart.data.datasets[3].data = dataPoints.map(d => d.benchProfit || 0);
-        mobPerfChart.setDatasetVisibility(3, true);
-      } else {
-        mobPerfChart.setDatasetVisibility(3, false);
-      }
-
-      // Year Markers (Annotations)
-      const annotations = {};
-      let lastYear = null;
-      dataPoints.forEach((d, index) => {
-        const year = new Date(d.date).getFullYear();
-        if (lastYear !== null && year !== lastYear) {
-          annotations[`line${year}`] = {
-            type: 'line', xMin: index, xMax: index,
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
-            borderWidth: 1, borderDash: [5, 5],
-            label: {
-              display: true, content: year.toString(), position: 'start',
-              backgroundColor: isDark ? 'rgba(15, 23, 42, 0.8)' : 'rgba(255, 255, 255, 0.8)',
-              color: isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)',
-              font: { size: 8, weight: 'bold' }
-            }
+          const metrics = {
+              net: filtered.reduce((sum, p) => sum + (parseFloat(p.netValue) || 0), 0),
+              gross: filtered.reduce((sum, p) => sum + (parseFloat(p.totalValue) || 0), 0),
+              change: filtered.reduce((sum, p) => sum + (parseFloat(p.changeValue) || 0), 0)
           };
-        }
-        lastYear = year;
-      });
-      mobPerfChart.options.plugins.annotation.annotations = annotations;
 
-      // Transaction Markers
-      const pointStyles = [];
-      const pointColors = [];
-      const pointRadii = [];
+          document.getElementById('mob-total-net').innerText = formatPrivacy(metrics.net, 'EUR', 'mob-net');
+          document.getElementById('mob-total-gross').innerText = `(${formatPrivacy(metrics.gross, 'EUR', 'mob-gross')})`;
+          
+          const varEl = document.getElementById('mob-day-var');
+          if (varEl) {
+              const isPos = metrics.change >= 0;
+              varEl.className = `ml-auto px-2 py-0.5 rounded-lg text-[10px] font-black shadow-sm ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`;
+              varEl.innerText = (isPos ? '+' : '') + formatPrivacy(metrics.change, 'EUR', 'mob-var');
+              varEl.classList.remove('hidden');
+          }
 
-      dataPoints.forEach(d => {
-        const events = d.events || [];
-        if (events.some(e => e.type === 'SELL')) {
-          pointStyles.push('circle'); pointColors.push('#f43f5e'); pointRadii.push(4);
-        } else if (events.some(e => e.type === 'BUY')) {
-          pointStyles.push('circle'); pointColors.push('#10b981'); pointRadii.push(4);
-        } else if (events.some(e => e.type === 'DEPOSIT' || e.type === 'DIVIDEND')) {
-          pointStyles.push('triangle'); pointColors.push('#10b981'); pointRadii.push(4);
-        } else if (events.some(e => e.type === 'WITHDRAWAL')) {
-          pointStyles.push('triangle'); pointColors.push('#f59e0b'); pointRadii.push(4);
-        } else {
-          pointStyles.push('circle'); pointColors.push('#135bec'); pointRadii.push(0);
-        }
-      });
-
-      mobPerfChart.data.datasets[0].pointStyle = pointStyles;
-      mobPerfChart.data.datasets[0].pointBackgroundColor = pointColors;
-      mobPerfChart.data.datasets[0].pointRadius = pointRadii;
-      mobPerfChart.data.datasets[0].pointBorderColor = '#fff';
-      mobPerfChart.data.datasets[0].pointBorderWidth = 1;
-
-      mobPerfChart.update();
-    } catch(e) { console.error('[MOB] Perf chart error:', e); }
+          const pList = document.getElementById('mob-portfolio-list');
+          if (pList) {
+              pList.innerHTML = portfolios.map(p => `
+                  <div class="p-4 bg-white dark:bg-surface-dark border-b border-slate-100 dark:border-slate-800 flex items-center justify-between" onclick="window.location.href='/portfolio?id=${p.id}'">
+                      <div class="flex items-center gap-3">
+                          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white" style="background-color:${p.color || '#6366f1'}">
+                              <span class="material-symbols-outlined">work</span>
+                          </div>
+                          <div>
+                              <div class="text-[14px] font-black">${p.name}</div>
+                              <div class="text-[10px] text-slate-500 uppercase font-bold">${p.assetCount || 0} Assets</div>
+                          </div>
+                      </div>
+                      <div class="text-right">
+                          <div class="text-[14px] font-black">${formatPrivacy(p.totalValue, p.currency, 'p-mob-'+p.id)}</div>
+                          <div class="text-[11px] font-bold ${p.changeValue >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${p.changeValue >= 0 ? '+' : ''}${formatPrivacy(p.changeValue, p.currency, 'dv-mob-'+p.id)}</div>
+                      </div>
+                  </div>
+              `).join('');
+          }
+          mobRenderPortfolioFilters();
+          mobUpdateWinnersLosers(data.global);
+          mobSyncMarketStatus();
+      } catch(e) { console.error(e); }
   }
 
-  function mobInitAllocChart() {
-    if (mobAllocChart) { mobAllocChart.destroy(); mobAllocChart = null; }
-    const ctx = document.getElementById('mob-alloc-chart')?.getContext('2d');
-    if (!ctx) return;
-    mobAllocChart = new Chart(ctx, {
-      type: 'doughnut',
-      data: { labels: [], datasets: [{ data: [],
-        backgroundColor: ['#135bec','#10b981','#f59e0b','#6366f1','#ec4899','#8b5cf6','#06b6d4'],
-        borderWidth: 0, hoverOffset: 4
-      }]},
-      options: {
-        responsive: true, maintainAspectRatio: false, cutout: '72%',
-        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toFixed(0)}%` } } }
-      }
-    });
-    mobUpdateAllocChart();
+  function mobUpdateWinnersLosers(global) {
+      const winners = document.getElementById('mob-top-winners');
+      const losers = document.getElementById('mob-top-losers');
+      if (!winners || !losers || !global) return;
+      
+      const render = (assets, color) => assets.map(a => `<div class="flex flex-col"><div class="flex items-center gap-1.5"><span class="text-[14px] font-black">${a.ticker}</span><span class="text-[14px] font-black" style="color:${color}">${a.changePercent >= 0 ? '+' : ''}${a.changePercent.toFixed(1)}%</span></div></div>`).join('') || '--';
+      winners.innerHTML = render(global.topWinners || [], 'var(--mob-emerald)');
+      losers.innerHTML = render(global.topLosers || [], 'var(--mob-rose)');
   }
 
-  async function mobUpdateAllocChart() {
-    if (!mobAllocChart) return;
-    try {
-      const res = await fetch('/api/analytics/global-allocation');
-      const data = await res.json();
-      mobAllocChart.data.labels = data.map(d => d.type);
-      mobAllocChart.data.datasets[0].data = data.map(d => d.percent);
-      mobAllocChart.update();
-      const legend = document.getElementById('mob-alloc-legend');
-      if (legend) {
-        const colors = mobAllocChart.data.datasets[0].backgroundColor;
-        legend.innerHTML = data.slice(0,5).map((d,i) => `
-          <div class="mob-alloc-item">
-            <div class="mob-alloc-dot" style="background:${colors[i%colors.length]}"></div>
-            <span class="mob-alloc-type">${d.type}</span>
-            <span class="mob-alloc-pct">${d.percent}%</span>
-          </div>`).join('');
-        if (data.length > 5) legend.innerHTML += `<div class="mob-alloc-item"><span class="mob-alloc-type" style="color:var(--mob-text-caption)">+${data.length-5} altri</span></div>`;
-      }
-    } catch(e) { console.error('[MOB] Alloc chart error:', e); }
+  async function mobUpdateChart() {
+      const ctx = document.getElementById('mob-perf-chart')?.getContext('2d');
+      if (!ctx) return;
+      try {
+          let url = `/api/analytics/global-performance?range=${mobCurrentRange}`;
+          if (selectedPortfolioIds.length > 0) url += `&portfolioIds=${selectedPortfolioIds.join(',')}`;
+          const res = await fetch(url);
+          const result = await res.json();
+          const points = result.dataPoints || [];
+          
+          if (mobPerfChart) mobPerfChart.destroy();
+          mobPerfChart = new Chart(ctx, {
+              type: 'line',
+              data: {
+                  labels: points.map(p => new Date(p.date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })),
+                  datasets: [{
+                      data: points.map(p => p.value),
+                      borderColor: '#135bec',
+                      tension: 0.4,
+                      fill: true,
+                      backgroundColor: 'rgba(19, 91, 236, 0.1)',
+                      borderWidth: 2,
+                      pointRadius: 0
+                  }]
+              },
+              options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: { legend: { display: false } },
+                  scales: { x: { display: false }, y: { display: false } }
+              }
+          });
+      } catch(e) { console.error(e); }
   }
 
   window.mobSetRange = function(range) {
-    mobCurrentRange = range;
-    document.querySelectorAll('#mob-range-bar .mob-range-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.range === range);
-    });
-    mobUpdatePerfChart();
+      mobCurrentRange = range;
+      document.querySelectorAll('.mob-range-btn').forEach(b => b.classList.toggle('active', b.dataset.range === range));
+      mobUpdateChart();
+  }
+
+  async function mobSyncMarketStatus() {
+      try {
+          const res = await fetch('/api/market-status');
+          const s = await res.json();
+          document.getElementById('mob-dot-eu').className = 'mob-market-dot' + (s.EU ? ' open' : '');
+          document.getElementById('mob-dot-us').className = 'mob-market-dot' + (s.US ? ' open' : '');
+      } catch(e) {}
+  }
+
+  window.openPortfolioModal = function() {
+      document.getElementById('portfolio-modal').style.display = 'flex';
+  };
+  window.closePortfolioModal = function() {
+      document.getElementById('portfolio-modal').style.display = 'none';
   };
 
-  function mobInit() {
-    if (!window._mobileViewActive) return;
-    mobUpdateDashboard();
-    mobInitPerfChart();
-    mobInitAllocChart();
-    mobSyncPrivacyIcon();
-    loadMobNews();
-    fetchMobVersion();
-  }
+  document.getElementById('portfolio-form').onsubmit = async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('p-id').value;
+      const data = {
+          name: document.getElementById('p-name').value,
+          type: document.getElementById('p-type').value,
+          currency: document.getElementById('p-currency').value,
+          startDate: document.getElementById('p-date').value,
+          initialCash: parseFloat(document.getElementById('p-cash').value),
+          color: document.getElementById('p-color').value,
+          losses: {}
+      };
+      const method = id ? 'PUT' : 'POST';
+      const url = id ? `/api/portfolios/${id}` : '/api/portfolios';
+      const res = await fetch(url, { method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
+      if (res.ok) { closePortfolioModal(); mobUpdateDashboard(); }
+  };
 
-  async function fetchMobVersion() {
-      try {
-          const res = await fetch('/api/app-version');
-          const data = await res.json();
-          const el = document.getElementById('mob-app-version');
-          if (el) el.innerText = data.version;
-      } catch (e) {}
-  }
-
-  function timeAgo(date) {
-      const seconds = Math.floor((new Date() - date) / 1000);
-      let interval = seconds / 31536000;
-      if (interval > 1) return Math.floor(interval) + "y";
-      interval = seconds / 2592000;
-      if (interval > 1) return Math.floor(interval) + "mo";
-      interval = seconds / 86400;
-      if (interval > 1) return Math.floor(interval) + "d";
-      interval = seconds / 3600;
-      if (interval > 1) return Math.floor(interval) + "h";
-      interval = seconds / 60;
-      if (interval > 1) return Math.floor(interval) + "m";
-      return Math.floor(seconds) + "s";
-  }
-
-  async function loadMobNews() {
-      const container = document.getElementById('mob-news-container');
-      if (!container) return;
-      try {
-          const res = await fetch('/api/news');
-          const news = await res.json();
-          if (!news || news.length === 0) {
-              container.innerHTML = '<div class="p-6 text-center text-xs text-slate-500 italic bg-slate-50/50 dark:bg-slate-900/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">No recent news available.</div>';
-              return;
-          }
-          container.innerHTML = news.map(n => {
-              const age = timeAgo(new Date(n.publishedAt * 1000));
-              return `
-                  <a href="${n.link}" target="_blank" rel="noopener noreferrer" style="display:block !important; padding:14px 16px; border-bottom:1px solid var(--mob-border); background:var(--mob-surface); text-decoration:none; color:inherit; -webkit-tap-highlight-color:transparent; transition:background 0.15s; height:auto !important; min-height:0 !important; border-left:none !important; border-right:none !important; border-radius:0 !important;">
-                      <div class="flex items-center gap-1.5 mb-1.5">
-                          <span class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20">${n.ticker}</span>
-                          <span class="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">${n.publisher} • ${age}</span>
-                      </div>
-                      <h4 class="mob-news-title" style="font-size:13px; font-weight:700; line-height:1.35; color:var(--mob-text); margin:0; display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${n.title}</h4>
-                  </a>
-              `;
-          }).join('');
-      } catch (err) {
-          console.error('Failed to load mobile news:', err);
-      }
-  }
-
-  // Init when mobile view is activated
-  window.addEventListener('mobile-view-activated', mobInit);
-  // Force mobile preference if we are on this specific page
-  if (window.location.pathname.includes('dashboard_mobile')) {
-    localStorage.setItem('layout-preference', 'mobile');
-  }
-  // If already active when DOM ready
   document.addEventListener('DOMContentLoaded', () => {
-    if (window._mobileViewActive || window.location.pathname.includes('mobile')) mobInit();
+      mobUpdateDashboard();
+      mobUpdateChart();
   });
-
-  // Re-init charts after activation (canvas may need redraw)
-  window.addEventListener('mobile-view-activated', () => {
-    setTimeout(() => {
-      if (mobPerfChart) { mobPerfChart.resize(); }
-      if (mobAllocChart) { mobAllocChart.resize(); }
-    }, 100);
-  });
-
-  // Privacy sync
-  window.addEventListener('privacy-changed', () => {
-    mobSyncPrivacyIcon();
-    if (window._mobileViewActive) mobUpdateDashboard();
-  });
-
-  // Auto-refresh on market update
-  window.addEventListener('portfolios-updated', (e) => {
-    if (e.detail) mobUpdateDashboard(e.detail);
-  });
-
-  window.addEventListener('market-data-updated', () => {
-    console.log("[Dashboard] Auto-refreshing UI...");
-    if (window._mobileViewActive) {
-      if (typeof mobUpdateDashboard === 'function') mobUpdateDashboard();
-      if (typeof mobUpdatePerfChart === 'function') mobUpdatePerfChart();
-      if (typeof mobUpdateAllocChart === 'function') mobUpdateAllocChart();
-    } else {
-      if (typeof loadDashboard === 'function') loadDashboard();
-      if (typeof updateDashboardChart === 'function') updateDashboardChart();
-      if (typeof initAllocationChart === 'function') initAllocationChart();
-    }
-  });
-})();
 </script>
-    <script>
-        // Force activation of mobile-specific logic in theme.js
-        window._mobileViewActive = true;
-    </script>
-</body></html>
+</body>
+</html>

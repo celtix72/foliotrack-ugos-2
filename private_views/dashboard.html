@@ -1,36 +1,24 @@
 <!DOCTYPE html>
-
-<html class="dark" lang="en"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>M2T - Dashboard</title>
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="M2T">
-<link rel="manifest" href="/manifest.json">
-<link rel="stylesheet" href="/dist/output.css">
-<link rel="stylesheet" href="/mobile.css">
-
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<style>
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #1e293b;
-            border-radius: 10px;
-        }
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M2T - Dashboard</title>
+    <link rel="stylesheet" href="/dist/output.css">
+    <link rel="stylesheet" href="/theme.css">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; }
+        .layout-toggle-btn.active { color: var(--primary); background: rgba(19, 91, 236, 0.1); border-color: var(--primary); }
     </style>
     <script src="/theme.js"></script>
-    <script src="/transaction_modal.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
-    <script src="/bulk_import.js"></script>
+    <script src="/transaction_modal.js"></script>
     <script src="/auth.js"></script>
     <script>
         window.addEventListener('DOMContentLoaded', () => {
@@ -38,100 +26,80 @@
         });
     </script>
 </head>
-<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex">
-<!-- Sidebar -->
-<aside class="w-72 border-r border-slate-200 dark:border-slate-800 flex flex-col h-screen sticky top-0 bg-white dark:bg-surface-dark transition-all duration-300">
-<div class="p-6 flex items-center gap-3">
-<div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white">
-<span class="material-symbols-outlined">query_stats</span>
-</div>
-<div>
-<h1 class="text-lg font-bold tracking-tight">M2T</h1>
-<p class="text-xs text-slate-500 dark:text-slate-400">M2T</p>
-</div>
-</div>
-<nav class="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
-<div class="pb-4">
-<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary font-medium" href="/dashboard">
-<span class="material-symbols-outlined text-[20px]">dashboard</span>
-<span>Dashboard</span>
-</a>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex overflow-hidden">
 
-<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/market">
-<span class="material-symbols-outlined text-[20px]">trending_up</span>
-<span>Market</span>
-</a>
-<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/reports">
-<span class="material-symbols-outlined text-[20px]">pie_chart</span>
-<span>Reports</span>
-</a>
-<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/history">
-<span class="material-symbols-outlined text-[20px]">history</span>
-<span>History</span>
-</a>
-            <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/dividend">
-                <span class="material-symbols-outlined text-[20px]">payments</span>
-                <span>Dividend</span>
-            </a>
-            <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/watchlist">
-                <span class="material-symbols-outlined text-[20px]">visibility</span>
-                <span>Watchlist</span>
-            </a>
-            <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/settings">
-                <span class="material-symbols-outlined text-[20px]">settings</span>
-                <span>Settings</span>
-            </a>
-            <a id="sidebar-admin-link" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/admin" style="display: none;">
-                <span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
-                <span>Admin Panel</span>
-            </a>
-</div>
-<div class="pt-4 border-t border-slate-200 dark:border-slate-800">
-<!-- Portfolio List -->
-<div class="space-y-1" id="sidebar-portfolios">
-    <div class="px-3 py-2 text-xs text-slate-400 italic"> Loading...</div>
-</div>
-</div>
-</nav>
-<div class="p-4 border-t border-slate-200 dark:border-slate-800">
-<div class="flex items-center gap-3 p-2 rounded-xl bg-slate-100 dark:bg-slate-900">
-<div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-400 font-bold text-xs" id="sidebar-user-initials">
-    UN
-</div>
-        <div class="flex-1 overflow-hidden">
-            <p class="text-sm font-bold truncate" id="sidebar-user-name">User</p>
-            <p class="text-[9px] text-slate-500 truncate" id="app-version-label">Loading...</p>
+<!-- Sidebar -->
+<aside class="w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-surface-dark flex flex-col shrink-0 hidden lg:flex">
+    <div class="p-6 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/20">
+            <span class="material-symbols-outlined text-2xl">insights</span>
         </div>
-        <span class="material-symbols-outlined text-slate-400 text-sm cursor-pointer" id="sidebar-logout-btn">logout</span>
+        <h1 class="text-xl font-black tracking-tight">M2T</h1>
     </div>
-</div>
+    
+    <nav class="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar mt-4">
+        <a href="/dashboard" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/10 text-primary font-bold transition-all">
+            <span class="material-symbols-outlined">dashboard</span> Dashboard
+        </a>
+        <a href="/market" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+            <span class="material-symbols-outlined">trending_up</span> Markets
+        </a>
+        <a href="/watchlist" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+            <span class="material-symbols-outlined">visibility</span> Watchlist
+        </a>
+        <a href="/history" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+            <span class="material-symbols-outlined">history</span> History
+        </a>
+        <a href="/dividend" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+            <span class="material-symbols-outlined">payments</span> Dividends
+        </a>
+        <a href="/reports" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+            <span class="material-symbols-outlined">pie_chart</span> Reports
+        </a>
+        
+        <div class="pt-6 pb-2 px-4">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Portfolios</p>
+        </div>
+        <div id="sidebar-portfolios" class="space-y-1">
+            <!-- Filled by JS -->
+        </div>
+    </nav>
+
+    <div class="p-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+        <a id="admin-link" href="/admin" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all hidden">
+            <span class="material-symbols-outlined">admin_panel_settings</span> Admin Panel
+        </a>
+        <a href="/settings" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+            <span class="material-symbols-outlined">settings</span> Settings
+        </a>
+        <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all">
+            <span class="material-symbols-outlined">logout</span> Logout
+        </button>
+    </div>
 </aside>
 
-<script>
-    async function fetchAppVersion() {
-        try {
-            const res = await fetch('/api/app-version');
-            const data = await res.json();
-            const label = document.getElementById('app-version-label');
-            if (label) label.innerText = data.version;
-        } catch (e) {}
-    }
-    document.addEventListener('DOMContentLoaded', fetchAppVersion);
-</script>
-<!-- Main Content Container -->
+<!-- Main Wrapper -->
 <div class="flex-1 flex flex-col h-screen overflow-hidden">
-<!-- Top Header -->
-<header class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-surface-dark/80 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-50 transition-all duration-300">
+    <!-- Top Header -->
+    <header class="h-20 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-surface-dark px-8 flex items-center justify-between shrink-0">
     <div class="flex items-center gap-6">
-        <div id="header-live-indicator" class="flex items-center gap-2 bg-slate-100 dark:bg-slate-900 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-800">
-            <span class="header-live-dot w-2 h-2 rounded-full bg-slate-400"></span>
-            <span class="header-live-text text-[10px] font-black uppercase tracking-widest text-slate-500">Connecting...</span>
+        <div class="flex items-center gap-3 text-slate-400">
+            <span class="material-symbols-outlined">calendar_today</span>
+            <span class="text-xs font-bold uppercase tracking-widest" id="header-date">--:--</span>
         </div>
-        <div class="flex items-center gap-4 border-l border-slate-200 dark:border-slate-800 pl-6">
-            <span id="header-last-update" class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Upd: --:--</span>
-            <div id="header-market-status" class="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest"></div>
+        <div class="h-4 w-px bg-slate-200 dark:bg-slate-700"></div>
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2">
+                <span class="text-[10px] font-bold text-slate-400 uppercase">EU</span>
+                <span id="market-dot-eu" class="w-2 h-2 rounded-full bg-slate-300"></span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-[10px] font-bold text-slate-400 uppercase">US</span>
+                <span id="market-dot-us" class="w-2 h-2 rounded-full bg-slate-300"></span>
+            </div>
         </div>
     </div>
+
     <div class="flex items-center gap-4">
         <div class="flex items-center gap-2">
             <!-- Notifications Bell -->
@@ -148,10 +116,9 @@
                 <span class="material-symbols-outlined text-sm" id="header-theme-icon">dark_mode</span>
             </button>
             <!-- Mobile View Toggle -->
-            <!-- Mobile View Toggle -->
-        <button onclick="toggleMobileView()" class="layout-toggle-btn w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all shadow-sm" title="Toggle Mobile View">
-            <span class="material-symbols-outlined text-sm">smartphone</span>
-        </button>
+            <button onclick="toggleMobileView()" class="layout-toggle-btn w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all shadow-sm" title="Toggle Mobile View">
+                <span class="material-symbols-outlined text-sm">smartphone</span>
+            </button>
         </div>
         <div class="text-right hidden sm:block">
             <p class="text-xs font-bold" id="header-user-name">User</p>
@@ -162,6 +129,7 @@
         </div>
     </div>
 </header>
+
 <!-- Main Content Scroll Area -->
 <main class="flex-1 overflow-y-auto custom-scrollbar bg-slate-50/50 dark:bg-background-dark">
     <!-- Dividend Alert Banner -->
@@ -173,7 +141,7 @@
                 </div>
                 <div>
                     <h4 class="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight" id="div-alert-title">Dividendi di Marzo</h4>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 font-bold" id="div-alert-msg">Hai 3 pagamenti previsti per un totale di €45.20.</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-bold" id="div-alert-msg">Hai 3 pagamenti previsti.</p>
                 </div>
             </div>
             <a href="/dividend" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg transition-all shadow-md shadow-amber-500/10">
@@ -201,11 +169,11 @@
 
                 <!-- LORDO -->
                 <div class="space-y-1">
-                    <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
                         LORDO
                     </p>
                     <div class="flex items-center gap-2">
-                        <h3 id="total-gross-worth" class="text-xl font-bold tracking-tight text-slate-600 dark:text-slate-400">€0</h3>
+                        <h3 id="total-gross-worth" class="text-xl font-bold tracking-tight">€0</h3>
                     </div>
                 </div>
 
@@ -221,14 +189,14 @@
             </div>
         </div>
 
-        <!-- Tag Filters (Moved here) -->
-        <div id="tag-filter-container" class="flex flex-wrap gap-2 mt-6">
-            <!-- JS filled tags -->
+        <!-- Portfolio Filters -->
+        <div id="portfolio-filter-container" class="flex flex-wrap gap-2 mt-6">
+            <!-- JS filled portfolio buttons -->
         </div>
     </div>
 
     <div class="px-8 space-y-8 pb-12">
-        <!-- Chart Section (Moved UP) -->
+        <!-- Chart Section -->
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <!-- Performance Chart (75%) -->
             <section class="lg:col-span-3 bg-white dark:bg-surface-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
@@ -293,6 +261,30 @@
             </section>
         </div>
 
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Top Winners (1D) -->
+            <section class="bg-white dark:bg-surface-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <h3 class="text-base font-bold mb-4 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    Migliori Performance (1D)
+                </h3>
+                <div id="top-winners" class="space-y-3">
+                    <!-- JS filled -->
+                </div>
+            </section>
+
+            <!-- Top Losers (1D) -->
+            <section class="bg-white dark:bg-surface-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <h3 class="text-base font-bold mb-4 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                    Peggiori Performance (1D)
+                </h3>
+                <div id="top-losers" class="space-y-3">
+                    <!-- JS filled -->
+                </div>
+            </section>
+        </div>
+
         <!-- Portfolios Overview -->
         <section class="space-y-4">
             <div class="flex items-center justify-between">
@@ -312,1032 +304,46 @@
                     </button>
                 </div>
             </div>
-                <div id="portfolio-container" class="flex flex-col gap-4">
-                    <!-- JS filled -->
-                </div>
-            </section>
+            <div id="portfolio-container" class="flex flex-col gap-4">
+                <!-- JS filled -->
+            </div>
+        </section>
 
-            <!-- Market Overview -->
-            <section class="space-y-4 pb-8 border-t border-slate-100 dark:border-slate-800 pt-8">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-bold">Market Overview</h3>
-                    <div class="flex items-center gap-3 text-[11px] font-bold text-slate-400 uppercase tracking-widest">
-                        <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Global Markets</span>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4" id="market-container">
-                    <!-- Market cards will be injected here -->
-                </div>
-            </section>
-
-            <!-- Financial News -->
-            <section class="space-y-4 pb-8 border-t border-slate-100 dark:border-slate-800 pt-8">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-bold">Financial News</h3>
-                    <div class="flex items-center gap-3 text-[11px] font-bold text-slate-400 uppercase tracking-widest">
-                        <span class="flex items-center gap-1.5 font-black text-blue-500 animate-pulse"><span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Live Feed</span>
-                    </div>
-                </div>
-                <div class="max-h-[500px] overflow-y-auto custom-scrollbar -mx-2 px-2">
-                    <div class="flex flex-col gap-3" id="news-container">
-                        <!-- News items will be injected here -->
-                        <div class="animate-pulse flex flex-col gap-3">
-                            <div class="h-16 w-full bg-slate-100 dark:bg-slate-800/50 rounded-xl"></div>
-                            <div class="h-16 w-full bg-slate-100 dark:bg-slate-800/50 rounded-xl"></div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </div>
-    </main>
-</div>
-</div>
-
-<!-- Import Modal -->
-<div id="import-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-start justify-center pt-8 pb-8 px-4 overflow-y-auto">
-  <div class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-6xl shadow-2xl flex flex-col">
-    <div class="px-6 py-4 border-b flex items-center justify-between">
-      <h3 class="font-bold text-lg">Import</h3>
-      <button onclick="closeImportModal()"><span class="material-symbols-outlined">close</span></button>
-    </div>
-    <div id="import-step-1" class="p-6 space-y-4">
-      <textarea id="import-paste-area" rows="12" class="w-full bg-slate-50 dark:bg-slate-900 rounded-xl p-4 font-mono text-xs" placeholder="Paste tab-separated data..."></textarea>
-      <div class="flex justify-end gap-3">
-        <button onclick="parseImportData()" class="px-7 py-2.5 bg-primary text-white rounded-lg font-bold">Parse</button>
-      </div>
-    </div>
-    <div id="import-step-2" class="hidden p-6 space-y-4">
-      <div class="overflow-x-auto rounded-xl border">
-        <table class="w-full text-xs text-left">
-          <thead class="bg-slate-50 dark:bg-slate-800/40">
-            <tr>
-              <th class="px-3 py-3">Status</th>
-              <th class="px-3 py-3">Date</th>
-              <th class="px-3 py-3">Type</th>
-              <th class="px-3 py-3">Ticker</th>
-              <th class="px-3 py-3">Name</th>
-              <th class="px-3 py-3">Curr</th>
-              <th class="px-3 py-3 text-right">FX</th>
-              <th class="px-3 py-3 text-right">Price</th>
-              <th class="px-3 py-3 text-right">Qty</th>
-              <th class="px-3 py-3 text-right">Comm</th>
-              <th class="px-3 py-3 text-right">Tax</th>
-              <th class="px-3 py-3 text-right">Total (Net)</th>
-            </tr>
-          </thead>
-          <tbody id="import-preview-body"></tbody>
-        </table>
-      </div>
-      <div class="flex gap-3 justify-end items-center">
-        <div class="flex-1 text-[10px] font-bold flex gap-4">
-          <span id="import-ok-count" class="text-emerald-500">0 OK</span>
-          <span id="import-warn-count" class="text-amber-500">0 Need Review</span>
-        </div>
-        <button onclick="confirmImport()" class="px-7 py-2.5 bg-emerald-600 text-white rounded-lg font-bold">Confirm</button>
-      </div>
-    </div>
-    <div id="import-step-3" class="hidden p-12 text-center">
-      <p id="import-progress-label">Processing...</p>
-    </div>
-  </div>
-</div>
-</main>
-</div>
-
-<!-- Dynamic Data Script -->
-<script>
-    const mockMarkets = [];
-
-    // Global formatting from theme.js
-
-    function timeAgo(date) {
-        const seconds = Math.floor((new Date() - date) / 1000);
-        let interval = seconds / 31536000;
-        if (interval > 1) return Math.floor(interval) + "y";
-        interval = seconds / 2592000;
-        if (interval > 1) return Math.floor(interval) + "mo";
-        interval = seconds / 86400;
-        if (interval > 1) return Math.floor(interval) + "d";
-        interval = seconds / 3600;
-        if (interval > 1) return Math.floor(interval) + "h";
-        interval = seconds / 60;
-        if (interval > 1) return Math.floor(interval) + "m";
-        return Math.floor(seconds) + "s";
-    }
-
-    async function loadNews() {
-        try {
-            const res = await fetch('/api/news');
-            const news = await res.json();
-            const container = document.getElementById('news-container');
-            if (!container) return;
-
-            if (!news || news.length === 0) {
-                container.innerHTML = '<div class="p-8 text-center text-xs text-slate-500 italic bg-slate-50/50 dark:bg-slate-900/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">No recent news available for your assets.</div>';
-                return;
-            }
-
-            container.innerHTML = news.map(n => {
-                const age = timeAgo(new Date(n.publishedAt * 1000));
-                return `
-                    <a href="${n.link}" target="_blank" rel="noopener noreferrer" class="group bg-white dark:bg-surface-dark hover:bg-slate-50 dark:hover:bg-slate-900/50 p-3 rounded-xl border border-slate-200 dark:border-slate-800 flex items-start gap-4 transition-all duration-300">
-                        <div class="flex-1 min-w-0 space-y-1">
-                            <div class="flex items-center gap-2">
-                                <span class="text-[9px] font-black uppercase tracking-widest text-primary bg-primary/10 px-1.5 py-0.5 rounded">${n.ticker}</span>
-                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">${n.publisher} • ${age} ago</span>
-                            </div>
-                            <h4 class="text-xs font-bold leading-snug group-hover:text-primary transition-colors line-clamp-2">${n.title}</h4>
-                        </div>
-                        <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-all">
-                            <span class="material-symbols-outlined text-[16px] text-slate-400 group-hover:text-primary">arrow_outward</span>
-                        </div>
-                    </a>
-                `;
-            }).join('');
-        } catch (err) {
-            console.error('Error loading news:', err);
-        }
-    }
-
-    let allTags = [];
-    let selectedTagIds = JSON.parse(localStorage.getItem('selectedTagIds') || '[]');
-
-    async function loadTags() {
-        try {
-            const res = await fetch('/api/tags');
-            allTags = await res.json();
-            renderTagFilters();
-        } catch (err) {
-            console.error('Failed to load tags:', err);
-        }
-    }
-
-    function renderTagFilters() {
-        const container = document.getElementById('tag-filter-container');
-        if (!container) return;
-        
-        container.innerHTML = allTags.map(tag => {
-            const isSelected = selectedTagIds.includes(tag.id);
-            // Gray when unselected, colored when selected
-            const style = isSelected 
-                ? `background-color: ${tag.color || 'var(--primary)'}; color: white; border-color: ${tag.color || 'var(--primary)'};` 
-                : `background-color: #f1f5f9; color: #64748b; border-color: #e2e8f0;`;
-            
-            return `
-                <button onclick="toggleTagFilter(${tag.id})" 
-                        style="${style}"
-                        class="px-3 py-1 rounded-full text-[10px] font-bold border transition-all shadow-sm">
-                    ${tag.name}
-                </button>
-            `;
-        }).join('') + (allTags.length === 0 ? '<span class="text-[10px] text-slate-400 italic">Nessun tag definito.</span>' : '');
-    }
-
-    function toggleTagFilter(tagId) {
-        if (selectedTagIds.includes(tagId)) {
-            selectedTagIds = selectedTagIds.filter(id => id !== tagId);
-        } else {
-            selectedTagIds.push(tagId);
-        }
-        localStorage.setItem('selectedTagIds', JSON.stringify(selectedTagIds));
-        renderTagFilters();
-        
-        // Dynamic update of top numbers and chart
-        if (window._dashboardData) {
-            updateDashboardUI(window._dashboardData);
-            updateDashboardChart();
-            initAllocationChart();
-        }
-    }
-
-    async function loadDashboard(prefetchedData = null) {
-        try {
-            // Always load ALL portfolios to show in the list
-            const url = '/api/portfolios';
-            const data = prefetchedData || await (await fetch(url)).json();
-            window._dashboardData = data;
-            updateDashboardUI(data);
-            
-            // Initial Chart/Market Load (only once or on full fetch)
-            if (!prefetchedData) {
-                initDashboardChart();
-                initAllocationChart();
-                loadDividendAlert();
-                
-                // Render Markets once
-                const mContainer = document.getElementById('market-container');
-                if (mContainer) {
-                    mContainer.innerHTML = mockMarkets.map(m => `
-                        <div class="p-4 rounded-xl bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 group hover:border-primary/50 transition-colors">
-                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">${m.name}</p>
-                            <div class="flex items-baseline justify-between">
-                                <span class="text-lg font-black tracking-tight">${m.val}</span>
-                                <span class="${m.perf >= 0 ? 'text-emerald-500' : 'text-rose-500'} text-[11px] font-bold">${m.perf >= 0 ? '+' : ''}${formatNumber(m.perf)}%</span>
-                            </div>
-                        </div>
-                    `).join('');
-                }
-            }
-        } catch (err) {
-            console.error('Failed to load dashboard:', err);
-        }
-    }
-
-    function updateDashboardUI(data) {
-        const portfolios = data.portfolios || [];
-        
-        // Filter metrics by selected tags
-        let filteredPortfolios = portfolios;
-        if (selectedTagIds.length > 0) {
-            filteredPortfolios = portfolios.filter(p => (p.tags || []).some(t => selectedTagIds.includes(t.id)));
-        }
-
-        const metrics = {
-            totalNetValue: filteredPortfolios.reduce((sum, p) => sum + (parseFloat(p.netValue) || parseFloat(p.totalValue) || 0), 0),
-            totalValue: filteredPortfolios.reduce((sum, p) => sum + (parseFloat(p.totalValue) || 0), 0),
-            totalGain: filteredPortfolios.reduce((sum, p) => sum + (parseFloat(p.totalGain) || 0), 0),
-            changeReg: filteredPortfolios.reduce((sum, p) => sum + (parseFloat(p.changeValue) || 0), 0),
-            changePP: filteredPortfolios.reduce((sum, p) => sum + (parseFloat(p.changeValuePrePost) || 0), 0)
-        };
-
-        // Hero Numbers
-        document.getElementById('total-net-worth').innerText = formatPrivacy(metrics.totalNetValue, 'EUR', 'networth');
-        document.getElementById('total-gross-worth').innerText = formatPrivacy(metrics.totalValue, 'EUR', 'gross');
-        
-        const gainAmt = metrics.totalGain;
-        const gainEl = document.getElementById('total-gain-value');
-        if (gainEl) {
-            const isGainPos = gainAmt >= 0;
-            gainEl.className = `text-xl font-bold tracking-tight ${isGainPos ? 'text-emerald-500' : 'text-rose-500'}`;
-            const sign = isGainPos ? '+' : '';
-            gainEl.innerText = sign + formatPrivacy(gainAmt, 'EUR', 'gain', 0);
-        }
-
-        const heroVar = document.getElementById('hero-day-var');
-        if (heroVar) {
-            const totalMove = metrics.changeReg + metrics.changePP;
-            const isPos = totalMove >= 0;
-            
-            const formattedReg = formatPrivacy(metrics.changeReg, 'EUR', 'h-var', 0);
-            const formattedPP = formatPrivacy(metrics.changePP, 'EUR', 'h-pp', 0);
-
-            if (formattedReg === '****') {
-                heroVar.classList.add('hidden');
-            } else {
-                const signReg = metrics.changeReg >= 0 ? '+' : '';
-                const signPP = metrics.changePP >= 0 ? '+' : '';
-                heroVar.className = `px-2.5 py-1 rounded-lg text-sm font-bold shadow-sm ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`;
-                
-                let html = `${signReg}${formattedReg}`;
-                if (metrics.changePP !== 0) {
-                    html += ` <span class="opacity-80 text-[10px] ml-1">(${signPP}${formattedPP})</span>`;
-                }
-                heroVar.innerHTML = html;
-                heroVar.classList.remove('hidden');
-            }
-        }
-
-        // Render Portfolios Grid (ALL Portfolios)
-        const pContainer = document.getElementById('portfolio-container');
-        if (pContainer) {
-            pContainer.innerHTML = portfolios.map(p => createPortfolioCard(p)).join('') || '<div class="col-span-full py-12 text-center text-slate-500 italic">No portfolios found.</div>';
-        }
-
-        // Render Sidebar
-        renderSidebarPortfolios(portfolios);
-
-        // Update Winners/Losers
-        const winnersContainer = document.getElementById('top-winners');
-        const losersContainer = document.getElementById('top-losers');
-        if (winnersContainer && losersContainer) {
-            winnersContainer.innerHTML = (data.global?.topWinners || []).map(a => `
-                <div class="flex items-center justify-between group">
-                    <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 font-bold text-xs ring-1 ring-emerald-500/20">
-                            ${a.ticker.substring(0,2)}
-                        </div>
-                        <div class="flex flex-col">
-                            <span class="text-xs font-bold text-slate-700 dark:text-slate-200 group-hover:text-primary transition-colors">${a.ticker}</span>
-                            <span class="text-[9px] text-slate-400 font-medium truncate w-16">${a.name || ''}</span>
-                        </div>
-                    </div>
-                    <div class="text-right flex flex-col">
-                        <span class="text-xs font-bold text-emerald-500">+${a.changePercent.toFixed(2)}%</span>
-                        <span class="text-[10px] text-emerald-500/80 font-medium">+${formatPrivacy(a.absChange, 'EUR', 'winner', 0)}</span>
-                    </div>
-                </div>
-            `).join('') || '<div class="text-xs text-slate-400 italic">Nessun dato</div>';
-
-            losersContainer.innerHTML = (data.global?.topLosers || []).map(a => `
-                <div class="flex items-center justify-between group">
-                    <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-500 font-bold text-xs ring-1 ring-rose-500/20">
-                            ${a.ticker.substring(0,2)}
-                        </div>
-                        <div class="flex flex-col">
-                            <span class="text-xs font-bold text-slate-700 dark:text-slate-200 group-hover:text-primary transition-colors">${a.ticker}</span>
-                            <span class="text-[9px] text-slate-400 font-medium truncate w-16">${a.name || ''}</span>
-                        </div>
-                    </div>
-                    <div class="text-right flex flex-col">
-                        <span class="text-xs font-bold text-rose-500">${a.changePercent.toFixed(2)}%</span>
-                        <span class="text-[10px] text-rose-500/80 font-medium">${formatPrivacy(a.absChange, 'EUR', 'loser', 0)}</span>
-                    </div>
-                </div>
-            `).join('') || '<div class="text-xs text-slate-400 italic">Nessun dato</div>';
-        }
-    }
-
-    // Listener per aggiornamenti real-time da theme.js
-    window.addEventListener('portfolios-updated', (e) => {
-        if (e.detail) updateDashboardUI(e.detail);
-    });
-
-    function renderSidebarPortfolios(portfolios) {
-        const sidebar = document.getElementById('sidebar-portfolios');
-        if (!sidebar) return;
-        
-        sidebar.innerHTML = portfolios.map(p => {
-            const isPrivate = window.privacyState && window.privacyState.enabled;
-            const displayVal = isPrivate ? '****' : formatCurrency(p.totalValue, p.currency, 0);
-            const tagHtml = (p.tags || []).map(t => `<span class="w-1 h-1 rounded-full" style="background-color: ${t.color}" title="${t.name}"></span>`).join('');
-            
-            return `
-                <a href="/portfolio?id=${p.id}" class="flex items-center justify-between px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group">
-                    <div class="flex items-center gap-3 overflow-hidden">
-                        <div class="w-1.5 h-1.5 rounded-full shrink-0" style="background-color: ${p.color || '#6366f1'}"></div>
-                        <div class="flex flex-col min-w-0">
-                            <span class="text-xs font-medium truncate">${p.name}</span>
-                            <div class="flex gap-0.5 mt-0.5">
-                                ${tagHtml}
-                            </div>
-                        </div>
-                    </div>
-                    <span class="text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">${displayVal}</span>
-                </a>
-            `;
-        }).join('') || '<div class="px-3 py-2 text-xs text-slate-400 italic">Nessun portafoglio</div>';
-    }
-
-    function createPortfolioCard(p) {
-        const isPrivate = window.privacyState && window.privacyState.enabled;
-        
-        // 1D and PrePost logic
-        const val1d = p.changeValue || 0;
-        const pct1d = p.changePercent || 0;
-        const valPP = p.changeValuePrePost || 0;
-        const pctPP = p.changePercentPrePost || 0;
-
-        const isPos1D = val1d >= 0;
-        const sign1D = isPos1D ? '+' : '';
-        const color1D = isPos1D ? 'text-emerald-500' : 'text-rose-500';
-        const bg1D = isPos1D ? 'bg-emerald-500/10' : 'bg-rose-500/10';
-        const rawFmt1D = formatNumber(Math.abs(val1d), 0);
-        const symbol = p.currency === 'EUR' ? '€' : (p.currency === 'USD' ? '$' : p.currency);
-        
-        const displayVal1D = isPrivate ? '****' : `${sign1D}${symbol}${rawFmt1D}`;
-        const displayPct1D = isPrivate ? '****' : `${sign1D}${Math.abs(pct1d).toFixed(2)}%`;
-
-        // Pre/Post Formatting
-        const signPP = valPP >= 0 ? '+' : '';
-        const rawFmtPP = formatNumber(Math.abs(valPP), 0);
-        const displayValPP = isPrivate ? '****' : `(${signPP}${symbol}${rawFmtPP})`;
-
-        const totalValStr = formatPrivacy(p.totalValue, p.currency, 'p-' + p.id, 0);
-
-        return `
-            <div class="bg-white dark:bg-surface-dark p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between group hover:border-primary hover:shadow-xl transition-all cursor-pointer w-full" onclick="window.location.href='/portfolio?id=${p.id}'">
-                <div class="flex items-center gap-4 md:gap-5 min-w-0 flex-1">
-                    <div class="w-12 h-12 rounded-xl flex items-center justify-center text-white shrink-0 shadow-sm" style="background-color: ${p.color || '#6366f1'}">
-                        <span class="material-symbols-outlined text-[24px]">work</span>
-                    </div>
-                    <div class="min-w-0">
-                        <div class="flex items-center gap-2">
-                            <p class="text-base md:text-lg font-black tracking-tight text-slate-900 dark:text-slate-100 truncate">${p.name}</p>
-                            ${p.type === 'Conto Deposito' ? '<span class="text-[9px] font-black bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded border border-amber-500/30 shrink-0">DEPOSITO</span>' : ''}
-                        </div>
-                        <div class="flex flex-wrap gap-1 mt-1">
-                            ${(p.tags || []).map(t => `<span class="text-[8px] font-black px-1.5 py-0.5 rounded-full border border-slate-200 dark:border-slate-700" style="background-color: ${t.color}20; color: ${t.color}">${t.name}</span>`).join('')}
-                        </div>
-                        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5 truncate">${p.assetCount || 0} Assets • ${p.currency}</p>
-                    </div>
-                </div>
-                
-                <div class="flex items-center gap-6 md:gap-8 shrink-0 text-right">
-                    <!-- Prominent 1D Variation -->
-                    <div class="text-right">
-                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Performance 1D</p>
-                        <div class="flex flex-col md:flex-row md:items-baseline justify-end gap-1 md:gap-2">
-                            <div class="flex flex-col items-end">
-                                <span class="text-xl md:text-2xl font-black tracking-tight ${color1D}">${displayVal1D}</span>
-                                ${valPP !== 0 ? `<span class="text-[10px] font-bold text-slate-400 -mt-1">${displayValPP}</span>` : ''}
-                            </div>
-                            <span class="text-[10px] md:text-xs font-bold px-1.5 py-0.5 rounded-md ${bg1D} ${color1D}">${displayPct1D}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="w-px h-10 bg-slate-200 dark:bg-slate-800 hidden md:block"></div>
-
-                    <!-- Total Value -->
-                    <div class="text-right hidden sm:block min-w-[100px]">
-                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Total Value</p>
-                        <p class="text-xl md:text-2xl font-black text-slate-900 dark:text-white truncate">${totalValStr}</p>
-                    </div>
-                    
-                    <span class="material-symbols-outlined text-slate-300 dark:text-slate-700 group-hover:text-primary transition-colors pr-2 hidden md:block">chevron_right</span>
+        <!-- Market Overview -->
+        <section class="space-y-4 pb-8 border-t border-slate-100 dark:border-slate-800 pt-8">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold">Market Overview</h3>
+                <div class="flex items-center gap-3 text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                    <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Global Markets</span>
                 </div>
             </div>
-        `;
-    }
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4" id="market-container">
+                <!-- Market cards will be injected here -->
+            </div>
+        </section>
 
-    async function loadDividendAlert() {
-        const container = document.getElementById('dividend-alert-container');
-        const titleEl = document.getElementById('div-alert-title');
-        const msgEl = document.getElementById('div-alert-msg');
-        if (!container || !titleEl || !msgEl) return;
-
-        try {
-            const res = await fetch('/api/analytics/current-month-dividends');
-            const data = await res.json();
-
-            if (data.hasDividends) {
-                titleEl.innerText = `Dividendi di ${data.monthName}`;
-                msgEl.innerText = `Hai ${data.count} ${data.count === 1 ? 'pagamento previsto' : 'pagamenti previsti'} (${formatCurrency(data.amount, 'EUR', 0)}).`;
-                container.classList.remove('hidden');
-            } else {
-                container.classList.add('hidden');
-            }
-        } catch (err) {
-            console.error('Failed to load dividend alert:', err);
-        }
-    }
-
-    // ─── Dashboard Chart Logic ────────────────────────────────────────────────
-    let dashboardChart = null;
-    let allocationChart = null;
-    let currentChartRange = '1M';
-
-    function initDashboardChart() {
-        if (dashboardChart) dashboardChart.destroy();
-        const ctx = document.getElementById('dashboardPerformanceChart')?.getContext('2d');
-        if (!ctx) return;
-
-        const isDark = document.documentElement.classList.contains('dark');
-        const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
-        const textColor = isDark ? '#94a3b8' : '#64748b';
-
-        dashboardChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: [],
-                datasets: [{
-                    label: 'Net Worth',
-                    data: [],
-                    borderColor: '#135bec',
-                    backgroundColor: 'rgba(19, 91, 236, 0.1)',
-                    fill: true,
-                    tension: 0.4,
-                    borderWidth: 2,
-                    pointRadius: 0,
-                    pointHoverRadius: 6,
-                    pointHoverBackgroundColor: '#135bec',
-                    pointHoverBorderColor: '#fff',
-                    pointHoverBorderWidth: 2,
-                    yAxisID: 'y'
-                }, {
-                    label: 'Net Profit/Loss',
-                    data: [],
-                    borderColor: '#10b981',
-                    backgroundColor: 'transparent',
-                    fill: false,
-                    tension: 0.4,
-                    borderWidth: 2,
-                    borderDash: [5, 5],
-                    pointRadius: 0,
-                    pointHoverRadius: 6,
-                    pointHoverBackgroundColor: '#10b981',
-                    pointHoverBorderColor: '#fff',
-                    pointHoverBorderWidth: 2,
-                    yAxisID: 'y1'
-                }, {
-                    pointHoverBorderWidth: 2,
-                    yAxisID: 'y1'
-                }, {
-                    label: 'Benchmark',
-                    data: [],
-                    borderColor: '#94a3b8',
-                    backgroundColor: 'transparent',
-                    fill: false,
-                    tension: 0.4,
-                    borderWidth: 2,
-                    borderDash: [3, 3],
-                    pointRadius: 0,
-                    hidden: true,
-                    yAxisID: 'y1'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        mode: 'index',
-                        intersect: false,
-                        backgroundColor: isDark ? '#1e293b' : '#fff',
-                        titleColor: isDark ? '#f1f5f9' : '#1e293b',
-                        bodyColor: isDark ? '#f1f5f9' : '#1e293b',
-                        borderColor: isDark ? '#334155' : '#e2e8f0',
-                        borderWidth: 1,
-                        padding: 12,
-                        callbacks: {
-                            label: (context) => null,
-                            title: (tooltipItems) => {
-                                const index = tooltipItems[0].dataIndex;
-                                const d = dashboardChart.rawPoints ? dashboardChart.rawPoints[index] : null;
-                                return (d && d.events && d.events.length > 0) ? tooltipItems[0].label : null;
-                            },
-                            afterBody: (tooltipItems) => {
-                                const index = tooltipItems[0].dataIndex;
-                                const d = dashboardChart.rawPoints ? dashboardChart.rawPoints[index] : null;
-                                if (d && d.events && d.events.length > 0) {
-                                    const labels = { 'BUY': 'ACQUISTO', 'SELL': 'VENDITA', 'DEPOSIT': 'DEPOSITO', 'WITHDRAWAL': 'PRELIEVO', 'DIVIDEND': 'DIVIDENDO' };
-                                    return d.events.map(ev => {
-                                        const typeLabel = labels[ev.type] || ev.type;
-                                        const prefix = (ev.type === 'DEPOSIT' || ev.type === 'BUY' || ev.type === 'DIVIDEND') ? '+' : '-';
-                                        if (ev.type === 'BUY' || ev.type === 'SELL') return `${typeLabel}: ${ev.assetName || ev.ticker}`;
-                                        if (ev.type === 'DEPOSIT' || ev.type === 'WITHDRAWAL') return `${typeLabel}: ${prefix}${formatCurrency(ev.amount, 'EUR')}`;
-                                        return `${typeLabel}: ${ev.ticker} ${prefix}${formatCurrency(ev.amount, 'EUR')}`;
-                                    });
-                                }
-                                return null;
-                            }
-                        }
-                    },
-                    zoom: {
-                        zoom: {
-                            wheel: { enabled: true },
-                            pinch: { enabled: true },
-                            mode: 'x',
-                        },
-                        pan: {
-                            enabled: true,
-                            mode: 'x',
-                        }
-                    },
-                    annotation: {
-                        annotations: {}
-                    }
-                },
-                scales: {
-                    x: {
-                        ticks: { color: textColor, font: { size: 10 } },
-                        grid: { display: false }
-                    },
-                    y: {
-                        grid: { color: gridColor }
-                    },
-                    y1: {
-                        position: 'right',
-                        ticks: {
-                            color: '#10b981',
-                            font: { size: 10 },
-                            callback: (val) => formatCurrency(val).split(',')[0]
-                        },
-                        grid: { drawOnChartArea: false }
-                    }
-                }
-            }
-        });
-        updateDashboardChart();
-    }
-
-    async function setChartRange(range) {
-        currentChartRange = range;
-        
-        const yearSelector = document.getElementById('year-selector');
-        if (/^\d{4}$/.test(range)) {
-            if (yearSelector) yearSelector.value = range;
-        } else {
-            if (yearSelector) yearSelector.value = "";
-        }
-
-        // Reset zoom when range changes
-        if (dashboardChart) dashboardChart.resetZoom();
-
-        // Update UI
-        document.querySelectorAll('.range-btn').forEach(btn => {
-            if (btn.dataset.range === range) {
-                btn.classList.add('bg-primary', 'text-white', 'shadow-md');
-                btn.classList.remove('text-slate-500');
-            } else {
-                btn.classList.remove('bg-primary', 'text-white', 'shadow-md');
-                btn.classList.add('text-slate-500');
-            }
-        });
-
-        // Restore Net Worth Visibility preference
-        const showNetWorth = localStorage.getItem('dashboard_show_net_worth') !== 'false';
-        const toggleEl = document.getElementById('toggle-net-worth');
-        if (toggleEl) toggleEl.checked = showNetWorth;
-        dashboardChart.setDatasetVisibility(0, showNetWorth);
-
-        updateDashboardChart();
-    }
-
-    function toggleNetWorthVisibility() {
-        if (!dashboardChart) return;
-        const checked = document.getElementById('toggle-net-worth').checked;
-        dashboardChart.setDatasetVisibility(0, checked);
-        dashboardChart.update();
-        localStorage.setItem('dashboard_show_net_worth', checked);
-    }
-
-    async function updateDashboardChart() {
-        if (!dashboardChart) return;
-        const isDark = document.documentElement.classList.contains('dark');
-        const benchmark = document.getElementById('benchmark-selector')?.value || '';
-        try {
-            let url = `/api/analytics/global-performance?range=${currentChartRange}&benchmark=${benchmark}`;
-            if (selectedTagIds.length > 0) url += `&tagIds=${selectedTagIds.join(',')}`;
-            const res = await fetch(url);
-            const result = await res.json();
-            
-            // Handle both { dataPoints: [...] } and direct array [...] responses for robustness
-            const dataPoints = result.dataPoints || (Array.isArray(result) ? result : []);
-            const changePercent = result.changePercent || 0;
-            
-            dashboardChart.rawPoints = dataPoints; // Store raw points for tooltip access
-            dashboardChart.data.labels = dataPoints.map(d => {
-                const date = new Date(d.date);
-                return date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
-            });
-            dashboardChart.data.datasets[0].data = dataPoints.map(d => d.value);
-            dashboardChart.data.datasets[1].data = dataPoints.map(d => d.profit);
-            dashboardChart.data.datasets[2].data = dataPoints.map(d => d.profitNoDiv);
-            
-            if (benchmark) {
-                dashboardChart.data.datasets[3].data = dataPoints.map(d => d.benchProfit || 0);
-                dashboardChart.setDatasetVisibility(3, true);
-            } else {
-                dashboardChart.setDatasetVisibility(3, false);
-            }
-
-            // Year Markers (Vertical dashed lines)
-            const annotations = {};
-            let lastYear = null;
-            dataPoints.forEach((d, index) => {
-                const year = new Date(d.date).getFullYear();
-                if (lastYear !== null && year !== lastYear) {
-                    annotations[`line${year}`] = {
-                        type: 'line',
-                        xMin: index,
-                        xMax: index,
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)',
-                        borderWidth: 1,
-                        borderDash: [5, 5],
-                        label: {
-                            display: true,
-                            content: year.toString(),
-                            position: 'start',
-                            backgroundColor: isDark ? 'rgba(15, 23, 42, 0.8)' : 'rgba(255, 255, 255, 0.8)',
-                            color: isDark ? 'rgba(15, 23, 42, 0.5)' : 'rgba(255, 255, 255, 0.5)',
-                            font: { size: 10, weight: 'bold' }
-                        }
-                    };
-                }
-                lastYear = year;
-            });
-            // Transaction Markers Logic
-            const pointStyles = [];
-            const pointColors = [];
-            const pointRadii = [];
-
-            dataPoints.forEach(d => {
-                const events = d.events || [];
-                if (events.some(e => e.type === 'SELL')) {
-                    pointStyles.push('circle');
-                    pointColors.push('#f43f5e'); // rose-500
-                    pointRadii.push(5);
-                } else if (events.some(e => e.type === 'BUY')) {
-                    pointStyles.push('circle');
-                    pointColors.push('#10b981'); // emerald-500
-                    pointRadii.push(5);
-                } else if (events.some(e => e.type === 'WITHDRAWAL')) {
-                    pointStyles.push('triangle');
-                    pointColors.push('#f59e0b'); // amber-500
-                    pointRadii.push(6);
-                } else if (events.some(e => e.type === 'DEPOSIT')) {
-                    pointStyles.push('triangle');
-                    pointColors.push('#10b981'); // emerald-500
-                    pointRadii.push(6);
-                } else {
-                    pointStyles.push('circle');
-                    pointColors.push('#135bec');
-                    pointRadii.push(0);
-                }
-            });
-
-            dashboardChart.data.datasets[0].pointStyle = pointStyles;
-            dashboardChart.data.datasets[0].pointBackgroundColor = pointColors;
-            dashboardChart.data.datasets[0].pointRadius = pointRadii;
-            dashboardChart.data.datasets[0].pointBorderColor = '#fff';
-            dashboardChart.data.datasets[0].pointBorderWidth = 1;
-
-            dashboardChart.options.plugins.annotation.annotations = annotations;
-
-            dashboardChart.update();
-
-            // Update Total Performance Badge
-            const totalPerfEl = document.getElementById('total-perf');
-            if (totalPerfEl) {
-                const isPos = changePercent >= 0;
-                totalPerfEl.className = `${isPos ? 'text-emerald-500' : 'text-rose-500'} text-sm font-bold flex items-center gap-1`;
-                totalPerfEl.innerHTML = `
-                    <span class="material-symbols-outlined text-[18px]">${isPos ? 'trending_up' : 'trending_down'}</span>
-                    ${isPos ? '+' : ''}${changePercent.toFixed(1)}%
-                `;
-            }
-        } catch (err) {
-            console.error('Failed to update dashboard chart:', err);
-        }
-    }
-
-    function initAllocationChart() {
-        if (allocationChart) allocationChart.destroy();
-        const ctx = document.getElementById('allocationChart')?.getContext('2d');
-        if (!ctx) return;
-
-        const isDark = document.documentElement.classList.contains('dark');
-        
-        allocationChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: [],
-                datasets: [{
-                    data: [],
-                    backgroundColor: [
-                        '#135bec', '#10b981', '#f59e0b', '#6366f1', '#ec4899', '#8b5cf6', '#06b6d4'
-                    ],
-                    borderWidth: 0,
-                    hoverOffset: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '70%',
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        enabled: true,
-                        callbacks: {
-                            label: (context) => {
-                                const label = context.label || '';
-                                const value = context.parsed || 0;
-                                return ` ${label}: ${value.toFixed(1)}%`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        updateAllocationChart();
-    }
-
-    async function updateAllocationChart() {
-        if (!allocationChart) return;
-        try {
-            const res = await fetch('/api/analytics/global-allocation');
-            const data = await res.json();
-            
-            allocationChart.data.labels = data.map(d => d.type);
-            allocationChart.data.datasets[0].data = data.map(d => d.percent);
-            allocationChart.update();
-
-            // Update custom legend
-            const legendContainer = document.getElementById('allocation-legend');
-            if (legendContainer) {
-                const colors = allocationChart.data.datasets[0].backgroundColor;
-                legendContainer.innerHTML = data.map((d, i) => `
-                    <div class="flex items-center justify-between group cursor-default">
-                        <div class="flex items-center gap-2">
-                            <div class="w-2 h-2 rounded-full" style="background-color: ${colors[i % colors.length]}"></div>
-                            <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400 group-hover:text-primary transition-colors">${d.type}</span>
-                        </div>
-                        <span class="text-[11px] font-bold">${d.percent}%</span>
-                    </div>
-                `).join('');
-            }
-        } catch (err) {
-            console.error('Failed to update allocation chart:', err);
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        loadDashboard();
-        loadTags();
-        initDashboardChart();
-        loadNews();
-        initAllocationChart();
-
-        window.addEventListener('privacy-changed', () => {
-            if (window._dashboardData) {
-                updateDashboardUI(window._dashboardData);
-            }
-        });
-
-        window.addEventListener('settings-updated', (e) => {
-            if (e.detail.privacyMode !== undefined) {
-                window.privacyState.enabled = e.detail.privacyMode === 'true';
-                window.dispatchEvent(new CustomEvent('privacy-changed'));
-            }
-        });
-
-        window.addEventListener('market-data-updated', () => {
-            console.log("[Dashboard] Auto-refreshing UI...");
-            loadDashboard();
-            if (typeof updateDashboardChart === 'function') updateDashboardChart();
-            if (typeof updateAllocationChart === 'function') updateAllocationChart();
-        });
-
-        // Portfolio Modal Logic
-        window.openPortfolioModal = async function(id = null) {
-            const listContainer = document.getElementById('minusvalenze-list');
-            listContainer.innerHTML = '<p class="text-[10px] text-slate-400 italic">Fetching categories...</p>';
-            
-            let categories = [];
-            try {
-                const res = await fetch('/api/tax-rates');
-                categories = await res.json();
-            } catch (err) { console.error(err); }
-
-            if (id) {
-                try {
-                    const res = await fetch(`/api/portfolios/${id}`);
-                    const p = await res.json();
-                    document.getElementById('p-id').value = p.id;
-                    document.getElementById('p-name').value = p.name;
-                    document.getElementById('p-type').value = p.type;
-                    document.getElementById('p-currency').value = p.currency;
-                    document.getElementById('p-date').value = p.startDate.split('T')[0];
-                    document.getElementById('p-cash').value = p.initialCash;
-                    document.getElementById('p-color').value = p.color || '#6366f1';
-                    document.getElementById('portfolio-modal-title').innerText = "Edit Portfolio";
-                    
-                    await renderPortfolioTags(id);
-
-                    const lossesMap = {};
-                    (p.losses || []).forEach(l => { lossesMap[l.asset_type] = l.loss_amount; });
-                    
-                    listContainer.innerHTML = categories.map(c => `
-                        <div class="space-y-1">
-                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">${c.asset_type}</label>
-                            <input data-type="${c.asset_type}" type="number" step="any" class="minusvalenza-input w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-1.5 px-3 text-sm" value="${lossesMap[c.asset_type] || 0}" placeholder="0.00"/>
-                        </div>
-                    `).join('') || '<p class="text-[10px] text-slate-400 italic">No categories defined.</p>';
-
-                    document.getElementById('portfolio-modal').classList.remove('hidden');
-                } catch (err) { console.error('Failed to load portfolio:', err); }
-            } else {
-                document.getElementById('p-id').value = '';
-                document.getElementById('portfolio-form').reset();
-                document.getElementById('p-type').value = 'Investimento';
-                document.getElementById('p-currency').value = 'EUR';
-                document.getElementById('p-date').value = new Date().toISOString().split('T')[0];
-                document.getElementById('p-cash').value = 0;
-                document.getElementById('p-color').value = '#6366f1';
-                document.getElementById('portfolio-modal-title').innerText = "New Portfolio";
-                await renderPortfolioTags();
-                
-                listContainer.innerHTML = categories.map(c => `
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">${c.asset_type}</label>
-                        <input data-type="${c.asset_type}" type="number" step="any" class="minusvalenza-input w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-1.5 px-3 text-sm" value="0" placeholder="0.00"/>
-                    </div>
-                `).join('') || '<p class="text-[10px] text-slate-400 italic">No categories defined.</p>';
-
-                document.getElementById('portfolio-modal').classList.remove('hidden');
-            }
-        };
-
-        async function renderPortfolioTags(portfolioId = null) {
-            const select = document.getElementById('p-additional-tag');
-            if (!select) return;
-            if (allTags.length === 0) await loadTags();
-            
-            let currentAdditionalTagId = null;
-            if (portfolioId && window._dashboardData) {
-                const p = window._dashboardData.portfolios.find(x => x.id == portfolioId);
-                if (p) {
-                    // Find the first tag that is NOT named 'ALL'
-                    const addTag = (p.tags || []).find(t => t.name !== 'ALL');
-                    if (addTag) currentAdditionalTagId = addTag.id;
-                }
-            }
-
-            // Fill dropdown excluding 'ALL'
-            const otherTags = allTags.filter(t => t.name !== 'ALL');
-            select.innerHTML = '<option value="">None</option>' + otherTags.map(tag => `
-                <option value="${tag.id}" ${currentAdditionalTagId == tag.id ? 'selected' : ''}>${tag.name}</option>
-            `).join('');
-        }
-
-        window.openTagManager = function() {
-            document.getElementById('tag-manager-modal').classList.remove('hidden');
-            document.getElementById('tag-manager-modal').classList.add('flex');
-            renderTagManagerList();
-        };
-
-        window.closeTagManager = function() {
-            document.getElementById('tag-manager-modal').classList.add('hidden');
-            document.getElementById('tag-manager-modal').classList.remove('flex');
-            renderPortfolioTags(document.getElementById('p-id').value);
-            renderTagFilters();
-        };
-
-        function renderTagManagerList() {
-            const list = document.getElementById('tag-manager-list');
-            list.innerHTML = allTags.map(tag => `
-                <div class="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                    <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background-color: ${tag.color}"></div><span class="text-sm font-medium">${tag.name}</span></div>
-                    <button onclick="deleteTag(${tag.id})" class="text-rose-500 hover:text-rose-600"><span class="material-symbols-outlined text-sm">delete</span></button>
+        <!-- Financial News -->
+        <section class="space-y-4 pb-8 border-t border-slate-100 dark:border-slate-800 pt-8">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold">Financial News</h3>
+                <div class="flex items-center gap-3 text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                    <span class="flex items-center gap-1.5 font-black text-blue-500 animate-pulse"><span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Live Feed</span>
                 </div>
-            `).join('') || '<div class="text-center text-slate-500 italic text-sm">No tags yet.</div>';
-        }
-
-        window.createNewTag = async function() {
-            const name = document.getElementById('new-tag-name').value;
-            const color = document.getElementById('new-tag-color').value;
-            if (!name) return;
-            const res = await fetch('/api/tags', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, color }) });
-            if (res.ok) { document.getElementById('new-tag-name').value = ''; await loadTags(); renderTagManagerList(); }
-        };
-
-        window.deleteTag = async function(id) {
-            if (!confirm('Eliminare questo TAG?')) return;
-            const res = await fetch(`/api/tags/${id}`, { method: 'DELETE' });
-            if (res.ok) { await loadTags(); renderTagManagerList(); selectedTagIds = selectedTagIds.filter(tid => tid !== id); localStorage.setItem('selectedTagIds', JSON.stringify(selectedTagIds)); renderTagFilters(); }
-        };
-
-        window.closePortfolioModal = function() {
-            const modal = document.getElementById('portfolio-modal');
-            if (modal) modal.classList.add('hidden');
-        };
-
-        const pForm = document.getElementById('portfolio-form');
-        if (pForm) {
-            pForm.onsubmit = async (e) => {
-                e.preventDefault();
-                const id = document.getElementById('p-id').value;
-                
-                const losses = {};
-                document.querySelectorAll('.minusvalenza-input').forEach(input => {
-                    const val = parseFloat(input.value) || 0;
-                    const type = input.dataset.type;
-                    if (type) losses[type] = val;
-                });
-
-                const additionalTagId = document.getElementById('p-additional-tag').value;
-                const allTag = allTags.find(t => t.name === 'ALL');
-                const selectedTags = [];
-                if (allTag) selectedTags.push(allTag.id);
-                if (additionalTagId) selectedTags.push(parseInt(additionalTagId));
-
-                const data = {
-                    name: document.getElementById('p-name').value,
-                    type: document.getElementById('p-type').value,
-                    currency: document.getElementById('p-currency').value,
-                    startDate: document.getElementById('p-date').value,
-                    initialCash: parseFloat(document.getElementById('p-cash').value),
-                    color: document.getElementById('p-color').value,
-                    tags: selectedTags,
-                    losses: losses
-                };
-                const method = id ? 'PUT' : 'POST';
-                const url = id ? `/api/portfolios/${id}` : '/api/portfolios';
-                try {
-                    const res = await fetch(url, {
-                        method,
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data)
-                    });
-                    if (res.ok) {
-                        closePortfolioModal();
-                        loadDashboard();
-                    } else {
-                        const errText = await res.text();
-                        alert('Failed to save portfolio: ' + errText);
-                    }
-                } catch (err) {
-                    console.error(err);
-                    alert('Error saving portfolio: ' + err.message);
-                }
-            };
-        }
-    });
-
-</script>
+            </div>
+            <div class="max-h-[500px] overflow-y-auto custom-scrollbar -mx-2 px-2">
+                <div class="flex flex-col gap-3" id="news-container">
+                    <!-- News items will be injected here -->
+                    <div class="animate-pulse flex flex-col gap-3">
+                        <div class="h-16 w-full bg-slate-100 dark:bg-slate-800/50 rounded-xl"></div>
+                        <div class="h-16 w-full bg-slate-100 dark:bg-slate-800/50 rounded-xl"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+</div>
+</div>
 
 <!-- Portfolio Modal -->
 <div id="portfolio-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
@@ -1385,27 +391,6 @@
                     <input id="p-color" type="color" class="w-full h-[42px] bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-1 px-1 cursor-pointer" value="#6366f1"/>
                 </div>
             </div>
-            
-            <!-- Tags Selection (Simplified) -->
-            <div class="space-y-2">
-                <div class="flex items-center justify-between">
-                    <label class="text-sm font-medium">Tags (Groups)</label>
-                    <button type="button" onclick="openTagManager()" class="text-[10px] font-black uppercase text-primary hover:underline">Manage Tags</button>
-                </div>
-                <div class="flex flex-col gap-2 p-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl">
-                    <div class="flex items-center gap-2">
-                        <span class="px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-600">ALL</span>
-                        <span class="text-[10px] text-slate-400 font-medium italic">(Mandatory)</span>
-                    </div>
-                    <div class="flex flex-col gap-1.5 mt-1 border-t border-slate-200 dark:border-slate-800 pt-2">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase">Additional Tag</label>
-                        <select id="p-additional-tag" class="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-800 rounded-lg py-1.5 px-3 text-xs">
-                            <option value="">None</option>
-                            <!-- JS filled -->
-                        </select>
-                    </div>
-                </div>
-            </div>
 
             <!-- Fiscal Management (Minusvalenze) -->
             <div class="border-t border-slate-200 dark:border-slate-800 pt-4 mt-2">
@@ -1430,27 +415,598 @@
     </div>
 </div>
 
-
-<!-- Tag Manager Modal -->
-<div id="tag-manager-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
-        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-            <h3 class="font-bold">Manage Tags</h3>
-            <button onclick="closeTagManager()" class="text-slate-400 hover:text-slate-600">
-                <span class="material-symbols-outlined">close</span>
-            </button>
-        </div>
-        <div class="p-6 space-y-4">
-            <div class="flex gap-2">
-                <input id="new-tag-name" class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-1.5 px-3 text-sm" placeholder="New tag name..."/>
-                <input id="new-tag-color" type="color" class="w-10 h-9 rounded-lg cursor-pointer" value="#64748b"/>
-                <button onclick="createNewTag()" class="bg-primary text-white p-1.5 rounded-lg">
-                    <span class="material-symbols-outlined">add</span>
-                </button>
-            </div>
-            <div id="tag-manager-list" class="space-y-2 max-h-60 overflow-y-auto">
-                <!-- JS filled -->
-            </div>
-        </div>
+<!-- Import Modal -->
+<div id="import-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-start justify-center pt-8 pb-8 px-4 overflow-y-auto">
+  <div class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-6xl shadow-2xl flex flex-col">
+    <div class="px-6 py-4 border-b flex items-center justify-between">
+      <h3 class="font-bold text-lg">Import</h3>
+      <button onclick="closeImportModal()"><span class="material-symbols-outlined">close</span></button>
     </div>
+    <div id="import-step-1" class="p-6 space-y-4">
+      <textarea id="import-paste-area" rows="12" class="w-full bg-slate-50 dark:bg-slate-900 rounded-xl p-4 font-mono text-xs" placeholder="Paste tab-separated data..."></textarea>
+      <div class="flex justify-end gap-3">
+        <button onclick="parseImportData()" class="px-7 py-2.5 bg-primary text-white rounded-lg font-bold">Parse</button>
+      </div>
+    </div>
+    <div id="import-step-2" class="hidden p-6 space-y-4">
+      <div class="overflow-x-auto rounded-xl border">
+        <table class="w-full text-xs text-left">
+          <thead class="bg-slate-50 dark:bg-slate-800/40">
+            <tr>
+              <th class="px-3 py-3">Status</th>
+              <th class="px-3 py-3">Date</th>
+              <th class="px-3 py-3">Type</th>
+              <th class="px-3 py-3">Ticker</th>
+              <th class="px-3 py-3">Name</th>
+              <th class="px-3 py-3">Curr</th>
+              <th class="px-3 py-3 text-right">FX</th>
+              <th class="px-3 py-3 text-right">Price</th>
+              <th class="px-3 py-3 text-right">Qty</th>
+              <th class="px-3 py-3 text-right">Comm</th>
+              <th class="px-3 py-3 text-right">Tax</th>
+              <th class="px-3 py-3 text-right">Total (Net)</th>
+            </tr>
+          </thead>
+          <tbody id="import-preview-body"></tbody>
+        </table>
+      </div>
+      <div class="flex gap-3 justify-end items-center">
+        <div class="flex-1 text-[10px] font-bold flex gap-4">
+           <span class="text-slate-400 uppercase tracking-widest">Total Rows: <span id="import-row-count" class="text-slate-900 dark:text-white">0</span></span>
+        </div>
+        <button onclick="resetImport()" class="px-5 py-2 text-slate-500 font-bold">Clear</button>
+        <button onclick="submitImport()" class="px-7 py-2.5 bg-emerald-600 text-white rounded-lg font-bold shadow-lg shadow-emerald-600/20">Finalize Import</button>
+      </div>
+    </div>
+  </div>
 </div>
+
+<script>
+    const mockMarkets = [
+        { name: 'S&P 500', val: '5,137', perf: 1.2 },
+        { name: 'NASDAQ', val: '16,274', perf: 1.4 },
+        { name: 'FTSE MIB', val: '32,934', perf: 0.8 },
+        { name: 'BTC/EUR', val: '62,431', perf: 4.5 }
+    ];
+
+    let selectedPortfolioIds = JSON.parse(localStorage.getItem('selectedPortfolioIds') || '[]');
+
+    function renderPortfolioFilters() {
+        const container = document.getElementById('portfolio-filter-container');
+        if (!container || !window._dashboardData) return;
+        
+        const portfolios = window._dashboardData.portfolios || [];
+        
+        container.innerHTML = portfolios.map(p => {
+            const isSelected = selectedPortfolioIds.includes(p.id);
+            const style = isSelected 
+                ? `background-color: ${p.color || 'var(--primary)'}; color: white; border-color: ${p.color || 'var(--primary)'};` 
+                : `background-color: #f1f5f9; color: #64748b; border-color: #e2e8f0;`;
+            
+            return `
+                <button onclick="togglePortfolioFilter(${p.id})" 
+                        style="${style}"
+                        class="px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all hover:scale-105 shadow-sm">
+                    ${p.name}
+                </button>
+            `;
+        }).join('') + (portfolios.length === 0 ? '<span class="text-[10px] text-slate-400 italic">Nessun portafoglio definito.</span>' : '');
+    }
+
+    window.togglePortfolioFilter = function(pId) {
+        const idx = selectedPortfolioIds.indexOf(pId);
+        if (idx > -1) {
+            selectedPortfolioIds.splice(idx, 1);
+        } else {
+            selectedPortfolioIds.push(pId);
+        }
+        localStorage.setItem('selectedPortfolioIds', JSON.stringify(selectedPortfolioIds));
+        renderPortfolioFilters();
+        
+        if (window._dashboardData) {
+            updateDashboardUI(window._dashboardData);
+            updateDashboardChart();
+            initAllocationChart();
+        }
+    };
+
+    async function loadDashboard(prefetchedData = null) {
+        try {
+            const url = '/api/portfolios';
+            const data = prefetchedData || await (await fetch(url)).json();
+            window._dashboardData = data;
+            
+            updateDashboardUI(data);
+            
+            if (!prefetchedData) {
+                initDashboardChart();
+                initAllocationChart();
+                loadDividendAlert();
+                
+                const mContainer = document.getElementById('market-container');
+                if (mContainer) {
+                    mContainer.innerHTML = mockMarkets.map(m => `
+                        <div class="p-4 rounded-xl bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 group hover:border-primary/50 transition-colors">
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">${m.name}</p>
+                            <div class="flex items-baseline justify-between">
+                                <span class="text-lg font-black tracking-tight">${m.val}</span>
+                                <span class="${m.perf >= 0 ? 'text-emerald-500' : 'text-rose-500'} text-[11px] font-bold">${m.perf >= 0 ? '+' : ''}${m.perf}%</span>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+        } catch (err) {
+            console.error('Failed to load dashboard:', err);
+        }
+    }
+
+    function updateDashboardUI(data) {
+        const portfolios = data.portfolios || [];
+        
+        let filteredPortfolios = portfolios;
+        if (selectedPortfolioIds.length > 0) {
+            filteredPortfolios = portfolios.filter(p => selectedPortfolioIds.includes(p.id));
+        }
+
+        renderPortfolioFilters();
+
+        const metrics = {
+            totalNetValue: filteredPortfolios.reduce((sum, p) => sum + (parseFloat(p.netValue) || parseFloat(p.totalValue) || 0), 0),
+            totalValue: filteredPortfolios.reduce((sum, p) => sum + (parseFloat(p.totalValue) || 0), 0),
+            totalGain: filteredPortfolios.reduce((sum, p) => sum + (parseFloat(p.totalGain) || 0), 0),
+            changeReg: filteredPortfolios.reduce((sum, p) => sum + (parseFloat(p.changeValue) || 0), 0),
+            changePP: filteredPortfolios.reduce((sum, p) => sum + (parseFloat(p.changeValuePrePost) || 0), 0)
+        };
+
+        document.getElementById('total-net-worth').innerText = formatPrivacy(metrics.totalNetValue, 'EUR', 'networth');
+        document.getElementById('total-gross-worth').innerText = formatPrivacy(metrics.totalValue, 'EUR', 'gross');
+        
+        const gainAmt = metrics.totalGain;
+        const gainEl = document.getElementById('total-gain-value');
+        if (gainEl) {
+            const isGainPos = gainAmt >= 0;
+            gainEl.className = `text-xl font-bold tracking-tight ${isGainPos ? 'text-emerald-500' : 'text-rose-500'}`;
+            const sign = isGainPos ? '+' : '';
+            gainEl.innerText = sign + formatPrivacy(gainAmt, 'EUR', 'gain', 0);
+        }
+
+        const heroVar = document.getElementById('hero-day-var');
+        if (heroVar) {
+            const totalMove = metrics.changeReg + metrics.changePP;
+            const isPos = totalMove >= 0;
+            
+            const formattedReg = formatPrivacy(metrics.changeReg, 'EUR', 'h-var', 0);
+            const formattedPP = formatPrivacy(metrics.changePP, 'EUR', 'h-pp', 0);
+
+            if (formattedReg === '****') {
+                heroVar.classList.add('hidden');
+            } else {
+                const signReg = metrics.changeReg >= 0 ? '+' : '';
+                const signPP = metrics.changePP >= 0 ? '+' : '';
+                heroVar.className = `px-2.5 py-1 rounded-lg text-sm font-bold shadow-sm ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`;
+                
+                let html = `${signReg}${formattedReg}`;
+                if (metrics.changePP !== 0) {
+                    html += ` <span class="opacity-80 text-[10px] ml-1">(${signPP}${formattedPP})</span>`;
+                }
+                heroVar.innerHTML = html;
+                heroVar.classList.remove('hidden');
+            }
+        }
+
+        const pContainer = document.getElementById('portfolio-container');
+        if (pContainer) {
+            pContainer.innerHTML = portfolios.map(p => createPortfolioCard(p)).join('') || '<div class="col-span-full py-12 text-center text-slate-500 italic">No portfolios found.</div>';
+        }
+
+        renderSidebarPortfolios(portfolios);
+
+        const winnersContainer = document.getElementById('top-winners');
+        const losersContainer = document.getElementById('top-losers');
+        if (winnersContainer && losersContainer && data.global) {
+            winnersContainer.innerHTML = (data.global.topWinners || []).map(w => createMiniAssetCard(w, true)).join('') || '<p class="text-xs text-slate-400 italic">Nessun dato disponibile</p>';
+            losersContainer.innerHTML = (data.global.topLosers || []).map(l => createMiniAssetCard(l, false)).join('') || '<p class="text-xs text-slate-400 italic">Nessun dato disponibile</p>';
+        }
+    }
+
+    function renderSidebarPortfolios(portfolios) {
+        const sidebar = document.getElementById('sidebar-portfolios');
+        if (!sidebar) return;
+        
+        sidebar.innerHTML = portfolios.map(p => {
+            const isPrivate = window.privacyState && window.privacyState.enabled;
+            const displayVal = isPrivate ? '****' : formatCurrency(p.totalValue, p.currency, 0);
+            
+            return `
+                <a href="/portfolio?id=${p.id}" class="flex items-center justify-between px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group">
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <div class="w-1.5 h-1.5 rounded-full shrink-0" style="background-color: ${p.color || '#6366f1'}"></div>
+                        <div class="flex flex-col min-w-0">
+                            <span class="text-xs font-medium truncate">${p.name}</span>
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">${displayVal}</span>
+                </a>
+            `;
+        }).join('') || '<div class="px-3 py-2 text-xs text-slate-400 italic">Nessun portafoglio</div>';
+    }
+
+    function createPortfolioCard(p) {
+        const isPrivate = window.privacyState && window.privacyState.enabled;
+        const val1d = p.changeValue || 0;
+        const pct1d = p.changePercent || 0;
+        const valPP = p.changeValuePrePost || 0;
+
+        const isPos1D = val1d >= 0;
+        const sign1D = isPos1D ? '+' : '';
+        const color1D = isPos1D ? 'text-emerald-500' : 'text-rose-500';
+        const bg1D = isPos1D ? 'bg-emerald-500/10' : 'bg-rose-500/10';
+        const symbol = p.currency === 'EUR' ? '€' : (p.currency === 'USD' ? '$' : p.currency);
+        
+        const displayVal1D = isPrivate ? '****' : `${sign1D}${symbol}${formatNumber(Math.abs(val1d), 0)}`;
+        const displayPct1D = isPrivate ? '****' : `${sign1D}${Math.abs(pct1d).toFixed(2)}%`;
+        const totalValStr = formatPrivacy(p.totalValue, p.currency, 'p-' + p.id, 0);
+
+        return `
+            <div class="bg-white dark:bg-surface-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between group hover:border-primary hover:shadow-xl transition-all cursor-pointer w-full" onclick="window.location.href='/portfolio?id=${p.id}'">
+                <div class="flex items-center gap-5 min-w-0 flex-1">
+                    <div class="w-12 h-12 rounded-xl flex items-center justify-center text-white shrink-0 shadow-sm" style="background-color: ${p.color || '#6366f1'}">
+                        <span class="material-symbols-outlined text-[24px]">work</span>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2">
+                            <p class="text-lg font-black tracking-tight text-slate-900 dark:text-slate-100 truncate">${p.name}</p>
+                            ${p.type === 'Conto Deposito' ? '<span class="text-[9px] font-black bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded border border-amber-500/30 shrink-0">DEPOSITO</span>' : ''}
+                        </div>
+                        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5 truncate">${p.assetCount || 0} Assets • ${p.currency}</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-8 shrink-0 text-right">
+                    <div class="text-right">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Performance 1D</p>
+                        <div class="flex items-baseline justify-end gap-2">
+                            <span class="text-2xl font-black tracking-tight ${color1D}">${displayVal1D}</span>
+                            <span class="text-xs font-bold px-1.5 py-0.5 rounded-md ${bg1D} ${color1D}">${displayPct1D}</span>
+                        </div>
+                    </div>
+                    <div class="w-px h-10 bg-slate-200 dark:bg-slate-800 hidden md:block"></div>
+                    <div class="text-right hidden sm:block min-w-[100px]">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Total Value</p>
+                        <p class="text-2xl font-black text-slate-900 dark:text-white truncate">${totalValStr}</p>
+                    </div>
+                    <span class="material-symbols-outlined text-slate-300 dark:text-slate-700 group-hover:text-primary transition-colors pr-2 hidden md:block">chevron_right</span>
+                </div>
+            </div>
+        `;
+    }
+
+    function createMiniAssetCard(asset, isWinner) {
+        const isPos = asset.changePercent >= 0;
+        const color = isPos ? 'text-emerald-500' : 'text-rose-500';
+        return `
+            <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-transparent hover:border-slate-200 dark:hover:border-slate-800 transition-all group">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-[10px] font-black group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all">
+                        ${asset.ticker.substring(0, 2)}
+                    </div>
+                    <div>
+                        <p class="text-xs font-black tracking-tight">${asset.ticker}</p>
+                        <p class="text-[9px] text-slate-500 uppercase font-bold">${asset.assetName || 'Asset'}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="${color} text-xs font-black">${isPos ? '+' : ''}${asset.changePercent.toFixed(2)}%</p>
+                    <p class="text-[10px] text-slate-500 font-bold">€ ${Math.abs(asset.absChange || 0).toFixed(0)}</p>
+                </div>
+            </div>
+        `;
+    }
+
+    async function loadDividendAlert() {
+        const container = document.getElementById('dividend-alert-container');
+        const titleEl = document.getElementById('div-alert-title');
+        const msgEl = document.getElementById('div-alert-msg');
+        if (!container || !titleEl || !msgEl) return;
+
+        try {
+            const res = await fetch('/api/analytics/current-month-dividends');
+            const data = await res.json();
+            if (data.hasDividends) {
+                titleEl.innerText = `Dividendi di ${data.monthName}`;
+                msgEl.innerText = `Hai ${data.count} ${data.count === 1 ? 'pagamento previsto' : 'pagamenti previsti'} (${formatCurrency(data.amount, 'EUR', 0)}).`;
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        } catch (err) { console.error(err); }
+    }
+
+    let dashboardChart = null;
+    let allocationChart = null;
+    let currentChartRange = '1M';
+
+    function initDashboardChart() {
+        if (dashboardChart) dashboardChart.destroy();
+        const ctx = document.getElementById('dashboardPerformanceChart')?.getContext('2d');
+        if (!ctx) return;
+
+        const isDark = document.documentElement.classList.contains('dark');
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+        const textColor = isDark ? '#94a3b8' : '#64748b';
+
+        dashboardChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Net Worth',
+                    data: [],
+                    borderColor: '#135bec',
+                    backgroundColor: 'rgba(19, 91, 236, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                    yAxisID: 'y'
+                }, {
+                    label: 'Net Profit/Loss',
+                    data: [],
+                    borderColor: '#10b981',
+                    backgroundColor: 'transparent',
+                    fill: false,
+                    tension: 0.4,
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                    yAxisID: 'y1'
+                }, {
+                    label: 'Benchmark',
+                    data: [],
+                    borderColor: '#94a3b8',
+                    backgroundColor: 'transparent',
+                    fill: false,
+                    tension: 0.4,
+                    borderWidth: 2,
+                    borderDash: [3, 3],
+                    pointRadius: 0,
+                    hidden: true,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: isDark ? '#1e293b' : '#fff',
+                        titleColor: isDark ? '#f1f5f9' : '#1e293b',
+                        bodyColor: isDark ? '#f1f5f9' : '#1e293b',
+                        borderColor: isDark ? '#334155' : '#e2e8f0',
+                        borderWidth: 1,
+                        padding: 12,
+                        callbacks: {
+                            label: (context) => {
+                                const val = context.parsed.y;
+                                return context.dataset.label + ': ' + formatCurrency(val, 'EUR', 0);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { ticks: { color: textColor, font: { size: 10 } }, grid: { display: false } },
+                    y: { grid: { color: gridColor } },
+                    y1: { position: 'right', ticks: { color: '#10b981', font: { size: 10 } }, grid: { display: false } }
+                }
+            }
+        });
+        updateDashboardChart();
+    }
+
+    async function updateDashboardChart() {
+        if (!dashboardChart) return;
+        const benchmark = document.getElementById('benchmark-selector')?.value || '';
+        try {
+            let url = `/api/analytics/global-performance?range=${currentChartRange}&benchmark=${benchmark}`;
+            if (selectedPortfolioIds.length > 0) url += `&portfolioIds=${selectedPortfolioIds.join(',')}`;
+            
+            const res = await fetch(url);
+            const result = await res.json();
+            const dataPoints = result.dataPoints || [];
+            
+            dashboardChart.rawPoints = dataPoints;
+            dashboardChart.data.labels = dataPoints.map(d => {
+                const date = new Date(d.date);
+                return date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
+            });
+            dashboardChart.data.datasets[0].data = dataPoints.map(d => d.value);
+            dashboardChart.data.datasets[1].data = dataPoints.map(d => d.profit);
+            
+            if (benchmark) {
+                dashboardChart.data.datasets[2].data = dataPoints.map(d => d.benchmarkValue);
+                dashboardChart.data.datasets[2].hidden = false;
+            } else {
+                dashboardChart.data.datasets[2].hidden = true;
+            }
+            dashboardChart.update();
+        } catch (err) { console.error('Chart update error:', err); }
+    }
+
+    function setChartRange(range) {
+        currentChartRange = range;
+        document.querySelectorAll('.range-btn').forEach(btn => {
+            btn.classList.toggle('bg-primary', btn.dataset.range === range);
+            btn.classList.toggle('text-white', btn.dataset.range === range);
+            btn.classList.toggle('shadow-md', btn.dataset.range === range);
+        });
+        updateDashboardChart();
+    }
+
+    async function initAllocationChart() {
+        if (allocationChart) allocationChart.destroy();
+        const ctx = document.getElementById('allocationChart')?.getContext('2d');
+        if (!ctx) return;
+
+        try {
+            let url = '/api/analytics/asset-allocation';
+            if (selectedPortfolioIds.length > 0) url += `?portfolioIds=${selectedPortfolioIds.join(',')}`;
+            
+            const res = await fetch(url);
+            const data = await res.json();
+            
+            allocationChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.map(d => d.type),
+                    datasets: [{
+                        data: data.map(d => d.value),
+                        backgroundColor: data.map(d => d.color || '#cbd5e1'),
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%',
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            const legend = document.getElementById('allocation-legend');
+            if (legend) {
+                const total = data.reduce((sum, d) => sum + d.value, 0);
+                legend.innerHTML = data.map(d => {
+                    const pct = total > 0 ? ((d.value / total) * 100).toFixed(1) : 0;
+                    return `
+                        <div class="flex items-center justify-between group">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full" style="background-color: ${d.color}"></span>
+                                <span class="text-[11px] font-black tracking-tight text-slate-700 dark:text-slate-300 uppercase">${d.type}</span>
+                            </div>
+                            <span class="text-[11px] font-black text-slate-500">${pct}%</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+        } catch (err) { console.error(err); }
+    }
+
+    window.openPortfolioModal = async function() {
+        const listContainer = document.getElementById('minusvalenze-list');
+        listContainer.innerHTML = '<p class="text-[10px] text-slate-400 italic">Recupero categorie...</p>';
+        
+        let categories = [];
+        try {
+            const res = await fetch('/api/tax-rates');
+            categories = await res.json();
+        } catch (err) { console.error(err); }
+
+        document.getElementById('portfolio-modal-title').innerText = "New Portfolio";
+        document.getElementById('p-id').value = '';
+        document.getElementById('portfolio-form').reset();
+        
+        listContainer.innerHTML = categories.map(c => `
+            <div class="space-y-1">
+                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">${c.asset_type}</label>
+                <input data-type="${c.asset_type}" type="number" step="any" class="minusvalenza-input w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-1.5 px-3 text-sm" value="0" placeholder="0.00"/>
+            </div>
+        `).join('') || '<p class="text-[10px] text-slate-400 italic">No categories defined.</p>';
+
+        document.getElementById('portfolio-modal').classList.remove('hidden');
+    };
+
+    window.closePortfolioModal = function() {
+        document.getElementById('portfolio-modal').classList.add('hidden');
+    };
+
+    const pForm = document.getElementById('portfolio-form');
+    if (pForm) {
+        pForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('p-id').value;
+            const losses = {};
+            document.querySelectorAll('.minusvalenza-input').forEach(input => {
+                const type = input.dataset.type;
+                const val = parseFloat(input.value) || 0;
+                if (type) losses[type] = val;
+            });
+
+            const data = {
+                name: document.getElementById('p-name').value,
+                type: document.getElementById('p-type').value,
+                currency: document.getElementById('p-currency').value,
+                startDate: document.getElementById('p-date').value,
+                initialCash: parseFloat(document.getElementById('p-cash').value),
+                color: document.getElementById('p-color').value,
+                losses: losses
+            };
+            
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? `/api/portfolios/${id}` : '/api/portfolios';
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (res.ok) {
+                closePortfolioModal();
+                loadDashboard();
+            }
+        };
+    }
+
+    function togglePrivacy() {
+        window.privacyState.enabled = !window.privacyState.enabled;
+        localStorage.setItem('privacy-enabled', window.privacyState.enabled);
+        document.dispatchEvent(new CustomEvent('privacy-changed'));
+    }
+
+    window.addEventListener('privacy-changed', () => {
+        const icon = document.getElementById('header-privacy-icon');
+        if (icon) icon.innerText = window.privacyState.enabled ? 'visibility_off' : 'visibility';
+        if (window._dashboardData) updateDashboardUI(window._dashboardData);
+    });
+
+    window.addEventListener('portfolios-updated', (e) => {
+        if (e.detail) updateDashboardUI(e.detail);
+    });
+
+    function toggleTheme() {
+        const isDark = document.documentElement.classList.toggle('dark');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        const icon = document.getElementById('header-theme-icon');
+        if (icon) icon.innerText = isDark ? 'light_mode' : 'dark_mode';
+        initDashboardChart();
+    }
+
+    function toggleMobileView() {
+        window.location.href = '/dashboard-mobile';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('header-date').innerText = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
+        loadDashboard();
+        
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (user.name) document.getElementById('header-user-name').innerText = user.name;
+        if (user.role) {
+            document.getElementById('header-user-role').innerText = user.role;
+            if (user.role === 'admin') document.getElementById('admin-link').classList.remove('hidden');
+        }
+    });
+
+    async function logout() {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        localStorage.clear();
+        window.location.href = '/login';
+    }
+</script>
+</body>
+</html>
