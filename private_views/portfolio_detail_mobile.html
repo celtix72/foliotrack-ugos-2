@@ -382,6 +382,17 @@
                     </div>
                 </div>
             </div>
+            <!-- Tags Selection -->
+            <div class="space-y-2 mt-4">
+                <div class="flex items-center justify-between">
+                    <label class="text-sm font-medium">Tag (Gruppi)</label>
+                    <button type="button" onclick="mobOpenTagManager()" class="text-[10px] font-black uppercase text-primary">Gestisci</button>
+                </div>
+                <div id="p-tag-list" class="flex flex-wrap gap-2 p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
+                    <!-- JS filled tags -->
+                </div>
+            </div>
+
             <div class="pt-4 flex gap-3">
                 <button type="button" id="delete-portfolio-btn" onclick="deletePortfolio()" class="px-4 py-2 text-rose-500 font-bold hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg hidden transition-colors">Delete</button>
                 <div class="flex-1"></div>
@@ -541,8 +552,91 @@
     currentPortfolioId = id;
   };
 
-  window.openPortfolioModal = function() {
+  let allTags = [];
+
+  async function mobLoadTags() {
+    try {
+      const res = await fetch('/api/tags');
+      allTags = await res.json();
+    } catch (e) { console.error('Error loading tags:', e); }
+  }
+
+  async function mobRenderPortfolioTags(portfolioId = null) {
+    const list = document.getElementById('p-tag-list');
+    if (!list) return;
+    if (allTags.length === 0) await mobLoadTags();
+    let pTags = [];
+    if (portfolioId) {
+      try {
+        const res = await fetch(`/api/portfolios/${portfolioId}`);
+        const p = await res.json();
+        pTags = (p.tags || []).map(t => t.id);
+      } catch (e) { console.error(e); }
+    }
+    list.innerHTML = allTags.map(tag => `
+      <label class="flex items-center gap-2 cursor-pointer group">
+          <input type="checkbox" name="p-tags" value="${tag.id}" ${pTags.includes(tag.id) ? 'checked' : ''} class="sr-only peer">
+          <div class="px-2 py-1 rounded-lg text-[10px] font-bold border transition-all peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 group-hover:border-primary/50">${tag.name}</div>
+      </label>
+    `).join('') || '<span class="text-[10px] text-slate-400 italic">Nessun tag definito.</span>';
+  }
+
+  window.mobOpenTagManager = function() {
+    document.getElementById('tag-manager-modal').classList.remove('hidden');
+    document.getElementById('tag-manager-modal').classList.add('flex');
+    mobRenderTagManagerList();
+  };
+
+  window.mobCloseTagManager = function() {
+    document.getElementById('tag-manager-modal').classList.add('hidden');
+    document.getElementById('tag-manager-modal').classList.remove('flex');
+    mobRenderPortfolioTags(document.getElementById('p-id').value);
+  };
+
+  function mobRenderTagManagerList() {
+    const list = document.getElementById('tag-manager-list');
+    list.innerHTML = allTags.map(tag => `
+      <div class="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+        <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background-color: ${tag.color}"></div><span class="text-sm font-medium">${tag.name}</span></div>
+        <button onclick="mobDeleteTag(${tag.id})" class="text-rose-500 hover:text-rose-600"><span class="material-symbols-outlined text-sm">delete</span></button>
+      </div>
+    `).join('') || '<div class="text-center text-slate-500 italic text-sm">Nessun tag.</div>';
+  }
+
+  window.mobCreateNewTag = async function() {
+    const name = document.getElementById('new-tag-name').value;
+    const color = document.getElementById('new-tag-color').value;
+    if (!name) return;
+    const res = await fetch('/api/tags', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, color }) });
+    if (res.ok) { document.getElementById('new-tag-name').value = ''; await mobLoadTags(); mobRenderTagManagerList(); }
+  };
+
+  window.mobDeleteTag = async function(id) {
+    if (!confirm('Eliminare questo TAG?')) return;
+    const res = await fetch(`/api/tags/${id}`, { method: 'DELETE' });
+    if (res.ok) { await mobLoadTags(); mobRenderTagManagerList(); }
+  };
+
+  window.openPortfolioModal = function(id = null) {
     const modal = document.getElementById('portfolio-modal');
+    if (id) {
+        fetch(`/api/portfolios/${id}`).then(r => r.json()).then(p => {
+            document.getElementById('p-id').value = p.id;
+            document.getElementById('p-name').value = p.name;
+            document.getElementById('p-type').value = p.type;
+            document.getElementById('p-currency').value = p.currency;
+            document.getElementById('p-date').value = p.startDate;
+            document.getElementById('p-cash').value = p.initialCash;
+            document.getElementById('p-color').value = p.color || '#6366f1';
+            mobRenderPortfolioTags(id);
+            document.getElementById('portfolio-modal-title').innerText = "Edit Portfolio";
+        });
+    } else {
+        document.getElementById('p-id').value = '';
+        document.getElementById('portfolio-form').reset();
+        mobRenderPortfolioTags();
+        document.getElementById('portfolio-modal-title').innerText = "New Portfolio";
+    }
     if (modal) modal.style.display = 'flex';
   };
   window.closePortfolioModal = function() {
