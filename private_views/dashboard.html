@@ -219,12 +219,81 @@
                     </div>
                 </div>
             </div>
+        </div>
 
+        <!-- Tag Filters (Moved here) -->
+        <div id="tag-filter-container" class="flex flex-wrap gap-2 mt-6">
+            <!-- JS filled tags -->
         </div>
     </div>
 
-    <div class="p-8 space-y-8">
-        <!-- Portfolios Overview (Moved UP) -->
+    <div class="px-8 space-y-8 pb-12">
+        <!-- Chart Section (Moved UP) -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <!-- Performance Chart (75%) -->
+            <section class="lg:col-span-3 bg-white dark:bg-surface-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <h3 class="text-lg font-bold">Performance</h3>
+                        <p class="text-xs text-slate-500">Aggregated net worth across selected portfolios</p>
+                    </div>
+                    <div class="flex gap-1 bg-slate-50 dark:bg-slate-900/50 p-1 rounded-lg border border-slate-100 dark:border-slate-800" id="chart-range-buttons">
+                        <button data-range="1W" onclick="setChartRange('1W')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">1W</button>
+                        <button data-range="1M" onclick="setChartRange('1M')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md bg-primary text-white shadow-md transition-all">1M</button>
+                        <button data-range="3M" onclick="setChartRange('3M')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">3M</button>
+                        <button data-range="YTD" onclick="setChartRange('YTD')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">YTD</button>
+                        <button data-range="1Y" onclick="setChartRange('1Y')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">1Y</button>
+                        <button data-range="2Y" onclick="setChartRange('2Y')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">2Y</button>
+                        <button data-range="3Y" onclick="setChartRange('3Y')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">3Y</button>
+                        <button data-range="5Y" onclick="setChartRange('5Y')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">5Y</button>
+                        <button data-range="ALL" onclick="setChartRange('ALL')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">ALL</button>
+                    </div>
+                    
+                    <div class="flex items-center gap-4 ml-4">
+                        <div class="h-4 w-[1px] bg-slate-200 dark:bg-slate-700 mx-1 hidden xl:block"></div>
+                        <!-- Net Worth Toggle -->
+                        <label class="flex items-center gap-2 cursor-pointer group">
+                            <div class="relative w-8 h-4 bg-slate-200 dark:bg-slate-800 rounded-full transition-colors group-hover:bg-slate-300 dark:group-hover:bg-slate-700">
+                                <input type="checkbox" id="toggle-net-worth" checked onchange="toggleNetWorthVisibility()" class="sr-only peer">
+                                <div class="absolute left-0.5 top-0.5 w-3 h-3 bg-white rounded-full transition-transform peer-checked:translate-x-4 peer-checked:bg-primary"></div>
+                            </div>
+                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Patrimonio</span>
+                        </label>
+                        <!-- Benchmark Selector -->
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Benchmark:</span>
+                            <select id="benchmark-selector" onchange="updateDashboardChart()" class="bg-transparent border-none text-[10px] font-bold text-primary focus:ring-0 cursor-pointer p-0">
+                                <option value="">Nessuno</option>
+                                <option value="FTSEMIB.MI">FTSE MIB</option>
+                                <option value="IWDA.AS">MSCI World</option>
+                                <option value="CSPX.AS">S&P 500</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div id="dashboard-chart-container" class="h-[280px] w-full relative">
+                    <canvas id="dashboardPerformanceChart"></canvas>
+                </div>
+            </section>
+
+            <!-- Asset Allocation (25%) -->
+            <section class="lg:col-span-1 bg-white dark:bg-surface-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
+                <div class="mb-4">
+                    <h3 class="text-lg font-bold">Allocation</h3>
+                    <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">ByType</p>
+                </div>
+                <div class="flex-1 flex flex-col items-center justify-center min-h-[300px]">
+                     <div class="w-full h-40 relative flex items-center justify-center mb-6">
+                         <canvas id="allocationChart"></canvas>
+                     </div>
+                     <div id="allocation-legend" class="w-full space-y-2 mt-4 custom-scrollbar overflow-y-auto max-h-[150px] px-2">
+                         <!-- Legend items will be injected here -->
+                     </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Portfolios Overview -->
         <section class="space-y-4">
             <div class="flex items-center justify-between">
                 <h3 class="text-lg font-bold">I Tuoi Portafogli</h3>
@@ -245,79 +314,15 @@
             </div>
             <div id="portfolio-container" class="flex flex-col gap-4">
                 <!-- JS filled -->
-                <div class="col-span-full py-12 text-center text-slate-500 italic">No portfolios found.</div>
             </div>
         </section>
+    </div>
+</main>
 
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-    <!-- Performance Chart (75%) -->
-    <section class="lg:col-span-3 bg-white dark:bg-surface-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
-        <div class="flex items-center justify-between mb-8">
-            <div>
-                <h3 class="text-lg font-bold">Performance</h3>
-                <p class="text-xs text-slate-500">Aggregated net worth across all connected platforms</p>
-                <div id="tag-filter-container" class="flex flex-wrap gap-2 mt-4">
-                    <!-- JS filled tags -->
-                </div>
-            </div>
-            <div class="flex gap-1 bg-slate-50 dark:bg-slate-900/50 p-1 rounded-lg border border-slate-100 dark:border-slate-800" id="chart-range-buttons">
-                <button data-range="1W" onclick="setChartRange('1W')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">1W</button>
-                <button data-range="1M" onclick="setChartRange('1M')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md bg-primary text-white shadow-md transition-all">1M</button>
-                <button data-range="3M" onclick="setChartRange('3M')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">3M</button>
-                <button data-range="YTD" onclick="setChartRange('YTD')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">YTD</button>
-                <button data-range="1Y" onclick="setChartRange('1Y')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">1Y</button>
-                <button data-range="2Y" onclick="setChartRange('2Y')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">2Y</button>
-                <button data-range="3Y" onclick="setChartRange('3Y')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">3Y</button>
-                <button data-range="5Y" onclick="setChartRange('5Y')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">5Y</button>
-                <button data-range="ALL" onclick="setChartRange('ALL')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">ALL</button>
-                
-            </div>
-            
-            <div class="flex items-center gap-4 ml-4">
-                <div class="h-4 w-[1px] bg-slate-200 dark:bg-slate-700 mx-1 hidden xl:block"></div>
-                
-                <!-- Net Worth Toggle -->
-                <label class="flex items-center gap-2 cursor-pointer group">
-                    <div class="relative w-8 h-4 bg-slate-200 dark:bg-slate-800 rounded-full transition-colors group-hover:bg-slate-300 dark:group-hover:bg-slate-700">
-                        <input type="checkbox" id="toggle-net-worth" checked onchange="toggleNetWorthVisibility()" class="sr-only peer">
-                        <div class="absolute left-0.5 top-0.5 w-3 h-3 bg-white rounded-full transition-transform peer-checked:translate-x-4 peer-checked:bg-primary"></div>
-                    </div>
-                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Patrimonio</span>
-                </label>
-
-                <!-- Benchmark Selector -->
-                <div class="flex items-center gap-2">
-                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Benchmark:</span>
-                    <select id="benchmark-selector" onchange="updateDashboardChart()" class="bg-transparent border-none text-[10px] font-bold text-primary focus:ring-0 cursor-pointer p-0">
-                        <option value="">Nessuno</option>
-                        <option value="FTSEMIB.MI">FTSE MIB</option>
-                        <option value="IWDA.AS">MSCI World</option>
-                        <option value="CSPX.AS">S&P 500</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-        <div id="dashboard-chart-container" class="h-[280px] w-full relative">
-            <canvas id="dashboardPerformanceChart"></canvas>
-        </div>
-    </section>
-
-    <!-- Asset Allocation (25%) -->
-    <section class="lg:col-span-1 bg-white dark:bg-surface-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
-        <div class="mb-4">
-            <h3 class="text-lg font-bold">Asset Allocation</h3>
-            <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">ByType</p>
-        </div>
-        <div class="flex-1 flex flex-col items-center justify-center min-h-[300px]">
-             <div class="w-full h-40 relative flex items-center justify-center mb-6">
-                 <canvas id="allocationChart"></canvas>
-             </div>
-             <div id="allocation-legend" class="w-full space-y-2 mt-4 custom-scrollbar overflow-y-auto max-h-[150px] px-2">
-                 <!-- Legend items will be injected here -->
-             </div>
-        </div>
-    </section>
-</div>
+<!-- Delete the old redundant sections below -->
+<script>
+    // Note: I will need to remove the duplicate sections manually if they are still there
+</script>
 
 
 
@@ -481,13 +486,19 @@
         
         container.innerHTML = allTags.map(tag => {
             const isSelected = selectedTagIds.includes(tag.id);
+            // Gray when unselected, colored when selected
+            const style = isSelected 
+                ? `background-color: ${tag.color || 'var(--primary)'}; color: white; border-color: ${tag.color || 'var(--primary)'};` 
+                : `background-color: #f1f5f9; color: #64748b; border-color: #e2e8f0;`;
+            
             return `
                 <button onclick="toggleTagFilter(${tag.id})" 
-                        class="px-3 py-1 rounded-full text-[10px] font-bold border transition-all ${isSelected ? 'bg-primary text-white border-primary shadow-sm shadow-primary/20' : 'bg-slate-50 dark:bg-slate-900 text-slate-500 border-slate-200 dark:border-slate-800 hover:border-primary/50'}">
+                        style="${style}"
+                        class="px-3 py-1 rounded-full text-[10px] font-bold border transition-all shadow-sm">
                     ${tag.name}
                 </button>
             `;
-        }).join('') + (allTags.length === 0 ? '<span class="text-[10px] text-slate-400 italic">Nessun tag definito. Usa le impostazioni portafoglio per aggiungerli.</span>' : '');
+        }).join('') + (allTags.length === 0 ? '<span class="text-[10px] text-slate-400 italic">Nessun tag definito.</span>' : '');
     }
 
     function toggleTagFilter(tagId) {
@@ -498,13 +509,19 @@
         }
         localStorage.setItem('selectedTagIds', JSON.stringify(selectedTagIds));
         renderTagFilters();
-        loadDashboard();
-        updateDashboardChart();
+        
+        // Dynamic update of top numbers and chart
+        if (window._dashboardData) {
+            updateDashboardUI(window._dashboardData);
+            updateDashboardChart();
+            initAllocationChart();
+        }
     }
 
     async function loadDashboard(prefetchedData = null) {
         try {
-            const url = selectedTagIds.length > 0 ? `/api/portfolios?tagIds=${selectedTagIds.join(',')}` : '/api/portfolios';
+            // Always load ALL portfolios to show in the list
+            const url = '/api/portfolios';
             const data = prefetchedData || await (await fetch(url)).json();
             window._dashboardData = data;
             updateDashboardUI(data);
@@ -536,14 +553,26 @@
 
     function updateDashboardUI(data) {
         const portfolios = data.portfolios || [];
-        const globalData = data.global;
-        if (!globalData) return;
+        
+        // Filter metrics by selected tags
+        let filteredPortfolios = portfolios;
+        if (selectedTagIds.length > 0) {
+            filteredPortfolios = portfolios.filter(p => (p.tags || []).some(t => selectedTagIds.includes(t.id)));
+        }
+
+        const metrics = {
+            totalNetValue: filteredPortfolios.reduce((sum, p) => sum + (p.netValue || p.totalValue), 0),
+            totalValue: filteredPortfolios.reduce((sum, p) => sum + (p.totalValue), 0),
+            totalGain: filteredPortfolios.reduce((sum, p) => sum + (p.totalGain || 0), 0),
+            changeReg: filteredPortfolios.reduce((sum, p) => sum + (p.changeValue || 0), 0),
+            changePP: filteredPortfolios.reduce((sum, p) => sum + (p.changeValuePrePost || 0), 0)
+        };
 
         // Hero Numbers
-        document.getElementById('total-net-worth').innerText = formatPrivacy(globalData.totalNetValue, 'EUR', 'networth');
-        document.getElementById('total-gross-worth').innerText = formatPrivacy(globalData.totalValue, 'EUR', 'gross');
+        document.getElementById('total-net-worth').innerText = formatPrivacy(metrics.totalNetValue, 'EUR', 'networth');
+        document.getElementById('total-gross-worth').innerText = formatPrivacy(metrics.totalValue, 'EUR', 'gross');
         
-        const gainAmt = globalData.totalGain || 0;
+        const gainAmt = metrics.totalGain;
         const gainEl = document.getElementById('total-gain-value');
         if (gainEl) {
             const isGainPos = gainAmt >= 0;
@@ -554,25 +583,21 @@
 
         const heroVar = document.getElementById('hero-day-var');
         if (heroVar) {
-            const changeReg = globalData.changeValue || globalData.totalChange || 0;
-            const changePP = globalData.changeValuePrePost || globalData.totalChangePrePost || 0;
-            const totalMove = changeReg + changePP;
+            const totalMove = metrics.changeReg + metrics.changePP;
             const isPos = totalMove >= 0;
             
-            const formattedReg = formatPrivacy(changeReg, 'EUR', 'h-var', 0);
-            const formattedPP = formatPrivacy(changePP, 'EUR', 'h-pp', 0);
-
-            console.info(`[DSH_DEBUG] Hero Var: Reg=${changeReg}, PP=${changePP}, Total=${totalMove}`);
+            const formattedReg = formatPrivacy(metrics.changeReg, 'EUR', 'h-var', 0);
+            const formattedPP = formatPrivacy(metrics.changePP, 'EUR', 'h-pp', 0);
 
             if (formattedReg === '****') {
                 heroVar.classList.add('hidden');
             } else {
-                const signReg = changeReg >= 0 ? '+' : '';
-                const signPP = changePP >= 0 ? '+' : '';
+                const signReg = metrics.changeReg >= 0 ? '+' : '';
+                const signPP = metrics.changePP >= 0 ? '+' : '';
                 heroVar.className = `px-2.5 py-1 rounded-lg text-sm font-bold shadow-sm ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`;
                 
                 let html = `${signReg}${formattedReg}`;
-                if (changePP !== 0) {
+                if (metrics.changePP !== 0) {
                     html += ` <span class="opacity-80 text-[10px] ml-1">(${signPP}${formattedPP})</span>`;
                 }
                 heroVar.innerHTML = html;
@@ -580,11 +605,9 @@
             }
         }
 
-        // Render Portfolios Grid
+        // Render Portfolios Grid (ALL Portfolios)
         const pContainer = document.getElementById('portfolio-container');
         if (pContainer) {
-            const sumP = portfolios.reduce((acc, p) => acc + (p.changeValue || 0) + (p.changeValuePrePost || 0), 0);
-            console.info(`[DSH_DEBUG] Portfolios Sum: ${sumP} (Aggregated from ${portfolios.length} items)`);
             pContainer.innerHTML = portfolios.map(p => createPortfolioCard(p)).join('') || '<div class="col-span-full py-12 text-center text-slate-500 italic">No portfolios found.</div>';
         }
 
