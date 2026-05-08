@@ -3067,7 +3067,16 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
         p.changeValue = (isNaN(p.performance1D) || !isFinite(p.performance1D)) ? 0 : (p.performance1D || 0);
         p.changeValuePrePost = (isNaN(p.performance1DPrePost) || !isFinite(p.performance1DPrePost)) ? 0 : (p.performance1DPrePost || 0);
 
-        const vCurr = p.totalValue || 0;
+        // Get accurate real-time details
+        const details = await getPortfolioDetails(p.id, rateToday);
+        p.totalValue = details.totalValue || 0;
+        p.totalTax = details.totalLatentTax || 0;
+        p.netValue = p.totalValue - p.totalTax;
+        p.roi = details.roi || 0;
+        p.twr = details.twr || 0;
+        p.xirr = details.xirr || 0;
+
+        const vCurr = p.totalValue;
         const vDelta = p.changeValue + p.changeValuePrePost;
         const vPrev = vCurr - vDelta;
 
@@ -3080,11 +3089,12 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
         // Split between regular/PP for the Hero pill
         const ratioReg = vDelta !== 0 ? (p.performance1D / vDelta) : 1;
         
-        // Aggregate only if included in totals
-        if (p.include_in_totals !== 0) {
-            globalChangeEUR += vDeltaEUR_Total * ratioReg;
-            globalChangePrePostEUR += vDeltaEUR_Total * (1 - ratioReg);
-        }
+        // Aggregate totals
+        totalValueEUR += vCurrEUR;
+        totalTaxEUR += p.totalTax / rate;
+        totalNetValueEUR += p.netValue / rate;
+        globalChangeEUR += vDeltaEUR_Total * ratioReg;
+        globalChangePrePostEUR += vDeltaEUR_Total * (1 - ratioReg);
 
         const history = individual[p.id] || [];
         if (history.length > 0) {
@@ -3102,19 +3112,6 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
         } else {
             p.changeValue1W = 0; p.changePercent1W = 0;
             p.changeValue1M = 0; p.changePercent1M = 0;
-        }
-
-        const details = await getPortfolioDetails(p.id, rateToday);
-        p.roi = details.roi || 0;
-        p.twr = details.twr || 0;
-        p.xirr = details.xirr || 0;
-        p.totalTax = details.totalLatentTax || 0;
-        p.netValue = (p.totalValue || 0) - p.totalTax;
-        
-        if (p.include_in_totals !== 0) {
-            totalValueEUR += vCurrEUR;
-            totalTaxEUR += p.totalTax / rate;
-            totalNetValueEUR += p.netValue / rate;
         }
     }
 

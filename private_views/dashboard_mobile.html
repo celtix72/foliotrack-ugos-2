@@ -511,10 +511,10 @@ window._mobileViewActive = true;
       }
 
       const g = {
-          totalNetValue: filteredPortfolios.reduce((sum, p) => sum + (p.netValue || p.totalValue), 0),
-          totalValue: filteredPortfolios.reduce((sum, p) => sum + (p.totalValue), 0),
-          changeReg: filteredPortfolios.reduce((sum, p) => sum + (p.changeValue || 0), 0),
-          changePP: filteredPortfolios.reduce((sum, p) => sum + (p.changeValuePrePost || 0), 0),
+          totalNetValue: filteredPortfolios.reduce((sum, p) => sum + (parseFloat(p.netValue) || parseFloat(p.totalValue) || 0), 0),
+          totalValue: filteredPortfolios.reduce((sum, p) => sum + (parseFloat(p.totalValue) || 0), 0),
+          changeReg: filteredPortfolios.reduce((sum, p) => sum + (parseFloat(p.changeValue) || 0), 0),
+          changePP: filteredPortfolios.reduce((sum, p) => sum + (parseFloat(p.changeValuePrePost) || 0), 0),
           topWinners: data.global?.topWinners || [],
           topLosers: data.global?.topLosers || []
       };
