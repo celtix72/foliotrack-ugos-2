@@ -649,6 +649,7 @@
                         <div class="flex items-center gap-2">
                             <p class="text-base md:text-lg font-black tracking-tight text-slate-900 dark:text-slate-100 truncate">${p.name}</p>
                             ${p.type === 'Conto Deposito' ? '<span class="text-[9px] font-black bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded border border-amber-500/30 shrink-0">DEPOSITO</span>' : ''}
+                            ${p.include_in_totals === 0 ? '<span class="text-[9px] font-black bg-slate-500/10 text-slate-500 px-1.5 py-0.5 rounded border border-slate-500/30 shrink-0">ESCLUSO</span>' : ''}
                         </div>
                         <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5 truncate">${p.assetCount || 0} Assets • ${p.currency}</p>
                     </div>

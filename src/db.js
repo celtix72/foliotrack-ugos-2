@@ -816,8 +816,8 @@ function savePortfolioSnapshot(portfolioId = null, eurUsdRate = 1.0, userId = nu
         // Global Dashboard Snapshot - Convert to EUR for consistent aggregate history
         // If userId is provided, only aggregate that user's portfolios.
         const portfolios = uId 
-            ? dbConnection.prepare(`SELECT p.id, p.currency, p.totalValue, p.currentCash FROM portfolios p JOIN portfolio_users pu ON p.id = pu.portfolio_id WHERE pu.user_id = ?`).all(uId)
-            : dbConnection.prepare(`SELECT id, currency, totalValue, currentCash FROM portfolios`).all();
+            ? dbConnection.prepare(`SELECT p.id, p.currency, p.totalValue, p.currentCash FROM portfolios p JOIN portfolio_users pu ON p.id = pu.portfolio_id WHERE pu.user_id = ? AND p.include_in_totals != 0`).all(uId)
+            : dbConnection.prepare(`SELECT id, currency, totalValue, currentCash FROM portfolios WHERE include_in_totals != 0`).all();
             
         for (const p of portfolios) {
             let tVal = (p.totalValue || 0);

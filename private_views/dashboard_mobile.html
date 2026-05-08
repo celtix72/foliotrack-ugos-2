@@ -503,7 +503,10 @@ window._mobileViewActive = true;
                     <span class="material-symbols-outlined" style="font-size: 20px; font-variation-settings: 'FILL' 1;">work</span>
                   </div>
                   <div class="mob-holding-info">
-                    <div class="mob-holding-ticker truncate">${p.name}</div>
+                    <div class="flex items-center gap-1.5 min-w-0">
+                      <div class="mob-holding-ticker truncate">${p.name}</div>
+                      ${p.include_in_totals === 0 ? '<div class="text-[8px] font-black bg-slate-500/10 text-slate-500 px-1 py-0.5 rounded border border-slate-500/30 shrink-0 uppercase tracking-tighter">Escluso</div>' : ''}
+                    </div>
                     <div class="mob-holding-name">${p.assetCount || 0} Assets${p.type === 'Conto Deposito' ? ' • DEPOSITO' : ''}</div>
                   </div>
                   
