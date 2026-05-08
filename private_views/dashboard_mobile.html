@@ -287,6 +287,20 @@
                   </div>
               </div>
 
+              <!-- Fiscal Management (Minusvalenze) -->
+              <div class="border-t border-slate-200 dark:border-slate-800 pt-4 mt-2">
+                  <button type="button" onclick="document.getElementById('fiscal-management').classList.toggle('hidden')" class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-primary transition-colors mb-4">
+                      <span class="material-symbols-outlined text-sm">account_balance_wallet</span>
+                      Gestione Fiscale (Minusvalenze)
+                      <span class="material-symbols-outlined text-sm">expand_more</span>
+                  </button>
+                  <div id="fiscal-management" class="hidden space-y-3 pb-2">
+                      <div id="minusvalenze-list" class="grid grid-cols-2 gap-x-4 gap-y-3">
+                          <!-- Dynamic losses inputs will be injected here -->
+                      </div>
+                  </div>
+              </div>
+
               <div class="pt-4 flex gap-3">
                   <div class="flex-1"></div>
                   <button type="button" onclick="closePortfolioModal()" class="px-5 py-2 rounded-lg font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Annulla</button>
@@ -646,12 +660,28 @@ window._mobileViewActive = true;
   }
 
   // ── Portfolio Modal Logic ─────────────────────────
-  window.openPortfolioModal = function() {
-    const title = document.getElementById('portfolio-modal-title');
-    if (title) title.innerText = 'Nuovo Portafoglio';
-    const form = document.getElementById('portfolio-form');
-    if (pid) pid.value = '';
+  window.openPortfolioModal = async function() {
+    const listContainer = document.getElementById('minusvalenze-list');
+    listContainer.innerHTML = '<p class="text-[10px] text-slate-400 italic">Recupero categorie...</p>';
+    
+    let categories = [];
+    try {
+        const res = await fetch('/api/tax-rates');
+        categories = await res.json();
+    } catch (err) { console.error(err); }
+
+    document.getElementById('portfolio-modal-title').innerText = 'Nuovo Portafoglio';
+    document.getElementById('p-id').value = '';
+    document.getElementById('portfolio-form').reset();
     mobRenderPortfolioTags();
+
+    listContainer.innerHTML = categories.map(c => `
+        <div class="space-y-1">
+            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">${c.asset_type}</label>
+            <input data-type="${c.asset_type}" type="number" step="any" class="minusvalenza-input w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-1.5 px-3 text-sm" value="0" placeholder="0.00"/>
+        </div>
+    `).join('') || '<p class="text-[10px] text-slate-400 italic">Nessuna categoria.</p>';
+
     const modal = document.getElementById('portfolio-modal');
     if (modal) modal.style.display = 'flex';
   };
@@ -662,6 +692,15 @@ window._mobileViewActive = true;
   };
 
   window.mobEditPortfolio = async function(id) {
+    const listContainer = document.getElementById('minusvalenze-list');
+    listContainer.innerHTML = '<p class="text-[10px] text-slate-400 italic">Recupero dati...</p>';
+    
+    let categories = [];
+    try {
+        const res = await fetch('/api/tax-rates');
+        categories = await res.json();
+    } catch (err) { console.error(err); }
+
     try {
       const res = await fetch(`/api/portfolios/${id}`);
       const p = await res.json();
@@ -674,6 +713,17 @@ window._mobileViewActive = true;
       document.getElementById('p-cash').value = p.initialCash || 0;
       document.getElementById('p-color').value = p.color || '#6366f1';
       mobRenderPortfolioTags(id);
+
+      const lossesMap = {};
+      (p.losses || []).forEach(l => { lossesMap[l.asset_type] = l.loss_amount; });
+      
+      listContainer.innerHTML = categories.map(c => `
+          <div class="space-y-1">
+              <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">${c.asset_type}</label>
+              <input data-type="${c.asset_type}" type="number" step="any" class="minusvalenza-input w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-1.5 px-3 text-sm" value="${lossesMap[c.asset_type] || 0}" placeholder="0.00"/>
+          </div>
+      `).join('') || '<p class="text-[10px] text-slate-400 italic">Nessuna categoria.</p>';
+
       document.getElementById('portfolio-modal').style.display = 'flex';
       resetSwipes();
     } catch(e) { console.error('Error loading portfolio for edit:', e); }
@@ -682,6 +732,14 @@ window._mobileViewActive = true;
   document.getElementById('portfolio-form').onsubmit = async (e) => {
     e.preventDefault();
     const id = document.getElementById('p-id').value;
+
+    const losses = {};
+    document.querySelectorAll('.minusvalenza-input').forEach(input => {
+      const type = input.getAttribute('data-type');
+      const val = parseFloat(input.value) || 0;
+      if (type) losses[type] = val;
+    });
+
     const body = {
       name: document.getElementById('p-name').value,
       type: document.getElementById('p-type').value,
@@ -689,7 +747,8 @@ window._mobileViewActive = true;
       startDate: document.getElementById('p-date').value,
       initialCash: parseFloat(document.getElementById('p-cash').value),
       color: document.getElementById('p-color').value,
-      tags: Array.from(document.querySelectorAll('input[name="p-tags"]:checked')).map(cb => parseInt(cb.value))
+      tags: Array.from(document.querySelectorAll('input[name="p-tags"]:checked')).map(cb => parseInt(cb.value)),
+      losses: losses
     };
     const method = id ? 'PUT' : 'POST';
     const url = id ? `/api/portfolios/${id}` : '/api/portfolios';
@@ -703,8 +762,11 @@ window._mobileViewActive = true;
         closePortfolioModal();
         mobLoadTags();
         mobUpdateDashboard();
+      } else {
+        const errText = await res.text();
+        alert('Failed to save: ' + errText);
       }
-    } catch(e) { console.error('Error saving portfolio:', e); }
+    } catch (err) { console.error(err); }
   };
 
   async function mobRenderPortfolioTags(portfolioId = null) {

@@ -644,6 +644,46 @@
     if (modal) modal.style.display = 'none';
   };
 
+  document.getElementById('portfolio-form').onsubmit = async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('p-id').value;
+    
+    const losses = {};
+    document.querySelectorAll('.minusvalenza-input').forEach(input => {
+      const type = input.getAttribute('data-type');
+      const val = parseFloat(input.value) || 0;
+      if (type) losses[type] = val;
+    });
+
+    const body = {
+      name: document.getElementById('p-name').value,
+      type: document.getElementById('p-type').value,
+      currency: document.getElementById('p-currency').value,
+      startDate: document.getElementById('p-date').value,
+      initialCash: parseFloat(document.getElementById('p-cash').value),
+      color: document.getElementById('p-color').value,
+      tags: Array.from(document.querySelectorAll('input[name="p-tags"]:checked')).map(cb => parseInt(cb.value)),
+      losses: losses
+    };
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? `/api/portfolios/${id}` : '/api/portfolios';
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (res.ok) {
+        closePortfolioModal();
+        if (id) mobLoadPortfolioDetail(id);
+        else mobLoadPortfolioList();
+      } else {
+        const errText = await res.text();
+        alert('Failed to save: ' + errText);
+      }
+    } catch (err) { console.error(err); }
+  };
+
   window.mobShowPortfolioList = function() {
     document.getElementById('mob-portfolio-detail-view').style.display = 'none';
     document.getElementById('mob-portfolio-list-view').style.display = '';
