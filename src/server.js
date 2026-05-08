@@ -2874,6 +2874,7 @@ app.delete('/api/assets/:id', (req, res) => {
     // 2. Check for open positions (simplified: if sum(qty) > 0 in any portfolio)
     // Actually, if we just check if it's used in any transaction, we might want to keep it as "referenced".
     // But the user specifically asked for "remove from monitoring if NO OPEN POSITIONS".
+    // Tags endpoints removed as requested. }
     
     let hasOpenPosition = false;
     const portfolios = database.db.prepare(`SELECT id FROM portfolios`).all();
@@ -2962,51 +2963,7 @@ app.delete('/api/notifications', requireAuth, (req, res) => {
 // ════════════════════════════════════════════════════════════════════════════
 
 // ─── Tags APIs ──────────────────────────────────────────────────────────────
-app.get('/api/tags', requireAuth, (req, res) => {
-    try {
-        // Ensure 'ALL' tag exists for this user
-        const allTag = database.db.prepare('SELECT * FROM tags WHERE user_id = ? AND name = ?').get(req.user.id, 'ALL');
-        if (!allTag) {
-            database.db.prepare('INSERT INTO tags (user_id, name, color) VALUES (?, ?, ?)')
-                .run(req.user.id, 'ALL', '#64748b');
-        }
-        const tags = database.db.prepare('SELECT * FROM tags WHERE user_id = ? ORDER BY name ASC').all(req.user.id);
-        res.json(tags);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
 
-app.post('/api/tags', requireAuth, (req, res) => {
-    const { name, color } = req.body;
-    if (!name) return res.status(400).json({ error: 'Tag name is required' });
-    try {
-        const result = database.db.prepare('INSERT INTO tags (user_id, name, color) VALUES (?, ?, ?)')
-            .run(req.user.id, name, color || '#64748b');
-        res.status(201).json({ id: result.lastInsertRowid, name, color: color || '#64748b' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.put('/api/tags/:id', requireAuth, (req, res) => {
-    const { name, color } = req.body;
-    try {
-        database.db.prepare('UPDATE tags SET name = ?, color = ? WHERE id = ? AND user_id = ?')
-            .run(name, color, req.params.id, req.user.id);
-        res.json({ id: req.params.id, name, color });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.delete('/api/tags/:id', requireAuth, (req, res) => {
-    try {
-        const tag = database.db.prepare('SELECT * FROM tags WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
-        if (tag && tag.name === 'ALL') {
-            return res.status(403).json({ error: 'Cannot delete the mandatory ALL tag' });
-        }
-        database.db.prepare('DELETE FROM tags WHERE id = ? AND user_id = ?').run(req.params.id, req.user.id);
         res.status(204).end();
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -3663,14 +3620,6 @@ app.post('/api/portfolios', requireAuth, (req, res) => {
         // Associate with user
         database.db.prepare(`INSERT INTO portfolio_users (portfolio_id, user_id) VALUES (?, ?)`).run(portfolioId, req.user.id);
         
-        // Handle tags
-        if (tags && Array.isArray(tags)) {
-            const stmt = database.db.prepare('INSERT INTO portfolio_tags (portfolio_id, tag_id) VALUES (?, ?)');
-            for (const tId of tags) {
-                stmt.run(portfolioId, tId);
-            }
-        }
-        
         triggerHistoryRebuild(portfolioId);
         
         // Handle initial losses if provided
@@ -3711,15 +3660,6 @@ app.put('/api/portfolios/:id', requireAuth, requirePortfolioAccess, async (req, 
         include_in_totals !== false ? 1 : 0,
         req.params.id
     );
-
-    // Update tags
-    database.db.prepare('DELETE FROM portfolio_tags WHERE portfolio_id = ?').run(req.params.id);
-    if (tags && Array.isArray(tags)) {
-        const stmt = database.db.prepare('INSERT INTO portfolio_tags (portfolio_id, tag_id) VALUES (?, ?)');
-        for (const tId of tags) {
-            stmt.run(req.params.id, tId);
-        }
-    }
 
     triggerHistoryRebuild(req.params.id);
 
@@ -5486,21 +5426,26 @@ app.get('/api/analytics/portfolio-performance/:id', requireAuth, requirePortfoli
 
 app.get('/api/analytics/global-performance', requireAuth, async (req, res) => {
     try {
-        const { range, benchmark, tagIds } = req.query;
+        const { range, benchmark, tagIds, portfolioIds } = req.query;
         const tags = tagIds ? tagIds.split(',').map(Number) : null;
-        const cacheKey = `global_perf_${req.user.id}_${range || 'ALL'}_${benchmark || 'none'}_${tagIds || 'all'}`;
+        let pIdsToUse = portfolioIds ? portfolioIds.split(',').map(Number) : null;
+
+        const cacheKey = `global_perf_${req.user.id}_${range || 'ALL'}_${benchmark || 'none'}_${portfolioIds || 'all'}_${tagIds || 'all'}`;
 
         if (performanceResultsCache[cacheKey] && (Date.now() - performanceResultsCache[cacheKey].timestamp < CACHE_TTL)) {
             return res.json(performanceResultsCache[cacheKey].data);
         }
 
-        const userPortfolios = database.db.prepare(`
-            SELECT p.id FROM portfolios p
-            JOIN portfolio_users pu ON p.id = pu.portfolio_id
-            WHERE pu.user_id = ?
-        `).all(req.user.id);
-        const pIds = userPortfolios.map(p => p.id);
-        const dataPoints = await calculatePerformanceHistory(pIds, range, false, false, benchmark, req.user.id, tags);
+        if (!pIdsToUse) {
+            const userPortfolios = database.db.prepare(`
+                SELECT p.id FROM portfolios p
+                JOIN portfolio_users pu ON p.id = pu.portfolio_id
+                WHERE pu.user_id = ?
+            `).all(req.user.id);
+            pIdsToUse = userPortfolios.map(p => p.id);
+        }
+
+        const dataPoints = await calculatePerformanceHistory(pIdsToUse, range, false, false, benchmark, req.user.id, tags);
 
         let changePercent = 0;
         if (dataPoints.length > 1) {
