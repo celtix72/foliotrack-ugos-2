@@ -2906,7 +2906,7 @@ app.delete('/api/assets/:id', (req, res) => {
     }
 });
 
-// ─── NOTIFICATIONS API ──────────────────────────────────────────────────────
+// ─── NOTIFICATIONS API ────────────────────────────────────────────────
 
 app.get('/api/notifications', requireAuth, (req, res) => {
     try {

@@ -808,8 +808,7 @@
         if (!ctx) return;
 
         try {
-            let url = '/api/analytics/asset-allocation';
-            if (selectedPortfolioIds.length > 0) url += `?portfolioIds=${selectedPortfolioIds.join(',')}`;
+
             
             const res = await fetch(url);
             const data = await res.json();
