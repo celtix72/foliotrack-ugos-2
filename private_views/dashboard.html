@@ -618,7 +618,7 @@
         const winnersContainer = document.getElementById('top-winners');
         const losersContainer = document.getElementById('top-losers');
         if (winnersContainer && losersContainer) {
-            winnersContainer.innerHTML = (globalData.topWinners || []).map(a => `
+            winnersContainer.innerHTML = (data.global?.topWinners || []).map(a => `
                 <div class="flex items-center justify-between group">
                     <div class="flex items-center gap-2">
                         <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 font-bold text-xs ring-1 ring-emerald-500/20">
@@ -636,7 +636,7 @@
                 </div>
             `).join('') || '<div class="text-xs text-slate-400 italic">Nessun dato</div>';
 
-            losersContainer.innerHTML = (globalData.topLosers || []).map(a => `
+            losersContainer.innerHTML = (data.global?.topLosers || []).map(a => `
                 <div class="flex items-center justify-between group">
                     <div class="flex items-center gap-2">
                         <div class="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-500 font-bold text-xs ring-1 ring-rose-500/20">
@@ -1144,37 +1144,7 @@
 
         window.addEventListener('privacy-changed', () => {
             if (window._dashboardData) {
-                const data = window._dashboardData;
-                const globalData = data.global;
-                
-                document.getElementById('total-net-worth').innerText = formatPrivacy(globalData.totalNetValue, 'EUR', 'networth');
-                document.getElementById('total-gross-worth').innerText = formatPrivacy(globalData.totalValue, 'EUR', 'gross');
-
-                // GAIN TOTALE
-                const gainAmtP = globalData.totalGain ?? 0;
-                const gainElP = document.getElementById('total-gain-value');
-                if (gainElP) {
-                    const isGainPos = gainAmtP >= 0;
-                    gainElP.className = `text-xl font-bold tracking-tight ${isGainPos ? 'text-emerald-500' : 'text-rose-500'}`;
-                    gainElP.innerText = (isGainPos ? '+' : '') + formatPrivacy(gainAmtP, 'EUR', 'gain', 0);
-                }
-
-                // Update header var
-                const headerVar = document.getElementById('header-portfolio-var');
-                if (headerVar) {
-                    const change = globalData.changeValue || 0;
-                    const isPos = change >= 0;
-                    const formatted = formatPrivacy(change, 'EUR', 'h-var', 0);
-                    const sign = (formatted !== '****' && isPos) ? '+' : '';
-                    headerVar.innerHTML = `${sign}${formatted}`;
-                }
-
-                // Re-render portfolios to apply privacy
-                const pContainer = document.getElementById('portfolio-container');
-                if (data.portfolios && data.portfolios.length > 0) {
-                    if (pContainer) pContainer.innerHTML = data.portfolios.map(p => createPortfolioCard(p)).join('');
-                    renderSidebarPortfolios(data.portfolios);
-                }
+                updateDashboardUI(window._dashboardData);
             }
         });
 
