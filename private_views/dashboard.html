@@ -1222,20 +1222,25 @@
         };
 
         async function renderPortfolioTags(portfolioId = null) {
-            const list = document.getElementById('p-tag-list');
-            if (!list) return;
+            const select = document.getElementById('p-additional-tag');
+            if (!select) return;
             if (allTags.length === 0) await loadTags();
-            let pTags = [];
+            
+            let currentAdditionalTagId = null;
             if (portfolioId && window._dashboardData) {
                 const p = window._dashboardData.portfolios.find(x => x.id == portfolioId);
-                if (p) pTags = (p.tags || []).map(t => t.id);
+                if (p) {
+                    // Find the first tag that is NOT named 'ALL'
+                    const addTag = (p.tags || []).find(t => t.name !== 'ALL');
+                    if (addTag) currentAdditionalTagId = addTag.id;
+                }
             }
-            list.innerHTML = allTags.map(tag => `
-                <label class="flex items-center gap-2 cursor-pointer group">
-                    <input type="checkbox" name="p-tags" value="${tag.id}" ${pTags.includes(tag.id) ? 'checked' : ''} class="sr-only peer">
-                    <div class="px-2 py-1 rounded-lg text-[10px] font-bold border transition-all peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 group-hover:border-primary/50">${tag.name}</div>
-                </label>
-            `).join('') || '<span class="text-[10px] text-slate-400 italic">No tags defined.</span>';
+
+            // Fill dropdown excluding 'ALL'
+            const otherTags = allTags.filter(t => t.name !== 'ALL');
+            select.innerHTML = '<option value="">None</option>' + otherTags.map(tag => `
+                <option value="${tag.id}" ${currentAdditionalTagId == tag.id ? 'selected' : ''}>${tag.name}</option>
+            `).join('');
         }
 
         window.openTagManager = function() {
@@ -1293,7 +1298,12 @@
                     if (type) losses[type] = val;
                 });
 
-                const selectedTags = Array.from(document.querySelectorAll('input[name="p-tags"]:checked')).map(cb => parseInt(cb.value));
+                const additionalTagId = document.getElementById('p-additional-tag').value;
+                const allTag = allTags.find(t => t.name === 'ALL');
+                const selectedTags = [];
+                if (allTag) selectedTags.push(allTag.id);
+                if (additionalTagId) selectedTags.push(parseInt(additionalTagId));
+
                 const data = {
                     name: document.getElementById('p-name').value,
                     type: document.getElementById('p-type').value,
@@ -1376,14 +1386,24 @@
                 </div>
             </div>
             
-            <!-- Tags Selection -->
+            <!-- Tags Selection (Simplified) -->
             <div class="space-y-2">
                 <div class="flex items-center justify-between">
                     <label class="text-sm font-medium">Tags (Groups)</label>
                     <button type="button" onclick="openTagManager()" class="text-[10px] font-black uppercase text-primary hover:underline">Manage Tags</button>
                 </div>
-                <div id="p-tag-list" class="flex flex-wrap gap-2 p-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl">
-                    <!-- JS filled tags -->
+                <div class="flex flex-col gap-2 p-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl">
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-600">ALL</span>
+                        <span class="text-[10px] text-slate-400 font-medium italic">(Mandatory)</span>
+                    </div>
+                    <div class="flex flex-col gap-1.5 mt-1 border-t border-slate-200 dark:border-slate-800 pt-2">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase">Additional Tag</label>
+                        <select id="p-additional-tag" class="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-800 rounded-lg py-1.5 px-3 text-xs">
+                            <option value="">None</option>
+                            <!-- JS filled -->
+                        </select>
+                    </div>
                 </div>
             </div>
 

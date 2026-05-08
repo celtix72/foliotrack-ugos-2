@@ -276,14 +276,24 @@
                   </div>
               </div>
 
-              <!-- Tags Selection -->
-              <div class="space-y-2 mt-4">
+              <!-- Tags Selection (Simplified) -->
+              <div class="space-y-2">
                   <div class="flex items-center justify-between">
-                      <label class="text-sm font-medium">Tag (Gruppi)</label>
-                      <button type="button" onclick="mobOpenTagManager()" class="text-[10px] font-black uppercase text-primary">Gestisci</button>
+                      <label class="text-sm font-medium">Tags (Groups)</label>
+                      <button type="button" onclick="mobOpenTagManager()" class="text-[10px] font-black uppercase text-primary hover:underline">Gestisci Tags</button>
                   </div>
-                  <div id="p-tag-list" class="flex flex-wrap gap-2 p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
-                      <!-- JS filled tags -->
+                  <div class="flex flex-col gap-2 p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
+                      <div class="flex items-center gap-2">
+                          <span class="px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-600">ALL</span>
+                          <span class="text-[10px] text-slate-400 font-medium italic">(Obbligatorio)</span>
+                      </div>
+                      <div class="flex flex-col gap-1.5 mt-1 border-t border-slate-200 dark:border-slate-800 pt-2">
+                          <label class="text-[10px] font-bold text-slate-400 uppercase">Tag Aggiuntivo</label>
+                          <select id="p-additional-tag" class="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-800 rounded-lg py-1.5 px-3 text-xs">
+                              <option value="">Nessuno</option>
+                              <!-- JS filled -->
+                          </select>
+                      </div>
                   </div>
               </div>
 
@@ -760,6 +770,12 @@ window._mobileViewActive = true;
       if (type) losses[type] = val;
     });
 
+    const additionalTagId = document.getElementById('p-additional-tag').value;
+    const allTag = allTags.find(t => t.name === 'ALL');
+    const selectedTags = [];
+    if (allTag) selectedTags.push(allTag.id);
+    if (additionalTagId) selectedTags.push(parseInt(additionalTagId));
+
     const body = {
       name: document.getElementById('p-name').value,
       type: document.getElementById('p-type').value,
@@ -767,7 +783,7 @@ window._mobileViewActive = true;
       startDate: document.getElementById('p-date').value,
       initialCash: parseFloat(document.getElementById('p-cash').value),
       color: document.getElementById('p-color').value,
-      tags: Array.from(document.querySelectorAll('input[name="p-tags"]:checked')).map(cb => parseInt(cb.value)),
+      tags: selectedTags,
       losses: losses
     };
     const method = id ? 'PUT' : 'POST';
@@ -790,20 +806,23 @@ window._mobileViewActive = true;
   };
 
   async function mobRenderPortfolioTags(portfolioId = null) {
-    const list = document.getElementById('p-tag-list');
-    if (!list) return;
+    const select = document.getElementById('p-additional-tag');
+    if (!select) return;
     if (allTags.length === 0) await mobLoadTags();
-    let pTags = [];
+    
+    let currentAdditionalTagId = null;
     if (portfolioId && window._dashboardData) {
-      const p = window._dashboardData.portfolios.find(x => x.id == portfolioId);
-      if (p) pTags = (p.tags || []).map(t => t.id);
+        const p = window._dashboardData.portfolios.find(x => x.id == portfolioId);
+        if (p) {
+            const addTag = (p.tags || []).find(t => t.name !== 'ALL');
+            if (addTag) currentAdditionalTagId = addTag.id;
+        }
     }
-    list.innerHTML = allTags.map(tag => `
-      <label class="flex items-center gap-2 cursor-pointer group">
-          <input type="checkbox" name="p-tags" value="${tag.id}" ${pTags.includes(tag.id) ? 'checked' : ''} class="sr-only peer">
-          <div class="px-2 py-1 rounded-lg text-[10px] font-bold border transition-all peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 group-hover:border-primary/50">${tag.name}</div>
-      </label>
-    `).join('') || '<span class="text-[10px] text-slate-400 italic">Nessun tag definito.</span>';
+
+    const otherTags = allTags.filter(t => t.name !== 'ALL');
+    select.innerHTML = '<option value="">Nessuno</option>' + otherTags.map(tag => `
+        <option value="${tag.id}" ${currentAdditionalTagId == tag.id ? 'selected' : ''}>${tag.name}</option>
+    `).join('');
   }
 
   window.mobOpenTagManager = function() {

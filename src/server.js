@@ -2964,6 +2964,12 @@ app.delete('/api/notifications', requireAuth, (req, res) => {
 // ─── Tags APIs ──────────────────────────────────────────────────────────────
 app.get('/api/tags', requireAuth, (req, res) => {
     try {
+        // Ensure 'ALL' tag exists for this user
+        const allTag = database.db.prepare('SELECT * FROM tags WHERE user_id = ? AND name = ?').get(req.user.id, 'ALL');
+        if (!allTag) {
+            database.db.prepare('INSERT INTO tags (user_id, name, color) VALUES (?, ?, ?)')
+                .run(req.user.id, 'ALL', '#64748b');
+        }
         const tags = database.db.prepare('SELECT * FROM tags WHERE user_id = ? ORDER BY name ASC').all(req.user.id);
         res.json(tags);
     } catch (err) {
@@ -2996,6 +3002,10 @@ app.put('/api/tags/:id', requireAuth, (req, res) => {
 
 app.delete('/api/tags/:id', requireAuth, (req, res) => {
     try {
+        const tag = database.db.prepare('SELECT * FROM tags WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+        if (tag && tag.name === 'ALL') {
+            return res.status(403).json({ error: 'Cannot delete the mandatory ALL tag' });
+        }
         database.db.prepare('DELETE FROM tags WHERE id = ? AND user_id = ?').run(req.params.id, req.user.id);
         res.status(204).end();
     } catch (err) {
