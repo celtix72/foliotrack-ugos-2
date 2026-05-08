@@ -4602,8 +4602,15 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
             portfolios = database.db.prepare('SELECT * FROM portfolios').all();
         }
     } else {
+        let tagFilter = '';
+        let params = [];
+        if (tagIds && tagIds.length > 0) {
+            const placeholders = tagIds.map(() => '?').join(',');
+            tagFilter = ` AND id IN (SELECT portfolio_id FROM portfolio_tags WHERE tag_id IN (${placeholders}))`;
+            params = [...tagIds];
+        }
         portfolios = pIdsInput.length > 0 
-            ? database.db.prepare(`SELECT * FROM portfolios WHERE id IN (${pIdsInput.join(',')})`).all()
+            ? database.db.prepare(`SELECT * FROM portfolios WHERE id IN (${pIdsInput.join(',')}) ${tagFilter}`).all(...params)
             : [];
     }
 

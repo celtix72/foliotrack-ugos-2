@@ -660,11 +660,18 @@
         sidebar.innerHTML = portfolios.map(p => {
             const isPrivate = window.privacyState && window.privacyState.enabled;
             const displayVal = isPrivate ? '****' : formatCurrency(p.totalValue, p.currency, 0);
+            const tagHtml = (p.tags || []).map(t => `<span class="w-1 h-1 rounded-full" style="background-color: ${t.color}" title="${t.name}"></span>`).join('');
+            
             return `
                 <a href="/portfolio?id=${p.id}" class="flex items-center justify-between px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group">
                     <div class="flex items-center gap-3 overflow-hidden">
                         <div class="w-1.5 h-1.5 rounded-full shrink-0" style="background-color: ${p.color || '#6366f1'}"></div>
-                        <span class="text-xs font-medium truncate">${p.name}</span>
+                        <div class="flex flex-col min-w-0">
+                            <span class="text-xs font-medium truncate">${p.name}</span>
+                            <div class="flex gap-0.5 mt-0.5">
+                                ${tagHtml}
+                            </div>
+                        </div>
                     </div>
                     <span class="text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">${displayVal}</span>
                 </a>
