@@ -2874,7 +2874,7 @@ app.delete('/api/assets/:id', (req, res) => {
     // 2. Check for open positions (simplified: if sum(qty) > 0 in any portfolio)
     // Actually, if we just check if it's used in any transaction, we might want to keep it as "referenced".
     // But the user specifically asked for "remove from monitoring if NO OPEN POSITIONS".
-    // Tags endpoints removed as requested. }
+
     
     let hasOpenPosition = false;
     const portfolios = database.db.prepare(`SELECT id FROM portfolios`).all();
@@ -2964,11 +2964,7 @@ app.delete('/api/notifications', requireAuth, (req, res) => {
 
 // ─── Tags APIs ──────────────────────────────────────────────────────────────
 
-        res.status(204).end();
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
+
 
 async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds = null) {
     let liveRate = liveRateInput;
@@ -3470,13 +3466,31 @@ app.get('/api/portfolios/:id', requireAuth, requirePortfolioAccess, async (req, 
     }
 });
 
+
+
+
+
 app.get('/api/analytics/global-allocation', requireAuth, async (req, res) => {
     try {
-        const portfolios = database.db.prepare(`
-            SELECT p.id FROM portfolios p
-            JOIN portfolio_users pu ON p.id = pu.portfolio_id
-            WHERE pu.user_id = ? AND p.include_in_totals != 0
-        `).all(req.user.id);
+        const { portfolioIds } = req.query;
+        let pIdsToUse = portfolioIds ? portfolioIds.split(',').map(Number) : null;
+
+        let portfolios;
+        if (pIdsToUse) {
+            const placeholders = pIdsToUse.map(() => '?').join(',');
+            portfolios = database.db.prepare(`
+                SELECT p.id FROM portfolios p
+                JOIN portfolio_users pu ON p.id = pu.portfolio_id
+                WHERE pu.user_id = ? AND p.id IN (${placeholders})
+            `).all(req.user.id, ...pIdsToUse);
+        } else {
+            portfolios = database.db.prepare(`
+                SELECT p.id FROM portfolios p
+                JOIN portfolio_users pu ON p.id = pu.portfolio_id
+                WHERE pu.user_id = ? AND p.include_in_totals != 0
+            `).all(req.user.id);
+        }
+
         const liveRate = await getEurUsdRate();
         const typeMap = {};
         let totalGrossValue = 0;
