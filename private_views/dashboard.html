@@ -1125,8 +1125,10 @@
             if (title) title.innerText = 'New Portfolio';
             const form = document.getElementById('portfolio-form');
             if (form) form.reset();
-            const pid = document.getElementById('p-id');
-            if (pid) pid.value = '';
+            const pcolor = document.getElementById('p-color');
+            if (pcolor) pcolor.value = '#6366f1';
+            const pinclude = document.getElementById('p-include');
+            if (pinclude) pinclude.checked = true;
             const modal = document.getElementById('portfolio-modal');
             if (modal) modal.classList.remove('hidden');
         };
@@ -1147,7 +1149,8 @@
                     currency: document.getElementById('p-currency').value,
                     startDate: document.getElementById('p-date').value,
                     initialCash: parseFloat(document.getElementById('p-cash').value),
-                    color: document.getElementById('p-color').value
+                    color: document.getElementById('p-color').value,
+                    include_in_totals: document.getElementById('p-include').checked
                 };
                 const method = id ? 'PUT' : 'POST';
                 const url = id ? `/api/portfolios/${id}` : '/api/portfolios';
@@ -1219,6 +1222,10 @@
                     <label class="text-sm font-medium">Brand Color</label>
                     <input id="p-color" type="color" class="w-full h-[42px] bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-1 px-1 cursor-pointer" value="#6366f1"/>
                 </div>
+            </div>
+            <div class="flex items-center gap-3 pt-2">
+                <input type="checkbox" id="p-include" checked class="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary bg-slate-50 dark:bg-slate-900"/>
+                <label for="p-include" class="text-sm font-medium cursor-pointer">Include in global totals & reports</label>
             </div>
             <div class="pt-4 flex gap-3">
                 <div class="flex-1"></div>

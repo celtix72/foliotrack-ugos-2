@@ -3020,9 +3020,13 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null) {
         p.changeValueEUR = vDeltaEUR_Total;
         
         // Split between regular/PP for the Hero pill
-        const ratioReg = vDelta !== 0 ? (p.changeValue / vDelta) : 1;
-        globalChangeEUR += vDeltaEUR_Total * ratioReg;
-        globalChangePrePostEUR += vDeltaEUR_Total * (1 - ratioReg);
+        const ratioReg = vDelta !== 0 ? (p.performance1D / vDelta) : 1;
+        
+        // Aggregate only if included in totals
+        if (p.include_in_totals !== 0) {
+            globalChangeEUR += vDeltaEUR_Total * ratioReg;
+            globalChangePrePostEUR += vDeltaEUR_Total * (1 - ratioReg);
+        }
 
         const history = individual[p.id] || [];
         if (history.length > 0) {
@@ -3049,9 +3053,11 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null) {
         p.totalTax = details.totalLatentTax || 0;
         p.netValue = (p.totalValue || 0) - p.totalTax;
         
-        totalValueEUR += vCurrEUR;
-        totalTaxEUR += p.totalTax / rate;
-        totalNetValueEUR += p.netValue / rate;
+        if (p.include_in_totals !== 0) {
+            totalValueEUR += vCurrEUR;
+            totalTaxEUR += p.totalTax / rate;
+            totalNetValueEUR += p.netValue / rate;
+        }
     }
 
 
@@ -3063,7 +3069,8 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null) {
                    SUM(CASE WHEN t.type = 'BUY' THEN t.quantity ELSE -t.quantity END) as netQty 
             FROM transactions t
             JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
-            WHERE pu.user_id = ? AND t.assetTicker IS NOT NULL AND t.assetTicker != 'CASH'
+            JOIN portfolios p ON t.portfolioId = p.id
+            WHERE pu.user_id = ? AND p.include_in_totals != 0 AND t.assetTicker IS NOT NULL AND t.assetTicker != 'CASH'
             GROUP BY t.assetTicker 
             HAVING netQty > 0.001
         ) h ON a.ticker = h.assetTicker
@@ -3433,7 +3440,7 @@ app.get('/api/analytics/global-allocation', requireAuth, async (req, res) => {
         const portfolios = database.db.prepare(`
             SELECT p.id FROM portfolios p
             JOIN portfolio_users pu ON p.id = pu.portfolio_id
-            WHERE pu.user_id = ?
+            WHERE pu.user_id = ? AND p.include_in_totals != 0
         `).all(req.user.id);
         const liveRate = await getEurUsdRate();
         const typeMap = {};
@@ -3559,7 +3566,7 @@ app.get('/api/export-all-transactions', (req, res) => {
 
 app.post('/api/portfolios', requireAuth, (req, res) => {
     console.log('POST /api/portfolios:', req.body);
-    const { name, type, currency, startDate, initialCash, color, losses } = req.body;
+    const { name, type, currency, startDate, initialCash, color, include_in_totals, losses } = req.body;
 
     if (!name) return res.status(400).json({ error: 'Portfolio name is required' });
 
@@ -3569,9 +3576,9 @@ app.post('/api/portfolios', requireAuth, (req, res) => {
 
     database.db.transaction(() => {
         const result = database.db.prepare(`
-            INSERT INTO portfolios (name, type, currency, startDate, initialCash, currentCash, totalValue, investedCapital, color)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(name, type || 'Investimento', currency || 'EUR', start, cash, cash, cash, cash, pColor);
+            INSERT INTO portfolios (name, type, currency, startDate, initialCash, currentCash, totalValue, investedCapital, color, include_in_totals)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(name, type || 'Investimento', currency || 'EUR', start, cash, cash, cash, cash, pColor, include_in_totals !== false ? 1 : 0);
 
         const portfolioId = result.lastInsertRowid;
         
@@ -3605,9 +3612,9 @@ app.put('/api/portfolios/:id', requireAuth, requirePortfolioAccess, async (req, 
     const existing = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(req.params.id);
     if (!existing) return res.status(404).send('Portfolio not found');
 
-    const { name, type, currency, startDate, initialCash, color, losses } = req.body;
+    const { name, type, currency, startDate, initialCash, color, include_in_totals, losses } = req.body;
     database.db.prepare(`
-        UPDATE portfolios SET name=?, type=?, currency=?, startDate=?, initialCash=?, color=? WHERE id=?
+        UPDATE portfolios SET name=?, type=?, currency=?, startDate=?, initialCash=?, color=?, include_in_totals=? WHERE id=?
     `).run(
         name       || existing.name,
         type       || existing.type || 'Investimento',
@@ -3615,6 +3622,7 @@ app.put('/api/portfolios/:id', requireAuth, requirePortfolioAccess, async (req, 
         startDate  || existing.startDate,
         parseFloat(initialCash != null ? initialCash : existing.initialCash),
         color      || existing.color || '#6366f1',
+        include_in_totals !== false ? 1 : 0,
         req.params.id
     );
 
@@ -5195,11 +5203,13 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                     pAssetsVal /= rate;
                 }
 
-                dayValue += pValue;
-                dayProfit += pProfit;
-                dayCash += pCash;
-                dayAssets += pAssetsVal;
-                dayNetDeposits += (portfolioStates[p.id].netDeposits / (p.currency === 'USD' ? (fxRates['USD']?.[dateStr] || 1) : 1));
+                if (portfolios.length === 1 || p.include_in_totals !== 0) {
+                    dayValue += pValue;
+                    dayProfit += pProfit;
+                    dayCash += pCash;
+                    dayAssets += pAssetsVal;
+                    dayNetDeposits += (portfolioStates[p.id].netDeposits / (p.currency === 'USD' ? (fxRates['USD']?.[dateStr] || 1) : 1));
+                }
 
                 if (includeIndividual) {
                     const rateForP = p.currency === 'USD' ? (fxRates['USD']?.[dateStr] || 1) : 1;
@@ -5234,6 +5244,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
 
         let dayDividends = 0;
         for (const p of portfolios) {
+            if (portfolios.length > 1 && p.include_in_totals === 0) continue;
             let pDivs = portfolioStates[p.id].dividends;
             if (p.currency === 'USD') {
                 const rate = fxRates['USD']?.[dateStr] || 1;
@@ -5941,14 +5952,15 @@ app.get('/api/analytics/reports', requireAuth, async (req, res) => {
         const portfolios = database.db.prepare(`
             SELECT p.* FROM portfolios p
             JOIN portfolio_users pu ON p.id = pu.portfolio_id
-            WHERE pu.user_id = ?
+            WHERE pu.user_id = ? AND p.include_in_totals != 0
         `).all(req.user.id);
         if (portfolios.length === 0) return res.json({ error: 'No portfolios found' });
 
         const allTransactions = database.db.prepare(`
             SELECT t.* FROM transactions t
             JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
-            WHERE pu.user_id = ?
+            JOIN portfolios p ON t.portfolioId = p.id
+            WHERE pu.user_id = ? AND p.include_in_totals != 0
             ORDER BY t.date ASC
         `).all(req.user.id);
         const assets = database.db.prepare('SELECT * FROM assets').all();

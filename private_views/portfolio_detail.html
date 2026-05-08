@@ -561,6 +561,10 @@
                     <input id="p-color" type="color" class="w-full h-[42px] bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-1 px-1 cursor-pointer" value="#6366f1"/>
                 </div>
             </div>
+            <div class="flex items-center gap-3 pt-2">
+                <input type="checkbox" id="p-include" checked class="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary bg-slate-50 dark:bg-slate-900"/>
+                <label for="p-include" class="text-sm font-medium cursor-pointer">Include in global totals & reports</label>
+            </div>
 
             <!-- Fiscal Management (Minusvalenze) -->
             <div class="border-t border-slate-200 dark:border-slate-800 pt-4 mt-2">
@@ -720,8 +724,8 @@
 
         if (!id) {
             document.getElementById('p-id').value = '';
-            document.getElementById('portfolio-form').reset();
-            document.getElementById('p-type').value = 'Investimento';
+            document.getElementById('p-color').value = '#6366f1';
+            document.getElementById('p-include').checked = true;
             document.getElementById('portfolio-modal-title').innerText = "New Portfolio";
             document.getElementById('delete-portfolio-btn').classList.add('hidden');
             
@@ -745,6 +749,7 @@
                 document.getElementById('p-date').value = p.startDate;
                 document.getElementById('p-cash').value = p.initialCash;
                 document.getElementById('p-color').value = p.color || '#6366f1';
+                document.getElementById('p-include').checked = p.include_in_totals !== 0;
                 document.getElementById('portfolio-modal-title').innerText = "Edit Portfolio";
                 document.getElementById('delete-portfolio-btn').classList.remove('hidden');
 
@@ -1375,6 +1380,7 @@
                 startDate: document.getElementById('p-date').value,
                 initialCash: parseFloat(document.getElementById('p-cash').value),
                 color: document.getElementById('p-color').value,
+                include_in_totals: document.getElementById('p-include').checked,
                 losses: losses
             };
             const id = document.getElementById('p-id').value;

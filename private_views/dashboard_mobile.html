@@ -270,6 +270,10 @@
                       <input id="p-color" type="color" class="w-full h-[42px] bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg py-1 px-1 cursor-pointer" value="#6366f1"/>
                   </div>
               </div>
+              <div class="flex items-center gap-3 pt-1 pb-2">
+                  <input type="checkbox" id="p-include" checked class="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary bg-slate-50 dark:bg-slate-900"/>
+                  <label for="p-include" class="text-[13px] font-medium cursor-pointer">Includi nei totali globali e report</label>
+              </div>
               <div class="pt-4 flex gap-3">
                   <div class="flex-1"></div>
                   <button type="button" onclick="closePortfolioModal()" class="px-5 py-2 rounded-lg font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Annulla</button>
@@ -569,6 +573,8 @@ window._mobileViewActive = true;
     if (form) form.reset();
     const pid = document.getElementById('p-id');
     if (pid) pid.value = '';
+    const pinclude = document.getElementById('p-include');
+    if (pinclude) pinclude.checked = true;
     const modal = document.getElementById('portfolio-modal');
     if (modal) modal.style.display = 'flex';
   };
@@ -590,6 +596,7 @@ window._mobileViewActive = true;
       document.getElementById('p-date').value = p.startDate ? p.startDate.split('T')[0] : '';
       document.getElementById('p-cash').value = p.initialCash || 0;
       document.getElementById('p-color').value = p.color || '#6366f1';
+      document.getElementById('p-include').checked = p.include_in_totals !== 0;
       document.getElementById('portfolio-modal').style.display = 'flex';
       resetSwipes();
     } catch(e) { console.error('Error loading portfolio for edit:', e); }
@@ -604,7 +611,8 @@ window._mobileViewActive = true;
       currency: document.getElementById('p-currency').value,
       startDate: document.getElementById('p-date').value,
       initialCash: parseFloat(document.getElementById('p-cash').value),
-      color: document.getElementById('p-color').value
+      color: document.getElementById('p-color').value,
+      include_in_totals: document.getElementById('p-include').checked
     };
     const method = id ? 'PUT' : 'POST';
     const url = id ? `/api/portfolios/${id}` : '/api/portfolios';

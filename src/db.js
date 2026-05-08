@@ -38,6 +38,7 @@ function initDb() {
         investedCapital REAL NOT NULL DEFAULT 0,
         assetCount  INTEGER NOT NULL DEFAULT 0,
         color       TEXT,
+        include_in_totals INTEGER NOT NULL DEFAULT 1,
         createdAt   TEXT    NOT NULL DEFAULT (datetime('now'))
       );
 
@@ -194,6 +195,10 @@ function initDb() {
 
     try {
         dbConnection.prepare(`ALTER TABLE portfolios ADD COLUMN color TEXT DEFAULT '#6366f1'`).run();
+    } catch (e) {}
+
+    try {
+        dbConnection.prepare(`ALTER TABLE portfolios ADD COLUMN include_in_totals INTEGER NOT NULL DEFAULT 1`).run();
     } catch (e) {}
 
     // --- New Equity Metrics Migrations ---
