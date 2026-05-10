@@ -4861,6 +4861,11 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
         fxRates['USD'] = historicalPrices['EURUSD=X'];
     }
 
+    const formatDate = (date) => {
+        const d = new Date(date);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    };
+
     const dataPoints = [];
     let currentDate = new Date(startDate);
     
@@ -4954,11 +4959,6 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
             }
         }
     }
-
-    const formatDate = (date) => {
-        const d = new Date(date);
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    };
 
     while (currentDate <= endSimulationDate) {
         const dateStr = formatDate(currentDate);
