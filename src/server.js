@@ -5340,6 +5340,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
             netDeposits: !isFinite(dayNetDeposits) ? 0 : Math.round(dayNetDeposits),
             cash: !isFinite(dayCash) ? 0 : Math.round(dayCash),
             assets: !isFinite(dayAssets) ? 0 : Math.round(dayAssets),
+            benchmarkValue: !isFinite(dayNetDeposits + benchmarkProfit) ? 0 : Math.round(dayNetDeposits + benchmarkProfit),
             benchProfit: benchmarkProfit,
             events: dayEvents
         });
