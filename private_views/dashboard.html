@@ -705,6 +705,8 @@
         const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
         const textColor = isDark ? '#94a3b8' : '#64748b';
 
+        const isNetWorth = document.getElementById('toggle-net-worth')?.checked ?? true;
+
         dashboardChart = new Chart(ctx, {
             type: 'line',
             data: {
@@ -719,7 +721,8 @@
                     borderWidth: 2,
                     pointRadius: 0,
                     pointHoverRadius: 6,
-                    yAxisID: 'y'
+                    yAxisID: 'y',
+                    hidden: !isNetWorth
                 }, {
                     label: 'Net Profit/Loss',
                     data: [],
@@ -731,7 +734,8 @@
                     borderDash: [5, 5],
                     pointRadius: 0,
                     pointHoverRadius: 6,
-                    yAxisID: 'y1'
+                    yAxisID: 'y1',
+                    hidden: isNetWorth
                 }, {
                     label: 'Benchmark',
                     data: [],
@@ -770,9 +774,9 @@
                 },
                 scales: {
                     x: { ticks: { color: textColor, font: { size: 10 } }, grid: { display: false } },
-                    y: { grid: { color: gridColor } },
-                    y1: { position: 'right', ticks: { color: '#10b981', font: { size: 10 } }, grid: { display: false } }
-                }
+                    y: { display: isNetWorth, grid: { color: gridColor } },
+                    y1: { display: !isNetWorth, position: 'right', ticks: { color: '#10b981', font: { size: 10 } }, grid: { display: false } }
+                },
             }
         });
         updateDashboardChart();
@@ -938,7 +942,18 @@
     }
 
     window.toggleNetWorthVisibility = function() {
-        togglePrivacy();
+        if (!dashboardChart) return;
+        const isNetWorth = document.getElementById('toggle-net-worth').checked;
+        
+        // Toggle datasets visibility
+        dashboardChart.data.datasets[0].hidden = !isNetWorth;
+        dashboardChart.data.datasets[1].hidden = isNetWorth;
+        
+        // Also update the Y axes
+        dashboardChart.options.scales.y.display = isNetWorth;
+        dashboardChart.options.scales.y1.display = !isNetWorth;
+        
+        dashboardChart.update();
     };
 
     window.addEventListener('privacy-changed', () => {
