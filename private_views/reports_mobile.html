@@ -30,9 +30,9 @@
     <script src="/auth.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-    mobLoadTags();
-    mobLoadReportData();
-    if (window.ftAuth) ftAuth.initAuthGuard();
+            if (window.ftAuth) ftAuth.initAuthGuard();
+            mobLoadPortfolios();
+            mobLoadReportData();
         });
     </script>
 </head>
@@ -249,8 +249,6 @@
     let mobPerfChart, mobAssetChart, mobGeoChart, mobDivChart;
     let mobCurrentRange = '1Y';
     let mobLastData = null;
-    let allTags = [];
-    let selectedTagIds = JSON.parse(localStorage.getItem('selectedTagIds') || '[]');
 
     window.switchRepTab = function(tab) {
         document.getElementById('tab-portafogli').classList.remove('active');
@@ -263,7 +261,6 @@
         document.getElementById('tab-' + tab).classList.add('active');
         document.getElementById('view-' + tab).classList.remove('hidden');
         
-        // Resize charts to prevent sizing bugs when unhiding
         if (tab === 'performance' && mobPerfChart) mobPerfChart.resize();
         if (tab === 'performance' && mobDivChart) mobDivChart.resize();
         if (tab === 'allocazione' && mobAssetChart) mobAssetChart.resize();
@@ -278,43 +275,46 @@
         mobLoadReportData();
     };
 
-    async function mobLoadTags() {
+    let selectedPortfolioIds = JSON.parse(localStorage.getItem('selectedPortfolioIds') || '[]');
+
+    async function mobLoadPortfolios() {
       try {
-        const res = await fetch('/api/tags');
-        allTags = await res.json();
-        mobRenderTagFilters();
-      } catch (e) { console.error('Error loading tags:', e); }
+        const res = await fetch('/api/portfolios');
+        const data = await res.json();
+        window._allPortfolios = data.portfolios || [];
+        mobRenderPortfolioFilters();
+      } catch (e) { console.error('Error loading portfolios:', e); }
     }
 
-    function mobRenderTagFilters() {
+    function mobRenderPortfolioFilters() {
       const container = document.getElementById('mob-tag-filters');
-      if (!container) return;
-      container.innerHTML = allTags.map(tag => {
-        const isSelected = selectedTagIds.includes(tag.id);
+      if (!container || !window._allPortfolios) return;
+      container.innerHTML = window._allPortfolios.map(p => {
+        const isSelected = selectedPortfolioIds.includes(p.id);
         return `
-          <button onclick="mobToggleTagFilter(${tag.id})" 
+          <button onclick="mobTogglePortfolioFilter(${p.id})" 
                   class="px-4 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${isSelected ? 'bg-primary text-white shadow-md' : 'bg-white/10 text-white/70 border border-white/10'}">
-            ${tag.name}
+            ${p.name}
           </button>`;
       }).join('');
     }
 
-    function mobToggleTagFilter(tagId) {
-      if (selectedTagIds.includes(tagId)) {
-        selectedTagIds = selectedTagIds.filter(id => id !== tagId);
+    function mobTogglePortfolioFilter(pId) {
+      const idx = selectedPortfolioIds.indexOf(pId);
+      if (idx > -1) {
+        selectedPortfolioIds.splice(idx, 1);
       } else {
-        selectedTagIds.push(tagId);
+        selectedPortfolioIds.push(pId);
       }
-      localStorage.setItem('selectedTagIds', JSON.stringify(selectedTagIds));
-      mobRenderTagFilters();
+      localStorage.setItem('selectedPortfolioIds', JSON.stringify(selectedPortfolioIds));
+      mobRenderPortfolioFilters();
       mobLoadReportData();
     }
 
     async function mobLoadReportData() {
-        if (!window._mobileViewActive) return;
         try {
             let url = `/api/analytics/reports?range=${mobCurrentRange}`;
-            if (selectedTagIds.length > 0) url += `&tagIds=${selectedTagIds.join(',')}`;
+            if (selectedPortfolioIds.length > 0) url += `&portfolioIds=${selectedPortfolioIds.join(',')}`;
             const res = await fetch(url);
             const data = await res.json();
             if (data.error) return;
