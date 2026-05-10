@@ -29,8 +29,6 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             if (window.ftAuth) ftAuth.initAuthGuard();
-            loadReports();
-            loadTags();
         });
     </script>
 </head>
@@ -368,49 +366,50 @@
         await loadReportData();
     }
 
-    let allTags = [];
-    let selectedTagIds = JSON.parse(localStorage.getItem('selectedTagIds') || '[]');
+    let selectedPortfolioIds = JSON.parse(localStorage.getItem('selectedPortfolioIds') || '[]');
 
-    async function loadTags() {
+    async function loadPortfolios() {
         try {
-            const res = await fetch('/api/tags');
-            allTags = await res.json();
-            renderTagFilters();
+            const res = await fetch('/api/portfolios');
+            const data = await res.json();
+            window._allPortfolios = data.portfolios || [];
+            renderPortfolioFilters();
         } catch (err) {
-            console.error('Failed to load tags:', err);
+            console.error('Failed to load portfolios:', err);
         }
     }
 
-    function renderTagFilters() {
-        const container = document.getElementById('tag-filter-container');
-        if (!container) return;
+    function renderPortfolioFilters() {
+        const container = document.getElementById('tag-filter-container'); // Reusing same container for consistency
+        if (!container || !window._allPortfolios) return;
         
-        container.innerHTML = allTags.map(tag => {
-            const isSelected = selectedTagIds.includes(tag.id);
+        container.innerHTML = window._allPortfolios.map(p => {
+            const isSelected = selectedPortfolioIds.includes(p.id);
             return `
-                <button onclick="toggleTagFilter(${tag.id})" 
+                <button onclick="togglePortfolioFilter(${p.id})" 
                         class="px-3 py-1 rounded-full text-[10px] font-bold border transition-all ${isSelected ? 'bg-primary text-white border-primary shadow-sm shadow-primary/20' : 'bg-slate-50 dark:bg-slate-900 text-slate-500 border-slate-200 dark:border-slate-800 hover:border-primary/50'}">
-                    ${tag.name}
+                    ${p.name}
                 </button>
             `;
-        }).join('') + (allTags.length === 0 ? '<span class="text-[10px] text-slate-400 italic">No tags defined.</span>' : '');
+        }).join('') + (window._allPortfolios.length === 0 ? '<span class="text-[10px] text-slate-400 italic">No portfolios defined.</span>' : '');
     }
 
-    function toggleTagFilter(tagId) {
-        if (selectedTagIds.includes(tagId)) {
-            selectedTagIds = selectedTagIds.filter(id => id !== tagId);
+    function togglePortfolioFilter(pId) {
+        const idx = selectedPortfolioIds.indexOf(pId);
+        if (idx > -1) {
+            selectedPortfolioIds.splice(idx, 1);
         } else {
-            selectedTagIds.push(tagId);
+            selectedPortfolioIds.push(pId);
         }
-        localStorage.setItem('selectedTagIds', JSON.stringify(selectedTagIds));
-        renderTagFilters();
-        loadReports();
+        localStorage.setItem('selectedPortfolioIds', JSON.stringify(selectedPortfolioIds));
+        renderPortfolioFilters();
+        loadReportData();
     }
 
-    async function loadReports() {
+    async function loadReportData() {
         try {
             let url = `/api/analytics/reports?range=${currentRange}`;
-            if (selectedTagIds.length > 0) url += `&tagIds=${selectedTagIds.join(',')}`;
+            if (selectedPortfolioIds.length > 0) url += `&portfolioIds=${selectedPortfolioIds.join(',')}`;
             const res = await fetch(url);
             const data = await res.json();
             if (data.error) throw new Error(data.error);
@@ -739,7 +738,10 @@
         });
     }
 
-    document.addEventListener('DOMContentLoaded', loadReportData);
+    document.addEventListener('DOMContentLoaded', () => {
+        loadPortfolios();
+        loadReportData();
+    });
 </script>
 </body>
 </html>
