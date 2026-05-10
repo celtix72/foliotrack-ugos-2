@@ -3192,6 +3192,27 @@ app.get('/api/performance', requireAuth, async (req, res) => {
  * Helper to calculate ALL details for a portfolio (holdings, taxes, allocation, dividends, etc.)
  * This is the SINGLE SOURCE OF TRUTH for portfolio content.
  */
+function getAssetTypeColor(type) {
+    const colors = {
+        'Stock': '#135bec',
+        'Equity': '#135bec',
+        'Azione': '#135bec',
+        'ETF': '#818cf8',
+        'Bond': '#f59e0b',
+        'Obbligazione': '#f59e0b',
+        'Crypto': '#10b981',
+        'Cripto': '#10b981',
+        'Valuta': '#10b981',
+        'Liquidity': '#94a3b8',
+        'Cash': '#94a3b8',
+        'Liquidità': '#94a3b8',
+        'Gold': '#eab308',
+        'Commodity': '#eab308',
+        'Other': '#f43f5e'
+    };
+    return colors[type] || colors['Other'];
+}
+
 async function getPortfolioDetails(portfolioId, liveRate = null) {
     const portfolio = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(portfolioId);
     if (!portfolio) throw new Error('Portfolio non trovato');
@@ -3570,7 +3591,8 @@ app.get('/api/analytics/global-allocation', requireAuth, async (req, res) => {
             .map(([type, value]) => ({
                 type,
                 value: Math.round(value * 100) / 100,
-                percent: totalGrossValue > 0 ? Math.round((value / totalGrossValue) * 1000) / 10 : 0
+                percent: totalGrossValue > 0 ? Math.round((value / totalGrossValue) * 1000) / 10 : 0,
+                color: getAssetTypeColor(type)
             })).sort((a, b) => b.value - a.value);
 
         res.json(allocation);
