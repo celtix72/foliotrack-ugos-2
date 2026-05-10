@@ -99,6 +99,7 @@
                 <span id="market-dot-us" class="w-2 h-2 rounded-full bg-slate-300"></span>
             </div>
         </div>
+
     </div>
 
     <div class="flex items-center gap-4">
@@ -190,8 +191,8 @@
             </div>
         </div>
 
-        <!-- Portfolio Filters -->
-        <div id="portfolio-filter-container" class="flex flex-wrap gap-2 mt-6">
+        <!-- Portfolio Selection Tags -->
+        <div id="portfolio-filter-container" class="flex flex-wrap gap-2 mt-6 border-t border-slate-100 dark:border-slate-800 pt-6">
             <!-- JS filled portfolio buttons -->
         </div>
     </div>
@@ -434,18 +435,20 @@
         
         container.innerHTML = portfolios.map(p => {
             const isSelected = selectedPortfolioIds.includes(p.id);
+            // Gray if not selected, portfolio color if selected
             const style = isSelected 
-                ? `background-color: ${p.color || 'var(--primary)'}; color: white; border-color: ${p.color || 'var(--primary)'};` 
-                : `background-color: #f1f5f9; color: #64748b; border-color: #e2e8f0;`;
+                ? `background-color: ${p.color || '#6366f1'}; color: white; border-color: ${p.color || '#6366f1'};` 
+                : `background-color: #f1f5f9; color: #64748b; border-color: #e2e8f0; opacity: 0.6;`;
             
             return `
                 <button onclick="togglePortfolioFilter(${p.id})" 
                         style="${style}"
-                        class="px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all hover:scale-105 shadow-sm">
+                        class="px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all hover:scale-105 shadow-sm flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-white ${isSelected ? '' : 'hidden'}"></span>
                     ${p.name}
                 </button>
             `;
-        }).join('') + (portfolios.length === 0 ? '<span class="text-[10px] text-slate-400 italic">Nessun portafoglio definito.</span>' : '');
+        }).join('') || '<span class="text-[10px] text-slate-400 italic">Nessun portafoglio definito.</span>';
     }
 
     window.togglePortfolioFilter = function(pId) {
