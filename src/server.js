@@ -4871,14 +4871,9 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
     
     // Benchmark tracking variables
     const benchmarkData = benchmarkTicker ? historicalPrices[benchmarkTicker] : null;
-    let benchmarkStartPrice = null;
-    if (benchmarkData) {
-        // Find first available price for benchmark in range
-        const dates = Object.keys(benchmarkData).sort();
-        const startStr = formatDate(startDate);
-        const actualStart = dates.find(d => d >= startStr) || dates[0];
-        benchmarkStartPrice = benchmarkData[actualStart];
-    }
+    let benchmarkShadowValue = null;
+    let lastBenchmarkPrice = null;
+    let previousDayNetDeposits = null;
 
     // Initial state and metadata caching per portfolio
     const portfolioStates = {};
@@ -5305,10 +5300,26 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
 
         
         let benchmarkProfit = 0;
-        if (benchmarkStartPrice && benchmarkData && benchmarkData[dateStr]) {
+        if (benchmarkData && benchmarkData[dateStr]) {
             const currentBenchPrice = benchmarkData[dateStr];
-            const gainPct = (currentBenchPrice / benchmarkStartPrice) - 1;
-            benchmarkProfit = dayNetDeposits * gainPct;
+            
+            if (benchmarkShadowValue === null) {
+                // Initialize at start of chart to match portfolio value for a fair comparison
+                benchmarkShadowValue = dayValue;
+                previousDayNetDeposits = dayNetDeposits;
+            } else {
+                const dayNetFlow = dayNetDeposits - previousDayNetDeposits;
+                
+                if (lastBenchmarkPrice && lastBenchmarkPrice > 0) {
+                    // Recursive Shadow Portfolio: Grow existing value by benchmark return + add new cash flow
+                    benchmarkShadowValue = (benchmarkShadowValue * (currentBenchPrice / lastBenchmarkPrice)) + dayNetFlow;
+                } else {
+                    benchmarkShadowValue += dayNetFlow;
+                }
+                previousDayNetDeposits = dayNetDeposits;
+            }
+            lastBenchmarkPrice = currentBenchPrice;
+            benchmarkProfit = benchmarkShadowValue - dayNetDeposits;
         }
 
         if (!isFinite(dayValue) || isNaN(dayValue)) {
