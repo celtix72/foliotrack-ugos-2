@@ -937,6 +937,10 @@
         document.dispatchEvent(new CustomEvent('privacy-changed'));
     }
 
+    window.toggleNetWorthVisibility = function() {
+        togglePrivacy();
+    };
+
     window.addEventListener('privacy-changed', () => {
         const icon = document.getElementById('header-privacy-icon');
         if (icon) icon.innerText = window.privacyState.enabled ? 'visibility_off' : 'visibility';
