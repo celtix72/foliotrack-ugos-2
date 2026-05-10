@@ -30,52 +30,63 @@
 <body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex overflow-hidden">
 
 <!-- Sidebar -->
-<aside class="w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-surface-dark flex flex-col shrink-0">
+<aside class="w-72 border-r border-slate-200 dark:border-slate-800 flex flex-col h-screen sticky top-0 bg-white dark:bg-surface-dark shrink-0">
     <div class="p-6 flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/20">
-            <span class="material-symbols-outlined text-2xl">insights</span>
+        <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white shadow-lg shadow-primary/20">
+            <span class="material-symbols-outlined">query_stats</span>
         </div>
-        <h1 class="text-xl font-black tracking-tight">M2T</h1>
+        <div>
+            <h1 class="text-lg font-bold tracking-tight">M2T</h1>
+            <p class="text-xs text-slate-500 dark:text-slate-400">FolioTracker</p>
+        </div>
     </div>
-    
-    <nav class="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar mt-4">
-        <a href="/dashboard" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/10 text-primary font-bold transition-all">
-            <span class="material-symbols-outlined">dashboard</span> Dashboard
-        </a>
-        <a href="/market" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
-            <span class="material-symbols-outlined">trending_up</span> Markets
-        </a>
-        <a href="/watchlist" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
-            <span class="material-symbols-outlined">visibility</span> Watchlist
-        </a>
-        <a href="/history" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
-            <span class="material-symbols-outlined">history</span> History
-        </a>
-        <a href="/dividend" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
-            <span class="material-symbols-outlined">payments</span> Dividends
-        </a>
-        <a href="/reports" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
-            <span class="material-symbols-outlined">pie_chart</span> Reports
-        </a>
-        
-        <div class="pt-6 pb-2 px-4">
-            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Portfolios</p>
+    <nav class="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
+        <div class="pb-4">
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary font-medium" href="/dashboard">
+                <span class="material-symbols-outlined text-[20px]">dashboard</span><span>Dashboard</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/market">
+                <span class="material-symbols-outlined text-[20px]">trending_up</span><span>Market</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/reports">
+                <span class="material-symbols-outlined text-[20px]">pie_chart</span><span>Reports</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/history">
+                <span class="material-symbols-outlined text-[20px]">history</span>
+                <span>History</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/dividend">
+                <span class="material-symbols-outlined text-[20px]">payments</span>
+                <span>Dividend</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/watchlist">
+                <span class="material-symbols-outlined text-[20px]">visibility</span>
+                <span>Watchlist</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer" href="/settings">
+                <span class="material-symbols-outlined text-[20px]">settings</span><span>Settings</span>
+            </a>
+            <a id="sidebar-admin-link" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/admin" style="display: none;">
+                <span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
+                <span>Admin Panel</span>
+            </a>
         </div>
-        <div id="sidebar-portfolios" class="space-y-1">
-            <!-- Filled by JS -->
+        <div class="pt-4 border-t border-slate-200 dark:border-slate-800">
+            <div class="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Portfolios</div>
+            <div class="space-y-1" id="sidebar-portfolios">
+                <div class="px-3 py-2 text-xs text-slate-400 italic">Loading...</div>
+            </div>
         </div>
     </nav>
-
-    <div class="p-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
-        <a id="admin-link" href="/admin" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all hidden">
-            <span class="material-symbols-outlined">admin_panel_settings</span> Admin Panel
-        </a>
-        <a href="/settings" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
-            <span class="material-symbols-outlined">settings</span> Settings
-        </a>
-        <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all">
-            <span class="material-symbols-outlined">logout</span> Logout
-        </button>
+    <div class="p-4 border-t border-slate-200 dark:border-slate-800">
+        <div class="flex items-center gap-3 p-2 rounded-xl bg-slate-100 dark:bg-slate-900">
+            <div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-400 font-bold text-xs" id="sidebar-user-initials">UN</div>
+            <div class="flex-1 overflow-hidden">
+                <p class="text-sm font-bold truncate" id="sidebar-user-name">User</p>
+                <p class="text-xs text-slate-500 truncate" id="sidebar-user-role">Utente</p>
+            </div>
+            <span class="material-symbols-outlined text-slate-400 text-sm cursor-pointer hover:text-rose-500 transition-colors" id="sidebar-logout-btn">logout</span>
+        </div>
     </div>
 </aside>
 
