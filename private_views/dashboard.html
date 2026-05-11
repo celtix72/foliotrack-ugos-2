@@ -20,6 +20,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
     <script src="/transaction_modal.js"></script>
+    <script src="/bulk_import.js"></script>
     <script src="/auth.js"></script>
     <script>
         window.addEventListener('DOMContentLoaded', () => {
@@ -358,7 +359,6 @@
     </div>
 </main>
 </div>
-</div>
 
 <!-- Portfolio Modal -->
 <div id="portfolio-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
@@ -428,6 +428,55 @@
             </div>
         </form>
     </div>
+</div>
+
+<!-- Import Modal -->
+<div id="import-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-start justify-center pt-8 pb-8 px-4 overflow-y-auto">
+  <div class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-6xl shadow-2xl flex flex-col">
+    <div class="px-6 py-4 border-b flex items-center justify-between">
+      <h3 class="font-bold text-lg">Import</h3>
+      <button onclick="closeImportModal()"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div id="import-step-1" class="p-6 space-y-4">
+      <textarea id="import-paste-area" rows="12" class="w-full bg-slate-50 dark:bg-slate-900 rounded-xl p-4 font-mono text-xs" placeholder="Paste tab-separated data..."></textarea>
+      <div class="flex justify-end gap-3">
+        <button onclick="parseImportData()" class="px-7 py-2.5 bg-primary text-white rounded-lg font-bold">Parse</button>
+      </div>
+    </div>
+    <div id="import-step-2" class="hidden p-6 space-y-4">
+      <div class="overflow-x-auto rounded-xl border">
+        <table class="w-full text-xs text-left">
+          <thead class="bg-slate-50 dark:bg-slate-800/40">
+            <tr>
+              <th class="px-3 py-3">Status</th>
+              <th class="px-3 py-3">Date</th>
+              <th class="px-3 py-3">Type</th>
+              <th class="px-3 py-3">Ticker</th>
+              <th class="px-3 py-3">Name</th>
+              <th class="px-3 py-3">Curr</th>
+              <th class="px-3 py-3 text-right">FX</th>
+              <th class="px-3 py-3 text-right">Price</th>
+              <th class="px-3 py-3 text-right">Qty</th>
+              <th class="px-3 py-3 text-right">Comm</th>
+              <th class="px-3 py-3 text-right">Tax</th>
+              <th class="px-3 py-3 text-right">Total (Net)</th>
+            </tr>
+          </thead>
+          <tbody id="import-preview-body"></tbody>
+        </table>
+      </div>
+      <div class="flex gap-3 justify-end items-center">
+        <div class="flex-1 text-[10px] font-bold flex gap-4">
+          <span id="import-ok-count" class="text-emerald-500">0 OK</span>
+          <span id="import-warn-count" class="text-amber-500">0 Need Review</span>
+        </div>
+        <button onclick="confirmImport()" class="px-7 py-2.5 bg-emerald-600 text-white rounded-lg font-bold">Confirm</button>
+      </div>
+    </div>
+    <div id="import-step-3" class="hidden p-12 text-center">
+      <p id="import-progress-label">Processing...</p>
+    </div>
+  </div>
 </div>
 
 <script>
