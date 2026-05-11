@@ -742,8 +742,13 @@
             const res = await fetch('/api/analytics/current-month-dividends');
             const data = await res.json();
             if (data.hasDividends) {
-                titleEl.innerText = `Dividendi di ${data.monthName}`;
-                msgEl.innerText = `Hai ${data.count} ${data.count === 1 ? 'pagamento previsto' : 'pagamenti previsti'} (${formatCurrency(data.amount, 'EUR', 0)}).`;
+                if (data.isExDateToday) {
+                    titleEl.innerHTML = `<span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span> OGGI STACCO DIVIDENDI</span>`;
+                    msgEl.innerHTML = `<span class="text-emerald-600 dark:text-emerald-400 font-black">Oggi è il giorno di stacco per ${data.todayCount} asset!</span><br>Controlla le proiezioni nella pagina dividendi per i dettagli.`;
+                } else {
+                    titleEl.innerText = `Dividendi di ${data.monthName}`;
+                    msgEl.innerText = `Hai ${data.count} ${data.count === 1 ? 'pagamento previsto' : 'pagamenti previsti'} (${formatCurrency(data.amount, 'EUR', 0)}).`;
+                }
                 container.classList.remove('hidden');
             } else {
                 container.classList.add('hidden');

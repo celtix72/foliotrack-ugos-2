@@ -680,8 +680,14 @@
                         `;
                     }
 
+                    const now = new Date();
+                    const currentMonthStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+                    const isCurrentMonth = a.date.startsWith(currentMonthStr);
+                    const rowStyle = isCurrentMonth ? 'background-color: rgba(16, 185, 129, 0.1);' : '';
+
                     return `
                     <div class="mob-holding-swipe-container" 
+                         style="${rowStyle}"
                          ontouchstart="handleTouchStart(event, this)" 
                          ontouchmove="handleTouchMove(event, this)" 
                          ontouchend="handleTouchEnd(event, this)">
@@ -835,8 +841,14 @@
                 const divNetto = d.amount || 0;
                 const divLordo = divNetto + (d.tax || 0);
                 
+                const now = new Date();
+                const currentMonthStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+                const isCurrentMonth = d.date.startsWith(currentMonthStr);
+                const rowStyle = isCurrentMonth ? 'background-color: rgba(16, 185, 129, 0.1);' : '';
+
                 return `
                     <div class="mob-holding-swipe-container" 
+                         style="${rowStyle}"
                          ontouchstart="handleTouchStart(event, this)" 
                          ontouchmove="handleTouchMove(event, this)" 
                          ontouchend="handleTouchEnd(event, this)">

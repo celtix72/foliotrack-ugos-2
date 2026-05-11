@@ -448,8 +448,13 @@
             const divNetto = d.amount || 0;
             const divLordo = divNetto + (d.tax || 0);
 
+            const now = new Date();
+            const currentMonthStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+            const isCurrentMonth = d.date.startsWith(currentMonthStr);
+            const rowClass = isCurrentMonth ? 'bg-emerald-500/10 dark:bg-emerald-500/5' : '';
+
             return `
-            <tr class="group hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
+            <tr class="group hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors ${rowClass}">
                 <td class="px-5 py-2">
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-black text-[9px] shrink-0 uppercase border border-primary/20">
@@ -912,8 +917,13 @@
                         `;
                     }
 
+                    const now = new Date();
+                    const currentMonthStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+                    const isCurrentMonth = a.date.startsWith(currentMonthStr);
+                    const rowClass = isCurrentMonth ? 'bg-emerald-500/10 dark:bg-emerald-500/5' : '';
+
                     return `
-                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors group">
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors group ${rowClass}">
                         <td class="px-3 py-1.5">
                             <div class="flex items-center gap-2">
                                 <div class="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-black text-[9px] shrink-0 uppercase border border-primary/20">
