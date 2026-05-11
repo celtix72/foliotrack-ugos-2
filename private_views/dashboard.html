@@ -241,6 +241,14 @@
                             </div>
                             <span class="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Patrimonio</span>
                         </label>
+                        <!-- Performance % Toggle -->
+                        <label class="flex items-center gap-2 cursor-pointer group">
+                            <div class="relative w-8 h-4 bg-slate-200 dark:bg-slate-800 rounded-full transition-colors group-hover:bg-slate-300 dark:group-hover:bg-slate-700">
+                                <input type="checkbox" id="toggle-perf-pct" onchange="togglePerfPctVisibility()" class="sr-only peer">
+                                <div class="absolute left-0.5 top-0.5 w-3 h-3 bg-white rounded-full transition-transform peer-checked:translate-x-4 peer-checked:bg-emerald-500"></div>
+                            </div>
+                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Performance %</span>
+                        </label>
                         <!-- Benchmark Selector -->
                         <div class="flex items-center gap-2">
                             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Benchmark:</span>
@@ -799,6 +807,26 @@
                     pointRadius: 0,
                     hidden: true,
                     yAxisID: 'y1'
+                }, {
+                    label: 'S&P 500',
+                    data: [],
+                    borderColor: '#10b981',
+                    borderWidth: 1.5,
+                    borderDash: [2, 2],
+                    pointRadius: 0,
+                    fill: false,
+                    tension: 0.4,
+                    yAxisID: 'y'
+                }, {
+                    label: 'FTSE MIB',
+                    data: [],
+                    borderColor: '#f59e0b',
+                    borderWidth: 1.5,
+                    borderDash: [2, 2],
+                    pointRadius: 0,
+                    fill: false,
+                    tension: 0.4,
+                    yAxisID: 'y'
                 }]
             },
             options: {
@@ -818,6 +846,10 @@
                         callbacks: {
                             label: (context) => {
                                 const val = context.parsed.y;
+                                const isPct = document.getElementById('toggle-perf-pct')?.checked;
+                                if (isPct || context.dataset.label.includes('%') || context.dataset.label.includes('Index')) {
+                                    return context.dataset.label + ': ' + val.toFixed(2);
+                                }
                                 return context.dataset.label + ': ' + formatCurrency(val, 'EUR', 0);
                             }
                         }
@@ -836,6 +868,9 @@
     async function updateDashboardChart() {
         if (!dashboardChart) return;
         const benchmark = document.getElementById('benchmark-selector')?.value || '';
+        const isPerfPct = document.getElementById('toggle-perf-pct')?.checked;
+        const isNetWorth = document.getElementById('toggle-net-worth')?.checked;
+
         try {
             let url = `/api/analytics/global-performance?range=${currentChartRange}&benchmark=${benchmark}`;
             if (selectedPortfolioIds.length > 0) url += `&portfolioIds=${selectedPortfolioIds.join(',')}`;
@@ -849,15 +884,78 @@
                 const date = new Date(d.date);
                 return date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
             });
-            dashboardChart.data.datasets[0].data = dataPoints.map(d => d.value);
-            dashboardChart.data.datasets[1].data = dataPoints.map(d => d.profit);
-            
-            if (benchmark) {
-                dashboardChart.data.datasets[2].data = dataPoints.map(d => d.benchmarkValue);
-                dashboardChart.data.datasets[2].hidden = false;
+
+            if (isPerfPct) {
+                // Performance % Mode
+                dashboardChart.data.datasets[0].label = 'Portfolio %';
+                dashboardChart.data.datasets[0].data = dataPoints.map(d => d.normalized);
+                dashboardChart.data.datasets[0].hidden = false;
+                
+                dashboardChart.data.datasets[1].hidden = true; // Hide Profit/Loss
+                
+                // Benchmark (Custom)
+                if (benchmark && dataPoints[0] && dataPoints[0].benchmarkNormalized !== undefined) {
+                    dashboardChart.data.datasets[2].label = benchmark + ' %';
+                    dashboardChart.data.datasets[2].data = dataPoints.map(d => d.benchmarkNormalized);
+                    dashboardChart.data.datasets[2].hidden = false;
+                } else {
+                    dashboardChart.data.datasets[2].hidden = true;
+                }
+
+                // Default Benchmarks
+                dashboardChart.data.datasets[3].label = 'S&P 500 %';
+                dashboardChart.data.datasets[3].data = dataPoints.map(d => d.sp500Normalized);
+                dashboardChart.data.datasets[3].hidden = false;
+
+                dashboardChart.data.datasets[4].label = 'FTSE MIB %';
+                dashboardChart.data.datasets[4].data = dataPoints.map(d => d.ftsemibNormalized);
+                dashboardChart.data.datasets[4].hidden = false;
+
+                // Update axis
+                dashboardChart.options.scales.y.title = { display: true, text: 'Performance Index (100 = Start)' };
             } else {
-                dashboardChart.data.datasets[2].hidden = true;
+                // Wealth (EUR) Mode
+                dashboardChart.data.datasets[0].label = 'Net Worth';
+                dashboardChart.data.datasets[0].data = dataPoints.map(d => d.value);
+                dashboardChart.data.datasets[0].hidden = !isNetWorth;
+
+                dashboardChart.data.datasets[1].label = 'Net Profit/Loss';
+                dashboardChart.data.datasets[1].data = dataPoints.map(d => d.profit);
+                dashboardChart.data.datasets[1].hidden = isNetWorth;
+
+                // Benchmark (Custom)
+                if (benchmark) {
+                    dashboardChart.data.datasets[2].label = benchmark;
+                    dashboardChart.data.datasets[2].data = dataPoints.map(d => d.benchmarkValue);
+                    dashboardChart.data.datasets[2].hidden = false;
+                    dashboardChart.data.datasets[2].yAxisID = isNetWorth ? 'y' : 'y1';
+                } else {
+                    dashboardChart.data.datasets[2].hidden = true;
+                }
+
+                // Default Benchmarks (Shadow Portfolios)
+                dashboardChart.data.datasets[3].label = 'S&P 500';
+                dashboardChart.data.datasets[3].data = dataPoints.map(d => d.sp500Value);
+                dashboardChart.data.datasets[3].hidden = false;
+                dashboardChart.data.datasets[3].yAxisID = isNetWorth ? 'y' : 'y1';
+
+                dashboardChart.data.datasets[4].label = 'FTSE MIB';
+                dashboardChart.data.datasets[4].data = dataPoints.map(d => d.ftsemibValue);
+                dashboardChart.data.datasets[4].hidden = false;
+                dashboardChart.data.datasets[4].yAxisID = isNetWorth ? 'y' : 'y1';
+
+                dashboardChart.options.scales.y.title = { display: false };
             }
+
+            // Update Axis Visibility
+            if (isPerfPct) {
+                dashboardChart.options.scales.y.display = true;
+                dashboardChart.options.scales.y1.display = false;
+            } else {
+                dashboardChart.options.scales.y.display = isNetWorth;
+                dashboardChart.options.scales.y1.display = !isNetWorth;
+            }
+
             dashboardChart.update();
         } catch (err) { console.error('Chart update error:', err); }
     }
@@ -995,16 +1093,19 @@
     window.toggleNetWorthVisibility = function() {
         if (!dashboardChart) return;
         const isNetWorth = document.getElementById('toggle-net-worth').checked;
-        
-        // Toggle datasets visibility
-        dashboardChart.data.datasets[0].hidden = !isNetWorth;
-        dashboardChart.data.datasets[1].hidden = isNetWorth;
-        
-        // Also update the Y axes
-        dashboardChart.options.scales.y.display = isNetWorth;
-        dashboardChart.options.scales.y1.display = !isNetWorth;
-        
-        dashboardChart.update();
+        if (isNetWorth) {
+            document.getElementById('toggle-perf-pct').checked = false;
+        }
+        updateDashboardChart();
+    };
+
+    window.togglePerfPctVisibility = function() {
+        if (!dashboardChart) return;
+        const isPerfPct = document.getElementById('toggle-perf-pct').checked;
+        if (isPerfPct) {
+            document.getElementById('toggle-net-worth').checked = false;
+        }
+        updateDashboardChart();
     };
 
     window.addEventListener('privacy-changed', () => {

@@ -4545,7 +4545,7 @@ app.get('/api/market/exchange-rate', async (req, res) => {
 /**
  * Shared helper to calculate performance data points for one or more portfolios.
  */
-async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefresh = false, includeIndividual = false, benchmarkTicker = null, userId = null, tagIds = null) {
+async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefresh = false, includeIndividual = false, benchmarkTicker = null, userId = null, tagIds = null, includeDefaults = false) {
     const pIdsInput = portfolioIds === null ? null : (Array.isArray(portfolioIds) ? portfolioIds : [portfolioIds]);
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
@@ -4620,6 +4620,10 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
     const uniqueTickers = [...rawTickers];
     if (benchmarkTicker && !uniqueTickers.includes(benchmarkTicker)) {
         uniqueTickers.push(benchmarkTicker);
+    }
+    if (includeDefaults) {
+        if (!uniqueTickers.includes('^GSPC')) uniqueTickers.push('^GSPC');
+        if (!uniqueTickers.includes('FTSEMIB.MI')) uniqueTickers.push('FTSEMIB.MI');
     }
     if (hasNonEur && !uniqueTickers.includes('EURUSD=X')) {
         uniqueTickers.push('EURUSD=X');
@@ -4870,10 +4874,24 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
     let currentDate = new Date(startDate);
     
     // Benchmark tracking variables
-    const benchmarkData = benchmarkTicker ? historicalPrices[benchmarkTicker] : null;
-    let benchmarkShadowValue = null;
-    let lastBenchmarkPrice = null;
+    const benchmarksToTrack = [];
+    if (benchmarkTicker) benchmarksToTrack.push({ ticker: benchmarkTicker, label: 'benchmark' });
+    if (includeDefaults) {
+        benchmarksToTrack.push({ ticker: '^GSPC', label: 'sp500' });
+        benchmarksToTrack.push({ ticker: 'FTSEMIB.MI', label: 'ftsemib' });
+    }
+
+    const benchmarkStates = benchmarksToTrack.map(b => ({
+        ticker: b.ticker,
+        label: b.label,
+        data: historicalPrices[b.ticker],
+        shadowValue: null,
+        lastPrice: null,
+        firstPrice: null
+    }));
+
     let previousDayNetDeposits = null;
+    let portfolioFirstRatio = null;
 
     // Initial state and metadata caching per portfolio
     const portfolioStates = {};
@@ -5299,28 +5317,44 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
 
 
         
-        let benchmarkProfit = 0;
-        if (benchmarkData && benchmarkData[dateStr]) {
-            const currentBenchPrice = benchmarkData[dateStr];
-            
-            if (benchmarkShadowValue === null) {
-                // Initialize at start of chart to match portfolio value for a fair comparison
-                benchmarkShadowValue = dayValue;
-                previousDayNetDeposits = dayNetDeposits;
-            } else {
-                const dayNetFlow = dayNetDeposits - previousDayNetDeposits;
+        // Benchmarks Calculation
+        const benchmarksResult = {};
+        for (const bState of benchmarkStates) {
+            if (bState.data && bState.data[dateStr]) {
+                const currentPrice = bState.data[dateStr];
                 
-                if (lastBenchmarkPrice && lastBenchmarkPrice > 0) {
-                    // Recursive Shadow Portfolio: Grow existing value by benchmark return + add new cash flow
-                    benchmarkShadowValue = (benchmarkShadowValue * (currentBenchPrice / lastBenchmarkPrice)) + dayNetFlow;
+                // Shadow Portfolio Calculation (Absolute comparison)
+                if (bState.shadowValue === null) {
+                    bState.shadowValue = dayValue;
+                    bState.firstPrice = currentPrice;
                 } else {
-                    benchmarkShadowValue += dayNetFlow;
+                    const dayNetFlow = dayNetDeposits - (previousDayNetDeposits || dayNetDeposits);
+                    if (bState.lastPrice && bState.lastPrice > 0) {
+                        bState.shadowValue = (bState.shadowValue * (currentPrice / bState.lastPrice)) + dayNetFlow;
+                    } else {
+                        bState.shadowValue += dayNetFlow;
+                    }
                 }
-                previousDayNetDeposits = dayNetDeposits;
+
+                // Normalized Index Calculation (Relative comparison, starts at 100)
+                const normalizedValue = bState.firstPrice ? (currentPrice / bState.firstPrice) * 100 : 100;
+
+                benchmarksResult[bState.label + 'Value'] = Math.round(bState.shadowValue);
+                benchmarksResult[bState.label + 'Profit'] = Math.round(bState.shadowValue - dayNetDeposits);
+                benchmarksResult[bState.label + 'Normalized'] = parseFloat(normalizedValue.toFixed(2));
+                
+                bState.lastPrice = currentPrice;
             }
-            lastBenchmarkPrice = currentBenchPrice;
-            benchmarkProfit = benchmarkShadowValue - dayNetDeposits;
         }
+
+        // Portfolio Normalization (TWR-like index starting at 100)
+        // We use the same "implied investment" logic as the reports page
+        const currentInv = dayNetDeposits > 0 ? dayNetDeposits : Math.max(1, dayValue - dayProfit);
+        const currentRatio = dayValue / currentInv;
+        if (portfolioFirstRatio === null) portfolioFirstRatio = currentRatio;
+        const portfolioNormalized = portfolioFirstRatio ? (currentRatio / portfolioFirstRatio) * 100 : 100;
+
+        previousDayNetDeposits = dayNetDeposits;
 
         if (!isFinite(dayValue) || isNaN(dayValue)) {
             // Log exactly which portfolio and asset caused the issue if possible
@@ -5351,9 +5385,9 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
             netDeposits: !isFinite(dayNetDeposits) ? 0 : Math.round(dayNetDeposits),
             cash: !isFinite(dayCash) ? 0 : Math.round(dayCash),
             assets: !isFinite(dayAssets) ? 0 : Math.round(dayAssets),
-            benchmarkValue: !isFinite(dayNetDeposits + benchmarkProfit) ? 0 : Math.round(dayNetDeposits + benchmarkProfit),
-            benchProfit: benchmarkProfit,
-            events: dayEvents
+            normalized: parseFloat(portfolioNormalized.toFixed(2)),
+            ...benchmarksResult,
+            events: typeof dayEvents !== 'undefined' ? dayEvents : []
         });
         currentDate.setDate(currentDate.getDate() + 1);
     }
@@ -5486,7 +5520,7 @@ app.get('/api/analytics/global-performance', requireAuth, async (req, res) => {
             pIdsToUse = userPortfolios.map(p => p.id);
         }
 
-        const dataPoints = await calculatePerformanceHistory(pIdsToUse, range, false, false, benchmark, req.user.id, tags);
+        const dataPoints = await calculatePerformanceHistory(pIdsToUse, range, false, false, benchmark, req.user.id, tags, true);
 
         let changePercent = 0;
         if (dataPoints.length > 1) {
