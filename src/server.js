@@ -6089,34 +6089,35 @@ app.get('/api/analytics/current-month-dividends', requireAuth, async (req, res) 
 
 app.get('/api/analytics/reports', requireAuth, async (req, res) => {
     try {
-        const { range = '1Y', tagIds } = req.query;
-        const tags = tagIds ? tagIds.split(',').map(Number) : null;
+        const { range = '1Y', portfolioIds } = req.query;
+        // Parse selected portfolio IDs from query string
+        const selectedPIds = (portfolioIds && portfolioIds.trim() !== '')
+            ? portfolioIds.split(',').map(Number).filter(n => !isNaN(n))
+            : null;
 
-        let tagFilter = '';
+        // Build portfolio filter: if specific IDs provided use them, else all user portfolios
+        let portfolioFilter = '';
         let params = [req.user.id];
-        if (tags && tags.length > 0) {
-            const placeholders = tags.map(() => '?').join(',');
-            tagFilter = ` AND p.id IN (SELECT portfolio_id FROM portfolio_tags WHERE tag_id IN (${placeholders}))`;
-            params = [...params, ...tags];
-        } else {
-            // Default to older include_in_totals flag if no tags specified
-            tagFilter = ' AND p.include_in_totals != 0';
+        if (selectedPIds && selectedPIds.length > 0) {
+            const placeholders = selectedPIds.map(() => '?').join(',');
+            portfolioFilter = ` AND p.id IN (${placeholders})`;
+            params = [...params, ...selectedPIds];
         }
 
         const portfolios = database.db.prepare(`
             SELECT p.* FROM portfolios p
             JOIN portfolio_users pu ON p.id = pu.portfolio_id
-            WHERE pu.user_id = ? ${tagFilter}
+            WHERE pu.user_id = ? ${portfolioFilter}
         `).all(...params);
         if (portfolios.length === 0) return res.json({ error: 'No portfolios found' });
 
+        const pIdsForQuery = portfolios.map(p => p.id);
+        const txPlaceholders = pIdsForQuery.map(() => '?').join(',');
         const allTransactions = database.db.prepare(`
             SELECT t.* FROM transactions t
-            JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
-            JOIN portfolios p ON t.portfolioId = p.id
-            WHERE pu.user_id = ? ${tagFilter}
+            WHERE t.portfolioId IN (${txPlaceholders})
             ORDER BY t.date ASC
-        `).all(...params);
+        `).all(...pIdsForQuery);
         const assets = database.db.prepare('SELECT * FROM assets').all();
         const assetMap = Object.fromEntries(assets.map(a => [a.ticker, a]));
 
@@ -6162,7 +6163,11 @@ app.get('/api/analytics/reports', requireAuth, async (req, res) => {
         const dateStrStart = startDate.toISOString().split('T')[0];
         const dateStrEnd = today.toISOString().split('T')[0];
 
-        const portfolioData = await calculatePerformanceHistory(null, range, false, true, null, req.user.id);
+        // Pass the selected portfolio IDs so performance history respects the filter
+        const portfolioData = await calculatePerformanceHistory(
+            selectedPIds && selectedPIds.length > 0 ? selectedPIds : pIdsForQuery,
+            range, false, true, null, req.user.id
+        );
         if (!portfolioData || !portfolioData.dataPoints || portfolioData.dataPoints.length === 0) {
              return res.json({ error: 'No performance data' });
         }
@@ -6318,10 +6323,11 @@ app.get('/api/analytics/reports', requireAuth, async (req, res) => {
             };
         }
 
-        // 2. Diversification
+        // 2. Diversification (assetType, geography, currency)
         const diversification = {
             geography: {},
-            assetType: {}
+            assetType: {},
+            currency: {}
         };
 
         for (const p of portfolios) {
@@ -6335,12 +6341,16 @@ app.get('/api/analytics/reports', requireAuth, async (req, res) => {
                 if (shares <= 0.0001) continue;
                 const a = assetMap[ticker];
                 if (!a) continue;
-                const value = shares * (a.currentPrice / (pTxs.filter(tx => tx.assetTicker === ticker && tx.exchangeRate).at(-1)?.exchangeRate || 1));
+                // Use last known exchange rate for currency conversion
+                const lastExRate = pTxs.filter(tx => tx.assetTicker === ticker && tx.exchangeRate).at(-1)?.exchangeRate || 1;
+                const value = shares * (a.currentPrice / lastExRate);
 
                 const geo = a.country || 'Unknown';
                 const type = a.type || 'Other';
+                const currency = a.currency || p.currency || 'EUR';
                 diversification.geography[geo] = (diversification.geography[geo] || 0) + value;
                 diversification.assetType[type] = (diversification.assetType[type] || 0) + value;
+                diversification.currency[currency] = (diversification.currency[currency] || 0) + value;
             }
         }
 

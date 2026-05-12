@@ -152,11 +152,11 @@
       
       <!-- Range Selector -->
       <div class="mob-chart-range-bar" id="mob-reports-range-bar">
-        <div class="mob-range-btn" onclick="mobChangeRange('YTD')" data-range="YTD">YTD</div>
+        <div class="mob-range-btn" onclick="mobChangeRange('6M')" data-range="6M">6M</div>
         <div class="mob-range-btn active" onclick="mobChangeRange('1Y')" data-range="1Y">1Y</div>
+        <div class="mob-range-btn" onclick="mobChangeRange('2Y')" data-range="2Y">2Y</div>
         <div class="mob-range-btn" onclick="mobChangeRange('3Y')" data-range="3Y">3Y</div>
         <div class="mob-range-btn" onclick="mobChangeRange('5Y')" data-range="5Y">5Y</div>
-        <div class="mob-range-btn" onclick="mobChangeRange('ALL')" data-range="ALL">ALL</div>
       </div>
 
       <div class="mob-chart-canvas-wrapper" style="height: 180px;">
@@ -215,6 +215,17 @@
           </div>
           <div class="mob-allocation-legend" id="mob-geo-legend"></div>
         </div>
+
+        <!-- Diversification Currency -->
+        <div class="mob-section-header">
+          <span class="mob-section-title">Currency</span>
+        </div>
+        <div class="mob-allocation-card">
+          <div class="mob-allocation-chart">
+            <canvas id="mob-currency-chart"></canvas>
+          </div>
+          <div class="mob-allocation-legend" id="mob-currency-legend"></div>
+        </div>
     </div> <!-- End view-allocazione -->
 
     <!-- Bottom spacer -->
@@ -246,7 +257,7 @@
 
 <script>
     // ─── Mobile Reports Logic ────────────────────────────────────────────────
-    let mobPerfChart, mobAssetChart, mobGeoChart, mobDivChart;
+    let mobPerfChart, mobAssetChart, mobGeoChart, mobCurrencyChart, mobDivChart;
     let mobCurrentRange = '1Y';
     let mobLastData = null;
 
@@ -265,6 +276,7 @@
         if (tab === 'performance' && mobDivChart) mobDivChart.resize();
         if (tab === 'allocazione' && mobAssetChart) mobAssetChart.resize();
         if (tab === 'allocazione' && mobGeoChart) mobGeoChart.resize();
+        if (tab === 'allocazione' && mobCurrencyChart) mobCurrencyChart.resize();
     };
 
     window.mobChangeRange = function(range) {
@@ -571,7 +583,28 @@
                 <span class="mob-alloc-pct">${((x[1]/Object.values(data.diversification.geography).reduce((a,b)=>a+b,0))*100).toFixed(0)}%</span>
             </div>`).join('');
 
-        // Dividends
+        // Currency Doughnut
+        const currCtxMob = document.getElementById('mob-currency-chart') ? document.getElementById('mob-currency-chart').getContext('2d') : null;
+        if (currCtxMob) {
+            const currData = Object.entries(data.diversification.currency||{}).sort((a,b) => b[1]-a[1]);
+            if (mobCurrencyChart) mobCurrencyChart.destroy();
+            mobCurrencyChart = new Chart(currCtxMob, {
+                type: 'doughnut',
+                data: {
+                    labels: currData.map(x => x[0]),
+                    datasets: [{ data: currData.map(x => x[1]), backgroundColor: colors, borderWidth: 0, hoverOffset: 4 }]
+                },
+                options: { cutout: '72%', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+            const currTotal = currData.reduce((a,b)=>a+b[1],0);
+            document.getElementById('mob-currency-legend').innerHTML = currData.slice(0,5).map((x,i) => `
+                <div class="mob-alloc-item">
+                    <div class="mob-alloc-dot" style="background:${colors[i%colors.length]}"></div>
+                    <span class="mob-alloc-type">${x[0]}</span>
+                    <span class="mob-alloc-pct">${currTotal>0?((x[1]/currTotal)*100).toFixed(0):0}%</span>
+                </div>`).join('');
+        }
+
         const dCtx = document.getElementById('mob-div-chart').getContext('2d');
         if (mobDivChart) mobDivChart.destroy();
         const totalDiv = data.dividends.reduce((s, x) => s + x.amount, 0);
