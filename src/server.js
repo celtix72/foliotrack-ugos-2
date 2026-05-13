@@ -5541,6 +5541,46 @@ app.get('/api/analytics/global-performance', requireAuth, async (req, res) => {
     }
 });
 
+// ─── MARKET INDICES ────────────────────────────────────────────────────────────
+
+const indicesCache = {};     // ticker → { data, ts }
+const INDICES_CACHE_TTL = 60 * 1000; // 60s
+
+app.get('/api/indices', requireAuth, async (req, res) => {
+    try {
+        const raw = (req.query.tickers || '').split(',').map(t => t.trim()).filter(Boolean).slice(0, 3);
+        if (raw.length === 0) return res.json([]);
+
+        const results = await Promise.all(raw.map(async (ticker) => {
+            const now = Date.now();
+            if (indicesCache[ticker] && (now - indicesCache[ticker].ts < INDICES_CACHE_TTL)) {
+                return indicesCache[ticker].data;
+            }
+            try {
+                const meta = await fetchAssetMetadata(ticker);
+                const item = {
+                    ticker,
+                    name:          meta?.name || ticker,
+                    price:         meta?.currentPrice || null,
+                    changePercent: meta?.changePercent || 0,
+                    changeValue:   meta?.changeValue || 0,
+                    currency:      meta?.currency || 'USD',
+                };
+                indicesCache[ticker] = { data: item, ts: now };
+                return item;
+            } catch (e) {
+                logger.warn(`Indices fetch failed for ${ticker}: ${e.message}`);
+                return { ticker, name: ticker, price: null, changePercent: 0, changeValue: 0, currency: '' };
+            }
+        }));
+
+        res.json(results);
+    } catch (err) {
+        logger.error('Indices API error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ─── FINANCIAL NEWS (RSS proxy) ────────────────────────────────────────────────
 
 let newsCache = null;
