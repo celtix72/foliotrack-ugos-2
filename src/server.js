@@ -3038,6 +3038,7 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
         p.roi = details.roi || 0;
         p.twr = details.twr || 0;
         p.xirr = details.xirr || 0;
+        p.minusvalenze = Object.values(details.losses || {}).reduce((s, a) => s + a, 0);
 
         const vCurr = p.totalValue;
         const vDelta = p.changeValue + p.changeValuePrePost;
@@ -3048,6 +3049,7 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
         const vPrevEUR = vPrev / prevRate;
         const vDeltaEUR_Total = vCurrEUR - vPrevEUR;
         p.changeValueEUR = vDeltaEUR_Total;
+        p.netValue = p.totalValue - p.totalTax;
         
         // Split between regular/PP for the Hero pill
         const ratioReg = vDelta !== 0 ? (p.performance1D / vDelta) : 1;
