@@ -754,6 +754,18 @@
 
     let allTags = [];
 
+    // ─── Formatting helpers for holdings table ─────────────────────────────
+    function ftFormatYield(y) {
+        if (y === null || y === undefined || y === 0) return '—';
+        // Yahoo returns yield as decimal (e.g. 0.0312 = 3.12%)
+        const pct = Math.abs(y) < 1 ? y * 100 : y;
+        return pct.toFixed(2) + '%';
+    }
+    function ftFormatPE(pe) {
+        if (pe === null || pe === undefined || pe <= 0) return '—';
+        return pe.toFixed(1) + 'x';
+    }
+
     async function loadTags() {
         try {
             const res = await fetch('/api/tags');
@@ -1155,47 +1167,46 @@
             return `
             <tr class="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors cursor-pointer group/row" onclick="toggleAssetTransactions('${h.ticker}')">
                 <!-- ASSET INFO -->
-                <td class="px-5 py-2">
-                    <div class="flex items-center gap-4">
+                <td class="px-5 py-1.5">
+                    <div class="flex items-center gap-3">
                         <!-- Ticker Avatar -->
-                        <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-[9px] shrink-0 uppercase border border-primary/20 group-hover/row:bg-primary group-hover/row:text-white group-hover/row:border-primary transition-all">
-                            <span id="expand-icon-${h.ticker}" class="material-symbols-outlined text-[18px]">chevron_right</span>
+                        <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-[9px] shrink-0 uppercase border border-primary/20 group-hover/row:bg-primary group-hover/row:text-white group-hover/row:border-primary transition-all">
+                            <span id="expand-icon-${h.ticker}" class="material-symbols-outlined text-[17px]">chevron_right</span>
                         </div>
                         <div class="min-w-0">
                             <!-- Name row -->
                             <div class="flex items-center gap-2 flex-wrap">
-                                <p class="font-black text-base text-slate-900 dark:text-white leading-tight">${h.name}</p>
+                                <p class="font-black text-sm text-slate-900 dark:text-white leading-tight">${h.name}</p>
                                 ${manualBtn}
                             </div>
                             <!-- Meta row -->
-                            <p class="text-[9px] text-slate-400 uppercase font-black tracking-widest mt-1 flex items-center gap-1.5 flex-wrap">
+                            <p class="text-[9px] text-slate-400 uppercase font-black tracking-widest mt-0.5 flex items-center gap-1.5 flex-wrap">
                                 <span>${h.ticker}</span>
                                 <span class="text-slate-300 dark:text-slate-700">•</span>
                                 <span>${h.currency}</span>
                                 <span class="px-1.5 py-0.5 rounded text-[8px] font-black leading-none ${sourceClass}">${sourceLabel}</span>
-                                ${h.dataSource === 'YF' ? '<span class="material-symbols-outlined text-primary text-[13px]" title="Yahoo Finance">bolt</span>' : ''}
                             </p>
                         </div>
                     </div>
                 </td>
 
                 <!-- QTY & AVG COST -->
-                <td class="px-5 py-2">
+                <td class="px-5 py-1.5">
                     <p class="font-black text-slate-800 dark:text-slate-100 font-mono text-sm">${formatNumber(h.shares, 0)}</p>
                     <p class="text-[10px] text-slate-400 font-bold font-mono mt-0.5">${formatCurrency(h.avgCostAssetCurr, h.currency, 2)} <span class="opacity-60 text-[9px]">avg</span></p>
                 </td>
 
                 <!-- MARKET PRICE + 1D -->
-                <td class="px-5 py-2">
+                <td class="px-5 py-1.5">
                     <p class="font-black text-slate-900 dark:text-white font-mono text-sm">${formatCurrency(h.currentPrice, h.currency, 2)}</p>
                     <div class="flex items-center gap-1 mt-0.5">
-                        <span class="material-symbols-outlined text-[12px] text-${dayColor}-500">${(h.changeValue || 0) >= 0 ? 'trending_up' : 'trending_down'}</span>
+                        <span class="material-symbols-outlined text-[11px] text-${dayColor}-500">${(h.changeValue || 0) >= 0 ? 'trending_up' : 'trending_down'}</span>
                         <span class="text-[10px] font-black text-${dayColor}-500 font-mono">${daySign}${formatCurrency(dailyGain, currency, 0)}</span>
                     </div>
                 </td>
 
                 <!-- YIELD / PE -->
-                <td class="px-5 py-2 text-right">
+                <td class="px-5 py-1.5 text-right">
                     <div class="flex flex-col items-end gap-0.5">
                         <span class="text-xs font-bold text-emerald-500">${ftFormatYield(h.dividendYield)}</span>
                         <span class="text-[10px] font-bold text-slate-500 font-mono">${ftFormatPE(h.pe)} <span class="text-[9px] opacity-60">PE</span></span>
@@ -1203,7 +1214,7 @@
                 </td>
 
                 <!-- VALUE + GAIN -->
-                <td class="px-5 py-2 text-right">
+                <td class="px-5 py-1.5 text-right">
                     <p class="font-black text-slate-900 dark:text-white font-mono text-sm">${formatCurrency(h.currentValue, currency, 0)}</p>
                     <div class="flex items-center justify-end gap-1 mt-0.5">
                         <span class="text-[10px] font-black text-${gainColor}-500 font-mono">${gainSign}${formatCurrency(h.unrealizedGain, currency, 0)}</span>

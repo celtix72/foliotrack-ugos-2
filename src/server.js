@@ -3312,6 +3312,7 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
                 totalCostInPCurr: Math.round(h.totalCostInPCurr * 100) / 100,
                 avgCost: Math.round(avgCost * 10000) / 10000,
                 avgCostAssetCurr: Math.round(avgCostAsset * 10000) / 10000,
+                avgCostPortCurr: Math.round(avgCost * 10000) / 10000,
                 currentValue: Math.round(curVal * 100) / 100,
                 unrealizedGain: Math.round(uGain * 100) / 100,
                 unrealizedGainPct: Math.round(uGainPct * 100) / 100,
@@ -3323,7 +3324,9 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
                 country: asset ? asset.country : 'Global',
                 lastUpdateError: asset ? asset.lastUpdateError : null,
                 targetPrice: asset ? asset.targetPrice : 0,
-                stopLoss: asset ? asset.stopLoss : 0
+                stopLoss: asset ? asset.stopLoss : 0,
+                pe: asset ? asset.pe : null,
+                dividendYield: asset ? asset.dividendYield : null,
             };
         });
 
