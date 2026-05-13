@@ -5538,6 +5538,64 @@ app.get('/api/analytics/global-performance', requireAuth, async (req, res) => {
     }
 });
 
+// ─── DAILY GAINS (Last 7 days) ─────────────────────────────────────────────────
+
+app.get('/api/analytics/daily-gains', requireAuth, async (req, res) => {
+    try {
+        const { portfolioIds } = req.query;
+        let pIds = portfolioIds ? portfolioIds.split(',').map(Number).filter(n => !isNaN(n)) : null;
+
+        // Resolve portfolio IDs for this user
+        if (!pIds || pIds.length === 0) {
+            const userPortfolios = database.db.prepare(`
+                SELECT p.id FROM portfolios p
+                JOIN portfolio_users pu ON p.id = pu.portfolio_id
+                WHERE pu.user_id = ?
+            `).all(req.user.id);
+            pIds = userPortfolios.map(p => p.id);
+        }
+
+        if (pIds.length === 0) return res.json({ days: [] });
+
+        // Fetch the last 9 days of history (need N+1 to compute differences for 7 days)
+        const today = new Date();
+        const cutoff = new Date(today);
+        cutoff.setDate(today.getDate() - 9);
+        const cutoffStr = cutoff.toISOString().split('T')[0];
+
+        const placeholders = pIds.map(() => '?').join(',');
+        const rows = database.db.prepare(`
+            SELECT date,
+                   SUM(totalValue)   AS totalValue,
+                   SUM(netDeposits)  AS netDeposits
+            FROM portfolio_history
+            WHERE portfolioId IN (${placeholders})
+              AND date >= ?
+            GROUP BY date
+            ORDER BY date ASC
+        `).all(...pIds, cutoffStr);
+
+        if (rows.length < 2) return res.json({ days: [] });
+
+        // Compute day-over-day gain (excluding cash flows)
+        const days = [];
+        for (let i = 1; i < rows.length; i++) {
+            const prev = rows[i - 1];
+            const curr = rows[i];
+            // Net gain = ΔValue - ΔDeposits (so cash injections don't look like gains)
+            const depositsDelta = (curr.netDeposits || 0) - (prev.netDeposits || 0);
+            const gain = (curr.totalValue || 0) - (prev.totalValue || 0) - depositsDelta;
+            days.push({ date: curr.date, gain: Math.round(gain * 100) / 100 });
+        }
+
+        // Return last 7
+        res.json({ days: days.slice(-7) });
+    } catch (err) {
+        logger.error('Daily gains error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ─── HISTORY ENDPOINT ──────────────────────────────────────────────────────────
 
 
