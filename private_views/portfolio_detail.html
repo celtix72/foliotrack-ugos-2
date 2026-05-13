@@ -359,19 +359,19 @@
             <div class="overflow-hidden bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
                 <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
-                            <th class="px-6 py-4 cursor-pointer hover:text-primary transition-all group" onclick="toggleSort('holdings', 'info')">
+                        <tr class="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                            <th class="px-5 py-3 cursor-pointer hover:text-primary transition-all group" onclick="toggleSort('holdings', 'info')">
                                 <div class="flex items-center gap-1">
-                                    Asset Info
+                                    Asset
                                     <span id="h-sort-info" class="material-symbols-outlined text-[14px]">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="px-6 py-4">Quantity & Avg Cost</th>
-                            <th class="px-6 py-4">Market Price</th>
-                            <th class="px-6 py-4 text-right">Metrics (Yield/PE)</th>
-                            <th class="px-6 py-4 cursor-pointer hover:text-primary transition-all group" onclick="toggleSort('holdings', 'impact')">
+                            <th class="px-5 py-3">Qty / Avg Cost</th>
+                            <th class="px-5 py-3">Price / 1D</th>
+                            <th class="px-5 py-3 text-right">Yield / PE</th>
+                            <th class="px-5 py-3 cursor-pointer hover:text-primary transition-all group" onclick="toggleSort('holdings', 'impact')">
                                 <div class="flex items-center gap-1 justify-end">
-                                    Portfolio Impact
+                                    Value / Gain
                                     <span id="h-sort-impact" class="material-symbols-outlined text-[14px]">unfold_more</span>
                                 </div>
                             </th>
@@ -1119,69 +1119,96 @@
         });
 
         tBody.innerHTML = sorted.map(h => {
-            const color = h.unrealizedGain >= 0 ? 'emerald' : 'rose';
-            const sign = h.unrealizedGain >= 0 ? '+' : '';
+            const gainColor  = h.unrealizedGain >= 0 ? 'emerald' : 'rose';
+            const gainSign   = h.unrealizedGain >= 0 ? '+' : '';
+            const gainPct    = h.avgCostPortCurr > 0 ? ((h.unrealizedGain / (h.shares * h.avgCostPortCurr)) * 100) : 0;
+            const dayColor   = (h.changeValue || 0) >= 0 ? 'emerald' : 'rose';
+            const daySign    = (h.changeValue || 0) >= 0 ? '+' : '';
+            const dailyGain  = (h.shares || 0) * (h.changeValue || 0);
+
             const errorTag = h.lastUpdateError ? `
-                <span class="ml-2 px-1.5 py-0.5 rounded-full bg-rose-500 text-[8px] font-black text-white uppercase tracking-tighter" title="${h.lastUpdateError.replace(/"/g, '&quot;')}">Err</span>
+                <span class="ml-1 px-1.5 py-0.5 rounded-full bg-rose-500 text-[8px] font-black text-white uppercase tracking-tighter" title="${h.lastUpdateError.replace(/"/g, '&quot;')}">Err</span>
             ` : '';
 
             const restoreBtn = (h.dataSource === 'B_ITA' && h.isin) ? `
-                <button onclick="event.stopPropagation(); window.fetchBorsaItalianaHistory('${h.ticker}', '${h.isin}')" class="w-6 h-6 rounded bg-emerald-500/10 text-emerald-500 flex items-center justify-center hover:bg-emerald-500/20 transition-colors ml-1" title="Restore History from Borsa Italiana">
-                    <span class="material-symbols-outlined text-[14px]">history</span>
+                <button onclick="event.stopPropagation(); window.fetchBorsaItalianaHistory('${h.ticker}', '${h.isin}')" class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center hover:bg-emerald-500/20 transition-colors" title="Restore History from Borsa Italiana">
+                    <span class="material-symbols-outlined text-[15px]">history</span>
                 </button>
             ` : '';
 
             const manualBtn = `
-                <button onclick="event.stopPropagation(); openManualModal('${h.ticker}', '${h.currency}', ${h.currentPrice}, '${h.type || ''}', '${h.country || ''}', '${h.dataSource || 'YF'}', '${h.isin || ''}')" class="w-6 h-6 rounded bg-amber-500/10 text-amber-500 flex items-center justify-center hover:bg-amber-500/20 transition-colors ml-2" title="Update Price / Source">
-                    <span class="material-symbols-outlined text-[14px]">edit_note</span>
+                <button onclick="event.stopPropagation(); openManualModal('${h.ticker}', '${h.currency}', ${h.currentPrice}, '${h.type || ''}', '${h.country || ''}', '${h.dataSource || 'YF'}', '${h.isin || ''}')" class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center hover:bg-amber-500/20 transition-colors" title="Update Price / Source">
+                    <span class="material-symbols-outlined text-[15px]">edit_note</span>
                 </button>
-                <button onclick="event.stopPropagation(); openAssetChartModal('${h.ticker}', '${h.name}', '${h.currency}')" class="w-6 h-6 rounded bg-violet-500/10 text-violet-500 flex items-center justify-center hover:bg-violet-500/20 transition-colors ml-1" title="Historical Chart">
-                    <span class="material-symbols-outlined text-[14px]">show_chart</span>
+                <button onclick="event.stopPropagation(); openAssetChartModal('${h.ticker}', '${h.name}', '${h.currency}')" class="w-7 h-7 rounded-lg bg-violet-500/10 text-violet-500 flex items-center justify-center hover:bg-violet-500/20 transition-colors" title="Historical Chart">
+                    <span class="material-symbols-outlined text-[15px]">show_chart</span>
                 </button>
                 ${restoreBtn}
                 ${errorTag}
-                ${h.dataSource === 'YF' ? `
-                    <div class="flex items-center ml-1">
-                        <span class="text-primary material-symbols-outlined text-[16px]" title="Yahoo Finance">bolt</span>
-                    </div>
-                ` : ''}
             `;
 
+            const sourceClass = h.dataSource === 'B_ITA'
+                ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400'
+                : 'bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400';
+            const sourceLabel = h.dataSource === 'B_ITA' ? 'BI' : 'YF';
+
             return `
-            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer group/row" onclick="toggleAssetTransactions('${h.ticker}')">
-                <td class="px-6 py-4">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded bg-primary/5 text-primary flex items-center justify-center font-bold text-[10px] group-hover/row:bg-primary group-hover/row:text-white transition-colors">
-                            <span class="material-symbols-outlined text-sm" id="expand-icon-${h.ticker}">chevron_right</span>
+            <tr class="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors cursor-pointer group/row" onclick="toggleAssetTransactions('${h.ticker}')">
+                <!-- ASSET INFO -->
+                <td class="px-5 py-2">
+                    <div class="flex items-center gap-4">
+                        <!-- Ticker Avatar -->
+                        <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-[9px] shrink-0 uppercase border border-primary/20 group-hover/row:bg-primary group-hover/row:text-white group-hover/row:border-primary transition-all">
+                            <span id="expand-icon-${h.ticker}" class="material-symbols-outlined text-[18px]">chevron_right</span>
                         </div>
-                        <div>
-                            <div class="flex items-center">
-                                <p class="font-bold text-slate-900 dark:text-white leading-tight">${h.name}</p>
+                        <div class="min-w-0">
+                            <!-- Name row -->
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <p class="font-black text-base text-slate-900 dark:text-white leading-tight">${h.name}</p>
                                 ${manualBtn}
                             </div>
-                            <p class="text-[10px] text-slate-500 uppercase font-black tracking-widest mt-0.5">
-                                ${h.ticker} • ${h.currency}
-                                <span class="inline-block ml-1 px-1.5 py-0.5 rounded text-[9px] font-black leading-none ${h.dataSource === 'B_ITA' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400'}" title="${h.dataSource === 'B_ITA' ? 'Borsa Italiana' : 'Yahoo Finance'}">${h.dataSource === 'B_ITA' ? 'BI' : 'YF'}</span>
+                            <!-- Meta row -->
+                            <p class="text-[9px] text-slate-400 uppercase font-black tracking-widest mt-1 flex items-center gap-1.5 flex-wrap">
+                                <span>${h.ticker}</span>
+                                <span class="text-slate-300 dark:text-slate-700">•</span>
+                                <span>${h.currency}</span>
+                                <span class="px-1.5 py-0.5 rounded text-[8px] font-black leading-none ${sourceClass}">${sourceLabel}</span>
+                                ${h.dataSource === 'YF' ? '<span class="material-symbols-outlined text-primary text-[13px]" title="Yahoo Finance">bolt</span>' : ''}
                             </p>
                         </div>
                     </div>
                 </td>
-                <td class="px-6 py-4">
-                    <p class="font-bold text-slate-700 dark:text-slate-200 font-mono text-sm leading-tight">${formatNumber(h.shares, 0)}</p>
-                    <p class="text-[10px] text-slate-500 font-bold font-mono mt-0.5">${formatCurrency(h.avgCostAssetCurr, h.currency, 2)} <span class="text-[9px] opacity-70">Avg</span></p>
+
+                <!-- QTY & AVG COST -->
+                <td class="px-5 py-2">
+                    <p class="font-black text-slate-800 dark:text-slate-100 font-mono text-sm">${formatNumber(h.shares, 0)}</p>
+                    <p class="text-[10px] text-slate-400 font-bold font-mono mt-0.5">${formatCurrency(h.avgCostAssetCurr, h.currency, 2)} <span class="opacity-60 text-[9px]">avg</span></p>
                 </td>
-                <td class="px-6 py-4">
-                    <p class="font-bold text-slate-900 dark:text-white font-mono text-sm leading-tight">${formatCurrency(h.currentPrice, h.currency, 2)}</p>
+
+                <!-- MARKET PRICE + 1D -->
+                <td class="px-5 py-2">
+                    <p class="font-black text-slate-900 dark:text-white font-mono text-sm">${formatCurrency(h.currentPrice, h.currency, 2)}</p>
+                    <div class="flex items-center gap-1 mt-0.5">
+                        <span class="material-symbols-outlined text-[12px] text-${dayColor}-500">${(h.changeValue || 0) >= 0 ? 'trending_up' : 'trending_down'}</span>
+                        <span class="text-[10px] font-black text-${dayColor}-500 font-mono">${daySign}${formatCurrency(dailyGain, currency, 0)}</span>
+                    </div>
                 </td>
-                <td class="px-6 py-4 text-right">
-                    <div class="flex flex-col items-end">
+
+                <!-- YIELD / PE -->
+                <td class="px-5 py-2 text-right">
+                    <div class="flex flex-col items-end gap-0.5">
                         <span class="text-xs font-bold text-emerald-500">${ftFormatYield(h.dividendYield)}</span>
                         <span class="text-[10px] font-bold text-slate-500 font-mono">${ftFormatPE(h.pe)} <span class="text-[9px] opacity-60">PE</span></span>
                     </div>
                 </td>
-                <td class="px-6 py-4 text-right">
-                    <p class="font-black text-slate-900 dark:text-white font-mono text-sm leading-tight">${formatCurrency(h.currentValue, currency, 0)}</p>
-                    <p class="text-[10px] font-bold text-${color}-500 font-mono mt-0.5">${sign}${formatCurrency(h.unrealizedGain, currency, 0)}</p>
+
+                <!-- VALUE + GAIN -->
+                <td class="px-5 py-2 text-right">
+                    <p class="font-black text-slate-900 dark:text-white font-mono text-sm">${formatCurrency(h.currentValue, currency, 0)}</p>
+                    <div class="flex items-center justify-end gap-1 mt-0.5">
+                        <span class="text-[10px] font-black text-${gainColor}-500 font-mono">${gainSign}${formatCurrency(h.unrealizedGain, currency, 0)}</span>
+                        <span class="text-[9px] font-bold px-1 py-0.5 rounded bg-${gainColor}-500/10 text-${gainColor}-500">${gainSign}${Math.abs(gainPct).toFixed(1)}%</span>
+                    </div>
                 </td>
             </tr>
             <tr id="transactions-${h.ticker}" class="hidden bg-slate-50/50 dark:bg-slate-900/30">
@@ -1243,10 +1270,11 @@
                 </td>
             </tr>
             `;
-        }).join('') || '<tr><td colspan="4" class="px-6 py-4 text-center text-slate-500 italic">No active holdings.</td></tr>';
-        
+        }).join('') || '<tr><td colspan="5" class="px-6 py-12 text-center text-slate-500 italic">No active holdings.</td></tr>';
+
         updateSortIndicators('holdings', holdingsSort);
     }
+
 
     function renderCashHistory(transactions, currency) {
         const cashHistoryBody = document.getElementById('cash-history-body');
