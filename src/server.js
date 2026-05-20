@@ -6017,9 +6017,13 @@ async function refreshDividendProjections(userId) {
                 const lastYearDivs = allDivTx.filter(d => d.ticker === ticker && d.date.startsWith(lastYear.toString()));
                 lastYearDivs.forEach(d => {
                     const newDate = `${currentYear}-${d.date.substring(5)}`;
-                    if (newDate > now.toISOString().split('T')[0]) {
-                        const amtEUR = toEUR(d.amount || (d.quantity * d.price - (d.tax || 0)), d.portCurrency, d.exchangeRate);
-                        newProjections.push({ ticker, name: pos.name, date: newDate, tag: 'STORICO', amount: 0, totalAmount: amtEUR, yield: 0 });
+                    if (newDate >= now.toISOString().split('T')[0] || newDate.startsWith(currentYear.toString())) {
+                        const month = newDate.split('-')[1];
+                        const alreadyConfirmed = allDivTx.some(tx => tx.ticker === ticker && tx.date.split('-')[1] === month && tx.date.startsWith(currentYear.toString()));
+                        if (!alreadyConfirmed) {
+                            const amtEUR = toEUR(d.amount || (d.quantity * d.price - (d.tax || 0)), d.portCurrency, d.exchangeRate);
+                            newProjections.push({ ticker, name: pos.name, date: newDate, tag: 'STORICO', amount: 0, totalAmount: amtEUR, yield: 0 });
+                        }
                     }
                 });
             } else if (ticker && !ticker.startsWith('CD_') && ticker !== 'Sconosciuto') {
@@ -6039,22 +6043,33 @@ async function refreshDividendProjections(userId) {
                             nextDateStr = new Date(dDate).toISOString().split('T')[0];
                         }
                         
-                        if (nextDateStr && nextDateStr >= now.toISOString().split('T')[0]) {
-                            const perPayment = (annualRate * pos.balance) / freq;
-                            const amtEUR = toEUR(perPayment, currencyYF, null);
-                            const unitAmount = toEUR(annualRate / freq, currencyYF, null);
-                            newProjections.push({ ticker, name: pos.name, date: nextDateStr, tag: 'YF', amount: unitAmount, totalAmount: amtEUR, yield: assetYield });
-                        } else if (annualRate > 0) {
+                        let yfProjected = false;
+                        if (nextDateStr && (nextDateStr >= now.toISOString().split('T')[0] || nextDateStr.startsWith(currentYear.toString()))) {
+                            const month = nextDateStr.split('-')[1];
+                            const alreadyConfirmed = allDivTx.some(tx => tx.ticker === ticker && tx.date.split('-')[1] === month && tx.date.startsWith(currentYear.toString()));
+                            if (!alreadyConfirmed) {
+                                const perPayment = (annualRate * pos.balance) / freq;
+                                const amtEUR = toEUR(perPayment, currencyYF, null);
+                                const unitAmount = toEUR(annualRate / freq, currencyYF, null);
+                                newProjections.push({ ticker, name: pos.name, date: nextDateStr, tag: 'YF', amount: unitAmount, totalAmount: amtEUR, yield: assetYield });
+                                yfProjected = true;
+                            }
+                        }
+                        
+                        if (!yfProjected && annualRate > 0) {
                             const histLastYear = allDivTx.filter(d => d.ticker === ticker && d.date.startsWith(lastYear.toString()));
                             if (histLastYear.length > 0) {
                                 const months = [...new Set(histLastYear.map(d => d.date.substring(5, 7)))];
                                 months.forEach(m => {
                                     const nextDate = `${currentYear}-${m}-20`;
-                                    if (nextDate > now.toISOString().split('T')[0]) {
-                                        const perPayment = (annualRate * pos.balance) / months.length;
-                                        const amtEUR = toEUR(perPayment, currencyYF, null);
-                                        const unitAmount = toEUR(annualRate / months.length, currencyYF, null);
-                                        newProjections.push({ ticker, name: pos.name, date: nextDate, tag: 'SIMULATO', amount: unitAmount, totalAmount: amtEUR, yield: assetYield });
+                                    if (nextDate >= now.toISOString().split('T')[0] || nextDate.startsWith(currentYear.toString())) {
+                                        const alreadyConfirmed = allDivTx.some(tx => tx.ticker === ticker && tx.date.split('-')[1] === m && tx.date.startsWith(currentYear.toString()));
+                                        if (!alreadyConfirmed) {
+                                            const perPayment = (annualRate * pos.balance) / months.length;
+                                            const amtEUR = toEUR(perPayment, currencyYF, null);
+                                            const unitAmount = toEUR(annualRate / months.length, currencyYF, null);
+                                            newProjections.push({ ticker, name: pos.name, date: nextDate, tag: 'SIMULATO', amount: unitAmount, totalAmount: amtEUR, yield: assetYield });
+                                        }
                                     }
                                 });
                             }
