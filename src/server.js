@@ -6032,8 +6032,17 @@ async function refreshDividendProjections(userId) {
                     if (summary && summary.summaryDetail && summary.summaryDetail.dividendRate > 0) {
                         const annualRate = summary.summaryDetail.dividendRate;
                         const assetYield = summary.summaryDetail.dividendYield || 0;
-                        const freq = summary.summaryDetail.dividendFrequency || 4;
                         const currencyYF = summary.summaryDetail.currency || pos.currency;
+                        
+                        const histLastYear = allDivTx.filter(d => d.ticker === ticker && d.date.startsWith(lastYear.toString()));
+                        let freq = summary.summaryDetail.dividendFrequency;
+                        if (!freq) {
+                            if (histLastYear.length > 0) {
+                                freq = histLastYear.length;
+                            } else {
+                                freq = 4;
+                            }
+                        }
                         
                         let nextDateStr = null;
                         const ce = summary.calendarEvents || {};
@@ -6057,7 +6066,6 @@ async function refreshDividendProjections(userId) {
                         }
                         
                         if (!yfProjected && annualRate > 0) {
-                            const histLastYear = allDivTx.filter(d => d.ticker === ticker && d.date.startsWith(lastYear.toString()));
                             if (histLastYear.length > 0) {
                                 const months = [...new Set(histLastYear.map(d => d.date.substring(5, 7)))];
                                 months.forEach(m => {
@@ -6141,6 +6149,8 @@ app.get('/api/analytics/dividend-projections', async (req, res) => {
         `).all(currentYear + '-%', req.user.id);
 
         const savedProjections = database.db.prepare(`SELECT * FROM dividend_projections WHERE year = ? AND user_id = ?`).all(currentYear, req.user.id);
+        const taxRatesRaw = database.db.prepare(`SELECT asset_type, rate FROM tax_rates WHERE user_id = ?`).all(req.user.id);
+        const taxMap = Object.fromEntries(taxRatesRaw.map(tr => [tr.asset_type, tr.rate]));
 
         const listItems = [];
         const actualByMonth = Array(12).fill(0);
@@ -6187,13 +6197,43 @@ app.get('/api/analytics/dividend-projections', async (req, res) => {
         // Projected
         savedProjections.forEach(p => {
             const m = parseInt(p.exDate.split('-')[1]) - 1;
-            const amtEUR = p.totalAmount;
-            projectedByMonth[m] += amtEUR;
-            totalExpected += amtEUR;
+            
+            // DB stores Gross in totalAmount
+            const grossEUR = p.totalAmount;
+            
+            const asset = openPositions.find(op => op.ticker === p.ticker);
+            const assetType = asset ? asset.assetType : 'Azioni';
+            let taxRate = taxMap[assetType];
+            if (taxRate === undefined) taxRate = 26.0;
+            
+            // Manual dividends already represent net in amount, maybe? Or totalAmount is already Net?
+            // Actually manual dividends have an amount entered by the user. If they enter Gross, we calculate Tax? 
+            // In manual dividend, user inputs amount. Let's assume the DB still stores gross or the user just enters Net.
+            // Let's use the UI's intention. The user says projection had "Lordo = Netto".
+            let taxEUR = grossEUR * (taxRate / 100);
+            let netEUR = grossEUR - taxEUR;
+            
+            if (p.tag === 'MANUALE') {
+                // If it's manual, we don't know if the user entered gross or net, but let's assume totalAmount is gross.
+                // Wait, if they enter amount manually, they usually enter what they expect to receive (Net).
+                // But the UI for manual dividend allows specifying Gross and Tax.
+                // Let's rely on standard logic: Projections from YF/SIMULATO are definitely GROSS.
+                if (p.tax !== undefined && p.tax > 0) {
+                    taxEUR = p.tax;
+                    netEUR = p.totalAmount;
+                }
+            }
+
+            projectedByMonth[m] += netEUR;
+            totalExpected += netEUR;
             tickersByMonth[m].add(p.ticker);
             listItems.push({
                 id: p.id, ticker: p.ticker, name: p.name, date: p.exDate, tag: p.tag,
-                amount: p.amount, totalAmount: amtEUR, annualProjected: 0, yield: p.yield, isCustom: p.isCustom
+                amount: p.amount, 
+                totalAmount: netEUR, 
+                gross: grossEUR, 
+                tax: taxEUR, 
+                annualProjected: 0, yield: p.yield, isCustom: p.isCustom
             });
         });
 
