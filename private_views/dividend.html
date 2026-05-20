@@ -193,33 +193,7 @@
                     </div>
                 </div>
 
-                <!-- Detail Table -->
-                <details open class="group bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                    <summary class="flex items-center justify-between px-5 py-4 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors outline-none">
-                        <span class="text-[11px] font-black uppercase tracking-widest text-slate-500">Dettaglio Proiezioni Mensili</span>
-                        <div class="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                            <span class="material-symbols-outlined text-slate-500 text-sm group-open:rotate-180 transition-transform">expand_more</span>
-                        </div>
-                    </summary>
-                    <div class="overflow-x-auto border-t border-slate-200 dark:border-slate-800">
-                        <table class="w-full text-left text-sm">
-                            <thead>
-                                <tr class="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-                                    <th class="px-3 py-2">Asset</th>
-                                    <th class="px-3 py-2 text-center">Data</th>
-                                    <th class="px-3 py-2">Fonte</th>
-                                    <th class="px-3 py-2 text-right">Lordo (U)</th>
-                                    <th class="px-3 py-2 text-right">Netto</th>
-                                    <th class="px-3 py-2 text-right">Lordo Tot.</th>
-                                    <th class="px-3 py-2 text-right">Yield YF</th>
-                                    <th class="px-3 py-2 text-right">Yield Reale</th>
-                                    <th class="px-3 py-2 text-right">Azioni</th>
-                                </tr>
-                            </thead>
-                            <tbody id="proj-detail-body" class="divide-y divide-slate-100 dark:divide-slate-800 text-[11px]"></tbody>
-                        </table>
-                    </div>
-                </details>
+
             </section>
 
             <!-- ─── HISTORICAL DIVIDENDS ──────────────────────────────────────── -->
@@ -253,7 +227,7 @@
 
                 <details open class="group bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
                     <summary class="flex items-center justify-between px-5 py-4 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors outline-none">
-                        <span class="text-[11px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">Elenco Dettagliato
+                        <span class="text-[11px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">Elenco Transazioni & Proiezioni
                             <select id="div-group-by" onchange="renderDividends()" onclick="event.stopPropagation()" class="bg-white/50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] py-1 pl-2 pr-6 focus:ring-0 cursor-pointer">
                                 <option value="year">Per Anno</option>
                                 <option value="portfolioName">Per Portafoglio</option>
@@ -269,10 +243,10 @@
                             <thead>
                                 <tr class="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
                                     <th class="px-5 py-3">Asset</th>
-                                    <th class="px-5 py-3">Portafoglio</th>
                                     <th class="px-5 py-3 text-center">Data</th>
-                                    <th class="px-5 py-3 text-right">DivNetto</th>
-                                    <th class="px-5 py-3 text-right">DivLordo</th>
+                                    <th class="px-5 py-3 text-center">Stato / Fonte</th>
+                                    <th class="px-5 py-3 text-right">Netto</th>
+                                    <th class="px-5 py-3 text-right">Lordo Tot.</th>
                                     <th class="px-5 py-3 text-right">Azioni</th>
                                 </tr>
                             </thead>
@@ -373,23 +347,45 @@
             renderDividends();
         }
 
+        function getUnifiedData() {
+            let combined = [...rawDivData];
+            if (window.globalProjData && window.globalProjData.assets) {
+                const projections = window.globalProjData.assets.filter(a => a.tag !== 'REGISTRATO');
+                projections.forEach(p => {
+                    combined.push({
+                        isProjection: true,
+                        id: p.id,
+                        assetTicker: p.ticker,
+                        name: p.name,
+                        portfolioName: 'N/A',
+                        date: p.date,
+                        amount: p.totalAmount, // net
+                        gross: p.gross || p.totalAmount,
+                        tax: p.tax || 0,
+                        tag: p.tag
+                    });
+                });
+            }
+            return combined;
+        }
+
         function renderDividends() {
             const body = document.getElementById('dividends-table-body');
             const groupBy = document.getElementById('div-group-by').value;
+
+            let filtered = getUnifiedData();
 
             if (groupBy !== currentGroupBy) {
                 collapsedGroups = new Set();
                 currentGroupBy = groupBy;
                 if (groupBy === 'year') {
-                    const years = [...new Set(rawDivData.map(d => d.date.split('-')[0]))];
+                    const years = [...new Set(filtered.map(d => d.date.split('-')[0]))];
                     collapsedGroups = new Set(years);
                 }
             }
 
-            let filtered = rawDivData;
-
             if (filtered.length === 0) {
-                body.innerHTML = '<tr><td colspan="4" class="px-6 py-12 text-center text-slate-500 italic">No dividend records matching filters.</td></tr>';
+                body.innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-slate-500 italic">No dividend records matching filters.</td></tr>';
                 return;
             }
 
@@ -398,14 +394,18 @@
             } else {
                 const groups = {};
                 filtered.forEach(d => {
-                    let key = d[groupBy];
+                    let key = d[groupBy] || 'N/A';
                     if (groupBy === 'year') key = d.date.split('-')[0];
                     
                     if (!groups[key]) {
                         groups[key] = { items: [], total: 0 };
                     }
                     groups[key].items.push(d);
-                    groups[key].total += d.amount;
+                    if (!d.isProjection || d.tag === 'REGISTRATO') {
+                        groups[key].total += d.amount; // solo confermati nel totale gruppo
+                    } else {
+                        groups[key].total += d.amount; // o includiamo anche le proiezioni nel totale del gruppo per l'anno in corso
+                    }
                 });
 
                 const keys = Object.keys(groups).sort((a, b) => {
@@ -421,18 +421,17 @@
 
                     html += `
                         <tr class="bg-slate-50/80 dark:bg-slate-900/60 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" onclick="toggleGroup('${key}')">
-                            <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800">
+                            <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800" colspan="3">
                                 <div class="flex items-center gap-2">
                                     <span class="material-symbols-outlined text-slate-400 text-lg">${icon}</span>
                                     <span class="text-xs font-black uppercase tracking-widest text-primary">${key}</span>
                                     <span class="text-[10px] text-slate-500 font-bold ml-1">(${group.items.length} records)</span>
                                 </div>
                             </td>
-                            <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800"></td>
-                            <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800"></td>
                             <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800 text-right font-mono text-xs font-black text-emerald-500">
                                 ${formatCurrency(group.total, 'EUR')}
                             </td>
+                            <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800" colspan="2"></td>
                         </tr>
                     `;
                     
@@ -447,13 +446,45 @@
         }
 
         function renderRow(d) {
-            const letters = d.assetTicker ? d.assetTicker.substring(0, 4).toUpperCase() : '???';
+            const isProj = d.isProjection;
+            const ticker = d.assetTicker || d.ticker || '???';
+            const letters = ticker.substring(0, 4).toUpperCase();
+            const name = d.name && d.name !== 'null' ? d.name : ticker;
+            const portName = d.portfolioName || 'N/A';
+            const date = d.date;
+            
             const divNetto = d.amount || 0;
-            const divLordo = divNetto + (d.tax || 0);
+            const divLordo = d.gross || (divNetto + (d.tax || 0));
+
+            const tag = isProj ? d.tag : 'STORICO';
+
+            let badge = '';
+            if (!isProj || tag === 'REGISTRATO') badge = '<span class="px-1.5 py-0.5 rounded inline-block text-[9px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">Ricevuto</span>';
+            else if (tag === 'YF') badge = '<span class="px-1.5 py-0.5 rounded inline-block text-[9px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">YF</span>';
+            else if (tag === 'SIMULATO') badge = '<span class="px-1.5 py-0.5 rounded inline-block text-[9px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20">Sim</span>';
+            else if (tag === 'MANUALE') badge = '<span class="px-1.5 py-0.5 rounded inline-block text-[9px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">Man</span>';
+            else if (tag === 'STORICO') badge = '<span class="px-1.5 py-0.5 rounded inline-block text-[9px] font-bold bg-slate-500/10 text-slate-500 border border-slate-500/20">Hist</span>';
+
+            let actionsHtml = '';
+            if (!isProj || tag === 'REGISTRATO') {
+                actionsHtml = `
+                    <div class="flex items-center justify-end gap-1.5">
+                        <button onclick="openEditConfirmedModal(${d.id}, true)" class="text-slate-400 hover:text-primary transition-colors cursor-pointer" title="Modifica"><span class="material-symbols-outlined text-sm">edit</span></button>
+                        <button onclick="deleteConfirmedDividend(${d.id})" class="text-slate-400 hover:text-red-500 transition-colors cursor-pointer" title="Elimina"><span class="material-symbols-outlined text-sm">delete</span></button>
+                    </div>
+                `;
+            } else {
+                actionsHtml = `
+                    <div class="flex items-center justify-end gap-1.5">
+                        <button onclick="openConfirmModal(${d.id})" class="text-emerald-500 hover:text-emerald-600 transition-colors cursor-pointer" title="Conferma Dividendo"><span class="material-symbols-outlined text-sm">check_circle</span></button>
+                        <button onclick="deleteProjection(${d.id})" class="text-slate-400 hover:text-red-500 transition-colors cursor-pointer" title="Elimina"><span class="material-symbols-outlined text-sm">delete</span></button>
+                    </div>
+                `;
+            }
 
             const now = new Date();
             const currentMonthStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
-            const isCurrentMonth = d.date.startsWith(currentMonthStr);
+            const isCurrentMonth = date.startsWith(currentMonthStr);
             const rowClass = isCurrentMonth ? 'bg-emerald-500/10 dark:bg-emerald-500/5' : '';
 
             return `
@@ -463,24 +494,17 @@
                         <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-black text-[9px] shrink-0 uppercase border border-primary/20">
                             ${letters}
                         </div>
-                        <div>
-                            <p class="font-black text-sm text-slate-900 dark:text-white leading-none">${d.assetTicker}</p>
-                            <p class="text-[8px] text-slate-400 uppercase font-black tracking-widest mt-0.5">${d.portfolioName}</p>
+                        <div class="overflow-hidden">
+                            <p class="font-bold text-sm text-slate-900 dark:text-white leading-none truncate">${name}</p>
+                            <p class="text-[8px] text-slate-400 uppercase font-black tracking-widest mt-0.5">${ticker} ${portName !== 'N/A' ? '• ' + portName : ''}</p>
                         </div>
                     </div>
                 </td>
-                <td class="px-5 py-2 text-center">
-                    <span class="px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-[10px] font-bold text-slate-500">${d.portfolioName}</span>
-                </td>
-                <td class="px-5 py-2 text-center font-mono text-[10px] font-bold text-slate-400">${d.date}</td>
-                <td class="px-5 py-2 text-right font-black font-mono text-sm text-emerald-500">+${formatCurrency(divNetto, 'EUR')}</td>
+                <td class="px-5 py-2 text-center font-mono text-[10px] font-bold text-slate-500">${date}</td>
+                <td class="px-5 py-2 text-center">${badge}</td>
+                <td class="px-5 py-2 text-right font-black font-mono text-sm ${isProj ? 'text-amber-500' : 'text-emerald-500'}">${divNetto > 0 ? '+'+formatCurrency(divNetto, 'EUR') : formatCurrency(divNetto, 'EUR')}</td>
                 <td class="px-5 py-2 text-right font-bold font-mono text-[10px] text-slate-500">${formatCurrency(divLordo, 'EUR')}</td>
-                <td class="px-5 py-2 text-right">
-                    <div class="flex items-center justify-end gap-1.5">
-                        <button onclick="openEditConfirmedModal(${d.id}, true)" class="text-slate-400 hover:text-primary transition-colors cursor-pointer" title="Modifica"><span class="material-symbols-outlined text-sm">edit</span></button>
-                        <button onclick="deleteConfirmedDividend(${d.id})" class="text-slate-400 hover:text-red-500 transition-colors cursor-pointer" title="Elimina"><span class="material-symbols-outlined text-sm">delete</span></button>
-                    </div>
-                </td>
+                <td class="px-5 py-2 text-right">${actionsHtml}</td>
             </tr>
             `;
         }
@@ -893,61 +917,8 @@
                     }
                 }
 
-                const assets = data.assets || [];
-                const tbody = document.getElementById('proj-detail-body');
-                tbody.innerHTML = assets.map(a => {
-                    let badge = '';
-                    if (a.tag === 'REGISTRATO') badge = '<span class="px-1.5 py-0.5 rounded inline-block text-[9px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">Ricevuto</span>';
-                    if (a.tag === 'YF') badge = '<span class="px-1.5 py-0.5 rounded inline-block text-[9px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">YF</span>';
-                    if (a.tag === 'SIMULATO') badge = '<span class="px-1.5 py-0.5 rounded inline-block text-[9px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20">Sim</span>';
-                    if (a.tag === 'STORICO') badge = '<span class="px-1.5 py-0.5 rounded inline-block text-[9px] font-bold bg-slate-500/10 text-slate-500 border border-slate-500/20">Hist</span>';
-                    if (a.tag === 'MANUALE') badge = '<span class="px-1.5 py-0.5 rounded inline-block text-[9px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">Man</span>';
-
-                    let actionsHtml = '';
-                    if (a.tag === 'REGISTRATO') {
-                        actionsHtml = `
-                            <div class="flex items-center justify-end gap-1.5">
-                                <button onclick="openEditConfirmedModal(${a.txId})" class="text-slate-400 hover:text-primary transition-colors cursor-pointer" title="Modifica"><span class="material-symbols-outlined text-sm">edit</span></button>
-                                <button onclick="deleteConfirmedDividend(${a.txId})" class="text-slate-400 hover:text-red-500 transition-colors cursor-pointer" title="Elimina"><span class="material-symbols-outlined text-sm">delete</span></button>
-                            </div>
-                        `;
-                    } else {
-                        actionsHtml = `
-                            <div class="flex items-center justify-end gap-1.5">
-                                <button onclick="openConfirmModal(${a.id})" class="text-emerald-500 hover:text-emerald-600 transition-colors cursor-pointer" title="Conferma Dividendo"><span class="material-symbols-outlined text-sm">check_circle</span></button>
-                                <button onclick="deleteProjection(${a.id})" class="text-slate-400 hover:text-red-500 transition-colors cursor-pointer" title="Elimina"><span class="material-symbols-outlined text-sm">delete</span></button>
-                            </div>
-                        `;
-                    }
-
-                    const now = new Date();
-                    const currentMonthStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
-                    const isCurrentMonth = a.date.startsWith(currentMonthStr);
-                    const rowClass = isCurrentMonth ? 'bg-emerald-500/10 dark:bg-emerald-500/5' : '';
-
-                    return `
-                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors group ${rowClass}">
-                        <td class="px-3 py-1.5">
-                            <div class="flex items-center gap-2">
-                                <div class="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-black text-[9px] shrink-0 uppercase border border-primary/20">
-                                    ${a.ticker.substring(0,3)}
-                                </div>
-                                <div class="overflow-hidden">
-                                    <p class="font-bold text-xs text-slate-900 dark:text-white leading-none truncate">${(a.name && a.name !== 'null') ? a.name : a.ticker}</p>
-                                    <p class="text-[8px] text-slate-400 uppercase font-black tracking-widest mt-0.5">${a.ticker}</p>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-3 py-1.5 text-center font-mono text-[10px] text-slate-500">${a.date}</td>
-                        <td class="px-3 py-1.5">${badge}</td>
-                        <td class="px-3 py-1.5 text-right font-mono font-bold text-slate-500">${a.amount ? '€' + a.amount.toFixed(2) : '—'}</td>
-                        <td class="px-3 py-1.5 text-right font-mono font-black text-emerald-500">€${(a.totalAmount || 0).toFixed(2)}</td>
-                        <td class="px-3 py-1.5 text-right font-mono font-black text-slate-400">€${(a.gross || a.totalAmount || 0).toFixed(2)}</td>
-                        <td class="px-3 py-1.5 text-right font-mono font-bold text-amber-500">${a.yield ? (a.yield*100).toFixed(2)+'%' : '—'}</td>
-                        <td class="px-3 py-1.5 text-right font-mono font-black text-emerald-600">${a.realYield ? (a.realYield*100).toFixed(2)+'%' : '—'}</td>
-                        <td class="px-3 py-1.5 text-right">${actionsHtml}</td>
-                    </tr>`;
-                }).join('');
+                // Call renderDividends to update the unified table
+                renderDividends();
 
             } catch (err) {
                 console.error('Error loading projections:', err);
