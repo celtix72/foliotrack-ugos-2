@@ -287,24 +287,24 @@
                     </select>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
-                    <div>
+                    <div class="col-span-2">
                         <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Data Incasso</label>
                         <input type="date" id="confirm-date" required class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-emerald-500/20 outline-none">
                     </div>
                     <div>
-                        <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Valore Lordo Totale (€)</label>
+                        <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Lordo (€)</label>
                         <input type="number" step="0.01" id="confirm-gross" required placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-emerald-500/20 font-mono font-black outline-none">
                     </div>
-                </div>
-                <div>
-                    <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Totale Tassazione (€)</label>
-                    <input type="number" step="0.01" id="confirm-tax" required placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-emerald-500/20 font-mono font-black outline-none">
+                    <div>
+                        <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Tasse (€)</label>
+                        <input type="number" step="0.01" id="confirm-tax" required placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-emerald-500/20 font-mono font-black outline-none">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Netto Stimato (€)</label>
+                        <input type="number" step="0.01" id="confirm-net" required placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 text-xs focus:ring-2 focus:ring-emerald-500/20 font-mono font-black outline-none">
+                    </div>
                 </div>
                 <div class="pt-2">
-                    <div class="flex justify-between items-center px-1 text-[10px] font-bold mb-3">
-                        <span class="text-slate-500">NETTO ESTIMATO:</span>
-                        <span id="confirm-net-preview" class="text-emerald-500 font-black">€ 0.00</span>
-                    </div>
                     <button type="submit" id="confirm-submit-btn" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg text-xs transition-colors shadow-sm">
                         Conferma e Salva
                     </button>
@@ -675,11 +675,26 @@
         function updateNetPreview() {
             const gross = parseFloat(document.getElementById('confirm-gross').value) || 0;
             const tax = parseFloat(document.getElementById('confirm-tax').value) || 0;
-            document.getElementById('confirm-net-preview').innerText = '€ ' + (gross - tax).toFixed(2);
+            document.getElementById('confirm-net').value = (gross - tax).toFixed(2);
         }
 
-        document.getElementById('confirm-gross').addEventListener('input', updateNetPreview);
-        document.getElementById('confirm-tax').addEventListener('input', updateNetPreview);
+        document.getElementById('confirm-gross').addEventListener('input', () => {
+            const gross = parseFloat(document.getElementById('confirm-gross').value) || 0;
+            const tax = parseFloat(document.getElementById('confirm-tax').value) || 0;
+            document.getElementById('confirm-net').value = (gross - tax).toFixed(2);
+        });
+
+        document.getElementById('confirm-tax').addEventListener('input', () => {
+            const gross = parseFloat(document.getElementById('confirm-gross').value) || 0;
+            const tax = parseFloat(document.getElementById('confirm-tax').value) || 0;
+            document.getElementById('confirm-net').value = (gross - tax).toFixed(2);
+        });
+
+        document.getElementById('confirm-net').addEventListener('input', () => {
+            const net = parseFloat(document.getElementById('confirm-net').value) || 0;
+            const tax = parseFloat(document.getElementById('confirm-tax').value) || 0;
+            document.getElementById('confirm-gross').value = (net + tax).toFixed(2);
+        });
 
         window.submitConfirmDividend = async (e) => {
             e.preventDefault();
