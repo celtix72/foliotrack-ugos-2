@@ -350,6 +350,10 @@
                                 ` : ''}
                                 <div class="mob-holding-gain" style="color:${color}; font-weight:900; margin-top:0">${isPos ? '+' : ''}${change.toFixed(1)}%</div>
                             </div>
+                            <div class="flex items-center justify-end gap-2 mt-1">
+                                <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">FWD P/E: ${a.forwardPE ? a.forwardPE.toFixed(1) : '—'}</span>
+                                <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">PEG: ${a.pegRatio ? a.pegRatio.toFixed(1) : '—'}</span>
+                            </div>
                         </div>
                     </div>
                 </div>

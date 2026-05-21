@@ -74,6 +74,7 @@ function initDb() {
         dividendYield REAL,
         eps           REAL,
         beta          REAL,
+        pegRatio      REAL,
         nextDividendDate TEXT,
         isManual      INTEGER NOT NULL DEFAULT 0,
         dataSource    TEXT    NOT NULL DEFAULT 'YF',
@@ -252,6 +253,10 @@ function initDb() {
 
     try {
         dbConnection.prepare(`ALTER TABLE assets ADD COLUMN nextDividendDate TEXT`).run();
+    } catch (e) {}
+
+    try {
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN pegRatio REAL`).run();
     } catch (e) {}
 
     try {
