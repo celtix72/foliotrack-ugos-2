@@ -901,7 +901,12 @@
 
             function renderMobRow(d) {
                 const isProj = d.isProjection;
-                const ticker = d.assetTicker || d.ticker || '???';
+                let ticker = d.assetTicker || d.ticker || '???';
+                if (d.assetType && ['Bond', 'ETF Obblig', 'Deposito Vincolato', 'ETF Monetario'].includes(d.assetType)) {
+                    if (d.isin && !ticker.includes(d.isin)) {
+                        ticker = `${ticker} (${d.isin})`;
+                    }
+                }
                 const letters = ticker.substring(0, 2).toUpperCase();
                 const name = d.name && d.name !== 'null' ? d.name : ticker;
                 const portName = d.portfolioName || 'N/A';

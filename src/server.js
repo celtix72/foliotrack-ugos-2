@@ -6140,7 +6140,7 @@ app.get('/api/analytics/dividend-projections', async (req, res) => {
 
         const openPositions = database.db.prepare(`
             SELECT COALESCE(NULLIF(NULLIF(t.assetTicker, 'null'), ''), 'Sconosciuto') as ticker,
-                   a.name as name,
+                   a.name as name, a.isin as isin, a.type as assetType,
                    a.currentPrice,
                    a.currency as assetCurrency,
                    SUM(CASE WHEN t.type = 'BUY' THEN t.quantity WHEN t.type = 'SELL' THEN -t.quantity ELSE 0 END) as balance
@@ -6202,7 +6202,7 @@ app.get('/api/analytics/dividend-projections', async (req, res) => {
             }
 
             listItems.push({
-                id: null, txId: d.txId, ticker: d.ticker, name: pos.name, date: d.date, tag: 'REGISTRATO',
+                id: null, txId: d.txId, ticker: d.ticker, name: pos.name, isin: pos.isin, assetType: pos.assetType, date: d.date, tag: 'REGISTRATO',
                 amount: null, totalAmount: amtEUR, gross, tax: d.tax || 0, annualProjected: 0, yield: 0, realYield
             });
         });
@@ -6236,8 +6236,9 @@ app.get('/api/analytics/dividend-projections', async (req, res) => {
             projectedByMonth[m] += netEUR;
             totalExpected += netEUR;
             tickersByMonth[m].add(p.ticker);
+            const asset = openPositions.find(op => op.ticker === p.ticker);
             listItems.push({
-                id: p.id, ticker: p.ticker, name: p.name, date: p.exDate, tag: p.tag,
+                id: p.id, ticker: p.ticker, name: p.name, isin: asset ? asset.isin : null, assetType: asset ? asset.assetType : null, date: p.exDate, tag: p.tag,
                 amount: p.amount, 
                 totalAmount: netEUR, 
                 gross: grossEUR, 
