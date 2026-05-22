@@ -757,6 +757,8 @@
                             id: p.id,
                             assetTicker: p.ticker,
                             name: p.name,
+                            isin: p.isin,
+                            assetType: p.assetType,
                             portfolioName: 'N/A',
                             date: p.date,
                             amount: p.totalAmount, // net
@@ -902,13 +904,25 @@
             function renderMobRow(d) {
                 const isProj = d.isProjection;
                 let ticker = d.assetTicker || d.ticker || '???';
-                if (d.assetType && ['Bond', 'ETF Obblig', 'Deposito Vincolato', 'ETF Monetario'].includes(d.assetType)) {
-                    if (d.isin && !ticker.includes(d.isin)) {
-                        ticker = `${ticker} (${d.isin})`;
+                let name = d.name && d.name !== 'null' ? d.name : ticker;
+                
+                // Extract ISIN from name if present
+                const isinMatch = name.match(/\(([A-Z0-9]{12})\)/) || name.match(/([A-Z0-9]{12})/);
+                let isin = d.isin || (isinMatch ? isinMatch[1] : null);
+
+                const isBond = d.assetType && ['Bond', 'ETF Obblig', 'Deposito Vincolato', 'ETF Monetario'].includes(d.assetType) 
+                               || ticker.toUpperCase().startsWith('BTP') 
+                               || ticker.toUpperCase().startsWith('BOT');
+
+                if (isBond && isin) {
+                    if (!ticker.includes(isin)) {
+                        ticker = `${ticker} (${isin})`;
                     }
+                    // Clean up name
+                    name = name.replace(`(${isin})`, '').replace(isin, '').trim();
+                    if (name === '' || name === '()') name = ticker;
                 }
                 const letters = ticker.substring(0, 2).toUpperCase();
-                const name = d.name && d.name !== 'null' ? d.name : ticker;
                 const portName = d.portfolioName || 'N/A';
                 const date = d.date;
                 
