@@ -318,6 +318,8 @@ function initDb() {
         exDate      TEXT    NOT NULL,
         amount      REAL    NOT NULL,
         totalAmount REAL    NOT NULL DEFAULT 0,
+        gross       REAL    NOT NULL DEFAULT 0,
+        tax         REAL    NOT NULL DEFAULT 0,
         yield       REAL    NOT NULL DEFAULT 0,
         tag         TEXT    NOT NULL,
         year        INTEGER NOT NULL,
@@ -464,6 +466,14 @@ function initDb() {
         // 6. Dividend Projections migration
         try {
             dbConnection.prepare(`ALTER TABLE dividend_projections ADD COLUMN user_id INTEGER`).run();
+        } catch (e) {}
+
+        try {
+            dbConnection.prepare(`ALTER TABLE dividend_projections ADD COLUMN gross REAL NOT NULL DEFAULT 0`).run();
+        } catch (e) {}
+
+        try {
+            dbConnection.prepare(`ALTER TABLE dividend_projections ADD COLUMN tax REAL NOT NULL DEFAULT 0`).run();
         } catch (e) {}
         dbConnection.prepare(`UPDATE dividend_projections SET user_id = ? WHERE user_id IS NULL`).run(adminId);
         
