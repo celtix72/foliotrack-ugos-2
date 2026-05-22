@@ -220,11 +220,14 @@
                     <span class="material-symbols-outlined" style="font-size:20px">expand_more</span>
                     Transazioni & Proiezioni
                 </div>
-                <select id="mob-div-group-by" onchange="renderMobDividends()" onclick="event.stopPropagation()" class="bg-black/5 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-md text-[10px] py-1 pl-2 pr-4 focus:ring-0 cursor-pointer text-slate-600 dark:text-slate-300">
-                    <option value="year">Per Anno</option>
-                    <option value="portfolioName">Portafoglio</option>
-                    <option value="none">Lista</option>
-                </select>
+                <div class="flex items-center gap-2">
+                    <input type="text" id="mob-div-filter-ticker" placeholder="Filtra Ticker..." class="bg-black/5 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-md text-[10px] py-1 px-2 focus:ring-1 focus:ring-emerald-500 outline-none w-24 text-slate-600 dark:text-slate-300" oninput="renderMobDividends()" onclick="event.stopPropagation()">
+                    <select id="mob-div-group-by" onchange="renderMobDividends()" onclick="event.stopPropagation()" class="bg-black/5 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-md text-[10px] py-1 pl-2 pr-4 focus:ring-0 cursor-pointer text-slate-600 dark:text-slate-300">
+                        <option value="year">Per Anno</option>
+                        <option value="portfolioName">Portafoglio</option>
+                        <option value="none">Lista</option>
+                    </select>
+                </div>
             </div>
             <div class="mob-div-tx-wrap">
                 <div id="mob-dividends-list">
@@ -772,8 +775,16 @@
                 if (!container || !groupByEl) return;
 
                 const groupBy = groupByEl.value;
+                const filterText = (document.getElementById('mob-div-filter-ticker')?.value || '').toLowerCase();
 
                 let filtered = getMobUnifiedData();
+
+                if (filterText) {
+                    filtered = filtered.filter(d => 
+                        (d.assetTicker || d.ticker || '').toLowerCase().includes(filterText) ||
+                        (d.name && d.name !== 'null' ? d.name : '').toLowerCase().includes(filterText)
+                    );
+                }
 
                 if (groupBy !== currentGroupBy) {
                     collapsedGroups = new Set();

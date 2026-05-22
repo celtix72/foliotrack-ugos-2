@@ -228,6 +228,7 @@
                 <details open class="group bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
                     <summary class="flex items-center justify-between px-5 py-4 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors outline-none">
                         <span class="text-[11px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">Elenco Transazioni & Proiezioni
+                            <input type="text" id="div-filter-ticker" placeholder="Filtra Ticker..." class="bg-white/50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] py-1 px-2 focus:ring-1 focus:ring-emerald-500 outline-none w-24 md:w-32" oninput="renderDividends()" onclick="event.stopPropagation()">
                             <select id="div-group-by" onchange="renderDividends()" onclick="event.stopPropagation()" class="bg-white/50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] py-1 pl-2 pr-6 focus:ring-0 cursor-pointer">
                                 <option value="year">Per Anno</option>
                                 <option value="portfolioName">Per Portafoglio</option>
@@ -372,8 +373,16 @@
         function renderDividends() {
             const body = document.getElementById('dividends-table-body');
             const groupBy = document.getElementById('div-group-by').value;
+            const filterText = (document.getElementById('div-filter-ticker')?.value || '').toLowerCase();
 
             let filtered = getUnifiedData();
+
+            if (filterText) {
+                filtered = filtered.filter(d => 
+                    (d.assetTicker || d.ticker || '').toLowerCase().includes(filterText) ||
+                    (d.name && d.name !== 'null' ? d.name : '').toLowerCase().includes(filterText)
+                );
+            }
 
             if (groupBy !== currentGroupBy) {
                 collapsedGroups = new Set();
