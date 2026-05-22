@@ -5823,10 +5823,19 @@ app.get('/api/analytics/dividends', requireAuth, (req, res) => {
         let allDividends = [];
 
         for (const p of portfolios) {
-            const divs = database.db.prepare("SELECT * FROM transactions WHERE portfolioId = ? AND type = 'DIVIDEND' ORDER BY date DESC").all(p.id);
+            const divs = database.db.prepare(`
+                SELECT t.*, a.name, a.isin, a.type as assetType
+                FROM transactions t
+                LEFT JOIN assets a ON t.assetTicker = a.ticker
+                WHERE t.portfolioId = ? AND t.type = 'DIVIDEND'
+                ORDER BY t.date DESC
+            `).all(p.id);
             allDividends = allDividends.concat(divs.map(d => ({
                 id:          d.id,
                 assetTicker: d.assetTicker,
+                name:        d.name,
+                isin:        d.isin,
+                assetType:   d.assetType,
                 date:        d.date,
                 amount:      d.amount,          // Netto
                 tax:         d.tax || 0,        // Tassazione
