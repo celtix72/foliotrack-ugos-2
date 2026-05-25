@@ -307,9 +307,14 @@
 
         // Pre-fill ticker if provided
         if (options.ticker) {
-            document.getElementById('tm-asset-search').value = options.ticker;
+            document.getElementById('tm-asset-search').value = options.name || options.ticker;
             document.getElementById('tm-asset-ticker').value = options.ticker;
         }
+        
+        if (options.qty !== undefined) document.getElementById('tm-qty').value = options.qty;
+        if (options.price !== undefined) document.getElementById('tm-price').value = options.price;
+        if (options.comm !== undefined) document.getElementById('tm-comm').value = options.comm;
+        if (options.tax !== undefined) document.getElementById('tm-tax').value = options.tax;
 
         toggleTransactionFields();
         } catch (err) {

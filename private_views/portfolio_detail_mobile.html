@@ -696,7 +696,6 @@
   let touchMoveX = 0;
   let currentSwipeEl = null;
   const SWIPE_THRESHOLD = 50;
-  const ACTION_WIDTH = 195; // 3 buttons * 65px
 
   window.handleTouchStart = function(e, container) {
     touchStartX = e.touches[0].clientX;
@@ -709,10 +708,12 @@
   window.handleTouchMove = function(e, container) {
     const item = container.querySelector('.mob-holding-item');
     if (!item) return;
+    const actions = container.querySelector('.mob-holding-actions');
+    const actionWidth = actions ? actions.children.length * 65 : 195;
     touchMoveX = e.touches[0].clientX;
     let diff = touchMoveX - touchStartX;
     if (diff > 0) diff = 0;
-    if (diff < -ACTION_WIDTH - 20) diff = -ACTION_WIDTH - 20;
+    if (diff < -actionWidth - 20) diff = -actionWidth - 20;
     item.style.transition = 'none';
     item.style.transform = `translateX(${diff}px)`;
   };
@@ -721,6 +722,8 @@
     if (e.target.closest('.mob-action-btn')) return;
     const item = container.querySelector('.mob-holding-item');
     if (!item) return;
+    const actions = container.querySelector('.mob-holding-actions');
+    const actionWidth = actions ? actions.children.length * 65 : 195;
     const diff = touchMoveX - touchStartX;
     
     item.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
@@ -728,7 +731,7 @@
     // If movement occurred and was beyond threshold, keep actions open.
     // Otherwise (including simple tap), reset to 0. (Tap-to-close)
     if (touchMoveX !== 0 && diff < -SWIPE_THRESHOLD) {
-      item.style.transform = `translateX(-${ACTION_WIDTH}px)`;
+      item.style.transform = `translateX(-${actionWidth}px)`;
       currentSwipeEl = container;
     } else {
       item.style.transform = 'translateX(0)';
@@ -1003,6 +1006,11 @@
                ontouchend="handleTouchEnd(event, this)">
             
             <div class="mob-holding-actions">
+              <div class="mob-action-btn bg-red-ios" 
+                   onclick="event.stopPropagation(); openTransactionModal({portfolioId: mobCurrentPortfolioId, type: 'SELL', ticker: '${h.ticker}', name: '${(h.name || '').replace(/'/g, "\\'")}', qty: ${h.shares}, price: ${h.currentPrice}})">
+                <span class="material-symbols-outlined">sell</span>
+                <span>Vendi</span>
+              </div>
               <div class="mob-action-btn bg-blue-ios" 
                    onclick="event.stopPropagation(); mobViewAssetTransactions('${h.ticker}')">
                 <span class="material-symbols-outlined">list</span>

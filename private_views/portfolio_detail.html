@@ -1152,7 +1152,14 @@
                 </button>
             ` : '';
 
+            const sellBtn = `
+                <button onclick="event.stopPropagation(); openTransactionModal({portfolioId: currentPortfolioId, type: 'SELL', ticker: '${h.ticker}', name: '${(h.name || '').replace(/'/g, "\\'")}', qty: ${h.shares}, price: ${h.currentPrice}})" class="w-7 h-7 rounded-lg bg-rose-500/10 text-rose-500 flex items-center justify-center hover:bg-rose-500/20 transition-colors" title="Sell Asset">
+                    <span class="material-symbols-outlined text-[15px]">sell</span>
+                </button>
+            `;
+
             const manualBtn = `
+                ${sellBtn}
                 <button onclick="event.stopPropagation(); openManualModal('${h.ticker}', '${h.currency}', ${h.currentPrice}, '${h.type || ''}', '${h.country || ''}', '${h.dataSource || 'YF'}', '${h.isin || ''}')" class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center hover:bg-amber-500/20 transition-colors" title="Update Price / Source">
                     <span class="material-symbols-outlined text-[15px]">edit_note</span>
                 </button>
