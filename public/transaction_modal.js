@@ -191,28 +191,60 @@
 
                 <!-- Row 5: Qty + Price -->
                 <div id="tm-qty-price-row" class="tm-row hidden" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
-                    <div><label class="mob-input-label" id="tm-qty-label">Quantità</label><input id="tm-qty" type="number" step="any" placeholder="0" class="mob-input-field font-mono" oninput="tmCalcNet()" /></div>
-                    <div><label class="mob-input-label" id="tm-price-label">Prezzo</label><input id="tm-price" type="number" step="any" placeholder="0.00" class="mob-input-field font-mono" oninput="tmCalcNet()" /></div>
+                    <div><label class="mob-input-label" id="tm-qty-label">Quantità</label><input id="tm-qty" type="number" step="any" placeholder="0" class="mob-input-field font-mono" oninput="tmCalcNet(); tmUpdateSellGain()" /></div>
+                    <div><label class="mob-input-label" id="tm-price-label">Prezzo</label><input id="tm-price" type="number" step="any" placeholder="0.00" class="mob-input-field font-mono" oninput="tmCalcNet(); tmUpdateSellGain()" /></div>
                 </div>
 
                 <!-- Row 6: Comm + Tax -->
                 <div id="tm-comm-tax-row" class="tm-row hidden" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
-                    <div id="tm-comm-wrap"><label class="mob-input-label">Commissioni</label><input id="tm-comm" type="number" step="any" value="0" class="mob-input-field font-mono" oninput="tmCalcNet()" /></div>
+                    <div id="tm-comm-wrap"><label class="mob-input-label">Commissioni</label><input id="tm-comm" type="number" step="any" value="0" class="mob-input-field font-mono" oninput="tmCalcNet(); tmUpdateSellGain()" /></div>
                     <div id="tm-tax-wrap">
                         <label class="mob-input-label">Tax</label>
-                        <input id="tm-tax" type="number" step="any" value="0" class="mob-input-field font-mono" oninput="tmCalcNet()" />
+                        <input id="tm-tax" type="number" step="any" value="0" class="mob-input-field font-mono" oninput="tmCalcNet(); tmUpdateSellGain()" />
                     </div>
                 </div>
 
                 <!-- Row 7: FX + Amount -->
                 <div id="tm-fx-amount-row" class="tm-row hidden" style="display: grid; grid-template-columns: 1fr 2fr; gap: 0.75rem; margin-bottom: 0.75rem;">
-                    <div id="tm-fx-wrap"><label class="mob-input-label">FX (<span id="tm-fx-from">USD</span>)</label><input id="tm-fx" type="number" step="any" value="1" class="mob-input-field font-mono" oninput="tmCalcNet()" /></div>
+                    <div id="tm-fx-wrap"><label class="mob-input-label">FX (<span id="tm-fx-from">USD</span>)</label><input id="tm-fx" type="number" step="any" value="1" class="mob-input-field font-mono" oninput="tmCalcNet(); tmUpdateSellGain()" /></div>
                     <div id="tm-amount-wrap"><label class="mob-input-label" id="tm-amount-label">Importo Totale</label>
                         <div class="relative"><input id="tm-amount" type="number" step="any" placeholder="0.00" class="mob-input-field font-mono" style="background: var(--mob-surface-2);" oninput="if(typeof tmCalcFromAmount === 'function') tmCalcFromAmount()" /><p class="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] font-bold italic" style="color: var(--mob-text-muted);" id="tm-amount-hint"></p></div>
                     </div>
                 </div>
 
-
+                <!-- Sell Gain Projection Panel -->
+                <div id="tm-sell-gain-panel" class="hidden tm-row" style="margin-bottom: 0.75rem; border-radius: 10px; overflow: hidden; border: 1px solid var(--mob-border);">
+                    <div style="padding: 6px 12px; background: var(--mob-surface-2); border-bottom: 1px solid var(--mob-border); display: flex; align-items: center; gap: 6px;">
+                        <span class="material-symbols-outlined" style="font-size: 13px; color: var(--mob-text-muted);">trending_up</span>
+                        <span style="font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em; color: var(--mob-text-muted);">Proiezione Vendita</span>
+                        <span id="tm-sgp-qty-badge" style="margin-left: auto; font-size: 9px; font-weight: 900; color: var(--mob-text-muted);"></span>
+                    </div>
+                    <div style="padding: 8px 12px; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; background: var(--mob-surface);">
+                        <div style="text-align: center;">
+                            <div style="font-size: 8px; font-weight: 700; text-transform: uppercase; color: var(--mob-text-muted); margin-bottom: 2px;">PMC</div>
+                            <div id="tm-sgp-avgcost" style="font-size: 11px; font-weight: 900; font-family: monospace; color: var(--mob-text);">—</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 8px; font-weight: 700; text-transform: uppercase; color: var(--mob-text-muted); margin-bottom: 2px;">Prezzo Vend.</div>
+                            <div id="tm-sgp-sellprice" style="font-size: 11px; font-weight: 900; font-family: monospace; color: var(--mob-text);">—</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 8px; font-weight: 700; text-transform: uppercase; color: var(--mob-text-muted); margin-bottom: 2px;">Gain Lordo</div>
+                            <div id="tm-sgp-gross" style="font-size: 11px; font-weight: 900; font-family: monospace;">—</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 8px; font-weight: 700; text-transform: uppercase; color: var(--mob-text-muted); margin-bottom: 2px;">Gain Netto</div>
+                            <div id="tm-sgp-net" style="font-size: 13px; font-weight: 900; font-family: monospace;">—</div>
+                        </div>
+                    </div>
+                    <div style="padding: 4px 12px 6px; background: var(--mob-surface); border-top: 1px solid var(--mob-border); display: flex; gap: 8px; align-items: center; justify-content: center;">
+                        <div id="tm-sgp-pct" style="font-size: 10px; font-weight: 900; font-family: monospace;">—</div>
+                        <div style="width: 1px; height: 12px; background: var(--mob-border);"></div>
+                        <div style="font-size: 9px; color: var(--mob-text-muted); font-weight: 700;">Incasso: <span id="tm-sgp-proceeds" style="font-weight: 900; color: var(--mob-text);">—</span></div>
+                        <div style="width: 1px; height: 12px; background: var(--mob-border);"></div>
+                        <div style="font-size: 9px; color: var(--mob-text-muted); font-weight: 700;">Costi: <span id="tm-sgp-costs" style="font-weight: 900; color: var(--mob-text);">—</span></div>
+                    </div>
+                </div>
 
                 <!-- Target Transfer -->
                 <div id="tm-dest-wrap" class="hidden" style="margin-top: 0.5rem;">
@@ -289,6 +321,11 @@
             const fx = document.getElementById('tm-fx');
             if (fx) fx.value = '1';
             
+            // Hide sell gain panel on reset
+            const sgp = document.getElementById('tm-sell-gain-panel');
+            if (sgp) sgp.classList.add('hidden');
+            window._tmSellHoldingData = null;
+
             _hideSearchResults();
 
         // Set default date = today
@@ -301,22 +338,33 @@
         document.getElementById('tm-type').value = type;
         document.getElementById('tm-source').value = 'YF';
 
-        document.getElementById('tm-title').innerText = 'Nuova Transazione';
-        document.getElementById('tm-submit-label').innerText = 'Conferma';
-        document.getElementById('tm-submit-icon').innerText = 'check_circle';
+        document.getElementById('tm-title').innerText = type === 'SELL' ? 'Vendi Asset' : 'Nuova Transazione';
+        document.getElementById('tm-submit-label').innerText = type === 'SELL' ? 'Conferma Vendita' : 'Conferma';
+        document.getElementById('tm-submit-icon').innerText = type === 'SELL' ? 'sell' : 'check_circle';
 
-        // Pre-fill ticker if provided
+        // Pre-fill ticker BEFORE toggleTransactionFields
         if (options.ticker) {
             document.getElementById('tm-asset-search').value = options.name || options.ticker;
             document.getElementById('tm-asset-ticker').value = options.ticker;
         }
-        
+
+        toggleTransactionFields();
+
+        // Pre-fill numeric fields AFTER toggle (fields are now visible)
         if (options.qty !== undefined) document.getElementById('tm-qty').value = options.qty;
         if (options.price !== undefined) document.getElementById('tm-price').value = options.price;
         if (options.comm !== undefined) document.getElementById('tm-comm').value = options.comm;
         if (options.tax !== undefined) document.getElementById('tm-tax').value = options.tax;
 
-        toggleTransactionFields();
+        // Store sell holding context for gain projection
+        if (type === 'SELL' && (options.avgCost !== undefined || options.totalQty !== undefined || options.qty !== undefined)) {
+            window._tmSellHoldingData = {
+                totalQty: options.totalQty || options.qty || 0,
+                avgCost: options.avgCost || 0,
+                currency: options.currency || 'EUR'
+            };
+            tmUpdateSellGain();
+        }
         } catch (err) {
             console.error('[TM] Error opening modal:', err);
         }
@@ -458,6 +506,84 @@
             window._tmIsCalculating = true;
             amountEl.value = net.toFixed(2);
             window._tmIsCalculating = false;
+        }
+    };
+
+    // ─── Sell Gain Projection ────────────────────────────────────────────────────
+    window.tmUpdateSellGain = function () {
+        const type = document.getElementById('tm-type')?.value;
+        const panel = document.getElementById('tm-sell-gain-panel');
+        if (!panel) return;
+
+        if (type !== 'SELL' || !window._tmSellHoldingData) {
+            panel.classList.add('hidden');
+            return;
+        }
+
+        const { totalQty, avgCost, currency } = window._tmSellHoldingData;
+        const sellQty   = parseFloat(document.getElementById('tm-qty')?.value) || 0;
+        const sellPrice = parseFloat(document.getElementById('tm-price')?.value) || 0;
+        const comm      = parseFloat(document.getElementById('tm-comm')?.value) || 0;
+        const tax       = parseFloat(document.getElementById('tm-tax')?.value) || 0;
+        const fx        = parseFloat(document.getElementById('tm-fx')?.value) || 1;
+
+        if (sellQty <= 0 || sellPrice <= 0) {
+            panel.classList.remove('hidden');
+            // Show static data but leave gain as —
+            document.getElementById('tm-sgp-avgcost').innerText  = avgCost > 0 ? avgCost.toFixed(2) : '—';
+            document.getElementById('tm-sgp-sellprice').innerText = sellPrice > 0 ? sellPrice.toFixed(2) : '—';
+            document.getElementById('tm-sgp-gross').innerText    = '—';
+            document.getElementById('tm-sgp-net').innerText      = '—';
+            document.getElementById('tm-sgp-pct').innerText      = '—';
+            document.getElementById('tm-sgp-proceeds').innerText = '—';
+            document.getElementById('tm-sgp-costs').innerText    = '—';
+            const badge = document.getElementById('tm-sgp-qty-badge');
+            if (badge) badge.innerText = totalQty > 0 ? `Hai: ${totalQty} pz` : '';
+            return;
+        }
+
+        // Proceeds in portfolio currency (after FX conversion)
+        const proceeds   = (sellQty * sellPrice) / fx;
+        // Cost basis of the sold shares (avgCost already in portfolio currency)
+        const costBasis  = sellQty * avgCost;
+        // Gross gain = proceeds - cost basis
+        const grossGain  = proceeds - costBasis;
+        // Total transaction costs
+        const totalCosts = comm + tax;
+        // Net gain = gross gain - costs
+        const netGain    = grossGain - totalCosts;
+        // % gain vs cost basis
+        const gainPct    = costBasis > 0 ? (netGain / costBasis) * 100 : 0;
+
+        const isPos = netGain >= 0;
+        const gainColor = isPos ? '#10b981' : '#f43f5e';
+        const sign = isPos ? '+' : '';
+
+        const fmt = (v, dec = 2) => {
+            const abs = Math.abs(v);
+            const s = abs >= 10000 ? abs.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.') : abs.toFixed(dec);
+            return (v < 0 ? '-' : '') + s;
+        };
+
+        panel.classList.remove('hidden');
+        document.getElementById('tm-sgp-avgcost').innerText  = avgCost > 0 ? avgCost.toFixed(2) : '—';
+        document.getElementById('tm-sgp-sellprice').innerText = sellPrice.toFixed(2);
+        document.getElementById('tm-sgp-gross').innerText    = sign + fmt(grossGain);
+        document.getElementById('tm-sgp-gross').style.color  = grossGain >= 0 ? '#10b981' : '#f43f5e';
+        document.getElementById('tm-sgp-net').innerText      = sign + fmt(netGain);
+        document.getElementById('tm-sgp-net').style.color    = gainColor;
+        document.getElementById('tm-sgp-pct').innerText      = sign + gainPct.toFixed(2) + '%';
+        document.getElementById('tm-sgp-pct').style.color    = gainColor;
+        document.getElementById('tm-sgp-proceeds').innerText = fmt(proceeds);
+        document.getElementById('tm-sgp-costs').innerText    = totalCosts > 0 ? fmt(totalCosts) : '0';
+
+        const badge = document.getElementById('tm-sgp-qty-badge');
+        if (badge) {
+            const isPartial = sellQty < totalQty;
+            badge.innerText = isPartial
+                ? `Parziale: ${sellQty} / ${totalQty} pz`
+                : `Totale: ${sellQty} pz`;
+            badge.style.color = isPartial ? '#f59e0b' : '#10b981';
         }
     };
 

@@ -1007,7 +1007,7 @@
             
             <div class="mob-holding-actions">
               <div class="mob-action-btn bg-red-ios" 
-                   onclick="event.stopPropagation(); openTransactionModal({portfolioId: mobCurrentPortfolioId, type: 'SELL', ticker: '${h.ticker}', name: '${(h.name || '').replace(/'/g, "\\'")}', qty: ${h.shares}, price: ${h.currentPrice}})">
+                   onclick="event.stopPropagation(); openTransactionModal({portfolioId: mobCurrentPortfolioId, type: 'SELL', ticker: '${h.ticker}', name: '${(h.name || '').replace(/'/g, "\\'")}', qty: ${h.shares}, totalQty: ${h.shares}, price: ${h.currentPrice}, avgCost: ${h.avgCostPortCurr || 0}, currency: '${currency}'})">
                 <span class="material-symbols-outlined">sell</span>
                 <span>Vendi</span>
               </div>
