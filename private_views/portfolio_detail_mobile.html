@@ -1436,14 +1436,31 @@
     
     try {
       const taxRes = await fetch('/api/tax-rates');
+      if (!taxRes.ok) throw new Error(`Tax rates fetch status: ${taxRes.status}`);
       const categories = await taxRes.json();
       
-      const pRes = await fetch(`/api/portfolios/${mobCurrentPortfolioId}`);
+      const portfolioId = mobCurrentPortfolioId || window.mobCurrentPortfolioId || window.currentPortfolioId;
+      if (!portfolioId) throw new Error('ID portafoglio non definito');
+      
+      const pRes = await fetch(`/api/portfolios/${portfolioId}`);
+      if (!pRes.ok) throw new Error(`Portfolio details fetch status: ${pRes.status}`);
       const p = await pRes.json();
       mobCurrentPortfolioData = p;
       
       const lossesMap = {};
-      (p.losses || []).forEach(l => { lossesMap[l.asset_type] = l.loss_amount; });
+      if (p.losses) {
+        if (Array.isArray(p.losses)) {
+          p.losses.forEach(l => {
+            const type = l.asset_type || l.type;
+            const amt = l.loss_amount !== undefined ? l.loss_amount : (l.amount !== undefined ? l.amount : 0);
+            if (type) lossesMap[type] = amt;
+          });
+        } else if (typeof p.losses === 'object') {
+          Object.entries(p.losses).forEach(([type, amt]) => {
+            lossesMap[type] = amt;
+          });
+        }
+      }
       
       bodyEl.innerHTML = categories.map(c => `
         <div class="mob-input-group">
@@ -1453,7 +1470,7 @@
       `).join('') || '<p class="text-[11px] text-slate-400 italic text-center">Nessuna categoria definita.</p>';
     } catch (err) {
       console.error(err);
-      bodyEl.innerHTML = '<p class="text-xs text-rose-500 text-center">Errore nel caricamento dei dati.</p>';
+      bodyEl.innerHTML = `<p class="text-xs text-rose-500 text-center py-4">Errore nel caricamento dei dati: ${err.message}</p>`;
     }
   };
 
