@@ -153,7 +153,7 @@
       </div>
     </div>
 
-      <div class="grid grid-cols-2 gap-3">
+      <div class="grid grid-cols-3 gap-3">
         <div class="mob-hero-stat-box">
           <span class="mob-hero-stat-box-label">Tasse Est.</span>
           <span class="mob-hero-stat-box-value text-rose-500" id="mob-f-tax">--</span>
@@ -161,6 +161,13 @@
         <div class="mob-hero-stat-box">
           <span class="mob-hero-stat-box-label">Minusvalenze</span>
           <span class="mob-hero-stat-box-value" id="mob-f-minus">--</span>
+        </div>
+        <div class="mob-hero-stat-box cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" onclick="openReconcileModal()">
+          <span class="mob-hero-stat-box-label flex items-center justify-center gap-1">
+            Cash 
+            <span class="material-symbols-outlined text-[10px] text-primary">edit</span>
+          </span>
+          <span class="mob-hero-stat-box-value text-emerald-600 dark:text-emerald-400" id="mob-detail-cash">--</span>
         </div>
       </div>
 
@@ -465,6 +472,7 @@
   let mobDetailChart = null;
   let mobDetailRange = '1M';
   window.mobCurrentPortfolioId = null;
+  let mobCurrentPortfolioData = null;
   let currentHoldings = [];
   let currentTransactions = [];
   let portfolioCurrency = 'EUR';
@@ -814,34 +822,35 @@
   // ── Portfolio Detail ──────────────────────────────
   async function mobLoadPortfolioDetail(id) {
     try {
-       const res = await fetch(`/api/portfolios/${id}`);
-       const p = await res.json();
-       console.log('[DEBUG] Mob Portfolio Data:', p);
-      const currency = p.currency || 'EUR';
-      portfolioCurrency = currency;
-      const el = (eid) => document.getElementById(eid);
+        const res = await fetch(`/api/portfolios/${id}`);
+        const p = await res.json();
+        mobCurrentPortfolioData = p;
+        console.log('[DEBUG] Mob Portfolio Data:', p);
+       const currency = p.currency || 'EUR';
+       portfolioCurrency = currency;
+       const el = (eid) => document.getElementById(eid);
 
-      const hero = el('mob-hero-section');
-      if (hero) {
-        // Phase 4: Hero background is now consistently Amber (Fiscal Summary style)
-        // Individual portfolio color is no longer used for the entire hero background.
-        hero.style.background = ''; 
-        hero.style.color = '';
-        hero.querySelectorAll('.mob-hero-label, .mob-hero-stat-box-label, .mob-hero-stat-box-value, .mob-hero-value, .mob-hero-stat-box').forEach(l => {
-          l.style.color = '';
-          l.style.background = '';
-          l.style.borderColor = '';
-        });
-        // We can still use p.color for the "add" button or name icon if wanted, but the hero background is Amber.
-      }
+       const hero = el('mob-hero-section');
+       if (hero) {
+         // Phase 4: Hero background is now consistently Amber (Fiscal Summary style)
+         // Individual portfolio color is no longer used for the entire hero background.
+         hero.style.background = ''; 
+         hero.style.color = '';
+         hero.querySelectorAll('.mob-hero-label, .mob-hero-stat-box-label, .mob-hero-stat-box-value, .mob-hero-value, .mob-hero-stat-box').forEach(l => {
+           l.style.color = '';
+           l.style.background = '';
+           l.style.borderColor = '';
+         });
+         // We can still use p.color for the "add" button or name icon if wanted, but the hero background is Amber.
+       }
 
-      if (el('mob-detail-pname')) el('mob-detail-pname').textContent = p.name;
-      if (el('mob-detail-pname-hero')) el('mob-detail-pname-hero').textContent = p.name;
-      if (el('mob-detail-label')) el('mob-detail-label').textContent = 'Portafoglio';
-      if (el('mob-detail-total')) el('mob-detail-total').textContent = formatPrivacy(p.netValue || p.totalValue, currency, 'mob-dt', 0);
-      if (el('mob-detail-gross')) el('mob-detail-gross').textContent = formatPrivacy(p.totalValue, currency, 'mob-dg', 0);
-      if (el('mob-detail-cash')) el('mob-detail-cash').textContent = formatPrivacy(p.cashBalance, currency, 'mob-dc', 0);
-      if (el('mob-detail-assets')) el('mob-detail-assets').textContent = p.assetCount || 0;
+       if (el('mob-detail-pname')) el('mob-detail-pname').textContent = p.name;
+       if (el('mob-detail-pname-hero')) el('mob-detail-pname-hero').textContent = p.name;
+       if (el('mob-detail-label')) el('mob-detail-label').textContent = 'Portafoglio';
+       if (el('mob-detail-total')) el('mob-detail-total').textContent = formatPrivacy(p.netValue || p.totalValue, currency, 'mob-dt', 0);
+       if (el('mob-detail-gross')) el('mob-detail-gross').textContent = formatPrivacy(p.totalValue, currency, 'mob-dg', 0);
+       if (el('mob-detail-cash')) el('mob-detail-cash').textContent = formatPrivacy(p.currentCash, currency, 'mob-dc', 0);
+       if (el('mob-detail-assets')) el('mob-detail-assets').textContent = p.assetCount || 0;
 
       // Performance Badge
       const perfBadge = el('mob-detail-perf-badge');
@@ -1354,8 +1363,10 @@
   window.openReconcileModal = function(currentCash, currency) {
     const modal = document.getElementById('reconcile-modal');
     if (!modal) return;
-    if (currentCash !== undefined) document.getElementById('reconcile-current-cash').textContent = formatCurrency(currentCash, currency, 2);
-    if (currency) document.getElementById('reconcile-currency-label').textContent = currency;
+    const cash = currentCash !== undefined ? currentCash : (mobCurrentPortfolioData?.currentCash || 0);
+    const curr = currency || (mobCurrentPortfolioData?.currency || 'EUR');
+    document.getElementById('reconcile-current-cash').textContent = formatCurrency(cash, curr, 2);
+    document.getElementById('reconcile-currency-label').textContent = curr;
     document.getElementById('reconcile-date').value = new Date().toISOString().split('T')[0];
     modal.style.display = 'flex';
   };

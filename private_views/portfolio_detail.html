@@ -1963,8 +1963,8 @@
         window.addEventListener('privacy-changed', () => {
             if (window._portfolioData) {
                 const p = window._portfolioData;
-                document.getElementById('total-value-label').innerText = formatPrivacy(p.totalValue, p.currency, 'p-total', 0);
-                document.getElementById('cash-balance-label').innerText = formatPrivacy(p.currentCash, p.currency, 'p-cash', 0);
+                document.getElementById('p-total-value').innerText = formatPrivacy(p.totalValue, p.currency, 'p-total', 0);
+                document.getElementById('p-cash-value').innerText = formatPrivacy(p.currentCash, p.currency, 'p-cash', 0);
                 
                 // Update hero var
                 const heroVar = document.getElementById('p-detail-day-var');
@@ -2447,7 +2447,7 @@
     }
 
     window.openReconcileModal = function() {
-        const currentCashText = document.getElementById('cash-balance-label').innerText;
+        const currentCashText = document.getElementById('p-cash-value').innerText;
         document.getElementById('reconcile-current-cash').innerText = currentCashText;
         document.getElementById('reconcile-actual-cash').value = '';
         document.getElementById('reconcile-currency-label').innerText = portfolioCurrency;
