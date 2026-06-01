@@ -3036,6 +3036,7 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
         p.totalValue = details.totalValue || 0;
         p.totalTax = details.totalLatentTax || 0;
         p.netValue = p.totalValue - p.totalTax;
+        p.currentCash = details.currentCash || 0;
         p.roi = details.roi || 0;
         p.twr = details.twr || 0;
         p.xirr = details.xirr || 0;
