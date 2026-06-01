@@ -355,8 +355,24 @@
                     </button>
                 </div>
             </div>
-            <div id="portfolio-container" class="flex flex-col gap-2">
-                <!-- JS filled -->
+            <div class="overflow-hidden bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                            <th class="px-5 py-3">Portafoglio</th>
+                            <th class="px-5 py-3 text-right">1D</th>
+                            <th class="px-5 py-3 text-right hidden sm:table-cell">Tax</th>
+                            <th class="px-5 py-3 text-right hidden sm:table-cell">Minusvalenze</th>
+                            <th class="px-5 py-3 text-right hidden sm:table-cell">Tot. Netto</th>
+                            <th class="px-5 py-3 text-right hidden sm:table-cell">Cash</th>
+                            <th class="px-5 py-3 text-right hidden sm:table-cell">Tot. Lordo</th>
+                            <th class="px-5 py-3 text-center w-10"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm" id="portfolio-container">
+                        <!-- JS filled -->
+                    </tbody>
+                </table>
             </div>
         </section>
 
@@ -655,7 +671,7 @@
 
         const pContainer = document.getElementById('portfolio-container');
         if (pContainer) {
-            pContainer.innerHTML = portfolios.map(p => createPortfolioCard(p)).join('') || '<div class="col-span-full py-12 text-center text-slate-500 italic">No portfolios found.</div>';
+            pContainer.innerHTML = portfolios.map(p => createPortfolioCard(p)).join('') || '<tr><td colspan="8" class="py-12 text-center text-slate-500 italic">No portfolios found.</td></tr>';
         }
 
         renderSidebarPortfolios(portfolios);
@@ -698,11 +714,9 @@
         const isPos1D = val1d >= 0;
         const sign1D  = isPos1D ? '+' : '';
         const color1D = isPos1D ? 'text-emerald-500' : 'text-rose-500';
-        const bg1D    = isPos1D ? 'bg-emerald-500/10' : 'bg-rose-500/10';
         const symbol  = p.currency === 'EUR' ? '€' : (p.currency === 'USD' ? '$' : p.currency);
 
         const displayVal1D  = isPrivate ? '****' : `${sign1D}${symbol}${formatNumber(Math.abs(val1d), 0)}`;
-        const displayPct1D  = isPrivate ? '****' : `${sign1D}${Math.abs(pct1d).toFixed(2)}%`;
         const totalValStr   = formatPrivacy(p.totalValue, p.currency, 'p-' + p.id, 0);
         const taxValStr     = formatPrivacy(p.totalTax || 0, p.currency, 't-' + p.id, 0);
         const minusValStr   = formatPrivacy(p.minusvalenze || 0, p.currency, 'm-' + p.id, 0);
@@ -710,49 +724,31 @@
         const cashValStr    = formatPrivacy(p.currentCash || 0, p.currency, 'c-' + p.id, 0);
 
         return `
-            <div class="bg-white dark:bg-surface-dark px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between group hover:border-primary/60 hover:shadow-md transition-all cursor-pointer w-full" onclick="window.location.href='/portfolio?id=${p.id}'">
-                <div class="flex items-center gap-2 min-w-0 flex-1">
-                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0 shadow-sm" style="background-color: ${p.color || '#6366f1'}">
-                        <span class="material-symbols-outlined text-[16px]">work</span>
-                    </div>
-                    <div class="min-w-0">
-                        <div class="flex items-center gap-1.5">
-                            <p class="text-xs font-black tracking-tight text-slate-900 dark:text-slate-100 truncate">${p.name}</p>
-                            ${p.type === 'Conto Deposito' ? '<span class="text-[8px] font-black bg-amber-500/10 text-amber-500 px-1 py-0.5 rounded border border-amber-500/30 shrink-0">DEP</span>' : ''}
+            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer group" onclick="window.location.href='/portfolio?id=${p.id}'">
+                <td class="px-5 py-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0 shadow-sm" style="background-color: ${p.color || '#6366f1'}">
+                            <span class="material-symbols-outlined text-[16px]">work</span>
                         </div>
-                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest truncate">${p.assetCount || 0} assets · ${p.currency}</p>
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-1.5">
+                                <p class="text-xs font-black tracking-tight text-slate-900 dark:text-slate-100 truncate">${p.name}</p>
+                                ${p.type === 'Conto Deposito' ? '<span class="text-[8px] font-black bg-amber-500/10 text-amber-500 px-1 py-0.5 rounded border border-amber-500/30 shrink-0">DEP</span>' : ''}
+                            </div>
+                            <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest truncate">${p.assetCount || 0} assets · ${p.currency}</p>
+                        </div>
                     </div>
-                </div>
-
-                <div class="flex items-center gap-4 shrink-0 text-right">
-                    <div class="text-right min-w-[70px]">
-                        <p class="text-[8px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">1D</p>
-                        <p class="text-xs font-black ${color1D} truncate">${displayVal1D}</p>
-                    </div>
-                    <div class="w-px h-6 bg-slate-200 dark:bg-slate-800 hidden md:block"></div>
-                    <div class="text-right hidden sm:block min-w-[70px]">
-                        <p class="text-[8px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">Tax</p>
-                        <p class="text-xs font-black text-rose-500 truncate">-${taxValStr}</p>
-                    </div>
-                    <div class="text-right hidden sm:block min-w-[70px]">
-                        <p class="text-[8px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">Minusvalenze</p>
-                        <p class="text-xs font-black text-amber-500 truncate">-${minusValStr}</p>
-                    </div>
-                    <div class="text-right hidden sm:block min-w-[70px]">
-                        <p class="text-[8px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">Tot. Netto</p>
-                        <p class="text-xs font-black text-emerald-500 truncate">${netValStr}</p>
-                    </div>
-                    <div class="text-right hidden sm:block min-w-[70px]">
-                        <p class="text-[8px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">Cash</p>
-                        <p class="text-xs font-black text-slate-700 dark:text-slate-200 truncate">${cashValStr}</p>
-                    </div>
-                    <div class="text-right hidden sm:block min-w-[70px]">
-                        <p class="text-[8px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">Tot. Lordo</p>
-                        <p class="text-xs font-black text-slate-900 dark:text-white truncate">${totalValStr}</p>
-                    </div>
-                    <span class="material-symbols-outlined text-slate-300 dark:text-slate-700 group-hover:text-primary transition-colors text-base hidden md:block">chevron_right</span>
-                </div>
-            </div>
+                </td>
+                <td class="px-5 py-3 text-right font-black ${color1D}">${displayVal1D}</td>
+                <td class="px-5 py-3 text-right font-black text-rose-500 hidden sm:table-cell">-${taxValStr}</td>
+                <td class="px-5 py-3 text-right font-black text-amber-500 hidden sm:table-cell">-${minusValStr}</td>
+                <td class="px-5 py-3 text-right font-black text-emerald-500 hidden sm:table-cell">${netValStr}</td>
+                <td class="px-5 py-3 text-right font-black text-slate-700 dark:text-slate-200 hidden sm:table-cell">${cashValStr}</td>
+                <td class="px-5 py-3 text-right font-black text-slate-900 dark:text-white hidden sm:table-cell">${totalValStr}</td>
+                <td class="px-5 py-3 text-center w-10">
+                    <span class="material-symbols-outlined text-slate-300 dark:text-slate-700 group-hover:text-primary transition-colors text-base">chevron_right</span>
+                </td>
+            </tr>
         `;
     }
 
