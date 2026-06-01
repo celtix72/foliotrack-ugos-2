@@ -158,9 +158,12 @@
           <span class="mob-hero-stat-box-label">Tasse Est.</span>
           <span class="mob-hero-stat-box-value text-rose-500" id="mob-f-tax">--</span>
         </div>
-        <div class="mob-hero-stat-box">
-          <span class="mob-hero-stat-box-label">Minusvalenze</span>
-          <span class="mob-hero-stat-box-value" id="mob-f-minus">--</span>
+        <div class="mob-hero-stat-box cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" onclick="openMinusvalenzeModal()">
+          <span class="mob-hero-stat-box-label flex items-center justify-center gap-1">
+            Minusvalenze
+            <span class="material-symbols-outlined text-[10px] text-primary">edit</span>
+          </span>
+          <span class="mob-hero-stat-box-value text-amber-500" id="mob-f-minus">--</span>
         </div>
         <div class="mob-hero-stat-box cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" onclick="openReconcileModal()">
           <span class="mob-hero-stat-box-label flex items-center justify-center gap-1">
@@ -280,32 +283,51 @@
   </div>
 </div>
 <!-- Reconcile Modal -->
-<div id="reconcile-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[10000] flex items-center justify-center" style="display:none">
-    <div class="bg-white dark:bg-surface-dark w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden max-h-[90vh] flex flex-col">
-        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
-            <h3 class="font-black text-lg">Cash Reconciliation</h3>
-            <button onclick="closeReconcileModal()" class="text-slate-400 hover:text-rose-500 transition-colors">
+<div id="reconcile-modal" class="mob-modal-overlay">
+    <div class="mob-modal-content">
+        <div class="mob-modal-header">
+            <h3 class="mob-modal-title">Cash Reconciliation</h3>
+            <button onclick="closeReconcileModal()" class="mob-modal-close">
                 <span class="material-symbols-outlined">close</span>
             </button>
         </div>
-        <div class="p-6 space-y-4">
-            <div class="p-4 bg-primary/5 border border-primary/20 rounded-xl space-y-1">
+        <div class="mob-modal-body">
+            <div class="p-4 bg-primary/5 border border-primary/20 rounded-xl space-y-1" style="background: var(--mob-surface-2); border-color: var(--mob-border);">
                 <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter" id="header-user-role">M2T</p>
-                <p id="reconcile-current-cash" class="text-xl font-black text-primary">€ 0.00</p>
+                <p id="reconcile-current-cash" class="text-xl font-black text-primary" style="color: var(--mob-primary);">€ 0.00</p>
             </div>
-            <div class="space-y-2">
-                <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Actual Balance (<span id="reconcile-currency-label">EUR</span>)</label>
-                <input id="reconcile-actual-cash" type="number" step="any" placeholder="0.00" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold text-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"/>
+            <div class="mob-input-group">
+                <label class="mob-input-label">Actual Balance (<span id="reconcile-currency-label">EUR</span>)</label>
+                <input id="reconcile-actual-cash" type="number" step="any" placeholder="0.00" class="mob-input-field" style="font-size: 18px;"/>
                 <p class="text-[10px] text-slate-400 italic">Enter the current cash balance from your broker/bank.</p>
             </div>
-            <div class="space-y-2">
-                <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Adjustment Date</label>
-                <input id="reconcile-date" type="date" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold outline-none"/>
+            <div class="mob-input-group">
+                <label class="mob-input-label">Adjustment Date</label>
+                <input id="reconcile-date" type="date" class="mob-input-field"/>
             </div>
-            <div class="pt-2 flex gap-3">
-                <button onclick="closeReconcileModal()" class="flex-1 py-3 rounded-xl font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Cancel</button>
-                <button onclick="saveReconcile()" class="flex-1 py-3 rounded-xl font-bold bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">Reconcile Now</button>
-            </div>
+        </div>
+        <div class="mob-modal-footer">
+            <button onclick="closeReconcileModal()" class="mob-btn mob-btn-secondary">Annulla</button>
+            <button onclick="saveReconcile()" class="mob-btn mob-btn-primary">Reconcilia Ora</button>
+        </div>
+    </div>
+</div>
+
+<!-- Minusvalenze Modal -->
+<div id="minusvalenze-modal" class="mob-modal-overlay">
+    <div class="mob-modal-content">
+        <div class="mob-modal-header">
+            <h3 class="mob-modal-title">Gestione Minusvalenze</h3>
+            <button onclick="closeMinusvalenzeModal()" class="mob-modal-close">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="mob-modal-body" id="minusvalenze-modal-body">
+            <!-- Dynamic fields will be injected here -->
+        </div>
+        <div class="mob-modal-footer">
+            <button onclick="closeMinusvalenzeModal()" class="mob-btn mob-btn-secondary">Annulla</button>
+            <button onclick="saveMinusvalenze()" class="mob-btn mob-btn-primary">Salva</button>
         </div>
     </div>
 </div>
@@ -1368,12 +1390,16 @@
     document.getElementById('reconcile-current-cash').textContent = formatCurrency(cash, curr, 2);
     document.getElementById('reconcile-currency-label').textContent = curr;
     document.getElementById('reconcile-date').value = new Date().toISOString().split('T')[0];
-    modal.style.display = 'flex';
+    modal.classList.add('active');
+    document.body.classList.add('modal-open');
   };
 
   window.closeReconcileModal = function() {
     const modal = document.getElementById('reconcile-modal');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+      modal.classList.remove('active');
+      document.body.classList.remove('modal-open');
+    }
   };
 
   window.saveReconcile = async function() {
@@ -1395,6 +1421,90 @@
         alert('Reconcile failed: ' + (e.error || 'Unknown error'));
       }
     } catch (err) { console.error(err); }
+  };
+
+  // ── Minusvalenze Modal ────────────────────────────────
+  window.openMinusvalenzeModal = async function() {
+    const modal = document.getElementById('minusvalenze-modal');
+    if (!modal) return;
+    
+    const bodyEl = document.getElementById('minusvalenze-modal-body');
+    bodyEl.innerHTML = '<div style="text-align:center;padding:32px"><div class="mob-spinner" style="margin:0 auto"></div></div>';
+    
+    modal.classList.add('active');
+    document.body.classList.add('modal-open');
+    
+    try {
+      const taxRes = await fetch('/api/tax-rates');
+      const categories = await taxRes.json();
+      
+      const pRes = await fetch(`/api/portfolios/${mobCurrentPortfolioId}`);
+      const p = await pRes.json();
+      mobCurrentPortfolioData = p;
+      
+      const lossesMap = {};
+      (p.losses || []).forEach(l => { lossesMap[l.asset_type] = l.loss_amount; });
+      
+      bodyEl.innerHTML = categories.map(c => `
+        <div class="mob-input-group">
+          <label class="mob-input-label">${c.asset_type}</label>
+          <input data-type="${c.asset_type}" type="number" step="any" class="mob-minusvalenza-input mob-input-field" value="${lossesMap[c.asset_type] || 0}" placeholder="0.00"/>
+        </div>
+      `).join('') || '<p class="text-[11px] text-slate-400 italic text-center">Nessuna categoria definita.</p>';
+    } catch (err) {
+      console.error(err);
+      bodyEl.innerHTML = '<p class="text-xs text-rose-500 text-center">Errore nel caricamento dei dati.</p>';
+    }
+  };
+
+  window.closeMinusvalenzeModal = function() {
+    const modal = document.getElementById('minusvalenze-modal');
+    if (modal) {
+      modal.classList.remove('active');
+      document.body.classList.remove('modal-open');
+    }
+  };
+
+  window.saveMinusvalenze = async function() {
+    if (!mobCurrentPortfolioId || !mobCurrentPortfolioData) return;
+    
+    const losses = {};
+    document.querySelectorAll('.mob-minusvalenza-input').forEach(input => {
+      const type = input.getAttribute('data-type');
+      const val = parseFloat(input.value) || 0;
+      if (type) losses[type] = val;
+    });
+    
+    const body = {
+      name: mobCurrentPortfolioData.name,
+      type: mobCurrentPortfolioData.type,
+      currency: mobCurrentPortfolioData.currency,
+      startDate: mobCurrentPortfolioData.startDate,
+      initialCash: mobCurrentPortfolioData.initialCash,
+      color: mobCurrentPortfolioData.color,
+      include_in_totals: mobCurrentPortfolioData.include_in_totals !== 0,
+      tags: (mobCurrentPortfolioData.tags || []).map(t => t.id),
+      losses: losses
+    };
+    
+    try {
+      const res = await fetch(`/api/portfolios/${mobCurrentPortfolioId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (res.ok) {
+        closeMinusvalenzeModal();
+        mobLoadPortfolioDetail(mobCurrentPortfolioId);
+        window.showNotification && window.showNotification('Minusvalenze aggiornate!', 'success');
+      } else {
+        const errText = await res.text();
+        alert('Failed to save minusvalenze: ' + errText);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Errore di connessione.');
+    }
   };
 
   function mobInit() {
