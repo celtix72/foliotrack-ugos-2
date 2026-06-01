@@ -223,6 +223,24 @@
 
       <!-- Holdings -->
       <div id="mob-holdings-view">
+        <!-- Sort Control -->
+        <div class="px-4 py-2 mx-4 my-2 flex items-center justify-between bg-slate-50 dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl" style="background: var(--mob-surface-2); border-color: var(--mob-border);">
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">sort</span>
+            Ordina per
+          </span>
+          <select id="mob-holdings-sort" onchange="mobSortHoldings()" class="bg-transparent border-none text-xs font-black text-primary outline-none focus:ring-0 cursor-pointer">
+            <option value="value_desc">Valore (Max → Min)</option>
+            <option value="value_asc">Valore (Min → Max)</option>
+            <option value="dayvar_desc">Var. Giornaliera (Max → Min)</option>
+            <option value="dayvar_asc">Var. Giornaliera (Min → Max)</option>
+            <option value="absvar_desc">Var. Assoluta (Max → Min)</option>
+            <option value="absvar_asc">Var. Assoluta (Min → Max)</option>
+            <option value="absvar_pct_desc">Var. Assoluta % (Max → Min)</option>
+            <option value="absvar_pct_asc">Var. Assoluta % (Min → Max)</option>
+          </select>
+        </div>
+
         <div class="mob-list-edge" id="mob-holdings-list">
           <div style="text-align:center;padding:32px">
             <div class="mob-spinner" style="margin:0 auto"></div>
@@ -935,6 +953,12 @@
       // 2. Load holdings and transactions from the already fetched portfolio data
       currentHoldings = p.holdings || [];
       currentTransactions = p.transactions || [];
+      
+      const sortSetting = localStorage.getItem('mobHoldingsSort') || 'value_desc';
+      const sortSelect = document.getElementById('mob-holdings-sort');
+      if (sortSelect) sortSelect.value = sortSetting;
+      mobSortHoldingsArray(currentHoldings, sortSetting);
+
       mobLoadHoldings(currentHoldings, currency);
       mobLoadTransactions(currentTransactions, currency);
       mobRenderAllocation(p.allocation || [], currency);
@@ -972,6 +996,40 @@
       `;
     }).join('');
   }
+
+  function mobSortHoldingsArray(holdings, option) {
+    holdings.sort((a, b) => {
+      let valA = 0;
+      let valB = 0;
+      
+      if (option.startsWith('value')) {
+        valA = a.currentValue || 0;
+        valB = b.currentValue || 0;
+      } else if (option.startsWith('dayvar')) {
+        valA = (a.changeValuePortfolio || 0) * (a.shares || 0);
+        valB = (b.changeValuePortfolio || 0) * (b.shares || 0);
+      } else if (option.startsWith('absvar_pct')) {
+        valA = a.unrealizedGainPct || 0;
+        valB = b.unrealizedGainPct || 0;
+      } else if (option.startsWith('absvar')) {
+        valA = a.unrealizedGain || 0;
+        valB = b.unrealizedGain || 0;
+      }
+      
+      if (option.endsWith('_asc')) {
+        return valA - valB;
+      } else {
+        return valB - valA;
+      }
+    });
+  }
+
+  window.mobSortHoldings = function() {
+    const option = document.getElementById('mob-holdings-sort')?.value || 'value_desc';
+    localStorage.setItem('mobHoldingsSort', option);
+    mobSortHoldingsArray(currentHoldings, option);
+    mobLoadHoldings(currentHoldings, portfolioCurrency);
+  };
 
   async function mobLoadHoldings(holdings, currency) {
     const container = document.getElementById('mob-holdings-list');
