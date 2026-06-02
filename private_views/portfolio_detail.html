@@ -2574,7 +2574,7 @@
             </div>
         `;
         
-        const source = new EventSource('/api/portfolios/' + portfolioId + '/ai-analysis');
+        const source = new EventSource('/api/portfolios/' + currentPortfolioId + '/ai-analysis');
         
         source.addEventListener('progress', (e) => {
             const data = JSON.parse(e.data);
@@ -2605,7 +2605,7 @@
         const content = document.getElementById('ai-history-content');
         content.innerHTML = `<div class="text-center py-8 text-slate-500"><span class="material-symbols-outlined animate-spin text-3xl">sync</span></div>`;
         
-        fetch('/api/portfolios/' + portfolioId + '/ai-history')
+        fetch('/api/portfolios/' + currentPortfolioId + '/ai-history')
             .then(res => res.json())
             .then(data => {
                 if (!Array.isArray(data)) {
@@ -2658,7 +2658,7 @@
     function deleteDtAiHistory(id) {
         if (!confirm('Sei sicuro di voler eliminare questa analisi?')) return;
         
-        fetch('/api/portfolios/' + portfolioId + '/ai-history/' + id, { method: 'DELETE' })
+        fetch('/api/portfolios/' + currentPortfolioId + '/ai-history/' + id, { method: 'DELETE' })
             .then(res => res.json())
             .then(data => {
                 if(data.success) {
