@@ -1,7 +1,9 @@
-[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
-2026-03-29T13:00:46.760Z [INFO] Skipping automatic market update: all markets are closed.
-2026-03-29T13:00:46.781Z [INFO] FolioTrack server running on port 3000
-2026-03-29T13:00:46.791Z [INFO] Database: /Users/mauro/Documents/Progetto_FolioTracker2/foliotrack.db
-Please consider completing the survey at https://bit.ly/yahoo-finance-api-feedback if you haven't already; for more info see https://github.com/gadicc/yahoo-finance2/issues/764#issuecomment-2056623851.  This will only be shown once, but you can suppress this message in future with `new YahooFinance({ suppressNotices: ['yahooSurvey'] })`.
-2026-03-29T13:01:46.732Z [INFO] Recording daily snapshots for portfolios and dashboard...
-2026-03-29T13:01:47.154Z [INFO] Daily snapshots completed.
+
+> progetto_foliotracker2@1.0.0 dev
+> node src/server.js
+
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+2026-06-02T09:07:12.832Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+[31mCRITICAL SECURITY WARNING: JWT_SECRET is not set. Using default development secret![0m
+2026-06-02T09:07:12.957Z [INFO] FolioTrack server running on port 3000
+2026-06-02T09:07:12.967Z [INFO] Database: /Users/mauro/Documents/FolioTrack3/foliotrack.db
