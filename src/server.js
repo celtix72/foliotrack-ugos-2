@@ -3486,10 +3486,74 @@ app.get('/api/portfolios/:id', requireAuth, requirePortfolioAccess, async (req, 
     }
 });
 
+app.get('/api/portfolios/:id/ai-analysis', requireAuth, requirePortfolioAccess, async (req, res) => {
+    try {
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            return res.status(400).json({ error: 'Chiave API GEMINI_API_KEY mancante. Configurala nel file .env per abilitare questa funzionalità.' });
+        }
 
+        const data = await getPortfolioDetails(req.params.id);
+        const holdings = data.holdings.filter(h => h.currentShares > 0).sort((a, b) => b.currentValue - a.currentValue);
+        
+        // Take top 10 for analysis to avoid huge prompt
+        const topHoldings = holdings.slice(0, 10);
+        
+        let contextData = '';
+        for (const h of topHoldings) {
+            try {
+                // Fetch recent news
+                const newsRes = await yahooFinance.search(h.ticker, { newsCount: 3 }).catch(() => ({}));
+                const newsTitles = (newsRes.news || []).map(n => n.title).join('; ');
+                
+                // Fetch earnings/fundamentals
+                const summary = await yahooFinance.quoteSummary(h.ticker, { modules: ['calendarEvents', 'defaultKeyStatistics'] }).catch(() => null);
+                let earningsDate = 'Sconosciuta';
+                if (summary?.calendarEvents?.earnings?.earningsDate?.[0]) {
+                    earningsDate = new Date(summary.calendarEvents.earnings.earningsDate[0]).toISOString().split('T')[0];
+                }
+                
+                contextData += `\n- **${h.ticker} (${h.name})**:
+  - Asset Type: ${h.type}
+  - Quote in Portfolio: ${h.currentShares} shares
+  - Average Cost (PMC): ${h.averageCost} ${data.portfolioCurrency}
+  - Current Price: ${h.currentPrice} ${h.currency}
+  - Total Value: ${h.currentValue} ${data.portfolioCurrency}
+  - Gain/Loss: ${h.percentageGainLoss}%
+  - Prossima Trimestrale (Earnings): ${earningsDate}
+  - Ultime News: ${newsTitles || 'Nessuna news rilevante recente'}`;
+            } catch (err) {
+                console.error(`Error fetching context for ${h.ticker}:`, err);
+            }
+        }
 
+        const prompt = `
+Sei un consulente finanziario esperto. Analizza i seguenti asset principali di un portafoglio d'investimento.
+Per ogni asset, fornisci un'indicazione operativa (es. Mantenere, Incrementare, Ridurre) basandoti sulla qualità del titolo, il Prezzo Medio di Carico (PMC) dell'utente rispetto al prezzo attuale, il contesto geopolitico e macroeconomico attuale, e le notizie/trimestrali recenti indicate.
 
+Portafoglio (Top Asset):
+${contextData}
 
+Fornisci una risposta formattata in Markdown, concisa ma professionale. Includi un breve paragrafo introduttivo sul contesto macroeconomico generale attuale, seguito dall'analisi di ogni titolo, e concludi con un suggerimento di ribilanciamento o gestione del rischio globale.
+`;
+
+        const response = await axios.post(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`,
+            {
+                contents: [{ parts: [{ text: prompt }] }]
+            },
+            {
+                headers: { 'Content-Type': 'application/json' }
+            }
+        );
+
+        const aiText = response.data.candidates?.[0]?.content?.parts?.[0]?.text || "Nessuna risposta dall'IA.";
+        res.json({ analysis: aiText });
+    } catch (err) {
+        console.error('AI Analysis Error:', err?.response?.data || err.message);
+        res.status(500).json({ error: 'Errore durante l\'analisi IA: ' + (err?.response?.data?.error?.message || err.message) });
+    }
+});
 
 app.get('/api/analytics/global-allocation', requireAuth, async (req, res) => {
     try {

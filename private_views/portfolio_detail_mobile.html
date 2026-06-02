@@ -27,6 +27,7 @@
     <script src="/theme.js"></script>
     <script src="/transaction_modal.js"></script>
     <script src="/mobile_transactions.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
@@ -213,6 +214,14 @@
         <div id="mob-allocation-list" style="display:flex; flex-direction:column; gap:10px;">
           <!-- JS filled -->
         </div>
+      </div>
+
+      <!-- AI Analysis Button -->
+      <div style="padding: 0 20px 10px;">
+        <button onclick="openAiAnalysisModal()" class="w-full py-3 rounded-xl font-black text-white shadow-lg flex items-center justify-center gap-2" style="background: linear-gradient(135deg, #6366f1, #a855f7); animation: pulse-border 2s infinite;">
+          <span class="material-symbols-outlined">auto_awesome</span>
+          Analisi IA Portafoglio
+        </button>
       </div>
 
       <!-- Tabs -->
@@ -1642,4 +1651,61 @@
   });
 })();
 </script>
+<!-- AI Analysis Modal -->
+<div id="ai-analysis-modal" class="mob-modal-overlay">
+    <div class="mob-modal" style="max-height: 90vh; display: flex; flex-direction: column;">
+        <div class="mob-modal-header" style="flex-shrink: 0;">
+            <div class="mob-modal-title flex items-center gap-2">
+                <span class="material-symbols-outlined" style="color: #a855f7;">auto_awesome</span>
+                Analisi IA
+            </div>
+            <button onclick="closeAiAnalysisModal()" class="mob-modal-close">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="mob-modal-body" style="overflow-y: auto; flex: 1; padding: 20px; font-size: 14px; line-height: 1.5;" id="ai-analysis-content">
+            <!-- Loading Spinner or AI Output goes here -->
+        </div>
+    </div>
+</div>
+
+<script>
+    function openAiAnalysisModal() {
+        const modal = document.getElementById('ai-analysis-modal');
+        const content = document.getElementById('ai-analysis-content');
+        modal.classList.add('active');
+        
+        content.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-10" style="color: #6366f1;">
+                <span class="material-symbols-outlined animate-spin mb-4" style="font-size: 3rem;">sync</span>
+                <p class="font-bold text-center">Analisi del portafoglio in corso...<br/><span style="font-size: 11px; font-weight: normal;">L'elaborazione delle notizie e dei dati di bilancio richiede circa 10-15 secondi.</span></p>
+            </div>
+        `;
+        
+        // Fetch AI Analysis from backend
+        fetch('/api/portfolios/' + currentPortfolioId + '/ai-analysis')
+            .then(res => res.json().then(data => ({ status: res.status, body: data })))
+            .then(result => {
+                if (result.status !== 200) {
+                    content.innerHTML = `<div class="p-4 bg-rose-50 dark:bg-rose-900/20 text-rose-600 rounded-lg font-bold">Errore: ${result.body.error || 'Errore sconosciuto'}</div>`;
+                } else {
+                    content.innerHTML = marked.parse(result.body.analysis);
+                    // Add tailwind prose classes or custom styling for markdown if necessary
+                    content.querySelectorAll('h1, h2, h3').forEach(el => el.classList.add('font-black', 'mt-4', 'mb-2'));
+                    content.querySelectorAll('p').forEach(el => el.classList.add('mb-3'));
+                    content.querySelectorAll('ul').forEach(el => el.classList.add('list-disc', 'pl-5', 'mb-3'));
+                    content.querySelectorAll('li').forEach(el => el.classList.add('mb-1'));
+                    content.querySelectorAll('strong').forEach(el => el.style.color = 'inherit');
+                }
+            })
+            .catch(err => {
+                content.innerHTML = `<div class="p-4 bg-rose-50 dark:bg-rose-900/20 text-rose-600 rounded-lg font-bold">Errore di rete durante la richiesta.</div>`;
+            });
+    }
+
+    function closeAiAnalysisModal() {
+        document.getElementById('ai-analysis-modal').classList.remove('active');
+    }
+</script>
+
 </body></html>
