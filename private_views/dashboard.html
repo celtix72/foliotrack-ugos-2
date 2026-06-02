@@ -189,21 +189,11 @@
                         <h2 id="total-net-worth" class="text-4xl font-black tracking-tight text-slate-900 dark:text-white">€0</h2>
                         <div id="hero-day-var" class="px-2.5 py-1 rounded-lg text-sm font-bold shadow-sm hidden"></div>
                     </div>
+                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                        Lordo: <span id="total-gross-worth" class="text-slate-500">€0</span>
+                    </p>
                 </div>
                 
-                <!-- divider -->
-                <div class="hidden xl:block w-px h-12 bg-slate-200 dark:bg-slate-800"></div>
-
-                <!-- LORDO -->
-                <div class="space-y-1">
-                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                        LORDO
-                    </p>
-                    <div class="flex items-center gap-2">
-                        <h3 id="total-gross-worth" class="text-xl font-bold tracking-tight">€0</h3>
-                    </div>
-                </div>
-
                 <!-- divider -->
                 <div class="hidden xl:block w-px h-12 bg-slate-200 dark:bg-slate-800"></div>
 
@@ -642,14 +632,6 @@
         document.getElementById('total-net-worth').innerText = formatPrivacy(metrics.totalNetValue, 'EUR', 'networth');
         document.getElementById('total-gross-worth').innerText = formatPrivacy(metrics.totalValue, 'EUR', 'gross');
         
-        const gainAmt = metrics.totalGain;
-        const gainEl = document.getElementById('total-gain-value');
-        if (gainEl) {
-            const isGainPos = gainAmt >= 0;
-            gainEl.className = `text-xl font-bold tracking-tight ${isGainPos ? 'text-emerald-500' : 'text-rose-500'}`;
-            const sign = isGainPos ? '+' : '';
-            gainEl.innerText = sign + formatPrivacy(gainAmt, 'EUR', 'gain', 0);
-        }
 
         const heroVar = document.getElementById('hero-day-var');
         if (heroVar) {
@@ -861,9 +843,8 @@
         try {
             let url = '/api/analytics/global-performance?range=6M';
             if (selectedPortfolioIds.length > 0) url += `&portfolioIds=${selectedPortfolioIds.join(',')}`;
-            const res  = await fetch(url);
-            const raw  = await res.json();
-            // API returns array of { date, value, profit, netDeposits } or { dataPoints: [...] }
+            const res   = await fetch(url);
+            const raw   = await res.json();
             const points = Array.isArray(raw) ? raw : (raw.dataPoints || []);
 
             if (points.length < 2) {
@@ -871,39 +852,53 @@
                 return;
             }
 
-            // Aggregate to ~24 buckets (weekly) for a clean sparkline
-            const bucketCount = Math.min(24, points.length);
-            const step = Math.max(1, Math.floor(points.length / bucketCount));
-            const sampled = [];
-            for (let i = step; i < points.length; i += step) {
-                const prev = points[i - step];
-                const curr = points[i];
-                const gain = (curr.value - curr.netDeposits) - (prev.value - prev.netDeposits);
-                sampled.push({ date: curr.date, gain });
+            // --- Group data points by calendar month ---
+            // Build a map: "YYYY-MM" -> { firstProfit, lastProfit }
+            const monthMap = {};
+            for (const pt of points) {
+                const key = (pt.date || '').substring(0, 7); // "YYYY-MM"
+                if (!key) continue;
+                const profit = (pt.value || 0) - (pt.netDeposits || 0);
+                if (!monthMap[key]) monthMap[key] = { first: profit, last: profit };
+                else monthMap[key].last = profit;
             }
 
-            if (sampled.length === 0) {
+            // Sort month keys and keep only the 6 most recent months with full data
+            const sortedKeys = Object.keys(monthMap).sort();
+            // We want month-over-month gain (last of month minus last of prior month)
+            const months = [];
+            for (let i = 1; i < sortedKeys.length; i++) {
+                const prev = monthMap[sortedKeys[i - 1]];
+                const curr = monthMap[sortedKeys[i]];
+                const gain = curr.last - prev.last;
+                const monthNum = parseInt(sortedKeys[i].split('-')[1], 10);
+                months.push({ key: sortedKeys[i], monthNum, gain });
+            }
+            // Take last 6 months
+            const bars = months.slice(-6);
+
+            if (bars.length === 0) {
                 barsContainer.innerHTML = '<span class="text-[9px] text-slate-400 italic">No data</span>';
                 return;
             }
 
-            const maxAbs   = Math.max(...sampled.map(d => Math.abs(d.gain)), 1);
-            const sixMTotal = sampled.reduce((s, d) => s + d.gain, 0);
+            const maxAbs    = Math.max(...bars.map(d => Math.abs(d.gain)), 1);
+            const sixMTotal = bars.reduce((s, d) => s + d.gain, 0);
 
-            barsContainer.innerHTML = sampled.map(d => {
-                const pct    = Math.round((Math.abs(d.gain) / maxAbs) * 100);
-                const isPos  = d.gain >= 0;
-                const color  = isPos ? '#10b981' : '#f43f5e';
-                const parts  = (d.date || '').split('-');
-                const dayLabel = parts.length >= 3 ? `${parts[2]}/${parts[1]}` : '';
-                const gainStr  = (isPos ? '+' : '') + formatCurrency(d.gain, 'EUR', 0);
-                const barH     = Math.max(pct * 0.32, 2);
+            // Bar width: 6 bars with a label, spread to fill nicely
+            barsContainer.innerHTML = bars.map(d => {
+                const pct     = Math.round((Math.abs(d.gain) / maxAbs) * 100);
+                const isPos   = d.gain >= 0;
+                const color   = isPos ? '#10b981' : '#f43f5e';
+                const gainStr = (isPos ? '+' : '') + formatCurrency(d.gain, 'EUR', 0);
+                const barH    = Math.max(pct * 0.32, 2);
                 return `
-                <div class="flex flex-col items-center gap-0.5 group relative" style="width:8px">
+                <div class="flex flex-col items-center gap-0.5 group relative" style="width:18px">
                     <div class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[8px] font-black px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none"
                          style="background:${color}; color:white">${gainStr}</div>
                     <div class="w-full rounded-sm transition-all duration-300"
                          style="height:${barH}px; background:${color}; box-shadow: 0 0 4px ${color}40;"></div>
+                    <span class="text-[7px] font-bold text-slate-400">${d.monthNum}</span>
                 </div>`;
             }).join('');
 
