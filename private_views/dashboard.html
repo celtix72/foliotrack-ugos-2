@@ -211,12 +211,12 @@
                 <!-- divider -->
                 <div class="hidden xl:block w-px h-12 bg-slate-200 dark:bg-slate-800"></div>
 
-                <!-- 6M SPARKLINE MINI CHART -->
+                <!-- 12M SPARKLINE MINI CHART -->
                 <div class="space-y-1 hidden xl:flex xl:flex-col">
                     <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                        TREND 6 MESI
+                        TREND 12 MESI
                     </p>
-                    <div class="flex items-end gap-px" id="sixm-sparkline-bars" style="height:36px">
+                    <div class="flex items-end gap-1" id="sixm-sparkline-bars" style="height:36px">
                         <!-- JS filled -->
                     </div>
                     <p class="text-[9px] text-slate-400 font-bold" id="sixm-sparkline-total"></p>
@@ -841,7 +841,7 @@
         if (!barsContainer) return;
 
         try {
-            let url = '/api/analytics/global-performance?range=6M';
+            let url = '/api/analytics/global-performance?range=1Y';
             if (selectedPortfolioIds.length > 0) url += `&portfolioIds=${selectedPortfolioIds.join(',')}`;
             const res   = await fetch(url);
             const raw   = await res.json();
@@ -875,7 +875,7 @@
                 months.push({ key: sortedKeys[i], monthNum, gain });
             }
             // Take last 6 months
-            const bars = months.slice(-6);
+            const bars = months.slice(-12);
 
             if (bars.length === 0) {
                 barsContainer.innerHTML = '<span class="text-[9px] text-slate-400 italic">No data</span>';
@@ -905,10 +905,10 @@
             if (totalLabel) {
                 const isPos = sixMTotal >= 0;
                 totalLabel.style.color = isPos ? '#10b981' : '#f43f5e';
-                totalLabel.textContent = (isPos ? '+' : '') + formatCurrency(sixMTotal, 'EUR', 0) + ' 6 mesi';
+                totalLabel.textContent = (isPos ? '+' : '') + formatCurrency(sixMTotal, 'EUR', 0) + ' 12 mesi';
             }
         } catch (err) {
-            console.error('6M sparkline error:', err);
+            console.error('12M sparkline error:', err);
         }
     }
 
