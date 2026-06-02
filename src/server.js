@@ -1043,7 +1043,7 @@ app.get('/api/auth/permissions', requireAuth, (req, res) => {
         res.json({ permissions: perms });
     } catch (e) {
         logger.error(`[AUTH] Error fetching permissions: ${e.message}`);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error(e); res.status(500).json({ error: e.message });
     }
 });
 
@@ -1164,7 +1164,7 @@ app.get('/api/admin/roles', requireAuth, requireAdmin, (req, res) => {
         const perms = database.getRolePermissions();
         res.json(perms);
     } catch (e) {
-        res.status(500).json({ error: 'Internal server error' });
+        console.error(e); res.status(500).json({ error: e.message });
     }
 });
 
@@ -1177,7 +1177,7 @@ app.post('/api/admin/roles', requireAuth, requireAdmin, (req, res) => {
         logger.info(`[ADMIN] Role permission updated: ${role} -> ${resource} = ${is_enabled}`);
         res.json({ ok: true });
     } catch (e) {
-        res.status(500).json({ error: 'Internal server error' });
+        console.error(e); res.status(500).json({ error: e.message });
     }
 });
 
@@ -1187,7 +1187,7 @@ app.get('/api/admin/users', requireAuth, requireAdmin, (req, res) => {
         const users = database.getAllUsers();
         res.json(users);
     } catch (e) {
-        res.status(500).json({ error: 'Internal server error' });
+        console.error(e); res.status(500).json({ error: e.message });
     }
 });
 
@@ -1202,7 +1202,7 @@ app.get('/api/admin/smtp-settings', requireAuth, requireAdmin, (req, res) => {
             smtp_from: settings.smtp_from || ''
         });
     } catch (e) {
-        res.status(500).json({ error: 'Internal server error' });
+        console.error(e); res.status(500).json({ error: e.message });
     }
 });
 
@@ -1222,7 +1222,7 @@ app.post('/api/admin/smtp-settings', requireAuth, requireAdmin, (req, res) => {
         logger.info(`[ADMIN] SMTP settings updated by ${req.user.username}`);
         res.json({ ok: true });
     } catch (e) {
-        res.status(500).json({ error: 'Internal server error' });
+        console.error(e); res.status(500).json({ error: e.message });
     }
 });
 
@@ -1234,7 +1234,7 @@ app.get('/api/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
             geminiApiKey: settings.geminiApiKey || ''
         });
     } catch (e) {
-        res.status(500).json({ error: 'Internal server error' });
+        console.error(e); res.status(500).json({ error: e.message });
     }
 });
 
@@ -1247,7 +1247,7 @@ app.post('/api/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
         logger.info(`[ADMIN] AI settings updated by ${req.user.username}`);
         res.json({ ok: true });
     } catch (e) {
-        res.status(500).json({ error: 'Internal server error' });
+        console.error(e); res.status(500).json({ error: e.message });
     }
 });
 
@@ -4653,6 +4653,10 @@ app.get('/api/settings', requireAuth, (req, res) => {
 });
 
 app.put('/api/settings', requireAuth, (req, res) => {
+    if (req.user.id === 'admin') {
+        // Prevent database foreign key error if the special admin user tries to save user settings
+        return res.json({});
+    }
     for (const [key, value] of Object.entries(req.body)) {
         database.setSetting(req.user.id, key, value);
     }
