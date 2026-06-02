@@ -1226,6 +1226,31 @@ app.post('/api/admin/smtp-settings', requireAuth, requireAdmin, (req, res) => {
     }
 });
 
+// GET /api/admin/ai-settings
+app.get('/api/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
+    try {
+        const settings = database.getSettings(1);
+        res.json({
+            geminiApiKey: settings.geminiApiKey || ''
+        });
+    } catch (e) {
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// POST /api/admin/ai-settings
+app.post('/api/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
+    const { geminiApiKey } = req.body;
+    try {
+        if (geminiApiKey !== undefined) database.setSetting(1, 'geminiApiKey', geminiApiKey);
+        
+        logger.info(`[ADMIN] AI settings updated by ${req.user.username}`);
+        res.json({ ok: true });
+    } catch (e) {
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // POST /api/admin/smtp-test
 app.post('/api/admin/smtp-test', requireAuth, requireAdmin, async (req, res) => {
     const { to } = req.body;
@@ -3488,8 +3513,8 @@ app.get('/api/portfolios/:id', requireAuth, requirePortfolioAccess, async (req, 
 
 app.get('/api/portfolios/:id/ai-analysis', requireAuth, requirePortfolioAccess, async (req, res) => {
     try {
-        const userSettings = database.getSettings(req.user.id) || {};
-        const apiKey = userSettings.geminiApiKey || process.env.GEMINI_API_KEY;
+        const globalSettings = database.getSettings(1) || {};
+        const apiKey = globalSettings.geminiApiKey || process.env.GEMINI_API_KEY;
         
         if (!apiKey) {
             return res.status(400).json({ error: 'Chiave API GEMINI_API_KEY mancante. Configurala nel pannello Admin o nel file .env per abilitare questa funzionalità.' });

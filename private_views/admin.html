@@ -772,7 +772,7 @@
         // --- SMTP Settings ---
         async function loadAiSettings() {
             try {
-                const settings = await fetchAdmin('/api/settings'); // Regular user settings for admin
+                const settings = await fetchAdmin('/api/admin/ai-settings'); 
                 if (settings) {
                     document.getElementById('ai-gemini-key').value = settings.geminiApiKey || '';
                 }
@@ -790,8 +790,8 @@
                 const payload = {
                     geminiApiKey: document.getElementById('ai-gemini-key').value
                 };
-                const res = await fetch('/api/settings', {
-                    method: 'PUT',
+                const res = await fetch('/api/admin/ai-settings', {
+                    method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${ftAuth.getToken()}`
