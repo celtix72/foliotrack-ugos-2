@@ -3511,6 +3511,68 @@ app.get('/api/portfolios/:id', requireAuth, requirePortfolioAccess, async (req, 
     }
 });
 
+// --- Gemini Model Resolver ---
+// Dynamically picks the best available model so the app survives deprecations.
+let _cachedGeminiModel = null;
+let _geminiModelCachedAt = 0;
+const GEMINI_MODEL_CACHE_MS = 60 * 60 * 1000; // 1 hour
+
+// Preferred model names in priority order (newest first)
+const GEMINI_MODEL_PREFERENCE = [
+    'gemini-3.5-flash',
+    'gemini-3.1-flash-lite',
+    'gemini-3.0-flash',
+    'gemini-2.5-flash',
+    'gemini-2.5-flash-lite',
+    'gemini-2.5-pro',
+    'gemini-2.0-flash-lite',
+    'gemini-1.5-flash',
+];
+
+async function getBestGeminiModel(apiKey) {
+    const now = Date.now();
+    if (_cachedGeminiModel && (now - _geminiModelCachedAt) < GEMINI_MODEL_CACHE_MS) {
+        return _cachedGeminiModel;
+    }
+    try {
+        const listRes = await axios.get(
+            `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}&pageSize=100`
+        );
+        const available = (listRes.data.models || [])
+            .filter(m => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+            .map(m => m.name.replace('models/', ''));
+
+        // Pick the highest-priority preferred model that is available
+        for (const preferred of GEMINI_MODEL_PREFERENCE) {
+            if (available.includes(preferred)) {
+                _cachedGeminiModel = preferred;
+                _geminiModelCachedAt = now;
+                console.log(`[Gemini] Selected model: ${preferred}`);
+                return preferred;
+            }
+        }
+        // Fallback: pick any flash model that supports generateContent
+        const anyFlash = available.find(m => m.includes('flash'));
+        if (anyFlash) {
+            _cachedGeminiModel = anyFlash;
+            _geminiModelCachedAt = now;
+            console.log(`[Gemini] Fallback model: ${anyFlash}`);
+            return anyFlash;
+        }
+        // Last resort: first available
+        if (available.length > 0) {
+            _cachedGeminiModel = available[0];
+            _geminiModelCachedAt = now;
+            console.log(`[Gemini] Last-resort model: ${available[0]}`);
+            return available[0];
+        }
+    } catch (err) {
+        console.warn('[Gemini] Could not fetch model list, using static fallback:', err.message);
+    }
+    // Static fallback if API list call fails
+    return 'gemini-2.5-flash';
+}
+
 app.get('/api/portfolios/:id/ai-analysis', requireAuth, requirePortfolioAccess, async (req, res) => {
     try {
         const globalSettings = database.getSettings(1) || {};
@@ -3580,8 +3642,10 @@ ${contextData}
 Fornisci una risposta formattata in Markdown, concisa ma professionale. Includi un breve paragrafo introduttivo sul contesto macroeconomico generale attuale, seguito dall'analisi di ogni titolo, e concludi con un suggerimento di ribilanciamento o gestione del rischio globale.
 `;
 
+        const geminiModel = await getBestGeminiModel(apiKey);
+        console.log(`[AI Analysis] Using model: ${geminiModel}`);
         const response = await axios.post(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`,
             {
                 contents: [{ parts: [{ text: prompt }] }]
             },
