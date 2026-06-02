@@ -2567,22 +2567,37 @@
         content.innerHTML = `
             <div class="flex flex-col items-center justify-center py-12 text-indigo-500">
                 <span class="material-symbols-outlined animate-spin mb-4" style="font-size: 3rem;">sync</span>
-                <p class="font-bold text-center text-lg">Analisi del portafoglio in corso...<br/><span class="text-xs font-normal text-slate-500">L'elaborazione delle notizie e dei dati di bilancio richiede circa 10-15 secondi.</span></p>
+                <p class="font-bold text-center text-lg">Analisi del portafoglio in corso...<br/>
+                   <span id="dt-ai-progress-message" class="text-xs font-normal text-slate-500 mt-2 block">Connessione in corso...</span>
+                </p>
             </div>
         `;
         
-        fetch('/api/portfolios/' + portfolioId + '/ai-analysis')
-            .then(res => res.json().then(data => ({ status: res.status, body: data })))
-            .then(result => {
-                if (result.status !== 200) {
-                    content.innerHTML = `<div class="p-4 bg-rose-50 dark:bg-rose-900/20 text-rose-600 rounded-xl font-bold">Errore: ${result.body.error || 'Errore sconosciuto'}</div>`;
-                } else {
-                    renderDtAiMarkdown(content, result.body.analysis);
-                }
-            })
-            .catch(err => {
-                content.innerHTML = `<div class="p-4 bg-rose-50 dark:bg-rose-900/20 text-rose-600 rounded-xl font-bold">Errore di rete durante la richiesta.</div>`;
-            });
+        const source = new EventSource('/api/portfolios/' + portfolioId + '/ai-analysis');
+        
+        source.addEventListener('progress', (e) => {
+            const data = JSON.parse(e.data);
+            const msgEl = document.getElementById('dt-ai-progress-message');
+            if (msgEl) msgEl.innerText = data.message;
+        });
+
+        source.addEventListener('complete', (e) => {
+            const data = JSON.parse(e.data);
+            source.close();
+            renderDtAiMarkdown(content, data.analysis);
+        });
+
+        source.addEventListener('error', (e) => {
+            source.close();
+            let errMsg = 'Errore di connessione o errore durante l\\'analisi IA.';
+            if (e.data) {
+                try {
+                    const parsed = JSON.parse(e.data);
+                    errMsg = parsed.error || errMsg;
+                } catch(err) {}
+            }
+            content.innerHTML = `<div class="p-4 bg-rose-50 dark:bg-rose-900/20 text-rose-600 rounded-xl font-bold">Errore: ${errMsg}</div>`;
+        });
     }
     
     function loadDtAiHistory() {

@@ -345,6 +345,27 @@
                 </div>
             </div>
 
+            <!-- 8. Intelligenza Artificiale -->
+            <div class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                <button onclick="toggleAdminSection('section-ai')" class="w-full flex items-center justify-between px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
+                    <h2 class="text-sm font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-indigo-500 text-lg">auto_awesome</span> Intelligenza Artificiale
+                    </h2>
+                    <span id="section-ai-arrow" class="material-symbols-outlined transition-transform">expand_more</span>
+                </button>
+                <div id="section-ai" class="collapsible-content px-6 pb-6 border-t border-slate-100 dark:border-slate-800 pt-6">
+                    <div class="space-y-4 max-w-xl">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Gemini API Key</label>
+                            <input type="password" id="ai-gemini-key" placeholder="AIzaSy..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
+                            <p class="text-[10px] text-slate-500 mt-1">Questa chiave verrà usata per generare i report di Analisi IA del portafoglio.</p>
+                        </div>
+                        <button onclick="saveAiSettings()" class="w-full py-2 bg-indigo-500 hover:bg-indigo-600 transition-colors text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm">Salva Chiave API</button>
+                        <p id="ai-status" class="text-[9px] font-bold hidden"></p>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </main>
 
@@ -423,6 +444,7 @@
             loadAuditLogs();
             loadSecuritySettings();
             loadBannedIps();
+            loadAiSettings();
         });
 
         async function loadLogDates() {
@@ -469,6 +491,7 @@
                 }
                 if (id === 'section-maintenance') loadBackups();
                 if (id === 'section-smtp') loadSmtpSettings();
+                if (id === 'section-ai') loadAiSettings();
             }
         };
 
@@ -743,6 +766,49 @@
             } catch (err) {
                 alert('Errore: ' + err.message);
                 loadRoles(); 
+            }
+        };
+
+        // --- SMTP Settings ---
+        async function loadAiSettings() {
+            try {
+                const settings = await fetchAdmin('/api/settings'); // Regular user settings for admin
+                if (settings) {
+                    document.getElementById('ai-gemini-key').value = settings.geminiApiKey || '';
+                }
+            } catch (err) {
+                console.error('Failed to load AI settings:', err);
+            }
+        }
+
+        window.saveAiSettings = async function() {
+            const btn = event.currentTarget;
+            const originalText = btn.innerText;
+            btn.innerText = 'SAVING...';
+            
+            try {
+                const payload = {
+                    geminiApiKey: document.getElementById('ai-gemini-key').value
+                };
+                const res = await fetch('/api/settings', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${ftAuth.getToken()}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) throw new Error('Network error');
+                
+                const status = document.getElementById('ai-status');
+                status.innerText = 'SALVATO CON SUCCESSO';
+                status.className = 'text-[9px] font-bold mt-2 text-emerald-500 block';
+                setTimeout(() => status.classList.add('hidden'), 3000);
+            } catch (err) {
+                console.error(err);
+                alert('Errore salvataggio impostazioni IA');
+            } finally {
+                btn.innerText = originalText;
             }
         };
 

@@ -586,7 +586,8 @@ function initDb() {
         marketStatusInterval: '60',
         marketStatusMinVariation: '0',
         disabledNewsSources: '[]',
-        schemaVersion: '1.0'
+        schemaVersion: '1.0',
+        geminiApiKey: ''
     };
 
     const insertSetting = dbConnection.prepare(

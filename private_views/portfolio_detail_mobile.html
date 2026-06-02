@@ -1720,22 +1720,37 @@
         content.innerHTML = `
             <div class="flex flex-col items-center justify-center py-10" style="color: #6366f1;">
                 <span class="material-symbols-outlined animate-spin mb-4" style="font-size: 3rem;">sync</span>
-                <p class="font-bold text-center">Analisi del portafoglio in corso...<br/><span style="font-size: 11px; font-weight: normal;">L'elaborazione richiede circa 10-15 secondi.</span></p>
+                <p class="font-bold text-center">Analisi del portafoglio in corso...<br/>
+                   <span id="ai-progress-message" style="font-size: 11px; font-weight: normal; margin-top: 8px; display: block;" class="text-slate-500">Connessione in corso...</span>
+                </p>
             </div>
         `;
         
-        fetch('/api/portfolios/' + currentPortfolioId + '/ai-analysis')
-            .then(res => res.json().then(data => ({ status: res.status, body: data })))
-            .then(result => {
-                if (result.status !== 200) {
-                    content.innerHTML = `<div class="p-4 bg-rose-50 dark:bg-rose-900/20 text-rose-600 rounded-lg font-bold">Errore: ${result.body.error || 'Errore sconosciuto'}</div>`;
-                } else {
-                    renderAiMarkdown(content, result.body.analysis);
-                }
-            })
-            .catch(err => {
-                content.innerHTML = `<div class="p-4 bg-rose-50 dark:bg-rose-900/20 text-rose-600 rounded-lg font-bold">Errore di rete durante la richiesta.</div>`;
-            });
+        const source = new EventSource('/api/portfolios/' + currentPortfolioId + '/ai-analysis');
+        
+        source.addEventListener('progress', (e) => {
+            const data = JSON.parse(e.data);
+            const msgEl = document.getElementById('ai-progress-message');
+            if (msgEl) msgEl.innerText = data.message;
+        });
+
+        source.addEventListener('complete', (e) => {
+            const data = JSON.parse(e.data);
+            source.close();
+            renderAiMarkdown(content, data.analysis);
+        });
+
+        source.addEventListener('error', (e) => {
+            source.close();
+            let errMsg = 'Errore di connessione o errore durante l\\'analisi IA.';
+            if (e.data) {
+                try {
+                    const parsed = JSON.parse(e.data);
+                    errMsg = parsed.error || errMsg;
+                } catch(err) {}
+            }
+            content.innerHTML = `<div class="p-4 bg-rose-50 dark:bg-rose-900/20 text-rose-600 rounded-lg font-bold">Errore: ${errMsg}</div>`;
+        });
     }
 
     function loadAiHistory() {

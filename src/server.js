@@ -3488,10 +3488,24 @@ app.get('/api/portfolios/:id', requireAuth, requirePortfolioAccess, async (req, 
 
 app.get('/api/portfolios/:id/ai-analysis', requireAuth, requirePortfolioAccess, async (req, res) => {
     try {
-        const apiKey = process.env.GEMINI_API_KEY;
+        const userSettings = database.getSettings(req.user.id) || {};
+        const apiKey = userSettings.geminiApiKey || process.env.GEMINI_API_KEY;
+        
         if (!apiKey) {
-            return res.status(400).json({ error: 'Chiave API GEMINI_API_KEY mancante. Configurala nel file .env per abilitare questa funzionalità.' });
+            return res.status(400).json({ error: 'Chiave API GEMINI_API_KEY mancante. Configurala nel pannello Admin o nel file .env per abilitare questa funzionalità.' });
         }
+
+        // Setup SSE Headers
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        
+        const sendEvent = (event, data) => {
+            res.write(`event: ${event}\n`);
+            res.write(`data: ${JSON.stringify(data)}\n\n`);
+        };
+
+        sendEvent('progress', { message: 'Inizializzazione analisi...' });
 
         const data = await getPortfolioDetails(req.params.id);
         const holdings = data.holdings.filter(h => h.currentShares > 0).sort((a, b) => b.currentValue - a.currentValue);
@@ -3502,6 +3516,8 @@ app.get('/api/portfolios/:id/ai-analysis', requireAuth, requirePortfolioAccess, 
         let contextData = '';
         for (const h of topHoldings) {
             try {
+                sendEvent('progress', { message: `Analizzando ${h.ticker} (${h.name})...` });
+                
                 // Fetch recent news
                 const newsRes = await yahooFinance.search(h.ticker, { newsCount: 3 }).catch(() => ({}));
                 const newsTitles = (newsRes.news || []).map(n => n.title).join('; ');
@@ -3526,6 +3542,8 @@ app.get('/api/portfolios/:id/ai-analysis', requireAuth, requirePortfolioAccess, 
                 console.error(`Error fetching context for ${h.ticker}:`, err);
             }
         }
+
+        sendEvent('progress', { message: 'Generazione responso IA in corso...' });
 
         const prompt = `
 Sei un consulente finanziario esperto. Analizza i seguenti asset principali di un portafoglio d'investimento.
@@ -3554,10 +3572,17 @@ Fornisci una risposta formattata in Markdown, concisa ma professionale. Includi 
             INSERT INTO ai_analyses (portfolio_id, analysis_text) VALUES (?, ?)
         `).run(req.params.id, aiText);
 
-        res.json({ analysis: aiText });
+        sendEvent('complete', { analysis: aiText });
+        res.end();
     } catch (err) {
         console.error('AI Analysis Error:', err?.response?.data || err.message);
-        res.status(500).json({ error: 'Errore durante l\'analisi IA: ' + (err?.response?.data?.error?.message || err.message) });
+        // se l'header è già stato inviato, usiamo l'event stream per l'errore
+        if (!res.headersSent) {
+            res.status(500).json({ error: 'Errore durante l\'analisi IA: ' + (err?.response?.data?.error?.message || err.message) });
+        } else {
+            res.write(`event: error\ndata: ${JSON.stringify({ error: 'Errore durante l\'analisi IA: ' + (err?.response?.data?.error?.message || err.message) })}\n\n`);
+            res.end();
+        }
     }
 });
 
