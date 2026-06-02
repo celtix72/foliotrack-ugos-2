@@ -57,6 +57,13 @@ function initDb() {
         createdAt    TEXT    NOT NULL DEFAULT (datetime('now'))
       );
 
+      CREATE TABLE IF NOT EXISTS ai_analyses (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        portfolio_id INTEGER NOT NULL REFERENCES portfolios(id) ON DELETE CASCADE,
+        analysis_text TEXT    NOT NULL,
+        created_at   DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
       CREATE TABLE IF NOT EXISTS assets (
         id            TEXT    PRIMARY KEY,
         ticker        TEXT    NOT NULL UNIQUE COLLATE NOCASE,

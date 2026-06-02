@@ -1654,17 +1654,29 @@
 <!-- AI Analysis Modal -->
 <div id="ai-analysis-modal" class="mob-modal-overlay">
     <div class="mob-modal" style="max-height: 90vh; display: flex; flex-direction: column;">
-        <div class="mob-modal-header" style="flex-shrink: 0;">
-            <div class="mob-modal-title flex items-center gap-2">
-                <span class="material-symbols-outlined" style="color: #a855f7;">auto_awesome</span>
-                Analisi IA
+        <div class="mob-modal-header" style="flex-shrink: 0; border-bottom: none; padding-bottom: 0;">
+            <div class="flex items-center justify-between w-full mb-2">
+                <div class="mob-modal-title flex items-center gap-2">
+                    <span class="material-symbols-outlined" style="color: #a855f7;">auto_awesome</span>
+                    Analisi IA
+                </div>
+                <button onclick="closeAiAnalysisModal()" class="mob-modal-close" style="position: static;">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
             </div>
-            <button onclick="closeAiAnalysisModal()" class="mob-modal-close">
-                <span class="material-symbols-outlined">close</span>
-            </button>
+            
+            <div class="flex border-b border-slate-200 dark:border-slate-700 w-full">
+                <button id="ai-tab-new" onclick="switchAiTab('new')" class="flex-1 py-2 text-sm font-bold border-b-2 border-primary text-primary">Nuova Analisi</button>
+                <button id="ai-tab-history" onclick="switchAiTab('history')" class="flex-1 py-2 text-sm font-bold border-b-2 border-transparent text-slate-500">Storico</button>
+            </div>
         </div>
+        
         <div class="mob-modal-body" style="overflow-y: auto; flex: 1; padding: 20px; font-size: 14px; line-height: 1.5;" id="ai-analysis-content">
             <!-- Loading Spinner or AI Output goes here -->
+        </div>
+        
+        <div class="mob-modal-body hidden" style="overflow-y: auto; flex: 1; padding: 20px; font-size: 14px; line-height: 1.5;" id="ai-history-content">
+            <!-- History list goes here -->
         </div>
     </div>
 </div>
@@ -1672,30 +1684,53 @@
 <script>
     function openAiAnalysisModal() {
         const modal = document.getElementById('ai-analysis-modal');
-        const content = document.getElementById('ai-analysis-content');
         modal.classList.add('active');
+        switchAiTab('new');
+        generateNewAiAnalysis();
+    }
+    
+    function closeAiAnalysisModal() {
+        document.getElementById('ai-analysis-modal').classList.remove('active');
+    }
+
+    function switchAiTab(tab) {
+        document.getElementById('ai-tab-new').classList.remove('border-primary', 'text-primary');
+        document.getElementById('ai-tab-new').classList.add('border-transparent', 'text-slate-500');
+        document.getElementById('ai-tab-history').classList.remove('border-primary', 'text-primary');
+        document.getElementById('ai-tab-history').classList.add('border-transparent', 'text-slate-500');
+        
+        document.getElementById('ai-analysis-content').classList.add('hidden');
+        document.getElementById('ai-history-content').classList.add('hidden');
+        
+        if (tab === 'new') {
+            document.getElementById('ai-tab-new').classList.add('border-primary', 'text-primary');
+            document.getElementById('ai-tab-new').classList.remove('border-transparent', 'text-slate-500');
+            document.getElementById('ai-analysis-content').classList.remove('hidden');
+        } else {
+            document.getElementById('ai-tab-history').classList.add('border-primary', 'text-primary');
+            document.getElementById('ai-tab-history').classList.remove('border-transparent', 'text-slate-500');
+            document.getElementById('ai-history-content').classList.remove('hidden');
+            loadAiHistory();
+        }
+    }
+
+    function generateNewAiAnalysis() {
+        const content = document.getElementById('ai-analysis-content');
         
         content.innerHTML = `
             <div class="flex flex-col items-center justify-center py-10" style="color: #6366f1;">
                 <span class="material-symbols-outlined animate-spin mb-4" style="font-size: 3rem;">sync</span>
-                <p class="font-bold text-center">Analisi del portafoglio in corso...<br/><span style="font-size: 11px; font-weight: normal;">L'elaborazione delle notizie e dei dati di bilancio richiede circa 10-15 secondi.</span></p>
+                <p class="font-bold text-center">Analisi del portafoglio in corso...<br/><span style="font-size: 11px; font-weight: normal;">L'elaborazione richiede circa 10-15 secondi.</span></p>
             </div>
         `;
         
-        // Fetch AI Analysis from backend
         fetch('/api/portfolios/' + currentPortfolioId + '/ai-analysis')
             .then(res => res.json().then(data => ({ status: res.status, body: data })))
             .then(result => {
                 if (result.status !== 200) {
                     content.innerHTML = `<div class="p-4 bg-rose-50 dark:bg-rose-900/20 text-rose-600 rounded-lg font-bold">Errore: ${result.body.error || 'Errore sconosciuto'}</div>`;
                 } else {
-                    content.innerHTML = marked.parse(result.body.analysis);
-                    // Add tailwind prose classes or custom styling for markdown if necessary
-                    content.querySelectorAll('h1, h2, h3').forEach(el => el.classList.add('font-black', 'mt-4', 'mb-2'));
-                    content.querySelectorAll('p').forEach(el => el.classList.add('mb-3'));
-                    content.querySelectorAll('ul').forEach(el => el.classList.add('list-disc', 'pl-5', 'mb-3'));
-                    content.querySelectorAll('li').forEach(el => el.classList.add('mb-1'));
-                    content.querySelectorAll('strong').forEach(el => el.style.color = 'inherit');
+                    renderAiMarkdown(content, result.body.analysis);
                 }
             })
             .catch(err => {
@@ -1703,8 +1738,83 @@
             });
     }
 
-    function closeAiAnalysisModal() {
-        document.getElementById('ai-analysis-modal').classList.remove('active');
+    function loadAiHistory() {
+        const content = document.getElementById('ai-history-content');
+        content.innerHTML = `<div class="text-center py-4 text-slate-500"><span class="material-symbols-outlined animate-spin">sync</span></div>`;
+        
+        fetch('/api/portfolios/' + currentPortfolioId + '/ai-history')
+            .then(res => res.json())
+            .then(data => {
+                if (!Array.isArray(data)) {
+                    content.innerHTML = `<div class="p-4 bg-rose-50 dark:bg-rose-900/20 text-rose-600 rounded-lg font-bold">Errore nel caricamento dello storico.</div>`;
+                    return;
+                }
+                if (data.length === 0) {
+                    content.innerHTML = `<div class="text-center py-10 text-slate-500 italic">Nessuna analisi passata presente per questo portafoglio.</div>`;
+                    return;
+                }
+                
+                content.innerHTML = '<div class="space-y-3">' + data.map(item => `
+                    <div class="border border-slate-200 dark:border-slate-700 rounded-xl p-3 bg-slate-50 dark:bg-slate-800 relative">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="font-bold text-primary flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[14px]">calendar_today</span>
+                                ${new Date(item.created_at).toLocaleString()}
+                            </div>
+                            <button onclick="deleteAiHistory(${item.id})" class="text-rose-500 hover:text-rose-700 transition-colors">
+                                <span class="material-symbols-outlined text-[18px]">delete</span>
+                            </button>
+                        </div>
+                        <div class="text-xs text-slate-600 dark:text-slate-400 line-clamp-3 mb-2">${item.analysis_text.substring(0, 150)}...</div>
+                        <button onclick="viewAiHistoryItem(${item.id})" class="w-full py-1.5 text-xs font-bold bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg shadow-sm">Leggi Analisi Completa</button>
+                        <div id="ai-hist-full-${item.id}" class="hidden mt-4 border-t border-slate-200 dark:border-slate-600 pt-3"></div>
+                    </div>
+                `).join('') + '</div>';
+                
+                // Store full texts for viewing
+                window._aiHistoryData = data;
+            })
+            .catch(err => {
+                content.innerHTML = `<div class="p-4 bg-rose-50 dark:bg-rose-900/20 text-rose-600 rounded-lg font-bold">Errore di rete.</div>`;
+            });
+    }
+
+    function viewAiHistoryItem(id) {
+        const fullDiv = document.getElementById(`ai-hist-full-${id}`);
+        if (!fullDiv.classList.contains('hidden')) {
+            fullDiv.classList.add('hidden');
+            return;
+        }
+        
+        const item = window._aiHistoryData.find(x => x.id === id);
+        if (item) {
+            renderAiMarkdown(fullDiv, item.analysis_text);
+            fullDiv.classList.remove('hidden');
+        }
+    }
+
+    function deleteAiHistory(id) {
+        if (!confirm('Sei sicuro di voler eliminare questa analisi?')) return;
+        
+        fetch('/api/portfolios/' + currentPortfolioId + '/ai-history/' + id, { method: 'DELETE' })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    loadAiHistory();
+                } else {
+                    alert('Errore: ' + data.error);
+                }
+            })
+            .catch(err => alert('Errore di rete.'));
+    }
+
+    function renderAiMarkdown(el, mdText) {
+        el.innerHTML = marked.parse(mdText);
+        el.querySelectorAll('h1, h2, h3').forEach(e => e.classList.add('font-black', 'mt-4', 'mb-2'));
+        el.querySelectorAll('p').forEach(e => e.classList.add('mb-3'));
+        el.querySelectorAll('ul').forEach(e => e.classList.add('list-disc', 'pl-5', 'mb-3'));
+        el.querySelectorAll('li').forEach(e => e.classList.add('mb-1'));
+        el.querySelectorAll('strong').forEach(e => e.style.color = 'inherit');
     }
 </script>
 

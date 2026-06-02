@@ -3548,10 +3548,46 @@ Fornisci una risposta formattata in Markdown, concisa ma professionale. Includi 
         );
 
         const aiText = response.data.candidates?.[0]?.content?.parts?.[0]?.text || "Nessuna risposta dall'IA.";
+        
+        // Save to database
+        database.db.prepare(`
+            INSERT INTO ai_analyses (portfolio_id, analysis_text) VALUES (?, ?)
+        `).run(req.params.id, aiText);
+
         res.json({ analysis: aiText });
     } catch (err) {
         console.error('AI Analysis Error:', err?.response?.data || err.message);
         res.status(500).json({ error: 'Errore durante l\'analisi IA: ' + (err?.response?.data?.error?.message || err.message) });
+    }
+});
+
+app.get('/api/portfolios/:id/ai-history', requireAuth, requirePortfolioAccess, (req, res) => {
+    try {
+        const analyses = database.db.prepare(`
+            SELECT id, analysis_text, created_at 
+            FROM ai_analyses 
+            WHERE portfolio_id = ? 
+            ORDER BY created_at DESC
+        `).all(req.params.id);
+        res.json(analyses);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/portfolios/:id/ai-history/:analysisId', requireAuth, requirePortfolioAccess, (req, res) => {
+    try {
+        const result = database.db.prepare(`
+            DELETE FROM ai_analyses 
+            WHERE id = ? AND portfolio_id = ?
+        `).run(req.params.analysisId, req.params.id);
+        
+        if (result.changes === 0) {
+            return res.status(404).json({ error: 'Analisi non trovata' });
+        }
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
