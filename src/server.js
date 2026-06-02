@@ -4657,7 +4657,7 @@ app.get('/api/asset-search', async (req, res) => {
         res.json(filtered);
     } catch (err) {
         console.error('Search error:', err);
-        res.status(500).send('Search failed');
+        res.status(500).json({ error: err.message });
     }
 });
 

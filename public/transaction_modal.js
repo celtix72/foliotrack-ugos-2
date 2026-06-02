@@ -711,7 +711,18 @@
     function _renderSearchResults(data) {
         const container = document.getElementById('tm-search-results');
         if (!container) return;
-        if (!data || data.length === 0) { _hideSearchResults(); return; }
+        
+        // Handle error responses from the API
+        if (data && data.error) {
+            console.error('[TM] Search error:', data.error);
+            _hideSearchResults();
+            return;
+        }
+
+        if (!Array.isArray(data) || data.length === 0) { 
+            _hideSearchResults(); 
+            return; 
+        }
 
         container.innerHTML = data.filter(i => i.symbol || i.ticker).map(i => {
             const sym = i.symbol || i.ticker;
