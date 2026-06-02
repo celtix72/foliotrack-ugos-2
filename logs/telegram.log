@@ -40,3 +40,6 @@
 2026-04-10T17:42:17.944Z [SKIPPED] Telegram is globally disabled.
 2026-04-13T07:02:29.744Z [ATTEMPT] Enabled: false, Token set: false, ChatID set: false
 2026-04-13T07:02:29.745Z [SKIPPED] Telegram is globally disabled.
+2026-06-02T08:43:57.289Z [SERVICE] Telegram polling started.
+2026-06-02T08:45:09.108Z [SERVICE] Telegram polling started.
+2026-06-02T08:49:26.774Z [SERVICE] Telegram polling started.
