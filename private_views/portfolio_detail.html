@@ -2500,7 +2500,7 @@
 </script>
 
 <!-- AI Analysis Modal -->
-<div id="ai-analysis-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+<div id="ai-analysis-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden items-center justify-center p-4 opacity-0 transition-opacity duration-300">
     <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-3xl transform scale-95 transition-transform duration-300 flex flex-col" style="max-height: 90vh;">
         <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col flex-shrink-0 gap-4">
             <div class="flex justify-between items-center w-full">
@@ -2532,7 +2532,8 @@
     function openAiAnalysisModal() {
         const modal = document.getElementById('ai-analysis-modal');
         modal.classList.remove('hidden');
-        // Small delay to allow display:block to apply before animating opacity
+        modal.style.display = 'flex';
+        // Small delay to allow display to apply before animating opacity
         setTimeout(() => {
             modal.classList.remove('opacity-0');
             modal.querySelector('div').classList.remove('scale-95');
@@ -2540,6 +2541,16 @@
         
         switchDtAiTab('new');
         generateNewDtAiAnalysis();
+    }
+
+    function closeAiAnalysisModal() {
+        const modal = document.getElementById('ai-analysis-modal');
+        modal.classList.add('opacity-0');
+        modal.querySelector('div').classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.style.display = '';
+        }, 300);
     }
 
     function switchDtAiTab(tab) {
