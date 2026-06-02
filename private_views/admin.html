@@ -498,7 +498,8 @@
 
 
         async function fetchAdmin(endpoint, options = {}) {
-            const res = await fetch(endpoint, options);
+            const config = { ...options, credentials: 'same-origin' };
+            const res = await fetch(endpoint, config);
             if (res.status === 401 || res.status === 403) {
                 ftAuth.logout();
                 return null;
@@ -792,9 +793,9 @@
                 };
                 const res = await fetch('/api/admin/ai-settings', {
                     method: 'POST',
+                    credentials: 'same-origin',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${ftAuth.getToken()}`
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(payload)
                 });

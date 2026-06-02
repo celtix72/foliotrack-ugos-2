@@ -16,3 +16,9 @@
 2026-06-02T09:16:44.590Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
 2026-06-02T09:16:44.680Z [INFO] FolioTrack server running on port 3000
 2026-06-02T09:16:44.689Z [INFO] Database: /Users/mauro/Documents/FolioTrack3/foliotrack.db
+2026-06-02T09:24:10.928Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-06-02T09:24:11.049Z [INFO] FolioTrack server running on port 3000
+2026-06-02T09:24:11.058Z [INFO] Database: /Users/mauro/Documents/FolioTrack3/foliotrack.db
+2026-06-02T09:27:57.771Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-06-02T09:27:57.902Z [INFO] FolioTrack server running on port 3000
+2026-06-02T09:27:57.911Z [INFO] Database: /Users/mauro/Documents/FolioTrack3/foliotrack.db

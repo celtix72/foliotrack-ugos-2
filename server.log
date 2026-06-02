@@ -2,8 +2,8 @@
 > progetto_foliotracker2@1.0.0 dev
 > node src/server.js
 
-[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
-2026-06-02T09:16:44.590Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+2026-06-02T09:27:57.771Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
 [31mCRITICAL SECURITY WARNING: JWT_SECRET is not set. Using default development secret![0m
-2026-06-02T09:16:44.680Z [INFO] FolioTrack server running on port 3000
-2026-06-02T09:16:44.689Z [INFO] Database: /Users/mauro/Documents/FolioTrack3/foliotrack.db
+2026-06-02T09:27:57.902Z [INFO] FolioTrack server running on port 3000
+2026-06-02T09:27:57.911Z [INFO] Database: /Users/mauro/Documents/FolioTrack3/foliotrack.db
