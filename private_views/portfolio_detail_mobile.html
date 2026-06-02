@@ -1742,7 +1742,7 @@
 
         source.addEventListener('error', (e) => {
             source.close();
-            let errMsg = 'Errore di connessione o errore durante l\\'analisi IA.';
+            let errMsg = `Errore di connessione o errore durante l'analisi IA.`;
             if (e.data) {
                 try {
                     const parsed = JSON.parse(e.data);
