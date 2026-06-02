@@ -3595,7 +3595,11 @@ app.get('/api/portfolios/:id/ai-analysis', requireAuth, requirePortfolioAccess, 
         sendEvent('progress', { message: 'Inizializzazione analisi...' });
 
         const data = await getPortfolioDetails(req.params.id);
-        const holdings = data.holdings.filter(h => h.currentShares > 0).sort((a, b) => b.currentValue - a.currentValue);
+        const holdings = data.holdings.filter(h => h.shares > 0).sort((a, b) => b.currentValue - a.currentValue);
+        
+        if (holdings.length === 0) {
+            throw new Error('Nessun titolo attivo (con quote > 0) trovato nel portafoglio. Aggiungi transazioni per poter avviare l\'analisi IA.');
+        }
         
         // Take top 10 for analysis to avoid huge prompt
         const topHoldings = holdings.slice(0, 10);
@@ -3618,11 +3622,11 @@ app.get('/api/portfolios/:id/ai-analysis', requireAuth, requirePortfolioAccess, 
                 
                 contextData += `\n- **${h.ticker} (${h.name})**:
   - Asset Type: ${h.type}
-  - Quote in Portfolio: ${h.currentShares} shares
-  - Average Cost (PMC): ${h.averageCost} ${data.portfolioCurrency}
+  - Quote in Portfolio: ${h.shares} shares
+  - Average Cost (PMC): ${h.avgCost} ${data.currency}
   - Current Price: ${h.currentPrice} ${h.currency}
-  - Total Value: ${h.currentValue} ${data.portfolioCurrency}
-  - Gain/Loss: ${h.percentageGainLoss}%
+  - Total Value: ${h.currentValue} ${data.currency}
+  - Gain/Loss: ${h.unrealizedGainPct}%
   - Prossima Trimestrale (Earnings): ${earningsDate}
   - Ultime News: ${newsTitles || 'Nessuna news rilevante recente'}`;
             } catch (err) {
@@ -3655,13 +3659,17 @@ Fornisci una risposta formattata in Markdown, concisa ma professionale. Includi 
         );
 
         const aiText = response.data.candidates?.[0]?.content?.parts?.[0]?.text || "Nessuna risposta dall'IA.";
+        const usage = response.data.usageMetadata || {};
         
         // Save to database
         database.db.prepare(`
             INSERT INTO ai_analyses (portfolio_id, analysis_text) VALUES (?, ?)
         `).run(req.params.id, aiText);
 
-        sendEvent('complete', { analysis: aiText });
+        sendEvent('complete', { 
+            analysis: aiText,
+            usage: usage 
+        });
         res.end();
     } catch (err) {
         console.error('AI Analysis Error:', err?.response?.data || err.message);

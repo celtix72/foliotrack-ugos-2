@@ -2597,6 +2597,18 @@
             const data = JSON.parse(e.data);
             source.close();
             renderDtAiMarkdown(content, data.analysis);
+            
+            if (data.usage && data.usage.totalTokenCount) {
+                const usageHtml = `
+                    <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined" style="font-size: 16px;">token</span>
+                            <span>Token utilizzati: <strong>${data.usage.totalTokenCount}</strong> (Prompt: ${data.usage.promptTokenCount}, Risposta: ${data.usage.candidatesTokenCount})</span>
+                        </div>
+                    </div>
+                `;
+                content.insertAdjacentHTML('beforeend', usageHtml);
+            }
         });
 
         source.addEventListener('error', (e) => {
