@@ -991,7 +991,9 @@
                             <th class="py-3 px-3 text-right">Qty</th>
                             <th class="py-3 px-3 text-right">Price (Asset)</th>
                             <th class="py-3 px-3 text-right">FX</th>
-                            <th class="py-3 px-3 text-right">Amt (User)</th>
+                            <th class="py-3 px-3 text-right">Gross</th>
+                            <th class="py-3 px-3 text-right text-rose-500">Tax</th>
+                            <th class="py-3 px-3 text-right text-emerald-500">Net Amt</th>
                             <th class="py-3 px-2 text-right text-indigo-500 bg-indigo-500/5" title="Amount calculated using direct EUR calculation logic">Calc (EUR)</th>
                             <th class="py-3 px-2 text-right text-amber-500 bg-amber-500/5" title="PMC per unit in EUR BEFORE this transaction">PMC (EUR)</th>
                             <th class="py-3 px-3 text-right text-emerald-500 bg-emerald-500/5">Gain (EUR)</th>
@@ -1000,7 +1002,7 @@
                     </thead>
                     <tbody id="audit-table-body" class="divide-y divide-slate-50 dark:divide-slate-800/50">
                         <!-- Rows will be injected here -->
-                        <tr><td colspan="11" class="py-12 text-center text-slate-500 italic">Click "Reload Data" to fetch transaction trace...</td></tr>
+                        <tr><td colspan="13" class="py-12 text-center text-slate-500 italic">Click "Reload Data" to fetch transaction trace...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -1979,14 +1981,14 @@
 
         window.loadAuditData = async function() {
             const tbody = document.getElementById('audit-table-body');
-            tbody.innerHTML = '<tr><td colspan="11" class="py-12 text-center text-slate-500 italic">Calculating transaction trace...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="13" class="py-12 text-center text-slate-500 italic">Calculating transaction trace...</td></tr>';
             
             try {
                 const res = await fetch('/api/transactions/audit');
                 const data = await res.json();
                 
                 if (!data || data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="11" class="py-12 text-center text-slate-500">No transactions found.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="13" class="py-12 text-center text-slate-500">No transactions found.</td></tr>';
                     return;
                 }
                 
@@ -2010,7 +2012,9 @@
                             <td class="py-2.5 px-3 text-right font-mono">${t.quantity ? t.quantity.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 4}) : '—'}</td>
                             <td class="py-2.5 px-3 text-right font-mono">${t.price ? t.price.toLocaleString(undefined, {minimumFractionDigits: 2}) : '—'} <span class="text-[8px] text-slate-500">${t.assetCurrency || ''}</span></td>
                             <td class="py-2.5 px-3 text-right font-mono text-slate-500">${t.exchangeRate ? t.exchangeRate.toFixed(4) : '1.0000'}</td>
-                            <td class="py-2.5 px-3 text-right font-mono text-slate-400 border-l border-slate-50 dark:border-slate-800/10">${t.amount ? t.amount.toLocaleString(undefined, {minimumFractionDigits: 2}) : '—'}</td>
+                            <td class="py-2.5 px-3 text-right font-mono text-slate-400">${((t.amount || 0) + (t.tax || 0)).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                            <td class="py-2.5 px-3 text-right font-mono text-rose-500">${t.tax ? t.tax.toLocaleString(undefined, {minimumFractionDigits: 2}) : '—'}</td>
+                            <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-500 border-l border-slate-50 dark:border-slate-800/10">${t.amount ? t.amount.toLocaleString(undefined, {minimumFractionDigits: 2}) : '—'}</td>
                             <td class="py-2.5 px-2 text-right font-mono font-bold text-indigo-500 bg-indigo-500/5 border-l border-indigo-500/10">${(t.amountEUR || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                             <td class="py-2.5 px-2 text-right font-mono text-amber-500 bg-amber-500/5 border-l border-amber-500/10">${(t.pmcEURBefore || 0).toLocaleString(undefined, {minimumFractionDigits: 4})}</td>
                             <td class="py-2.5 px-3 text-right font-mono font-bold ${gainClass} bg-emerald-500/5 border-l border-emerald-500/10">${t.realizedGainEUR ? (t.realizedGainEUR > 0 ? '+' : '') + t.realizedGainEUR.toLocaleString(undefined, {minimumFractionDigits: 2}) : '—'}</td>
@@ -2031,7 +2035,7 @@
                 // Trigger initial filter/total calculation
                 filterAuditTable();
             } catch (err) {
-                tbody.innerHTML = `<tr><td colspan="11" class="py-12 text-center text-rose-500">Error loading data: ${err.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="13" class="py-12 text-center text-rose-500">Error loading data: ${err.message}</td></tr>`;
             }
         };
 
@@ -2046,7 +2050,7 @@
 
             for (let i = 1; i < tr.length; i++) {
                 const td = tr[i].getElementsByTagName('td');
-                if (td.length < 11) continue; 
+                if (td.length < 13) continue; 
                 
                 let foundText = false;
                 for (let j = 0; j < td.length; j++) {
@@ -2064,8 +2068,8 @@
                 tr[i].style.display = found ? "" : "none";
                 
                 if (found) {
-                    // Column 10 is Gain (EUR)
-                    const gainTxt = td[10].innerText.replace('€', '').replace(/\s/g, '').replace(/\./g, '').replace(',', '.').trim();
+                    // Column 12 is Gain (EUR)
+                    const gainTxt = td[12].innerText.replace('€', '').replace(/\s/g, '').replace(/\./g, '').replace(',', '.').trim();
                     const gainVal = parseFloat(gainTxt) || 0;
                     totalGain += gainVal;
                 }
@@ -2174,6 +2178,7 @@
                 document.getElementById('edit-audit-comm').value = t.commission || 0;
                 document.getElementById('edit-audit-tax').value = t.tax || 0;
                 document.getElementById('edit-audit-amount').value = t.amount || 0;
+                document.getElementById('edit-audit-gross').value = (parseFloat(t.amount || 0) + parseFloat(t.tax || 0)).toFixed(2);
 
                 document.getElementById('edit-audit-modal').classList.remove('hidden');
             } catch (e) {
@@ -2318,18 +2323,22 @@
                     <input type="number" step="any" id="edit-audit-fx" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:ring-primary/30">
                 </div>
             </div>
-            <div class="grid grid-cols-3 gap-4">
+            <div class="grid grid-cols-4 gap-4">
                 <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Comm</label>
-                    <input type="number" step="any" id="edit-audit-comm" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:ring-primary/30">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Gross</label>
+                    <input type="number" step="any" id="edit-audit-gross" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:ring-primary/30" oninput="document.getElementById('edit-audit-amount').value = (parseFloat(this.value || 0) - parseFloat(document.getElementById('edit-audit-tax').value || 0)).toFixed(2)">
                 </div>
                 <div class="space-y-1.5">
                     <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Tax</label>
-                    <input type="number" step="any" id="edit-audit-tax" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:ring-primary/30">
+                    <input type="number" step="any" id="edit-audit-tax" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:ring-primary/30" oninput="document.getElementById('edit-audit-amount').value = (parseFloat(document.getElementById('edit-audit-gross').value || 0) - parseFloat(this.value || 0)).toFixed(2)">
                 </div>
                 <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Amt (EUR)</label>
-                    <input type="number" step="any" id="edit-audit-amount" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:ring-primary/30">
+                    <label class="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Net (Gain)</label>
+                    <input type="number" step="any" id="edit-audit-amount" class="w-full bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 text-emerald-600 dark:text-emerald-400 font-bold rounded-lg py-2 px-3 text-sm focus:ring-emerald-500/30">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Comm</label>
+                    <input type="number" step="any" id="edit-audit-comm" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 px-3 text-sm focus:ring-primary/30">
                 </div>
             </div>
             <div class="flex justify-end gap-3 pt-4">
