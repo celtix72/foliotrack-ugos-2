@@ -960,6 +960,22 @@
                     </div>
                 </div>
                 <div class="w-full md:w-auto">
+                    <select id="audit-year-filter" onchange="filterAuditTable()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 focus:ring-primary/30 focus:border-primary">
+                        <option value="">All Years</option>
+                        <option value="2027">2027</option>
+                        <option value="2026">2026</option>
+                        <option value="2025">2025</option>
+                        <option value="2024">2024</option>
+                        <option value="2023">2023</option>
+                        <option value="2022">2022</option>
+                        <option value="2021">2021</option>
+                        <option value="2020">2020</option>
+                        <option value="2019">2019</option>
+                        <option value="2018">2018</option>
+                        <option value="2017">2017</option>
+                    </select>
+                </div>
+                <div class="w-full md:w-auto">
                     <select id="audit-type-filter" onchange="filterAuditTable()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 focus:ring-primary/30 focus:border-primary">
                         <option value="">All Types</option>
                         <option value="BUY">Buy</option>
@@ -2023,6 +2039,9 @@
                                     <button onclick="editTransactionAudit(${t.id})" class="p-1.5 rounded-lg hover:bg-primary/10 text-slate-400 hover:text-primary transition-colors" title="Edit">
                                         <span class="material-symbols-outlined text-[16px]">edit</span>
                                     </button>
+                                    <button onclick="duplicateTransactionAudit(${t.id})" class="p-1.5 rounded-lg hover:bg-amber-500/10 text-slate-400 hover:text-amber-500 transition-colors" title="Duplicate">
+                                        <span class="material-symbols-outlined text-[16px]">content_copy</span>
+                                    </button>
                                     <button onclick="deleteTransactionAudit(${t.id})" class="p-1.5 rounded-lg hover:bg-rose-500/10 text-slate-400 hover:text-rose-500 transition-colors" title="Delete">
                                         <span class="material-symbols-outlined text-[16px]">delete</span>
                                     </button>
@@ -2042,8 +2061,10 @@
         window.filterAuditTable = function() {
             const input = document.getElementById('audit-search');
             const typeFilterEl = document.getElementById('audit-type-filter');
+            const yearFilterEl = document.getElementById('audit-year-filter');
             const filter = input.value.toUpperCase();
             const typeFilter = typeFilterEl ? typeFilterEl.value.toUpperCase() : '';
+            const yearFilter = yearFilterEl ? yearFilterEl.value : '';
             const table = document.getElementById('audit-table');
             const tr = table.getElementsByTagName('tr');
             let totalGain = 0;
@@ -2063,7 +2084,10 @@
                 const rowType = td[2] ? td[2].innerText.toUpperCase().trim() : '';
                 const typeMatches = typeFilter === '' || rowType === typeFilter;
                 
-                const found = foundText && typeMatches;
+                const rowDate = td[0] ? td[0].innerText.trim() : '';
+                const yearMatches = yearFilter === '' || rowDate.startsWith(yearFilter);
+                
+                const found = foundText && typeMatches && yearMatches;
 
                 tr[i].style.display = found ? "" : "none";
                 
@@ -2170,6 +2194,10 @@
                 if (!t) return alert('Transaction not found');
 
                 document.getElementById('edit-audit-id').value = t.id;
+                document.getElementById('edit-audit-portfolio-id').value = t.portfolioId;
+                document.getElementById('edit-audit-asset-ticker').value = t.assetTicker || '';
+                document.getElementById('edit-audit-is-duplicate').value = 'false';
+                
                 document.getElementById('edit-audit-type').value = t.type;
                 document.getElementById('edit-audit-date').value = t.date;
                 document.getElementById('edit-audit-qty').value = t.quantity || 0;
@@ -2190,8 +2218,37 @@
             document.getElementById('edit-audit-modal').classList.add('hidden');
         };
 
+        window.duplicateTransactionAudit = async function(id) {
+            try {
+                const res = await fetch('/api/transactions');
+                const txs = await res.json();
+                const t = txs.find(x => x.id === id);
+                if (!t) return alert('Transaction not found');
+
+                document.getElementById('edit-audit-id').value = '';
+                document.getElementById('edit-audit-portfolio-id').value = t.portfolioId;
+                document.getElementById('edit-audit-asset-ticker').value = t.assetTicker || '';
+                document.getElementById('edit-audit-is-duplicate').value = 'true';
+                
+                document.getElementById('edit-audit-type').value = t.type;
+                document.getElementById('edit-audit-date').value = t.date;
+                document.getElementById('edit-audit-qty').value = t.quantity || 0;
+                document.getElementById('edit-audit-price').value = t.price || 0;
+                document.getElementById('edit-audit-fx').value = t.exchangeRate || 1;
+                document.getElementById('edit-audit-comm').value = t.commission || 0;
+                document.getElementById('edit-audit-tax').value = t.tax || 0;
+                document.getElementById('edit-audit-amount').value = t.amount || 0;
+                document.getElementById('edit-audit-gross').value = (parseFloat(t.amount || 0) + parseFloat(t.tax || 0)).toFixed(2);
+
+                document.getElementById('edit-audit-modal').classList.remove('hidden');
+            } catch (e) {
+                alert('Error fetching transaction: ' + e.message);
+            }
+        };
+
         window.saveAuditTransaction = async function() {
             const id = document.getElementById('edit-audit-id').value;
+            const isDuplicate = document.getElementById('edit-audit-is-duplicate').value === 'true';
             const body = {
                 type: document.getElementById('edit-audit-type').value,
                 date: document.getElementById('edit-audit-date').value,
@@ -2204,13 +2261,26 @@
             };
 
             try {
-                const res = await fetch(`/api/transactions/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
-                });
+                let res;
+                if (isDuplicate) {
+                    body.portfolioId = document.getElementById('edit-audit-portfolio-id').value;
+                    body.assetTicker = document.getElementById('edit-audit-asset-ticker').value;
+                    res = await fetch(`/api/transactions`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
+                } else {
+                    res = await fetch(`/api/transactions/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
+                }
+                
+                // For POST we might receive the transaction object, for PUT {success: true}
                 const data = await res.json();
-                if (data.success) {
+                if (res.ok || data.success) {
                     closeEditAuditModal();
                     loadAuditData(); // Refresh table
                 } else {
@@ -2291,6 +2361,9 @@
         </div>
         <form id="edit-audit-form" class="space-y-4">
             <input type="hidden" id="edit-audit-id">
+            <input type="hidden" id="edit-audit-portfolio-id">
+            <input type="hidden" id="edit-audit-asset-ticker">
+            <input type="hidden" id="edit-audit-is-duplicate" value="false">
             <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-1.5">
                     <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Type</label>
