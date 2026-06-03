@@ -24,6 +24,7 @@
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
     <script src="/theme.js"></script>
     <script src="/transaction_modal.js"></script>
     <script src="/mobile_transactions.js"></script>
@@ -138,18 +139,28 @@
       <div class="flex items-center justify-between mb-3">
         <div>
           <div class="mob-chart-title">Performance Comparison</div>
-          <div class="mob-chart-subtitle">Portfolio vs Benchmarks</div>
+          <div class="mob-chart-subtitle">Portfolio vs Benchmarks (norm. 100)</div>
         </div>
-        <div class="flex items-center gap-2">
-            <button onclick="window.location.href='/api/export-all-transactions'" class="mob-icon-btn text-emerald-500" title="Export CSV">
-              <span class="material-symbols-outlined">csv</span>
-            </button>
-            <button onclick="window.print()" class="mob-icon-btn" title="Export PDF">
-              <span class="material-symbols-outlined">download</span>
-            </button>
+        <!-- KPI pill -->
+        <div class="flex flex-col items-end gap-0.5">
+          <span id="mob-rep-kpi-pct" class="text-[13px] font-black" style="color:#94a3b8">—</span>
+          <span id="mob-rep-kpi-abs" class="text-[9px] font-bold" style="color:#94a3b8">—</span>
         </div>
       </div>
-      
+      <div class="flex items-center gap-4 mb-3 px-1">
+        <div class="flex items-center gap-1.5">
+          <div style="width:18px;height:3px;background:#10b981;border-radius:2px"></div>
+          <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Portfolio</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <div style="width:18px;height:2px;background:repeating-linear-gradient(to right,#f59e0b 0,#f59e0b 5px,transparent 5px,transparent 9px)"></div>
+          <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">S&P 500</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <div style="width:18px;height:2px;background:repeating-linear-gradient(to right,#8b5cf6 0,#8b5cf6 5px,transparent 5px,transparent 9px)"></div>
+          <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">MSCI</span>
+        </div>
+      </div>
       <!-- Range Selector -->
       <div class="mob-chart-range-bar" id="mob-reports-range-bar">
         <div class="mob-range-btn" onclick="mobChangeRange('6M')" data-range="6M">6M</div>
@@ -159,8 +170,13 @@
         <div class="mob-range-btn" onclick="mobChangeRange('5Y')" data-range="5Y">5Y</div>
       </div>
 
-      <div class="mob-chart-canvas-wrapper" style="height: 180px;">
+      <div class="mob-chart-canvas-wrapper" style="height: 190px; margin-top: 8px;">
         <canvas id="mob-perf-chart"></canvas>
+      </div>
+      <!-- Date labels -->
+      <div class="flex justify-between mt-1 px-1">
+        <span id="mob-rep-start-lbl" class="text-[8px] font-bold text-slate-500"></span>
+        <span id="mob-rep-end-lbl" class="text-[8px] font-bold text-slate-500"></span>
       </div>
     </div>
 
@@ -447,50 +463,84 @@
 
     function mobRenderCharts(data) {
         const colors = ['#135bec', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6'];
-        
-        // Performance
+
+        // ── Performance line chart ─────────────────────────────────────────────
         const pCtx = document.getElementById('mob-perf-chart').getContext('2d');
         if (mobPerfChart) mobPerfChart.destroy();
-        
+
         const isDark = document.documentElement.classList.contains('dark');
-        
+        const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+        const textColor = isDark ? '#64748b' : '#94a3b8';
+
+        const portfolioData = data.performance.portfolio || [];
+        const firstVal = portfolioData[0]?.value ?? 100;
+        const lastVal  = portfolioData[portfolioData.length - 1]?.value ?? 100;
+        const isPos    = lastVal >= firstVal;
+        const lineColor = isPos ? '#10b981' : '#f43f5e';
+
+        // KPI pill
+        const delta = lastVal - firstVal;
+        const sign  = delta >= 0 ? '+' : '';
+        const kpiPct = document.getElementById('mob-rep-kpi-pct');
+        const kpiAbs = document.getElementById('mob-rep-kpi-abs');
+        const startLbl = document.getElementById('mob-rep-start-lbl');
+        const endLbl   = document.getElementById('mob-rep-end-lbl');
+        if (kpiPct) { kpiPct.textContent = sign + delta.toFixed(2) + '%'; kpiPct.style.color = lineColor; }
+        if (kpiAbs) { kpiAbs.textContent = sign + delta.toFixed(2) + ' pts'; kpiAbs.style.color = lineColor; }
+        const fmtD = (iso) => new Date(iso).toLocaleDateString('it-IT', { day:'2-digit', month:'short' });
+        if (portfolioData[0] && startLbl) startLbl.textContent = fmtD(portfolioData[0].date);
+        if (portfolioData[portfolioData.length-1] && endLbl) endLbl.textContent = fmtD(portfolioData[portfolioData.length-1].date);
+
         mobPerfChart = new Chart(pCtx, {
             type: 'line',
             data: {
-                labels: data.performance.portfolio.map(d => new Date(d.date).toLocaleDateString('it-IT', {day:'2-digit',month:'2-digit'})),
+                labels: portfolioData.map(d => new Date(d.date).toLocaleDateString('it-IT', {day:'2-digit',month:'2-digit'})),
                 datasets: [
                     {
                         label: 'Portfolio',
-                        data: data.performance.portfolio.map(d => d.value),
-                        borderColor: '#135bec',
-                        borderWidth: 2,
+                        data: portfolioData.map(d => d.value),
+                        borderColor: lineColor,
+                        borderWidth: 2.5,
                         fill: true,
-                        backgroundColor: isDark ? 'rgba(19, 91, 236, 0.1)' : 'rgba(19, 91, 236, 0.05)',
-                        tension: 0.4,
+                        backgroundColor: (ctx2) => {
+                            const chart = ctx2.chart;
+                            const { ctx: c, chartArea } = chart;
+                            if (!chartArea) return 'transparent';
+                            const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                            if (isPos) {
+                                g.addColorStop(0, 'rgba(16,185,129,0.25)');
+                                g.addColorStop(1, 'rgba(16,185,129,0.01)');
+                            } else {
+                                g.addColorStop(0, 'rgba(244,63,94,0.20)');
+                                g.addColorStop(1, 'rgba(244,63,94,0.01)');
+                            }
+                            return g;
+                        },
+                        tension: 0.35,
                         pointRadius: 0,
-                        pointHoverRadius: 6,
-                        pointHoverBackgroundColor: '#135bec',
+                        pointHoverRadius: 5,
+                        pointHoverBackgroundColor: lineColor,
                         pointHoverBorderColor: '#fff',
                         pointHoverBorderWidth: 2
                     },
                     {
                         label: 'S&P 500',
-                        data: data.performance.sp500.map(d => d.value),
-                        borderColor: '#10b981',
-                        borderWidth: 1.5,
-                        borderDash: [5, 5],
-                        fill: false,
-                        tension: 0.4,
-                        pointRadius: 0
-                    },
-                    {
-                        label: 'MSCI World',
-                        data: data.performance.msci.map(d => d.value),
+                        data: (data.performance.sp500 || []).map(d => d.value),
                         borderColor: '#f59e0b',
                         borderWidth: 1.5,
                         borderDash: [5, 5],
                         fill: false,
-                        tension: 0.4,
+                        tension: 0.35,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'MSCI World',
+                        data: (data.performance.msci || []).map(d => d.value),
+                        borderColor: '#8b5cf6',
+                        borderWidth: 1.5,
+                        borderDash: [5, 5],
+                        fill: false,
+                        tension: 0.35,
                         pointRadius: 0
                     }
                 ]
@@ -498,48 +548,57 @@
             options: {
                 responsive: true, maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
-                plugins: { 
+                plugins: {
                     legend: { display: false },
                     tooltip: {
-                        backgroundColor: isDark ? 'rgba(30, 41, 59, 1)' : 'rgba(255, 255, 255, 1)',
-                        titleColor: isDark ? '#f1f5f9' : '#1e293b',
-                        bodyColor: isDark ? '#f1f5f9' : '#1e293b',
+                        backgroundColor: isDark ? 'rgba(15,23,42,0.95)' : 'rgba(255,255,255,0.97)',
+                        titleColor: isDark ? '#f1f5f9' : '#0f172a',
+                        bodyColor: isDark ? '#cbd5e1' : '#334155',
                         borderColor: isDark ? '#334155' : '#e2e8f0',
                         borderWidth: 1,
                         padding: 10,
+                        cornerRadius: 8,
                         callbacks: {
-                            label: (ctx) => null, // Hide numeric value from tooltip
                             title: (items) => {
-                                const d = data.performance.portfolio[items[0].dataIndex];
-                                return (d && d.events && d.events.length > 0) ? items[0].label : null;
+                                const d = portfolioData[items[0]?.dataIndex];
+                                return d ? new Date(d.date).toLocaleDateString('it-IT', { weekday:'short', day:'2-digit', month:'short' }) : '';
                             },
-                            afterBody: (items) => {
-                                const index = items[0].dataIndex;
-                                const d = data.performance.portfolio[index];
-                                if (d && d.events && d.events.length > 0) {
-                                    const labels = { 'BUY': 'ACQUISTO', 'SELL': 'VENDITA', 'DEPOSIT': 'DEPOSITO', 'WITHDRAWAL': 'PRELIEVO', 'DIVIDEND': 'DIVIDENDO' };
-                                    return d.events.map(ev => {
-                                        const typeLabel = labels[ev.type] || ev.type;
-                                        return `${typeLabel}: ${ev.ticker || ev.assetName || ''}`;
-                                    });
-                                }
-                                return null;
+                            label: (context) => {
+                                if (context.dataset.hidden) return null;
+                                const val = context.parsed.y;
+                                const s = val >= 100 ? '+' : '';
+                                return ` ${context.dataset.label}: ${val.toFixed(1)} (${s}${(val-100).toFixed(1)}%)`;
+                            }
+                        }
+                    },
+                    annotation: {
+                        annotations: {
+                            baseline: {
+                                type: 'line',
+                                yMin: 100, yMax: 100,
+                                borderColor: 'rgba(148,163,184,0.35)',
+                                borderWidth: 1,
+                                borderDash: [4, 4]
                             }
                         }
                     }
                 },
-                scales: { 
-                    x: { 
-                        ticks: { color: isDark?'#64748b':'#94a3b8', font: { size: 9 }, maxTicksLimit: 5 },
-                        grid: { display: false }
+                scales: {
+                    x: {
+                        ticks: { color: textColor, font: { size: 9 }, maxTicksLimit: 5 },
+                        grid: { display: false },
+                        border: { display: false }
                     },
-                    y: { 
-                        grid: { color: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' }, 
-                        ticks: { 
-                            color: isDark?'#64748b':'#94a3b8', 
-                            font: { size: 9 },
-                            callback: v => '€'+Math.round(v/1000)+'k'
-                        } 
+                    y: {
+                        grid: { color: gridColor, drawTicks: false },
+                        border: { display: false },
+                        ticks: {
+                            color: textColor,
+                            font: { size: 9, weight: '700' },
+                            maxTicksLimit: 3,
+                            padding: 4,
+                            callback: v => v.toFixed(0)
+                        }
                     }
                 }
             }
@@ -608,19 +667,58 @@
         const dCtx = document.getElementById('mob-div-chart').getContext('2d');
         if (mobDivChart) mobDivChart.destroy();
         const totalDiv = data.dividends.reduce((s, x) => s + x.amount, 0);
-        document.getElementById('mob-div-total').textContent = formatCurrency(totalDiv, 'USD');
+        document.getElementById('mob-div-total').textContent = formatCurrency(totalDiv, 'EUR');
         mobDivChart = new Chart(dCtx, {
             type: 'bar',
             data: {
                 labels: data.dividends.map(x => x.date),
-                datasets: [{ data: data.dividends.map(x => x.amount), backgroundColor: '#10b981', borderRadius: 4 }]
+                datasets: [{ 
+                    data: data.dividends.map(x => x.amount),
+                    backgroundColor: (ctx2) => {
+                        const chart = ctx2.chart;
+                        const {ctx: c, chartArea} = chart;
+                        if (!chartArea) return 'rgba(16,185,129,0.3)';
+                        const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                        g.addColorStop(0, 'rgba(16,185,129,0.45)');
+                        g.addColorStop(1, 'rgba(16,185,129,0.08)');
+                        return g;
+                    },
+                    borderColor: '#10b981',
+                    borderWidth: 0,
+                    borderRadius: 5
+                }]
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { 
-                    x: { ticks: { font: { size: 8 } }, grid: { display: false } },
-                    y: { display: false }
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: isDark ? 'rgba(15,23,42,0.95)' : 'rgba(255,255,255,0.97)',
+                        titleColor: isDark ? '#f1f5f9' : '#0f172a',
+                        bodyColor: isDark ? '#cbd5e1' : '#334155',
+                        borderColor: isDark ? '#334155' : '#e2e8f0',
+                        borderWidth: 1,
+                        padding: 8,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: (context) => ` ${formatCurrency(context.parsed.y, 'EUR', 2)}`
+                        }
+                    }
+                },
+                scales: {
+                    x: { ticks: { color: textColor, font: { size: 8 } }, grid: { display: false }, border: { display: false } },
+                    y: {
+                        display: true,
+                        grid: { color: gridColor, drawTicks: false },
+                        border: { display: false },
+                        ticks: {
+                            color: textColor,
+                            font: { size: 8, weight: '700' },
+                            maxTicksLimit: 3,
+                            padding: 4,
+                            callback: v => v >= 1000 ? (v/1000).toFixed(0)+'K' : v.toFixed(0)
+                        }
+                    }
                 }
             }
         });

@@ -24,6 +24,7 @@
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
     <script src="/theme.js"></script>
     <script src="/header_indices.js"></script>
     <script src="/auth.js"></script>
@@ -208,12 +209,34 @@
 </section>
 <!-- Performance Chart Section -->
 <section class="bg-white dark:bg-surface-dark p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-<div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+<div class="flex flex-wrap items-center justify-between gap-4 mb-4">
     <div>
         <h3 class="text-xl font-bold">Performance Comparison</h3>
-        <p class="text-sm text-slate-500">Portfolio vs Market Benchmarks (Normalized to 100)</p>
+        <p class="text-sm text-slate-500">Portfolio vs Benchmark (normalizzati a 100)</p>
     </div>
     <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Range: <span id="chart-range-label" class="text-primary">1Y</span></p>
+</div>
+<!-- KPI bar -->
+<div class="flex flex-wrap items-center gap-6 mb-5 px-1" id="rep-kpi-bar">
+    <div class="flex flex-col gap-0.5">
+        <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Inizio periodo</span>
+        <span id="rep-kpi-start" class="text-sm font-black text-slate-700 dark:text-slate-200">—</span>
+        <span id="rep-kpi-start-date" class="text-[9px] text-slate-400 font-bold">—</span>
+    </div>
+    <div class="h-8 w-px bg-slate-100 dark:bg-slate-800"></div>
+    <div class="flex flex-col gap-0.5">
+        <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Valore attuale</span>
+        <span id="rep-kpi-end" class="text-sm font-black text-slate-700 dark:text-slate-200">—</span>
+        <span id="rep-kpi-end-date" class="text-[9px] text-slate-400 font-bold">—</span>
+    </div>
+    <div class="h-8 w-px bg-slate-100 dark:bg-slate-800"></div>
+    <div class="flex flex-col gap-0.5">
+        <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Variazione TWR</span>
+        <span id="rep-kpi-delta" class="text-sm font-black">—</span>
+        <span id="rep-kpi-delta-pct" class="text-[9px] font-bold">—</span>
+    </div>
+    <!-- Legenda inline -->
+    <div id="rep-chart-legend" class="ml-auto flex flex-wrap items-center gap-4"></div>
 </div>
 <div class="h-96 w-full">
     <canvas id="performanceChart"></canvas>
@@ -488,48 +511,132 @@
         if (sharpeEl) sharpeEl.textContent = formatNumber(m.sharpeRatio, 2);
     }
 
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    function repFmtTick(val) {
+        const abs = Math.abs(val);
+        if (abs >= 1e6) return (val/1e6).toFixed(1) + 'M€';
+        if (abs >= 1e3) return (val/1e3).toFixed(0) + 'K€';
+        return val.toFixed(0) + '€';
+    }
+
+    function repBuildGradient(ctx, chartArea, color, alpha1 = 0.22, alpha2 = 0.01) {
+        const g = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+        g.addColorStop(0, color.replace(')', `,${alpha1})`).replace('rgb', 'rgba'));
+        g.addColorStop(1, color.replace(')', `,${alpha2})`).replace('rgb', 'rgba'));
+        return g;
+    }
+
+    function repRenderLegend(datasets) {
+        const el = document.getElementById('rep-chart-legend');
+        if (!el) return;
+        el.innerHTML = datasets.filter(ds => !ds.hidden).map(ds => {
+            const hasDash = ds.borderDash && ds.borderDash.length;
+            const lineStyle = hasDash
+                ? `background:repeating-linear-gradient(to right,${ds.borderColor} 0,${ds.borderColor} 6px,transparent 6px,transparent 10px);background-size:100% 2px;background-repeat:no-repeat;background-position:0 50%;`
+                : `background-color:${ds.borderColor};height:3px;border-radius:2px;`;
+            return `<div class="flex items-center gap-1.5">
+                <div style="width:22px;${lineStyle}"></div>
+                <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">${ds.label}</span>
+            </div>`;
+        }).join('');
+    }
+
+    function repUpdateKPI(twrData) {
+        if (!twrData || twrData.length < 2) return;
+        const first = twrData[0];
+        const last  = twrData[twrData.length - 1];
+        const fmtD  = (d) => new Date(d).toLocaleDateString('it-IT', { day:'2-digit', month:'short', year:'numeric' });
+
+        const startV = first.value ?? 100;
+        const endV   = last.value  ?? 100;
+        const delta  = endV - startV;
+        const isPos  = delta >= 0;
+        const sign   = isPos ? '+' : '';
+        const color  = isPos ? '#10b981' : '#f43f5e';
+
+        const startEl = document.getElementById('rep-kpi-start');
+        const startDt = document.getElementById('rep-kpi-start-date');
+        const endEl   = document.getElementById('rep-kpi-end');
+        const endDt   = document.getElementById('rep-kpi-end-date');
+        const dAbs    = document.getElementById('rep-kpi-delta');
+        const dPct    = document.getElementById('rep-kpi-delta-pct');
+
+        if (startEl) startEl.textContent = startV.toFixed(2);
+        if (startDt) startDt.textContent = fmtD(first.date);
+        if (endEl)   endEl.textContent   = endV.toFixed(2);
+        if (endDt)   endDt.textContent   = fmtD(last.date);
+        if (dAbs)    { dAbs.textContent  = sign + delta.toFixed(2) + ' pts'; dAbs.style.color = color; }
+        if (dPct)    { dPct.textContent  = sign + delta.toFixed(2) + '%'; dPct.style.color = color; }
+    }
+
     function renderPerformanceChart(p) {
         const ctx = document.getElementById('performanceChart').getContext('2d');
         if (perfChart) perfChart.destroy();
 
-        const labels = p.twr.map(d => d.date);
+        const isDark = document.documentElement.classList.contains('dark');
+        const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
+        const textColor = isDark ? '#94a3b8' : '#64748b';
+
+        const twrData = p.twr || [];
+        const firstVal = twrData[0]?.value ?? 100;
+        const lastVal  = twrData[twrData.length - 1]?.value ?? 100;
+        const isPos    = lastVal >= firstVal;
+        const portfolioColor = isPos ? '#10b981' : '#f43f5e';
+
+        const labels = twrData.map(d => d.date);
         const datasets = [
             {
-                label: 'Your Portfolio (TWR)',
-                data: p.twr.map(d => ({ x: d.date, y: d.value, events: d.events })),
-                borderColor: '#135bec',
-                backgroundColor: 'rgba(19, 91, 236, 0.1)',
-                borderWidth: 4,
+                label: 'Portfolio (TWR)',
+                data: twrData.map(d => ({ x: d.date, y: d.value, events: d.events })),
+                borderColor: portfolioColor,
+                backgroundColor: (ctx2) => {
+                    const chart = ctx2.chart;
+                    const {ctx: c, chartArea} = chart;
+                    if (!chartArea) return 'transparent';
+                    const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                    if (isPos) {
+                        g.addColorStop(0, 'rgba(16,185,129,0.22)');
+                        g.addColorStop(1, 'rgba(16,185,129,0.01)');
+                    } else {
+                        g.addColorStop(0, 'rgba(244,63,94,0.18)');
+                        g.addColorStop(1, 'rgba(244,63,94,0.01)');
+                    }
+                    return g;
+                },
+                borderWidth: 2.5,
                 fill: true,
-                tension: 0.4,
-                pointRadius: 4,
-                pointBackgroundColor: '#135bec',
-                zIndex: 10
+                tension: 0.35,
+                pointRadius: 0,
+                pointHoverRadius: 6,
+                pointHoverBackgroundColor: portfolioColor,
+                pointHoverBorderColor: '#fff',
+                pointHoverBorderWidth: 2
             },
             {
                 label: 'S&P 500',
-                data: p.sp500.map(d => ({ x: d.date, y: d.value })),
-                borderColor: '#10b981',
-                borderDash: [5, 5],
-                borderWidth: 2,
+                data: (p.sp500 || []).map(d => ({ x: d.date, y: d.value })),
+                borderColor: '#f59e0b',
+                borderDash: [5, 4],
+                borderWidth: 1.5,
                 pointRadius: 0,
                 fill: false,
-                tension: 0.4
+                tension: 0.35
             },
             {
                 label: 'MSCI World',
-                data: p.msci.map(d => ({ x: d.date, y: d.value })),
-                borderColor: '#f59e0b',
-                borderDash: [5, 5],
-                borderWidth: 2,
+                data: (p.msci || []).map(d => ({ x: d.date, y: d.value })),
+                borderColor: '#8b5cf6',
+                borderDash: [5, 4],
+                borderWidth: 1.5,
                 pointRadius: 0,
                 fill: false,
-                tension: 0.4
+                tension: 0.35
             }
         ];
 
-        // Add individual portfolios
-        const pColors = ['#8b5cf6', '#ec4899', '#06b6d4', '#f43f5e', '#10b981', '#fbbf24'];
+        // Add individual portfolios (hidden by default)
+        const pColors = ['#3b82f6', '#ec4899', '#06b6d4', '#f43f5e', '#a3e635', '#fbbf24'];
         let colorIdx = 0;
         for (const pid in p.individual) {
             const port = p.individual[pid];
@@ -537,15 +644,15 @@
                 label: port.name,
                 data: port.history.map(h => ({ x: h.date, y: h.value, events: h.events })),
                 borderColor: pColors[colorIdx % pColors.length],
-                borderWidth: 2,
+                borderWidth: 1.5,
                 pointRadius: 0,
                 fill: false,
-                tension: 0.4,
-                hidden: true // Hidden by default to avoid clutter
+                tension: 0.35,
+                hidden: true
             });
             colorIdx++;
         }
-        
+
         perfChart = new Chart(ctx, {
             type: 'line',
             data: { labels, datasets },
@@ -554,42 +661,82 @@
                 maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
                 plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: { 
-                            usePointStyle: true,
-                            font: { size: 10, weight: 'bold' },
-                            padding: 20
-                        }
-                    },
+                    legend: { display: false },
                     tooltip: {
-                        backgroundColor: 'rgba(17, 24, 39, 0.9)',
-                        titleFont: { size: 13, weight: 'bold' },
-                        bodyFont: { size: 11 },
+                        backgroundColor: isDark ? 'rgba(15,23,42,0.96)' : 'rgba(255,255,255,0.97)',
+                        titleColor: isDark ? '#f1f5f9' : '#0f172a',
+                        bodyColor: isDark ? '#cbd5e1' : '#334155',
+                        borderColor: isDark ? '#334155' : '#e2e8f0',
+                        borderWidth: 1,
+                        padding: 12,
+                        cornerRadius: 10,
+                        boxPadding: 4,
+                        usePointStyle: true,
                         callbacks: {
-                            label: (ctx) => null, // Hide value
+                            title: (items) => {
+                                if (!items.length) return '';
+                                const d = new Date(items[0].label);
+                                return d.toLocaleDateString('it-IT', { weekday:'short', day:'2-digit', month:'short', year:'numeric' });
+                            },
+                            label: (context) => {
+                                if (context.parsed.y == null || context.dataset.hidden) return null;
+                                const val = context.parsed.y;
+                                const sign = val >= 100 ? '+' : '';
+                                return ` ${context.dataset.label}: ${val.toFixed(2)} (${sign}${(val - 100).toFixed(2)}%)`;
+                            },
                             afterBody: (tooltipItems) => {
                                 const events = [];
                                 tooltipItems.forEach(item => {
-                                    const dataPoint = item.dataset.data[item.dataIndex];
-                                    if (dataPoint.events && dataPoint.events.length > 0) {
-                                        dataPoint.events.forEach(e => {
-                                            events.push(`• ${e.type}: ${e.assetName || e.ticker} (${formatCurrency(e.amount, 'EUR')})`);
-                                        });
+                                    const dp = item.dataset.data[item.dataIndex];
+                                    if (dp && dp.events && dp.events.length > 0) {
+                                        dp.events.forEach(e => events.push(`  • ${e.type}: ${e.assetName || e.ticker} (${formatCurrency(e.amount, 'EUR')})`) );
                                     }
                                 });
-                                // Remove duplicates and return unique events
-                                return [...new Set(events)];
+                                return events.length ? ['', ...new Set(events)] : [];
+                            }
+                        }
+                    },
+                    annotation: {
+                        annotations: {
+                            baseline: {
+                                type: 'line',
+                                yMin: 100, yMax: 100,
+                                borderColor: 'rgba(148,163,184,0.35)',
+                                borderWidth: 1,
+                                borderDash: [4, 4]
                             }
                         }
                     }
                 },
                 scales: {
-                    x: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' } } },
-                    y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 10, weight: 'bold' } } }
+                    x: {
+                        grid: { display: false },
+                        border: { display: false },
+                        ticks: {
+                            color: textColor,
+                            font: { size: 10, weight: '600' },
+                            maxTicksLimit: 8,
+                            maxRotation: 0
+                        }
+                    },
+                    y: {
+                        grid: { color: gridColor, drawTicks: false },
+                        border: { display: false },
+                        ticks: {
+                            color: textColor,
+                            font: { size: 10, weight: '600' },
+                            maxTicksLimit: 5,
+                            padding: 8,
+                            callback: (v) => v.toFixed(0)
+                        }
+                    }
                 }
             }
         });
+
+        // Aggiorna KPI e legenda
+        repUpdateKPI(twrData);
+        repRenderLegend(datasets);
     }
 
     function renderPortfoliosBreakdown(individual) {
@@ -700,11 +847,11 @@
         if (divChart) divChart.destroy();
 
         const totalIncome = divs.reduce((s, x) => s + x.amount, 0);
-        document.getElementById('dividend-total-income').textContent = formatCurrency(totalIncome, 'USD', 0);
+        document.getElementById('dividend-total-income').textContent = formatCurrency(totalIncome, 'EUR', 0);
 
         // Projected Yield
         if (metrics && metrics.dividendYield !== undefined) {
-            const yieldEl = document.getElementById('yield-percent');
+            const yieldEl  = document.getElementById('yield-percent');
             const yieldBox = document.getElementById('dividend-projection');
             if (yieldEl && yieldBox) {
                 yieldEl.textContent = (metrics.dividendYield * 100).toFixed(1) + '%';
@@ -712,28 +859,72 @@
             }
         }
 
+        const isDark = document.documentElement.classList.contains('dark');
+        const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
+        const textColor = isDark ? '#94a3b8' : '#64748b';
+
         divChart = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: divs.map(x => x.date),
                 datasets: [{
-                    label: 'Dividends',
+                    label: 'Dividendi',
                     data: divs.map(x => x.amount),
-                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                    backgroundColor: (ctx2) => {
+                        const chart = ctx2.chart;
+                        const {ctx: c, chartArea} = chart;
+                        if (!chartArea) return 'rgba(16,185,129,0.2)';
+                        const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                        g.addColorStop(0, 'rgba(16,185,129,0.45)');
+                        g.addColorStop(1, 'rgba(16,185,129,0.08)');
+                        return g;
+                    },
                     borderColor: '#10b981',
-                    borderWidth: 2,
-                    borderRadius: 4,
-                    hoverBackgroundColor: '#10b981'
+                    borderWidth: 0,
+                    borderRadius: 6,
+                    hoverBackgroundColor: '#10b981',
+                    hoverBorderRadius: 6
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                scales: {
-                    x: { grid: { display: false }, ticks: { font: { size: 9, weight: 'bold' } } },
-                    y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 9, weight: 'bold' } } }
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: isDark ? 'rgba(15,23,42,0.96)' : 'rgba(255,255,255,0.97)',
+                        titleColor: isDark ? '#f1f5f9' : '#0f172a',
+                        bodyColor: isDark ? '#cbd5e1' : '#334155',
+                        borderColor: isDark ? '#334155' : '#e2e8f0',
+                        borderWidth: 1,
+                        padding: 10,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: (context) => ` ${formatCurrency(context.parsed.y, 'EUR', 2)}`
+                        }
+                    }
                 },
-                plugins: { legend: { display: false } }
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        border: { display: false },
+                        ticks: { color: textColor, font: { size: 9, weight: '600' }, maxRotation: 45 }
+                    },
+                    y: {
+                        grid: { color: gridColor, drawTicks: false },
+                        border: { display: false },
+                        ticks: {
+                            color: textColor,
+                            font: { size: 9, weight: '600' },
+                            maxTicksLimit: 4,
+                            padding: 6,
+                            callback: (v) => {
+                                if (v >= 1000) return (v/1000).toFixed(1) + 'K€';
+                                return v.toFixed(0) + '€';
+                            }
+                        }
+                    }
+                }
             }
         });
     }
