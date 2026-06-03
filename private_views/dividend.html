@@ -352,8 +352,32 @@
         let rawDivData = [];
         let collapsedGroups = new Set();
         let currentGroupBy = 'year';
+        let globalHoldings = {};
         window.globalProjData = null;
         window.hasTriedReset = false;
+
+        async function loadHoldings() {
+            try {
+                const res = await fetch('/api/portfolios');
+                if(!res.ok) return;
+                const pData = await res.json();
+                for (const p of (pData.portfolios || [])) {
+                    const dRes = await fetch('/api/portfolios/' + p.id);
+                    if(!dRes.ok) continue;
+                    const details = await dRes.json();
+                    if (details.holdings) {
+                        details.holdings.forEach(h => {
+                            if (!globalHoldings[h.ticker]) globalHoldings[h.ticker] = { cost: 0, currentValue: 0 };
+                            globalHoldings[h.ticker].cost += (h.totalCostInPCurr || 0);
+                            globalHoldings[h.ticker].currentValue += (h.currentValue || 0);
+                        });
+                    }
+                }
+                if(document.getElementById('asset-yield-year-filter')) {
+                    renderAssetYearYields();
+                }
+            } catch (err) { console.error('Error loading holdings:', err); }
+        }
 
         async function loadDividends() {
             try {
@@ -633,6 +657,12 @@
                 const taxPercent = g.gross > 0 ? (g.tax / g.gross) * 100 : 0;
                 const letters = g.ticker.substring(0, 4).toUpperCase();
                 
+                let yieldOnCost = 0;
+                if (globalHoldings[g.ticker] && globalHoldings[g.ticker].cost > 0) {
+                    yieldOnCost = (g.gross / globalHoldings[g.ticker].cost) * 100;
+                }
+                let yieldBadge = yieldOnCost > 0 ? `<div class="text-[9px] text-slate-400 font-bold mt-0.5" title="Yield on Cost (Rendimento sul Prezzo Medio di Carico)">YOC: <span class="text-indigo-500 font-black">${yieldOnCost.toFixed(2)}%</span></div>` : '';
+                
                 return `
                 <tr class="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
                     <td class="px-5 py-3">
@@ -646,8 +676,9 @@
                             </div>
                         </div>
                     </td>
-                    <td class="px-5 py-3 text-right font-black font-mono text-sm text-slate-700 dark:text-slate-300">
-                        ${formatCurrency(g.gross, 'EUR')}
+                    <td class="px-5 py-3 text-right">
+                        <div class="font-black font-mono text-sm text-slate-700 dark:text-slate-300">${formatCurrency(g.gross, 'EUR')}</div>
+                        ${yieldBadge}
                     </td>
                     <td class="px-5 py-3 text-right font-mono text-sm text-slate-500">
                         ${formatCurrency(g.tax, 'EUR')}
@@ -1101,6 +1132,7 @@
             loadDividends();
             loadProjections();
             loadSidebarPortfolios();
+            loadHoldings();
         });
     </script>
 </body>
