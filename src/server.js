@@ -6264,7 +6264,7 @@ async function refreshDividendProjections(userId) {
                 const lastYearDivs = allDivTx.filter(d => d.ticker === ticker && d.date.startsWith(lastYear.toString()));
                 lastYearDivs.forEach(d => {
                     const newDate = `${currentYear}-${d.date.substring(5)}`;
-                    if (newDate >= now.toISOString().split('T')[0] || newDate.startsWith(currentYear.toString())) {
+                    if (newDate >= now.toISOString().split('T')[0]) {
                         const month = newDate.split('-')[1];
                         const alreadyConfirmed = allDivTx.some(tx => tx.ticker === ticker && tx.date.split('-')[1] === month && tx.date.startsWith(currentYear.toString()));
                         if (!alreadyConfirmed) {
@@ -6305,7 +6305,7 @@ async function refreshDividendProjections(userId) {
                         }
                         
                         let yfProjected = false;
-                        if (nextDateStr && (nextDateStr >= now.toISOString().split('T')[0] || nextDateStr.startsWith(currentYear.toString()))) {
+                        if (nextDateStr && nextDateStr >= now.toISOString().split('T')[0]) {
                             const month = nextDateStr.split('-')[1];
                             const alreadyConfirmed = allDivTx.some(tx => tx.ticker === ticker && tx.date.split('-')[1] === month && tx.date.startsWith(currentYear.toString()));
                             if (!alreadyConfirmed) {
@@ -6330,7 +6330,7 @@ async function refreshDividendProjections(userId) {
                             if (histLastYear.length > 0) {
                                 histLastYear.forEach(d => {
                                     const newDate = `${currentYear}-${d.date.substring(5)}`;
-                                    if (newDate >= now.toISOString().split('T')[0] || newDate.startsWith(currentYear.toString())) {
+                                    if (newDate >= now.toISOString().split('T')[0]) {
                                         const month = newDate.split('-')[1];
                                         const alreadyConfirmed = allDivTx.some(tx => tx.ticker === ticker && tx.date.split('-')[1] === month && tx.date.startsWith(currentYear.toString()));
                                         if (!alreadyConfirmed) {
