@@ -6247,6 +6247,13 @@ async function refreshDividendProjections(userId) {
         const taxRatesRaw = database.db.prepare(`SELECT asset_type, rate FROM tax_rates WHERE user_id = ?`).all(userId);
         const taxMap = Object.fromEntries(taxRatesRaw.map(tr => [tr.asset_type, tr.rate]));
 
+        const balanceOnExDateQuery = database.db.prepare(`
+            SELECT SUM(CASE WHEN t.type = 'BUY' THEN t.quantity WHEN t.type = 'SELL' THEN -t.quantity ELSE 0 END) as balance
+            FROM transactions t
+            JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
+            WHERE pu.user_id = ? AND t.assetTicker = ? AND t.date <= ?
+        `);
+
         const newProjections = [];
 
         const projectionPromises = openPositions.map(async (pos) => {
@@ -6261,10 +6268,13 @@ async function refreshDividendProjections(userId) {
                         const month = newDate.split('-')[1];
                         const alreadyConfirmed = allDivTx.some(tx => tx.ticker === ticker && tx.date.split('-')[1] === month && tx.date.startsWith(currentYear.toString()));
                         if (!alreadyConfirmed) {
-                            const lastYearNet = toEUR(d.amount || (d.quantity * d.price - (d.tax || 0)), d.portCurrency, d.exchangeRate);
-                            const lastYearTax = toEUR(d.tax || 0, d.portCurrency, d.exchangeRate);
-                            const lastYearGross = lastYearNet + lastYearTax;
-                            newProjections.push({ ticker, name: pos.name, date: newDate, tag: 'STORICO', amount: 0, totalAmount: lastYearNet, gross: lastYearGross, tax: lastYearTax, yield: 0 });
+                            const balanceOnExDate = balanceOnExDateQuery.get(userId, ticker, newDate)?.balance || 0;
+                            if (balanceOnExDate > 0.0001) {
+                                const lastYearNet = toEUR(d.amount || (d.quantity * d.price - (d.tax || 0)), d.portCurrency, d.exchangeRate);
+                                const lastYearTax = toEUR(d.tax || 0, d.portCurrency, d.exchangeRate);
+                                const lastYearGross = lastYearNet + lastYearTax;
+                                newProjections.push({ ticker, name: pos.name, date: newDate, tag: 'STORICO', amount: 0, totalAmount: lastYearNet, gross: lastYearGross, tax: lastYearTax, yield: 0 });
+                            }
                         }
                     }
                 });
@@ -6299,17 +6309,20 @@ async function refreshDividendProjections(userId) {
                             const month = nextDateStr.split('-')[1];
                             const alreadyConfirmed = allDivTx.some(tx => tx.ticker === ticker && tx.date.split('-')[1] === month && tx.date.startsWith(currentYear.toString()));
                             if (!alreadyConfirmed) {
-                                const perPayment = (annualRate * pos.balance) / freq;
-                                const amtGrossEUR = toEUR(perPayment, currencyYF, null);
-                                const unitAmount = toEUR(annualRate / freq, currencyYF, null);
-                                
-                                let taxRate = taxMap[pos.assetType];
-                                if (taxRate === undefined) taxRate = 26.0;
-                                const taxEUR = amtGrossEUR * (taxRate / 100);
-                                const netEUR = amtGrossEUR - taxEUR;
-                                
-                                newProjections.push({ ticker, name: pos.name, date: nextDateStr, tag: 'YF', amount: unitAmount, totalAmount: netEUR, gross: amtGrossEUR, tax: taxEUR, yield: assetYield });
-                                yfProjected = true;
+                                const balanceOnExDate = balanceOnExDateQuery.get(userId, ticker, nextDateStr)?.balance || 0;
+                                if (balanceOnExDate > 0.0001) {
+                                    const perPayment = (annualRate * balanceOnExDate) / freq;
+                                    const amtGrossEUR = toEUR(perPayment, currencyYF, null);
+                                    const unitAmount = toEUR(annualRate / freq, currencyYF, null);
+                                    
+                                    let taxRate = taxMap[pos.assetType];
+                                    if (taxRate === undefined) taxRate = 26.0;
+                                    const taxEUR = amtGrossEUR * (taxRate / 100);
+                                    const netEUR = amtGrossEUR - taxEUR;
+                                    
+                                    newProjections.push({ ticker, name: pos.name, date: nextDateStr, tag: 'YF', amount: unitAmount, totalAmount: netEUR, gross: amtGrossEUR, tax: taxEUR, yield: assetYield });
+                                    yfProjected = true;
+                                }
                             }
                         }
                         
@@ -6321,11 +6334,14 @@ async function refreshDividendProjections(userId) {
                                         const month = newDate.split('-')[1];
                                         const alreadyConfirmed = allDivTx.some(tx => tx.ticker === ticker && tx.date.split('-')[1] === month && tx.date.startsWith(currentYear.toString()));
                                         if (!alreadyConfirmed) {
-                                            const lastYearNet = toEUR(d.amount || (d.quantity * d.price - (d.tax || 0)), d.portCurrency, d.exchangeRate);
-                                            const lastYearTax = toEUR(d.tax || 0, d.portCurrency, d.exchangeRate);
-                                            const lastYearGross = lastYearNet + lastYearTax;
-                                            
-                                            newProjections.push({ ticker, name: pos.name, date: newDate, tag: 'SIMULATO', amount: 0, totalAmount: lastYearNet, gross: lastYearGross, tax: lastYearTax, yield: assetYield });
+                                            const balanceOnExDate = balanceOnExDateQuery.get(userId, ticker, newDate)?.balance || 0;
+                                            if (balanceOnExDate > 0.0001) {
+                                                const lastYearNet = toEUR(d.amount || (d.quantity * d.price - (d.tax || 0)), d.portCurrency, d.exchangeRate);
+                                                const lastYearTax = toEUR(d.tax || 0, d.portCurrency, d.exchangeRate);
+                                                const lastYearGross = lastYearNet + lastYearTax;
+                                                
+                                                newProjections.push({ ticker, name: pos.name, date: newDate, tag: 'SIMULATO', amount: 0, totalAmount: lastYearNet, gross: lastYearGross, tax: lastYearTax, yield: assetYield });
+                                            }
                                         }
                                     }
                                 });
