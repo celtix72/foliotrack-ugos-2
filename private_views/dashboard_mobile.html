@@ -98,10 +98,19 @@
 
     <!-- Chart -->
     <div class="mob-chart-card">
-      <div class="flex items-baseline gap-2 mb-3">
-        <div class="mob-chart-title">Performance</div>
-        <div class="mob-chart-subtitle">Aggregato</div>
+      <!-- Chart header: title + KPI pill -->
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <div class="mob-chart-title">Performance</div>
+          <div class="mob-chart-subtitle">Patrimonio aggregato</div>
+        </div>
+        <!-- KPI variazione periodo -->
+        <div id="mob-chart-kpi" class="flex flex-col items-end gap-0.5">
+          <span id="mob-kpi-delta-pct" class="text-[13px] font-black" style="color:#94a3b8">—</span>
+          <span id="mob-kpi-delta-abs" class="text-[9px] font-bold" style="color:#94a3b8">—</span>
+        </div>
       </div>
+      <!-- Range bar -->
       <div class="mob-chart-range-bar" id="mob-range-bar">
         <div class="mob-range-btn" onclick="mobSetRange('1W')" data-range="1W">1W</div>
         <div class="mob-range-btn active" onclick="mobSetRange('1M')" data-range="1M">1M</div>
@@ -110,8 +119,14 @@
         <div class="mob-range-btn" onclick="mobSetRange('1Y')" data-range="1Y">1Y</div>
         <div class="mob-range-btn" onclick="mobSetRange('ALL')" data-range="ALL">ALL</div>
       </div>
-      <div class="mob-chart-canvas-wrapper mt-2">
+      <!-- Chart canvas -->
+      <div class="mob-chart-canvas-wrapper mt-3" style="position:relative">
         <canvas id="mob-perf-chart"></canvas>
+      </div>
+      <!-- Start / End date labels -->
+      <div class="flex justify-between mt-1 px-1">
+        <span id="mob-chart-start-lbl" class="text-[8px] font-bold text-slate-500"></span>
+        <span id="mob-chart-end-lbl" class="text-[8px] font-bold text-slate-500"></span>
       </div>
     </div>
 
@@ -313,6 +328,53 @@
       losers.innerHTML = render(global.topLosers || [], 'var(--mob-rose)');
   }
 
+  // Helper tick abbreviato mobile
+  function mobFmtTick(val) {
+      const abs = Math.abs(val);
+      if (abs >= 1e6) return (val / 1e6).toFixed(1) + 'M';
+      if (abs >= 1e3) return (val / 1e3).toFixed(0) + 'K';
+      return val.toFixed(0);
+  }
+
+  // Gradient fill dinamico mobile
+  function mobBuildGradient(ctx, chartArea, isPos) {
+      const g = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+      if (isPos) {
+          g.addColorStop(0, 'rgba(16,185,129,0.28)');
+          g.addColorStop(1, 'rgba(16,185,129,0.01)');
+      } else {
+          g.addColorStop(0, 'rgba(244,63,94,0.22)');
+          g.addColorStop(1, 'rgba(244,63,94,0.01)');
+      }
+      return g;
+  }
+
+  // Aggiorna KPI pill sopra il grafico
+  function mobUpdateKPI(points) {
+      const pctEl = document.getElementById('mob-kpi-delta-pct');
+      const absEl = document.getElementById('mob-kpi-delta-abs');
+      const startLbl = document.getElementById('mob-chart-start-lbl');
+      const endLbl   = document.getElementById('mob-chart-end-lbl');
+      if (!pctEl || !points || points.length < 2) return;
+
+      const first = points[0];
+      const last  = points[points.length - 1];
+      const delta  = (last.value || 0) - (first.value || 0);
+      const pct    = first.value ? (delta / first.value) * 100 : 0;
+      const isPos  = delta >= 0;
+      const color  = isPos ? '#10b981' : '#f43f5e';
+      const sign   = isPos ? '+' : '';
+
+      pctEl.textContent  = sign + pct.toFixed(2) + '%';
+      pctEl.style.color  = color;
+      absEl.textContent  = sign + formatCurrency(delta, 'EUR', 0);
+      absEl.style.color  = color;
+
+      const fmtD = (iso) => new Date(iso).toLocaleDateString('it-IT', { day:'2-digit', month:'short' });
+      if (startLbl) startLbl.textContent = fmtD(first.date);
+      if (endLbl)   endLbl.textContent   = fmtD(last.date);
+  }
+
   async function mobUpdateChart() {
       const ctx = document.getElementById('mob-perf-chart')?.getContext('2d');
       if (!ctx) return;
@@ -322,27 +384,110 @@
           const res = await fetch(url);
           const result = await res.json();
           const points = result.dataPoints || [];
-          
+
+          // Aggiorna KPI
+          mobUpdateKPI(points);
+
+          const values    = points.map(p => p.value ?? 0);
+          const firstVal  = values[0] ?? 0;
+          const lastVal   = values[values.length - 1] ?? 0;
+          const isPos     = lastVal >= firstVal;
+          const lineColor = isPos ? '#10b981' : '#f43f5e';
+
           if (mobPerfChart) mobPerfChart.destroy();
+
+          const isDark = document.documentElement.classList.contains('dark');
+          const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
+          const textColor = isDark ? '#64748b' : '#94a3b8';
+
           mobPerfChart = new Chart(ctx, {
               type: 'line',
               data: {
                   labels: points.map(p => new Date(p.date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })),
                   datasets: [{
-                      data: points.map(p => p.value),
-                      borderColor: '#135bec',
-                      tension: 0.4,
+                      data: values,
+                      borderColor: lineColor,
+                      tension: 0.35,
                       fill: true,
-                      backgroundColor: 'rgba(19, 91, 236, 0.1)',
-                      borderWidth: 2,
-                      pointRadius: 0
+                      backgroundColor: (ctx2) => {
+                          const chart = ctx2.chart;
+                          const { ctx: c, chartArea } = chart;
+                          if (!chartArea) return 'transparent';
+                          return mobBuildGradient(c, chartArea, isPos);
+                      },
+                      borderWidth: 2.5,
+                      pointRadius: 0,
+                      pointHoverRadius: 5,
+                      pointHoverBackgroundColor: lineColor,
+                      pointHoverBorderColor: '#fff',
+                      pointHoverBorderWidth: 2
                   }]
               },
               options: {
                   responsive: true,
                   maintainAspectRatio: false,
-                  plugins: { legend: { display: false } },
-                  scales: { x: { display: false }, y: { display: false } }
+                  interaction: { mode: 'index', intersect: false },
+                  plugins: {
+                      legend: { display: false },
+                      tooltip: {
+                          enabled: true,
+                          backgroundColor: isDark ? 'rgba(15,23,42,0.95)' : 'rgba(255,255,255,0.97)',
+                          titleColor: isDark ? '#f1f5f9' : '#0f172a',
+                          bodyColor: isDark ? '#cbd5e1' : '#334155',
+                          borderColor: isDark ? '#334155' : '#e2e8f0',
+                          borderWidth: 1,
+                          padding: 10,
+                          cornerRadius: 8,
+                          callbacks: {
+                              title: (items) => {
+                                  const idx = items[0]?.dataIndex;
+                                  if (points[idx]) {
+                                      return new Date(points[idx].date).toLocaleDateString('it-IT', { weekday:'short', day:'2-digit', month:'short' });
+                                  }
+                                  return items[0]?.label || '';
+                              },
+                              label: (context) => {
+                                  return ' ' + formatCurrency(context.parsed.y, 'EUR', 0);
+                              },
+                              afterLabel: (context) => {
+                                  const idx = context.dataIndex;
+                                  if (!points[idx] || !points[0]) return '';
+                                  const delta = (points[idx].value || 0) - (points[0].value || 0);
+                                  const pct = points[0].value ? (delta / points[0].value) * 100 : 0;
+                                  const sign = delta >= 0 ? '+' : '';
+                                  return ` Δ ${sign}${formatCurrency(delta,'EUR',0)} (${sign}${pct.toFixed(1)}%)`;
+                              }
+                          }
+                      },
+                      annotation: {
+                          annotations: {
+                              baseline: {
+                                  type: 'line',
+                                  yMin: firstVal,
+                                  yMax: firstVal,
+                                  borderColor: 'rgba(148,163,184,0.35)',
+                                  borderWidth: 1,
+                                  borderDash: [4, 4]
+                              }
+                          }
+                      }
+                  },
+                  scales: {
+                      x: { display: false },
+                      y: {
+                          display: true,
+                          position: 'left',
+                          grid: { color: gridColor, drawTicks: false },
+                          border: { display: false },
+                          ticks: {
+                              color: textColor,
+                              font: { size: 9, weight: '700' },
+                              maxTicksLimit: 3,
+                              padding: 4,
+                              callback: (v) => mobFmtTick(v)
+                          }
+                      }
+                  }
               }
           });
       } catch(e) { console.error(e); }
