@@ -735,7 +735,7 @@
             const data = labels.map(y => grouped[y]);
 
             const isDark = document.documentElement.classList.contains('dark');
-            const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+            const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
             const textColor = isDark ? '#94a3b8' : '#64748b';
 
             histChartInstance = new Chart(ctx, {
@@ -745,28 +745,57 @@
                     datasets: [{
                         label: 'Incassato',
                         data: data,
-                        backgroundColor: 'rgba(16,185,129,0.7)',
-                        hoverBackgroundColor: 'rgba(16,185,129,1)',
-                        borderRadius: 6
+                        backgroundColor: (ctx2) => {
+                            const chart = ctx2.chart;
+                            const {ctx: c, chartArea} = chart;
+                            if (!chartArea) return 'rgba(16,185,129,0.4)';
+                            const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                            g.addColorStop(0, 'rgba(16,185,129,0.75)');
+                            g.addColorStop(1, 'rgba(16,185,129,0.12)');
+                            return g;
+                        },
+                        hoverBackgroundColor: '#10b981',
+                        borderRadius: 6,
+                        borderSkipped: false
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false }
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: isDark ? 'rgba(15,23,42,0.96)' : 'rgba(255,255,255,0.97)',
+                            titleColor: isDark ? '#f1f5f9' : '#0f172a',
+                            bodyColor: isDark ? '#cbd5e1' : '#334155',
+                            borderColor: isDark ? '#334155' : '#e2e8f0',
+                            borderWidth: 1,
+                            padding: 10,
+                            cornerRadius: 8,
+                            boxPadding: 4,
+                            callbacks: {
+                                label: (context) => ` ${formatCurrency(context.parsed.y, 'EUR', 2)}`
+                            }
+                        }
                     },
                     scales: {
                         x: {
                             grid: { display: false },
-                            ticks: { color: textColor, font: { size: 10, weight: 'bold' } }
+                            border: { display: false },
+                            ticks: { color: textColor, font: { size: 10, weight: '700' } }
                         },
                         y: {
-                            grid: { color: gridColor },
+                            grid: { color: gridColor, drawTicks: false },
+                            border: { display: false },
                             ticks: {
                                 color: textColor,
                                 font: { size: 10 },
-                                callback: v => '€' + v.toLocaleString('it-IT')
+                                maxTicksLimit: 4,
+                                padding: 6,
+                                callback: v => {
+                                    if (v >= 1000) return (v/1000).toFixed(1) + 'K€';
+                                    return v.toFixed(0) + '€';
+                                }
                             }
                         }
                     }
@@ -1027,18 +1056,28 @@
                             {
                                 label: 'Ricevuto',
                                 data: actualData,
-                                backgroundColor: 'rgba(16,185,129,0.75)',
+                                backgroundColor: (ctx2) => {
+                                    const chart = ctx2.chart;
+                                    const {ctx: c, chartArea} = chart;
+                                    if (!chartArea) return 'rgba(16,185,129,0.65)';
+                                    const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                                    g.addColorStop(0, 'rgba(16,185,129,0.85)');
+                                    g.addColorStop(1, 'rgba(16,185,129,0.25)');
+                                    return g;
+                                },
+                                hoverBackgroundColor: '#10b981',
                                 borderRadius: 6,
                                 borderSkipped: false
                             },
                             {
                                 label: 'Proiettato',
                                 data: displayData,
-                                backgroundColor: 'rgba(6,182,212,0.6)',
-                                borderColor: 'rgba(6,182,212,1)',
-                                borderWidth: 1,
+                                backgroundColor: 'rgba(6,182,212,0.45)',
+                                borderColor: 'rgba(6,182,212,0.9)',
+                                borderWidth: 1.5,
                                 borderRadius: 6,
-                                borderSkipped: false
+                                borderSkipped: false,
+                                hoverBackgroundColor: 'rgba(6,182,212,0.7)'
                             }
                         ]
                     },
@@ -1050,13 +1089,22 @@
                         plugins: {
                             legend: { display: false },
                             tooltip: {
+                                backgroundColor: isDark ? 'rgba(15,23,42,0.96)' : 'rgba(255,255,255,0.97)',
+                                titleColor: isDark ? '#f1f5f9' : '#0f172a',
+                                bodyColor: isDark ? '#cbd5e1' : '#334155',
+                                borderColor: isDark ? '#334155' : '#e2e8f0',
+                                borderWidth: 1,
+                                padding: 12,
+                                cornerRadius: 10,
+                                boxPadding: 4,
+                                usePointStyle: true,
                                 callbacks: {
                                     afterBody: (context) => {
                                         const idx = context[0].dataIndex;
-                                        if (tickersData[idx]) return '\nAsset: ' + tickersData[idx];
+                                        if (tickersData[idx]) return ['', '• Asset: ' + tickersData[idx]];
                                         return '';
                                     },
-                                    label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.raw)}`
+                                    label: ctx => ` ${ctx.dataset.label}: ${formatCurrency(ctx.raw, 'EUR', 0)}`
                                 }
                             }
                         },
@@ -1064,15 +1112,22 @@
                             x: {
                                 stacked: true,
                                 grid: { display: false },
-                                ticks: { color: textColor, font: { size: 10, weight: 'bold' } }
+                                border: { display: false },
+                                ticks: { color: textColor, font: { size: 10, weight: '700' } }
                             },
                             y: {
                                 stacked: true,
-                                grid: { color: gridColor },
+                                grid: { color: gridColor, drawTicks: false },
+                                border: { display: false },
                                 ticks: {
                                     color: textColor,
                                     font: { size: 10 },
-                                    callback: v => '€' + v.toLocaleString('it-IT')
+                                    maxTicksLimit: 4,
+                                    padding: 6,
+                                    callback: v => {
+                                        if (v >= 1000) return (v/1000).toFixed(1) + 'K€';
+                                        return v.toFixed(0) + '€';
+                                    }
                                 }
                             }
                         }
