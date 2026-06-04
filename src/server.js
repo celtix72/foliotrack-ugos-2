@@ -7539,6 +7539,12 @@ app.post('/api/settings/news-sources', requireAuth, express.json(), (req, res) =
         
         const stmt = database.db.prepare('INSERT INTO news_sources (user_id, name, url) VALUES (?, ?, ?)');
         const info = stmt.run(req.user.id, name, url);
+        
+        // Trigger a background sync immediately so the user sees news right away
+        setTimeout(() => {
+            syncNews().catch(e => logger.error('Error in immediate sync:', e));
+        }, 100);
+
         res.json({ id: info.lastInsertRowid, name, url, is_enabled: 1 });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -7550,6 +7556,12 @@ app.put('/api/settings/news-sources/:id', requireAuth, express.json(), (req, res
         const { is_enabled } = req.body;
         const stmt = database.db.prepare('UPDATE news_sources SET is_enabled = ? WHERE id = ? AND user_id = ?');
         stmt.run(is_enabled ? 1 : 0, req.params.id, req.user.id);
+        
+        // Trigger a background sync immediately
+        setTimeout(() => {
+            syncNews().catch(e => logger.error('Error in immediate sync:', e));
+        }, 100);
+
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
