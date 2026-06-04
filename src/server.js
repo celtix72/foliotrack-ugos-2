@@ -791,6 +791,8 @@ app.use(cookieParser());
  * Attaches req.user = { id, username, role, display_name } on success.
  */
 function requireAuth(req, res, next) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    
     const token = req.cookies[JWT_COOKIE] || (req.headers.authorization || '').replace('Bearer ', '');
     const isApi = req.originalUrl.startsWith('/api/');
 
