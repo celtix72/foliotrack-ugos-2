@@ -3148,6 +3148,10 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
 
     const lastPoint = globalPoints.at(-1) || { value: 0, profit: 0, netDeposits: 0 };
 
+    const watchlistTickers = userId ? database.db.prepare(`SELECT ticker FROM user_watchlist WHERE user_id = ?`).all(userId).map(r => r.ticker) : [];
+    const portfolioTickers = heldAssetsRaw.map(a => a.ticker);
+    const uniqueTickers = [...new Set([...watchlistTickers, ...portfolioTickers])];
+
     return {
         portfolios: rows,
         totalValue: totalValueEUR,
@@ -3163,7 +3167,8 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
         topWinners: heldAssetsPct.slice(0, 5),
         topLosers: heldAssetsPct.slice(-5).reverse(),
         topWinnersAbs: heldAssetsAbs.slice(0, 5),
-        topLosersAbs: heldAssetsAbs.slice(-5).reverse()
+        topLosersAbs: heldAssetsAbs.slice(-5).reverse(),
+        userTickers: uniqueTickers
     };
 }
 

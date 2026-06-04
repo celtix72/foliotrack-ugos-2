@@ -690,6 +690,8 @@
             winnersContainer.innerHTML = (data.global.topWinners || []).map(w => createMiniAssetCard(w, true)).join('') || '<p class="text-xs text-slate-400 italic">Nessun dato disponibile</p>';
             losersContainer.innerHTML = (data.global.topLosers || []).map(l => createMiniAssetCard(l, false)).join('') || '<p class="text-xs text-slate-400 italic">Nessun dato disponibile</p>';
         }
+        loadNews(); // Injected
+        }
     }
 
     function renderSidebarPortfolios(portfolios) {
@@ -1604,10 +1606,25 @@
         const skeleton  = document.getElementById('news-skeleton');
         if (!container) return;
 
-        const FEEDS = [
-            { rss: 'https://feeds.finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,%5EDJI&region=US&lang=en-US', source: 'Yahoo Finance' },
-            { rss: 'https://news.google.com/rss/search?q=finanza+mercati+borsa&hl=it&gl=IT&ceid=IT:it', source: 'Google Finance' },
-        ];
+        let symbols = [];
+        if (window._dashboardData && window._dashboardData.global && window._dashboardData.global.userTickers) {
+            symbols = window._dashboardData.global.userTickers.map(t => t.split('.')[0]).filter(t => t && t.length > 0);
+        }
+
+        let FEEDS = [];
+        if (symbols.length > 0) {
+            const chunk = symbols.slice(0, 15).join(',');
+            const query = symbols.slice(0, 4).join('+');
+            FEEDS = [
+                { rss: `https://feeds.finance.yahoo.com/rss/2.0/headline?s=${encodeURIComponent(chunk)}&region=US&lang=en-US`, source: 'Yahoo Finance' },
+                { rss: `https://news.google.com/rss/search?q=${encodeURIComponent(query)}+finanza&hl=it&gl=IT&ceid=IT:it`, source: 'Google Finance' }
+            ];
+        } else {
+            FEEDS = [
+                { rss: 'https://feeds.finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,%5EDJI&region=US&lang=en-US', source: 'Yahoo Finance' },
+                { rss: 'https://news.google.com/rss/search?q=finanza+mercati+borsa&hl=it&gl=IT&ceid=IT:it', source: 'Google Finance' },
+            ];
+        }
         const API = 'https://api.rss2json.com/v1/api.json?rss_url=';
 
         let allItems = [];
@@ -1674,8 +1691,6 @@
     document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('header-date').innerText = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
         loadDashboard();
-        loadNews();
-        
         const user = JSON.parse(localStorage.getItem('user') || '{}');
         if (user.name) document.getElementById('header-user-name').innerText = user.name;
         if (user.role) {
