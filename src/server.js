@@ -3113,7 +3113,7 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
         FROM assets a
         JOIN (
             SELECT t.assetTicker, 
-                   SUM(CASE WHEN t.type = 'BUY' THEN t.quantity ELSE -t.quantity END) as netQty 
+                   SUM(CASE WHEN t.type = 'BUY' THEN t.quantity WHEN t.type = 'SELL' THEN -t.quantity ELSE 0 END) as netQty 
             FROM transactions t
             JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
             JOIN portfolios p ON t.portfolioId = p.id
