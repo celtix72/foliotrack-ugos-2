@@ -170,6 +170,24 @@
     </div>
     <div class="mob-portfolio-list" id="mob-portfolio-list"></div>
 
+    
+    <!-- Financial News (Live Feed) -->
+    <div class="mob-section-header mt-8">
+      <span class="mob-section-title">Live Feed</span>
+      <span class="flex items-center gap-1 font-black text-[10px] text-blue-500 animate-pulse">
+        <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> News
+      </span>
+    </div>
+    <div class="px-5 mb-4">
+      <div class="flex flex-col gap-3" id="mob-news-container">
+        <!-- Skeleton -->
+        <div class="animate-pulse flex flex-col gap-2" id="mob-news-skeleton">
+            <div class="h-16 w-full bg-slate-100 dark:bg-slate-800/50 rounded-xl"></div>
+            <div class="h-16 w-full bg-slate-100 dark:bg-slate-800/50 rounded-xl"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- Footer -->
     <div class="px-8 py-8 flex flex-col items-center opacity-30">
       <div class="text-[9px] font-black uppercase tracking-widest text-slate-500" id="mob-app-version">v. 2.0</div>
@@ -690,6 +708,97 @@
           }
       } catch(e) { console.error('mob 12M sparkline:', e); }
   }
+
+  const SOURCE_COLORS = {
+      'Yahoo Finance':   '#6366f1',
+      'Google Finance':  '#10b981',
+      'Il Sole 24 Ore':  '#f59e0b',
+      'Reuters':         '#3b82f6',
+  };
+
+  function relativeTime(isoDate) {
+      if (!isoDate) return '';
+      const diff = Math.floor((Date.now() - new Date(isoDate)) / 1000);
+      if (diff < 60)    return 'Ora';
+      if (diff < 3600)  return Math.floor(diff/60) + ' min';
+      if (diff < 86400) return Math.floor(diff/3600) + ' h';
+      return Math.floor(diff/86400) + ' d';
+  }
+
+  async function loadMobNews() {
+      const container = document.getElementById('mob-news-container');
+      const skeleton  = document.getElementById('mob-news-skeleton');
+      if (!container) return;
+
+      const FEEDS = [
+          { rss: 'https://feeds.finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,%5EDJI&region=US&lang=en-US', source: 'Yahoo Finance' },
+          { rss: 'https://news.google.com/rss/search?q=finanza+mercati+borsa&hl=it&gl=IT&ceid=IT:it', source: 'Google Finance' },
+      ];
+      const API = 'https://api.rss2json.com/v1/api.json?rss_url=';
+
+      let allItems = [];
+      const seen = new Set();
+
+      await Promise.allSettled(FEEDS.map(async ({ rss, source }) => {
+          try {
+              const url = `${API}${encodeURIComponent(rss)}&count=10`;
+              const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+              const data = await r.json();
+              if (data.status !== 'ok') return;
+              for (const item of (data.items || [])) {
+                  if (!item.title || seen.has(item.title)) continue;
+                  seen.add(item.title);
+                  allItems.push({
+                      title:   item.title,
+                      url:     item.link || item.guid,
+                      source,
+                      pubDate: item.pubDate ? new Date(item.pubDate).toISOString() : null,
+                      summary: item.description ? item.description.replace(/<[^>]+>/g,'').trim().substring(0,150) : null
+                  });
+              }
+          } catch (_) { /* silent */ }
+      }));
+
+      allItems.sort((a,b) => {
+          if (!a.pubDate && !b.pubDate) return 0;
+          if (!a.pubDate) return 1;
+          if (!b.pubDate) return -1;
+          return new Date(b.pubDate) - new Date(a.pubDate);
+      });
+      allItems = allItems.slice(0, 10);
+
+      if (skeleton) skeleton.remove();
+
+      if (allItems.length === 0) {
+          container.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-8">Nessuna notizia disponibile al momento.</p>';
+          return;
+      }
+
+      container.innerHTML = allItems.map(item => {
+          const color   = SOURCE_COLORS[item.source] || '#94a3b8';
+          const time    = relativeTime(item.pubDate);
+          const title   = item.title.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+          const summary = item.summary ? item.summary.replace(/</g,'&lt;').replace(/>/g,'&gt;').substring(0,100) + (item.summary.length > 100 ? '…' : '') : '';
+          const href    = item.url ? `href="${item.url}" target="_blank" rel="noopener noreferrer"` : '';
+          return `
+          <a ${href} class="flex items-start gap-3 p-3 rounded-xl bg-white dark:bg-surface-dark border border-slate-100 dark:border-slate-800 shadow-sm active:scale-[0.98] transition-transform">
+              <div class="w-2 h-2 rounded-full shrink-0 mt-1.5" style="background:${color}"></div>
+              <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-1">
+                      <span class="text-[9px] font-black uppercase tracking-widest" style="color:${color}">${item.source}</span>
+                      ${time ? `<span class="text-[9px] text-slate-400 font-bold">${time}</span>` : ''}
+                  </div>
+                  <p class="text-xs font-bold text-slate-800 dark:text-slate-100 leading-snug line-clamp-2">${title}</p>
+                  ${summary ? `<p class="text-[10px] text-slate-500 mt-1 leading-snug line-clamp-2">${summary}</p>` : ''}
+              </div>
+          </a>`;
+      }).join('');
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+      loadMobNews();
+  });
+
 </script>
 </body>
 </html>
