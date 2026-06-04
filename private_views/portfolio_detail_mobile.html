@@ -990,8 +990,22 @@
     container.innerHTML = allocation.slice(0, 6).map(a => {
       const pct = a.percent || 0;
       // Define colors for common types if not provided
-      const typeColors = { 'Bond': '#3b82f6', 'Azioni': '#10b981', 'Liquidity': '#f59e0b', 'ETF': '#8b5cf6', 'Stock': '#10b981' };
-      const color = a.color || typeColors[a.type] || 'var(--mob-primary)';
+      const ASSET_TYPE_COLORS_MOB = {
+          'Azioni':             '#ef4444',
+          'Stock':              '#ef4444',
+          'ETF Azionario':      '#c2410c',
+          'ETF':                '#c2410c',
+          'ETF Monetario':      '#4ade80',
+          'Bond':               '#eab308',
+          'ETF Obblig':         '#eab308',
+          'Obbligazioni':       '#eab308',
+          'Deposito Vincolato': '#eab308',
+          'Liquidità':          '#16a34a',
+          'Liquidity':          '#16a34a',
+          'Cash':               '#16a34a',
+      };
+      const MOB_GENERIC_COLORS = ['#6366f1','#8b5cf6','#ec4899','#06b6d4','#f97316','#14b8a6'];
+      const color = a.color || ASSET_TYPE_COLORS_MOB[a.type] || MOB_GENERIC_COLORS[allocation.indexOf(a) % MOB_GENERIC_COLORS.length] || 'var(--mob-primary)';
       return `
         <div class="mob-alloc-bar-container">
           <div class="mob-alloc-bar-label">

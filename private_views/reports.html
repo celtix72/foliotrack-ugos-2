@@ -782,6 +782,26 @@
         });
     }
 
+    // ─── Palette semantica asset type ──────────────────────────────────────
+    const ASSET_TYPE_COLORS = {
+        'Azioni':              '#ef4444',  // Rosso
+        'Stock':               '#ef4444',
+        'ETF Azionario':       '#c2410c',  // Arancio scuro
+        'ETF':                 '#c2410c',
+        'ETF Monetario':       '#4ade80',  // Verde chiaro
+        'Bond':                '#eab308',  // Giallo
+        'ETF Obblig':          '#eab308',
+        'Obbligazioni':        '#eab308',
+        'Deposito Vincolato':  '#eab308',
+        'Liquidità':           '#16a34a',  // Verde scuro
+        'Liquidity':           '#16a34a',
+        'Cash':                '#16a34a',
+    };
+    const FALLBACK_COLORS = ['#6366f1','#8b5cf6','#ec4899','#06b6d4','#14b8a6','#f97316','#a3e635','#94a3b8'];
+    function getAssetTypeColor(label, fallbackIdx) {
+        return ASSET_TYPE_COLORS[label] || FALLBACK_COLORS[fallbackIdx % FALLBACK_COLORS.length];
+    }
+
     function renderDiversification(d) {
         const assetCtx = document.getElementById('diversificationAssetChart').getContext('2d');
         const geoCtx   = document.getElementById('diversificationGeoChart').getContext('2d');
@@ -790,14 +810,19 @@
         if (geoChart)      geoChart.destroy();
         if (currencyChart) currencyChart.destroy();
 
-        const colors = ['#135bec','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#f43f5e','#a3e635','#6366f1','#14b8a6'];
+        const genericColors = ['#135bec','#6366f1','#8b5cf6','#ec4899','#06b6d4','#f97316','#14b8a6','#a3e635'];
         const isDark = document.documentElement.classList.contains('dark');
 
-        const makeDonut = (ctx, data) => new Chart(ctx, {
+        const assetData = Object.entries(d.assetType||{}).sort((a,b)=>b[1]-a[1]);
+        const geoData   = Object.entries(d.geography||{}).sort((a,b)=>b[1]-a[1]);
+        const currData  = Object.entries(d.currency||{}).sort((a,b)=>b[1]-a[1]);
+
+        // Doughnut generico (geo, currency)
+        const makeDonut = (ctx, data, colorFn) => new Chart(ctx, {
             type: 'doughnut',
             data: {
                 labels: data.map(x => x[0]),
-                datasets: [{ data: data.map(x => x[1]), backgroundColor: colors,
+                datasets: [{ data: data.map(x => x[1]), backgroundColor: data.map((x,i) => colorFn(x[0], i)),
                     borderWidth: 2, borderColor: isDark ? '#1e293b' : '#fff', hoverOffset: 8 }]
             },
             options: {
@@ -815,31 +840,29 @@
             }
         });
 
-        const renderLegend = (containerId, data) => {
+        const renderLegend = (containerId, data, colorFn) => {
             const el = document.getElementById(containerId);
             if (!el) return;
             const total = data.reduce((s,x)=>s+x[1],0);
             el.innerHTML = data.map((x,i) => `
                 <div class="flex items-center justify-between text-[10px] py-1 border-b border-slate-100 dark:border-slate-800/50 last:border-0">
                     <div class="flex items-center gap-1.5 min-w-0">
-                        <span class="w-2 h-2 rounded-full shrink-0" style="background:${colors[i%colors.length]}"></span>
+                        <span class="w-2 h-2 rounded-full shrink-0" style="background:${colorFn(x[0], i)}"></span>
                         <span class="truncate font-bold text-slate-700 dark:text-slate-300">${x[0]}</span>
                     </div>
                     <span class="font-black text-primary ml-2 shrink-0">${total>0?formatNumber((x[1]/total)*100,1):'0'}%</span>
                 </div>`).join('');
         };
 
-        const assetData = Object.entries(d.assetType||{}).sort((a,b)=>b[1]-a[1]);
-        const geoData   = Object.entries(d.geography||{}).sort((a,b)=>b[1]-a[1]);
-        const currData  = Object.entries(d.currency||{}).sort((a,b)=>b[1]-a[1]);
+        const genericColorFn = (label, i) => genericColors[i % genericColors.length];
 
-        assetChart    = makeDonut(assetCtx, assetData);
-        geoChart      = makeDonut(geoCtx,   geoData);
-        currencyChart = makeDonut(currCtx,  currData);
+        assetChart    = makeDonut(assetCtx, assetData, getAssetTypeColor);
+        geoChart      = makeDonut(geoCtx,   geoData,   genericColorFn);
+        currencyChart = makeDonut(currCtx,  currData,  genericColorFn);
 
-        renderLegend('legend-asset',    assetData);
-        renderLegend('legend-geo',      geoData);
-        renderLegend('legend-currency', currData);
+        renderLegend('legend-asset',    assetData, getAssetTypeColor);
+        renderLegend('legend-geo',      geoData,   genericColorFn);
+        renderLegend('legend-currency', currData,  genericColorFn);
     }
 
     function renderDividendChart(divs, metrics) {

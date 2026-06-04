@@ -461,16 +461,33 @@
         }).join('') || '<div style="text-align:center;padding:24px;opacity:0.4;font-size:12px;">No data available</div>';
     }
 
+    // ── Palette semantica asset type ──────────────────────────────────────────
+    const ASSET_TYPE_COLORS = {
+        'Azioni':              '#ef4444',
+        'Stock':               '#ef4444',
+        'ETF Azionario':       '#c2410c',
+        'ETF':                 '#c2410c',
+        'ETF Monetario':       '#4ade80',
+        'Bond':                '#eab308',
+        'ETF Obblig':          '#eab308',
+        'Obbligazioni':        '#eab308',
+        'Deposito Vincolato':  '#eab308',
+        'Liquidità':           '#16a34a',
+        'Liquidity':           '#16a34a',
+        'Cash':                '#16a34a',
+    };
+    const GENERIC_COLORS = ['#135bec', '#6366f1', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#14b8a6', '#94a3b8'];
+    function getAssetTypeColor(label, idx) {
+        return ASSET_TYPE_COLORS[label] || GENERIC_COLORS[idx % GENERIC_COLORS.length];
+    }
+
     function mobRenderCharts(data) {
-        const colors = ['#135bec', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6'];
-
-        // ── Performance line chart ─────────────────────────────────────────────
-        const pCtx = document.getElementById('mob-perf-chart').getContext('2d');
-        if (mobPerfChart) mobPerfChart.destroy();
-
         const isDark = document.documentElement.classList.contains('dark');
         const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
         const textColor = isDark ? '#64748b' : '#94a3b8';
+
+        // ── Performance line chart ─────────────────────────────────────────────
+        const pCtx = document.getElementById('mob-perf-chart').getContext('2d');
 
         const portfolioData = data.performance.portfolio || [];
         const firstVal = portfolioData[0]?.value ?? 100;
@@ -612,15 +629,16 @@
             type: 'doughnut',
             data: {
                 labels: assetData.map(x => x[0]),
-                datasets: [{ data: assetData.map(x => x[1]), backgroundColor: colors, borderWidth: 0, hoverOffset: 4 }]
+                datasets: [{ data: assetData.map(x => x[1]), backgroundColor: assetData.map((x,i) => getAssetTypeColor(x[0], i)), borderWidth: 0, hoverOffset: 4 }]
             },
             options: { cutout: '72%', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
         });
+        const assetTotal = Object.values(data.diversification.assetType).reduce((a,b)=>a+b,0);
         document.getElementById('mob-asset-legend').innerHTML = assetData.slice(0,5).map((x,i) => `
             <div class="mob-alloc-item">
-                <div class="mob-alloc-dot" style="background:${colors[i%colors.length]}"></div>
+                <div class="mob-alloc-dot" style="background:${getAssetTypeColor(x[0], i)}"></div>
                 <span class="mob-alloc-type">${x[0]}</span>
-                <span class="mob-alloc-pct">${((x[1]/Object.values(data.diversification.assetType).reduce((a,b)=>a+b,0))*100).toFixed(0)}%</span>
+                <span class="mob-alloc-pct">${assetTotal>0?((x[1]/assetTotal)*100).toFixed(0):0}%</span>
             </div>`).join('');
 
         // Geo Doughnut
@@ -631,15 +649,16 @@
             type: 'doughnut',
             data: {
                 labels: geoData.map(x => x[0]),
-                datasets: [{ data: geoData.map(x => x[1]), backgroundColor: colors, borderWidth: 0, hoverOffset: 4 }]
+                datasets: [{ data: geoData.map(x => x[1]), backgroundColor: geoData.map((_,i) => GENERIC_COLORS[i % GENERIC_COLORS.length]), borderWidth: 0, hoverOffset: 4 }]
             },
             options: { cutout: '72%', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
         });
+        const geoTotal = Object.values(data.diversification.geography).reduce((a,b)=>a+b,0);
         document.getElementById('mob-geo-legend').innerHTML = geoData.slice(0,5).map((x,i) => `
             <div class="mob-alloc-item">
-                <div class="mob-alloc-dot" style="background:${colors[i%colors.length]}"></div>
+                <div class="mob-alloc-dot" style="background:${GENERIC_COLORS[i % GENERIC_COLORS.length]}"></div>
                 <span class="mob-alloc-type">${x[0]}</span>
-                <span class="mob-alloc-pct">${((x[1]/Object.values(data.diversification.geography).reduce((a,b)=>a+b,0))*100).toFixed(0)}%</span>
+                <span class="mob-alloc-pct">${geoTotal>0?((x[1]/geoTotal)*100).toFixed(0):0}%</span>
             </div>`).join('');
 
         // Currency Doughnut
