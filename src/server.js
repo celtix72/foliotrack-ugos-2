@@ -3135,8 +3135,6 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
         if (!(openedToday && isToday)) {
             if (preMktActive && a.preMarketChangePercent) {
                 changePct = a.preMarketChangePercent;
-            } else {
-                changePct = 0;
             }
         }
 
