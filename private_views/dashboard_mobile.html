@@ -321,7 +321,7 @@
       const render = (assets, color) => assets.map(a => {
           const sign = a.changePercent >= 0 ? '+' : '-';
           const absVal = typeof formatCurrency === 'function' ? formatCurrency(Math.abs(a.absChange || 0), 'EUR', 0) : Math.abs(a.absChange || 0).toFixed(0) + '€';
-          return `<div class="flex items-center justify-between"><span class="text-[12px] font-black truncate max-w-[60px]">${a.ticker}</span><div class="flex flex-col items-end leading-[1.1]"><span class="text-[11px] font-black" style="color:${color}">${a.changePercent >= 0 ? '+' : ''}${a.changePercent.toFixed(1)}%</span><span class="text-[9px] font-bold text-slate-500">${sign}${absVal}</span></div></div>`;
+          return `<div class="flex items-center justify-between"><span class="text-[12px] font-black truncate max-w-[60px]">${a.ticker}</span><div class="flex items-center gap-1.5"><span class="text-[11px] font-black" style="color:${color}">${a.changePercent >= 0 ? '+' : ''}${a.changePercent.toFixed(1)}%</span><span class="text-[10px] font-bold text-slate-500">(${sign}${absVal})</span></div></div>`;
       }).join('') || '--';
       winners.innerHTML = render(global.topWinners || [], 'var(--mob-emerald)');
       losers.innerHTML = render(global.topLosers || [], 'var(--mob-rose)');
