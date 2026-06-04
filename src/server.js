@@ -3159,8 +3159,8 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
         changePercent: (totalValueEUR - globalChangeEUR - globalChangePrePostEUR) > 0 
             ? ((globalChangeEUR + globalChangePrePostEUR) / (totalValueEUR - globalChangeEUR - globalChangePrePostEUR)) * 100 
             : 0,
-        topWinners: heldAssets.slice(0, 2),
-        topLosers: heldAssets.slice(-2).reverse()
+        topWinners: heldAssets.slice(0, 5),
+        topLosers: heldAssets.slice(-5).reverse()
     };
 }
 

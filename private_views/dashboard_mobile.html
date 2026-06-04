@@ -51,12 +51,7 @@
 <div id="mobile-ui">
   <!-- ── Mobile Header ── -->
   <div class="mob-header">
-    <div class="mob-header-logo-container">
-      <div class="mob-header-logo-circle">
-        <span class="material-symbols-outlined">insights</span>
-      </div>
-      <div class="mob-header-logo-text">M2T</div>
-    </div>
+    
     <div style="flex:1"></div>
     <div class="mob-header-market-pill">
       <div class="mob-market-item"><span>EU</span><span id="mob-dot-eu" class="mob-market-dot"></span></div>
@@ -82,11 +77,11 @@
       <div class="grid grid-cols-2 gap-4">
         <div class="mob-hero-stat-item !p-0 !bg-transparent">
           <span class="mob-hero-stat-label">Migliori (1D)</span>
-          <div id="mob-top-winners" class="space-y-4 mt-2">--</div>
+          <div id="mob-top-winners" class="space-y-1.5 mt-2">--</div>
         </div>
         <div class="mob-hero-stat-item !p-0 !bg-transparent">
           <span class="mob-hero-stat-label">Peggiori (1D)</span>
-          <div id="mob-top-losers" class="space-y-4 mt-2">--</div>
+          <div id="mob-top-losers" class="space-y-1.5 mt-2">--</div>
         </div>
       </div>
     </div>
@@ -323,7 +318,11 @@
       const losers = document.getElementById('mob-top-losers');
       if (!winners || !losers || !global) return;
       
-      const render = (assets, color) => assets.map(a => `<div class="flex flex-col"><div class="flex items-center gap-1.5"><span class="text-[14px] font-black">${a.ticker}</span><span class="text-[14px] font-black" style="color:${color}">${a.changePercent >= 0 ? '+' : ''}${a.changePercent.toFixed(1)}%</span></div></div>`).join('') || '--';
+      const render = (assets, color) => assets.map(a => {
+          const sign = a.changePercent >= 0 ? '+' : '-';
+          const absVal = typeof formatCurrency === 'function' ? formatCurrency(Math.abs(a.absChange || 0), 'EUR', 0) : Math.abs(a.absChange || 0).toFixed(0) + '€';
+          return `<div class="flex items-center justify-between"><span class="text-[12px] font-black truncate max-w-[60px]">${a.ticker}</span><div class="flex flex-col items-end leading-[1.1]"><span class="text-[11px] font-black" style="color:${color}">${a.changePercent >= 0 ? '+' : ''}${a.changePercent.toFixed(1)}%</span><span class="text-[9px] font-bold text-slate-500">${sign}${absVal}</span></div></div>`;
+      }).join('') || '--';
       winners.innerHTML = render(global.topWinners || [], 'var(--mob-emerald)');
       losers.innerHTML = render(global.topLosers || [], 'var(--mob-rose)');
   }
