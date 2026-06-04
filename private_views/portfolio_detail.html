@@ -315,32 +315,69 @@
     <!-- Charts Row: Performance + Allocation -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Performance Chart (Left) -->
-        <div class="lg:col-span-2 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-            <div class="flex items-center justify-between mb-8">
-                <h3 class="text-lg font-bold">Performance</h3>
-                <div class="flex bg-slate-100 dark:bg-slate-900 rounded-lg p-1 gap-1" id="chart-range-buttons">
-                    <button data-range="1W" onclick="setChartRange('1W')" class="range-btn px-3 py-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all rounded-md">1W</button>
-                    <button data-range="1M" onclick="setChartRange('1M')" class="range-btn px-3 py-1.5 text-[10px] font-bold rounded-md bg-white dark:bg-slate-800 shadow-sm transition-all">1M</button>
-                    <button data-range="3M" onclick="setChartRange('3M')" class="range-btn px-3 py-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all rounded-md">3M</button>
-                    <button data-range="YTD" onclick="setChartRange('YTD')" class="range-btn px-3 py-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all rounded-md">YTD</button>
-                    <button data-range="1Y" onclick="setChartRange('1Y')" class="range-btn px-3 py-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all rounded-md">1Y</button>
-                    <button data-range="2Y" onclick="setChartRange('2Y')" class="range-btn px-3 py-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all rounded-md">2Y</button>
-                    <button data-range="3Y" onclick="setChartRange('3Y')" class="range-btn px-3 py-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all rounded-md">3Y</button>
-                    <button data-range="5Y" onclick="setChartRange('5Y')" class="range-btn px-3 py-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all rounded-md">5Y</button>
-                    <button data-range="ALL" onclick="setChartRange('ALL')" class="range-btn px-3 py-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all rounded-md">ALL</button>
-                    
-                    <div class="h-4 w-[1px] bg-slate-200 dark:bg-slate-700 mx-1 self-center"></div>
-                    
-                    <select id="year-selector" onchange="setChartRange(this.value)" class="bg-transparent border-none text-[10px] font-bold text-slate-500 focus:ring-0 cursor-pointer">
-                        <option value="" disabled selected>Year</option>
-                        <option value="2026">2026</option>
-                        <option value="2025">2025</option>
-                        <option value="2024">2024</option>
-                        <option value="2023">2023</option>
-                        <option value="2022">2022</option>
-                    </select>
+        <div class="lg:col-span-2 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col">
+            <!-- Header row -->
+            <div class="flex flex-wrap items-start justify-between gap-4 mb-4">
+                <div>
+                    <h3 class="text-lg font-bold">Performance</h3>
+                    <p class="text-xs text-slate-500">Andamento del portafoglio nel periodo selezionato</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <!-- Range buttons -->
+                    <div class="flex gap-1 bg-slate-50 dark:bg-slate-900/50 p-1 rounded-lg border border-slate-100 dark:border-slate-800" id="chart-range-buttons">
+                        <button data-range="1W" onclick="setChartRange('1W')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">1W</button>
+                        <button data-range="1M" onclick="setChartRange('1M')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md bg-primary text-white shadow-md transition-all">1M</button>
+                        <button data-range="3M" onclick="setChartRange('3M')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">3M</button>
+                        <button data-range="YTD" onclick="setChartRange('YTD')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">YTD</button>
+                        <button data-range="1Y" onclick="setChartRange('1Y')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">1Y</button>
+                        <button data-range="2Y" onclick="setChartRange('2Y')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">2Y</button>
+                        <button data-range="3Y" onclick="setChartRange('3Y')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">3Y</button>
+                        <button data-range="5Y" onclick="setChartRange('5Y')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">5Y</button>
+                        <button data-range="ALL" onclick="setChartRange('ALL')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">ALL</button>
+                        <div class="h-4 w-[1px] bg-slate-200 dark:bg-slate-700 mx-0.5 self-center"></div>
+                        <select id="year-selector" onchange="setChartRange(this.value)" class="bg-transparent border-none text-[10px] font-bold text-slate-500 focus:ring-0 cursor-pointer">
+                            <option value="" disabled selected>Anno</option>
+                            <option value="2026">2026</option>
+                            <option value="2025">2025</option>
+                            <option value="2024">2024</option>
+                            <option value="2023">2023</option>
+                            <option value="2022">2022</option>
+                        </select>
+                    </div>
+                    <div class="h-4 w-[1px] bg-slate-200 dark:bg-slate-700"></div>
+                    <!-- Mode toggle pills -->
+                    <div class="flex gap-1 bg-slate-50 dark:bg-slate-900/50 p-1 rounded-lg border border-slate-100 dark:border-slate-800">
+                        <button id="pmode-btn-eur" onclick="setPortfolioChartMode('eur')" class="pmode-btn px-2.5 py-1 text-[10px] font-bold rounded-md bg-primary text-white shadow-md transition-all">€ Patrimonio</button>
+                        <button id="pmode-btn-pnl" onclick="setPortfolioChartMode('pnl')" class="pmode-btn px-2.5 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">P&L</button>
+                        <button id="pmode-btn-pct" onclick="setPortfolioChartMode('pct')" class="pmode-btn px-2.5 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">% Perf.</button>
+                    </div>
                 </div>
             </div>
+
+            <!-- KPI summary bar -->
+            <div id="p-chart-kpi-bar" class="flex flex-wrap items-center gap-5 mb-4 px-1">
+                <div class="flex flex-col gap-0.5">
+                    <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Inizio periodo</span>
+                    <span id="p-kpi-start-val" class="text-sm font-black text-slate-700 dark:text-slate-200">—</span>
+                    <span id="p-kpi-start-date" class="text-[9px] text-slate-400 font-bold">—</span>
+                </div>
+                <div class="h-8 w-px bg-slate-100 dark:bg-slate-800"></div>
+                <div class="flex flex-col gap-0.5">
+                    <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Valore attuale</span>
+                    <span id="p-kpi-end-val" class="text-sm font-black text-slate-700 dark:text-slate-200">—</span>
+                    <span id="p-kpi-end-date" class="text-[9px] text-slate-400 font-bold">—</span>
+                </div>
+                <div class="h-8 w-px bg-slate-100 dark:bg-slate-800"></div>
+                <div class="flex flex-col gap-0.5">
+                    <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Variazione</span>
+                    <span id="p-kpi-delta-abs" class="text-sm font-black">—</span>
+                    <span id="p-kpi-delta-pct" class="text-[9px] font-bold">—</span>
+                </div>
+                <!-- Inline legend -->
+                <div id="p-chart-legend" class="ml-auto flex flex-wrap items-center gap-4"></div>
+            </div>
+
+            <!-- Chart canvas -->
             <div class="h-64 w-full relative">
                 <canvas id="performanceChart"></canvas>
             </div>
@@ -1692,15 +1729,99 @@
     // ─── Chart Management ───────────────────────────────────────────────────
     let performanceChart = null;
     let currentChartRange = '1M';
+    let currentPortfolioChartMode = 'eur'; // 'eur' | 'pnl' | 'pct'
     let currentPerformanceData = []; // Store raw API records
+
+    function fmtPortfolioTick(val, isPct) {
+        if (isPct) return val.toFixed(1) + '%';
+        const abs = Math.abs(val);
+        if (abs >= 1e6) return (val / 1e6).toFixed(1) + 'M€';
+        if (abs >= 1e3) return (val / 1e3).toFixed(0) + 'K€';
+        return val.toFixed(0) + '€';
+    }
+
+    function buildPortfolioGradient(ctx, chartArea, isPositive) {
+        const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+        if (isPositive) {
+            gradient.addColorStop(0, 'rgba(16, 185, 129, 0.25)');
+            gradient.addColorStop(1, 'rgba(16, 185, 129, 0.01)');
+        } else {
+            gradient.addColorStop(0, 'rgba(244, 63, 94, 0.20)');
+            gradient.addColorStop(1, 'rgba(244, 63, 94, 0.01)');
+        }
+        return gradient;
+    }
+
+    function updatePortfolioChartKPI(dataPoints, mode) {
+        if (!dataPoints || dataPoints.length < 2) return;
+        const first = dataPoints[0];
+        const last  = dataPoints[dataPoints.length - 1];
+        const startVal = mode === 'pnl' ? (first.profit || 0) : (first.value || 0);
+        const endVal   = mode === 'pnl' ? (last.profit  || 0) : (last.value  || 0);
+        const delta    = endVal - startVal;
+        const deltaPct = startVal !== 0 ? (delta / Math.abs(startVal)) * 100 : 0;
+        const isPos    = delta >= 0;
+        const sign     = isPos ? '+' : '';
+        const color    = isPos ? '#10b981' : '#f43f5e';
+        const fmtDate  = (iso) => new Date(iso).toLocaleDateString('it-IT', { day:'2-digit', month:'short', year:'numeric' });
+        const fmtVal   = (v) => {
+            if (mode === 'pct') return (v >= 100 ? '+' : '') + (v - 100).toFixed(2) + '%';
+            return formatCurrency(v, portfolioCurrency || 'EUR', 0);
+        };
+        const sv = document.getElementById('p-kpi-start-val');
+        const sd = document.getElementById('p-kpi-start-date');
+        const ev = document.getElementById('p-kpi-end-val');
+        const ed = document.getElementById('p-kpi-end-date');
+        const da = document.getElementById('p-kpi-delta-abs');
+        const dp = document.getElementById('p-kpi-delta-pct');
+        if (mode === 'pct') {
+            if (sv) sv.textContent = fmtVal(first.normalized || 100);
+            if (ev) ev.textContent = fmtVal(last.normalized  || 100);
+            const nd = (last.normalized || 100) - (first.normalized || 100);
+            if (da) { da.textContent = (nd >= 0 ? '+' : '') + nd.toFixed(2) + '%'; da.style.color = nd >= 0 ? '#10b981' : '#f43f5e'; }
+            if (dp) dp.textContent = '';
+        } else {
+            if (sv) sv.textContent = fmtVal(startVal);
+            if (ev) ev.textContent = fmtVal(endVal);
+            if (da) { da.textContent = sign + formatCurrency(delta, portfolioCurrency || 'EUR', 0); da.style.color = color; }
+            if (dp) { dp.textContent = sign + deltaPct.toFixed(2) + '%'; dp.style.color = color; }
+        }
+        if (sd) sd.textContent = fmtDate(first.date);
+        if (ed) ed.textContent = fmtDate(last.date);
+    }
+
+    function updatePortfolioChartLegend(datasets) {
+        const el = document.getElementById('p-chart-legend');
+        if (!el) return;
+        el.innerHTML = datasets.filter(ds => !ds.hidden).map(ds => {
+            const dash = (ds.borderDash && ds.borderDash.length) ? `repeating-linear-gradient(to right,${ds.borderColor} 0,${ds.borderColor} 6px,transparent 6px,transparent 10px)` : '';
+            const lineStyle = dash ? `background:${dash};background-size:100% 2px;background-repeat:no-repeat;background-position:0 50%;` : `background-color:${ds.borderColor};height:3px;border-radius:2px;`;
+            return `<div class="flex items-center gap-1.5">
+                <div style="width:20px;${lineStyle}"></div>
+                <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">${ds.label}</span>
+            </div>`;
+        }).join('');
+    }
+
+    window.setPortfolioChartMode = function(mode) {
+        currentPortfolioChartMode = mode;
+        document.querySelectorAll('.pmode-btn').forEach(btn => {
+            const m = btn.id.replace('pmode-btn-', '');
+            btn.classList.toggle('bg-primary', m === mode);
+            btn.classList.toggle('text-white', m === mode);
+            btn.classList.toggle('shadow-md', m === mode);
+            btn.classList.toggle('text-slate-500', m !== mode);
+        });
+        updatePerformanceChart();
+    };
 
     function initPerformanceChart() {
         if (performanceChart) performanceChart.destroy();
         const ctx = document.getElementById('performanceChart')?.getContext('2d');
         if (!ctx) return;
-        
+
         const isDark = document.documentElement.classList.contains('dark');
-        const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+        const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
         const textColor = isDark ? '#94a3b8' : '#64748b';
 
         performanceChart = new Chart(ctx, {
@@ -1708,137 +1829,168 @@
             data: {
                 labels: [],
                 datasets: [{
-                    label: 'Total Value',
+                    label: 'Patrimonio',
                     data: [],
                     borderColor: portfolioColor || '#135bec',
-                    backgroundColor: (portfolioColor || '#135bec') + '1A', // 10% opacity
+                    backgroundColor: 'rgba(19,91,236,0.10)',
                     fill: true,
-                    tension: 0.4,
-                    borderWidth: 2,
-                    pointRadius: (context) => {
-                        const idx = context.dataIndex;
-                        const data = currentPerformanceData[idx];
-                        return (data && data.events && data.events.length > 0) ? 6 : 0;
-                    },
-                    pointBackgroundColor: (context) => {
-                        const idx = context.dataIndex;
-                        const data = currentPerformanceData[idx];
-                        if (!data || !data.events || data.events.length === 0) return '#135bec';
-                        const firstType = data.events[0].type;
-                        if (firstType === 'BUY') return '#10b981';
-                        if (firstType === 'SELL') return '#ef4444';
-                        if (firstType === 'DIVIDEND') return '#3b82f6';
-                        return '#135bec';
-                    },
-                    pointBorderWidth: 2,
-                    pointBorderColor: '#fff',
-                    pointHoverRadius: 8,
+                    tension: 0.35,
+                    borderWidth: 2.5,
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                    pointHoverBackgroundColor: portfolioColor || '#135bec',
+                    pointHoverBorderColor: '#fff',
+                    pointHoverBorderWidth: 2,
                     yAxisID: 'y'
                 }, {
-                    label: 'Net Profit/Loss',
+                    label: 'P&L Netto',
                     data: [],
                     borderColor: '#10b981',
-                    backgroundColor: 'transparent',
-                    fill: false,
-                    tension: 0.4,
-                    borderWidth: 2,
-                    borderDash: [5, 5],
+                    backgroundColor: 'rgba(16,185,129,0.10)',
+                    fill: true,
+                    tension: 0.35,
+                    borderWidth: 2.5,
                     pointRadius: 0,
                     pointHoverRadius: 6,
                     pointHoverBackgroundColor: '#10b981',
                     pointHoverBorderColor: '#fff',
                     pointHoverBorderWidth: 2,
+                    hidden: true,
                     yAxisID: 'y1'
                 }, {
-                    label: 'Net Gain (No Div)',
+                    label: '% Perf.',
                     data: [],
-                    borderColor: '#f59e0b',
-                    backgroundColor: 'transparent',
-                    fill: false,
-                    tension: 0.4,
-                    borderWidth: 2,
-                    borderDash: [2, 2],
+                    borderColor: '#8b5cf6',
+                    backgroundColor: 'rgba(139,92,246,0.10)',
+                    fill: true,
+                    tension: 0.35,
+                    borderWidth: 2.5,
                     pointRadius: 0,
                     pointHoverRadius: 6,
-                    pointHoverBackgroundColor: '#f59e0b',
+                    pointHoverBackgroundColor: '#8b5cf6',
                     pointHoverBorderColor: '#fff',
                     pointHoverBorderWidth: 2,
-                    yAxisID: 'y1'
+                    hidden: true,
+                    yAxisID: 'y'
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        mode: 'index',
-                        intersect: false,
-                        backgroundColor: isDark ? '#1e293b' : '#fff',
-                        titleColor: isDark ? '#f1f5f9' : '#1e293b',
-                        bodyColor: isDark ? '#f1f5f9' : '#1e293b',
+                        enabled: true,
+                        backgroundColor: isDark ? 'rgba(15,23,42,0.96)' : 'rgba(255,255,255,0.97)',
+                        titleColor: isDark ? '#f1f5f9' : '#0f172a',
+                        bodyColor: isDark ? '#cbd5e1' : '#334155',
                         borderColor: isDark ? '#334155' : '#e2e8f0',
                         borderWidth: 1,
                         padding: 12,
-                        displayColors: true,
+                        cornerRadius: 10,
+                        boxPadding: 4,
+                        usePointStyle: true,
                         callbacks: {
-                            label: (context) => null,
-                            title: (tooltipItems) => {
-                                const data = currentPerformanceData[tooltipItems[0].dataIndex];
-                                return (data && data.events && data.events.length > 0) ? tooltipItems[0].label : null;
+                            title: (items) => {
+                                if (!items.length) return '';
+                                const idx = items[0].dataIndex;
+                                const pts = performanceChart.rawPoints || [];
+                                if (pts[idx]) {
+                                    const d = new Date(pts[idx].date);
+                                    return d.toLocaleDateString('it-IT', { weekday:'short', day:'2-digit', month:'short', year:'numeric' });
+                                }
+                                return items[0].label;
                             },
-                            afterBody: (tooltipItems) => {
-                                let results = [];
-                                const data = currentPerformanceData[tooltipItems[0].dataIndex];
-                                if (data && data.events && data.events.length > 0) {
+                            label: (context) => {
+                                if (context.parsed.y == null || context.dataset.hidden) return null;
+                                const val = context.parsed.y;
+                                const lbl = context.dataset.label;
+                                const isPct = currentPortfolioChartMode === 'pct';
+                                if (isPct) return ' ' + lbl + ': ' + (val >= 100 ? '+' : '') + (val - 100).toFixed(2) + '%';
+                                return ' ' + lbl + ': ' + formatCurrency(val, portfolioCurrency || 'EUR', 0);
+                            },
+                            afterBody: (items) => {
+                                // Show transaction events if any
+                                const idx = items[0]?.dataIndex;
+                                const pts = performanceChart.rawPoints;
+                                const d = pts && pts[idx];
+                                const lines = [];
+                                if (d && d.events && d.events.length > 0) {
                                     const labels = { 'BUY': 'ACQUISTO', 'SELL': 'VENDITA', 'DEPOSIT': 'DEPOSITO', 'WITHDRAWAL': 'PRELIEVO', 'DIVIDEND': 'DIVIDENDO' };
-                                    data.events.forEach(e => {
+                                    d.events.forEach(e => {
                                         const typeLabel = labels[e.type] || e.type;
-                                        const prefix = (e.type === 'DEPOSIT' || e.type === 'BUY' || e.type === 'DIVIDEND') ? '+' : '-';
-                                        if (e.type === 'BUY' || e.type === 'SELL') {
-                                            results.push(`✦ ${typeLabel}: ${e.assetName || e.ticker}`);
-                                        } else if (e.type === 'DEPOSIT' || e.type === 'WITHDRAWAL') {
-                                            results.push(`✦ ${typeLabel}: ${prefix}${formatCurrency(e.amount, 'EUR', 0)}`);
-                                        } else {
-                                            results.push(`✦ ${typeLabel}: ${e.ticker} ${prefix}${formatCurrency(e.amount, 'EUR', 0)}`);
-                                        }
+                                        const prefix = ['DEPOSIT','BUY','DIVIDEND'].includes(e.type) ? '+' : '-';
+                                        if (e.type === 'BUY' || e.type === 'SELL') lines.push(`◆ ${typeLabel}: ${e.assetName || e.ticker}`);
+                                        else if (e.type === 'DEPOSIT' || e.type === 'WITHDRAWAL') lines.push(`◆ ${typeLabel}: ${prefix}${formatCurrency(e.amount, portfolioCurrency || 'EUR', 0)}`);
+                                        else lines.push(`◆ ${typeLabel}: ${e.ticker} ${prefix}${formatCurrency(e.amount, portfolioCurrency || 'EUR', 0)}`);
                                     });
                                 }
-                                return results.length > 0 ? results : null;
+                                // Show delta from start
+                                if (currentPortfolioChartMode === 'eur' && pts && pts[idx] && pts[0]) {
+                                    const delta = (pts[idx].value || 0) - (pts[0].value || 0);
+                                    const pct = pts[0].value ? (delta / pts[0].value) * 100 : 0;
+                                    const sign = delta >= 0 ? '+' : '';
+                                    lines.push('');
+                                    lines.push(`Δ da inizio: ${sign}${formatCurrency(delta, portfolioCurrency || 'EUR', 0)} (${sign}${pct.toFixed(2)}%)`);
+                                }
+                                return lines.length > 0 ? lines : null;
                             }
                         }
                     },
                     zoom: {
-                        zoom: {
-                            wheel: { enabled: true },
-                            pinch: { enabled: true },
-                            mode: 'x',
-                        },
-                        pan: {
-                            enabled: true,
-                            mode: 'x',
-                        }
+                        zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' },
+                        pan: { enabled: true, mode: 'x' }
                     },
                     annotation: {
-                        annotations: {}
+                        annotations: {
+                            baseline: {
+                                type: 'line',
+                                yMin: 0, yMax: 0,
+                                borderColor: 'rgba(148,163,184,0.3)',
+                                borderWidth: 1,
+                                borderDash: [4, 4],
+                                display: false
+                            }
+                        }
                     }
                 },
                 scales: {
                     x: {
-                        ticks: { color: textColor, font: { size: 10 } },
-                        grid: { display: false }
+                        ticks: {
+                            color: textColor,
+                            font: { size: 10, weight: '600' },
+                            maxTicksLimit: 8,
+                            maxRotation: 0
+                        },
+                        grid: { display: false },
+                        border: { display: false }
                     },
                     y: {
-                        grid: { color: gridColor }
+                        display: true,
+                        position: 'left',
+                        grid: { color: gridColor, drawTicks: false },
+                        border: { display: false, dash: [4,4] },
+                        ticks: {
+                            color: textColor,
+                            font: { size: 10, weight: '600' },
+                            maxTicksLimit: 5,
+                            padding: 8,
+                            callback: (val) => fmtPortfolioTick(val, currentPortfolioChartMode === 'pct')
+                        }
                     },
                     y1: {
+                        display: false,
                         position: 'right',
+                        grid: { display: false },
+                        border: { display: false },
                         ticks: {
                             color: '#10b981',
-                            font: { size: 10 },
-                            callback: (val) => formatCurrency(val).split(',')[0]
-                        },
-                        grid: { drawOnChartArea: false }
+                            font: { size: 10, weight: '600' },
+                            maxTicksLimit: 5,
+                            padding: 8,
+                            callback: (val) => fmtPortfolioTick(val, false)
+                        }
                     }
                 }
             }
@@ -1848,26 +2000,24 @@
 
     async function setChartRange(range) {
         currentChartRange = range;
-        
+
         const yearSelector = document.getElementById('year-selector');
         if (/^\d{4}$/.test(range)) {
             if (yearSelector) yearSelector.value = range;
         } else {
-            if (yearSelector) yearSelector.value = "";
+            if (yearSelector) yearSelector.value = '';
         }
 
         // Reset zoom when range changes
         if (performanceChart) performanceChart.resetZoom();
 
-        // Update UI
+        // Update range button styling (dashboard style: bg-primary active)
         document.querySelectorAll('.range-btn').forEach(btn => {
-            if (btn.dataset.range === range) {
-                btn.classList.add('bg-white', 'dark:bg-slate-800', 'shadow-sm', 'text-slate-900', 'dark:text-white', 'font-black');
-                btn.classList.remove('text-slate-400');
-            } else {
-                btn.classList.remove('bg-white', 'dark:bg-slate-800', 'shadow-sm', 'text-slate-900', 'dark:text-white', 'font-black');
-                btn.classList.add('text-slate-400');
-            }
+            const active = btn.dataset.range === range;
+            btn.classList.toggle('bg-primary', active);
+            btn.classList.toggle('text-white', active);
+            btn.classList.toggle('shadow-md', active);
+            btn.classList.toggle('text-slate-500', !active);
         });
 
         updatePerformanceChart();
@@ -1875,88 +2025,151 @@
 
     async function updatePerformanceChart() {
         if (!currentPortfolioId || !performanceChart) return;
-        const isDark = document.documentElement.classList.contains('dark');
+        const mode = currentPortfolioChartMode;
         try {
             const res = await fetch(`/api/analytics/portfolio-performance/${currentPortfolioId}?range=${currentChartRange}`);
             const result = await res.json();
             const dataPoints = result.dataPoints || [];
-            const changePercent = result.changePercent || 0;
-            currentPerformanceData = dataPoints; // Keep raw data for points/tooltips
-            
+            currentPerformanceData = dataPoints;
+            performanceChart.rawPoints = dataPoints;
+
             performanceChart.data.labels = dataPoints.map(d => {
                 const date = new Date(d.date);
                 return date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
             });
-            performanceChart.data.datasets[0].data = dataPoints.map(d => d.value);
-            performanceChart.data.datasets[1].data = dataPoints.map(d => d.profit);
-            performanceChart.data.datasets[2].data = dataPoints.map(d => d.profitNoDiv);
 
-            // Year Markers (Vertical dashed lines)
-            const annotations = {};
+            // ── Modalità % Normalizzata ──────────────────────────────────────────────
+            if (mode === 'pct') {
+                const pData = dataPoints.map(d => d.normalized ?? 100);
+                const lastP = pData[pData.length - 1] ?? 100;
+                const isPos = lastP >= (pData[0] ?? 100);
+
+                performanceChart.data.datasets[0].hidden = true;
+                performanceChart.data.datasets[1].hidden = true;
+                performanceChart.data.datasets[2].label = '% Perf.';
+                performanceChart.data.datasets[2].data = pData;
+                performanceChart.data.datasets[2].hidden = false;
+                performanceChart.data.datasets[2].yAxisID = 'y';
+                performanceChart.data.datasets[2].borderColor = isPos ? '#10b981' : '#f43f5e';
+                performanceChart.data.datasets[2].backgroundColor = (ctx2) => {
+                    const {ctx: c, chartArea} = ctx2.chart;
+                    if (!chartArea) return 'transparent';
+                    return buildPortfolioGradient(c, chartArea, isPos);
+                };
+
+                performanceChart.options.scales.y.display = true;
+                performanceChart.options.scales.y1.display = false;
+                performanceChart.options.plugins.annotation.annotations.baseline.yMin = 100;
+                performanceChart.options.plugins.annotation.annotations.baseline.yMax = 100;
+                performanceChart.options.plugins.annotation.annotations.baseline.display = true;
+                delete performanceChart.options.plugins.annotation.annotations.baseline.scaleID;
+
+            // ── Modalità P&L ─────────────────────────────────────────────────────
+            } else if (mode === 'pnl') {
+                const pnlData = dataPoints.map(d => d.profit ?? 0);
+                const lastPnl = pnlData[pnlData.length - 1] ?? 0;
+                const isPos   = lastPnl >= 0;
+
+                performanceChart.data.datasets[0].hidden = true;
+                performanceChart.data.datasets[1].label = 'P&L Netto';
+                performanceChart.data.datasets[1].data  = pnlData;
+                performanceChart.data.datasets[1].hidden = false;
+                performanceChart.data.datasets[1].yAxisID = 'y1';
+                performanceChart.data.datasets[1].borderColor = isPos ? '#10b981' : '#f43f5e';
+                performanceChart.data.datasets[1].backgroundColor = (ctx2) => {
+                    const {ctx: c, chartArea} = ctx2.chart;
+                    if (!chartArea) return 'transparent';
+                    return buildPortfolioGradient(c, chartArea, isPos);
+                };
+                performanceChart.data.datasets[2].hidden = true;
+
+                performanceChart.options.scales.y.display = false;
+                performanceChart.options.scales.y1.display = true;
+                performanceChart.options.plugins.annotation.annotations.baseline.yMin = 0;
+                performanceChart.options.plugins.annotation.annotations.baseline.yMax = 0;
+                performanceChart.options.plugins.annotation.annotations.baseline.display = true;
+                performanceChart.options.plugins.annotation.annotations.baseline.scaleID = 'y1';
+
+            // ── Modalità Patrimonio € ────────────────────────────────────────────
+            } else {
+                const wData = dataPoints.map(d => d.value ?? 0);
+                const lastW  = wData[wData.length - 1] ?? 0;
+                const firstW = wData[0] ?? 0;
+                const isPos  = lastW >= firstW;
+
+                performanceChart.data.datasets[0].label = 'Patrimonio';
+                performanceChart.data.datasets[0].data  = wData;
+                performanceChart.data.datasets[0].hidden = false;
+                performanceChart.data.datasets[0].yAxisID = 'y';
+                performanceChart.data.datasets[0].borderColor = isPos ? (portfolioColor || '#135bec') : '#f43f5e';
+                performanceChart.data.datasets[0].backgroundColor = (ctx2) => {
+                    const {ctx: c, chartArea} = ctx2.chart;
+                    if (!chartArea) return 'rgba(19,91,236,0.10)';
+                    return buildPortfolioGradient(c, chartArea, isPos);
+                };
+                performanceChart.data.datasets[1].hidden = true;
+                performanceChart.data.datasets[2].hidden = true;
+
+                performanceChart.options.scales.y.display = true;
+                performanceChart.options.scales.y1.display = false;
+                performanceChart.options.plugins.annotation.annotations.baseline.display = false;
+            }
+
+            // ── Year Markers ─────────────────────────────────────────────────────
+            const isDark = document.documentElement.classList.contains('dark');
+            const yearAnnotations = {};
             let lastYear = null;
             dataPoints.forEach((d, index) => {
                 const year = new Date(d.date).getFullYear();
                 if (lastYear !== null && year !== lastYear) {
-                    annotations[`line${year}`] = {
-                        type: 'line',
-                        xMin: index,
-                        xMax: index,
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)',
-                        borderWidth: 1,
-                        borderDash: [5, 5],
+                    yearAnnotations[`line${year}`] = {
+                        type: 'line', xMin: index, xMax: index,
+                        borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+                        borderWidth: 1, borderDash: [5, 5],
                         label: {
-                            display: true,
-                            content: year.toString(),
-                            position: 'start',
-                            backgroundColor: isDark ? 'rgba(15, 23, 42, 0.8)' : 'rgba(255, 255, 255, 0.8)',
-                            color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
+                            display: true, content: year.toString(), position: 'start',
+                            backgroundColor: isDark ? 'rgba(15,23,42,0.8)' : 'rgba(255,255,255,0.8)',
+                            color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
                             font: { size: 10, weight: 'bold' }
                         }
                     };
                 }
                 lastYear = year;
             });
-            // Transaction Markers Logic
-            const pointStyles = [];
-            const pointColors = [];
-            const pointRadii = [];
+            // Merge year annotations with baseline
+            performanceChart.options.plugins.annotation.annotations = {
+                baseline: performanceChart.options.plugins.annotation.annotations.baseline,
+                ...yearAnnotations
+            };
 
+            // ── Transaction Markers ──────────────────────────────────────────────
+            const pointStyles = [], pointColors = [], pointRadii = [];
             dataPoints.forEach(d => {
                 const events = d.events || [];
                 if (events.some(e => e.type === 'SELL')) {
-                    pointStyles.push('circle');
-                    pointColors.push('#f43f5e'); // rose-500
-                    pointRadii.push(5);
+                    pointStyles.push('circle'); pointColors.push('#f43f5e'); pointRadii.push(5);
                 } else if (events.some(e => e.type === 'BUY')) {
-                    pointStyles.push('circle');
-                    pointColors.push('#10b981'); // emerald-500
-                    pointRadii.push(5);
+                    pointStyles.push('circle'); pointColors.push('#10b981'); pointRadii.push(5);
                 } else if (events.some(e => e.type === 'WITHDRAWAL')) {
-                    pointStyles.push('triangle');
-                    pointColors.push('#f59e0b'); // amber-500
-                    pointRadii.push(6);
+                    pointStyles.push('triangle'); pointColors.push('#f59e0b'); pointRadii.push(6);
                 } else if (events.some(e => e.type === 'DEPOSIT')) {
-                    pointStyles.push('triangle');
-                    pointColors.push('#10b981'); // emerald-500
-                    pointRadii.push(6);
+                    pointStyles.push('triangle'); pointColors.push('#10b981'); pointRadii.push(6);
                 } else {
-                    pointStyles.push('circle');
-                    pointColors.push('#6366f1');
-                    pointRadii.push(0);
+                    pointStyles.push('circle'); pointColors.push('#6366f1'); pointRadii.push(0);
                 }
             });
-
             performanceChart.data.datasets[0].pointStyle = pointStyles;
             performanceChart.data.datasets[0].pointBackgroundColor = pointColors;
-            performanceChart.data.datasets[0].pointRadius = pointRadii;
+            performanceChart.data.datasets[0].pointRadius = mode === 'eur' ? pointRadii : pointRadii.map(() => 0);
             performanceChart.data.datasets[0].pointBorderColor = '#fff';
             performanceChart.data.datasets[0].pointBorderWidth = 1;
 
-            performanceChart.options.plugins.annotation.annotations = annotations;
-
             performanceChart.update();
+            updatePortfolioChartKPI(dataPoints, mode);
+            updatePortfolioChartLegend(performanceChart.data.datasets);
 
             // Update Header Performance Badge
+            const changePercent = result.changePercent || 0;
             const perfBadge = document.getElementById('header-perf-badge');
             if (perfBadge) {
                 const isPos = changePercent >= 0;
