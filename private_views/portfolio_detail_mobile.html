@@ -193,19 +193,52 @@
 
       <!-- Chart -->
       <div class="mob-chart-card">
-        <div class="mob-chart-title">Performance</div>
+        <div class="flex items-center justify-between mb-2">
+            <div class="mob-chart-title" style="margin-bottom:0;">Performance</div>
+            <div class="flex gap-1" style="background:var(--mob-surface); padding:2px; border-radius:6px; border:1px solid var(--mob-border);">
+                <button id="mob-pmode-btn-eur" onclick="mobSetDetailChartMode('eur')" class="mob-pmode-btn" style="padding:4px 8px; font-size:9px; font-weight:800; border-radius:4px; transition:all 0.2s; background:var(--mob-primary); color:white;">€</button>
+                <button id="mob-pmode-btn-pnl" onclick="mobSetDetailChartMode('pnl')" class="mob-pmode-btn" style="padding:4px 8px; font-size:9px; font-weight:800; border-radius:4px; transition:all 0.2s; color:var(--mob-text-caption);">P&L</button>
+                <button id="mob-pmode-btn-pct" onclick="mobSetDetailChartMode('pct')" class="mob-pmode-btn" style="padding:4px 8px; font-size:9px; font-weight:800; border-radius:4px; transition:all 0.2s; color:var(--mob-text-caption);">%</button>
+            </div>
+        </div>
+
         <div class="mob-chart-range-bar" id="mob-detail-range-bar">
-          <div class="mob-range-btn" onclick="mobDetailRange('1D')" data-range="1D">1D</div>
+          <div class="mob-range-btn" onclick="mobDetailRange('1W')" data-range="1W">1W</div>
           <div class="mob-range-btn active" onclick="mobDetailRange('1M')" data-range="1M">1M</div>
           <div class="mob-range-btn" onclick="mobDetailRange('3M')" data-range="3M">3M</div>
-          <div class="mob-range-btn" onclick="mobDetailRange('6M')" data-range="6M">6M</div>
           <div class="mob-range-btn" onclick="mobDetailRange('YTD')" data-range="YTD">YTD</div>
           <div class="mob-range-btn" onclick="mobDetailRange('1Y')" data-range="1Y">1Y</div>
           <div class="mob-range-btn" onclick="mobDetailRange('ALL')" data-range="ALL">ALL</div>
         </div>
+
+        <!-- KPI summary bar -->
+        <div id="mob-p-chart-kpi-bar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding:0 4px;">
+            <div style="display:flex; flex-direction:column; gap:2px;">
+                <span style="font-size:7px; font-weight:900; text-transform:uppercase; letter-spacing:0.5px; color:var(--mob-text-caption);">Inizio</span>
+                <span id="mob-p-kpi-start-val" style="font-size:11px; font-weight:900; color:var(--mob-text);">—</span>
+                <span id="mob-p-kpi-start-date" style="font-size:7px; font-weight:700; color:var(--mob-text-caption);">—</span>
+            </div>
+            <div style="width:1px; height:20px; background:var(--mob-border);"></div>
+            <div style="display:flex; flex-direction:column; gap:2px;">
+                <span style="font-size:7px; font-weight:900; text-transform:uppercase; letter-spacing:0.5px; color:var(--mob-text-caption);">Attuale</span>
+                <span id="mob-p-kpi-end-val" style="font-size:11px; font-weight:900; color:var(--mob-text);">—</span>
+                <span id="mob-p-kpi-end-date" style="font-size:7px; font-weight:700; color:var(--mob-text-caption);">—</span>
+            </div>
+            <div style="width:1px; height:20px; background:var(--mob-border);"></div>
+            <div style="display:flex; flex-direction:column; gap:2px; text-align:right;">
+                <span style="font-size:7px; font-weight:900; text-transform:uppercase; letter-spacing:0.5px; color:var(--mob-text-caption);">Variazione</span>
+                <span id="mob-p-kpi-delta-abs" style="font-size:11px; font-weight:900;">—</span>
+                <span id="mob-p-kpi-delta-pct" style="font-size:8px; font-weight:700;">—</span>
+            </div>
+        </div>
+
+        <!-- Inline legend -->
+        <div id="mob-p-chart-legend" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px; padding:0 4px; justify-content:center;"></div>
+
         <div class="mob-chart-canvas-wrapper">
           <canvas id="mob-detail-chart"></canvas>
         </div>
+
       </div>
 
       <!-- Allocation Row -->
@@ -1269,92 +1302,218 @@
     }
   }
 
+  let mobDetailChartMode = 'eur'; // 'eur' | 'pnl' | 'pct'
+
+  function mobFmtPortfolioTick(val, isPct) {
+      if (isPct) return val.toFixed(1) + '%';
+      const abs = Math.abs(val);
+      if (abs >= 1e6) return (val / 1e6).toFixed(1) + 'M€';
+      if (abs >= 1e3) return (val / 1e3).toFixed(0) + 'K€';
+      return val.toFixed(0) + '€';
+  }
+
+  function mobBuildPortfolioGradient(ctx, chartArea, isPositive) {
+      const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+      if (isPositive) {
+          gradient.addColorStop(0, 'rgba(16, 185, 129, 0.25)');
+          gradient.addColorStop(1, 'rgba(16, 185, 129, 0.01)');
+      } else {
+          gradient.addColorStop(0, 'rgba(244, 63, 94, 0.20)');
+          gradient.addColorStop(1, 'rgba(244, 63, 94, 0.01)');
+      }
+      return gradient;
+  }
+
+  function mobUpdatePortfolioChartKPI(dataPoints, mode) {
+      if (!dataPoints || dataPoints.length < 2) return;
+      const first = dataPoints[0];
+      const last  = dataPoints[dataPoints.length - 1];
+      const startVal = mode === 'pnl' ? (first.profit || 0) : (first.value || 0);
+      const endVal   = mode === 'pnl' ? (last.profit  || 0) : (last.value  || 0);
+      const delta    = endVal - startVal;
+      const deltaPct = startVal !== 0 ? (delta / Math.abs(startVal)) * 100 : 0;
+      const isPos    = delta >= 0;
+      const sign     = isPos ? '+' : '';
+      const color    = isPos ? '#10b981' : '#f43f5e';
+      const fmtDate  = (iso) => new Date(iso).toLocaleDateString('it-IT', { day:'2-digit', month:'short', year:'2-digit' });
+      const fmtVal   = (v) => {
+          if (mode === 'pct') return (v >= 100 ? '+' : '') + (v - 100).toFixed(2) + '%';
+          return formatCurrency(v, 'EUR', 0);
+      };
+      const sv = document.getElementById('mob-p-kpi-start-val');
+      const sd = document.getElementById('mob-p-kpi-start-date');
+      const ev = document.getElementById('mob-p-kpi-end-val');
+      const ed = document.getElementById('mob-p-kpi-end-date');
+      const da = document.getElementById('mob-p-kpi-delta-abs');
+      const dp = document.getElementById('mob-p-kpi-delta-pct');
+
+      if (mode === 'pct') {
+          if (sv) sv.textContent = fmtVal(first.normalized || 100);
+          if (ev) ev.textContent = fmtVal(last.normalized  || 100);
+          const nd = (last.normalized || 100) - (first.normalized || 100);
+          if (da) { da.textContent = (nd >= 0 ? '+' : '') + nd.toFixed(2) + '%'; da.style.color = nd >= 0 ? '#10b981' : '#f43f5e'; }
+          if (dp) dp.textContent = '';
+      } else {
+          if (sv) sv.textContent = fmtVal(startVal);
+          if (ev) ev.textContent = fmtVal(endVal);
+          if (da) { da.textContent = sign + formatCurrency(delta, 'EUR', 0); da.style.color = color; }
+          if (dp) { dp.textContent = sign + deltaPct.toFixed(2) + '%'; dp.style.color = color; }
+      }
+      if (sd) sd.textContent = fmtDate(first.date);
+      if (ed) ed.textContent = fmtDate(last.date);
+  }
+
+  function mobUpdatePortfolioChartLegend(datasets) {
+      const el = document.getElementById('mob-p-chart-legend');
+      if (!el) return;
+      el.innerHTML = datasets.filter(ds => !ds.hidden).map(ds => {
+          const dash = (ds.borderDash && ds.borderDash.length) ? `repeating-linear-gradient(to right,${ds.borderColor} 0,${ds.borderColor} 6px,transparent 6px,transparent 10px)` : '';
+          const lineStyle = dash ? `background:${dash};background-size:100% 2px;background-repeat:no-repeat;background-position:0 50%;` : `background-color:${ds.borderColor};height:3px;border-radius:2px;`;
+          return `<div style="display:flex; align-items:center; gap:4px;">
+              <div style="width:16px;${lineStyle}"></div>
+              <span style="font-size:8px; font-weight:800; color:var(--mob-text-caption); text-transform:uppercase; letter-spacing:0.5px;">${ds.label}</span>
+          </div>`;
+      }).join('');
+  }
+
+  window.mobSetDetailChartMode = function(mode) {
+      mobDetailChartMode = mode;
+      document.querySelectorAll('.mob-pmode-btn').forEach(btn => {
+          const m = btn.id.replace('mob-pmode-btn-', '');
+          const isActive = (m === mode);
+          if (isActive) {
+              btn.style.background = 'var(--mob-primary)';
+              btn.style.color = 'white';
+          } else {
+              btn.style.background = 'transparent';
+              btn.style.color = 'var(--mob-text-caption)';
+          }
+      });
+      if (mobCurrentPortfolioId) mobUpdateDetailChart(mobCurrentPortfolioId);
+  };
+
   function mobInitDetailChart(portfolioId) {
     if (mobDetailChart) { mobDetailChart.destroy(); mobDetailChart = null; }
     const ctx = document.getElementById('mob-detail-chart')?.getContext('2d');
     if (!ctx) return;
     const isDark = document.documentElement.classList.contains('dark');
+    const gridColor = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)';
+    const textColor = isDark ? '#64748b' : '#94a3b8';
+
     mobDetailChart = new Chart(ctx, {
       type: 'line',
       data: { 
         labels: [], 
         datasets: [
           {
-            label: 'Valore', data: [],
+            label: 'Patrimonio', data: [],
             borderColor: '#135bec', backgroundColor: 'rgba(19,91,236,0.10)',
-            fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0, pointHoverRadius: 6,
-            pointHoverBackgroundColor: '#135bec', pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2
+            fill: true, tension: 0.35, borderWidth: 2, pointRadius: 0, pointHoverRadius: 6,
+            pointHoverBackgroundColor: '#135bec', pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2,
+            yAxisID: 'y'
           },
           {
-            label: 'Profitto Netto', data: [],
-            borderColor: '#10b981', backgroundColor: 'transparent',
-            fill: false, tension: 0.4, borderWidth: 2, borderDash: [5, 5],
+            label: 'P&L Netto', data: [],
+            borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.10)',
+            fill: true, tension: 0.35, borderWidth: 2,
             pointRadius: 0, pointHoverRadius: 6,
             pointHoverBackgroundColor: '#10b981', pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2,
+            hidden: true,
             yAxisID: 'y1'
           },
           {
-            label: 'Guadagno (No Div)', data: [],
-            borderColor: '#f59e0b', backgroundColor: 'transparent',
-            fill: false, tension: 0.4, borderWidth: 2, borderDash: [2, 2],
+            label: '% Perf.', data: [],
+            borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,0.10)',
+            fill: true, tension: 0.35, borderWidth: 2,
             pointRadius: 0, pointHoverRadius: 6,
-            pointHoverBackgroundColor: '#f59e0b', pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2,
-            yAxisID: 'y1'
+            pointHoverBackgroundColor: '#8b5cf6', pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2,
+            hidden: true,
+            yAxisID: 'y'
           }
         ]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
         plugins: {
           legend: { display: false },
           tooltip: {
-            mode: 'index', intersect: false,
-            backgroundColor: isDark ? '#1e293b' : '#fff',
-            titleColor: isDark ? '#f1f5f9' : '#1e293b',
-            bodyColor: isDark ? '#f1f5f9' : '#1e293b',
+            enabled: true,
+            backgroundColor: isDark ? 'rgba(15,23,42,0.96)' : 'rgba(255,255,255,0.97)',
+            titleColor: isDark ? '#f1f5f9' : '#0f172a',
+            bodyColor: isDark ? '#cbd5e1' : '#334155',
             borderColor: isDark ? '#334155' : '#e2e8f0',
-            borderWidth: 1, padding: 10,
+            borderWidth: 1, padding: 10, cornerRadius: 8, boxPadding: 4, usePointStyle: true,
             callbacks: {
-              label: () => null,
-              title: (items) => {
-                  const d = mobDetailChart.rawPoints ? mobDetailChart.rawPoints[items[0].dataIndex] : null;
-                  return (d && d.events && d.events.length > 0) ? items[0].label : null;
-              },
-              afterBody: (items) => {
-                  const d = mobDetailChart.rawPoints ? mobDetailChart.rawPoints[items[0].dataIndex] : null;
-                  if (d && d.events && d.events.length > 0) {
-                      const labels = { 'BUY': 'ACQUISTO', 'SELL': 'VENDITA', 'DEPOSIT': 'DEPOSITO', 'WITHDRAWAL': 'PRELIEVO', 'DIVIDEND': 'DIVIDENDO' };
-                      return d.events.map(ev => {
-                          const typeLabel = labels[ev.type] || ev.type;
-                          const prefix = (ev.type === 'DEPOSIT' || ev.type === 'BUY' || ev.type === 'DIVIDEND') ? '+' : '-';
-                          if (ev.type === 'BUY' || ev.type === 'SELL') return `${typeLabel}: ${ev.assetName || ev.ticker}`;
-                          if (ev.type === 'DEPOSIT' || ev.type === 'WITHDRAWAL') return `${typeLabel}: ${prefix}${formatCurrency(ev.amount, 'EUR')}`;
-                          return `${typeLabel}: ${ev.ticker} ${prefix}${formatCurrency(ev.amount, 'EUR')}`;
-                      });
-                  }
-                  return null;
-              }
+                title: (items) => {
+                    if (!items.length) return '';
+                    const d = mobDetailChart.rawPoints ? mobDetailChart.rawPoints[items[0].dataIndex] : null;
+                    if (d) {
+                        return new Date(d.date).toLocaleDateString('it-IT', { day:'2-digit', month:'short', year:'numeric' });
+                    }
+                    return items[0].label;
+                },
+                label: (context) => {
+                    if (context.parsed.y == null || context.dataset.hidden) return null;
+                    const val = context.parsed.y;
+                    const lbl = context.dataset.label;
+                    const isPct = mobDetailChartMode === 'pct';
+                    if (isPct) return ' ' + lbl + ': ' + (val >= 100 ? '+' : '') + (val - 100).toFixed(2) + '%';
+                    return ' ' + lbl + ': ' + formatCurrency(val, 'EUR', 0);
+                },
+                afterBody: (items) => {
+                    const idx = items[0]?.dataIndex;
+                    const pts = mobDetailChart.rawPoints;
+                    const d = pts && pts[idx];
+                    const lines = [];
+                    if (d && d.events && d.events.length > 0) {
+                        const labels = { 'BUY': 'ACQ', 'SELL': 'VEN', 'DEPOSIT': 'DEP', 'WITHDRAWAL': 'PRE', 'DIVIDEND': 'DIV' };
+                        d.events.forEach(ev => {
+                            const typeLabel = labels[ev.type] || ev.type;
+                            const prefix = ['DEPOSIT','BUY','DIVIDEND'].includes(ev.type) ? '+' : '-';
+                            if (ev.type === 'BUY' || ev.type === 'SELL') lines.push(`◆ ${typeLabel}: ${ev.assetName || ev.ticker}`);
+                            else if (ev.type === 'DEPOSIT' || ev.type === 'WITHDRAWAL') lines.push(`◆ ${typeLabel}: ${prefix}${formatCurrency(ev.amount, 'EUR', 0)}`);
+                            else lines.push(`◆ ${typeLabel}: ${ev.ticker} ${prefix}${formatCurrency(ev.amount, 'EUR', 0)}`);
+                        });
+                    }
+                    if (mobDetailChartMode === 'eur' && pts && pts[idx] && pts[0]) {
+                        const delta = (pts[idx].value || 0) - (pts[0].value || 0);
+                        const sign = delta >= 0 ? '+' : '';
+                        lines.push('');
+                        lines.push(`Δ: ${sign}${formatCurrency(delta, 'EUR', 0)}`);
+                    }
+                    return lines.length > 0 ? lines : null;
+                }
             }
           },
           zoom: { zoom: { wheel:{enabled:false}, pinch:{enabled:true}, mode:'x' }, pan:{enabled:true, mode:'x'} },
-          annotation: { annotations: {} }
+          annotation: {
+              annotations: {
+                  baseline: {
+                      type: 'line', yMin: 0, yMax: 0,
+                      borderColor: 'rgba(148,163,184,0.3)', borderWidth: 1, borderDash: [4, 4],
+                      display: false
+                  }
+              }
+          }
         },
         scales: {
-          x: { ticks: { color: isDark?'#64748b':'#94a3b8', font:{size:8}, maxTicksLimit: 5 }, grid: { display: false } },
+          x: { ticks: { color: textColor, font:{size:8, weight:'600'}, maxTicksLimit: 5 }, grid: { display: false }, border:{display:false} },
           y: { 
+            display: true, position: 'left',
             ticks: { 
-              color: isDark?'#64748b':'#94a3b8', font:{size:8}, 
-              callback: v => '€'+Math.round(v/1000)+'k' 
+              color: textColor, font:{size:8, weight:'600'}, 
+              callback: v => mobFmtPortfolioTick(v, mobDetailChartMode === 'pct')
             }, 
-            grid: { color: isDark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.04)' } 
+            grid: { color: gridColor, drawTicks:false }, border:{display:false, dash:[4,4]}
           },
           y1: {
-            position: 'right',
+            display: false, position: 'right',
             ticks: {
-              color: '#10b981', font: { size: 8 },
-              callback: v => '€'+Math.round(v/1000)+'k'
+              color: '#10b981', font: { size: 8, weight:'600' },
+              callback: v => mobFmtPortfolioTick(v, false)
             },
-            grid: { drawOnChartArea: false }
+            grid: { display:false }, border:{display:false}
           }
         }
       }
@@ -1366,6 +1525,7 @@
     if (!mobDetailChart) return;
     const isDark = document.documentElement.classList.contains('dark');
     const r = range || mobDetailRange;
+    const mode = mobDetailChartMode;
     try {
       const res = await fetch(`/api/analytics/portfolio-performance/${portfolioId}?range=${r}`);
       const result = await res.json();
@@ -1374,17 +1534,85 @@
       mobDetailChart.rawPoints = pts;
       mobDetailChart.data.labels = pts.map(d => new Date(d.date).toLocaleDateString('it-IT', {day:'2-digit',month:'2-digit'}));
       
-      mobDetailChart.data.datasets[0].data = pts.map(d => d.value);
-      mobDetailChart.data.datasets[1].data = pts.map(d => d.profit);
-      mobDetailChart.data.datasets[2].data = pts.map(d => d.profitNoDiv);
+      if (mode === 'pct') {
+          const pData = pts.map(d => d.normalized ?? 100);
+          const lastP = pData[pData.length - 1] ?? 100;
+          const isPos = lastP >= (pData[0] ?? 100);
+
+          mobDetailChart.data.datasets[0].hidden = true;
+          mobDetailChart.data.datasets[1].hidden = true;
+          mobDetailChart.data.datasets[2].label = '% Perf.';
+          mobDetailChart.data.datasets[2].data = pData;
+          mobDetailChart.data.datasets[2].hidden = false;
+          mobDetailChart.data.datasets[2].yAxisID = 'y';
+          mobDetailChart.data.datasets[2].borderColor = isPos ? '#10b981' : '#f43f5e';
+          mobDetailChart.data.datasets[2].backgroundColor = (ctx2) => {
+              const {ctx: c, chartArea} = ctx2.chart;
+              if (!chartArea) return 'transparent';
+              return mobBuildPortfolioGradient(c, chartArea, isPos);
+          };
+
+          mobDetailChart.options.scales.y.display = true;
+          mobDetailChart.options.scales.y1.display = false;
+          mobDetailChart.options.plugins.annotation.annotations.baseline.yMin = 100;
+          mobDetailChart.options.plugins.annotation.annotations.baseline.yMax = 100;
+          mobDetailChart.options.plugins.annotation.annotations.baseline.display = true;
+          delete mobDetailChart.options.plugins.annotation.annotations.baseline.scaleID;
+      } else if (mode === 'pnl') {
+          const pnlData = pts.map(d => d.profit ?? 0);
+          const lastPnl = pnlData[pnlData.length - 1] ?? 0;
+          const isPos   = lastPnl >= 0;
+
+          mobDetailChart.data.datasets[0].hidden = true;
+          mobDetailChart.data.datasets[1].label = 'P&L Netto';
+          mobDetailChart.data.datasets[1].data  = pnlData;
+          mobDetailChart.data.datasets[1].hidden = false;
+          mobDetailChart.data.datasets[1].yAxisID = 'y1';
+          mobDetailChart.data.datasets[1].borderColor = isPos ? '#10b981' : '#f43f5e';
+          mobDetailChart.data.datasets[1].backgroundColor = (ctx2) => {
+              const {ctx: c, chartArea} = ctx2.chart;
+              if (!chartArea) return 'transparent';
+              return mobBuildPortfolioGradient(c, chartArea, isPos);
+          };
+          mobDetailChart.data.datasets[2].hidden = true;
+
+          mobDetailChart.options.scales.y.display = false;
+          mobDetailChart.options.scales.y1.display = true;
+          mobDetailChart.options.plugins.annotation.annotations.baseline.yMin = 0;
+          mobDetailChart.options.plugins.annotation.annotations.baseline.yMax = 0;
+          mobDetailChart.options.plugins.annotation.annotations.baseline.display = true;
+          mobDetailChart.options.plugins.annotation.annotations.baseline.scaleID = 'y1';
+      } else {
+          const wData = pts.map(d => d.value ?? 0);
+          const lastW  = wData[wData.length - 1] ?? 0;
+          const firstW = wData[0] ?? 0;
+          const isPos  = lastW >= firstW;
+
+          mobDetailChart.data.datasets[0].label = 'Patrimonio';
+          mobDetailChart.data.datasets[0].data  = wData;
+          mobDetailChart.data.datasets[0].hidden = false;
+          mobDetailChart.data.datasets[0].yAxisID = 'y';
+          mobDetailChart.data.datasets[0].borderColor = isPos ? '#135bec' : '#f43f5e';
+          mobDetailChart.data.datasets[0].backgroundColor = (ctx2) => {
+              const {ctx: c, chartArea} = ctx2.chart;
+              if (!chartArea) return 'rgba(19,91,236,0.10)';
+              return mobBuildPortfolioGradient(c, chartArea, isPos);
+          };
+          mobDetailChart.data.datasets[1].hidden = true;
+          mobDetailChart.data.datasets[2].hidden = true;
+
+          mobDetailChart.options.scales.y.display = true;
+          mobDetailChart.options.scales.y1.display = false;
+          mobDetailChart.options.plugins.annotation.annotations.baseline.display = false;
+      }
 
       // Year Markers (Annotations)
-      const annotations = {};
+      const yearAnnotations = {};
       let lastYear = null;
       pts.forEach((d, index) => {
         const year = new Date(d.date).getFullYear();
         if (lastYear !== null && year !== lastYear) {
-          annotations[`line${year}`] = {
+          yearAnnotations[`line${year}`] = {
             type: 'line', xMin: index, xMax: index,
             borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
             borderWidth: 1, borderDash: [5, 5],
@@ -1398,7 +1626,10 @@
         }
         lastYear = year;
       });
-      mobDetailChart.options.plugins.annotation.annotations = annotations;
+      mobDetailChart.options.plugins.annotation.annotations = {
+          baseline: mobDetailChart.options.plugins.annotation.annotations.baseline,
+          ...yearAnnotations
+      };
 
       // Transaction Markers
       const pointStyles = [];
@@ -1422,15 +1653,18 @@
 
       mobDetailChart.data.datasets[0].pointStyle = pointStyles;
       mobDetailChart.data.datasets[0].pointBackgroundColor = pointColors;
-      mobDetailChart.data.datasets[0].pointRadius = pointRadii;
+      mobDetailChart.data.datasets[0].pointRadius = mode === 'eur' ? pointRadii : pointRadii.map(()=>0);
       mobDetailChart.data.datasets[0].pointBorderColor = '#fff';
       mobDetailChart.data.datasets[0].pointBorderWidth = 1;
 
       mobDetailChart.update();
+      mobUpdatePortfolioChartKPI(pts, mode);
+      mobUpdatePortfolioChartLegend(mobDetailChart.data.datasets);
     } catch(e) { console.error('[MOB] Detail chart error:', e); }
   }
 
   window.mobDetailRange = function(range) {
+
     mobDetailRange = range;
     document.querySelectorAll('#mob-detail-range-bar .mob-range-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.range === range);
