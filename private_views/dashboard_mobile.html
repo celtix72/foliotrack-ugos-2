@@ -726,95 +726,38 @@
       return Math.floor(diff/86400) + ' d';
   }
 
-  async function loadMobNews() {
+    async function loadMobNews() {
       const container = document.getElementById('mob-news-container');
       const skeleton  = document.getElementById('mob-news-skeleton');
       if (!container) return;
 
-      let symbols = [];
-      if (window._dashboardData && window._dashboardData.global && window._dashboardData.global.userTickers) {
-          symbols = window._dashboardData.global.userTickers.map(t => t.split('.')[0]).filter(t => t && t.length > 0);
-      }
-
-      let FEEDS = [];
-      if (symbols.length > 0) {
-          const chunk = symbols.slice(0, 15).join(',');
-          const query = symbols.slice(0, 4).join('+');
-          FEEDS = [
-              { rss: `https://feeds.finance.yahoo.com/rss/2.0/headline?s=${encodeURIComponent(chunk)}&region=US&lang=en-US`, source: 'Yahoo Finance' },
-              { rss: `https://news.google.com/rss/search?q=${encodeURIComponent(query)}+finanza&hl=it&gl=IT&ceid=IT:it`, source: 'Google Finance' }
-          ];
-      } else {
-          FEEDS = [
-              { rss: 'https://feeds.finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,%5EDJI&region=US&lang=en-US', source: 'Yahoo Finance' },
-              { rss: 'https://news.google.com/rss/search?q=finanza+mercati+borsa&hl=it&gl=IT&ceid=IT:it', source: 'Google Finance' },
-          ];
-      }
-      const API = 'https://api.rss2json.com/v1/api.json?rss_url=';
-
       let allItems = [];
-      const seen = new Set();
-
-      await Promise.allSettled(FEEDS.map(async ({ rss, source }) => {
-          try {
-              const url = `${API}${encodeURIComponent(rss)}&count=10`;
-              const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
-              const data = await r.json();
-              if (data.status !== 'ok') return;
-              for (const item of (data.items || [])) {
-                  if (!item.title || seen.has(item.title)) continue;
-                  seen.add(item.title);
-                  allItems.push({
-                      title:   item.title,
-                      url:     item.link || item.guid,
-                      source,
-                      pubDate: item.pubDate ? new Date(item.pubDate).toISOString() : null,
-                      summary: item.description ? item.description.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : null
-                  });
-              }
-          } catch (_) { /* silent */ }
-      }));
-
-      allItems.sort((a,b) => {
-          if (!a.pubDate && !b.pubDate) return 0;
-          if (!a.pubDate) return 1;
-          if (!b.pubDate) return -1;
-          return new Date(b.pubDate) - new Date(a.pubDate);
-      });
-      allItems = allItems.slice(0, 10);
+      try {
+          const res = await fetch('/api/news');
+          allItems = await res.json();
+      } catch (e) {
+          console.error('Failed to fetch mobile news', e);
+      }
 
       if (skeleton) skeleton.remove();
 
       if (allItems.length === 0) {
-          container.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-8">Nessuna notizia disponibile al momento.</p>';
+          container.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-8">Nessuna notizia. Vai in Impostazioni per aggiungere feed RSS.</p>';
           return;
       }
 
       container.innerHTML = allItems.map(item => {
-          const color   = SOURCE_COLORS[item.source] || '#94a3b8';
+          const source = item.source_name || 'News';
+          const color   = SOURCE_COLORS[source] || '#94a3b8';
           const time    = relativeTime(item.pubDate);
-          
-          // Clean title
           const title   = item.title.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+          const href    = item.link ? `href="${item.link}" target="_blank" rel="noopener noreferrer"` : '';
           
-          // Deep clean summary
-          let summary = '';
-          if (item.summary) {
-              summary = item.summary.replace(/<[^>]+>/g, ' ')
-                                    .replace(/&nbsp;/g, ' ')
-                                    .replace(/\s+/g, ' ')
-                                    .trim()
-                                    .substring(0, 80);
-              if (item.summary.length > 80) summary += '…';
-          }
-          
-          const href    = item.url ? `href="${item.url}" target="_blank" rel="noopener noreferrer"` : '';
-          
-                              return `
+          return `
           <a ${href} class="block p-3 rounded-xl bg-white dark:bg-surface-dark border border-slate-100 dark:border-slate-800 shadow-sm active:scale-[0.98] transition-transform">
               <div class="flex items-center gap-2 mb-1.5">
-                  <div class="w-2 h-2 rounded-full shrink-0" style="background:${color}"></div>
-                  <span class="text-[9px] font-black uppercase tracking-widest" style="color:${color}">${item.source}</span>
+                  <div class="w-1.5 h-1.5 rounded-full shrink-0" style="background:${color}"></div>
+                  <span class="text-[9px] font-black uppercase tracking-widest" style="color:${color}">${source}</span>
                   ${time ? `<span class="text-[9px] text-slate-400 font-bold ml-auto">${time}</span>` : ''}
               </div>
               <p class="text-[11px] font-bold text-slate-800 dark:text-slate-100 leading-snug m-0 p-0">${title}</p>

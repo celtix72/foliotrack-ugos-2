@@ -11,6 +11,8 @@ const jwt          = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const webpush      = require('web-push');
 const { xirr, calculateTWR } = require('./utils/finance');
+const Parser = require('rss-parser');
+const rssParser = new Parser();
 
 // ─── Application Version ─────────────────────────────────────────────────────
 const now = new Date();
@@ -7511,6 +7513,61 @@ app.get('/api/logs/telegram', (req, res) => {
 // NEWS API ENDPOINTS
 // ════════════════════════════════════════════════════════════════════════════
 
+app.get('/api/news', requireAuth, (req, res) => {
+    try {
+        const rows = database.db.prepare('SELECT * FROM news_articles WHERE user_id = ? ORDER BY pubDate DESC LIMIT 50').all(req.user.id);
+        res.json(rows);
+    } catch (err) {
+        logger.error('/api/news error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/settings/news-sources', requireAuth, (req, res) => {
+    try {
+        const rows = database.db.prepare('SELECT * FROM news_sources WHERE user_id = ? ORDER BY created_at ASC').all(req.user.id);
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/settings/news-sources', requireAuth, express.json(), (req, res) => {
+    try {
+        const { name, url } = req.body;
+        if (!name || !url) return res.status(400).json({ error: 'Name and URL are required' });
+        
+        const stmt = database.db.prepare('INSERT INTO news_sources (user_id, name, url) VALUES (?, ?, ?)');
+        const info = stmt.run(req.user.id, name, url);
+        res.json({ id: info.lastInsertRowid, name, url, is_enabled: 1 });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/settings/news-sources/:id', requireAuth, express.json(), (req, res) => {
+    try {
+        const { is_enabled } = req.body;
+        const stmt = database.db.prepare('UPDATE news_sources SET is_enabled = ? WHERE id = ? AND user_id = ?');
+        stmt.run(is_enabled ? 1 : 0, req.params.id, req.user.id);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/settings/news-sources/:id', requireAuth, (req, res) => {
+    try {
+        const stmt = database.db.prepare('DELETE FROM news_sources WHERE id = ? AND user_id = ?');
+        stmt.run(req.params.id, req.user.id);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+
 app.get('/api/news', (req, res) => {
     try {
         const settings = database.getSettings();
@@ -7906,92 +7963,45 @@ try {
 let lastDailyReportDate = ''; // 'YYYY-MM-DD'
 let lastTelegramStatusTime = 0;
 
-// ─── News Sync Engine ───────────────────────────────────────────────────────
+// ─── News Sync Engine ───────────────────────────────────────────────────────────────────────
 async function syncNews() {
     try {
-        logger.info('Starting Financial News Sync...');
+        logger.info('Starting RSS News Sync...');
         
-        // 1. Get tickers and names from Watchlist or active Portfolios
-        const allTrackedAssets = database.db.prepare(`
-            SELECT a.ticker, a.name 
-            FROM assets a
-            LEFT JOIN (
-                SELECT assetTicker, SUM(CASE WHEN type = 'BUY' THEN quantity WHEN type = 'SELL' THEN -quantity ELSE 0 END) as balance
-                FROM transactions
-                GROUP BY assetTicker
-            ) t ON a.ticker = t.assetTicker
-            WHERE a.inWatchlist = 1 OR IFNULL(t.balance, 0) > 0.0001
-        `).all().filter(a => a.ticker && a.ticker !== 'CASH' && !a.ticker.startsWith('CD_'));
-        
-        const assets = allTrackedAssets; // Use the objects directly
-        let newsSaved = 0;
+        const sources = database.db.prepare('SELECT * FROM news_sources WHERE is_enabled = 1').all();
+        if (sources.length === 0) return;
 
-        // Clear existing news to ensure a clean start with the new filtering
-        database.db.prepare(`DELETE FROM global_news`).run();
+        let totalSaved = 0;
 
-        for (const asset of assets) {
-            const t = asset.ticker;
-            const name = asset.name || '';
-            const tickerBase = t.split('.')[0].toUpperCase();
-            const tickerFull = t.toUpperCase();
-
+        for (const source of sources) {
             try {
-                const results = await yahooFinance.search(t, { newsCount: 10 });
-                if (results && results.news) {
-                    for (const n of results.news) {
-                        const uuid = String(n.uuid || '');
-                        const title = String(n.title || '');
-                        const publisher = String(n.publisher || 'Unknown');
-                        const link = String(n.link || '');
-                        
-                        let publishedAt;
-                        if (n.providerPublishTime instanceof Date) {
-                            publishedAt = Math.floor(n.providerPublishTime.getTime() / 1000);
-                        } else if (typeof n.providerPublishTime === 'number') {
-                            publishedAt = n.providerPublishTime;
-                        } else {
-                            publishedAt = Math.floor(Date.now() / 1000);
-                        }
-
-                        if (!uuid || !title || !link) continue; 
-
-                        // Strict Relevance Filter
-                        const related = (n.relatedTickers || []).map(rt => rt.toUpperCase());
-                        const upperTitle = title.toUpperCase();
-                        
-                        let isRelevant = false;
-                        if (related.length > 0) {
-                            isRelevant = related.includes(tickerFull) || related.includes(tickerBase);
-                        } else {
-                            isRelevant = upperTitle.includes(tickerFull) || 
-                                         upperTitle.includes(tickerBase) || 
-                                         (name && upperTitle.includes(name.toUpperCase()));
-                        }
-
-                        if (!isRelevant) continue;
-                        
-                        const stmt = database.db.prepare(`
-                            INSERT OR IGNORE INTO global_news (uuid, ticker, title, publisher, link, publishedAt)
-                            VALUES (?, ?, ?, ?, ?, ?)
-                        `);
-                        const info = stmt.run(uuid, String(t), title, publisher, link, publishedAt);
-                        if (info.changes > 0) newsSaved++;
-                    }
+                const feed = await rssParser.parseURL(source.url);
+                for (const item of feed.items || []) {
+                    if (!item.title || !item.link) continue;
+                    
+                    const pubDate = item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString();
+                    
+                    const stmt = database.db.prepare(`
+                        INSERT OR IGNORE INTO news_articles (user_id, title, link, pubDate, source_name)
+                        VALUES (?, ?, ?, ?, ?)
+                    `);
+                    const info = stmt.run(source.user_id, item.title, item.link, pubDate, source.name);
+                    if (info.changes > 0) totalSaved++;
                 }
-            } catch (e) {
-                logger.warn(`Failed to fetch news for ${t}: ${e.message}`);
+            } catch (err) {
+                logger.error(`Failed to fetch RSS for ${source.url}: `, err);
             }
+            
+            // Keep only latest 50 articles per user
+            database.db.prepare(`
+                DELETE FROM news_articles 
+                WHERE user_id = ? AND id NOT IN (
+                    SELECT id FROM news_articles WHERE user_id = ? ORDER BY pubDate DESC LIMIT 50
+                )
+            `).run(source.user_id, source.user_id);
         }
         
-        // 2. Obsolescence: Limit global_news to 100 latest items
-        database.db.prepare(`
-            DELETE FROM global_news 
-            WHERE uuid NOT IN (
-                SELECT uuid FROM global_news ORDER BY publishedAt DESC LIMIT 100
-            )
-        `).run();
-        
-        logger.info(`News Sync completed. Saved ${newsSaved} new articles.`);
+        logger.info(`News Sync completed. Saved ${totalSaved} new articles.`);
     } catch (err) {
         logger.error('Error during news sync:', err);
     }
@@ -7999,11 +8009,9 @@ async function syncNews() {
 
 setInterval(() => {
     syncNews().catch(e => logger.error(e));
-}, 2 * 60 * 60 * 1000); // 2 hours
+}, 1 * 60 * 60 * 1000); // 1 hour
 
-setTimeout(syncNews, 10000); // Run first sync 10s after startup
-
-
+setTimeout(syncNews, 5000); // Run first sync 5s after startup
 
 setInterval(async () => {
     const settings = database.getSettings();

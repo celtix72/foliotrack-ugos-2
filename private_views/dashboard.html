@@ -1599,90 +1599,46 @@
         return `${Math.floor(diff / 86400)}g fa`;
     }
 
-    // Client-side news loader using rss2json.com (free, no key needed)
+    // Client-side news loader from backend API
     async function loadNews() {
         const container = document.getElementById('news-container');
         const skeleton  = document.getElementById('news-skeleton');
         if (!container) return;
 
-        let symbols = [];
-        if (window._dashboardData && window._dashboardData.global && window._dashboardData.global.userTickers) {
-            symbols = window._dashboardData.global.userTickers.map(t => t.split('.')[0]).filter(t => t && t.length > 0);
-        }
-
-        let FEEDS = [];
-        if (symbols.length > 0) {
-            const chunk = symbols.slice(0, 15).join(',');
-            const query = symbols.slice(0, 4).join('+');
-            FEEDS = [
-                { rss: `https://feeds.finance.yahoo.com/rss/2.0/headline?s=${encodeURIComponent(chunk)}&region=US&lang=en-US`, source: 'Yahoo Finance' },
-                { rss: `https://news.google.com/rss/search?q=${encodeURIComponent(query)}+finanza&hl=it&gl=IT&ceid=IT:it`, source: 'Google Finance' }
-            ];
-        } else {
-            FEEDS = [
-                { rss: 'https://feeds.finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EIXIC,%5EDJI&region=US&lang=en-US', source: 'Yahoo Finance' },
-                { rss: 'https://news.google.com/rss/search?q=finanza+mercati+borsa&hl=it&gl=IT&ceid=IT:it', source: 'Google Finance' },
-            ];
-        }
-        const API = 'https://api.rss2json.com/v1/api.json?rss_url=';
-
         let allItems = [];
-        const seen = new Set();
-
-        await Promise.allSettled(FEEDS.map(async ({ rss, source }) => {
-            try {
-                const url = `${API}${encodeURIComponent(rss)}&count=10`;
-                const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
-                const data = await r.json();
-                if (data.status !== 'ok') return;
-                for (const item of (data.items || [])) {
-                    if (!item.title || seen.has(item.title)) continue;
-                    seen.add(item.title);
-                    allItems.push({
-                        title:   item.title,
-                        url:     item.link || item.guid,
-                        source,
-                        pubDate: item.pubDate ? new Date(item.pubDate).toISOString() : null,
-                        summary: item.description ? item.description.replace(/<[^>]+>/g,'').trim().substring(0,150) : null
-                    });
-                }
-            } catch (_) { /* silent */ }
-        }));
-
-        allItems.sort((a,b) => {
-            if (!a.pubDate && !b.pubDate) return 0;
-            if (!a.pubDate) return 1;
-            if (!b.pubDate) return -1;
-            return new Date(b.pubDate) - new Date(a.pubDate);
-        });
-        allItems = allItems.slice(0, 20);
+        try {
+            const res = await fetch('/api/news');
+            allItems = await res.json();
+        } catch (e) {
+            console.error('Failed to fetch news', e);
+        }
 
         if (skeleton) skeleton.remove();
 
         if (allItems.length === 0) {
-            container.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-8">Nessuna notizia disponibile al momento.</p>';
+            container.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-8">Nessuna notizia disponibile al momento. Vai in Impostazioni per aggiungere sorgenti RSS.</p>';
             return;
         }
 
         container.innerHTML = allItems.map(item => {
-            const color   = SOURCE_COLORS[item.source] || '#94a3b8';
-            const time    = relativeTime(item.pubDate);
-            const title   = item.title.replace(/</g,'&lt;').replace(/>/g,'&gt;');
-            const summary = item.summary ? item.summary.replace(/</g,'&lt;').replace(/>/g,'&gt;').substring(0,140) + (item.summary.length > 140 ? '…' : '') : '';
-            const href    = item.url ? `href="${item.url}" target="_blank" rel="noopener noreferrer"` : '';
+            const source = item.source_name || 'News';
+            const color  = SOURCE_COLORS[source] || '#94a3b8';
+            const time   = relativeTime(item.pubDate);
+            const title  = item.title.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            const href   = item.link ? `href="${item.link}" target="_blank" rel="noopener noreferrer"` : '';
+            
             return `
-            <a ${href} class="flex items-start gap-4 p-4 rounded-xl bg-white dark:bg-surface-dark border border-slate-100 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md transition-all group">
-                <div class="w-2 h-2 rounded-full shrink-0 mt-1.5" style="background:${color}"></div>
-                <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2 mb-1">
-                        <span class="text-[9px] font-black uppercase tracking-widest" style="color:${color}">${item.source}</span>
-                        ${time ? `<span class="text-[9px] text-slate-400 font-bold">${time}</span>` : ''}
+                <a ${href} class="flex items-start gap-4 p-4 rounded-xl bg-white dark:bg-surface-dark border border-slate-100 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md transition-all group">
+                    <div class="w-2 h-2 rounded-full shrink-0 mt-1.5" style="background:${color}"></div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <span class="text-[10px] font-black uppercase tracking-widest" style="color:${color}">${source}</span>
+                            ${time ? `<span class="text-[10px] text-slate-400 font-bold">${time}</span>` : ''}
+                        </div>
+                        <p class="text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-primary transition-colors leading-snug line-clamp-2">${title}</p>
                     </div>
-                    <p class="text-xs font-bold text-slate-800 dark:text-slate-100 leading-snug line-clamp-2 group-hover:text-primary transition-colors">${title}</p>
-                    ${summary ? `<p class="text-[10px] text-slate-500 mt-1 leading-snug line-clamp-2">${summary}</p>` : ''}
-                </div>
-                <span class="material-symbols-outlined text-slate-300 dark:text-slate-700 text-sm shrink-0 group-hover:text-primary transition-colors">open_in_new</span>
-            </a>`;
+                </a>
+            `;
         }).join('');
     }
 

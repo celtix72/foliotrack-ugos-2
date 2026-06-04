@@ -48705,3 +48705,10 @@
 2026-06-03T20:43:49.915Z [INFO] Database: /Users/mauro/Documents/FolioTrack3/foliotrack.db
 2026-06-03T20:43:59.874Z [INFO] Starting Financial News Sync...
 2026-06-03T20:43:59.914Z [INFO] News Sync completed. Saved 0 new articles.
+2026-06-04T19:14:10.789Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-06-04T19:14:10.936Z [INFO] FolioTrack server running on port 3000
+2026-06-04T19:14:10.945Z [INFO] Database: /Users/mauro/Documents/FolioTrack3/foliotrack.db
+2026-06-04T19:14:15.910Z [INFO] Starting RSS News Sync...
+2026-06-04T19:15:13.261Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-04T19:15:13.295Z [INFO] Recording daily snapshots for portfolios and dashboard...
+2026-06-04T19:15:13.309Z [ERROR] Daily snapshot failed - table portfolio_history has no column named user_id

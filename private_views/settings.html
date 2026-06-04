@@ -339,10 +339,17 @@
     <div id="news-sources-content" class="hidden">
         <div class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-5">
             <div>
-                <p class="font-bold text-sm">Dashboard News Providers</p>
-                <p class="text-[10px] text-slate-400">Toggle the publishers you want to see in your financial news feed.</p>
+                <p class="font-bold text-sm">RSS News Providers</p>
+                <p class="text-[10px] text-slate-400">Add custom RSS feeds or toggle existing ones. The system fetches news from these feeds every hour.</p>
             </div>
-            <div id="news-sources-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            
+            <form id="add-news-source-form" class="flex gap-2">
+                <input type="text" id="new-source-name" placeholder="Name (e.g. Yahoo)" required class="w-1/3 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg text-xs p-2">
+                <input type="url" id="new-source-url" placeholder="RSS URL" required class="flex-1 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg text-xs p-2">
+                <button type="submit" class="bg-blue-500 text-white rounded-lg px-3 py-2 text-xs font-bold hover:bg-blue-600 transition-colors">Add</button>
+            </form>
+
+            <div id="news-sources-list" class="flex flex-col gap-3 max-h-60 overflow-y-auto custom-scrollbar">
                 <p class="text-xs text-slate-400 italic">Loading sources...</p>
             </div>
         </div>

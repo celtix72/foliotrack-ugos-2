@@ -115,6 +115,26 @@ function initDb() {
         tag_id       INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
         PRIMARY KEY (portfolio_id, tag_id)
       );
+
+      CREATE TABLE IF NOT EXISTS news_sources (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        name       TEXT    NOT NULL,
+        url        TEXT    NOT NULL,
+        is_enabled INTEGER NOT NULL DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS news_articles (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        title       TEXT    NOT NULL,
+        link        TEXT    NOT NULL,
+        pubDate     TEXT,
+        source_name TEXT,
+        created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, link)
+      );
     `);
 
     // Migration: Add type to portfolios if it doesn't exist
