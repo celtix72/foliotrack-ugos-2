@@ -51,6 +51,7 @@
 <div id="mobile-ui">
   <!-- ── Mobile Header ── -->
   <div class="mob-header">
+    <img src="/m2t_mobile_logo.png" style="width:24px;height:24px;border-radius:6px;object-fit:cover;margin-right:8px;" alt="M2T Logo">
     
     <div style="flex:1"></div>
     <div class="mob-header-market-pill">
@@ -73,6 +74,13 @@
         <div class="mob-hero-value" id="mob-total-net" style="font-size: 28px;">€ 0</div>
         <div class="text-[14px] font-bold text-slate-500 opacity-80" id="mob-total-gross">(€ 0)</div>
         <div id="mob-day-var" class="ml-auto px-2 py-0.5 rounded-lg text-[10px] font-black shadow-sm hidden"></div>
+      </div>
+      <div class="flex justify-between items-center mb-2 mt-4">
+        <span class="text-[11px] font-black uppercase text-slate-500 tracking-widest opacity-0">Rank</span>
+        <div class="flex bg-slate-200 dark:bg-slate-800 rounded-md p-0.5">
+          <button onclick="mobSetRankingBasis('pct')" id="btn-rank-pct" class="px-2 py-0.5 text-[10px] font-bold rounded-sm bg-white dark:bg-slate-600 shadow-sm text-slate-800 dark:text-slate-100">%</button>
+          <button onclick="mobSetRankingBasis('abs')" id="btn-rank-abs" class="px-2 py-0.5 text-[10px] font-bold rounded-sm text-slate-500 dark:text-slate-400">Valore</button>
+        </div>
       </div>
       <div class="grid grid-cols-2 gap-4">
         <div class="mob-hero-stat-item !p-0 !bg-transparent">
@@ -323,9 +331,36 @@
           const absVal = typeof formatCurrency === 'function' ? formatCurrency(Math.abs(a.absChange || 0), 'EUR', 0) : Math.abs(a.absChange || 0).toFixed(0) + '€';
           return `<div class="flex items-center justify-between"><span class="text-[12px] font-black truncate max-w-[60px]">${a.ticker}</span><div class="flex items-center gap-1.5"><span class="text-[11px] font-black" style="color:${color}">${a.changePercent >= 0 ? '+' : ''}${a.changePercent.toFixed(1)}%</span><span class="text-[10px] font-bold text-slate-500">(${sign}${absVal})</span></div></div>`;
       }).join('') || '--';
-      winners.innerHTML = render(global.topWinners || [], 'var(--mob-emerald)');
-      losers.innerHTML = render(global.topLosers || [], 'var(--mob-rose)');
+      
+      const wList = mobRankingBasis === 'abs' ? (global.topWinnersAbs || []) : (global.topWinners || []);
+      const lList = mobRankingBasis === 'abs' ? (global.topLosersAbs || []) : (global.topLosers || []);
+      
+      winners.innerHTML = render(wList, 'var(--mob-emerald)');
+      losers.innerHTML = render(lList, 'var(--mob-rose)');
   }
+  
+  let mobRankingBasis = localStorage.getItem('mobRankingBasis') || 'pct';
+
+  window.mobSetRankingBasis = function(basis) {
+      mobRankingBasis = basis;
+      localStorage.setItem('mobRankingBasis', basis);
+      
+      const btnPct = document.getElementById('btn-rank-pct');
+      const btnAbs = document.getElementById('btn-rank-abs');
+      if (basis === 'pct') {
+          btnPct.className = "px-2 py-0.5 text-[10px] font-bold rounded-sm bg-white dark:bg-slate-600 shadow-sm text-slate-800 dark:text-slate-100";
+          btnAbs.className = "px-2 py-0.5 text-[10px] font-bold rounded-sm text-slate-500 dark:text-slate-400";
+      } else {
+          btnAbs.className = "px-2 py-0.5 text-[10px] font-bold rounded-sm bg-white dark:bg-slate-600 shadow-sm text-slate-800 dark:text-slate-100";
+          btnPct.className = "px-2 py-0.5 text-[10px] font-bold rounded-sm text-slate-500 dark:text-slate-400";
+      }
+      if (window._dashboardData) mobUpdateWinnersLosers(window._dashboardData.global);
+  };
+  
+  // Initialize toggle buttons state
+  document.addEventListener('DOMContentLoaded', () => {
+      mobSetRankingBasis(mobRankingBasis);
+  });
 
   // Helper tick abbreviato mobile
   function mobFmtTick(val) {

@@ -3143,7 +3143,10 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
         const rate = (a.currency === 'USD') ? rateToday : 1;
         const absChange = (a.currentPrice * changePct / 100) * a.totalNetQty / rate;
         return { ticker: a.ticker, name: a.name, changePercent: changePct, absChange };
-    }).sort((a,b) => b.changePercent - a.changePercent);
+    });
+    
+    const heldAssetsPct = [...heldAssets].sort((a,b) => b.changePercent - a.changePercent);
+    const heldAssetsAbs = [...heldAssets].sort((a,b) => (b.absChange || 0) - (a.absChange || 0));
 
     const lastPoint = globalPoints.at(-1) || { value: 0, profit: 0, netDeposits: 0 };
 
@@ -3159,8 +3162,10 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
         changePercent: (totalValueEUR - globalChangeEUR - globalChangePrePostEUR) > 0 
             ? ((globalChangeEUR + globalChangePrePostEUR) / (totalValueEUR - globalChangeEUR - globalChangePrePostEUR)) * 100 
             : 0,
-        topWinners: heldAssets.slice(0, 5),
-        topLosers: heldAssets.slice(-5).reverse()
+        topWinners: heldAssetsPct.slice(0, 5),
+        topLosers: heldAssetsPct.slice(-5).reverse(),
+        topWinnersAbs: heldAssetsAbs.slice(0, 5),
+        topLosersAbs: heldAssetsAbs.slice(-5).reverse()
     };
 }
 
@@ -3195,7 +3200,9 @@ app.get('/api/portfolios', requireAuth, async (req, res) => {
                 changeValuePrePost: stats.totalChangePrePost,
                 changePercent: stats.changePercent,
                 topWinners: stats.topWinners,
-                topLosers: stats.topLosers
+                topLosers: stats.topLosers,
+                topWinnersAbs: stats.topWinnersAbs,
+                topLosersAbs: stats.topLosersAbs
             }
         });
     } catch (err) {
