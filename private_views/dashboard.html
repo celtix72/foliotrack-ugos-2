@@ -941,13 +941,20 @@
                 const labelAlpha = isCurrentYear ? 1 : 0.45;
                 const gainStr = (isPos ? '+' : '') + formatCurrency(d.gain, 'EUR', 0);
                 const barH    = Math.max(pct * 0.32, 2);
+                const isCurrentMonth = (i === 0); // reversed → first = most recent month
+                const liveIndicator = isCurrentMonth
+                    ? `<div style="position:absolute;top:-5px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:${barColor}" class="animate-pulse"></div>`
+                    : '';
                 html += `
                 <div class="flex flex-col items-center gap-0.5 group relative" style="width:18px">
                     <div class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[8px] font-black px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none"
-                         style="background:${barColor}; color:white">${gainStr}</div>
-                    <div class="w-full rounded-sm transition-all duration-300"
-                         style="height:${barH}px; background:${barColor}; opacity:${barAlpha}; box-shadow: 0 0 4px ${barColor}40;"></div>
-                    <span class="text-[7px] font-bold" style="color:rgba(100,116,139,${labelAlpha})">${d.monthNum}</span>
+                         style="background:${barColor}; color:white">${gainStr}${isCurrentMonth ? ' ●' : ''}</div>
+                    <div style="position:relative;width:100%">
+                        ${liveIndicator}
+                        <div class="w-full rounded-sm transition-all duration-300"
+                             style="height:${barH}px; background:${barColor}; opacity:${barAlpha}; box-shadow: 0 0 4px ${barColor}40; ${isCurrentMonth ? `outline:1px solid ${barColor};outline-offset:1px;` : ''}"></div>
+                    </div>
+                    <span class="text-[7px] font-bold" style="color:${isCurrentMonth ? '#135bec' : `rgba(100,116,139,${labelAlpha})`}">${d.monthNum}</span>
                 </div>`;
             }
             barsContainer.innerHTML = html;

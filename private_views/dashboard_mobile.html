@@ -622,9 +622,11 @@
 
           let html = '';
           let prevYear = null;
-          for (const d of bars) {
+          for (let mobI = 0; mobI < bars.length; mobI++) {
+              const d = bars[mobI];
               const barYear = d.key.split('-')[0];
               const isCurr  = barYear === currYear;
+              const isCurrentMonth = (mobI === 0); // reversed → first = most recent month
               if (prevYear !== null && prevYear !== barYear) {
                   html += `<div style="width:4px;align-self:stretch;display:flex;align-items:flex-end"><div style="width:1px;height:60%;background:rgba(148,163,184,0.4);margin:0 auto"></div></div>`;
               }
@@ -633,10 +635,16 @@
               const isPos   = d.gain >= 0;
               const color   = isPos ? '#10b981' : '#f43f5e';
               const gainStr = (isPos ? '+' : '') + formatCurrency(d.gain, 'EUR', 0);
+              const liveIndicator = isCurrentMonth
+                  ? `<div style="position:absolute;top:-5px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:${color};animation:pulse 1.5s infinite"></div>`
+                  : '';
               html += `<div class="flex flex-col items-center gap-0.5 group relative" style="width:20px">
-                  <div class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[8px] font-black px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 z-10 pointer-events-none" style="background:${color};color:white">${gainStr}</div>
-                  <div class="w-full rounded-sm" style="height:${Math.max(pct*0.38,2)}px;background:${color};opacity:${isCurr?1:0.4};box-shadow:0 0 4px ${color}40"></div>
-                  <span style="font-size:7px;font-weight:bold;color:rgba(100,116,139,${isCurr?1:0.45})">${d.monthNum}</span>
+                  <div class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[8px] font-black px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 z-10 pointer-events-none" style="background:${color};color:white">${gainStr}${isCurrentMonth ? ' ●' : ''}</div>
+                  <div style="position:relative;width:100%">
+                      ${liveIndicator}
+                      <div class="w-full rounded-sm" style="height:${Math.max(pct*0.38,2)}px;background:${color};opacity:${isCurr?1:0.4};box-shadow:0 0 4px ${color}40;${isCurrentMonth?`outline:1px solid ${color};outline-offset:1px`:''}"></div>
+                  </div>
+                  <span style="font-size:7px;font-weight:bold;color:${isCurrentMonth ? '#135bec' : `rgba(100,116,139,${isCurr?1:0.45})`}">${d.monthNum}</span>
               </div>`;
           }
           barsEl.innerHTML = html;
