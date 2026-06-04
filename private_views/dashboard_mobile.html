@@ -810,16 +810,15 @@
           
           const href    = item.url ? `href="${item.url}" target="_blank" rel="noopener noreferrer"` : '';
           
-          return `
-          <a ${href} class="flex items-start gap-3 p-3 rounded-xl bg-white dark:bg-surface-dark border border-slate-100 dark:border-slate-800 shadow-sm active:scale-[0.98] transition-transform">
-              <div class="w-2 h-2 rounded-full shrink-0 mt-1.5" style="background:${color}"></div>
-              <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 mb-1">
+                    return `
+          <a ${href} class="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-white dark:bg-surface-dark border border-slate-100 dark:border-slate-800 shadow-sm active:scale-[0.98] transition-transform" style="height: max-content;">
+              <div class="w-1.5 h-1.5 rounded-full shrink-0 mt-1.5" style="background:${color}"></div>
+              <div class="flex-1 min-w-0 flex flex-col justify-start">
+                  <div class="flex items-center gap-2 mb-0.5">
                       <span class="text-[9px] font-black uppercase tracking-widest" style="color:${color}">${item.source}</span>
                       ${time ? `<span class="text-[9px] text-slate-400 font-bold">${time}</span>` : ''}
                   </div>
-                  <p class="text-xs font-bold text-slate-800 dark:text-slate-100 leading-snug">${title}</p>
-                  ${summary ? `<p class="text-[10px] text-slate-500 mt-1 leading-snug">${summary}</p>` : ''}
+                  <p class="text-[11px] font-bold text-slate-800 dark:text-slate-100 leading-snug m-0 p-0">${title}</p>
               </div>
           </a>`;
       }).join('');
