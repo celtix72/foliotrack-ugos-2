@@ -5703,6 +5703,9 @@ async function triggerHistoryRebuild(portfolioId = null) {
 }
 
 // ─── ANALYTICS ENDPOINTS ──────────────────────────────────────────────────────
+// Shorter TTL for analytics endpoints so the current day/month stays fresh.
+// Historical points (past days/months) are stable and don't change.
+const ANALYTICS_CACHE_TTL = 2 * 60 * 1000; // 2 minutes
 
 app.get('/api/analytics/portfolio-performance/:id', requireAuth, requirePortfolioAccess, async (req, res) => {
     try {
@@ -5710,7 +5713,7 @@ app.get('/api/analytics/portfolio-performance/:id', requireAuth, requirePortfoli
         const portfolioId = req.params.id;
         const cacheKey = `portfolio_perf_${portfolioId}_${range || 'ALL'}`;
 
-        if (performanceResultsCache[cacheKey] && (Date.now() - performanceResultsCache[cacheKey].timestamp < CACHE_TTL)) {
+        if (performanceResultsCache[cacheKey] && (Date.now() - performanceResultsCache[cacheKey].timestamp < ANALYTICS_CACHE_TTL)) {
             return res.json(performanceResultsCache[cacheKey].data);
         }
 
@@ -5740,7 +5743,7 @@ app.get('/api/analytics/global-performance', requireAuth, async (req, res) => {
 
         const cacheKey = `global_perf_${req.user.id}_${range || 'ALL'}_${benchmark || 'none'}_${portfolioIds || 'all'}_${tagIds || 'all'}`;
 
-        if (performanceResultsCache[cacheKey] && (Date.now() - performanceResultsCache[cacheKey].timestamp < CACHE_TTL)) {
+        if (performanceResultsCache[cacheKey] && (Date.now() - performanceResultsCache[cacheKey].timestamp < ANALYTICS_CACHE_TTL)) {
             return res.json(performanceResultsCache[cacheKey].data);
         }
 
@@ -5910,10 +5913,11 @@ app.get('/api/analytics/daily-gains', requireAuth, async (req, res) => {
 
         if (pIds.length === 0) return res.json({ days: [] });
 
+        const todayStr = new Date().toISOString().split('T')[0];
+
         // Fetch the last 9 days of history (need N+1 to compute differences for 7 days)
-        const today = new Date();
-        const cutoff = new Date(today);
-        cutoff.setDate(today.getDate() - 9);
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 9);
         const cutoffStr = cutoff.toISOString().split('T')[0];
 
         const placeholders = pIds.map(() => '?').join(',');
@@ -5924,13 +5928,12 @@ app.get('/api/analytics/daily-gains', requireAuth, async (req, res) => {
             FROM portfolio_history
             WHERE portfolioId IN (${placeholders})
               AND date >= ?
+              AND date < ?
             GROUP BY date
             ORDER BY date ASC
-        `).all(...pIds, cutoffStr);
+        `).all(...pIds, cutoffStr, todayStr);
 
-        if (rows.length < 2) return res.json({ days: [] });
-
-        // Compute day-over-day gain (excluding cash flows)
+        // Compute day-over-day gain (excluding cash flows) for historical days
         const days = [];
         for (let i = 1; i < rows.length; i++) {
             const prev = rows[i - 1];
@@ -5941,6 +5944,30 @@ app.get('/api/analytics/daily-gains', requireAuth, async (req, res) => {
             days.push({ date: curr.date, gain: Math.round(gain * 100) / 100 });
         }
 
+        // For TODAY: use live performance1D from the portfolios table (same source as the dashboard hero)
+        // This avoids the stale portfolio_history discrepancy for the current day.
+        const liveRows = database.db.prepare(`
+            SELECT performance1D, performance1DPrePost, currency
+            FROM portfolios
+            WHERE id IN (${placeholders})
+        `).all(...pIds);
+
+        // Sum performance1D across portfolios (already in portfolio currency, typically EUR)
+        // For USD portfolios we'd need FX conversion, but performance1D is already stored
+        // in portfolio currency after recalculatePortfolio(), so we can sum directly.
+        const liveGain = liveRows.reduce((sum, p) => sum + (p.performance1D || 0), 0);
+
+        if (liveRows.length > 0) {
+            days.push({ date: todayStr, gain: Math.round(liveGain * 100) / 100 });
+        } else if (rows.length >= 2) {
+            // Fallback: use last historical delta if no live data available
+            const last = rows[rows.length - 1];
+            const prev = rows[rows.length - 2];
+            const depositsDelta = (last.netDeposits || 0) - (prev.netDeposits || 0);
+            const gain = (last.totalValue || 0) - (prev.totalValue || 0) - depositsDelta;
+            days.push({ date: last.date, gain: Math.round(gain * 100) / 100 });
+        }
+
         // Return last 7
         res.json({ days: days.slice(-7) });
     } catch (err) {
@@ -5948,6 +5975,7 @@ app.get('/api/analytics/daily-gains', requireAuth, async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
 
 // ─── HISTORY ENDPOINT ──────────────────────────────────────────────────────────
 
