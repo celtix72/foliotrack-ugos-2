@@ -18,7 +18,7 @@
   --mob-rose: #f43f5e;
   --mob-amber: #f59e0b;
   --mob-tab-h: 84px;
-  --mob-header-h: 60px;
+  --mob-header-h: 48px;
   --mob-safe-top: env(safe-area-inset-top, 0px);
   --mob-safe-bottom: env(safe-area-inset-bottom, 0px);
   --mob-radius-card: 20px;
@@ -38,14 +38,14 @@ html:not(.dark) :root {
   --mob-text: #0f172a;
   --mob-text-muted: #4b5563; /* Darker for light mode */
   --mob-text-caption: #6b7280; /* Darker for light mode */
-  --mob-header-bg: rgba(255, 255, 255, 0.85);
+  --mob-header-bg: #0f1821;
   --mob-hero-bg: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
   --mob-tab-bg: rgba(255, 255, 255, 0.92);
 }
 
 /* Default Dark values */
 :root {
-  --mob-header-bg: rgba(17, 23, 34, 0.85);
+  --mob-header-bg: #0f1821;
   --mob-hero-bg: linear-gradient(135deg, #1a2235 0%, #0e1929 100%);
   --mob-tab-bg: rgba(17, 23, 34, 0.92);
 }
