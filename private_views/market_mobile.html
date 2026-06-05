@@ -274,6 +274,8 @@
   };
 
   window.handleTouchEnd = function(e, container) {
+    // If touch ended on an action button (or its child), do nothing here —
+    // the button's own ontouchend handler will fire the action.
     if (e.target.closest('.mob-action-btn')) return;
     const item = container.querySelector('.mob-holding-item');
     if (!item) return;
@@ -290,6 +292,28 @@
       item.style.transform = 'translateX(0)';
       currentSwipeEl = null;
     }
+  };
+
+  // Handles action button taps reliably on mobile.
+  // When the swipe panel is open, browsers suppress the synthetic 'click'
+  // event because touchmove was recorded on the parent. We bypass this by
+  // attaching ontouchend directly on each button which calls the action and
+  // then resets the swipe state.
+  window.mobActionTap = function(e, fn) {
+    e.stopPropagation();
+    e.preventDefault();
+    // Reset swipe state so the row closes after the action
+    const container = e.target.closest('.mob-holding-swipe-container');
+    if (container) {
+      const item = container.querySelector('.mob-holding-item');
+      if (item) {
+        item.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
+        item.style.transform = 'translateX(0)';
+      }
+      currentSwipeEl = null;
+    }
+    // Small delay so the reset animation starts before the modal opens
+    setTimeout(fn, 60);
   };
 
   function resetSwipes(except) {
@@ -512,33 +536,45 @@
 
         const colors = getAssetTypeColors(a.type || a.yfType, a.ticker);
 
+        const tickerEsc = a.ticker.replace(/'/g, "\\'");
         const actions = a.hasPosition ? `
           <div class="mob-holding-actions">
-            <div class="mob-action-btn bg-indigo-500" onclick="event.stopPropagation(); openAssetAiHistoryModal('${a.ticker}')">
+            <div class="mob-action-btn bg-indigo-500"
+                 ontouchend="mobActionTap(event, () => openAssetAiHistoryModal('${tickerEsc}'))"
+                 onclick="event.stopPropagation(); openAssetAiHistoryModal('${tickerEsc}')">
               <span class="material-symbols-outlined text-white">smart_toy</span>
               <span class="text-white">IA</span>
             </div>
-            <div class="mob-action-btn bg-blue-ios" onclick="event.stopPropagation(); mobViewAssetTransactions('${a.ticker}')">
+            <div class="mob-action-btn bg-blue-ios"
+                 ontouchend="mobActionTap(event, () => mobViewAssetTransactions('${tickerEsc}'))"
+                 onclick="event.stopPropagation(); mobViewAssetTransactions('${tickerEsc}')">
               <span class="material-symbols-outlined">list</span>
               <span>Trans</span>
             </div>
-
-            <div class="mob-action-btn bg-orange-ios" onclick="event.stopPropagation(); openManualModal('${a.ticker}', '${a.currency}', ${a.currentPrice}, '${a.type}', '${(a.country || '').replace(/'/g, "\\'")}', '${a.dataSource}', '${a.isin}')">
+            <div class="mob-action-btn bg-orange-ios"
+                 ontouchend="mobActionTap(event, () => openManualModal('${tickerEsc}', '${a.currency}', ${a.currentPrice}, '${a.type}', '${(a.country || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${a.dataSource}', '${a.isin}'))"
+                 onclick="event.stopPropagation(); openManualModal('${tickerEsc}', '${a.currency}', ${a.currentPrice}, '${a.type}', '${(a.country || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${a.dataSource}', '${a.isin}')">
               <span class="material-symbols-outlined">edit_note</span>
               <span>Modifica</span>
             </div>
           </div>
         ` : `
           <div class="mob-holding-actions">
-            <div class="mob-action-btn bg-indigo-500" onclick="event.stopPropagation(); openAssetAiHistoryModal('${a.ticker}')">
+            <div class="mob-action-btn bg-indigo-500"
+                 ontouchend="mobActionTap(event, () => openAssetAiHistoryModal('${tickerEsc}'))"
+                 onclick="event.stopPropagation(); openAssetAiHistoryModal('${tickerEsc}')">
               <span class="material-symbols-outlined text-white">smart_toy</span>
               <span class="text-white">IA</span>
             </div>
-            <div class="mob-action-btn bg-orange-ios" onclick="event.stopPropagation(); openManualModal('${a.ticker}', '${a.currency}', ${a.currentPrice}, '${a.type}', '${(a.country || '').replace(/'/g, "\\'")}', '${a.dataSource}', '${a.isin}')">
+            <div class="mob-action-btn bg-orange-ios"
+                 ontouchend="mobActionTap(event, () => openManualModal('${tickerEsc}', '${a.currency}', ${a.currentPrice}, '${a.type}', '${(a.country || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${a.dataSource}', '${a.isin}'))"
+                 onclick="event.stopPropagation(); openManualModal('${tickerEsc}', '${a.currency}', ${a.currentPrice}, '${a.type}', '${(a.country || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${a.dataSource}', '${a.isin}')">
               <span class="material-symbols-outlined">edit_note</span>
               <span>Modifica</span>
             </div>
-            <div class="mob-action-btn bg-red-ios" onclick="event.stopPropagation(); removeFromWatchlist('${a.ticker}', ${!!a.hasPosition})">
+            <div class="mob-action-btn bg-red-ios"
+                 ontouchend="mobActionTap(event, () => removeFromWatchlist('${tickerEsc}', ${!!a.hasPosition}))"
+                 onclick="event.stopPropagation(); removeFromWatchlist('${tickerEsc}', ${!!a.hasPosition})">
               <span class="material-symbols-outlined">delete</span>
               <span>Rimuovi</span>
             </div>
