@@ -64,6 +64,15 @@ function initDb() {
         created_at   DATETIME DEFAULT CURRENT_TIMESTAMP
       );
 
+      CREATE TABLE IF NOT EXISTS asset_ai_analyses (
+        portfolio_id INTEGER NOT NULL REFERENCES portfolios(id) ON DELETE CASCADE,
+        ticker       TEXT    NOT NULL,
+        action       TEXT    NOT NULL,
+        reasoning    TEXT    NOT NULL,
+        updated_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (portfolio_id, ticker)
+      );
+
       CREATE TABLE IF NOT EXISTS assets (
         id            TEXT    PRIMARY KEY,
         ticker        TEXT    NOT NULL UNIQUE COLLATE NOCASE,
@@ -140,6 +149,20 @@ function initDb() {
     // Migration: Add type to portfolios if it doesn't exist
     try {
         dbConnection.prepare(`ALTER TABLE portfolios ADD COLUMN type TEXT NOT NULL DEFAULT 'Investimento'`).run();
+    } catch (e) {}
+
+    // Migration: Add asset_ai_analyses table
+    try {
+        dbConnection.exec(`
+            CREATE TABLE IF NOT EXISTS asset_ai_analyses (
+                portfolio_id INTEGER NOT NULL REFERENCES portfolios(id) ON DELETE CASCADE,
+                ticker       TEXT    NOT NULL,
+                action       TEXT    NOT NULL,
+                reasoning    TEXT    NOT NULL,
+                updated_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (portfolio_id, ticker)
+            );
+        `);
     } catch (e) {}
 
     // Migration: Add performance1DPrePost to portfolios if it doesn't exist
@@ -607,7 +630,10 @@ function initDb() {
         marketStatusMinVariation: '0',
         disabledNewsSources: '[]',
         schemaVersion: '1.0',
-        geminiApiKey: ''
+        geminiApiKey: '',
+        aiCustomPrompt: '',
+        aiTokensUsedToday: '0',
+        aiTokensDate: new Date().toISOString().split('T')[0]
     };
 
     const insertSetting = dbConnection.prepare(

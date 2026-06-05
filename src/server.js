@@ -3331,6 +3331,8 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
             
             const avgCost = h.shares > 0 ? h.totalCostInPCurr / h.shares : 0;
             const avgCostAsset = h.shares > 0 ? h.totalCostInAssetCurr / h.shares : 0;
+            
+            const aiData = database.db.prepare(`SELECT action, reasoning, updated_at FROM asset_ai_analyses WHERE portfolio_id = ? AND ticker = ?`).get(portfolioId, ticker);
 
             // For CD_ assets, current price strictly follows cost basis per share (zero unrealized gain)
             if (ticker && ticker.startsWith('CD_')) {
@@ -3370,6 +3372,9 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
                 stopLoss: asset ? asset.stopLoss : 0,
                 pe: asset ? asset.pe : null,
                 dividendYield: asset ? asset.dividendYield : null,
+                aiAction: aiData ? aiData.action : null,
+                aiReasoning: aiData ? aiData.reasoning : null,
+                aiUpdatedAt: aiData ? aiData.updated_at : null
             };
         });
 
@@ -3650,14 +3655,26 @@ app.get('/api/portfolios/:id/ai-analysis', requireAuth, requirePortfolioAccess, 
 
         sendEvent('progress', { message: 'Generazione responso IA in corso...' });
 
+        const customPrompt = globalSettings.aiCustomPrompt ? `\nIstruzioni personalizzate dall'utente:\n${globalSettings.aiCustomPrompt}\n` : '';
+
         const prompt = `
 Sei un consulente finanziario esperto. Analizza i seguenti asset principali di un portafoglio d'investimento.
-Per ogni asset, fornisci un'indicazione operativa (es. Mantenere, Incrementare, Ridurre) basandoti sulla qualità del titolo, il Prezzo Medio di Carico (PMC) dell'utente rispetto al prezzo attuale, il contesto geopolitico e macroeconomico attuale, e le notizie/trimestrali recenti indicate.
-
+${customPrompt}
 Portafoglio (Top Asset):
 ${contextData}
 
-Fornisci una risposta formattata in Markdown, concisa ma professionale. Includi un breve paragrafo introduttivo sul contesto macroeconomico generale attuale, seguito dall'analisi di ogni titolo, e concludi con un suggerimento di ribilanciamento o gestione del rischio globale.
+Devi restituire ESATTAMENTE ed ESCLUSIVAMENTE un oggetto JSON con questa struttura, senza blocco markdown (\`\`\`json) e senza testo testuale prima o dopo:
+{
+  "globalAnalysis": "Breve paragrafo introduttivo sul contesto macroeconomico generale e suggerimento finale di ribilanciamento formattato in markdown.",
+  "assets": [
+    {
+      "ticker": "AAPL",
+      "action": "BUY",
+      "reasoning": "Motivazione concisa in markdown per l'indicazione operativa."
+    }
+  ]
+}
+NB: il campo action deve essere una singola parola (es. BUY, SELL, HOLD, INCREASE, DECREASE).
 `;
 
         const geminiModel = await getBestGeminiModel(apiKey);
@@ -3672,13 +3689,51 @@ Fornisci una risposta formattata in Markdown, concisa ma professionale. Includi 
             }
         );
 
-        const aiText = response.data.candidates?.[0]?.content?.parts?.[0]?.text || "Nessuna risposta dall'IA.";
+        let aiText = "Nessuna risposta dall'IA.";
+        let parsedResponse = null;
+        try {
+            const rawText = response.data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+            const cleanText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+            parsedResponse = JSON.parse(cleanText);
+            aiText = parsedResponse.globalAnalysis || "Analisi completata, ma nessuna analisi globale fornita.";
+        } catch (e) {
+            console.error('Failed to parse AI JSON response:', e);
+            aiText = response.data.candidates?.[0]?.content?.parts?.[0]?.text || "Errore di parsing del responso IA.";
+        }
+
         const usage = response.data.usageMetadata || {};
+        const tokensUsed = usage.totalTokenCount || 0;
         
-        // Save to database
-        database.db.prepare(`
-            INSERT INTO ai_analyses (portfolio_id, analysis_text) VALUES (?, ?)
-        `).run(req.params.id, aiText);
+        database.db.transaction(() => {
+            // Aggiorna token count
+            const today = new Date().toISOString().split('T')[0];
+            let currentTokens = parseInt(globalSettings.aiTokensUsedToday) || 0;
+            let tokenDate = globalSettings.aiTokensDate || today;
+            
+            if (tokenDate !== today) {
+                currentTokens = 0;
+                database.setSetting(1, 'aiTokensDate', today);
+            }
+            database.setSetting(1, 'aiTokensUsedToday', (currentTokens + tokensUsed).toString());
+
+            // Save global analysis
+            database.db.prepare(`
+                INSERT INTO ai_analyses (portfolio_id, analysis_text) VALUES (?, ?)
+            `).run(req.params.id, aiText);
+
+            // Save per-asset analyses
+            if (parsedResponse && Array.isArray(parsedResponse.assets)) {
+                const stmt = database.db.prepare(`
+                    INSERT OR REPLACE INTO asset_ai_analyses (portfolio_id, ticker, action, reasoning, updated_at) 
+                    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+                `);
+                for (const a of parsedResponse.assets) {
+                    if (a.ticker && a.action) {
+                        stmt.run(req.params.id, a.ticker, a.action.toUpperCase(), a.reasoning || '');
+                    }
+                }
+            }
+        })();
 
         sendEvent('complete', { 
             analysis: aiText,

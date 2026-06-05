@@ -657,6 +657,30 @@
     </div>
 </div>
 
+<!-- AI Details Modal -->
+<div id="ai-details-modal" class="fixed inset-0 bg-slate-900/50 dark:bg-black/60 backdrop-blur-sm hidden z-[100] flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-surface-dark w-full max-w-md rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6">
+        <div class="flex justify-between items-center mb-4">
+            <div>
+                <h3 class="text-sm font-black uppercase tracking-widest text-indigo-500 flex items-center gap-2"><span class="material-symbols-outlined">smart_toy</span> Analisi IA</h3>
+                <p id="ai-modal-ticker" class="text-xs text-slate-500 font-bold mt-1"></p>
+            </div>
+            <button onclick="closeAiModal()" class="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                <span class="material-symbols-outlined text-sm">close</span>
+            </button>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <span id="ai-modal-action" class="inline-block px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest border"></span>
+            </div>
+            <div class="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-800 max-h-60 overflow-y-auto custom-scrollbar">
+                <p id="ai-modal-reasoning" class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed"></p>
+            </div>
+            <p id="ai-modal-date" class="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-right mt-2"></p>
+        </div>
+    </div>
+</div>
+
 
 <!-- Manual Update Modal -->
 
@@ -1235,7 +1259,14 @@
                         <div class="min-w-0">
                             <!-- Name row -->
                             <div class="flex items-center gap-2 flex-wrap">
-                                <p class="font-black text-sm text-slate-900 dark:text-white leading-tight">${h.name}</p>
+                                <p class="font-black text-sm text-slate-900 dark:text-white leading-tight flex items-center">${h.name}
+                                    ${h.aiAction ? `<span onclick="event.stopPropagation(); openAiModal('${h.ticker}', '${h.aiAction}', \`${(h.aiReasoning || '').replace(/`/g, '\\`').replace(/'/g, "\\'")}\`, '${h.aiUpdatedAt || ''}')" class="px-1.5 py-0.5 ml-2 cursor-pointer rounded text-[8px] font-black uppercase tracking-tighter hover:opacity-80 transition-opacity
+                                    ${h.aiAction === 'BUY' || h.aiAction === 'INCREASE' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 
+                                      h.aiAction === 'SELL' || h.aiAction === 'DECREASE' ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' : 
+                                      'bg-slate-500/10 text-slate-500 border border-slate-500/20'}">
+                                    IA: ${h.aiAction}
+                                    </span>` : ''}
+                                </p>
                                 ${manualBtn}
                             </div>
                             <!-- Meta row -->
@@ -1652,6 +1683,32 @@
         document.getElementById('confirm-modal-body').innerText = body;
         pendingDeleteAction = action;
         document.getElementById('general-confirm-modal').classList.remove('hidden');
+    }
+
+    function closeEditTxModal() {
+        document.getElementById('edit-transaction-modal').classList.add('hidden');
+    }
+
+    window.openAiModal = function(ticker, action, reasoning, date) {
+        document.getElementById('ai-modal-ticker').innerText = ticker;
+        const actionEl = document.getElementById('ai-modal-action');
+        actionEl.innerText = action;
+        actionEl.className = `inline-block px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest border ${
+            action === 'BUY' || action === 'INCREASE' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 
+            action === 'SELL' || action === 'DECREASE' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' : 
+            'bg-slate-500/10 text-slate-500 border-slate-500/20'
+        }`;
+        document.getElementById('ai-modal-reasoning').innerHTML = reasoning.replace(/\\n/g, '<br>');
+        document.getElementById('ai-modal-date').innerText = 'Aggiornato il: ' + date;
+        document.getElementById('ai-details-modal').classList.remove('hidden');
+    };
+
+    window.closeAiModal = function() {
+        document.getElementById('ai-details-modal').classList.add('hidden');
+    };
+
+    async function submitEditTx(event) {
+        // ... implementation
     }
 
     function closeConfirmModal() {

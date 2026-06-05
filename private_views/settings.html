@@ -486,6 +486,43 @@
     </div>
 </section>
 
+<!-- Intelligenza Artificiale -->
+<section class="space-y-2">
+    <div class="flex items-center justify-between cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-900/50 p-2 -mx-2 rounded-xl transition-colors" onclick="toggleSection('ai-settings-content')">
+        <h2 class="text-lg font-bold border-l-4 border-indigo-500 pl-3">Intelligenza Artificiale (AI)</h2>
+        <span id="ai-settings-content-icon" class="material-symbols-outlined text-slate-400 group-hover:text-indigo-500 transition-transform">expand_more</span>
+    </div>
+    <div id="ai-settings-content" class="hidden">
+        <div class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-6">
+            
+            <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+                <div>
+                    <div class="font-bold text-sm">Utilizzo Token Giornalieri (Gemini Free)</div>
+                    <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Limite suggerito: 1.000.000</div>
+                </div>
+                <div class="text-right">
+                    <span id="ai-tokens-used" class="text-lg font-black text-indigo-500">0</span>
+                    <span class="text-xs text-slate-400">/ 1M</span>
+                </div>
+            </div>
+            
+            <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2.5 mb-4">
+                <div id="ai-tokens-progress" class="bg-indigo-500 h-2.5 rounded-full" style="width: 0%"></div>
+            </div>
+
+            <div class="space-y-2 pt-4 border-t border-slate-200 dark:border-slate-800">
+                <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest">Prompt di Analisi Personalizzato</label>
+                <p class="text-[10px] text-slate-400">Aggiungi regole specifiche su come l'IA deve valutare i tuoi titoli (es. orizzonte temporale, focus sui dividendi, ecc.). Verranno accodate al prompt di base.</p>
+                <textarea id="ai-custom-prompt" rows="4" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-3 px-4 text-sm focus:ring-indigo-500/30 focus:border-indigo-500 transition-colors" placeholder="Es. Valuta i titoli con un'ottica da cassettista a lungo termine, privilegiando dividendi alti e stabili."></textarea>
+                <div class="flex justify-end pt-2">
+                    <button onclick="saveAISettings()" class="px-6 py-2 bg-indigo-500 text-white rounded-lg text-xs font-bold hover:bg-indigo-600 transition-all shadow-sm shadow-indigo-500/20">Salva Prompt</button>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</section>
+
 <!-- Notification Center -->
 <section class="space-y-2">
     <div class="flex items-center justify-between cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-900/50 p-2 -mx-2 rounded-xl transition-colors" onclick="toggleSection('notification-center-content')">
@@ -2728,6 +2765,44 @@
                 const u = data.user;
                 document.getElementById('desktop-user-name').textContent = u.display_name || u.username;
                 document.getElementById('desktop-user-email').textContent = u.email || 'Nessuna email';
+            }
+        });
+
+        // Fetch AI Settings and other user settings
+        fetch('/api/settings').then(res => res.json()).then(settings => {
+            if (settings) {
+                if (document.getElementById('ai-custom-prompt')) {
+                    document.getElementById('ai-custom-prompt').value = settings.aiCustomPrompt || '';
+                }
+                if (document.getElementById('ai-tokens-used')) {
+                    const tokens = parseInt(settings.aiTokensUsedToday) || 0;
+                    document.getElementById('ai-tokens-used').textContent = tokens.toLocaleString();
+                    const progress = Math.min((tokens / 1000000) * 100, 100);
+                    document.getElementById('ai-tokens-progress').style.width = progress + '%';
+                    if (progress >= 90) {
+                        document.getElementById('ai-tokens-progress').classList.remove('bg-indigo-500');
+                        document.getElementById('ai-tokens-progress').classList.add('bg-rose-500');
+                        document.getElementById('ai-tokens-used').classList.remove('text-indigo-500');
+                        document.getElementById('ai-tokens-used').classList.add('text-rose-500');
+                    }
+                }
+            }
+        });
+
+        window.saveAISettings = async function() {
+            const val = document.getElementById('ai-custom-prompt').value;
+            try {
+                const res = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ aiCustomPrompt: val })
+                });
+                if (res.ok) alert('Prompt IA salvato con successo!');
+                else alert('Errore durante il salvataggio');
+            } catch(e) {
+                alert('Errore di rete');
+            }
+        };
                 document.getElementById('desktop-user-role').textContent = u.role;
             }
         }).catch(err => console.error('Error fetching user info', err));
