@@ -65,12 +65,22 @@ function initDb() {
       );
 
       CREATE TABLE IF NOT EXISTS asset_ai_analyses (
-        portfolio_id INTEGER NOT NULL REFERENCES portfolios(id) ON DELETE CASCADE,
-        ticker       TEXT    NOT NULL,
-        action       TEXT    NOT NULL,
-        reasoning    TEXT    NOT NULL,
-        updated_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (portfolio_id, ticker)
+          portfolio_id INTEGER NOT NULL REFERENCES portfolios(id) ON DELETE CASCADE,
+          ticker       TEXT    NOT NULL,
+          action       TEXT    NOT NULL,
+          reasoning    TEXT    NOT NULL,
+          updated_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (portfolio_id, ticker)
+      );
+
+      CREATE TABLE IF NOT EXISTS asset_ai_history (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          ticker TEXT NOT NULL,
+          action TEXT NOT NULL,
+          reasoning TEXT NOT NULL,
+          targetPrice REAL,
+          stopLoss REAL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
 
       CREATE TABLE IF NOT EXISTS assets (
@@ -163,6 +173,21 @@ function initDb() {
                 PRIMARY KEY (portfolio_id, ticker)
             );
         `);
+    } catch (e) {}
+
+    // Migration: Add asset_ai_history table if it doesn't exist
+    try {
+        dbConnection.prepare(`
+            CREATE TABLE IF NOT EXISTS asset_ai_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ticker TEXT NOT NULL,
+                action TEXT NOT NULL,
+                reasoning TEXT NOT NULL,
+                targetPrice REAL,
+                stopLoss REAL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+        `).run();
     } catch (e) {}
 
     // Migration: Add AI fields to assets table

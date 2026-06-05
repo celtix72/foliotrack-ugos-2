@@ -3729,6 +3729,12 @@ NB: il campo action deve essere una singola parola (es. BUY, SELL, HOLD, INCREAS
                     VALUES (?, ?, ?, ?)
                 `).run(userId, ticker, targetPrice, stopLoss);
             }
+
+            // Inserisci nello storico
+            database.db.prepare(`
+                INSERT INTO asset_ai_history (ticker, action, reasoning, targetPrice, stopLoss)
+                VALUES (?, ?, ?, ?, ?)
+            `).run(ticker, action, reasoning, targetPrice, stopLoss);
         })();
 
         sendEvent('complete', { 
@@ -3744,6 +3750,31 @@ NB: il campo action deve essere una singola parola (es. BUY, SELL, HOLD, INCREAS
             res.write(`event: error\ndata: ${JSON.stringify({ error: 'Errore durante l\'analisi IA: ' + (err?.response?.data?.error?.message || err.message) })}\n\n`);
             res.end();
         }
+    }
+});
+
+app.get('/api/assets/:ticker/ai-history', requireAuth, (req, res) => {
+    try {
+        const history = database.db.prepare(`
+            SELECT id, action, reasoning, targetPrice, stopLoss, created_at 
+            FROM asset_ai_history 
+            WHERE ticker = ? 
+            ORDER BY created_at DESC
+        `).all(req.params.ticker);
+        res.json(history);
+    } catch (err) {
+        logger.error('Error fetching asset AI history', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/assets/ai-history/:id', requireAuth, (req, res) => {
+    try {
+        database.db.prepare('DELETE FROM asset_ai_history WHERE id = ?').run(req.params.id);
+        res.json({ success: true });
+    } catch (err) {
+        logger.error('Error deleting asset AI history', err);
+        res.status(500).json({ error: err.message });
     }
 });
 
