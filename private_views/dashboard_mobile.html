@@ -68,14 +68,15 @@
 
   <div class="mob-scroll" id="mob-dashboard-scroll">
     <!-- Dividend Alert Banner -->
-    <div id="dividend-alert-container" class="px-4 mt-3 hidden">
-        <a href="/dividend" class="bg-amber-500/10 dark:bg-amber-500/5 border border-amber-500/20 rounded-lg p-2 flex items-center gap-2.5 shadow-sm active:scale-[0.98] transition-transform">
-            <span class="material-symbols-outlined text-amber-500 text-[18px] shrink-0">payments</span>
-            <div class="flex-1 min-w-0">
-                <div class="text-[10px] font-black text-amber-600 dark:text-amber-500 uppercase tracking-tight truncate" id="div-alert-title">Dividendi</div>
-                <div class="text-[9px] text-slate-600 dark:text-slate-300 font-bold leading-tight line-clamp-1" id="div-alert-msg">Info pagamenti.</div>
+    <div id="dividend-alert-container" class="px-4 mt-4 hidden">
+        <a href="/dividend" class="block p-3 rounded-xl bg-white dark:bg-surface-dark border border-slate-100 dark:border-slate-800 shadow-sm active:scale-[0.98] transition-transform">
+            <div class="flex items-center gap-2 mb-1.5">
+                <span class="text-[9px] font-black uppercase tracking-widest text-amber-500 flex items-center" id="div-alert-title">
+                    <!-- filled by js -->
+                </span>
+                <span class="text-[9px] text-slate-400 font-bold ml-auto flex items-center"><span class="material-symbols-outlined text-[12px]">chevron_right</span></span>
             </div>
-            <span class="material-symbols-outlined text-amber-500/50 text-[14px] shrink-0">chevron_right</span>
+            <p class="text-[11px] font-bold text-slate-800 dark:text-slate-100 leading-snug m-0 p-0" id="div-alert-msg"></p>
         </a>
     </div>
 
@@ -620,7 +621,7 @@
                   titleEl.innerHTML = `<span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span> OGGI STACCO DIVIDENDI</span>`;
                   msgEl.innerHTML = `<span class="text-emerald-600 dark:text-emerald-400 font-black">Giorno di stacco per ${data.todayCount} asset!</span>`;
               } else {
-                  titleEl.innerText = `Dividendi di ${data.monthName}`;
+                  titleEl.innerHTML = `<span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> DIVIDENDI DI ${data.monthName}</span>`;
                   msgEl.innerText = `${data.count} ${data.count === 1 ? 'pagamento previsto' : 'pagamenti previsti'} (${formatCurrency(data.amount, 'EUR', 0)}).`;
               }
               container.classList.remove('hidden');
