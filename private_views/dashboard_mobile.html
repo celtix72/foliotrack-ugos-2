@@ -68,19 +68,15 @@
 
   <div class="mob-scroll" id="mob-dashboard-scroll">
     <!-- Dividend Alert Banner -->
-    <div id="dividend-alert-container" class="px-4 mt-4 hidden">
-        <div class="bg-amber-500/10 dark:bg-amber-500/5 border border-amber-500/20 rounded-xl p-3 flex items-center gap-3 shadow-sm">
-            <div class="w-8 h-8 rounded-lg bg-amber-500 text-white flex shrink-0 items-center justify-center shadow-md shadow-amber-500/20">
-                <span class="material-symbols-outlined text-sm">payments</span>
-            </div>
+    <div id="dividend-alert-container" class="px-4 mt-3 hidden">
+        <a href="/dividend" class="bg-amber-500/10 dark:bg-amber-500/5 border border-amber-500/20 rounded-lg p-2 flex items-center gap-2.5 shadow-sm active:scale-[0.98] transition-transform">
+            <span class="material-symbols-outlined text-amber-500 text-[18px] shrink-0">payments</span>
             <div class="flex-1 min-w-0">
-                <h4 class="text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-tight truncate" id="div-alert-title">Dividendi</h4>
-                <p class="text-[9px] text-slate-500 dark:text-slate-400 font-bold leading-tight" id="div-alert-msg">Info pagamenti.</p>
+                <div class="text-[10px] font-black text-amber-600 dark:text-amber-500 uppercase tracking-tight truncate" id="div-alert-title">Dividendi</div>
+                <div class="text-[9px] text-slate-600 dark:text-slate-300 font-bold leading-tight line-clamp-1" id="div-alert-msg">Info pagamenti.</div>
             </div>
-            <a href="/dividend" class="shrink-0 w-6 h-6 bg-amber-500 hover:bg-amber-600 text-white rounded-md flex items-center justify-center transition-all shadow-sm">
-                <span class="material-symbols-outlined text-[14px]">arrow_forward_ios</span>
-            </a>
-        </div>
+            <span class="material-symbols-outlined text-amber-500/50 text-[14px] shrink-0">chevron_right</span>
+        </a>
     </div>
 
     <!-- Hero Card -->
