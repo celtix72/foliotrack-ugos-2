@@ -5828,84 +5828,15 @@ app.get('/api/indices', requireAuth, async (req, res) => {
     }
 });
 
-// ─── FINANCIAL NEWS (RSS proxy) ────────────────────────────────────────────────
 
+// ─── FINANCIAL NEWS (RSS proxy) — legacy cache vars (kept for reference) ──────
 let newsCache = null;
 let newsCacheTime = 0;
 const NEWS_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+// NOTE: /api/news is defined in the NEWS API ENDPOINTS section below (line ~7518)
+// and reads from the news_articles table populated by syncNews().
 
-app.get('/api/news', requireAuth, async (req, res) => {
-    try {
-        // Serve from cache if fresh
-        if (newsCache && (Date.now() - newsCacheTime < NEWS_CACHE_TTL)) {
-            return res.json({ items: newsCache });
-        }
 
-        // RSS feeds — no API key needed, publicly available
-        const RSS_FEEDS = [
-            { url: 'https://feeds.finance.yahoo.com/rss/2.0/headline?s=^GSPC,^IXIC,^DJI&region=US&lang=en-US', source: 'Yahoo Finance' },
-            { url: 'https://www.investing.com/rss/news.rss', source: 'Investing.com' },
-            { url: 'https://news.google.com/rss/search?q=finanza+borsa+mercati&hl=it&gl=IT&ceid=IT:it', source: 'Google News' },
-        ];
-
-        // Simple XML field extractor (no external XML parser needed)
-        const extractXmlField = (xml, tag) => {
-            const m = xml.match(new RegExp(`<${tag}[^>]*>(?:<\\!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/${tag}>`, 'i'));
-            return m ? m[1].trim().replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'") : '';
-        };
-
-        const allItems = [];
-        const seenTitles = new Set();
-
-        await Promise.allSettled(RSS_FEEDS.map(async ({ url, source }) => {
-            try {
-                const resp = await axios.get(url, {
-                    timeout: 6000,
-                    headers: { 'User-Agent': 'Mozilla/5.0 FolioTracker/1.0' }
-                });
-                const xml = resp.data;
-
-                // Split into <item> blocks
-                const itemBlocks = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/gi)].map(m => m[1]);
-
-                for (const block of itemBlocks.slice(0, 10)) {
-                    const title   = extractXmlField(block, 'title');
-                    const link    = extractXmlField(block, 'link') || extractXmlField(block, 'guid');
-                    const pubDate = extractXmlField(block, 'pubDate');
-                    const desc    = extractXmlField(block, 'description').replace(/<[^>]+>/g, '').trim().substring(0, 180);
-
-                    if (!title || seenTitles.has(title)) continue;
-                    seenTitles.add(title);
-
-                    allItems.push({
-                        title,
-                        url: link,
-                        source,
-                        pubDate: pubDate ? new Date(pubDate).toISOString() : null,
-                        summary: desc || null
-                    });
-                }
-            } catch (e) {
-                logger.warn(`RSS fetch failed for ${source}: ${e.message}`);
-            }
-        }));
-
-        // Sort by date desc, take top 20
-        allItems.sort((a, b) => {
-            if (!a.pubDate && !b.pubDate) return 0;
-            if (!a.pubDate) return 1;
-            if (!b.pubDate) return -1;
-            return new Date(b.pubDate) - new Date(a.pubDate);
-        });
-
-        newsCache = allItems.slice(0, 20);
-        newsCacheTime = Date.now();
-        res.json({ items: newsCache });
-    } catch (err) {
-        logger.error('News feed error:', err);
-        res.status(500).json({ error: err.message });
-    }
-});
 
 // ─── DAILY GAINS (Last 7 days) ─────────────────────────────────────────────────
 
@@ -7580,26 +7511,7 @@ app.delete('/api/settings/news-sources/:id', requireAuth, (req, res) => {
     }
 });
 
-// ════════════════════════════════════════════════════════════════════════════
 
-app.get('/api/news', (req, res) => {
-    try {
-        const settings = database.getSettings();
-        let disabledSources = [];
-        try { disabledSources = JSON.parse(settings.disabledNewsSources || '[]'); } catch (e) {}
-
-        const placeholders = disabledSources.map(() => '?').join(',');
-        const query = disabledSources.length > 0
-            ? `SELECT * FROM global_news WHERE publisher NOT IN (${placeholders}) ORDER BY publishedAt DESC LIMIT 20`
-            : `SELECT * FROM global_news ORDER BY publishedAt DESC LIMIT 20`;
-            
-        const rows = database.db.prepare(query).all(...disabledSources);
-        res.json(rows);
-    } catch (err) {
-        logger.error('/api/news error:', err);
-        res.status(500).json({ error: err.message });
-    }
-});
 
 app.get('/api/news/sources', (req, res) => {
     try {
