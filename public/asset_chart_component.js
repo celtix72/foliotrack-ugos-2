@@ -73,6 +73,21 @@
                             Remove
                         </button>
                     </div>
+
+                    <!-- AI History Area -->
+                    <div id="chart-modal-ai-area" style="margin-top: 16px; border-top: 1px dashed rgba(148,163,184,0.2); padding-top: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <h4 style="font-size: 12px; font-weight: 900; color: var(--mob-primary); display: flex; align-items: center; gap: 4px; margin: 0;">
+                                <span class="material-symbols-outlined" style="font-size: 16px;">smart_toy</span> Analisi IA
+                            </h4>
+                            <button id="modal-run-ai-btn" onclick="window.runChartAi()" style="background: var(--mob-primary); color: white; padding: 6px 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; font-size: 10px; display: flex; align-items: center; gap: 4px;">
+                                <span class="material-symbols-outlined" style="font-size: 14px;">refresh</span> Nuova
+                            </button>
+                        </div>
+                        <div id="chart-modal-ai-list" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+                            <!-- AI history items injected here -->
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Footer Info -->
@@ -336,6 +351,9 @@
                 }).join('');
                 
                 dataArea.style.display = 'block';
+
+                // Load AI History
+                window.loadChartAiHistory(_chartTicker);
             }
 
             if (!_allChartData.length) {
@@ -715,6 +733,142 @@
             document.getElementById('chart-modal-loading').style.display = 'none';
             document.getElementById('chart-modal-empty').style.display = 'flex';
         }
+    };
+
+    // ─── AI Analysis Logic for Chart Modal ────────────────────────────────────────────────────────
+    window.loadChartAiHistory = async function(ticker) {
+        const listEl = document.getElementById('chart-modal-ai-list');
+        if (!listEl) return;
+        listEl.innerHTML = '<div style="display:flex; justify-content:center; padding: 20px;"><span class="material-symbols-outlined animate-spin" style="color: #94a3b8;">sync</span></div>';
+        
+        try {
+            const res = await fetch('/api/assets/' + encodeURIComponent(ticker) + '/ai-history');
+            const history = await res.json();
+            
+            if (!history || history.length === 0) {
+                listEl.innerHTML = '<div style="text-align:center; padding: 20px; color: #94a3b8; font-size: 11px; font-style: italic;">Nessuna analisi passata presente.</div>';
+                return;
+            }
+
+            const isDark = document.documentElement.classList.contains('dark');
+            const itemBg = isDark ? 'rgba(30,41,59,0.5)' : '#f8fafc';
+
+            listEl.innerHTML = history.map(item => {
+                const date = new Date(item.created_at).toLocaleString();
+                let actionColor = 'rgba(148,163,184,0.1)';
+                let actionTextColor = '#64748b';
+                if (item.action === 'BUY' || item.action === 'INCREASE') {
+                    actionColor = 'rgba(16,185,129,0.1)';
+                    actionTextColor = 'rgb(16,185,129)';
+                } else if (item.action === 'SELL' || item.action === 'DECREASE') {
+                    actionColor = 'rgba(239,68,68,0.1)';
+                    actionTextColor = 'rgb(239,68,68)';
+                }
+                
+                return `
+                    <div style="border: 1px solid rgba(148,163,184,0.2); border-radius: 12px; padding: 12px; background: ${itemBg};">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 10px; font-weight: bold; color: #94a3b8; display: flex; align-items: center; gap: 4px;">
+                                <span class="material-symbols-outlined" style="font-size: 12px;">calendar_today</span> ${date}
+                            </span>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <span style="padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 900; background: ${actionColor}; color: ${actionTextColor}; border: 1px solid ${actionTextColor};">${item.action}</span>
+                                <button onclick="window.deleteChartAiHistory(${item.id}, '${ticker}')" style="background: none; border: none; color: rgb(239,68,68); padding: 0; cursor: pointer; display: flex;"><span class="material-symbols-outlined" style="font-size: 14px;">delete</span></button>
+                            </div>
+                        </div>
+                        <div style="font-size: 11px; color: var(--mob-text); opacity: 0.8; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 8px; line-height: 1.4;">
+                            ${item.reasoning.replace(/\\n/g, ' ')}
+                        </div>
+                        <button onclick="window.openChartAiDetail('${ticker}', '${item.action}', \`${(item.reasoning || '').replace(/`/g, '\\`').replace(/'/g, "\\'").replace(/"/g, '&quot;')}\`, '${date}')" style="width: 100%; padding: 6px; border-radius: 6px; border: 1px solid rgba(148,163,184,0.2); background: transparent; color: var(--mob-text); font-size: 10px; font-weight: bold; cursor: pointer;">Leggi Tutto</button>
+                    </div>
+                `;
+            }).join('');
+        } catch(e) {
+            listEl.innerHTML = '<div style="text-align:center; padding: 10px; color: rgb(239,68,68); font-weight: bold; font-size: 11px;">Errore di caricamento</div>';
+        }
+    };
+
+    window.runChartAi = async function() {
+        if (!_chartTicker) return;
+        const btn = document.getElementById('modal-run-ai-btn');
+        const listEl = document.getElementById('chart-modal-ai-list');
+        
+        btn.disabled = true;
+        btn.innerHTML = '<span class="material-symbols-outlined animate-spin" style="font-size: 14px;">sync</span> Analisi...';
+        listEl.innerHTML = '<div style="text-align:center; padding: 20px; font-size: 12px; font-weight: bold; color: var(--mob-primary);"><div style="margin-bottom: 8px;"><span class="material-symbols-outlined animate-spin" style="font-size: 24px;">smart_toy</span></div>Generazione analisi IA in corso... attendere.</div>';
+
+        const source = new EventSource('/api/assets/' + encodeURIComponent(_chartTicker) + '/ai-analysis');
+        
+        source.addEventListener('progress', function(e) {
+            const data = JSON.parse(e.data);
+            listEl.innerHTML = `<div style="text-align:center; padding: 20px; font-size: 12px; font-weight: bold; color: var(--mob-primary);"><div style="margin-bottom: 8px;"><span class="material-symbols-outlined animate-spin" style="font-size: 24px;">smart_toy</span></div>${data.message}</div>`;
+        });
+        
+        source.addEventListener('complete', function(e) {
+            source.close();
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 14px;">refresh</span> Nuova';
+            window.loadChartAiHistory(_chartTicker);
+        });
+        
+        source.addEventListener('error', function(e) {
+            source.close();
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 14px;">refresh</span> Nuova';
+            const data = JSON.parse(e.data || '{}');
+            alert(data.error || "Errore durante l'analisi IA");
+            window.loadChartAiHistory(_chartTicker);
+        });
+    };
+
+    window.deleteChartAiHistory = async function(id, ticker) {
+        if (!confirm('Eliminare analisi?')) return;
+        try {
+            const res = await fetch('/api/assets/ai-history/' + id, { method: 'DELETE' });
+            if((await res.json()).success) window.loadChartAiHistory(ticker);
+        } catch(e) {}
+    };
+
+    window.openChartAiDetail = function(ticker, action, reasoning, date) {
+        let detailModal = document.getElementById('chart-ai-detail-modal');
+        if (!detailModal) {
+            const isDark = document.documentElement.classList.contains('dark');
+            const backdropColor = isDark ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.8)';
+            detailModal = document.createElement('div');
+            detailModal.id = 'chart-ai-detail-modal';
+            detailModal.style.cssText = `display: none; position: fixed; inset: 0; z-index: 20000; align-items: center; justify-content: center; background-color: ${backdropColor}; backdrop-filter: blur(8px); padding: 16px;`;
+            document.body.appendChild(detailModal);
+            
+            // Close on backdrop click
+            detailModal.addEventListener('click', function(e) {
+                if (e.target === this) this.style.display = 'none';
+            });
+        }
+
+        let actionColor = 'rgba(148,163,184,0.1)';
+        let actionTextColor = '#64748b';
+        if (action === 'BUY' || action === 'INCREASE') {
+            actionColor = 'rgba(16,185,129,0.1)';
+            actionTextColor = 'rgb(16,185,129)';
+        } else if (action === 'SELL' || action === 'DECREASE') {
+            actionColor = 'rgba(239,68,68,0.1)';
+            actionTextColor = 'rgb(239,68,68)';
+        }
+
+        detailModal.innerHTML = `
+            <div style="background: var(--mob-surface); border: 1px solid var(--mob-border); border-radius: 20px; width: 100%; max-width: 400px; max-height: 80vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
+                <div style="padding: 16px; border-bottom: 1px solid rgba(148,163,184,0.1); display: flex; justify-content: space-between; align-items: center; background: var(--mob-surface-2);">
+                    <h3 style="font-size: 14px; font-weight: 900; color: var(--mob-primary); display: flex; align-items: center; gap: 8px; margin: 0;"><span class="material-symbols-outlined">smart_toy</span> IA: ${ticker}</h3>
+                    <button onclick="document.getElementById('chart-ai-detail-modal').style.display='none'" style="background:none; border:none; color: #94a3b8; cursor:pointer; display: flex;"><span class="material-symbols-outlined">close</span></button>
+                </div>
+                <div style="padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; -webkit-overflow-scrolling: touch;">
+                    <div><span style="padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 900; background: ${actionColor}; color: ${actionTextColor}; border: 1px solid ${actionTextColor}; inline-block">${action}</span></div>
+                    <div style="font-size: 13px; line-height: 1.6; color: var(--mob-text);">${reasoning.replace(/\\n/g, '<br>')}</div>
+                    <div style="font-size: 10px; font-weight: bold; color: #94a3b8; text-align: right; margin-top: 8px; border-top: 1px dashed rgba(148,163,184,0.2); padding-top: 8px;">Aggiornato il: ${date}</div>
+                </div>
+            </div>
+        `;
+        detailModal.style.display = 'flex';
     };
 
     // Ensure we expose necessary functions globally
