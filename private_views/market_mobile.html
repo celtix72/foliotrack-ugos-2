@@ -726,25 +726,25 @@
                                   item.action === 'SELL' || item.action === 'DECREASE' ? 'text-rose-500 bg-rose-500/10 border-rose-500/20' : 
                                   'text-slate-500 bg-slate-500/10 border-slate-500/20';
               
-              return \`
+              return `
                   <div class="border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50 dark:bg-slate-800/50 mb-3">
                       <div class="flex justify-between items-center mb-2">
                           <span class="font-bold text-slate-500 flex items-center gap-1 text-[11px]">
-                              <span class="material-symbols-outlined text-[14px]">calendar_today</span> \${date}
+                              <span class="material-symbols-outlined text-[14px]">calendar_today</span> ${date}
                           </span>
                           <div class="flex items-center gap-2">
-                              <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border \${actionColor}">\${item.action}</span>
-                              <button onclick="deleteAssetAiHistory(\${item.id}, '\${ticker}')" class="text-rose-500"><span class="material-symbols-outlined text-sm">delete</span></button>
+                              <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border ${actionColor}">${item.action}</span>
+                              <button onclick="deleteAssetAiHistory(${item.id}, '${ticker}')" class="text-rose-500"><span class="material-symbols-outlined text-sm">delete</span></button>
                           </div>
                       </div>
                       <div class="flex gap-4 mb-3 text-[10px] font-bold text-slate-400">
-                          \${item.targetPrice ? \`<span>TP: <span class="text-emerald-500">\${item.targetPrice}</span></span>\` : ''}
-                          \${item.stopLoss ? \`<span>SL: <span class="text-rose-500">\${item.stopLoss}</span></span>\` : ''}
+                          ${item.targetPrice ? `<span>TP: <span class="text-emerald-500">${item.targetPrice}</span></span>` : ''}
+                          ${item.stopLoss ? `<span>SL: <span class="text-rose-500">${item.stopLoss}</span></span>` : ''}
                       </div>
-                      <div class="text-xs text-slate-600 dark:text-slate-400 line-clamp-3 mb-3">\${item.reasoning.replace(/\\\\n/g, ' ')}</div>
-                      <button onclick="openAssetAiModal('\${ticker}', '\${item.action}', \\\`\${(item.reasoning || '').replace(/\`/g, '\\\\`').replace(/'/g, "\\\\'").replace(/"/g, '&quot;')}\\\`, '\${date}')" class="text-[10px] font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm w-full">Leggi Tutto</button>
+                      <div class="text-xs text-slate-600 dark:text-slate-400 line-clamp-3 mb-3">${item.reasoning.replace(/\\n/g, ' ')}</div>
+                      <button onclick="openAssetAiModal('${ticker}', '${item.action}', \`${(item.reasoning || '').replace(/`/g, '\\`').replace(/'/g, "\\'").replace(/"/g, '&quot;')}\`, '${date}')" class="text-[10px] font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm w-full">Leggi Tutto</button>
                   </div>
-              \`;
+              `;
           }).join('');
       } catch(e) {
           listEl.innerHTML = '<div class="text-center py-4 text-rose-500 font-bold">Errore di caricamento</div>';
@@ -763,11 +763,11 @@
       document.getElementById('asset-ai-ticker').innerText = ticker;
       const actionEl = document.getElementById('asset-ai-action');
       actionEl.innerText = action;
-      actionEl.className = \`inline-block px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest border \${
+      actionEl.className = `inline-block px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest border ${
           action === 'BUY' || action === 'INCREASE' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 
           action === 'SELL' || action === 'DECREASE' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' : 
           'bg-slate-500/10 text-slate-500 border-slate-500/20'
-      }\`;
+      }`;
       document.getElementById('asset-ai-reasoning').innerHTML = reasoning.replace(/\\n/g, '<br>');
       document.getElementById('asset-ai-date').innerText = 'Aggiornato il: ' + date;
       document.getElementById('asset-ai-modal').classList.remove('hidden');
