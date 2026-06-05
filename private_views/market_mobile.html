@@ -196,6 +196,54 @@
   </div>
 </div>
 
+<!-- AI History Modal -->
+<div id="asset-ai-history-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center hidden">
+    <div class="bg-white dark:bg-surface-dark w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl border-t border-slate-200 dark:border-slate-800 flex flex-col" style="max-height: 85vh;">
+        <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <h3 class="font-black text-sm text-indigo-500 flex items-center gap-2">
+                <span class="material-symbols-outlined text-lg">history</span> Storico IA: <span id="history-modal-ticker" class="text-slate-900 dark:text-white"></span>
+            </h3>
+            <button onclick="closeAssetAiHistoryModal()" class="text-slate-400 hover:text-rose-500 transition-colors p-1">
+                <span class="material-symbols-outlined text-xl">close</span>
+            </button>
+        </div>
+        
+        <div class="p-4 overflow-y-auto custom-scrollbar flex-1" id="asset-ai-history-list"></div>
+
+        <div class="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 sm:rounded-b-2xl">
+            <button id="btn-run-new-ai" class="w-full py-3 rounded-xl font-bold bg-indigo-500 text-white flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20">
+                <span class="material-symbols-outlined text-sm">smart_toy</span> Nuova Analisi
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- AI Detail Modal -->
+<div id="asset-ai-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] flex items-center justify-center hidden p-4">
+    <div class="bg-white dark:bg-surface-dark w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[80vh]">
+        <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <h3 class="font-black text-sm text-indigo-500 flex items-center gap-2"><span class="material-symbols-outlined text-lg">smart_toy</span> IA: <span id="asset-ai-ticker"></span></h3>
+            <button onclick="closeAssetAiModal()" class="text-slate-400 p-1"><span class="material-symbols-outlined text-xl">close</span></button>
+        </div>
+        <div class="p-4 overflow-y-auto custom-scrollbar">
+            <div class="mb-3"><span id="asset-ai-action"></span></div>
+            <p id="asset-ai-reasoning" class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed"></p>
+            <p id="asset-ai-date" class="text-[9px] text-slate-400 font-bold uppercase tracking-widest text-right mt-3"></p>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="ai-loading-overlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[200] hidden flex-col items-center justify-center p-4 gap-4">
+    <div class="w-14 h-14 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center animate-pulse">
+        <span class="material-symbols-outlined text-3xl animate-spin" style="animation-duration: 3s;">smart_toy</span>
+    </div>
+    <div class="text-center space-y-1">
+        <h3 class="text-lg font-black text-white">Analisi in corso...</h3>
+        <p id="ai-loading-msg" class="text-indigo-300 text-xs font-medium">Attendere</p>
+    </div>
+</div>
+
 <!-- Mobile Market JS -->
 <script>
 (function() {
@@ -204,7 +252,7 @@
   let touchMoveX = 0;
   let currentSwipeEl = null;
   const SWIPE_THRESHOLD = 50;
-  const ACTION_WIDTH = 130; // 2 buttons * 65px (Standard width for mobile actions)
+  const ACTION_WIDTH = 195; // 3 buttons * 65px
 
   window.handleTouchStart = function(e, container) {
     touchStartX = e.touches[0].clientX;
@@ -466,6 +514,10 @@
 
         const actions = a.hasPosition ? `
           <div class="mob-holding-actions">
+            <div class="mob-action-btn bg-indigo-500" onclick="event.stopPropagation(); openAssetAiHistoryModal('${a.ticker}')">
+              <span class="material-symbols-outlined text-white">smart_toy</span>
+              <span class="text-white">IA</span>
+            </div>
             <div class="mob-action-btn bg-blue-ios" onclick="event.stopPropagation(); mobViewAssetTransactions('${a.ticker}')">
               <span class="material-symbols-outlined">list</span>
               <span>Trans</span>
@@ -478,7 +530,10 @@
           </div>
         ` : `
           <div class="mob-holding-actions">
-
+            <div class="mob-action-btn bg-indigo-500" onclick="event.stopPropagation(); openAssetAiHistoryModal('${a.ticker}')">
+              <span class="material-symbols-outlined text-white">smart_toy</span>
+              <span class="text-white">IA</span>
+            </div>
             <div class="mob-action-btn bg-orange-ios" onclick="event.stopPropagation(); openManualModal('${a.ticker}', '${a.currency}', ${a.currentPrice}, '${a.type}', '${(a.country || '').replace(/'/g, "\\'")}', '${a.dataSource}', '${a.isin}')">
               <span class="material-symbols-outlined">edit_note</span>
               <span>Modifica</span>
@@ -513,6 +568,13 @@
               <div class="mob-holding-info">
                 <div class="flex items-center gap-2">
                   <div class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border" style="background: ${colors.bg}; color: #000000; border-color: ${colors.border}; display: inline-block;">${a.ticker}</div>
+                  ${a.aiAction ? `
+                    <div class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter border flex items-center gap-1
+                        ${a.aiAction === 'BUY' || a.aiAction === 'INCREASE' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 
+                          a.aiAction === 'SELL' || a.aiAction === 'DECREASE' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' : 
+                          'bg-slate-500/10 text-slate-500 border-slate-500/20'}">
+                        <span class="material-symbols-outlined text-[10px]">smart_toy</span> ${a.aiAction}
+                    </div>` : ''}
                 </div>
                 <div class="mob-holding-name" style="margin-top:2px;">${abbreviateName(a.name) || ''}</div>
                 <div class="flex flex-wrap gap-1.5 mt-1">
@@ -602,6 +664,119 @@
       }
     } catch(e) {}
   };
+
+  // ─── AI Analysis Modals & Logic ────────────────────────────────────────────────────────
+  window.runAssetAI = async function(ticker) {
+      const overlay = document.getElementById('ai-loading-overlay');
+      const msgEl = document.getElementById('ai-loading-msg');
+      overlay.classList.remove('hidden');
+      overlay.style.display = 'flex';
+      msgEl.innerText = 'Inizializzazione...';
+
+      const source = new EventSource('/api/assets/' + encodeURIComponent(ticker) + '/ai-analysis');
+      source.addEventListener('progress', function(e) {
+          const data = JSON.parse(e.data);
+          msgEl.innerText = data.message;
+      });
+      source.addEventListener('complete', function(e) {
+          source.close();
+          overlay.classList.add('hidden');
+          overlay.style.display = '';
+          mobLoadAssets();
+      });
+      source.addEventListener('error', function(e) {
+          source.close();
+          overlay.classList.add('hidden');
+          overlay.style.display = '';
+          const data = JSON.parse(e.data || '{}');
+          alert(data.error || "Errore durante l'analisi IA");
+      });
+  }
+
+  window.openAssetAiHistoryModal = function(ticker) {
+      document.getElementById('history-modal-ticker').innerText = ticker;
+      document.getElementById('asset-ai-history-modal').classList.remove('hidden');
+      document.getElementById('btn-run-new-ai').onclick = () => {
+          closeAssetAiHistoryModal();
+          runAssetAI(ticker);
+      };
+      loadAssetAiHistory(ticker);
+  }
+
+  window.closeAssetAiHistoryModal = function() {
+      document.getElementById('asset-ai-history-modal').classList.add('hidden');
+  }
+
+  window.loadAssetAiHistory = async function(ticker) {
+      const listEl = document.getElementById('asset-ai-history-list');
+      listEl.innerHTML = '<div class="flex justify-center p-8"><span class="material-symbols-outlined animate-spin text-slate-400 text-3xl">sync</span></div>';
+      
+      try {
+          const res = await fetch('/api/assets/' + encodeURIComponent(ticker) + '/ai-history');
+          const history = await res.json();
+          
+          if (!history || history.length === 0) {
+              listEl.innerHTML = '<div class="text-center py-12 text-slate-500 italic">Nessuna analisi passata presente.</div>';
+              return;
+          }
+
+          listEl.innerHTML = history.map(item => {
+              const date = new Date(item.created_at).toLocaleString();
+              const actionColor = item.action === 'BUY' || item.action === 'INCREASE' ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' : 
+                                  item.action === 'SELL' || item.action === 'DECREASE' ? 'text-rose-500 bg-rose-500/10 border-rose-500/20' : 
+                                  'text-slate-500 bg-slate-500/10 border-slate-500/20';
+              
+              return \`
+                  <div class="border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50 dark:bg-slate-800/50 mb-3">
+                      <div class="flex justify-between items-center mb-2">
+                          <span class="font-bold text-slate-500 flex items-center gap-1 text-[11px]">
+                              <span class="material-symbols-outlined text-[14px]">calendar_today</span> \${date}
+                          </span>
+                          <div class="flex items-center gap-2">
+                              <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border \${actionColor}">\${item.action}</span>
+                              <button onclick="deleteAssetAiHistory(\${item.id}, '\${ticker}')" class="text-rose-500"><span class="material-symbols-outlined text-sm">delete</span></button>
+                          </div>
+                      </div>
+                      <div class="flex gap-4 mb-3 text-[10px] font-bold text-slate-400">
+                          \${item.targetPrice ? \`<span>TP: <span class="text-emerald-500">\${item.targetPrice}</span></span>\` : ''}
+                          \${item.stopLoss ? \`<span>SL: <span class="text-rose-500">\${item.stopLoss}</span></span>\` : ''}
+                      </div>
+                      <div class="text-xs text-slate-600 dark:text-slate-400 line-clamp-3 mb-3">\${item.reasoning.replace(/\\\\n/g, ' ')}</div>
+                      <button onclick="openAssetAiModal('\${ticker}', '\${item.action}', \\\`\${(item.reasoning || '').replace(/\`/g, '\\\\`').replace(/'/g, "\\\\'").replace(/"/g, '&quot;')}\\\`, '\${date}')" class="text-[10px] font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm w-full">Leggi Tutto</button>
+                  </div>
+              \`;
+          }).join('');
+      } catch(e) {
+          listEl.innerHTML = '<div class="text-center py-4 text-rose-500 font-bold">Errore di caricamento</div>';
+      }
+  }
+
+  window.deleteAssetAiHistory = async function(id, ticker) {
+      if (!confirm('Eliminare analisi?')) return;
+      try {
+          const res = await fetch('/api/assets/ai-history/' + id, { method: 'DELETE' });
+          if((await res.json()).success) loadAssetAiHistory(ticker);
+      } catch(e) {}
+  }
+
+  window.openAssetAiModal = function(ticker, action, reasoning, date) {
+      document.getElementById('asset-ai-ticker').innerText = ticker;
+      const actionEl = document.getElementById('asset-ai-action');
+      actionEl.innerText = action;
+      actionEl.className = \`inline-block px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest border \${
+          action === 'BUY' || action === 'INCREASE' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 
+          action === 'SELL' || action === 'DECREASE' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' : 
+          'bg-slate-500/10 text-slate-500 border-slate-500/20'
+      }\`;
+      document.getElementById('asset-ai-reasoning').innerHTML = reasoning.replace(/\\n/g, '<br>');
+      document.getElementById('asset-ai-date').innerText = 'Aggiornato il: ' + date;
+      document.getElementById('asset-ai-modal').classList.remove('hidden');
+  }
+
+  window.closeAssetAiModal = function() {
+      document.getElementById('asset-ai-modal').classList.add('hidden');
+  }
+
 
 
   function mobInit() {
