@@ -1256,7 +1256,7 @@
                             <!-- Name row -->
                             <div class="flex items-center gap-2 flex-wrap">
                                 <p class="font-black text-sm text-slate-900 dark:text-white leading-tight flex items-center">${h.name}
-                                    ${h.aiAction ? `<span onclick="event.stopPropagation(); openAiModal('${h.ticker}', '${h.aiAction}', \`${(h.aiReasoning || '').replace(/`/g, '\\`').replace(/'/g, "\\'")}\`, '${h.aiUpdatedAt || ''}')" class="px-1.5 py-0.5 ml-2 cursor-pointer rounded text-[8px] font-black uppercase tracking-tighter hover:opacity-80 transition-opacity
+                                    ${h.aiAction ? `<span onclick="event.stopPropagation(); openAiModal('${h.ticker}', '${h.aiAction}', \`${(h.aiReasoning || '').replace(/`/g, '\\`').replace(/'/g, "\\'").replace(/"/g, '&quot;')}\`, '${h.aiUpdatedAt || ''}')" class="px-1.5 py-0.5 ml-2 cursor-pointer rounded text-[8px] font-black uppercase tracking-tighter hover:opacity-80 transition-opacity
                                     ${h.aiAction === 'BUY' || h.aiAction === 'INCREASE' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 
                                       h.aiAction === 'SELL' || h.aiAction === 'DECREASE' ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' : 
                                       'bg-slate-500/10 text-slate-500 border border-slate-500/20'}">

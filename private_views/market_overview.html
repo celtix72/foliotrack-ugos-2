@@ -410,7 +410,7 @@ function renderAssets(filter = '') {
         const dailyGain = (a.totalQuantity || 0) * (a.changeValue || 0);
 
         const aiBadge = a.aiAction ? `
-            <span onclick="event.stopPropagation(); openAssetAiModal('${a.ticker}', '${a.aiAction}', \`${(a.aiReasoning || '').replace(/`/g, '\\`').replace(/'/g, "\\'")}\`, '${a.aiUpdatedAt ? a.aiUpdatedAt.split(' ')[0] : ''}')" class="px-1.5 py-0.5 ml-2 cursor-pointer rounded text-[8px] font-black uppercase tracking-tighter hover:opacity-80 transition-opacity
+            <span onclick="event.stopPropagation(); openAssetAiModal('${a.ticker}', '${a.aiAction}', \`${(a.aiReasoning || '').replace(/`/g, '\\`').replace(/'/g, "\\'").replace(/"/g, '&quot;')}\`, '${a.aiUpdatedAt ? a.aiUpdatedAt.split(' ')[0] : ''}')" class="px-1.5 py-0.5 ml-2 cursor-pointer rounded text-[8px] font-black uppercase tracking-tighter hover:opacity-80 transition-opacity
                 ${a.aiAction === 'BUY' || a.aiAction === 'INCREASE' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 
                   a.aiAction === 'SELL' || a.aiAction === 'DECREASE' ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' : 
                   'bg-slate-500/10 text-slate-500 border border-slate-500/20'}">
