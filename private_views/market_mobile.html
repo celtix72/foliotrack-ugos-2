@@ -196,53 +196,7 @@
   </div>
 </div>
 
-<!-- AI History Modal -->
-<div id="asset-ai-history-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center hidden">
-    <div class="bg-white dark:bg-surface-dark w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl border-t border-slate-200 dark:border-slate-800 flex flex-col" style="max-height: 85vh;">
-        <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-            <h3 class="font-black text-sm text-indigo-500 flex items-center gap-2">
-                <span class="material-symbols-outlined text-lg">history</span> Storico IA: <span id="history-modal-ticker" class="text-slate-900 dark:text-white"></span>
-            </h3>
-            <button onclick="closeAssetAiHistoryModal()" class="text-slate-400 hover:text-rose-500 transition-colors p-1">
-                <span class="material-symbols-outlined text-xl">close</span>
-            </button>
-        </div>
-        
-        <div class="p-4 overflow-y-auto custom-scrollbar flex-1" id="asset-ai-history-list"></div>
 
-        <div class="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 sm:rounded-b-2xl">
-            <button id="btn-run-new-ai" class="w-full py-3 rounded-xl font-bold bg-indigo-500 text-white flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20">
-                <span class="material-symbols-outlined text-sm">smart_toy</span> Nuova Analisi
-            </button>
-        </div>
-    </div>
-</div>
-
-<!-- AI Detail Modal -->
-<div id="asset-ai-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] flex items-center justify-center hidden p-4">
-    <div class="bg-white dark:bg-surface-dark w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[80vh]">
-        <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-            <h3 class="font-black text-sm text-indigo-500 flex items-center gap-2"><span class="material-symbols-outlined text-lg">smart_toy</span> IA: <span id="asset-ai-ticker"></span></h3>
-            <button onclick="closeAssetAiModal()" class="text-slate-400 p-1"><span class="material-symbols-outlined text-xl">close</span></button>
-        </div>
-        <div class="p-4 overflow-y-auto custom-scrollbar">
-            <div class="mb-3"><span id="asset-ai-action"></span></div>
-            <p id="asset-ai-reasoning" class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed"></p>
-            <p id="asset-ai-date" class="text-[9px] text-slate-400 font-bold uppercase tracking-widest text-right mt-3"></p>
-        </div>
-    </div>
-</div>
-
-<!-- Loading Overlay -->
-<div id="ai-loading-overlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[200] hidden flex-col items-center justify-center p-4 gap-4">
-    <div class="w-14 h-14 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center animate-pulse">
-        <span class="material-symbols-outlined text-3xl animate-spin" style="animation-duration: 3s;">smart_toy</span>
-    </div>
-    <div class="text-center space-y-1">
-        <h3 class="text-lg font-black text-white">Analisi in corso...</h3>
-        <p id="ai-loading-msg" class="text-indigo-300 text-xs font-medium">Attendere</p>
-    </div>
-</div>
 
 <!-- Mobile Market JS -->
 <script>
@@ -702,7 +656,67 @@
   };
 
   // ─── AI Analysis Modals & Logic ────────────────────────────────────────────────────────
+
+  window.injectAiModals = function() {
+      if (document.getElementById('asset-ai-history-modal')) return;
+
+      const html = `
+      <!-- AI History Modal -->
+      <div id="asset-ai-history-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center hidden" style="position: fixed !important;">
+          <div class="bg-white dark:bg-surface-dark w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl border-t border-slate-200 dark:border-slate-800 flex flex-col" style="max-height: 85vh;">
+              <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                  <h3 class="font-black text-sm text-indigo-500 flex items-center gap-2">
+                      <span class="material-symbols-outlined text-lg">history</span> Storico IA: <span id="history-modal-ticker" class="text-slate-900 dark:text-white"></span>
+                  </h3>
+                  <button onclick="closeAssetAiHistoryModal()" class="text-slate-400 hover:text-rose-500 transition-colors p-1">
+                      <span class="material-symbols-outlined text-xl">close</span>
+                  </button>
+              </div>
+              
+              <div class="p-4 overflow-y-auto custom-scrollbar flex-1" id="asset-ai-history-list"></div>
+
+              <div class="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 sm:rounded-b-2xl">
+                  <button id="btn-run-new-ai" class="w-full py-3 rounded-xl font-bold bg-indigo-500 text-white flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20">
+                      <span class="material-symbols-outlined text-sm">smart_toy</span> Nuova Analisi
+                  </button>
+              </div>
+          </div>
+      </div>
+
+      <!-- AI Detail Modal -->
+      <div id="asset-ai-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] flex items-center justify-center hidden p-4" style="position: fixed !important;">
+          <div class="bg-white dark:bg-surface-dark w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[80vh]">
+              <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                  <h3 class="font-black text-sm text-indigo-500 flex items-center gap-2"><span class="material-symbols-outlined text-lg">smart_toy</span> IA: <span id="asset-ai-ticker"></span></h3>
+                  <button onclick="closeAssetAiModal()" class="text-slate-400 p-1"><span class="material-symbols-outlined text-xl">close</span></button>
+              </div>
+              <div class="p-4 overflow-y-auto custom-scrollbar">
+                  <div class="mb-3"><span id="asset-ai-action"></span></div>
+                  <p id="asset-ai-reasoning" class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed"></p>
+                  <p id="asset-ai-date" class="text-[9px] text-slate-400 font-bold uppercase tracking-widest text-right mt-3"></p>
+              </div>
+          </div>
+      </div>
+
+      <!-- Loading Overlay -->
+      <div id="ai-loading-overlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[200] hidden flex-col items-center justify-center p-4 gap-4" style="position: fixed !important;">
+          <div class="w-14 h-14 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center animate-pulse">
+              <span class="material-symbols-outlined text-3xl animate-spin" style="animation-duration: 3s;">smart_toy</span>
+          </div>
+          <div class="text-center space-y-1">
+              <h3 class="text-lg font-black text-white">Analisi in corso...</h3>
+              <p id="ai-loading-msg" class="text-indigo-300 text-xs font-medium">Attendere</p>
+          </div>
+      </div>`;
+      
+      const div = document.createElement('div');
+      div.innerHTML = html;
+      // Inject outside of #mobile-ui so it's not affected by overflow: hidden
+      document.body.appendChild(div);
+  }
+
   window.runAssetAI = async function(ticker) {
+      window.injectAiModals();
       const overlay = document.getElementById('ai-loading-overlay');
       const msgEl = document.getElementById('ai-loading-msg');
       overlay.classList.remove('hidden');
@@ -730,6 +744,7 @@
   }
 
   window.openAssetAiHistoryModal = function(ticker) {
+      window.injectAiModals();
       document.getElementById('history-modal-ticker').innerText = ticker;
       document.getElementById('asset-ai-history-modal').classList.remove('hidden');
       document.getElementById('btn-run-new-ai').onclick = () => {
@@ -740,11 +755,13 @@
   }
 
   window.closeAssetAiHistoryModal = function() {
-      document.getElementById('asset-ai-history-modal').classList.add('hidden');
+      const modal = document.getElementById('asset-ai-history-modal');
+      if (modal) modal.classList.add('hidden');
   }
 
   window.loadAssetAiHistory = async function(ticker) {
       const listEl = document.getElementById('asset-ai-history-list');
+      if (!listEl) return;
       listEl.innerHTML = '<div class="flex justify-center p-8"><span class="material-symbols-outlined animate-spin text-slate-400 text-3xl">sync</span></div>';
       
       try {
@@ -796,6 +813,7 @@
   }
 
   window.openAssetAiModal = function(ticker, action, reasoning, date) {
+      window.injectAiModals();
       document.getElementById('asset-ai-ticker').innerText = ticker;
       const actionEl = document.getElementById('asset-ai-action');
       actionEl.innerText = action;
@@ -810,7 +828,8 @@
   }
 
   window.closeAssetAiModal = function() {
-      document.getElementById('asset-ai-modal').classList.add('hidden');
+      const modal = document.getElementById('asset-ai-modal');
+      if (modal) modal.classList.add('hidden');
   }
 
 
