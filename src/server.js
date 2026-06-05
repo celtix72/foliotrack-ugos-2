@@ -6603,11 +6603,12 @@ app.get('/api/analytics/current-month-dividends', requireAuth, async (req, res) 
         const totalCount = (projections.count || 0) + (received.count || 0);
 
         const todayStr = now.toISOString().split('T')[0];
-        const exDateToday = database.db.prepare(`
-            SELECT COUNT(*) as count 
+        const exDateTodayAssets = database.db.prepare(`
+            SELECT ticker, totalAmount 
             FROM dividend_projections 
             WHERE user_id = ? AND exDate = ?
-        `).get(req.user.id, todayStr);
+        `).all(req.user.id, todayStr);
+        const todayCount = exDateTodayAssets.length;
 
         const MONTH_NAMES_LONG = [
             'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
@@ -6620,8 +6621,9 @@ app.get('/api/analytics/current-month-dividends', requireAuth, async (req, res) 
             count: totalCount,
             amount: totalAmount,
             hasDividends: totalCount > 0,
-            isExDateToday: (exDateToday.count || 0) > 0,
-            todayCount: (exDateToday.count || 0)
+            isExDateToday: todayCount > 0,
+            todayCount: todayCount,
+            todayAssets: exDateTodayAssets
         });
     } catch (err) {
         logger.error('Current month dividends error', err);

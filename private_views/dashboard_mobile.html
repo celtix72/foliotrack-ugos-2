@@ -617,7 +617,11 @@
           if (data.hasDividends) {
               if (data.isExDateToday) {
                   titleEl.innerHTML = `<span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span> OGGI STACCO DIVIDENDI</span>`;
-                  msgEl.innerHTML = `<span class="text-emerald-600 dark:text-emerald-400 font-black">Giorno di stacco per ${data.todayCount} asset!</span>`;
+                  let msg = `Giorno di stacco per ${data.todayCount} asset!`;
+                  if (data.todayAssets && data.todayAssets.length > 0) {
+                      msg = data.todayAssets.map(a => `<b>${a.ticker}</b> (${formatCurrency(a.totalAmount, 'EUR', 0)})`).join(', ');
+                  }
+                  msgEl.innerHTML = `<span class="text-emerald-600 dark:text-emerald-400 font-black">${msg}</span>`;
               } else {
                   titleEl.innerHTML = `<span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> DIVIDENDI DI ${data.monthName}</span>`;
                   msgEl.innerText = `${data.count} ${data.count === 1 ? 'pagamento previsto' : 'pagamenti previsti'} (${formatCurrency(data.amount, 'EUR', 0)}).`;
