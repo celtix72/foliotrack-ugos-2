@@ -2232,7 +2232,10 @@ app.get('/api/assets', requireAuth, async (req, res) => {
                CASE WHEN uw.user_id IS NOT NULL THEN 1 ELSE 0 END as inWatchlist,
                uw.targetPrice as userTargetPrice,
                uw.stopLoss as userStopLoss,
-               uw.volatilityAlert as userVolatilityAlert
+               uw.volatilityAlert as userVolatilityAlert,
+               a.ai_action as aiAction,
+               a.ai_reasoning as aiReasoning,
+               a.ai_updated_at as aiUpdatedAt
         FROM assets a
         LEFT JOIN (
             SELECT t.assetTicker, 
@@ -3332,7 +3335,7 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
             const avgCost = h.shares > 0 ? h.totalCostInPCurr / h.shares : 0;
             const avgCostAsset = h.shares > 0 ? h.totalCostInAssetCurr / h.shares : 0;
             
-            const aiData = database.db.prepare(`SELECT action, reasoning, updated_at FROM asset_ai_analyses WHERE portfolio_id = ? AND ticker = ?`).get(portfolioId, ticker);
+            const aiData = database.db.prepare(`SELECT ai_action as action, ai_reasoning as reasoning, ai_updated_at as updated_at FROM assets WHERE ticker = ?`).get(ticker);
 
             // For CD_ assets, current price strictly follows cost basis per share (zero unrealized gain)
             if (ticker && ticker.startsWith('CD_')) {
@@ -3592,7 +3595,7 @@ async function getBestGeminiModel(apiKey) {
     return 'gemini-2.5-flash';
 }
 
-app.get('/api/portfolios/:id/ai-analysis', requireAuth, requirePortfolioAccess, async (req, res) => {
+app.get('/api/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
     try {
         const globalSettings = database.getSettings(1) || {};
         const apiKey = globalSettings.geminiApiKey || process.env.GEMINI_API_KEY;
@@ -3611,74 +3614,59 @@ app.get('/api/portfolios/:id/ai-analysis', requireAuth, requirePortfolioAccess, 
             res.write(`data: ${JSON.stringify(data)}\n\n`);
         };
 
-        sendEvent('progress', { message: 'Inizializzazione analisi...' });
+        const ticker = req.params.ticker;
+        sendEvent('progress', { message: 'Recupero informazioni asset...' });
 
-        const data = await getPortfolioDetails(req.params.id);
-        const holdings = data.holdings.filter(h => h.shares > 0).sort((a, b) => b.currentValue - a.currentValue);
+        // Fetch asset info
+        const assetRow = database.db.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(ticker);
+        if (!assetRow) {
+            throw new Error('Asset non trovato.');
+        }
+
+        // Fetch recent news
+        sendEvent('progress', { message: 'Ricerca news recenti...' });
+        const newsRes = await yahooFinance.search(ticker, { newsCount: 3 }).catch(() => ({}));
+        const newsTitles = (newsRes.news || []).map(n => n.title).join('; ');
         
-        if (holdings.length === 0) {
-            throw new Error('Nessun titolo attivo (con quote > 0) trovato nel portafoglio. Aggiungi transazioni per poter avviare l\'analisi IA.');
+        // Fetch earnings/fundamentals
+        sendEvent('progress', { message: 'Recupero dati fondamentali...' });
+        const summary = await yahooFinance.quoteSummary(ticker, { modules: ['calendarEvents', 'defaultKeyStatistics'] }).catch(() => null);
+        let earningsDate = 'Sconosciuta';
+        if (summary?.calendarEvents?.earnings?.earningsDate?.[0]) {
+            earningsDate = new Date(summary.calendarEvents.earnings.earningsDate[0]).toISOString().split('T')[0];
         }
         
-        // Take top 10 for analysis to avoid huge prompt
-        const topHoldings = holdings.slice(0, 10);
-        
-        let contextData = '';
-        for (const h of topHoldings) {
-            try {
-                sendEvent('progress', { message: `Analizzando ${h.ticker} (${h.name})...` });
-                
-                // Fetch recent news
-                const newsRes = await yahooFinance.search(h.ticker, { newsCount: 3 }).catch(() => ({}));
-                const newsTitles = (newsRes.news || []).map(n => n.title).join('; ');
-                
-                // Fetch earnings/fundamentals
-                const summary = await yahooFinance.quoteSummary(h.ticker, { modules: ['calendarEvents', 'defaultKeyStatistics'] }).catch(() => null);
-                let earningsDate = 'Sconosciuta';
-                if (summary?.calendarEvents?.earnings?.earningsDate?.[0]) {
-                    earningsDate = new Date(summary.calendarEvents.earnings.earningsDate[0]).toISOString().split('T')[0];
-                }
-                
-                contextData += `\n- **${h.ticker} (${h.name})**:
-  - Asset Type: ${h.type}
-  - Quote in Portfolio: ${h.shares} shares
-  - Average Cost (PMC): ${h.avgCost} ${data.currency}
-  - Current Price: ${h.currentPrice} ${h.currency}
-  - Total Value: ${h.currentValue} ${data.currency}
-  - Gain/Loss: ${h.unrealizedGainPct}%
+        const contextData = `
+- **${assetRow.ticker} (${assetRow.name})**:
+  - Asset Type: ${assetRow.type}
+  - Exchange: ${assetRow.exchange}
+  - Currency: ${assetRow.currency}
+  - Current Price: ${assetRow.currentPrice}
   - Prossima Trimestrale (Earnings): ${earningsDate}
   - Ultime News: ${newsTitles || 'Nessuna news rilevante recente'}`;
-            } catch (err) {
-                console.error(`Error fetching context for ${h.ticker}:`, err);
-            }
-        }
 
         sendEvent('progress', { message: 'Generazione responso IA in corso...' });
 
         const customPrompt = globalSettings.aiCustomPrompt ? `\nIstruzioni personalizzate dall'utente:\n${globalSettings.aiCustomPrompt}\n` : '';
 
         const prompt = `
-Sei un consulente finanziario esperto. Analizza i seguenti asset principali di un portafoglio d'investimento.
+Sei un consulente finanziario esperto. Analizza questo specifico asset in base ai dati forniti.
 ${customPrompt}
-Portafoglio (Top Asset):
+Dati Asset:
 ${contextData}
 
-Devi restituire ESATTAMENTE ed ESCLUSIVAMENTE un oggetto JSON con questa struttura, senza blocco markdown (\`\`\`json) e senza testo testuale prima o dopo:
+Devi restituire ESATTAMENTE ed ESCLUSIVAMENTE un oggetto JSON con questa struttura, senza blocco markdown (\`\`\`json) e senza testo testuale prima o dopo. Se non hai informazioni sufficienti per determinare un targetPrice o uno stopLoss accurati, imposta i loro valori a 0:
 {
-  "globalAnalysis": "Breve paragrafo introduttivo sul contesto macroeconomico generale e suggerimento finale di ribilanciamento formattato in markdown.",
-  "assets": [
-    {
-      "ticker": "AAPL",
-      "action": "BUY",
-      "reasoning": "Motivazione concisa in markdown per l'indicazione operativa."
-    }
-  ]
+  "action": "BUY",
+  "reasoning": "Motivazione concisa in markdown per l'indicazione operativa e i livelli di prezzo suggeriti.",
+  "targetProfit": 150.50,
+  "stopLoss": 90.00
 }
-NB: il campo action deve essere una singola parola (es. BUY, SELL, HOLD, INCREASE, DECREASE).
+NB: il campo action deve essere una singola parola (es. BUY, SELL, HOLD, INCREASE, DECREASE). targetProfit e stopLoss devono essere numeri (usa il punto per i decimali).
 `;
 
         const geminiModel = await getBestGeminiModel(apiKey);
-        console.log(`[AI Analysis] Using model: ${geminiModel}`);
+        console.log(`[AI Analysis] Using model: ${geminiModel} for asset ${ticker}`);
         const response = await axios.post(
             `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`,
             {
@@ -3689,16 +3677,14 @@ NB: il campo action deve essere una singola parola (es. BUY, SELL, HOLD, INCREAS
             }
         );
 
-        let aiText = "Nessuna risposta dall'IA.";
         let parsedResponse = null;
         try {
             const rawText = response.data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
             const cleanText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
             parsedResponse = JSON.parse(cleanText);
-            aiText = parsedResponse.globalAnalysis || "Analisi completata, ma nessuna analisi globale fornita.";
         } catch (e) {
             console.error('Failed to parse AI JSON response:', e);
-            aiText = response.data.candidates?.[0]?.content?.parts?.[0]?.text || "Errore di parsing del responso IA.";
+            throw new Error("Errore di parsing del responso IA.");
         }
 
         const usage = response.data.usageMetadata || {};
@@ -3716,33 +3702,26 @@ NB: il campo action deve essere una singola parola (es. BUY, SELL, HOLD, INCREAS
             }
             database.setSetting(1, 'aiTokensUsedToday', (currentTokens + tokensUsed).toString());
 
-            // Save global analysis
-            database.db.prepare(`
-                INSERT INTO ai_analyses (portfolio_id, analysis_text) VALUES (?, ?)
-            `).run(req.params.id, aiText);
+            // Aggiorna asset con targetPrice, stopLoss e info IA
+            const targetPrice = parsedResponse.targetProfit > 0 ? parsedResponse.targetProfit : assetRow.targetPrice;
+            const stopLoss = parsedResponse.stopLoss > 0 ? parsedResponse.stopLoss : assetRow.stopLoss;
+            const action = (parsedResponse.action || 'HOLD').toUpperCase();
+            const reasoning = parsedResponse.reasoning || '';
 
-            // Save per-asset analyses
-            if (parsedResponse && Array.isArray(parsedResponse.assets)) {
-                const stmt = database.db.prepare(`
-                    INSERT OR REPLACE INTO asset_ai_analyses (portfolio_id, ticker, action, reasoning, updated_at) 
-                    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-                `);
-                for (const a of parsedResponse.assets) {
-                    if (a.ticker && a.action) {
-                        stmt.run(req.params.id, a.ticker, a.action.toUpperCase(), a.reasoning || '');
-                    }
-                }
-            }
+            database.db.prepare(`
+                UPDATE assets 
+                SET targetPrice = ?, stopLoss = ?, ai_action = ?, ai_reasoning = ?, ai_updated_at = CURRENT_TIMESTAMP
+                WHERE ticker = ?
+            `).run(targetPrice, stopLoss, action, reasoning, ticker);
         })();
 
         sendEvent('complete', { 
-            analysis: aiText,
+            analysis: parsedResponse,
             usage: usage 
         });
         res.end();
     } catch (err) {
         console.error('AI Analysis Error:', err?.response?.data || err.message);
-        // se l'header è già stato inviato, usiamo l'event stream per l'errore
         if (!res.headersSent) {
             res.status(500).json({ error: 'Errore durante l\'analisi IA: ' + (err?.response?.data?.error?.message || err.message) });
         } else {

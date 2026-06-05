@@ -298,6 +298,39 @@
         </div>
     </div>
 
+    <!-- Asset AI Analysis Modal -->
+    <div id="asset-ai-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center hidden p-4">
+        <div class="bg-white dark:bg-surface-dark w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col">
+            <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <h3 class="font-black text-lg text-indigo-500 flex items-center gap-2"><span class="material-symbols-outlined">smart_toy</span> Analisi IA</h3>
+                <button onclick="closeAssetAiModal()" class="text-slate-400 hover:text-rose-500 transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <h4 id="asset-ai-ticker" class="font-black text-xl">--</h4>
+                <div>
+                    <span id="asset-ai-action" class="inline-block px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest border"></span>
+                </div>
+                <div class="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-800 max-h-60 overflow-y-auto custom-scrollbar">
+                    <p id="asset-ai-reasoning" class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed"></p>
+                </div>
+                <p id="asset-ai-date" class="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-right mt-2"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Running AI Analysis Overlay -->
+    <div id="ai-loading-overlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[200] hidden items-center justify-center p-4 flex-col gap-6">
+        <div class="w-16 h-16 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center animate-pulse">
+            <span class="material-symbols-outlined text-4xl animate-spin" style="animation-duration: 3s;">smart_toy</span>
+        </div>
+        <div class="text-center space-y-2">
+            <h3 class="text-xl font-black text-white">Analisi IA in corso...</h3>
+            <p id="ai-loading-msg" class="text-indigo-300 text-sm font-medium">Recupero informazioni asset...</p>
+        </div>
+    </div>
+
 </div><!-- /panel-watchlist -->
 
 </div><!-- /p-8 -->
@@ -376,6 +409,15 @@ function renderAssets(filter = '') {
 
         const dailyGain = (a.totalQuantity || 0) * (a.changeValue || 0);
 
+        const aiBadge = a.aiAction ? `
+            <span onclick="event.stopPropagation(); openAssetAiModal('${a.ticker}', '${a.aiAction}', \`${(a.aiReasoning || '').replace(/`/g, '\\`').replace(/'/g, "\\'")}\`, '${a.aiUpdatedAt ? a.aiUpdatedAt.split(' ')[0] : ''}')" class="px-1.5 py-0.5 ml-2 cursor-pointer rounded text-[8px] font-black uppercase tracking-tighter hover:opacity-80 transition-opacity
+                ${a.aiAction === 'BUY' || a.aiAction === 'INCREASE' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 
+                  a.aiAction === 'SELL' || a.aiAction === 'DECREASE' ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' : 
+                  'bg-slate-500/10 text-slate-500 border border-slate-500/20'}">
+                IA_${a.aiUpdatedAt ? a.aiUpdatedAt.split(' ')[0] : ''}
+            </span>
+        ` : '';
+
         return `
         <tr class="group transition-colors hover:bg-slate-50 dark:hover:bg-white/[0.02] ${alertClass} ${opacity} cursor-pointer" ondblclick="loadAssetChart('${a.ticker}')">
             <td class="px-5 py-1">
@@ -384,8 +426,8 @@ function renderAssets(filter = '') {
                         ${a.ticker.substring(0,4)}
                     </div>
                     <div>
-                        <div class="flex items-center gap-2">
-                            <p class="font-black text-lg text-slate-900 dark:text-white leading-none">${a.name}</p>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <p class="font-black text-lg text-slate-900 dark:text-white leading-none flex items-center">${a.name} ${aiBadge}</p>
                             ${!a.isMonitored ? '<span class="text-[8px] font-black bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-500 tracking-tighter uppercase">Inactive</span>' : ''}
                             ${a.lastUpdateError ? `<span class="px-1.5 py-0.5 rounded-full bg-rose-500 text-[8px] font-black text-white uppercase tracking-tighter" title="${a.lastUpdateError.replace(/"/g, '&quot;')}">Err</span>` : ''}
                         </div>
@@ -460,14 +502,17 @@ function renderAssets(filter = '') {
             </td>
             <td class="px-5 py-1.5 text-right">
                 <div class="flex items-center justify-end gap-1">
-                    <button onclick="openAlertModal('${a.ticker}')" class="h-8 w-8 rounded-lg bg-slate-100 dark:bg-white/[0.05] text-slate-500 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-all flex items-center justify-center">
+                    <button onclick="event.stopPropagation(); runAssetAI('${a.ticker}')" class="h-8 w-8 rounded-lg bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500 hover:text-white transition-all flex items-center justify-center mr-1" title="Analisi IA">
+                        <span class="material-symbols-outlined text-base">smart_toy</span>
+                    </button>
+                    <button onclick="event.stopPropagation(); openAlertModal('${a.ticker}')" class="h-8 w-8 rounded-lg bg-slate-100 dark:bg-white/[0.05] text-slate-500 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-all flex items-center justify-center">
                         <span class="material-symbols-outlined text-base">settings_alert</span>
                     </button>
                     ${a.isMonitored ? `
-                    <button onclick="unmonitorAsset('${a.ticker}')" class="h-8 w-8 rounded-lg bg-slate-100 dark:bg-white/[0.05] text-slate-400 hover:bg-rose-500/10 hover:text-rose-500 transition-all flex items-center justify-center">
+                    <button onclick="event.stopPropagation(); unmonitorAsset('${a.ticker}')" class="h-8 w-8 rounded-lg bg-slate-100 dark:bg-white/[0.05] text-slate-400 hover:bg-rose-500/10 hover:text-rose-500 transition-all flex items-center justify-center">
                         <span class="material-symbols-outlined text-base">visibility_off</span>
                     </button>` : `
-                    <button onclick="restoreMonitoring('${a.ticker}')" class="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all flex items-center justify-center">
+                    <button onclick="event.stopPropagation(); restoreMonitoring('${a.ticker}')" class="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all flex items-center justify-center">
                         <span class="material-symbols-outlined text-base">visibility</span>
                     </button>
                     `}
@@ -641,6 +686,51 @@ async function forceSync() {
             icon.classList.remove('animate-spin');
         }, 1000);
     }
+}
+
+window.openAssetAiModal = function(ticker, action, reasoning, date) {
+    document.getElementById('asset-ai-ticker').innerText = ticker;
+    const actionEl = document.getElementById('asset-ai-action');
+    actionEl.innerText = action;
+    actionEl.className = `inline-block px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest border ${
+        action === 'BUY' || action === 'INCREASE' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 
+        action === 'SELL' || action === 'DECREASE' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' : 
+        'bg-slate-500/10 text-slate-500 border-slate-500/20'
+    }`;
+    document.getElementById('asset-ai-reasoning').innerHTML = reasoning.replace(/\\n/g, '<br>');
+    document.getElementById('asset-ai-date').innerText = 'Aggiornato il: ' + date;
+    document.getElementById('asset-ai-modal').classList.remove('hidden');
+}
+
+window.closeAssetAiModal = function() {
+    document.getElementById('asset-ai-modal').classList.add('hidden');
+}
+
+window.runAssetAI = async function(ticker) {
+    const overlay = document.getElementById('ai-loading-overlay');
+    const msgEl = document.getElementById('ai-loading-msg');
+    overlay.classList.remove('hidden');
+    overlay.style.display = 'flex';
+    msgEl.innerText = 'Inizializzazione...';
+
+    const source = new EventSource('/api/assets/' + encodeURIComponent(ticker) + '/ai-analysis');
+    source.addEventListener('progress', function(e) {
+        const data = JSON.parse(e.data);
+        msgEl.innerText = data.message;
+    });
+    source.addEventListener('complete', function(e) {
+        source.close();
+        overlay.classList.add('hidden');
+        overlay.style.display = '';
+        loadAssets(); // Reload assets to show the new TAG and updated StopLoss/Target
+    });
+    source.addEventListener('error', function(e) {
+        source.close();
+        overlay.classList.add('hidden');
+        overlay.style.display = '';
+        const data = JSON.parse(e.data || '{}');
+        alert(data.error || 'Errore durante l\\'analisi IA');
+    });
 }
 
 // ─── Movers Carousel Logic ──────────────────────────────────────────────────

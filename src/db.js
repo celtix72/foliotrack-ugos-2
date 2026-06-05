@@ -165,6 +165,13 @@ function initDb() {
         `);
     } catch (e) {}
 
+    // Migration: Add AI fields to assets table
+    try {
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN ai_action TEXT`).run();
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN ai_reasoning TEXT`).run();
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN ai_updated_at DATETIME`).run();
+    } catch (e) {}
+
     // Migration: Add performance1DPrePost to portfolios if it doesn't exist
     try {
         dbConnection.prepare(`ALTER TABLE portfolios ADD COLUMN performance1DPrePost REAL NOT NULL DEFAULT 0`).run();
