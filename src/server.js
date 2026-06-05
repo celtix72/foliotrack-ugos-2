@@ -3713,6 +3713,22 @@ NB: il campo action deve essere una singola parola (es. BUY, SELL, HOLD, INCREAS
                 SET targetPrice = ?, stopLoss = ?, ai_action = ?, ai_reasoning = ?, ai_updated_at = CURRENT_TIMESTAMP
                 WHERE ticker = ?
             `).run(targetPrice, stopLoss, action, reasoning, ticker);
+
+            // Se l'utente ha una watchlist per questo asset, sovrascrivi anche le sue impostazioni personali
+            const userId = req.user.id;
+            const userWl = database.db.prepare(`SELECT 1 FROM user_watchlist WHERE user_id = ? AND ticker = ?`).get(userId, ticker);
+            if (userWl) {
+                database.db.prepare(`
+                    UPDATE user_watchlist
+                    SET targetPrice = ?, stopLoss = ?
+                    WHERE user_id = ? AND ticker = ?
+                `).run(targetPrice, stopLoss, userId, ticker);
+            } else {
+                database.db.prepare(`
+                    INSERT INTO user_watchlist (user_id, ticker, targetPrice, stopLoss)
+                    VALUES (?, ?, ?, ?)
+                `).run(userId, ticker, targetPrice, stopLoss);
+            }
         })();
 
         sendEvent('complete', { 
