@@ -98,6 +98,35 @@
 </div>
 
 <script>
+    const getAssetTypeColors = (type, ticker) => {
+        const t = (type || '').toUpperCase();
+        const tk = (ticker || '').toUpperCase();
+        
+        let bg = 'rgba(239, 68, 68, 0.15)';
+        let text = '#ef4444';
+        let border = 'rgba(239, 68, 68, 0.3)';
+        
+        if (t.includes('MONETAR') || tk.includes('XEON') || tk.includes('LEON') || tk.includes('C3M') || tk.includes('SMART') || t.includes('CASH') || t.includes('LIQUIDIT') || t.includes('LIQUIDITY')) {
+            bg = 'rgba(34, 197, 94, 0.15)';
+            text = '#22c55e';
+            border = 'rgba(34, 197, 94, 0.3)';
+        } else if (t.includes('BOND') || t.includes('OBBLIG') || t.includes('DEPOSITO') || tk.startsWith('BTP') || t.includes('FIXED INCOME')) {
+            bg = 'rgba(245, 158, 11, 0.15)';
+            text = '#f59e0b';
+            border = 'rgba(245, 158, 11, 0.3)';
+        } else if (t.includes('ETF')) {
+            bg = 'rgba(59, 130, 246, 0.15)';
+            text = '#3b82f6';
+            border = 'rgba(59, 130, 246, 0.3)';
+        } else if (t.includes('CRYPTO') || t.includes('VALUTA')) {
+            bg = 'rgba(139, 92, 246, 0.15)';
+            text = '#8b5cf6';
+            border = 'rgba(139, 92, 246, 0.3)';
+        }
+        
+        return { bg, text, border };
+    };
+
     let rawHistoryData = [];
     let isMobDataLoaded = false;
     let mobCollapsedGroups = new Set();
@@ -228,7 +257,7 @@
                     const isTrade = ['BUY', 'SELL'].includes(pos.type);
                     const gainColor = pos.realizedGain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
                     const gainSign = pos.realizedGain >= 0 ? '+' : '';
-                    const logoChar = pos.ticker ? pos.ticker.substring(0,2) : (pos.type ? pos.type.substring(0,2) : '??');
+                    const colors = getAssetTypeColors(pos.assetType, pos.ticker);
                     
                     html += `
                         <div class="mob-holding-swipe-container" 
@@ -246,13 +275,12 @@
                                 </div>
                             </div>
                             <div class="mob-holding-item">
-                                <div class="mob-holding-logo">${logoChar}</div>
                                 <div class="mob-holding-info">
                                     <div class="flex items-center gap-2">
-                                        <div class="mob-holding-ticker">${pos.ticker || pos.name}</div>
+                                        <div class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border" style="background: ${colors.bg}; color: ${colors.text}; border-color: ${colors.border}; display: inline-block;">${pos.ticker || pos.name}</div>
                                         <div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter ${pos.realizedGain >= 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'}">${isTrade ? pos.type : 'CLOSED'}</div>
                                     </div>
-                                    <div class="mob-holding-name">${pos.portfolioName || 'N/A'} • ${isTrade ? formatNumber(pos.quantity, 0) + ' qta' : pos.type}</div>
+                                    <div class="mob-holding-name" style="margin-top:2px;">${pos.portfolioName || 'N/A'} • ${isTrade ? formatNumber(pos.quantity, 0) + ' qta' : pos.type}</div>
                                 </div>
                                 <div class="mob-holding-values">
                                     <div class="mob-holding-value" style="color: ${isTrade ? gainColor : 'inherit'}">

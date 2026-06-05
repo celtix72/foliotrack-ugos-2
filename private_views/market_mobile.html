@@ -404,14 +404,33 @@
 
       if (posCountEl) posCountEl.textContent = `${openPos.length} Assets`;
 
-      const getAssetTag = (type, ticker) => {
+      const getAssetTypeColors = (type, ticker) => {
         const t = (type || '').toUpperCase();
         const tk = (ticker || '').toUpperCase();
-        if (tk.startsWith('CD_')) return 'CD';
-        if (t.includes('ETF')) return 'ETF';
-        if (t.includes('BOND') || t.includes('FIXED INCOME') || tk.startsWith('BTP')) return 'Bond';
-        if (t.includes('EQUITY') || t.includes('AZIENDA') || t.includes('AZ')) return 'Az';
-        return 'Az';
+        
+        let bg = 'rgba(239, 68, 68, 0.15)';
+        let text = '#ef4444';
+        let border = 'rgba(239, 68, 68, 0.3)';
+        
+        if (t.includes('MONETAR') || tk.includes('XEON') || tk.includes('LEON') || tk.includes('C3M') || tk.includes('SMART') || t.includes('CASH') || t.includes('LIQUIDIT') || t.includes('LIQUIDITY')) {
+          bg = 'rgba(34, 197, 94, 0.15)';
+          text = '#22c55e';
+          border = 'rgba(34, 197, 94, 0.3)';
+        } else if (t.includes('BOND') || t.includes('OBBLIG') || t.includes('DEPOSITO') || tk.startsWith('BTP') || t.includes('FIXED INCOME')) {
+          bg = 'rgba(245, 158, 11, 0.15)';
+          text = '#f59e0b';
+          border = 'rgba(245, 158, 11, 0.3)';
+        } else if (t.includes('ETF')) {
+          bg = 'rgba(59, 130, 246, 0.15)';
+          text = '#3b82f6';
+          border = 'rgba(59, 130, 246, 0.3)';
+        } else if (t.includes('CRYPTO') || t.includes('VALUTA')) {
+          bg = 'rgba(139, 92, 246, 0.15)';
+          text = '#8b5cf6';
+          border = 'rgba(139, 92, 246, 0.3)';
+        }
+        
+        return { bg, text, border };
       };
 
       const renderCard = (a, isLarge = false) => {
@@ -443,7 +462,7 @@
             alertBorder = 'border-color: rgba(245,158,11,0.3) !important';
         }
 
-        const tag = getAssetTag(a.yfType || a.type, a.ticker);
+        const colors = getAssetTypeColors(a.type || a.yfType, a.ticker);
 
         const actions = a.hasPosition ? `
           <div class="mob-holding-actions">
@@ -491,13 +510,11 @@
                ontouchend="handleTouchEnd(event, this)">
             ${actions}
             <div class="mob-holding-item" style="${alertBg}; ${alertBorder}" onclick="window.showMobDetails('${a.ticker.replace(/'/g, "\\'")}', '${a.name ? a.name.replace(/'/g, "\\'") : ''}', '${a.currency || 'EUR'}')">
-              ${showLogo ? `<div class="mob-holding-logo">${a.ticker.substring(0,3)}</div>` : ''}
               <div class="mob-holding-info">
                 <div class="flex items-center gap-2">
-                  <div class="mob-holding-ticker">${a.ticker}</div>
-                  <div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700">${tag}</div>
+                  <div class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border" style="background: ${colors.bg}; color: ${colors.text}; border-color: ${colors.border}; display: inline-block;">${a.ticker}</div>
                 </div>
-                <div class="mob-holding-name">${abbreviateName(a.name) || ''}</div>
+                <div class="mob-holding-name" style="margin-top:2px;">${abbreviateName(a.name) || ''}</div>
                 <div class="flex flex-wrap gap-1.5 mt-1">
                     ${targetPrice > 0 ? `<div style="font-size:10px; font-weight:900; color:${targetReached?'var(--mob-emerald)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">${targetReached?'check_circle':'target'}</span> TP: ${formatCurrency(targetPrice, a.currency, 2)}</div>` : ''}
                     ${volThreshold > 0 ? `<div style="font-size:10px; font-weight:900; color:${volAlertTriggered?'var(--mob-amber)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">${volAlertTriggered?'priority_high':'bolt'}</span> VOL: ${volThreshold}%</div>` : ''}
