@@ -68,19 +68,15 @@
 
   <div class="mob-scroll" id="mob-dashboard-scroll">
     <!-- Dividend Alert Banner -->
-    <div id="dividend-alert-container" class="px-4 mt-4 hidden">
-        <div class="bg-amber-500/10 dark:bg-amber-500/5 border border-amber-500/20 rounded-xl p-3 flex items-center gap-3 shadow-sm">
-            <div class="w-8 h-8 rounded-lg bg-amber-500 text-white flex shrink-0 items-center justify-center shadow-md shadow-amber-500/20">
-                <span class="material-symbols-outlined text-sm">payments</span>
+    <div id="dividend-alert-container" class="hidden" style="margin: 8px 12px 0;">
+        <a href="/dividend" style="display:flex; align-items:center; gap:8px; background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.2); border-radius:10px; padding:7px 10px; text-decoration:none; color:inherit; -webkit-tap-highlight-color:transparent;">
+            <span class="material-symbols-outlined" style="font-size:16px; color:#f59e0b; flex-shrink:0; font-variation-settings:'FILL' 1;">payments</span>
+            <div style="flex:1; min-width:0;">
+                <div style="font-size:9px; font-weight:900; text-transform:uppercase; letter-spacing:0.05em; color:#f59e0b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="div-alert-title">Dividendi</div>
+                <div style="font-size:9px; font-weight:700; color:var(--mob-text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="div-alert-msg">Info pagamenti.</div>
             </div>
-            <div class="flex-1 min-w-0">
-                <h4 class="text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-tight truncate" id="div-alert-title">Dividendi</h4>
-                <p class="text-[9px] text-slate-500 dark:text-slate-400 font-bold leading-tight" id="div-alert-msg">Info pagamenti.</p>
-            </div>
-            <a href="/dividend" class="shrink-0 w-6 h-6 bg-amber-500 hover:bg-amber-600 text-white rounded-md flex items-center justify-center transition-all shadow-sm">
-                <span class="material-symbols-outlined text-[14px]">arrow_forward_ios</span>
-            </a>
-        </div>
+            <span class="material-symbols-outlined" style="font-size:14px; color:rgba(245,158,11,0.5); flex-shrink:0;">chevron_right</span>
+        </a>
     </div>
 
     <!-- Hero Card -->
