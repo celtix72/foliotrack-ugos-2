@@ -6890,10 +6890,19 @@ app.get('/api/analytics/reports', requireAuth, async (req, res) => {
 
         for (const p of portfolios) {
             const holdings = {};
+            const holdingsCost = {};
             const pTxs = allTransactions.filter(t => t.portfolioId === p.id);
             for (const t of pTxs) {
-                if (t.type === 'BUY') holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) + t.quantity;
-                if (t.type === 'SELL') holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) - t.quantity;
+                if (t.type === 'BUY') {
+                    holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) + t.quantity;
+                    const costAsset = t.amount ? (Math.abs(t.amount) * (t.exchangeRate || 1)) : (t.quantity * t.price + t.commission + t.tax);
+                    holdingsCost[t.assetTicker] = (holdingsCost[t.assetTicker] || 0) + costAsset;
+                }
+                if (t.type === 'SELL') {
+                    const avgCost = holdings[t.assetTicker] > 0 ? (holdingsCost[t.assetTicker] || 0) / holdings[t.assetTicker] : 0;
+                    holdings[t.assetTicker] = (holdings[t.assetTicker] || 0) - t.quantity;
+                    holdingsCost[t.assetTicker] = Math.max(0, (holdingsCost[t.assetTicker] || 0) - (t.quantity * avgCost));
+                }
             }
             for (const [ticker, shares] of Object.entries(holdings)) {
                 if (shares <= 0.0001) continue;
@@ -6901,7 +6910,13 @@ app.get('/api/analytics/reports', requireAuth, async (req, res) => {
                 if (!a) continue;
                 // Use last known exchange rate for currency conversion
                 const lastExRate = pTxs.filter(tx => tx.assetTicker === ticker && tx.exchangeRate).at(-1)?.exchangeRate || 1;
-                const value = shares * (a.currentPrice / lastExRate);
+                
+                let curPx = a.currentPrice;
+                if (ticker.startsWith('CD_')) {
+                    curPx = shares > 0 ? (holdingsCost[ticker] || 0) / shares : 0;
+                }
+                
+                const value = shares * (curPx / lastExRate);
 
                 const geo = a.country || 'Unknown';
                 const type = a.type || 'Other';

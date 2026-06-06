@@ -39,6 +39,21 @@ window.generateDetailedPDFReport = async function(buttonEl) {
             }
         };
 
+        const formatValue = (val) => {
+            if (val === undefined || val === null || isNaN(val)) return '0';
+            return Number(val).toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        };
+
+        const formatCurrency = (val) => {
+            if (val === undefined || val === null || isNaN(val)) return '€ 0';
+            return '€ ' + Number(val).toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        };
+
+        const formatPercent = (val) => {
+            if (val === undefined || val === null || isNaN(val)) return '0,0%';
+            return Number(val).toLocaleString('it-IT', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
+        };
+
         // Header
         doc.setFontSize(22);
         doc.setFont("helvetica", "bold");
@@ -61,9 +76,9 @@ window.generateDetailedPDFReport = async function(buttonEl) {
             startY: startY,
             head: [['Total ROI', 'Total Gain', 'Sharpe Ratio', 'Miglior Asset']],
             body: [[
-                metrics.totalROI !== undefined ? (metrics.totalROI * 100).toFixed(2) + '%' : 'N/A',
-                metrics.totalGain !== undefined ? '€ ' + metrics.totalGain.toFixed(2) : 'N/A',
-                metrics.sharpeRatio !== undefined ? metrics.sharpeRatio.toFixed(2) : 'N/A',
+                metrics.totalROI !== undefined ? formatPercent(metrics.totalROI * 100) : 'N/A',
+                metrics.totalGain !== undefined ? formatCurrency(metrics.totalGain) : 'N/A',
+                metrics.sharpeRatio !== undefined ? Number(metrics.sharpeRatio).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'N/A',
                 metrics.bestAsset || 'N/A'
             ]],
             theme: 'striped',
@@ -87,10 +102,10 @@ window.generateDetailedPDFReport = async function(buttonEl) {
                 const pm = p.metrics || {};
                 pBreakdownBody.push([
                     p.name,
-                    '€ ' + (pm.currentValue || 0).toFixed(2),
-                    pm.totalROI !== undefined ? (pm.totalROI * 100).toFixed(2) + '%' : '0%',
-                    pm.twr !== undefined ? (pm.twr * 100).toFixed(2) + '%' : '0%',
-                    pm.xirr !== undefined ? (pm.xirr * 100).toFixed(2) + '%' : '0%'
+                    formatCurrency(pm.currentValue || 0),
+                    pm.totalROI !== undefined ? formatPercent(pm.totalROI * 100) : '0,0%',
+                    pm.twr !== undefined ? formatPercent(pm.twr * 100) : '0,0%',
+                    pm.xirr !== undefined ? formatPercent(pm.xirr * 100) : '0,0%'
                 ]);
             }
         }
@@ -118,9 +133,9 @@ window.generateDetailedPDFReport = async function(buttonEl) {
             const at = reportsData.diversification.assetType;
             let totalVal = Object.values(at).reduce((a, b) => a + b, 0);
             for (const [type, val] of Object.entries(at)) {
-                allocBody.push([type, '€ ' + val.toFixed(2), totalVal > 0 ? ((val / totalVal) * 100).toFixed(1) + '%' : '0%']);
+                allocBody.push([type, formatCurrency(val), totalVal > 0 ? formatPercent((val / totalVal) * 100) : '0,0%']);
             }
-            allocBody.sort((a, b) => parseFloat(b[2]) - parseFloat(a[2]));
+            allocBody.sort((a, b) => parseFloat(b[2].replace(',', '.')) - parseFloat(a[2].replace(',', '.')));
 
             doc.autoTable({
                 startY: startY,
@@ -174,10 +189,10 @@ window.generateDetailedPDFReport = async function(buttonEl) {
             a.port,
             a.ticker,
             a.name,
-            a.qty.toFixed(4),
-            `${a.price.toFixed(2)} ${a.currency}`,
-            `€ ${a.unrealized.toFixed(2)}`,
-            `€ ${a.dividends.toFixed(2)}`
+            formatValue(a.qty),
+            formatValue(a.price) + ' ' + a.currency,
+            formatCurrency(a.unrealized),
+            formatCurrency(a.dividends)
         ]);
 
         doc.autoTable({
