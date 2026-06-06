@@ -190,6 +190,11 @@ function initDb() {
         `).run();
     } catch (e) {}
 
+    // Migration: Add user_id to portfolio_history if it doesn't exist
+    try {
+        dbConnection.prepare(`ALTER TABLE portfolio_history ADD COLUMN user_id INTEGER REFERENCES users(id) ON DELETE CASCADE`).run();
+    } catch (e) {}
+
     // Migration: Add AI fields to assets table
     try {
         dbConnection.prepare(`ALTER TABLE assets ADD COLUMN ai_action TEXT`).run();
