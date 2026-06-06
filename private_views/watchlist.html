@@ -118,10 +118,10 @@
                         <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Ticker / Name</th>
                         <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Price</th>
                         <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Perf (1D / 1W / 1M / 1Y)</th>
-                        <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">AI View</th>
+                        <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Trend</th>
                         <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Buy Zone</th>
-                        <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">TP1</th>
-                        <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">TP2</th>
+                        <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Sup / Res</th>
+                        <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">TP / SL</th>
                         <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
                     </tr>
                 </thead>
@@ -254,10 +254,12 @@
                         return m ? m[1].trim() : '—';
                     };
 
-                    const aiView = getAiParam(item.aiReasoning, 'View Operativa');
-                    const buyZone = getAiParam(item.aiReasoning, 'Livello di Ingresso (Buy Zone)');
-                    const tp1 = getAiParam(item.aiReasoning, 'Take Profit 1 (TP1)');
-                    const tp2 = getAiParam(item.aiReasoning, 'Take Profit 2 (TP2)');
+                    const trend = getAiParam(item.aiReasoning, 'Trend di fondo');
+                    const buyZone = getAiParam(item.aiReasoning, 'Zona di Ingresso ideale (Buy)');
+                    const tp = getAiParam(item.aiReasoning, 'Take Profit (TP)');
+                    const sl = getAiParam(item.aiReasoning, 'Stop Loss (SL)');
+                    const sup = getAiParam(item.aiReasoning, 'Area di Supporto critico');
+                    const res = getAiParam(item.aiReasoning, 'Area di Resistenza critica');
 
                     return `
                         <tr class="border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group cursor-pointer" ondblclick="openAssetChartModal('${item.ticker}')">
@@ -282,10 +284,16 @@
                                     ${renderPerf(perf.perf1Y)}
                                 </div>
                             </td>
-                            <td class="px-5 py-2 text-center font-bold text-slate-600 dark:text-slate-300 text-xs">${aiView}</td>
+                            <td class="px-5 py-2 text-center font-bold text-slate-600 dark:text-slate-300 text-xs">${trend}</td>
                             <td class="px-5 py-2 text-center font-bold text-slate-600 dark:text-slate-300 text-xs">${buyZone}</td>
-                            <td class="px-5 py-2 text-right font-bold text-emerald-500 text-xs">${tp1}</td>
-                            <td class="px-5 py-2 text-right font-bold text-emerald-500 text-xs">${tp2}</td>
+                            <td class="px-5 py-2 text-right text-[10px] font-bold text-slate-500">
+                                S: <span class="text-slate-700 dark:text-slate-300">${sup}</span><br>
+                                R: <span class="text-slate-700 dark:text-slate-300">${res}</span>
+                            </td>
+                            <td class="px-5 py-2 text-right text-[10px] font-bold text-slate-500">
+                                TP: <span class="text-emerald-500">${tp}</span><br>
+                                SL: <span class="text-rose-500">${sl}</span>
+                            </td>
                             <td class="px-5 py-2 text-right">
                                     <div class="flex items-center justify-end gap-2">
                                         ${typeLabel === 'ETF' ? `

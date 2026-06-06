@@ -346,10 +346,12 @@
                 return m ? m[1].trim() : '—';
             };
 
-            const aiView = getAiParam(a.aiReasoning, 'View Operativa');
-            const buyZone = getAiParam(a.aiReasoning, 'Livello di Ingresso (Buy Zone)');
-            const tp1 = getAiParam(a.aiReasoning, 'Take Profit 1 (TP1)');
-            const tp2 = getAiParam(a.aiReasoning, 'Take Profit 2 (TP2)');
+            const trend = getAiParam(a.aiReasoning, 'Trend di fondo');
+            const buyZone = getAiParam(a.aiReasoning, 'Zona di Ingresso ideale (Buy)');
+            const tp = getAiParam(a.aiReasoning, 'Take Profit (TP)');
+            const sl = getAiParam(a.aiReasoning, 'Stop Loss (SL)');
+            const sup = getAiParam(a.aiReasoning, 'Area di Supporto critico');
+            const res = getAiParam(a.aiReasoning, 'Area di Resistenza critica');
 
             return `
                 <div class="mob-holding-swipe-container" 
@@ -381,12 +383,16 @@
                             </div>
                             <div class="flex flex-col gap-1 mt-1.5">
                                 <div class="flex items-center gap-2">
-                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">View: <span style="color:var(--mob-text-primary)">${aiView}</span></span>
+                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">Trend: <span style="color:var(--mob-text-primary)">${trend}</span></span>
                                     <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">Zone: <span style="color:var(--mob-text-primary)">${buyZone}</span></span>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">TP1: <span style="color:var(--mob-emerald)">${tp1}</span></span>
-                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">TP2: <span style="color:var(--mob-emerald)">${tp2}</span></span>
+                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">Sup: <span style="color:var(--mob-text-primary)">${sup}</span></span>
+                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">Res: <span style="color:var(--mob-text-primary)">${res}</span></span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">TP: <span style="color:var(--mob-emerald)">${tp}</span></span>
+                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">SL: <span style="color:var(--mob-rose)">${sl}</span></span>
                                 </div>
                             </div>
                         </div>
