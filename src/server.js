@@ -3241,14 +3241,15 @@ app.get('/api/performance', requireAuth, async (req, res) => {
 function getAssetTypeColor(type) {
     const t = (type || 'Other').toUpperCase();
     
-    // Risk Scale: Green (Low) -> Red (High)
-    if (t.includes('LIQUID') || t.includes('CASH') || t.includes('DEPOSITO')) return '#10b981'; // Emerald 500 (Safe)
-    if (t.includes('BOND') || t.includes('OBBLIG')) return '#84cc16'; // Lime 500
-    if (t.includes('ETF')) return '#f59e0b'; // Amber 500
-    if (t.includes('AZION') || t.includes('STOCK') || t.includes('EQUITY')) return '#f97316'; // Orange 500
-    if (t.includes('CRYPTO') || t.includes('VALUTA')) return '#ef4444'; // Red 500 (High Risk)
+    if (t.includes('LIQUID') || t.includes('CASH')) return '#166534'; // Verde Scuro
+    if (t.includes('DEPOSITO') || t.includes('CONTO')) return '#15803d'; // Verde Medio
+    if (t.includes('MONETARIO')) return '#4ade80'; // Verde Chiaro
+    if (t.includes('BOND') || t.includes('OBBLIG')) return '#eab308'; // Giallo
+    if (t.includes('ETF AZION') || t.includes('ETF')) return '#f97316'; // Arancio
+    if (t.includes('AZION') || t.includes('STOCK') || t.includes('EQUITY')) return '#ef4444'; // Rosso
+    if (t.includes('CRYPTO') || t.includes('VALUTA')) return '#8b5cf6'; // Viola
     
-    return '#94a3b8'; // Slate 400 (Unknown/Other)
+    return '#94a3b8'; // Slate
 }
 
 async function getPortfolioDetails(portfolioId, liveRate = null) {

@@ -106,22 +106,20 @@
         let text = '#ef4444';
         let border = 'rgba(239, 68, 68, 0.3)';
         
-        if (t.includes('MONETAR') || tk.includes('XEON') || tk.includes('LEON') || tk.includes('C3M') || tk.includes('SMART') || t.includes('CASH') || t.includes('LIQUIDIT') || t.includes('LIQUIDITY')) {
-            bg = 'rgba(34, 197, 94, 0.15)';
-            text = '#22c55e';
-            border = 'rgba(34, 197, 94, 0.3)';
-        } else if (t.includes('BOND') || t.includes('OBBLIG') || t.includes('DEPOSITO') || tk.startsWith('BTP') || t.includes('FIXED INCOME')) {
-            bg = 'rgba(245, 158, 11, 0.15)';
-            text = '#f59e0b';
-            border = 'rgba(245, 158, 11, 0.3)';
-        } else if (t.includes('ETF')) {
-            bg = 'rgba(59, 130, 246, 0.15)';
-            text = '#3b82f6';
-            border = 'rgba(59, 130, 246, 0.3)';
+        if (t.includes('LIQUID') || t.includes('CASH') || tk.includes('CASH')) {
+            bg = 'rgba(22, 101, 52, 0.15)'; text = '#166534'; border = 'rgba(22, 101, 52, 0.3)'; // Verde Scuro
+        } else if (t.includes('DEPOSITO') || t.includes('CONTO')) {
+            bg = 'rgba(21, 128, 61, 0.15)'; text = '#15803d'; border = 'rgba(21, 128, 61, 0.3)'; // Verde Medio
+        } else if (t.includes('MONETARIO') || tk.includes('XEON') || tk.includes('LEON') || tk.includes('C3M') || tk.includes('SMART')) {
+            bg = 'rgba(74, 222, 128, 0.15)'; text = '#4ade80'; border = 'rgba(74, 222, 128, 0.3)'; // Verde Chiaro
+        } else if (t.includes('BOND') || t.includes('OBBLIG') || tk.startsWith('BTP') || t.includes('FIXED INCOME')) {
+            bg = 'rgba(234, 179, 8, 0.15)'; text = '#eab308'; border = 'rgba(234, 179, 8, 0.3)'; // Giallo
+        } else if (t.includes('ETF AZION') || t.includes('ETF')) {
+            bg = 'rgba(249, 115, 22, 0.15)'; text = '#f97316'; border = 'rgba(249, 115, 22, 0.3)'; // Arancio
         } else if (t.includes('CRYPTO') || t.includes('VALUTA')) {
-            bg = 'rgba(139, 92, 246, 0.15)';
-            text = '#8b5cf6';
-            border = 'rgba(139, 92, 246, 0.3)';
+            bg = 'rgba(139, 92, 246, 0.15)'; text = '#8b5cf6'; border = 'rgba(139, 92, 246, 0.3)'; // Viola
+        } else if (t.includes('AZION') || t.includes('STOCK') || t.includes('EQUITY')) {
+            bg = 'rgba(239, 68, 68, 0.15)'; text = '#ef4444'; border = 'rgba(239, 68, 68, 0.3)'; // Rosso
         }
         
         return { bg, text, border };
