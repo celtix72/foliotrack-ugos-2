@@ -2774,8 +2774,11 @@
                 const u = data.user;
                 document.getElementById('desktop-user-name').textContent = u.display_name || u.username;
                 document.getElementById('desktop-user-email').textContent = u.email || 'Nessuna email';
+                if(document.getElementById('desktop-user-role')) {
+                    document.getElementById('desktop-user-role').textContent = u.role;
+                }
             }
-        });
+        }).catch(err => console.error('Error fetching user info', err));
 
         fetch('/api/settings').then(res => res.json()).then(settings => {
             if (settings) {
@@ -2815,9 +2818,6 @@
                 alert('Errore di rete');
             }
         };
-                document.getElementById('desktop-user-role').textContent = u.role;
-            }
-        }).catch(err => console.error('Error fetching user info', err));
 
         if (window.ftPush) {
             ftPush.init().then(ready => {
