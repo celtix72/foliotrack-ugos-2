@@ -139,6 +139,29 @@
     </main>
 </div>
 
+<!-- AI Details Modal -->
+<div id="ai-details-modal" class="fixed inset-0 bg-slate-900/50 dark:bg-black/60 backdrop-blur-sm hidden z-[110] flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-surface-dark w-full max-w-md rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6">
+        <div class="flex justify-between items-center mb-4">
+            <div>
+                <h3 class="text-sm font-black uppercase tracking-widest text-indigo-500 flex items-center gap-2"><span class="material-symbols-outlined">smart_toy</span> Analisi IA</h3>
+                <p id="ai-modal-ticker" class="text-xs text-slate-500 font-bold mt-1"></p>
+            </div>
+            <button onclick="closeAiModal()" class="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                <span class="material-symbols-outlined text-sm">close</span>
+            </button>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <span id="ai-modal-action" class="inline-block px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest border"></span>
+            </div>
+            <div class="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-800 max-h-60 overflow-y-auto custom-scrollbar">
+                <p id="ai-modal-reasoning" class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed"></p>
+            </div>
+            <p id="ai-modal-date" class="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-right mt-2"></p>
+        </div>
+    </div>
+</div>
 
 <script>
     let watchlist = [];
@@ -210,6 +233,15 @@
                                     typeLabel === 'ETF' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 
                                     'bg-slate-500/10 text-slate-500 border-slate-500/20';
 
+                    const aiBadge = item.aiAction ? `
+                        <span onclick="event.stopPropagation(); openAiModal('${item.ticker}', '${item.aiAction}', \`${(item.aiReasoning || '').replace(/`/g, '\\`').replace(/'/g, "\\'").replace(/"/g, '&quot;')}\`, '${item.aiUpdatedAt || ''}')" class="px-1.5 py-0.5 ml-2 cursor-pointer rounded text-[8px] font-black uppercase tracking-tighter hover:opacity-80 transition-opacity flex items-center gap-1
+                            ${item.aiAction === 'BUY' || item.aiAction === 'INCREASE' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 
+                              item.aiAction === 'SELL' || item.aiAction === 'DECREASE' ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' : 
+                              'bg-slate-500/10 text-slate-500 border border-slate-500/20'}">
+                            <span class="material-symbols-outlined text-[10px]">smart_toy</span> ${item.aiAction} (${item.aiHistoryCount || 1})
+                        </span>
+                    ` : '';
+
                     return `
                         <tr class="border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group cursor-pointer" ondblclick="openAssetChartModal('${item.ticker}')">
                             <td class="px-5 py-2">
@@ -218,6 +250,7 @@
                                     <span class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${typeColor}">
                                         ${typeLabel}
                                     </span>
+                                    ${aiBadge}
                                 </div>
                                 <div class="text-[10px] font-bold text-slate-400 uppercase tracking-tight truncate max-w-[180px] mt-1">${item.name}</div>
                             </td>
@@ -381,6 +414,53 @@
             suggestionsBox.classList.add('hidden');
         }
     });
+
+    window.openAiModal = function(ticker, action, reasoning, date) {
+        document.getElementById('ai-modal-ticker').innerText = ticker;
+        const actionEl = document.getElementById('ai-modal-action');
+        actionEl.innerText = action;
+        actionEl.className = `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest border shadow-sm ${
+            action === 'BUY' || action === 'INCREASE' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30 shadow-emerald-500/10' : 
+            action === 'SELL' || action === 'DECREASE' ? 'bg-rose-500/10 text-rose-500 border-rose-500/30 shadow-rose-500/10' : 
+            'bg-slate-500/10 text-slate-500 border-slate-500/30 shadow-slate-500/10'
+        }`;
+        
+        // Add icon to action
+        const iconSpan = document.createElement('span');
+        iconSpan.className = 'material-symbols-outlined text-[14px]';
+        iconSpan.innerText = (action === 'BUY' || action === 'INCREASE') ? 'trending_up' : ((action === 'SELL' || action === 'DECREASE') ? 'trending_down' : 'horizontal_rule');
+        actionEl.prepend(iconSpan);
+
+        // Parse Markdown
+        let formattedReasoning = reasoning.replace(/\\n/g, '\n');
+        
+        // Headings
+        formattedReasoning = formattedReasoning.replace(/^### (.*$)/gim, '<h4 class="text-indigo-500 text-[15px] font-black mt-4 mb-2 flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px]">psychiatry</span> $1</h4>');
+        formattedReasoning = formattedReasoning.replace(/^## (.*$)/gim, '<h3 class="text-indigo-500 text-base font-black mt-5 mb-2.5 border-b border-slate-200 dark:border-slate-700 pb-1">$1</h3>');
+        formattedReasoning = formattedReasoning.replace(/^# (.*$)/gim, '<h2 class="text-indigo-500 text-lg font-black mt-5 mb-3">$1</h2>');
+        
+        // Bold
+        formattedReasoning = formattedReasoning.replace(/\*\*(.*?)\*\*/g, '<strong class="text-indigo-500 font-black bg-indigo-500/10 px-1 rounded">$1</strong>');
+        
+        // Italics
+        formattedReasoning = formattedReasoning.replace(/\*(.*?)\*/g, '<em class="text-slate-400 dark:text-slate-500">$1</em>');
+        
+        // Lists
+        formattedReasoning = formattedReasoning.replace(/^\s*[-*]\s+(.*)$/gim, '<div class="flex gap-2 mb-2 pl-1"><span class="text-indigo-500 font-black">&bull;</span><span class="flex-1">$1</span></div>');
+        formattedReasoning = formattedReasoning.replace(/^\s*\d+\.\s+(.*)$/gim, '<div class="flex gap-2 mb-2 pl-1"><span class="text-indigo-500 font-black">&bull;</span><span class="flex-1">$1</span></div>');
+        
+        // Newlines to BR
+        formattedReasoning = formattedReasoning.replace(/\n\n/g, '<div class="h-3"></div>');
+        formattedReasoning = formattedReasoning.replace(/\n/g, '<br>');
+
+        document.getElementById('ai-modal-reasoning').innerHTML = formattedReasoning;
+        document.getElementById('ai-modal-date').innerHTML = `<span class="material-symbols-outlined text-[12px] align-text-bottom mr-1">update</span> Aggiornato il: ${date}`;
+        document.getElementById('ai-details-modal').classList.remove('hidden');
+    };
+
+    window.closeAiModal = function() {
+        document.getElementById('ai-details-modal').classList.add('hidden');
+    };
 
     // Initialize
     loadWatchlist();

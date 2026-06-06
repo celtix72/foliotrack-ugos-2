@@ -2660,6 +2660,10 @@ app.get('/api/watchlist', requireAuth, (req, res) => {
                    uw.targetPrice as userTargetPrice,
                    uw.stopLoss as userStopLoss,
                    uw.volatilityAlert as userVolatilityAlert,
+                   a.ai_action as aiAction,
+                   a.ai_reasoning as aiReasoning,
+                   a.ai_updated_at as aiUpdatedAt,
+                   (SELECT COUNT(*) FROM asset_ai_history ah WHERE ah.ticker = a.ticker) as aiHistoryCount,
                    CASE WHEN t.balance IS NOT NULL AND t.balance > 0.0001 THEN 1 ELSE 0 END as hasPosition
             FROM assets a
             JOIN user_watchlist uw ON a.ticker = uw.ticker
