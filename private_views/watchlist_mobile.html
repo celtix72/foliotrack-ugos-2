@@ -333,6 +333,23 @@
 
             const p = perfData[a.ticker] || {};
 
+            const getAiParam = (text, param) => {
+                if (!text) return '—';
+                const escapedParam = param.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(`(?:\\-|\\•|\\*)\\s*${escapedParam}\\s*:\\s*([^\\n]+)`, 'i');
+                let m = text.match(regex);
+                if(m) return m[1].trim();
+                
+                const regex2 = new RegExp(`${escapedParam}\\s*:\\s*([^\\n]+)`, 'i');
+                m = text.match(regex2);
+                return m ? m[1].trim() : '—';
+            };
+
+            const aiView = getAiParam(a.aiReasoning, 'View Operativa');
+            const buyZone = getAiParam(a.aiReasoning, 'Livello di Ingresso (Buy Zone)');
+            const tp1 = getAiParam(a.aiReasoning, 'Take Profit 1 (TP1)');
+            const tp2 = getAiParam(a.aiReasoning, 'Take Profit 2 (TP2)');
+
             return `
                 <div class="mob-holding-swipe-container" 
                      ontouchstart="handleTouchStart(event, this)" 
@@ -361,9 +378,15 @@
                             <div class="flex flex-wrap gap-1.5 mt-1">
                                 ${alertTags}
                             </div>
-                            <div class="flex items-center gap-2 mt-1.5">
-                                <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">P/E: ${a.forwardPE ? a.forwardPE.toFixed(1) : '—'}</span>
-                                <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">PEG: ${a.pegRatio ? a.pegRatio.toFixed(1) : '—'}</span>
+                            <div class="flex flex-col gap-1 mt-1.5">
+                                <div class="flex items-center gap-2">
+                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">View: <span style="color:var(--mob-text-primary)">${aiView}</span></span>
+                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">Zone: <span style="color:var(--mob-text-primary)">${buyZone}</span></span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">TP1: <span style="color:var(--mob-emerald)">${tp1}</span></span>
+                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">TP2: <span style="color:var(--mob-emerald)">${tp2}</span></span>
+                                </div>
                             </div>
                         </div>
                         <div class="mob-holding-values text-right shrink-0">

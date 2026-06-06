@@ -118,9 +118,10 @@
                         <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Ticker / Name</th>
                         <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Price</th>
                         <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Perf (1D / 1W / 1M / 1Y)</th>
-                        <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Yield</th>
-                        <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">FWD P/E</th>
-                        <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">PEG</th>
+                        <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">AI View</th>
+                        <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Buy Zone</th>
+                        <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">TP1</th>
+                        <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">TP2</th>
                         <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
                     </tr>
                 </thead>
@@ -212,7 +213,7 @@
             if (items.length === 0) return '';
             return `
                 <tr class="bg-slate-100/50 dark:bg-slate-800/80">
-                    <td colspan="7" class="px-5 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+                    <td colspan="8" class="px-5 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
                         ${title} (${items.length})
                     </td>
                 </tr>
@@ -240,6 +241,23 @@
                         </span>
                     ` : '';
 
+                    const getAiParam = (text, param) => {
+                        if (!text) return '—';
+                        const escapedParam = param.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                        const regex = new RegExp(`(?:\\-|\\•|\\*)\\s*${escapedParam}\\s*:\\s*([^\\n]+)`, 'i');
+                        let m = text.match(regex);
+                        if(m) return m[1].trim();
+                        
+                        const regex2 = new RegExp(`${escapedParam}\\s*:\\s*([^\\n]+)`, 'i');
+                        m = text.match(regex2);
+                        return m ? m[1].trim() : '—';
+                    };
+
+                    const aiView = getAiParam(item.aiReasoning, 'View Operativa');
+                    const buyZone = getAiParam(item.aiReasoning, 'Livello di Ingresso (Buy Zone)');
+                    const tp1 = getAiParam(item.aiReasoning, 'Take Profit 1 (TP1)');
+                    const tp2 = getAiParam(item.aiReasoning, 'Take Profit 2 (TP2)');
+
                     return `
                         <tr class="border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group cursor-pointer" ondblclick="openAssetChartModal('${item.ticker}')">
                             <td class="px-5 py-2">
@@ -263,9 +281,10 @@
                                     ${renderPerf(perf.perf1Y)}
                                 </div>
                             </td>
-                            <td class="px-5 py-2 text-right font-bold text-emerald-500 text-xs">${ftFormatYield(item.dividendYield)}</td>
-                            <td class="px-5 py-2 text-right font-bold text-slate-600 dark:text-slate-300 text-xs">${item.forwardPE ? item.forwardPE.toFixed(2) : '—'}</td>
-                            <td class="px-5 py-2 text-right font-bold text-slate-600 dark:text-slate-300 text-xs">${item.pegRatio ? item.pegRatio.toFixed(2) : '—'}</td>
+                            <td class="px-5 py-2 text-center font-bold text-slate-600 dark:text-slate-300 text-xs">${aiView}</td>
+                            <td class="px-5 py-2 text-center font-bold text-slate-600 dark:text-slate-300 text-xs">${buyZone}</td>
+                            <td class="px-5 py-2 text-right font-bold text-emerald-500 text-xs">${tp1}</td>
+                            <td class="px-5 py-2 text-right font-bold text-emerald-500 text-xs">${tp2}</td>
                             <td class="px-5 py-2 text-right">
                                     <div class="flex items-center justify-end gap-2">
                                         ${typeLabel === 'ETF' ? `
