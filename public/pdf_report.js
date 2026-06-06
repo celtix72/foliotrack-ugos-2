@@ -153,7 +153,7 @@ window.generateDetailedPDFReport = async function(buttonEl) {
         startY = 40;
         doc.setFontSize(14);
         doc.setFont("helvetica", "bold");
-        doc.text('Dettaglio Asset Posseduti (Posizioni Aperte)', marginLeft, startY);
+        doc.text('Dettaglio Asset Posseduti', marginLeft, startY);
         startY += 20;
 
         // Aggregate open positions across portfolios
@@ -161,49 +161,104 @@ window.generateDetailedPDFReport = async function(buttonEl) {
         for (const p of portfolioDetailsList) {
             const pName = p.portfolio.name;
             const pCurr = p.portfolio.currency;
-            if (p.details && p.details.holdings) {
-                const divMap = {};
-                if (p.details.dividends) {
-                    for (const d of p.details.dividends) {
-                        divMap[d.ticker] = (divMap[d.ticker] || 0) + d.amount;
-                    }
-                }
-                for (const h of p.details.holdings) {
+            if (p.details) {
+                // Add Cash manually since it's not in holdings
+                if (p.details.currentCash > 0) {
                     allAssets.push({
                         port: pName,
-                        ticker: h.ticker,
-                        name: h.name,
-                        qty: h.shares || 0,
-                        price: h.currentPrice || 0,
-                        unrealized: h.unrealizedGain || 0,
-                        dividends: divMap[h.ticker] || 0,
-                        currency: h.currency || pCurr
+                        ticker: 'CASH',
+                        name: 'Liquidità ' + pCurr,
+                        type: 'Liquidity',
+                        qty: p.details.currentCash,
+                        price: 1,
+                        unrealized: 0,
+                        dividends: 0,
+                        currency: pCurr
                     });
+                }
+                
+                if (p.details.holdings) {
+                    for (const h of p.details.holdings) {
+                        let annualDividend = 0;
+                        if (h.currentPrice && h.dividendYield) {
+                            annualDividend = h.currentPrice * h.dividendYield * h.shares;
+                        }
+                        
+                        allAssets.push({
+                            port: pName,
+                            ticker: h.ticker,
+                            name: h.name,
+                            type: h.type || 'Other',
+                            qty: h.shares || 0,
+                            price: h.currentPrice || 0,
+                            unrealized: h.unrealizedGain || 0,
+                            dividends: annualDividend,
+                            currency: h.currency || pCurr
+                        });
+                    }
                 }
             }
         }
 
-        allAssets.sort((a, b) => b.unrealized - a.unrealized); // sort by unrealized
+        // Mapping for types to match user's requested grouping and names
+        const typeMap = {
+            'Liquidity': { name: "LIQUIDITA'", order: 1 },
+            'Cash': { name: "LIQUIDITA'", order: 1 },
+            'ETF Monetario': { name: "ETF MONETARIO", order: 2 },
+            'Deposito Vincolato': { name: "CONTI DEPOSITO", order: 3 },
+            'Bond': { name: "OBBLIGAZIONI", order: 4 },
+            'ETF Obblig': { name: "OBBLIGAZIONI", order: 4 },
+            'ETF Azionario': { name: "ETF AZIONARI", order: 5 },
+            'Azioni': { name: "AZIONI", order: 6 },
+            'Stock': { name: "AZIONI", order: 6 }
+        };
 
-        const assetsBody = allAssets.map(a => [
-            a.port,
-            a.ticker,
-            a.name,
-            formatValue(a.qty),
-            formatValue(a.price) + ' ' + a.currency,
-            formatCurrency(a.unrealized),
-            formatCurrency(a.dividends)
-        ]);
+        const getGroup = (type) => typeMap[type] || { name: type.toUpperCase(), order: 99 };
 
-        doc.autoTable({
-            startY: startY,
-            head: [['Portafoglio', 'Ticker', 'Nome', 'Quantità', 'Prezzo', 'Unrealized (EUR)', 'Dividendi (EUR)']],
-            body: assetsBody,
-            theme: 'grid',
-            headStyles: { fillColor: [15, 23, 42] },
-            styles: { fontSize: 8 },
-            margin: { left: marginLeft }
-        });
+        // Group assets
+        const groupedAssets = {};
+        for (const a of allAssets) {
+            const groupInfo = getGroup(a.type);
+            const gName = groupInfo.name;
+            if (!groupedAssets[gName]) groupedAssets[gName] = { order: groupInfo.order, assets: [] };
+            groupedAssets[gName].assets.push(a);
+        }
+
+        const sortedGroups = Object.entries(groupedAssets).sort((a, b) => a[1].order - b[1].order);
+
+        for (const [gName, group] of sortedGroups) {
+            checkPageBreak(80);
+            
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(50, 50, 50);
+            doc.text(gName, marginLeft, startY);
+            startY += 10;
+            
+            group.assets.sort((a, b) => b.unrealized - a.unrealized);
+
+            const assetsBody = group.assets.map(a => [
+                a.port,
+                a.ticker,
+                a.name,
+                formatValue(a.qty),
+                formatValue(a.price) + ' ' + a.currency,
+                formatCurrency(a.unrealized),
+                formatCurrency(a.dividends)
+            ]);
+
+            doc.autoTable({
+                startY: startY,
+                head: [['Portafoglio', 'Ticker', 'Nome', 'Quantità', 'Prezzo', 'Unrealized', 'Dividendi Previsti']],
+                body: assetsBody,
+                theme: 'grid',
+                headStyles: { fillColor: [15, 23, 42] },
+                styles: { fontSize: 8 },
+                margin: { left: marginLeft }
+            });
+            
+            startY = doc.lastAutoTable.finalY + 30;
+        }
 
         // Save
         const fileName = `M2T_Report_${new Date().toISOString().split('T')[0]}.pdf`;
