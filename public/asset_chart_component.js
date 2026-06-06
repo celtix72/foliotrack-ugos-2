@@ -738,7 +738,7 @@
             modal.innerHTML = `
                 <div class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800" style="width: 100%; max-width: 500px; max-height: 85vh; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column; overflow: hidden;">
                     <!-- Header -->
-                    <div style="padding: 16px 20px; border-bottom: 1px solid rgba(148,163,184,0.1); display: flex; justify-content: space-between; align-items: center; background: var(--mob-surface);">
+                    <div class="bg-slate-50 dark:bg-slate-900/50" style="padding: 16px 20px; border-bottom: 1px solid rgba(148,163,184,0.1); display: flex; justify-content: space-between; align-items: center;">
                         <div>
                             <h3 class="font-black text-sm md:text-lg dark:text-white" style="margin: 0; display: flex; align-items: center; gap: 8px;">
                                 <span class="material-symbols-outlined" style="background: linear-gradient(135deg, var(--mob-primary), #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">smart_toy</span> 
@@ -746,15 +746,15 @@
                             </h3>
                             <p class="text-[9px] text-slate-400 uppercase tracking-widest font-bold" id="ai-modal-subtitle" style="margin: 2px 0 0 0;"></p>
                         </div>
-                        <button onclick="document.getElementById('asset-ai-history-modal').style.display='none'" style="background: rgba(148,163,184,0.1); border: none; border-radius: 50%; cursor: pointer; color: #94a3b8; padding: 6px; display: flex;">
+                        <button onclick="document.getElementById('asset-ai-history-modal').style.display='none'" class="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700" style="background: rgba(148,163,184,0.1); border: none; border-radius: 50%; cursor: pointer; padding: 6px; display: flex; transition: all 0.2s;">
                             <span class="material-symbols-outlined" style="font-size: 18px;">close</span>
                         </button>
                     </div>
                     
                     <!-- Content Area -->
-                    <div style="padding: 20px; flex: 1; display: flex; flex-direction: column; background: var(--mob-surface-2); overflow: hidden;">
+                    <div class="bg-white dark:bg-slate-900" style="padding: 20px; flex: 1; display: flex; flex-direction: column; overflow: hidden;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                            <h4 style="font-size: 13px; font-weight: 900; color: var(--mob-text); display: flex; align-items: center; gap: 4px; margin: 0;">
+                            <h4 class="text-slate-900 dark:text-white" style="font-size: 13px; font-weight: 900; display: flex; align-items: center; gap: 4px; margin: 0;">
                                 Storico Analisi
                             </h4>
                             <button id="ai-modal-run-btn" onclick="window.runAssetAi()" style="background: var(--mob-primary); color: white; padding: 8px 16px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 11px; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(19,91,236,0.2);">
@@ -830,10 +830,10 @@
                                 </button>
                             </div>
                         </div>
-                        <div style="font-size: 12px; color: var(--mob-text); opacity: 0.8; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 12px; line-height: 1.5;">
+                        <div class="text-slate-700 dark:text-slate-300" style="font-size: 12px; opacity: 0.9; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 12px; line-height: 1.5;">
                             ${item.reasoning.replace(/\\n/g, ' ').replace(/[*#]/g, '')}
                         </div>
-                        <button onclick="window.openAssetAiDetail('${ticker}', '${item.action}', \`${(item.reasoning || '').replace(/`/g, '\\`').replace(/'/g, "\\'").replace(/"/g, '&quot;')}\`, '${date}')" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid rgba(148,163,184,0.3); background: rgba(148,163,184,0.05); color: var(--mob-primary); font-size: 11px; font-weight: 900; cursor: pointer; transition: all 0.2s;" class="hover:bg-slate-200 dark:hover:bg-slate-700">Espandi Dettaglio</button>
+                        <button onclick="window.openAssetAiDetail('${ticker}', '${item.action}', \`${(item.reasoning || '').replace(/`/g, '\\`').replace(/'/g, "\\'").replace(/"/g, '&quot;')}\`, '${date}')" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid rgba(148,163,184,0.3); background: rgba(148,163,184,0.05); font-size: 11px; font-weight: 900; cursor: pointer; transition: all 0.2s;" class="text-indigo-600 dark:text-indigo-400 hover:bg-slate-200 dark:hover:bg-slate-700">Espandi Dettaglio</button>
                     </div>
                 `;
             }).join('');
@@ -921,33 +921,33 @@
         let formattedReasoning = reasoning.replace(/\\n/g, '\n');
         
         // Headings
-        formattedReasoning = formattedReasoning.replace(/^### (.*$)/gim, '<h4 style="color: var(--mob-primary); font-size: 15px; font-weight: 900; margin-top: 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined" style="font-size: 16px;">psychiatry</span> $1</h4>');
-        formattedReasoning = formattedReasoning.replace(/^## (.*$)/gim, '<h3 style="color: var(--mob-primary); font-size: 16px; font-weight: 900; margin-top: 18px; margin-bottom: 10px; border-bottom: 1px solid rgba(148,163,184,0.1); padding-bottom: 4px;">$1</h3>');
-        formattedReasoning = formattedReasoning.replace(/^# (.*$)/gim, '<h2 style="color: var(--mob-primary); font-size: 18px; font-weight: 900; margin-top: 20px; margin-bottom: 12px;">$1</h2>');
+        formattedReasoning = formattedReasoning.replace(/^### (.*$)/gim, '<h4 class="text-indigo-600 dark:text-indigo-400" style="font-size: 13px; font-weight: 900; margin-top: 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined" style="font-size: 14px;">psychiatry</span> $1</h4>');
+        formattedReasoning = formattedReasoning.replace(/^## (.*$)/gim, '<h3 class="text-indigo-600 dark:text-indigo-400" style="font-size: 14px; font-weight: 900; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid rgba(148,163,184,0.1); padding-bottom: 4px;">$1</h3>');
+        formattedReasoning = formattedReasoning.replace(/^# (.*$)/gim, '<h2 class="text-indigo-600 dark:text-indigo-400" style="font-size: 15px; font-weight: 900; margin-top: 18px; margin-bottom: 10px;">$1</h2>');
         
         // Bold
-        formattedReasoning = formattedReasoning.replace(/\*\*(.*?)\*\*/g, '<strong style="color: var(--mob-primary); font-weight: 900; background: rgba(148,163,184,0.1); padding: 0 4px; border-radius: 4px;">$1</strong>');
+        formattedReasoning = formattedReasoning.replace(/\*\*(.*?)\*\*/g, '<strong class="text-indigo-600 dark:text-indigo-400" style="font-weight: 900; background: rgba(148,163,184,0.1); padding: 0 4px; border-radius: 4px;">$1</strong>');
         
         // Italics
-        formattedReasoning = formattedReasoning.replace(/\*(.*?)\*/g, '<em style="color: var(--mob-text-muted);">$1</em>');
+        formattedReasoning = formattedReasoning.replace(/\*(.*?)\*/g, '<em class="text-slate-500 dark:text-slate-400">$1</em>');
         
         // Lists
-        formattedReasoning = formattedReasoning.replace(/^\s*[-*]\s+(.*)$/gim, '<div style="display: flex; gap: 8px; margin-bottom: 8px; padding-left: 4px;"><span style="color: var(--mob-primary); font-size: 14px; font-weight: 900;">&bull;</span><span style="flex: 1;">$1</span></div>');
-        formattedReasoning = formattedReasoning.replace(/^\s*\d+\.\s+(.*)$/gim, '<div style="display: flex; gap: 8px; margin-bottom: 8px; padding-left: 4px;"><span style="color: var(--mob-primary); font-size: 14px; font-weight: 900;">&bull;</span><span style="flex: 1;">$1</span></div>');
+        formattedReasoning = formattedReasoning.replace(/^\s*[-*]\s+(.*)$/gim, '<div style="display: flex; gap: 8px; margin-bottom: 6px; padding-left: 4px;"><span class="text-indigo-600 dark:text-indigo-400" style="font-size: 14px; font-weight: 900;">&bull;</span><span style="flex: 1;">$1</span></div>');
+        formattedReasoning = formattedReasoning.replace(/^\s*\d+\.\s+(.*)$/gim, '<div style="display: flex; gap: 8px; margin-bottom: 6px; padding-left: 4px;"><span class="text-indigo-600 dark:text-indigo-400" style="font-size: 14px; font-weight: 900;">&bull;</span><span style="flex: 1;">$1</span></div>');
         
         // Newlines to BR
         formattedReasoning = formattedReasoning.replace(/\n\n/g, '<div style="height: 12px;"></div>');
         formattedReasoning = formattedReasoning.replace(/\n/g, '<br>');
 
         detailModal.innerHTML = `
-            <div style="background: var(--mob-surface); border: 1px solid var(--mob-border); border-radius: 20px; width: 100%; max-width: 400px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
-                <div style="padding: 16px; border-bottom: 1px solid rgba(148,163,184,0.1); display: flex; justify-content: space-between; align-items: center; background: var(--mob-surface-2);">
-                    <h3 style="font-size: 14px; font-weight: 900; color: var(--mob-primary); display: flex; align-items: center; gap: 8px; margin: 0;"><span class="material-symbols-outlined" style="background: linear-gradient(135deg, var(--mob-primary), #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">smart_toy</span> IA: ${ticker}</h3>
-                    <button onclick="document.getElementById('chart-ai-detail-modal').style.display='none'" style="background:rgba(148,163,184,0.1); border-radius:50%; border:none; color: var(--mob-text); cursor:pointer; display: flex; padding: 4px; transition: background 0.2s;"><span class="material-symbols-outlined" style="font-size: 18px;">close</span></button>
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800" style="border-radius: 20px; width: 95%; max-width: 600px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
+                <div class="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800" style="padding: 16px; display: flex; justify-content: space-between; align-items: center;">
+                    <h3 class="text-indigo-600 dark:text-indigo-400" style="font-size: 14px; font-weight: 900; display: flex; align-items: center; gap: 8px; margin: 0;"><span class="material-symbols-outlined" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">smart_toy</span> IA: ${ticker}</h3>
+                    <button onclick="document.getElementById('chart-ai-detail-modal').style.display='none'" class="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700" style="background:rgba(148,163,184,0.1); border-radius:50%; border:none; cursor:pointer; display: flex; padding: 6px; transition: all 0.2s;"><span class="material-symbols-outlined" style="font-size: 18px;">close</span></button>
                 </div>
                 <div style="padding: 20px 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; -webkit-overflow-scrolling: touch;">
                     <div style="text-align: center;"><span style="padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 900; background: ${actionColor}; color: ${actionTextColor}; border: 1px solid ${actionTextColor}; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px ${actionColor};"><span class="material-symbols-outlined" style="font-size: 14px;">${action === 'BUY' || action === 'INCREASE' ? 'trending_up' : (action === 'SELL' || action === 'DECREASE' ? 'trending_down' : 'horizontal_rule')}</span> ${action}</span></div>
-                    <div style="font-size: 13px; line-height: 1.6; color: var(--mob-text); margin-top: 8px;">${formattedReasoning}</div>
+                    <div class="text-slate-800 dark:text-slate-200" style="font-size: 12px; line-height: 1.6; margin-top: 8px;">${formattedReasoning}</div>
                     <div style="font-size: 10px; font-weight: bold; color: #94a3b8; text-align: right; margin-top: 12px; border-top: 1px dashed rgba(148,163,184,0.2); padding-top: 12px; display: flex; justify-content: flex-end; align-items: center; gap: 4px;">
                         <span class="material-symbols-outlined" style="font-size: 12px;">update</span> Aggiornato il: ${date}
                     </div>
