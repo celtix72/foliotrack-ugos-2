@@ -258,8 +258,14 @@
 
                     const trend = getAiParam(item.aiReasoning, 'Trend di fondo') !== '—' ? getAiParam(item.aiReasoning, 'Trend di fondo') : getAiParam(item.aiReasoning, 'View Operativa');
                     const buyZone = getAiParam(item.aiReasoning, 'Zona di Ingresso ideale (Buy)') !== '—' ? getAiParam(item.aiReasoning, 'Zona di Ingresso ideale (Buy)') : getAiParam(item.aiReasoning, 'Livello di Ingresso (Buy Zone)');
-                    const tp = getAiParam(item.aiReasoning, 'Take Profit (TP)') !== '—' ? getAiParam(item.aiReasoning, 'Take Profit (TP)') : getAiParam(item.aiReasoning, 'Take Profit 1 (TP1)');
-                    const sl = getAiParam(item.aiReasoning, 'Stop Loss (SL)');
+                    
+                    let tp = getAiParam(item.aiReasoning, 'Take Profit suggerito (TP)');
+                    if (tp === '—') tp = getAiParam(item.aiReasoning, 'Take Profit (TP)');
+                    if (tp === '—') tp = getAiParam(item.aiReasoning, 'Take Profit 1 (TP1)');
+                    
+                    let sl = getAiParam(item.aiReasoning, 'Stop Loss rigoroso (SL)');
+                    if (sl === '—') sl = getAiParam(item.aiReasoning, 'Stop Loss (SL)');
+                    
                     const sup = getAiParam(item.aiReasoning, 'Area di Supporto critico');
                     
                     // If SL is not found, maybe show TP2 from old format
