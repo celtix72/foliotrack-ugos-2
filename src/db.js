@@ -663,7 +663,8 @@ function initDb() {
         disabledNewsSources: '[]',
         schemaVersion: '1.0',
         geminiApiKey: '',
-        aiCustomPrompt: '',
+        aiAssetPrompt: '',
+        aiPortfolioPrompt: '',
         aiTokensUsedToday: '0',
         aiTokensDate: new Date().toISOString().split('T')[0]
     };

@@ -3648,7 +3648,7 @@ app.get('/api/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
 
         sendEvent('progress', { message: 'Generazione responso IA in corso...' });
 
-        const customPrompt = globalSettings.aiCustomPrompt ? `\nIstruzioni personalizzate dall'utente:\n${globalSettings.aiCustomPrompt}\n` : '';
+        const customPrompt = globalSettings.aiAssetPrompt ? `\nIstruzioni personalizzate dall'utente:\n${globalSettings.aiAssetPrompt}\n` : '';
 
         const prompt = `
 Sei un consulente finanziario esperto. Analizza questo specifico asset in base ai dati forniti.
@@ -3776,6 +3776,119 @@ app.delete('/api/assets/ai-history/:id', requireAuth, (req, res) => {
     } catch (err) {
         logger.error('Error deleting asset AI history', err);
         res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/portfolios/:id/ai-analysis', requireAuth, requirePortfolioAccess, async (req, res) => {
+    try {
+        const globalSettings = database.getSettings(1) || {};
+        const apiKey = globalSettings.geminiApiKey || process.env.GEMINI_API_KEY;
+        
+        if (!apiKey) {
+            return res.status(400).json({ error: 'Chiave API GEMINI_API_KEY mancante. Configurala nel pannello Admin o nel file .env per abilitare questa funzionalità.' });
+        }
+
+        // Setup SSE Headers
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        
+        const sendEvent = (event, data) => {
+            res.write(`event: ${event}\n`);
+            res.write(`data: ${JSON.stringify(data)}\n\n`);
+        };
+
+        const portfolioId = req.params.id;
+        sendEvent('progress', { message: 'Recupero informazioni portafoglio...' });
+
+        const liveRate = await getEurUsdRate();
+        const details = await getPortfolioDetails(portfolioId, liveRate);
+        if (!details) {
+            throw new Error('Portafoglio non trovato.');
+        }
+
+        // Costruisci il testo del contesto
+        let contextData = `
+- **Nome**: ${details.name}
+- **Valuta Base**: ${details.currency}
+- **Liquidità**: ${details.currentCash.toFixed(2)} ${details.currency}
+- **Valore Lordo Totale (esclusa liquidità)**: ${details.grossValue.toFixed(2)} ${details.currency}
+- **Valore Netto Stimato**: ${details.netValue.toFixed(2)} ${details.currency}
+- **Profit/Loss Totale (Lordo)**: ${details.totalProfit.toFixed(2)} ${details.currency} (${details.totalProfitPct.toFixed(2)}%)
+- **Profit/Loss Totale (Netto)**: ${details.netProfit.toFixed(2)} ${details.currency} (${details.netProfitPct.toFixed(2)}%)
+
+**Composizione Asset**:
+`;
+        if (details.holdings && details.holdings.length > 0) {
+            details.holdings.forEach(h => {
+                contextData += `- ${h.ticker} (${h.name}): Quantità ${h.totalQuantity}, Prezzo Attuale ${h.currentPrice} ${h.currency}, Valore ${h.currentValue.toFixed(2)} ${details.currency}, P&L ${h.profit.toFixed(2)} ${details.currency} (${h.profitPct.toFixed(2)}%), Tipo: ${h.type || 'N/D'}, Peso sul tot: ${h.weightPct.toFixed(2)}%\n`;
+            });
+        } else {
+            contextData += `- Nessun asset presente in portafoglio.\n`;
+        }
+
+        sendEvent('progress', { message: 'Generazione responso IA in corso...' });
+
+        const customPrompt = globalSettings.aiPortfolioPrompt ? `\nIstruzioni personalizzate dall'utente:\n${globalSettings.aiPortfolioPrompt}\n` : '';
+
+        const prompt = `
+Sei un consulente finanziario esperto. Analizza questo portafoglio in base ai dati forniti, concentrandoti sulla diversificazione, sul rischio e sui rendimenti.
+${customPrompt}
+Dati Portafoglio:
+${contextData}
+
+Restituisci l'analisi in formato Markdown chiaro e ben strutturato. Usa titoli, elenchi puntati e testo in grassetto dove necessario per evidenziare i concetti chiave. Metti in risalto i punti di forza e i potenziali rischi o sbilanciamenti del portafoglio. Fornisci anche eventuali suggerimenti strategici (senza che costituiscano consiglio finanziario vincolante).
+`;
+
+        const geminiModel = await getBestGeminiModel(apiKey);
+        console.log(`[AI Analysis] Using model: ${geminiModel} for portfolio ${portfolioId}`);
+        const response = await axios.post(
+            `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`,
+            {
+                contents: [{ parts: [{ text: prompt }] }]
+            },
+            {
+                headers: { 'Content-Type': 'application/json' }
+            }
+        );
+
+        const rawText = response.data.candidates?.[0]?.content?.parts?.[0]?.text || "Nessuna risposta generata.";
+        
+        const usage = response.data.usageMetadata || {};
+        const tokensUsed = usage.totalTokenCount || 0;
+        
+        database.db.transaction(() => {
+            // Aggiorna token count
+            const today = new Date().toISOString().split('T')[0];
+            let currentTokens = parseInt(globalSettings.aiTokensUsedToday) || 0;
+            let tokenDate = globalSettings.aiTokensDate || today;
+            
+            if (tokenDate !== today) {
+                currentTokens = 0;
+                database.setSetting(1, 'aiTokensDate', today);
+            }
+            database.setSetting(1, 'aiTokensUsedToday', (currentTokens + tokensUsed).toString());
+
+            // Inserisci l'analisi nello storico del portafoglio
+            database.db.prepare(`
+                INSERT INTO ai_analyses (portfolio_id, analysis_text)
+                VALUES (?, ?)
+            `).run(portfolioId, rawText);
+        })();
+
+        sendEvent('complete', { 
+            analysis: rawText,
+            usage: usage 
+        });
+        res.end();
+    } catch (err) {
+        console.error('Portfolio AI Analysis Error:', err?.response?.data || err.message);
+        if (!res.headersSent) {
+            res.status(500).json({ error: 'Errore durante l\'analisi IA del portafoglio: ' + (err?.response?.data?.error?.message || err.message) });
+        } else {
+            res.write(`event: error\ndata: ${JSON.stringify({ error: 'Errore durante l\'analisi IA: ' + (err?.response?.data?.error?.message || err.message) })}\n\n`);
+            res.end();
+        }
     }
 });
 
