@@ -433,15 +433,16 @@ function renderAssets(filter = '') {
         const alertClass = targetReached ? 'bg-emerald-500/5' : (stopLossHit ? 'bg-rose-500/5' : '');
 
         const dailyGain = (a.totalQuantity || 0) * (a.changeValue || 0);
-
-        const aiBadge = a.aiAction ? `
-            <span onclick="event.stopPropagation(); openAssetAiHistoryModal('${a.ticker}')" class="px-1.5 py-0.5 ml-2 cursor-pointer rounded text-[8px] font-black uppercase tracking-tighter hover:opacity-80 transition-opacity flex items-center gap-1
-                ${a.aiAction === 'BUY' || a.aiAction === 'INCREASE' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 
-                  a.aiAction === 'SELL' || a.aiAction === 'DECREASE' ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' : 
-                  'bg-slate-500/10 text-slate-500 border border-slate-500/20'}">
-                <span class="material-symbols-outlined text-[10px]">smart_toy</span> ${a.aiAction} (${a.aiHistoryCount || 1})
+        const count = a.aiHistoryCount || 0;
+        const aiBadge = count > 0 ? `
+            <span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${a.ticker}', '${(a.name || '').replace(/'/g, "\\'")}', '${a.currency || 'EUR'}')" class="px-1.5 py-0.5 ml-2 rounded text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 border border-emerald-500/30 text-emerald-500 bg-emerald-500/10 cursor-pointer hover:bg-emerald-500/20 transition-colors" title="Storico Analisi IA">
+                <span class="material-symbols-outlined" style="font-size: 12px;">smart_toy</span> ${count}
             </span>
-        ` : '';
+        ` : `
+            <span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${a.ticker}', '${(a.name || '').replace(/'/g, "\\'")}', '${a.currency || 'EUR'}')" class="px-1.5 py-0.5 ml-2 rounded text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 border border-slate-400/30 text-slate-400 bg-slate-400/10 cursor-pointer hover:bg-slate-400/20 transition-colors" title="Genera Analisi IA">
+                <span class="material-symbols-outlined" style="font-size: 12px;">smart_toy</span>
+            </span>
+        `;
 
         return `
         <tr class="group transition-colors hover:bg-slate-50 dark:hover:bg-white/[0.02] ${alertClass} ${opacity} cursor-pointer" ondblclick="loadAssetChart('${a.ticker}')">
@@ -776,103 +777,6 @@ window.runAssetAI = async function(ticker) {
         source.close();
         overlay.classList.add('hidden');
         overlay.style.display = '';
-        loadAssets(); // Reload assets to show the new TAG and updated StopLoss/Target
-        openAssetAiHistoryModal(ticker);
-    });
-    source.addEventListener('error', function(e) {
-        source.close();
-        overlay.classList.add('hidden');
-        overlay.style.display = '';
-        const data = JSON.parse(e.data || '{}');
-        alert(data.error || "Errore durante l'analisi IA");
-    });
-}
-
-// ─── AI History Logic ────────────────────────────────────────────────────────
-window.openAssetAiHistoryModal = function(ticker) {
-    document.getElementById('history-modal-ticker').innerText = ticker;
-    document.getElementById('asset-ai-history-modal').classList.remove('hidden');
-    document.getElementById('btn-run-new-ai').onclick = () => {
-        closeAssetAiHistoryModal();
-        runAssetAI(ticker);
-    };
-    loadAssetAiHistory(ticker);
-}
-
-window.closeAssetAiHistoryModal = function() {
-    document.getElementById('asset-ai-history-modal').classList.add('hidden');
-}
-
-window.loadAssetAiHistory = async function(ticker) {
-    const listEl = document.getElementById('asset-ai-history-list');
-    listEl.innerHTML = '<div class="flex justify-center p-8"><span class="material-symbols-outlined animate-spin text-slate-400 text-3xl">sync</span></div>';
-    
-    try {
-        const res = await fetch('/api/assets/' + encodeURIComponent(ticker) + '/ai-history');
-        const history = await res.json();
-        
-        if (!history || history.length === 0) {
-            listEl.innerHTML = '<div class="text-center py-12 text-slate-500 italic">Nessuna analisi passata presente per questo asset. Clicca su "Esegui Nuova Analisi" per cominciare.</div>';
-            return;
-        }
-
-        window._currentAssetAiHistory = history;
-
-        listEl.innerHTML = history.map(item => {
-            const date = new Date(item.created_at).toLocaleString();
-            const actionColor = item.action === 'BUY' || item.action === 'INCREASE' ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' : 
-                                item.action === 'SELL' || item.action === 'DECREASE' ? 'text-rose-500 bg-rose-500/10 border-rose-500/20' : 
-                                'text-slate-500 bg-slate-500/10 border-slate-500/20';
-            
-            return `
-                <div class="border border-slate-200 dark:border-slate-800 rounded-2xl p-5 bg-slate-50 dark:bg-slate-800/50 relative">
-                    <div class="flex justify-between items-start mb-3">
-                        <div class="flex items-center gap-3">
-                            <span class="font-bold text-slate-500 flex items-center gap-1.5 text-sm">
-                                <span class="material-symbols-outlined text-[16px]">calendar_today</span> ${date}
-                            </span>
-                            <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border ${actionColor}">
-                                ${item.action}
-                            </span>
-                        </div>
-                        <button onclick="deleteAssetAiHistory(${item.id}, '${ticker}')" class="text-rose-500 hover:text-rose-600 transition-colors" title="Elimina Analisi">
-                            <span class="material-symbols-outlined text-sm">delete</span>
-                        </button>
-                    </div>
-                    <div class="flex gap-4 mb-4 text-xs font-bold text-slate-400">
-                        ${item.targetPrice ? `<span>Target: <span class="text-emerald-500">${item.targetPrice}</span></span>` : ''}
-                        ${item.stopLoss ? `<span>Stop: <span class="text-rose-500">${item.stopLoss}</span></span>` : ''}
-                    </div>
-                    <div class="text-sm text-slate-600 dark:text-slate-400 line-clamp-3 mb-4">${item.reasoning.replace(/\\n/g, ' ').replace(/[*#]/g, '')}</div>
-                    <button onclick="openAssetAiModal('${ticker}', '${item.action}', \`${(item.reasoning || '').replace(/`/g, '\\`').replace(/'/g, "\\'").replace(/"/g, '&quot;')}\`, '${date}')" class="text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 px-4 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors shadow-sm">
-                        Leggi Analisi Completa
-                    </button>
-                </div>
-            `;
-        }).join('');
-    } catch(e) {
-        listEl.innerHTML = '<div class="text-center py-12 text-rose-500 font-bold">Errore nel caricamento dello storico.</div>';
-    }
-}
-
-window.deleteAssetAiHistory = async function(id, ticker) {
-    if (!confirm('Sei sicuro di voler eliminare questa analisi dallo storico?')) return;
-    
-    try {
-        const res = await fetch('/api/assets/ai-history/' + id, { method: 'DELETE' });
-        const data = await res.json();
-        if(data.success) {
-            loadAssetAiHistory(ticker);
-            loadAssets(); // Reload assets to update the AI history count tag
-        } else {
-            alert('Errore: ' + data.error);
-        }
-    } catch(e) {
-        alert('Errore di rete.');
-    }
-}
-
-
 // ─── Movers Carousel Logic ──────────────────────────────────────────────────
 async function loadMovers() {
     try {

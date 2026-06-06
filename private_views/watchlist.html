@@ -232,14 +232,16 @@
                                     typeLabel === 'ETF' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 
                                     'bg-slate-500/10 text-slate-500 border-slate-500/20';
 
-                    const aiBadge = item.aiAction ? `
-                        <span onclick="event.stopPropagation(); openAiModal('${item.ticker}', '${item.aiAction}', \`${(item.aiReasoning || '').replace(/`/g, '\\`').replace(/'/g, "\\'").replace(/"/g, '&quot;')}\`, '${item.aiUpdatedAt || ''}')" class="px-1.5 py-0.5 ml-2 cursor-pointer rounded text-[8px] font-black uppercase tracking-tighter hover:opacity-80 transition-opacity flex items-center gap-1
-                            ${item.aiAction === 'BUY' || item.aiAction === 'INCREASE' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 
-                              item.aiAction === 'SELL' || item.aiAction === 'DECREASE' ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' : 
-                              'bg-slate-500/10 text-slate-500 border border-slate-500/20'}">
-                            <span class="material-symbols-outlined text-[10px]">smart_toy</span> ${item.aiAction} (${item.aiHistoryCount || 1})
+                    const count = item.aiHistoryCount || 0;
+                    const aiBadge = count > 0 ? `
+                        <span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'")}', '${item.currency || 'EUR'}')" class="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 border border-emerald-500/30 text-emerald-500 bg-emerald-500/10 cursor-pointer hover:bg-emerald-500/20 transition-colors ml-2" title="Storico Analisi IA">
+                            <span class="material-symbols-outlined" style="font-size: 12px;">smart_toy</span> ${count}
                         </span>
-                    ` : '';
+                    ` : `
+                        <span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'")}', '${item.currency || 'EUR'}')" class="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 border border-slate-400/30 text-slate-400 bg-slate-400/10 cursor-pointer hover:bg-slate-400/20 transition-colors ml-2" title="Genera Analisi IA">
+                            <span class="material-symbols-outlined" style="font-size: 12px;">smart_toy</span>
+                        </span>
+                    `;
 
                     const getAiParam = (text, param) => {
                         if (!text) return '—';

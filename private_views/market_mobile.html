@@ -544,13 +544,15 @@
               <div class="mob-holding-info">
                 <div class="flex items-center gap-2">
                   <div class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border" style="background: ${colors.bg}; color: #000000; border-color: ${colors.border}; display: inline-block;">${a.ticker}</div>
-                  ${a.aiAction ? `
-                    <div class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter border flex items-center gap-1
-                        ${a.aiAction === 'BUY' || a.aiAction === 'INCREASE' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 
-                          a.aiAction === 'SELL' || a.aiAction === 'DECREASE' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' : 
-                          'bg-slate-500/10 text-slate-500 border-slate-500/20'}">
-                        <span class="material-symbols-outlined text-[10px]">smart_toy</span> ${a.aiAction} (${a.aiHistoryCount || 1})
-                    </div>` : ''}
+                  ${ (a.aiHistoryCount || 0) > 0 ? `
+                      <span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${a.ticker.replace(/'/g, "\\'")}', '${(a.name || '').replace(/'/g, "\\'")}', '${a.currency || 'EUR'}')" class="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 border border-emerald-500/30 text-emerald-500 bg-emerald-500/10 cursor-pointer">
+                          <span class="material-symbols-outlined" style="font-size: 12px;">smart_toy</span> ${a.aiHistoryCount}
+                      </span>
+                  ` : `
+                      <span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${a.ticker.replace(/'/g, "\\'")}', '${(a.name || '').replace(/'/g, "\\'")}', '${a.currency || 'EUR'}')" class="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 border border-slate-400/30 text-slate-400 bg-slate-400/10 cursor-pointer">
+                          <span class="material-symbols-outlined" style="font-size: 12px;">smart_toy</span>
+                      </span>
+                  `}
                 </div>
                 <div class="mob-holding-name" style="margin-top:2px;">${abbreviateName(a.name) || ''}</div>
                 <div class="flex flex-wrap gap-1.5 mt-1">

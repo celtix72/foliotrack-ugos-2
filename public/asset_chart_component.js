@@ -73,21 +73,6 @@
                             Remove
                         </button>
                     </div>
-
-                    <!-- AI History Area -->
-                    <div id="chart-modal-ai-area" style="margin-top: 16px; border-top: 1px dashed rgba(148,163,184,0.2); padding-top: 16px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                            <h4 style="font-size: 12px; font-weight: 900; color: var(--mob-primary); display: flex; align-items: center; gap: 4px; margin: 0;">
-                                <span class="material-symbols-outlined" style="font-size: 16px;">smart_toy</span> Analisi IA
-                            </h4>
-                            <button id="modal-run-ai-btn" onclick="window.runChartAi()" style="background: var(--mob-primary); color: white; padding: 6px 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; font-size: 10px; display: flex; align-items: center; gap: 4px;">
-                                <span class="material-symbols-outlined" style="font-size: 14px;">refresh</span> Nuova
-                            </button>
-                        </div>
-                        <div id="chart-modal-ai-list" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
-                            <!-- AI history items injected here -->
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Footer Info -->
@@ -351,9 +336,6 @@
                 }).join('');
                 
                 dataArea.style.display = 'block';
-
-                // Load AI History
-                window.loadChartAiHistory(_chartTicker);
             }
 
             if (!_allChartData.length) {
@@ -735,23 +717,93 @@
         }
     };
 
-    // ─── AI Analysis Logic for Chart Modal ────────────────────────────────────────────────────────
-    window.loadChartAiHistory = async function(ticker) {
-        const listEl = document.getElementById('chart-modal-ai-list');
+    // ─── AI Analysis Logic for Standalone Modal ────────────────────────────────────────────────────────
+    
+    let _aiModalTicker = null;
+    let _aiModalName = null;
+
+    window.openAssetAiHistoryModal = function(ticker, name, currency) {
+        _aiModalTicker = ticker;
+        _aiModalName = name;
+        
+        let modal = document.getElementById('asset-ai-history-modal');
+        if (!modal) {
+            const isDark = document.documentElement.classList.contains('dark');
+            const backdropColor = isDark ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.7)';
+            
+            modal = document.createElement('div');
+            modal.id = 'asset-ai-history-modal';
+            modal.style.cssText = `display: none; position: fixed; inset: 0; z-index: 10000; align-items: center; justify-content: center; background-color: ${backdropColor}; backdrop-filter: blur(12px); padding: 16px; flex-direction: column;`;
+            
+            modal.innerHTML = `
+                <div class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800" style="width: 100%; max-width: 500px; max-height: 85vh; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column; overflow: hidden;">
+                    <!-- Header -->
+                    <div style="padding: 16px 20px; border-bottom: 1px solid rgba(148,163,184,0.1); display: flex; justify-content: space-between; align-items: center; background: var(--mob-surface);">
+                        <div>
+                            <h3 class="font-black text-sm md:text-lg dark:text-white" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                                <span class="material-symbols-outlined" style="background: linear-gradient(135deg, var(--mob-primary), #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">smart_toy</span> 
+                                <span id="ai-modal-title"></span>
+                            </h3>
+                            <p class="text-[9px] text-slate-400 uppercase tracking-widest font-bold" id="ai-modal-subtitle" style="margin: 2px 0 0 0;"></p>
+                        </div>
+                        <button onclick="document.getElementById('asset-ai-history-modal').style.display='none'" style="background: rgba(148,163,184,0.1); border: none; border-radius: 50%; cursor: pointer; color: #94a3b8; padding: 6px; display: flex;">
+                            <span class="material-symbols-outlined" style="font-size: 18px;">close</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Content Area -->
+                    <div style="padding: 20px; flex: 1; display: flex; flex-direction: column; background: var(--mob-surface-2); overflow: hidden;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <h4 style="font-size: 13px; font-weight: 900; color: var(--mob-text); display: flex; align-items: center; gap: 4px; margin: 0;">
+                                Storico Analisi
+                            </h4>
+                            <button id="ai-modal-run-btn" onclick="window.runAssetAi()" style="background: var(--mob-primary); color: white; padding: 8px 16px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 11px; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(19,91,236,0.2);">
+                                <span class="material-symbols-outlined" style="font-size: 16px;">add</span> Nuova Analisi
+                            </button>
+                        </div>
+                        
+                        <div id="ai-modal-list" style="overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 12px; padding-right: 4px; -webkit-overflow-scrolling: touch;">
+                            <!-- AI items injected here -->
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            // Close on backdrop click
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) this.style.display = 'none';
+            });
+        }
+
+        document.getElementById('ai-modal-title').textContent = `AI: ${ticker}`;
+        document.getElementById('ai-modal-subtitle').textContent = name || '';
+        modal.style.display = 'flex';
+        
+        window.loadAssetAiHistory(ticker);
+    };
+
+    window.loadAssetAiHistory = async function(ticker) {
+        const listEl = document.getElementById('ai-modal-list');
         if (!listEl) return;
-        listEl.innerHTML = '<div style="display:flex; justify-content:center; padding: 20px;"><span class="material-symbols-outlined animate-spin" style="color: #94a3b8;">sync</span></div>';
+        listEl.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height: 100px;"><span class="material-symbols-outlined animate-spin" style="font-size: 28px; color: var(--mob-primary);">sync</span></div>';
         
         try {
             const res = await fetch('/api/assets/' + encodeURIComponent(ticker) + '/ai-history');
             const history = await res.json();
             
             if (!history || history.length === 0) {
-                listEl.innerHTML = '<div style="text-align:center; padding: 20px; color: #94a3b8; font-size: 11px; font-style: italic;">Nessuna analisi passata presente.</div>';
+                listEl.innerHTML = `
+                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height: 150px; text-align:center; color: #94a3b8;">
+                        <span class="material-symbols-outlined" style="font-size: 32px; margin-bottom: 8px; opacity: 0.5;">history</span>
+                        <div style="font-size: 12px; font-weight: bold;">Nessuna analisi IA presente</div>
+                        <div style="font-size: 10px;">Clicca su "Nuova Analisi" per iniziare</div>
+                    </div>`;
                 return;
             }
 
             const isDark = document.documentElement.classList.contains('dark');
-            const itemBg = isDark ? 'rgba(30,41,59,0.5)' : '#f8fafc';
+            const itemBg = isDark ? 'rgba(30,41,59,0.5)' : '#ffffff';
 
             listEl.innerHTML = history.map(item => {
                 const date = new Date(item.created_at).toLocaleString();
@@ -766,70 +818,78 @@
                 }
                 
                 return `
-                    <div style="border: 1px solid rgba(148,163,184,0.2); border-radius: 12px; padding: 12px; background: ${itemBg};">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <span style="font-size: 10px; font-weight: bold; color: #94a3b8; display: flex; align-items: center; gap: 4px;">
-                                <span class="material-symbols-outlined" style="font-size: 12px;">calendar_today</span> ${date}
+                    <div style="border: 1px solid rgba(148,163,184,0.2); border-radius: 14px; padding: 14px; background: ${itemBg}; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="font-size: 10px; font-weight: 900; color: #94a3b8; display: flex; align-items: center; gap: 4px;">
+                                <span class="material-symbols-outlined" style="font-size: 14px;">calendar_today</span> ${date}
                             </span>
                             <div style="display: flex; gap: 8px; align-items: center;">
-                                <span style="padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 900; background: ${actionColor}; color: ${actionTextColor}; border: 1px solid ${actionTextColor};">${item.action}</span>
-                                <button onclick="window.deleteChartAiHistory(${item.id}, '${ticker}')" style="background: none; border: none; color: rgb(239,68,68); padding: 0; cursor: pointer; display: flex;"><span class="material-symbols-outlined" style="font-size: 14px;">delete</span></button>
+                                <span style="padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: 900; background: ${actionColor}; color: ${actionTextColor}; border: 1px solid ${actionTextColor}; box-shadow: 0 2px 8px ${actionColor};">${item.action}</span>
+                                <button onclick="window.deleteAssetAiHistory(${item.id}, '${ticker}')" style="background: rgba(239,68,68,0.1); border: none; border-radius: 6px; color: rgb(239,68,68); padding: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" class="hover:bg-red-500/20">
+                                    <span class="material-symbols-outlined" style="font-size: 14px;">delete</span>
+                                </button>
                             </div>
                         </div>
-                        <div style="font-size: 11px; color: var(--mob-text); opacity: 0.8; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 8px; line-height: 1.4;">
+                        <div style="font-size: 12px; color: var(--mob-text); opacity: 0.8; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 12px; line-height: 1.5;">
                             ${item.reasoning.replace(/\\n/g, ' ').replace(/[*#]/g, '')}
                         </div>
-                        <button onclick="window.openChartAiDetail('${ticker}', '${item.action}', \`${(item.reasoning || '').replace(/`/g, '\\`').replace(/'/g, "\\'").replace(/"/g, '&quot;')}\`, '${date}')" style="width: 100%; padding: 6px; border-radius: 6px; border: 1px solid rgba(148,163,184,0.2); background: transparent; color: var(--mob-text); font-size: 10px; font-weight: bold; cursor: pointer;">Leggi Dettagliata</button>
+                        <button onclick="window.openAssetAiDetail('${ticker}', '${item.action}', \`${(item.reasoning || '').replace(/`/g, '\\`').replace(/'/g, "\\'").replace(/"/g, '&quot;')}\`, '${date}')" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid rgba(148,163,184,0.3); background: rgba(148,163,184,0.05); color: var(--mob-primary); font-size: 11px; font-weight: 900; cursor: pointer; transition: all 0.2s;" class="hover:bg-slate-200 dark:hover:bg-slate-700">Espandi Dettaglio</button>
                     </div>
                 `;
             }).join('');
         } catch(e) {
-            listEl.innerHTML = '<div style="text-align:center; padding: 10px; color: rgb(239,68,68); font-weight: bold; font-size: 11px;">Errore di caricamento</div>';
+            listEl.innerHTML = '<div style="text-align:center; padding: 20px; color: rgb(239,68,68); font-weight: bold; font-size: 12px;">Errore di caricamento</div>';
         }
     };
 
-    window.runChartAi = async function() {
-        if (!_chartTicker) return;
-        const btn = document.getElementById('modal-run-ai-btn');
-        const listEl = document.getElementById('chart-modal-ai-list');
+    window.runAssetAi = async function() {
+        if (!_aiModalTicker) return;
+        const btn = document.getElementById('ai-modal-run-btn');
+        const listEl = document.getElementById('ai-modal-list');
         
         btn.disabled = true;
-        btn.innerHTML = '<span class="material-symbols-outlined animate-spin" style="font-size: 14px;">sync</span> Analisi...';
-        listEl.innerHTML = '<div style="text-align:center; padding: 20px; font-size: 12px; font-weight: bold; color: var(--mob-primary);"><div style="margin-bottom: 8px;"><span class="material-symbols-outlined animate-spin" style="font-size: 24px;">smart_toy</span></div>Generazione analisi IA in corso... attendere.</div>';
+        btn.innerHTML = '<span class="material-symbols-outlined animate-spin" style="font-size: 16px;">sync</span> Attendere...';
+        listEl.innerHTML = `
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height: 180px; text-align:center; color: var(--mob-primary);">
+                <span class="material-symbols-outlined animate-spin" style="font-size: 48px; margin-bottom: 12px; background: linear-gradient(135deg, var(--mob-primary), #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">smart_toy</span>
+                <div style="font-size: 14px; font-weight: 900;">Generazione Analisi IA in corso...</div>
+                <div style="font-size: 11px; opacity: 0.7; margin-top: 8px;" id="ai-modal-progress-text">Inizializzazione</div>
+            </div>`;
 
-        const source = new EventSource('/api/assets/' + encodeURIComponent(_chartTicker) + '/ai-analysis');
+        const source = new EventSource('/api/assets/' + encodeURIComponent(_aiModalTicker) + '/ai-analysis');
         
         source.addEventListener('progress', function(e) {
             const data = JSON.parse(e.data);
-            listEl.innerHTML = `<div style="text-align:center; padding: 20px; font-size: 12px; font-weight: bold; color: var(--mob-primary);"><div style="margin-bottom: 8px;"><span class="material-symbols-outlined animate-spin" style="font-size: 24px;">smart_toy</span></div>${data.message}</div>`;
+            const pt = document.getElementById('ai-modal-progress-text');
+            if(pt) pt.textContent = data.message;
         });
         
         source.addEventListener('complete', function(e) {
             source.close();
             btn.disabled = false;
-            btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 14px;">refresh</span> Nuova';
-            window.loadChartAiHistory(_chartTicker);
+            btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px;">add</span> Nuova Analisi';
+            window.loadAssetAiHistory(_aiModalTicker);
         });
         
         source.addEventListener('error', function(e) {
             source.close();
             btn.disabled = false;
-            btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 14px;">refresh</span> Nuova';
+            btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px;">add</span> Nuova Analisi';
             const data = JSON.parse(e.data || '{}');
             alert(data.error || "Errore durante l'analisi IA");
-            window.loadChartAiHistory(_chartTicker);
+            window.loadAssetAiHistory(_aiModalTicker);
         });
     };
 
-    window.deleteChartAiHistory = async function(id, ticker) {
+    window.deleteAssetAiHistory = async function(id, ticker) {
         if (!confirm('Eliminare analisi?')) return;
         try {
             const res = await fetch('/api/assets/ai-history/' + id, { method: 'DELETE' });
-            if((await res.json()).success) window.loadChartAiHistory(ticker);
+            if((await res.json()).success) window.loadAssetAiHistory(ticker);
         } catch(e) {}
     };
 
-    window.openChartAiDetail = function(ticker, action, reasoning, date) {
+    window.openAssetAiDetail = function(ticker, action, reasoning, date) {
         let detailModal = document.getElementById('chart-ai-detail-modal');
         if (!detailModal) {
             const isDark = document.documentElement.classList.contains('dark');
