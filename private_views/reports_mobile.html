@@ -25,7 +25,10 @@
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <script src="/theme.js"></script>
+    <script src="/pdf_report.js"></script>
     <script src="/transaction_modal.js"></script>
     <script src="/mobile_transactions.js"></script>
     <script src="/auth.js"></script>
@@ -64,6 +67,9 @@
 
     <!-- Action Buttons -->
     <div class="mob-header-actions">
+      <button onclick="window.generateDetailedPDFReport(this)" id="mob-pdf-btn" class="mob-icon-btn text-indigo-500" title="Download PDF Report">
+        <span class="material-symbols-outlined">picture_as_pdf</span>
+      </button>
       <a href="/admin" id="mob-admin-link" class="mob-icon-btn text-amber-500" title="Admin Panel" style="display:none">
         <span class="material-symbols-outlined">admin_panel_settings</span>
       </a>
