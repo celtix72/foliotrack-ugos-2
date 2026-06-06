@@ -254,11 +254,16 @@
                         return m ? m[1].trim() : '—';
                     };
 
-                    const trend = getAiParam(item.aiReasoning, 'Trend di fondo');
-                    const buyZone = getAiParam(item.aiReasoning, 'Zona di Ingresso ideale (Buy)');
-                    const tp = getAiParam(item.aiReasoning, 'Take Profit (TP)');
+                    const trend = getAiParam(item.aiReasoning, 'Trend di fondo') !== '—' ? getAiParam(item.aiReasoning, 'Trend di fondo') : getAiParam(item.aiReasoning, 'View Operativa');
+                    const buyZone = getAiParam(item.aiReasoning, 'Zona di Ingresso ideale (Buy)') !== '—' ? getAiParam(item.aiReasoning, 'Zona di Ingresso ideale (Buy)') : getAiParam(item.aiReasoning, 'Livello di Ingresso (Buy Zone)');
+                    const tp = getAiParam(item.aiReasoning, 'Take Profit (TP)') !== '—' ? getAiParam(item.aiReasoning, 'Take Profit (TP)') : getAiParam(item.aiReasoning, 'Take Profit 1 (TP1)');
                     const sl = getAiParam(item.aiReasoning, 'Stop Loss (SL)');
                     const sup = getAiParam(item.aiReasoning, 'Area di Supporto critico');
+                    
+                    // If SL is not found, maybe show TP2 from old format
+                    const slOrTp2 = sl !== '—' ? sl : getAiParam(item.aiReasoning, 'Take Profit 2 (TP2)');
+                    const slLabel = sl !== '—' ? 'SL' : 'TP2';
+
                     const res = getAiParam(item.aiReasoning, 'Area di Resistenza critica');
 
                     return `
@@ -292,7 +297,7 @@
                             </td>
                             <td class="px-5 py-2 text-right text-[10px] font-bold text-slate-500">
                                 TP: <span class="text-emerald-500">${tp}</span><br>
-                                SL: <span class="text-rose-500">${sl}</span>
+                                ${slLabel}: <span class="text-rose-500">${slOrTp2}</span>
                             </td>
                             <td class="px-5 py-2 text-right">
                                     <div class="flex items-center justify-end gap-2">

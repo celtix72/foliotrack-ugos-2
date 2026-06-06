@@ -346,11 +346,15 @@
                 return m ? m[1].trim() : '—';
             };
 
-            const trend = getAiParam(a.aiReasoning, 'Trend di fondo');
-            const buyZone = getAiParam(a.aiReasoning, 'Zona di Ingresso ideale (Buy)');
-            const tp = getAiParam(a.aiReasoning, 'Take Profit (TP)');
+            const trend = getAiParam(a.aiReasoning, 'Trend di fondo') !== '—' ? getAiParam(a.aiReasoning, 'Trend di fondo') : getAiParam(a.aiReasoning, 'View Operativa');
+            const buyZone = getAiParam(a.aiReasoning, 'Zona di Ingresso ideale (Buy)') !== '—' ? getAiParam(a.aiReasoning, 'Zona di Ingresso ideale (Buy)') : getAiParam(a.aiReasoning, 'Livello di Ingresso (Buy Zone)');
+            const tp = getAiParam(a.aiReasoning, 'Take Profit (TP)') !== '—' ? getAiParam(a.aiReasoning, 'Take Profit (TP)') : getAiParam(a.aiReasoning, 'Take Profit 1 (TP1)');
             const sl = getAiParam(a.aiReasoning, 'Stop Loss (SL)');
             const sup = getAiParam(a.aiReasoning, 'Area di Supporto critico');
+            
+            const slOrTp2 = sl !== '—' ? sl : getAiParam(a.aiReasoning, 'Take Profit 2 (TP2)');
+            const slLabel = sl !== '—' ? 'SL' : 'TP2';
+            
             const res = getAiParam(a.aiReasoning, 'Area di Resistenza critica');
 
             return `
@@ -392,7 +396,7 @@
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">TP: <span style="color:var(--mob-emerald)">${tp}</span></span>
-                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">SL: <span style="color:var(--mob-rose)">${sl}</span></span>
+                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">${slLabel}: <span style="color:${sl !== '—' ? 'var(--mob-rose)' : 'var(--mob-emerald)'}">${slOrTp2}</span></span>
                                 </div>
                             </div>
                         </div>
