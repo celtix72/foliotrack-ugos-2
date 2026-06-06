@@ -2235,7 +2235,8 @@ app.get('/api/assets', requireAuth, async (req, res) => {
                uw.volatilityAlert as userVolatilityAlert,
                a.ai_action as aiAction,
                a.ai_reasoning as aiReasoning,
-               a.ai_updated_at as aiUpdatedAt
+               a.ai_updated_at as aiUpdatedAt,
+               (SELECT COUNT(*) FROM asset_ai_history ah WHERE ah.ticker = a.ticker) as aiHistoryCount
         FROM assets a
         LEFT JOIN (
             SELECT t.assetTicker, 

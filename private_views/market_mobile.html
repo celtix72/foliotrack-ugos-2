@@ -549,7 +549,7 @@
                         ${a.aiAction === 'BUY' || a.aiAction === 'INCREASE' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 
                           a.aiAction === 'SELL' || a.aiAction === 'DECREASE' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' : 
                           'bg-slate-500/10 text-slate-500 border-slate-500/20'}">
-                        <span class="material-symbols-outlined text-[10px]">smart_toy</span> ${a.aiAction}
+                        <span class="material-symbols-outlined text-[10px]">smart_toy</span> ${a.aiAction} (${a.aiHistoryCount || 1})
                     </div>` : ''}
                 </div>
                 <div class="mob-holding-name" style="margin-top:2px;">${abbreviateName(a.name) || ''}</div>
