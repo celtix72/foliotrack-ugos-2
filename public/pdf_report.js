@@ -21,7 +21,7 @@ window.generateDetailedPDFReport = async function(buttonEl) {
         // Fetch details for each portfolio
         const portfolioDetailsList = [];
         for (const p of portfolios) {
-            const detailRes = await fetch(`/api/portfolio-details?id=${p.id}`);
+            const detailRes = await fetch(`/api/portfolios/${p.id}`);
             const detailData = await detailRes.json();
             portfolioDetailsList.push({ portfolio: p, details: detailData });
         }
