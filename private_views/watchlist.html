@@ -290,10 +290,12 @@
     }
 
     function renderPerf(val) {
-        if (val === undefined || val === null) return `<span class="text-slate-300 dark:text-slate-700 font-bold text-xs tracking-tighter">—</span>`;
-        const isPos = val >= 0;
+        if (val === undefined || val === null || val === '') return `<span class="text-slate-300 dark:text-slate-700 font-bold text-xs tracking-tighter">—</span>`;
+        const numVal = parseFloat(val);
+        if (isNaN(numVal)) return `<span class="text-slate-300 dark:text-slate-700 font-bold text-xs tracking-tighter">—</span>`;
+        const isPos = numVal >= 0;
         const color = isPos ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border-rose-500/20';
-        return `<span class="performance-chip border ${color}">${isPos ? '+' : ''}${val.toFixed(1)}%</span>`;
+        return `<span class="performance-chip border ${color}">${isPos ? '+' : ''}${numVal.toFixed(1)}%</span>`;
     }
 
     window.addEventListener('market-data-updated', () => {

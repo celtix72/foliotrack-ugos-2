@@ -278,10 +278,12 @@
         const perfData = window.performanceData || {};
 
         const renderMobilePerf = (val, label) => {
-            if (val === undefined || val === null) return `<span style="font-size:9px; font-weight:800; color:var(--mob-text-caption)">${label}: —</span>`;
-            const isP = val >= 0;
+            if (val === undefined || val === null || val === '') return `<span style="font-size:9px; font-weight:800; color:var(--mob-text-caption)">${label}: —</span>`;
+            const numVal = parseFloat(val);
+            if (isNaN(numVal)) return `<span style="font-size:9px; font-weight:800; color:var(--mob-text-caption)">${label}: —</span>`;
+            const isP = numVal >= 0;
             const c = isP ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-            return `<span style="font-size:9px; font-weight:900; color:${c}; background: ${isP ? 'rgba(16,185,129,0.1)' : 'rgba(244,63,94,0.1)'}; padding: 1px 4px; border-radius: 4px;">${label} ${isP ? '+' : ''}${val.toFixed(1)}%</span>`;
+            return `<span style="font-size:9px; font-weight:900; color:${c}; background: ${isP ? 'rgba(16,185,129,0.1)' : 'rgba(244,63,94,0.1)'}; padding: 1px 4px; border-radius: 4px;">${label} ${isP ? '+' : ''}${numVal.toFixed(1)}%</span>`;
         };
 
         container.innerHTML = watchlist.map(a => {
