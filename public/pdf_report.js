@@ -147,15 +147,21 @@ window.generateDetailedPDFReport = async function(buttonEl) {
             const pName = p.portfolio.name;
             const pCurr = p.portfolio.currency;
             if (p.details && p.details.holdings) {
+                const divMap = {};
+                if (p.details.dividends) {
+                    for (const d of p.details.dividends) {
+                        divMap[d.ticker] = (divMap[d.ticker] || 0) + d.amount;
+                    }
+                }
                 for (const h of p.details.holdings) {
                     allAssets.push({
                         port: pName,
                         ticker: h.ticker,
                         name: h.name,
-                        qty: h.balance,
-                        price: h.currentPrice,
+                        qty: h.shares || 0,
+                        price: h.currentPrice || 0,
                         unrealized: h.unrealizedGain || 0,
-                        dividends: h.collectedDividends || 0,
+                        dividends: divMap[h.ticker] || 0,
                         currency: h.currency || pCurr
                     });
                 }
