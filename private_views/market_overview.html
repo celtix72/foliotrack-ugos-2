@@ -714,69 +714,7 @@ async function forceSync() {
     }
 }
 
-window.openAssetAiModal = function(ticker, action, reasoning, date) {
-    document.getElementById('asset-ai-ticker').innerText = ticker;
-    const actionEl = document.getElementById('asset-ai-action');
-    actionEl.innerText = action;
-    actionEl.className = `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest border shadow-sm ${
-        action === 'BUY' || action === 'INCREASE' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30 shadow-emerald-500/10' : 
-        action === 'SELL' || action === 'DECREASE' ? 'bg-rose-500/10 text-rose-500 border-rose-500/30 shadow-rose-500/10' : 
-        'bg-slate-500/10 text-slate-500 border-slate-500/30 shadow-slate-500/10'
-    }`;
-    
-    // Add icon to action
-    const iconSpan = document.createElement('span');
-    iconSpan.className = 'material-symbols-outlined text-[14px]';
-    iconSpan.innerText = (action === 'BUY' || action === 'INCREASE') ? 'trending_up' : ((action === 'SELL' || action === 'DECREASE') ? 'trending_down' : 'horizontal_rule');
-    actionEl.prepend(iconSpan);
 
-    // Parse Markdown
-    let formattedReasoning = reasoning.replace(/\\n/g, '\n');
-    
-    // Headings
-    formattedReasoning = formattedReasoning.replace(/^### (.*$)/gim, '<h4 class="text-indigo-500 text-[15px] font-black mt-4 mb-2 flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px]">psychiatry</span> $1</h4>');
-    formattedReasoning = formattedReasoning.replace(/^## (.*$)/gim, '<h3 class="text-indigo-500 text-base font-black mt-5 mb-2.5 border-b border-slate-200 dark:border-slate-700 pb-1">$1</h3>');
-    formattedReasoning = formattedReasoning.replace(/^# (.*$)/gim, '<h2 class="text-indigo-500 text-lg font-black mt-5 mb-3">$1</h2>');
-    
-    // Bold
-    formattedReasoning = formattedReasoning.replace(/\*\*(.*?)\*\*/g, '<strong class="text-indigo-500 font-black bg-indigo-500/10 px-1 rounded">$1</strong>');
-    
-    // Italics
-    formattedReasoning = formattedReasoning.replace(/\*(.*?)\*/g, '<em class="text-slate-400 dark:text-slate-500">$1</em>');
-    
-    // Lists
-    formattedReasoning = formattedReasoning.replace(/^\s*[-*]\s+(.*)$/gim, '<div class="flex gap-2 mb-2 pl-1"><span class="text-indigo-500 font-black">&bull;</span><span class="flex-1">$1</span></div>');
-    formattedReasoning = formattedReasoning.replace(/^\s*\d+\.\s+(.*)$/gim, '<div class="flex gap-2 mb-2 pl-1"><span class="text-indigo-500 font-black">&bull;</span><span class="flex-1">$1</span></div>');
-    
-    // Newlines to BR
-    formattedReasoning = formattedReasoning.replace(/\n\n/g, '<div class="h-3"></div>');
-    formattedReasoning = formattedReasoning.replace(/\n/g, '<br>');
-
-    document.getElementById('asset-ai-reasoning').innerHTML = formattedReasoning;
-    document.getElementById('asset-ai-date').innerHTML = `<span class="material-symbols-outlined text-[12px] align-text-bottom mr-1">update</span> Aggiornato il: ${date}`;
-    document.getElementById('asset-ai-modal').classList.remove('hidden');
-}
-
-window.closeAssetAiModal = function() {
-    document.getElementById('asset-ai-modal').classList.add('hidden');
-}
-
-window.runAssetAI = async function(ticker) {
-    const overlay = document.getElementById('ai-loading-overlay');
-    const msgEl = document.getElementById('ai-loading-msg');
-    overlay.classList.remove('hidden');
-    overlay.style.display = 'flex';
-    msgEl.innerText = 'Inizializzazione...';
-
-    const source = new EventSource('/api/assets/' + encodeURIComponent(ticker) + '/ai-analysis');
-    source.addEventListener('progress', function(e) {
-        const data = JSON.parse(e.data);
-        msgEl.innerText = data.message;
-    });
-    source.addEventListener('complete', function(e) {
-        source.close();
-        overlay.classList.add('hidden');
-        overlay.style.display = '';
 // ─── Movers Carousel Logic ──────────────────────────────────────────────────
 async function loadMovers() {
     try {
