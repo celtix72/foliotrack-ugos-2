@@ -117,9 +117,7 @@
                     <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
                         <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Ticker / Name</th>
                         <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Price</th>
-                        <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">1D</th>
-                        <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">History</th>
-                        <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Perf (1W / 1M / 1Y)</th>
+                        <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Perf (1D / 1W / 1M / 1Y)</th>
                         <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Yield</th>
                         <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">FWD P/E</th>
                         <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">PEG</th>
@@ -214,7 +212,7 @@
             if (items.length === 0) return '';
             return `
                 <tr class="bg-slate-100/50 dark:bg-slate-800/80">
-                    <td colspan="9" class="px-5 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+                    <td colspan="7" class="px-5 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
                         ${title} (${items.length})
                     </td>
                 </tr>
@@ -257,12 +255,9 @@
                             <td class="px-5 py-2">
                                 <div class="text-sm font-bold">${formatCurrency(item.currentPrice, item.currency, 2)}</div>
                             </td>
-                            <td class="px-5 py-2 text-center">${renderPerf(d1)}</td>
-                            <td class="px-5 py-2 text-center">
-                                <canvas id="sparkline-${item.ticker}" width="60" height="24" class="opacity-80 mx-auto"></canvas>
-                            </td>
                             <td class="px-5 py-2 text-center">
                                 <div class="flex items-center justify-center gap-1">
+                                    ${renderPerf(d1)}
                                     ${renderPerf(perf.perf1W)}
                                     ${renderPerf(perf.perf1M)}
                                     ${renderPerf(perf.perf1Y)}
@@ -292,47 +287,6 @@
         tbody.innerHTML = renderSection(equities, 'Equity') + 
                           renderSection(etfs, 'ETF') + 
                           renderSection(other, 'Other');
-
-        // Draw sparklines
-        watchlist.forEach(item => {
-            if (item.sparkline && item.sparkline.length > 1) {
-                const canvas = document.getElementById(`sparkline-${item.ticker}`);
-                if (canvas) {
-                    const color = (item.changePercent || 0) >= 0 ? '#10b981' : '#f43f5e';
-                    drawSparkline(canvas, item.sparkline, color);
-                }
-            }
-        });
-    }
-
-    function drawSparkline(canvas, data, color) {
-        const ctx = canvas.getContext('2d');
-        const width = canvas.width;
-        const height = canvas.height;
-        ctx.clearRect(0, 0, width, height);
-        const min = Math.min(...data);
-        const max = Math.max(...data);
-        const range = max - min || 1;
-        ctx.beginPath();
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        data.forEach((val, i) => {
-            const x = (i / (data.length - 1)) * width;
-            const y = height - ((val - min) / range) * (height - 4) - 2;
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-        });
-        ctx.stroke();
-        ctx.lineTo(width, height);
-        ctx.lineTo(0, height);
-        ctx.closePath();
-        const grad = ctx.createLinearGradient(0, 0, 0, height);
-        grad.addColorStop(0, color + '33');
-        grad.addColorStop(1, color + '00');
-        ctx.fillStyle = grad;
-        ctx.fill();
     }
 
     function renderPerf(val) {

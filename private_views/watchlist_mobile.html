@@ -275,6 +275,15 @@
         }
         if (empty) empty.classList.add('hidden');
 
+        const perfData = window.performanceData || {};
+
+        const renderMobilePerf = (val, label) => {
+            if (val === undefined || val === null) return `<span style="font-size:9px; font-weight:800; color:var(--mob-text-caption)">${label}: —</span>`;
+            const isP = val >= 0;
+            const c = isP ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+            return `<span style="font-size:9px; font-weight:900; color:${c}; background: ${isP ? 'rgba(16,185,129,0.1)' : 'rgba(244,63,94,0.1)'}; padding: 1px 4px; border-radius: 4px;">${label} ${isP ? '+' : ''}${val.toFixed(1)}%</span>`;
+        };
+
         container.innerHTML = watchlist.map(a => {
             const price = a.currentPrice || 0;
             const change = a.changePercent || 0;
@@ -320,6 +329,8 @@
                 alertTags += `<div style="font-size:10px; font-weight:900; color:${stopLossHit?'var(--mob-rose)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">${stopLossHit?'dangerous':'warning'}</span> SL: ${formatCurrency(stopLoss, a.currency, 2)}</div>`;
             }
 
+            const p = perfData[a.ticker] || {};
+
             return `
                 <div class="mob-holding-swipe-container" 
                      ontouchstart="handleTouchStart(event, this)" 
@@ -348,25 +359,32 @@
                             <div class="flex flex-wrap gap-1.5 mt-1">
                                 ${alertTags}
                             </div>
-                        </div>
-                        <div class="mob-holding-values">
-                            <div class="mob-holding-value">${formatCurrency(price, a.currency, 2)}</div>
-                            <div class="flex items-center justify-end gap-1.5 mt-0.5">
-                                ${(a.preMarketChangePercent && Math.abs(a.preMarketChangePercent) > 0.01 && !window._mobMarketOpen) ? `
-                                    <span style="font-size:10px; font-weight:900; color:${a.preMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">
-                                        (${a.preMarketChangePercent >= 0 ? '+' : ''}${a.preMarketChangePercent.toFixed(1)}%)
-                                    </span>
-                                ` : ''}
-                                ${(a.postMarketChangePercent && Math.abs(a.postMarketChangePercent) > 0.01 && !window._mobMarketOpen) ? `
-                                    <span style="font-size:10px; font-weight:900; color:${a.postMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">
-                                        (${a.postMarketChangePercent >= 0 ? '+' : ''}${a.postMarketChangePercent.toFixed(1)}%)
-                                    </span>
-                                ` : ''}
-                                <div class="mob-holding-gain" style="color:${color}; font-weight:900; margin-top:0">${isPos ? '+' : ''}${change.toFixed(1)}%</div>
-                            </div>
-                            <div class="flex items-center justify-end gap-2 mt-1">
-                                <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">FWD P/E: ${a.forwardPE ? a.forwardPE.toFixed(1) : '—'}</span>
+                            <div class="flex items-center gap-2 mt-1.5">
+                                <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">P/E: ${a.forwardPE ? a.forwardPE.toFixed(1) : '—'}</span>
                                 <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">PEG: ${a.pegRatio ? a.pegRatio.toFixed(1) : '—'}</span>
+                            </div>
+                        </div>
+                        <div class="mob-holding-values text-right shrink-0">
+                            <div class="mob-holding-value" style="font-size: 15px;">${formatCurrency(price, a.currency, 2)}</div>
+                            <div class="flex flex-col items-end gap-1 mt-1">
+                                <div class="flex items-center justify-end gap-1">
+                                    ${(a.preMarketChangePercent && Math.abs(a.preMarketChangePercent) > 0.01 && !window._mobMarketOpen) ? `
+                                        <span style="font-size:9px; font-weight:900; color:${a.preMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">
+                                            PRE: ${a.preMarketChangePercent >= 0 ? '+' : ''}${a.preMarketChangePercent.toFixed(1)}%
+                                        </span>
+                                    ` : ''}
+                                    ${(a.postMarketChangePercent && Math.abs(a.postMarketChangePercent) > 0.01 && !window._mobMarketOpen) ? `
+                                        <span style="font-size:9px; font-weight:900; color:${a.postMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">
+                                            POST: ${a.postMarketChangePercent >= 0 ? '+' : ''}${a.postMarketChangePercent.toFixed(1)}%
+                                        </span>
+                                    ` : ''}
+                                    ${renderMobilePerf(change, '1D')}
+                                </div>
+                                <div class="flex gap-1 mt-0.5">
+                                    ${renderMobilePerf(p.perf1W, '1W')}
+                                    ${renderMobilePerf(p.perf1M, '1M')}
+                                </div>
+                                ${renderMobilePerf(p.perf1Y, '1Y')}
                             </div>
                         </div>
                     </div>
