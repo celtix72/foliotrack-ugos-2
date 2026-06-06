@@ -243,13 +243,14 @@
 
                     const getAiParam = (text, param) => {
                         if (!text) return '—';
+                        const normalizedText = text.replace(/\\n/g, '\n');
                         const escapedParam = param.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                         const regex = new RegExp(`(?:\\-|\\•|\\*)\\s*${escapedParam}\\s*:\\s*([^\\n]+)`, 'i');
-                        let m = text.match(regex);
+                        let m = normalizedText.match(regex);
                         if(m) return m[1].trim();
                         
                         const regex2 = new RegExp(`${escapedParam}\\s*:\\s*([^\\n]+)`, 'i');
-                        m = text.match(regex2);
+                        m = normalizedText.match(regex2);
                         return m ? m[1].trim() : '—';
                     };
 
