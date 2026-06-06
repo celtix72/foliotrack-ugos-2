@@ -789,7 +789,7 @@
         listEl.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height: 100px;"><span class="material-symbols-outlined animate-spin" style="font-size: 28px; color: var(--mob-primary);">sync</span></div>';
         
         try {
-            const res = await fetch('/api/assets/' + encodeURIComponent(ticker) + '/ai-history');
+            const res = await fetch('/api/assets/' + encodeURIComponent(ticker) + '/ai-history?t=' + Date.now());
             const history = await res.json();
             
             if (!history || history.length === 0) {
@@ -869,6 +869,9 @@
             btn.disabled = false;
             btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px;">add</span> Nuova Analisi';
             window.loadAssetAiHistory(_aiModalTicker);
+            if (typeof window.loadAssets === 'function') window.loadAssets();
+            if (typeof window.loadWatchlist === 'function') window.loadWatchlist();
+            if (typeof window.loadPortfolioDetails === 'function') window.loadPortfolioDetails();
         });
         
         source.addEventListener('error', function(e) {
@@ -885,7 +888,12 @@
         if (!confirm('Eliminare analisi?')) return;
         try {
             const res = await fetch('/api/assets/ai-history/' + id, { method: 'DELETE' });
-            if((await res.json()).success) window.loadAssetAiHistory(ticker);
+            if((await res.json()).success) {
+                window.loadAssetAiHistory(ticker);
+                if (typeof window.loadAssets === 'function') window.loadAssets();
+                if (typeof window.loadWatchlist === 'function') window.loadWatchlist();
+                if (typeof window.loadPortfolioDetails === 'function') window.loadPortfolioDetails();
+            }
         } catch(e) {}
     };
 

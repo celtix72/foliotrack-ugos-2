@@ -3653,22 +3653,41 @@ app.get('/api/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
 
         sendEvent('progress', { message: 'Generazione responso IA in corso...' });
 
-        const customPrompt = globalSettings.aiAssetPrompt ? `\nIstruzioni personalizzate dall'utente:\n${globalSettings.aiAssetPrompt}\n` : '';
+        let customPromptText = globalSettings.aiAssetPrompt || '';
+        if (customPromptText) {
+            const assetName = assetRow.name || assetRow.ticker;
+            const assetExchange = assetRow.exchange || 'Mercato';
+            customPromptText = customPromptText.replace(/\[INSERIRE TICKER E MERCATO\]/gi, `${assetRow.ticker} (${assetExchange})`);
+            customPromptText = customPromptText.replace(/\[TICKER\]/gi, assetRow.ticker);
+            customPromptText = customPromptText.replace(/\[ASSET\]/gi, assetName);
+        }
+
+        const customPrompt = customPromptText ? `\nIstruzioni personalizzate dall'utente:\n${customPromptText}\n` : '';
 
         const prompt = `
-Sei un consulente finanziario esperto. Analizza questo specifico asset in base ai dati forniti.
+Sei un esperto analista finanziario. Il tuo compito è analizzare questo asset in base ai dati forniti e soddisfare scrupolosamente le istruzioni personalizzate dell'utente.
+
 ${customPrompt}
-Dati Asset:
+
+Dati Asset Attuali:
 ${contextData}
 
-Devi restituire ESATTAMENTE ed ESCLUSIVAMENTE un oggetto JSON con questa struttura, senza blocco markdown (\`\`\`json) e senza testo testuale prima o dopo. Se non hai informazioni sufficienti per determinare un targetPrice o uno stopLoss accurati, imposta i loro valori a 0:
+REGOLE DI OUTPUT FONDAMENTALI:
+Devi restituire ESATTAMENTE ed ESCLUSIVAMENTE un oggetto JSON valido. NESSUN TESTO al di fuori del JSON. Nessun blocco markdown \`\`\`json.
+Tutta la tua analisi discorsiva, comprese le risposte alle istruzioni dell'utente e la scheda tecnica richiesta, DEVONO ESSERE INSERITE ALL'INTERNO del campo testuale "reasoning" formattato in Markdown.
+Inoltre, devi estrarre l'indicazione operativa e i prezzi chiave per popolare i campi strutturati "action", "targetProfit" e "stopLoss".
+
+Struttura JSON richiesta:
 {
   "action": "BUY",
-  "reasoning": "Motivazione concisa in markdown per l'indicazione operativa e i livelli di prezzo suggeriti.",
+  "reasoning": "INSERISCI QUI TUTTA L'ANALISI COMPLETA E LA SCHEDA TECNICA RICHIESTA (in formato Markdown).",
   "targetProfit": 150.50,
   "stopLoss": 90.00
 }
-NB: il campo action deve essere una singola parola (es. BUY, SELL, HOLD, INCREASE, DECREASE). targetProfit e stopLoss devono essere numeri (usa il punto per i decimali).
+
+NB: 
+- "action" deve essere una singola parola in maiuscolo (es. BUY, SELL, HOLD, INCREASE, DECREASE). 
+- "targetProfit" e "stopLoss" devono essere numeri (usa il punto per i decimali, es. 10.50). Se non hai un target o stop loss definito, inserisci 0.
 `;
 
         const geminiModel = await getBestGeminiModel(apiKey);
