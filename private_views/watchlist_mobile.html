@@ -363,6 +363,30 @@
             
             const res = getAiParam(a.aiReasoning, 'Area di Resistenza critica');
 
+            const cleanParam = (val) => val === '—' ? val : val.replace(/\*/g, '').trim();
+            const trendClean = cleanParam(trend);
+            const buyZoneClean = cleanParam(buyZone);
+            const tpClean = cleanParam(tp);
+            const slOrTp2Clean = cleanParam(slOrTp2);
+            const supClean = cleanParam(sup);
+            const resClean = cleanParam(res);
+
+            let shortTrend = trendClean;
+            const trendMatch = trendClean.match(/^(Rialzista|Ribassista|Laterale|Buy|Sell|Hold)/i);
+            if (trendMatch) {
+                shortTrend = trendMatch[1];
+            } else if (shortTrend.length > 12) {
+                shortTrend = shortTrend.substring(0, 10) + '...';
+            }
+
+            const shortVal = (val) => {
+                if (val === '—') return val;
+                const m = val.match(/^([€$\d.,]+)/);
+                if (m) return m[1];
+                if (val.length > 15) return val.substring(0, 12) + '...';
+                return val;
+            };
+
             return `
                 <div class="mob-holding-swipe-container" 
                      ontouchstart="handleTouchStart(event, this)" 
@@ -398,16 +422,16 @@
                             </div>
                             <div class="flex flex-col gap-1 mt-1.5">
                                 <div class="flex items-center gap-2">
-                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">Trend: <span style="color:var(--mob-text-primary)">${trend}</span></span>
-                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">Zone: <span style="color:var(--mob-text-primary)">${buyZone}</span></span>
+                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">Trend: <span style="color:var(--mob-text-primary)" title="${trendClean.replace(/"/g, '&quot;')}">${shortTrend}</span></span>
+                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">Zone: <span style="color:var(--mob-text-primary)" title="${buyZoneClean.replace(/"/g, '&quot;')}">${shortVal(buyZoneClean)}</span></span>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">Sup: <span style="color:var(--mob-text-primary)">${sup}</span></span>
-                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">Res: <span style="color:var(--mob-text-primary)">${res}</span></span>
+                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">Sup: <span style="color:var(--mob-text-primary)" title="${supClean.replace(/"/g, '&quot;')}">${shortVal(supClean)}</span></span>
+                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">Res: <span style="color:var(--mob-text-primary)" title="${resClean.replace(/"/g, '&quot;')}">${shortVal(resClean)}</span></span>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">TP: <span style="color:var(--mob-emerald)">${tp}</span></span>
-                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">${slLabel}: <span style="color:${sl !== '—' ? 'var(--mob-rose)' : 'var(--mob-emerald)'}">${slOrTp2}</span></span>
+                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">TP: <span style="color:var(--mob-emerald)" title="${tpClean.replace(/"/g, '&quot;')}">${shortVal(tpClean)}</span></span>
+                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">${slLabel}: <span style="color:${sl !== '—' ? 'var(--mob-rose)' : 'var(--mob-emerald)'}" title="${slOrTp2Clean.replace(/"/g, '&quot;')}">${shortVal(slOrTp2Clean)}</span></span>
                                 </div>
                             </div>
                         </div>
