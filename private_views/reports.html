@@ -149,44 +149,33 @@
 <!-- Reports Scrollable Area -->
 <main class="flex-1 overflow-y-auto custom-scrollbar p-8 bg-background-light dark:bg-background-dark">
 <!-- Reports Header Section -->
-<div class="flex flex-wrap items-center justify-between gap-4 mb-6">
-<div>
-            <div class="flex items-end justify-between mb-8 gap-4">
-                <div>
-                    <h2 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Reports & Analytics</h2>
-                    <p class="text-sm font-bold text-slate-500 mt-1 flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                        Analisi portafoglio live
-                    </p>
-                </div>
-                <div class="flex gap-4 items-center">
-                    <!-- PDF Button -->
-                    <button onclick="window.generateDetailedPDFReport(this)" class="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm transition-all shadow-md">
-                        <span class="material-symbols-outlined" style="font-size: 16px;">picture_as_pdf</span> Scarica PDF
-                    </button>
-                    <!-- Range Selector -->
-                    <div class="flex bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl p-1 shadow-sm" id="reports-range-selector">
-<p class="text-sm text-slate-500 dark:text-slate-400" id="report-period-label">Last 12 Months</p>
-<div id="tag-filter-container" class="flex flex-wrap gap-2 mt-4">
-    <!-- JS filled portfolio tags -->
-</div>
-</div>
-<div class="flex items-center gap-3 flex-wrap">
-<!-- Period Range Selector -->
-<div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-900/50 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
-    <button onclick="changeRange('6M')" data-range="6M" class="range-btn px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all hover:bg-white dark:hover:bg-slate-800">6M</button>
-    <button onclick="changeRange('1Y')" data-range="1Y" class="range-btn px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all hover:bg-white dark:hover:bg-slate-800">1Y</button>
-    <button onclick="changeRange('2Y')" data-range="2Y" class="range-btn px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all hover:bg-white dark:hover:bg-slate-800">2Y</button>
-    <button onclick="changeRange('3Y')" data-range="3Y" class="range-btn px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all hover:bg-white dark:hover:bg-slate-800">3Y</button>
-    <button onclick="changeRange('5Y')" data-range="5Y" class="range-btn px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all hover:bg-white dark:hover:bg-slate-800">5Y</button>
-</div>
-<button class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 transition-all shadow-lg shadow-emerald-500/20" onclick="window.location.href='/api/export-all-transactions'">
-<span class="material-symbols-outlined text-sm">csv</span>Export CSV
-</button>
-<button class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 transition-all shadow-lg shadow-primary/20" onclick="window.print()">
-<span class="material-symbols-outlined text-sm">download</span>Export PDF
-</button>
-</div>
+<div class="flex flex-wrap items-end justify-between mb-8 gap-4">
+    <div>
+        <h2 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Reports & Analytics</h2>
+        <p class="text-sm font-bold text-slate-500 mt-1 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            Analisi portafoglio live
+        </p>
+        <div id="tag-filter-container" class="flex flex-wrap gap-2 mt-4">
+            <!-- JS filled portfolio tags -->
+        </div>
+    </div>
+    <div class="flex items-center gap-3 flex-wrap">
+        <button onclick="window.generateDetailedPDFReport(this)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 transition-all shadow-lg shadow-indigo-600/20">
+            <span class="material-symbols-outlined text-sm">picture_as_pdf</span>Export PDF
+        </button>
+        <button class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 transition-all shadow-lg shadow-emerald-500/20" onclick="window.location.href='/api/export-all-transactions'">
+            <span class="material-symbols-outlined text-sm">csv</span>Export CSV
+        </button>
+        <!-- Period Range Selector -->
+        <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-900/50 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
+            <button onclick="changeRange('6M')" data-range="6M" class="range-btn px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all hover:bg-white dark:hover:bg-slate-800">6M</button>
+            <button onclick="changeRange('1Y')" data-range="1Y" class="range-btn px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all hover:bg-white dark:hover:bg-slate-800 bg-white dark:bg-slate-700 shadow-sm text-primary">1Y</button>
+            <button onclick="changeRange('2Y')" data-range="2Y" class="range-btn px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all hover:bg-white dark:hover:bg-slate-800">2Y</button>
+            <button onclick="changeRange('3Y')" data-range="3Y" class="range-btn px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all hover:bg-white dark:hover:bg-slate-800">3Y</button>
+            <button onclick="changeRange('5Y')" data-range="5Y" class="range-btn px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all hover:bg-white dark:hover:bg-slate-800">5Y</button>
+        </div>
+    </div>
 </div>
 <div class="space-y-8 max-w-7xl mx-auto">
 <!-- Key Metrics Grid -->

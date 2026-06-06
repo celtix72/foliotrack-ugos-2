@@ -7,7 +7,7 @@ window.generateDetailedPDFReport = async function(buttonEl) {
 
     try {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('p', 'pt', 'a4');
+        const doc = new jsPDF('l', 'pt', 'a4'); // 'l' for landscape
 
         // Fetch Global Reports Data
         const reportsRes = await fetch('/api/analytics/reports?range=1Y');
@@ -28,8 +28,16 @@ window.generateDetailedPDFReport = async function(buttonEl) {
 
         // --- PDF Generation Logic ---
         const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
         const marginLeft = 40;
         let startY = 40;
+
+        const checkPageBreak = (neededHeight) => {
+            if (startY + neededHeight > pageHeight - 40) {
+                doc.addPage();
+                startY = 40;
+            }
+        };
 
         // Header
         doc.setFontSize(22);
@@ -63,6 +71,7 @@ window.generateDetailedPDFReport = async function(buttonEl) {
             margin: { left: marginLeft }
         });
         startY = doc.lastAutoTable.finalY + 30;
+        checkPageBreak(50);
 
         // Portfolios Breakdown
         doc.setFontSize(14);
@@ -98,11 +107,7 @@ window.generateDetailedPDFReport = async function(buttonEl) {
 
         // Asset Allocation
         if (reportsData.diversification) {
-            // Check page break
-            if (startY > doc.internal.pageSize.getHeight() - 100) {
-                doc.addPage();
-                startY = 40;
-            }
+            checkPageBreak(60);
 
             doc.setFontSize(14);
             doc.setFont("helvetica", "bold");
