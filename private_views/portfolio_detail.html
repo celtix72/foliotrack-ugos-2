@@ -654,7 +654,7 @@
 </div>
 
 <!-- AI Details Modal -->
-<div id="ai-details-modal" class="fixed inset-0 bg-slate-900/50 dark:bg-black/60 backdrop-blur-sm hidden z-[100] flex items-center justify-center p-4">
+<div id="ai-details-modal" class="fixed inset-0 bg-slate-900/50 dark:bg-black/60 backdrop-blur-sm hidden z-[110] flex items-center justify-center p-4">
     <div class="bg-white dark:bg-surface-dark w-full max-w-md rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6">
         <div class="flex justify-between items-center mb-4">
             <div>
@@ -1689,13 +1689,42 @@
         document.getElementById('ai-modal-ticker').innerText = ticker;
         const actionEl = document.getElementById('ai-modal-action');
         actionEl.innerText = action;
-        actionEl.className = `inline-block px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest border ${
-            action === 'BUY' || action === 'INCREASE' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 
-            action === 'SELL' || action === 'DECREASE' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' : 
-            'bg-slate-500/10 text-slate-500 border-slate-500/20'
+        actionEl.className = `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest border shadow-sm ${
+            action === 'BUY' || action === 'INCREASE' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30 shadow-emerald-500/10' : 
+            action === 'SELL' || action === 'DECREASE' ? 'bg-rose-500/10 text-rose-500 border-rose-500/30 shadow-rose-500/10' : 
+            'bg-slate-500/10 text-slate-500 border-slate-500/30 shadow-slate-500/10'
         }`;
-        document.getElementById('ai-modal-reasoning').innerHTML = reasoning.replace(/\\n/g, '<br>');
-        document.getElementById('ai-modal-date').innerText = 'Aggiornato il: ' + date;
+        
+        // Add icon to action
+        const iconSpan = document.createElement('span');
+        iconSpan.className = 'material-symbols-outlined text-[14px]';
+        iconSpan.innerText = (action === 'BUY' || action === 'INCREASE') ? 'trending_up' : ((action === 'SELL' || action === 'DECREASE') ? 'trending_down' : 'horizontal_rule');
+        actionEl.prepend(iconSpan);
+
+        // Parse Markdown
+        let formattedReasoning = reasoning.replace(/\\n/g, '\n');
+        
+        // Headings
+        formattedReasoning = formattedReasoning.replace(/^### (.*$)/gim, '<h4 class="text-indigo-500 text-[15px] font-black mt-4 mb-2 flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px]">psychiatry</span> $1</h4>');
+        formattedReasoning = formattedReasoning.replace(/^## (.*$)/gim, '<h3 class="text-indigo-500 text-base font-black mt-5 mb-2.5 border-b border-slate-200 dark:border-slate-700 pb-1">$1</h3>');
+        formattedReasoning = formattedReasoning.replace(/^# (.*$)/gim, '<h2 class="text-indigo-500 text-lg font-black mt-5 mb-3">$1</h2>');
+        
+        // Bold
+        formattedReasoning = formattedReasoning.replace(/\*\*(.*?)\*\*/g, '<strong class="text-indigo-500 font-black bg-indigo-500/10 px-1 rounded">$1</strong>');
+        
+        // Italics
+        formattedReasoning = formattedReasoning.replace(/\*(.*?)\*/g, '<em class="text-slate-400 dark:text-slate-500">$1</em>');
+        
+        // Lists
+        formattedReasoning = formattedReasoning.replace(/^\s*[-*]\s+(.*)$/gim, '<div class="flex gap-2 mb-2 pl-1"><span class="text-indigo-500 font-black">&bull;</span><span class="flex-1">$1</span></div>');
+        formattedReasoning = formattedReasoning.replace(/^\s*\d+\.\s+(.*)$/gim, '<div class="flex gap-2 mb-2 pl-1"><span class="text-indigo-500 font-black">&bull;</span><span class="flex-1">$1</span></div>');
+        
+        // Newlines to BR
+        formattedReasoning = formattedReasoning.replace(/\n\n/g, '<div class="h-3"></div>');
+        formattedReasoning = formattedReasoning.replace(/\n/g, '<br>');
+
+        document.getElementById('ai-modal-reasoning').innerHTML = formattedReasoning;
+        document.getElementById('ai-modal-date').innerHTML = `<span class="material-symbols-outlined text-[12px] align-text-bottom mr-1">update</span> Aggiornato il: ${date}`;
         document.getElementById('ai-details-modal').classList.remove('hidden');
     };
 

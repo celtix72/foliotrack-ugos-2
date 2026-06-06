@@ -777,9 +777,9 @@
                             </div>
                         </div>
                         <div style="font-size: 11px; color: var(--mob-text); opacity: 0.8; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 8px; line-height: 1.4;">
-                            ${item.reasoning.replace(/\\n/g, ' ')}
+                            ${item.reasoning.replace(/\\n/g, ' ').replace(/[*#]/g, '')}
                         </div>
-                        <button onclick="window.openChartAiDetail('${ticker}', '${item.action}', \`${(item.reasoning || '').replace(/`/g, '\\`').replace(/'/g, "\\'").replace(/"/g, '&quot;')}\`, '${date}')" style="width: 100%; padding: 6px; border-radius: 6px; border: 1px solid rgba(148,163,184,0.2); background: transparent; color: var(--mob-text); font-size: 10px; font-weight: bold; cursor: pointer;">Leggi Tutto</button>
+                        <button onclick="window.openChartAiDetail('${ticker}', '${item.action}', \`${(item.reasoning || '').replace(/`/g, '\\`').replace(/'/g, "\\'").replace(/"/g, '&quot;')}\`, '${date}')" style="width: 100%; padding: 6px; border-radius: 6px; border: 1px solid rgba(148,163,184,0.2); background: transparent; color: var(--mob-text); font-size: 10px; font-weight: bold; cursor: pointer;">Leggi Dettagliata</button>
                     </div>
                 `;
             }).join('');
@@ -837,7 +837,9 @@
             detailModal = document.createElement('div');
             detailModal.id = 'chart-ai-detail-modal';
             detailModal.style.cssText = `display: none; position: fixed; inset: 0; z-index: 20000; align-items: center; justify-content: center; background-color: ${backdropColor}; backdrop-filter: blur(8px); padding: 16px;`;
-            document.body.appendChild(detailModal);
+            
+            const target = document.getElementById('mobile-ui') || document.body;
+            target.appendChild(detailModal);
             
             // Close on backdrop click
             detailModal.addEventListener('click', function(e) {
@@ -854,17 +856,41 @@
             actionColor = 'rgba(239,68,68,0.1)';
             actionTextColor = 'rgb(239,68,68)';
         }
+        
+        // Formatta markdown basico per una UI accattivante
+        let formattedReasoning = reasoning.replace(/\\n/g, '\n');
+        
+        // Headings
+        formattedReasoning = formattedReasoning.replace(/^### (.*$)/gim, '<h4 style="color: var(--mob-primary); font-size: 15px; font-weight: 900; margin-top: 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined" style="font-size: 16px;">psychiatry</span> $1</h4>');
+        formattedReasoning = formattedReasoning.replace(/^## (.*$)/gim, '<h3 style="color: var(--mob-primary); font-size: 16px; font-weight: 900; margin-top: 18px; margin-bottom: 10px; border-bottom: 1px solid rgba(148,163,184,0.1); padding-bottom: 4px;">$1</h3>');
+        formattedReasoning = formattedReasoning.replace(/^# (.*$)/gim, '<h2 style="color: var(--mob-primary); font-size: 18px; font-weight: 900; margin-top: 20px; margin-bottom: 12px;">$1</h2>');
+        
+        // Bold
+        formattedReasoning = formattedReasoning.replace(/\*\*(.*?)\*\*/g, '<strong style="color: var(--mob-primary); font-weight: 900; background: rgba(148,163,184,0.1); padding: 0 4px; border-radius: 4px;">$1</strong>');
+        
+        // Italics
+        formattedReasoning = formattedReasoning.replace(/\*(.*?)\*/g, '<em style="color: var(--mob-text-muted);">$1</em>');
+        
+        // Lists
+        formattedReasoning = formattedReasoning.replace(/^\s*[-*]\s+(.*)$/gim, '<div style="display: flex; gap: 8px; margin-bottom: 8px; padding-left: 4px;"><span style="color: var(--mob-primary); font-size: 14px; font-weight: 900;">&bull;</span><span style="flex: 1;">$1</span></div>');
+        formattedReasoning = formattedReasoning.replace(/^\s*\d+\.\s+(.*)$/gim, '<div style="display: flex; gap: 8px; margin-bottom: 8px; padding-left: 4px;"><span style="color: var(--mob-primary); font-size: 14px; font-weight: 900;">&bull;</span><span style="flex: 1;">$1</span></div>');
+        
+        // Newlines to BR
+        formattedReasoning = formattedReasoning.replace(/\n\n/g, '<div style="height: 12px;"></div>');
+        formattedReasoning = formattedReasoning.replace(/\n/g, '<br>');
 
         detailModal.innerHTML = `
-            <div style="background: var(--mob-surface); border: 1px solid var(--mob-border); border-radius: 20px; width: 100%; max-width: 400px; max-height: 80vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
+            <div style="background: var(--mob-surface); border: 1px solid var(--mob-border); border-radius: 20px; width: 100%; max-width: 400px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
                 <div style="padding: 16px; border-bottom: 1px solid rgba(148,163,184,0.1); display: flex; justify-content: space-between; align-items: center; background: var(--mob-surface-2);">
-                    <h3 style="font-size: 14px; font-weight: 900; color: var(--mob-primary); display: flex; align-items: center; gap: 8px; margin: 0;"><span class="material-symbols-outlined">smart_toy</span> IA: ${ticker}</h3>
-                    <button onclick="document.getElementById('chart-ai-detail-modal').style.display='none'" style="background:none; border:none; color: #94a3b8; cursor:pointer; display: flex;"><span class="material-symbols-outlined">close</span></button>
+                    <h3 style="font-size: 14px; font-weight: 900; color: var(--mob-primary); display: flex; align-items: center; gap: 8px; margin: 0;"><span class="material-symbols-outlined" style="background: linear-gradient(135deg, var(--mob-primary), #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">smart_toy</span> IA: ${ticker}</h3>
+                    <button onclick="document.getElementById('chart-ai-detail-modal').style.display='none'" style="background:rgba(148,163,184,0.1); border-radius:50%; border:none; color: var(--mob-text); cursor:pointer; display: flex; padding: 4px; transition: background 0.2s;"><span class="material-symbols-outlined" style="font-size: 18px;">close</span></button>
                 </div>
-                <div style="padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; -webkit-overflow-scrolling: touch;">
-                    <div><span style="padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 900; background: ${actionColor}; color: ${actionTextColor}; border: 1px solid ${actionTextColor}; inline-block">${action}</span></div>
-                    <div style="font-size: 13px; line-height: 1.6; color: var(--mob-text);">${reasoning.replace(/\\n/g, '<br>')}</div>
-                    <div style="font-size: 10px; font-weight: bold; color: #94a3b8; text-align: right; margin-top: 8px; border-top: 1px dashed rgba(148,163,184,0.2); padding-top: 8px;">Aggiornato il: ${date}</div>
+                <div style="padding: 20px 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; -webkit-overflow-scrolling: touch;">
+                    <div style="text-align: center;"><span style="padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 900; background: ${actionColor}; color: ${actionTextColor}; border: 1px solid ${actionTextColor}; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px ${actionColor};"><span class="material-symbols-outlined" style="font-size: 14px;">${action === 'BUY' || action === 'INCREASE' ? 'trending_up' : (action === 'SELL' || action === 'DECREASE' ? 'trending_down' : 'horizontal_rule')}</span> ${action}</span></div>
+                    <div style="font-size: 13px; line-height: 1.6; color: var(--mob-text); margin-top: 8px;">${formattedReasoning}</div>
+                    <div style="font-size: 10px; font-weight: bold; color: #94a3b8; text-align: right; margin-top: 12px; border-top: 1px dashed rgba(148,163,184,0.2); padding-top: 12px; display: flex; justify-content: flex-end; align-items: center; gap: 4px;">
+                        <span class="material-symbols-outlined" style="font-size: 12px;">update</span> Aggiornato il: ${date}
+                    </div>
                 </div>
             </div>
         `;
