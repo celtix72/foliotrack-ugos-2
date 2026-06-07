@@ -354,14 +354,62 @@
                     <span id="section-ai-arrow" class="material-symbols-outlined transition-transform">expand_more</span>
                 </button>
                 <div id="section-ai" class="collapsible-content px-6 pb-6 border-t border-slate-100 dark:border-slate-800 pt-6">
-                    <div class="space-y-4 max-w-xl">
+                    <div class="space-y-6">
+                        
+                        <!-- AI Engine Selection -->
                         <div>
-                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Gemini API Key</label>
-                            <input type="password" id="ai-gemini-key" placeholder="AIzaSy..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
-                            <p class="text-[10px] text-slate-500 mt-1">Questa chiave verrà usata per generare i report di Analisi IA del portafoglio.</p>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Motore AI di default</label>
+                            <select id="ai-engine" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-indigo-500 outline-none">
+                                <option value="Gemini">Gemini</option>
+                                <option value="Qwen">Qwen</option>
+                                <option value="OpenAI">OpenAI</option>
+                                <option value="Both">Confronto (Gemini + Qwen)</option>
+                            </select>
+                            <p class="text-[10px] text-slate-500 mt-1">Scegli quale motore usare per le analisi. "Confronto" userà entrambi per comparare i risultati.</p>
                         </div>
-                        <button onclick="saveAiSettings()" class="w-full py-2 bg-indigo-500 hover:bg-indigo-600 transition-colors text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm">Salva Chiave API</button>
-                        <p id="ai-status" class="text-[9px] font-bold hidden"></p>
+
+                        <!-- API Keys -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Gemini API Key</label>
+                                <input type="password" id="ai-gemini-key" placeholder="AIzaSy..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Qwen API Key</label>
+                                <input type="password" id="ai-qwen-key" placeholder="sk-..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">OpenAI API Key</label>
+                                <input type="password" id="ai-openai-key" placeholder="sk-..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
+                            </div>
+                        </div>
+
+                        <!-- Custom Prompts -->
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1">Prompt Valutazione Singolo Asset</label>
+                                <textarea id="ai-asset-prompt" rows="3" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-3 px-4 text-sm focus:ring-indigo-500/30 focus:border-indigo-500 transition-colors" placeholder="Es. Valuta i titoli con un'ottica da cassettista a lungo termine, privilegiando dividendi alti e stabili."></textarea>
+                            </div>
+                            <div>
+                                <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1">Prompt Analisi Intero Portafoglio</label>
+                                <textarea id="ai-portfolio-prompt" rows="3" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-3 px-4 text-sm focus:ring-indigo-500/30 focus:border-indigo-500 transition-colors" placeholder="Es. Analizza la diversificazione settoriale e valuta se l'esposizione all'azionario è troppo elevata per un profilo moderato."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Tokens Tracker -->
+                        <div class="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+                            <div class="flex items-center justify-between mb-2">
+                                <div>
+                                    <div class="font-bold text-sm">Utilizzo Token Giornalieri</div>
+                                </div>
+                                <div class="text-right">
+                                    <span id="ai-tokens-used" class="text-lg font-black text-indigo-500">0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button onclick="saveAiSettings()" class="w-full py-3 bg-indigo-500 hover:bg-indigo-600 transition-colors text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm">Salva Impostazioni AI</button>
+                        <p id="ai-status" class="text-[9px] font-bold hidden text-center"></p>
                     </div>
                 </div>
             </div>
@@ -775,7 +823,17 @@
             try {
                 const settings = await fetchAdmin('/api/admin/ai-settings'); 
                 if (settings) {
+                    document.getElementById('ai-engine').value = settings.aiEngine || 'Gemini';
                     document.getElementById('ai-gemini-key').value = settings.geminiApiKey || '';
+                    document.getElementById('ai-qwen-key').value = settings.qwenApiKey || '';
+                    document.getElementById('ai-openai-key').value = settings.openaiApiKey || '';
+                    document.getElementById('ai-asset-prompt').value = settings.aiAssetPrompt || '';
+                    document.getElementById('ai-portfolio-prompt').value = settings.aiPortfolioPrompt || '';
+                    
+                    if (document.getElementById('ai-tokens-used')) {
+                        const tokens = parseInt(settings.aiTokensUsedToday) || 0;
+                        document.getElementById('ai-tokens-used').textContent = tokens.toLocaleString();
+                    }
                 }
             } catch (err) {
                 console.error('Failed to load AI settings:', err);
@@ -789,7 +847,12 @@
             
             try {
                 const payload = {
-                    geminiApiKey: document.getElementById('ai-gemini-key').value
+                    aiEngine: document.getElementById('ai-engine').value,
+                    geminiApiKey: document.getElementById('ai-gemini-key').value,
+                    qwenApiKey: document.getElementById('ai-qwen-key').value,
+                    openaiApiKey: document.getElementById('ai-openai-key').value,
+                    aiAssetPrompt: document.getElementById('ai-asset-prompt').value,
+                    aiPortfolioPrompt: document.getElementById('ai-portfolio-prompt').value
                 };
                 const res = await fetch('/api/admin/ai-settings', {
                     method: 'POST',
@@ -802,8 +865,8 @@
                 if (!res.ok) throw new Error('Network error');
                 
                 const status = document.getElementById('ai-status');
-                status.innerText = 'SALVATO CON SUCCESSO';
-                status.className = 'text-[9px] font-bold mt-2 text-emerald-500 block';
+                status.innerText = 'IMPOSTAZIONI AI SALVATE';
+                status.className = 'text-[9px] font-bold mt-3 text-emerald-500 block text-center';
                 setTimeout(() => status.classList.add('hidden'), 3000);
             } catch (err) {
                 console.error(err);

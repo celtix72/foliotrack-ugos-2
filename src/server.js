@@ -1235,7 +1235,14 @@ app.get('/api/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
     try {
         const settings = database.getSettings(1);
         res.json({
-            geminiApiKey: settings.geminiApiKey || ''
+            aiEngine: settings.aiEngine || 'Gemini',
+            geminiApiKey: settings.geminiApiKey || '',
+            qwenApiKey: settings.qwenApiKey || '',
+            openaiApiKey: settings.openaiApiKey || '',
+            aiAssetPrompt: settings.aiAssetPrompt || '',
+            aiPortfolioPrompt: settings.aiPortfolioPrompt || '',
+            aiTokensUsedToday: settings.aiTokensUsedToday || '0',
+            aiTokensDate: settings.aiTokensDate || ''
         });
     } catch (e) {
         console.error(e); res.status(500).json({ error: e.message });
@@ -1244,9 +1251,14 @@ app.get('/api/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
 
 // POST /api/admin/ai-settings
 app.post('/api/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
-    const { geminiApiKey } = req.body;
+    const { aiEngine, geminiApiKey, qwenApiKey, openaiApiKey, aiAssetPrompt, aiPortfolioPrompt } = req.body;
     try {
+        if (aiEngine !== undefined) database.setSetting(1, 'aiEngine', aiEngine);
         if (geminiApiKey !== undefined) database.setSetting(1, 'geminiApiKey', geminiApiKey);
+        if (qwenApiKey !== undefined) database.setSetting(1, 'qwenApiKey', qwenApiKey);
+        if (openaiApiKey !== undefined) database.setSetting(1, 'openaiApiKey', openaiApiKey);
+        if (aiAssetPrompt !== undefined) database.setSetting(1, 'aiAssetPrompt', aiAssetPrompt);
+        if (aiPortfolioPrompt !== undefined) database.setSetting(1, 'aiPortfolioPrompt', aiPortfolioPrompt);
         
         logger.info(`[ADMIN] AI settings updated by ${req.user.username}`);
         res.json({ ok: true });
@@ -3601,6 +3613,45 @@ async function getBestGeminiModel(apiKey) {
     return 'gemini-2.5-flash';
 }
 
+async function callAIModel(engine, prompt, keys) {
+    if (engine === 'Qwen') {
+        const apiKey = keys.qwenApiKey || process.env.QWEN_API_KEY;
+        if (!apiKey) throw new Error('Qwen API Key mancante.');
+        const res = await axios.post('https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions', {
+            model: 'qwen-plus',
+            messages: [{ role: 'user', content: prompt }]
+        }, {
+            headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
+        });
+        const content = res.data.choices?.[0]?.message?.content || '{}';
+        return { text: content, usage: res.data.usage || {} };
+    } else if (engine === 'OpenAI') {
+        const apiKey = keys.openaiApiKey || process.env.OPENAI_API_KEY;
+        if (!apiKey) throw new Error('OpenAI API Key mancante.');
+        const res = await axios.post('https://api.openai.com/v1/chat/completions', {
+            model: 'gpt-4o',
+            messages: [{ role: 'user', content: prompt }]
+        }, {
+            headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
+        });
+        const content = res.data.choices?.[0]?.message?.content || '{}';
+        return { text: content, usage: res.data.usage || {} };
+    } else {
+        // Default to Gemini
+        const apiKey = keys.geminiApiKey || process.env.GEMINI_API_KEY;
+        if (!apiKey) throw new Error('Gemini API Key mancante.');
+        const geminiModel = await getBestGeminiModel(apiKey);
+        const res = await axios.post(
+            `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`,
+            { contents: [{ parts: [{ text: prompt }] }] },
+            { headers: { 'Content-Type': 'application/json' } }
+        );
+        const content = res.data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+        const usage = res.data.usageMetadata || {};
+        return { text: content, usage: { totalTokenCount: usage.totalTokenCount || 0 } };
+    }
+}
+
 app.get('/api/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
     try {
         const globalSettings = database.getSettings(1) || {};
@@ -3690,30 +3741,67 @@ NB:
 - "targetProfit" e "stopLoss" devono essere numeri (usa il punto per i decimali, es. 10.50). Se non hai un target o stop loss definito, inserisci 0.
 `;
 
-        const geminiModel = await getBestGeminiModel(apiKey);
-        console.log(`[AI Analysis] Using model: ${geminiModel} for asset ${ticker}`);
-        const response = await axios.post(
-            `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`,
-            {
-                contents: [{ parts: [{ text: prompt }] }]
-            },
-            {
-                headers: { 'Content-Type': 'application/json' }
-            }
-        );
-
+        const engine = globalSettings.aiEngine || 'Gemini';
         let parsedResponse = null;
+        let tokensUsed = 0;
+        let usage = {};
+
         try {
-            const rawText = response.data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-            const cleanText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-            parsedResponse = JSON.parse(cleanText);
+            if (engine === 'Both') {
+                sendEvent('progress', { message: 'Generazione in corso (Gemini + Qwen)...' });
+                const [geminiRes, qwenRes] = await Promise.allSettled([
+                    callAIModel('Gemini', prompt, globalSettings),
+                    callAIModel('Qwen', prompt, globalSettings)
+                ]);
+
+                let geminiText = "{}";
+                if (geminiRes.status === 'fulfilled') {
+                    geminiText = geminiRes.value.text;
+                    tokensUsed += (geminiRes.value.usage.totalTokenCount || 0);
+                }
+
+                let qwenText = "{}";
+                if (qwenRes.status === 'fulfilled') {
+                    qwenText = qwenRes.value.text;
+                    // Qwen tokens approximation or tracking if provided
+                    tokensUsed += (qwenRes.value.usage.total_tokens || 0);
+                }
+
+                let parsedGemini = {};
+                let parsedQwen = {};
+                
+                try {
+                    const cleanG = geminiText.replace(/```json/gi, '').replace(/```/g, '').trim();
+                    parsedGemini = JSON.parse(cleanG);
+                } catch(e) {}
+                
+                try {
+                    const cleanQ = qwenText.replace(/```json/gi, '').replace(/```/g, '').trim();
+                    parsedQwen = JSON.parse(cleanQ);
+                } catch(e) {}
+
+                parsedResponse = {
+                    action: parsedGemini.action || parsedQwen.action || 'HOLD',
+                    targetProfit: parsedGemini.targetProfit || parsedQwen.targetProfit || 0,
+                    stopLoss: parsedGemini.stopLoss || parsedQwen.stopLoss || 0,
+                    reasoning: `### Analisi prodotta da Gemini\n\n${parsedGemini.reasoning || 'Nessuna risposta valida da Gemini.'}\n\n---\n\n### Analisi prodotta da Qwen\n\n${parsedQwen.reasoning || 'Nessuna risposta valida da Qwen.'}`
+                };
+
+            } else {
+                sendEvent('progress', { message: `Generazione responso IA in corso tramite ${engine}...` });
+                const res = await callAIModel(engine, prompt, globalSettings);
+                const rawText = res.text;
+                tokensUsed = res.usage.totalTokenCount || res.usage.total_tokens || 0;
+                usage = res.usage;
+                
+                const cleanText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+                parsedResponse = JSON.parse(cleanText);
+                parsedResponse.reasoning = `### Analisi prodotta da ${engine}\n\n` + (parsedResponse.reasoning || '');
+            }
         } catch (e) {
             console.error('Failed to parse AI JSON response:', e);
-            throw new Error("Errore di parsing del responso IA.");
+            throw new Error("Errore durante la generazione o parsing del responso IA.");
         }
-
-        const usage = response.data.usageMetadata || {};
-        const tokensUsed = usage.totalTokenCount || 0;
         
         database.db.transaction(() => {
             // Aggiorna token count
@@ -3864,22 +3952,44 @@ ${contextData}
 Restituisci l'analisi in formato Markdown chiaro e ben strutturato. Usa titoli, elenchi puntati e testo in grassetto dove necessario per evidenziare i concetti chiave. Metti in risalto i punti di forza e i potenziali rischi o sbilanciamenti del portafoglio. Fornisci anche eventuali suggerimenti strategici (senza che costituiscano consiglio finanziario vincolante).
 `;
 
-        const geminiModel = await getBestGeminiModel(apiKey);
-        console.log(`[AI Analysis] Using model: ${geminiModel} for portfolio ${portfolioId}`);
-        const response = await axios.post(
-            `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`,
-            {
-                contents: [{ parts: [{ text: prompt }] }]
-            },
-            {
-                headers: { 'Content-Type': 'application/json' }
-            }
-        );
+        const engine = globalSettings.aiEngine || 'Gemini';
+        let rawText = "Nessuna risposta generata.";
+        let tokensUsed = 0;
+        let usage = {};
 
-        const rawText = response.data.candidates?.[0]?.content?.parts?.[0]?.text || "Nessuna risposta generata.";
-        
-        const usage = response.data.usageMetadata || {};
-        const tokensUsed = usage.totalTokenCount || 0;
+        try {
+            if (engine === 'Both') {
+                sendEvent('progress', { message: 'Generazione in corso (Gemini + Qwen)...' });
+                const [geminiRes, qwenRes] = await Promise.allSettled([
+                    callAIModel('Gemini', prompt, globalSettings),
+                    callAIModel('Qwen', prompt, globalSettings)
+                ]);
+
+                let geminiText = "Errore nella generazione con Gemini.";
+                if (geminiRes.status === 'fulfilled') {
+                    geminiText = geminiRes.value.text;
+                    tokensUsed += (geminiRes.value.usage.totalTokenCount || 0);
+                }
+
+                let qwenText = "Errore nella generazione con Qwen.";
+                if (qwenRes.status === 'fulfilled') {
+                    qwenText = qwenRes.value.text;
+                    tokensUsed += (qwenRes.value.usage.total_tokens || 0);
+                }
+
+                rawText = `### Analisi prodotta da Gemini\n\n${geminiText}\n\n---\n\n### Analisi prodotta da Qwen\n\n${qwenText}`;
+
+            } else {
+                sendEvent('progress', { message: `Generazione responso IA in corso tramite ${engine}...` });
+                const res = await callAIModel(engine, prompt, globalSettings);
+                rawText = `### Analisi prodotta da ${engine}\n\n` + res.text;
+                tokensUsed = res.usage.totalTokenCount || res.usage.total_tokens || 0;
+                usage = res.usage;
+            }
+        } catch (e) {
+            console.error('Failed to generate portfolio AI response:', e);
+            throw new Error("Errore durante la generazione del responso IA.");
+        }
         
         database.db.transaction(() => {
             // Aggiorna token count
