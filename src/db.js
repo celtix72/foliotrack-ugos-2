@@ -185,10 +185,16 @@ function initDb() {
                 reasoning TEXT NOT NULL,
                 targetPrice REAL,
                 stopLoss REAL,
+                engine TEXT DEFAULT 'Gemini',
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             );
         `).run();
     } catch (e) {}
+
+    // Migration: Add engine to asset_ai_history
+    try {
+        dbConnection.prepare(`ALTER TABLE asset_ai_history ADD COLUMN engine TEXT DEFAULT 'Gemini'`).run();
+    } catch(e) {}
 
     // Robust Migration: Fix portfolio_history NOT NULL constraint and ensure user_id exists
     try {

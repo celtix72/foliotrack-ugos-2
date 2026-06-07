@@ -2328,7 +2328,16 @@ app.get('/api/assets', requireAuth, async (req, res) => {
     const today = new Date().toISOString().split('T')[0];
 
     // Add sparkline data (last 7 days from cache)
-    const result = rows.map(a => {
+    
+        const aiHistoryStmt = database.db.prepare(`
+            SELECT engine, action as aiAction, targetPrice as aiTargetPrice, MAX(created_at) as created_at
+            FROM asset_ai_history
+            WHERE ticker = ? AND engine IS NOT NULL
+            GROUP BY engine
+        `);
+        const result = rows.map(a => {
+            const aiBadges = aiHistoryStmt.all(a.ticker);
+
         let sparkline = [];
         if (historicalPricesCache[a.ticker]) {
             const history = historicalPricesCache[a.ticker];
@@ -2695,7 +2704,16 @@ app.get('/api/watchlist', requireAuth, (req, res) => {
         `).all(req.user.id, req.user.id);
         
         const today = new Date().toISOString().split('T')[0];
+
+        const aiHistoryStmt = database.db.prepare(`
+            SELECT engine, action as aiAction, targetPrice as aiTargetPrice, MAX(created_at) as created_at
+            FROM asset_ai_history
+            WHERE ticker = ? AND engine IS NOT NULL
+            GROUP BY engine
+        `);
         const result = rows.map(a => {
+            const aiBadges = aiHistoryStmt.all(a.ticker);
+
             let sparkline = [];
             if (historicalPricesCache[a.ticker]) {
                 const history = historicalPricesCache[a.ticker];
@@ -3889,9 +3907,9 @@ NB:
 
             // Inserisci nello storico
             database.db.prepare(`
-                INSERT INTO asset_ai_history (ticker, action, reasoning, targetPrice, stopLoss)
-                VALUES (?, ?, ?, ?, ?)
-            `).run(ticker, action, reasoning, targetPrice, stopLoss);
+                INSERT INTO asset_ai_history (ticker, action, reasoning, targetPrice, stopLoss, engine)
+                VALUES (?, ?, ?, ?, ?, ?)
+            `).run(ticker, action, reasoning, targetPrice, stopLoss, engine);
         })();
 
         sendEvent('complete', { 
