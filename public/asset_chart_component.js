@@ -757,9 +757,14 @@
                             <h4 class="text-slate-900 dark:text-white" style="font-size: 13px; font-weight: 900; display: flex; align-items: center; gap: 4px; margin: 0;">
                                 Storico Analisi
                             </h4>
-                            <button id="ai-modal-run-btn" onclick="window.runAssetAi()" style="background: var(--mob-primary); color: white; padding: 8px 16px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 11px; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(19,91,236,0.2);">
-                                <span class="material-symbols-outlined" style="font-size: 16px;">add</span> Nuova Analisi
-                            </button>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <select id="ai-modal-engine-select" style="font-size: 11px; padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(148,163,184,0.3); background: transparent; cursor: pointer; outline: none; font-weight: 600;" class="text-slate-700 dark:text-slate-300">
+                                    <option value="">Default (Caricamento...)</option>
+                                </select>
+                                <button id="ai-modal-run-btn" onclick="window.runAssetAi()" style="background: var(--mob-primary); color: white; padding: 8px 16px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 11px; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(19,91,236,0.2);">
+                                    <span class="material-symbols-outlined" style="font-size: 16px;">add</span> Nuova Analisi
+                                </button>
+                            </div>
                         </div>
                         
                         <div id="ai-modal-list" style="overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 12px; padding-right: 4px; -webkit-overflow-scrolling: touch;">
@@ -781,6 +786,14 @@
         modal.style.display = 'flex';
         
         window.loadAssetAiHistory(ticker);
+        
+        // Fetch available engines
+        fetch('/api/ai/available-engines').then(r => r.json()).then(data => {
+            const select = document.getElementById('ai-modal-engine-select');
+            if (select && data.engines) {
+                select.innerHTML = data.engines.map(e => `<option value="${e}" ${e === data.default ? 'selected' : ''}>${e === 'Both' ? 'Gemini + Qwen' : e}</option>`).join('');
+            }
+        }).catch(e => console.error("Error loading engines", e));
     };
 
     window.loadAssetAiHistory = async function(ticker) {
@@ -856,7 +869,9 @@
                 <div style="font-size: 11px; opacity: 0.7; margin-top: 8px;" id="ai-modal-progress-text">Inizializzazione</div>
             </div>`;
 
-        const source = new EventSource('/api/assets/' + encodeURIComponent(_aiModalTicker) + '/ai-analysis');
+        const engineSelect = document.getElementById('ai-modal-engine-select');
+        const engine = engineSelect && engineSelect.value ? '?engine=' + encodeURIComponent(engineSelect.value) : '';
+        const source = new EventSource('/api/assets/' + encodeURIComponent(_aiModalTicker) + '/ai-analysis' + engine);
         
         source.addEventListener('progress', function(e) {
             const data = JSON.parse(e.data);

@@ -3760,7 +3760,7 @@ NB:
 - "targetProfit" e "stopLoss" devono essere numeri (usa il punto per i decimali, es. 10.50). Se non hai un target o stop loss definito, inserisci 0.
 `;
 
-        const engine = globalSettings.aiEngine || 'Gemini';
+        const engine = req.query.engine || globalSettings.aiEngine || 'Gemini';
         let parsedResponse = null;
         let tokensUsed = 0;
         let usage = {};
@@ -3971,7 +3971,7 @@ ${contextData}
 Restituisci l'analisi in formato Markdown chiaro e ben strutturato. Usa titoli, elenchi puntati e testo in grassetto dove necessario per evidenziare i concetti chiave. Metti in risalto i punti di forza e i potenziali rischi o sbilanciamenti del portafoglio. Fornisci anche eventuali suggerimenti strategici (senza che costituiscano consiglio finanziario vincolante).
 `;
 
-        const engine = globalSettings.aiEngine || 'Gemini';
+        const engine = req.query.engine || globalSettings.aiEngine || 'Gemini';
         let rawText = "Nessuna risposta generata.";
         let tokensUsed = 0;
         let usage = {};
