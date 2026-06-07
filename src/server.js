@@ -3621,6 +3621,38 @@ async function getBestGeminiModel(apiKey) {
     return 'gemini-2.5-flash';
 }
 
+function parseAIResponse(rawText) {
+    let cleanText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+    try {
+        return JSON.parse(cleanText);
+    } catch (e) {
+        console.warn('JSON parse failed, attempting regex extraction. Error:', e.message);
+        const result = { action: 'HOLD', targetProfit: 0, stopLoss: 0, reasoning: rawText };
+        
+        const actionMatch = rawText.match(/"action"\s*:\s*"([^"]+)"/i);
+        if (actionMatch) result.action = actionMatch[1].toUpperCase();
+        
+        const tpMatch = rawText.match(/"targetProfit"\s*:\s*([\d.]+)/i);
+        if (tpMatch) result.targetProfit = parseFloat(tpMatch[1]);
+        
+        const slMatch = rawText.match(/"stopLoss"\s*:\s*([\d.]+)/i);
+        if (slMatch) result.stopLoss = parseFloat(slMatch[1]);
+        
+        // Extract reasoning
+        const reasoningMatch = rawText.match(/"reasoning"\s*:\s*"([\s\S]*?)"(?=\n\s*\}|\r\n\s*\}|,\s*"targetProfit"|,\s*"stopLoss"|,\s*"action"|$)/i);
+        if (reasoningMatch) {
+            result.reasoning = reasoningMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
+        } else {
+            // If we can't find reasoning field, try to strip the json wrapper from raw text
+            let stripped = rawText.replace(/\{[\s\S]*"reasoning"\s*:\s*"/i, '');
+            stripped = stripped.replace(/"\s*\}[\s\S]*$/i, '');
+            result.reasoning = stripped.trim() ? stripped : rawText;
+        }
+        
+        return result;
+    }
+}
+
 async function callAIModel(engine, prompt, keys) {
     if (engine === 'Qwen') {
         const apiKey = keys.qwenApiKey || process.env.QWEN_API_KEY;
@@ -3789,15 +3821,9 @@ NB:
                 let parsedGemini = {};
                 let parsedQwen = {};
                 
-                try {
-                    const cleanG = geminiText.replace(/```json/gi, '').replace(/```/g, '').trim();
-                    parsedGemini = JSON.parse(cleanG);
-                } catch(e) {}
+                parsedGemini = parseAIResponse(geminiText);
                 
-                try {
-                    const cleanQ = qwenText.replace(/```json/gi, '').replace(/```/g, '').trim();
-                    parsedQwen = JSON.parse(cleanQ);
-                } catch(e) {}
+                parsedQwen = parseAIResponse(qwenText);
 
                 parsedResponse = {
                     action: parsedGemini.action || parsedQwen.action || 'HOLD',
@@ -3813,8 +3839,7 @@ NB:
                 tokensUsed = res.usage.totalTokenCount || res.usage.total_tokens || 0;
                 usage = res.usage;
                 
-                const cleanText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-                parsedResponse = JSON.parse(cleanText);
+                parsedResponse = parseAIResponse(rawText);
                 parsedResponse.reasoning = `### Analisi prodotta da ${engine}\n\n` + (parsedResponse.reasoning || '');
             }
         } catch (e) {
