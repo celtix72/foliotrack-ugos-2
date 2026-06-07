@@ -2408,7 +2408,8 @@ app.get('/api/assets', requireAuth, async (req, res) => {
             stopLoss: a.userStopLoss !== null ? a.userStopLoss : a.stopLoss,
             volatilityAlert: a.userVolatilityAlert !== null ? a.userVolatilityAlert : a.volatilityAlert,
             portfoliosInfo,
-            totalGainEUR
+            totalGainEUR,
+            aiBadges
         };
     });
 
@@ -2751,6 +2752,7 @@ app.get('/api/watchlist', requireAuth, (req, res) => {
                 aiTargetPrice: a.aiTargetPrice,
                 aiAction: a.aiAction,
                 aiReasoning: a.aiReasoning,
+                aiBadges,
                 volatilityAlert: a.userVolatilityAlert,
                 inWatchlist: 1,
                 sparkline,
