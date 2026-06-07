@@ -1239,6 +1239,7 @@ app.get('/api/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
             geminiApiKey: settings.geminiApiKey || '',
             qwenApiKey: settings.qwenApiKey || '',
             openaiApiKey: settings.openaiApiKey || '',
+            agnesApiKey: settings.agnesApiKey || '',
             aiAssetPrompt: settings.aiAssetPrompt || '',
             aiPortfolioPrompt: settings.aiPortfolioPrompt || '',
             aiTokensUsedToday: settings.aiTokensUsedToday || '0',
@@ -1251,12 +1252,13 @@ app.get('/api/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
 
 // POST /api/admin/ai-settings
 app.post('/api/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
-    const { aiEngine, geminiApiKey, qwenApiKey, openaiApiKey, aiAssetPrompt, aiPortfolioPrompt } = req.body;
+    const { aiEngine, geminiApiKey, qwenApiKey, openaiApiKey, agnesApiKey, aiAssetPrompt, aiPortfolioPrompt } = req.body;
     try {
         if (aiEngine !== undefined) database.setSetting(1, 'aiEngine', aiEngine);
         if (geminiApiKey !== undefined) database.setSetting(1, 'geminiApiKey', geminiApiKey);
         if (qwenApiKey !== undefined) database.setSetting(1, 'qwenApiKey', qwenApiKey);
         if (openaiApiKey !== undefined) database.setSetting(1, 'openaiApiKey', openaiApiKey);
+        if (agnesApiKey !== undefined) database.setSetting(1, 'agnesApiKey', agnesApiKey);
         if (aiAssetPrompt !== undefined) database.setSetting(1, 'aiAssetPrompt', aiAssetPrompt);
         if (aiPortfolioPrompt !== undefined) database.setSetting(1, 'aiPortfolioPrompt', aiPortfolioPrompt);
         
@@ -3630,6 +3632,17 @@ async function callAIModel(engine, prompt, keys) {
         if (!apiKey) throw new Error('OpenAI API Key mancante.');
         const res = await axios.post('https://api.openai.com/v1/chat/completions', {
             model: 'gpt-4o',
+            messages: [{ role: 'user', content: prompt }]
+        }, {
+            headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
+        });
+        const content = res.data.choices?.[0]?.message?.content || '{}';
+        return { text: content, usage: res.data.usage || {} };
+    } else if (engine === 'Agnes') {
+        const apiKey = keys.agnesApiKey || process.env.AGNES_API_KEY;
+        if (!apiKey) throw new Error('Agnes API Key mancante.');
+        const res = await axios.post('https://apihub.agnes-ai.com/v1/chat/completions', {
+            model: 'agnes-2.0-flash',
             messages: [{ role: 'user', content: prompt }]
         }, {
             headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
