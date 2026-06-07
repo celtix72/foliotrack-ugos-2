@@ -543,9 +543,9 @@ function renderAssets(filter = '') {
                                 if (badge.aiAction === 'BUY' || badge.aiAction === 'INCREASE') bgClass = 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white';
                                 else if (badge.aiAction === 'SELL' || badge.aiAction === 'DECREASE') bgClass = 'bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white';
                                 
-                                const fv = badge.aiTargetPrice ? ` • ${formatCurrency(badge.aiTargetPrice, a.currency)}` : '';
-                                return `<button onclick="event.stopPropagation(); openAssetAiHistoryModal('${a.ticker}')" class="h-8 px-2 rounded-lg ${bgClass} transition-all flex items-center justify-center mr-1 font-black text-[10px] whitespace-nowrap" title="${engine}: ${badge.aiAction}${fv}">
-                                    <span class="material-symbols-outlined text-base mr-1">${icon}</span>${badge.aiAction}${fv}
+                                const fvStr = badge.aiTargetPrice ? formatCurrency(badge.aiTargetPrice, a.currency) : badge.aiAction;
+                                return `<button onclick="event.stopPropagation(); openAssetAiHistoryModal('${a.ticker}')" class="h-8 px-2 rounded-lg ${bgClass} transition-all flex items-center justify-center mr-1 font-black text-[10px] whitespace-nowrap" title="${engine}: ${fvStr}">
+                                    <span class="material-symbols-outlined text-base mr-1">${icon}</span>${fvStr}
                                 </button>`;
                             }).join('');
                         } else if (a.aiHistoryCount > 0) {

@@ -2352,10 +2352,10 @@ app.get('/api/assets', requireAuth, async (req, res) => {
     // Add sparkline data (last 7 days from cache)
     
         const aiHistoryStmt = database.db.prepare(`
-            SELECT engine, action as aiAction, targetPrice as aiTargetPrice, MAX(created_at) as created_at
+            SELECT engine, action as aiAction, targetPrice as aiTargetPrice, created_at
             FROM asset_ai_history
             WHERE ticker = ? AND engine IS NOT NULL
-            GROUP BY engine
+            ORDER BY created_at DESC LIMIT 5
         `);
         const result = rows.map(a => {
             const aiBadges = aiHistoryStmt.all(a.ticker);
@@ -2728,10 +2728,10 @@ app.get('/api/watchlist', requireAuth, (req, res) => {
         const today = new Date().toISOString().split('T')[0];
 
         const aiHistoryStmt = database.db.prepare(`
-            SELECT engine, action as aiAction, targetPrice as aiTargetPrice, MAX(created_at) as created_at
+            SELECT engine, action as aiAction, targetPrice as aiTargetPrice, created_at
             FROM asset_ai_history
             WHERE ticker = ? AND engine IS NOT NULL
-            GROUP BY engine
+            ORDER BY created_at DESC LIMIT 5
         `);
         const result = rows.map(a => {
             const aiBadges = aiHistoryStmt.all(a.ticker);
