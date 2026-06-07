@@ -251,7 +251,7 @@
                             const fvStr = badge.aiTargetPrice ? formatCurrency(badge.aiTargetPrice, item.currency) : badge.aiAction;
                             
                             return `
-                            <span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'")}', '${item.currency || 'EUR'}')" class="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 border ${colorClass} cursor-pointer transition-colors ml-2 whitespace-nowrap" title="${engine}: ${badge.aiAction} ${fv}">
+                            <span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'")}', '${item.currency || 'EUR'}')" class="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 border ${colorClass} cursor-pointer transition-colors ml-2 whitespace-nowrap" title="${engine}: ${badge.aiAction} ">
                                 <span class="material-symbols-outlined" style="font-size: 12px;">${icon}</span> ${fvStr}
                             </span>`;
                         }).join('');
