@@ -3955,7 +3955,7 @@ NB:
 app.get('/api/assets/:ticker/ai-history', requireAuth, (req, res) => {
     try {
         const history = database.db.prepare(`
-            SELECT id, action, reasoning, targetPrice, stopLoss, created_at 
+            SELECT id, action, reasoning, targetPrice, stopLoss, engine, created_at 
             FROM asset_ai_history 
             WHERE ticker = ? 
             ORDER BY created_at DESC

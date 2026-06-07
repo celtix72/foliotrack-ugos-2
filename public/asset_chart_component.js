@@ -821,6 +821,15 @@
             listEl.innerHTML = history.map(item => {
                 const date = new Date(item.created_at).toLocaleString();
                 let actionColor = 'rgba(148,163,184,0.1)';
+                
+                const engine = item.engine || 'X';
+                let engineIcon = 'smart_toy';
+                if (engine === 'Gemini') engineIcon = 'auto_awesome';
+                else if (engine === 'Qwen') engineIcon = 'chat_spark';
+                else if (engine === 'Agnes') engineIcon = 'psychiatry';
+                else if (engine === 'OpenAI') engineIcon = 'data_exploration';
+                else if (engine === 'X') engineIcon = 'close';
+
                 let actionTextColor = '#64748b';
                 if (item.action === 'BUY' || item.action === 'INCREASE') {
                     actionColor = 'rgba(16,185,129,0.1)';
@@ -833,9 +842,14 @@
                 return `
                     <div style="border: 1px solid rgba(148,163,184,0.2); border-radius: 14px; padding: 14px; background: ${itemBg}; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <span style="font-size: 10px; font-weight: 900; color: #94a3b8; display: flex; align-items: center; gap: 4px;">
-                                <span class="material-symbols-outlined" style="font-size: 14px;">calendar_today</span> ${date}
-                            </span>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 10px; font-weight: 900; color: #94a3b8; display: flex; align-items: center; gap: 4px;">
+                                    <span class="material-symbols-outlined" style="font-size: 14px;">calendar_today</span> ${date}
+                                </span>
+                                <span style="font-size: 10px; font-weight: 900; color: #64748b; background: rgba(148,163,184,0.1); padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 3px;" title="Motore IA: ${engine}">
+                                    <span class="material-symbols-outlined" style="font-size: 12px;">${engineIcon}</span> ${engine}
+                                </span>
+                            </div>
                             <div style="display: flex; gap: 8px; align-items: center;">
                                 <span style="padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: 900; background: ${actionColor}; color: ${actionTextColor}; border: 1px solid ${actionTextColor}; box-shadow: 0 2px 8px ${actionColor};">${item.action}</span>
                                 <button onclick="window.deleteAssetAiHistory(${item.id}, '${ticker}')" style="background: rgba(239,68,68,0.1); border: none; border-radius: 6px; color: rgb(239,68,68); padding: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" class="hover:bg-red-500/20">
@@ -921,7 +935,7 @@
             detailModal.id = 'chart-ai-detail-modal';
             detailModal.style.cssText = `display: none; position: fixed; inset: 0; z-index: 20000; align-items: center; justify-content: center; background-color: ${backdropColor}; backdrop-filter: blur(8px); padding: 16px;`;
             
-            const target = document.getElementById('mobile-ui') || document.body;
+            const target = document.body;
             target.appendChild(detailModal);
             
             // Close on backdrop click
