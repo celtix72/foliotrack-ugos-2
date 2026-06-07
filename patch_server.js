@@ -2,46 +2,35 @@ const fs = require('fs');
 
 let content = fs.readFileSync('src/server.js', 'utf8');
 
-const helper = `async function callAIModel(engine, prompt, keys) {
-    if (engine === 'Qwen') {
-        const apiKey = keys.qwenApiKey || process.env.QWEN_API_KEY;
-        if (!apiKey) throw new Error('Qwen API Key mancante.');
-        const res = await axios.post('https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions', {
-            model: 'qwen-plus',
-            messages: [{ role: 'user', content: prompt }]
-        }, {
-            headers: { 'Authorization': \`Bearer \${apiKey}\`, 'Content-Type': 'application/json' }
-        });
-        const content = res.data.choices?.[0]?.message?.content || '{}';
-        return { text: content, usage: res.data.usage || {} };
-    } else if (engine === 'OpenAI') {
-        const apiKey = keys.openaiApiKey || process.env.OPENAI_API_KEY;
-        if (!apiKey) throw new Error('OpenAI API Key mancante.');
-        const res = await axios.post('https://api.openai.com/v1/chat/completions', {
-            model: 'gpt-4o',
-            messages: [{ role: 'user', content: prompt }]
-        }, {
-            headers: { 'Authorization': \`Bearer \${apiKey}\`, 'Content-Type': 'application/json' }
-        });
-        const content = res.data.choices?.[0]?.message?.content || '{}';
-        return { text: content, usage: res.data.usage || {} };
-    } else {
-        // Default to Gemini
-        const apiKey = keys.geminiApiKey || process.env.GEMINI_API_KEY;
-        if (!apiKey) throw new Error('Gemini API Key mancante.');
-        const geminiModel = await getBestGeminiModel(apiKey);
-        const res = await axios.post(
-            \`https://generativelanguage.googleapis.com/v1beta/models/\${geminiModel}:generateContent?key=\${apiKey}\`,
-            { contents: [{ parts: [{ text: prompt }] }] },
-            { headers: { 'Content-Type': 'application/json' } }
-        );
-        const content = res.data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-        const usage = res.data.usageMetadata || {};
-        return { text: content, usage: { totalTokenCount: usage.totalTokenCount || 0 } };
-    }
-}
-`;
+// Update SQL for assets table update
+content = content.replace(
+    "SET targetPrice = ?, stopLoss = ?, ai_action = ?, ai_reasoning = ?, ai_updated_at = CURRENT_TIMESTAMP",
+    "SET targetPrice = ?, stopLoss = ?, ai_action = ?, ai_reasoning = ?, ai_engine = ?, ai_updated_at = CURRENT_TIMESTAMP"
+);
 
-content = content.replace("    return 'gemini-2.5-flash';\n}\n\napp.get('/api/assets/:ticker/ai-analysis'", "    return 'gemini-2.5-flash';\n}\n\n" + helper + "\napp.get('/api/assets/:ticker/ai-analysis'");
+content = content.replace(
+    "            database.db.prepare(`\n                UPDATE assets \n                SET targetPrice = ?, stopLoss = ?, ai_action = ?, ai_reasoning = ?, ai_engine = ?, ai_updated_at = CURRENT_TIMESTAMP\n                WHERE ticker = ?\n            `).run(targetPrice, stopLoss, action, reasoning, ticker);",
+    "            database.db.prepare(`\n                UPDATE assets \n                SET targetPrice = ?, stopLoss = ?, ai_action = ?, ai_reasoning = ?, ai_engine = ?, ai_updated_at = CURRENT_TIMESTAMP\n                WHERE ticker = ?\n            `).run(targetPrice, stopLoss, action, reasoning, engine, ticker);"
+);
+
+// We need to make sure the engine is passed. Wait, engine is already defined in the ai-analysis scope as 'const engine = globalSettings.aiEngine || 'Gemini';'
+// Let's verify if `engine` is in scope there.
+// The code inside /api/assets/:ticker/ai-analysis:
+// const engine = globalSettings.aiEngine || 'Gemini';
+// ...
+// database.db.transaction(() => { ... })
+// Yes, it is in scope.
+
+// Update GET /api/watchlist
+content = content.replace(
+    "                   a.ai_updated_at as aiUpdatedAt,",
+    "                   a.ai_updated_at as aiUpdatedAt,\n                   a.ai_engine as aiEngine,\n                   a.targetPrice as aiTargetPrice,"
+);
+
+// Ensure it's mapped in the output of GET /api/watchlist
+content = content.replace(
+    "                stopLoss: a.userStopLoss,",
+    "                stopLoss: a.userStopLoss,\n                aiEngine: a.aiEngine,\n                aiTargetPrice: a.aiTargetPrice,\n                aiAction: a.aiAction,\n                aiReasoning: a.aiReasoning,"
+);
 
 fs.writeFileSync('src/server.js', content, 'utf8');

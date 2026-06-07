@@ -2677,6 +2677,8 @@ app.get('/api/watchlist', requireAuth, (req, res) => {
                    a.ai_action as aiAction,
                    a.ai_reasoning as aiReasoning,
                    a.ai_updated_at as aiUpdatedAt,
+                   a.ai_engine as aiEngine,
+                   a.targetPrice as aiTargetPrice,
                    (SELECT COUNT(*) FROM asset_ai_history ah WHERE ah.ticker = a.ticker) as aiHistoryCount,
                    CASE WHEN t.balance IS NOT NULL AND t.balance > 0.0001 THEN 1 ELSE 0 END as hasPosition
             FROM assets a
@@ -2705,6 +2707,10 @@ app.get('/api/watchlist', requireAuth, (req, res) => {
                 ...a, 
                 targetPrice: a.userTargetPrice,
                 stopLoss: a.userStopLoss,
+                aiEngine: a.aiEngine,
+                aiTargetPrice: a.aiTargetPrice,
+                aiAction: a.aiAction,
+                aiReasoning: a.aiReasoning,
                 volatilityAlert: a.userVolatilityAlert,
                 inWatchlist: 1,
                 sparkline,
@@ -3836,9 +3842,9 @@ NB:
 
             database.db.prepare(`
                 UPDATE assets 
-                SET targetPrice = ?, stopLoss = ?, ai_action = ?, ai_reasoning = ?, ai_updated_at = CURRENT_TIMESTAMP
+                SET targetPrice = ?, stopLoss = ?, ai_action = ?, ai_reasoning = ?, ai_engine = ?, ai_updated_at = CURRENT_TIMESTAMP
                 WHERE ticker = ?
-            `).run(targetPrice, stopLoss, action, reasoning, ticker);
+            `).run(targetPrice, stopLoss, action, reasoning, engine, ticker);
 
             // Se l'utente ha una watchlist per questo asset, sovrascrivi anche le sue impostazioni personali
             const userId = req.user.id;
