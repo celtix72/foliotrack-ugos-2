@@ -2835,7 +2835,10 @@ app.get('/api/watchlist/performance', requireAuth, async (req, res) => {
             SELECT a.ticker 
             FROM assets a
             JOIN user_watchlist uw ON a.ticker = uw.ticker
-            WHERE uw.user_id = ? AND a.ticker != 'CASH'
+            WHERE uw.user_id = ? 
+              AND a.ticker != 'CASH' 
+              AND IFNULL(a.type, '') != 'Liquidità' 
+              AND a.ticker NOT LIKE 'CD_%'
         `).all(req.user.id);
         const results = {};
         
@@ -4815,6 +4818,9 @@ app.get('/api/market/movers', requireAuth, async (req, res) => {
                 GROUP BY t.assetTicker 
                 HAVING balance > 0.0001
             ) t ON a.ticker = t.assetTicker
+            WHERE a.ticker != 'CASH' 
+              AND IFNULL(a.type, '') != 'Liquidità' 
+              AND a.ticker NOT LIKE 'CD_%'
         `).all(userId);
 
         rows = rows.map(a => {
