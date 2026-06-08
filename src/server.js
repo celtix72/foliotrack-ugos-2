@@ -1711,8 +1711,6 @@ function calculateVariationOverrides(marketStatus) {
             // 1. Regular Session Variation
             if (openedToday && isToday) {
                 overrides.regular[a.ticker] = a.changeValue || 0;
-            } else if (!openedToday && isToday && isUS && !preMktActive) {
-                overrides.regular[a.ticker] = a.changeValue || 0;
             } else {
                 overrides.regular[a.ticker] = 0;
             }
@@ -2357,6 +2355,7 @@ app.get('/api/assets', requireAuth, async (req, res) => {
             WHERE ticker = ? AND engine IS NOT NULL
             ORDER BY created_at DESC LIMIT 5
         `);
+        const marketStatus = getMarketStatus();
         const result = rows.map(a => {
             const aiBadges = aiHistoryStmt.all(a.ticker);
 
@@ -2367,6 +2366,9 @@ app.get('/api/assets', requireAuth, async (req, res) => {
             sparkline = dates.slice(-7).map(d => history[d]);
         }
         const isToday = a.quoteDate === today;
+        const isUS = isUSMarket(a);
+        const openedToday = isUS ? marketStatus.US_openedToday : marketStatus.EU_openedToday;
+        const showVariation = isToday && openedToday;
 
         let totalGainEUR = 0;
         
@@ -2401,8 +2403,8 @@ app.get('/api/assets', requireAuth, async (req, res) => {
         return { 
             ...a, 
             sparkline,
-            changePercent: isToday ? a.changePercent : 0,
-            changeValue: isToday ? a.changeValue : 0,
+            changePercent: showVariation ? a.changePercent : 0,
+            changeValue: showVariation ? a.changeValue : 0,
             // Override global alert settings with user-specific ones
             targetPrice: a.userTargetPrice !== null ? a.userTargetPrice : a.targetPrice,
             stopLoss: a.userStopLoss !== null ? a.userStopLoss : a.stopLoss,
@@ -2734,6 +2736,7 @@ app.get('/api/watchlist', requireAuth, (req, res) => {
             WHERE ticker = ? AND engine IS NOT NULL
             ORDER BY created_at DESC LIMIT 5
         `);
+        const marketStatus = getMarketStatus();
         const result = rows.map(a => {
             const aiBadges = aiHistoryStmt.all(a.ticker);
 
@@ -2744,6 +2747,10 @@ app.get('/api/watchlist', requireAuth, (req, res) => {
                 sparkline = dates.slice(-7).map(d => history[d]);
             }
             const isToday = a.quoteDate === today;
+            const isUS = isUSMarket(a);
+            const openedToday = isUS ? marketStatus.US_openedToday : marketStatus.EU_openedToday;
+            const showVariation = isToday && openedToday;
+            
             return { 
                 ...a, 
                 targetPrice: a.userTargetPrice,
@@ -2756,8 +2763,8 @@ app.get('/api/watchlist', requireAuth, (req, res) => {
                 volatilityAlert: a.userVolatilityAlert,
                 inWatchlist: 1,
                 sparkline,
-                changePercent: isToday ? (a.changePercent || 0) : 0,
-                changeValue: isToday ? (a.changeValue || 0) : 0
+                changePercent: showVariation ? (a.changePercent || 0) : 0,
+                changeValue: showVariation ? (a.changeValue || 0) : 0
             };
         });
         res.json(result);
@@ -3819,7 +3826,7 @@ ${contextData}
 REGOLE DI OUTPUT FONDAMENTALI:
 Devi restituire ESATTAMENTE ed ESCLUSIVAMENTE un oggetto JSON valido. NESSUN TESTO al di fuori del JSON. Nessun blocco markdown \`\`\`json.
 Tutta la tua analisi discorsiva, comprese le risposte alle istruzioni dell'utente e la scheda tecnica richiesta, DEVONO ESSERE INSERITE ALL'INTERNO del campo testuale "reasoning" formattato in Markdown.
-Inoltre, devi estrarre l'indicazione operativa e i prezzi chiave per popolare i campi strutturati "action", "targetProfit" e "stopLoss".
+Inoltre, devi estrarre l'indicazione operativa e i prezzi chiave per popolare i campi strutturati "action", "targetProfit" and "stopLoss".
 
 Struttura JSON richiesta:
 {
@@ -4793,9 +4800,10 @@ app.get('/api/market/movers', requireAuth, async (req, res) => {
     try {
         const userId = req.user.id;
         const todayStr = new Date().toISOString().split('T')[0];
+        const marketStatus = getMarketStatus();
         
         // Return assets that have open positions for THIS user
-        const rows = database.db.prepare(`
+        let rows = database.db.prepare(`
             SELECT a.* 
             FROM assets a
             JOIN (
@@ -4807,10 +4815,21 @@ app.get('/api/market/movers', requireAuth, async (req, res) => {
                 GROUP BY t.assetTicker 
                 HAVING balance > 0.0001
             ) t ON a.ticker = t.assetTicker
-            WHERE a.quoteDate = ?
-            ORDER BY ABS(a.changePercent) DESC
-            LIMIT 10
-        `).all(userId, todayStr);
+        `).all(userId);
+
+        rows = rows.map(a => {
+            const isUS = isUSMarket(a);
+            const openedToday = isUS ? marketStatus.US_openedToday : marketStatus.EU_openedToday;
+            const isToday = a.quoteDate === todayStr;
+            
+            if (!openedToday || !isToday) {
+                a.changePercent = 0;
+                a.changeValue = 0;
+            }
+            return a;
+        }).filter(a => Math.abs(a.changePercent) > 0)
+          .sort((a, b) => Math.abs(b.changePercent) - Math.abs(a.changePercent))
+          .slice(0, 10);
 
         res.json(rows);
     } catch (err) {
