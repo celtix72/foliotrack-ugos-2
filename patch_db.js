@@ -1,44 +1,44 @@
 const fs = require('fs');
+let code = fs.readFileSync('src/db.js', 'utf8');
 
-let dbCode = fs.readFileSync('src/db.js', 'utf8');
-
-const migrationScript = `    // Migration: Add ai_engine to assets
+const oldMigration = `    // Robust Migration: Fix portfolio_history NOT NULL constraint and ensure user_id exists
     try {
-        dbConnection.prepare(\`ALTER TABLE assets ADD COLUMN ai_engine TEXT\`).run();
-    } catch (e) {}
-
-    // Backfill ai_engine based on ai_reasoning for existing assets
-    try {
-        const assetsWithoutEngine = dbConnection.prepare("SELECT ticker, ai_reasoning FROM assets WHERE ai_engine IS NULL AND ai_reasoning IS NOT NULL AND ai_reasoning != ''").all();
-        const updateEngine = dbConnection.prepare("UPDATE assets SET ai_engine = ? WHERE ticker = ?");
+        const tableInfo = dbConnection.prepare("PRAGMA table_info(portfolio_history)").all();
+        const portfolioIdCol = tableInfo.find(c => c.name === 'portfolioId');
+        const hasUserId = tableInfo.some(c => c.name === 'user_id');
         
-        dbConnection.transaction(() => {
-            for (const asset of assetsWithoutEngine) {
-                const reasoning = asset.ai_reasoning.toUpperCase();
-                let engine = null;
-                if (reasoning.includes('ANALISI PRODOTTA DA GEMINI')) engine = 'Gemini';
-                else if (reasoning.includes('ANALISI PRODOTTA DA QWEN')) engine = 'Qwen';
-                else if (reasoning.includes('ANALISI PRODOTTA DA AGNES')) engine = 'Agnes';
-                else if (reasoning.includes('ANALISI PRODOTTA DA OPENAI')) engine = 'OpenAI';
-                else if (reasoning.includes('ANALISI TRAMITE GEMINI')) engine = 'Gemini'; // older versions
-                
-                if (engine) {
-                    updateEngine.run(engine, asset.ticker);
-                } else {
-                    // Default fallback or leave NULL if undeducible
-                    updateEngine.run('X', asset.ticker);
-                }
+        if (!hasUserId || (portfolioIdCol && portfolioIdCol.notnull === 1)) {`;
+
+const newMigration = `    // Robust Migration: Fix portfolio_history NOT NULL constraint and ensure user_id exists
+    try {
+        const tableInfo = dbConnection.prepare("PRAGMA table_info(portfolio_history)").all();
+        if (tableInfo.length > 0) {
+            const hasNetDeposits = tableInfo.some(c => c.name === 'netDeposits');
+            if (!hasNetDeposits) {
+                dbConnection.prepare("ALTER TABLE portfolio_history ADD COLUMN netDeposits REAL NOT NULL DEFAULT 0").run();
             }
-        })();
-    } catch (e) {
-        console.error("Migration error for ai_engine:", e);
-    }
-`;
 
-// Insert the migration just after the `ai_updated_at` migration
-dbCode = dbCode.replace(
-    "dbConnection.prepare(`ALTER TABLE assets ADD COLUMN ai_updated_at DATETIME`).run();\n    } catch (e) {}",
-    "dbConnection.prepare(`ALTER TABLE assets ADD COLUMN ai_updated_at DATETIME`).run();\n    } catch (e) {}\n\n" + migrationScript
-);
+            const portfolioIdCol = tableInfo.find(c => c.name === 'portfolioId');
+            const hasUserId = tableInfo.some(c => c.name === 'user_id');
+            
+            if (!hasUserId || (portfolioIdCol && portfolioIdCol.notnull === 1)) {`;
 
-fs.writeFileSync('src/db.js', dbCode, 'utf8');
+code = code.replace(oldMigration, newMigration);
+
+const oldMigrationEnd = `                // Create index for global snapshot
+                dbConnection.prepare(\`CREATE UNIQUE INDEX IF NOT EXISTS idx_global_history_user ON portfolio_history(date, user_id) WHERE portfolioId IS NULL\`).run();
+            })();
+        }
+    } catch (e) {`;
+
+const newMigrationEnd = `                // Create index for global snapshot
+                dbConnection.prepare(\`CREATE UNIQUE INDEX IF NOT EXISTS idx_global_history_user ON portfolio_history(date, user_id) WHERE portfolioId IS NULL\`).run();
+            })();
+        }
+        }
+    } catch (e) {`;
+
+code = code.replace(oldMigrationEnd, newMigrationEnd);
+
+fs.writeFileSync('src/db.js', code, 'utf8');
+console.log('Patched db.js migration logic');

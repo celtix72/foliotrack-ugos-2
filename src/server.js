@@ -3706,6 +3706,9 @@ function parseAIResponse(rawText) {
 }
 
 async function callAIModel(engine, prompt, keys) {
+    logger.info(`[AI Iteration] Starting analysis with engine: ${engine}`);
+    logger.info(`[AI Prompt] 
+${prompt}`);
     if (engine === 'Qwen') {
         const apiKey = keys.qwenApiKey || process.env.QWEN_API_KEY;
         if (!apiKey) throw new Error('Qwen API Key mancante.');
@@ -3716,6 +3719,8 @@ async function callAIModel(engine, prompt, keys) {
             headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
         });
         const content = res.data.choices?.[0]?.message?.content || '{}';
+        logger.info(`[AI Response (${engine})] 
+${content}`);
         return { text: content, usage: res.data.usage || {} };
     } else if (engine === 'OpenAI') {
         const apiKey = keys.openaiApiKey || process.env.OPENAI_API_KEY;
@@ -3727,6 +3732,8 @@ async function callAIModel(engine, prompt, keys) {
             headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
         });
         const content = res.data.choices?.[0]?.message?.content || '{}';
+        logger.info(`[AI Response (${engine})] 
+${content}`);
         return { text: content, usage: res.data.usage || {} };
     } else if (engine === 'Agnes') {
         const apiKey = keys.agnesApiKey || process.env.AGNES_API_KEY;
@@ -3738,6 +3745,8 @@ async function callAIModel(engine, prompt, keys) {
             headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
         });
         const content = res.data.choices?.[0]?.message?.content || '{}';
+        logger.info(`[AI Response (${engine})] 
+${content}`);
         return { text: content, usage: res.data.usage || {} };
     } else {
         // Default to Gemini
@@ -3750,6 +3759,8 @@ async function callAIModel(engine, prompt, keys) {
             { headers: { 'Content-Type': 'application/json' } }
         );
         const content = res.data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+        logger.info(`[AI Response (${engine})] 
+${content}`);
         const usage = res.data.usageMetadata || {};
         return { text: content, usage: { totalTokenCount: usage.totalTokenCount || 0 } };
     }

@@ -199,10 +199,16 @@ function initDb() {
     // Robust Migration: Fix portfolio_history NOT NULL constraint and ensure user_id exists
     try {
         const tableInfo = dbConnection.prepare("PRAGMA table_info(portfolio_history)").all();
-        const portfolioIdCol = tableInfo.find(c => c.name === 'portfolioId');
-        const hasUserId = tableInfo.some(c => c.name === 'user_id');
-        
-        if (!hasUserId || (portfolioIdCol && portfolioIdCol.notnull === 1)) {
+        if (tableInfo.length > 0) {
+            const hasNetDeposits = tableInfo.some(c => c.name === 'netDeposits');
+            if (!hasNetDeposits) {
+                dbConnection.prepare("ALTER TABLE portfolio_history ADD COLUMN netDeposits REAL NOT NULL DEFAULT 0").run();
+            }
+
+            const portfolioIdCol = tableInfo.find(c => c.name === 'portfolioId');
+            const hasUserId = tableInfo.some(c => c.name === 'user_id');
+            
+            if (!hasUserId || (portfolioIdCol && portfolioIdCol.notnull === 1)) {
             dbConnection.transaction(() => {
                 dbConnection.prepare(`
                     CREATE TABLE portfolio_history_new (
@@ -240,6 +246,7 @@ function initDb() {
                 // Create index for global snapshot
                 dbConnection.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_global_history_user ON portfolio_history(date, user_id) WHERE portfolioId IS NULL`).run();
             })();
+        }
         }
     } catch (e) {
         console.error("Migration error: Failed to recreate portfolio_history:", e);
