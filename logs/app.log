@@ -41038,3 +41038,8 @@
 2026-06-06T20:29:49.929Z [ERROR] Daily snapshot failed - NOT NULL constraint failed: portfolio_history.portfolioId
 2026-06-06T20:30:49.910Z [INFO] Skipping automatic market update: all markets are closed.
 2026-06-06T20:30:49.937Z [INFO] Recording daily snapshots for portfolios and dashboard...
+2026-06-09T08:46:42.479Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-06-09T08:46:42.627Z [INFO] FolioTrack server running on port 3000
+2026-06-09T08:46:42.636Z [INFO] Database: /Users/mauro/Documents/FolioTrack3/foliotrack.db
+2026-06-09T08:46:47.567Z [INFO] Starting RSS News Sync...
+2026-06-09T08:46:48.342Z [INFO] News Sync completed. Saved 20 new articles.

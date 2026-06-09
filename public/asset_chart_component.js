@@ -791,7 +791,12 @@
         fetch('/api/ai/available-engines').then(r => r.json()).then(data => {
             const select = document.getElementById('ai-modal-engine-select');
             if (select && data.engines) {
-                select.innerHTML = data.engines.map(e => `<option value="${e}" ${e === data.default ? 'selected' : ''}>${e === 'Both' ? 'Gemini + Qwen' : e}</option>`).join('');
+                select.innerHTML = data.engines.map(e => {
+                    let label = e;
+                    if (e === 'Both') label = 'Gemini + Qwen';
+                    else label = e.replace(/_(Free|Pay)/, ' ($1)');
+                    return `<option value="${e}" ${e === data.default ? 'selected' : ''}>${label}</option>`;
+                }).join('');
             }
         }).catch(e => console.error("Error loading engines", e));
     };

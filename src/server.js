@@ -1238,16 +1238,22 @@ app.get('/api/ai/available-engines', requireAuth, (req, res) => {
         const settings = database.getSettings(1);
         const available = [];
         
-        if (settings.geminiApiKey || process.env.GEMINI_API_KEY) available.push('Gemini');
-        if (settings.qwenApiKey || process.env.QWEN_API_KEY) available.push('Qwen');
-        if (settings.openaiApiKey || process.env.OPENAI_API_KEY) available.push('OpenAI');
-        if (settings.agnesApiKey || process.env.AGNES_API_KEY) available.push('Agnes');
+        if (settings.geminiApiKeyFree) available.push('Gemini_Free');
+        if (settings.geminiApiKeyPay || settings.geminiApiKey || process.env.GEMINI_API_KEY) available.push('Gemini_Pay');
+        if (settings.qwenApiKeyFree) available.push('Qwen_Free');
+        if (settings.qwenApiKeyPay || settings.qwenApiKey || process.env.QWEN_API_KEY) available.push('Qwen_Pay');
+        if (settings.openaiApiKeyFree) available.push('OpenAI_Free');
+        if (settings.openaiApiKeyPay || settings.openaiApiKey || process.env.OPENAI_API_KEY) available.push('OpenAI_Pay');
+        if (settings.agnesApiKeyFree) available.push('Agnes_Free');
+        if (settings.agnesApiKeyPay || settings.agnesApiKey || process.env.AGNES_API_KEY) available.push('Agnes_Pay');
         
-        if (available.length >= 2 && available.includes('Gemini') && available.includes('Qwen')) {
+        const hasGemini = available.some(e => e.startsWith('Gemini'));
+        const hasQwen = available.some(e => e.startsWith('Qwen'));
+        if (hasGemini && hasQwen) {
             available.push('Both');
         }
         
-        res.json({ engines: available, default: settings.aiEngine || 'Gemini' });
+        res.json({ engines: available, default: settings.aiEngine || 'Gemini_Free' });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
@@ -1257,11 +1263,15 @@ app.get('/api/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
     try {
         const settings = database.getSettings(1);
         res.json({
-            aiEngine: settings.aiEngine || 'Gemini',
-            geminiApiKey: settings.geminiApiKey || '',
-            qwenApiKey: settings.qwenApiKey || '',
-            openaiApiKey: settings.openaiApiKey || '',
-            agnesApiKey: settings.agnesApiKey || '',
+            aiEngine: settings.aiEngine || 'Gemini_Free',
+            geminiApiKeyFree: settings.geminiApiKeyFree || '',
+            geminiApiKeyPay: settings.geminiApiKeyPay || settings.geminiApiKey || '',
+            qwenApiKeyFree: settings.qwenApiKeyFree || '',
+            qwenApiKeyPay: settings.qwenApiKeyPay || settings.qwenApiKey || '',
+            openaiApiKeyFree: settings.openaiApiKeyFree || '',
+            openaiApiKeyPay: settings.openaiApiKeyPay || settings.openaiApiKey || '',
+            agnesApiKeyFree: settings.agnesApiKeyFree || '',
+            agnesApiKeyPay: settings.agnesApiKeyPay || settings.agnesApiKey || '',
             aiAssetPrompt: settings.aiAssetPrompt || '',
             aiPortfolioPrompt: settings.aiPortfolioPrompt || '',
             aiTokensUsedToday: settings.aiTokensUsedToday || '0',
@@ -1274,13 +1284,17 @@ app.get('/api/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
 
 // POST /api/admin/ai-settings
 app.post('/api/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
-    const { aiEngine, geminiApiKey, qwenApiKey, openaiApiKey, agnesApiKey, aiAssetPrompt, aiPortfolioPrompt } = req.body;
+    const { aiEngine, geminiApiKeyFree, geminiApiKeyPay, qwenApiKeyFree, qwenApiKeyPay, openaiApiKeyFree, openaiApiKeyPay, agnesApiKeyFree, agnesApiKeyPay, aiAssetPrompt, aiPortfolioPrompt } = req.body;
     try {
         if (aiEngine !== undefined) database.setSetting(1, 'aiEngine', aiEngine);
-        if (geminiApiKey !== undefined) database.setSetting(1, 'geminiApiKey', geminiApiKey);
-        if (qwenApiKey !== undefined) database.setSetting(1, 'qwenApiKey', qwenApiKey);
-        if (openaiApiKey !== undefined) database.setSetting(1, 'openaiApiKey', openaiApiKey);
-        if (agnesApiKey !== undefined) database.setSetting(1, 'agnesApiKey', agnesApiKey);
+        if (geminiApiKeyFree !== undefined) database.setSetting(1, 'geminiApiKeyFree', geminiApiKeyFree);
+        if (geminiApiKeyPay !== undefined) database.setSetting(1, 'geminiApiKeyPay', geminiApiKeyPay);
+        if (qwenApiKeyFree !== undefined) database.setSetting(1, 'qwenApiKeyFree', qwenApiKeyFree);
+        if (qwenApiKeyPay !== undefined) database.setSetting(1, 'qwenApiKeyPay', qwenApiKeyPay);
+        if (openaiApiKeyFree !== undefined) database.setSetting(1, 'openaiApiKeyFree', openaiApiKeyFree);
+        if (openaiApiKeyPay !== undefined) database.setSetting(1, 'openaiApiKeyPay', openaiApiKeyPay);
+        if (agnesApiKeyFree !== undefined) database.setSetting(1, 'agnesApiKeyFree', agnesApiKeyFree);
+        if (agnesApiKeyPay !== undefined) database.setSetting(1, 'agnesApiKeyPay', agnesApiKeyPay);
         if (aiAssetPrompt !== undefined) database.setSetting(1, 'aiAssetPrompt', aiAssetPrompt);
         if (aiPortfolioPrompt !== undefined) database.setSetting(1, 'aiPortfolioPrompt', aiPortfolioPrompt);
         
@@ -3798,11 +3812,7 @@ ${content}`);
 app.get('/api/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
     try {
         const globalSettings = database.getSettings(1) || {};
-        const apiKey = globalSettings.geminiApiKey || process.env.GEMINI_API_KEY;
-        
-        if (!apiKey) {
-            return res.status(400).json({ error: 'Chiave API GEMINI_API_KEY mancante. Configurala nel pannello Admin o nel file .env per abilitare questa funzionalità.' });
-        }
+
 
         // Setup SSE Headers
         res.setHeader('Content-Type', 'text/event-stream');
@@ -4031,11 +4041,7 @@ app.delete('/api/assets/ai-history/:id', requireAuth, (req, res) => {
 app.get('/api/portfolios/:id/ai-analysis', requireAuth, requirePortfolioAccess, async (req, res) => {
     try {
         const globalSettings = database.getSettings(1) || {};
-        const apiKey = globalSettings.geminiApiKey || process.env.GEMINI_API_KEY;
-        
-        if (!apiKey) {
-            return res.status(400).json({ error: 'Chiave API GEMINI_API_KEY mancante. Configurala nel pannello Admin o nel file .env per abilitare questa funzionalità.' });
-        }
+
 
         // Setup SSE Headers
         res.setHeader('Content-Type', 'text/event-stream');
