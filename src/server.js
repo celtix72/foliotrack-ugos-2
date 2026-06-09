@@ -1627,6 +1627,8 @@ async function fetchAssetMetadata(ticker) {
             postMarketChangePercent: quote.postMarketChangePercent || 0,
             pe: quote.trailingPE || (summary.summaryDetail ? summary.summaryDetail.trailingPE : null),
             forwardPE: quote.forwardPE || (summary.summaryDetail ? summary.summaryDetail.forwardPE : null),
+            changePercent: quote.regularMarketVolume === 0 ? 0 : (quote.regularMarketChangePercent !== undefined && quote.regularMarketChangePercent !== null ? quote.regularMarketChangePercent : (summary.price ? summary.price.regularMarketChangePercent : null)),
+            changeValue: quote.regularMarketVolume === 0 ? 0 : (quote.regularMarketChange !== undefined && quote.regularMarketChange !== null ? quote.regularMarketChange : (summary.price ? summary.price.regularMarketChange : null)),
             dividendYield: (function() {
                 let y = quote.dividendYield || (summary.summaryDetail ? summary.summaryDetail.dividendYield : null);
                 if (y === null || y === undefined) return null;
@@ -1855,11 +1857,14 @@ function clearPerformanceCache() {
                 }
 
                 if (price !== undefined && price !== null) {
+                    const rawDt = dtArr[dtArr.length - 1].dt; // e.g. "20260608"
+                    const parsedDate = rawDt ? `${rawDt.substring(0,4)}-${rawDt.substring(4,6)}-${rawDt.substring(6,8)}` : null;
                     return {
                         success: true,
                         price: parseFloat(price),
                         variation: variation !== null ? parseFloat(variation) : null,
                         url: finalUrl,
+                        quoteDate: parsedDate,
                         isin
                     };
                 }
@@ -8183,7 +8188,7 @@ async function updateMarketData(force = false) {
                         currency: asset.currency || 'EUR',
                         exchange: asset.exchange,
                         country: asset.country,
-                        quoteDate: new Date().toISOString().split('T')[0]
+                        quoteDate: result.quoteDate || new Date().toISOString().split('T')[0]
                     };
                 } else {
                     logger.warn(`B_ITA scraping failed for ${asset.ticker} (${asset.isin})`);
@@ -8199,8 +8204,8 @@ async function updateMarketData(force = false) {
                 }
                 updateData = {
                     price: metadata.currentPrice || asset.currentPrice,
-                    change: metadata.changePercent || asset.changePercent,
-                    changeValue: metadata.changeValue || 0,
+                    change: metadata.changePercent !== undefined && metadata.changePercent !== null ? metadata.changePercent : asset.changePercent,
+                    changeValue: metadata.changeValue !== undefined && metadata.changeValue !== null ? metadata.changeValue : 0,
                     pe: metadata.pe || asset.pe,
                     forwardPE: metadata.forwardPE || asset.forwardPE,
                     pegRatio: metadata.pegRatio || asset.pegRatio,

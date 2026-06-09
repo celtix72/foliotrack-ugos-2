@@ -1,19 +1,11 @@
-const YahooFinance = require('yahoo-finance2').default;
-const yahooFinance = new YahooFinance();
-
+const yahooFinance = require('yahoo-finance2').default;
 async function test() {
-    try {
-        const ticker = 'IWDA.AS';
-        const result = await yahooFinance.quoteSummary(ticker, {
-            modules: ['summaryDetail', 'defaultKeyStatistics', 'fundProfile', 'assetProfile']
-        });
-        console.log('--- Fund Profile ---');
-        console.log(JSON.stringify(result.fundProfile, null, 2));
-        console.log('--- Key Statistics ---');
-        console.log(JSON.stringify(result.defaultKeyStatistics, null, 2));
-    } catch (e) {
-        console.error(e);
-    }
+    const q = await yahooFinance.quote('ISP.MI');
+    console.log('regularMarketTime:', q.regularMarketTime);
+    console.log('regularMarketChange:', q.regularMarketChange);
+    console.log('regularMarketChangePercent:', q.regularMarketChangePercent);
+    console.log('regularMarketVolume:', q.regularMarketVolume);
+    console.log('regularMarketPrice:', q.regularMarketPrice);
+    console.log('regularMarketPreviousClose:', q.regularMarketPreviousClose);
 }
-
 test();
