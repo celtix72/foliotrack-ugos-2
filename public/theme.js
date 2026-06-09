@@ -814,6 +814,16 @@
     }
 
     // ─── Global Formatting ────────────────────────────────────────────────────
+    window.formatAiFv = function(val, currency = 'EUR') {
+        if (val === null || val === undefined) return '—';
+        const num = parseFloat(val);
+        if (isNaN(num)) return val;
+        let decimals = 2;
+        if (num > 30) decimals = 0;
+        else if (num > 10) decimals = 1;
+        return window.formatCurrency(num, currency, decimals);
+    };
+
     window.formatCurrency = function(val, currency = 'EUR', decimals = 2) {
         if (val === null || val === undefined) return '—';
         const value = parseFloat(val);

@@ -819,7 +819,8 @@
             const itemBg = isDark ? 'rgba(30,41,59,0.5)' : '#ffffff';
 
             listEl.innerHTML = history.map(item => {
-                const date = new Date(item.created_at).toLocaleString();
+                const dObj = new Date(item.created_at);
+                const date = dObj.toLocaleDateString() + ' ' + dObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                 let actionColor = 'rgba(148,163,184,0.1)';
                 
                 const engine = item.engine || 'X';
@@ -849,6 +850,9 @@
                                 <span style="font-size: 10px; font-weight: 900; color: #64748b; background: rgba(148,163,184,0.1); padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 3px;" title="Motore IA: ${engine}">
                                     <span class="material-symbols-outlined" style="font-size: 12px;">${engineIcon}</span> ${engine}
                                 </span>
+                                ${item.targetPrice ? `<span style="font-size: 10px; font-weight: 900; color: #64748b; background: rgba(148,163,184,0.1); padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 3px;" title="Fair Value">
+                                    <span class="material-symbols-outlined" style="font-size: 12px;">monetization_on</span> FV: ${window.formatAiFv ? window.formatAiFv(item.targetPrice, '') : item.targetPrice}
+                                </span>` : ''}
                             </div>
                             <div style="display: flex; gap: 8px; align-items: center;">
                                 <span style="padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: 900; background: ${actionColor}; color: ${actionTextColor}; border: 1px solid ${actionTextColor}; box-shadow: 0 2px 8px ${actionColor};">${item.action}</span>
