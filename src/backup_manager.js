@@ -86,7 +86,7 @@ function deleteBackup(filename) {
  * Prunes old automatic backups based on retention setting.
  */
 async function applyRetention() {
-    const settings = require('./db').getSettings();
+    const settings = require('./db').getSettings(1);
     const limit = parseInt(settings.backupRetention || 5);
     
     const backups = listBackups()

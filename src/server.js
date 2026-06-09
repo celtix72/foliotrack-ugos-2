@@ -867,7 +867,7 @@ app.post('/api/auth/login', (req, res) => {
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     
     // Brute force protection
-    const settings = database.getSettings();
+    const settings = database.getSettings(1);
     const maxAttempts = parseInt(settings.auth_max_attempts || '5');
     const banMinutes = parseInt(settings.auth_ban_duration_minutes || '30');
     
@@ -1473,7 +1473,7 @@ app.delete('/api/admin/sessions/:sid', requireAuth, requireAdmin, (req, res) => 
 // GET /api/admin/security-settings
 app.get('/api/admin/security-settings', requireAuth, requireAdmin, (req, res) => {
     try {
-        const settings = database.getSettings();
+        const settings = database.getSettings(1);
         res.json({
             max_attempts: parseInt(settings.auth_max_attempts || '5'),
             ban_duration: parseInt(settings.auth_ban_duration_minutes || '30')
@@ -7916,7 +7916,7 @@ app.post('/api/settings/telegram/test-status', async (req, res) => {
 
 app.get('/api/debug/telegram-market', async (req, res) => {
     try {
-        const settings = database.getSettings();
+        const settings = database.getSettings(1);
         if (settings.telegramEnabled !== 'true') {
             return res.json({ success: false, error: 'Telegram is globally disabled in settings.' });
         }
@@ -8019,7 +8019,7 @@ app.delete('/api/settings/news-sources/:id', requireAuth, (req, res) => {
 
 app.get('/api/news/sources', (req, res) => {
     try {
-        const settings = database.getSettings();
+        const settings = database.getSettings(1);
         let disabledSources = [];
         try { disabledSources = JSON.parse(settings.disabledNewsSources || '[]'); } catch (e) {}
 
@@ -8145,7 +8145,7 @@ app.use((req, res) => res.redirect('/login'));
 let globalLastMarketUpdate = Date.now();
 
 async function updateMarketData(force = false) {
-    const settings = database.getSettings();
+    const settings = database.getSettings(1);
     const status = getMarketStatus();
     if (!force && !status.anyOpen) {
         // If markets are closed, only proceed if there are assets with 0.00€ price (critical for newly imported BTPs)
@@ -8444,7 +8444,7 @@ setInterval(() => {
 setTimeout(syncNews, 5000); // Run first sync 5s after startup
 
 setInterval(async () => {
-    const settings = database.getSettings();
+    const settings = database.getSettings(1);
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
     const status = getMarketStatus();
