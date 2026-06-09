@@ -3712,12 +3712,18 @@ ${prompt}`);
     if (engine === 'Qwen') {
         const apiKey = keys.qwenApiKey || process.env.QWEN_API_KEY;
         if (!apiKey) throw new Error('Qwen API Key mancante.');
-        const res = await axios.post('https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions', {
-            model: 'qwen-plus',
-            messages: [{ role: 'user', content: prompt }]
-        }, {
-            headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
-        });
+        let res;
+        try {
+            res = await axios.post('https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions', {
+                model: 'qwen-plus',
+                messages: [{ role: 'user', content: prompt }]
+            }, {
+                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
+            });
+        } catch (apiErr) {
+            logger.error('[AI API Error (Qwen)]', apiErr.response ? apiErr.response.data : apiErr.message);
+            throw apiErr;
+        }
         const content = res.data.choices?.[0]?.message?.content || '{}';
         logger.info(`[AI Response (${engine})] 
 ${content}`);
@@ -3725,12 +3731,18 @@ ${content}`);
     } else if (engine === 'OpenAI') {
         const apiKey = keys.openaiApiKey || process.env.OPENAI_API_KEY;
         if (!apiKey) throw new Error('OpenAI API Key mancante.');
-        const res = await axios.post('https://api.openai.com/v1/chat/completions', {
-            model: 'gpt-4o',
-            messages: [{ role: 'user', content: prompt }]
-        }, {
-            headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
-        });
+        let res;
+        try {
+            res = await axios.post('https://api.openai.com/v1/chat/completions', {
+                model: 'gpt-4o',
+                messages: [{ role: 'user', content: prompt }]
+            }, {
+                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
+            });
+        } catch (apiErr) {
+            logger.error('[AI API Error (OpenAI)]', apiErr.response ? apiErr.response.data : apiErr.message);
+            throw apiErr;
+        }
         const content = res.data.choices?.[0]?.message?.content || '{}';
         logger.info(`[AI Response (${engine})] 
 ${content}`);
@@ -3738,12 +3750,18 @@ ${content}`);
     } else if (engine === 'Agnes') {
         const apiKey = keys.agnesApiKey || process.env.AGNES_API_KEY;
         if (!apiKey) throw new Error('Agnes API Key mancante.');
-        const res = await axios.post('https://apihub.agnes-ai.com/v1/chat/completions', {
-            model: 'agnes-2.0-flash',
-            messages: [{ role: 'user', content: prompt }]
-        }, {
-            headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
-        });
+        let res;
+        try {
+            res = await axios.post('https://apihub.agnes-ai.com/v1/chat/completions', {
+                model: 'agnes-2.0-flash',
+                messages: [{ role: 'user', content: prompt }]
+            }, {
+                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
+            });
+        } catch (apiErr) {
+            logger.error('[AI API Error (Agnes)]', apiErr.response ? apiErr.response.data : apiErr.message);
+            throw apiErr;
+        }
         const content = res.data.choices?.[0]?.message?.content || '{}';
         logger.info(`[AI Response (${engine})] 
 ${content}`);
@@ -3753,11 +3771,17 @@ ${content}`);
         const apiKey = keys.geminiApiKey || process.env.GEMINI_API_KEY;
         if (!apiKey) throw new Error('Gemini API Key mancante.');
         const geminiModel = await getBestGeminiModel(apiKey);
-        const res = await axios.post(
-            `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`,
-            { contents: [{ parts: [{ text: prompt }] }] },
-            { headers: { 'Content-Type': 'application/json' } }
-        );
+        let res;
+        try {
+            res = await axios.post(
+                `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`,
+                { contents: [{ parts: [{ text: prompt }] }] },
+                { headers: { 'Content-Type': 'application/json' } }
+            );
+        } catch (apiErr) {
+            logger.error('[AI API Error (Gemini)]', apiErr.response ? apiErr.response.data : apiErr.message);
+            throw apiErr;
+        }
         const content = res.data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
         logger.info(`[AI Response (${engine})] 
 ${content}`);
@@ -3853,6 +3877,7 @@ Struttura JSON richiesta:
 NB: 
 - "action" deve essere una singola parola in maiuscolo (es. BUY, SELL, HOLD, INCREASE, DECREASE). 
 - "targetProfit" e "stopLoss" devono essere numeri (usa il punto per i decimali, es. 10.50). Se non hai un target o stop loss definito, inserisci 0.
+- IMPORTANTE: Per i ritorni a capo all'interno di "reasoning", devi ASSOLUTAMENTE USARE il carattere di escape "\n" e non andare mai a capo fisicamente. Fai l'escape anche delle eventuali virgolette interne con \" per non invalidare il JSON.
 `;
 
         const engine = req.query.engine || globalSettings.aiEngine || 'Gemini';
