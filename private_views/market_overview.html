@@ -212,6 +212,7 @@
                         <th class="px-5 py-3" id="th-total-daily-gain">Daily Gain</th>
                         <th class="px-5 py-3 hidden sm:table-cell">Target/Stop</th>
                         <th class="px-5 py-3 text-right">Actions</th>
+                        
                     </tr>
                 </thead>
                 <tbody id="list-positions" class="divide-y divide-slate-100 dark:divide-slate-800">
@@ -453,7 +454,39 @@ function renderAssets(filter = '') {
                     </div>
                     <div>
                         <div class="flex items-center gap-2 flex-wrap">
-                            <p class="font-black text-lg text-slate-900 dark:text-white leading-none flex items-center">${a.name} ${aiBadge}</p>
+                            <div class="flex items-center gap-2">
+                                <p class="font-black text-sm text-slate-900 dark:text-white leading-none">${a.name}</p>
+                                ${(function() {
+                                    if (a.aiBadges && a.aiBadges.length > 0) {
+                                        return a.aiBadges.map(badge => {
+                                            const engine = badge.engine || 'X';
+                                            let icon = 'smart_toy';
+                                            if (engine === 'Gemini') icon = 'auto_awesome';
+                                            else if (engine === 'Qwen') icon = 'chat_spark';
+                                            else if (engine === 'Agnes') icon = 'psychiatry';
+                                            else if (engine === 'OpenAI') icon = 'data_exploration';
+                                            else if (engine === 'X') icon = 'close';
+                                            
+                                            let bgClass = 'bg-slate-500/10 text-slate-500 hover:bg-slate-500 hover:text-white';
+                                            if (badge.aiAction === 'BUY' || badge.aiAction === 'INCREASE') bgClass = 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white';
+                                            else if (badge.aiAction === 'SELL' || badge.aiAction === 'DECREASE') bgClass = 'bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white';
+                                            
+                                            const fvStr = badge.aiTargetPrice ? formatAiFv(badge.aiTargetPrice, a.currency) : badge.aiAction;
+                                            return `<button onclick="event.stopPropagation(); openAssetAiHistoryModal('${a.ticker}')" class="h-6 px-1.5 rounded ${bgClass} transition-all flex items-center justify-center font-black text-[9px] whitespace-nowrap" title="${engine}: ${fvStr}">
+                                                <span class="material-symbols-outlined text-[12px] mr-1">${icon}</span>${fvStr}
+                                            </button>`;
+                                        }).join('');
+                                    } else if (a.aiHistoryCount > 0) {
+                                        return `<button onclick="event.stopPropagation(); openAssetAiHistoryModal('${a.ticker}')" class="h-6 px-1.5 rounded bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500 hover:text-white transition-all flex items-center justify-center font-black text-[9px] whitespace-nowrap" title="Storico IA (${a.aiHistoryCount})">
+                                            <span class="material-symbols-outlined text-[12px] mr-1">smart_toy</span>${a.aiHistoryCount}
+                                        </button>`;
+                                    } else {
+                                        return `<button onclick="event.stopPropagation(); openAssetAiHistoryModal('${a.ticker}')" class="h-6 w-6 rounded bg-slate-500/10 text-slate-500 hover:bg-slate-500 hover:text-white transition-all flex items-center justify-center" title="Genera Analisi IA">
+                                            <span class="material-symbols-outlined text-[12px]">smart_toy</span>
+                                        </button>`;
+                                    }
+                                })()}
+                            </div>
                             ${!a.isMonitored ? '<span class="text-[8px] font-black bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-500 tracking-tighter uppercase">Inactive</span>' : ''}
                             ${a.lastUpdateError ? `<span class="px-1.5 py-0.5 rounded-full bg-rose-500 text-[8px] font-black text-white uppercase tracking-tighter" title="${a.lastUpdateError.replace(/"/g, '&quot;')}">Err</span>` : ''}
                         </div>
@@ -487,10 +520,7 @@ function renderAssets(filter = '') {
             </td>
             <td class="px-5 py-1.5">
                 <div class="flex items-center gap-4">
-                    <!-- Sparkline -->
-                    <div class="hidden md:block">
-                        <canvas id="sparkline-${a.ticker}" width="60" height="24" class="opacity-80"></canvas>
-                    </div>
+                    
                     <div class="flex flex-col">
                         <div class="flex items-center gap-2 flex-wrap">
                             <div class="flex items-center gap-1.5">
@@ -528,36 +558,7 @@ function renderAssets(filter = '') {
             </td>
             <td class="px-5 py-1.5 text-right">
                 <div class="flex items-center justify-end gap-1">
-                    ${(function() {
-                        if (a.aiBadges && a.aiBadges.length > 0) {
-                            return a.aiBadges.map(badge => {
-                                const engine = badge.engine || 'X';
-                                let icon = 'smart_toy';
-                                if (engine === 'Gemini') icon = 'auto_awesome';
-                                else if (engine === 'Qwen') icon = 'chat_spark';
-                                else if (engine === 'Agnes') icon = 'psychiatry';
-                                else if (engine === 'OpenAI') icon = 'data_exploration';
-                                else if (engine === 'X') icon = 'close';
-                                
-                                let bgClass = 'bg-slate-500/10 text-slate-500 hover:bg-slate-500 hover:text-white';
-                                if (badge.aiAction === 'BUY' || badge.aiAction === 'INCREASE') bgClass = 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white';
-                                else if (badge.aiAction === 'SELL' || badge.aiAction === 'DECREASE') bgClass = 'bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white';
-                                
-                                const fvStr = badge.aiTargetPrice ? formatAiFv(badge.aiTargetPrice, a.currency) : badge.aiAction;
-                                return `<button onclick="event.stopPropagation(); openAssetAiHistoryModal('${a.ticker}')" class="h-8 px-2 rounded-lg ${bgClass} transition-all flex items-center justify-center mr-1 font-black text-[10px] whitespace-nowrap" title="${engine}: ${fvStr}">
-                                    <span class="material-symbols-outlined text-base mr-1">${icon}</span>${fvStr}
-                                </button>`;
-                            }).join('');
-                        } else if (a.aiHistoryCount > 0) {
-                            return `<button onclick="event.stopPropagation(); openAssetAiHistoryModal('${a.ticker}')" class="h-8 w-8 rounded-lg bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500 hover:text-white transition-all flex items-center justify-center mr-1" title="Storico IA (${a.aiHistoryCount})">
-                                <span class="material-symbols-outlined text-base">smart_toy</span>
-                            </button>`;
-                        } else {
-                            return `<button onclick="event.stopPropagation(); openAssetAiHistoryModal('${a.ticker}')" class="h-8 w-8 rounded-lg bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500 hover:text-white transition-all flex items-center justify-center mr-1" title="Storico IA">
-                                <span class="material-symbols-outlined text-base">smart_toy</span>
-                            </button>`;
-                        }
-                    })()}
+
                     <button onclick="event.stopPropagation(); openAlertModal('${a.ticker}')" class="h-8 w-8 rounded-lg bg-slate-100 dark:bg-white/[0.05] text-slate-500 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-all flex items-center justify-center">
                         <span class="material-symbols-outlined text-base">settings_alert</span>
                     </button>
