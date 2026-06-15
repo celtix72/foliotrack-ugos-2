@@ -74,7 +74,14 @@ const logger = {
         writeLog('INFO', msg);
     },
     error: (msg, err) => {
-        const errMsg = err ? ` - ${err.message || err}` : '';
+        let errStr = err;
+        if (err) {
+            if (err.message) errStr = err.message;
+            else if (typeof err === 'object') {
+                try { errStr = JSON.stringify(err); } catch(e) { errStr = String(err); }
+            }
+        }
+        const errMsg = errStr ? ` - ${errStr}` : '';
         const line = `${new Date().toISOString()} [ERROR] ${msg}${errMsg}\n`;
         process.stderr.write(line);
         writeLog('ERROR', `${msg}${errMsg}`);
