@@ -405,15 +405,24 @@
                     }
                     
                     extraStats = `
-                        <span style="margin-left: 12px; font-size: 0.8em; font-weight: 900;" class="text-slate-700 dark:text-slate-300">QTA: ${qty.toFixed(4)}</span>
-                        <span style="margin-left: 8px; color: ${gainColor}; font-size: 0.8em; font-weight: 900;">Gain: ${gainSign}€${Math.abs(gainEUR).toFixed(2)}${pctGainStr}</span>
+                        <span style="color: white; font-weight: 900;">QTA: ${qty.toFixed(0)}</span>
+                        <span style="color: ${gainColor}; font-weight: 900;">Gain: ${gainSign}€${Math.abs(gainEUR).toFixed(2)}${pctGainStr}</span>
                     `;
                 }
 
                 const headerTitle = document.getElementById('chart-modal-title');
-                headerTitle.innerHTML = `History: ${_chartTicker} 
-                    <span style="margin-left: 8px; color: ${vColor}; font-size: 0.8em; font-weight: 900;">Day: ${vSign}${latestVar.pct.toFixed(2)}% (${vSign}${latestVar.val.toFixed(2)} ${_chartCurrency})</span>
-                    ${extraStats}`;
+                headerTitle.parentElement.style.flex = "1";
+                headerTitle.style.display = "flex";
+                headerTitle.style.alignItems = "center";
+                headerTitle.style.justifyContent = "space-between";
+
+                headerTitle.innerHTML = `
+                    <span>${_chartTicker}</span>
+                    <div style="display: flex; gap: 12px; font-size: 0.8em; text-align: right; margin-right: 16px; align-items: center;">
+                        ${extraStats}
+                        <span style="color: ${vColor}; font-weight: 900;">Day: ${vSign}${latestVar.pct.toFixed(2)}% (${vSign}${latestVar.val.toFixed(2)} ${_chartCurrency})</span>
+                    </div>
+                `;
             }
             // We'll create a dictionary of transactions by date for easy lookup
             const tradesByDate = {};
