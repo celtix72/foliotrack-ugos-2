@@ -40,11 +40,16 @@
 
                                     const cloned = res.clone();
                                     const data = await cloned.json();
-                                    sessionStorage.setItem(cacheKey, JSON.stringify({
-                                        timestamp: Date.now(),
-                                        data: data,
-                                        v: currentVersion
-                                    }));
+                                    try {
+                                        sessionStorage.setItem(cacheKey, JSON.stringify({
+                                            timestamp: Date.now(),
+                                            data: data,
+                                            v: currentVersion
+                                        }));
+                                    } catch(quotaErr) {
+                                        // Response too large for sessionStorage — skip caching silently
+                                        sessionStorage.removeItem(cacheKey);
+                                    }
                                 }
                             }).catch(e => console.error('Background SWR fetch failed:', e));
                             
@@ -63,11 +68,19 @@
                     const cloned = res.clone();
                     try {
                         const data = await cloned.json();
-                        sessionStorage.setItem(cacheKey, JSON.stringify({
+                        const entry = JSON.stringify({
                             timestamp: Date.now(),
                             data: data,
                             v: sessionStorage.getItem('ft_cache_v')
-                        }));
+                        });
+                        // Skip caching if payload exceeds ~1MB to avoid QuotaExceededError
+                        if (entry.length < 1_000_000) {
+                            try {
+                                sessionStorage.setItem(cacheKey, entry);
+                            } catch(quotaErr) {
+                                sessionStorage.removeItem(cacheKey);
+                            }
+                        }
                     } catch(e) {}
                 }
                 return res;
