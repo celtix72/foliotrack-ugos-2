@@ -386,8 +386,34 @@
                 const latestVar = dailyVars[dailyVars.length - 1];
                 const vColor = latestVar.pct >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
                 const vSign = latestVar.pct >= 0 ? '+' : '';
+                
+                let extraStats = '';
+                if (assetInfo && assetInfo.totalQuantity > 0.0001) {
+                    const qty = assetInfo.totalQuantity;
+                    const gainEUR = assetInfo.totalGainEUR || 0;
+                    const gainSign = gainEUR >= 0 ? '+' : '';
+                    const gainColor = gainEUR >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+                    
+                    let pctGainStr = '';
+                    const costAsset = assetInfo.totalCostAssetCurr || 0;
+                    if (costAsset > 0) {
+                        const currentPrice = assetInfo.currentPrice > 0 ? assetInfo.currentPrice : (prices.length > 0 ? prices[prices.length - 1] : 0);
+                        const valAsset = qty * currentPrice;
+                        const pctGain = ((valAsset - costAsset) / costAsset) * 100;
+                        const pctSign = pctGain >= 0 ? '+' : '';
+                        pctGainStr = ` (${pctSign}${pctGain.toFixed(2)}%)`;
+                    }
+                    
+                    extraStats = `
+                        <span style="margin-left: 12px; font-size: 0.8em; font-weight: 900;" class="text-slate-700 dark:text-slate-300">QTA: ${qty.toFixed(4)}</span>
+                        <span style="margin-left: 8px; color: ${gainColor}; font-size: 0.8em; font-weight: 900;">Gain: ${gainSign}€${Math.abs(gainEUR).toFixed(2)}${pctGainStr}</span>
+                    `;
+                }
+
                 const headerTitle = document.getElementById('chart-modal-title');
-                headerTitle.innerHTML = `History: ${_chartTicker} <span style="margin-left: 8px; color: ${vColor}; font-size: 0.8em; font-weight: 900;">${vSign}${latestVar.pct.toFixed(2)}% (${vSign}${latestVar.val.toFixed(2)} ${_chartCurrency})</span>`;
+                headerTitle.innerHTML = `History: ${_chartTicker} 
+                    <span style="margin-left: 8px; color: ${vColor}; font-size: 0.8em; font-weight: 900;">Day: ${vSign}${latestVar.pct.toFixed(2)}% (${vSign}${latestVar.val.toFixed(2)} ${_chartCurrency})</span>
+                    ${extraStats}`;
             }
             // We'll create a dictionary of transactions by date for easy lookup
             const tradesByDate = {};
