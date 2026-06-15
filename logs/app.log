@@ -41043,3 +41043,11 @@
 2026-06-09T08:46:42.636Z [INFO] Database: /Users/mauro/Documents/FolioTrack3/foliotrack.db
 2026-06-09T08:46:47.567Z [INFO] Starting RSS News Sync...
 2026-06-09T08:46:48.342Z [INFO] News Sync completed. Saved 20 new articles.
+2026-06-15T18:40:39.565Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-06-15T18:40:39.817Z [INFO] FolioTrack server running on port 3000
+2026-06-15T18:40:39.827Z [INFO] Database: /Users/mauro/Documents/FolioTrack3/foliotrack.db
+2026-06-15T18:40:44.723Z [INFO] Starting RSS News Sync...
+2026-06-15T18:40:45.114Z [INFO] News Sync completed. Saved 20 new articles.
+2026-06-15T18:45:15.888Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-06-15T18:45:20.947Z [INFO] Starting RSS News Sync...
+2026-06-15T18:45:21.305Z [INFO] News Sync completed. Saved 0 new articles.
