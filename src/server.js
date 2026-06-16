@@ -4972,17 +4972,18 @@ app.get('/api/market/movers', requireAuth, async (req, res) => {
               AND a.ticker NOT LIKE 'CD_%'
         `).all(userId);
 
-        rows = rows.map(a => {
+        rows = rows.filter(a => {
+            // Always exclude assets whose last quote is not from today
+            if (a.quoteDate !== todayStr) return false;
+            
             const isUS = isUSMarket(a);
             const openedToday = isUS ? marketStatus.US_openedToday : marketStatus.EU_openedToday;
-            const isToday = a.quoteDate === todayStr;
             
-            if (!openedToday || !isToday) {
-                a.changePercent = 0;
-                a.changeValue = 0;
-            }
-            return a;
-        }).filter(a => Math.abs(a.changePercent) > 0)
+            // Also exclude if the market did not open today (stale intraday data)
+            if (!openedToday) return false;
+            
+            return Math.abs(a.changePercent) > 0;
+        })
           .sort((a, b) => Math.abs(b.changePercent) - Math.abs(a.changePercent))
           .slice(0, 10);
 
