@@ -394,28 +394,56 @@
       const container = document.getElementById('mob-movers-carousel');
       const section = document.getElementById('mob-movers-section');
       if (!container || !section) return;
+
       if (!movers || movers.length === 0) {
         section.style.display = 'none';
         return;
       }
       section.style.display = '';
-            const preVal = (m.preMarketChangePercent && Math.abs(m.preMarketChangePercent) > 0.01 && !window._mobMarketOpen) 
-              ? `<span style="color:${m.preMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}; font-weight:900; margin-right:4px">(${m.preMarketChangePercent >= 0 ? '+' : ''}${m.preMarketChangePercent.toFixed(1)}%)</span>` 
-              : '';
-            const postVal = (m.postMarketChangePercent && Math.abs(m.postMarketChangePercent) > 0.01 && !window._mobMarketOpen)
-              ? `<span style="color:${m.postMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}; font-weight:900; margin-right:4px">(${m.postMarketChangePercent >= 0 ? '+' : ''}${m.postMarketChangePercent.toFixed(1)}%)</span>`
-              : '';
 
-            return `
-              <div class="snap-start shrink-0 w-28 bg-white dark:bg-surface-dark border-r border-slate-200 dark:border-slate-800 py-0.5 flex flex-col items-center justify-center text-center"
-                   onclick="window.showMobDetails('${m.ticker}')">
-                <span class="text-[11px] font-black text-black uppercase tracking-tight leading-none mb-1">${m.ticker}</span>
-                <div class="flex items-center justify-center text-[10px] font-black">
-                  ${preVal || postVal}
-                  <span style="color:${color}">${isPos ? '+' : ''}${m.changePercent.toFixed(1)}%</span>
-                </div>
-              </div>`;
-    } catch(e) {}
+      const gainers = movers.filter(m => m.changePercent > 0)
+                            .sort((a, b) => b.changePercent - a.changePercent)
+                            .slice(0, 5);
+      const losers  = movers.filter(m => m.changePercent < 0)
+                            .sort((a, b) => a.changePercent - b.changePercent)
+                            .slice(0, 5);
+
+      const renderCard = (m) => {
+        const isPos = m.changePercent >= 0;
+        const color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        const bg    = isPos ? 'rgba(16,185,129,0.08)' : 'rgba(244,63,94,0.08)';
+        const border= isPos ? 'rgba(16,185,129,0.25)' : 'rgba(244,63,94,0.25)';
+        const sign  = isPos ? '+' : '';
+        const price = (m.currentPrice || 0).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return `
+          <div onclick="window.showMobDetails('${m.ticker}', '${(m.name||'').replace(/'/g,"\\'")}', '${m.currency||'EUR'}')"
+               style="flex-shrink:0; width:100px; border-radius:12px; padding:8px 6px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; cursor:pointer; background:${bg}; border:1px solid ${border}; margin-right:8px;">
+            <span style="font-size:11px; font-weight:900; color:var(--mob-text); text-transform:uppercase; letter-spacing:-0.3px; line-height:1; margin-bottom:4px;">${m.ticker}</span>
+            <span style="font-size:16px; font-weight:900; color:${color}; line-height:1; margin-bottom:2px;">${sign}${m.changePercent.toFixed(1)}%</span>
+            <span style="font-size:9px; font-weight:700; color:var(--mob-text-muted);">${price} ${m.currency||''}</span>
+          </div>`;
+      };
+
+      let html = '';
+      if (gainers.length > 0) {
+        html += `<div style="padding:4px 0 2px 0;">
+          <div style="font-size:9px; font-weight:900; color:var(--mob-emerald); text-transform:uppercase; letter-spacing:0.12em; padding:0 4px 6px 4px;">▲ Top</div>
+          <div style="display:flex; overflow-x:auto; padding-bottom:4px;" class="no-scrollbar">
+            ${gainers.map(renderCard).join('')}
+          </div>
+        </div>`;
+      }
+      if (losers.length > 0) {
+        html += `<div style="padding:4px 0 2px 0;">
+          <div style="font-size:9px; font-weight:900; color:var(--mob-rose); text-transform:uppercase; letter-spacing:0.12em; padding:0 4px 6px 4px;">▼ Worst</div>
+          <div style="display:flex; overflow-x:auto; padding-bottom:4px;" class="no-scrollbar">
+            ${losers.map(renderCard).join('')}
+          </div>
+        </div>`;
+      }
+
+      container.innerHTML = html;
+    } catch(e) { console.error('[MOB] Movers load error:', e); }
   }
 
   async function mobLoadAssets() {
