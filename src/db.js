@@ -767,6 +767,8 @@ function initDb() {
         openaiApiKeyPay: '',
         agnesApiKeyFree: '',
         agnesApiKeyPay: '',
+        aimlapiApiKeyFree: '',
+        aimlapiApiKeyPay: '',
         aiAssetPrompt: '',
         aiPortfolioPrompt: '',
         aiTokensUsedToday: '0',

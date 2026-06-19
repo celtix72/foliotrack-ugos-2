@@ -1253,6 +1253,8 @@ app.get('/api/ai/available-engines', requireAuth, (req, res) => {
         if (settings.openaiApiKeyPay || settings.openaiApiKey || process.env.OPENAI_API_KEY) available.push('OpenAI_Pay');
         if (settings.agnesApiKeyFree) available.push('Agnes_Free');
         if (settings.agnesApiKeyPay || settings.agnesApiKey || process.env.AGNES_API_KEY) available.push('Agnes_Pay');
+        if (settings.aimlapiApiKeyFree) available.push('Aimlapi_Free');
+        if (settings.aimlapiApiKeyPay || process.env.AIMLAPI_API_KEY) available.push('Aimlapi_Pay');
         
         const hasGemini = available.some(e => e.startsWith('Gemini'));
         const hasQwen = available.some(e => e.startsWith('Qwen'));
@@ -1279,6 +1281,8 @@ app.get('/api/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
             openaiApiKeyPay: settings.openaiApiKeyPay || settings.openaiApiKey || '',
             agnesApiKeyFree: settings.agnesApiKeyFree || '',
             agnesApiKeyPay: settings.agnesApiKeyPay || settings.agnesApiKey || '',
+            aimlapiApiKeyFree: settings.aimlapiApiKeyFree || '',
+            aimlapiApiKeyPay: settings.aimlapiApiKeyPay || '',
             aiAssetPrompt: settings.aiAssetPrompt || '',
             aiPortfolioPrompt: settings.aiPortfolioPrompt || '',
             aiTokensUsedToday: settings.aiTokensUsedToday || '0',
@@ -1291,7 +1295,7 @@ app.get('/api/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
 
 // POST /api/admin/ai-settings
 app.post('/api/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
-    const { aiEngine, geminiApiKeyFree, geminiApiKeyPay, qwenApiKeyFree, qwenApiKeyPay, openaiApiKeyFree, openaiApiKeyPay, agnesApiKeyFree, agnesApiKeyPay, aiAssetPrompt, aiPortfolioPrompt } = req.body;
+    const { aiEngine, geminiApiKeyFree, geminiApiKeyPay, qwenApiKeyFree, qwenApiKeyPay, openaiApiKeyFree, openaiApiKeyPay, agnesApiKeyFree, agnesApiKeyPay, aimlapiApiKeyFree, aimlapiApiKeyPay, aiAssetPrompt, aiPortfolioPrompt } = req.body;
     try {
         if (aiEngine !== undefined) database.setSetting(1, 'aiEngine', aiEngine);
         if (geminiApiKeyFree !== undefined) database.setSetting(1, 'geminiApiKeyFree', geminiApiKeyFree);
@@ -1302,6 +1306,8 @@ app.post('/api/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
         if (openaiApiKeyPay !== undefined) database.setSetting(1, 'openaiApiKeyPay', openaiApiKeyPay);
         if (agnesApiKeyFree !== undefined) database.setSetting(1, 'agnesApiKeyFree', agnesApiKeyFree);
         if (agnesApiKeyPay !== undefined) database.setSetting(1, 'agnesApiKeyPay', agnesApiKeyPay);
+        if (aimlapiApiKeyFree !== undefined) database.setSetting(1, 'aimlapiApiKeyFree', aimlapiApiKeyFree);
+        if (aimlapiApiKeyPay !== undefined) database.setSetting(1, 'aimlapiApiKeyPay', aimlapiApiKeyPay);
         if (aiAssetPrompt !== undefined) database.setSetting(1, 'aiAssetPrompt', aiAssetPrompt);
         if (aiPortfolioPrompt !== undefined) database.setSetting(1, 'aiPortfolioPrompt', aiPortfolioPrompt);
         
@@ -3827,12 +3833,15 @@ function parseAIResponse(rawText) {
 }
 
 async function callAIModel(engine, prompt, keys) {
+    const parts = engine.split('_');
+    const baseEngine = parts[0] || 'Gemini';
+    const tier = parts[1] || 'Pay';
+
     logger.info(`[AI Iteration] Starting analysis with engine: ${engine}`);
-    logger.info(`[AI Prompt] 
-${prompt}`);
-    if (engine === 'Qwen') {
-        const apiKey = keys.qwenApiKey || process.env.QWEN_API_KEY;
-        if (!apiKey) throw new Error('Qwen API Key mancante.');
+    logger.info(`[AI Prompt] \n${prompt}`);
+    if (baseEngine === 'Qwen') {
+        const apiKey = tier === 'Free' ? keys.qwenApiKeyFree : (keys.qwenApiKeyPay || keys.qwenApiKey || process.env.QWEN_API_KEY);
+        if (!apiKey) throw new Error(`Qwen API Key (${tier}) mancante.`);
         let res;
         try {
             res = await axios.post('https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions', {
@@ -3846,12 +3855,11 @@ ${prompt}`);
             throw apiErr;
         }
         const content = res.data.choices?.[0]?.message?.content || '{}';
-        logger.info(`[AI Response (${engine})] 
-${content}`);
+        logger.info(`[AI Response (${engine})] \n${content}`);
         return { text: content, usage: res.data.usage || {} };
-    } else if (engine === 'OpenAI') {
-        const apiKey = keys.openaiApiKey || process.env.OPENAI_API_KEY;
-        if (!apiKey) throw new Error('OpenAI API Key mancante.');
+    } else if (baseEngine === 'OpenAI') {
+        const apiKey = tier === 'Free' ? keys.openaiApiKeyFree : (keys.openaiApiKeyPay || keys.openaiApiKey || process.env.OPENAI_API_KEY);
+        if (!apiKey) throw new Error(`OpenAI API Key (${tier}) mancante.`);
         let res;
         try {
             res = await axios.post('https://api.openai.com/v1/chat/completions', {
@@ -3865,12 +3873,11 @@ ${content}`);
             throw apiErr;
         }
         const content = res.data.choices?.[0]?.message?.content || '{}';
-        logger.info(`[AI Response (${engine})] 
-${content}`);
+        logger.info(`[AI Response (${engine})] \n${content}`);
         return { text: content, usage: res.data.usage || {} };
-    } else if (engine === 'Agnes') {
-        const apiKey = keys.agnesApiKey || process.env.AGNES_API_KEY;
-        if (!apiKey) throw new Error('Agnes API Key mancante.');
+    } else if (baseEngine === 'Agnes') {
+        const apiKey = tier === 'Free' ? keys.agnesApiKeyFree : (keys.agnesApiKeyPay || keys.agnesApiKey || process.env.AGNES_API_KEY);
+        if (!apiKey) throw new Error(`Agnes API Key (${tier}) mancante.`);
         let res;
         try {
             res = await axios.post('https://apihub.agnes-ai.com/v1/chat/completions', {
@@ -3884,13 +3891,30 @@ ${content}`);
             throw apiErr;
         }
         const content = res.data.choices?.[0]?.message?.content || '{}';
-        logger.info(`[AI Response (${engine})] 
-${content}`);
+        logger.info(`[AI Response (${engine})] \n${content}`);
+        return { text: content, usage: res.data.usage || {} };
+    } else if (baseEngine === 'Aimlapi') {
+        const apiKey = tier === 'Free' ? keys.aimlapiApiKeyFree : (keys.aimlapiApiKeyPay || keys.aimlapiApiKey || process.env.AIMLAPI_API_KEY);
+        if (!apiKey) throw new Error(`AIML API Key (${tier}) mancante.`);
+        let res;
+        try {
+            res = await axios.post('https://api.aimlapi.com/v1/chat/completions', {
+                model: 'gpt-4o',
+                messages: [{ role: 'user', content: prompt }]
+            }, {
+                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
+            });
+        } catch (apiErr) {
+            logger.error('[AI API Error (Aimlapi)]', apiErr.response ? apiErr.response.data : apiErr.message);
+            throw apiErr;
+        }
+        const content = res.data.choices?.[0]?.message?.content || '{}';
+        logger.info(`[AI Response (${engine})] \n${content}`);
         return { text: content, usage: res.data.usage || {} };
     } else {
         // Default to Gemini
-        const apiKey = keys.geminiApiKey || process.env.GEMINI_API_KEY;
-        if (!apiKey) throw new Error('Gemini API Key mancante.');
+        const apiKey = tier === 'Free' ? keys.geminiApiKeyFree : (keys.geminiApiKeyPay || keys.geminiApiKey || process.env.GEMINI_API_KEY);
+        if (!apiKey) throw new Error(`Gemini API Key (${tier}) mancante.`);
         const geminiModel = await getBestGeminiModel(apiKey);
         let res;
         try {
@@ -3904,8 +3928,7 @@ ${content}`);
             throw apiErr;
         }
         const content = res.data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-        logger.info(`[AI Response (${engine})] 
-${content}`);
+        logger.info(`[AI Response (${engine})] \n${content}`);
         const usage = res.data.usageMetadata || {};
         return { text: content, usage: { totalTokenCount: usage.totalTokenCount || 0 } };
     }
