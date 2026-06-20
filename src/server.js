@@ -1280,9 +1280,10 @@ app.get('/api/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
             openaiApiKeyFree: settings.openaiApiKeyFree || '',
             openaiApiKeyPay: settings.openaiApiKeyPay || settings.openaiApiKey || '',
             agnesApiKeyFree: settings.agnesApiKeyFree || '',
-            agnesApiKeyPay: settings.agnesApiKeyPay || settings.agnesApiKey || '',
+            agnesApiKeyPay: settings.agnesApiKeyPay || '',
             aimlapiApiKeyFree: settings.aimlapiApiKeyFree || '',
             aimlapiApiKeyPay: settings.aimlapiApiKeyPay || '',
+            tavilyApiKey: settings.tavilyApiKey || '',
             aiAssetPrompt: settings.aiAssetPrompt || '',
             aiPortfolioPrompt: settings.aiPortfolioPrompt || '',
             aiTokensUsedToday: settings.aiTokensUsedToday || '0',
@@ -1295,7 +1296,7 @@ app.get('/api/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
 
 // POST /api/admin/ai-settings
 app.post('/api/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
-    const { aiEngine, geminiApiKeyFree, geminiApiKeyPay, qwenApiKeyFree, qwenApiKeyPay, openaiApiKeyFree, openaiApiKeyPay, agnesApiKeyFree, agnesApiKeyPay, aimlapiApiKeyFree, aimlapiApiKeyPay, aiAssetPrompt, aiPortfolioPrompt } = req.body;
+    const { aiEngine, geminiApiKeyFree, geminiApiKeyPay, qwenApiKeyFree, qwenApiKeyPay, openaiApiKeyFree, openaiApiKeyPay, agnesApiKeyFree, agnesApiKeyPay, aimlapiApiKeyFree, aimlapiApiKeyPay, tavilyApiKey, aiAssetPrompt, aiPortfolioPrompt } = req.body;
     try {
         if (aiEngine !== undefined) database.setSetting(1, 'aiEngine', aiEngine);
         if (geminiApiKeyFree !== undefined) database.setSetting(1, 'geminiApiKeyFree', geminiApiKeyFree);
@@ -1308,6 +1309,7 @@ app.post('/api/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
         if (agnesApiKeyPay !== undefined) database.setSetting(1, 'agnesApiKeyPay', agnesApiKeyPay);
         if (aimlapiApiKeyFree !== undefined) database.setSetting(1, 'aimlapiApiKeyFree', aimlapiApiKeyFree);
         if (aimlapiApiKeyPay !== undefined) database.setSetting(1, 'aimlapiApiKeyPay', aimlapiApiKeyPay);
+        if (tavilyApiKey !== undefined) database.setSetting(1, 'tavilyApiKey', tavilyApiKey);
         if (aiAssetPrompt !== undefined) database.setSetting(1, 'aiAssetPrompt', aiAssetPrompt);
         if (aiPortfolioPrompt !== undefined) database.setSetting(1, 'aiPortfolioPrompt', aiPortfolioPrompt);
         
@@ -3959,9 +3961,30 @@ app.get('/api/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
         }
 
         // Fetch recent news
-        sendEvent('progress', { message: 'Ricerca news recenti...' });
-        const newsRes = await yahooFinance.search(ticker, { newsCount: 3 }).catch(() => ({}));
-        const newsTitles = (newsRes.news || []).map(n => n.title).join('; ');
+        let newsTitles = '';
+        const tavilyKey = globalSettings.tavilyApiKey || process.env.TAVILY_API_KEY;
+        if (tavilyKey) {
+            sendEvent('progress', { message: 'Ricerca news recenti tramite Tavily...' });
+            try {
+                const tavilyRes = await axios.post('https://api.tavily.com/search', {
+                    api_key: tavilyKey,
+                    query: `${assetRow.ticker} ${assetRow.name} stock news latest analysis`,
+                    search_depth: 'basic',
+                    max_results: 5
+                });
+                if (tavilyRes.data && Array.isArray(tavilyRes.data.results)) {
+                    newsTitles = tavilyRes.data.results.map(r => `${r.title}: ${r.content}`).join('\n');
+                }
+            } catch (err) {
+                logger.error('[Tavily API Error]', err.message);
+            }
+        }
+        
+        if (!newsTitles) {
+            sendEvent('progress', { message: 'Ricerca news recenti...' });
+            const newsRes = await yahooFinance.search(ticker, { newsCount: 3 }).catch(() => ({}));
+            newsTitles = (newsRes.news || []).map(n => n.title).join('; ');
+        }
         
         // Fetch earnings/fundamentals
         sendEvent('progress', { message: 'Recupero dati fondamentali...' });

@@ -769,6 +769,7 @@ function initDb() {
         agnesApiKeyPay: '',
         aimlapiApiKeyFree: '',
         aimlapiApiKeyPay: '',
+        tavilyApiKey: '',
         aiAssetPrompt: '',
         aiPortfolioPrompt: '',
         aiTokensUsedToday: '0',
