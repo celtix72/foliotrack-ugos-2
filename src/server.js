@@ -808,6 +808,10 @@ app.use(helmet({
             defaultSrc: ["'self'"],
             scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'",
                 'cdn.jsdelivr.net', 'cdnjs.cloudflare.com'],
+            // Helmet 7+ splits scriptSrc from scriptSrcAttr.
+            // The app uses inline event handlers (onclick, onchange, etc.)
+            // throughout all HTML views, so we must allow 'unsafe-inline' here.
+            scriptSrcAttr: ["'unsafe-inline'"],
             styleSrc: ["'self'", "'unsafe-inline'",
                 'fonts.googleapis.com', 'cdnjs.cloudflare.com',
                 'fonts.gstatic.com'],
@@ -824,6 +828,7 @@ app.use(helmet({
     },
     crossOriginEmbedderPolicy: false, // needed for some chart libs
 }));
+
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
