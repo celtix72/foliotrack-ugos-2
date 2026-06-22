@@ -13,6 +13,8 @@ const webpush      = require('web-push');
 const { xirr, calculateTWR } = require('./utils/finance');
 const Parser = require('rss-parser');
 const rssParser = new Parser();
+const { callAIModel, parseAIResponse } = require('./services/aiService');
+
 
 // ─── Application Version ─────────────────────────────────────────────────────
 const now = new Date();
