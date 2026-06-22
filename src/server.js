@@ -806,49 +806,67 @@ app.set('trust proxy', 1);
 // HTTP (including LAN access) and print a warning to the console. We detect the
 // protocol per-request and skip those two headers for HTTP connections so that
 // local-network users (http://192.168.x.x:PORT) have a clean console.
+//
+// IMPORTANT: upgradeInsecureRequests must be explicitly set to false for HTTP
+// connections. Without this, Helmet's CSP defaults can cause the browser to
+// silently upgrade all subresource requests from HTTP to HTTPS, resulting in
+// ERR_SSL_PROTOCOL_ERROR on every asset/API call on a plain-HTTP LAN server.
 
-const helmetBase = {
-    contentSecurityPolicy: {
-        directives: {
-            defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'",
-                'cdn.jsdelivr.net', 'cdnjs.cloudflare.com'],
-            // Helmet 7+ splits scriptSrc from scriptSrcAttr.
-            // The app uses inline event handlers (onclick, onchange, etc.)
-            // throughout all HTML views, so we must allow 'unsafe-inline' here.
-            scriptSrcAttr: ["'unsafe-inline'"],
-            styleSrc: ["'self'", "'unsafe-inline'",
-                'fonts.googleapis.com', 'cdnjs.cloudflare.com',
-                'fonts.gstatic.com'],
-            fontSrc: ["'self'", 'fonts.gstatic.com', 'cdn.jsdelivr.net',
-                'cdnjs.cloudflare.com'],
-            imgSrc: ["'self'", 'data:', 'blob:'],
-            // cdn.jsdelivr.net and cdnjs.cloudflare.com needed for source map
-            // fetches triggered by Chart.js, Hammer.js and other CDN bundles.
-            connectSrc: ["'self'", 'cdn.jsdelivr.net', 'cdnjs.cloudflare.com'],
-            workerSrc: ["'self'", 'blob:'],
-            frameSrc: ["'none'"],
-            objectSrc: ["'none'"],
-        }
-    },
-    crossOriginEmbedderPolicy: false, // needed for some chart libs
-    crossOriginOpenerPolicy: false,   // applied conditionally below for HTTPS
-    strictTransportSecurity: false,   // applied conditionally below for HTTPS
+const cspDirectivesBase = {
+    defaultSrc: ["'self'"],
+    scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'",
+        'cdn.jsdelivr.net', 'cdnjs.cloudflare.com'],
+    // Helmet 7+ splits scriptSrc from scriptSrcAttr.
+    // The app uses inline event handlers (onclick, onchange, etc.)
+    // throughout all HTML views, so we must allow 'unsafe-inline' here.
+    scriptSrcAttr: ["'unsafe-inline'"],
+    styleSrc: ["'self'", "'unsafe-inline'",
+        'fonts.googleapis.com', 'cdnjs.cloudflare.com',
+        'fonts.gstatic.com'],
+    fontSrc: ["'self'", 'fonts.gstatic.com', 'cdn.jsdelivr.net',
+        'cdnjs.cloudflare.com'],
+    imgSrc: ["'self'", 'data:', 'blob:'],
+    // cdn.jsdelivr.net and cdnjs.cloudflare.com needed for source map
+    // fetches triggered by Chart.js, Hammer.js and other CDN bundles.
+    connectSrc: ["'self'", 'cdn.jsdelivr.net', 'cdnjs.cloudflare.com'],
+    workerSrc: ["'self'", 'blob:'],
+    frameSrc: ["'none'"],
+    objectSrc: ["'none'"],
 };
 
 // Pre-build two Helmet instances: full (HTTPS) and stripped (HTTP)
 const helmetHTTPS = helmet({
-    ...helmetBase,
+    contentSecurityPolicy: { directives: cspDirectivesBase },
+    crossOriginEmbedderPolicy: false,
     crossOriginOpenerPolicy: { policy: 'same-origin' },
     strictTransportSecurity: { maxAge: 31536000, includeSubDomains: true },
 });
-const helmetHTTP = helmet(helmetBase);
+
+const helmetHTTP = helmet({
+    contentSecurityPolicy: {
+        directives: {
+            ...cspDirectivesBase,
+            // Explicitly disable upgrade-insecure-requests on HTTP:
+            // without this the browser tries to load ALL subresources (JS, CSS,
+            // API calls) over HTTPS → ERR_SSL_PROTOCOL_ERROR on a plain HTTP server.
+            upgradeInsecureRequests: null,
+        }
+    },
+    crossOriginEmbedderPolicy: false,
+    crossOriginOpenerPolicy: false,
+    // Disable Origin-Agent-Cluster on HTTP to avoid "previously placed in a
+    // site-keyed agent cluster" warning when the same IP is visited over both
+    // HTTP and HTTPS with inconsistent header presence.
+    originAgentCluster: false,
+    strictTransportSecurity: false,
+});
 
 // Apply the right instance per request
 app.use((req, res, next) => {
     const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https';
     return isHttps ? helmetHTTPS(req, res, next) : helmetHTTP(req, res, next);
 });
+
 
 
 
