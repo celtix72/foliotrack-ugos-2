@@ -39,7 +39,7 @@ function calculateROI(value, netDeposits, profit) {
     return 0;
 }
 
-const { logger, telegramLogger, getLastLogLines, LOG_FILE, LOGS_DIR, TELEGRAM_LOG_FILE } = require('./utils/logger');
+const { logger, telegramLogger, getLastLogLines, LOG_FILE, LOGS_DIR, TELEGRAM_LOG_FILE, getRotatedLogFile } = require('./utils/logger');
 
 dotenv.config();
 
@@ -390,7 +390,7 @@ async function sendTelegramDailyReport() {
 const yahooFinance = new YahooFinance({ suppressNotices: ['ripHistorical'] });
 const database = require('./db');
 const backupManager = require('./backup_manager');
-const { getTransporter } = require('./utils/mailer');
+const { getTransporter, resetTransporter } = require('./utils/mailer');
 const { logAudit } = require('./utils/audit');
 
 const app  = express();
