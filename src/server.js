@@ -1,9 +1,6 @@
 'use strict';
 
 const express      = require('express');
-const cors         = require('cors');
-const helmet       = require('helmet');
-const rateLimit    = require('express-rate-limit');
 const path         = require('path');
 const dotenv       = require('dotenv');
 const crypto       = require('crypto');
@@ -782,249 +779,29 @@ function logAudit(userId, action, details, req) {
 
 
 // ─── JWT / Auth configuration ─────────────────────────────────────────────────
-function getRequiredSecret(name) {
-    const value = (process.env[name] || '').trim();
-    if (value) return value;
-
-    if (process.env.NODE_ENV === 'development') {
-        const temporarySecret = crypto.randomBytes(32).toString('hex');
-        logger.warn(`[SECURITY] ${name} is not set. Using a temporary random secret for this process only.`);
-        return temporarySecret;
-    }
-
-    throw new Error(`${name} is required. Set it in the environment before starting the server.`);
-}
-
-const JWT_SECRET = getRequiredSecret('JWT_SECRET');
-const JWT_COOKIE = 'ft_token';
-const JWT_EXPIRY = '7d';
+const { JWT_SECRET, JWT_COOKIE, JWT_EXPIRY } = require('./config');
 
 app.set('trust proxy', 1);
 
 // ─── Security Headers (Helmet) ───────────────────────────────────────────────
-// COOP and HSTS are only meaningful over HTTPS. Browsers ignore them on plain
-// HTTP (including LAN access) and print a warning to the console. We detect the
-// protocol per-request and skip those two headers for HTTP connections so that
-// local-network users (http://192.168.x.x:PORT) have a clean console.
-//
-// IMPORTANT: upgradeInsecureRequests must be explicitly set to false for HTTP
-// connections. Without this, Helmet's CSP defaults can cause the browser to
-// silently upgrade all subresource requests from HTTP to HTTPS, resulting in
-// ERR_SSL_PROTOCOL_ERROR on every asset/API call on a plain-HTTP LAN server.
+const { configureSecurity, authLimiter, registerLimiter } = require('./middlewares/securityMiddleware');
 
-const cspDirectivesBase = {
-    defaultSrc: ["'self'"],
-    scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'",
-        'cdn.jsdelivr.net', 'cdnjs.cloudflare.com'],
-    // Helmet 7+ splits scriptSrc from scriptSrcAttr.
-    // The app uses inline event handlers (onclick, onchange, etc.)
-    // throughout all HTML views, so we must allow 'unsafe-inline' here.
-    scriptSrcAttr: ["'unsafe-inline'"],
-    styleSrc: ["'self'", "'unsafe-inline'",
-        'fonts.googleapis.com', 'cdnjs.cloudflare.com',
-        'fonts.gstatic.com'],
-    fontSrc: ["'self'", 'fonts.gstatic.com', 'cdn.jsdelivr.net',
-        'cdnjs.cloudflare.com'],
-    imgSrc: ["'self'", 'data:', 'blob:'],
-    // cdn.jsdelivr.net and cdnjs.cloudflare.com needed for source map
-    // fetches triggered by Chart.js, Hammer.js and other CDN bundles.
-    connectSrc: ["'self'", 'cdn.jsdelivr.net', 'cdnjs.cloudflare.com'],
-    workerSrc: ["'self'", 'blob:'],
-    frameSrc: ["'none'"],
-    objectSrc: ["'none'"],
-};
-
-// Pre-build two Helmet instances: full (HTTPS) and stripped (HTTP)
-const helmetHTTPS = helmet({
-    contentSecurityPolicy: { directives: cspDirectivesBase },
-    crossOriginEmbedderPolicy: false,
-    crossOriginOpenerPolicy: { policy: 'same-origin' },
-    strictTransportSecurity: { maxAge: 31536000, includeSubDomains: true },
-});
-
-const helmetHTTP = helmet({
-    contentSecurityPolicy: {
-        directives: {
-            ...cspDirectivesBase,
-            // Explicitly disable upgrade-insecure-requests on HTTP:
-            // without this the browser tries to load ALL subresources (JS, CSS,
-            // API calls) over HTTPS → ERR_SSL_PROTOCOL_ERROR on a plain HTTP server.
-            upgradeInsecureRequests: null,
-        }
-    },
-    crossOriginEmbedderPolicy: false,
-    crossOriginOpenerPolicy: false,
-    // Disable Origin-Agent-Cluster on HTTP to avoid "previously placed in a
-    // site-keyed agent cluster" warning when the same IP is visited over both
-    // HTTP and HTTPS with inconsistent header presence.
-    originAgentCluster: false,
-    strictTransportSecurity: false,
-});
-
-// Apply the right instance per request
-app.use((req, res, next) => {
-    const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https';
-    return isHttps ? helmetHTTPS(req, res, next) : helmetHTTP(req, res, next);
-});
-
-
-
-
-// ─── CORS ─────────────────────────────────────────────────────────────────────
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
-    .split(',')
-    .map(o => o.trim())
-    .filter(Boolean);
-
-app.use(cors({
-    origin: (origin, callback) => {
-        // Allow requests with no origin (same-origin, curl, mobile apps)
-        if (!origin) return callback(null, true);
-        if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
-            return callback(null, true);
-        }
-        return callback(new Error(`CORS: origin not allowed — ${origin}`));
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-}));
-
-// ─── Rate Limiting ────────────────────────────────────────────────────────────
-// General API limiter
-const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 300,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { error: 'Troppe richieste. Riprova tra qualche minuto.' },
-});
-
-// Strict limiter for auth endpoints
-const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 15,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { error: 'Troppi tentativi di accesso. Riprova tra 15 minuti.' },
-});
-
-// Very strict limiter for registration
-const registerLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000, // 1 hour
-    max: 5,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { error: 'Limite registrazioni raggiunto. Riprova tra un\'ora.' },
-});
-
-app.use('/api/', apiLimiter);
+// ─── Security Setup ──────────────────────────────────────────────────────────
+configureSecurity(app);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // ─── Auth Middleware ─────────────────────────────────────────────────────────
+const { 
+    requireAuth, 
+    requireAdmin, 
+    requirePortfolioAccess, 
+    publicApiMiddleware 
+} = require('./middlewares/authMiddleware');
 
-/**
- * Verifies JWT from cookie or Authorization header.
- * Attaches req.user = { id, username, role, display_name } on success.
- */
-function requireAuth(req, res, next) {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-    
-    const token = req.cookies[JWT_COOKIE] || (req.headers.authorization || '').replace('Bearer ', '');
-    const isApi = req.originalUrl.startsWith('/api/');
-
-    if (!token) {
-        if (isApi) return res.status(401).json({ error: 'Non autenticato' });
-        return res.redirect('/login');
-    }
-    try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        
-        // Session Check
-        if (decoded.sid) {
-            const session = database.db.prepare('SELECT id FROM user_sessions WHERE session_id = ?').get(decoded.sid);
-            if (!session) {
-                res.clearCookie(JWT_COOKIE);
-                if (isApi) return res.status(401).json({ error: 'Sessione revocata o scaduta' });
-                return res.redirect('/login?error=session_revoked');
-            }
-            // Update last seen
-            database.db.prepare("UPDATE user_sessions SET last_seen = datetime('now') WHERE session_id = ?").run(decoded.sid);
-        }
-
-        req.user = decoded;
-        next();
-    } catch (e) {
-        if (isApi) return res.status(401).json({ error: 'Token non valido o scaduto' });
-        return res.redirect('/login');
-    }
-}
-
-
-/**
- * Requires admin role after requireAuth.
- */
-function requireAdmin(req, res, next) {
-    if (!req.user || req.user.role !== 'admin') {
-        if (req.accepts('html')) return res.redirect('/dashboard');
-        return res.status(403).json({ error: 'Accesso negato: richiesto ruolo admin' });
-    }
-    next();
-}
-
-/**
- * Ensures the authenticated user has access to the portfolio.
- * Looks for portfolioId in req.params or req.body.
- */
-function requirePortfolioAccess(req, res, next) {
-    const portfolioId = req.params.portfolioId || req.params.id || req.body.portfolioId;
-    if (!portfolioId) return next();
-
-    try {
-        const access = database.db.prepare('SELECT 1 FROM portfolio_users WHERE portfolio_id = ? AND user_id = ?').get(portfolioId, req.user.id);
-        if (!access && req.user.role !== 'admin') {
-            return res.status(403).json({ error: 'Accesso negato a questo portafoglio' });
-        }
-        next();
-    } catch (e) {
-        res.status(500).json({ error: 'Errore verifica permessi' });
-    }
-}
-
-const PUBLIC_API_PATHS = new Set([
-    '/api/auth/login',
-    '/api/auth/logout',
-    '/api/auth/register',
-    '/api/auth/forgot-password',
-    '/api/auth/reset-password',
-    '/api/app-version'
-]);
-
-// Minimal set of public GET endpoints:
-// - market-status: used by header_indices.js loaded in all authenticated pages,
-//   but also potentially before login in the theme. Kept public to avoid breaking
-//   the header on slow connections. All other market/asset data requires auth.
-const PUBLIC_API_PATTERNS = [
-    /^\/api\/market-status$/
-];
-
-function isPublicApiRequest(req) {
-    const path = req.path === '/' ? '/api' : `/api${req.path}`;
-
-    if (req.method === 'POST') return PUBLIC_API_PATHS.has(path);
-    if (req.method !== 'GET') return false;
-    if (PUBLIC_API_PATHS.has(path)) return true;
-
-    return PUBLIC_API_PATTERNS.some(pattern => pattern.test(path));
-}
-
-app.use('/api', (req, res, next) => {
-    if (isPublicApiRequest(req)) return next();
-    return requireAuth(req, res, next);
-});
+app.use('/api', publicApiMiddleware);
 
 // ─── Auth API Routes ─────────────────────────────────────────────────────────
 
