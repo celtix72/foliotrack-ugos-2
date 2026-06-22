@@ -806,11 +806,18 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'cdn.jsdelivr.net', 'cdnjs.cloudflare.com'],
-            styleSrc: ["'self'", "'unsafe-inline'", 'fonts.googleapis.com', 'cdnjs.cloudflare.com'],
-            fontSrc: ["'self'", 'fonts.gstatic.com'],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'",
+                'cdn.jsdelivr.net', 'cdnjs.cloudflare.com'],
+            styleSrc: ["'self'", "'unsafe-inline'",
+                'fonts.googleapis.com', 'cdnjs.cloudflare.com',
+                'fonts.gstatic.com'],
+            fontSrc: ["'self'", 'fonts.gstatic.com', 'cdn.jsdelivr.net',
+                'cdnjs.cloudflare.com'],
             imgSrc: ["'self'", 'data:', 'blob:'],
-            connectSrc: ["'self'"],
+            // cdn.jsdelivr.net and cdnjs.cloudflare.com needed for source map
+            // fetches triggered by Chart.js, Hammer.js and other CDN bundles.
+            connectSrc: ["'self'", 'cdn.jsdelivr.net', 'cdnjs.cloudflare.com'],
+            workerSrc: ["'self'", 'blob:'],
             frameSrc: ["'none'"],
             objectSrc: ["'none'"],
         }
