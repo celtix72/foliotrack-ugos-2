@@ -2576,7 +2576,7 @@ app.get('/api/assets', requireAuth, async (req, res) => {
 });
 
 // Historical quotes for a specific asset (for chart popup)
-app.get('/api/asset-quotes/:ticker', (req, res) => {
+app.get('/api/asset-quotes/:ticker', requireAuth, (req, res) => {
     const { ticker } = req.params;
     const { from, to } = req.query;
     try {
@@ -2596,7 +2596,7 @@ app.get('/api/asset-quotes/:ticker', (req, res) => {
 
 
 
-app.post('/api/assets/manual-update', async (req, res) => {
+app.post('/api/assets/manual-update', requireAuth, async (req, res) => {
     const { ticker, price, date, type, country, dataSource, isin } = req.body;
     if (!ticker) return res.status(400).send('Ticker is required');
     const sanitizedTicker = sanitizeTicker(ticker);
@@ -2625,20 +2625,20 @@ app.post('/api/assets/manual-update', async (req, res) => {
     res.json({ success: true });
 });
 
-app.post('/api/assets/toggle-manual', (req, res) => {
+app.post('/api/assets/toggle-manual', requireAuth, (req, res) => {
     const { ticker, isManual } = req.body;
     database.db.prepare(`UPDATE assets SET isManual = ? WHERE ticker = ?`).run(isManual ? 1 : 0, ticker);
     res.json({ success: true });
 });
 
-app.get('/api/assets/:id', (req, res) => {
+app.get('/api/assets/:id', requireAuth, (req, res) => {
     const row = database.db.prepare(`SELECT * FROM assets WHERE id = ?`).get(req.params.id);
     if (!row) return res.status(404).send('Asset not found');
     res.json(row);
 });
 
-// Borsa Italiana Debug Endpoint
-app.post('/api/debug/borsa-italiana', async (req, res) => {
+// Borsa Italiana Debug Endpoint (admin only)
+app.post('/api/debug/borsa-italiana', requireAuth, requireAdmin, async (req, res) => {
     const { isin, assetType } = req.body;
     if (!isin) return res.status(400).send('ISIN is required');
     const result = await B_ITA(isin, assetType);
@@ -2646,7 +2646,7 @@ app.post('/api/debug/borsa-italiana', async (req, res) => {
 });
 
 // Import historical data (usually from frontend scraper)
-app.post('/api/assets/import-history', (req, res) => {
+app.post('/api/assets/import-history', requireAuth, (req, res) => {
     const { ticker, history } = req.body; // history: [{dt, closePx}, ...]
     if (!ticker || !history || !Array.isArray(history)) {
         return res.status(400).send('Ticker and history array are required');
@@ -2901,7 +2901,7 @@ app.delete('/api/assets/:id', requireAuth, (req, res) => {
 
 // ─── MARKET SEARCH API ───────────────────────────────────────────────────────
 
-app.get('/api/market/search', async (req, res) => {
+app.get('/api/market/search', requireAuth, async (req, res) => {
     const { q } = req.query;
     if (!q || q.length < 2) return res.json([]);
 
@@ -2922,7 +2922,7 @@ app.get('/api/market/search', async (req, res) => {
     }
 });
 
-app.get('/api/market/indices', async (req, res) => {
+app.get('/api/market/indices', requireAuth, async (req, res) => {
     const symbols = ['FTSEMIB.MI', 'BTC-USD', '^GSPC', '^IXIC'];
     const names = {
         'FTSEMIB.MI': 'FTSE MIB',
@@ -3533,7 +3533,9 @@ app.get('/api/portfolios', requireAuth, async (req, res) => {
         });
     } catch (err) {
         console.error('API Error /api/portfolios:', err);
-        res.status(500).json({ error: err.message, stack: err.stack });
+        const errPayload = { error: err.message };
+        if (process.env.NODE_ENV === 'development') errPayload.stack = err.stack;
+        res.status(500).json(errPayload);
     }
 });
 
@@ -4512,7 +4514,7 @@ app.get('/api/analytics/global-allocation', requireAuth, async (req, res) => {
     }
 });
 
-app.get('/api/portfolios/:id/export', (req, res) => {
+app.get('/api/portfolios/:id/export', requireAuth, requirePortfolioAccess, (req, res) => {
     const portfolioId = req.params.id;
     const portfolio = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(portfolioId);
     if (!portfolio) return res.status(404).send('Portfolio not found');
@@ -4554,7 +4556,7 @@ app.get('/api/portfolios/:id/export', (req, res) => {
     res.status(200).send(csvContent);
 });
 
-app.get('/api/export-all-transactions', (req, res) => {
+app.get('/api/export-all-transactions', requireAuth, (req, res) => {
     try {
         const transactions = database.db.prepare(`
             SELECT t.*, p.name as portfolioName 
@@ -4746,7 +4748,7 @@ app.post('/api/portfolios/:id/reconcile', requireAuth, requirePortfolioAccess, a
     });
 });
 
-app.post('/api/admin/rebuild-history', async (req, res) => {
+app.post('/api/admin/rebuild-history', requireAuth, requireAdmin, async (req, res) => {
     try {
         logger.info('Rebuilding performance history: Step 1/4 - Updating market quotes...');
         await updateMarketData();
@@ -4808,7 +4810,7 @@ app.post('/api/admin/rebuild-history', async (req, res) => {
 // ════════════════════════════════════════════════════════════════════════════
 
 
-app.get('/api/transactions/audit', async (req, res) => {
+app.get('/api/transactions/audit', requireAuth, async (req, res) => {
     try {
         const portfolios = database.db.prepare(`SELECT id, name, currency FROM portfolios`).all();
         const pMap = Object.fromEntries(portfolios.map(p => [p.id, p]));
@@ -5150,7 +5152,7 @@ app.get('/api/market/movers', requireAuth, async (req, res) => {
 });
 
 // Validate a ticker against Yahoo Finance (used by bulk import)
-app.get('/api/validate-ticker', async (req, res) => {
+app.get('/api/validate-ticker', requireAuth, async (req, res) => {
     const ticker = (req.query.ticker || "").trim().toUpperCase();
     const isin = (req.query.isin || "").trim().toUpperCase();
     if (!ticker && !isin) return res.status(400).send('Ticker or ISIN required');
@@ -5263,7 +5265,7 @@ app.get('/api/test/yahoo-ticker', requireAuth, requireAdmin, async (req, res) =>
 });
 
 // Bulk import: save multiple validated transactions at once
-app.post('/api/transactions/bulk', async (req, res) => {
+app.post('/api/transactions/bulk', requireAuth, async (req, res) => {
     const { portfolioId, transactions } = req.body;
     logger.info(`Bulk import request received for portfolioId: ${portfolioId} | Rows: ${transactions ? transactions.length : 0}`);
     if (!portfolioId || !transactions || !transactions.length) {
@@ -5441,7 +5443,7 @@ app.post('/api/transactions/bulk', async (req, res) => {
 // EXCHANGE RATE API
 // ════════════════════════════════════════════════════════════════════════════
 
-app.get('/api/fx-rate', async (req, res) => {
+app.get('/api/fx-rate', requireAuth, async (req, res) => {
     const { from, to } = req.query;
     if (!from || !to) return res.status(400).send('from and to are required');
     if (from === to)  return res.json({ rate: 1.0 });
@@ -5495,7 +5497,7 @@ app.put('/api/settings', requireAuth, (req, res) => {
     res.json(database.getSettings(req.user.id));
 });
 
-app.post('/api/telegram/send-report', async (req, res) => {
+app.post('/api/telegram/send-report', requireAuth, async (req, res) => {
     try {
         await sendTelegramDailyReport();
         res.json({ success: true });
@@ -5508,7 +5510,7 @@ app.post('/api/telegram/send-report', async (req, res) => {
 // ASSET SEARCH
 // ════════════════════════════════════════════════════════════════════════════
 
-app.get('/api/asset-search', async (req, res) => {
+app.get('/api/asset-search', requireAuth, async (req, res) => {
     const { query } = req.query;
     if (!query) return res.status(400).send('query is required');
     try {
@@ -5522,7 +5524,7 @@ app.get('/api/asset-search', async (req, res) => {
     }
 });
 
-app.get('/api/market/exchange-rate', async (req, res) => {
+app.get('/api/market/exchange-rate', requireAuth, async (req, res) => {
     try {
         const rate = await getEurUsdRate();
         res.json({ pair: 'EURUSD', rate, timestamp: eurUsdCache.timestamp });
@@ -7105,7 +7107,7 @@ app.post('/api/dividends/projections/reset', requireAuth, async (req, res) => {
     }
 });
 
-app.get('/api/analytics/dividend-projections', async (req, res) => {
+app.get('/api/analytics/dividend-projections', requireAuth, async (req, res) => {
     try {
         const now = new Date();
         const currentYear = now.getFullYear();
@@ -7933,7 +7935,7 @@ app.post('/api/backups/import', requireAuth, express.json({ limit: '50mb' }), as
 // LOGS API
 // ════════════════════════════════════════════════════════════════════════════
 
-app.get('/api/logs', (req, res) => {
+app.get('/api/logs', requireAuth, requireAdmin, (req, res) => {
     try {
         const maxLines = parseInt(req.query.lines) || 2000;
         const dateParam = req.query.date; // YYYY-MM-DD
@@ -7960,7 +7962,7 @@ app.get('/api/logs', (req, res) => {
 });
 
 // List available log dates
-app.get('/api/logs/dates', (req, res) => {
+app.get('/api/logs/dates', requireAuth, requireAdmin, (req, res) => {
     try {
         if (!fs.existsSync(LOGS_DIR)) return res.json([]);
         const files = fs.readdirSync(LOGS_DIR)
@@ -7982,7 +7984,7 @@ app.get('/api/market-status', (req, res) => {
 
 
 
-app.post('/api/market-sync', async (req, res) => {
+app.post('/api/market-sync', requireAuth, requireAdmin, async (req, res) => {
     try {
         logger.info('Manual market sync triggered.');
         updateMarketData(true); // force = true
@@ -8122,7 +8124,7 @@ app.post('/api/settings/notifications', requireAuth, (req, res) => {
 });
 
 // ─── Telegram Test Endpoints ────────────────────────────────────────────────
-app.post('/api/settings/telegram/test-tp', async (req, res) => {
+app.post('/api/settings/telegram/test-tp', requireAuth, async (req, res) => {
     try {
         const tsFormatted = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
         const msg = `${escapeV2('🏆')} *${escapeV2('TARGET PROFIT')}*\n\n` +
@@ -8136,7 +8138,7 @@ app.post('/api/settings/telegram/test-tp', async (req, res) => {
     }
 });
 
-app.post('/api/settings/telegram/test-sl', async (req, res) => {
+app.post('/api/settings/telegram/test-sl', requireAuth, async (req, res) => {
     try {
         const tsFormatted = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
         const msg = `${escapeV2('⚠️')} *${escapeV2('STOP LOSS')}*\n\n` +
@@ -8150,7 +8152,7 @@ app.post('/api/settings/telegram/test-sl', async (req, res) => {
     }
 });
 
-app.post('/api/settings/telegram/test-volatility', async (req, res) => {
+app.post('/api/settings/telegram/test-volatility', requireAuth, async (req, res) => {
     try {
         const tsFormatted = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
         const msg = `${escapeV2('📊')} *${escapeV2('VOLATILITY ALERT')}*\n\n` +
@@ -8164,7 +8166,7 @@ app.post('/api/settings/telegram/test-volatility', async (req, res) => {
     }
 });
 
-app.post('/api/settings/telegram/test-status', async (req, res) => {
+app.post('/api/settings/telegram/test-status', requireAuth, async (req, res) => {
     try {
         await sendMarketStatusTelegram();
         res.json({ success: true, message: 'Test Status sent' });
@@ -8173,7 +8175,7 @@ app.post('/api/settings/telegram/test-status', async (req, res) => {
     }
 });
 
-app.get('/api/debug/telegram-market', async (req, res) => {
+app.get('/api/debug/telegram-market', requireAuth, requireAdmin, async (req, res) => {
     try {
         const settings = database.getSettings(1);
         if (settings.telegramEnabled !== 'true') {
@@ -8190,7 +8192,7 @@ app.get('/api/debug/telegram-market', async (req, res) => {
     }
 });
 
-app.get('/api/logs/telegram', (req, res) => {
+app.get('/api/logs/telegram', requireAuth, requireAdmin, (req, res) => {
     try {
         if (!fs.existsSync(TELEGRAM_LOG_FILE)) return res.json([]);
         const content = fs.readFileSync(TELEGRAM_LOG_FILE, 'utf8');
@@ -8276,7 +8278,7 @@ app.delete('/api/settings/news-sources/:id', requireAuth, (req, res) => {
 
 
 
-app.get('/api/news/sources', (req, res) => {
+app.get('/api/news/sources', requireAuth, (req, res) => {
     try {
         const settings = database.getSettings(1);
         let disabledSources = [];
@@ -8294,7 +8296,7 @@ app.get('/api/news/sources', (req, res) => {
     }
 });
 
-app.post('/api/news/sources', express.json(), (req, res) => {
+app.post('/api/news/sources', requireAuth, express.json(), (req, res) => {
     try {
         const { disabledSources } = req.body;
         if (!Array.isArray(disabledSources)) return res.status(400).json({ error: 'Must be an array' });
