@@ -802,7 +802,12 @@ const JWT_EXPIRY = '7d';
 app.set('trust proxy', 1);
 
 // ─── Security Headers (Helmet) ───────────────────────────────────────────────
-app.use(helmet({
+// COOP and HSTS are only meaningful over HTTPS. Browsers ignore them on plain
+// HTTP (including LAN access) and print a warning to the console. We detect the
+// protocol per-request and skip those two headers for HTTP connections so that
+// local-network users (http://192.168.x.x:PORT) have a clean console.
+
+const helmetBase = {
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
@@ -827,7 +832,24 @@ app.use(helmet({
         }
     },
     crossOriginEmbedderPolicy: false, // needed for some chart libs
-}));
+    crossOriginOpenerPolicy: false,   // applied conditionally below for HTTPS
+    strictTransportSecurity: false,   // applied conditionally below for HTTPS
+};
+
+// Pre-build two Helmet instances: full (HTTPS) and stripped (HTTP)
+const helmetHTTPS = helmet({
+    ...helmetBase,
+    crossOriginOpenerPolicy: { policy: 'same-origin' },
+    strictTransportSecurity: { maxAge: 31536000, includeSubDomains: true },
+});
+const helmetHTTP = helmet(helmetBase);
+
+// Apply the right instance per request
+app.use((req, res, next) => {
+    const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https';
+    return isHttps ? helmetHTTPS(req, res, next) : helmetHTTP(req, res, next);
+});
+
 
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
