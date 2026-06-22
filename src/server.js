@@ -2647,34 +2647,19 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
 
 // ─── PORTFOLIOS API ──────────────────────────────────────────────────────────────
 
-app.get('/api/portfolios', requireAuth, async (req, res) => {
-    try {
-        const tagIds = req.query.tagIds ? req.query.tagIds.split(',').map(Number) : null;
-        const stats = await getAllPortfolioStats(req.user.id, null, tagIds);
-        res.json({
-            portfolios: stats.portfolios,
-            global: {
-                totalValue: stats.totalValue,
-                totalNetValue: stats.totalNetValue,
-                totalTax: stats.totalTax,
-                totalGain: stats.totalGain,
-                investedCapital: stats.investedCapital,
-                changeValue: stats.totalChange,
-                changeValuePrePost: stats.totalChangePrePost,
-                changePercent: stats.changePercent,
-                topWinners: stats.topWinners,
-                topLosers: stats.topLosers,
-                topWinnersAbs: stats.topWinnersAbs,
-                topLosersAbs: stats.topLosersAbs
-            }
-        });
-    } catch (err) {
-        console.error('API Error /api/portfolios:', err);
-        const errPayload = { error: err.message };
-        if (process.env.NODE_ENV === 'development') errPayload.stack = err.stack;
-        res.status(500).json(errPayload);
-    }
-});
+app.use('/api/portfolios', require('./routes/portfolios')({
+    requireAuth,
+    requirePortfolioAccess,
+    database,
+    logger,
+    getAllPortfolioStats,
+    getPortfolioDetails,
+    calculatePerformanceHistory,
+    getEurUsdRate,
+    callAIModel,
+    parseAIResponse,
+    clearPerformanceCache: typeof clearPerformanceCache === 'function' ? clearPerformanceCache : () => {}
+}));
 
 app.get('/api/performance', requireAuth, async (req, res) => {
     try {
@@ -2980,14 +2965,6 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
     };
 }
 
-app.get('/api/portfolios/:id', requireAuth, requirePortfolioAccess, async (req, res) => {
-    try {
-        const data = await getPortfolioDetails(req.params.id);
-        res.json(data);
-    } catch (err) {
-        res.status(err.message === 'Portfolio non trovato' ? 404 : 500).json({ error: err.message });
-    }
-});
 
 // --- Gemini Model Resolver ---
 // Moved to src/services/aiService.js
@@ -3242,166 +3219,8 @@ app.delete('/api/assets/ai-history/:id', requireAuth, (req, res) => {
     }
 });
 
-app.get('/api/portfolios/:id/ai-analysis', requireAuth, requirePortfolioAccess, async (req, res) => {
-    try {
-        const globalSettings = database.getSettings(1) || {};
 
 
-        // Setup SSE Headers
-        res.setHeader('Content-Type', 'text/event-stream');
-        res.setHeader('Cache-Control', 'no-cache');
-        res.setHeader('Connection', 'keep-alive');
-        
-        const sendEvent = (event, data) => {
-            res.write(`event: ${event}\n`);
-            res.write(`data: ${JSON.stringify(data)}\n\n`);
-        };
-
-        const portfolioId = req.params.id;
-        sendEvent('progress', { message: 'Recupero informazioni portafoglio...' });
-
-        const liveRate = await getEurUsdRate();
-        const details = await getPortfolioDetails(portfolioId, liveRate);
-        if (!details) {
-            throw new Error('Portafoglio non trovato.');
-        }
-
-        // Costruisci il testo del contesto
-        let contextData = `
-- **Nome**: ${details.name}
-- **Valuta Base**: ${details.currency}
-- **Liquidità**: ${details.currentCash.toFixed(2)} ${details.currency}
-- **Valore Lordo Totale (esclusa liquidità)**: ${details.grossValue.toFixed(2)} ${details.currency}
-- **Valore Netto Stimato**: ${details.netValue.toFixed(2)} ${details.currency}
-- **Profit/Loss Totale (Lordo)**: ${details.totalProfit.toFixed(2)} ${details.currency} (${details.totalProfitPct.toFixed(2)}%)
-- **Profit/Loss Totale (Netto)**: ${details.netProfit.toFixed(2)} ${details.currency} (${details.netProfitPct.toFixed(2)}%)
-
-**Composizione Asset**:
-`;
-        if (details.holdings && details.holdings.length > 0) {
-            details.holdings.forEach(h => {
-                contextData += `- ${h.ticker} (${h.name}): Quantità ${h.totalQuantity}, Prezzo Attuale ${h.currentPrice} ${h.currency}, Valore ${h.currentValue.toFixed(2)} ${details.currency}, P&L ${h.profit.toFixed(2)} ${details.currency} (${h.profitPct.toFixed(2)}%), Tipo: ${h.type || 'N/D'}, Peso sul tot: ${h.weightPct.toFixed(2)}%\n`;
-            });
-        } else {
-            contextData += `- Nessun asset presente in portafoglio.\n`;
-        }
-
-        sendEvent('progress', { message: 'Generazione responso IA in corso...' });
-
-        const customPrompt = globalSettings.aiPortfolioPrompt ? `\nIstruzioni personalizzate dall'utente:\n${globalSettings.aiPortfolioPrompt}\n` : '';
-
-        const prompt = `
-Sei un consulente finanziario esperto. Analizza questo portafoglio in base ai dati forniti, concentrandoti sulla diversificazione, sul rischio e sui rendimenti.
-${customPrompt}
-Dati Portafoglio:
-${contextData}
-
-Restituisci l'analisi in formato Markdown chiaro e ben strutturato. Usa titoli, elenchi puntati e testo in grassetto dove necessario per evidenziare i concetti chiave. Metti in risalto i punti di forza e i potenziali rischi o sbilanciamenti del portafoglio. Fornisci anche eventuali suggerimenti strategici (senza che costituiscano consiglio finanziario vincolante).
-`;
-
-        const engine = req.query.engine || globalSettings.aiEngine || 'Gemini';
-        let rawText = "Nessuna risposta generata.";
-        let tokensUsed = 0;
-        let usage = {};
-
-        try {
-            if (engine === 'Both') {
-                sendEvent('progress', { message: 'Generazione in corso (Gemini + Qwen)...' });
-                const [geminiRes, qwenRes] = await Promise.allSettled([
-                    callAIModel('Gemini', prompt, globalSettings),
-                    callAIModel('Qwen', prompt, globalSettings)
-                ]);
-
-                let geminiText = "Errore nella generazione con Gemini.";
-                if (geminiRes.status === 'fulfilled') {
-                    geminiText = geminiRes.value.text;
-                    tokensUsed += (geminiRes.value.usage.totalTokenCount || 0);
-                }
-
-                let qwenText = "Errore nella generazione con Qwen.";
-                if (qwenRes.status === 'fulfilled') {
-                    qwenText = qwenRes.value.text;
-                    tokensUsed += (qwenRes.value.usage.total_tokens || 0);
-                }
-
-                rawText = `### Analisi prodotta da Gemini\n\n${geminiText}\n\n---\n\n### Analisi prodotta da Qwen\n\n${qwenText}`;
-
-            } else {
-                sendEvent('progress', { message: `Generazione responso IA in corso tramite ${engine}...` });
-                const res = await callAIModel(engine, prompt, globalSettings);
-                rawText = `### Analisi prodotta da ${engine}\n\n` + res.text;
-                tokensUsed = res.usage.totalTokenCount || res.usage.total_tokens || 0;
-                usage = res.usage;
-            }
-        } catch (e) {
-            console.error('Failed to generate portfolio AI response:', e);
-            throw new Error("Errore durante la generazione del responso IA.");
-        }
-        
-        database.db.transaction(() => {
-            // Aggiorna token count
-            const today = new Date().toISOString().split('T')[0];
-            let currentTokens = parseInt(globalSettings.aiTokensUsedToday) || 0;
-            let tokenDate = globalSettings.aiTokensDate || today;
-            
-            if (tokenDate !== today) {
-                currentTokens = 0;
-                database.setSetting(1, 'aiTokensDate', today);
-            }
-            database.setSetting(1, 'aiTokensUsedToday', (currentTokens + tokensUsed).toString());
-
-            // Inserisci l'analisi nello storico del portafoglio
-            database.db.prepare(`
-                INSERT INTO ai_analyses (portfolio_id, analysis_text)
-                VALUES (?, ?)
-            `).run(portfolioId, rawText);
-        })();
-
-        sendEvent('complete', { 
-            analysis: rawText,
-            usage: usage 
-        });
-        res.end();
-    } catch (err) {
-        console.error('Portfolio AI Analysis Error:', err?.response?.data || err.message);
-        if (!res.headersSent) {
-            res.status(500).json({ error: 'Errore durante l\'analisi IA del portafoglio: ' + (err?.response?.data?.error?.message || err.message) });
-        } else {
-            res.write(`event: error\ndata: ${JSON.stringify({ error: 'Errore durante l\'analisi IA: ' + (err?.response?.data?.error?.message || err.message) })}\n\n`);
-            res.end();
-        }
-    }
-});
-
-app.get('/api/portfolios/:id/ai-history', requireAuth, requirePortfolioAccess, (req, res) => {
-    try {
-        const analyses = database.db.prepare(`
-            SELECT id, analysis_text, created_at 
-            FROM ai_analyses 
-            WHERE portfolio_id = ? 
-            ORDER BY created_at DESC
-        `).all(req.params.id);
-        res.json(analyses);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.delete('/api/portfolios/:id/ai-history/:analysisId', requireAuth, requirePortfolioAccess, (req, res) => {
-    try {
-        const result = database.db.prepare(`
-            DELETE FROM ai_analyses 
-            WHERE id = ? AND portfolio_id = ?
-        `).run(req.params.analysisId, req.params.id);
-        
-        if (result.changes === 0) {
-            return res.status(404).json({ error: 'Analisi non trovata' });
-        }
-        res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
 
 app.get('/api/analytics/global-allocation', requireAuth, async (req, res) => {
     try {
@@ -3458,47 +3277,6 @@ app.get('/api/analytics/global-allocation', requireAuth, async (req, res) => {
     }
 });
 
-app.get('/api/portfolios/:id/export', requireAuth, requirePortfolioAccess, (req, res) => {
-    const portfolioId = req.params.id;
-    const portfolio = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(portfolioId);
-    if (!portfolio) return res.status(404).send('Portfolio not found');
-
-    const transactions = database.db.prepare(
-        `SELECT * FROM transactions WHERE portfolioId = ? ORDER BY date ASC`
-    ).all(portfolioId);
-
-    if (transactions.length === 0) {
-        return res.status(400).send('No transactions to export');
-    }
-
-    const headers = ['ID', 'Type', 'Asset', 'Date', 'Quantity', 'Price', 'Commission', 'Tax', 'FX Rate', 'Amount'];
-    const rows = transactions.map(t => [
-        t.id,
-        t.type,
-        t.assetTicker || '',
-        t.date,
-        t.quantity,
-        t.price,
-        t.commission,
-        t.tax,
-        t.exchangeRate,
-        t.amount
-    ]);
-
-    let csvContent = headers.join(',') + '\n';
-    rows.forEach(row => {
-        csvContent += row.map(value => {
-            if (typeof value === 'string') {
-                return `"${value.replace(/"/g, '""')}"`;
-            }
-            return value;
-        }).join(',') + '\n';
-    });
-
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename=transactions_${portfolio.name.replace(/\s+/g, '_')}.csv`);
-    res.status(200).send(csvContent);
-});
 
 app.get('/api/export-all-transactions', requireAuth, (req, res) => {
     try {
@@ -3547,150 +3325,9 @@ app.get('/api/export-all-transactions', requireAuth, (req, res) => {
 });
 
 
-app.post('/api/portfolios', requireAuth, (req, res) => {
-    console.log('POST /api/portfolios:', req.body);
-    const { name, type, currency, startDate, initialCash, color, include_in_totals, tags, losses } = req.body;
 
-    if (!name) return res.status(400).json({ error: 'Portfolio name is required' });
 
-    const cash  = parseFloat(initialCash || 0);
-    const start = startDate || new Date().toISOString().split('T')[0];
-    const pColor = color || '#6366f1';
 
-    database.db.transaction(() => {
-        const result = database.db.prepare(`
-            INSERT INTO portfolios (name, type, currency, startDate, initialCash, currentCash, totalValue, investedCapital, color, include_in_totals)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(name, type || 'Investimento', currency || 'EUR', start, cash, cash, cash, cash, pColor, include_in_totals !== false ? 1 : 0);
-
-        const portfolioId = result.lastInsertRowid;
-        
-        // Associate with user
-        database.db.prepare(`INSERT INTO portfolio_users (portfolio_id, user_id) VALUES (?, ?)`).run(portfolioId, req.user.id);
-        
-        triggerHistoryRebuild(portfolioId);
-        
-        // Handle initial losses if provided
-        if (losses && typeof losses === 'object') {
-            const stmt = database.db.prepare(`INSERT OR REPLACE INTO portfolio_losses (portfolioId, asset_type, amount) VALUES (?, ?, ?)`);
-            for (const [type, amount] of Object.entries(losses)) {
-                stmt.run(portfolioId, type, parseFloat(amount) || 0);
-            }
-        }
-    })();
-
-    const created = database.db.prepare(`
-        SELECT p.* FROM portfolios p 
-        JOIN portfolio_users pu ON p.id = pu.portfolio_id 
-        WHERE p.name = ? AND pu.user_id = ?
-        ORDER BY p.id DESC LIMIT 1
-    `).get(name, req.user.id);
-
-    console.log('Created portfolio:', created);
-    clearPerformanceCache();
-    res.status(201).json(created);
-});
-
-app.put('/api/portfolios/:id', requireAuth, requirePortfolioAccess, async (req, res) => {
-    const existing = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(req.params.id);
-    if (!existing) return res.status(404).send('Portfolio not found');
-
-    const { name, type, currency, startDate, initialCash, color, include_in_totals, tags, losses } = req.body;
-    database.db.prepare(`
-        UPDATE portfolios SET name=?, type=?, currency=?, startDate=?, initialCash=?, color=?, include_in_totals=? WHERE id=?
-    `).run(
-        name       || existing.name,
-        type       || existing.type || 'Investimento',
-        currency   || existing.currency,
-        startDate  || existing.startDate,
-        parseFloat(initialCash != null ? initialCash : existing.initialCash),
-        color      || existing.color || '#6366f1',
-        include_in_totals !== false ? 1 : 0,
-        req.params.id
-    );
-
-    triggerHistoryRebuild(req.params.id);
-
-    // Update losses
-    if (losses && typeof losses === 'object') {
-        const stmt = database.db.prepare(`INSERT OR REPLACE INTO portfolio_losses (portfolioId, asset_type, amount) VALUES (?, ?, ?)`);
-        for (const [type, amount] of Object.entries(losses)) {
-            stmt.run(req.params.id, type, parseFloat(amount) || 0);
-        }
-    }
-
-    const liveRate = await getEurUsdRate();
-    database.recalculatePortfolio(req.params.id, liveRate);
-    clearPerformanceCache();
-    res.json(database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(req.params.id));
-});
-
-app.delete('/api/portfolios/:id', requireAuth, requirePortfolioAccess, (req, res) => {
-    const row = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(req.params.id);
-    if (!row) return res.status(404).send('Portfolio not found');
-    
-    database.db.prepare(`DELETE FROM portfolios WHERE id = ?`).run(req.params.id);
-    console.log(`Deleted portfolio ${req.params.id} by user ${req.user.id}`);
-    
-    // Trigger global rebuild to update aggregate charts
-    triggerHistoryRebuild(null);
-    
-    clearPerformanceCache();
-    res.json(row);
-});
-
-app.post('/api/portfolios/:id/reconcile', requireAuth, requirePortfolioAccess, async (req, res) => {
-    const { actualCash, date } = req.body;
-    const portfolioId = req.params.id;
-
-    if (actualCash == null) return res.status(400).send('actualCash is required');
-
-    // 1. Ensure current data is accurate
-    const liveRate = await getEurUsdRate();
-    database.recalculatePortfolio(portfolioId, liveRate);
-    
-    const portfolio = database.db.prepare(`SELECT * FROM portfolios WHERE id = ?`).get(portfolioId);
-    if (!portfolio) return res.status(404).send('Portfolio not found');
-
-    const diff = parseFloat(actualCash) - portfolio.currentCash;
-
-    if (Math.abs(diff) < 0.01) {
-        return res.json({ message: 'Balance already reconciled', diff: 0 });
-    }
-
-    const type = diff > 0 ? 'DEPOSIT' : 'WITHDRAWAL';
-    const amount = Math.abs(diff);
-
-    // 2. Insert reconciliation transaction
-    database.db.prepare(`
-        INSERT INTO transactions (portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-        parseInt(portfolioId), type, 'CASH',
-        date || new Date().toISOString().split('T')[0],
-        0, 0, 0, 0, 1, amount
-    );
-
-    // 3. Update historical snapshots from this date onwards
-    const reconciliationDate = date || new Date().toISOString().split('T')[0];
-    database.db.prepare(`
-        UPDATE portfolio_history 
-        SET totalValue = totalValue + ?, 
-            cashValue = cashValue + ? 
-        WHERE (portfolioId = ? OR portfolioId IS NULL) 
-          AND date >= ?
-    `).run(diff, diff, parseInt(portfolioId), reconciliationDate);
-
-    // 4. Final recalculation and cache cleanup
-    database.recalculatePortfolio(portfolioId, liveRate);
-    if (typeof clearPerformanceCache === 'function') clearPerformanceCache();
-
-    res.json({ 
-        message: 'Reconciliation successful', 
-        diff, 
-        newCash: actualCash 
-    });
-});
 
 app.post('/api/admin/rebuild-history', requireAuth, requireAdmin, async (req, res) => {
     try {
