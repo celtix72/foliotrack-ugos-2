@@ -261,28 +261,5 @@ module.exports = function (dependencies) {
         }
     });
 
-    // POST /api/admin/rebuild-history
-    router.post('/rebuild-history', requireAuth, requireAdmin, async (req, res) => {
-        try {
-            // Note: This relies on backfill.js logic or simply calls the function if exported.
-            // Depending on how backfill is implemented, we might need more dependencies here.
-            // It's originally in server.js line 3334
-            res.status(501).json({ error: 'Not implemented in this route yet. Needs backfill logic.' });
-        } catch (err) {
-            res.status(500).json({ error: err.message });
-        }
-    });
-    
-    // POST /api/admin/purge-performance
-    router.post('/purge-performance', requireAuth, requireAdmin, (req, res) => {
-        try {
-            // This is originally at line 6581 in server.js
-            database.db.prepare('DELETE FROM portfolio_history').run();
-            res.json({ ok: true });
-        } catch (err) {
-            res.status(500).json({ error: err.message });
-        }
-    });
-
     return router;
 };
