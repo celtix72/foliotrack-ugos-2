@@ -2,6 +2,8 @@
 
 const express      = require('express');
 const cors         = require('cors');
+const helmet       = require('helmet');
+const rateLimit    = require('express-rate-limit');
 const path         = require('path');
 const dotenv       = require('dotenv');
 const crypto       = require('crypto');
@@ -800,7 +802,73 @@ const JWT_EXPIRY = '7d';
 
 app.set('trust proxy', 1);
 
-app.use(cors());
+// ─── Security Headers (Helmet) ───────────────────────────────────────────────
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'cdn.jsdelivr.net', 'cdnjs.cloudflare.com'],
+            styleSrc: ["'self'", "'unsafe-inline'", 'fonts.googleapis.com', 'cdnjs.cloudflare.com'],
+            fontSrc: ["'self'", 'fonts.gstatic.com'],
+            imgSrc: ["'self'", 'data:', 'blob:'],
+            connectSrc: ["'self'"],
+            frameSrc: ["'none'"],
+            objectSrc: ["'none'"],
+        }
+    },
+    crossOriginEmbedderPolicy: false, // needed for some chart libs
+}));
+
+// ─── CORS ─────────────────────────────────────────────────────────────────────
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map(o => o.trim())
+    .filter(Boolean);
+
+app.use(cors({
+    origin: (origin, callback) => {
+        // Allow requests with no origin (same-origin, curl, mobile apps)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        return callback(new Error(`CORS: origin not allowed — ${origin}`));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+// ─── Rate Limiting ────────────────────────────────────────────────────────────
+// General API limiter
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 300,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Troppe richieste. Riprova tra qualche minuto.' },
+});
+
+// Strict limiter for auth endpoints
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 15,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Troppi tentativi di accesso. Riprova tra 15 minuti.' },
+});
+
+// Very strict limiter for registration
+const registerLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Limite registrazioni raggiunto. Riprova tra un\'ora.' },
+});
+
+app.use('/api/', apiLimiter);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -916,7 +984,7 @@ app.use('/api', (req, res, next) => {
 // ─── Auth API Routes ─────────────────────────────────────────────────────────
 
 // POST /api/auth/login
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', authLimiter, (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) {
         return res.status(400).json({ error: 'Username e password obbligatori' });
@@ -1109,7 +1177,7 @@ app.get('/api/auth/permissions', requireAuth, (req, res) => {
 });
 
 // POST /api/auth/register
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/auth/register', registerLimiter, async (req, res) => {
     const { username, email } = req.body;
     if (!username || !email) return res.status(400).json({ error: 'Username ed email obbligatori' });
     
@@ -1140,7 +1208,7 @@ app.post('/api/auth/register', async (req, res) => {
 // POST /api/auth/change-password
 app.post('/api/auth/change-password', async (req, res) => {
     const { user_id, current_password, new_password } = req.body;
-    if (!new_password || new_password.length < 4) return res.status(400).json({ error: 'La nuova password deve essere di almeno 4 caratteri' });
+    if (!new_password || new_password.length < 8) return res.status(400).json({ error: 'La nuova password deve essere di almeno 8 caratteri' });
 
     let userId = user_id;
     // se è loggato, usiamo il suo id

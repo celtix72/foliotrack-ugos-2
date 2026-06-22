@@ -75,7 +75,12 @@ function listBackups() {
  * Deletes a backup by filename.
  */
 function deleteBackup(filename) {
-    const dbPath = path.join(BACKUP_DIR, filename);
+    // Sanitize: accept only the basename, no directory traversal
+    const safeName = path.basename(filename);
+    if (!safeName.match(/^backup-[\w.-]+-(?:auto|manual)\.db$/)) {
+        throw new Error('Nome backup non valido');
+    }
+    const dbPath = path.join(BACKUP_DIR, safeName);
     const metaPath = dbPath + '.json';
     
     if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath);
@@ -106,7 +111,12 @@ async function applyRetention() {
  * WARNING: This is destructive.
  */
 async function restoreBackup(filename) {
-    const backupPath = path.join(BACKUP_DIR, filename);
+    // Sanitize: accept only the basename, no directory traversal
+    const safeName = path.basename(filename);
+    if (!safeName.match(/^backup-[\w.-]+-(?:auto|manual)\.db$/)) {
+        throw new Error('Nome backup non valido');
+    }
+    const backupPath = path.join(BACKUP_DIR, safeName);
     const metaPath = backupPath + '.json';
 
     if (!fs.existsSync(backupPath) || !fs.existsSync(metaPath)) {
