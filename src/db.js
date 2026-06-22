@@ -4,9 +4,97 @@ const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 // Store DB file next to src/, in the project root, or via ENV
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'foliotrack.db');
+
+const SECRET_SETTING_KEYS = new Set([
+    'telegramBotToken',
+    'geminiApiKey',
+    'geminiApiKeyFree',
+    'geminiApiKeyPay',
+    'qwenApiKeyFree',
+    'qwenApiKeyPay',
+    'openaiApiKeyFree',
+    'openaiApiKeyPay',
+    'agnesApiKeyFree',
+    'agnesApiKeyPay',
+    'aimlapiApiKeyFree',
+    'aimlapiApiKeyPay',
+    'tavilyApiKey',
+    'smtp_pass'
+]);
+
+function getSettingsEncryptionKey() {
+    return process.env.SETTINGS_ENCRYPTION_KEY || process.env.APP_SECRET || process.env.JWT_SECRET;
+}
+
+function isEncryptedSettingValue(value) {
+    return typeof value === 'string' && value.startsWith('enc:v1:');
+}
+
+function getEncryptionKeyBuffer() {
+    const key = getSettingsEncryptionKey();
+    if (!key) return null;
+    return crypto.createHash('sha256').update(String(key)).digest();
+}
+
+function encryptSettingValue(key, value) {
+    const stringValue = String(value ?? '');
+    if (!SECRET_SETTING_KEYS.has(key) || stringValue === '') return stringValue;
+
+    const keyBuffer = getEncryptionKeyBuffer();
+    if (!keyBuffer) {
+        throw new Error('SETTINGS_ENCRYPTION_KEY, APP_SECRET or JWT_SECRET is required to store secret settings.');
+    }
+
+    const iv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv('aes-256-gcm', keyBuffer, iv);
+    const encrypted = Buffer.concat([cipher.update(stringValue, 'utf8'), cipher.final()]);
+    const tag = cipher.getAuthTag();
+    return `enc:v1:${iv.toString('base64')}:${tag.toString('base64')}:${encrypted.toString('base64')}`;
+}
+
+function decryptSettingValue(key, value) {
+    if (!SECRET_SETTING_KEYS.has(key) || typeof value !== 'string') return value;
+    if (!isEncryptedSettingValue(value)) return value;
+
+    const keyBuffer = getEncryptionKeyBuffer();
+    if (!keyBuffer) {
+        throw new Error('SETTINGS_ENCRYPTION_KEY, APP_SECRET or JWT_SECRET is required to read encrypted settings.');
+    }
+
+    const [scheme, version, ivB64, tagB64, encryptedB64] = value.split(':');
+    if (scheme !== 'enc' || version !== 'v1' || !ivB64 || !tagB64 || !encryptedB64) {
+        throw new Error('Invalid encrypted setting format.');
+    }
+
+    const decipher = crypto.createDecipheriv('aes-256-gcm', keyBuffer, Buffer.from(ivB64, 'base64'));
+    decipher.setAuthTag(Buffer.from(tagB64, 'base64'));
+    return Buffer.concat([
+        decipher.update(Buffer.from(encryptedB64, 'base64')),
+        decipher.final()
+    ]).toString('utf8');
+}
+
+function reencryptPlaintextSecretSettings() {
+    const keyBuffer = getEncryptionKeyBuffer();
+    if (!keyBuffer) return;
+
+    const rows = dbConnection.prepare(`
+        SELECT user_id, key, value
+        FROM settings
+        WHERE key IN (${Array.from(SECRET_SETTING_KEYS).map(() => '?').join(',')})
+    `).all(...SECRET_SETTING_KEYS);
+
+    for (const row of rows) {
+        if (row.value && !isEncryptedSettingValue(row.value)) {
+            dbConnection.prepare(`UPDATE settings SET value = ? WHERE user_id = ? AND key = ?`)
+                .run(encryptSettingValue(row.key, row.value), row.user_id, row.key);
+        }
+    }
+}
 
 let dbConnection;
 
@@ -785,6 +873,8 @@ function initDb() {
         }
     }
 
+    reencryptPlaintextSecretSettings();
+
     // ─── Migrations: Add user columns if they don't exist ────────────────────────
     try { 
         dbConnection.prepare(`ALTER TABLE users ADD COLUMN email TEXT`).run();
@@ -832,7 +922,10 @@ initDb();
 function getSettings(userId) {
     if (!userId) return {};
     const rows = dbConnection.prepare(`SELECT key, value FROM settings WHERE user_id = ?`).all(userId);
-    const settings = Object.fromEntries(rows.map(r => [r.key, r.value]));
+    const settings = {};
+    for (const row of rows) {
+        settings[row.key] = decryptSettingValue(row.key, row.value);
+    }
     
     // Default values for new settings if they don't exist for this user
     if (settings.volatilityNotificationsEnabled === undefined) settings.volatilityNotificationsEnabled = 'false';
@@ -844,7 +937,8 @@ function getSettings(userId) {
 
 function setSetting(userId, key, value) {
     if (!userId) return;
-    dbConnection.prepare(`INSERT OR REPLACE INTO settings (user_id, key, value) VALUES (?, ?, ?)`).run(userId, key, String(value));
+    const encryptedValue = encryptSettingValue(key, value);
+    dbConnection.prepare(`INSERT OR REPLACE INTO settings (user_id, key, value) VALUES (?, ?, ?)`).run(userId, key, encryptedValue);
 }
 
 function recalculatePortfolio(portfolioId, liveEurUsdRate = null, variationOverrides = null) {

@@ -4,6 +4,7 @@ const express      = require('express');
 const cors         = require('cors');
 const path         = require('path');
 const dotenv       = require('dotenv');
+const crypto       = require('crypto');
 const YahooFinance = require('yahoo-finance2').default;
 const axios        = require('axios');
 const fs           = require('fs');
@@ -735,7 +736,6 @@ const yahooFinance = new YahooFinance({ suppressNotices: ['ripHistorical'] });
 const database = require('./db');
 const backupManager = require('./backup_manager');
 const nodemailer = require('nodemailer');
-const crypto = require('crypto');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -781,12 +781,24 @@ function logAudit(userId, action, details, req) {
 
 
 // ─── JWT / Auth configuration ─────────────────────────────────────────────────
-const JWT_SECRET = process.env.JWT_SECRET || 'foliotrack_secret_development_static_12345';
-if (!process.env.JWT_SECRET) {
-    console.warn('\x1b[31m%s\x1b[0m', 'CRITICAL SECURITY WARNING: JWT_SECRET is not set. Using default development secret!');
+function getRequiredSecret(name) {
+    const value = (process.env[name] || '').trim();
+    if (value) return value;
+
+    if (process.env.NODE_ENV === 'development') {
+        const temporarySecret = crypto.randomBytes(32).toString('hex');
+        logger.warn(`[SECURITY] ${name} is not set. Using a temporary random secret for this process only.`);
+        return temporarySecret;
+    }
+
+    throw new Error(`${name} is required. Set it in the environment before starting the server.`);
 }
+
+const JWT_SECRET = getRequiredSecret('JWT_SECRET');
 const JWT_COOKIE = 'ft_token';
 const JWT_EXPIRY = '7d';
+
+app.set('trust proxy', 1);
 
 app.use(cors());
 app.use(express.json());
@@ -862,6 +874,44 @@ function requirePortfolioAccess(req, res, next) {
         res.status(500).json({ error: 'Errore verifica permessi' });
     }
 }
+
+const PUBLIC_API_PATHS = new Set([
+    '/api/auth/login',
+    '/api/auth/logout',
+    '/api/auth/register',
+    '/api/auth/forgot-password',
+    '/api/auth/reset-password',
+    '/api/app-version'
+]);
+
+const PUBLIC_API_PATTERNS = [
+    /^\/api\/asset-quotes\/[^/]+$/,
+    /^\/api\/assets\/[^/]+$/,
+    /^\/api\/assets\/[^/]+\/history$/,
+    /^\/api\/assets\/[^/]+\/details$/,
+    /^\/api\/market\/search$/,
+    /^\/api\/market\/indices$/,
+    /^\/api\/validate-ticker$/,
+    /^\/api\/test\/yahoo-ticker$/,
+    /^\/api\/fx-rate$/,
+    /^\/api\/market-status$/,
+    /^\/api\/news\/sources$/
+];
+
+function isPublicApiRequest(req) {
+    const path = req.path === '/' ? '/api' : `/api${req.path}`;
+
+    if (req.method === 'POST') return PUBLIC_API_PATHS.has(path);
+    if (req.method !== 'GET') return false;
+    if (PUBLIC_API_PATHS.has(path)) return true;
+
+    return PUBLIC_API_PATTERNS.some(pattern => pattern.test(path));
+}
+
+app.use('/api', (req, res, next) => {
+    if (isPublicApiRequest(req)) return next();
+    return requireAuth(req, res, next);
+});
 
 // ─── Auth API Routes ─────────────────────────────────────────────────────────
 
@@ -3385,20 +3435,7 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
     };
 }
 
-// ─── Global API Authentication Guard ─────────────────────────────────────────
-// Protects ALL /api/* routes except the explicitly public ones
-const PUBLIC_API_PATHS = new Set([
-    '/api/auth/login',
-    '/api/auth/logout',
-    '/api/app-version'
-]);
-app.use('/api/', (req, res, next) => {
-    const fullPath = req.path === '/' ? '/api/' : `/api${req.path}`;
-    // Allow public paths
-    if (PUBLIC_API_PATHS.has(req.baseUrl + req.path) || PUBLIC_API_PATHS.has('/api' + req.path)) return next();
-    // Apply auth check
-    return requireAuth(req, res, next);
-});
+// ─── PORTFOLIOS API ──────────────────────────────────────────────────────────────
 
 app.get('/api/portfolios', requireAuth, async (req, res) => {
     try {
