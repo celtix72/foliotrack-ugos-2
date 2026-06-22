@@ -25,6 +25,11 @@ function getTransporter() {
     return transporterInstance;
 }
 
+function resetTransporter() {
+    transporterInstance = null;
+}
+
 module.exports = {
-    getTransporter
+    getTransporter,
+    resetTransporter
 };

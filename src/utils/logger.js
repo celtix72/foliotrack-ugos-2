@@ -119,5 +119,6 @@ module.exports = {
     getLastLogLines,
     LOG_FILE,
     LOGS_DIR,
-    TELEGRAM_LOG_FILE
+    TELEGRAM_LOG_FILE,
+    getRotatedLogFile
 };
