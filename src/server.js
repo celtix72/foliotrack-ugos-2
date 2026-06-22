@@ -1211,25 +1211,28 @@ app.post('/api/auth/register', registerLimiter, async (req, res) => {
 });
 
 // POST /api/auth/change-password
+// Requires an active session (JWT cookie or Authorization header).
+// Unauthenticated password reset via email token uses /api/auth/reset-password instead.
 app.post('/api/auth/change-password', async (req, res) => {
-    const { user_id, current_password, new_password } = req.body;
+    const { current_password, new_password } = req.body;
     if (!new_password || new_password.length < 8) return res.status(400).json({ error: 'La nuova password deve essere di almeno 8 caratteri' });
 
-    let userId = user_id;
-    // se è loggato, usiamo il suo id
+    // Require a valid session — do NOT accept user_id from the request body
     const token = req.cookies[JWT_COOKIE] || (req.headers.authorization || '').replace('Bearer ', '');
-    if (token) {
-        try {
-            const decoded = jwt.verify(token, JWT_SECRET);
-            userId = decoded.id;
-        } catch (e) {}
-    }
+    if (!token) return res.status(401).json({ error: 'Non autenticato' });
 
-    if (!userId) return res.status(401).json({ error: 'Non autorizzato' });
+    let userId;
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        userId = decoded.id;
+    } catch (e) {
+        return res.status(401).json({ error: 'Sessione non valida o scaduta' });
+    }
 
     const user = database.db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
     if (!user) return res.status(404).json({ error: 'Utente non trovato' });
 
+    if (!current_password) return res.status(400).json({ error: 'Password corrente obbligatoria' });
     const bcrypt = require('bcryptjs');
     const valid = bcrypt.compareSync(current_password, user.password_hash);
     if (!valid) return res.status(401).json({ error: 'Password corrente errata' });
@@ -1273,7 +1276,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 // POST /api/auth/reset-password
 app.post('/api/auth/reset-password', (req, res) => {
     const { token, new_password } = req.body;
-    if (!token || !new_password || new_password.length < 4) return res.status(400).json({ error: 'Token o password non validi' });
+    if (!token || !new_password || new_password.length < 8) return res.status(400).json({ error: 'Token o password non validi (min. 8 caratteri)' });
 
     const user = database.db.prepare('SELECT id, reset_token_expiry FROM users WHERE reset_token = ?').get(token);
     if (!user) return res.status(400).json({ error: 'Token non valido o scaduto' });
@@ -3149,7 +3152,7 @@ app.get('/api/watchlist/performance', requireAuth, async (req, res) => {
     }
 });
 
-app.get('/api/assets/:ticker/history', async (req, res) => {
+app.get('/api/assets/:ticker/history', requireAuth, async (req, res) => {
     const { ticker } = req.params;
     const { range } = req.query;
     
@@ -3205,7 +3208,7 @@ app.get('/api/assets/:ticker/portfolios', requireAuth, (req, res) => {
     }
 });
 
-app.get('/api/assets/:ticker/details', async (req, res) => {
+app.get('/api/assets/:ticker/details', requireAuth, async (req, res) => {
     const { ticker } = req.params;
     try {
         const summary = await yahooFinance.quoteSummary(ticker, {
@@ -3225,7 +3228,7 @@ app.get('/api/assets/:ticker/details', async (req, res) => {
     }
 });
 
-app.delete('/api/assets/:id', (req, res) => {
+app.delete('/api/assets/:id', requireAuth, (req, res) => {
     const asset = database.db.prepare(`SELECT * FROM assets WHERE id = ? OR ticker = ?`).get(req.params.id, req.params.id);
     if (!asset) return res.status(404).send('Asset not found');
 
