@@ -351,7 +351,6 @@ async function sendTelegramMessage(message, customChatId = null, userId = null) 
     };
 
     return new Promise((resolve, reject) => {
-        telegramLogger.log(`[SENDING] Payload: ${data}`);
         const req = https.request(options, (res) => {
             let body = '';
             res.on('data', (d) => body += d);
@@ -952,18 +951,12 @@ const PUBLIC_API_PATHS = new Set([
     '/api/app-version'
 ]);
 
+// Minimal set of public GET endpoints:
+// - market-status: used by header_indices.js loaded in all authenticated pages,
+//   but also potentially before login in the theme. Kept public to avoid breaking
+//   the header on slow connections. All other market/asset data requires auth.
 const PUBLIC_API_PATTERNS = [
-    /^\/api\/asset-quotes\/[^/]+$/,
-    /^\/api\/assets\/[^/]+$/,
-    /^\/api\/assets\/[^/]+\/history$/,
-    /^\/api\/assets\/[^/]+\/details$/,
-    /^\/api\/market\/search$/,
-    /^\/api\/market\/indices$/,
-    /^\/api\/validate-ticker$/,
-    /^\/api\/test\/yahoo-ticker$/,
-    /^\/api\/fx-rate$/,
-    /^\/api\/market-status$/,
-    /^\/api\/news\/sources$/
+    /^\/api\/market-status$/
 ];
 
 function isPublicApiRequest(req) {
@@ -5231,8 +5224,8 @@ app.get('/api/validate-ticker', async (req, res) => {
     }
 });
 
-// Diagnostic tool: fetch full metadata for a ticker from Yahoo Finance
-app.get('/api/test/yahoo-ticker', async (req, res) => {
+// Diagnostic tool: fetch full metadata for a ticker from Yahoo Finance (admin only)
+app.get('/api/test/yahoo-ticker', requireAuth, requireAdmin, async (req, res) => {
     const ticker = (req.query.ticker || "").trim().toUpperCase();
     if (!ticker) return res.status(400).send('Ticker required');
 
