@@ -2527,7 +2527,9 @@
     async function loadMgmtPortfolios() {
         try {
             const res = await fetch('/api/portfolios');
-            const portfolios = await res.json();
+            const data = await res.json();
+            // /api/portfolios returns { portfolios: [...], global: {...} }
+            const portfolios = Array.isArray(data) ? data : (data.portfolios || []);
             const select = document.getElementById('mgmt-portfolio-select');
             if(select) {
                 const oldVal = select.value;
