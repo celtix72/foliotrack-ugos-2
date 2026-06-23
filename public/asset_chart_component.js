@@ -412,7 +412,11 @@
                         pctGainStr = ` (${pctSign}${pctGain.toFixed(2)}%)`;
                     }
                     
-                    gainStr = `${gainSign}€${Math.abs(gainEUR).toFixed(2)}${pctGainStr}`;
+                    const formattedGainVal = new Intl.NumberFormat('it-IT', {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                    }).format(Math.round(Math.abs(gainEUR)));
+                    gainStr = `${gainSign}${formattedGainVal} €${pctGainStr}`;
                 }
 
                 const statsRow = document.getElementById('chart-modal-stats-row');
