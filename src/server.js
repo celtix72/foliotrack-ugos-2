@@ -1373,7 +1373,7 @@ app.use('/api/portfolios', require('./routes/portfolios')({
 
 // ─── Assets & Fundamentals Routes ────────────────────────────────────────────
 app.use('/api', require('./routes/assets')({
-    requireAuth, requirePortfolioAccess, database, logger, yahooFinance,
+    requireAuth, requireAdmin, requirePortfolioAccess, database, logger, yahooFinance,
     getEurUsdRate, getMarketStatus, isUSMarket, fetchAssetMetadata,
     clearPerformanceCache, callAIModel, parseAIResponse, notifyUser, APP_VERSION
 }));

@@ -8,6 +8,7 @@ module.exports = function(dependencies) {
     const router = express.Router();
     const {
         requireAuth,
+        requireAdmin,
         requirePortfolioAccess,
         database,
         logger,
