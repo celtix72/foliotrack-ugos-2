@@ -17,12 +17,40 @@
         const isDark = document.documentElement.classList.contains('dark');
         const backdropColor = isDark ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.7)';
 
+        // Inject fallback CSS variables for desktop / views where mobile.css is not fully active
+        let styleTag = document.getElementById('asset-chart-modal-styles');
+        if (!styleTag) {
+            styleTag = document.createElement('style');
+            styleTag.id = 'asset-chart-modal-styles';
+            styleTag.innerHTML = `
+                #asset-chart-modal {
+                    --mob-bg: #0b0f1a;
+                    --mob-surface: #111722;
+                    --mob-surface-2: #1a2235;
+                    --mob-border: rgba(255, 255, 255, 0.07);
+                    --mob-text: #f1f5f9;
+                    --mob-text-muted: #94a3b8;
+                    --mob-emerald: #10b981;
+                    --mob-rose: #f43f5e;
+                    --mob-primary: #135bec;
+                }
+                html:not(.dark) #asset-chart-modal {
+                    --mob-bg: #f0f4f8;
+                    --mob-surface: #ffffff;
+                    --mob-surface-2: #f1f5f9;
+                    --mob-border: rgba(0, 0, 0, 0.07);
+                    --mob-text: #0f172a;
+                    --mob-text-muted: #4b5563;
+                }
+            `;
+            document.head.appendChild(styleTag);
+        }
+
         const modalHtml = `
         <div id="asset-chart-modal" 
              style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999; align-items: center; justify-content: center; background-color: ${backdropColor}; backdrop-filter: blur(12px); padding: 0.5rem; flex-direction: column;"
              class="flex">
-            <div class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800" 
-                 style="width: 100%; max-width: 900px; max-height: 94vh; position: relative; z-index: 10000; display: flex; flex-direction: column; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden;">
+            <div style="width: 100%; max-width: 900px; max-height: 94vh; position: relative; z-index: 10000; display: flex; flex-direction: column; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; background: var(--mob-surface); color: var(--mob-text); border: 1px solid var(--mob-border);">
                 
                 <!-- Header -->
                 <div style="padding: 16px 20px; border-bottom: 1px solid rgba(148,163,184,0.1); display: flex; justify-content: space-between; align-items: center; background: var(--mob-surface); ">
