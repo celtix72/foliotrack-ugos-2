@@ -220,7 +220,7 @@ module.exports = function (dependencies) {
     });
 
     // GET /api/analytics/global-allocation
-    router.get('/global-allocation', requireAuth, async (req, res) => {
+    router.get('/analytics/global-allocation', requireAuth, async (req, res) => {
         try {
             const { portfolioIds } = req.query;
             let pIdsToUse = (portfolioIds && portfolioIds.trim() !== '') ? portfolioIds.split(',').map(Number) : null;
@@ -322,7 +322,7 @@ module.exports = function (dependencies) {
     });
 
     // GET /api/analytics/portfolio-performance/:id
-    router.get('/portfolio-performance/:id', requireAuth, requirePortfolioAccess, async (req, res) => {
+    router.get('/analytics/portfolio-performance/:id', requireAuth, requirePortfolioAccess, async (req, res) => {
         try {
             const { range } = req.query;
             const portfolioId = req.params.id;
@@ -352,7 +352,7 @@ module.exports = function (dependencies) {
     });
 
     // GET /api/analytics/global-performance
-    router.get('/global-performance', requireAuth, async (req, res) => {
+    router.get('/analytics/global-performance', requireAuth, async (req, res) => {
         try {
             const { range, benchmark, tagIds, portfolioIds } = req.query;
             const tags = tagIds ? tagIds.split(',').map(Number) : null;
@@ -392,7 +392,7 @@ module.exports = function (dependencies) {
     });
 
     // GET /api/analytics/daily-gains
-    router.get('/daily-gains', requireAuth, async (req, res) => {
+    router.get('/analytics/daily-gains', requireAuth, async (req, res) => {
         try {
             const { portfolioIds } = req.query;
             let pIds = portfolioIds ? portfolioIds.split(',').map(Number).filter(n => !isNaN(n)) : null;
@@ -462,7 +462,7 @@ module.exports = function (dependencies) {
     });
 
     // GET /api/analytics/history
-    router.get('/history', requireAuth, (req, res) => {
+    router.get('/analytics/history', requireAuth, (req, res) => {
         try {
             const portfolios = database.db.prepare(`
                 SELECT p.id, p.name, p.currency FROM portfolios p
@@ -551,7 +551,7 @@ module.exports = function (dependencies) {
     });
 
     // GET /api/analytics/dividends
-    router.get('/dividends', requireAuth, (req, res) => {
+    router.get('/analytics/dividends', requireAuth, (req, res) => {
         try {
             const portfolios = database.db.prepare(`
                 SELECT p.id, p.name, p.currency FROM portfolios p
@@ -591,7 +591,7 @@ module.exports = function (dependencies) {
     });
 
     // GET /api/analytics/dividend-projections
-    router.get('/dividend-projections', requireAuth, async (req, res) => {
+    router.get('/analytics/dividend-projections', requireAuth, async (req, res) => {
         try {
             const now = new Date();
             const currentYear = now.getFullYear();
@@ -734,7 +734,7 @@ module.exports = function (dependencies) {
     });
 
     // GET /api/analytics/current-month-dividends
-    router.get('/current-month-dividends', requireAuth, async (req, res) => {
+    router.get('/analytics/current-month-dividends', requireAuth, async (req, res) => {
         try {
             const now = new Date();
             const currentYear = now.getFullYear();
@@ -788,7 +788,7 @@ module.exports = function (dependencies) {
     });
 
     // GET /api/analytics/reports
-    router.get('/reports', requireAuth, async (req, res) => {
+    router.get('/analytics/reports', requireAuth, async (req, res) => {
         try {
             const { range = '1Y', portfolioIds } = req.query;
             const selectedPIds = (portfolioIds && portfolioIds.trim() !== '')
