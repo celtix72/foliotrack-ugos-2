@@ -658,8 +658,32 @@
             });
 
             const isDark = document.documentElement.classList.contains('dark');
-            const tickColor = isDark ? '#ffffff' : '#000000';
-            const gridColor = isDark ? 'rgba(148,163,184,0.1)' : 'rgba(148,163,184,0.15)';
+            let tickColor = isDark ? '#ffffff' : '#000000';
+            let gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+
+            try {
+                const chartWrapper = document.getElementById('chart-modal-content')?.parentElement;
+                if (chartWrapper) {
+                    chartWrapper.style.backgroundColor = isDark ? '#0b0f1a' : '#f0f4f8';
+                    const bg = window.getComputedStyle(chartWrapper).backgroundColor;
+                    const rgb = bg?.match(/\d+/g);
+                    if (rgb && rgb.length >= 3) {
+                        const r = parseInt(rgb[0]);
+                        const g = parseInt(rgb[1]);
+                        const b = parseInt(rgb[2]);
+                        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+                        if (brightness < 128) {
+                            tickColor = '#ffffff';
+                            gridColor = 'rgba(255, 255, 255, 0.1)';
+                        } else {
+                            tickColor = '#000000';
+                            gridColor = 'rgba(0, 0, 0, 0.1)';
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("Error computing chart wrapper style:", e);
+            }
 
             // Clean up old tradeDatasets to add our new ones at the bottom (z-layer)
             // But we want markers on top, area at bottom
