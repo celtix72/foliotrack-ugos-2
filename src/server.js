@@ -14,6 +14,7 @@ const { xirr, calculateTWR } = require('./utils/finance');
 const Parser = require('rss-parser');
 const rssParser = new Parser();
 const { callAIModel, parseAIResponse } = require('./services/aiService');
+const { notifyUser } = require('./services/notificationService');
 
 
 // ─── Application Version ─────────────────────────────────────────────────────
