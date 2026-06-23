@@ -765,7 +765,29 @@
                     scales: {
                         x: {
                             offset: false,
-                            ticks: { maxTicksLimit: 8, maxRotation: 0, font: { size: 10 }, color: tickColor },
+                            ticks: {
+                                maxTicksLimit: 8,
+                                maxRotation: 45,
+                                minRotation: 45,
+                                font: { size: 9 },
+                                color: tickColor,
+                                callback: function(value) {
+                                    const dateStr = this.getLabelForValue(value);
+                                    if (!dateStr) return '';
+                                    const parts = dateStr.split('-');
+                                    if (parts.length !== 3) return dateStr;
+                                    const [yyyy, mm, dd] = parts;
+                                    const yy = yyyy.substring(2);
+                                    
+                                    if (range === '1d' || range === '1w' || range === '1m') {
+                                        return `${dd}/${mm}`;
+                                    } else if (range === '6m' || range === '1y') {
+                                        return `${dd}/${mm}/${yy}`;
+                                    } else {
+                                        return `${mm}/${yy}`;
+                                    }
+                                }
+                            },
                             grid: { color: gridColor }
                         },
                         y: {
