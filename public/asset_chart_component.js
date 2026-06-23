@@ -50,7 +50,7 @@
                 </div>
                 
                 <!-- Chart Area (Compact) -->
-                <div style="padding: 10px 16px; flex: 1; min-height: 180px; display: flex; flex-direction: column; background: var(--mob-bg); overflow: hidden;">
+                <div style="padding: 10px 16px; flex: 1; min-height: 300px; display: flex; flex-direction: column; background: var(--mob-bg); overflow: hidden;">
                     <div id="chart-modal-loading" style="display: none; flex: 1; align-items: center; justify-content: center;">
                         <span class="material-symbols-outlined animate-spin" style="font-size: 24px; color: var(--mob-primary);">progress_activity</span>
                     </div>
@@ -58,7 +58,7 @@
                         <span class="material-symbols-outlined" style="font-size: 32px;">bar_chart_off</span>
                         <p style="font-weight: bold; margin-top: 8px; font-size: 11px;">No historical data.</p>
                     </div>
-                    <div id="chart-modal-content" style="display: none; flex: 1; min-height: 160px; position: relative;">
+                    <div id="chart-modal-content" style="display: none; flex: 1; min-height: 280px; position: relative;">
                         <canvas id="asset-history-chart" style="width: 100% !important; height: 100% !important;"></canvas>
                     </div>
                 </div>
