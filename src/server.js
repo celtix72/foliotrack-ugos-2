@@ -453,6 +453,8 @@ let performanceResultsCache = {}; // { cacheKey: { data, timestamp } }
 performanceResultsCache = {}; // Clear cache to apply date fix immediately
 let eurUsdCache = { rate: 1.08, timestamp: 0 };
 const EUR_USD_TTL = 5 * 60 * 1000; // 5 minutes
+let globalLastMarketUpdate = Date.now();
+
 
 // ─── MARKET STATUS LOGIC ─────────────────────────────────────────────────────
 const MARKET_HOURS = {
@@ -5104,8 +5106,6 @@ app.use((req, res) => res.redirect('/login'));
 // ════════════════════════════════════════════════════════════════════════════
 // MARKET DATA UPDATE  (runs on interval)
 // ════════════════════════════════════════════════════════════════════════════
-
-let globalLastMarketUpdate = Date.now();
 
 async function updateMarketData(force = false) {
     const settings = database.getSettings(1);
