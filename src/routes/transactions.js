@@ -24,7 +24,7 @@ module.exports = function(dependencies) {
     } = dependencies;
 
     // ─── TRANSACTION AUDIT ───────────────────────────────────────────────────
-    router.get('/api/transactions/audit', requireAuth, async (req, res) => {
+    router.get('/transactions/audit', requireAuth, async (req, res) => {
         try {
             const portfolios = database.db.prepare(`SELECT id, name, currency FROM portfolios`).all();
             const pMap = Object.fromEntries(portfolios.map(p => [p.id, p]));
@@ -96,7 +96,7 @@ module.exports = function(dependencies) {
     });
 
     // ─── GET TRANSACTIONS ────────────────────────────────────────────────────
-    router.get('/api/transactions', requireAuth, (req, res) => {
+    router.get('/transactions', requireAuth, (req, res) => {
         const { portfolioId, assetTicker, id } = req.query;
         
         // Isolation: Filter by portfolios user has access to
@@ -125,7 +125,7 @@ module.exports = function(dependencies) {
     });
 
     // ─── CREATE TRANSACTION ──────────────────────────────────────────────────
-    router.post('/api/transactions', requireAuth, requirePortfolioAccess, async (req, res) => {
+    router.post('/transactions', requireAuth, requirePortfolioAccess, async (req, res) => {
         const { 
             portfolioId, type, assetTicker, date, quantity, price, 
             commission, tax, exchangeRate, amount, destinationPortfolioId, 
@@ -239,7 +239,7 @@ module.exports = function(dependencies) {
     });
 
     // ─── DELETE TRANSACTION ──────────────────────────────────────────────────
-    router.delete('/api/transactions/:id', requireAuth, async (req, res) => {
+    router.delete('/transactions/:id', requireAuth, async (req, res) => {
         const row = database.db.prepare(`
             SELECT t.* FROM transactions t
             JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
@@ -279,7 +279,7 @@ module.exports = function(dependencies) {
     });
 
     // ─── UPDATE TRANSACTION ──────────────────────────────────────────────────
-    router.put('/api/transactions/:id', requireAuth, async (req, res) => {
+    router.put('/transactions/:id', requireAuth, async (req, res) => {
         const { type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount } = req.body;
         
         // Check ownership
@@ -321,7 +321,7 @@ module.exports = function(dependencies) {
     });
 
     // ─── YAHOO TICKER TEST ───────────────────────────────────────────────────
-    router.get('/api/test/yahoo-ticker', requireAuth, requireAdmin, async (req, res) => {
+    router.get('/test/yahoo-ticker', requireAuth, requireAdmin, async (req, res) => {
         const ticker = (req.query.ticker || "").trim().toUpperCase();
         if (!ticker) return res.status(400).send('Ticker required');
 
@@ -347,7 +347,7 @@ module.exports = function(dependencies) {
     });
 
     // ─── BULK IMPORT ─────────────────────────────────────────────────────────
-    router.post('/api/transactions/bulk', requireAuth, async (req, res) => {
+    router.post('/transactions/bulk', requireAuth, async (req, res) => {
         const { portfolioId, transactions } = req.body;
         logger.info(`Bulk import request received for portfolioId: ${portfolioId} | Rows: ${transactions ? transactions.length : 0}`);
         if (!portfolioId || !transactions || !transactions.length) {
@@ -426,8 +426,8 @@ module.exports = function(dependencies) {
                                         name = CASE WHEN ? IS NOT NULL AND ? != '' THEN ? ELSE name END
                                     WHERE UPPER(ticker) = UPPER(?)
                                 `).run(newIsin, newIsin, newSource, 
-                                      t.assetName || null, t.assetName || null, t.assetName || null, 
-                                      sanitizedTicker);
+                                       t.assetName || null, t.assetName || null, t.assetName || null, 
+                                       sanitizedTicker);
                             } else {
                                 database.db.prepare(`
                                     INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, forwardPE, dividendYield, eps, beta, pegRatio, nextDividendDate, country, isManual, dataSource, isin, updatedAt)
@@ -521,7 +521,7 @@ module.exports = function(dependencies) {
     });
 
     // ─── EXPORT TRANSACTIONS ─────────────────────────────────────────────────
-    router.get('/api/export-all-transactions', requireAuth, (req, res) => {
+    router.get('/export-all-transactions', requireAuth, (req, res) => {
         try {
             const transactions = database.db.prepare(`
                 SELECT t.*, p.name as portfolioName 

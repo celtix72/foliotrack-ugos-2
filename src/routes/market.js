@@ -29,7 +29,7 @@ module.exports = function(dependencies) {
 
 // ─── MARKET SEARCH API ───────────────────────────────────────────────────────
 
-router.get('/api/market/search', requireAuth, async (req, res) => {
+router.get('/market/search', requireAuth, async (req, res) => {
     const { q } = req.query;
     if (!q || q.length < 2) return res.json([]);
 
@@ -50,7 +50,7 @@ router.get('/api/market/search', requireAuth, async (req, res) => {
     }
 });
 
-router.get('/api/market/indices', requireAuth, async (req, res) => {
+router.get('/market/indices', requireAuth, async (req, res) => {
     const symbols = ['FTSEMIB.MI', 'BTC-USD', '^GSPC', '^IXIC'];
     const names = {
         'FTSEMIB.MI': 'FTSE MIB',
@@ -81,7 +81,7 @@ router.get('/api/market/indices', requireAuth, async (req, res) => {
 
 
 // Get market movers (assets with today's quotes, sorted by % change)
-router.get('/api/market/movers', requireAuth, async (req, res) => {
+router.get('/market/movers', requireAuth, async (req, res) => {
     try {
         const userId = req.user.id;
         const todayStr = new Date().toISOString().split('T')[0];
@@ -127,7 +127,7 @@ router.get('/api/market/movers', requireAuth, async (req, res) => {
 });
 
 // Validate a ticker against Yahoo Finance (used by bulk import)
-router.get('/api/validate-ticker', requireAuth, async (req, res) => {
+router.get('/validate-ticker', requireAuth, async (req, res) => {
     const ticker = (req.query.ticker || "").trim().toUpperCase();
     const isin = (req.query.isin || "").trim().toUpperCase();
     if (!ticker && !isin) return res.status(400).send('Ticker or ISIN required');
@@ -215,7 +215,7 @@ router.get('/api/validate-ticker', requireAuth, async (req, res) => {
 
 // ════════════════════════════════════════════════════════════════════════════
 
-router.get('/api/fx-rate', requireAuth, async (req, res) => {
+router.get('/fx-rate', requireAuth, async (req, res) => {
     const { from, to } = req.query;
     if (!from || !to) return res.status(400).send('from and to are required');
     if (from === to)  return res.json({ rate: 1.0 });
@@ -231,7 +231,7 @@ router.get('/api/fx-rate', requireAuth, async (req, res) => {
 
 // ════════════════════════════════════════════════════════════════════════════
 
-router.get('/api/asset-search', requireAuth, async (req, res) => {
+router.get('/asset-search', requireAuth, async (req, res) => {
     const { query } = req.query;
     if (!query) return res.status(400).send('query is required');
     try {
@@ -245,7 +245,7 @@ router.get('/api/asset-search', requireAuth, async (req, res) => {
     }
 });
 
-router.get('/api/market/exchange-rate', requireAuth, async (req, res) => {
+router.get('/market/exchange-rate', requireAuth, async (req, res) => {
     try {
         const rate = await getEurUsdRate();
         res.json({ pair: 'EURUSD', rate, timestamp: eurUsdCache.timestamp });
@@ -256,7 +256,7 @@ router.get('/api/market/exchange-rate', requireAuth, async (req, res) => {
 
 // ─── MARKET INDICES ────────────────────────────────────────────────────────────
 
-router.get('/api/indices', requireAuth, async (req, res) => {
+router.get('/indices', requireAuth, async (req, res) => {
     try {
         const raw = (req.query.tickers || '').split(',').map(t => t.trim()).filter(Boolean).slice(0, 3);
         if (raw.length === 0) return res.json([]);
@@ -291,7 +291,7 @@ router.get('/api/indices', requireAuth, async (req, res) => {
     }
 });
 
-router.get('/api/market-status', (req, res) => {
+router.get('/market-status', (req, res) => {
     res.json({
         ...getMarketStatus(),
         lastUpdate: globalLastMarketUpdate
@@ -300,7 +300,7 @@ router.get('/api/market-status', (req, res) => {
 
 
 
-router.post('/api/market-sync', requireAuth, requireAdmin, async (req, res) => {
+router.post('/market-sync', requireAuth, requireAdmin, async (req, res) => {
     try {
         logger.info('Manual market sync triggered.');
         updateMarketData(true); // force = true
@@ -311,7 +311,7 @@ router.post('/api/market-sync', requireAuth, requireAdmin, async (req, res) => {
 });
 
 // ══ PURGE PERFORMANCE HISTORY ══
-router.post('/api/admin/purge-performance', requireAuth, (req, res) => {
+router.post('/admin/purge-performance', requireAuth, (req, res) => {
     const userId = req.user.id;
     const isAdmin = req.user.role === 'admin';
     const scope = req.query.scope || 'user'; // 'user' or 'system'
@@ -346,7 +346,7 @@ router.post('/api/admin/purge-performance', requireAuth, (req, res) => {
     }
 });
 
-router.get('/api/news', requireAuth, (req, res) => {
+router.get('/news', requireAuth, (req, res) => {
     try {
         const rows = database.db.prepare('SELECT * FROM news_articles WHERE user_id = ? ORDER BY pubDate DESC LIMIT 50').all(req.user.id);
         res.json(rows);
@@ -356,7 +356,7 @@ router.get('/api/news', requireAuth, (req, res) => {
     }
 });
 
-router.get('/api/settings/news-sources', requireAuth, (req, res) => {
+router.get('/settings/news-sources', requireAuth, (req, res) => {
     try {
         const rows = database.db.prepare('SELECT * FROM news_sources WHERE user_id = ? ORDER BY created_at ASC').all(req.user.id);
         res.json(rows);
@@ -365,7 +365,7 @@ router.get('/api/settings/news-sources', requireAuth, (req, res) => {
     }
 });
 
-router.post('/api/settings/news-sources', requireAuth, express.json(), (req, res) => {
+router.post('/settings/news-sources', requireAuth, express.json(), (req, res) => {
     try {
         const { name, url } = req.body;
         if (!name || !url) return res.status(400).json({ error: 'Name and URL are required' });
@@ -384,7 +384,7 @@ router.post('/api/settings/news-sources', requireAuth, express.json(), (req, res
     }
 });
 
-router.put('/api/settings/news-sources/:id', requireAuth, express.json(), (req, res) => {
+router.put('/settings/news-sources/:id', requireAuth, express.json(), (req, res) => {
     try {
         const { is_enabled } = req.body;
         const stmt = database.db.prepare('UPDATE news_sources SET is_enabled = ? WHERE id = ? AND user_id = ?');
@@ -401,7 +401,7 @@ router.put('/api/settings/news-sources/:id', requireAuth, express.json(), (req, 
     }
 });
 
-router.delete('/api/settings/news-sources/:id', requireAuth, (req, res) => {
+router.delete('/settings/news-sources/:id', requireAuth, (req, res) => {
     try {
         const stmt = database.db.prepare('DELETE FROM news_sources WHERE id = ? AND user_id = ?');
         stmt.run(req.params.id, req.user.id);
@@ -413,7 +413,7 @@ router.delete('/api/settings/news-sources/:id', requireAuth, (req, res) => {
 
 
 
-router.get('/api/news/sources', requireAuth, (req, res) => {
+router.get('/news/sources', requireAuth, (req, res) => {
     try {
         const settings = database.getSettings(1);
         let disabledSources = [];
@@ -431,7 +431,7 @@ router.get('/api/news/sources', requireAuth, (req, res) => {
     }
 });
 
-router.post('/api/news/sources', requireAuth, express.json(), (req, res) => {
+router.post('/news/sources', requireAuth, express.json(), (req, res) => {
     try {
         const { disabledSources } = req.body;
         if (!Array.isArray(disabledSources)) return res.status(400).json({ error: 'Must be an array' });

@@ -50,7 +50,7 @@ module.exports = function(dependencies) {
  *  - financialData    : Margini, ROE, ROA, crescita ricavi/utili, target price
  *  - earningsHistory  : Storico EPS effettivi (ultimi 4 quarter)
  */
-router.get('/api/fundamentals/:ticker', requireAuth, async (req, res) => {
+router.get('/fundamentals/:ticker', requireAuth, async (req, res) => {
     const ticker = (req.params.ticker || '').toUpperCase();
     if (!ticker) return res.status(400).json({ error: 'Ticker mancante' });
 
@@ -289,7 +289,7 @@ router.get('/api/fundamentals/:ticker', requireAuth, async (req, res) => {
  * DELETE /api/fundamentals/:ticker/cache
  * Invalida la cache per un ticker specifico (utile per forzare refresh).
  */
-router.delete('/api/fundamentals/:ticker/cache', requireAuth, (req, res) => {
+router.delete('/fundamentals/:ticker/cache', requireAuth, (req, res) => {
     const ticker = (req.params.ticker || '').toUpperCase();
     const deleted = fundamentalsCache.delete(ticker);
     res.json({ ticker, cacheCleared: deleted });
@@ -299,7 +299,7 @@ router.delete('/api/fundamentals/:ticker/cache', requireAuth, (req, res) => {
 // ASSETS API
 // ════════════════════════════════════════════════════════════════════════════
 
-router.get('/api/assets', requireAuth, async (req, res) => {
+router.get('/assets', requireAuth, async (req, res) => {
     const userId = req.user.id;
     // Return all assets except CASH, with a flag indicating if they have an active position for THIS user
     const rows = database.db.prepare(`
@@ -467,7 +467,7 @@ router.get('/api/assets', requireAuth, async (req, res) => {
 });
 
 // Historical quotes for a specific asset (for chart popup)
-router.get('/api/asset-quotes/:ticker', requireAuth, (req, res) => {
+router.get('/asset-quotes/:ticker', requireAuth, (req, res) => {
     const { ticker } = req.params;
     const { from, to } = req.query;
     try {
@@ -487,7 +487,7 @@ router.get('/api/asset-quotes/:ticker', requireAuth, (req, res) => {
 
 
 
-router.post('/api/assets/manual-update', requireAuth, async (req, res) => {
+router.post('/assets/manual-update', requireAuth, async (req, res) => {
     const { ticker, price, date, type, country, dataSource, isin } = req.body;
     if (!ticker) return res.status(400).send('Ticker is required');
     const sanitizedTicker = sanitizeTicker(ticker);
@@ -516,20 +516,20 @@ router.post('/api/assets/manual-update', requireAuth, async (req, res) => {
     res.json({ success: true });
 });
 
-router.post('/api/assets/toggle-manual', requireAuth, (req, res) => {
+router.post('/assets/toggle-manual', requireAuth, (req, res) => {
     const { ticker, isManual } = req.body;
     database.db.prepare(`UPDATE assets SET isManual = ? WHERE ticker = ?`).run(isManual ? 1 : 0, ticker);
     res.json({ success: true });
 });
 
-router.get('/api/assets/:id', requireAuth, (req, res) => {
+router.get('/assets/:id', requireAuth, (req, res) => {
     const row = database.db.prepare(`SELECT * FROM assets WHERE id = ?`).get(req.params.id);
     if (!row) return res.status(404).send('Asset not found');
     res.json(row);
 });
 
 // Borsa Italiana Debug Endpoint (admin only)
-router.post('/api/debug/borsa-italiana', requireAuth, requireAdmin, async (req, res) => {
+router.post('/debug/borsa-italiana', requireAuth, requireAdmin, async (req, res) => {
     const { isin, assetType } = req.body;
     if (!isin) return res.status(400).send('ISIN is required');
     const result = await B_ITA(isin, assetType);
@@ -537,7 +537,7 @@ router.post('/api/debug/borsa-italiana', requireAuth, requireAdmin, async (req, 
 });
 
 // Import historical data (usually from frontend scraper)
-router.post('/api/assets/import-history', requireAuth, (req, res) => {
+router.post('/assets/import-history', requireAuth, (req, res) => {
     const { ticker, history } = req.body; // history: [{dt, closePx}, ...]
     if (!ticker || !history || !Array.isArray(history)) {
         return res.status(400).send('Ticker and history array are required');
@@ -568,7 +568,7 @@ router.post('/api/assets/import-history', requireAuth, (req, res) => {
     }
 });
 
-router.post('/api/assets', requireAuth, async (req, res) => {
+router.post('/assets', requireAuth, async (req, res) => {
     try {
         let { ticker, name, type, currency, exchange, pe, currentPrice, changePercent, isin, dataSource } = req.body;
         ticker = sanitizeTicker(ticker);
@@ -636,7 +636,7 @@ router.post('/api/assets', requireAuth, async (req, res) => {
     }
 });
 
-router.put('/api/assets/:id', requireAuth, (req, res) => {
+router.put('/assets/:id', requireAuth, (req, res) => {
     const { targetPrice, stopLoss, volatilityAlert, isMonitored, dataSource, isin, name, type, exchange, currency, currentPrice, changePercent, pe } = req.body;
     
     // 1. Update Asset Metadata (Global)
@@ -687,7 +687,7 @@ router.put('/api/assets/:id', requireAuth, (req, res) => {
 
     res.json({ success: true });
 });
-router.post('/api/assets/split', requireAuth, async (req, res) => {
+router.post('/assets/split', requireAuth, async (req, res) => {
     const { oldTicker, newTicker, ratio, splitDate } = req.body;
     
     if (!oldTicker || !ratio || !splitDate) {
@@ -782,7 +782,7 @@ router.post('/api/assets/split', requireAuth, async (req, res) => {
     }
 });
 
-router.delete('/api/assets/:id', requireAuth, (req, res) => {
+router.delete('/assets/:id', requireAuth, (req, res) => {
     // Assets are global, but we can delete from the user's watchlist
     try {
         database.db.prepare(`DELETE FROM user_watchlist WHERE user_id = ? AND ticker = (SELECT ticker FROM assets WHERE id = ? OR ticker = ?)`).run(req.user.id, req.params.id, req.params.id);
@@ -791,7 +791,7 @@ router.delete('/api/assets/:id', requireAuth, (req, res) => {
 });
 
 
-router.get('/api/assets/:ticker/history', requireAuth, async (req, res) => {
+router.get('/assets/:ticker/history', requireAuth, async (req, res) => {
     const { ticker } = req.params;
     const { range } = req.query;
     
@@ -830,7 +830,7 @@ router.get('/api/assets/:ticker/history', requireAuth, async (req, res) => {
     }
 });
 
-router.get('/api/assets/:ticker/portfolios', requireAuth, (req, res) => {
+router.get('/assets/:ticker/portfolios', requireAuth, (req, res) => {
     const { ticker } = req.params;
     const userId = req.user.id;
     try {
@@ -847,7 +847,7 @@ router.get('/api/assets/:ticker/portfolios', requireAuth, (req, res) => {
     }
 });
 
-router.get('/api/assets/:ticker/details', requireAuth, async (req, res) => {
+router.get('/assets/:ticker/details', requireAuth, async (req, res) => {
     const { ticker } = req.params;
     try {
         const summary = await yahooFinance.quoteSummary(ticker, {
@@ -867,7 +867,7 @@ router.get('/api/assets/:ticker/details', requireAuth, async (req, res) => {
     }
 });
 
-router.delete('/api/assets/:id', requireAuth, (req, res) => {
+router.delete('/assets/:id', requireAuth, (req, res) => {
     const asset = database.db.prepare(`SELECT * FROM assets WHERE id = ? OR ticker = ?`).get(req.params.id, req.params.id);
     if (!asset) return res.status(404).send('Asset not found');
 
@@ -910,7 +910,7 @@ router.delete('/api/assets/:id', requireAuth, (req, res) => {
     }
 });
 
-router.get('/api/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
+router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
     try {
         const globalSettings = database.getSettings(1) || {};
 
@@ -1135,7 +1135,7 @@ NB:
     }
 });
 
-router.get('/api/assets/:ticker/ai-history', requireAuth, (req, res) => {
+router.get('/assets/:ticker/ai-history', requireAuth, (req, res) => {
     try {
         const history = database.db.prepare(`
             SELECT id, action, reasoning, targetPrice, stopLoss, engine, created_at 
@@ -1150,7 +1150,7 @@ router.get('/api/assets/:ticker/ai-history', requireAuth, (req, res) => {
     }
 });
 
-router.delete('/api/assets/ai-history/:id', requireAuth, (req, res) => {
+router.delete('/assets/ai-history/:id', requireAuth, (req, res) => {
     try {
         database.db.prepare('DELETE FROM asset_ai_history WHERE id = ?').run(req.params.id);
         res.json({ success: true });

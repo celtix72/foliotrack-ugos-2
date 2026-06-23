@@ -16,7 +16,7 @@ module.exports = function(dependencies) {
     } = dependencies;
 
     // ─── DIVIDENDS PROJECTIONS & CONFIRMATION ───────────────────────────────
-    router.get('/api/dividends/manual-projections', requireAuth, (req, res) => {
+    router.get('/dividends/manual-projections', requireAuth, (req, res) => {
         try {
             const data = database.db.prepare(`
                 SELECT m.*, a.name FROM dividend_projections m 
@@ -30,7 +30,7 @@ module.exports = function(dependencies) {
         }
     });
 
-    router.post('/api/dividends/projections', requireAuth, (req, res) => {
+    router.post('/dividends/projections', requireAuth, (req, res) => {
         try {
             const { ticker, exDate, amount } = req.body;
             if (!ticker || !exDate || !amount) return res.status(400).json({ error: 'Missing fields' });
@@ -43,7 +43,7 @@ module.exports = function(dependencies) {
         } catch (err) { res.status(500).json({ error: err.message }); }
     });
 
-    router.put('/api/dividends/projections/:id', requireAuth, (req, res) => {
+    router.put('/dividends/projections/:id', requireAuth, (req, res) => {
         try {
             const { exDate, amount } = req.body;
             const year = parseInt(exDate.substring(0, 4));
@@ -56,14 +56,14 @@ module.exports = function(dependencies) {
         } catch (err) { res.status(500).json({ error: err.message }); }
     });
 
-    router.delete('/api/dividends/projections/:id', requireAuth, (req, res) => {
+    router.delete('/dividends/projections/:id', requireAuth, (req, res) => {
         try {
             database.db.prepare(`DELETE FROM dividend_projections WHERE id = ? AND user_id = ?`).run(req.params.id, req.user.id);
             res.json({ success: true });
         } catch (err) { res.status(500).json({ error: err.message }); }
     });
 
-    router.post('/api/dividends/projections/:id/confirm', requireAuth, requirePortfolioAccess, async (req, res) => {
+    router.post('/dividends/projections/:id/confirm', requireAuth, requirePortfolioAccess, async (req, res) => {
         try {
             const { portfolioId, ticker, grossAmount, tax, date } = req.body;
             if (!portfolioId || !ticker || !date) {
@@ -90,7 +90,7 @@ module.exports = function(dependencies) {
      * PUT /api/dividends/transactions/:id
      * Modifica un dividendo già confermato (transazione esistente).
      */
-    router.put('/api/dividends/transactions/:id', requireAuth, async (req, res) => {
+    router.put('/dividends/transactions/:id', requireAuth, async (req, res) => {
         try {
             const { grossAmount, tax, date } = req.body;
             const taxVal   = parseFloat(tax)   || 0;
@@ -119,7 +119,7 @@ module.exports = function(dependencies) {
      * DELETE /api/dividends/transactions/:id
      * Elimina un dividendo già confermato (transazione esistente).
      */
-    router.delete('/api/dividends/transactions/:id', requireAuth, async (req, res) => {
+    router.delete('/dividends/transactions/:id', requireAuth, async (req, res) => {
         try {
             const tx = database.db.prepare(`
                 SELECT t.id, t.portfolioId FROM transactions t
@@ -135,7 +135,7 @@ module.exports = function(dependencies) {
         } catch (err) { res.status(500).json({ error: err.message }); }
     });
 
-    router.post('/api/dividends/projections/reset', requireAuth, async (req, res) => {
+    router.post('/dividends/projections/reset', requireAuth, async (req, res) => {
         try {
             const count = await refreshDividendProjections(req.user.id);
             res.json({ success: true, count });
