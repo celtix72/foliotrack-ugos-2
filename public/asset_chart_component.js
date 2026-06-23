@@ -200,10 +200,10 @@
     };
 
     window.openAssetChartModal = function(ticker, name, currency) {
-        window.loadAssetChart(ticker, '1m');
+        window.loadAssetChart(ticker, '2y');
     };
 
-    window.loadAssetChart = async function(ticker, range = '1m') {
+    window.loadAssetChart = async function(ticker, range = '2y') {
         ensureModalExists();
         if (ticker) _chartTicker = ticker;
         if (!_chartTicker) return;
