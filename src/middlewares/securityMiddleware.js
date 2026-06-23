@@ -68,7 +68,7 @@ function configureSecurity(app) {
     // General API limiter
     const apiLimiter = rateLimit({
         windowMs: 15 * 60 * 1000,
-        max: 300,
+        max: 1000,
         standardHeaders: true,
         legacyHeaders: false,
         message: { error: 'Troppe richieste. Riprova tra qualche minuto.' },
