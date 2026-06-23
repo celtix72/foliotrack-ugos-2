@@ -32,11 +32,11 @@
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <div id="chart-range-btns" style="display: flex; gap: 4px;">
-                            <button onclick="loadAssetChart(null, '1d')" data-range="1d" class="chart-range-btn" style="padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(148,163,184,0.2); background: transparent; color: var(--mob-text-muted); cursor: pointer; font-size: 10px; font-weight: bold;">1D</button>
                             <button onclick="loadAssetChart(null, '1w')" data-range="1w" class="chart-range-btn" style="padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(148,163,184,0.2); background: transparent; color: var(--mob-text-muted); cursor: pointer; font-size: 10px; font-weight: bold;">1W</button>
                             <button onclick="loadAssetChart(null, '1m')" data-range="1m" class="chart-range-btn" style="padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(148,163,184,0.2); background: transparent; color: var(--mob-text-muted); cursor: pointer; font-size: 10px; font-weight: bold;">1M</button>
                             <button onclick="loadAssetChart(null, '6m')" data-range="6m" class="chart-range-btn" style="padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(148,163,184,0.2); background: transparent; color: var(--mob-text-muted); cursor: pointer; font-size: 10px; font-weight: bold;">6M</button>
                             <button onclick="loadAssetChart(null, '1y')" data-range="1y" class="chart-range-btn" style="padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(148,163,184,0.2); background: transparent; color: var(--mob-text-muted); cursor: pointer; font-size: 10px; font-weight: bold;">1Y</button>
+                            <button onclick="loadAssetChart(null, '2y')" data-range="2y" class="chart-range-btn" style="padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(148,163,184,0.2); background: transparent; color: var(--mob-text-muted); cursor: pointer; font-size: 10px; font-weight: bold;">2Y</button>
                             <button onclick="loadAssetChart(null, 'all')" data-range="all" class="chart-range-btn" style="padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(148,163,184,0.2); background: transparent; color: var(--mob-text-muted); cursor: pointer; font-size: 10px; font-weight: bold;">ALL</button>
                         </div>
                         <button onclick="closeAssetChartModal()" style="background: rgba(148,163,184,0.1); border: none; border-radius: 50%; cursor: pointer; color: #94a3b8; padding: 6px; display: flex;">
@@ -351,9 +351,7 @@
             // 2. Filter by range
             const now = new Date();
             const fromDate = new Date(now);
-            if (range === '1d') {
-                fromDate.setHours(0,0,0,0);
-            } else if (range === '1w') {
+            if (range === '1w') {
                 fromDate.setDate(fromDate.getDate() - 7);
             } else if (range === '1m') {
                 fromDate.setMonth(fromDate.getMonth() - 1);
@@ -361,6 +359,8 @@
                 fromDate.setMonth(fromDate.getMonth() - 6);
             } else if (range === '1y') {
                 fromDate.setFullYear(fromDate.getFullYear() - 1);
+            } else if (range === '2y') {
+                fromDate.setFullYear(fromDate.getFullYear() - 2);
             } else {
                 fromDate.setFullYear(fromDate.getFullYear() - 20); // 'all'
             }
@@ -658,7 +658,7 @@
             });
 
             const isDark = document.documentElement.classList.contains('dark');
-            const tickColor = isDark ? '#94a3b8' : '#64748b';
+            const tickColor = isDark ? '#ffffff' : '#000000';
             const gridColor = isDark ? 'rgba(148,163,184,0.1)' : 'rgba(148,163,184,0.15)';
 
             // Clean up old tradeDatasets to add our new ones at the bottom (z-layer)
