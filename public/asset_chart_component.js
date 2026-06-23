@@ -44,6 +44,10 @@
                         </button>
                     </div>
                 </div>
+
+                <!-- Stats Row -->
+                <div id="chart-modal-stats-row" style="display: none; padding: 12px 20px; border-bottom: 1px solid rgba(148,163,184,0.1); background: var(--mob-surface); display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: center;">
+                </div>
                 
                 <!-- Chart Area (Compact) -->
                 <div style="padding: 10px 16px; flex: 1; min-height: 180px; display: flex; flex-direction: column; background: var(--mob-bg); overflow: hidden;">
@@ -381,18 +385,22 @@
                 return { pct: 0, val: 0 };
             });
 
-            // Update Header with latest variation
+            // Update Stats Bar
             if (dailyVars.length > 0) {
                 const latestVar = dailyVars[dailyVars.length - 1];
                 const vColor = latestVar.pct >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
                 const vSign = latestVar.pct >= 0 ? '+' : '';
                 
-                let extraStats = '';
+                let qtyStr = '0';
+                let gainStr = '—';
+                let gainColor = 'var(--mob-text-muted)';
+                
                 if (assetInfo && assetInfo.totalQuantity > 0.0001) {
                     const qty = assetInfo.totalQuantity;
+                    qtyStr = Number(qty.toFixed(4)).toString();
                     const gainEUR = assetInfo.totalGainEUR || 0;
                     const gainSign = gainEUR >= 0 ? '+' : '';
-                    const gainColor = gainEUR >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+                    gainColor = gainEUR >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
                     
                     let pctGainStr = '';
                     const costAsset = assetInfo.totalCostAssetCurr || 0;
@@ -404,25 +412,41 @@
                         pctGainStr = ` (${pctSign}${pctGain.toFixed(2)}%)`;
                     }
                     
-                    extraStats = `
-                        <span style="color: white; font-weight: 900;">QTA: ${qty.toFixed(0)}</span>
-                        <span style="color: ${gainColor}; font-weight: 900;">Gain: ${gainSign}€${Math.abs(gainEUR).toFixed(2)}${pctGainStr}</span>
+                    gainStr = `${gainSign}€${Math.abs(gainEUR).toFixed(2)}${pctGainStr}`;
+                }
+
+                const statsRow = document.getElementById('chart-modal-stats-row');
+                if (statsRow) {
+                    statsRow.style.display = 'flex';
+                    statsRow.innerHTML = `
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <span style="font-size: 8px; text-transform: uppercase; color: var(--mob-text-muted); font-weight: 900; letter-spacing: 0.05em;">QTA Asset</span>
+                            <span style="font-size: 13px; font-weight: 900; color: var(--mob-text);" class="dark:text-white">${qtyStr}</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <span style="font-size: 8px; text-transform: uppercase; color: var(--mob-text-muted); font-weight: 900; letter-spacing: 0.05em;">GAIN Assoluto</span>
+                            <span style="font-size: 13px; font-weight: 900; color: ${gainColor};">${gainStr}</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <span style="font-size: 8px; text-transform: uppercase; color: var(--mob-text-muted); font-weight: 900; letter-spacing: 0.05em;">GAIN DAY</span>
+                            <span style="font-size: 13px; font-weight: 900; color: ${vColor};">${vSign}${latestVar.pct.toFixed(2)}%</span>
+                        </div>
                     `;
                 }
 
                 const headerTitle = document.getElementById('chart-modal-title');
-                headerTitle.parentElement.style.flex = "1";
-                headerTitle.style.display = "flex";
-                headerTitle.style.alignItems = "center";
-                headerTitle.style.justifyContent = "space-between";
-
-                headerTitle.innerHTML = `
-                    <span>${_chartTicker}</span>
-                    <div style="display: flex; gap: 12px; font-size: 0.8em; text-align: right; margin-right: 16px; align-items: center;">
-                        ${extraStats}
-                        <span style="color: ${vColor}; font-weight: 900;">Day: ${vSign}${latestVar.pct.toFixed(2)}% (${vSign}${latestVar.val.toFixed(2)} ${_chartCurrency})</span>
-                    </div>
-                `;
+                if (headerTitle) {
+                    headerTitle.textContent = `History: ${_chartTicker}`;
+                    if (headerTitle.parentElement) {
+                        headerTitle.parentElement.style.flex = "";
+                    }
+                    headerTitle.style.display = "";
+                    headerTitle.style.alignItems = "";
+                    headerTitle.style.justifyContent = "";
+                }
+            } else {
+                const statsRow = document.getElementById('chart-modal-stats-row');
+                if (statsRow) statsRow.style.display = 'none';
             }
             // We'll create a dictionary of transactions by date for easy lookup
             const tradesByDate = {};
