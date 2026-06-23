@@ -339,8 +339,15 @@
                   <div class="mob-settings-value"><span id="mob-news-sources-config-icon" class="material-symbols-outlined text-[14px] transition-transform">expand_more</span></div>
               </div>
               <div id="mob-news-sources-config" class="hidden bg-slate-50/50 dark:bg-black/20 px-5 py-4 space-y-4 border-t border-slate-100 dark:border-slate-800">
-                  <div id="mob-news-sources-list" class="space-y-4">
+                  <div id="mob-news-sources-list" class="space-y-2">
                       <p class="text-[10px] text-slate-500 italic">Loading sources...</p>
+                  </div>
+                  <!-- Add new RSS source form -->
+                  <div class="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-2">
+                      <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Add RSS Feed</p>
+                      <input id="mob-news-name-input" type="text" placeholder="Name (e.g. Reuters)" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-[11px] text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                      <input id="mob-news-url-input" type="url" placeholder="RSS URL" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-[11px] text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                      <button id="mob-add-news-source-btn" class="w-full py-2 bg-blue-500 text-white text-[10px] font-black uppercase rounded-lg">Add Source</button>
                   </div>
               </div>
 
@@ -524,39 +531,83 @@
             const list = document.getElementById('mob-news-sources-list');
             if (!list) return;
             try {
-                const res = await fetch('/api/news/sources');
+                const res = await fetch('/api/settings/news-sources');
                 const sources = await res.json();
-                if (sources.length === 0) {
-                    list.innerHTML = '<p class="text-[10px] text-slate-500 italic">No news sources cached yet.</p>';
+                if (!Array.isArray(sources) || sources.length === 0) {
+                    list.innerHTML = '<p class="text-[10px] text-slate-500 italic">No news sources yet. Add one below.</p>';
                     return;
                 }
                 list.innerHTML = sources.map(s => {
-                    const id = 'mob_source_' + s.name.replace(/\\W/g, '');
+                    const safeId = 'mob_src_' + s.id;
                     return `
-                    <div class="flex items-center justify-between" onclick="document.getElementById('${id}').click()">
-                        <span class="text-xs font-bold truncate max-w-[150px]">${s.name}</span>
-                        <div class="mob-toggle">
-                            <input type="checkbox" id="${id}" data-publisher="${s.name}" class="mob-news-source-toggle" onclick="event.stopPropagation()" ${s.isEnabled ? 'checked' : ''}>
-                            <div class="mob-toggle-slider"></div>
+                    <div class="flex items-center justify-between gap-2 py-1">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-[11px] font-bold text-slate-800 dark:text-slate-100 truncate">${s.name}</p>
+                            <p class="text-[9px] text-slate-400 truncate">${s.url}</p>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <div class="mob-toggle" onclick="document.getElementById('${safeId}').click()">
+                                <input type="checkbox" id="${safeId}" data-source-id="${s.id}" class="mob-news-source-toggle" onclick="event.stopPropagation()" ${s.is_enabled ? 'checked' : ''}>
+                                <div class="mob-toggle-slider"></div>
+                            </div>
+                            <button onclick="deleteMobNewsSource(${s.id})" class="text-rose-400 hover:text-rose-600 active:scale-90 transition-transform">
+                                <span class="material-symbols-outlined text-[16px]">delete</span>
+                            </button>
                         </div>
                     </div>
                     `;
                 }).join('');
 
                 document.querySelectorAll('.mob-news-source-toggle').forEach(el => {
-                    el.addEventListener('change', async () => {
-                        const disabledSources = [];
-                        document.querySelectorAll('.mob-news-source-toggle:not(:checked)').forEach(cb => {
-                            disabledSources.push(cb.dataset.publisher);
-                        });
-                        await fetch('/api/news/sources', {
-                            method: 'POST',
+                    el.addEventListener('change', async (e) => {
+                        const id = e.target.dataset.sourceId;
+                        const enabled = e.target.checked ? 1 : 0;
+                        await fetch(`/api/settings/news-sources/${id}`, {
+                            method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ disabledSources })
+                            body: JSON.stringify({ is_enabled: enabled })
                         });
                     });
                 });
-            } catch (err) { console.error(err); }
+            } catch (err) { console.error('loadNewsSources error:', err); }
+        };
+
+        async function deleteMobNewsSource(id) {
+            if (!confirm('Remove this news source?')) return;
+            try {
+                await fetch(`/api/settings/news-sources/${id}`, { method: 'DELETE' });
+                await loadNewsSources();
+            } catch (err) { console.error('deleteMobNewsSource error:', err); }
+        };
+
+        const addNewsBtn = document.getElementById('mob-add-news-source-btn');
+        if (addNewsBtn) {
+            addNewsBtn.addEventListener('click', async () => {
+                const nameEl = document.getElementById('mob-news-name-input');
+                const urlEl = document.getElementById('mob-news-url-input');
+                const name = nameEl?.value.trim();
+                const url = urlEl?.value.trim();
+                if (!name || !url) { alert('Please enter both a name and a URL.'); return; }
+                try {
+                    addNewsBtn.disabled = true;
+                    addNewsBtn.textContent = 'Adding...';
+                    const res = await fetch('/api/settings/news-sources', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, url })
+                    });
+                    if (!res.ok) throw new Error(await res.text());
+                    if (nameEl) nameEl.value = '';
+                    if (urlEl) urlEl.value = '';
+                    await loadNewsSources();
+                } catch (err) {
+                    console.error('addNewsSource error:', err);
+                    alert('Error adding source: ' + err.message);
+                } finally {
+                    addNewsBtn.disabled = false;
+                    addNewsBtn.textContent = 'Add Source';
+                }
+            });
         };
 
         const saveSettings = () => {

@@ -1188,47 +1188,87 @@
                     lightBtn.className = 'px-6 py-2 rounded-lg text-sm font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-all';
                 }
             }
-            if (typeof loadBackups === 'function') loadBackups();
+            if (typeof loadB            // Load News Sources
+            window.deleteNewsSource = async function(id) {
+                if (!confirm("Sei sicuro di voler eliminare questa sorgente RSS?")) return;
+                try {
+                    const res = await fetch(`/api/settings/news-sources/${id}`, { method: 'DELETE' });
+                    if (res.ok) {
+                        loadNewsSources();
+                    } else {
+                        alert("Impossibile eliminare la sorgente");
+                    }
+                } catch (e) { console.error(e); }
+            };
 
-            // Load News Sources
             async function loadNewsSources() {
                 try {
-                    const res = await fetch('/api/news/sources');
+                    const res = await fetch('/api/settings/news-sources');
                     const sources = await res.json();
                     const container = document.getElementById('news-sources-list');
                     if (!container) return;
                     if (sources.length === 0) {
-                        container.innerHTML = '<p class="text-[10px] text-slate-500 italic">No news sources cached yet.</p>';
+                        container.innerHTML = '<p class="text-[10px] text-slate-500 italic">Nessuna sorgente RSS configurata.</p>';
                         return;
                     }
                     container.innerHTML = sources.map(s => {
-                        const id = 'source_' + s.name.replace(/\\W/g, '');
+                        const id = 'source_' + s.id;
                         return `
                         <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
-                            <span class="font-bold text-xs truncate max-w-[150px]" title="${s.name}">${s.name}</span>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="${id}" data-publisher="${s.name}" class="news-source-toggle sr-only peer" ${s.isEnabled ? 'checked' : ''}>
-                                <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-blue-500"></div>
-                            </label>
+                            <div class="flex flex-col min-w-0">
+                                <span class="font-bold text-xs truncate max-w-[180px]" title="${s.name}">${s.name}</span>
+                                <span class="text-[9px] text-slate-400 truncate max-w-[200px]" title="${s.url}">${s.url}</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="${id}" data-id="${s.id}" class="news-source-toggle sr-only peer" ${s.is_enabled === 1 ? 'checked' : ''}>
+                                    <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-blue-500"></div>
+                                </label>
+                                <button onclick="deleteNewsSource(${s.id})" class="text-rose-500 hover:text-rose-600 transition-colors">
+                                    <span class="material-symbols-outlined text-sm">delete</span>
+                                </button>
+                            </div>
                         </div>
                         `;
                     }).join('');
 
                     document.querySelectorAll('.news-source-toggle').forEach(el => {
                         el.addEventListener('change', async () => {
-                            const disabledSources = [];
-                            document.querySelectorAll('.news-source-toggle:not(:checked)').forEach(cb => {
-                                disabledSources.push(cb.dataset.publisher);
-                            });
-                            await fetch('/api/news/sources', {
-                                method: 'POST',
+                            const sourceId = el.dataset.id;
+                            await fetch(`/api/settings/news-sources/${sourceId}`, {
+                                method: 'PUT',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ disabledSources })
+                                body: JSON.stringify({ is_enabled: el.checked ? 1 : 0 })
                             });
                         });
                     });
                 } catch (e) { console.error(e); }
             }
+
+            const addForm = document.getElementById('add-news-source-form');
+            if (addForm) {
+                addForm.onsubmit = async (e) => {
+                    e.preventDefault();
+                    const name = document.getElementById('new-source-name').value;
+                    const url = document.getElementById('new-source-url').value;
+                    try {
+                        const res = await fetch('/api/settings/news-sources', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name, url })
+                        });
+                        if (res.ok) {
+                            addForm.reset();
+                            loadNewsSources();
+                        } else {
+                            const err = await res.json();
+                            alert("Errore: " + (err.error || "Impossibile aggiungere la sorgente"));
+                        }
+                    } catch (err) { console.error(err); }
+                };
+            }
+
+            loadNewsSources();       }
             loadNewsSources();
         };
 
