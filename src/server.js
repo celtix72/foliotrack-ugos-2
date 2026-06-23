@@ -483,7 +483,9 @@ app.use('/api', analyticsRouter);
 app.use('/api', require('./routes/assets')({
     requireAuth, requireAdmin, requirePortfolioAccess, database, logger, yahooFinance,
     getEurUsdRate, getMarketStatus, isUSMarket, fetchAssetMetadata,
-    clearPerformanceCache, callAIModel, parseAIResponse, notifyUser, APP_VERSION
+    clearPerformanceCache, callAIModel, parseAIResponse, notifyUser, APP_VERSION,
+    triggerHistoryRebuild, recalculateAllPortfoliosWithOverrides, historicalPricesCache,
+    isValidISIN, sanitizeTicker, B_ITA
 }));
 
 // ─── Market Routes ────────────────────────────────────────────────────────────
@@ -493,7 +495,7 @@ app.use('/api', require('./routes/market')({
     clearPerformanceCache, updateMarketData, syncNews,
     get eurUsdCache() { return eurUsdCache; },
     get globalLastMarketUpdate() { return globalLastMarketUpdate; },
-    APP_VERSION
+    APP_VERSION, B_ITA
 }));
 
 // ─── Transactions Routes ──────────────────────────────────────────────────────

@@ -22,6 +22,12 @@ module.exports = function(dependencies) {
         parseAIResponse,
         notifyUser,
         APP_VERSION,
+        triggerHistoryRebuild,
+        recalculateAllPortfoliosWithOverrides,
+        historicalPricesCache,
+        isValidISIN,
+        sanitizeTicker,
+        B_ITA,
     } = dependencies;
 
     const fundamentalsCache = new Map();

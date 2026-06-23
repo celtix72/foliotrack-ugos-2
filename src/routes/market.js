@@ -22,6 +22,7 @@ module.exports = function(dependencies) {
         eurUsdCache,
         APP_VERSION,
         globalLastMarketUpdate,
+        B_ITA,
     } = dependencies;
 
     const indicesCache = {};
