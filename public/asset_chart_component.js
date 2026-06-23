@@ -50,7 +50,7 @@
                 </div>
                 
                 <!-- Chart Area (Compact) -->
-                <div style="padding: 10px 16px; flex: 1; min-height: 300px; display: flex; flex-direction: column; background: var(--mob-bg); overflow: hidden;">
+                <div style="padding: 10px 0px; flex: 1; min-height: 300px; display: flex; flex-direction: column; background: var(--mob-bg); overflow: hidden;">
                     <div id="chart-modal-loading" style="display: none; flex: 1; align-items: center; justify-content: center;">
                         <span class="material-symbols-outlined animate-spin" style="font-size: 24px; color: var(--mob-primary);">progress_activity</span>
                     </div>
@@ -717,6 +717,14 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     interaction: { mode: 'index', intersect: false },
+                    layout: {
+                        padding: {
+                            left: 0,
+                            right: 0,
+                            top: 8,
+                            bottom: 0
+                        }
+                    },
                     plugins: {
                         legend: { display: false },
                         tooltip: {
@@ -756,11 +764,13 @@
                     },
                     scales: {
                         x: {
+                            offset: false,
                             ticks: { maxTicksLimit: 8, maxRotation: 0, font: { size: 10 }, color: tickColor },
                             grid: { color: gridColor }
                         },
                         y: {
                             ticks: {
+                                mirror: true,
                                 callback: v => v.toFixed(2),
                                 color: tickColor,
                                 font: { size: 10 }
