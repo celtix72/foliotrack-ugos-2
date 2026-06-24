@@ -218,6 +218,27 @@ router.get('/fundamentals/:ticker', requireAuth, async (req, res) => {
         result.errors.push({ module: 'fundamentalsTimeSeries-annual', error: e.message });
     }
 
+    // ── 5.1 Storico Finanziario Annuale (Revenue, Net Income) ───────────────
+    try {
+        const from = new Date();
+        from.setFullYear(from.getFullYear() - 6);
+        const finAnnual = await yahooFinance.fundamentalsTimeSeries(ticker, {
+            period1: from.toISOString().split('T')[0],
+            type: 'annual',
+            module: 'financials'
+        });
+        result.historicalFinancials = (finAnnual || []).map(item => {
+            return {
+                date: item.date instanceof Date ? item.date.toISOString().split('T')[0] : (item.date ?? null),
+                totalRevenue: item.totalRevenue ?? item.operatingRevenue ?? null,
+                netIncome: item.netIncome ?? item.netIncomeCommonStockholders ?? null
+            };
+        }).filter(i => i.date && (i.totalRevenue !== null || i.netIncome !== null));
+    } catch (e) {
+        logger.warn(`[Fundamentals] fundamentalsTimeSeries annual financials error for ${ticker}: ${e.message}`);
+        result.errors.push({ module: 'fundamentalsTimeSeries-financials', error: e.message });
+    }
+
     // ── 6. FCF storico trimestrale (fundamentalsTimeSeries) ─────────────────
     try {
         const from = new Date();
@@ -977,6 +998,28 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
         const ks = summary?.defaultKeyStatistics || {};
         const sd = summary?.summaryDetail || {};
         
+        let historicalStr = '';
+        try {
+            const from = new Date();
+            from.setFullYear(from.getFullYear() - 4);
+            const finAnnual = await yahooFinance.fundamentalsTimeSeries(ticker, {
+                period1: from.toISOString().split('T')[0],
+                type: 'annual',
+                module: 'financials'
+            });
+            if (finAnnual && finAnnual.length > 0) {
+                const lines = finAnnual.map(item => {
+                    const year = item.date instanceof Date ? item.date.getFullYear() : (item.date ? String(item.date).substring(0,4) : 'N/D');
+                    const rev = item.totalRevenue ?? item.operatingRevenue ?? null;
+                    const ni = item.netIncome ?? item.netIncomeCommonStockholders ?? null;
+                    return `    * ${year}: Revenue ${rev ? (rev/1e9).toFixed(2)+'B' : 'N/D'}, Net Income ${ni ? (ni/1e9).toFixed(2)+'B' : 'N/D'}`;
+                });
+                historicalStr = '\n  - Storico Dati Finanziari (Annuale):\n' + lines.join('\n');
+            }
+        } catch(e) {
+            logger.warn(`[AI] Error fetching historical financials for ${ticker}: ${e.message}`);
+        }
+        
         const fundamentalsStr = `
   - P/E (Trailing): ${sd.trailingPE ? sd.trailingPE.toFixed(2) : 'N/D'}
   - P/E (Forward): ${ks.forwardPE ? ks.forwardPE.toFixed(2) : 'N/D'}
@@ -984,7 +1027,7 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
   - EPS (Trailing): ${ks.trailingEps ? ks.trailingEps.toFixed(2) : 'N/D'}
   - EPS (Forward): ${ks.forwardEps ? ks.forwardEps.toFixed(2) : 'N/D'}
   - Dividend Yield: ${sd.dividendYield ? (sd.dividendYield * 100).toFixed(2) + '%' : 'N/D'}
-  - Beta: ${ks.beta ? ks.beta.toFixed(2) : (sd.beta ? sd.beta.toFixed(2) : 'N/D')}`;
+  - Beta: ${ks.beta ? ks.beta.toFixed(2) : (sd.beta ? sd.beta.toFixed(2) : 'N/D')}${historicalStr}`;
         
         const contextData = `
 - **${assetRow.ticker} (${assetRow.name})**:
