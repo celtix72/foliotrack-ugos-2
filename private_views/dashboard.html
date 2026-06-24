@@ -404,10 +404,21 @@
 
         <!-- Financial News -->
         <section class="space-y-4 pb-8 border-t border-slate-100 dark:border-slate-800 pt-8">
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between flex-wrap gap-2">
                 <h3 class="text-lg font-bold">Financial News</h3>
-                <div class="flex items-center gap-3 text-[11px] font-bold text-slate-400 uppercase tracking-widest">
-                    <span class="flex items-center gap-1.5 font-black text-blue-500 animate-pulse"><span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Live Feed</span>
+                <div class="flex items-center gap-3">
+                    <!-- Filter Toggle -->
+                    <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5" id="news-filter-group">
+                        <button id="news-filter-all" onclick="setNewsFilter('all')"
+                            class="px-3 py-1 text-[10px] font-black rounded-md bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-slate-100 transition-all">
+                            Tutte
+                        </button>
+                        <button id="news-filter-portfolio" onclick="setNewsFilter('portfolio')"
+                            class="px-3 py-1 text-[10px] font-black rounded-md text-slate-500 dark:text-slate-400 transition-all">
+                            I miei titoli
+                        </button>
+                    </div>
+                    <span class="flex items-center gap-1.5 font-black text-[11px] text-blue-500 animate-pulse"><span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Live Feed</span>
                 </div>
             </div>
             <div class="max-h-[500px] overflow-y-auto custom-scrollbar -mx-2 px-2">
@@ -1603,6 +1614,31 @@
     }
 
     // Client-side news loader from backend API
+    let _newsFilter = localStorage.getItem('newsFilter') || 'all';
+
+    window.setNewsFilter = function(filter) {
+        _newsFilter = filter;
+        localStorage.setItem('newsFilter', filter);
+        // Update button styles
+        const btnAll  = document.getElementById('news-filter-all');
+        const btnPort = document.getElementById('news-filter-portfolio');
+        if (btnAll && btnPort) {
+            const activeClass  = 'bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-slate-100';
+            const inactiveClass = 'text-slate-500 dark:text-slate-400';
+            if (filter === 'all') {
+                btnAll.className  = `px-3 py-1 text-[10px] font-black rounded-md ${activeClass} transition-all`;
+                btnPort.className = `px-3 py-1 text-[10px] font-black rounded-md ${inactiveClass} transition-all`;
+            } else {
+                btnPort.className = `px-3 py-1 text-[10px] font-black rounded-md ${activeClass} transition-all`;
+                btnAll.className  = `px-3 py-1 text-[10px] font-black rounded-md ${inactiveClass} transition-all`;
+            }
+        }
+        loadNews();
+    };
+
+    // Init filter button state on load
+    document.addEventListener('DOMContentLoaded', () => { window.setNewsFilter(_newsFilter); }, { once: true });
+
     async function loadNews() {
         const container = document.getElementById('news-container');
         const skeleton  = document.getElementById('news-skeleton');
@@ -1610,7 +1646,8 @@
 
         let allItems = [];
         try {
-            const res = await fetch('/api/news');
+            const url = _newsFilter === 'portfolio' ? '/api/news?filter=portfolio' : '/api/news';
+            const res = await fetch(url);
             allItems = await res.json();
         } catch (e) {
             console.error('Failed to fetch news', e);
@@ -1619,7 +1656,9 @@
         if (skeleton) skeleton.remove();
 
         if (allItems.length === 0) {
-            container.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-8">Nessuna notizia disponibile al momento. Vai in Impostazioni per aggiungere sorgenti RSS.</p>';
+            container.innerHTML = _newsFilter === 'portfolio'
+                ? '<p class="text-xs text-slate-400 italic text-center py-8">Nessuna notizia per i tuoi titoli. Prova il feed completo.</p>'
+                : '<p class="text-xs text-slate-400 italic text-center py-8">Nessuna notizia disponibile al momento. Vai in Impostazioni per aggiungere sorgenti RSS.</p>';
             return;
         }
 

@@ -349,6 +349,58 @@ router.post('/admin/purge-performance', requireAuth, (req, res) => {
 
 router.get('/news', requireAuth, (req, res) => {
     try {
+        const filter = req.query.filter; // 'portfolio' or undefined
+
+        if (filter === 'portfolio') {
+            // Collect all tickers owned (portfolio) + watchlist for this user
+            const portfolioTickers = database.db.prepare(`
+                SELECT DISTINCT t.assetTicker AS ticker
+                FROM transactions t
+                JOIN portfolios p ON t.portfolioId = p.id
+                WHERE p.user_id = ? AND t.assetTicker IS NOT NULL AND t.assetTicker != 'CASH'
+            `).all(req.user.id).map(r => r.ticker);
+
+            const watchlistTickers = database.db.prepare(`
+                SELECT DISTINCT ticker FROM user_watchlist WHERE user_id = ?
+            `).all(req.user.id).map(r => r.ticker);
+
+            const allTickers = [...new Set([...portfolioTickers, ...watchlistTickers])];
+
+            if (allTickers.length === 0) {
+                return res.json([]);
+            }
+
+            // Also fetch asset names for richer matching
+            const placeholders = allTickers.map(() => '?').join(',');
+            const assetNames = database.db.prepare(
+                `SELECT ticker, name FROM assets WHERE ticker IN (${placeholders})`
+            ).all(...allTickers);
+
+            // Build LIKE conditions for both ticker and name
+            const conditions = [];
+            const params = [];
+            for (const t of allTickers) {
+                conditions.push(`LOWER(na.title) LIKE ?`);
+                params.push(`%${t.toLowerCase()}%`);
+            }
+            for (const a of assetNames) {
+                if (a.name && a.name.length > 2) {
+                    conditions.push(`LOWER(na.title) LIKE ?`);
+                    params.push(`%${a.name.toLowerCase()}%`);
+                }
+            }
+
+            const whereClause = conditions.join(' OR ');
+            const rows = database.db.prepare(`
+                SELECT na.* FROM news_articles na
+                WHERE na.user_id = ? AND (${whereClause})
+                ORDER BY na.pubDate DESC LIMIT 50
+            `).all(req.user.id, ...params);
+
+            return res.json(rows);
+        }
+
+        // Default: all news
         const rows = database.db.prepare('SELECT * FROM news_articles WHERE user_id = ? ORDER BY pubDate DESC LIMIT 50').all(req.user.id);
         res.json(rows);
     } catch (err) {
