@@ -653,6 +653,33 @@
     </div>
 </div>
 
+<!-- Fundamentals Modal -->
+<div id="fundamentals-modal" class="fixed inset-0 bg-slate-900/50 dark:bg-black/60 backdrop-blur-sm hidden z-[110] flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <div>
+                <h3 class="font-black text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                    <span class="material-symbols-outlined text-indigo-500">query_stats</span>
+                    Dati Fondamentali
+                </h3>
+                <p id="fund-modal-ticker" class="text-xs text-slate-500 font-bold mt-1"></p>
+            </div>
+            <button onclick="closeFundamentalsModal()" class="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                <span class="material-symbols-outlined text-sm">close</span>
+            </button>
+        </div>
+        <div class="p-5 overflow-y-auto" id="fund-modal-body">
+            <div id="fund-modal-loading" class="flex flex-col items-center justify-center py-10">
+                <span class="material-symbols-outlined text-4xl text-indigo-500 animate-spin">refresh</span>
+                <p class="text-sm text-slate-500 font-bold mt-3">Recupero dati...</p>
+            </div>
+            <div id="fund-modal-content" class="hidden space-y-4">
+                <!-- Content injected here -->
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- AI Details Modal -->
 <div id="ai-details-modal" class="fixed inset-0 bg-slate-900/50 dark:bg-black/60 backdrop-blur-sm hidden z-[110] flex items-center justify-center p-4">
     <div class="bg-white dark:bg-surface-dark w-full max-w-md rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6">
@@ -1233,6 +1260,9 @@
                 </button>
                 <button onclick="event.stopPropagation(); openAssetChartModal('${h.ticker}', '${h.name}', '${h.currency}')" class="w-7 h-7 rounded-lg bg-violet-500/10 text-violet-500 flex items-center justify-center hover:bg-violet-500/20 transition-colors" title="Historical Chart">
                     <span class="material-symbols-outlined text-[15px]">show_chart</span>
+                </button>
+                <button onclick="event.stopPropagation(); openFundamentalsModal('${h.ticker}', '${(h.name || '').replace(/'/g, "\\'")}')" class="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center hover:bg-indigo-500/20 transition-colors" title="Dati Fondamentali">
+                    <span class="material-symbols-outlined text-[15px]">query_stats</span>
                 </button>
                 ${restoreBtn}
                 ${errorTag}
@@ -2779,6 +2809,82 @@
         document.getElementById('reconcile-currency-label').innerText = portfolioCurrency;
         document.getElementById('reconcile-date').value = new Date().toISOString().split('T')[0];
         document.getElementById('reconcile-modal').classList.remove('hidden');
+    }
+
+    window.openFundamentalsModal = async function(ticker, name) {
+        document.getElementById('fund-modal-ticker').innerText = `${ticker} - ${name}`;
+        document.getElementById('fund-modal-loading').classList.remove('hidden');
+        document.getElementById('fund-modal-content').classList.add('hidden');
+        document.getElementById('fundamentals-modal').classList.remove('hidden');
+
+        try {
+            const res = await fetch(`/api/fundamentals/${ticker}`);
+            const data = await res.json();
+            
+            const content = document.getElementById('fund-modal-content');
+            
+            // Build UI
+            let html = '<div class="grid grid-cols-2 gap-3">';
+            
+            const ks = data.keyStats || {};
+            
+            html += `<div class="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">PEG Ratio (5y expected)</p>
+                        <p class="text-lg font-black mt-1 text-slate-900 dark:text-white">${data.pegRatio ? data.pegRatio.toFixed(2) : 'N/D'}</p>
+                     </div>`;
+                     
+            html += `<div class="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">P/E Forward</p>
+                        <p class="text-lg font-black mt-1 text-slate-900 dark:text-white">${ks.forwardPE ? ks.forwardPE.toFixed(2) : 'N/D'}</p>
+                     </div>`;
+                     
+            html += `<div class="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">EPS Forward</p>
+                        <p class="text-lg font-black mt-1 text-slate-900 dark:text-white">${ks.forwardEps ? ks.forwardEps.toFixed(2) : 'N/D'}</p>
+                     </div>`;
+                     
+            html += `<div class="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">EPS Trailing</p>
+                        <p class="text-lg font-black mt-1 text-slate-900 dark:text-white">${ks.trailingEps ? ks.trailingEps.toFixed(2) : 'N/D'}</p>
+                     </div>`;
+                     
+            html += '</div>';
+            
+            // Earnings Trend (if available)
+            if (data.pegRatioTrend && data.pegRatioTrend.length > 0) {
+                html += `<div class="mt-5">
+                            <p class="text-xs font-black text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-widest flex items-center gap-1.5"><span class="material-symbols-outlined text-[14px] text-slate-400">trending_up</span> Trend Stime (Anni di Rif.)</p>
+                            <div class="space-y-2">`;
+                
+                data.pegRatioTrend.forEach(t => {
+                    if (t.period.endsWith('y')) { // Only show yearly trends
+                        const yearStr = t.endDate ? new Date(t.endDate).getFullYear() : t.period;
+                        html += `
+                        <div class="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-800">
+                            <span class="text-xs font-black text-indigo-500 w-24">${t.period} (${yearStr})</span>
+                            <div class="flex flex-1 items-center justify-end gap-5 text-xs font-mono">
+                                <span class="flex flex-col items-end"><span class="text-[9px] text-slate-400 uppercase tracking-widest">EPS Est</span> <span class="text-slate-900 dark:text-white font-black">${t.epsEstimateMean ? t.epsEstimateMean.toFixed(2) : 'N/D'}</span></span>
+                                <span class="flex flex-col items-end"><span class="text-[9px] text-slate-400 uppercase tracking-widest">Growth</span> <span class="${t.growth >= 0 ? 'text-emerald-500' : 'text-rose-500'} font-black">${t.growth ? (t.growth >= 0 ? '+' : '') + (t.growth * 100).toFixed(1) + '%' : 'N/D'}</span></span>
+                            </div>
+                        </div>`;
+                    }
+                });
+                
+                html += `   </div>
+                          </div>`;
+            }
+
+            content.innerHTML = html;
+            document.getElementById('fund-modal-loading').classList.add('hidden');
+            content.classList.remove('hidden');
+
+        } catch (e) {
+            document.getElementById('fund-modal-loading').innerHTML = `<p class="text-rose-500 font-bold p-4 text-center">Errore nel caricamento: ${e.message}</p>`;
+        }
+    }
+
+    window.closeFundamentalsModal = function() {
+        document.getElementById('fundamentals-modal').classList.add('hidden');
     }
 
     window.closeReconcileModal = function() {

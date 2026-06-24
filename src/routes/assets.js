@@ -968,11 +968,23 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
         
         // Fetch earnings/fundamentals
         sendEvent('progress', { message: 'Recupero dati fondamentali...' });
-        const summary = await yahooFinance.quoteSummary(ticker, { modules: ['calendarEvents', 'defaultKeyStatistics'] }).catch(() => null);
+        const summary = await yahooFinance.quoteSummary(ticker, { modules: ['calendarEvents', 'defaultKeyStatistics', 'summaryDetail'] }).catch(() => null);
         let earningsDate = 'Sconosciuta';
         if (summary?.calendarEvents?.earnings?.earningsDate?.[0]) {
             earningsDate = new Date(summary.calendarEvents.earnings.earningsDate[0]).toISOString().split('T')[0];
         }
+
+        const ks = summary?.defaultKeyStatistics || {};
+        const sd = summary?.summaryDetail || {};
+        
+        const fundamentalsStr = `
+  - P/E (Trailing): ${sd.trailingPE ? sd.trailingPE.toFixed(2) : 'N/D'}
+  - P/E (Forward): ${ks.forwardPE ? ks.forwardPE.toFixed(2) : 'N/D'}
+  - PEG Ratio: ${ks.pegRatio ? ks.pegRatio.toFixed(2) : 'N/D'}
+  - EPS (Trailing): ${ks.trailingEps ? ks.trailingEps.toFixed(2) : 'N/D'}
+  - EPS (Forward): ${ks.forwardEps ? ks.forwardEps.toFixed(2) : 'N/D'}
+  - Dividend Yield: ${sd.dividendYield ? (sd.dividendYield * 100).toFixed(2) + '%' : 'N/D'}
+  - Beta: ${ks.beta ? ks.beta.toFixed(2) : (sd.beta ? sd.beta.toFixed(2) : 'N/D')}`;
         
         const contextData = `
 - **${assetRow.ticker} (${assetRow.name})**:
@@ -980,7 +992,7 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
   - Exchange: ${assetRow.exchange}
   - Currency: ${assetRow.currency}
   - Current Price: ${assetRow.currentPrice}
-  - Prossima Trimestrale (Earnings): ${earningsDate}
+  - Prossima Trimestrale (Earnings): ${earningsDate}${fundamentalsStr}
   - Ultime News: ${newsTitles || 'Nessuna news rilevante recente'}`;
 
         sendEvent('progress', { message: 'Generazione responso IA in corso...' });
