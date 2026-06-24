@@ -111,7 +111,8 @@ async function getAssetFundamentals(ticker) {
             enterpriseToRevenue:   s.enterpriseToRevenue   ?? null,
             '52WeekChange':        s['52WeekChange']        ?? null,
             sharesOutstanding:     s.sharesOutstanding      ?? null,
-            bookValue:             s.bookValue              ?? null
+            bookValue:             s.bookValue              ?? null,
+            netIncomeToCommon:     s.netIncomeToCommon      ?? null
         };
     } catch (e) {
         logger.warn(`[Fundamentals] defaultKeyStatistics error for ${ticker}: ${e.message}`);
@@ -265,6 +266,24 @@ async function getAssetFundamentals(ticker) {
                 pe: pe
             };
         }).filter(i => i.date && (i.totalRevenue !== null || i.netIncome !== null));
+        
+        // Append current year (TTM)
+        if (result.financialData && result.keyStats) {
+            const tr = result.financialData.totalRevenue;
+            const ni = result.keyStats.netIncomeToCommon;
+            const eps = result.keyStats.trailingEps;
+            const price = result.financialData.currentPrice;
+            if (tr || ni) {
+                result.historicalFinancials.push({
+                    date: 'TTM',
+                    totalRevenue: tr ?? null,
+                    netIncome: ni ?? null,
+                    eps: eps ?? null,
+                    price: price ?? null,
+                    pe: (price !== null && eps !== null && eps > 0) ? (price / eps) : null
+                });
+            }
+        }
     } catch (e) {
         logger.warn(`[Fundamentals] fundamentalsTimeSeries annual financials error for ${ticker}: ${e.message}`);
         result.errors.push({ module: 'fundamentalsTimeSeries-financials', error: e.message });
