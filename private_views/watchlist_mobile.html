@@ -402,8 +402,13 @@
                      ontouchmove="handleTouchMove(event, this)" 
                      ontouchend="handleTouchEnd(event, this)">
                     
-                    <div class="mob-holding-actions">
-                        <div class="mob-action-btn bg-red-ios" 
+                    <div class="mob-holding-actions" style="display: flex;">
+                        <div class="mob-action-btn" style="background-color: #6366f1; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white;" 
+                             onclick="event.stopPropagation(); window.openFundamentalsModal('${a.ticker.replace(/'/g, "\\'")}', '${(a.name || '').replace(/'/g, "\\'")}')">
+                            <span class="material-symbols-outlined">query_stats</span>
+                            <span>Fund.</span>
+                        </div>
+                        <div class="mob-action-btn bg-red-ios" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;"
                              onclick="event.stopPropagation(); window.removeFromWatchlist('${a.ticker.replace(/'/g, "\\'")}', ${!!a.hasPosition})">
                             <span class="material-symbols-outlined">delete</span>
                             <span>Rimuovi</span>
@@ -455,10 +460,7 @@ ${(function() {
                                     <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">Trend: <span style="color:var(--mob-text-primary)" title="${trendClean.replace(/"/g, '&quot;')}">${shortTrend}</span></span>
                                     <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">Zone: <span style="color:var(--mob-text-primary)" title="${buyZoneClean.replace(/"/g, '&quot;')}">${shortVal(buyZoneClean)}</span></span>
                                 </div>
-                                <div class="flex items-center gap-2">
-                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">Sup: <span style="color:var(--mob-text-primary)" title="${supClean.replace(/"/g, '&quot;')}">${shortVal(supClean)}</span></span>
-                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">Res: <span style="color:var(--mob-text-primary)" title="${resClean.replace(/"/g, '&quot;')}">${shortVal(resClean)}</span></span>
-                                </div>
+
                                 <div class="flex items-center gap-2">
                                     <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">TP: <span style="color:var(--mob-emerald)" title="${tpClean.replace(/"/g, '&quot;')}">${shortVal(tpClean)}</span></span>
                                     <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">${slLabel}: <span style="color:${sl !== '—' ? 'var(--mob-rose)' : 'var(--mob-emerald)'}" title="${slOrTp2Clean.replace(/"/g, '&quot;')}">${shortVal(slOrTp2Clean)}</span></span>
@@ -612,5 +614,24 @@ ${(function() {
     <!-- Portal for search suggestions (iOS fix: root level fixed avoids flex stacking issues) -->
     <div id="mob-search-suggestions" class="fixed top-[124px] left-0 right-0 bottom-[var(--mob-tab-h)] bg-white dark:bg-background-dark border-t border-slate-200 dark:border-slate-800 z-[12000] hidden overflow-y-auto shadow-2xl"></div>
 
+
+<div id="fundamentals-modal" class="mob-modal-overlay">
+    <div class="mob-modal-content">
+        <div class="mob-modal-header">
+            <h3 class="mob-modal-title flex items-center gap-2"><span class="material-symbols-outlined text-indigo-500">query_stats</span> Dati Fondamentali</h3>
+            <button onclick="closeFundamentalsModal()" class="mob-modal-close"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <p id="fund-modal-ticker" class="text-[10px] text-slate-500 font-bold px-4 pt-1"></p>
+        <div class="mob-modal-body" style="padding-top: 10px;">
+            <div id="fund-modal-loading" class="flex flex-col items-center justify-center py-10">
+                <span class="material-symbols-outlined text-4xl text-indigo-500 animate-spin">refresh</span>
+                <p class="text-sm text-slate-500 font-bold mt-3">Recupero dati...</p>
+            </div>
+            <div id="fund-modal-content" class="hidden space-y-4">
+                <!-- Content injected here -->
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>

@@ -355,6 +355,42 @@ async function getAssetFundamentals(ticker) {
         result.errors.push({ module: 'peg-historical-calc', error: e.message });
     }
 
+    // ── 8. Analisi Tecnica (da DB: assets.ai_reasoning) ──────────────────────
+    try {
+        const assetRow = database.db.prepare('SELECT ai_reasoning FROM assets WHERE ticker = ?').get(ticker);
+        if (assetRow && assetRow.ai_reasoning) {
+            const getAiParam = (text, param) => {
+                if (!text) return null;
+                const normalizedText = text.replace(/\\n/g, '\n');
+                const escapedParam = param.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(`(?:\\-|\\•|\\*)\\s*${escapedParam}\\s*:\\s*([^\\n]+)`, 'i');
+                let m = normalizedText.match(regex);
+                if (m) return m[1].trim();
+                
+                const regex2 = new RegExp(`${escapedParam}\\s*:\\s*([^\\n]+)`, 'i');
+                m = normalizedText.match(regex2);
+                return m ? m[1].trim() : null;
+            };
+
+            const reasoning = assetRow.ai_reasoning;
+            const trend = getAiParam(reasoning, 'Trend di fondo') || getAiParam(reasoning, 'View Operativa') || null;
+            const buyZone = getAiParam(reasoning, 'Zona di Ingresso ideale (Buy)') || getAiParam(reasoning, 'Livello di Ingresso (Buy Zone)') || null;
+            const support = getAiParam(reasoning, 'Area di Supporto critico') || null;
+            const resistance = getAiParam(reasoning, 'Area di Resistenza critica') || null;
+
+            if (trend || buyZone || support || resistance) {
+                result.technicalAnalysis = {
+                    trend,
+                    buyZone,
+                    support,
+                    resistance
+                };
+            }
+        }
+    } catch (e) {
+        logger.warn(`[Fundamentals] Technical analysis fetch error for ${ticker}: ${e.message}`);
+    }
+
     // Salva in cache
     fundamentalsCache.set(ticker, { ts: Date.now(), data: result });
 
