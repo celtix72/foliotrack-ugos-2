@@ -56,9 +56,11 @@ module.exports = function(dependencies) {
  *  - financialData    : Margini, ROE, ROA, crescita ricavi/utili, target price
  *  - earningsHistory  : Storico EPS effettivi (ultimi 4 quarter)
  */
-router.get('/fundamentals/:ticker', requireAuth, async (req, res) => {
-    const ticker = (req.params.ticker || '').toUpperCase();
-    if (!ticker) return res.status(400).json({ error: 'Ticker mancante' });
+async function getAssetFundamentals(ticker) {
+    if (!ticker) throw new Error('Ticker mancante');
+    ticker = ticker.toUpperCase();
+
+    
 
     // Check cache
     const cached = fundamentalsCache.get(ticker);
@@ -87,12 +89,16 @@ router.get('/fundamentals/:ticker', requireAuth, async (req, res) => {
     // ── 1. defaultKeyStatistics: PEG forward + FCF TTM ──────────────────────
     try {
         const ks = await yahooFinance.quoteSummary(ticker, {
-            modules: ['defaultKeyStatistics']
+            modules: ['defaultKeyStatistics', 'summaryDetail', 'calendarEvents']
         });
         const s = ks.defaultKeyStatistics || {};
         result.pegRatio        = s.pegRatio       ?? null;
         result.fcfTTM          = s.freeCashflow   ?? null;
         result.operatingCFTTM  = s.operatingCashflow ?? null;
+        const sd = ks.summaryDetail || {};
+        const ce = ks.calendarEvents || {};
+        result.summaryDetail = sd;
+        result.calendarEvents = ce;
         result.keyStats = {
             forwardPE:      s.forwardPE       ?? null,
             trailingEps:    s.trailingEps     ?? null,
@@ -218,20 +224,45 @@ router.get('/fundamentals/:ticker', requireAuth, async (req, res) => {
         result.errors.push({ module: 'fundamentalsTimeSeries-annual', error: e.message });
     }
 
-    // ── 5.1 Storico Finanziario Annuale (Revenue, Net Income) ───────────────
+    // ── 5.1 Storico Finanziario Annuale (Revenue, Net Income, Price, P/E) ───
     try {
         const from = new Date();
         from.setFullYear(from.getFullYear() - 6);
-        const finAnnual = await yahooFinance.fundamentalsTimeSeries(ticker, {
-            period1: from.toISOString().split('T')[0],
-            type: 'annual',
-            module: 'financials'
-        });
+        const p1 = from.toISOString().split('T')[0];
+        
+        const [finAnnual, chartData] = await Promise.all([
+            yahooFinance.fundamentalsTimeSeries(ticker, { period1: p1, type: 'annual', module: 'financials' }).catch(() => null),
+            yahooFinance.chart(ticker, { period1: p1, interval: '1mo' }).catch(() => null)
+        ]);
+        
+        const prices = chartData?.quotes || [];
+        
         result.historicalFinancials = (finAnnual || []).map(item => {
+            const dateStr = item.date instanceof Date ? item.date.toISOString().split('T')[0] : (item.date ?? null);
+            let closestPrice = null;
+            if (dateStr && prices.length > 0) {
+                const targetTime = new Date(dateStr).getTime();
+                let minDiff = Infinity;
+                for (const q of prices) {
+                    if (!q.date || !q.close) continue;
+                    const diff = Math.abs(new Date(q.date).getTime() - targetTime);
+                    if (diff < minDiff) {
+                        minDiff = diff;
+                        closestPrice = q.close;
+                    }
+                }
+            }
+            
+            const eps = item.dilutedEPS ?? item.basicEPS ?? null;
+            const pe = (closestPrice !== null && eps !== null && eps > 0) ? (closestPrice / eps) : null;
+            
             return {
-                date: item.date instanceof Date ? item.date.toISOString().split('T')[0] : (item.date ?? null),
+                date: dateStr,
                 totalRevenue: item.totalRevenue ?? item.operatingRevenue ?? null,
-                netIncome: item.netIncome ?? item.netIncomeCommonStockholders ?? null
+                netIncome: item.netIncome ?? item.netIncomeCommonStockholders ?? null,
+                eps: eps,
+                price: closestPrice,
+                pe: pe
             };
         }).filter(i => i.date && (i.totalRevenue !== null || i.netIncome !== null));
     } catch (e) {
@@ -309,7 +340,16 @@ router.get('/fundamentals/:ticker', requireAuth, async (req, res) => {
     fundamentalsCache.set(ticker, { ts: Date.now(), data: result });
 
     logger.info(`[Fundamentals] Done for ${ticker}: PEG=${result.pegRatio}, FCF TTM=${result.fcfTTM}, FCF annual records=${result.fcfAnnual.length}, quarterly=${result.fcfQuarterly.length}`);
-    res.json(result);
+    return result;
+}
+
+router.get('/fundamentals/:ticker', requireAuth, async (req, res) => {
+    try {
+        const data = await getAssetFundamentals(req.params.ticker);
+        res.json(data);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
 });
 
 /**
@@ -988,46 +1028,36 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
         }
         
         // Fetch earnings/fundamentals
-        sendEvent('progress', { message: 'Recupero dati fondamentali...' });
-        const summary = await yahooFinance.quoteSummary(ticker, { modules: ['calendarEvents', 'defaultKeyStatistics', 'summaryDetail'] }).catch(() => null);
+        sendEvent('progress', { message: 'Recupero dati fondamentali (presenti e storici)...' });
+        const fundamentalsData = await getAssetFundamentals(ticker).catch(() => ({}));
+        
         let earningsDate = 'Sconosciuta';
-        if (summary?.calendarEvents?.earnings?.earningsDate?.[0]) {
-            earningsDate = new Date(summary.calendarEvents.earnings.earningsDate[0]).toISOString().split('T')[0];
+        if (fundamentalsData.calendarEvents?.earnings?.earningsDate?.[0]) {
+            earningsDate = new Date(fundamentalsData.calendarEvents.earnings.earningsDate[0]).toISOString().split('T')[0];
         }
 
-        const ks = summary?.defaultKeyStatistics || {};
-        const sd = summary?.summaryDetail || {};
+        const ks = fundamentalsData.keyStats || {};
+        const sd = fundamentalsData.summaryDetail || {};
         
         let historicalStr = '';
-        try {
-            const from = new Date();
-            from.setFullYear(from.getFullYear() - 4);
-            const finAnnual = await yahooFinance.fundamentalsTimeSeries(ticker, {
-                period1: from.toISOString().split('T')[0],
-                type: 'annual',
-                module: 'financials'
+        if (fundamentalsData.historicalFinancials && fundamentalsData.historicalFinancials.length > 0) {
+            const lines = fundamentalsData.historicalFinancials.map(item => {
+                const year = item.date ? String(item.date).substring(0,4) : 'N/D';
+                const rev = item.totalRevenue ?? null;
+                const ni = item.netIncome ?? null;
+                return `    * ${year}: Revenue ${rev ? (rev/1e9).toFixed(2)+'B' : 'N/D'}, Net Income ${ni ? (ni/1e9).toFixed(2)+'B' : 'N/D'}`;
             });
-            if (finAnnual && finAnnual.length > 0) {
-                const lines = finAnnual.map(item => {
-                    const year = item.date instanceof Date ? item.date.getFullYear() : (item.date ? String(item.date).substring(0,4) : 'N/D');
-                    const rev = item.totalRevenue ?? item.operatingRevenue ?? null;
-                    const ni = item.netIncome ?? item.netIncomeCommonStockholders ?? null;
-                    return `    * ${year}: Revenue ${rev ? (rev/1e9).toFixed(2)+'B' : 'N/D'}, Net Income ${ni ? (ni/1e9).toFixed(2)+'B' : 'N/D'}`;
-                });
-                historicalStr = '\n  - Storico Dati Finanziari (Annuale):\n' + lines.join('\n');
-            }
-        } catch(e) {
-            logger.warn(`[AI] Error fetching historical financials for ${ticker}: ${e.message}`);
+            historicalStr = '\n  - Storico Dati Finanziari (Annuale):\n' + lines.join('\n');
         }
         
         const fundamentalsStr = `
   - P/E (Trailing): ${sd.trailingPE ? sd.trailingPE.toFixed(2) : 'N/D'}
   - P/E (Forward): ${ks.forwardPE ? ks.forwardPE.toFixed(2) : 'N/D'}
-  - PEG Ratio: ${ks.pegRatio ? ks.pegRatio.toFixed(2) : 'N/D'}
+  - PEG Ratio: ${fundamentalsData.pegRatio ? fundamentalsData.pegRatio.toFixed(2) : 'N/D'}
   - EPS (Trailing): ${ks.trailingEps ? ks.trailingEps.toFixed(2) : 'N/D'}
   - EPS (Forward): ${ks.forwardEps ? ks.forwardEps.toFixed(2) : 'N/D'}
   - Dividend Yield: ${sd.dividendYield ? (sd.dividendYield * 100).toFixed(2) + '%' : 'N/D'}
-  - Beta: ${ks.beta ? ks.beta.toFixed(2) : (sd.beta ? sd.beta.toFixed(2) : 'N/D')}${historicalStr}`;
+  - Beta: ${sd.beta ? sd.beta.toFixed(2) : 'N/D'}${historicalStr}`;
         
         const contextData = `
 - **${assetRow.ticker} (${assetRow.name})**:

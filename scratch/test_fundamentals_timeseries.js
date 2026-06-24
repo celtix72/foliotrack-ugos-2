@@ -11,7 +11,7 @@ async function test() {
             type: 'annual'
         });
         
-        console.log(JSON.stringify(financials.slice(0,2), null, 2));
+        console.log(financials.map(f => ({ date: f.date, eps: f.dilutedEPS, basicEps: f.basicEPS })));
     } catch (e) {
         console.error("Error:", e);
     }

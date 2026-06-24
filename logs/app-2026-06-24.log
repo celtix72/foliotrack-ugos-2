@@ -1,0 +1,6 @@
+2026-06-24T17:40:42.600Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-06-24T17:40:42.612Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-06-24T17:40:42.720Z [INFO] FolioTrack server running on port 3000
+2026-06-24T17:40:42.728Z [INFO] Database: /Users/mauro/Documents/Progetti_Sviluppo/FolioTrack3/foliotrack.db
+2026-06-24T17:40:47.688Z [INFO] Starting RSS News Sync...
+2026-06-24T17:40:48.073Z [INFO] News Sync completed. Saved 20 new articles.
