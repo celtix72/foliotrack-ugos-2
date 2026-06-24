@@ -153,8 +153,12 @@ Rispondi in JSON: { "riskScore": 7, "diversification": "...", "actions": ["...",
             
         } catch (err) {
             logger.error(`[AI Portfolio Analysis Error]`, err);
+            const errorMsg = err?.response?.data?.error?.message 
+                          || (err?.response?.data ? JSON.stringify(err.response.data) : null)
+                          || err.message 
+                          || "Errore sconosciuto.";
             res.write(`event: error\n`);
-            res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+            res.write(`data: ${JSON.stringify({ error: errorMsg })}\n\n`);
             res.end();
         }
     });

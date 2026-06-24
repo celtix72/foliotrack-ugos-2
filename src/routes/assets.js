@@ -1086,8 +1086,8 @@ NB:
                 parsedResponse.reasoning = `### Analisi prodotta da ${engine}\n\n` + (parsedResponse.reasoning || '');
             }
         } catch (e) {
-            console.error('Failed to parse AI JSON response:', e);
-            throw new Error("Errore durante la generazione o parsing del responso IA.");
+            console.error('Failed to parse AI JSON response or execute model:', e);
+            throw e;
         }
         
         database.db.transaction(() => {

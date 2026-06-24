@@ -1062,10 +1062,19 @@
         source.addEventListener('error', function(e) {
             source.close();
             btn.disabled = false;
-            btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px;">add</span> Nuova Analisi';
-            const data = JSON.parse(e.data || '{}');
-            alert(data.error || "Errore durante l'analisi IA");
-            window.loadAssetAiHistory(_aiModalTicker);
+            btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px;">refresh</span> Riprova';
+            
+            let errorData = {};
+            try { errorData = JSON.parse(e.data || '{}'); } catch(err){}
+            const errorMsg = errorData.error || "Errore sconosciuto durante l'analisi IA";
+            
+            listEl.innerHTML = `
+                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 24px; text-align:center; color: rgb(239,68,68); background: rgba(239,68,68,0.1); border-radius: 12px; margin-bottom: 16px; border: 1px solid rgba(239,68,68,0.3);">
+                    <span class="material-symbols-outlined" style="font-size: 40px; margin-bottom: 8px;">error</span>
+                    <div style="font-size: 14px; font-weight: 900;">Analisi IA Fallita</div>
+                    <div style="font-size: 11px; margin-top: 8px; font-family: monospace; word-break: break-word;">${errorMsg}</div>
+                </div>
+            `;
         });
     };
 
