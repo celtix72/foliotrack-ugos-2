@@ -747,21 +747,6 @@ function initDb() {
             dbConnection.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_global_history_user ON portfolio_history(date, user_id) WHERE portfolioId IS NULL`).run();
         } catch (e) {}
         
-        // Migration: Default RSS Feeds
-        try {
-            const allUsers = dbConnection.prepare('SELECT id FROM users').all();
-            for (const u of allUsers) {
-                const hasInvesting = dbConnection.prepare('SELECT id FROM news_sources WHERE user_id = ? AND url LIKE "%investing.com%"').get(u.id);
-                if (!hasInvesting) {
-                    dbConnection.prepare('INSERT INTO news_sources (user_id, name, url) VALUES (?, ?, ?)').run(u.id, 'Investing Italia', 'https://it.investing.com/rss/news_25.rss');
-                }
-                const hasCNBC = dbConnection.prepare('SELECT id FROM news_sources WHERE user_id = ? AND url LIKE "%cnbc.com%"').get(u.id);
-                if (!hasCNBC) {
-                    dbConnection.prepare('INSERT INTO news_sources (user_id, name, url) VALUES (?, ?, ?)').run(u.id, 'CNBC Markets', 'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664');
-                }
-            }
-        } catch (e) {}
-
         // 7. Notification Matrix Migration
         try {
             const users = dbConnection.prepare('SELECT id, telegram_chat_id FROM users').all();
@@ -792,6 +777,23 @@ function initDb() {
         
     } catch (e) {
         console.error('Database migration error:', e.message);
+    }
+
+    // Migration: Default RSS Feeds
+    try {
+        const allUsers = dbConnection.prepare('SELECT id FROM users').all();
+        for (const u of allUsers) {
+            const hasInvesting = dbConnection.prepare('SELECT id FROM news_sources WHERE user_id = ? AND url LIKE "%investing.com%"').get(u.id);
+            if (!hasInvesting) {
+                dbConnection.prepare('INSERT INTO news_sources (user_id, name, url) VALUES (?, ?, ?)').run(u.id, 'Investing Italia', 'https://it.investing.com/rss/news_25.rss');
+            }
+            const hasCNBC = dbConnection.prepare('SELECT id FROM news_sources WHERE user_id = ? AND url LIKE "%cnbc.com%"').get(u.id);
+            if (!hasCNBC) {
+                dbConnection.prepare('INSERT INTO news_sources (user_id, name, url) VALUES (?, ?, ?)').run(u.id, 'CNBC Markets', 'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664');
+            }
+        }
+    } catch (e) {
+        console.error('RSS Database migration error:', e.message);
     }
 
     // Migration: Add role_permissions defaults if empty
