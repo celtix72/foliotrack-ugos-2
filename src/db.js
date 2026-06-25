@@ -747,6 +747,21 @@ function initDb() {
             dbConnection.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_global_history_user ON portfolio_history(date, user_id) WHERE portfolioId IS NULL`).run();
         } catch (e) {}
         
+        // Migration: Default RSS Feeds
+        try {
+            const allUsers = dbConnection.prepare('SELECT id FROM users').all();
+            for (const u of allUsers) {
+                const hasInvesting = dbConnection.prepare('SELECT id FROM news_sources WHERE user_id = ? AND url LIKE "%investing.com%"').get(u.id);
+                if (!hasInvesting) {
+                    dbConnection.prepare('INSERT INTO news_sources (user_id, name, url) VALUES (?, ?, ?)').run(u.id, 'Investing Italia', 'https://it.investing.com/rss/news_25.rss');
+                }
+                const hasCNBC = dbConnection.prepare('SELECT id FROM news_sources WHERE user_id = ? AND url LIKE "%cnbc.com%"').get(u.id);
+                if (!hasCNBC) {
+                    dbConnection.prepare('INSERT INTO news_sources (user_id, name, url) VALUES (?, ?, ?)').run(u.id, 'CNBC Markets', 'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664');
+                }
+            }
+        } catch (e) {}
+
         // 7. Notification Matrix Migration
         try {
             const users = dbConnection.prepare('SELECT id, telegram_chat_id FROM users').all();
@@ -1214,7 +1229,17 @@ function createUser(username, password, email = null, role = 'free', displayName
     const result = dbConnection.prepare(
         `INSERT INTO users (username, email, password_hash, role, display_name, must_change_password) VALUES (?, ?, ?, ?, ?, ?)`
     ).run(username, email, hash, role, displayName || username, mustChangePassword);
-    return dbConnection.prepare(`SELECT id, username, email, role, display_name, created_at FROM users WHERE id = ?`).get(result.lastInsertRowid);
+    
+    const userId = result.lastInsertRowid;
+    try {
+        const stmt = dbConnection.prepare('INSERT INTO news_sources (user_id, name, url) VALUES (?, ?, ?)');
+        stmt.run(userId, 'Investing Italia', 'https://it.investing.com/rss/news_25.rss');
+        stmt.run(userId, 'CNBC Markets', 'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664');
+    } catch (e) {
+        console.error("Failed to insert default news sources for user:", e.message);
+    }
+
+    return dbConnection.prepare(`SELECT id, username, email, role, display_name, created_at FROM users WHERE id = ?`).get(userId);
 }
 
 /**

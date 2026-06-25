@@ -2788,11 +2788,19 @@ async function syncNews() {
         const sources = database.db.prepare('SELECT * FROM news_sources WHERE is_enabled = 1').all();
         if (sources.length === 0) return;
 
-        let totalSaved = 0;
+        // Group sources by URL to avoid duplicate network requests
+        const sourcesByUrl = {};
+        for (const s of sources) {
+            if (!sourcesByUrl[s.url]) sourcesByUrl[s.url] = [];
+            sourcesByUrl[s.url].push(s);
+        }
 
-        for (const source of sources) {
+        let totalSaved = 0;
+        const usersToCleanup = new Set();
+
+        for (const [url, userSources] of Object.entries(sourcesByUrl)) {
             try {
-                const feed = await rssParser.parseURL(source.url);
+                const feed = await rssParser.parseURL(url);
                 for (const item of feed.items || []) {
                     if (!item.title || !item.link) continue;
                     
@@ -2802,20 +2810,27 @@ async function syncNews() {
                         INSERT OR IGNORE INTO news_articles (user_id, title, link, pubDate, source_name)
                         VALUES (?, ?, ?, ?, ?)
                     `);
-                    const info = stmt.run(source.user_id, item.title, item.link, pubDate, source.name);
-                    if (info.changes > 0) totalSaved++;
+                    
+                    // Distribute to all users who have this source enabled
+                    for (const source of userSources) {
+                        const info = stmt.run(source.user_id, item.title, item.link, pubDate, source.name);
+                        if (info.changes > 0) totalSaved++;
+                        usersToCleanup.add(source.user_id);
+                    }
                 }
             } catch (err) {
-                logger.error(`Failed to fetch RSS for ${source.url}: `, err);
+                logger.error(`Failed to fetch RSS for ${url}: `, err.message);
             }
-            
-            // Keep only latest 50 articles per user
+        }
+        
+        // Keep latest 300 articles per user (increased from 50 to allow deep filtering)
+        for (const userId of usersToCleanup) {
             database.db.prepare(`
                 DELETE FROM news_articles 
                 WHERE user_id = ? AND id NOT IN (
-                    SELECT id FROM news_articles WHERE user_id = ? ORDER BY pubDate DESC LIMIT 50
+                    SELECT id FROM news_articles WHERE user_id = ? ORDER BY pubDate DESC LIMIT 300
                 )
-            `).run(source.user_id, source.user_id);
+            `).run(userId, userId);
         }
         
         logger.info(`News Sync completed. Saved ${totalSaved} new articles.`);
