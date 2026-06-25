@@ -4,3 +4,21 @@
 2026-06-24T17:40:42.728Z [INFO] Database: /Users/mauro/Documents/Progetti_Sviluppo/FolioTrack3/foliotrack.db
 2026-06-24T17:40:47.688Z [INFO] Starting RSS News Sync...
 2026-06-24T17:40:48.073Z [INFO] News Sync completed. Saved 20 new articles.
+2026-06-24T19:26:35.427Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-06-24T19:26:35.445Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-06-24T19:26:35.550Z [INFO] FolioTrack server running on port 3000
+2026-06-24T19:26:35.559Z [INFO] Database: /Users/mauro/Documents/Progetti_Sviluppo/FolioTrack3/foliotrack.db
+2026-06-24T19:26:40.520Z [INFO] Starting RSS News Sync...
+2026-06-24T19:26:40.933Z [INFO] News Sync completed. Saved 14 new articles.
+2026-06-24T19:27:37.270Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-24T19:27:37.293Z [INFO] Recording daily snapshots for portfolios and dashboard...
+2026-06-24T19:27:37.306Z [INFO] Daily snapshots completed.
+2026-06-24T21:00:09.763Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-24T21:00:09.790Z [INFO] Starting RSS News Sync...
+2026-06-24T21:00:10.150Z [INFO] News Sync completed. Saved 3 new articles.
+2026-06-24T21:35:35.237Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-24T22:26:53.684Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-24T22:26:53.704Z [INFO] Starting RSS News Sync...
+2026-06-24T22:26:54.008Z [INFO] News Sync completed. Saved 7 new articles.
+2026-06-24T22:36:24.827Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-24T23:08:18.371Z [INFO] Skipping automatic market update: all markets are closed.
