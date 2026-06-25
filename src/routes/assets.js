@@ -519,15 +519,26 @@ router.get('/assets', requireAuth, async (req, res) => {
 
     // Add sparkline data (last 7 days from cache)
     
-        const aiHistoryStmt = database.db.prepare(`
-            SELECT engine, action as aiAction, targetPrice as aiTargetPrice, created_at
-            FROM asset_ai_history
-            WHERE ticker = ? AND engine IS NOT NULL
-            ORDER BY created_at DESC LIMIT 5
-        `);
+        const allTickers = rows.map(r => r.ticker);
+        const badgesByTicker = {};
+        if (allTickers.length > 0) {
+            const placeholders = allTickers.map(() => '?').join(',');
+            const aiHistoryStmt = database.db.prepare(`
+                SELECT ticker, engine, action as aiAction, targetPrice as aiTargetPrice, created_at
+                FROM asset_ai_history
+                WHERE ticker IN (${placeholders}) AND engine IS NOT NULL
+                ORDER BY created_at DESC
+            `);
+            const allBadges = aiHistoryStmt.all(...allTickers);
+            for (const b of allBadges) {
+                if (!badgesByTicker[b.ticker]) badgesByTicker[b.ticker] = [];
+                if (badgesByTicker[b.ticker].length < 5) badgesByTicker[b.ticker].push(b);
+            }
+        }
+        
         const marketStatus = getMarketStatus();
         const result = rows.map(a => {
-            const aiBadges = aiHistoryStmt.all(a.ticker);
+            const aiBadges = badgesByTicker[a.ticker] || [];
 
         let sparkline = [];
         if (historicalPricesCache[a.ticker]) {

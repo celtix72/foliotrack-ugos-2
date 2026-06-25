@@ -49,15 +49,26 @@ module.exports = function(dependencies) {
              
              const today = new Date().toISOString().split('T')[0];
  
-             const aiHistoryStmt = database.db.prepare(`
-                 SELECT engine, action as aiAction, targetPrice as aiTargetPrice, created_at
-                 FROM asset_ai_history
-                 WHERE ticker = ? AND engine IS NOT NULL
-                 ORDER BY created_at DESC LIMIT 5
-             `);
+             const allTickers = rows.map(r => r.ticker);
+             const badgesByTicker = {};
+             if (allTickers.length > 0) {
+                 const placeholders = allTickers.map(() => '?').join(',');
+                 const aiHistoryStmt = database.db.prepare(`
+                     SELECT ticker, engine, action as aiAction, targetPrice as aiTargetPrice, created_at
+                     FROM asset_ai_history
+                     WHERE ticker IN (${placeholders}) AND engine IS NOT NULL
+                     ORDER BY created_at DESC
+                 `);
+                 const allBadges = aiHistoryStmt.all(...allTickers);
+                 for (const b of allBadges) {
+                     if (!badgesByTicker[b.ticker]) badgesByTicker[b.ticker] = [];
+                     if (badgesByTicker[b.ticker].length < 5) badgesByTicker[b.ticker].push(b);
+                 }
+             }
+
              const marketStatus = getMarketStatus();
              const result = rows.map(a => {
-                 const aiBadges = aiHistoryStmt.all(a.ticker);
+                 const aiBadges = badgesByTicker[a.ticker] || [];
  
                  let sparkline = [];
                  if (historicalPricesCache[a.ticker]) {
@@ -153,6 +164,13 @@ module.exports = function(dependencies) {
      // ─── WATCHLIST PERFORMANCE ───────────────────────────────────────────────
      router.get('/watchlist/performance', requireAuth, async (req, res) => {
         try {
+            const CACHE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
+            if (watchlistPerformanceCache.data && watchlistPerformanceCache.lastUpdated) {
+                if (Date.now() - watchlistPerformanceCache.lastUpdated < CACHE_TTL_MS) {
+                    return res.json(watchlistPerformanceCache.data);
+                }
+            }
+
             const watchlist = database.db.prepare(`
                 SELECT a.ticker 
                 FROM assets a
