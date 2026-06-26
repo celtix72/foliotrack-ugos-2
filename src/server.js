@@ -1090,11 +1090,15 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
 
         const rate = (a.currency === 'USD') ? rateToday : 1;
         const absChange = (a.currentPrice * changePct / 100) * a.totalNetQty / rate;
-        return { ticker: a.ticker, name: a.name, changePercent: changePct, absChange };
+        
+        const isValidToday = isToday || (preMktActive && a.preMarketChangePercent);
+
+        return { ticker: a.ticker, name: a.name, changePercent: changePct, absChange, isValidToday };
     });
     
-    const heldAssetsPct = [...heldAssets].sort((a,b) => b.changePercent - a.changePercent);
-    const heldAssetsAbs = [...heldAssets].sort((a,b) => (b.absChange || 0) - (a.absChange || 0));
+    const validTopAssets = heldAssets.filter(a => a.isValidToday && a.changePercent !== 0 && a.absChange !== 0);
+    const heldAssetsPct = [...validTopAssets].sort((a,b) => b.changePercent - a.changePercent);
+    const heldAssetsAbs = [...validTopAssets].sort((a,b) => (b.absChange || 0) - (a.absChange || 0));
 
     const lastPoint = globalPoints.at(-1) || { value: 0, profit: 0, netDeposits: 0 };
 
