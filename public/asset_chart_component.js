@@ -422,6 +422,7 @@
                 let qtyStr = '0';
                 let gainStr = '—';
                 let gainColor = 'var(--mob-text-muted)';
+                let pmcStr = '—';
                 
                 if (assetInfo && assetInfo.totalQuantity > 0.0001) {
                     const qty = assetInfo.totalQuantity;
@@ -433,7 +434,6 @@
                     let pctGainStr = '';
                     const costAsset = assetInfo.totalCostAssetCurr || 0;
                     
-                    let pmcStr = '—';
                     if (qty > 0 && costAsset > 0) {
                         const pmc = costAsset / qty;
                         pmcStr = pmc.toFixed(2);
@@ -452,8 +452,6 @@
                         maximumFractionDigits: 0
                     }).format(Math.round(Math.abs(gainEUR)));
                     gainStr = `${gainSign}${formattedGainVal} €${pctGainStr}`;
-                } else {
-                    var pmcStr = '—';
                 }
 
                 const statsRow = document.getElementById('chart-modal-stats-row');
