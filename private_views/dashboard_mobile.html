@@ -678,12 +678,14 @@
                       y: {
                           display: true,
                           position: 'left',
+                          beginAtZero: false,
+                          grace: '5%',
                           grid: { color: gridColor, drawTicks: false },
                           border: { display: false },
                           ticks: {
                               color: textColor,
                               font: { size: 9, weight: '700' },
-                              maxTicksLimit: 3,
+                              maxTicksLimit: 5,
                               padding: 4,
                               callback: (v) => mobFmtTick(v)
                           }
@@ -691,12 +693,14 @@
                       y1: {
                           display: false,
                           position: 'right',
+                          beginAtZero: false,
+                          grace: '5%',
                           grid: { display: false },
                           border: { display: false },
                           ticks: {
                               color: '#10b981',
                               font: { size: 9, weight: '700' },
-                              maxTicksLimit: 3,
+                              maxTicksLimit: 5,
                               padding: 4,
                               callback: (v) => mobFmtTick(v)
                           }
