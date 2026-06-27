@@ -432,6 +432,13 @@
                     
                     let pctGainStr = '';
                     const costAsset = assetInfo.totalCostAssetCurr || 0;
+                    
+                    let pmcStr = '—';
+                    if (qty > 0 && costAsset > 0) {
+                        const pmc = costAsset / qty;
+                        pmcStr = pmc.toFixed(2);
+                    }
+
                     if (costAsset > 0) {
                         const currentPrice = assetInfo.currentPrice > 0 ? assetInfo.currentPrice : (prices.length > 0 ? prices[prices.length - 1] : 0);
                         const valAsset = qty * currentPrice;
@@ -445,6 +452,8 @@
                         maximumFractionDigits: 0
                     }).format(Math.round(Math.abs(gainEUR)));
                     gainStr = `${gainSign}${formattedGainVal} €${pctGainStr}`;
+                } else {
+                    var pmcStr = '—';
                 }
 
                 const statsRow = document.getElementById('chart-modal-stats-row');
@@ -454,6 +463,10 @@
                         <div style="display: flex; flex-direction: column; gap: 2px;">
                             <span style="font-size: 8px; text-transform: uppercase; color: var(--mob-text-muted); font-weight: 900; letter-spacing: 0.05em;">QTA Asset</span>
                             <span style="font-size: 13px; font-weight: 900; color: var(--mob-text);" class="dark:text-white">${qtyStr}</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <span style="font-size: 8px; text-transform: uppercase; color: var(--mob-text-muted); font-weight: 900; letter-spacing: 0.05em;">PMC</span>
+                            <span style="font-size: 13px; font-weight: 900; color: var(--mob-text);" class="dark:text-white">${pmcStr !== '—' ? pmcStr + ' ' + _chartCurrency : pmcStr}</span>
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 2px;">
                             <span style="font-size: 8px; text-transform: uppercase; color: var(--mob-text-muted); font-weight: 900; letter-spacing: 0.05em;">GAIN Assoluto</span>
