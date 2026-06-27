@@ -423,6 +423,29 @@
                 let gainStr = '—';
                 let gainColor = 'var(--mob-text-muted)';
                 let pmcStr = '—';
+                let currentPriceStr = '—';
+                
+                const formatDynamicPrice = (val) => {
+                    const absVal = Math.abs(val);
+                    if (absVal >= 1000) return val.toFixed(0);
+                    if (absVal >= 10) return val.toFixed(1);
+                    if (absVal >= 1) return val.toFixed(2);
+                    return val.toFixed(3);
+                };
+                
+                const getCurrencySymbol = (curr) => {
+                    if (curr === 'EUR') return '€';
+                    if (curr === 'USD') return '$';
+                    if (curr === 'GBP') return '£';
+                    if (curr === 'CHF') return 'CHF';
+                    return curr || '';
+                };
+                
+                const currSymbol = getCurrencySymbol(_chartCurrency);
+                const currentPriceVal = (assetInfo && assetInfo.currentPrice > 0) ? assetInfo.currentPrice : (prices.length > 0 ? prices[prices.length - 1] : 0);
+                if (currentPriceVal > 0) {
+                    currentPriceStr = formatDynamicPrice(currentPriceVal);
+                }
                 
                 if (assetInfo && assetInfo.totalQuantity > 0.0001) {
                     const qty = assetInfo.totalQuantity;
@@ -436,12 +459,11 @@
                     
                     if (qty > 0 && costAsset > 0) {
                         const pmc = costAsset / qty;
-                        pmcStr = pmc.toFixed(2);
+                        pmcStr = formatDynamicPrice(pmc);
                     }
 
                     if (costAsset > 0) {
-                        const currentPrice = assetInfo.currentPrice > 0 ? assetInfo.currentPrice : (prices.length > 0 ? prices[prices.length - 1] : 0);
-                        const valAsset = qty * currentPrice;
+                        const valAsset = qty * currentPriceVal;
                         const pctGain = ((valAsset - costAsset) / costAsset) * 100;
                         const pctSign = pctGain >= 0 ? '+' : '';
                         pctGainStr = ` (${pctSign}${pctGain.toFixed(2)}%)`;
@@ -464,7 +486,11 @@
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 2px;">
                             <span style="font-size: 8px; text-transform: uppercase; color: var(--mob-text-muted); font-weight: 900; letter-spacing: 0.05em;">PMC</span>
-                            <span style="font-size: 13px; font-weight: 900; color: var(--mob-text);" class="dark:text-white">${pmcStr !== '—' ? pmcStr + ' ' + _chartCurrency : pmcStr}</span>
+                            <span style="font-size: 13px; font-weight: 900; color: var(--mob-text);" class="dark:text-white">${pmcStr !== '—' ? pmcStr + ' ' + currSymbol : pmcStr}</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <span style="font-size: 8px; text-transform: uppercase; color: var(--mob-text-muted); font-weight: 900; letter-spacing: 0.05em;">Prezzo</span>
+                            <span style="font-size: 13px; font-weight: 900; color: #3b82f6;" class="text-blue-500">${currentPriceStr !== '—' ? currentPriceStr + ' ' + currSymbol : currentPriceStr}</span>
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 2px;">
                             <span style="font-size: 8px; text-transform: uppercase; color: var(--mob-text-muted); font-weight: 900; letter-spacing: 0.05em;">GAIN Assoluto</span>
