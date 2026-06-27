@@ -125,8 +125,18 @@
           <span id="mob-kpi-delta-abs" class="text-[9px] font-bold" style="color:#94a3b8">—</span>
         </div>
       </div>
+      <!-- Mode Selector -->
+      <div class="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1 w-full mb-3 mt-2">
+          <button id="mob-mode-btn-eur" onclick="mobSetChartMode('eur')" class="mob-mode-btn flex-1 py-1.5 text-[10px] font-bold rounded-md text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-all">€ EUR</button>
+          <button id="mob-mode-btn-pnl" onclick="mobSetChartMode('pnl')" class="mob-mode-btn flex-1 py-1.5 text-[10px] font-bold rounded-md bg-primary text-white shadow-md transition-all">P&L</button>
+          <button id="mob-mode-btn-pct" onclick="mobSetChartMode('pct')" class="mob-mode-btn flex-1 py-1.5 text-[10px] font-bold rounded-md text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-all">% P&L</button>
+      </div>
+
+      <!-- Inline Legend -->
+      <div id="mob-chart-legend-inline" class="flex flex-wrap items-center gap-3 mb-2 px-1"></div>
+
       <!-- Range bar -->
-      <div class="mob-chart-range-bar" id="mob-range-bar">
+      <div class="mob-chart-range-bar mb-3" id="mob-range-bar">
         <div class="mob-range-btn" onclick="mobSetRange('1W')" data-range="1W">1W</div>
         <div class="mob-range-btn" onclick="mobSetRange('1M')" data-range="1M">1M</div>
         <div class="mob-range-btn" onclick="mobSetRange('3M')" data-range="3M">3M</div>
@@ -135,7 +145,7 @@
         <div class="mob-range-btn" onclick="mobSetRange('ALL')" data-range="ALL">ALL</div>
       </div>
       <!-- Chart canvas -->
-      <div class="mob-chart-canvas-wrapper mt-3" style="position:relative">
+      <div class="mob-chart-canvas-wrapper" style="position:relative; height: 180px;">
         <canvas id="mob-perf-chart"></canvas>
       </div>
       <!-- Start / End date labels -->
@@ -427,53 +437,93 @@
       return g;
   }
 
+  let mobCurrentChartMode = 'pnl';
+  let _mobChartDataPoints = []; // Cache points to avoid refetching on mode change
+
+  window.mobSetChartMode = function(mode) {
+      mobCurrentChartMode = mode;
+      document.querySelectorAll('.mob-mode-btn').forEach(btn => {
+          const btnMode = btn.id.replace('mob-mode-btn-', '');
+          btn.classList.toggle('bg-primary', btnMode === mode);
+          btn.classList.toggle('text-white', btnMode === mode);
+          btn.classList.toggle('shadow-md', btnMode === mode);
+          btn.classList.toggle('text-slate-500', btnMode !== mode);
+      });
+      if (_mobChartDataPoints.length > 0) {
+          mobUpdateChartFromData(_mobChartDataPoints);
+      } else {
+          mobUpdateChart();
+      }
+  };
+
   // Aggiorna KPI pill sopra il grafico
-  function mobUpdateKPI(points) {
+  function mobUpdateKPI(points, mode) {
       const pctEl = document.getElementById('mob-kpi-delta-pct');
       const absEl = document.getElementById('mob-kpi-delta-abs');
       const startLbl = document.getElementById('mob-chart-start-lbl');
       const endLbl   = document.getElementById('mob-chart-end-lbl');
-      if (!pctEl || !points || points.length < 2) return;
+      if (!points || points.length < 2) return;
 
       const first = points[0];
       const last  = points[points.length - 1];
-      const delta  = (last.value || 0) - (first.value || 0);
-      const pct    = first.value ? (delta / first.value) * 100 : 0;
-      const isPos  = delta >= 0;
-      const color  = isPos ? '#10b981' : '#f43f5e';
-      const sign   = isPos ? '+' : '';
 
-      pctEl.textContent  = sign + pct.toFixed(2) + '%';
-      pctEl.style.color  = color;
-      absEl.textContent  = sign + formatCurrency(delta, 'EUR', 0);
-      absEl.style.color  = color;
+      const startVal  = mode === 'pnl' ? (first.profit || 0) : (first.value || 0);
+      const endVal    = mode === 'pnl' ? (last.profit  || 0) : (last.value  || 0);
+      const delta     = endVal - startVal;
+      const deltaPct  = startVal !== 0 ? (delta / Math.abs(startVal)) * 100 : 0;
+      const isPos     = delta >= 0;
+      const sign      = isPos ? '+' : '';
+      const color     = isPos ? '#10b981' : '#f43f5e';
+
+      if (mode === 'pct') {
+          const normDelta = (last.normalized || 100) - (first.normalized || 100);
+          const normSign  = normDelta >= 0 ? '+' : '';
+          if (absEl) { absEl.textContent = normSign + normDelta.toFixed(2) + '%'; absEl.style.color = normDelta >= 0 ? '#10b981' : '#f43f5e'; }
+          if (pctEl) { pctEl.textContent = ''; }
+      } else {
+          if (absEl) { absEl.textContent = sign + formatCurrency(delta, 'EUR', 0); absEl.style.color = color; }
+          if (pctEl) { pctEl.textContent = sign + deltaPct.toFixed(2) + '%'; pctEl.style.color = color; }
+      }
 
       const fmtD = (iso) => new Date(iso).toLocaleDateString('it-IT', { day:'2-digit', month:'short' });
       if (startLbl) startLbl.textContent = fmtD(first.date);
       if (endLbl)   endLbl.textContent   = fmtD(last.date);
   }
 
+  function mobUpdateChartLegend(datasets) {
+      const el = document.getElementById('mob-chart-legend-inline');
+      if (!el) return;
+      el.innerHTML = datasets
+          .filter(ds => !ds.hidden)
+          .map(ds => {
+              const dash = (ds.borderDash && ds.borderDash.length) ? `repeating-linear-gradient(to right,${ds.borderColor} 0,${ds.borderColor} 6px,transparent 6px,transparent 10px)` : '';
+              const lineStyle = dash ? `background:${dash};background-size:100% 2px;background-repeat:no-repeat;background-position:0 50%;` : `background-color:${ds.borderColor};height:3px;border-radius:2px;`;
+              return `<div class="flex items-center gap-1.5">
+                  <div style="width:16px;${lineStyle}"></div>
+                  <span class="text-[8px] font-bold text-slate-500 uppercase tracking-widest">${ds.label}</span>
+              </div>`;
+          }).join('');
+  }
+
   async function mobUpdateChart() {
-      const ctx = document.getElementById('mob-perf-chart')?.getContext('2d');
-      if (!ctx) return;
       try {
           let url = `/api/analytics/global-performance?range=${mobCurrentRange}`;
           if (selectedPortfolioIds.length > 0) url += `&portfolioIds=${selectedPortfolioIds.join(',')}`;
           const res = await fetch(url);
           const result = await res.json();
-          const points = result.dataPoints || [];
+          _mobChartDataPoints = result.dataPoints || [];
+          mobUpdateChartFromData(_mobChartDataPoints);
+      } catch(e) { console.error(e); }
+  }
 
-          // Aggiorna KPI
-          mobUpdateKPI(points);
+  function mobUpdateChartFromData(points) {
+      const ctx = document.getElementById('mob-perf-chart')?.getContext('2d');
+      if (!ctx || points.length === 0) return;
 
-          const values    = points.map(p => p.value ?? 0);
-          const firstVal  = values[0] ?? 0;
-          const lastVal   = values[values.length - 1] ?? 0;
-          const isPos     = lastVal >= firstVal;
-          const lineColor = isPos ? '#10b981' : '#f43f5e';
+      const mode = mobCurrentChartMode;
+      mobUpdateKPI(points, mode);
 
-          if (mobPerfChart) mobPerfChart.destroy();
-
+      if (!mobPerfChart) {
           const isDark = document.documentElement.classList.contains('dark');
           const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
           const textColor = isDark ? '#64748b' : '#94a3b8';
@@ -481,24 +531,52 @@
           mobPerfChart = new Chart(ctx, {
               type: 'line',
               data: {
-                  labels: points.map(p => new Date(p.date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })),
+                  labels: [],
                   datasets: [{
-                      data: values,
-                      borderColor: lineColor,
-                      tension: 0.35,
+                      label: 'Patrimonio Netto',
+                      data: [],
+                      borderColor: '#135bec',
+                      backgroundColor: 'rgba(19,91,236,0.10)',
                       fill: true,
-                      backgroundColor: (ctx2) => {
-                          const chart = ctx2.chart;
-                          const { ctx: c, chartArea } = chart;
-                          if (!chartArea) return 'transparent';
-                          return mobBuildGradient(c, chartArea, isPos);
-                      },
-                      borderWidth: 2.5,
+                      tension: 0.35,
+                      borderWidth: 2,
                       pointRadius: 0,
                       pointHoverRadius: 5,
-                      pointHoverBackgroundColor: lineColor,
-                      pointHoverBorderColor: '#fff',
-                      pointHoverBorderWidth: 2
+                      yAxisID: 'y'
+                  }, {
+                      label: 'P&L Netto',
+                      data: [],
+                      borderColor: '#10b981',
+                      backgroundColor: 'rgba(16,185,129,0.10)',
+                      fill: true,
+                      tension: 0.35,
+                      borderWidth: 2,
+                      pointRadius: 0,
+                      pointHoverRadius: 5,
+                      yAxisID: 'y1',
+                      hidden: true
+                  }, {
+                      label: 'S&P 500',
+                      data: [],
+                      borderColor: '#f59e0b',
+                      borderWidth: 1.5,
+                      borderDash: [3, 3],
+                      pointRadius: 0,
+                      fill: false,
+                      tension: 0.35,
+                      hidden: true,
+                      yAxisID: 'y'
+                  }, {
+                      label: 'FTSE MIB',
+                      data: [],
+                      borderColor: '#8b5cf6',
+                      borderWidth: 1.5,
+                      borderDash: [3, 3],
+                      pointRadius: 0,
+                      fill: false,
+                      tension: 0.35,
+                      hidden: true,
+                      yAxisID: 'y'
                   }]
               },
               options: {
@@ -516,24 +594,31 @@
                           borderWidth: 1,
                           padding: 10,
                           cornerRadius: 8,
+                          usePointStyle: true,
                           callbacks: {
                               title: (items) => {
                                   const idx = items[0]?.dataIndex;
-                                  if (points[idx]) {
-                                      return new Date(points[idx].date).toLocaleDateString('it-IT', { weekday:'short', day:'2-digit', month:'short' });
+                                  if (_mobChartDataPoints[idx]) {
+                                      return new Date(_mobChartDataPoints[idx].date).toLocaleDateString('it-IT', { weekday:'short', day:'2-digit', month:'short' });
                                   }
                                   return items[0]?.label || '';
                               },
                               label: (context) => {
-                                  return ' ' + formatCurrency(context.parsed.y, 'EUR', 0);
+                                  if (context.parsed.y == null || context.dataset.hidden) return null;
+                                  const val = context.parsed.y;
+                                  const lbl = context.dataset.label;
+                                  const isPct = mobCurrentChartMode === 'pct';
+                                  if (isPct) return ' ' + lbl + ': ' + (val >= 100 ? '+' : '') + (val - 100).toFixed(2) + '%';
+                                  return ' ' + lbl + ': ' + formatCurrency(val, 'EUR', 0);
                               },
-                              afterLabel: (context) => {
-                                  const idx = context.dataIndex;
-                                  if (!points[idx] || !points[0]) return '';
-                                  const delta = (points[idx].value || 0) - (points[0].value || 0);
-                                  const pct = points[0].value ? (delta / points[0].value) * 100 : 0;
+                              afterBody: (items) => {
+                                  if (mobCurrentChartMode !== 'eur') return [];
+                                  const idx = items[0]?.dataIndex;
+                                  if (!_mobChartDataPoints || !_mobChartDataPoints[idx] || !_mobChartDataPoints[0]) return [];
+                                  const delta = (_mobChartDataPoints[idx].value || 0) - (_mobChartDataPoints[0].value || 0);
+                                  const pct = _mobChartDataPoints[0].value ? (delta / _mobChartDataPoints[0].value) * 100 : 0;
                                   const sign = delta >= 0 ? '+' : '';
-                                  return ` Δ ${sign}${formatCurrency(delta,'EUR',0)} (${sign}${pct.toFixed(1)}%)`;
+                                  return ['', `Δ da inizio: ${sign}${formatCurrency(delta,'EUR',0)} (${sign}${pct.toFixed(2)}%)`];
                               }
                           }
                       },
@@ -541,11 +626,11 @@
                           annotations: {
                               baseline: {
                                   type: 'line',
-                                  yMin: firstVal,
-                                  yMax: firstVal,
-                                  borderColor: 'rgba(148,163,184,0.35)',
+                                  yMin: 0, yMax: 0,
+                                  borderColor: 'rgba(148,163,184,0.3)',
                                   borderWidth: 1,
-                                  borderDash: [4, 4]
+                                  borderDash: [4, 4],
+                                  display: false
                               }
                           }
                       }
@@ -564,11 +649,133 @@
                               padding: 4,
                               callback: (v) => mobFmtTick(v)
                           }
+                      },
+                      y1: {
+                          display: false,
+                          position: 'right',
+                          grid: { display: false },
+                          border: { display: false },
+                          ticks: {
+                              color: '#10b981',
+                              font: { size: 9, weight: '700' },
+                              maxTicksLimit: 3,
+                              padding: 4,
+                              callback: (v) => mobFmtTick(v)
+                          }
                       }
                   }
               }
           });
-      } catch(e) { console.error(e); }
+      }
+
+      mobPerfChart.data.labels = points.map(p => new Date(p.date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }));
+
+      if (mode === 'pct') {
+          const pData = points.map(d => d.normalized ?? 100);
+          const lastP = pData[pData.length - 1] ?? 100;
+          const isPos = lastP >= (pData[0] ?? 100);
+
+          mobPerfChart.data.datasets[0].label = 'Portfolio';
+          mobPerfChart.data.datasets[0].data = pData;
+          mobPerfChart.data.datasets[0].hidden = false;
+          mobPerfChart.data.datasets[0].yAxisID = 'y';
+          mobPerfChart.data.datasets[0].borderColor = isPos ? '#10b981' : '#f43f5e';
+          mobPerfChart.data.datasets[0].backgroundColor = (ctx2) => {
+              const chart = ctx2.chart;
+              const {ctx: c, chartArea} = chart;
+              if (!chartArea) return 'transparent';
+              return mobBuildGradient(c, chartArea, isPos);
+          };
+
+          mobPerfChart.data.datasets[1].hidden = true;
+
+          const sp500Data = points.map(d => d.sp500Normalized);
+          const hasSp500 = sp500Data.some(v => v != null && v !== 0);
+          mobPerfChart.data.datasets[2].data = sp500Data;
+          mobPerfChart.data.datasets[2].hidden = !hasSp500;
+          mobPerfChart.data.datasets[2].yAxisID = 'y';
+
+          const ftseData = points.map(d => d.ftsemibNormalized);
+          const hasFtse = ftseData.some(v => v != null && v !== 0);
+          mobPerfChart.data.datasets[3].data = ftseData;
+          mobPerfChart.data.datasets[3].hidden = !hasFtse;
+          mobPerfChart.data.datasets[3].yAxisID = 'y';
+
+          mobPerfChart.options.scales.y.display = true;
+          mobPerfChart.options.scales.y1.display = false;
+
+          mobPerfChart.options.plugins.annotation.annotations.baseline.yMin = 100;
+          mobPerfChart.options.plugins.annotation.annotations.baseline.yMax = 100;
+          mobPerfChart.options.plugins.annotation.annotations.baseline.display = true;
+
+      } else if (mode === 'pnl') {
+          const pnlData = points.map(d => d.profit ?? 0);
+          const lastPnl = pnlData[pnlData.length - 1] ?? 0;
+          const isPos   = lastPnl >= 0;
+
+          mobPerfChart.data.datasets[0].hidden = true;
+          mobPerfChart.data.datasets[1].data  = pnlData;
+          mobPerfChart.data.datasets[1].hidden = false;
+          mobPerfChart.data.datasets[1].yAxisID = 'y1';
+          mobPerfChart.data.datasets[1].borderColor = isPos ? '#10b981' : '#f43f5e';
+          mobPerfChart.data.datasets[1].backgroundColor = (ctx2) => {
+              const chart = ctx2.chart;
+              const {ctx: c, chartArea} = chart;
+              if (!chartArea) return 'transparent';
+              return mobBuildGradient(c, chartArea, isPos);
+          };
+
+          mobPerfChart.data.datasets[2].hidden = true;
+          mobPerfChart.data.datasets[3].hidden = true;
+
+          mobPerfChart.options.scales.y.display = false;
+          mobPerfChart.options.scales.y1.display = true;
+
+          mobPerfChart.options.plugins.annotation.annotations.baseline.yMin = 0;
+          mobPerfChart.options.plugins.annotation.annotations.baseline.yMax = 0;
+          mobPerfChart.options.plugins.annotation.annotations.baseline.display = true;
+          mobPerfChart.options.plugins.annotation.annotations.baseline.scaleID = 'y1';
+
+      } else {
+          const wData = points.map(d => d.value ?? 0);
+          const lastW = wData[wData.length - 1] ?? 0;
+          const firstW = wData[0] ?? 0;
+          const isPos  = lastW >= firstW;
+
+          mobPerfChart.data.datasets[0].label = 'Patrimonio Netto';
+          mobPerfChart.data.datasets[0].data  = wData;
+          mobPerfChart.data.datasets[0].hidden = false;
+          mobPerfChart.data.datasets[0].yAxisID = 'y';
+          mobPerfChart.data.datasets[0].borderColor = isPos ? '#135bec' : '#f43f5e';
+          mobPerfChart.data.datasets[0].backgroundColor = (ctx2) => {
+              const chart = ctx2.chart;
+              const {ctx: c, chartArea} = chart;
+              if (!chartArea) return 'transparent';
+              return mobBuildGradient(c, chartArea, isPos);
+          };
+
+          mobPerfChart.data.datasets[1].hidden = true;
+
+          const sp500Data = points.map(d => d.sp500Value);
+          const hasSp500 = sp500Data.some(v => v != null && v !== 0);
+          mobPerfChart.data.datasets[2].data = sp500Data;
+          mobPerfChart.data.datasets[2].hidden = !hasSp500;
+          mobPerfChart.data.datasets[2].yAxisID = 'y';
+
+          const ftseData = points.map(d => d.ftsemibValue);
+          const hasFtse = ftseData.some(v => v != null && v !== 0);
+          mobPerfChart.data.datasets[3].data = ftseData;
+          mobPerfChart.data.datasets[3].hidden = !hasFtse;
+          mobPerfChart.data.datasets[3].yAxisID = 'y';
+
+          mobPerfChart.options.scales.y.display = true;
+          mobPerfChart.options.scales.y1.display = false;
+          
+          mobPerfChart.options.plugins.annotation.annotations.baseline.display = false;
+      }
+
+      mobPerfChart.update();
+      mobUpdateChartLegend(mobPerfChart.data.datasets);
   }
 
   window.mobSetRange = function(range) {
