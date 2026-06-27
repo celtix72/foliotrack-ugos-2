@@ -466,7 +466,7 @@
                         const valAsset = qty * currentPriceVal;
                         const pctGain = ((valAsset - costAsset) / costAsset) * 100;
                         const pctSign = pctGain >= 0 ? '+' : '';
-                        pctGainStr = ` (${pctSign}${pctGain.toFixed(2)}%)`;
+                        pctGainStr = ` (${pctSign}${pctGain.toFixed(1)}%)`;
                     }
                     
                     const formattedGainVal = new Intl.NumberFormat('it-IT', {
@@ -498,7 +498,7 @@
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 2px;">
                             <span style="font-size: 8px; text-transform: uppercase; color: var(--mob-text-muted); font-weight: 900; letter-spacing: 0.05em;">GAIN DAY</span>
-                            <span style="font-size: 13px; font-weight: 900; color: ${vColor};">${vSign}${latestVar.pct.toFixed(2)}%</span>
+                            <span style="font-size: 13px; font-weight: 900; color: ${vColor};">${vSign}${latestVar.pct.toFixed(1)}%</span>
                         </div>
                     `;
                 }
@@ -824,7 +824,7 @@
                                     const trades = tradesByDate[dt] || [];
                                     const trade = trades.find(tr => tr.type === datasetLabel);
                                     if (trade) {
-                                        return ` ${trade.type}: ${_chartTicker} (${trade.quantity} @ ${trade.price.toFixed(2)})`;
+                                        return ` ${trade.type}: ${_chartTicker} (${trade.quantity} @ ${formatDynamicPrice(trade.price)})`;
                                     }
                                 }
                                 // Default price & variation
@@ -832,8 +832,8 @@
                                     const idx = context.dataIndex;
                                     const v = dailyVars[idx];
                                     const sign = v.pct >= 0 ? '+' : '';
-                                    const price = context.parsed.y.toFixed(2);
-                                    return ` Price: ${price} ${_chartCurrency} (${sign}${v.pct.toFixed(2)}%)`;
+                                    const price = formatDynamicPrice(context.parsed.y);
+                                    return ` Price: ${price} ${_chartCurrency} (${sign}${v.pct.toFixed(1)}%)`;
                                 }
                                 return null;
                             },
@@ -881,7 +881,7 @@
                         y: {
                             ticks: {
                                 mirror: true,
-                                callback: v => v.toFixed(2),
+                                callback: v => formatDynamicPrice(v),
                                 color: tickColor,
                                 font: { size: 10 }
                             },
