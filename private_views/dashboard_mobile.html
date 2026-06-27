@@ -113,18 +113,35 @@
 
     <!-- Chart -->
     <div class="mob-chart-card">
-      <!-- Chart header: title + KPI pill -->
+      <!-- Chart header: title -->
       <div class="flex items-center justify-between mb-3">
         <div>
           <div class="mob-chart-title">Performance</div>
           <div class="mob-chart-subtitle">Patrimonio aggregato</div>
         </div>
-        <!-- KPI variazione periodo -->
-        <div id="mob-chart-kpi" class="flex flex-col items-end gap-0.5">
-          <span id="mob-kpi-delta-pct" class="text-[13px] font-black" style="color:#94a3b8">—</span>
-          <span id="mob-kpi-delta-abs" class="text-[9px] font-bold" style="color:#94a3b8">—</span>
-        </div>
       </div>
+      
+      <!-- KPI Bar (Desktop-like) -->
+      <div id="mob-chart-kpi-bar" class="flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 mb-3">
+          <div class="flex flex-col gap-0.5">
+              <span class="text-[8px] font-black uppercase tracking-widest text-slate-400">Inizio</span>
+              <span id="mob-kpi-start-val" class="text-[12px] font-black text-slate-700 dark:text-slate-200">—</span>
+          </div>
+          <div class="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-2"></div>
+          <div class="flex flex-col gap-0.5">
+              <span class="text-[8px] font-black uppercase tracking-widest text-slate-400">Attuale</span>
+              <span id="mob-kpi-end-val" class="text-[12px] font-black text-slate-700 dark:text-slate-200">—</span>
+          </div>
+          <div class="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-2"></div>
+          <div class="flex flex-col gap-0.5 items-end">
+              <span class="text-[8px] font-black uppercase tracking-widest text-slate-400">Variazione</span>
+              <div class="flex items-baseline gap-1">
+                 <span id="mob-kpi-delta-pct" class="text-[12px] font-black">—</span>
+                 <span id="mob-kpi-delta-abs" class="text-[9px] font-bold text-slate-400">—</span>
+              </div>
+          </div>
+      </div>
+      
       <!-- Mode Selector & Legend Row -->
       <div class="flex items-center justify-between mb-3 mt-1">
         <!-- Inline Legend -->
@@ -156,11 +173,6 @@
       <!-- Chart canvas -->
       <div class="mob-chart-canvas-wrapper" style="position:relative; height: 180px;">
         <canvas id="mob-perf-chart"></canvas>
-      </div>
-      <!-- Start / End date labels -->
-      <div class="flex justify-between mt-1 px-1">
-        <span id="mob-chart-start-lbl" class="text-[8px] font-bold text-slate-500"></span>
-        <span id="mob-chart-end-lbl" class="text-[8px] font-bold text-slate-500"></span>
       </div>
     </div>
 
@@ -466,12 +478,12 @@
       }
   };
 
-  // Aggiorna KPI pill sopra il grafico
+  // Aggiorna KPI bar sopra il grafico
   function mobUpdateKPI(points, mode) {
       const pctEl = document.getElementById('mob-kpi-delta-pct');
       const absEl = document.getElementById('mob-kpi-delta-abs');
-      const startLbl = document.getElementById('mob-chart-start-lbl');
-      const endLbl   = document.getElementById('mob-chart-end-lbl');
+      const startValEl = document.getElementById('mob-kpi-start-val');
+      const endValEl = document.getElementById('mob-kpi-end-val');
       if (!points || points.length < 2) return;
 
       const first = points[0];
@@ -485,19 +497,24 @@
       const sign      = isPos ? '+' : '';
       const color     = isPos ? '#10b981' : '#f43f5e';
 
+      const fmtVal = (v) => {
+          if (mode === 'pct') return (v >= 100 ? '+' : '') + (v - 100).toFixed(2) + '%';
+          return formatCurrency(v, 'EUR', 0);
+      };
+
       if (mode === 'pct') {
           const normDelta = (last.normalized || 100) - (first.normalized || 100);
           const normSign  = normDelta >= 0 ? '+' : '';
-          if (absEl) { absEl.textContent = normSign + normDelta.toFixed(2) + '%'; absEl.style.color = normDelta >= 0 ? '#10b981' : '#f43f5e'; }
-          if (pctEl) { pctEl.textContent = ''; }
+          if (startValEl) startValEl.textContent = fmtVal(first.normalized || 100);
+          if (endValEl) endValEl.textContent = fmtVal(last.normalized || 100);
+          if (pctEl) { pctEl.textContent = normSign + normDelta.toFixed(2) + '%'; pctEl.style.color = normDelta >= 0 ? '#10b981' : '#f43f5e'; }
+          if (absEl) { absEl.textContent = ''; }
       } else {
-          if (absEl) { absEl.textContent = sign + formatCurrency(delta, 'EUR', 0); absEl.style.color = color; }
+          if (startValEl) startValEl.textContent = fmtVal(startVal);
+          if (endValEl) endValEl.textContent = fmtVal(endVal);
           if (pctEl) { pctEl.textContent = sign + deltaPct.toFixed(2) + '%'; pctEl.style.color = color; }
+          if (absEl) { absEl.textContent = '(' + sign + formatCurrency(delta, 'EUR', 0) + ')'; }
       }
-
-      const fmtD = (iso) => new Date(iso).toLocaleDateString('it-IT', { day:'2-digit', month:'short' });
-      if (startLbl) startLbl.textContent = fmtD(first.date);
-      if (endLbl)   endLbl.textContent   = fmtD(last.date);
   }
 
   function mobUpdateChartLegend(datasets) {
@@ -646,7 +663,17 @@
                       }
                   },
                   scales: {
-                      x: { display: false },
+                      x: {
+                          display: true,
+                          ticks: {
+                              color: textColor,
+                              font: { size: 9, weight: '600' },
+                              maxTicksLimit: 5,
+                              maxRotation: 0
+                          },
+                          grid: { display: false },
+                          border: { display: false }
+                      },
                       y: {
                           display: true,
                           position: 'left',
