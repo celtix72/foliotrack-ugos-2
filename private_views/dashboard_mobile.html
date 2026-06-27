@@ -121,27 +121,6 @@
         </div>
       </div>
       
-      <!-- KPI Bar (Desktop-like) -->
-      <div id="mob-chart-kpi-bar" class="flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 mb-3">
-          <div class="flex flex-col gap-0.5">
-              <span class="text-[8px] font-black uppercase tracking-widest text-slate-400">Inizio</span>
-              <span id="mob-kpi-start-val" class="text-[12px] font-black text-slate-700 dark:text-slate-200">—</span>
-          </div>
-          <div class="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-2"></div>
-          <div class="flex flex-col gap-0.5">
-              <span class="text-[8px] font-black uppercase tracking-widest text-slate-400">Attuale</span>
-              <span id="mob-kpi-end-val" class="text-[12px] font-black text-slate-700 dark:text-slate-200">—</span>
-          </div>
-          <div class="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-2"></div>
-          <div class="flex flex-col gap-0.5 items-end">
-              <span class="text-[8px] font-black uppercase tracking-widest text-slate-400">Variazione</span>
-              <div class="flex items-baseline gap-1">
-                 <span id="mob-kpi-delta-pct" class="text-[12px] font-black">—</span>
-                 <span id="mob-kpi-delta-abs" class="text-[9px] font-bold text-slate-400">—</span>
-              </div>
-          </div>
-      </div>
-      
       <!-- Mode Selector & Legend Row -->
       <div class="flex items-center justify-between mb-3 mt-1">
         <!-- Inline Legend -->
@@ -170,6 +149,28 @@
         <div class="mob-range-btn active" onclick="mobSetRange('1Y')" data-range="1Y">1Y</div>
         <div class="mob-range-btn" onclick="mobSetRange('ALL')" data-range="ALL">ALL</div>
       </div>
+      
+      <!-- KPI Bar (Desktop-like) -->
+      <div id="mob-chart-kpi-bar" class="flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 mb-3">
+          <div class="flex flex-col gap-0.5">
+              <span class="text-[8px] font-black uppercase tracking-widest text-slate-400">Inizio</span>
+              <span id="mob-kpi-start-val" class="text-[12px] font-black text-slate-700 dark:text-slate-200">—</span>
+          </div>
+          <div class="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-2"></div>
+          <div class="flex flex-col gap-0.5">
+              <span class="text-[8px] font-black uppercase tracking-widest text-slate-400">Attuale</span>
+              <span id="mob-kpi-end-val" class="text-[12px] font-black text-slate-700 dark:text-slate-200">—</span>
+          </div>
+          <div class="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-2"></div>
+          <div class="flex flex-col gap-0.5 items-end">
+              <span class="text-[8px] font-black uppercase tracking-widest text-slate-400">Variazione</span>
+              <div class="flex items-baseline gap-1">
+                 <span id="mob-kpi-delta-pct" class="text-[12px] font-black">—</span>
+                 <span id="mob-kpi-delta-abs" class="text-[9px] font-bold text-slate-400">—</span>
+              </div>
+          </div>
+      </div>
+
       <!-- Chart canvas -->
       <div class="mob-chart-canvas-wrapper" style="position:relative; height: 180px;">
         <canvas id="mob-perf-chart"></canvas>
