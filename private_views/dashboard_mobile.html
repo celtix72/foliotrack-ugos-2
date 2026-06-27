@@ -125,15 +125,24 @@
           <span id="mob-kpi-delta-abs" class="text-[9px] font-bold" style="color:#94a3b8">—</span>
         </div>
       </div>
-      <!-- Mode Selector -->
-      <div class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 gap-0.5 w-full mb-3 mt-2">
-          <button id="mob-mode-btn-eur" onclick="mobSetChartMode('eur')" class="mob-mode-btn flex-1 py-1 text-[9px] font-bold rounded-md transition-all text-slate-400 dark:text-slate-500">€ EUR</button>
-          <button id="mob-mode-btn-pnl" onclick="mobSetChartMode('pnl')" class="mob-mode-btn flex-1 py-1 text-[9px] font-bold rounded-md transition-all bg-white dark:bg-slate-700 text-primary shadow-sm">P&L</button>
-          <button id="mob-mode-btn-pct" onclick="mobSetChartMode('pct')" class="mob-mode-btn flex-1 py-1 text-[9px] font-bold rounded-md transition-all text-slate-400 dark:text-slate-500">% P&L</button>
+      <!-- Mode Selector & Legend Row -->
+      <div class="flex items-center justify-between mb-3 mt-1">
+        <!-- Inline Legend -->
+        <div id="mob-chart-legend-inline" class="flex flex-wrap items-center gap-3 px-1"></div>
+        
+        <!-- Mode Selector -->
+        <div class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 gap-0.5">
+            <button id="mob-mode-btn-eur" onclick="mobSetChartMode('eur')" title="€ EUR" class="mob-mode-btn p-1 rounded-md transition-all text-slate-400 dark:text-slate-500">
+                <span class="material-symbols-outlined" style="font-size:15px">euro</span>
+            </button>
+            <button id="mob-mode-btn-pnl" onclick="mobSetChartMode('pnl')" title="P&L" class="mob-mode-btn p-1 rounded-md transition-all bg-white dark:bg-slate-700 text-primary shadow-sm">
+                <span class="material-symbols-outlined" style="font-size:15px">show_chart</span>
+            </button>
+            <button id="mob-mode-btn-pct" onclick="mobSetChartMode('pct')" title="% P&L" class="mob-mode-btn p-1 rounded-md transition-all text-slate-400 dark:text-slate-500">
+                <span class="material-symbols-outlined" style="font-size:15px">percent</span>
+            </button>
+        </div>
       </div>
-
-      <!-- Inline Legend -->
-      <div id="mob-chart-legend-inline" class="flex flex-wrap items-center gap-3 mb-2 px-1"></div>
 
       <!-- Range bar -->
       <div class="mob-chart-range-bar mb-3" id="mob-range-bar">
@@ -445,9 +454,9 @@
       document.querySelectorAll('.mob-mode-btn').forEach(btn => {
           const btnMode = btn.id.replace('mob-mode-btn-', '');
           if (btnMode === mode) {
-              btn.className = 'mob-mode-btn flex-1 py-1 text-[9px] font-bold rounded-md transition-all bg-white dark:bg-slate-700 text-primary shadow-sm';
+              btn.className = 'mob-mode-btn p-1 rounded-md transition-all bg-white dark:bg-slate-700 text-primary shadow-sm';
           } else {
-              btn.className = 'mob-mode-btn flex-1 py-1 text-[9px] font-bold rounded-md transition-all text-slate-400 dark:text-slate-500';
+              btn.className = 'mob-mode-btn p-1 rounded-md transition-all text-slate-400 dark:text-slate-500';
           }
       });
       if (_mobChartDataPoints.length > 0) {
