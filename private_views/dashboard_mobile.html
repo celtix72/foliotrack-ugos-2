@@ -707,6 +707,7 @@
           mobPerfChart.options.plugins.annotation.annotations.baseline.yMin = 100;
           mobPerfChart.options.plugins.annotation.annotations.baseline.yMax = 100;
           mobPerfChart.options.plugins.annotation.annotations.baseline.display = true;
+          mobPerfChart.options.plugins.annotation.annotations.baseline.scaleID = 'y';
 
       } else if (mode === 'pnl') {
           const pnlData = points.map(d => d.profit ?? 0);
@@ -772,6 +773,7 @@
           mobPerfChart.options.scales.y1.display = false;
           
           mobPerfChart.options.plugins.annotation.annotations.baseline.display = false;
+          mobPerfChart.options.plugins.annotation.annotations.baseline.scaleID = 'y';
       }
 
       mobPerfChart.update();

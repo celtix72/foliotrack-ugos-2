@@ -1344,6 +1344,7 @@
                 dashboardChart.options.plugins.annotation.annotations.baseline.yMin = 100;
                 dashboardChart.options.plugins.annotation.annotations.baseline.yMax = 100;
                 dashboardChart.options.plugins.annotation.annotations.baseline.display = true;
+                dashboardChart.options.plugins.annotation.annotations.baseline.scaleID = 'y';
 
             // --- Modalità P&L ---
             } else if (mode === 'pnl') {
@@ -1425,6 +1426,7 @@
                 dashboardChart.options.scales.y.display = true;
                 dashboardChart.options.scales.y1.display = false;
                 dashboardChart.options.plugins.annotation.annotations.baseline.display = false;
+                dashboardChart.options.plugins.annotation.annotations.baseline.scaleID = 'y';
             }
 
             dashboardChart.update();
