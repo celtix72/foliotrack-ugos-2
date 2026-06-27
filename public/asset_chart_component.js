@@ -465,7 +465,7 @@
                         const valAsset = qty * currentPriceVal;
                         const pctGain = ((valAsset - costAsset) / costAsset) * 100;
                         const pctSign = pctGain >= 0 ? '+' : '';
-                        pctGainStr = ` (${pctSign}${pctGain.toFixed(1)}%)`;
+                        pctGainStr = ` (${pctSign}${pctGain.toFixed(0)}%)`;
                     }
                     
                     const formattedGainVal = new Intl.NumberFormat('it-IT', {
