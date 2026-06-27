@@ -480,7 +480,7 @@
                     statsRow.style.display = 'flex';
                     statsRow.innerHTML = `
                         <div style="display: flex; flex-direction: column; gap: 2px;">
-                            <span style="font-size: 8px; text-transform: uppercase; color: var(--mob-text-muted); font-weight: 900; letter-spacing: 0.05em;">QTA Asset</span>
+                            <span style="font-size: 8px; text-transform: uppercase; color: var(--mob-text-muted); font-weight: 900; letter-spacing: 0.05em;">QTA</span>
                             <span style="font-size: 13px; font-weight: 900; color: var(--mob-text);" class="dark:text-white">${qtyStr}</span>
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 2px;">
