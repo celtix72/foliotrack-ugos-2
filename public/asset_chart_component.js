@@ -397,6 +397,22 @@
             const displayData = data.length > 0 ? data : _allChartData;
 
             const labels = displayData.map(d => d.date);
+            const formatDynamicPrice = (val) => {
+                const absVal = Math.abs(val);
+                if (absVal >= 1000) return val.toFixed(0);
+                if (absVal >= 10) return val.toFixed(1);
+                if (absVal >= 1) return val.toFixed(2);
+                return val.toFixed(3);
+            };
+            
+            const getCurrencySymbol = (curr) => {
+                if (curr === 'EUR') return '€';
+                if (curr === 'USD') return '$';
+                if (curr === 'GBP') return '£';
+                if (curr === 'CHF') return 'CHF';
+                return curr || '';
+            };
+
             const prices = displayData.map(d => d.price);
             
             // Calculate daily variations
@@ -424,23 +440,6 @@
                 let gainColor = 'var(--mob-text-muted)';
                 let pmcStr = '—';
                 let currentPriceStr = '—';
-                
-                const formatDynamicPrice = (val) => {
-                    const absVal = Math.abs(val);
-                    if (absVal >= 1000) return val.toFixed(0);
-                    if (absVal >= 10) return val.toFixed(1);
-                    if (absVal >= 1) return val.toFixed(2);
-                    return val.toFixed(3);
-                };
-                
-                const getCurrencySymbol = (curr) => {
-                    if (curr === 'EUR') return '€';
-                    if (curr === 'USD') return '$';
-                    if (curr === 'GBP') return '£';
-                    if (curr === 'CHF') return 'CHF';
-                    return curr || '';
-                };
-                
                 const currSymbol = getCurrencySymbol(_chartCurrency);
                 const currentPriceVal = (assetInfo && assetInfo.currentPrice > 0) ? assetInfo.currentPrice : (prices.length > 0 ? prices[prices.length - 1] : 0);
                 if (currentPriceVal > 0) {
