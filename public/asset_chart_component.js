@@ -733,8 +733,8 @@
             const basisSet = {
                 label: 'Avg Cost Basis',
                 data: basisPrices,
-                borderColor: isDark ? 'rgba(148, 163, 184, 0.5)' : 'rgba(100, 116, 139, 0.5)',
-                borderWidth: 1.5,
+                borderColor: isDark ? 'rgba(250, 204, 21, 0.8)' : 'rgba(234, 179, 8, 0.8)', // Yellow dashed line for PMC
+                borderWidth: 2,
                 borderDash: [5, 5],
                 pointRadius: 0,
                 fill: false,
@@ -754,11 +754,10 @@
                             label: _chartTicker,
                             data: prices,
                             borderColor: lineColor,
-                            backgroundColor: fillColor,
                             borderWidth: 2,
                             pointRadius: displayData.length > 100 ? 0 : 2,
                             pointHoverRadius: 4,
-                            fill: true,
+                            fill: false,
                             tension: 0.1,
                             yAxisID: 'y'
                         },
