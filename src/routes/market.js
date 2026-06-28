@@ -388,37 +388,43 @@ router.get('/news', requireAuth, (req, res) => {
 
         let rows = [];
 
+        // Escape regex function
+        const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
         if (filter === 'portfolio') {
             if (matchTerms.length === 0) {
                 return res.json([]);
             }
 
-            // Build LIKE conditions
-            const conditions = [];
-            const params = [];
-            for (const term of matchTerms) {
-                conditions.push(`LOWER(na.title) LIKE ?`);
-                params.push(`%${term.value}%`);
-            }
+            // Fetch a larger batch to filter in memory for precise regex matching
+            const recentNews = database.db.prepare(`
+                SELECT * FROM news_articles 
+                WHERE user_id = ? 
+                ORDER BY pubDate DESC LIMIT 200
+            `).all(req.user.id);
 
-            const whereClause = conditions.join(' OR ');
-            rows = database.db.prepare(`
-                SELECT na.* FROM news_articles na
-                WHERE na.user_id = ? AND (${whereClause})
-                ORDER BY na.pubDate DESC LIMIT 50
-            `).all(req.user.id, ...params);
+            // Filter using word boundaries
+            rows = recentNews.filter(r => {
+                const title = (r.title || '').toLowerCase();
+                for (const term of matchTerms) {
+                    const regex = new RegExp(`\\b${escapeRegExp(term.value)}\\b`, 'i');
+                    if (regex.test(title)) return true;
+                }
+                return false;
+            }).slice(0, 50);
+
         } else {
             // Default: all news
             rows = database.db.prepare('SELECT * FROM news_articles WHERE user_id = ? ORDER BY pubDate DESC LIMIT 50').all(req.user.id);
         }
 
-        // Tag each row with matched tickers
+        // Tag each row with matched tickers using precise word boundaries
         const taggedRows = rows.map(r => {
-            const titleLower = (r.title || '').toLowerCase();
+            const title = (r.title || '').toLowerCase();
             const matchedTags = new Set();
             for (const term of matchTerms) {
-                // simple substring check for tagging
-                if (titleLower.includes(term.value)) {
+                const regex = new RegExp(`\\b${escapeRegExp(term.value)}\\b`, 'i');
+                if (regex.test(title)) {
                     matchedTags.add(term.label);
                 }
             }
