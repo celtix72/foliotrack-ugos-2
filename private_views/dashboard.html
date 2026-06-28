@@ -1675,13 +1675,20 @@
             const title  = item.title.replace(/</g,'&lt;').replace(/>/g,'&gt;');
             const href   = item.link ? `href="${item.link}" target="_blank" rel="noopener noreferrer"` : '';
             
+            const tagsHtml = (item.matchedTags && item.matchedTags.length > 0) 
+              ? item.matchedTags.map(tag => `<span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-primary/10 text-primary uppercase ml-1.5">${tag}</span>`).join('')
+              : '';
+
             return `
                 <a ${href} class="flex items-start gap-4 p-4 rounded-xl bg-white dark:bg-surface-dark border border-slate-100 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md transition-all group">
                     <div class="w-2 h-2 rounded-full shrink-0 mt-1.5" style="background:${color}"></div>
                     <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-2 mb-1.5">
-                            <span class="text-[10px] font-black uppercase tracking-widest" style="color:${color}">${source}</span>
-                            ${time ? `<span class="text-[10px] text-slate-400 font-bold">${time}</span>` : ''}
+                        <div class="flex items-center mb-1.5 flex-wrap gap-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-black uppercase tracking-widest" style="color:${color}">${source}</span>
+                            </div>
+                            ${tagsHtml}
+                            ${time ? `<span class="text-[10px] text-slate-400 font-bold ml-auto">${time}</span>` : ''}
                         </div>
                         <p class="text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-primary transition-colors leading-snug line-clamp-2">${title}</p>
                     </div>
