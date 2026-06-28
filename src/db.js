@@ -791,6 +791,14 @@ function initDb() {
             if (!hasCNBC) {
                 dbConnection.prepare('INSERT INTO news_sources (user_id, name, url) VALUES (?, ?, ?)').run(u.id, 'CNBC Markets', 'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664');
             }
+            const hasSole24 = dbConnection.prepare('SELECT id FROM news_sources WHERE user_id = ? AND url LIKE "%ilsole24ore.com%"').get(u.id);
+            if (!hasSole24) {
+                dbConnection.prepare('INSERT INTO news_sources (user_id, name, url) VALUES (?, ?, ?)').run(u.id, 'Il Sole 24 Ore', 'https://www.ilsole24ore.com/rss/finanza.xml');
+            }
+            const hasCorriere = dbConnection.prepare('SELECT id FROM news_sources WHERE user_id = ? AND url LIKE "%corriereobjects.it%"').get(u.id);
+            if (!hasCorriere) {
+                dbConnection.prepare('INSERT INTO news_sources (user_id, name, url) VALUES (?, ?, ?)').run(u.id, 'Corriere Economia', 'https://xml.corriereobjects.it/rss/economia.xml');
+            }
         }
     } catch (e) {
         console.error('RSS Database migration error:', e.message);

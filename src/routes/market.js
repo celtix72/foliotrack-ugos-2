@@ -380,13 +380,17 @@ router.get('/news', requireAuth, (req, res) => {
             const conditions = [];
             const params = [];
             for (const t of allTickers) {
+                const baseTicker = t.split('.')[0].toLowerCase();
                 conditions.push(`LOWER(na.title) LIKE ?`);
-                params.push(`%${t.toLowerCase()}%`);
+                params.push(`%${baseTicker}%`);
             }
             for (const a of assetNames) {
                 if (a.name && a.name.length > 2) {
-                    conditions.push(`LOWER(na.title) LIKE ?`);
-                    params.push(`%${a.name.toLowerCase()}%`);
+                    const cleanName = a.name.replace(/\b(SPA|INC|LLC|CORP|LTD|PLC|NV|S\.P\.A\.|S\.R\.L\.)\b/gi, '').trim().toLowerCase();
+                    if (cleanName.length > 2) {
+                        conditions.push(`LOWER(na.title) LIKE ?`);
+                        params.push(`%${cleanName}%`);
+                    }
                 }
             }
 
