@@ -353,11 +353,10 @@ router.get('/news', requireAuth, (req, res) => {
 
         // Collect all tickers owned (portfolio) + watchlist for this user
         const portfolioTickers = database.db.prepare(`
-            SELECT DISTINCT t.assetTicker AS ticker
-            FROM transactions t
-            JOIN portfolios p ON t.portfolioId = p.id
-            WHERE p.user_id = ? AND t.assetTicker IS NOT NULL AND t.assetTicker != 'CASH'
-        `).all(req.user.id).map(r => r.ticker);
+            SELECT DISTINCT assetTicker AS ticker
+            FROM transactions
+            WHERE assetTicker IS NOT NULL AND assetTicker != 'CASH'
+        `).all().map(r => r.ticker);
 
         const watchlistTickers = database.db.prepare(`
             SELECT DISTINCT ticker FROM user_watchlist WHERE user_id = ?
