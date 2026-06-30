@@ -67,3 +67,39 @@
 2026-06-25T19:34:44.201Z [INFO] Database: /Users/mauro/Documents/Progetti_Sviluppo/FolioTrack3/foliotrack.db
 2026-06-25T19:34:49.152Z [INFO] Starting RSS News Sync...
 2026-06-25T19:34:49.599Z [INFO] News Sync completed. Saved 3 new articles.
+2026-06-25T19:50:34.612Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-06-25T19:50:34.628Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-06-25T19:50:34.738Z [INFO] FolioTrack server running on port 3000
+2026-06-25T19:50:34.746Z [INFO] Database: /Users/mauro/Documents/Progetti_Sviluppo/FolioTrack3/foliotrack.db
+2026-06-25T19:50:35.800Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-06-25T19:50:35.810Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-06-25T19:50:35.862Z [INFO] FolioTrack server running on port 3000
+2026-06-25T19:50:35.871Z [INFO] Database: /Users/mauro/Documents/Progetti_Sviluppo/FolioTrack3/foliotrack.db
+2026-06-25T19:50:39.700Z [INFO] Starting RSS News Sync...
+2026-06-25T19:50:40.738Z [INFO] News Sync completed. Saved 43 new articles.
+2026-06-25T19:50:40.848Z [INFO] Starting RSS News Sync...
+2026-06-25T19:50:41.488Z [INFO] News Sync completed. Saved 0 new articles.
+2026-06-25T19:51:36.442Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-25T19:51:37.303Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-25T20:13:05.640Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-25T20:13:06.764Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-25T21:00:08.229Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-25T21:00:08.269Z [INFO] Starting RSS News Sync...
+2026-06-25T21:00:09.020Z [INFO] News Sync completed. Saved 21 new articles.
+2026-06-25T21:00:09.351Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-25T21:00:09.383Z [INFO] Starting RSS News Sync...
+2026-06-25T21:00:10.055Z [INFO] News Sync completed. Saved 0 new articles.
+2026-06-25T21:15:55.865Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-25T21:15:56.949Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-25T21:33:35.275Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-25T21:51:20.054Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-25T21:59:16.620Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-25T21:59:17.726Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-25T22:33:11.286Z [INFO] Starting RSS News Sync...
+2026-06-25T22:33:11.334Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-25T22:33:12.060Z [INFO] News Sync completed. Saved 19 new articles.
+2026-06-25T22:33:12.398Z [INFO] Starting RSS News Sync...
+2026-06-25T22:33:12.434Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-25T22:33:13.078Z [INFO] News Sync completed. Saved 0 new articles.
+2026-06-25T22:49:13.187Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-25T22:49:13.187Z [INFO] Skipping automatic market update: all markets are closed.

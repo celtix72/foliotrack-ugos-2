@@ -1,0 +1,222 @@
+2026-06-26T00:10:19.690Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T00:10:19.690Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T00:10:19.728Z [INFO] Recording daily snapshots for portfolios and dashboard...
+2026-06-26T00:10:19.731Z [INFO] Recording daily snapshots for portfolios and dashboard...
+2026-06-26T00:10:19.771Z [INFO] Starting RSS News Sync...
+2026-06-26T00:10:19.771Z [INFO] Starting RSS News Sync...
+2026-06-26T00:10:19.940Z [INFO] Daily snapshots completed.
+2026-06-26T00:10:19.942Z [INFO] Daily snapshots completed.
+2026-06-26T00:10:20.380Z [INFO] News Sync completed. Saved 0 new articles.
+2026-06-26T00:10:20.382Z [INFO] News Sync completed. Saved 5 new articles.
+2026-06-26T00:27:55.293Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T00:27:55.293Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T00:45:41.727Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T01:52:00.628Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T01:52:00.654Z [INFO] Starting RSS News Sync...
+2026-06-26T01:52:01.421Z [INFO] News Sync completed. Saved 11 new articles.
+2026-06-26T01:55:04.999Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T01:55:05.028Z [INFO] Starting RSS News Sync...
+2026-06-26T01:55:05.616Z [INFO] News Sync completed. Saved 0 new articles.
+2026-06-26T02:47:07.688Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T03:04:42.996Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T03:04:43.016Z [INFO] Starting RSS News Sync...
+2026-06-26T03:04:43.646Z [INFO] News Sync completed. Saved 8 new articles.
+2026-06-26T03:22:27.565Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T03:56:05.117Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T03:56:05.153Z [INFO] Starting RSS News Sync...
+2026-06-26T03:56:05.830Z [INFO] News Sync completed. Saved 8 new articles.
+2026-06-26T03:56:13.618Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T04:10:51.076Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T04:10:59.561Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T04:10:59.581Z [INFO] Starting RSS News Sync...
+2026-06-26T04:11:00.245Z [INFO] News Sync completed. Saved 0 new articles.
+2026-06-26T04:27:13.049Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T04:43:36.215Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T04:56:20.433Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T04:56:20.473Z [INFO] Starting RSS News Sync...
+2026-06-26T04:56:22.123Z [INFO] News Sync completed. Saved 8 new articles.
+2026-06-26T04:56:28.900Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T05:17:45.905Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T05:17:45.946Z [INFO] Starting RSS News Sync...
+2026-06-26T05:17:46.577Z [INFO] News Sync completed. Saved 1 new articles.
+2026-06-26T05:33:16.420Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T05:50:54.671Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T05:51:07.033Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T05:57:02.988Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T05:57:20.625Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T05:57:20.663Z [INFO] Starting RSS News Sync...
+2026-06-26T05:57:20.712Z [ERROR] Failed to fetch RSS for https://feeds.finance.yahoo.com/rss/2.0/headline?s=AAPL,MSFT&region=US&lang=en-US:  - getaddrinfo ENOTFOUND feeds.finance.yahoo.com
+2026-06-26T05:57:20.723Z [ERROR] Failed to fetch RSS for https://it.investing.com/rss/news_25.rss:  - getaddrinfo ENOTFOUND it.investing.com
+2026-06-26T05:57:20.732Z [ERROR] Failed to fetch RSS for https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664:  - getaddrinfo ENOTFOUND search.cnbc.com
+2026-06-26T05:57:20.740Z [INFO] News Sync completed. Saved 0 new articles.
+2026-06-26T06:31:13.787Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T06:38:52.526Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T06:38:52.561Z [INFO] Starting RSS News Sync...
+2026-06-26T06:38:52.607Z [ERROR] Failed to fetch RSS for https://feeds.finance.yahoo.com/rss/2.0/headline?s=AAPL,MSFT&region=US&lang=en-US:  - getaddrinfo ENOTFOUND feeds.finance.yahoo.com
+2026-06-26T06:38:52.619Z [ERROR] Failed to fetch RSS for https://it.investing.com/rss/news_25.rss:  - getaddrinfo ENOTFOUND it.investing.com
+2026-06-26T06:38:52.628Z [ERROR] Failed to fetch RSS for https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664:  - getaddrinfo ENOTFOUND search.cnbc.com
+2026-06-26T06:38:52.638Z [INFO] News Sync completed. Saved 0 new articles.
+2026-06-26T06:39:10.213Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T06:54:38.781Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T06:54:51.047Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T06:57:20.725Z [INFO] Starting RSS News Sync...
+2026-06-26T06:57:20.798Z [ERROR] Failed to fetch RSS for https://feeds.finance.yahoo.com/rss/2.0/headline?s=AAPL,MSFT&region=US&lang=en-US:  - getaddrinfo ENOTFOUND feeds.finance.yahoo.com
+2026-06-26T06:57:20.823Z [ERROR] Failed to fetch RSS for https://it.investing.com/rss/news_25.rss:  - getaddrinfo ENOTFOUND it.investing.com
+2026-06-26T06:57:20.838Z [ERROR] Failed to fetch RSS for https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664:  - getaddrinfo ENOTFOUND search.cnbc.com
+2026-06-26T06:57:20.847Z [INFO] News Sync completed. Saved 0 new articles.
+2026-06-26T07:00:38.861Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-26T07:00:51.086Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-26T07:40:19.067Z [INFO] Starting RSS News Sync...
+2026-06-26T07:40:19.132Z [ERROR] Failed to fetch RSS for https://feeds.finance.yahoo.com/rss/2.0/headline?s=AAPL,MSFT&region=US&lang=en-US:  - getaddrinfo ENOTFOUND feeds.finance.yahoo.com
+2026-06-26T07:40:19.215Z [ERROR] Failed to fetch RSS for https://it.investing.com/rss/news_25.rss:  - getaddrinfo ENOTFOUND it.investing.com
+2026-06-26T07:40:19.235Z [ERROR] Failed to fetch RSS for https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664:  - getaddrinfo ENOTFOUND search.cnbc.com
+2026-06-26T07:40:19.244Z [INFO] News Sync completed. Saved 0 new articles.
+2026-06-26T07:57:20.778Z [INFO] Starting RSS News Sync...
+2026-06-26T07:57:20.812Z [ERROR] Failed to fetch RSS for https://feeds.finance.yahoo.com/rss/2.0/headline?s=AAPL,MSFT&region=US&lang=en-US:  - getaddrinfo ENOTFOUND feeds.finance.yahoo.com
+2026-06-26T07:57:20.826Z [ERROR] Failed to fetch RSS for https://it.investing.com/rss/news_25.rss:  - getaddrinfo ENOTFOUND it.investing.com
+2026-06-26T07:57:20.837Z [ERROR] Failed to fetch RSS for https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664:  - getaddrinfo ENOTFOUND search.cnbc.com
+2026-06-26T07:57:20.849Z [INFO] News Sync completed. Saved 0 new articles.
+2026-06-26T08:03:03.610Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-26T08:03:15.889Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-26T08:51:12.953Z [INFO] Starting RSS News Sync...
+2026-06-26T08:51:13.027Z [ERROR] Failed to fetch RSS for https://feeds.finance.yahoo.com/rss/2.0/headline?s=AAPL,MSFT&region=US&lang=en-US:  - getaddrinfo ENOTFOUND feeds.finance.yahoo.com
+2026-06-26T08:51:13.043Z [ERROR] Failed to fetch RSS for https://it.investing.com/rss/news_25.rss:  - getaddrinfo ENOTFOUND it.investing.com
+2026-06-26T08:51:13.052Z [ERROR] Failed to fetch RSS for https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664:  - getaddrinfo ENOTFOUND search.cnbc.com
+2026-06-26T08:51:13.062Z [INFO] News Sync completed. Saved 0 new articles.
+2026-06-26T08:57:55.415Z [INFO] Starting RSS News Sync...
+2026-06-26T08:57:55.456Z [ERROR] Failed to fetch RSS for https://feeds.finance.yahoo.com/rss/2.0/headline?s=AAPL,MSFT&region=US&lang=en-US:  - getaddrinfo ENOTFOUND feeds.finance.yahoo.com
+2026-06-26T08:57:55.478Z [ERROR] Failed to fetch RSS for https://it.investing.com/rss/news_25.rss:  - getaddrinfo ENOTFOUND it.investing.com
+2026-06-26T08:57:55.493Z [ERROR] Failed to fetch RSS for https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664:  - getaddrinfo ENOTFOUND search.cnbc.com
+2026-06-26T08:57:55.503Z [INFO] News Sync completed. Saved 0 new articles.
+2026-06-26T09:07:08.004Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-26T09:07:20.670Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-26T09:42:23.525Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-06-26T09:42:23.540Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-06-26T09:42:23.652Z [INFO] FolioTrack server running on port 3000
+2026-06-26T09:42:23.660Z [INFO] Database: /Users/mauro/Documents/Progetti_Sviluppo/FolioTrack3/foliotrack.db
+2026-06-26T09:42:28.615Z [INFO] Starting RSS News Sync...
+2026-06-26T09:42:30.325Z [INFO] News Sync completed. Saved 27 new articles.
+2026-06-26T09:42:31.748Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-06-26T09:42:31.758Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-06-26T09:42:31.839Z [INFO] FolioTrack server running on port 3000
+2026-06-26T09:42:31.847Z [INFO] Database: /Users/mauro/Documents/Progetti_Sviluppo/FolioTrack3/foliotrack.db
+2026-06-26T09:42:36.824Z [INFO] Starting RSS News Sync...
+2026-06-26T09:42:38.959Z [INFO] News Sync completed. Saved 0 new articles.
+2026-06-26T09:43:26.802Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-26T09:43:34.912Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-26T10:58:35.843Z [INFO] Starting RSS News Sync...
+2026-06-26T10:58:35.920Z [ERROR] Failed to fetch RSS for https://feeds.finance.yahoo.com/rss/2.0/headline?s=AAPL,MSFT&region=US&lang=en-US:  - getaddrinfo ENOTFOUND feeds.finance.yahoo.com
+2026-06-26T10:58:35.947Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-26T10:58:35.961Z [ERROR] Failed to fetch RSS for https://it.investing.com/rss/news_25.rss:  - getaddrinfo ENOTFOUND it.investing.com
+2026-06-26T10:58:35.974Z [ERROR] Failed to fetch RSS for https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664:  - getaddrinfo ENOTFOUND search.cnbc.com
+2026-06-26T10:58:35.982Z [INFO] News Sync completed. Saved 0 new articles.
+2026-06-26T10:58:44.043Z [INFO] Starting RSS News Sync...
+2026-06-26T10:58:44.092Z [ERROR] Failed to fetch RSS for https://feeds.finance.yahoo.com/rss/2.0/headline?s=AAPL,MSFT&region=US&lang=en-US:  - getaddrinfo ENOTFOUND feeds.finance.yahoo.com
+2026-06-26T10:58:44.112Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-26T10:58:44.123Z [ERROR] Failed to fetch RSS for https://it.investing.com/rss/news_25.rss:  - getaddrinfo ENOTFOUND it.investing.com
+2026-06-26T10:58:44.136Z [ERROR] Failed to fetch RSS for https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664:  - getaddrinfo ENOTFOUND search.cnbc.com
+2026-06-26T10:58:44.144Z [INFO] News Sync completed. Saved 0 new articles.
+2026-06-26T12:04:39.429Z [INFO] Starting RSS News Sync...
+2026-06-26T12:04:39.446Z [INFO] Starting RSS News Sync...
+2026-06-26T12:04:39.464Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-26T12:04:39.473Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-26T12:04:39.488Z [ERROR] Failed to fetch RSS for https://feeds.finance.yahoo.com/rss/2.0/headline?s=AAPL,MSFT&region=US&lang=en-US:  - getaddrinfo ENOTFOUND feeds.finance.yahoo.com
+2026-06-26T12:04:39.498Z [ERROR] Failed to fetch RSS for https://feeds.finance.yahoo.com/rss/2.0/headline?s=AAPL,MSFT&region=US&lang=en-US:  - getaddrinfo ENOTFOUND feeds.finance.yahoo.com
+2026-06-26T12:04:39.507Z [ERROR] Failed to fetch RSS for https://it.investing.com/rss/news_25.rss:  - getaddrinfo ENOTFOUND it.investing.com
+2026-06-26T12:04:39.514Z [ERROR] Failed to fetch RSS for https://it.investing.com/rss/news_25.rss:  - getaddrinfo ENOTFOUND it.investing.com
+2026-06-26T12:04:39.517Z [ERROR] Failed to fetch RSS for https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664:  - getaddrinfo ENOTFOUND search.cnbc.com
+2026-06-26T12:04:39.524Z [ERROR] Failed to fetch RSS for https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664:  - getaddrinfo ENOTFOUND search.cnbc.com
+2026-06-26T12:04:39.526Z [INFO] News Sync completed. Saved 0 new articles.
+2026-06-26T12:04:39.534Z [INFO] News Sync completed. Saved 0 new articles.
+2026-06-26T13:21:41.897Z [INFO] Starting RSS News Sync...
+2026-06-26T13:21:41.897Z [INFO] Starting RSS News Sync...
+2026-06-26T13:21:41.941Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-26T13:21:41.941Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-26T13:21:41.959Z [ERROR] Failed to fetch RSS for https://feeds.finance.yahoo.com/rss/2.0/headline?s=AAPL,MSFT&region=US&lang=en-US:  - getaddrinfo ENOTFOUND feeds.finance.yahoo.com
+2026-06-26T13:21:41.963Z [ERROR] Failed to fetch RSS for https://feeds.finance.yahoo.com/rss/2.0/headline?s=AAPL,MSFT&region=US&lang=en-US:  - getaddrinfo ENOTFOUND feeds.finance.yahoo.com
+2026-06-26T13:21:41.976Z [ERROR] Failed to fetch RSS for https://it.investing.com/rss/news_25.rss:  - getaddrinfo ENOTFOUND it.investing.com
+2026-06-26T13:21:41.982Z [ERROR] Failed to fetch RSS for https://it.investing.com/rss/news_25.rss:  - getaddrinfo ENOTFOUND it.investing.com
+2026-06-26T13:21:41.987Z [ERROR] Failed to fetch RSS for https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664:  - getaddrinfo ENOTFOUND search.cnbc.com
+2026-06-26T13:21:41.993Z [ERROR] Failed to fetch RSS for https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664:  - getaddrinfo ENOTFOUND search.cnbc.com
+2026-06-26T13:21:41.996Z [INFO] News Sync completed. Saved 0 new articles.
+2026-06-26T13:21:42.001Z [INFO] News Sync completed. Saved 0 new articles.
+2026-06-26T14:30:21.006Z [INFO] Starting RSS News Sync...
+2026-06-26T14:30:21.006Z [INFO] Starting RSS News Sync...
+2026-06-26T14:30:21.058Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-26T14:30:21.058Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-26T14:30:21.077Z [ERROR] Failed to fetch RSS for https://feeds.finance.yahoo.com/rss/2.0/headline?s=AAPL,MSFT&region=US&lang=en-US:  - getaddrinfo ENOTFOUND feeds.finance.yahoo.com
+2026-06-26T14:30:21.081Z [ERROR] Failed to fetch RSS for https://feeds.finance.yahoo.com/rss/2.0/headline?s=AAPL,MSFT&region=US&lang=en-US:  - getaddrinfo ENOTFOUND feeds.finance.yahoo.com
+2026-06-26T14:30:21.099Z [ERROR] Failed to fetch RSS for https://it.investing.com/rss/news_25.rss:  - getaddrinfo ENOTFOUND it.investing.com
+2026-06-26T14:30:21.100Z [ERROR] Failed to fetch RSS for https://it.investing.com/rss/news_25.rss:  - getaddrinfo ENOTFOUND it.investing.com
+2026-06-26T14:30:21.111Z [ERROR] Failed to fetch RSS for https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664:  - getaddrinfo ENOTFOUND search.cnbc.com
+2026-06-26T14:30:21.111Z [ERROR] Failed to fetch RSS for https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664:  - getaddrinfo ENOTFOUND search.cnbc.com
+2026-06-26T14:30:21.120Z [INFO] News Sync completed. Saved 0 new articles.
+2026-06-26T14:30:21.120Z [INFO] News Sync completed. Saved 0 new articles.
+2026-06-26T15:32:23.321Z [INFO] Starting RSS News Sync...
+2026-06-26T15:32:23.326Z [INFO] Starting RSS News Sync...
+2026-06-26T15:32:23.621Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-26T15:32:23.664Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-26T15:32:24.048Z [INFO] News Sync completed. Saved 34 new articles.
+2026-06-26T15:32:24.193Z [INFO] News Sync completed. Saved 0 new articles.
+2026-06-26T16:39:07.518Z [INFO] Starting RSS News Sync...
+2026-06-26T16:39:07.523Z [INFO] Starting RSS News Sync...
+2026-06-26T16:39:07.703Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-26T16:39:07.738Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-26T16:39:08.233Z [INFO] News Sync completed. Saved 1 new articles.
+2026-06-26T16:39:08.254Z [INFO] News Sync completed. Saved 22 new articles.
+2026-06-26T17:40:09.284Z [INFO] Starting RSS News Sync...
+2026-06-26T17:40:09.290Z [INFO] Starting RSS News Sync...
+2026-06-26T17:40:09.500Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-26T17:40:09.555Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-26T17:40:10.014Z [INFO] News Sync completed. Saved 11 new articles.
+2026-06-26T17:40:10.021Z [INFO] News Sync completed. Saved 10 new articles.
+2026-06-26T18:41:25.575Z [INFO] Starting RSS News Sync...
+2026-06-26T18:41:25.592Z [INFO] Starting RSS News Sync...
+2026-06-26T18:41:25.761Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-26T18:41:25.789Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-26T18:41:26.264Z [INFO] News Sync completed. Saved 8 new articles.
+2026-06-26T18:41:26.619Z [INFO] News Sync completed. Saved 15 new articles.
+2026-06-26T19:42:11.166Z [INFO] Starting RSS News Sync...
+2026-06-26T19:42:11.177Z [INFO] Starting RSS News Sync...
+2026-06-26T19:42:11.370Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-26T19:42:11.400Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-06-26T19:42:11.828Z [INFO] News Sync completed. Saved 1 new articles.
+2026-06-26T19:42:11.841Z [INFO] News Sync completed. Saved 23 new articles.
+2026-06-26T20:12:53.462Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T20:12:53.482Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T20:35:42.552Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T20:35:42.568Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T20:43:09.041Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T20:43:09.059Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T20:43:09.072Z [INFO] Starting RSS News Sync...
+2026-06-26T20:43:09.073Z [INFO] Starting RSS News Sync...
+2026-06-26T20:43:09.717Z [INFO] News Sync completed. Saved 27 new articles.
+2026-06-26T20:43:09.731Z [INFO] News Sync completed. Saved 18 new articles.
+2026-06-26T20:56:27.381Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T20:56:27.402Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T21:17:36.891Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T21:17:36.907Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T21:46:47.270Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T21:46:47.285Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T21:46:47.314Z [INFO] Starting RSS News Sync...
+2026-06-26T21:46:47.319Z [INFO] Starting RSS News Sync...
+2026-06-26T21:46:47.942Z [INFO] News Sync completed. Saved 22 new articles.
+2026-06-26T21:46:47.958Z [INFO] News Sync completed. Saved 22 new articles.
+2026-06-26T22:02:55.788Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T22:02:55.793Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T22:12:46.932Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T22:12:46.943Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T22:37:05.136Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T22:37:05.139Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T22:53:15.585Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T22:53:15.617Z [INFO] Starting RSS News Sync...
+2026-06-26T22:53:15.676Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T22:53:15.695Z [INFO] Starting RSS News Sync...
+2026-06-26T23:09:43.668Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T23:09:43.698Z [ERROR] Failed to fetch RSS for https://feeds.finance.yahoo.com/rss/2.0/headline?s=AAPL,MSFT&region=US&lang=en-US:  - getaddrinfo ENOTFOUND feeds.finance.yahoo.com
+2026-06-26T23:09:43.718Z [ERROR] Failed to fetch RSS for https://feeds.finance.yahoo.com/rss/2.0/headline?s=AAPL,MSFT&region=US&lang=en-US:  - Request timed out after 60000ms
+2026-06-26T23:09:43.733Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T23:09:44.493Z [INFO] News Sync completed. Saved 18 new articles.
+2026-06-26T23:09:44.504Z [INFO] News Sync completed. Saved 18 new articles.
+2026-06-26T23:26:29.921Z [INFO] Skipping automatic market update: all markets are closed.
+2026-06-26T23:26:29.921Z [INFO] Skipping automatic market update: all markets are closed.
