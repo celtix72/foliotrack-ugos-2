@@ -238,6 +238,16 @@
 
             _allChartData = await quotesRes.json();
             const transactions = await txRes.json();
+            
+            // Normalize transaction dates to YYYY-MM-DD
+            if (transactions && Array.isArray(transactions)) {
+                transactions.forEach(t => {
+                    if (t.date && typeof t.date === 'string') {
+                        t.date = t.date.split('T')[0].split(' ')[0];
+                    }
+                });
+            }
+
             const allAssets = await assetRes.json();
             let detailsData = {};
             if (detailsRes && detailsRes.ok) {
@@ -624,14 +634,34 @@
             // Better to use separate datasets for markers to avoid cluttering the main line
             const tradeDatasets = [];
             
-            const buys = transactions.filter(t => t.type === 'BUY' && labels.includes(t.date));
-            const sells = transactions.filter(t => t.type === 'SELL' && labels.includes(t.date));
-            const divs = transactions.filter(t => t.type === 'DIVIDEND' && labels.includes(t.date));
+            // Snap transaction dates to the closest available label to handle weekend/holiday transactions
+            const snapToLabel = (txDate) => {
+                if (labels.includes(txDate)) return txDate;
+                const txD = new Date(txDate);
+                let closest = null;
+                let minDiff = Infinity;
+                labels.forEach(l => {
+                    const diff = Math.abs(new Date(l) - txD);
+                    if (diff < minDiff) {
+                        minDiff = diff;
+                        closest = l;
+                    }
+                });
+                return closest || txDate;
+            };
+
+            transactions.forEach(t => {
+                t.snappedDate = snapToLabel(t.date);
+            });
+
+            const buys = transactions.filter(t => t.type === 'BUY' && t.snappedDate);
+            const sells = transactions.filter(t => t.type === 'SELL' && t.snappedDate);
+            const divs = transactions.filter(t => t.type === 'DIVIDEND' && t.snappedDate);
 
             if (buys.length > 0) {
                 tradeDatasets.push({
                     label: 'BUY',
-                    data: buys.map(t => ({ x: t.date, y: t.price })),
+                    data: buys.map(t => ({ x: t.snappedDate, y: t.price })),
                     borderColor: 'rgb(16,185,129)',
                     backgroundColor: 'rgb(16,185,129)',
                     pointStyle: 'triangle',
@@ -645,7 +675,7 @@
             if (sells.length > 0) {
                 tradeDatasets.push({
                     label: 'SELL',
-                    data: sells.map(t => ({ x: t.date, y: t.price })),
+                    data: sells.map(t => ({ x: t.snappedDate, y: t.price })),
                     borderColor: 'rgb(239,68,68)',
                     backgroundColor: 'rgb(239,68,68)',
                     pointStyle: 'circle',
@@ -659,7 +689,7 @@
             if (divs.length > 0) {
                 tradeDatasets.push({
                     label: 'DIVIDEND',
-                    data: divs.map(t => ({ x: t.date, y: t.price })),
+                    data: divs.map(t => ({ x: t.snappedDate, y: t.price })),
                     borderColor: 'rgb(245,158,11)',
                     backgroundColor: 'rgb(245,158,11)',
                     pointStyle: 'rectRot',
@@ -671,33 +701,20 @@
             }
 
             // Calculate Performance Visualization (PMC Basis + Gain/Loss Area)
-            const firstDate = labels[0];
+            const sortedTx = [...transactions].sort((a,b) => new Date(a.date) - new Date(b.date));
             let currentQty = 0;
             let currentTotalCost = 0;
-
-            // 1. Pre-calculate historical PMC before chart range
-            const historicalTx = transactions.filter(t => t.date < firstDate);
-            historicalTx.sort((a,b) => new Date(a.date) - new Date(b.date)).forEach(t => {
-                const q = parseFloat(t.quantity) || 0;
-                const p = parseFloat(t.price) || 0;
-                if (t.type === 'BUY') {
-                    currentTotalCost += q * p;
-                    currentQty += q;
-                } else if (t.type === 'SELL' && currentQty > 0) {
-                    const avgPrice = currentTotalCost / currentQty;
-                    currentTotalCost -= q * avgPrice;
-                    currentQty -= q;
-                }
-            });
+            let txIndex = 0;
 
             const basisPrices = []; // PMC line
             const heldPrices = [];  // Current price line for filling
 
             labels.forEach((date, idx) => {
                 const dayBeforeQty = currentQty;
-                const dayTx = transactions.filter(t => t.date === date);
                 
-                dayTx.forEach(t => {
+                // Process all transactions chronologically up to and including 'date'
+                while (txIndex < sortedTx.length && sortedTx[txIndex].date <= date) {
+                    const t = sortedTx[txIndex];
                     const q = parseFloat(t.quantity) || 0;
                     const p = parseFloat(t.price) || 0;
                     if (t.type === 'BUY') {
@@ -708,7 +725,8 @@
                         currentTotalCost -= q * avgPrice;
                         currentQty -= q;
                     }
-                });
+                    txIndex++;
+                }
 
                 const isHolding = dayBeforeQty > 0.0001 || currentQty > 0.0001;
                 if (isHolding) {

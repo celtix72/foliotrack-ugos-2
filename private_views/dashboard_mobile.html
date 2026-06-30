@@ -356,7 +356,8 @@
           const metrics = {
               net: filtered.reduce((sum, p) => sum + (parseFloat(p.netValue) || 0), 0),
               gross: filtered.reduce((sum, p) => sum + (parseFloat(p.totalValue) || 0), 0),
-              change: filtered.reduce((sum, p) => sum + (parseFloat(p.changeValue) || 0), 0)
+              changeReg: filtered.reduce((sum, p) => sum + (parseFloat(p.changeValue) || 0), 0),
+              changePP: filtered.reduce((sum, p) => sum + (parseFloat(p.changeValuePrePost) || 0), 0)
           };
 
           document.getElementById('mob-total-net').innerText = formatPrivacy(metrics.net, 'EUR', 'mob-net');
@@ -364,9 +365,28 @@
           
           const varEl = document.getElementById('mob-day-var');
           if (varEl) {
-              const isPos = metrics.change >= 0;
+              const totalMove = metrics.changeReg + metrics.changePP;
+              const isPos = totalMove >= 0;
               varEl.className = `ml-auto px-2 py-0.5 rounded-lg text-[10px] font-black shadow-sm ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`;
-              varEl.innerText = (isPos ? '+' : '') + formatPrivacy(metrics.change, 'EUR', 'mob-var');
+              
+              const formattedReg = formatPrivacy(metrics.changeReg, 'EUR', 'mob-var');
+              const formattedPP = formatPrivacy(metrics.changePP, 'EUR', 'mob-pp-var');
+              
+              if (formattedReg === '****') {
+                  varEl.innerText = '****';
+              } else {
+                  const signReg = metrics.changeReg >= 0 ? '+' : '';
+                  const signPP = metrics.changePP >= 0 ? '+' : '';
+                  
+                  let html = `${signReg}${formatPrivacy(totalMove, 'EUR', 'mob-total-var')}`;
+                  
+                  // Optional: if you want to show them split like on desktop:
+                  // let html = `${signReg}${formattedReg}`;
+                  // if (metrics.changePP !== 0) {
+                  //     html += ` <span class="opacity-80 text-[8px] ml-1">(${signPP}${formattedPP})</span>`;
+                  // }
+                  varEl.innerHTML = html;
+              }
               varEl.classList.remove('hidden');
           }
 

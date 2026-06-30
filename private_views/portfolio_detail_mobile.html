@@ -951,9 +951,13 @@
       // Performance Badge
       const perfBadge = el('mob-detail-perf-badge');
       if (perfBadge) {
-        const absVal = p.changeValue || 0;
-        const isPos = absVal >= 0;
-        perfBadge.innerHTML = `<span class="material-symbols-outlined text-sm font-bold">${isPos ? 'trending_up' : 'trending_down'}</span> ${formatPrivacy(absVal, currency, 'mob-perf', 0)}`;
+        const absValReg = p.changeValue || 0;
+        const absValPP = p.changeValuePrePost || 0;
+        const totalAbsVal = absValReg + absValPP;
+        const isPos = totalAbsVal >= 0;
+        
+        let html = `<span class="material-symbols-outlined text-sm font-bold">${isPos ? 'trending_up' : 'trending_down'}</span> ${formatPrivacy(totalAbsVal, currency, 'mob-perf', 0)}`;
+        perfBadge.innerHTML = html;
       }
 
       // Fiscal Summary (Compact - Mob Redesign Phase 5)

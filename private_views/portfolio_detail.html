@@ -1136,7 +1136,9 @@
             const totalVal = p.totalValue || 0;
             const cashVal = p.currentCash || 0;
             const assetsVal = totalVal - cashVal;
-            const dayGain = p.changeValue || 0;
+            const dayGainReg = p.changeValue || 0;
+            const dayGainPP = p.changeValuePrePost || 0;
+            const totalDayGain = dayGainReg + dayGainPP;
 
             // Use '' to get only the number from formatPrivacy (respecting privacy mode)
             // and handle symbols separately in the HTML spans
@@ -1146,8 +1148,8 @@
             
             const dayGainEl = document.getElementById('p-day-gain');
             if (dayGainEl) {
-                const isPos = dayGain >= 0;
-                const formatted = formatPrivacy(dayGain, '', 'p-day-gain', 0);
+                const isPos = totalDayGain >= 0;
+                const formatted = formatPrivacy(totalDayGain, '', 'p-day-gain', 0);
                 dayGainEl.innerText = (isPos ? '+' : '') + formatted;
                 dayGainEl.className = `text-xl font-black tracking-tight ${isPos ? 'text-emerald-500' : 'text-rose-500'}`;
             }
