@@ -499,11 +499,9 @@ router.get('/assets', requireAuth, async (req, res) => {
                     pOpenMap[ticker].costBase -= t.quantity * pmcBase;
                     if (pOpenMap[ticker].qty <= 0.0001) delete pOpenMap[ticker];
                 }
-            } else if (t.type === 'SPLIT') {
-                if (pOpenMap[ticker] && pOpenMap[ticker].qty > 0 && t.quantity > 0) {
-                    pOpenMap[ticker].qty *= t.quantity;
-                }
             }
+            // NOTE: SPLIT is an audit marker — DB already retroactively adjusts all
+            // historical BUY/SELL prices & quantities, so do NOT re-apply ratio here.
         }
         for (const [ticker, data] of Object.entries(pOpenMap)) {
             if (!portfolioHoldings[ticker]) portfolioHoldings[ticker] = [];

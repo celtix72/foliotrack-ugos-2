@@ -1231,9 +1231,11 @@ module.exports = function (dependencies) {
                     } else if (t.type === 'DIVIDEND') {
                         const net = t.amount ? (Math.abs(t.amount) / fxRate) : ((q * p - comm - tax) / fxRate);
                         dividends += net;
-                    } else if (t.type === 'SPLIT' && qty > 0 && q > 0) {
-                        qty *= q;
                     }
+                    // NOTE: SPLIT transactions are audit markers only.
+                    // The split route already retroactively adjusts all historical
+                    // BUY/SELL quantities and prices in the DB, so we must NOT
+                    // re-apply the ratio here.
                 }
 
                 // Unrealized on currently open position

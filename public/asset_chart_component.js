@@ -455,9 +455,9 @@
                     const avgPrice = accurateTotalCost / accurateQty;
                     accurateTotalCost -= q * avgPrice;
                     accurateQty -= q;
-                } else if (t.type === 'SPLIT' && accurateQty > 0 && q > 0) {
-                    accurateQty = accurateQty * q; 
                 }
+                // NOTE: SPLIT is an audit marker — DB already retroactively adjusts
+                // historical BUY/SELL quantities and prices, so do NOT re-apply here.
                 
                 if (Math.abs(accurateQty) < 0.00001) {
                     accurateQty = 0;
@@ -753,9 +753,10 @@
                         const avgPrice = currentTotalCost / currentQty;
                         currentTotalCost -= q * avgPrice;
                         currentQty -= q;
-                    } else if (t.type === 'SPLIT' && currentQty > 0 && q > 0) {
-                        currentQty = currentQty * q; // SPLIT factor applied to quantity
                     }
+                    // NOTE: SPLIT is an audit marker — DB already retroactively adjusts
+                    // historical BUY/SELL quantities and prices, so do NOT re-apply here.
+
                     
                     // Prevent floating point residue from causing ghost positions
                     if (Math.abs(currentQty) < 0.00001) {
