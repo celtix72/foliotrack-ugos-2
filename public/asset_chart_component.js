@@ -439,6 +439,33 @@
                 return { pct: 0, val: 0 };
             });
 
+            // --- Calculate accurate QTY and PMC from JS transactions ---
+            const sortedTxAll = [...transactions].sort((a,b) => new Date(a.date) - new Date(b.date));
+            let accurateQty = 0;
+            let accurateTotalCost = 0;
+            
+            for (const t of sortedTxAll) {
+                const q = Math.abs(parseFloat(String(t.quantity).replace(',', '.'))) || 0;
+                const p = parseFloat(String(t.price).replace(',', '.')) || 0;
+                
+                if (t.type === 'BUY') {
+                    accurateTotalCost += q * p;
+                    accurateQty += q;
+                } else if (t.type === 'SELL' && accurateQty > 0) {
+                    const avgPrice = accurateTotalCost / accurateQty;
+                    accurateTotalCost -= q * avgPrice;
+                    accurateQty -= q;
+                } else if (t.type === 'SPLIT' && accurateQty > 0 && q > 0) {
+                    accurateQty = accurateQty * q; 
+                }
+                
+                if (Math.abs(accurateQty) < 0.00001) {
+                    accurateQty = 0;
+                    accurateTotalCost = 0;
+                }
+            }
+            const accuratePMC = accurateQty > 0.0001 ? accurateTotalCost / accurateQty : 0;
+
             // Update Stats Bar
             if (dailyVars.length > 0) {
                 const latestVar = dailyVars[dailyVars.length - 1];
@@ -456,26 +483,26 @@
                     currentPriceStr = formatDynamicPrice(currentPriceVal);
                 }
                 
-                if (assetInfo && assetInfo.totalQuantity > 0.0001) {
-                    const qty = assetInfo.totalQuantity;
+                // Use JS accurate computation over backend's potentially flawed SQL calculation
+                if (accurateQty > 0.0001) {
+                    const qty = accurateQty;
                     qtyStr = Number(qty.toFixed(4)).toString();
-                    const gainEUR = assetInfo.totalGainEUR || 0;
+                    const gainEUR = assetInfo ? (assetInfo.totalGainEUR || 0) : 0;
                     const gainSign = gainEUR >= 0 ? '+' : '';
                     gainColor = gainEUR >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
                     
                     let pctGainStr = '';
-                    const costAsset = assetInfo.totalCostAssetCurr || 0;
+                    const costAsset = accurateTotalCost;
                     
-                    if (qty > 0 && costAsset > 0) {
-                        const pmc = costAsset / qty;
-                        pmcStr = formatDynamicPrice(pmc);
+                    if (accuratePMC > 0) {
+                        pmcStr = formatDynamicPrice(accuratePMC);
                     }
 
                     if (costAsset > 0) {
                         const valAsset = qty * currentPriceVal;
                         const pctGain = ((valAsset - costAsset) / costAsset) * 100;
                         const pctSign = pctGain >= 0 ? '+' : '';
-                        pctGainStr = ` (${pctSign}${pctGain.toFixed(0)}%)`;
+                        pctGainStr = ` (${pctSign}${pctGain.toFixed(1)}%)`;
                     }
                     
                     const formattedGainVal = new Intl.NumberFormat('it-IT', {
