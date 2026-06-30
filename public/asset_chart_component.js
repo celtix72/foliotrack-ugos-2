@@ -705,6 +705,7 @@
             let currentQty = 0;
             let currentTotalCost = 0;
             let txIndex = 0;
+            let lastValidPMC = null;
 
             const basisPrices = []; // PMC line
             const heldPrices = [];  // Current price line for filling
@@ -715,8 +716,9 @@
                 // Process all transactions chronologically up to and including 'date'
                 while (txIndex < sortedTx.length && sortedTx[txIndex].date <= date) {
                     const t = sortedTx[txIndex];
-                    const q = parseFloat(t.quantity) || 0;
-                    const p = parseFloat(t.price) || 0;
+                    const q = Math.abs(parseFloat(String(t.quantity).replace(',', '.'))) || 0;
+                    const p = parseFloat(String(t.price).replace(',', '.')) || 0;
+                    
                     if (t.type === 'BUY') {
                         currentTotalCost += q * p;
                         currentQty += q;
@@ -724,14 +726,25 @@
                         const avgPrice = currentTotalCost / currentQty;
                         currentTotalCost -= q * avgPrice;
                         currentQty -= q;
+                    } else if (t.type === 'SPLIT' && currentQty > 0 && q > 0) {
+                        currentQty = currentQty * q; // SPLIT factor applied to quantity
+                    }
+                    
+                    // Prevent floating point residue from causing ghost positions
+                    if (Math.abs(currentQty) < 0.00001) {
+                        currentQty = 0;
+                        currentTotalCost = 0;
                     }
                     txIndex++;
                 }
 
+                if (currentQty > 0.0001) {
+                    lastValidPMC = currentTotalCost / currentQty;
+                }
+
                 const isHolding = dayBeforeQty > 0.0001 || currentQty > 0.0001;
                 if (isHolding) {
-                    const avgPrice = currentQty > 0 ? (currentTotalCost / currentQty) : (currentTotalCost / dayBeforeQty); // handle case where sold today
-                    basisPrices.push(avgPrice);
+                    basisPrices.push(lastValidPMC);
                     heldPrices.push(prices[idx]);
                 } else {
                     basisPrices.push(null);
