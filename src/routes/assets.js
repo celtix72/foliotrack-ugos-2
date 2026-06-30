@@ -499,6 +499,10 @@ router.get('/assets', requireAuth, async (req, res) => {
                     pOpenMap[ticker].costBase -= t.quantity * pmcBase;
                     if (pOpenMap[ticker].qty <= 0.0001) delete pOpenMap[ticker];
                 }
+            } else if (t.type === 'SPLIT') {
+                if (pOpenMap[ticker] && pOpenMap[ticker].qty > 0 && t.quantity > 0) {
+                    pOpenMap[ticker].qty *= t.quantity;
+                }
             }
         }
         for (const [ticker, data] of Object.entries(pOpenMap)) {
@@ -581,8 +585,14 @@ router.get('/assets', requireAuth, async (req, res) => {
             };
         });
 
+        // Override flawed SQL properties with accurately calculated portfolio holdings data
+        const actualTotalQuantity = (portfolioHoldings[a.ticker] || []).reduce((sum, ph) => sum + ph.qty, 0);
+        const actualTotalCostAssetCurr = (portfolioHoldings[a.ticker] || []).reduce((sum, ph) => sum + (ph.pmc * ph.qty), 0);
+
         return { 
             ...a, 
+            totalQuantity: actualTotalQuantity > 0.0001 ? actualTotalQuantity : 0,
+            totalCostAssetCurr: actualTotalCostAssetCurr,
             sparkline,
             changePercent: showVariation ? a.changePercent : 0,
             changeValue: showVariation ? a.changeValue : 0,

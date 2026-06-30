@@ -1209,6 +1209,12 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
             closedByKey[ck].realizedGain   += rGain;
             closedByKey[ck].sells++;
         }
+        
+        if (t.type === 'SPLIT' && t.assetTicker) {
+            if (openMap[t.assetTicker] && openMap[t.assetTicker].shares > 0 && qty > 0) {
+                openMap[t.assetTicker].shares *= qty;
+            }
+        }
 
         if (t.type === 'DIVIDEND' && t.assetTicker) {
             const net = (qty && price && t.type !== 'DIVIDEND_MANUAL') ? ((qty * price - comm - tax) / fx) : (amount / fx);
