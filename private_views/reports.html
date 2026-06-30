@@ -220,10 +220,13 @@
         <h3 class="text-xl font-bold">Performance Comparison</h3>
         <p class="text-sm text-slate-500">Portfolio vs Benchmark (normalizzati a 100)</p>
     </div>
-    <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Range: <span id="chart-range-label" class="text-primary">1Y</span></p>
+    <div class="flex items-center gap-3">
+        <button id="toggle-individual-btn" onclick="toggleIndividualPortfolios()" class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:border-primary hover:text-primary transition-all">Show Portfolios</button>
+        <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Range: <span id="chart-range-label" class="text-primary">1Y</span></p>
+    </div>
 </div>
 <!-- KPI bar -->
-<div class="flex flex-wrap items-center gap-6 mb-5 px-1" id="rep-kpi-bar">
+<div class="flex flex-wrap items-center gap-5 mb-5 px-1" id="rep-kpi-bar">
     <div class="flex flex-col gap-0.5">
         <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Inizio periodo</span>
         <span id="rep-kpi-start" class="text-sm font-black text-slate-700 dark:text-slate-200">—</span>
@@ -237,9 +240,24 @@
     </div>
     <div class="h-8 w-px bg-slate-100 dark:bg-slate-800"></div>
     <div class="flex flex-col gap-0.5">
-        <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Variazione TWR</span>
+        <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">TWR &Delta;</span>
         <span id="rep-kpi-delta" class="text-sm font-black">—</span>
         <span id="rep-kpi-delta-pct" class="text-[9px] font-bold">—</span>
+    </div>
+    <div class="h-8 w-px bg-slate-100 dark:bg-slate-800"></div>
+    <div class="flex flex-col gap-0.5">
+        <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Alpha vs S&P</span>
+        <span id="rep-kpi-alpha" class="text-sm font-black">—</span>
+    </div>
+    <div class="h-8 w-px bg-slate-100 dark:bg-slate-800"></div>
+    <div class="flex flex-col gap-0.5">
+        <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Max Drawdown</span>
+        <span id="rep-kpi-maxdd" class="text-sm font-black text-rose-500">—</span>
+    </div>
+    <div class="h-8 w-px bg-slate-100 dark:bg-slate-800"></div>
+    <div class="flex flex-col gap-0.5">
+        <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Volatilità Ann.</span>
+        <span id="rep-kpi-vol" class="text-sm font-black text-slate-600 dark:text-slate-300">—</span>
     </div>
     <!-- Legenda inline -->
     <div id="rep-chart-legend" class="ml-auto flex flex-wrap items-center gap-4"></div>
@@ -298,6 +316,42 @@
             </thead>
             <tbody id="annual-gains-body" class="divide-y divide-slate-50 dark:divide-slate-800/50">
                 <!-- Data will be injected here -->
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- ── Asset Gains Section ──────────────────────────────────────────── -->
+<section class="bg-white dark:bg-surface-dark p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm" id="asset-gains-section">
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div>
+            <h3 class="text-xl font-bold">Gain Cumulativi per Asset</h3>
+            <p class="text-sm text-slate-500">Gain realizzati + dividendi + non realizzati su tutti gli anni</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 mr-1">Ordina per</span>
+            <button onclick="sortAssetGains('totalGain')" data-sort="totalGain" class="asset-sort-btn active px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg bg-primary text-white transition-all">Gain €</button>
+            <button onclick="sortAssetGains('gainPct')" data-sort="gainPct" class="asset-sort-btn px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:border-primary hover:text-primary transition-all">Gain %</button>
+            <button onclick="sortAssetGains('name')" data-sort="name" class="asset-sort-btn px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:border-primary hover:text-primary transition-all">Nome</button>
+        </div>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="text-[10px] font-bold uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800">
+                    <th class="pb-3">#</th>
+                    <th class="pb-3">Asset</th>
+                    <th class="pb-3 text-right">Tipo</th>
+                    <th class="pb-3 text-right">Realized</th>
+                    <th class="pb-3 text-right">Dividendi</th>
+                    <th class="pb-3 text-right">Unrealized</th>
+                    <th class="pb-3 text-right">Total Gain €</th>
+                    <th class="pb-3 text-right">Gain %</th>
+                    <th class="pb-3 text-right w-28">Performance</th>
+                </tr>
+            </thead>
+            <tbody id="asset-gains-body" class="divide-y divide-slate-50 dark:divide-slate-800/50">
+                <tr><td colspan="9" class="py-8 text-center text-slate-400 text-sm">Caricamento...</td></tr>
             </tbody>
         </table>
     </div>
@@ -450,6 +504,11 @@
             renderDiversification(data.diversification);
             renderDividendChart(data.dividends, data.metrics);
             if (data.annualGains) renderAnnualGains(data.annualGains);
+            if (data.assetGains) {
+                window._assetGainsData = data.assetGains;
+                window._assetGainsSortKey = 'totalGain';
+                renderAssetGains(data.assetGains, 'totalGain');
+            }
 
             // document.getElementById('last-update-label').textContent = 'Last Update: ' + new Date().toLocaleTimeString('it-IT');
         } catch (err) {
@@ -548,7 +607,7 @@
         }).join('');
     }
 
-    function repUpdateKPI(twrData) {
+    function repUpdateKPI(twrData, sp500Data) {
         if (!twrData || twrData.length < 2) return;
         const first = twrData[0];
         const last  = twrData[twrData.length - 1];
@@ -561,19 +620,52 @@
         const sign   = isPos ? '+' : '';
         const color  = isPos ? '#10b981' : '#f43f5e';
 
-        const startEl = document.getElementById('rep-kpi-start');
-        const startDt = document.getElementById('rep-kpi-start-date');
-        const endEl   = document.getElementById('rep-kpi-end');
-        const endDt   = document.getElementById('rep-kpi-end-date');
-        const dAbs    = document.getElementById('rep-kpi-delta');
-        const dPct    = document.getElementById('rep-kpi-delta-pct');
+        document.getElementById('rep-kpi-start')?.setText?.(startV.toFixed(2)) || (document.getElementById('rep-kpi-start') && (document.getElementById('rep-kpi-start').textContent = startV.toFixed(2)));
+        document.getElementById('rep-kpi-start-date') && (document.getElementById('rep-kpi-start-date').textContent = fmtD(first.date));
+        document.getElementById('rep-kpi-end') && (document.getElementById('rep-kpi-end').textContent = endV.toFixed(2));
+        document.getElementById('rep-kpi-end-date') && (document.getElementById('rep-kpi-end-date').textContent = fmtD(last.date));
+        const dAbs = document.getElementById('rep-kpi-delta');
+        const dPct = document.getElementById('rep-kpi-delta-pct');
+        if (dAbs) { dAbs.textContent = sign + delta.toFixed(2) + ' pts'; dAbs.style.color = color; }
+        if (dPct) { dPct.textContent = sign + delta.toFixed(2) + '%'; dPct.style.color = color; }
 
-        if (startEl) startEl.textContent = startV.toFixed(2);
-        if (startDt) startDt.textContent = fmtD(first.date);
-        if (endEl)   endEl.textContent   = endV.toFixed(2);
-        if (endDt)   endDt.textContent   = fmtD(last.date);
-        if (dAbs)    { dAbs.textContent  = sign + delta.toFixed(2) + ' pts'; dAbs.style.color = color; }
-        if (dPct)    { dPct.textContent  = sign + delta.toFixed(2) + '%'; dPct.style.color = color; }
+        // Alpha vs S&P500
+        if (sp500Data && sp500Data.length >= 2) {
+            const sp500Start = sp500Data[0].value ?? 100;
+            const sp500End   = sp500Data[sp500Data.length - 1].value ?? 100;
+            const sp500Delta = sp500End - sp500Start;
+            const alpha = delta - sp500Delta;
+            const alphaEl = document.getElementById('rep-kpi-alpha');
+            if (alphaEl) {
+                alphaEl.textContent = (alpha >= 0 ? '+' : '') + alpha.toFixed(2) + ' pts';
+                alphaEl.style.color = alpha >= 0 ? '#10b981' : '#f43f5e';
+            }
+        }
+
+        // Max Drawdown from TWR series
+        let peak = -Infinity, maxDD = 0;
+        for (const pt of twrData) {
+            if (pt.value > peak) peak = pt.value;
+            const dd = peak > 0 ? (pt.value - peak) / peak * 100 : 0;
+            if (dd < maxDD) maxDD = dd;
+        }
+        const ddEl = document.getElementById('rep-kpi-maxdd');
+        if (ddEl) ddEl.textContent = maxDD.toFixed(1) + '%';
+
+        // Annualised Volatility (monthly returns stdev * sqrt(12))
+        const monthlyReturns = [];
+        for (let i = 1; i < twrData.length; i++) {
+            const prev = twrData[i-1].value;
+            const curr = twrData[i].value;
+            if (prev > 0) monthlyReturns.push((curr - prev) / prev);
+        }
+        if (monthlyReturns.length >= 2) {
+            const mean = monthlyReturns.reduce((a,b) => a+b, 0) / monthlyReturns.length;
+            const variance = monthlyReturns.reduce((a,b) => a + Math.pow(b - mean, 2), 0) / monthlyReturns.length;
+            const annVol = Math.sqrt(variance) * Math.sqrt(12) * 100;
+            const volEl = document.getElementById('rep-kpi-vol');
+            if (volEl) volEl.textContent = annVol.toFixed(1) + '%';
+        }
     }
 
     function renderPerformanceChart(p) {
@@ -741,8 +833,101 @@
         });
 
         // Aggiorna KPI e legenda
-        repUpdateKPI(twrData);
+        repUpdateKPI(twrData, p.sp500 || []);
         repRenderLegend(datasets);
+    }
+
+    // ── Toggle individual portfolios visibility ───────────────────────────
+    let _individualPortfoliosVisible = false;
+    function toggleIndividualPortfolios() {
+        _individualPortfoliosVisible = !_individualPortfoliosVisible;
+        const btn = document.getElementById('toggle-individual-btn');
+        if (!perfChart) return;
+        perfChart.data.datasets.forEach((ds, idx) => {
+            if (idx >= 3) { // first 3 are Portfolio, S&P500, MSCI
+                ds.hidden = !_individualPortfoliosVisible;
+            }
+        });
+        perfChart.update();
+        if (btn) {
+            btn.textContent = _individualPortfoliosVisible ? 'Hide Portfolios' : 'Show Portfolios';
+            btn.classList.toggle('bg-primary', _individualPortfoliosVisible);
+            btn.classList.toggle('text-white', _individualPortfoliosVisible);
+        }
+    }
+
+    // ── Asset Gains Rendering ─────────────────────────────────────────────
+    const MEDALS = ['🥇', '🥈', '🥉'];
+
+    function sortAssetGains(key) {
+        window._assetGainsSortKey = key;
+        document.querySelectorAll('.asset-sort-btn').forEach(btn => {
+            const isActive = btn.getAttribute('data-sort') === key;
+            btn.classList.toggle('bg-primary', isActive);
+            btn.classList.toggle('text-white', isActive);
+            btn.classList.toggle('border', !isActive);
+            btn.classList.toggle('border-slate-200', !isActive);
+            btn.classList.toggle('dark:border-slate-700', !isActive);
+            btn.classList.toggle('text-slate-500', !isActive);
+        });
+        if (window._assetGainsData) renderAssetGains(window._assetGainsData, key);
+    }
+
+    function renderAssetGains(gains, sortKey = 'totalGain') {
+        const body = document.getElementById('asset-gains-body');
+        if (!body) return;
+
+        let sorted;
+        if (sortKey === 'name') {
+            sorted = [...gains].sort((a,b) => a.name.localeCompare(b.name));
+        } else if (sortKey === 'gainPct') {
+            sorted = [...gains].sort((a,b) => b.gainPct - a.gainPct);
+        } else {
+            sorted = [...gains].sort((a,b) => b.totalGain - a.totalGain);
+        }
+
+        const maxAbs = Math.max(...sorted.map(g => Math.abs(g.totalGain)), 1);
+
+        body.innerHTML = sorted.map((g, i) => {
+            const isPos = g.totalGain >= 0;
+            const gainColor = isPos ? 'text-emerald-500' : 'text-rose-500';
+            const barColor  = isPos ? '#10b981' : '#f43f5e';
+            const barPct    = Math.min(100, (Math.abs(g.totalGain) / maxAbs) * 100).toFixed(1);
+            const medal = MEDALS[i] ? `<span class="mr-1">${MEDALS[i]}</span>` : '';
+            const pctColor = g.gainPct >= 0 ? 'text-emerald-500' : 'text-rose-500';
+            const openBadge = g.hasOpenPosition ? '<span class="ml-1 px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[8px] font-black uppercase">Open</span>' : '';
+            const fmtEur = (v) => {
+                const sign = v >= 0 ? '+' : '';
+                const abs = Math.abs(v);
+                if (abs >= 1000) return sign + new Intl.NumberFormat('it-IT', {minimumFractionDigits:0,maximumFractionDigits:0}).format(v) + ' €';
+                return sign + v.toFixed(0) + ' €';
+            };
+            return `<tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                <td class="py-3 text-[11px] font-black text-slate-400">${medal}${i+1}</td>
+                <td class="py-3">
+                    <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[9px] font-black text-slate-500 shrink-0">${(g.ticker.substring(0,3))}</div>
+                        <div>
+                            <div class="font-bold text-sm flex items-center">${g.ticker}${openBadge}</div>
+                            <div class="text-[10px] text-slate-400 truncate max-w-[180px]">${g.name}</div>
+                        </div>
+                    </div>
+                </td>
+                <td class="py-3 text-right"><span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[9px] font-bold text-slate-500">${g.type}</span></td>
+                <td class="py-3 text-right font-bold text-sm ${g.realizedGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${fmtEur(g.realizedGain)}</td>
+                <td class="py-3 text-right font-bold text-sm text-emerald-500">${g.dividends > 0 ? '+' + g.dividends.toFixed(0) + ' €' : '—'}</td>
+                <td class="py-3 text-right font-bold text-sm ${g.unrealizedGain >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${g.hasOpenPosition ? fmtEur(g.unrealizedGain) : '<span class="text-slate-300 dark:text-slate-700">—</span>'}</td>
+                <td class="py-3 text-right font-black text-sm ${gainColor}">${fmtEur(g.totalGain)}</td>
+                <td class="py-3 text-right font-black text-sm ${pctColor}">${g.gainPct >= 0 ? '+' : ''}${g.gainPct.toFixed(1)}%</td>
+                <td class="py-3 text-right">
+                    <div class="flex items-center justify-end">
+                        <div class="w-24 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                            <div class="h-full rounded-full" style="width:${barPct}%;background:${barColor}"></div>
+                        </div>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('') || '<tr><td colspan="9" class="py-8 text-center text-slate-400 text-sm">Nessun dato disponibile</td></tr>';
     }
 
     function renderPortfoliosBreakdown(individual) {

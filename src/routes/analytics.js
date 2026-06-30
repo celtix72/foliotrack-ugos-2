@@ -1190,6 +1190,82 @@ module.exports = function (dependencies) {
 
             const annualGains = Object.values(annualGainsMap).sort((a,b) => b.year - a.year);
 
+            // ── Per-Asset Cumulative Gains ────────────────────────────────────────
+            const assetGainsMap = {};
+            const liveRate = await getEurUsdRate();
+
+            for (const [ticker, a] of Object.entries(assetMap)) {
+                if (ticker === 'CASH' || ticker.startsWith('CASH')) continue;
+                const tks = allTransactions.filter(t => t.assetTicker === ticker);
+                if (tks.length === 0) continue;
+
+                const fx = (t) => t.exchangeRate || 1;
+                let qty = 0;
+                let totalCostAsset = 0;   // asset currency
+                let realizedGain = 0;     // EUR
+                let dividends = 0;        // EUR
+                let totalInvested = 0;    // EUR (all-time sum of BUYs)
+
+                const sortedTks = [...tks].sort((a,b) => new Date(a.date) - new Date(b.date));
+                for (const t of sortedTks) {
+                    const q = Math.abs(t.quantity || 0);
+                    const p = t.price || 0;
+                    const comm = t.commission || 0;
+                    const tax = t.tax || 0;
+                    const fxRate = fx(t);
+
+                    if (t.type === 'BUY') {
+                        const costAsset = t.amount ? (Math.abs(t.amount) * fxRate) : (q * p + comm + tax);
+                        const costEur = costAsset / fxRate;
+                        totalCostAsset += costAsset;
+                        qty += q;
+                        totalInvested += costEur;
+                    } else if (t.type === 'SELL' && qty > 0) {
+                        const avgCostAsset = totalCostAsset / qty;
+                        const proceeds = t.amount ? Math.abs(t.amount) : ((q * p - comm - tax) / fxRate);
+                        const costBasisEur = (q * avgCostAsset) / fxRate;
+                        realizedGain += proceeds - costBasisEur;
+                        totalCostAsset -= q * avgCostAsset;
+                        qty -= q;
+                        if (Math.abs(qty) < 0.00001) { qty = 0; totalCostAsset = 0; }
+                    } else if (t.type === 'DIVIDEND') {
+                        const net = t.amount ? (Math.abs(t.amount) / fxRate) : ((q * p - comm - tax) / fxRate);
+                        dividends += net;
+                    } else if (t.type === 'SPLIT' && qty > 0 && q > 0) {
+                        qty *= q;
+                    }
+                }
+
+                // Unrealized on currently open position
+                let unrealizedGain = 0;
+                if (qty > 0.0001 && a.currentPrice > 0) {
+                    const lastFx = tks.filter(t => t.exchangeRate).at(-1)?.exchangeRate || 1;
+                    const curValEur = (qty * a.currentPrice) / lastFx;
+                    const curCostEur = totalCostAsset / lastFx;
+                    unrealizedGain = curValEur - curCostEur;
+                }
+
+                const totalGain = realizedGain + dividends + unrealizedGain;
+                if (totalInvested < 0.01 && totalGain === 0) continue;
+                const gainPct = totalInvested > 0 ? (totalGain / totalInvested) * 100 : 0;
+
+                assetGainsMap[ticker] = {
+                    ticker,
+                    name: a.name || ticker,
+                    type: a.type || 'Stock',
+                    currency: a.currency || 'EUR',
+                    realizedGain: Math.round(realizedGain * 100) / 100,
+                    dividends: Math.round(dividends * 100) / 100,
+                    unrealizedGain: Math.round(unrealizedGain * 100) / 100,
+                    totalGain: Math.round(totalGain * 100) / 100,
+                    totalInvested: Math.round(totalInvested * 100) / 100,
+                    gainPct: Math.round(gainPct * 100) / 100,
+                    hasOpenPosition: qty > 0.0001
+                };
+            }
+            const assetGains = Object.values(assetGainsMap).sort((a,b) => b.totalGain - a.totalGain);
+
+
             res.json({
                 performance: {
                     portfolio: normalizedGlobal,
@@ -1201,6 +1277,7 @@ module.exports = function (dependencies) {
                 diversification,
                 dividends,
                 annualGains,
+                assetGains,
                 metrics: {
                     totalROI,
                     totalGain: currentProfit,

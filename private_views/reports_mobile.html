@@ -178,6 +178,11 @@
         <span id="mob-rep-start-lbl" class="text-[8px] font-bold text-slate-500"></span>
         <span id="mob-rep-end-lbl" class="text-[8px] font-bold text-slate-500"></span>
       </div>
+      <!-- Extra KPI pills row -->
+      <div class="flex items-center justify-between gap-2 mt-2 px-1">
+        <span id="mob-rep-kpi-alpha" class="text-[9px] font-bold" style="color:#94a3b8">—</span>
+        <span id="mob-rep-kpi-maxdd" class="text-[9px] font-bold" style="color:#94a3b8">—</span>
+      </div>
     </div>
 
         <!-- Annual Gains -->
@@ -185,6 +190,20 @@
           <span class="mob-section-title">Annual Gains Summary</span>
         </div>
         <div class="mob-list-edge" id="mob-annual-gains-container">
+            <!-- Injected via JS -->
+        </div>
+
+        <!-- Asset Gains per Asset -->
+        <div class="mob-section-header" style="margin-top:8px;">
+          <span class="mob-section-title">Gain per Asset</span>
+        </div>
+        <!-- Sort pills -->
+        <div style="padding: 0 16px 8px 16px; display:flex; gap:8px; overflow-x:auto;" class="no-scrollbar">
+            <div onclick="mobSortAssetGains('totalGain')" data-msort="totalGain" class="mob-asset-sort-btn" style="padding:6px 14px;border-radius:20px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:0.07em;cursor:pointer;white-space:nowrap;background:var(--mob-primary);color:#fff;">Gain €</div>
+            <div onclick="mobSortAssetGains('gainPct')" data-msort="gainPct" class="mob-asset-sort-btn" style="padding:6px 14px;border-radius:20px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:0.07em;cursor:pointer;white-space:nowrap;background:var(--mob-surface-2);color:var(--mob-text-muted);">Gain %</div>
+            <div onclick="mobSortAssetGains('name')" data-msort="name" class="mob-asset-sort-btn" style="padding:6px 14px;border-radius:20px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:0.07em;cursor:pointer;white-space:nowrap;background:var(--mob-surface-2);color:var(--mob-text-muted);">Nome A-Z</div>
+        </div>
+        <div class="mob-list-edge" id="mob-asset-gains-container">
             <!-- Injected via JS -->
         </div>
 
@@ -419,6 +438,35 @@
             // Charts
             mobRenderCharts(data);
             if (data.annualGains) mobRenderAnnualGains(data.annualGains);
+            if (data.assetGains) {
+                window._mobAssetGainsData = data.assetGains;
+                mobRenderAssetGains(data.assetGains, 'totalGain');
+            }
+
+            // Extra performance KPIs for the chart header
+            if (data.performance && data.performance.twr && data.performance.sp500) {
+                const twr = data.performance.twr;
+                const sp500 = data.performance.sp500;
+                if (twr.length >= 2 && sp500.length >= 2) {
+                    const twrDelta = twr[twr.length-1].value - twr[0].value;
+                    const spDelta  = sp500[sp500.length-1].value - sp500[0].value;
+                    const alpha = twrDelta - spDelta;
+                    const alphaEl = document.getElementById('mob-rep-kpi-alpha');
+                    if (alphaEl) {
+                        alphaEl.textContent = (alpha >= 0 ? '+' : '') + alpha.toFixed(1) + ' pts Alpha';
+                        alphaEl.style.color = alpha >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+                    }
+                }
+                // Max Drawdown
+                let peak2 = -Infinity, maxDD2 = 0;
+                for (const pt of twr) {
+                    if (pt.value > peak2) peak2 = pt.value;
+                    const dd = peak2 > 0 ? (pt.value - peak2) / peak2 * 100 : 0;
+                    if (dd < maxDD2) maxDD2 = dd;
+                }
+                const ddEl = document.getElementById('mob-rep-kpi-maxdd');
+                if (ddEl) ddEl.textContent = 'Max DD: ' + maxDD2.toFixed(1) + '%';
+            }
         } catch(e) {
             console.error('Mobile Reports sync error:', e);
         }
@@ -458,6 +506,69 @@
                     </div>
                 </div>
             `;
+        }).join('') || '<div style="text-align:center;padding:24px;opacity:0.4;font-size:12px;">No data available</div>';
+    }
+
+    // ── Mobile Asset Gains ────────────────────────────────────────────────────
+    window.mobSortAssetGains = function(key) {
+        document.querySelectorAll('.mob-asset-sort-btn').forEach(btn => {
+            const isActive = btn.dataset.msort === key;
+            btn.style.background = isActive ? 'var(--mob-primary)' : 'var(--mob-surface-2)';
+            btn.style.color = isActive ? '#fff' : 'var(--mob-text-muted)';
+        });
+        if (window._mobAssetGainsData) mobRenderAssetGains(window._mobAssetGainsData, key);
+    };
+
+    function mobRenderAssetGains(gains, sortKey = 'totalGain') {
+        const container = document.getElementById('mob-asset-gains-container');
+        if (!container) return;
+
+        let sorted;
+        if (sortKey === 'name') sorted = [...gains].sort((a,b) => a.name.localeCompare(b.name));
+        else if (sortKey === 'gainPct') sorted = [...gains].sort((a,b) => b.gainPct - a.gainPct);
+        else sorted = [...gains].sort((a,b) => b.totalGain - a.totalGain);
+
+        const topGain = Math.max(...sorted.map(g => Math.abs(g.totalGain)), 1);
+        const MEDALS_MOB = ['\uD83E\uDD47','\uD83E\uDD48','\uD83E\uDD49'];
+
+        container.innerHTML = sorted.map((g, i) => {
+            const isPos = g.totalGain >= 0;
+            const gainColor = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+            const pctColor = g.gainPct >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+            const barPct = Math.min(100, Math.abs(g.totalGain) / topGain * 100);
+            const medal = MEDALS_MOB[i] || '';
+            const openDot = g.hasOpenPosition ? '<span style="width:6px;height:6px;border-radius:50%;background:var(--mob-primary);display:inline-block;margin-left:5px;vertical-align:middle;"></span>' : '';
+            const fmtG = (v) => {
+                const s = v >= 0 ? '+' : '';
+                const abs = Math.abs(v);
+                if (abs >= 1000) return s + new Intl.NumberFormat('it-IT', {maximumFractionDigits:0}).format(v) + '\u20ac';
+                return s + v.toFixed(0) + '\u20ac';
+            };
+            return `<div class="mob-holding-swipe-container">
+                <div class="mob-holding-item" style="flex-direction:column;align-items:stretch;gap:5px;padding:10px 16px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <div style="display:flex;align-items:center;gap:7px;">
+                            <span style="font-size:14px;">${medal}</span>
+                            <div>
+                                <div style="font-size:13px;font-weight:900;display:flex;align-items:center;">${g.ticker}${openDot}</div>
+                                <div style="font-size:10px;color:var(--mob-text-muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g.name}</div>
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:15px;font-weight:900;color:${gainColor};">${fmtG(g.totalGain)}</div>
+                            <div style="font-size:11px;font-weight:700;color:${pctColor};">${g.gainPct >= 0 ? '+' : ''}${g.gainPct.toFixed(1)}%</div>
+                        </div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--mob-text-muted);font-weight:700;gap:4px;">
+                        <span>Realiz: <span style="color:${g.realizedGain>=0?'var(--mob-emerald)':'var(--mob-rose)'}">${fmtG(g.realizedGain)}</span></span>
+                        <span>Div: <span style="color:var(--mob-emerald)">${g.dividends>0?'+'+g.dividends.toFixed(0)+'\u20ac':'\u2014'}</span></span>
+                        ${g.hasOpenPosition ? `<span>Open: <span style="color:${g.unrealizedGain>=0?'var(--mob-emerald)':'var(--mob-rose)'}">${fmtG(g.unrealizedGain)}</span></span>` : '<span></span>'}
+                    </div>
+                    <div style="height:3px;border-radius:2px;background:var(--mob-surface-2);overflow:hidden;margin-top:2px;">
+                        <div style="height:100%;border-radius:2px;width:${barPct}%;background:${isPos?'var(--mob-emerald)':'var(--mob-rose)'};"></div>
+                    </div>
+                </div>
+            </div>`;
         }).join('') || '<div style="text-align:center;padding:24px;opacity:0.4;font-size:12px;">No data available</div>';
     }
 
