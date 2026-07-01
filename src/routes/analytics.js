@@ -356,7 +356,7 @@ module.exports = function (dependencies) {
         try {
             const { range, benchmark, tagIds, portfolioIds } = req.query;
             const tags = tagIds ? tagIds.split(',').map(Number) : null;
-            let pIdsToUse = portfolioIds ? portfolioIds.split(',').map(Number) : null;
+            let pIdsToUse = portfolioIds ? portfolioIds.split(',').map(Number).filter(n => !isNaN(n)) : null;
             const cacheKey = `global_perf_${req.user.id}_${range || 'ALL'}_${benchmark || 'none'}_${portfolioIds || 'all'}_${tagIds || 'all'}`;
             const performanceResultsCache = getPerformanceResultsCache();
 
@@ -364,13 +364,21 @@ module.exports = function (dependencies) {
                 return res.json(performanceResultsCache[cacheKey].data);
             }
 
-            if (!pIdsToUse) {
-                const userPortfolios = database.db.prepare(`
-                    SELECT p.id FROM portfolios p
-                    JOIN portfolio_users pu ON p.id = pu.portfolio_id
-                    WHERE pu.user_id = ?
-                `).all(req.user.id);
-                pIdsToUse = userPortfolios.map(p => p.id);
+            const userPortfolios = database.db.prepare(`
+                SELECT p.id FROM portfolios p
+                JOIN portfolio_users pu ON p.id = pu.portfolio_id
+                WHERE pu.user_id = ?
+            `).all(req.user.id);
+            const userPIds = userPortfolios.map(p => p.id);
+
+            if (pIdsToUse) {
+                pIdsToUse = pIdsToUse.filter(id => userPIds.includes(id));
+            } else {
+                pIdsToUse = userPIds;
+            }
+
+            if (pIdsToUse.length === 0) {
+                return res.json({ dataPoints: [], changePercent: 0 });
             }
 
             const dataPoints = await calculatePerformanceHistory(pIdsToUse, range, false, false, benchmark, req.user.id, tags, true);
@@ -397,13 +405,17 @@ module.exports = function (dependencies) {
             const { portfolioIds } = req.query;
             let pIds = portfolioIds ? portfolioIds.split(',').map(Number).filter(n => !isNaN(n)) : null;
 
-            if (!pIds || pIds.length === 0) {
-                const userPortfolios = database.db.prepare(`
-                    SELECT p.id FROM portfolios p
-                    JOIN portfolio_users pu ON p.id = pu.portfolio_id
-                    WHERE pu.user_id = ?
-                `).all(req.user.id);
-                pIds = userPortfolios.map(p => p.id);
+            const userPortfolios = database.db.prepare(`
+                SELECT p.id FROM portfolios p
+                JOIN portfolio_users pu ON p.id = pu.portfolio_id
+                WHERE pu.user_id = ?
+            `).all(req.user.id);
+            const userPIds = userPortfolios.map(p => p.id);
+
+            if (pIds) {
+                pIds = pIds.filter(id => userPIds.includes(id));
+            } else {
+                pIds = userPIds;
             }
 
             if (pIds.length === 0) return res.json({ days: [] });

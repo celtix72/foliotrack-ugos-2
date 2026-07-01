@@ -1547,9 +1547,19 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
             tagFilter = ` AND id IN (SELECT portfolio_id FROM portfolio_tags WHERE tag_id IN (${placeholders}))`;
             params = [...tagIds];
         }
-        portfolios = pIdsInput.length > 0 
-            ? database.db.prepare(`SELECT * FROM portfolios WHERE id IN (${pIdsInput.join(',')}) ${tagFilter}`).all(...params)
-            : [];
+        if (userId) {
+            portfolios = pIdsInput.length > 0
+                ? database.db.prepare(`
+                    SELECT p.* FROM portfolios p
+                    JOIN portfolio_users pu ON p.id = pu.portfolio_id
+                    WHERE pu.user_id = ? AND p.id IN (${pIdsInput.join(',')}) ${tagFilter}
+                  `).all(userId, ...params)
+                : [];
+        } else {
+            portfolios = pIdsInput.length > 0 
+                ? database.db.prepare(`SELECT * FROM portfolios WHERE id IN (${pIdsInput.join(',')}) ${tagFilter}`).all(...params)
+                : [];
+        }
     }
 
     const pIds = portfolios.map(p => p.id);
