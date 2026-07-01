@@ -23,25 +23,87 @@
         }
     </style>
 </head>
-<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col">
-    <!-- Top Header -->
-    <header class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-surface-dark/80 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-50">
-        <div class="flex items-center gap-6">
-            <a href="/dashboard" class="flex items-center justify-center w-10 h-10 bg-primary/10 text-primary rounded-xl hover:bg-primary/20 transition-colors">
-                <span class="material-symbols-outlined">arrow_back</span>
-            </a>
-            <h1 class="text-xl font-black tracking-tight text-slate-900 dark:text-white">Admin Panel</h1>
-        </div>
-        <div class="flex items-center gap-4">
-            <div class="text-right hidden sm:block">
-                <p class="text-xs font-bold" id="header-user-name">User</p>
-                <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter" id="header-user-role">Role</p>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-72 border-r border-slate-200 dark:border-slate-800 flex flex-col h-screen sticky top-0 bg-white dark:bg-surface-dark shrink-0">
+        <div class="p-6 flex items-center gap-3">
+            <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white shadow-lg shadow-primary/20">
+                <span class="material-symbols-outlined">query_stats</span>
             </div>
-            <button onclick="ftAuth.logout()" class="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-500 transition-colors">
-                <span class="material-symbols-outlined text-sm">logout</span>
-            </button>
+            <div>
+                <h1 class="text-lg font-bold tracking-tight">M2T</h1>
+                <p class="text-xs text-slate-500 dark:text-slate-400">FolioTracker</p>
+            </div>
         </div>
-    </header>
+        <nav class="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
+            <div class="pb-4">
+                <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/dashboard">
+                    <span class="material-symbols-outlined text-[20px]">dashboard</span>
+                    <span>Dashboard</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/market">
+                    <span class="material-symbols-outlined text-[20px]">trending_up</span>
+                    <span>Market</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/reports">
+                    <span class="material-symbols-outlined text-[20px]">pie_chart</span>
+                    <span>Reports</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/history">
+                    <span class="material-symbols-outlined text-[20px]">history</span>
+                    <span>History</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/dividend">
+                    <span class="material-symbols-outlined text-[20px]">payments</span>
+                    <span>Dividend</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/watchlist">
+                    <span class="material-symbols-outlined text-[20px]">visibility</span>
+                    <span>Watchlist</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/settings">
+                    <span class="material-symbols-outlined text-[20px]">settings</span>
+                    <span>Settings</span>
+                </a>
+                <a id="sidebar-admin-link" class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary font-medium" href="/admin" style="display: none;">
+                    <span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
+                    <span>Admin Panel</span>
+                </a>
+            </div>
+            <div class="pt-4 border-t border-slate-200 dark:border-slate-800">
+                <div class="space-y-1" id="sidebar-portfolios"></div>
+            </div>
+        </nav>
+        <div class="p-4 border-t border-slate-200 dark:border-slate-800">
+            <div class="flex items-center gap-3 p-2 rounded-xl bg-slate-100 dark:bg-slate-900">
+                <div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-400 font-bold text-xs" id="sidebar-user-initials">UN</div>
+                <div class="flex-1 overflow-hidden">
+                    <p class="text-sm font-bold truncate" id="sidebar-user-name">User</p>
+                    <p class="text-xs text-slate-500 truncate" id="sidebar-user-role">Free Plan</p>
+                </div>
+                <span class="material-symbols-outlined text-slate-400 text-sm cursor-pointer" id="sidebar-logout-btn">logout</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col h-screen overflow-hidden">
+        <!-- Top Header -->
+        <header class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-surface-dark/80 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-50">
+            <div class="flex items-center gap-6">
+                <h1 class="text-xl font-black tracking-tight text-slate-900 dark:text-white">Admin Panel</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-right hidden sm:block">
+                    <p class="text-xs font-bold" id="header-user-name">User</p>
+                    <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter" id="header-user-role">Role</p>
+                </div>
+                <button onclick="ftAuth.logout()" class="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-500 transition-colors">
+                    <span class="material-symbols-outlined text-sm">logout</span>
+                </button>
+            </div>
+        </header>
 
     <main class="flex-1 p-8 overflow-y-auto">
         <div class="max-w-6xl mx-auto space-y-4">
@@ -529,8 +591,26 @@
         </div>
     </div>
 
+    </div> <!-- Close Main Content Area -->
 
     <script>
+        async function loadSidebarPortfolios() {
+            try {
+                const res = await fetch('/api/portfolios');
+                const data = await res.json();
+                const p = data.portfolios || [];
+                document.getElementById('sidebar-portfolios').innerHTML = p.map(port => `
+                    <a href="/portfolio?id=${port.id}" class="flex items-center justify-between px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                        <div class="flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            <span class="text-xs font-medium">${port.name}</span>
+                        </div>
+                        <span class="text-[10px] font-bold uppercase text-slate-400">${port.currency}</span>
+                    </a>
+                `).join('') || '<div class="px-3 py-2 text-xs text-slate-500 italic">No portfolios.</div>';
+            } catch (err) { console.error(err); }
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
             const user = await ftAuth.initAuthGuard();
             // Optional: double check if admin here
@@ -548,6 +628,7 @@
             loadSecuritySettings();
             loadBannedIps();
             loadAiSettings();
+            loadSidebarPortfolios();
         });
 
         async function loadLogDates() {
