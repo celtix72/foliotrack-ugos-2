@@ -784,14 +784,14 @@
                 type: 'doughnut',
                 data: {
                     labels: currData.map(x => x[0]),
-                    datasets: [{ data: currData.map(x => x[1]), backgroundColor: colors, borderWidth: 0, hoverOffset: 4 }]
+                    datasets: [{ data: currData.map(x => x[1]), backgroundColor: currData.map((_, i) => GENERIC_COLORS[i % GENERIC_COLORS.length]), borderWidth: 0, hoverOffset: 4 }]
                 },
                 options: { cutout: '72%', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             });
             const currTotal = currData.reduce((a,b)=>a+b[1],0);
             document.getElementById('mob-currency-legend').innerHTML = currData.slice(0,5).map((x,i) => `
                 <div class="mob-alloc-item">
-                    <div class="mob-alloc-dot" style="background:${colors[i%colors.length]}"></div>
+                    <div class="mob-alloc-dot" style="background:${GENERIC_COLORS[i % GENERIC_COLORS.length]}"></div>
                     <span class="mob-alloc-type">${x[0]}</span>
                     <span class="mob-alloc-pct">${currTotal>0?((x[1]/currTotal)*100).toFixed(0):0}%</span>
                 </div>`).join('');
@@ -857,11 +857,11 @@
         });
     }
 
-    window.addEventListener('mobile-view-activated', mobSyncReports);
+    window.addEventListener('mobile-view-activated', mobLoadReportData);
     
     // Initial call
     if (document.body.classList.contains('mobile-view-active') || window._mobileViewActive) {
-        mobSyncReports();
+        mobLoadReportData();
         if (window.ftAuth && ftAuth.getUser()?.role === 'admin') {
             const adminLink = document.getElementById('mob-admin-link');
             if (adminLink) adminLink.style.display = 'flex';
