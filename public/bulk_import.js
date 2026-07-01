@@ -30,9 +30,156 @@ function parseDate_IT(str) {
     return str.trim();
 }
 
+// ─── BROKER-SPECIFIC PARSE (via backend) ──────────────────────────────────────
+
+async function parseBrokerSpecific(broker) {
+    const raw = document.getElementById('import-paste-area').value.trim();
+    if (!raw) { alert('Incolla prima il contenuto del file CSV.'); return; }
+
+    const portfolioName = document.getElementById('import-portfolio-name-hint')?.value?.trim() || '';
+
+    document.getElementById('import-step-1').classList.add('hidden');
+    document.getElementById('import-step-3').classList.remove('hidden');
+    document.getElementById('import-progress-label').textContent = `Parsing formato ${broker}...`;
+
+    try {
+        const resp = await fetch('/api/transactions/parse-broker', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ broker, csv: raw, portfolioName })
+        });
+
+        const result = await resp.json();
+        if (!resp.ok) throw new Error(result.error || 'Errore parsing');
+
+        const detected = result.broker || broker;
+        const txs      = result.transactions || [];
+        const warns    = result.warnings || [];
+
+        if (txs.length === 0) {
+            document.getElementById('import-step-3').classList.add('hidden');
+            document.getElementById('import-step-1').classList.remove('hidden');
+            alert(`Nessuna transazione trovata (broker: ${detected}).\n${warns.join('\n')}`);
+            return;
+        }
+
+        document.getElementById('import-progress-label').textContent = `Trovate ${txs.length} transazioni. Validazione ticker...`;
+
+        // Convert to importRows format
+        const parsed = txs.map(t => ({
+            dateRaw:       t.date,
+            date:          t.date,
+            type:          t.type,
+            portfolio:     t.portfolioName || '',
+            tickerRaw:     t.assetTicker || '',
+            ticker:        t.assetTicker || '',
+            isin:          t.isin || '',
+            dataSource:    t.dataSource || 'YF',
+            currency:      t.assetCurrency || 'EUR',
+            exchangeRate:  t.exchangeRate || 1,
+            price:         t.price || 0,
+            quantity:      t.quantity || 0,
+            commission:    t.commission || 0,
+            tax:           t.tax || 0,
+            valEur:        t.amount || 0,
+            yfName:        t.assetName || '',
+            yfCurrency:    t.assetCurrency || 'EUR',
+            yfExchange:    t.assetExchange || '',
+            yfType:        t.assetType || 'Stock',
+            yfPrice:       0,
+            yfPe:          null,
+            suggestions:   [],
+            status:        (['CASH', ''].includes(t.assetTicker) || (t.assetType === 'Deposito Vincolato') || (t.dataSource === 'MANUAL')) ? 'ok' : 'pending',
+            _brokerParsed: true,
+        }));
+
+        // Validate tickers for non-manual assets
+        const uniqueKeys = [...new Set(parsed.filter(r => r.status === 'pending').map(r => JSON.stringify({ t: r.tickerRaw, i: r.isin })))];
+        const tickerCache = {};
+
+        for (let i = 0; i < uniqueKeys.length; i++) {
+            const info = JSON.parse(uniqueKeys[i]);
+            const tk   = info.t;
+            const isin = info.i;
+            const key  = tk + (isin ? '|' + isin : '');
+
+            if (!tk || tk === 'CASH') { tickerCache[key] = { valid: true, ticker: 'CASH' }; continue; }
+            if (tk.startsWith('BTP')) { tickerCache[key] = { valid: true, isBTP: true }; continue; }
+            if (tk.startsWith('CD_')) { tickerCache[key] = { valid: true, ticker: tk, name: tk, type: 'Deposito Vincolato', currency: 'EUR', exchange: 'MANUAL', country: 'Italy' }; continue; }
+
+            document.getElementById('import-progress-label').textContent = `Validazione ${tk} (${i+1}/${uniqueKeys.length})...`;
+            try {
+                const r = await fetch(`/api/validate-ticker?ticker=${encodeURIComponent(tk)}&isin=${encodeURIComponent(isin || '')}`);
+                tickerCache[key] = await r.json();
+            } catch { tickerCache[key] = { valid: false, suggestions: [] }; }
+        }
+
+        for (const row of parsed) {
+            if (row.status === 'ok') continue;
+            const key = row.tickerRaw + (row.isin ? '|' + row.isin : '');
+            const result = tickerCache[key];
+            if (!result) { row.status = 'manual'; continue; }
+            if (result.isBTP) {
+                row.status = 'ok'; row.yfName = row.ticker; row.yfType = 'Bond'; row.yfCurrency = 'EUR'; row.yfExchange = 'XMIL'; row.dataSource = 'B_ITA';
+            } else if (result.valid) {
+                row.status     = 'ok';
+                row.ticker     = result.ticker || row.ticker;
+                row.yfName     = result.name || row.yfName;
+                row.yfCurrency = result.currency || row.yfCurrency;
+                row.yfExchange = result.exchange || row.yfExchange;
+                row.yfType     = result.type || row.yfType;
+                row.yfPrice    = result.currentPrice || 0;
+                row.yfPe       = result.pe || null;
+                row.yfCountry  = result.country || '';
+                row.isin       = result.isin || row.isin;
+                row.dataSource = result.dataSource || 'YF';
+            } else if (result.suggestions && result.suggestions.length) {
+                row.status     = 'suggestions';
+                row.suggestions = result.suggestions;
+            } else {
+                row.status = 'manual';
+            }
+        }
+
+        if (warns.length > 0) {
+            console.warn(`[${detected}] Import warnings:\n` + warns.join('\n'));
+        }
+
+        importRows = parsed;
+        document.getElementById('import-step-3').classList.add('hidden');
+        document.getElementById('import-step-2').classList.remove('hidden');
+        renderImportPreview();
+
+        // Show warnings as a non-blocking banner
+        const warnBanner = document.getElementById('import-warn-banner');
+        if (warnBanner) {
+            if (warns.length > 0) {
+                warnBanner.textContent = `⚠️ ${warns.length} avviso/i: ` + warns.slice(0,3).join(' | ') + (warns.length > 3 ? ` ...+${warns.length-3} altri` : '');
+                warnBanner.classList.remove('hidden');
+            } else {
+                warnBanner.classList.add('hidden');
+            }
+        }
+
+    } catch (err) {
+        document.getElementById('import-step-3').classList.add('hidden');
+        document.getElementById('import-step-1').classList.remove('hidden');
+        alert('Errore parsing: ' + err.message);
+    }
+}
+
+// ─── GENERIC PARSE (client-side, existing logic) ──────────────────────────────
+
 window.parseImportData = async function() {
     const raw = document.getElementById('import-paste-area').value.trim();
     if (!raw) { alert('Please paste some data first.'); return; }
+
+    // Check if broker-specific mode is selected
+    const brokerSel = document.getElementById('import-broker-select');
+    const broker    = brokerSel ? brokerSel.value : 'GENERIC';
+    if (broker !== 'GENERIC') {
+        return parseBrokerSpecific(broker);
+    }
 
     const lines = raw.split('\n').map(l => l.trim()).filter(l => l);
     const headerKeywords = ['data','operazione','portfolio','ticker','val','price','qta'];

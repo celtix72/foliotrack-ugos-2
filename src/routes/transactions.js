@@ -1,4 +1,5 @@
 const express = require('express');
+const { detectBroker, parseDirecta, parseIfis } = require('../utils/brokerParsers');
 
 /**
  * Transactions Router
@@ -613,6 +614,32 @@ module.exports = function(dependencies) {
         } catch (err) {
             console.error('Export all error:', err);
             res.status(500).send('Export error: ' + err.message);
+        }
+    });
+
+    // ─── PARSE BROKER CSV ─────────────────────────────────────────────────────────────
+    // POST /api/transactions/parse-broker
+    // Accepts raw CSV text + broker type, returns normalized transactions for preview.
+    router.post('/transactions/parse-broker', requireAuth, express.json({ limit: '5mb' }), (req, res) => {
+        try {
+            const { broker, csv, portfolioName } = req.body;
+            if (!csv || !csv.trim()) return res.status(400).json({ error: 'csv is required' });
+
+            const detectedBroker = broker && broker !== 'AUTO' ? broker.toUpperCase() : detectBroker(csv);
+
+            let result;
+            if (detectedBroker === 'DIRECTA') {
+                result = parseDirecta(csv);
+            } else if (detectedBroker === 'IFIS') {
+                result = parseIfis(csv, portfolioName || 'IFIS');
+            } else {
+                return res.status(400).json({ error: `Broker '${detectedBroker}' non supportato. Usa: DIRECTA, IFIS.` });
+            }
+
+            res.json({ broker: detectedBroker, ...result });
+        } catch (err) {
+            logger.error('[parse-broker]', err);
+            res.status(500).json({ error: err.message });
         }
     });
 
