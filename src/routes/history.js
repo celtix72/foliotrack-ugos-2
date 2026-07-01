@@ -38,6 +38,15 @@ module.exports = function (dependencies) {
 
         try {
             if (id) {
+                // Verify the record belongs to one of the user's portfolios (admin bypasses)
+                if (req.user.role !== 'admin') {
+                    const owned = database.db.prepare(`
+                        SELECT h.id FROM portfolio_history h
+                        JOIN portfolio_users pu ON h.portfolioId = pu.portfolio_id
+                        WHERE h.id = ? AND pu.user_id = ?
+                    `).get(id, req.user.id);
+                    if (!owned) return res.status(403).json({ error: 'Accesso negato' });
+                }
                 database.db.prepare(`
                     UPDATE portfolio_history 
                     SET date = ?, totalValue = ?, cashValue = ?, assetValue = ? 

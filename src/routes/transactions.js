@@ -24,17 +24,35 @@ module.exports = function(dependencies) {
     } = dependencies;
 
     // ─── TRANSACTION AUDIT ───────────────────────────────────────────────────
+    // Each user sees only their own portfolios; admin sees everything.
     router.get('/transactions/audit', requireAuth, async (req, res) => {
         try {
-            const portfolios = database.db.prepare(`SELECT id, name, currency FROM portfolios`).all();
+            let portfolios;
+            if (req.user.role === 'admin') {
+                portfolios = database.db.prepare(`SELECT id, name, currency FROM portfolios`).all();
+            } else {
+                portfolios = database.db.prepare(`
+                    SELECT p.id, p.name, p.currency FROM portfolios p
+                    JOIN portfolio_users pu ON p.id = pu.portfolio_id
+                    WHERE pu.user_id = ?
+                `).all(req.user.id);
+            }
             const pMap = Object.fromEntries(portfolios.map(p => [p.id, p]));
             
             const assets = database.db.prepare(`SELECT ticker, name, currency, isVirtualHistory, hasHistoryInconsistency FROM assets`).all();
             const aMap = Object.fromEntries(assets.map(a => [a.ticker, a]));
-            
-            const transactions = database.db.prepare(`
-                SELECT * FROM transactions ORDER BY date ASC, id ASC
-            `).all();
+
+            let transactions;
+            if (req.user.role === 'admin') {
+                transactions = database.db.prepare(`SELECT * FROM transactions ORDER BY date ASC, id ASC`).all();
+            } else {
+                const pIds = portfolios.map(p => p.id);
+                if (pIds.length === 0) return res.json([]);
+                const ph = pIds.map(() => '?').join(',');
+                transactions = database.db.prepare(`
+                    SELECT * FROM transactions WHERE portfolioId IN (${ph}) ORDER BY date ASC, id ASC
+                `).all(...pIds);
+            }
             
             const pmcStats = {}; // { portfolioId: { ticker: { shares: 0, costEUR: 0 } } }
             
@@ -354,6 +372,14 @@ module.exports = function(dependencies) {
             return res.status(400).json({ error: 'portfolioId and transactions[] required' });
         }
 
+        // Build a set of portfolio IDs the user is allowed to write to (admin bypasses)
+        const allowedPids = req.user.role === 'admin'
+            ? null // null means all allowed
+            : new Set(
+                database.db.prepare(`SELECT portfolio_id FROM portfolio_users WHERE user_id = ?`)
+                    .all(req.user.id).map(r => r.portfolio_id)
+              );
+
         try {
             const parseItalianDate = (dateStr) => {
                 if (!dateStr) return null;
@@ -392,6 +418,10 @@ module.exports = function(dependencies) {
                             const pName = t.portfolioName.trim();
                             let p = database.db.prepare(`SELECT id FROM portfolios WHERE name = ?`).get(pName);
                             if (!p) {
+                                // Only admin or portfolio owners can auto-create portfolios
+                                if (allowedPids !== null) {
+                                    throw new Error(`Portfolio '${pName}' non trovato e non hai i permessi per crearlo automaticamente.`);
+                                }
                                 const info = database.db.prepare(`
                                     INSERT INTO portfolios (name, currency, startDate, initialCash)
                                     VALUES (?, 'EUR', ?, 0)
@@ -406,6 +436,12 @@ module.exports = function(dependencies) {
                         if (isNaN(targetId)) {
                             throw new Error(`Invalid portfolio mapping for transaction on ${t.date}. 'portfolioId' is '${portfolioId}' and row 'portfolioName' is '${t.portfolioName || 'Missing'}'.`);
                         }
+
+                        // Security: ensure user owns the target portfolio
+                        if (allowedPids !== null && !allowedPids.has(targetId)) {
+                            throw new Error(`Accesso negato: non hai i permessi per il portfolio ID ${targetId}.`);
+                        }
+
                         affectedPortfolios.add(targetId);
 
                         let sanitizedTicker = '';
@@ -521,14 +557,27 @@ module.exports = function(dependencies) {
     });
 
     // ─── EXPORT TRANSACTIONS ─────────────────────────────────────────────────
+    // Each user exports only their own transactions; admin exports all.
     router.get('/export-all-transactions', requireAuth, (req, res) => {
         try {
-            const transactions = database.db.prepare(`
-                SELECT t.*, p.name as portfolioName 
-                FROM transactions t
-                JOIN portfolios p ON t.portfolioId = p.id
-                ORDER BY t.date ASC, t.id ASC
-            `).all();
+            let transactions;
+            if (req.user.role === 'admin') {
+                transactions = database.db.prepare(`
+                    SELECT t.*, p.name as portfolioName 
+                    FROM transactions t
+                    JOIN portfolios p ON t.portfolioId = p.id
+                    ORDER BY t.date ASC, t.id ASC
+                `).all();
+            } else {
+                transactions = database.db.prepare(`
+                    SELECT t.*, p.name as portfolioName 
+                    FROM transactions t
+                    JOIN portfolios p ON t.portfolioId = p.id
+                    JOIN portfolio_users pu ON p.id = pu.portfolio_id
+                    WHERE pu.user_id = ?
+                    ORDER BY t.date ASC, t.id ASC
+                `).all(req.user.id);
+            }
 
             if (transactions.length === 0) {
                 return res.status(400).send('No transactions to export');
