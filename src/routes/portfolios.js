@@ -226,7 +226,8 @@ Rispondi in JSON: { "riskScore": 7, "diversification": "...", "actions": ["...",
         
         try {
             database.db.transaction(() => {
-                const info = database.db.prepare('INSERT INTO portfolios (name, currency, include_in_totals) VALUES (?, ?, 1)').run(name, currency || 'EUR');
+                const todayStr = new Date().toISOString().split('T')[0];
+                const info = database.db.prepare('INSERT INTO portfolios (name, currency, startDate, include_in_totals) VALUES (?, ?, ?, 1)').run(name, currency || 'EUR', todayStr);
                 const pid = info.lastInsertRowid;
                 
                 database.db.prepare('INSERT INTO portfolio_users (portfolio_id, user_id, role) VALUES (?, ?, ?)')
