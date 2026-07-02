@@ -2809,9 +2809,18 @@ try {
 let lastDailyReportDate = ''; // 'YYYY-MM-DD'
 let lastTelegramStatusTime = 0;
 
+let isFirstNewsSync = true;
+
 // Helper to check if a news article relates to the user's portfolio tickers and send an alert
 async function checkAndSendNewsAlert(userId, item, sourceName) {
     try {
+        // Skip if the article is older than 24 hours to avoid notifying on historical/older news
+        const pubDateStr = item.pubDate || new Date().toISOString();
+        const pubTime = new Date(pubDateStr).getTime();
+        if (!isNaN(pubTime) && Date.now() - pubTime > 24 * 60 * 60 * 1000) {
+            return;
+        }
+
         // 1. Get user's unique tickers
         const userTickersRows = database.db.prepare(`
             SELECT DISTINCT assetTicker FROM transactions
@@ -2882,8 +2891,10 @@ async function checkAndSendNewsAlert(userId, item, sourceName) {
 
 // ─── News Sync Engine ───────────────────────────────────────────────────────────────────────
 async function syncNews() {
+    const isFirstSync = isFirstNewsSync;
+    isFirstNewsSync = false;
     try {
-        logger.info('Starting RSS News Sync...');
+        logger.info(`Starting RSS News Sync (isFirstSync: ${isFirstSync})...`);
         
         const sources = database.db.prepare('SELECT * FROM news_sources WHERE is_enabled = 1').all();
         if (sources.length === 0) return;
@@ -2917,7 +2928,9 @@ async function syncNews() {
                         if (info.changes > 0) {
                             totalSaved++;
                             usersToCleanup.add(source.user_id);
-                            checkAndSendNewsAlert(source.user_id, item, source.name).catch(e => logger.error(e));
+                            if (!isFirstSync) {
+                                checkAndSendNewsAlert(source.user_id, item, source.name).catch(e => logger.error(e));
+                            }
                         }
                     }
                 }
