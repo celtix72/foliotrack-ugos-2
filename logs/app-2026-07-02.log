@@ -104,3 +104,7 @@
 2026-07-02T16:00:12.262Z [INFO] News Sync completed. Saved 44 new articles.
 2026-07-02T16:00:42.932Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
 2026-07-02T16:00:42.996Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-07-02T16:10:53.478Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-02T16:10:53.489Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-02T16:10:58.567Z [INFO] Starting RSS News Sync...
+2026-07-02T16:10:59.604Z [INFO] News Sync completed. Saved 44 new articles.
