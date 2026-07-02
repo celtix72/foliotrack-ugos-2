@@ -2809,6 +2809,77 @@ try {
 let lastDailyReportDate = ''; // 'YYYY-MM-DD'
 let lastTelegramStatusTime = 0;
 
+// Helper to check if a news article relates to the user's portfolio tickers and send an alert
+async function checkAndSendNewsAlert(userId, item, sourceName) {
+    try {
+        // 1. Get user's unique tickers
+        const userTickersRows = database.db.prepare(`
+            SELECT DISTINCT assetTicker FROM transactions
+            WHERE portfolioId IN (SELECT portfolio_id FROM portfolio_users WHERE user_id = ?)
+              AND assetTicker IS NOT NULL AND assetTicker != 'CASH' AND assetTicker != ''
+        `).all(userId);
+        if (userTickersRows.length === 0) return;
+        const userTickers = userTickersRows.map(r => r.assetTicker);
+
+        // 2. Fetch asset names
+        const placeholders = userTickers.map(() => '?').join(',');
+        const assets = database.db.prepare(`
+            SELECT ticker, name FROM assets WHERE ticker IN (${placeholders})
+        `).all(...userTickers);
+
+        // 3. Find matching asset
+        let matchedAsset = null;
+        const titleLower = item.title.toLowerCase();
+        
+        for (const asset of assets) {
+            const ticker = asset.ticker;
+            const name = asset.name;
+            
+            const cleanTicker = ticker.split('.')[0].replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+            if (cleanTicker.length >= 3 && titleLower.includes(cleanTicker)) {
+                matchedAsset = asset;
+                break;
+            }
+            if (titleLower.includes(ticker.toLowerCase())) {
+                matchedAsset = asset;
+                break;
+            }
+            if (name) {
+                const cleanName = name.toLowerCase().replace(/inc\.|corp\.|ltd\.|spa|s\.p\.a\./g, '').trim();
+                if (cleanName.length >= 4 && titleLower.includes(cleanName)) {
+                    matchedAsset = asset;
+                    break;
+                }
+            }
+        }
+
+        if (matchedAsset) {
+            const escapeV2 = (text) => {
+                if (typeof text !== 'string') text = String(text || '');
+                return text.replace(/([_*\[\]()~`>#+\-=|{}.!\\])/g, '\\$1');
+            };
+
+            const cleanTitle = escapeV2(item.title);
+            const cleanTicker = escapeV2(matchedAsset.ticker);
+            const cleanLink = item.link.replace(/([\\)])/g, '\\$1');
+
+            // Send notification
+            const payload = {
+                title: `News Alert: ${matchedAsset.ticker}`,
+                body: `${item.title}`,
+                ticker: matchedAsset.ticker,
+                data: {
+                    url: item.link
+                },
+                telegramMessage: `📰 *News Alert: ${cleanTicker}*\n\n${cleanTitle}\n\n[Leggi notizia completa](${cleanLink})`
+            };
+            await notifyUser(userId, 'NEWS', payload);
+        }
+    } catch (e) {
+        logger.error(`Error in checkAndSendNewsAlert for user ${userId}:`, e);
+    }
+}
+
 // ─── News Sync Engine ───────────────────────────────────────────────────────────────────────
 async function syncNews() {
     try {
@@ -2843,8 +2914,11 @@ async function syncNews() {
                     // Distribute to all users who have this source enabled
                     for (const source of userSources) {
                         const info = stmt.run(source.user_id, item.title, item.link, pubDate, source.name);
-                        if (info.changes > 0) totalSaved++;
-                        usersToCleanup.add(source.user_id);
+                        if (info.changes > 0) {
+                            totalSaved++;
+                            usersToCleanup.add(source.user_id);
+                            checkAndSendNewsAlert(source.user_id, item, source.name).catch(e => logger.error(e));
+                        }
                     }
                 }
             } catch (err) {

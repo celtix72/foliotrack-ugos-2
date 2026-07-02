@@ -956,6 +956,8 @@ function getSettings(userId) {
     if (settings.volatilityNotificationsEnabled === undefined) settings.volatilityNotificationsEnabled = 'false';
     if (settings.volatilityThreshold === undefined) settings.volatilityThreshold = '5.0';
     if (settings.updateFrequency === undefined) settings.updateFrequency = '5';
+    if (settings.notify_news_telegram === undefined) settings.notify_news_telegram = 'true';
+    if (settings.notify_news_push === undefined) settings.notify_news_push = 'true';
     
     return settings;
 }

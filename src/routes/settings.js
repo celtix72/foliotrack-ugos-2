@@ -167,7 +167,8 @@ module.exports = function (dependencies) {
                 vol: { telegram: settings.notify_vol_telegram === 'true', push: settings.notify_vol_push === 'true' },
                 daily: { telegram: settings.notify_daily_telegram === 'true', push: settings.notify_daily_push === 'true' },
                 status: { telegram: settings.notify_status_telegram === 'true', push: settings.notify_status_push === 'true' },
-                dividend: { telegram: settings.notify_dividend_telegram === 'true', push: settings.notify_dividend_push === 'true' }
+                dividend: { telegram: settings.notify_dividend_telegram === 'true', push: settings.notify_dividend_push === 'true' },
+                news: { telegram: settings.notify_news_telegram === 'true', push: settings.notify_news_push === 'true' }
             };
             res.json(matrix);
         } catch (e) {
@@ -249,6 +250,97 @@ module.exports = function (dependencies) {
         try {
             await sendStatusNotification(req.user.id, 'STATUS');
             res.json({ success: true, message: 'Test Status sent' });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // POST /api/settings/telegram/test-news
+    router.post('/settings/telegram/test-news', requireAuth, async (req, res) => {
+        try {
+            const userId = req.user.id;
+            const { notifyUser } = require('../services/notificationService');
+
+            // 1. Get last 3 news
+            let news = database.db.prepare('SELECT title, link, pubDate, source_name FROM news_articles WHERE user_id = ? ORDER BY pubDate DESC LIMIT 3').all(userId);
+            if (news.length === 0) {
+                news = database.db.prepare('SELECT title, link, pubDate, publisher AS source_name FROM global_news ORDER BY publishedAt DESC LIMIT 3').all();
+            }
+
+            if (news.length === 0) {
+                return res.status(404).json({ error: 'Nessuna notizia disponibile nel database per eseguire il test.' });
+            }
+
+            // 2. Get user's tickers
+            const userTickersRows = database.db.prepare(`
+                SELECT DISTINCT assetTicker FROM transactions
+                WHERE portfolioId IN (SELECT portfolio_id FROM portfolio_users WHERE user_id = ?)
+                  AND assetTicker IS NOT NULL AND assetTicker != 'CASH' AND assetTicker != ''
+            `).all(userId);
+
+            const userTickers = userTickersRows.map(r => r.assetTicker);
+            let assets = [];
+            if (userTickers.length > 0) {
+                const placeholders = userTickers.map(() => '?').join(',');
+                assets = database.db.prepare(`
+                    SELECT ticker, name FROM assets WHERE ticker IN (${placeholders})
+                `).all(...userTickers);
+            }
+
+            const escapeV2 = (text) => {
+                if (typeof text !== 'string') text = String(text || '');
+                return text.replace(/([_*\[\]()~`>#+\-=|{}.!\\])/g, '\\$1');
+            };
+
+            let sentCount = 0;
+
+            for (const item of news) {
+                let matchedTicker = 'TEST';
+                const titleLower = item.title.toLowerCase();
+
+                // Find a match
+                for (const asset of assets) {
+                    const cleanT = asset.ticker.split('.')[0].replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                    if (cleanT.length >= 3 && titleLower.includes(cleanT)) {
+                        matchedTicker = asset.ticker;
+                        break;
+                    }
+                    if (titleLower.includes(asset.ticker.toLowerCase())) {
+                        matchedTicker = asset.ticker;
+                        break;
+                    }
+                    if (asset.name) {
+                        const cleanName = asset.name.toLowerCase().replace(/inc\.|corp\.|ltd\.|spa|s\.p\.a\./g, '').trim();
+                        if (cleanName.length >= 4 && titleLower.includes(cleanName)) {
+                            matchedTicker = asset.ticker;
+                            break;
+                        }
+                    }
+                }
+
+                if (matchedTicker === 'TEST' && userTickers.length > 0) {
+                    matchedTicker = userTickers[0]; // fallback to first ticker of the user
+                }
+
+                const cleanTitle = escapeV2(item.title);
+                const cleanTicker = escapeV2(matchedTicker);
+                const cleanLink = item.link.replace(/([\\)])/g, '\\$1');
+
+                const payload = {
+                    title: `News Alert (Test): ${matchedTicker}`,
+                    body: `${item.title}`,
+                    ticker: matchedTicker,
+                    data: {
+                        url: item.link
+                    },
+                    telegramMessage: `📰 *News Alert (Test): ${cleanTicker}*\n\n${cleanTitle}\n\n[Leggi notizia completa](${cleanLink})`
+                };
+
+                await notifyUser(userId, 'NEWS', payload, true); // force send
+                sentCount++;
+            }
+
+            res.json({ success: true, message: `Inviati ${sentCount} test alert di notizie.` });
         } catch (err) {
             res.status(500).json({ error: err.message });
         }

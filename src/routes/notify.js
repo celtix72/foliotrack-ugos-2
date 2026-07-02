@@ -94,6 +94,12 @@ module.exports = function (dependencies) {
                 body: 'MSFT: +€12.50 (Netto)',
                 telegramMessage: '*💰 DIVIDENDO RICEVUTO*\n\nAsset: `MSFT`\nImporto Netto: `€12.50`',
                 data: { url: '/dividend' }
+            },
+            news: {
+                title: 'News Alert: AAPL',
+                body: 'Apple Inc. announces new AI features for iOS 20.',
+                telegramMessage: '📰 *News Alert: AAPL*\n\nApple Inc\\. announces new AI features for iOS 20\\.\n\n[Leggi notizia completa](https://www.apple.com)',
+                data: { url: 'https://www.apple.com' }
             }
         };
 
