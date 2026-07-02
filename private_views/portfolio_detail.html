@@ -982,7 +982,19 @@
                 document.getElementById('delete-portfolio-btn').classList.remove('hidden');
                 
                 const lossesMap = {};
-                (p.losses || []).forEach(l => { lossesMap[l.asset_type] = l.loss_amount; });
+                if (p.losses) {
+                    if (Array.isArray(p.losses)) {
+                        p.losses.forEach(l => { 
+                            const type = l.asset_type || l.type;
+                            const amt = l.loss_amount !== undefined ? l.loss_amount : l.amount;
+                            if (type) lossesMap[type] = amt;
+                        });
+                    } else if (typeof p.losses === 'object') {
+                        Object.entries(p.losses).forEach(([type, amt]) => {
+                            lossesMap[type] = amt;
+                        });
+                    }
+                }
                 
                 listContainer.innerHTML = categories.map(c => `
                     <div class="space-y-1">

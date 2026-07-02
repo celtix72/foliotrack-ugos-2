@@ -467,6 +467,11 @@ app.use('/api/portfolios', require('./routes/portfolios')({
     clearPerformanceCache: typeof clearPerformanceCache === 'function' ? clearPerformanceCache : () => {}
 }));
 
+app.use('/api/tags', require('./routes/tags')({
+    requireAuth,
+    database
+}));
+
 // ─── Analytics Routes ─────────────────────────────────────────────────────────
 const analyticsRouter = require('./routes/analytics')({
     requireAuth, requirePortfolioAccess, database, logger, yahooFinance, getEurUsdRate,
@@ -1282,6 +1287,12 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
     const trMap = {};
     taxRates.forEach(r => trMap[r.asset_type] = r.rate);
 
+    const pTags = database.db.prepare(`
+        SELECT t.id, t.name, t.color FROM tags t
+        JOIN portfolio_tags pt ON t.id = pt.tag_id
+        WHERE pt.portfolio_id = ?
+    `).all(portfolioId);
+
     const losses = database.db.prepare(`SELECT asset_type, amount FROM portfolio_losses WHERE portfolioId = ?`).all(portfolioId);
     const lossMap = {};
     losses.forEach(l => lossMap[l.asset_type] = l.amount);
@@ -1417,7 +1428,8 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
         totalGrossLatentGain: Math.round(totalGrossLatentGain * 100) / 100,
         totalLatentTax: Math.round(totalLatentTax * 100) / 100,
         taxBreakdown,
-        losses: lossMap
+        losses: lossMap,
+        tags: pTags
     };
 }
 
