@@ -595,15 +595,14 @@ function renderAssets(filter = '') {
         <tr class="group transition-colors hover:bg-slate-50 dark:hover:bg-white/[0.02] ${alertClass} ${opacity} cursor-pointer" ondblclick="loadAssetChart('${a.ticker}')">
             <td class="px-5 py-1">
                 <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-[10px] shrink-0 uppercase border border-primary/20">
-                        ${a.ticker.substring(0,4)}
+                    <div class="min-w-10 px-2 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-[10px] shrink-0 uppercase border border-primary/20">
+                        ${a.ticker}
                     </div>
                     <div>
-                            <div class="flex items-center gap-2">
-                                <p class="font-black text-sm text-slate-900 dark:text-white leading-none">${a.name}</p>
-                            </div>
-                            ${!a.isMonitored ? '<span class="text-[8px] font-black bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-500 tracking-tighter uppercase">Inactive</span>' : ''}
-                            ${a.lastUpdateError ? `<span class="px-1.5 py-0.5 rounded-full bg-rose-500 text-[8px] font-black text-white uppercase tracking-tighter" title="${a.lastUpdateError.replace(/"/g, '&quot;')}">Err</span>` : ''}
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <p class="font-black text-sm text-slate-900 dark:text-white leading-none truncate max-w-[240px]" title="${a.name}">${a.name}</p>
+                            ${!a.isMonitored ? '<span class="text-[8px] font-black bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-500 tracking-tighter uppercase shrink-0">Inactive</span>' : ''}
+                            ${a.lastUpdateError ? `<span class="px-1.5 py-0.5 rounded-full bg-rose-500 text-[8px] font-black text-white uppercase tracking-tighter shrink-0" title="${a.lastUpdateError.replace(/"/g, '&quot;')}">Err</span>` : ''}
                         </div>
                         <p class="text-[9px] text-slate-400 uppercase font-black tracking-widest mt-1.5 flex items-center gap-2 flex-wrap">
                             ${(a.portfoliosInfo && a.portfoliosInfo.length > 0) ? a.portfoliosInfo.map(p => `
@@ -616,8 +615,6 @@ function renderAssets(filter = '') {
                             ${(a.portfoliosInfo && a.portfoliosInfo.length > 0) ? '<span class="text-slate-300 dark:text-slate-700 mx-1">|</span>' : ''}
 
                             <span class="shrink-0 flex items-center gap-2">
-                                <span class="text-slate-500">${a.ticker}</span>
-                                <span class="text-slate-300 dark:text-slate-700">•</span>
                                 <span>${a.exchange || 'Market'}</span>
                                 <span class="px-1.5 py-0.5 rounded text-[8px] font-black leading-none ${a.dataSource === 'B_ITA' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400'}">${a.dataSource === 'B_ITA' ? 'BI' : 'YF'}</span>
                             </span>
