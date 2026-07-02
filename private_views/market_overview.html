@@ -659,10 +659,10 @@ function renderAssets(filter = '') {
                 <p class="text-base font-black ${dailyGain >= 0 ? 'text-emerald-500' : 'text-rose-500'} font-mono">${formatCurrency(dailyGain, a.currency)}</p>
             </td>
             <td class="px-5 py-1.5">
-                <p class="text-base font-black text-slate-900 dark:text-white font-mono">${formatCurrency(a.totalCostAssetCurr || 0, a.currency)}</p>
+                <p class="text-base font-black text-slate-900 dark:text-white font-mono">${formatCurrency(a.totalCostAssetCurr || 0, a.currency, 0)}</p>
             </td>
             <td class="px-5 py-1.5">
-                <p class="text-base font-black text-slate-900 dark:text-white font-mono">${formatCurrency(price * (a.totalQuantity || 0), a.currency)}</p>
+                <p class="text-base font-black text-slate-900 dark:text-white font-mono">${formatCurrency(price * (a.totalQuantity || 0), a.currency, 0)}</p>
                 <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">
                     Q.tà: <span class="font-mono text-slate-500 dark:text-slate-400">${formatNumber(a.totalQuantity || 0, 2)}</span>
                 </p>
@@ -676,7 +676,7 @@ function renderAssets(filter = '') {
                     const clr = gain >= 0 ? 'text-emerald-500' : 'text-rose-500';
                     const sgn = gain >= 0 ? '+' : '';
                     return `
-                        <p class="text-base font-black ${clr}">${sgn}${formatCurrency(gain, a.currency)}</p>
+                        <p class="text-base font-black ${clr}">${sgn}${formatCurrency(gain, a.currency, 0)}</p>
                         <p class="text-[10px] font-bold ${clr} mt-0.5">${sgn}${formatNumber(gainPct, 1)}%</p>
                     `;
                 })()}
