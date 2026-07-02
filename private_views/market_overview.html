@@ -205,14 +205,27 @@
         <div class="overflow-hidden bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
             <table class="w-full text-left border-collapse">
                 <thead>
-                    <tr class="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                    <tr class="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 select-none">
                         <th class="px-5 py-3">Asset</th>
-                        <th class="px-5 py-3">Price</th>
-                        <th class="px-5 py-3">Performance</th>
-                        <th class="px-5 py-3" id="th-total-daily-gain">Daily Gain</th>
-                        <th class="px-5 py-3 hidden sm:table-cell">Target/Stop</th>
+                        <th class="px-5 py-3 cursor-pointer hover:text-primary transition-colors" onclick="toggleSort('price')">
+                            Price <span id="sort-icon-price"></span>
+                        </th>
+                        <th class="px-5 py-3 cursor-pointer hover:text-primary transition-colors" onclick="toggleSort('perf24h')">
+                            Perf. 24h <span id="sort-icon-perf24h"></span>
+                        </th>
+                        <th class="px-5 py-3 cursor-pointer hover:text-primary transition-colors" id="th-total-daily-gain" onclick="toggleSort('dailyGain')">
+                            Daily Gain <span id="sort-icon-dailyGain"></span>
+                        </th>
+                        <th class="px-5 py-3 cursor-pointer hover:text-primary transition-colors" onclick="toggleSort('invested')">
+                            Investito <span id="sort-icon-invested"></span>
+                        </th>
+                        <th class="px-5 py-3 cursor-pointer hover:text-primary transition-colors" onclick="toggleSort('cumulated')">
+                            Cumulato <span id="sort-icon-cumulated"></span>
+                        </th>
+                        <th class="px-5 py-3 cursor-pointer hover:text-primary transition-colors" onclick="toggleSort('gain')">
+                            Gain <span id="sort-icon-gain"></span>
+                        </th>
                         <th class="px-5 py-3 text-right">Actions</th>
-                        
                     </tr>
                 </thead>
                 <tbody id="list-positions" class="divide-y divide-slate-100 dark:divide-slate-800">
@@ -396,6 +409,66 @@
 <script>
 let allAssets = [];
 let usdEurRate = 1.0;
+let currentSortField = 'perf24h';
+let currentSortDir = 'desc';
+
+function getSortValue(a, field) {
+    switch (field) {
+        case 'price':
+            return a.currentPrice || 0;
+        case 'perf24h':
+            return a.changePercent || 0;
+        case 'dailyGain': {
+            let val = (a.totalQuantity || 0) * (a.changeValue || 0);
+            if (a.currency === 'USD') val /= usdEurRate;
+            return val;
+        }
+        case 'invested': {
+            let val = a.totalCostAssetCurr || 0;
+            if (a.currency === 'USD') val /= usdEurRate;
+            return val;
+        }
+        case 'cumulated': {
+            let val = (a.totalQuantity || 0) * (a.currentPrice || 0);
+            if (a.currency === 'USD') val /= usdEurRate;
+            return val;
+        }
+        case 'gain': {
+            let cumulated = (a.totalQuantity || 0) * (a.currentPrice || 0);
+            let invested = a.totalCostAssetCurr || 0;
+            let val = cumulated - invested;
+            if (a.currency === 'USD') val /= usdEurRate;
+            return val;
+        }
+        default:
+            return 0;
+    }
+}
+
+function toggleSort(field) {
+    if (currentSortField === field) {
+        currentSortDir = currentSortDir === 'desc' ? 'asc' : 'desc';
+    } else {
+        currentSortField = field;
+        currentSortDir = 'desc';
+    }
+    renderAssets(document.getElementById('search-assets')?.value || '');
+}
+
+function updateSortHeaders() {
+    const fields = ['price', 'perf24h', 'dailyGain', 'invested', 'cumulated', 'gain'];
+    fields.forEach(f => {
+        const span = document.getElementById(`sort-icon-${f}`);
+        if (!span) return;
+        if (currentSortField === f) {
+            span.innerHTML = currentSortDir === 'desc' ? ' ↓' : ' ↑';
+            span.className = 'text-indigo-500 font-black ml-0.5';
+        } else {
+            span.innerHTML = '';
+            span.className = '';
+        }
+    });
+}
 
 // ─── Data loading ─────────────────────────────────────────────────────────────
 async function loadAssets() {
@@ -426,7 +499,13 @@ function renderAssets(filter = '') {
         ? allAssets.filter(a => (a.name + a.ticker).toLowerCase().includes(filter.toLowerCase()))
         : allAssets).filter(a => a.ticker !== 'CASH');
 
-    const openPositions = filtered.filter(a => a.hasPosition).sort((a, b) => (b.changePercent || 0) - (a.changePercent || 0));
+    const openPositions = filtered.filter(a => a.hasPosition).sort((a, b) => {
+        const valA = getSortValue(a, currentSortField);
+        const valB = getSortValue(b, currentSortField);
+        return currentSortDir === 'desc' ? valB - valA : valA - valB;
+    });
+
+    updateSortHeaders();
 
     if (countLabel) countLabel.textContent = `${openPositions.length} POSITIONS`;
 
@@ -552,13 +631,6 @@ function renderAssets(filter = '') {
             </td>
             <td class="px-5 py-1.5">
                 <p class="text-lg font-black text-slate-900 dark:text-white font-mono">${formatCurrency(price, a.currency)}</p>
-                ${a.hasPosition && a.totalQuantity > 0 ? `
-                    <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">
-                        Cumulato: <span class="font-mono text-slate-600 dark:text-slate-300 font-black">${formatCurrency(price * a.totalQuantity, a.currency)}</span>
-                        <span class="text-slate-300 dark:text-slate-700 mx-1">•</span>
-                        Q.tà: <span class="font-mono text-slate-500 dark:text-slate-400">${formatNumber(a.totalQuantity, 2)}</span>
-                    </p>
-                ` : ''}
             </td>
             <td class="px-5 py-1.5">
                 <div class="flex items-center gap-4">
@@ -586,17 +658,28 @@ function renderAssets(filter = '') {
             <td class="px-5 py-1.5">
                 <p class="text-base font-black ${dailyGain >= 0 ? 'text-emerald-500' : 'text-rose-500'} font-mono">${formatCurrency(dailyGain, a.currency)}</p>
             </td>
-            <td class="px-5 py-1.5 hidden sm:table-cell">
-                <div class="flex gap-4">
-                    <div class="space-y-0.5">
-                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Target</p>
-                        <p class="text-[10px] font-black ${targetReached ? 'text-emerald-500' : 'text-slate-500'}">${a.targetPrice ? formatCurrency(a.targetPrice, a.currency) : '—'}</p>
-                    </div>
-                    <div class="space-y-0.5">
-                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Stop</p>
-                        <p class="text-[10px] font-black ${stopLossHit ? 'text-rose-500' : 'text-slate-500'}">${a.stopLoss ? formatCurrency(a.stopLoss, a.currency) : '—'}</p>
-                    </div>
-                </div>
+            <td class="px-5 py-1.5">
+                <p class="text-base font-black text-slate-900 dark:text-white font-mono">${formatCurrency(a.totalCostAssetCurr || 0, a.currency)}</p>
+            </td>
+            <td class="px-5 py-1.5">
+                <p class="text-base font-black text-slate-900 dark:text-white font-mono">${formatCurrency(price * (a.totalQuantity || 0), a.currency)}</p>
+                <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">
+                    Q.tà: <span class="font-mono text-slate-500 dark:text-slate-400">${formatNumber(a.totalQuantity || 0, 2)}</span>
+                </p>
+            </td>
+            <td class="px-5 py-1.5 font-mono">
+                ${(function() {
+                    const cumulated = (a.totalQuantity || 0) * price;
+                    const invested = a.totalCostAssetCurr || 0;
+                    const gain = cumulated - invested;
+                    const gainPct = invested > 0 ? (gain / invested) * 100 : 0;
+                    const clr = gain >= 0 ? 'text-emerald-500' : 'text-rose-500';
+                    const sgn = gain >= 0 ? '+' : '';
+                    return `
+                        <p class="text-base font-black ${clr}">${sgn}${formatCurrency(gain, a.currency)}</p>
+                        <p class="text-[10px] font-bold ${clr} mt-0.5">${sgn}${formatNumber(gainPct, 1)}%</p>
+                    `;
+                })()}
             </td>
             <td class="px-5 py-1.5 text-right">
                 <div class="flex items-center justify-end gap-1">
