@@ -104,3 +104,71 @@
 2026-07-01T11:08:22.832Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
 2026-07-01T11:08:27.911Z [INFO] Starting RSS News Sync...
 2026-07-01T11:08:28.867Z [INFO] News Sync completed. Saved 60 new articles.
+2026-07-01T11:15:10.955Z [INFO] Starting RSS News Sync...
+2026-07-01T11:15:11.787Z [INFO] News Sync completed. Saved 50 new articles.
+2026-07-01T11:15:13.057Z [INFO] Starting RSS News Sync...
+2026-07-01T11:15:13.973Z [INFO] News Sync completed. Saved 50 new articles.
+2026-07-01T11:15:28.807Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-07-01T11:17:27.161Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-07-01T13:01:09.070Z [INFO] Starting RSS News Sync...
+2026-07-01T13:01:09.917Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-07-01T13:01:10.496Z [INFO] Starting RSS News Sync...
+2026-07-01T13:01:10.742Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-07-01T13:01:10.910Z [INFO] News Sync completed. Saved 72 new articles.
+2026-07-01T13:01:11.356Z [INFO] News Sync completed. Saved 49 new articles.
+2026-07-01T14:24:29.976Z [INFO] Starting RSS News Sync...
+2026-07-01T14:24:29.976Z [INFO] Starting RSS News Sync...
+2026-07-01T14:24:30.194Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-07-01T14:24:30.194Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-07-01T14:24:30.771Z [INFO] News Sync completed. Saved 49 new articles.
+2026-07-01T14:24:30.892Z [INFO] News Sync completed. Saved 56 new articles.
+2026-07-01T15:30:06.205Z [INFO] Starting RSS News Sync...
+2026-07-01T15:30:06.215Z [INFO] Starting RSS News Sync...
+2026-07-01T15:30:06.567Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-07-01T15:30:06.616Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-07-01T15:30:07.192Z [INFO] News Sync completed. Saved 72 new articles.
+2026-07-01T15:30:07.284Z [INFO] News Sync completed. Saved 28 new articles.
+2026-07-01T16:31:05.662Z [INFO] Starting RSS News Sync...
+2026-07-01T16:31:05.665Z [INFO] Starting RSS News Sync...
+2026-07-01T16:31:05.899Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-07-01T16:31:05.930Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-07-01T16:31:06.575Z [INFO] News Sync completed. Saved 38 new articles.
+2026-07-01T16:31:06.577Z [INFO] News Sync completed. Saved 31 new articles.
+2026-07-01T17:48:23.773Z [INFO] Starting RSS News Sync...
+2026-07-01T17:48:23.780Z [INFO] Starting RSS News Sync...
+2026-07-01T17:48:23.992Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-07-01T17:48:24.038Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-07-01T17:48:24.810Z [INFO] News Sync completed. Saved 33 new articles.
+2026-07-01T17:48:24.816Z [INFO] News Sync completed. Saved 49 new articles.
+2026-07-01T19:19:33.291Z [INFO] Starting RSS News Sync...
+2026-07-01T19:19:33.333Z [INFO] Starting RSS News Sync...
+2026-07-01T19:19:33.483Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-07-01T19:19:33.564Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-07-01T19:19:34.118Z [INFO] News Sync completed. Saved 65 new articles.
+2026-07-01T19:19:34.234Z [INFO] News Sync completed. Saved 25 new articles.
+2026-07-01T20:35:00.378Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-01T20:35:00.396Z [INFO] Starting RSS News Sync...
+2026-07-01T20:35:00.410Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-01T20:35:00.429Z [INFO] Starting RSS News Sync...
+2026-07-01T20:35:01.297Z [INFO] News Sync completed. Saved 64 new articles.
+2026-07-01T20:35:01.388Z [INFO] News Sync completed. Saved 23 new articles.
+2026-07-01T20:51:45.387Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-01T20:51:45.431Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-01T21:00:26.061Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-01T21:00:26.110Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-01T21:31:51.882Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-01T21:31:51.932Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-01T22:01:38.990Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-01T22:01:39.019Z [INFO] Starting RSS News Sync...
+2026-07-01T22:01:39.042Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-01T22:01:39.055Z [INFO] Starting RSS News Sync...
+2026-07-01T22:01:40.026Z [INFO] News Sync completed. Saved 44 new articles.
+2026-07-01T22:01:40.150Z [INFO] News Sync completed. Saved 66 new articles.
+2026-07-01T22:34:57.951Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-01T22:34:58.007Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-01T23:43:31.315Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-01T23:43:31.345Z [INFO] Starting RSS News Sync...
+2026-07-01T23:43:31.366Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-01T23:43:31.380Z [INFO] Starting RSS News Sync...
+2026-07-01T23:43:32.167Z [INFO] News Sync completed. Saved 51 new articles.
+2026-07-01T23:43:32.191Z [INFO] News Sync completed. Saved 23 new articles.
