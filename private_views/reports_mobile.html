@@ -622,6 +622,7 @@
         if (portfolioData[0] && startLbl) startLbl.textContent = fmtD(portfolioData[0].date);
         if (portfolioData[portfolioData.length-1] && endLbl) endLbl.textContent = fmtD(portfolioData[portfolioData.length-1].date);
 
+        if (mobPerfChart) mobPerfChart.destroy();
         mobPerfChart = new Chart(pCtx, {
             type: 'line',
             data: {
