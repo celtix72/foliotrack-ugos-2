@@ -562,7 +562,7 @@ function renderAssets(filter = '') {
         totalGainHeader.innerHTML = `
             <div class="flex flex-col">
                 <span>Daily Gain</span>
-                <span class="text-[10px] font-mono ${color} leading-none mt-1">${sign}${formatCurrency(totalDailyGainEUR, 'EUR')}</span>
+                <span class="text-[10px] font-mono ${color} leading-none mt-1">${sign}${formatCurrency(totalDailyGainEUR, 'EUR', 0)}</span>
             </div>
         `;
     }
@@ -607,14 +607,9 @@ function renderAssets(filter = '') {
                         </div>
                         <p class="text-[9px] text-slate-400 uppercase font-black tracking-widest mt-1.5 flex items-center gap-2 flex-wrap">
                             ${(a.portfoliosInfo && a.portfoliosInfo.length > 0) ? a.portfoliosInfo.map(p => `
-                                <span class="flex items-center gap-1 shrink-0">
-                                    <span class="px-1.5 py-0.5 rounded text-[7px] font-black tracking-tighter uppercase" 
-                                          style="background-color: ${p.color || '#64748b'}15; color: ${p.color || '#64748b'}; border: 1px solid ${p.color || '#64748b'}30;">
-                                        ${p.name}
-                                    </span>
-                                    <span class="font-bold text-[8px]" style="color: ${p.roi >= 0 ? '#10b981' : '#f43f5e'};">
-                                        ${p.roi >= 0 ? '+' : ''}${formatNumber(p.roi, 1)}%
-                                    </span>
+                                <span class="px-1.5 py-0.5 rounded text-[7px] font-black tracking-tighter uppercase shrink-0" 
+                                      style="background-color: ${p.color || '#64748b'}15; color: ${p.color || '#64748b'}; border: 1px solid ${p.color || '#64748b'}30;">
+                                    ${p.name}
                                 </span>
                             `).join('<span class="text-slate-200 dark:text-slate-800">•</span>') : ''}
 
@@ -660,7 +655,7 @@ function renderAssets(filter = '') {
                 </div>
             </td>
             <td class="px-5 py-1.5">
-                <p class="text-base font-black ${dailyGain >= 0 ? 'text-emerald-500' : 'text-rose-500'} font-mono">${formatCurrency(dailyGain, a.currency)}</p>
+                <p class="text-base font-black ${dailyGain >= 0 ? 'text-emerald-500' : 'text-rose-500'} font-mono">${formatCurrency(dailyGain, a.currency, 0)}</p>
             </td>
             <td class="px-5 py-1.5">
                 <p class="text-base font-black text-slate-900 dark:text-white font-mono">${formatCurrency(a.totalCostAssetCurr || 0, a.currency, 0)}</p>
