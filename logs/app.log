@@ -42564,3 +42564,7 @@
 2026-07-02T16:45:13.418Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
 2026-07-02T16:45:18.497Z [INFO] Starting RSS News Sync...
 2026-07-02T16:45:19.580Z [INFO] News Sync completed. Saved 47 new articles.
+2026-07-02T16:48:28.465Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-02T16:48:28.475Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-02T16:48:33.550Z [INFO] Starting RSS News Sync...
+2026-07-02T16:48:34.412Z [INFO] News Sync completed. Saved 44 new articles.
