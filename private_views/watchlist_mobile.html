@@ -684,6 +684,12 @@
             if (type === 'CONTO_DEPOSITO' || yfType === 'CONTO_DEPOSITO' || ticker.startsWith('CD_')) {
                 return 0;
             }
+            
+            // When sorting by name or total gain, do not partition open/closed markets
+            if (_watchlistSortMode === 'name' || _watchlistSortMode === 'totalGain') {
+                return 1;
+            }
+            
             return isAssetMarketOpen(x) ? 2 : 1;
         };
 
