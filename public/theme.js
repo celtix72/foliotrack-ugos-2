@@ -458,11 +458,6 @@
     }
 
     window.removeFromWatchlist = async function(ticker, hasPosition = false) {
-        if (hasPosition) {
-            alert(`L'asset ${ticker} ha posizioni aperte in uno o più portafogli.\n\nPer rimuoverlo completamente, devi prima eliminare tutte le singole transazioni associate a questo ticker.`);
-            return;
-        }
-        
         if (!confirm(`Rimuovere ${ticker} dalla watchlist?`)) return;
         
         try {
