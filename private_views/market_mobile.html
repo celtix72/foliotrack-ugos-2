@@ -73,8 +73,10 @@
         padding: 10px 14px;
         gap: 10px;
         cursor: pointer;
-        transition: background 0.15s;
+        transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
         position: relative;
+        z-index: 2;
+        will-change: transform;
     }
     .mkcard-row:active { background: var(--mob-border); }
     /* Left accent bar based on gain/loss */
@@ -677,22 +679,22 @@
 
       // ── NEW Card View renderer ──────────────────────────────────────
       function renderCardView(a) {
-        const price = a.currentPrice || 0;
-        const change = a.changePercent || 0;
-        const isPos = change >= 0;
+        const price    = a.currentPrice || 0;
+        const change   = a.changePercent || 0;
+        const isPos    = change >= 0;
         const chgColor = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
         const tickerEsc = a.ticker.replace(/'/g, "\\'");
-        const nameEsc  = (a.name || '').replace(/'/g, "\\'");
+        const nameEsc   = (a.name || '').replace(/'/g, "\\'");
         const cur = a.currency || 'EUR';
 
         // Daily gain
-        const _chgVal = (a.changeValue || 0) * (a.totalQuantity || 0);
+        const _chgVal  = (a.changeValue || 0) * (a.totalQuantity || 0);
         const _dgColor = _chgVal >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
         const _dgSign  = _chgVal >= 0 ? '+' : '';
 
-        // Total position
-        const _totalVal  = price * (a.totalQuantity || 0);
-        const _totalGain = a.totalGainEUR !== undefined ? a.totalGainEUR : (_totalVal - (a.totalCostAssetCurr || 0));
+        // Total position gain
+        const _totalVal     = price * (a.totalQuantity || 0);
+        const _totalGain    = a.totalGainEUR !== undefined ? a.totalGainEUR : (_totalVal - (a.totalCostAssetCurr || 0));
         const _totGainIsPos = _totalGain >= 0;
         const _totGainColor = _totGainIsPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
         const _totGainSign  = (_totGainIsPos && Math.abs(_totalGain) >= 0.5) ? '+' : '';
@@ -701,24 +703,30 @@
         const hasDailyGain = a.hasPosition && Math.abs(_chgVal) >= 0.01;
         const hasTotalGain = a.hasPosition && _totalVal > 0;
 
-        // Portfolio tags
+        // Portfolio tags (inline style, no newlines)
         const portTags = (a.portfoliosInfo && a.portfoliosInfo.length > 0)
           ? a.portfoliosInfo.map(p => {
-              const bg  = (p.color || '#64748b') + '22';
               const clr = p.color || '#64748b';
-              const brd = (p.color || '#64748b') + '44';
-              return `<span class="mkcard-port-tag" style="background:${bg};color:${clr};border:1px solid ${brd}">${p.name}</span>`;
-            }).join('')
+              return `<span style="display:inline-block;border-radius:4px;padding:1px 5px;font-size:8px;font-weight:900;text-transform:uppercase;background:${clr}22;color:${clr};border:1px solid ${clr}44">${p.name}</span>`;
+            }).join(' ')
           : '';
 
-        // Pre/post market
-        const prePost = (a.preMarketChangePercent && Math.abs(a.preMarketChangePercent) > 0.01 && !window._mobMarketOpen)
-          ? `<span style="font-size:10px;font-weight:900;color:${a.preMarketChangePercent>=0?'var(--mob-emerald)':'var(--mob-rose)'}">${a.preMarketChangePercent>=0?'+':''}${a.preMarketChangePercent.toFixed(1)}% Pre</span>`
-          : (a.postMarketChangePercent && Math.abs(a.postMarketChangePercent) > 0.01 && !window._mobMarketOpen)
-            ? `<span style="font-size:10px;font-weight:900;color:${a.postMarketChangePercent>=0?'var(--mob-emerald)':'var(--mob-rose)'}">${a.postMarketChangePercent>=0?'+':''}${a.postMarketChangePercent.toFixed(1)}% Post</span>`
-            : '';
+        // Pre/post market (inline)
+        let prePost = '';
+        if (a.preMarketChangePercent && Math.abs(a.preMarketChangePercent) > 0.01 && !window._mobMarketOpen) {
+          const c = a.preMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+          const s = a.preMarketChangePercent >= 0 ? '+' : '';
+          prePost = `<span style="font-size:10px;font-weight:900;color:${c}">${s}${a.preMarketChangePercent.toFixed(1)}% Pre</span>`;
+        } else if (a.postMarketChangePercent && Math.abs(a.postMarketChangePercent) > 0.01 && !window._mobMarketOpen) {
+          const c = a.postMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+          const s = a.postMarketChangePercent >= 0 ? '+' : '';
+          prePost = `<span style="font-size:10px;font-weight:900;color:${c}">${s}${a.postMarketChangePercent.toFixed(1)}% Post</span>`;
+        }
 
         const priceFmt = fmtPriceCompact(price, cur, price >= 100 ? 0 : price >= 10 ? 1 : 2);
+        const dsBg  = a.dataSource === 'B_ITA' ? 'rgba(251,146,60,0.15)' : 'rgba(56,189,248,0.15)';
+        const dsClr = a.dataSource === 'B_ITA' ? '#fb923c' : '#38bdf8';
+        const dsLbl = a.dataSource === 'B_ITA' ? 'BI' : 'YF';
 
         return `
           <div class="mob-holding-swipe-container"
@@ -728,43 +736,30 @@
             ${renderActions(a)}
             <div class="mkcard-row ${isPos ? 'pos' : 'neg'}"
                  onclick="window.showMobDetails('${tickerEsc}','${nameEsc}','${cur}')">
-              <!-- Ticker chip -->
               <div class="mkcard-ticker-badge">
                 <div class="mkcard-ticker-chip">${a.ticker}</div>
               </div>
-              <!-- Body -->
               <div class="mkcard-body">
-                <div class="mkcard-name">${abbreviateName(a.name, 26)}</div>
+                <div class="mkcard-name">${abbreviateName(a.name, 28)}</div>
                 <div class="mkcard-meta">
                   <span>${a.exchange || 'MKT'}</span>
-                  <span class="mkcard-meta-sep">•</span>
-                  <span style="background:${a.dataSource==='B_ITA'?'rgba(251,146,60,0.15)':'rgba(56,189,248,0.15)'};
-                              color:${a.dataSource==='B_ITA'?'#fb923c':'#38bdf8'};
-                              border-radius:3px; padding:1px 4px; font-size:8px; font-weight:900">${a.dataSource==='B_ITA'?'BI':'YF'}</span>
+                  <span style="opacity:0.35">•</span>
+                  <span style="background:${dsBg};color:${dsClr};border-radius:3px;padding:1px 4px;font-size:8px;font-weight:900">${dsLbl}</span>
                   ${portTags}
                 </div>
-                <!-- AI badge -->
-                <div style="margin-top:3px; display:flex; flex-wrap:wrap; gap:3px">
+                <div style="margin-top:3px;display:flex;flex-wrap:wrap;gap:3px">
                   ${renderAiBadgeMob(a)}
                 </div>
               </div>
-              <!-- Values -->
               <div class="mkcard-values">
                 <div class="mkcard-price">${priceFmt}</div>
                 <div class="mkcard-change" style="color:${chgColor}">
-                  <span class="material-symbols-outlined" style="font-size:11px">${isPos?'trending_up':'trending_down'}</span>
-                  ${isPos?'+':''}${change.toFixed(1)}%
+                  <span class="material-symbols-outlined" style="font-size:11px">${isPos ? 'trending_up' : 'trending_down'}</span>
+                  ${isPos ? '+' : ''}${change.toFixed(1)}%
                 </div>
                 ${prePost ? `<div style="margin-top:1px">${prePost}</div>` : ''}
-                ${hasDailyGain ? `
-                  <div class="mkcard-gain-row" style="margin-top:3px">
-                    <span class="mkcard-daily-gain" style="color:${_dgColor};background:${_chgVal>=0?'rgba(16,185,129,0.1)':'rgba(244,63,94,0.1)'}">${_dgSign}${fmtPriceCompact(_chgVal, cur, 0)}</span>
-                  </div>` : ''}
-                ${hasTotalGain ? `
-                  <div class="mkcard-gain-row">
-                    <span style="font-size:9px;font-weight:700;color:${_totGainColor}">${_totGainSign}${fmtPriceCompact(_totalGain, _totGainCur, 0)}</span>
-                    <span class="mkcard-total-gain">${fmtPriceCompact(_totalVal, cur, 0)}</span>
-                  </div>` : ''}
+                ${hasDailyGain ? `<div style="margin-top:3px;display:flex;justify-content:flex-end"><span style="font-size:10px;font-weight:700;font-family:monospace;border-radius:4px;padding:1px 5px;color:${_dgColor};background:${_chgVal >= 0 ? 'rgba(16,185,129,0.1)' : 'rgba(244,63,94,0.1)'}">${_dgSign}${fmtPriceCompact(_chgVal, cur, 0)}</span></div>` : ''}
+                ${hasTotalGain ? `<div style="display:flex;justify-content:flex-end;align-items:center;gap:4px"><span style="font-size:9px;font-weight:700;color:${_totGainColor}">${_totGainSign}${fmtPriceCompact(_totalGain, _totGainCur, 0)}</span><span style="font-size:9px;font-weight:500;color:var(--mob-text-muted)">${fmtPriceCompact(_totalVal, cur, 0)}</span></div>` : ''}
               </div>
             </div>
           </div>`;
