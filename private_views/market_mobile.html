@@ -708,7 +708,7 @@
           ? a.portfoliosInfo.map(p => {
               const clr = p.color || '#64748b';
               const firstLetter = (p.name || 'P').charAt(0).toUpperCase();
-              return `<span style="background:${clr}20; color:${clr}; border:1px solid ${clr}40; border-radius:3px; padding:1px 3px; font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:900; line-height:1; display:inline-block; vertical-align:middle; margin-left:3px;" title="${p.name}">${firstLetter}</span>`;
+              return `<span style="background:${clr}22; color:${clr}; border:1px solid ${clr}44; border-radius:4px; padding:1px 5px; font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; display:inline-block; vertical-align:middle; margin-left:3px; text-transform:uppercase;" title="${p.name}">${firstLetter}</span>`;
             }).join('')
           : '';
         const exchangeLabel = a.exchange || 'MKT';
