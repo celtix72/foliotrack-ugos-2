@@ -67,7 +67,7 @@
     }
     .mkcard-row {
         display: grid;
-        grid-template-columns: 1fr 90px 120px;
+        grid-template-columns: 1fr 90px 55px 75px;
         align-items: center;
         background: var(--mob-surface);
         border-bottom: 1px solid var(--mob-border);
@@ -815,13 +815,12 @@
         const _absPct  = invested > 0 ? ((_totalVal - invested) / invested) * 100 : 0;
         const absPctColor = _absPct >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
 
-        // Formatted Column 4 rows
+        // Formatted Column 3 & 4 rows
         const todayVarPct = `${isPos ? '+' : ''}${change.toFixed(1)}%`;
         const todayVarStr = hasDailyGain ? `${_dgSign}${fmtPriceCompact(_chgVal, cur, 0)}` : '—';
 
         const absVarPct = hasTotalGain ? `${_absPct >= 0 ? '+' : ''}${_absPct.toFixed(1)}%` : '—';
-        const absVarVal = hasTotalGain ? ` / ${_totGainSign}${fmtPriceCompact(_totalGain, _totGainCur, 0)}` : '';
-        const absVarStr = `${absVarPct}${absVarVal}`;
+        const absVarValStr = hasTotalGain ? `${_totGainSign}${fmtPriceCompact(_totalGain, _totGainCur, 0)}` : '—';
 
         return `
           <div class="mob-holding-swipe-container"
@@ -841,15 +840,21 @@
                 <span style="font-size:calc(13px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${priceFmt}&nbsp;<span style="color:${chgColor}; font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:900">${todayVarPct}</span><span style="background:rgba(100,116,139,0.1); color:var(--mob-text-muted); border-radius:3px; padding:1px 4px; font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; margin-left:4px; display:inline-block; vertical-align:middle">${exchangeLabel}</span></span>
               </div>
 
-              <!-- Col 3: AI Target Price TAG -->
+              <!-- Col 2: AI Target Price TAG -->
               <div style="display:flex; flex-direction:column; justify-content:center; align-items:flex-start; gap:3px; min-width:0; height:100%">
                 ${renderAiBadgeMob(a)}
               </div>
 
-              <!-- Col 4: Today Var (% / Val) & Absolute Var (% / Val) -->
+              <!-- Col 3: Today Var % & Absolute Var % -->
+              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; min-width:0; text-align:right">
+                <div style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:900; color:${chgColor}; font-family:'SF Mono',monospace; white-space:nowrap">${todayVarPct}</div>
+                <div style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:700; color:${hasTotalGain ? absPctColor : 'var(--mob-text-muted)'}; font-family:'SF Mono',monospace; white-space:nowrap">${absVarPct}</div>
+              </div>
+
+              <!-- Col 4: Today Var Value & Absolute Var Value -->
               <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; min-width:0; text-align:right">
                 <div style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:900; color:${chgColor}; font-family:'SF Mono',monospace; white-space:nowrap">${todayVarStr}</div>
-                <div style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:700; color:${hasTotalGain ? absPctColor : 'var(--mob-text-muted)'}; font-family:'SF Mono',monospace; white-space:nowrap">${absVarStr}</div>
+                <div style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:700; color:${hasTotalGain ? _totGainColor : 'var(--mob-text-muted)'}; font-family:'SF Mono',monospace; white-space:nowrap">${absVarValStr}</div>
               </div>
             </div>
           </div>`;
