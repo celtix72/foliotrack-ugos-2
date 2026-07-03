@@ -66,12 +66,13 @@
         padding: 0;
     }
     .mkcard-row {
-        display: flex;
-        align-items: stretch;
+        display: grid;
+        grid-template-columns: 75px 1fr 68px 112px;
+        align-items: center;
         background: var(--mob-surface);
         border-bottom: 1px solid var(--mob-border);
-        padding: 10px 14px;
-        gap: 10px;
+        padding: 10px 8px;
+        gap: 8px;
         cursor: pointer;
         transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
         position: relative;
@@ -89,109 +90,6 @@
     }
     .mkcard-row.pos::before { background: var(--mob-emerald); }
     .mkcard-row.neg::before { background: var(--mob-rose); }
-
-    .mkcard-ticker-badge {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-width: 44px;
-        max-width: 54px;
-        flex-shrink: 0;
-    }
-    .mkcard-ticker-chip {
-        background: rgba(99,102,241,0.12);
-        border: 1px solid rgba(99,102,241,0.25);
-        border-radius: 8px;
-        padding: 4px 6px;
-        font-size: 9px;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 0.02em;
-        color: #818cf8;
-        text-align: center;
-        line-height: 1.2;
-        word-break: break-all;
-        max-width: 52px;
-    }
-    .mkcard-body {
-        flex: 1;
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 3px;
-    }
-    .mkcard-name {
-        font-size: 12px;
-        font-weight: 900;
-        color: var(--mob-text);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        line-height: 1.2;
-    }
-    .mkcard-meta {
-        font-size: 9px;
-        font-weight: 700;
-        color: var(--mob-text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-    }
-    .mkcard-meta-sep { opacity: 0.35; }
-    .mkcard-port-tag {
-        display: inline-block;
-        border-radius: 4px;
-        padding: 1px 5px;
-        font-size: 8px;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-    }
-    .mkcard-values {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        flex-shrink: 0;
-        gap: 2px;
-        min-width: 80px;
-    }
-    .mkcard-price {
-        font-size: 15px;
-        font-weight: 900;
-        font-family: 'SF Mono', monospace;
-        color: var(--mob-text);
-        line-height: 1;
-    }
-    .mkcard-change {
-        font-size: 11px;
-        font-weight: 900;
-        line-height: 1;
-        display: flex;
-        align-items: center;
-        gap: 3px;
-    }
-    .mkcard-gain-row {
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 6px;
-    }
-    .mkcard-daily-gain {
-        font-size: 10px;
-        font-weight: 700;
-        font-family: 'SF Mono', monospace;
-        border-radius: 4px;
-        padding: 1px 5px;
-    }
-    .mkcard-total-gain {
-        font-size: 10px;
-        font-weight: 700;
-        color: var(--mob-text-muted);
-        font-family: 'SF Mono', monospace;
-    }
 </style>
 <script src="/theme.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -356,7 +254,7 @@
   };
 
   window.handleTouchMove = function(e, container) {
-    const item = container.querySelector('.mob-holding-item');
+    const item = container.querySelector('.mob-holding-item, .mkcard-row');
     if (!item) return;
     touchMoveX = e.touches[0].clientX;
     let diff = touchMoveX - touchStartX;
@@ -370,7 +268,7 @@
     // If touch ended on an action button (or its child), do nothing here —
     // the button's own ontouchend handler will fire the action.
     if (e.target.closest('.mob-action-btn')) return;
-    const item = container.querySelector('.mob-holding-item');
+    const item = container.querySelector('.mob-holding-item, .mkcard-row');
     if (!item) return;
     const diff = touchMoveX - touchStartX;
     
@@ -398,7 +296,7 @@
     // Reset swipe state so the row closes after the action
     const container = e.target.closest('.mob-holding-swipe-container');
     if (container) {
-      const item = container.querySelector('.mob-holding-item');
+      const item = container.querySelector('.mob-holding-item, .mkcard-row');
       if (item) {
         item.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
         item.style.transform = 'translateX(0)';
@@ -412,7 +310,7 @@
   function resetSwipes(except) {
     document.querySelectorAll('.mob-holding-swipe-container').forEach(c => {
       if (c === except) return;
-      const item = c.querySelector('.mob-holding-item');
+      const item = c.querySelector('.mob-holding-item, .mkcard-row');
       if (item) item.style.transform = 'translateX(0)';
     });
     currentSwipeEl = null;
@@ -615,6 +513,8 @@
             bg = 'rgba(234, 179, 8, 0.15)'; text = '#eab308'; border = 'rgba(234, 179, 8, 0.3)';
         } else if (t.includes('ETF AZION') || t.includes('ETF')) {
             bg = 'rgba(249, 115, 22, 0.15)'; text = '#f97316'; border = 'rgba(249, 115, 22, 0.3)';
+        } else if (t.includes('ETC') || t.includes('COMMODIT') || t.includes('MATERIE PRIME')) {
+            bg = 'rgba(20, 184, 166, 0.15)'; text = '#14b8a6'; border = 'rgba(20, 184, 166, 0.3)';
         } else if (t.includes('CRYPTO') || t.includes('VALUTA')) {
             bg = 'rgba(139, 92, 246, 0.15)'; text = '#8b5cf6'; border = 'rgba(139, 92, 246, 0.3)';
         } else if (t.includes('AZION') || t.includes('STOCK') || t.includes('EQUITY')) {
@@ -703,30 +603,28 @@
         const hasDailyGain = a.hasPosition && Math.abs(_chgVal) >= 0.01;
         const hasTotalGain = a.hasPosition && _totalVal > 0;
 
-        // Portfolio tags (inline style, no newlines)
-        const portTags = (a.portfoliosInfo && a.portfoliosInfo.length > 0)
-          ? a.portfoliosInfo.map(p => {
-              const clr = p.color || '#64748b';
-              return `<span style="display:inline-block;border-radius:4px;padding:1px 5px;font-size:8px;font-weight:900;text-transform:uppercase;background:${clr}22;color:${clr};border:1px solid ${clr}44">${p.name}</span>`;
-            }).join(' ')
-          : '';
-
-        // Pre/post market (inline)
-        let prePost = '';
-        if (a.preMarketChangePercent && Math.abs(a.preMarketChangePercent) > 0.01 && !window._mobMarketOpen) {
-          const c = a.preMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-          const s = a.preMarketChangePercent >= 0 ? '+' : '';
-          prePost = `<span style="font-size:10px;font-weight:900;color:${c}">${s}${a.preMarketChangePercent.toFixed(1)}% Pre</span>`;
-        } else if (a.postMarketChangePercent && Math.abs(a.postMarketChangePercent) > 0.01 && !window._mobMarketOpen) {
-          const c = a.postMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-          const s = a.postMarketChangePercent >= 0 ? '+' : '';
-          prePost = `<span style="font-size:10px;font-weight:900;color:${c}">${s}${a.postMarketChangePercent.toFixed(1)}% Post</span>`;
-        }
+        // Portfolio names concatenation
+        const portName = (a.portfoliosInfo && a.portfoliosInfo.length > 0) ? a.portfoliosInfo.map(p => p.name).join('/') : '';
+        const exchangeLabel = a.exchange || 'MKT';
 
         const priceFmt = fmtPriceCompact(price, cur, price >= 100 ? 0 : price >= 10 ? 1 : 2);
-        const dsBg  = a.dataSource === 'B_ITA' ? 'rgba(251,146,60,0.15)' : 'rgba(56,189,248,0.15)';
-        const dsClr = a.dataSource === 'B_ITA' ? '#fb923c' : '#38bdf8';
-        const dsLbl = a.dataSource === 'B_ITA' ? 'BI' : 'YF';
+        
+        // Asset type colors
+        const colors = getAssetTypeColors(a.type || a.yfType, a.ticker);
+
+        // Absolute variation calculations
+        const invested = a.totalCostAssetCurr || 0;
+        const _absPct  = invested > 0 ? ((_totalVal - invested) / invested) * 100 : 0;
+        const absPctColor = _absPct >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+
+        // Formatted Column 4 rows
+        const todayVarPct = `${isPos ? '+' : ''}${change.toFixed(1)}%`;
+        const todayVarVal = hasDailyGain ? ` / ${_dgSign}${fmtPriceCompact(_chgVal, cur, 0)}` : '';
+        const todayVarStr = `${todayVarPct}${todayVarVal}`;
+
+        const absVarPct = hasTotalGain ? `${_absPct >= 0 ? '+' : ''}${_absPct.toFixed(1)}%` : '—';
+        const absVarVal = hasTotalGain ? ` / ${_totGainSign}${fmtPriceCompact(_totalGain, _totGainCur, 0)}` : '';
+        const absVarStr = `${absVarPct}${absVarVal}`;
 
         return `
           <div class="mob-holding-swipe-container"
@@ -736,30 +634,30 @@
             ${renderActions(a)}
             <div class="mkcard-row ${isPos ? 'pos' : 'neg'}"
                  onclick="window.showMobDetails('${tickerEsc}','${nameEsc}','${cur}')">
-              <div class="mkcard-ticker-badge">
-                <div class="mkcard-ticker-chip">${a.ticker}</div>
+              
+              <!-- Col 1: Ticker TAG & Price -->
+              <div style="display:flex; flex-direction:column; gap:3px; align-items:flex-start; min-width:0">
+                <span style="background:${colors.bg}; color:${colors.text}; border:1px solid ${colors.border}; border-radius:4px; padding:1px 5px; font-size:9px; font-weight:900; text-transform:uppercase; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; max-width:100%">${a.ticker}</span>
+                <span style="font-size:11px; font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${priceFmt}</span>
               </div>
-              <div class="mkcard-body">
-                <div class="mkcard-name">${abbreviateName(a.name, 28)}</div>
-                <div class="mkcard-meta">
-                  <span>${a.exchange || 'MKT'}</span>
-                  <span style="opacity:0.35">•</span>
-                  <span style="background:${dsBg};color:${dsClr};border-radius:3px;padding:1px 4px;font-size:8px;font-weight:900">${dsLbl}</span>
-                  ${portTags}
-                </div>
-                <div style="margin-top:3px;display:flex;flex-wrap:wrap;gap:3px">
-                  ${renderAiBadgeMob(a)}
+
+              <!-- Col 2: Name & Portafoglio / Mercato -->
+              <div style="display:flex; flex-direction:column; gap:2px; min-width:0">
+                <div style="font-size:12px; font-weight:900; color:var(--mob-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${abbreviateName(a.name, 15)}</div>
+                <div style="font-size:9px; font-weight:700; color:var(--mob-text-muted); text-transform:uppercase; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">
+                  ${portName ? `${abbreviateName(portName, 12)} / ${exchangeLabel}` : exchangeLabel}
                 </div>
               </div>
-              <div class="mkcard-values">
-                <div class="mkcard-price">${priceFmt}</div>
-                <div class="mkcard-change" style="color:${chgColor}">
-                  <span class="material-symbols-outlined" style="font-size:11px">${isPos ? 'trending_up' : 'trending_down'}</span>
-                  ${isPos ? '+' : ''}${change.toFixed(1)}%
-                </div>
-                ${prePost ? `<div style="margin-top:1px">${prePost}</div>` : ''}
-                ${hasDailyGain ? `<div style="margin-top:3px;display:flex;justify-content:flex-end"><span style="font-size:10px;font-weight:700;font-family:monospace;border-radius:4px;padding:1px 5px;color:${_dgColor};background:${_chgVal >= 0 ? 'rgba(16,185,129,0.1)' : 'rgba(244,63,94,0.1)'}">${_dgSign}${fmtPriceCompact(_chgVal, cur, 0)}</span></div>` : ''}
-                ${hasTotalGain ? `<div style="display:flex;justify-content:flex-end;align-items:center;gap:4px"><span style="font-size:9px;font-weight:700;color:${_totGainColor}">${_totGainSign}${fmtPriceCompact(_totalGain, _totGainCur, 0)}</span><span style="font-size:9px;font-weight:500;color:var(--mob-text-muted)">${fmtPriceCompact(_totalVal, cur, 0)}</span></div>` : ''}
+
+              <!-- Col 3: AI Target Price TAG -->
+              <div style="display:flex; justify-content:center; align-items:center; min-width:0; height:100%">
+                ${renderAiBadgeMob(a)}
+              </div>
+
+              <!-- Col 4: Today Var (% / Val) & Absolute Var (% / Val) -->
+              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; min-width:0; text-align:right">
+                <div style="font-size:10px; font-weight:900; color:${chgColor}; font-family:'SF Mono',monospace; white-space:nowrap">${todayVarStr}</div>
+                <div style="font-size:9px; font-weight:700; color:${hasTotalGain ? absPctColor : 'var(--mob-text-muted)'}; font-family:'SF Mono',monospace; white-space:nowrap">${absVarStr}</div>
               </div>
             </div>
           </div>`;
