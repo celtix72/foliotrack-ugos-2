@@ -124,15 +124,15 @@
     <!-- Content -->
     <div class="mob-scroll relative z-[1]" id="mob-watchlist-scroll">
         <div class="mob-section-header pb-1">
-            <span class="mob-section-title">La Tua Watchlist</span>
+            <span class="mob-section-title">Watch</span>
             <div class="flex items-center gap-1.5">
-                <button id="btn-subview-main" onclick="setWatchlistSubView('Main')"
+                <button id="btn-subview-az1" onclick="setWatchlistSubView('Az1')"
                         class="text-[9px] font-black uppercase px-2 py-1 rounded-md transition-all whitespace-nowrap">
-                  Main
+                  Az1
                 </button>
-                <button id="btn-subview-f1" onclick="setWatchlistSubView('F1')"
+                <button id="btn-subview-etf1" onclick="setWatchlistSubView('ETF1')"
                         class="text-[9px] font-black uppercase px-2 py-1 rounded-md transition-all whitespace-nowrap">
-                  F1
+                  ETF1
                 </button>
                 <span class="text-slate-300 dark:text-slate-700 mx-1">|</span>
                 <span id="mob-watchlist-count" class="mob-header-subtitle">0 Assets</span>
@@ -343,7 +343,11 @@
     let _watchlistExtMode = localStorage.getItem('watchlist_ext_mode') === 'true';
     let _watchlistSortMode = localStorage.getItem('watchlist_sort_mode') || 'changePercent';
     let _watchlistScale = parseFloat(localStorage.getItem('watchlist_font_scale')) || 1.0;
-    let _watchlistSubView = localStorage.getItem('watchlist_sub_view') || 'Main';
+    let _watchlistSubView = localStorage.getItem('watchlist_sub_view');
+    if (_watchlistSubView !== 'Az1' && _watchlistSubView !== 'ETF1') {
+        _watchlistSubView = 'Az1';
+        localStorage.setItem('watchlist_sub_view', 'Az1');
+    }
 
     const _activeTag   = 'text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all bg-primary text-white shadow-sm';
     const _inactiveTag = 'text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700';
@@ -359,18 +363,11 @@
     };
 
     function updateSubViewToggle() {
-        const btnMain = document.getElementById('btn-subview-main');
-        const btnF1   = document.getElementById('btn-subview-f1');
-        if (btnMain) btnMain.className = _watchlistSubView === 'Main' ? _activeTag : _inactiveTag;
-        if (btnF1)   btnF1.className   = _watchlistSubView === 'F1'   ? _activeTag : _inactiveTag;
+        const btnAz1 = document.getElementById('btn-subview-az1');
+        const btnEtf1 = document.getElementById('btn-subview-etf1');
+        if (btnAz1) btnAz1.className = _watchlistSubView === 'Az1' ? _activeTag : _inactiveTag;
+        if (btnEtf1) btnEtf1.className = _watchlistSubView === 'ETF1' ? _activeTag : _inactiveTag;
     }
-
-    window.toggleWatchlistExt = function() {
-        _watchlistExtMode = !_watchlistExtMode;
-        localStorage.setItem('watchlist_ext_mode', _watchlistExtMode);
-        updateExtToggle();
-        renderWatchlist();
-    };
 
     window.toggleWatchlistExt = function() {
         _watchlistExtMode = !_watchlistExtMode;
@@ -582,7 +579,7 @@
                 <span style="font-size:calc(13px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${priceFmt}&nbsp;<span style="color:${chgColor}; font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:900">${todayVarPct}</span><span style="background:rgba(100,116,139,0.1); color:var(--mob-text-muted); border-radius:3px; padding:1px 4px; font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; margin-left:4px; display:inline-block; vertical-align:middle">${exchangeLabel}</span></span>
               </div>
 
-              ${_watchlistSubView === 'F1' ? '<div></div><div></div><div></div>' : `
+              ${_watchlistSubView === 'ETF1' ? '<div></div><div></div><div></div>' : `
               <!-- Col 2: P/E -->
               <div style="display:flex; flex-direction:column; justify-content:center; align-items:flex-end; gap:2px; min-width:0; height:100%; text-align:right">
                 <span style="font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:800; color:var(--mob-text-caption); text-transform:uppercase">P/E</span>
@@ -614,6 +611,19 @@
         const empty = document.getElementById('mob-watchlist-empty');
         const countEl = document.getElementById('mob-watchlist-count');
         let watchlist = window.watchlist || [];
+
+        // Filter based on selected sub-view (Az1 = Stocks/Equity, ETF1 = ETFs)
+        if (_watchlistSubView === 'Az1') {
+            watchlist = watchlist.filter(a => {
+                const t = (a.type || a.yfType || '').toUpperCase();
+                return (t.includes('AZION') || t.includes('STOCK') || t.includes('EQUITY')) && !t.includes('ETF');
+            });
+        } else if (_watchlistSubView === 'ETF1') {
+            watchlist = watchlist.filter(a => {
+                const t = (a.type || a.yfType || '').toUpperCase();
+                return t.includes('ETF');
+            });
+        }
 
         const getSortGroup = (x) => {
             const ticker = (x.ticker || '').toUpperCase();
