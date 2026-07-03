@@ -184,16 +184,10 @@
     <div style="flex:1"></div>
 
     <!-- Section 1: Open Positions -->
-    <div class="mob-section-header">
-      <span class="mob-section-title">Posizioni Aperte</span>
+    <div class="mob-section-header pb-1">
+      <span class="mob-section-title">Open ASSET</span>
       <div class="flex items-center gap-2">
         <span id="mob-pos-count" class="mob-header-subtitle">0 Assets</span>
-        <select id="mob-sort-select" onchange="setMarketSort(this.value)" class="bg-slate-100 dark:bg-slate-800 border-none text-[10px] font-black uppercase tracking-wider rounded-lg px-2 py-1 text-slate-700 dark:text-slate-300 focus:ring-0 cursor-pointer">
-          <option value="changePercent">Var. % Giorno</option>
-          <option value="name">Nome</option>
-          <option value="dailyVal">Var. Val Giorno</option>
-          <option value="totalGain">Var. Assoluta</option>
-        </select>
         <!-- View mode toggle -->
         <div class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 gap-0.5">
           <button id="btn-view-card" onclick="setMarketView('card')" title="Vista card (nuova)"  
@@ -210,6 +204,27 @@
           </button>
         </div>
       </div>
+    </div>
+    
+    <!-- Sort tags row -->
+    <div class="px-4 pb-3 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+      <span class="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500 mr-1 whitespace-nowrap">Ordina:</span>
+      <button id="btn-sort-pct" onclick="setMarketSort('changePercent')" 
+              class="text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all whitespace-nowrap">
+        % Giorno
+      </button>
+      <button id="btn-sort-name" onclick="setMarketSort('name')" 
+              class="text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all whitespace-nowrap">
+        Nome
+      </button>
+      <button id="btn-sort-val" onclick="setMarketSort('dailyVal')" 
+              class="text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all whitespace-nowrap">
+        Val Giorno
+      </button>
+      <button id="btn-sort-abs" onclick="setMarketSort('totalGain')" 
+              class="text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all whitespace-nowrap">
+        Assoluto
+      </button>
     </div>
     <div class="mob-list-edge" id="mob-list-positions"></div>
 
@@ -335,11 +350,26 @@
   // ── Sort Mode (changePercent / name / dailyVal / totalGain) ──────────────────────
   let _marketSortMode = localStorage.getItem('market_sort_mode') || 'changePercent';
 
+  const _activeTag   = 'text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all bg-primary text-white shadow-sm';
+  const _inactiveTag = 'text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700';
+
   window.setMarketSort = function(mode) {
     _marketSortMode = mode;
     localStorage.setItem('market_sort_mode', mode);
+    updateSortToggle();
     mobLoadAssets();
   };
+
+  function updateSortToggle() {
+    const btnPct  = document.getElementById('btn-sort-pct');
+    const btnName = document.getElementById('btn-sort-name');
+    const btnVal  = document.getElementById('btn-sort-val');
+    const btnAbs  = document.getElementById('btn-sort-abs');
+    if (btnPct)  btnPct.className  = _marketSortMode === 'changePercent' ? _activeTag : _inactiveTag;
+    if (btnName) btnName.className = _marketSortMode === 'name'          ? _activeTag : _inactiveTag;
+    if (btnVal)  btnVal.className  = _marketSortMode === 'dailyVal'       ? _activeTag : _inactiveTag;
+    if (btnAbs)  btnAbs.className  = _marketSortMode === 'totalGain'      ? _activeTag : _inactiveTag;
+  }
 
   const _activeBtn = 'p-1 rounded-md transition-all bg-white dark:bg-slate-700 text-primary shadow-sm';
   const _inactiveBtn = 'p-1 rounded-md transition-all text-slate-400 dark:text-slate-500';
@@ -827,6 +857,7 @@
     mobLoadMovers();
     mobLoadAssets();
     updateViewToggle();
+    updateSortToggle();
   }
 
   window.addEventListener('mobile-view-activated', mobInit);
