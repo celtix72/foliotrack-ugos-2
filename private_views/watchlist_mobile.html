@@ -183,6 +183,14 @@
             <!-- Items injected here -->
         </div>
 
+        <!-- Divider & Section 2: Dati Fondamentali -->
+        <div class="mob-section-header pb-1 mt-6">
+            <span class="mob-section-title">Valori Fondamentali</span>
+        </div>
+        <div id="mob-watchlist-fundamentals-container" class="mob-list-edge">
+            <!-- Items injected here -->
+        </div>
+
         <div id="mob-watchlist-empty" class="py-20 text-center hidden">
             <span class="material-symbols-outlined text-6xl text-slate-200 dark:text-slate-800 mb-4 font-variation-settings-fill">visibility_off</span>
             <p class="text-slate-500 font-bold">Watchlist vuota</p>
@@ -402,6 +410,10 @@
         const listEl = document.getElementById('mob-watchlist-container');
         if (listEl) {
             listEl.style.setProperty('--mkcard-scale', _watchlistScale);
+        }
+        const fundEl = document.getElementById('mob-watchlist-fundamentals-container');
+        if (fundEl) {
+            fundEl.style.setProperty('--mkcard-scale', _watchlistScale);
         }
     }
 
@@ -670,6 +682,117 @@
           </div>`;
     };
 
+    function renderFundamentalsCardView(a) {
+        const price    = a.currentPrice || 0;
+        const change   = a.changePercent || 0;
+        const isPos    = change >= 0;
+        const chgColor = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        const tickerEsc = a.ticker.replace(/'/g, "\\'");
+        const nameEsc   = (a.name || '').replace(/'/g, "\\'");
+        const cur = a.currency || 'EUR';
+
+        // Portfolio tags
+        const portTags = (a.portfoliosInfo && a.portfoliosInfo.length > 0)
+          ? a.portfoliosInfo.map(p => {
+              const clr = p.color || '#64748b';
+              const firstLetter = (p.name || 'P').charAt(0).toUpperCase();
+              return `<span style="background:${clr}22; color:${clr}; border:1px solid ${clr}44; border-radius:4px; padding:1px 5px; font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; display:inline-block; vertical-align:middle; margin-left:3px; text-transform:uppercase;" title="${p.name}">${firstLetter}</span>`;
+            }).join('')
+          : '';
+        const exchangeLabel = a.exchange || 'MKT';
+
+        const priceFmt = fmtPriceCompact(price, cur, price >= 100 ? 0 : price >= 10 ? 1 : 2);
+        
+        // Asset type colors
+        const colors = getAssetTypeColors(a.type || a.yfType, a.ticker);
+
+        // Toggle ticker symbol or abbreviated name based on extended mode setting
+        const displaySymbol = _watchlistExtMode ? abbreviateName(a.name, 15) : a.ticker;
+        const isOpen = isAssetMarketOpen(a);
+        const todayVarPct = `${isPos ? '+' : ''}${change.toFixed(1)}%`;
+
+        return `
+          <div class="mob-holding-swipe-container"
+               ontouchstart="handleTouchStart(event,this)"
+               ontouchmove="handleTouchMove(event,this)"
+               ontouchend="handleTouchEnd(event,this)">
+            ${renderActions(a)}
+            <div class="mkcard-row ${isPos ? 'pos' : 'neg'} ${isOpen ? '' : 'closed-market'}"
+                 onclick="window.showMobDetails('${tickerEsc}','${nameEsc}','${cur}')">
+              
+              <!-- Col 1: Ticker TAG, Price, Var% & Market Tag -->
+              <div style="display:flex; flex-direction:column; gap:3px; align-items:flex-start; min-width:0">
+                <div style="display:flex; align-items:center; max-width:100%">
+                  <span style="background:${colors.bg}; color:#000000; border:1px solid ${colors.border}; border-radius:4px; padding:1px 5px; font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; flex-shrink:1">${displaySymbol}</span>
+                  ${portTags}
+                </div>
+                <span style="font-size:calc(13px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${priceFmt}&nbsp;<span style="color:${chgColor}; font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:900">${todayVarPct}</span><span style="background:rgba(100,116,139,0.1); color:var(--mob-text-muted); border-radius:3px; padding:1px 4px; font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; margin-left:4px; display:inline-block; vertical-align:middle">${exchangeLabel}</span></span>
+              </div>
+
+              <!-- Col 2: P/E -->
+              <div style="display:flex; flex-direction:column; justify-content:center; align-items:flex-end; gap:2px; min-width:0; height:100%; text-align:right">
+                <span style="font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:800; color:var(--mob-text-caption); text-transform:uppercase">P/E</span>
+                <span style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${a.pe ? a.pe.toFixed(1) : '—'}</span>
+              </div>
+
+              <!-- Col 3: Fwd P/E -->
+              <div style="display:flex; flex-direction:column; justify-content:center; align-items:flex-end; gap:2px; min-width:0; height:100%; text-align:right">
+                <span style="font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:800; color:var(--mob-text-caption); text-transform:uppercase">Fwd P/E</span>
+                <span style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${a.forwardPE ? a.forwardPE.toFixed(1) : '—'}</span>
+              </div>
+
+              <!-- Col 4: PEG & Beta -->
+              <div style="display:flex; flex-direction:column; justify-content:center; align-items:flex-end; gap:2px; min-width:0; height:100%; text-align:right">
+                <span style="font-size:calc(9px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text-caption)">PEG: ${a.pegRatio ? a.pegRatio.toFixed(1) : '—'}</span>
+                <span style="font-size:calc(9px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text-caption)">BETA: ${a.beta ? a.beta.toFixed(2) : '—'}</span>
+              </div>
+            </div>
+          </div>`;
+    }
+
+    function renderFundamentalsNormalView(a) {
+        const colors = getAssetTypeColors(a.type || a.yfType, a.ticker);
+        const tickerEsc = a.ticker.replace(/'/g, "\\'");
+        const isOpen = isAssetMarketOpen(a);
+        
+        const showLogo = _watchlistViewMode !== 'compact';
+
+        return `
+          <div class="mob-holding-swipe-container"
+               ontouchstart="handleTouchStart(event,this)"
+               ontouchmove="handleTouchMove(event,this)"
+               ontouchend="handleTouchEnd(event,this)">
+            ${renderActions(a)}
+            <div class="mob-holding-item ${isOpen ? '' : 'closed-market'}" onclick="window.showMobDetails('${tickerEsc}','${(a.name||'').replace(/'/g,"\\'")  }','${a.currency||'EUR'}')">
+              <div class="mob-holding-info">
+                <div class="flex items-center gap-2">
+                  <div class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border" style="background:${colors.bg};color:#000000;border-color:${colors.border};display:inline-block">${a.ticker}</div>
+                </div>
+                <div class="mob-holding-name" style="margin-top:2px">${abbreviateName(a.name)||''}</div>
+              </div>
+              <div class="mob-holding-values" style="display:flex; gap:16px; align-items:center;">
+                <div style="text-align:right">
+                    <div style="font-size:8px; color:var(--mob-text-caption)">P/E</div>
+                    <div style="font-size:12px; font-weight:900">${a.pe ? a.pe.toFixed(1) : '—'}</div>
+                </div>
+                <div style="text-align:right">
+                    <div style="font-size:8px; color:var(--mob-text-caption)">FWD P/E</div>
+                    <div style="font-size:12px; font-weight:900">${a.forwardPE ? a.forwardPE.toFixed(1) : '—'}</div>
+                </div>
+                <div style="text-align:right">
+                    <div style="font-size:9px; font-weight:700; color:var(--mob-text-caption)">PEG: ${a.pegRatio ? a.pegRatio.toFixed(1) : '—'}</div>
+                    <div style="font-size:9px; font-weight:700; color:var(--mob-text-caption)">BETA: ${a.beta ? a.beta.toFixed(2) : '—'}</div>
+                </div>
+              </div>
+            </div>
+          </div>`;
+    }
+
+    const renderFundamentalsCard = (a) => {
+        if (_watchlistViewMode === 'card') return renderFundamentalsCardView(a);
+        return renderFundamentalsNormalView(a);
+    };
+
     function renderWatchlist() {
         const container = document.getElementById('mob-watchlist-container');
         const empty = document.getElementById('mob-watchlist-empty');
@@ -724,6 +847,8 @@
 
         if (!watchlist || watchlist.length === 0) {
             if (container) container.innerHTML = '';
+            const fundamentalsContainer = document.getElementById('mob-watchlist-fundamentals-container');
+            if (fundamentalsContainer) fundamentalsContainer.innerHTML = '';
             if (empty) empty.classList.remove('hidden');
             return;
         }
@@ -732,6 +857,10 @@
         if (container) {
             container.innerHTML = watchlist.map(a => renderCard(a)).join('') || '<div class="mob-empty">Watchlist vuota</div>';
             updateWatchlistScale();
+        }
+        const fundamentalsContainer = document.getElementById('mob-watchlist-fundamentals-container');
+        if (fundamentalsContainer) {
+            fundamentalsContainer.innerHTML = watchlist.map(a => renderFundamentalsCard(a)).join('') || '<div class="mob-empty">Watchlist vuota</div>';
         }
     }
     window.renderWatchlist = renderWatchlist;
