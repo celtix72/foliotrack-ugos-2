@@ -28,6 +28,45 @@
 
         /* Force visibility of #mobile-ui when mobile view is active */
         body.mobile-view-active #mobile-ui { display: flex !important; visibility: visible !important; opacity: 1 !important; }
+
+        /* ── Card View Styles ── */
+        .mkcard-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            padding: 0;
+        }
+        .mkcard-row {
+            display: grid;
+            grid-template-columns: 1fr 90px 55px 75px;
+            align-items: center;
+            background: var(--mob-surface);
+            border-bottom: 1px solid var(--mob-border);
+            padding: 6px 8px;
+            gap: 8px;
+            cursor: pointer;
+            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            position: relative;
+            z-index: 2;
+            will-change: transform;
+        }
+        .mkcard-row:active { background: var(--mob-border); }
+        /* Left accent bar based on gain/loss */
+        .mkcard-row::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 5px; bottom: 5px;
+            width: 3px;
+            border-radius: 0 2px 2px 0;
+        }
+        .mkcard-row.pos::before { background: var(--mob-emerald); }
+        .mkcard-row.neg::before { background: var(--mob-rose); }
+        .mkcard-row.closed-market, .mob-holding-item.closed-market {
+            background: var(--mob-surface-2) !important;
+        }
+        .mkcard-row.closed-market > *, .mob-holding-item.closed-market > * {
+            opacity: 0.7;
+        }
     </style>
     <script src="/auth.js"></script>
     <script>
@@ -84,9 +123,60 @@
 
     <!-- Content -->
     <div class="mob-scroll relative z-[1]" id="mob-watchlist-scroll">
-        <div class="mob-section-header">
+        <div class="mob-section-header pb-1">
             <span class="mob-section-title">La Tua Watchlist</span>
-            <span id="mob-watchlist-count" class="mob-header-subtitle">0 Assets</span>
+            <div class="flex items-center gap-2">
+                <span id="mob-watchlist-count" class="mob-header-subtitle">0 Assets</span>
+                <!-- View mode toggle -->
+                <div class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 gap-0.5">
+                  <button id="btn-view-card" onclick="setWatchlistView('card')" title="Vista card (nuova)"  
+                          class="p-1 rounded-md transition-all">
+                    <span class="material-symbols-outlined" style="font-size:15px">table_rows</span>
+                  </button>
+                  <button id="btn-view-normal" onclick="setWatchlistView('normal')" title="Vista normale"
+                          class="p-1 rounded-md transition-all">
+                    <span class="material-symbols-outlined" style="font-size:15px">view_list</span>
+                  </button>
+                  <button id="btn-view-compact" onclick="setWatchlistView('compact')" title="Vista compatta"
+                          class="p-1 rounded-md transition-all">
+                    <span class="material-symbols-outlined" style="font-size:15px">density_small</span>
+                  </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sort tags row -->
+        <div class="px-4 pb-3 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <button id="btn-sort-ext" onclick="toggleWatchlistExt()" 
+                  class="text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all whitespace-nowrap">
+            EXT
+          </button>
+          <span class="text-slate-300 dark:text-slate-700 mx-0.5">|</span>
+          <button id="btn-sort-pct" onclick="setWatchlistSort('changePercent')" 
+                  class="text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all whitespace-nowrap">
+            % Giorno
+          </button>
+          <button id="btn-sort-name" onclick="setWatchlistSort('name')" 
+                  class="text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all whitespace-nowrap">
+            Nome
+          </button>
+          <button id="btn-sort-val" onclick="setWatchlistSort('dailyVal')" 
+                  class="text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all whitespace-nowrap">
+            Val Giorno
+          </button>
+          <button id="btn-sort-abs" onclick="setWatchlistSort('totalGain')" 
+                  class="text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all whitespace-nowrap">
+            Assoluto
+          </button>
+          <span class="text-slate-300 dark:text-slate-700 mx-1">|</span>
+          <button onclick="changeWatchlistScale(0.1)" 
+                  class="text-[11px] font-black bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-md active:scale-95 transition-all whitespace-nowrap">
+            +
+          </button>
+          <button onclick="changeWatchlistScale(-0.1)" 
+                  class="text-[11px] font-black bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-md active:scale-95 transition-all whitespace-nowrap">
+            -
+          </button>
         </div>
 
         <div id="mob-watchlist-container" class="mob-list-edge">
@@ -232,7 +322,6 @@
         } else if (t.includes('ETF AZION') || t.includes('ETF')) {
             bg = 'rgba(249, 115, 22, 0.15)'; text = '#f97316'; border = 'rgba(249, 115, 22, 0.3)'; // Arancio
         } else if (t.includes('CRYPTO') || t.includes('VALUTA')) {
-            bg = 'rgba(139, 92, 246, 0.15)'; text = '#8b5cf6'; border = 'rgba(139, 92, 246, 0.3)'; // Viola
         } else if (t.includes('AZION') || t.includes('STOCK') || t.includes('EQUITY')) {
             bg = 'rgba(239, 68, 68, 0.15)'; text = '#ef4444'; border = 'rgba(239, 68, 68, 0.3)'; // Rosso
         }
@@ -240,15 +329,138 @@
         return { bg, text, border };
     };
 
+    function fmtPriceCompact(price, currency, dec) {
+        if (price === undefined || price === null) return '—';
+        const curSym = currency === 'USD' ? '$' : '€';
+        const sign = price < 0 ? '-' : '';
+        const absPrice = Math.abs(price);
+        let valStr;
+        if (absPrice >= 1000) {
+            valStr = (absPrice / 1000).toFixed(1) + 'k';
+        } else {
+            valStr = absPrice.toFixed(dec !== undefined ? dec : 2);
+        }
+        return `${sign}${valStr}${curSym}`;
+    }
+
+    // Scale / Sort / View modes matching Market style
+    let _watchlistViewMode = localStorage.getItem('watchlist_view_mode') || 'card';
+    let _watchlistExtMode = localStorage.getItem('watchlist_ext_mode') === 'true';
+    let _watchlistSortMode = localStorage.getItem('watchlist_sort_mode') || 'changePercent';
+    let _watchlistScale = parseFloat(localStorage.getItem('watchlist_font_scale')) || 1.0;
+
+    const _activeTag   = 'text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all bg-primary text-white shadow-sm';
+    const _inactiveTag = 'text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700';
+
+    const _activeBtn = 'p-1 rounded-md transition-all bg-white dark:bg-slate-700 text-primary shadow-sm';
+    const _inactiveBtn = 'p-1 rounded-md transition-all text-slate-400 dark:text-slate-500';
+
+    window.setWatchlistView = function(mode) {
+        _watchlistViewMode = mode;
+        localStorage.setItem('watchlist_view_mode', mode);
+        updateViewToggle();
+        renderWatchlist();
+    };
+
+    window.toggleWatchlistExt = function() {
+        _watchlistExtMode = !_watchlistExtMode;
+        localStorage.setItem('watchlist_ext_mode', _watchlistExtMode);
+        updateExtToggle();
+        renderWatchlist();
+    };
+
+    function updateExtToggle() {
+        const btnExt = document.getElementById('btn-sort-ext');
+        if (btnExt) btnExt.className = _watchlistExtMode ? _activeTag : _inactiveTag;
+    }
+
+    window.setWatchlistSort = function(mode) {
+        _watchlistSortMode = mode;
+        localStorage.setItem('watchlist_sort_mode', mode);
+        updateSortToggle();
+        renderWatchlist();
+    };
+
+    function updateSortToggle() {
+        const btnPct  = document.getElementById('btn-sort-pct');
+        const btnName = document.getElementById('btn-sort-name');
+        const btnVal  = document.getElementById('btn-sort-val');
+        const btnAbs  = document.getElementById('btn-sort-abs');
+        if (btnPct)  btnPct.className  = _watchlistSortMode === 'changePercent' ? _activeTag : _inactiveTag;
+        if (btnName) btnName.className = _watchlistSortMode === 'name'          ? _activeTag : _inactiveTag;
+        if (btnVal)  btnVal.className  = _watchlistSortMode === 'dailyVal'       ? _activeTag : _inactiveTag;
+        if (btnAbs)  btnAbs.className  = _watchlistSortMode === 'totalGain'      ? _activeTag : _inactiveTag;
+    }
+
+    window.changeWatchlistScale = function(amount) {
+        _watchlistScale = Math.max(0.7, Math.min(1.5, _watchlistScale + amount));
+        localStorage.setItem('watchlist_font_scale', _watchlistScale);
+        updateWatchlistScale();
+    };
+
+    function updateWatchlistScale() {
+        const listEl = document.getElementById('mob-watchlist-container');
+        if (listEl) {
+            listEl.style.setProperty('--mkcard-scale', _watchlistScale);
+        }
+    }
+
+    function updateViewToggle() {
+        const btnCard = document.getElementById('btn-view-card');
+        const btnN    = document.getElementById('btn-view-normal');
+        const btnC    = document.getElementById('btn-view-compact');
+        if (btnCard) btnCard.className = _watchlistViewMode === 'card'    ? _activeBtn : _inactiveBtn;
+        if (btnN)    btnN.className    = _watchlistViewMode === 'normal'  ? _activeBtn : _inactiveBtn;
+        if (btnC)    btnC.className    = _watchlistViewMode === 'compact' ? _activeBtn : _inactiveBtn;
+    }
+
+    function isAssetMarketOpen(a) {
+        const ticker = (a.ticker || '').toUpperCase();
+        const type = (a.type || '').toUpperCase();
+        const yfType = (a.yfType || '').toUpperCase();
+
+        if (type === 'CONTO_DEPOSITO' || yfType === 'CONTO_DEPOSITO' || ticker.startsWith('CD_')) {
+            return false;
+        }
+
+        const status = window._marketStatusData;
+        if (!status) return true;
+        if (status.isWeekend) return false;
+        
+        const exchange = (a.exchange || '').toUpperCase();
+        
+        if (ticker.indexOf('.') === -1 || exchange === 'US' || exchange === 'USA' || exchange === 'NASDAQ' || exchange === 'NYSE' || exchange === 'AMEX') {
+            return !!status.US;
+        }
+        
+        if (ticker.endsWith('.MI') || ticker.endsWith('.DE') || ticker.endsWith('.F') || ticker.endsWith('.MU') || ticker.endsWith('.PA') || ticker.endsWith('.AS') || ticker.endsWith('.MC') || exchange === 'MIL' || exchange === 'GER' || exchange === 'FRA' || exchange === 'PAR' || exchange === 'AMS' || exchange === 'MAD') {
+            return !!status.EU;
+        }
+        
+        return !!status.anyOpen;
+    }
+
     async function loadWatchlist() {
         try {
-            const resW = await fetch('/api/watchlist');
+            if (!window._marketStatusData) {
+                try {
+                    const statusRes = await fetch('/api/market-status?t=' + Date.now());
+                    window._marketStatusData = await statusRes.json();
+                } catch(e) {}
+            }
+
+            const resW = await fetch('/api/watchlist?t=' + Date.now());
             window.watchlist = await resW.json();
             window._watchlistItems = window.watchlist;
+            
+            updateViewToggle();
+            updateSortToggle();
+            updateExtToggle();
+            updateWatchlistScale();
+
             renderWatchlist();
 
-            // Load performance in background
-            const resP = await fetch('/api/watchlist/performance');
+            const resP = await fetch('/api/watchlist/performance?t=' + Date.now());
             window.performanceData = await resP.json();
             renderWatchlist();
         } catch (err) {
@@ -257,14 +469,250 @@
     }
     window.loadWatchlist = loadWatchlist;
 
+    function renderAiBadgeMob(a) {
+        const tickerEsc = a.ticker.replace(/'/g, "\\'");
+        const nameEsc = (a.name || '').replace(/'/g, "\\'");
+        const cur = a.currency || 'EUR';
+        if (a.aiBadges && a.aiBadges.length > 0) {
+            return a.aiBadges.map(badge => {
+                const engine = badge.engine || 'X';
+                let icon = 'smart_toy';
+                if (engine === 'Gemini') icon = 'auto_awesome';
+                else if (engine === 'Qwen') icon = 'chat_spark';
+                else if (engine === 'Agnes') icon = 'psychiatry';
+                else if (engine === 'OpenAI') icon = 'data_exploration';
+                let clr = 'border-slate-500/30 text-slate-500 bg-slate-500/10';
+                if (badge.aiAction === 'BUY' || badge.aiAction === 'INCREASE') clr = 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10';
+                else if (badge.aiAction === 'SELL' || badge.aiAction === 'DECREASE') clr = 'border-rose-500/30 text-rose-500 bg-rose-500/10';
+                
+                let fvStr = badge.aiAction;
+                if (badge.aiTargetPrice) {
+                    const num = parseFloat(badge.aiTargetPrice);
+                    let dec = 2;
+                    if (num > 30) dec = 0;
+                    else if (num > 10) dec = 1;
+                    fvStr = num.toLocaleString('it-IT', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+                }
+                
+                return `<span onclick="event.stopPropagation();window.openAssetAiHistoryModal('${tickerEsc}','${nameEsc}','${cur}')" class="px-1.5 py-0.5 rounded font-black uppercase tracking-tighter flex items-center gap-1 border ${clr} cursor-pointer whitespace-nowrap" style="font-size: calc(10px * var(--mkcard-scale, 1))">
+                    <span class="material-symbols-outlined" style="font-size: calc(12px * var(--mkcard-scale, 1))">${icon}</span> ${fvStr}</span>`;
+            }).join('');
+        } else if ((a.aiHistoryCount || 0) > 0) {
+            return `<span onclick="event.stopPropagation();window.openAssetAiHistoryModal('${tickerEsc}','${nameEsc}','${cur}')" class="px-1.5 py-0.5 rounded font-black uppercase tracking-tighter flex items-center gap-1 border border-slate-500/30 text-slate-500 bg-slate-500/10 cursor-pointer" style="font-size: calc(10px * var(--mkcard-scale, 1))">
+                <span class="material-symbols-outlined" style="font-size: calc(12px * var(--mkcard-scale, 1))">smart_toy</span> ${a.aiHistoryCount}</span>`;
+        }
+        return `<span onclick="event.stopPropagation();window.openAssetAiHistoryModal('${tickerEsc}','${nameEsc}','${cur}')" class="px-1.5 py-0.5 rounded font-black uppercase tracking-tighter flex items-center gap-1 border border-slate-400/30 text-slate-400 bg-slate-400/10 cursor-pointer" style="font-size: calc(10px * var(--mkcard-scale, 1))">
+            <span class="material-symbols-outlined" style="font-size: calc(12px * var(--mkcard-scale, 1))">smart_toy</span></span>`;
+    }
+
+    function renderActions(a) {
+        const tickerEsc = a.ticker.replace(/'/g, "\\'");
+        const countryEsc = (a.country || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        const openModal = `openManualModal('${tickerEsc}','${a.currency}',${a.currentPrice},'${a.type}','${countryEsc}','${a.dataSource}','${a.isin}')`;
+        if (a.hasPosition) {
+            return `<div class="mob-holding-actions">
+                <div class="mob-action-btn bg-blue-ios" ontouchend="mobActionTap(event,()=>mobViewAssetTransactions('${tickerEsc}'))" onclick="event.stopPropagation();mobViewAssetTransactions('${tickerEsc}')">
+                    <span class="material-symbols-outlined">list</span><span>Trans</span>
+                </div>
+                <div class="mob-action-btn bg-orange-ios" ontouchend="mobActionTap(event,()=>${openModal})" onclick="event.stopPropagation();${openModal}">
+                    <span class="material-symbols-outlined">edit_note</span><span>Modifica</span>
+                </div>
+            </div>`;
+        }
+        return `<div class="mob-holding-actions">
+            <div class="mob-action-btn bg-orange-ios" ontouchend="mobActionTap(event,()=>${openModal})" onclick="event.stopPropagation();${openModal}">
+                <span class="material-symbols-outlined">edit_note</span><span>Modifica</span>
+            </div>
+            <div class="mob-action-btn bg-red-ios" ontouchend="mobActionTap(event,()=>removeFromWatchlist('${tickerEsc}',${!!a.hasPosition}))" onclick="event.stopPropagation();removeFromWatchlist('${tickerEsc}',${!!a.hasPosition})">
+                <span class="material-symbols-outlined">delete</span><span>Rimuovi</span>
+            </div>
+        </div>`;
+    }
+
+    function renderCardView(a) {
+        const price    = a.currentPrice || 0;
+        const change   = a.changePercent || 0;
+        const isPos    = change >= 0;
+        const chgColor = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        const tickerEsc = a.ticker.replace(/'/g, "\\'");
+        const nameEsc   = (a.name || '').replace(/'/g, "\\'");
+        const cur = a.currency || 'EUR';
+
+        const _chgVal  = (a.changeValue || 0) * (a.totalQuantity || 0);
+        const _totalVal     = price * (a.totalQuantity || 0);
+        const _totalGain    = a.totalGainEUR !== undefined ? a.totalGainEUR : (_totalVal - (a.totalCostAssetCurr || 0));
+        const _totGainIsPos = _totalGain >= 0;
+        const _totGainColor = _totGainIsPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        const _totGainSign  = (_totGainIsPos && Math.abs(_totalGain) >= 0.5) ? '+' : '';
+        const _totGainCur   = a.totalGainEUR !== undefined ? 'EUR' : cur;
+
+        const hasDailyGain = a.hasPosition && Math.abs(_chgVal) >= 0.01;
+        const hasTotalGain = a.hasPosition && _totalVal > 0;
+
+        const portTags = (a.portfoliosInfo && a.portfoliosInfo.length > 0)
+          ? a.portfoliosInfo.map(p => {
+              const clr = p.color || '#64748b';
+              const firstLetter = (p.name || 'P').charAt(0).toUpperCase();
+              return `<span style="background:${clr}22; color:${clr}; border:1px solid ${clr}44; border-radius:4px; padding:1px 5px; font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; display:inline-block; vertical-align:middle; margin-left:3px; text-transform:uppercase;" title="${p.name}">${firstLetter}</span>`;
+            }).join('')
+          : '';
+        const exchangeLabel = a.exchange || 'MKT';
+
+        const priceFmt = fmtPriceCompact(price, cur, price >= 100 ? 0 : price >= 10 ? 1 : 2);
+        
+        const colors = getAssetTypeColors(a.type || a.yfType, a.ticker);
+        const displaySymbol = _watchlistExtMode ? abbreviateName(a.name, 15) : a.ticker;
+        const isOpen = isAssetMarketOpen(a);
+
+        const invested = a.totalCostAssetCurr || 0;
+        const _absPct  = invested > 0 ? ((_totalVal - invested) / invested) * 100 : 0;
+        const absPctColor = _absPct >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+
+        const todayVarPct = `${isPos ? '+' : ''}${change.toFixed(1)}%`;
+        const todayVarStr = hasDailyGain ? `${_chgVal >= 0 ? '+' : ''}${fmtPriceCompact(_chgVal, cur, 0)}` : '—';
+        const absVarPct = hasTotalGain ? `${_absPct >= 0 ? '+' : ''}${_absPct.toFixed(1)}%` : '—';
+        const absVarValStr = hasTotalGain ? `${_totGainSign}${fmtPriceCompact(_totalGain, _totGainCur, 0)}` : '—';
+
+        return `
+          <div class="mob-holding-swipe-container"
+               ontouchstart="handleTouchStart(event,this)"
+               ontouchmove="handleTouchMove(event,this)"
+               ontouchend="handleTouchEnd(event,this)">
+            ${renderActions(a)}
+            <div class="mkcard-row ${isPos ? 'pos' : 'neg'} ${isOpen ? '' : 'closed-market'}"
+                 onclick="window.showMobDetails('${tickerEsc}','${nameEsc}','${cur}')">
+              
+              <div style="display:flex; flex-direction:column; gap:3px; align-items:flex-start; min-width:0">
+                <div style="display:flex; align-items:center; max-width:100%">
+                  <span style="background:${colors.bg}; color:#000000; border:1px solid ${colors.border}; border-radius:4px; padding:1px 5px; font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; flex-shrink:1">${displaySymbol}</span>
+                  ${portTags}
+                </div>
+                <span style="font-size:calc(13px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${priceFmt}&nbsp;<span style="color:${chgColor}; font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:900">${todayVarPct}</span><span style="background:rgba(100,116,139,0.1); color:var(--mob-text-muted); border-radius:3px; padding:1px 4px; font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; margin-left:4px; display:inline-block; vertical-align:middle">${exchangeLabel}</span></span>
+              </div>
+
+              <div style="display:flex; flex-direction:column; justify-content:center; align-items:flex-start; gap:3px; min-width:0; height:100%">
+                ${renderAiBadgeMob(a)}
+              </div>
+
+              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; min-width:0; text-align:right">
+                <div style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:900; color:${chgColor}; font-family:'SF Mono',monospace; white-space:nowrap">${todayVarPct}</div>
+                <div style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:700; color:${hasTotalGain ? absPctColor : 'var(--mob-text-muted)'}; font-family:'SF Mono',monospace; white-space:nowrap">${absVarPct}</div>
+              </div>
+
+              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; min-width:0; text-align:right">
+                <div style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:900; color:${chgColor}; font-family:'SF Mono',monospace; white-space:nowrap">${todayVarStr}</div>
+                <div style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:700; color:${hasTotalGain ? _totGainColor : 'var(--mob-text-muted)'}; font-family:'SF Mono',monospace; white-space:nowrap">${absVarValStr}</div>
+              </div>
+            </div>
+          </div>`;
+    }
+
+    const renderCard = (a) => {
+        if (_watchlistViewMode === 'card') return renderCardView(a);
+
+        const price = a.currentPrice || 0;
+        const change = a.changePercent || 0;
+        const isPos = change >= 0;
+        const color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+
+        const colors = getAssetTypeColors(a.type || a.yfType, a.ticker);
+        const tickerEsc = a.ticker.replace(/'/g, "\\'");
+        const isOpen = isAssetMarketOpen(a);
+
+        const showLogo = _watchlistViewMode !== 'compact';
+        const _chgVal = (a.changeValue || 0) * (a.totalQuantity || 0);
+        const _showDailyGain = !showLogo && a.hasPosition && _chgVal !== 0;
+        const _dgColor = _chgVal >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        const _totalVal = (a.currentPrice || 0) * (a.totalQuantity || 0);
+        const _totalGain = a.totalGainEUR !== undefined ? a.totalGainEUR : (_totalVal - (a.totalCostAssetCurr || 0));
+        const _totalGainCurrency = a.totalGainEUR !== undefined ? 'EUR' : a.currency;
+        const _totGainIsPos = _totalGain >= 0;
+        const _totGainColor = _totGainIsPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        const _totGainSign = (_totGainIsPos && Math.abs(_totalGain) >= 0.5) ? '+' : '';
+        const _showTotals = !showLogo && a.hasPosition && _totalVal > 0;
+
+        return `
+          <div class="mob-holding-swipe-container"
+               ontouchstart="handleTouchStart(event,this)"
+               ontouchmove="handleTouchMove(event,this)"
+               ontouchend="handleTouchEnd(event,this)">
+            ${renderActions(a)}
+            <div class="mob-holding-item ${isOpen ? '' : 'closed-market'}" onclick="window.showMobDetails('${tickerEsc}','${(a.name||'').replace(/'/g,"\\'")  }','${a.currency||'EUR'}')">
+              <div class="mob-holding-info">
+                <div class="flex items-center gap-2">
+                  <div class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border" style="background:${colors.bg};color:#000000;border-color:${colors.border};display:inline-block">${a.ticker}</div>
+                  ${renderAiBadgeMob(a)}
+                </div>
+                <div class="mob-holding-name" style="margin-top:2px">${abbreviateName(a.name)||''}</div>
+              </div>
+              <div class="mob-holding-values">
+                ${showLogo ? `
+                  <div class="mob-holding-value">${formatCurrency(price, a.currency, price>=100?0:price>=10?1:2)}</div>
+                  <div class="flex items-center justify-end gap-1.5 mt-0.5">
+                    ${(a.preMarketChangePercent&&Math.abs(a.preMarketChangePercent)>0.01&&!window._mobMarketOpen)?`<span style="font-size:10px;font-weight:900;color:${a.preMarketChangePercent>=0?'var(--mob-emerald)':'var(--mob-rose)'}">(${a.preMarketChangePercent>=0?'+':''}${a.preMarketChangePercent.toFixed(1)}%)</span>`:''}
+                    ${(a.postMarketChangePercent&&Math.abs(a.postMarketChangePercent)>0.01&&!window._mobMarketOpen)?`<span style="font-size:10px;font-weight:900;color:${a.postMarketChangePercent>=0?'var(--mob-emerald)':'var(--mob-rose)'}">(${a.postMarketChangePercent>=0?'+':''}${a.postMarketChangePercent.toFixed(1)}%)</span>`:''}
+                    <div class="mob-holding-gain" style="color:${color};font-weight:900;margin-top:0">${isPos?'+':''}${change.toFixed(1)}%</div>
+                  </div>
+                ` : `
+                  <div class="mob-compact-values">
+                    <span class="mob-cv-gain" style="color:${_dgColor}">${_showDailyGain?(_chgVal>=0?'+':'')+fmtPriceCompact(_chgVal,a.currency,0):''}</span>
+                    <span class="mob-holding-gain" style="color:${color};font-weight:900;margin-top:0">${isPos?'+':''}${change.toFixed(1)}%</span>
+                    <span class="mob-holding-value">${fmtPriceCompact(price,a.currency,price>=100?0:price>=10?1:2)}</span>
+                  </div>
+                  ${_showTotals?`<div class="mob-compact-values" style="margin-top:2px;opacity:0.85">
+                    <span style="display:inline-flex;justify-content:flex-end;padding-right:6px"><span style="background:${_totGainIsPos?'rgba(16,185,129,0.15)':'rgba(244,63,94,0.15)'};color:${_totGainColor};font-size:calc(11px * var(--mob-scale,1));font-weight:700;white-space:nowrap;border-radius:4px;padding:1px 5px;letter-spacing:-0.2px">${_totGainSign}${fmtPriceCompact(_totalGain,_totalGainCurrency,0)}</span></span>
+                    <span></span>
+                    <span style="text-align:right;font-size:calc(11px * var(--mob-scale,1));font-weight:500;color:var(--mob-text-muted);white-space:nowrap;padding-left:8px">${fmtPriceCompact(_totalVal,a.currency,0)}</span>
+                  </div>`:''}
+                `}
+              </div>
+            </div>
+          </div>`;
+    };
+
     function renderWatchlist() {
         const container = document.getElementById('mob-watchlist-container');
         const empty = document.getElementById('mob-watchlist-empty');
         const countEl = document.getElementById('mob-watchlist-count');
         let watchlist = window.watchlist || [];
-        
-        // Dynamic sorting: Highest changePercent first
-        watchlist.sort((a, b) => (b.changePercent || 0) - (a.changePercent || 0));
+
+        const getSortGroup = (x) => {
+            const ticker = (x.ticker || '').toUpperCase();
+            const type = (x.type || '').toUpperCase();
+            const yfType = (x.yfType || '').toUpperCase();
+            
+            if (type === 'CONTO_DEPOSITO' || yfType === 'CONTO_DEPOSITO' || ticker.startsWith('CD_')) {
+                return 0;
+            }
+            return isAssetMarketOpen(x) ? 2 : 1;
+        };
+
+        watchlist.sort((a, b) => {
+            const groupA = getSortGroup(a);
+            const groupB = getSortGroup(b);
+            
+            if (groupA !== groupB) {
+                return groupB - groupA;
+            }
+            
+            if (groupA === 0) {
+                return (a.ticker || '').localeCompare(b.ticker || '');
+            }
+
+            if (_watchlistSortMode === 'name') {
+                return (a.name || '').localeCompare(b.name || '');
+            } else if (_watchlistSortMode === 'dailyVal') {
+                const valA = (a.changeValue || 0) * (a.totalQuantity || 0);
+                const valB = (b.changeValue || 0) * (b.totalQuantity || 0);
+                return valB - valA;
+            } else if (_watchlistSortMode === 'totalGain') {
+                const valA = a.totalGainEUR !== undefined ? a.totalGainEUR : (((a.currentPrice || 0) * (a.totalQuantity || 0)) - (a.totalCostAssetCurr || 0));
+                const valB = b.totalGainEUR !== undefined ? b.totalGainEUR : (((b.currentPrice || 0) * (b.totalQuantity || 0)) - (b.totalCostAssetCurr || 0));
+                return valB - valA;
+            } else {
+                return (b.changePercent || 0) - (a.changePercent || 0);
+            }
+        });
 
         if (countEl) countEl.textContent = `${watchlist.length} Assets`;
 
@@ -275,230 +723,12 @@
         }
         if (empty) empty.classList.add('hidden');
 
-        const perfData = window.performanceData || {};
-
-        const renderMobilePerf = (val, label) => {
-            if (val === undefined || val === null || val === '') return `<span style="font-size:9px; font-weight:800; color:var(--mob-text-caption)">${label}: —</span>`;
-            const numVal = parseFloat(val);
-            if (isNaN(numVal)) return `<span style="font-size:9px; font-weight:800; color:var(--mob-text-caption)">${label}: —</span>`;
-            const isP = numVal >= 0;
-            const c = isP ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-            return `<span style="font-size:9px; font-weight:900; color:${c}; background: ${isP ? 'rgba(16,185,129,0.1)' : 'rgba(244,63,94,0.1)'}; padding: 1px 4px; border-radius: 4px;">${label} ${isP ? '+' : ''}${numVal.toFixed(1)}%</span>`;
-        };
-
-        container.innerHTML = watchlist.map(a => {
-            const price = a.currentPrice || 0;
-            const change = a.changePercent || 0;
-            const isPos = change >= 0;
-            const color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-            const colors = getAssetTypeColors(a.type || a.yfType, a.ticker);
-
-            const targetPrice = a.targetPrice || 0;
-            const targetPrice2 = a.targetPrice2 || 0;
-            const stopLoss = a.stopLoss || 0;
-            const volThreshold = a.volatilityAlert || 0;
-
-            const targetReached = targetPrice > 0 && price >= targetPrice;
-            const target2Reached = targetPrice2 > 0 && price >= targetPrice2;
-            const stopLossHit = stopLoss > 0 && price <= stopLoss;
-            const volAlertTriggered = volThreshold > 0 && Math.abs(change) >= volThreshold;
-
-            let alertBg = '';
-            let alertBorder = '';
-            
-            if (targetReached || target2Reached) {
-                alertBg = 'background: linear-gradient(rgba(16,185,129,0.12), rgba(16,185,129,0.12)), var(--mob-surface)';
-                alertBorder = 'border-color: rgba(16,185,129,0.3) !important';
-            } else if (stopLossHit) {
-                alertBg = 'background: linear-gradient(rgba(244,63,94,0.12), rgba(244,63,94,0.12)), var(--mob-surface)';
-                alertBorder = 'border-color: rgba(244,63,94,0.3) !important';
-            } else if (volAlertTriggered) {
-                alertBg = 'background: linear-gradient(rgba(245,158,11,0.12), rgba(245,158,11,0.12)), var(--mob-surface)';
-                alertBorder = 'border-color: rgba(245,158,11,0.3) !important';
-            }
-
-            let alertTags = '';
-            if (targetPrice > 0) {
-                alertTags += `<div style="font-size:10px; font-weight:900; color:${targetReached?'var(--mob-emerald)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">${targetReached?'check_circle':'target'}</span> TP1: ${formatCurrency(targetPrice, a.currency, 2)}</div>`;
-            }
-            if (targetPrice2 > 0) {
-                alertTags += `<div style="font-size:10px; font-weight:900; color:${target2Reached?'var(--mob-emerald)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">${target2Reached?'check_circle':'target'}</span> TP2: ${formatCurrency(targetPrice2, a.currency, 2)}</div>`;
-            }
-            if (volThreshold > 0) {
-                alertTags += `<div style="font-size:10px; font-weight:900; color:${volAlertTriggered?'var(--mob-amber)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">${volAlertTriggered?'priority_high':'bolt'}</span> VOL: ${volThreshold}%</div>`;
-            }
-            if (stopLoss > 0) {
-                alertTags += `<div style="font-size:10px; font-weight:900; color:${stopLossHit?'var(--mob-rose)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">${stopLossHit?'dangerous':'warning'}</span> SL: ${formatCurrency(stopLoss, a.currency, 2)}</div>`;
-            }
-
-            const p = perfData[a.ticker] || {};
-
-            const getAiParam = (text, param) => {
-                if (!text) return '—';
-                const normalizedText = text.replace(/\\n/g, '\n');
-                const escapedParam = param.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const regex = new RegExp(`(?:\\-|\\•|\\*)\\s*${escapedParam}\\s*:\\s*([^\\n]+)`, 'i');
-                let m = normalizedText.match(regex);
-                if(m) return m[1].trim();
-                
-                const regex2 = new RegExp(`${escapedParam}\\s*:\\s*([^\\n]+)`, 'i');
-                m = normalizedText.match(regex2);
-                return m ? m[1].trim() : '—';
-            };
-
-            const trend = getAiParam(a.aiReasoning, 'Trend di fondo') !== '—' ? getAiParam(a.aiReasoning, 'Trend di fondo') : getAiParam(a.aiReasoning, 'View Operativa');
-            const buyZone = getAiParam(a.aiReasoning, 'Zona di Ingresso ideale (Buy)') !== '—' ? getAiParam(a.aiReasoning, 'Zona di Ingresso ideale (Buy)') : getAiParam(a.aiReasoning, 'Livello di Ingresso (Buy Zone)');
-            
-            let tp = getAiParam(a.aiReasoning, 'Take Profit suggerito (TP)');
-            if (tp === '—') tp = getAiParam(a.aiReasoning, 'Take Profit (TP)');
-            if (tp === '—') tp = getAiParam(a.aiReasoning, 'Take Profit 1 (TP1)');
-            
-            let sl = getAiParam(a.aiReasoning, 'Stop Loss rigoroso (SL)');
-            if (sl === '—') sl = getAiParam(a.aiReasoning, 'Stop Loss (SL)');
-            
-            const sup = getAiParam(a.aiReasoning, 'Area di Supporto critico');
-            
-            const slOrTp2 = sl !== '—' ? sl : getAiParam(a.aiReasoning, 'Take Profit 2 (TP2)');
-            const slLabel = sl !== '—' ? 'SL' : 'TP2';
-            
-            const res = getAiParam(a.aiReasoning, 'Area di Resistenza critica');
-
-            const cleanParam = (val) => val === '—' ? val : val.replace(/\*/g, '').trim();
-            const trendClean = cleanParam(trend);
-            const buyZoneClean = cleanParam(buyZone);
-            const tpClean = cleanParam(tp);
-            const slOrTp2Clean = cleanParam(slOrTp2);
-            const supClean = cleanParam(sup);
-            const resClean = cleanParam(res);
-
-            let shortTrend = trendClean;
-            const trendMatch = trendClean.match(/^(Rialzista|Ribassista|Laterale|Buy|Sell|Hold|Positivo|Negativo)/i);
-            if (trendMatch) {
-                const t = trendMatch[1].toLowerCase();
-                if (t === 'rialzista' || t === 'buy' || t === 'positivo') {
-                    shortTrend = '<span class="material-symbols-outlined text-emerald-500" style="font-size: 14px; vertical-align: middle;">trending_up</span>';
-                } else if (t === 'ribassista' || t === 'sell' || t === 'negativo') {
-                    shortTrend = '<span class="material-symbols-outlined text-rose-500" style="font-size: 14px; vertical-align: middle;">trending_down</span>';
-                } else {
-                    shortTrend = '<span class="material-symbols-outlined text-amber-500" style="font-size: 14px; vertical-align: middle;">trending_flat</span>';
-                }
-            } else if (trendClean !== '—') {
-                shortTrend = '<span class="material-symbols-outlined text-slate-400" style="font-size: 14px; vertical-align: middle;">info</span>';
-            } else {
-                shortTrend = '<span class="text-slate-400">—</span>';
-            }
-
-            const shortVal = (val) => {
-                if (val === '—') return val;
-                const m = val.match(/^([€$\d.,]+)/);
-                if (m) return m[1];
-                if (val.length > 15) return val.substring(0, 12) + '...';
-                return val;
-            };
-
-            return `
-                <div class="mob-holding-swipe-container" 
-                     ontouchstart="handleTouchStart(event, this)" 
-                     ontouchmove="handleTouchMove(event, this)" 
-                     ontouchend="handleTouchEnd(event, this)">
-                    
-                    <div class="mob-holding-actions" style="display: flex;">
-                        <div class="mob-action-btn" style="background-color: #6366f1; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white;" 
-                             onclick="event.stopPropagation(); window.openFundamentalsModal('${a.ticker.replace(/'/g, "\\'")}', '${(a.name || '').replace(/'/g, "\\'")}')">
-                            <span class="material-symbols-outlined">query_stats</span>
-                            <span>Fund.</span>
-                        </div>
-                        <div class="mob-action-btn bg-red-ios" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;"
-                             onclick="event.stopPropagation(); window.removeFromWatchlist('${a.ticker.replace(/'/g, "\\'")}', ${!!a.hasPosition})">
-                            <span class="material-symbols-outlined">delete</span>
-                            <span>Rimuovi</span>
-                        </div>
-                    </div>
-
-                    <div class="mob-holding-item" style="${alertBg}; ${alertBorder}" onclick="window.showMobDetails('${a.ticker.replace(/'/g, "\\'")}', '${a.name ? a.name.replace(/'/g, "\\'") : ''}', '${a.currency || 'EUR'}')">
-                        <div class="mob-holding-info">
-                            <div class="flex items-center gap-2">
-                                <div class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border" style="background: ${colors.bg}; color: #000000; border-color: ${colors.border}; display: inline-block;">${a.ticker}</div>
-                                
-${(function() {
-                                    if (a.aiBadges && a.aiBadges.length > 0) {
-                                        return a.aiBadges.map(badge => {
-                                            const engine = badge.engine || 'X';
-                                            let icon = 'smart_toy';
-                                            if (engine === 'Gemini') icon = 'auto_awesome';
-                                            else if (engine === 'Qwen') icon = 'chat_spark';
-                                            else if (engine === 'Agnes') icon = 'psychiatry';
-                                            else if (engine === 'OpenAI') icon = 'data_exploration';
-                                            else if (engine === 'X') icon = 'close';
-                                            
-                                            let colorClass = 'border-slate-500/30 text-slate-500 bg-slate-500/10';
-                                            if (badge.aiAction === 'BUY' || badge.aiAction === 'INCREASE') colorClass = 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10';
-                                            else if (badge.aiAction === 'SELL' || badge.aiAction === 'DECREASE') colorClass = 'border-rose-500/30 text-rose-500 bg-rose-500/10';
-                                            
-                                            const fvStr = badge.aiTargetPrice ? formatAiFv(badge.aiTargetPrice, a.currency) : badge.aiAction;
-                                            return `<span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${a.ticker.replace(/'/g, "\\'")}', '${(a.name || '').replace(/'/g, "\\'")}', '${a.currency || 'EUR'}')" class="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 border ${colorClass} cursor-pointer whitespace-nowrap ml-1">
-                                                <span class="material-symbols-outlined" style="font-size: 12px;">${icon}</span> ${fvStr}
-                                            </span>`;
-                                        }).join('');
-                                    } else if ((a.aiHistoryCount || 0) > 0) {
-                                        return `<span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${a.ticker.replace(/'/g, "\\'")}', '${(a.name || '').replace(/'/g, "\\'")}', '${a.currency || 'EUR'}')" class="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 border border-slate-500/30 text-slate-500 bg-slate-500/10 cursor-pointer">
-                                            <span class="material-symbols-outlined" style="font-size: 12px;">smart_toy</span> ${a.aiHistoryCount}
-                                        </span>`;
-                                    } else {
-                                        return `<span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${a.ticker.replace(/'/g, "\\'")}', '${(a.name || '').replace(/'/g, "\\'")}', '${a.currency || 'EUR'}')" class="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 border border-slate-400/30 text-slate-400 bg-slate-400/10 cursor-pointer">
-                                            <span class="material-symbols-outlined" style="font-size: 12px;">smart_toy</span>
-                                        </span>`;
-                                    }
-                                })()}
-                            </div>
-                            <div class="mob-holding-name" style="margin-top:2px;">${abbreviateName(a.name) || ''}</div>
-                            <div class="flex flex-wrap gap-1.5 mt-1">
-                                ${alertTags}
-                            </div>
-                            <div class="flex flex-col gap-1 mt-1.5">
-                                <div class="flex items-center gap-2">
-                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">Trend: <span style="color:var(--mob-text-primary)" title="${trendClean.replace(/"/g, '&quot;')}">${shortTrend}</span></span>
-                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">Zone: <span style="color:var(--mob-text-primary)" title="${buyZoneClean.replace(/"/g, '&quot;')}">${shortVal(buyZoneClean)}</span></span>
-                                </div>
-
-                                <div class="flex items-center gap-2">
-                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">TP: <span style="color:var(--mob-emerald)" title="${tpClean.replace(/"/g, '&quot;')}">${shortVal(tpClean)}</span></span>
-                                    <span style="font-size:9px; font-weight:900; color:var(--mob-text-caption)">${slLabel}: <span style="color:${sl !== '—' ? 'var(--mob-rose)' : 'var(--mob-emerald)'}" title="${slOrTp2Clean.replace(/"/g, '&quot;')}">${shortVal(slOrTp2Clean)}</span></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mob-holding-values text-right shrink-0">
-                            <div class="mob-holding-value" style="font-size: 15px;">${formatCurrency(price, a.currency, 2)}</div>
-                            <div class="flex flex-col items-end gap-1 mt-1">
-                                <div class="flex items-center justify-end gap-1">
-                                    ${(a.preMarketChangePercent && Math.abs(a.preMarketChangePercent) > 0.01 && !window._mobMarketOpen) ? `
-                                        <span style="font-size:9px; font-weight:900; color:${a.preMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">
-                                            PRE: ${a.preMarketChangePercent >= 0 ? '+' : ''}${a.preMarketChangePercent.toFixed(1)}%
-                                        </span>
-                                    ` : ''}
-                                    ${(a.postMarketChangePercent && Math.abs(a.postMarketChangePercent) > 0.01 && !window._mobMarketOpen) ? `
-                                        <span style="font-size:9px; font-weight:900; color:${a.postMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">
-                                            POST: ${a.postMarketChangePercent >= 0 ? '+' : ''}${a.postMarketChangePercent.toFixed(1)}%
-                                        </span>
-                                    ` : ''}
-                                    ${renderMobilePerf(change, '1D')}
-                                </div>
-                                <div class="flex gap-1 mt-0.5">
-                                    ${renderMobilePerf(p.perf1W, '1W')}
-                                    ${renderMobilePerf(p.perf1M, '1M')}
-                                </div>
-                                ${renderMobilePerf(p.perf1Y, '1Y')}
-                            </div>
-                        </div>
-                    </div>
-    <div style="flex:1"></div>
-                </div>
-            `;
-        }).join('');
+        if (container) {
+            container.innerHTML = watchlist.map(a => renderCard(a)).join('') || '<div class="mob-empty">Watchlist vuota</div>';
+            updateWatchlistScale();
+        }
     }
     window.renderWatchlist = renderWatchlist;
-
-
 
     async function showMobDetails(ticker, name, currency) {
         if (typeof openAssetChartModal === 'function') {
@@ -585,14 +815,14 @@ ${(function() {
 
         async function mobSyncMarketStatus() {
             try {
-                const res = await fetch('/api/market-status');
+                const res = await fetch('/api/market-status?t=' + Date.now());
                 const s = await res.json();
                 window._mobMarketOpen = s.anyOpen;
                 
                 const dotEu = document.getElementById('mob-dot-eu');
                 const dotUs = document.getElementById('mob-dot-us');
-                if (dotEu) dotEu.className = 'mob-market-dot' + (s.euOpen ? ' live' : '');
-                if (dotUs) dotUs.className = 'mob-market-dot' + (s.usOpen ? ' live' : '');
+                if (dotEu) { dotEu.className = 'mob-market-dot' + (s.EU ? ' live' : ''); }
+                if (dotUs) { dotUs.className = 'mob-market-dot' + (s.US ? ' live' : ''); }
                 
                 // Refresh list to update pre/post market visibility
                 if (window.watchlist && window.watchlist.length > 0) renderWatchlist();

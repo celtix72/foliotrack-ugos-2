@@ -16,11 +16,12 @@ module.exports = function(dependencies) {
         fetchAssetMetadata,
         triggerHistoryRebuild,
         historicalPricesCache,
-        watchlistPerformanceCache
+        watchlistPerformanceCache,
+        getEurUsdRate
     } = dependencies;
 
     // ─── WATCHLIST GET ───────────────────────────────────────────────────────
-    router.get('/watchlist', requireAuth, (req, res) => {
+    router.get('/watchlist', requireAuth, async (req, res) => {
         try {
             const rows = database.db.prepare(`
                 SELECT a.*, 
@@ -47,8 +48,61 @@ module.exports = function(dependencies) {
                  ORDER BY a.ticker ASC
              `).all(req.user.id, req.user.id);
              
+             // 1. Calculate holdings per portfolio to get specific PMCs (Filtered by user)
+             const portfolioHoldings = {}; 
+             const allP = database.db.prepare(`
+                 SELECT p.id, p.name, p.color, p.currency 
+                 FROM portfolios p
+                 JOIN portfolio_users pu ON p.id = pu.portfolio_id
+                 WHERE pu.user_id = ?
+             `).all(req.user.id);
+             for (const p of allP) {
+                 const txs = database.db.prepare(`
+                     SELECT type, assetTicker, quantity, price, commission, tax, exchangeRate, amount 
+                     FROM transactions 
+                     WHERE portfolioId = ? 
+                     ORDER BY date ASC
+                 `).all(p.id);
+                 
+                 const pOpenMap = {};
+                 for (const t of txs) {
+                     if (!t.assetTicker || t.assetTicker === 'CASH') continue;
+                     const ticker = t.assetTicker;
+                     if (t.type === 'BUY') {
+                         if (!pOpenMap[ticker]) pOpenMap[ticker] = { qty: 0, cost: 0, costBase: 0 };
+                         const fx = t.exchangeRate || 1;
+                         const costBase = t.amount ? Math.abs(t.amount) : ((t.quantity * t.price + t.commission + t.tax) / fx);
+
+                         pOpenMap[ticker].qty += t.quantity;
+                         pOpenMap[ticker].cost += (t.quantity * t.price + t.commission + t.tax);
+                         pOpenMap[ticker].costBase += costBase;
+                     } else if (t.type === 'SELL') {
+                         if (pOpenMap[ticker] && pOpenMap[ticker].qty > 0) {
+                             const pmc = pOpenMap[ticker].cost / pOpenMap[ticker].qty;
+                             const pmcBase = pOpenMap[ticker].costBase / pOpenMap[ticker].qty;
+                             pOpenMap[ticker].qty -= t.quantity;
+                             pOpenMap[ticker].cost -= t.quantity * pmc;
+                             pOpenMap[ticker].costBase -= t.quantity * pmcBase;
+                             if (pOpenMap[ticker].qty <= 0.0001) delete pOpenMap[ticker];
+                         }
+                     }
+                 }
+                 for (const [ticker, data] of Object.entries(pOpenMap)) {
+                     if (!portfolioHoldings[ticker]) portfolioHoldings[ticker] = [];
+                     portfolioHoldings[ticker].push({
+                         name: p.name,
+                         color: p.color,
+                         currency: p.currency,
+                         qty: data.qty,
+                         costBase: data.costBase,
+                         pmc: data.cost / data.qty
+                     });
+                 }
+             }
+
+             const liveRate = await getEurUsdRate();
              const today = new Date().toISOString().split('T')[0];
- 
+  
              const allTickers = rows.map(r => r.ticker);
              const badgesByTicker = {};
              if (allTickers.length > 0) {
@@ -69,7 +123,7 @@ module.exports = function(dependencies) {
              const marketStatus = getMarketStatus();
              const result = rows.map(a => {
                  const aiBadges = badgesByTicker[a.ticker] || [];
- 
+  
                  let sparkline = [];
                  if (historicalPricesCache[a.ticker]) {
                      const history = historicalPricesCache[a.ticker];
@@ -81,8 +135,42 @@ module.exports = function(dependencies) {
                  const openedToday = isUS ? marketStatus.US_openedToday : marketStatus.EU_openedToday;
                  const showVariation = isToday && openedToday;
                  
+                 let totalGainEUR = 0;
+                 
+                 const portfoliosInfo = (portfolioHoldings[a.ticker] || []).map(ph => {
+                     const roi = (a.currentPrice > 0 && ph.pmc > 0) ? ((a.currentPrice - ph.pmc) / ph.pmc) * 100 : 0;
+                     
+                     const currentValAsset = ph.qty * (a.currentPrice || 0);
+                     let currentValBase = currentValAsset;
+                     if (a.currency === 'USD' && ph.currency === 'EUR') {
+                         currentValBase = currentValAsset / liveRate;
+                     } else if (a.currency === 'EUR' && ph.currency === 'USD') {
+                         currentValBase = currentValAsset * liveRate;
+                     }
+                     
+                     const gainBase = currentValBase - ph.costBase;
+                     
+                     let gainEUR = gainBase;
+                     if (ph.currency === 'USD') {
+                         gainEUR = gainBase / liveRate;
+                     }
+                     
+                     totalGainEUR += gainEUR;
+                     
+                     return {
+                         name: ph.name,
+                         color: ph.color,
+                         roi: roi
+                     };
+                 });
+
+                 const actualTotalQuantity = (portfolioHoldings[a.ticker] || []).reduce((sum, ph) => sum + ph.qty, 0);
+                 const actualTotalCostAssetCurr = (portfolioHoldings[a.ticker] || []).reduce((sum, ph) => sum + (ph.pmc * ph.qty), 0);
+
                  return { 
                      ...a, 
+                     totalQuantity: actualTotalQuantity > 0.0001 ? actualTotalQuantity : 0,
+                     totalCostAssetCurr: actualTotalCostAssetCurr,
                      targetPrice: a.userTargetPrice,
                      stopLoss: a.userStopLoss,
                      aiEngine: a.aiEngine,
@@ -94,7 +182,9 @@ module.exports = function(dependencies) {
                      inWatchlist: 1,
                      sparkline,
                      changePercent: showVariation ? (a.changePercent || 0) : 0,
-                     changeValue: showVariation ? (a.changeValue || 0) : 0
+                     changeValue: showVariation ? (a.changeValue || 0) : 0,
+                     portfoliosInfo,
+                     totalGainEUR
                  };
              });
              res.json(result);

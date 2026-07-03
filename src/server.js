@@ -519,7 +519,7 @@ app.use('/api', require('./routes/dividends')({
 // ─── Watchlist Routes ─────────────────────────────────────────────────────────
 app.use('/api', require('./routes/watchlist')({
     requireAuth, database, logger, yahooFinance, getMarketStatus, isUSMarket,
-    fetchAssetMetadata, triggerHistoryRebuild, historicalPricesCache, watchlistPerformanceCache
+    fetchAssetMetadata, triggerHistoryRebuild, historicalPricesCache, watchlistPerformanceCache, getEurUsdRate
 }));
 
 // ─── Settings Routes ──────────────────────────────────────────────────────────
