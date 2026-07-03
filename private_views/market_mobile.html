@@ -650,14 +650,14 @@
               </div>
 
               <!-- Col 3: AI Target Price TAG -->
-              <div style="display:flex; justify-content:center; align-items:center; min-width:0; height:100%">
+              <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; gap:3px; min-width:0; height:100%">
                 ${renderAiBadgeMob(a)}
               </div>
 
               <!-- Col 4: Today Var (% / Val) & Absolute Var (% / Val) -->
               <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; min-width:0; text-align:right">
-                <div style="font-size:10px; font-weight:900; color:${chgColor}; font-family:'SF Mono',monospace; white-space:nowrap">${todayVarStr}</div>
-                <div style="font-size:9px; font-weight:700; color:${hasTotalGain ? absPctColor : 'var(--mob-text-muted)'}; font-family:'SF Mono',monospace; white-space:nowrap">${absVarStr}</div>
+                <div style="font-size:12px; font-weight:900; color:${chgColor}; font-family:'SF Mono',monospace; white-space:nowrap">${todayVarStr}</div>
+                <div style="font-size:12px; font-weight:700; color:${hasTotalGain ? absPctColor : 'var(--mob-text-muted)'}; font-family:'SF Mono',monospace; white-space:nowrap">${absVarStr}</div>
               </div>
             </div>
           </div>`;
