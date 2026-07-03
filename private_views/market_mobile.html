@@ -71,7 +71,7 @@
         align-items: center;
         background: var(--mob-surface);
         border-bottom: 1px solid var(--mob-border);
-        padding: 10px 8px;
+        padding: 6px 8px;
         gap: 8px;
         cursor: pointer;
         transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -84,7 +84,7 @@
     .mkcard-row::before {
         content: '';
         position: absolute;
-        left: 0; top: 8px; bottom: 8px;
+        left: 0; top: 5px; bottom: 5px;
         width: 3px;
         border-radius: 0 2px 2px 0;
     }
@@ -631,7 +631,16 @@
             let clr = 'border-slate-500/30 text-slate-500 bg-slate-500/10';
             if (badge.aiAction === 'BUY' || badge.aiAction === 'INCREASE') clr = 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10';
             else if (badge.aiAction === 'SELL' || badge.aiAction === 'DECREASE') clr = 'border-rose-500/30 text-rose-500 bg-rose-500/10';
-            const fvStr = badge.aiTargetPrice ? formatAiFv(badge.aiTargetPrice, cur) : badge.aiAction;
+            
+            let fvStr = badge.aiAction;
+            if (badge.aiTargetPrice) {
+              const num = parseFloat(badge.aiTargetPrice);
+              let dec = 2;
+              if (num > 30) dec = 0;
+              else if (num > 10) dec = 1;
+              fvStr = num.toLocaleString('it-IT', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+            }
+            
             return `<span onclick="event.stopPropagation();window.openAssetAiHistoryModal('${tickerEsc}','${nameEsc}','${cur}')" class="px-1.5 py-0.5 rounded font-black uppercase tracking-tighter flex items-center gap-1 border ${clr} cursor-pointer whitespace-nowrap" style="font-size: calc(10px * var(--mkcard-scale, 1))">
               <span class="material-symbols-outlined" style="font-size: calc(12px * var(--mkcard-scale, 1))">${icon}</span> ${fvStr}</span>`;
           }).join('');
