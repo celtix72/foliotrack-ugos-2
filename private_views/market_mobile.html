@@ -67,7 +67,7 @@
     }
     .mkcard-row {
         display: grid;
-        grid-template-columns: 85px 1fr 68px 112px;
+        grid-template-columns: 95px 1fr 68px 112px;
         align-items: center;
         background: var(--mob-surface);
         border-bottom: 1px solid var(--mob-border);
@@ -208,6 +208,11 @@
     
     <!-- Sort tags row -->
     <div class="px-4 pb-3 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+      <button id="btn-sort-ext" onclick="toggleMarketExt()" 
+              class="text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all whitespace-nowrap">
+        EXT
+      </button>
+      <span class="text-slate-300 dark:text-slate-700 mx-0.5">|</span>
       <button id="btn-sort-pct" onclick="setMarketSort('changePercent')" 
               class="text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all whitespace-nowrap">
         % Giorno
@@ -354,6 +359,21 @@
     updateViewToggle();
     mobLoadAssets();
   };
+
+  // ── Extended Name Mode (Toggles ticker with name) ───────────────────────────────
+  let _marketExtMode = localStorage.getItem('market_ext_mode') === 'true';
+
+  window.toggleMarketExt = function() {
+    _marketExtMode = !_marketExtMode;
+    localStorage.setItem('market_ext_mode', _marketExtMode);
+    updateExtToggle();
+    mobLoadAssets();
+  };
+
+  function updateExtToggle() {
+    const btnExt = document.getElementById('btn-sort-ext');
+    if (btnExt) btnExt.className = _marketExtMode ? _activeTag : _inactiveTag;
+  }
 
   // ── Sort Mode (changePercent / name / dailyVal / totalGain) ──────────────────────
   let _marketSortMode = localStorage.getItem('market_sort_mode') || 'changePercent';
@@ -717,6 +737,9 @@
         // Asset type colors
         const colors = getAssetTypeColors(a.type || a.yfType, a.ticker);
 
+        // Toggle ticker symbol or abbreviated name based on extended mode setting
+        const displaySymbol = _marketExtMode ? abbreviateName(a.name, 15) : a.ticker;
+
         // Absolute variation calculations
         const invested = a.totalCostAssetCurr || 0;
         const _absPct  = invested > 0 ? ((_totalVal - invested) / invested) * 100 : 0;
@@ -742,16 +765,15 @@
               <!-- Col 1: Ticker TAG & Price -->
               <div style="display:flex; flex-direction:column; gap:3px; align-items:flex-start; min-width:0">
                 <div style="display:flex; align-items:center; max-width:100%">
-                  <span style="background:${colors.bg}; color:#000000; border:1px solid ${colors.border}; border-radius:4px; padding:1px 5px; font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; flex-shrink:1">${a.ticker}</span>
+                  <span style="background:${colors.bg}; color:#000000; border:1px solid ${colors.border}; border-radius:4px; padding:1px 5px; font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; flex-shrink:1">${displaySymbol}</span>
                   ${portTags}
                 </div>
                 <span style="font-size:calc(13px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${priceFmt}&nbsp;<span style="color:${chgColor}; font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:900">${todayVarPct}</span></span>
               </div>
 
-              <!-- Col 2: Name & Portafoglio / Mercato -->
-              <div style="display:flex; flex-direction:column; gap:2px; min-width:0">
-                <div style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:900; color:var(--mob-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${abbreviateName(a.name, 15)}</div>
-                <div style="font-size:calc(9px * var(--mkcard-scale, 1)); font-weight:700; color:var(--mob-text-muted); text-transform:uppercase; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">
+              <!-- Col 2: Mercato -->
+              <div style="display:flex; flex-direction:column; justify-content:center; min-width:0">
+                <div style="font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:700; color:var(--mob-text-muted); text-transform:uppercase; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">
                   ${exchangeLabel}
                 </div>
               </div>
@@ -907,6 +929,7 @@
     mobLoadAssets();
     updateViewToggle();
     updateSortToggle();
+    updateExtToggle();
     updateMarketScale();
   }
 
