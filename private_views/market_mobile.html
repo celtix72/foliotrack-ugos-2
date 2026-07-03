@@ -90,6 +90,10 @@
     }
     .mkcard-row.pos::before { background: var(--mob-emerald); }
     .mkcard-row.neg::before { background: var(--mob-rose); }
+    .mkcard-row.closed-market, .mob-holding-item.closed-market {
+        background: var(--mob-surface-2) !important;
+        opacity: 0.75;
+    }
 </style>
 <script src="/theme.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -576,8 +580,38 @@
     } catch(e) { console.error('[MOB] Movers load error:', e); }
   }
 
+  let _marketStatusData = null;
+
+  function isAssetMarketOpen(a) {
+    const status = _marketStatusData;
+    if (!status) return true;
+    if (status.isWeekend) return false;
+    
+    const ticker = (a.ticker || '').toUpperCase();
+    const exchange = (a.exchange || '').toUpperCase();
+    
+    // US markets check
+    if (ticker.indexOf('.') === -1 || exchange === 'US' || exchange === 'USA' || exchange === 'NASDAQ' || exchange === 'NYSE' || exchange === 'AMEX') {
+      return !!status.US;
+    }
+    
+    // European markets check
+    if (ticker.endsWith('.MI') || ticker.endsWith('.DE') || ticker.endsWith('.F') || ticker.endsWith('.MU') || ticker.endsWith('.PA') || ticker.endsWith('.AS') || ticker.endsWith('.MC') || exchange === 'MIL' || exchange === 'GER' || exchange === 'FRA' || exchange === 'PAR' || exchange === 'AMS' || exchange === 'MAD') {
+      return !!status.EU;
+    }
+    
+    return !!status.anyOpen;
+  }
+
   async function mobLoadAssets() {
     try {
+      if (!_marketStatusData) {
+        try {
+          const statusRes = await fetch('/api/market-status');
+          _marketStatusData = await statusRes.json();
+        } catch(e) {}
+      }
+
       const res = await fetch('/api/assets');
       const assets = (await res.json()).filter(a => a.ticker !== 'CASH');
       
@@ -588,6 +622,13 @@
       const posCountEl = document.getElementById('mob-pos-count');
 
       const openPos = assets.filter(a => a.hasPosition).sort((a, b) => {
+        // Market open status takes priority (open = 1, closed = 0)
+        const openA = isAssetMarketOpen(a) ? 1 : 0;
+        const openB = isAssetMarketOpen(b) ? 1 : 0;
+        if (openA !== openB) {
+          return openB - openA;
+        }
+
         if (_marketSortMode === 'name') {
           return (a.name || '').localeCompare(b.name || '');
         } else if (_marketSortMode === 'dailyVal') {
@@ -739,6 +780,7 @@
 
         // Toggle ticker symbol or abbreviated name based on extended mode setting
         const displaySymbol = _marketExtMode ? abbreviateName(a.name, 15) : a.ticker;
+        const isOpen = isAssetMarketOpen(a);
 
         // Absolute variation calculations
         const invested = a.totalCostAssetCurr || 0;
@@ -759,7 +801,7 @@
                ontouchmove="handleTouchMove(event,this)"
                ontouchend="handleTouchEnd(event,this)">
             ${renderActions(a)}
-            <div class="mkcard-row ${isPos ? 'pos' : 'neg'}"
+            <div class="mkcard-row ${isPos ? 'pos' : 'neg'} ${isOpen ? '' : 'closed-market'}"
                  onclick="window.showMobDetails('${tickerEsc}','${nameEsc}','${cur}')">
               
               <!-- Col 1: Ticker TAG, Price, Var% & Market Tag -->
@@ -799,6 +841,7 @@
 
         const colors = getAssetTypeColors(a.type || a.yfType, a.ticker);
         const tickerEsc = a.ticker.replace(/'/g, "\\'");
+        const isOpen = isAssetMarketOpen(a);
 
         const showLogo = _marketViewMode !== 'compact';
         const _chgVal = (a.changeValue || 0) * (a.totalQuantity || 0);
@@ -819,7 +862,7 @@
                ontouchmove="handleTouchMove(event,this)"
                ontouchend="handleTouchEnd(event,this)">
             ${renderActions(a)}
-            <div class="mob-holding-item" onclick="window.showMobDetails('${tickerEsc}','${(a.name||'').replace(/'/g,"\\'")  }','${a.currency||'EUR'}')">
+            <div class="mob-holding-item ${isOpen ? '' : 'closed-market'}" onclick="window.showMobDetails('${tickerEsc}','${(a.name||'').replace(/'/g,"\\'")  }','${a.currency||'EUR'}')">
               <div class="mob-holding-info">
                 <div class="flex items-center gap-2">
                   <div class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border" style="background:${colors.bg};color:#000000;border-color:${colors.border};display:inline-block">${a.ticker}</div>
