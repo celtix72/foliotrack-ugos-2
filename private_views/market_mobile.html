@@ -631,12 +631,30 @@
       const posContainer = document.getElementById('mob-list-positions');
       const posCountEl = document.getElementById('mob-pos-count');
 
+      const getSortGroup = (x) => {
+        const ticker = (x.ticker || '').toUpperCase();
+        const type = (x.type || '').toUpperCase();
+        const yfType = (x.yfType || '').toUpperCase();
+        
+        // Group 0: Conto Deposito (always bottom)
+        if (type === 'CONTO_DEPOSITO' || yfType === 'CONTO_DEPOSITO' || ticker.startsWith('CD_')) {
+          return 0;
+        }
+        // Group 2: Open, Group 1: Closed
+        return isAssetMarketOpen(x) ? 2 : 1;
+      };
+
       const openPos = assets.filter(a => a.hasPosition).sort((a, b) => {
-        // Market open status takes priority (open = 1, closed = 0)
-        const openA = isAssetMarketOpen(a) ? 1 : 0;
-        const openB = isAssetMarketOpen(b) ? 1 : 0;
-        if (openA !== openB) {
-          return openB - openA;
+        const groupA = getSortGroup(a);
+        const groupB = getSortGroup(b);
+        
+        if (groupA !== groupB) {
+          return groupB - groupA; // Group 2 first, then Group 1, then Group 0
+        }
+        
+        // Group 0 (CD) does not participate in active sorting; sort statically by ticker/name
+        if (groupA === 0) {
+          return (a.ticker || '').localeCompare(b.ticker || '');
         }
 
         if (_marketSortMode === 'name') {
