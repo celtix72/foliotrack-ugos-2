@@ -67,7 +67,7 @@
     }
     .mkcard-row {
         display: grid;
-        grid-template-columns: 95px 1fr 68px 112px;
+        grid-template-columns: 140px 1fr 68px 112px;
         align-items: center;
         background: var(--mob-surface);
         border-bottom: 1px solid var(--mob-border);
@@ -762,21 +762,17 @@
             <div class="mkcard-row ${isPos ? 'pos' : 'neg'}"
                  onclick="window.showMobDetails('${tickerEsc}','${nameEsc}','${cur}')">
               
-              <!-- Col 1: Ticker TAG & Price -->
+              <!-- Col 1: Ticker TAG, Price, Var% & Market Tag -->
               <div style="display:flex; flex-direction:column; gap:3px; align-items:flex-start; min-width:0">
                 <div style="display:flex; align-items:center; max-width:100%">
                   <span style="background:${colors.bg}; color:#000000; border:1px solid ${colors.border}; border-radius:4px; padding:1px 5px; font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; flex-shrink:1">${displaySymbol}</span>
                   ${portTags}
                 </div>
-                <span style="font-size:calc(13px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${priceFmt}&nbsp;<span style="color:${chgColor}; font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:900">${todayVarPct}</span></span>
+                <span style="font-size:calc(13px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${priceFmt}&nbsp;<span style="color:${chgColor}; font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:900">${todayVarPct}</span><span style="background:rgba(100,116,139,0.1); color:var(--mob-text-muted); border-radius:3px; padding:1px 4px; font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; margin-left:4px; display:inline-block; vertical-align:middle">${exchangeLabel}</span></span>
               </div>
 
-              <!-- Col 2: Mercato -->
-              <div style="display:flex; flex-direction:column; justify-content:center; min-width:0">
-                <div style="font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:700; color:var(--mob-text-muted); text-transform:uppercase; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">
-                  ${exchangeLabel}
-                </div>
-              </div>
+              <!-- Col 2: Spacer -->
+              <div></div>
 
               <!-- Col 3: AI Target Price TAG -->
               <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; gap:3px; min-width:0; height:100%">
