@@ -682,6 +682,128 @@ async function fetchAssetMetadata(ticker) {
     }
 }
 
+function getLocalDate(timeZone) {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric',
+        hour12: false
+    });
+    const parts = formatter.formatToParts(now);
+    const dateParts = {};
+    for (const p of parts) {
+        if (p.type !== 'literal') {
+            dateParts[p.type] = parseInt(p.value, 10);
+        }
+    }
+    return new Date(Date.utc(dateParts.year, dateParts.month - 1, dateParts.day));
+}
+
+function getGoodFriday(year) {
+    const f = Math.floor,
+          G = year % 19,
+          C = f(year / 100),
+          H = (C - f(C / 4) - f((8 * C + 13) / 25) + 19 * G + 15) % 30,
+          I = H - f(H / 28) * (1 - f(29 / (H + 1)) * f((21 - G) / 11)),
+          J = (year + f(year / 4) + I + 2 - C + f(C / 4)) % 7,
+          L = I - J,
+          month = 3 + f((L + 40) / 44),
+          day = L + 28 - 31 * f(month / 4);
+
+    const easter = new Date(Date.utc(year, month - 1, day));
+    const goodFriday = new Date(easter);
+    goodFriday.setUTCDate(easter.getUTCDate() - 2);
+    return goodFriday;
+}
+
+function getEasterMonday(year) {
+    const easter = new Date(getGoodFriday(year));
+    easter.setUTCDate(easter.getUTCDate() + 3);
+    return easter;
+}
+
+function isUSMarketHoliday(date) {
+    const year = date.getUTCFullYear();
+    const month = date.getUTCMonth();
+    const dayOfMonth = date.getUTCDate();
+    const dayOfWeek = date.getUTCDay();
+
+    const getObserved = (targetMonth, targetDay) => {
+        const d = new Date(Date.utc(year, targetMonth, targetDay));
+        const dw = d.getUTCDay();
+        if (dw === 6) {
+            return new Date(Date.utc(year, targetMonth, targetDay - 1));
+        } else if (dw === 0) {
+            return new Date(Date.utc(year, targetMonth, targetDay + 1));
+        }
+        return d;
+    };
+
+    const isMatch = (obsDate) => {
+        return obsDate.getUTCMonth() === month && obsDate.getUTCDate() === dayOfMonth;
+    };
+
+    if (isMatch(getObserved(0, 1))) return true;
+
+    if (month === 0 && dayOfWeek === 1) {
+        if (dayOfMonth >= 15 && dayOfMonth <= 21) return true;
+    }
+
+    if (month === 1 && dayOfWeek === 1) {
+        if (dayOfMonth >= 15 && dayOfMonth <= 21) return true;
+    }
+
+    const gf = getGoodFriday(year);
+    if (gf.getUTCMonth() === month && gf.getUTCDate() === dayOfMonth) return true;
+
+    if (month === 4 && dayOfWeek === 1) {
+        if (dayOfMonth >= 25) return true;
+    }
+
+    if (isMatch(getObserved(5, 19))) return true;
+
+    if (isMatch(getObserved(6, 4))) return true;
+
+    if (month === 8 && dayOfWeek === 1) {
+        if (dayOfMonth <= 7) return true;
+    }
+
+    if (month === 10 && dayOfWeek === 4) {
+        if (dayOfMonth >= 22 && dayOfMonth <= 28) return true;
+    }
+
+    if (isMatch(getObserved(11, 25))) return true;
+
+    return false;
+}
+
+function isEUMarketHoliday(date) {
+    const year = date.getUTCFullYear();
+    const month = date.getUTCMonth();
+    const dayOfMonth = date.getUTCDate();
+
+    if (month === 0 && dayOfMonth === 1) return true;
+
+    const gf = getGoodFriday(year);
+    if (gf.getUTCMonth() === month && gf.getUTCDate() === dayOfMonth) return true;
+
+    const em = getEasterMonday(year);
+    if (em.getUTCMonth() === month && em.getUTCDate() === dayOfMonth) return true;
+
+    if (month === 4 && dayOfMonth === 1) return true;
+
+    if (month === 11 && dayOfMonth === 25) return true;
+
+    if (month === 11 && dayOfMonth === 26) return true;
+
+    return false;
+}
+
 function getMarketStatus() {
     const now = new Date();
     const day = now.getUTCDay(); // 0=Sun, 6=Sat
@@ -693,14 +815,26 @@ function getMarketStatus() {
         hour: '2-digit', minute: '2-digit', hour12: false
     }).format(now);
 
-    const checkOpen = (hours) => {
-        if (isWeekend) return false;
+    const usLocalDate = getLocalDate('America/New_York');
+    const euLocalDate = getLocalDate('Europe/Rome');
+
+    const usDay = usLocalDate.getUTCDay();
+    const euDay = euLocalDate.getUTCDay();
+
+    const isUSWeekend = (usDay === 0 || usDay === 6);
+    const isEUWeekend = (euDay === 0 || euDay === 6);
+
+    const isUSHoliday = isUSWeekend || isUSMarketHoliday(usLocalDate);
+    const isEUHoliday = isEUWeekend || isEUMarketHoliday(euLocalDate);
+
+    const checkOpen = (hours, isClosed) => {
+        if (isClosed) return false;
         return cetNow >= hours.open && cetNow <= hours.close;
     };
 
-    const milOpen = checkOpen(MARKET_HOURS.MIL);
-    const gerOpen = checkOpen(MARKET_HOURS.GER);
-    const usOpen  = checkOpen(MARKET_HOURS.USA);
+    const milOpen = checkOpen(MARKET_HOURS.MIL, isEUHoliday);
+    const gerOpen = checkOpen(MARKET_HOURS.GER, isEUHoliday);
+    const usOpen  = checkOpen(MARKET_HOURS.USA, isUSHoliday);
 
     const milHrs = MARKET_HOURS.MIL;
     const usHrs  = MARKET_HOURS.USA;
@@ -708,10 +842,10 @@ function getMarketStatus() {
     const status = {
         EU: milOpen || gerOpen,
         US: usOpen,
-        EU_openedToday: !isWeekend && cetNow >= milHrs.open,
-        US_openedToday: !isWeekend && cetNow >= usHrs.open,
-        US_preMarketActive: !isWeekend && cetNow >= '10:00' && cetNow < usHrs.open,
-        US_afterHoursActive: !isWeekend && (cetNow > usHrs.close || cetNow < '02:05'),
+        EU_openedToday: !isEUHoliday && cetNow >= milHrs.open,
+        US_openedToday: !isUSHoliday && cetNow >= usHrs.open,
+        US_preMarketActive: !isUSHoliday && cetNow >= '10:00' && cetNow < usHrs.open,
+        US_afterHoursActive: !isUSHoliday && (cetNow > usHrs.close || cetNow < '02:05'),
         isWeekend,
         anyOpen: milOpen || gerOpen || usOpen
     };
