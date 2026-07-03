@@ -30,7 +30,7 @@
         background: var(--mob-surface);
         border-bottom: 1px solid var(--mob-border);
         height: 34px;
-        display: block; /* Changed from flex to avoid stretching/align issues */
+        display: block;
         white-space: nowrap;
         position: relative;
     }
@@ -56,6 +56,139 @@
     @keyframes ticker {
         0% { transform: translateX(0); }
         100% { transform: translateX(-50%); }
+    }
+
+    /* ── Card View Styles ── */
+    .mkcard-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        padding: 0;
+    }
+    .mkcard-row {
+        display: flex;
+        align-items: stretch;
+        background: var(--mob-surface);
+        border-bottom: 1px solid var(--mob-border);
+        padding: 10px 14px;
+        gap: 10px;
+        cursor: pointer;
+        transition: background 0.15s;
+        position: relative;
+    }
+    .mkcard-row:active { background: var(--mob-border); }
+    /* Left accent bar based on gain/loss */
+    .mkcard-row::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 8px; bottom: 8px;
+        width: 3px;
+        border-radius: 0 2px 2px 0;
+    }
+    .mkcard-row.pos::before { background: var(--mob-emerald); }
+    .mkcard-row.neg::before { background: var(--mob-rose); }
+
+    .mkcard-ticker-badge {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-width: 44px;
+        max-width: 54px;
+        flex-shrink: 0;
+    }
+    .mkcard-ticker-chip {
+        background: rgba(99,102,241,0.12);
+        border: 1px solid rgba(99,102,241,0.25);
+        border-radius: 8px;
+        padding: 4px 6px;
+        font-size: 9px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        color: #818cf8;
+        text-align: center;
+        line-height: 1.2;
+        word-break: break-all;
+        max-width: 52px;
+    }
+    .mkcard-body {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+    .mkcard-name {
+        font-size: 12px;
+        font-weight: 900;
+        color: var(--mob-text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.2;
+    }
+    .mkcard-meta {
+        font-size: 9px;
+        font-weight: 700;
+        color: var(--mob-text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .mkcard-meta-sep { opacity: 0.35; }
+    .mkcard-port-tag {
+        display: inline-block;
+        border-radius: 4px;
+        padding: 1px 5px;
+        font-size: 8px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    .mkcard-values {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        flex-shrink: 0;
+        gap: 2px;
+        min-width: 80px;
+    }
+    .mkcard-price {
+        font-size: 15px;
+        font-weight: 900;
+        font-family: 'SF Mono', monospace;
+        color: var(--mob-text);
+        line-height: 1;
+    }
+    .mkcard-change {
+        font-size: 11px;
+        font-weight: 900;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+    }
+    .mkcard-gain-row {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 6px;
+    }
+    .mkcard-daily-gain {
+        font-size: 10px;
+        font-weight: 700;
+        font-family: 'SF Mono', monospace;
+        border-radius: 4px;
+        padding: 1px 5px;
+    }
+    .mkcard-total-gain {
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--mob-text-muted);
+        font-family: 'SF Mono', monospace;
     }
 </style>
 <script src="/theme.js"></script>
@@ -157,6 +290,10 @@
         <span id="mob-pos-count" class="mob-header-subtitle">0 Assets</span>
         <!-- View mode toggle -->
         <div class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 gap-0.5">
+          <button id="btn-view-card" onclick="setMarketView('card')" title="Vista card (nuova)"  
+                  class="p-1 rounded-md transition-all">
+            <span class="material-symbols-outlined" style="font-size:15px">table_rows</span>
+          </button>
           <button id="btn-view-normal" onclick="setMarketView('normal')" title="Vista normale"
                   class="p-1 rounded-md transition-all">
             <span class="material-symbols-outlined" style="font-size:15px">view_list</span>
@@ -279,8 +416,8 @@
     currentSwipeEl = null;
   }
 
-  // ── View Mode (Normal / Compact) ────────────────────────────────────────
-  let _marketViewMode = localStorage.getItem('market_view_mode') || 'normal';
+  // ── View Mode (Card / Normal / Compact) ────────────────────────────────────────
+  let _marketViewMode = localStorage.getItem('market_view_mode') || 'card';
 
   window.setMarketView = function(mode) {
     _marketViewMode = mode;
@@ -289,16 +426,16 @@
     mobLoadAssets();
   };
 
+  const _activeBtn = 'p-1 rounded-md transition-all bg-white dark:bg-slate-700 text-primary shadow-sm';
+  const _inactiveBtn = 'p-1 rounded-md transition-all text-slate-400 dark:text-slate-500';
+
   function updateViewToggle() {
-    const btnN = document.getElementById('btn-view-normal');
-    const btnC = document.getElementById('btn-view-compact');
-    const isCompact = _marketViewMode === 'compact';
-    if (btnN) btnN.className = isCompact
-      ? 'p-1 rounded-md transition-all text-slate-400 dark:text-slate-500'
-      : 'p-1 rounded-md transition-all bg-white dark:bg-slate-700 text-primary shadow-sm';
-    if (btnC) btnC.className = isCompact
-      ? 'p-1 rounded-md transition-all bg-white dark:bg-slate-700 text-primary shadow-sm'
-      : 'p-1 rounded-md transition-all text-slate-400 dark:text-slate-500';
+    const btnCard = document.getElementById('btn-view-card');
+    const btnN    = document.getElementById('btn-view-normal');
+    const btnC    = document.getElementById('btn-view-compact');
+    if (btnCard) btnCard.className = _marketViewMode === 'card'    ? _activeBtn : _inactiveBtn;
+    if (btnN)    btnN.className    = _marketViewMode === 'normal'  ? _activeBtn : _inactiveBtn;
+    if (btnC)    btnC.className    = _marketViewMode === 'compact' ? _activeBtn : _inactiveBtn;
   }
 
   window.mobViewAssetDetails = function(ticker, name, currency) {
@@ -485,75 +622,171 @@
         return { bg, text, border };
       };
 
-      const renderCard = (a, isLarge = false) => {
+      // ── AI badge renderer (reusable) ────────────────────────────────
+      function renderAiBadgeMob(a) {
+        const tickerEsc = a.ticker.replace(/'/g, "\\'");
+        const nameEsc = (a.name || '').replace(/'/g, "\\'");
+        const cur = a.currency || 'EUR';
+        if (a.aiBadges && a.aiBadges.length > 0) {
+          return a.aiBadges.map(badge => {
+            const engine = badge.engine || 'X';
+            let icon = 'smart_toy';
+            if (engine === 'Gemini') icon = 'auto_awesome';
+            else if (engine === 'Qwen') icon = 'chat_spark';
+            else if (engine === 'Agnes') icon = 'psychiatry';
+            else if (engine === 'OpenAI') icon = 'data_exploration';
+            let clr = 'border-slate-500/30 text-slate-500 bg-slate-500/10';
+            if (badge.aiAction === 'BUY' || badge.aiAction === 'INCREASE') clr = 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10';
+            else if (badge.aiAction === 'SELL' || badge.aiAction === 'DECREASE') clr = 'border-rose-500/30 text-rose-500 bg-rose-500/10';
+            const fvStr = badge.aiTargetPrice ? formatAiFv(badge.aiTargetPrice, cur) : badge.aiAction;
+            return `<span onclick="event.stopPropagation();window.openAssetAiHistoryModal('${tickerEsc}','${nameEsc}','${cur}')" class="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 border ${clr} cursor-pointer whitespace-nowrap">
+              <span class="material-symbols-outlined" style="font-size:12px">${icon}</span> ${fvStr}</span>`;
+          }).join('');
+        } else if ((a.aiHistoryCount || 0) > 0) {
+          return `<span onclick="event.stopPropagation();window.openAssetAiHistoryModal('${tickerEsc}','${nameEsc}','${cur}')" class="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 border border-slate-500/30 text-slate-500 bg-slate-500/10 cursor-pointer">
+            <span class="material-symbols-outlined" style="font-size:12px">smart_toy</span> ${a.aiHistoryCount}</span>`;
+        }
+        return `<span onclick="event.stopPropagation();window.openAssetAiHistoryModal('${tickerEsc}','${nameEsc}','${cur}')" class="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 border border-slate-400/30 text-slate-400 bg-slate-400/10 cursor-pointer">
+          <span class="material-symbols-outlined" style="font-size:12px">smart_toy</span></span>`;
+      }
+
+      // ── Action buttons (swipeable) ───────────────────────────────────
+      function renderActions(a) {
+        const tickerEsc = a.ticker.replace(/'/g, "\\'");
+        const countryEsc = (a.country || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        const openModal = `openManualModal('${tickerEsc}','${a.currency}',${a.currentPrice},'${a.type}','${countryEsc}','${a.dataSource}','${a.isin}')`;
+        if (a.hasPosition) {
+          return `<div class="mob-holding-actions">
+            <div class="mob-action-btn bg-blue-ios" ontouchend="mobActionTap(event,()=>mobViewAssetTransactions('${tickerEsc}'))" onclick="event.stopPropagation();mobViewAssetTransactions('${tickerEsc}')">
+              <span class="material-symbols-outlined">list</span><span>Trans</span>
+            </div>
+            <div class="mob-action-btn bg-orange-ios" ontouchend="mobActionTap(event,()=>${openModal})" onclick="event.stopPropagation();${openModal}">
+              <span class="material-symbols-outlined">edit_note</span><span>Modifica</span>
+            </div>
+          </div>`;
+        }
+        return `<div class="mob-holding-actions">
+          <div class="mob-action-btn bg-orange-ios" ontouchend="mobActionTap(event,()=>${openModal})" onclick="event.stopPropagation();${openModal}">
+            <span class="material-symbols-outlined">edit_note</span><span>Modifica</span>
+          </div>
+          <div class="mob-action-btn bg-red-ios" ontouchend="mobActionTap(event,()=>removeFromWatchlist('${tickerEsc}',${!!a.hasPosition}))" onclick="event.stopPropagation();removeFromWatchlist('${tickerEsc}',${!!a.hasPosition})">
+            <span class="material-symbols-outlined">delete</span><span>Rimuovi</span>
+          </div>
+        </div>`;
+      }
+
+      // ── NEW Card View renderer ──────────────────────────────────────
+      function renderCardView(a) {
+        const price = a.currentPrice || 0;
+        const change = a.changePercent || 0;
+        const isPos = change >= 0;
+        const chgColor = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        const tickerEsc = a.ticker.replace(/'/g, "\\'");
+        const nameEsc  = (a.name || '').replace(/'/g, "\\'");
+        const cur = a.currency || 'EUR';
+
+        // Daily gain
+        const _chgVal = (a.changeValue || 0) * (a.totalQuantity || 0);
+        const _dgColor = _chgVal >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        const _dgSign  = _chgVal >= 0 ? '+' : '';
+
+        // Total position
+        const _totalVal  = price * (a.totalQuantity || 0);
+        const _totalGain = a.totalGainEUR !== undefined ? a.totalGainEUR : (_totalVal - (a.totalCostAssetCurr || 0));
+        const _totGainIsPos = _totalGain >= 0;
+        const _totGainColor = _totGainIsPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        const _totGainSign  = (_totGainIsPos && Math.abs(_totalGain) >= 0.5) ? '+' : '';
+        const _totGainCur   = a.totalGainEUR !== undefined ? 'EUR' : cur;
+
+        const hasDailyGain = a.hasPosition && Math.abs(_chgVal) >= 0.01;
+        const hasTotalGain = a.hasPosition && _totalVal > 0;
+
+        // Portfolio tags
+        const portTags = (a.portfoliosInfo && a.portfoliosInfo.length > 0)
+          ? a.portfoliosInfo.map(p => {
+              const bg  = (p.color || '#64748b') + '22';
+              const clr = p.color || '#64748b';
+              const brd = (p.color || '#64748b') + '44';
+              return `<span class="mkcard-port-tag" style="background:${bg};color:${clr};border:1px solid ${brd}">${p.name}</span>`;
+            }).join('')
+          : '';
+
+        // Pre/post market
+        const prePost = (a.preMarketChangePercent && Math.abs(a.preMarketChangePercent) > 0.01 && !window._mobMarketOpen)
+          ? `<span style="font-size:10px;font-weight:900;color:${a.preMarketChangePercent>=0?'var(--mob-emerald)':'var(--mob-rose)'}">${a.preMarketChangePercent>=0?'+':''}${a.preMarketChangePercent.toFixed(1)}% Pre</span>`
+          : (a.postMarketChangePercent && Math.abs(a.postMarketChangePercent) > 0.01 && !window._mobMarketOpen)
+            ? `<span style="font-size:10px;font-weight:900;color:${a.postMarketChangePercent>=0?'var(--mob-emerald)':'var(--mob-rose)'}">${a.postMarketChangePercent>=0?'+':''}${a.postMarketChangePercent.toFixed(1)}% Post</span>`
+            : '';
+
+        const priceFmt = fmtPriceCompact(price, cur, price >= 100 ? 0 : price >= 10 ? 1 : 2);
+
+        return `
+          <div class="mob-holding-swipe-container"
+               ontouchstart="handleTouchStart(event,this)"
+               ontouchmove="handleTouchMove(event,this)"
+               ontouchend="handleTouchEnd(event,this)">
+            ${renderActions(a)}
+            <div class="mkcard-row ${isPos ? 'pos' : 'neg'}"
+                 onclick="window.showMobDetails('${tickerEsc}','${nameEsc}','${cur}')">
+              <!-- Ticker chip -->
+              <div class="mkcard-ticker-badge">
+                <div class="mkcard-ticker-chip">${a.ticker}</div>
+              </div>
+              <!-- Body -->
+              <div class="mkcard-body">
+                <div class="mkcard-name">${abbreviateName(a.name, 26)}</div>
+                <div class="mkcard-meta">
+                  <span>${a.exchange || 'MKT'}</span>
+                  <span class="mkcard-meta-sep">•</span>
+                  <span style="background:${a.dataSource==='B_ITA'?'rgba(251,146,60,0.15)':'rgba(56,189,248,0.15)'};
+                              color:${a.dataSource==='B_ITA'?'#fb923c':'#38bdf8'};
+                              border-radius:3px; padding:1px 4px; font-size:8px; font-weight:900">${a.dataSource==='B_ITA'?'BI':'YF'}</span>
+                  ${portTags}
+                </div>
+                <!-- AI badge -->
+                <div style="margin-top:3px; display:flex; flex-wrap:wrap; gap:3px">
+                  ${renderAiBadgeMob(a)}
+                </div>
+              </div>
+              <!-- Values -->
+              <div class="mkcard-values">
+                <div class="mkcard-price">${priceFmt}</div>
+                <div class="mkcard-change" style="color:${chgColor}">
+                  <span class="material-symbols-outlined" style="font-size:11px">${isPos?'trending_up':'trending_down'}</span>
+                  ${isPos?'+':''}${change.toFixed(1)}%
+                </div>
+                ${prePost ? `<div style="margin-top:1px">${prePost}</div>` : ''}
+                ${hasDailyGain ? `
+                  <div class="mkcard-gain-row" style="margin-top:3px">
+                    <span class="mkcard-daily-gain" style="color:${_dgColor};background:${_chgVal>=0?'rgba(16,185,129,0.1)':'rgba(244,63,94,0.1)'}">${_dgSign}${fmtPriceCompact(_chgVal, cur, 0)}</span>
+                  </div>` : ''}
+                ${hasTotalGain ? `
+                  <div class="mkcard-gain-row">
+                    <span style="font-size:9px;font-weight:700;color:${_totGainColor}">${_totGainSign}${fmtPriceCompact(_totalGain, _totGainCur, 0)}</span>
+                    <span class="mkcard-total-gain">${fmtPriceCompact(_totalVal, cur, 0)}</span>
+                  </div>` : ''}
+              </div>
+            </div>
+          </div>`;
+      }
+
+      // ── Legacy Normal / Compact renderer ────────────────────────────
+      const renderCard = (a) => {
+        if (_marketViewMode === 'card') return renderCardView(a);
+
         const price = a.currentPrice || 0;
         const change = a.changePercent || 0;
         const isPos = change >= 0;
         const color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-        
-        // Alert state
-        const targetPrice = a.targetPrice || 0;
-        const stopLoss = a.stopLoss || 0;
-        const volThreshold = a.volatilityAlert || 0;
-
-        const targetReached = targetPrice > 0 && price >= targetPrice;
-        const stopLossHit = stopLoss > 0 && price <= stopLoss;
-        const volAlertTriggered = volThreshold > 0 && Math.abs(change) >= volThreshold;
-        
-        let alertBg = '';
-        let alertBorder = '';
-        
-        if (targetReached) {
-            alertBg = 'background: linear-gradient(rgba(16,185,129,0.12), rgba(16,185,129,0.12)), var(--mob-surface)';
-            alertBorder = 'border-color: rgba(16,185,129,0.3) !important';
-        } else if (stopLossHit) {
-            alertBg = 'background: linear-gradient(rgba(244,63,94,0.12), rgba(244,63,94,0.12)), var(--mob-surface)';
-            alertBorder = 'border-color: rgba(244,63,94,0.3) !important';
-        } else if (volAlertTriggered) {
-            alertBg = 'background: linear-gradient(rgba(245,158,11,0.12), rgba(245,158,11,0.12)), var(--mob-surface)';
-            alertBorder = 'border-color: rgba(245,158,11,0.3) !important';
-        }
 
         const colors = getAssetTypeColors(a.type || a.yfType, a.ticker);
-
         const tickerEsc = a.ticker.replace(/'/g, "\\'");
-        const actions = a.hasPosition ? `
-          <div class="mob-holding-actions">
-            <div class="mob-action-btn bg-blue-ios"
-                 ontouchend="mobActionTap(event, () => mobViewAssetTransactions('${tickerEsc}'))"
-                 onclick="event.stopPropagation(); mobViewAssetTransactions('${tickerEsc}')">
-              <span class="material-symbols-outlined">list</span>
-              <span>Trans</span>
-            </div>
-            <div class="mob-action-btn bg-orange-ios"
-                 ontouchend="mobActionTap(event, () => openManualModal('${tickerEsc}', '${a.currency}', ${a.currentPrice}, '${a.type}', '${(a.country || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${a.dataSource}', '${a.isin}'))"
-                 onclick="event.stopPropagation(); openManualModal('${tickerEsc}', '${a.currency}', ${a.currentPrice}, '${a.type}', '${(a.country || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${a.dataSource}', '${a.isin}')">
-              <span class="material-symbols-outlined">edit_note</span>
-              <span>Modifica</span>
-            </div>
-          </div>
-        ` : `
-          <div class="mob-holding-actions">
-            <div class="mob-action-btn bg-orange-ios"
-                 ontouchend="mobActionTap(event, () => openManualModal('${tickerEsc}', '${a.currency}', ${a.currentPrice}, '${a.type}', '${(a.country || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${a.dataSource}', '${a.isin}'))"
-                 onclick="event.stopPropagation(); openManualModal('${tickerEsc}', '${a.currency}', ${a.currentPrice}, '${a.type}', '${(a.country || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${a.dataSource}', '${a.isin}')">
-              <span class="material-symbols-outlined">edit_note</span>
-              <span>Modifica</span>
-            </div>
-            <div class="mob-action-btn bg-red-ios"
-                 ontouchend="mobActionTap(event, () => removeFromWatchlist('${tickerEsc}', ${!!a.hasPosition}))"
-                 onclick="event.stopPropagation(); removeFromWatchlist('${tickerEsc}', ${!!a.hasPosition})">
-              <span class="material-symbols-outlined">delete</span>
-              <span>Rimuovi</span>
-            </div>
-          </div>
-        `;
+
         const showLogo = _marketViewMode !== 'compact';
         const _chgVal = (a.changeValue || 0) * (a.totalQuantity || 0);
         const _showDailyGain = !showLogo && a.hasPosition && _chgVal !== 0;
         const _dgColor = _chgVal >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
         const _dgSign = _chgVal >= 0 ? '+' : '';
-        // Total position values
         const _totalVal = (a.currentPrice || 0) * (a.totalQuantity || 0);
         const _totalGain = a.totalGainEUR !== undefined ? a.totalGainEUR : (_totalVal - (a.totalCostAssetCurr || 0));
         const _totalGainCurrency = a.totalGainEUR !== undefined ? 'EUR' : a.currency;
@@ -563,72 +796,38 @@
         const _showTotals = !showLogo && a.hasPosition && _totalVal > 0;
 
         return `
-          <div class="mob-holding-swipe-container" 
-               ontouchstart="handleTouchStart(event, this)" 
-               ontouchmove="handleTouchMove(event, this)" 
-               ontouchend="handleTouchEnd(event, this)">
-            ${actions}
-            <div class="mob-holding-item" style="${alertBg}; ${alertBorder}" onclick="window.showMobDetails('${a.ticker.replace(/'/g, "\\'")}', '${a.name ? a.name.replace(/'/g, "\\'") : ''}', '${a.currency || 'EUR'}')">
+          <div class="mob-holding-swipe-container"
+               ontouchstart="handleTouchStart(event,this)"
+               ontouchmove="handleTouchMove(event,this)"
+               ontouchend="handleTouchEnd(event,this)">
+            ${renderActions(a)}
+            <div class="mob-holding-item" onclick="window.showMobDetails('${tickerEsc}','${(a.name||'').replace(/'/g,"\\'")  }','${a.currency||'EUR'}')">
               <div class="mob-holding-info">
                 <div class="flex items-center gap-2">
-                  <div class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border" style="background: ${colors.bg}; color: #000000; border-color: ${colors.border}; display: inline-block;">${a.ticker}</div>
-                  ${(function() {
-        if (a.aiBadges && a.aiBadges.length > 0) {
-            return a.aiBadges.map(badge => {
-                const engine = badge.engine || 'X';
-                let icon = 'smart_toy';
-                if (engine === 'Gemini') icon = 'auto_awesome';
-                else if (engine === 'Qwen') icon = 'chat_spark';
-                else if (engine === 'Agnes') icon = 'psychiatry';
-                else if (engine === 'OpenAI') icon = 'data_exploration';
-                else if (engine === 'X') icon = 'close';
-                
-                let colorClass = 'border-slate-500/30 text-slate-500 bg-slate-500/10';
-                if (badge.aiAction === 'BUY' || badge.aiAction === 'INCREASE') colorClass = 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10';
-                else if (badge.aiAction === 'SELL' || badge.aiAction === 'DECREASE') colorClass = 'border-rose-500/30 text-rose-500 bg-rose-500/10';
-                
-                const fvStr = badge.aiTargetPrice ? formatAiFv(badge.aiTargetPrice, a.currency) : badge.aiAction;
-                return `<span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${a.ticker.replace(/'/g, "\\'")}', '${(a.name || '').replace(/'/g, "\\'")}', '${a.currency || 'EUR'}')" class="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 border ${colorClass} cursor-pointer whitespace-nowrap ml-1">
-                    <span class="material-symbols-outlined" style="font-size: 12px;">${icon}</span> ${fvStr}
-                </span>`;
-            }).join('');
-        } else if ((a.aiHistoryCount || 0) > 0) {
-            return `<span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${a.ticker.replace(/'/g, "\\'")}', '${(a.name || '').replace(/'/g, "\\'")}', '${a.currency || 'EUR'}')" class="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 border border-slate-500/30 text-slate-500 bg-slate-500/10 cursor-pointer">
-                <span class="material-symbols-outlined" style="font-size: 12px;">smart_toy</span> ${a.aiHistoryCount}
-            </span>`;
-        } else {
-            return `<span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${a.ticker.replace(/'/g, "\\'")}', '${(a.name || '').replace(/'/g, "\\'")}', '${a.currency || 'EUR'}')" class="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 border border-slate-400/30 text-slate-400 bg-slate-400/10 cursor-pointer">
-                <span class="material-symbols-outlined" style="font-size: 12px;">smart_toy</span>
-            </span>`;
-        }
-    })()}
+                  <div class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border" style="background:${colors.bg};color:#000000;border-color:${colors.border};display:inline-block">${a.ticker}</div>
+                  ${renderAiBadgeMob(a)}
                 </div>
-                <div class="mob-holding-name" style="margin-top:2px;">${abbreviateName(a.name) || ''}</div>
-                <div class="flex flex-wrap gap-1.5 mt-1">
-                    ${targetPrice > 0 ? `<div style="font-size:10px; font-weight:900; color:${targetReached?'var(--mob-emerald)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">${targetReached?'check_circle':'target'}</span> TP: ${formatCurrency(targetPrice, a.currency, 2)}</div>` : ''}
-                    ${volThreshold > 0 ? `<div style="font-size:10px; font-weight:900; color:${volAlertTriggered?'var(--mob-amber)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">${volAlertTriggered?'priority_high':'bolt'}</span> VOL: ${volThreshold}%</div>` : ''}
-                    ${stopLoss > 0 ? `<div style="font-size:10px; font-weight:900; color:${stopLossHit?'var(--mob-rose)':'var(--mob-text-caption)'}; display:flex; align-items:center; gap:2px"><span class="material-symbols-outlined" style="font-size:12px">${stopLossHit?'dangerous':'warning'}</span> SL: ${formatCurrency(stopLoss, a.currency, 2)}</div>` : ''}
-                </div>
+                <div class="mob-holding-name" style="margin-top:2px">${abbreviateName(a.name)||''}</div>
               </div>
               <div class="mob-holding-values">
                 ${showLogo ? `
-                  <div class="mob-holding-value">${formatCurrency(price, a.currency, price >= 100 ? 0 : price >= 10 ? 1 : 2)}</div>
+                  <div class="mob-holding-value">${formatCurrency(price, a.currency, price>=100?0:price>=10?1:2)}</div>
                   <div class="flex items-center justify-end gap-1.5 mt-0.5">
-                    ${(a.preMarketChangePercent && Math.abs(a.preMarketChangePercent) > 0.01 && !window._mobMarketOpen) ? `<span style="font-size:10px; font-weight:900; color:${a.preMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">(${a.preMarketChangePercent >= 0 ? '+' : ''}${a.preMarketChangePercent.toFixed(1)}%)</span>` : ''}
-                    ${(a.postMarketChangePercent && Math.abs(a.postMarketChangePercent) > 0.01 && !window._mobMarketOpen) ? `<span style="font-size:10px; font-weight:900; color:${a.postMarketChangePercent >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">(${a.postMarketChangePercent >= 0 ? '+' : ''}${a.postMarketChangePercent.toFixed(1)}%)</span>` : ''}
-                    <div class="mob-holding-gain" style="color:${color}; font-weight:900; margin-top:0">${isPos ? '+' : ''}${change.toFixed(1)}%</div>
+                    ${(a.preMarketChangePercent&&Math.abs(a.preMarketChangePercent)>0.01&&!window._mobMarketOpen)?`<span style="font-size:10px;font-weight:900;color:${a.preMarketChangePercent>=0?'var(--mob-emerald)':'var(--mob-rose)'}">(${a.preMarketChangePercent>=0?'+':''}${a.preMarketChangePercent.toFixed(1)}%)</span>`:''}
+                    ${(a.postMarketChangePercent&&Math.abs(a.postMarketChangePercent)>0.01&&!window._mobMarketOpen)?`<span style="font-size:10px;font-weight:900;color:${a.postMarketChangePercent>=0?'var(--mob-emerald)':'var(--mob-rose)'}">(${a.postMarketChangePercent>=0?'+':''}${a.postMarketChangePercent.toFixed(1)}%)</span>`:''}
+                    <div class="mob-holding-gain" style="color:${color};font-weight:900;margin-top:0">${isPos?'+':''}${change.toFixed(1)}%</div>
                   </div>
                 ` : `
                   <div class="mob-compact-values">
-                    <span class="mob-cv-gain" style="color:${_dgColor}">${_showDailyGain ? _dgSign + fmtPriceCompact(_chgVal, a.currency, 0) : ''}</span>
-                    <span class="mob-holding-gain" style="color:${color}; font-weight:900; margin-top:0">${isPos ? '+' : ''}${change.toFixed(1)}%</span>
-                    <span class="mob-holding-value">${fmtPriceCompact(price, a.currency, price >= 100 ? 0 : price >= 10 ? 1 : 2)}</span>
+                    <span class="mob-cv-gain" style="color:${_dgColor}">${_showDailyGain?_dgSign+fmtPriceCompact(_chgVal,a.currency,0):''}</span>
+                    <span class="mob-holding-gain" style="color:${color};font-weight:900;margin-top:0">${isPos?'+':''}${change.toFixed(1)}%</span>
+                    <span class="mob-holding-value">${fmtPriceCompact(price,a.currency,price>=100?0:price>=10?1:2)}</span>
                   </div>
-                  ${_showTotals ? `<div class="mob-compact-values" style="margin-top:2px; opacity:0.85">
-                    <span style="display:inline-flex; justify-content:flex-end; padding-right:6px"><span style="background:${_totGainIsPos ? 'rgba(16,185,129,0.15)' : 'rgba(244,63,94,0.15)'}; color:${_totGainColor}; font-size:calc(11px * var(--mob-scale,1)); font-weight:700; white-space:nowrap; border-radius:4px; padding:1px 5px; letter-spacing:-0.2px">${_totGainSign}${fmtPriceCompact(_totalGain, _totalGainCurrency, 0)}</span></span>
+                  ${_showTotals?`<div class="mob-compact-values" style="margin-top:2px;opacity:0.85">
+                    <span style="display:inline-flex;justify-content:flex-end;padding-right:6px"><span style="background:${_totGainIsPos?'rgba(16,185,129,0.15)':'rgba(244,63,94,0.15)'};color:${_totGainColor};font-size:calc(11px * var(--mob-scale,1));font-weight:700;white-space:nowrap;border-radius:4px;padding:1px 5px;letter-spacing:-0.2px">${_totGainSign}${fmtPriceCompact(_totalGain,_totalGainCurrency,0)}</span></span>
                     <span></span>
-                    <span style="text-align:right; font-size:calc(11px * var(--mob-scale,1)); font-weight:500; color:var(--mob-text-muted); white-space:nowrap; padding-left:8px">${fmtPriceCompact(_totalVal, a.currency, 0)}</span>
-                  </div>` : ''}
+                    <span style="text-align:right;font-size:calc(11px * var(--mob-scale,1));font-weight:500;color:var(--mob-text-muted);white-space:nowrap;padding-left:8px">${fmtPriceCompact(_totalVal,a.currency,0)}</span>
+                  </div>`:''}
                 `}
               </div>
             </div>
