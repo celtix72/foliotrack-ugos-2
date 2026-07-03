@@ -127,21 +127,6 @@
             <span class="mob-section-title">La Tua Watchlist</span>
             <div class="flex items-center gap-2">
                 <span id="mob-watchlist-count" class="mob-header-subtitle">0 Assets</span>
-                <!-- View mode toggle -->
-                <div class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 gap-0.5">
-                  <button id="btn-view-card" onclick="setWatchlistView('card')" title="Vista card (nuova)"  
-                          class="p-1 rounded-md transition-all">
-                    <span class="material-symbols-outlined" style="font-size:15px">table_rows</span>
-                  </button>
-                  <button id="btn-view-normal" onclick="setWatchlistView('normal')" title="Vista normale"
-                          class="p-1 rounded-md transition-all">
-                    <span class="material-symbols-outlined" style="font-size:15px">view_list</span>
-                  </button>
-                  <button id="btn-view-compact" onclick="setWatchlistView('compact')" title="Vista compatta"
-                          class="p-1 rounded-md transition-all">
-                    <span class="material-symbols-outlined" style="font-size:15px">density_small</span>
-                  </button>
-                </div>
             </div>
         </div>
 
@@ -352,7 +337,7 @@
     }
 
     // Scale / Sort / View modes matching Market style
-    let _watchlistViewMode = localStorage.getItem('watchlist_view_mode') || 'card';
+    let _watchlistViewMode = 'card';
     let _watchlistExtMode = localStorage.getItem('watchlist_ext_mode') === 'true';
     let _watchlistSortMode = localStorage.getItem('watchlist_sort_mode') || 'changePercent';
     let _watchlistScale = parseFloat(localStorage.getItem('watchlist_font_scale')) || 1.0;
@@ -363,10 +348,10 @@
     const _activeBtn = 'p-1 rounded-md transition-all bg-white dark:bg-slate-700 text-primary shadow-sm';
     const _inactiveBtn = 'p-1 rounded-md transition-all text-slate-400 dark:text-slate-500';
 
-    window.setWatchlistView = function(mode) {
-        _watchlistViewMode = mode;
-        localStorage.setItem('watchlist_view_mode', mode);
-        updateViewToggle();
+    window.toggleWatchlistExt = function() {
+        _watchlistExtMode = !_watchlistExtMode;
+        localStorage.setItem('watchlist_ext_mode', _watchlistExtMode);
+        updateExtToggle();
         renderWatchlist();
     };
 
@@ -417,14 +402,6 @@
         }
     }
 
-    function updateViewToggle() {
-        const btnCard = document.getElementById('btn-view-card');
-        const btnN    = document.getElementById('btn-view-normal');
-        const btnC    = document.getElementById('btn-view-compact');
-        if (btnCard) btnCard.className = _watchlistViewMode === 'card'    ? _activeBtn : _inactiveBtn;
-        if (btnN)    btnN.className    = _watchlistViewMode === 'normal'  ? _activeBtn : _inactiveBtn;
-        if (btnC)    btnC.className    = _watchlistViewMode === 'compact' ? _activeBtn : _inactiveBtn;
-    }
 
     function isAssetMarketOpen(a) {
         const ticker = (a.ticker || '').toUpperCase();
@@ -465,7 +442,6 @@
             window.watchlist = await resW.json();
             window._watchlistItems = window.watchlist;
             
-            updateViewToggle();
             updateSortToggle();
             updateExtToggle();
             updateWatchlistScale();
@@ -620,66 +596,7 @@
     }
 
     const renderCard = (a) => {
-        if (_watchlistViewMode === 'card') return renderCardView(a);
-
-        const price = a.currentPrice || 0;
-        const change = a.changePercent || 0;
-        const isPos = change >= 0;
-        const color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-
-        const colors = getAssetTypeColors(a.type || a.yfType, a.ticker);
-        const tickerEsc = a.ticker.replace(/'/g, "\\'");
-        const isOpen = isAssetMarketOpen(a);
-
-        const showLogo = _watchlistViewMode !== 'compact';
-        const _chgVal = (a.changeValue || 0) * (a.totalQuantity || 0);
-        const _showDailyGain = !showLogo && a.hasPosition && _chgVal !== 0;
-        const _dgColor = _chgVal >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-        const _totalVal = (a.currentPrice || 0) * (a.totalQuantity || 0);
-        const _totalGain = a.totalGainEUR !== undefined ? a.totalGainEUR : (_totalVal - (a.totalCostAssetCurr || 0));
-        const _totalGainCurrency = a.totalGainEUR !== undefined ? 'EUR' : a.currency;
-        const _totGainIsPos = _totalGain >= 0;
-        const _totGainColor = _totGainIsPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-        const _totGainSign = (_totGainIsPos && Math.abs(_totalGain) >= 0.5) ? '+' : '';
-        const _showTotals = !showLogo && a.hasPosition && _totalVal > 0;
-
-        return `
-          <div class="mob-holding-swipe-container"
-               ontouchstart="handleTouchStart(event,this)"
-               ontouchmove="handleTouchMove(event,this)"
-               ontouchend="handleTouchEnd(event,this)">
-            ${renderActions(a)}
-            <div class="mob-holding-item ${isOpen ? '' : 'closed-market'}" onclick="window.showMobDetails('${tickerEsc}','${(a.name||'').replace(/'/g,"\\'")  }','${a.currency||'EUR'}')">
-              <div class="mob-holding-info">
-                <div class="flex items-center gap-2">
-                  <div class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border" style="background:${colors.bg};color:#000000;border-color:${colors.border};display:inline-block">${a.ticker}</div>
-                  ${renderAiBadgeMob(a)}
-                </div>
-                <div class="mob-holding-name" style="margin-top:2px">${abbreviateName(a.name)||''}</div>
-              </div>
-              <div class="mob-holding-values">
-                ${showLogo ? `
-                  <div class="mob-holding-value">${formatCurrency(price, a.currency, price>=100?0:price>=10?1:2)}</div>
-                  <div class="flex items-center justify-end gap-1.5 mt-0.5">
-                    ${(a.preMarketChangePercent&&Math.abs(a.preMarketChangePercent)>0.01&&!window._mobMarketOpen)?`<span style="font-size:10px;font-weight:900;color:${a.preMarketChangePercent>=0?'var(--mob-emerald)':'var(--mob-rose)'}">(${a.preMarketChangePercent>=0?'+':''}${a.preMarketChangePercent.toFixed(1)}%)</span>`:''}
-                    ${(a.postMarketChangePercent&&Math.abs(a.postMarketChangePercent)>0.01&&!window._mobMarketOpen)?`<span style="font-size:10px;font-weight:900;color:${a.postMarketChangePercent>=0?'var(--mob-emerald)':'var(--mob-rose)'}">(${a.postMarketChangePercent>=0?'+':''}${a.postMarketChangePercent.toFixed(1)}%)</span>`:''}
-                    <div class="mob-holding-gain" style="color:${color};font-weight:900;margin-top:0">${isPos?'+':''}${change.toFixed(1)}%</div>
-                  </div>
-                ` : `
-                  <div class="mob-compact-values">
-                    <span class="mob-cv-gain" style="color:${_dgColor}">${_showDailyGain?(_chgVal>=0?'+':'')+fmtPriceCompact(_chgVal,a.currency,0):''}</span>
-                    <span class="mob-holding-gain" style="color:${color};font-weight:900;margin-top:0">${isPos?'+':''}${change.toFixed(1)}%</span>
-                    <span class="mob-holding-value">${fmtPriceCompact(price,a.currency,price>=100?0:price>=10?1:2)}</span>
-                  </div>
-                  ${_showTotals?`<div class="mob-compact-values" style="margin-top:2px;opacity:0.85">
-                    <span style="display:inline-flex;justify-content:flex-end;padding-right:6px"><span style="background:${_totGainIsPos?'rgba(16,185,129,0.15)':'rgba(244,63,94,0.15)'};color:${_totGainColor};font-size:calc(11px * var(--mob-scale,1));font-weight:700;white-space:nowrap;border-radius:4px;padding:1px 5px;letter-spacing:-0.2px">${_totGainSign}${fmtPriceCompact(_totalGain,_totalGainCurrency,0)}</span></span>
-                    <span></span>
-                    <span style="text-align:right;font-size:calc(11px * var(--mob-scale,1));font-weight:500;color:var(--mob-text-muted);white-space:nowrap;padding-left:8px">${fmtPriceCompact(_totalVal,a.currency,0)}</span>
-                  </div>`:''}
-                `}
-              </div>
-            </div>
-          </div>`;
+        return renderCardView(a);
     };
 
     function renderFundamentalsCardView(a) {
@@ -750,47 +667,8 @@
           </div>`;
     }
 
-    function renderFundamentalsNormalView(a) {
-        const colors = getAssetTypeColors(a.type || a.yfType, a.ticker);
-        const tickerEsc = a.ticker.replace(/'/g, "\\'");
-        const isOpen = isAssetMarketOpen(a);
-        
-        const showLogo = _watchlistViewMode !== 'compact';
-
-        return `
-          <div class="mob-holding-swipe-container"
-               ontouchstart="handleTouchStart(event,this)"
-               ontouchmove="handleTouchMove(event,this)"
-               ontouchend="handleTouchEnd(event,this)">
-            ${renderActions(a)}
-            <div class="mob-holding-item ${isOpen ? '' : 'closed-market'}" onclick="window.showMobDetails('${tickerEsc}','${(a.name||'').replace(/'/g,"\\'")  }','${a.currency||'EUR'}')">
-              <div class="mob-holding-info">
-                <div class="flex items-center gap-2">
-                  <div class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border" style="background:${colors.bg};color:#000000;border-color:${colors.border};display:inline-block">${a.ticker}</div>
-                </div>
-                <div class="mob-holding-name" style="margin-top:2px">${abbreviateName(a.name)||''}</div>
-              </div>
-              <div class="mob-holding-values" style="display:flex; gap:16px; align-items:center;">
-                <div style="text-align:right">
-                    <div style="font-size:8px; color:var(--mob-text-caption)">P/E</div>
-                    <div style="font-size:12px; font-weight:900">${a.pe ? a.pe.toFixed(1) : '—'}</div>
-                </div>
-                <div style="text-align:right">
-                    <div style="font-size:8px; color:var(--mob-text-caption)">FWD P/E</div>
-                    <div style="font-size:12px; font-weight:900">${a.forwardPE ? a.forwardPE.toFixed(1) : '—'}</div>
-                </div>
-                <div style="text-align:right">
-                    <div style="font-size:9px; font-weight:700; color:var(--mob-text-caption)">PEG: ${a.pegRatio ? a.pegRatio.toFixed(1) : '—'}</div>
-                    <div style="font-size:9px; font-weight:700; color:var(--mob-text-caption)">BETA: ${a.beta ? a.beta.toFixed(2) : '—'}</div>
-                </div>
-              </div>
-            </div>
-          </div>`;
-    }
-
     const renderFundamentalsCard = (a) => {
-        if (_watchlistViewMode === 'card') return renderFundamentalsCardView(a);
-        return renderFundamentalsNormalView(a);
+        return renderFundamentalsCardView(a);
     };
 
     function renderWatchlist() {
