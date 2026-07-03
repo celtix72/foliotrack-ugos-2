@@ -125,7 +125,16 @@
     <div class="mob-scroll relative z-[1]" id="mob-watchlist-scroll">
         <div class="mob-section-header pb-1">
             <span class="mob-section-title">La Tua Watchlist</span>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5">
+                <button id="btn-subview-main" onclick="setWatchlistSubView('Main')"
+                        class="text-[9px] font-black uppercase px-2 py-1 rounded-md transition-all whitespace-nowrap">
+                  Main
+                </button>
+                <button id="btn-subview-f1" onclick="setWatchlistSubView('F1')"
+                        class="text-[9px] font-black uppercase px-2 py-1 rounded-md transition-all whitespace-nowrap">
+                  F1
+                </button>
+                <span class="text-slate-300 dark:text-slate-700 mx-1">|</span>
                 <span id="mob-watchlist-count" class="mob-header-subtitle">0 Assets</span>
             </div>
         </div>
@@ -341,12 +350,27 @@
     let _watchlistExtMode = localStorage.getItem('watchlist_ext_mode') === 'true';
     let _watchlistSortMode = localStorage.getItem('watchlist_sort_mode') || 'changePercent';
     let _watchlistScale = parseFloat(localStorage.getItem('watchlist_font_scale')) || 1.0;
+    let _watchlistSubView = localStorage.getItem('watchlist_sub_view') || 'Main';
 
     const _activeTag   = 'text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all bg-primary text-white shadow-sm';
     const _inactiveTag = 'text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700';
 
     const _activeBtn = 'p-1 rounded-md transition-all bg-white dark:bg-slate-700 text-primary shadow-sm';
     const _inactiveBtn = 'p-1 rounded-md transition-all text-slate-400 dark:text-slate-500';
+
+    window.setWatchlistSubView = function(view) {
+        _watchlistSubView = view;
+        localStorage.setItem('watchlist_sub_view', view);
+        updateSubViewToggle();
+        renderWatchlist();
+    };
+
+    function updateSubViewToggle() {
+        const btnMain = document.getElementById('btn-subview-main');
+        const btnF1   = document.getElementById('btn-subview-f1');
+        if (btnMain) btnMain.className = _watchlistSubView === 'Main' ? _activeTag : _inactiveTag;
+        if (btnF1)   btnF1.className   = _watchlistSubView === 'F1'   ? _activeTag : _inactiveTag;
+    }
 
     window.toggleWatchlistExt = function() {
         _watchlistExtMode = !_watchlistExtMode;
@@ -444,6 +468,7 @@
             
             updateSortToggle();
             updateExtToggle();
+            updateSubViewToggle();
             updateWatchlistScale();
 
             renderWatchlist();
@@ -578,6 +603,7 @@
                 <span style="font-size:calc(13px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${priceFmt}&nbsp;<span style="color:${chgColor}; font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:900">${todayVarPct}</span><span style="background:rgba(100,116,139,0.1); color:var(--mob-text-muted); border-radius:3px; padding:1px 4px; font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; margin-left:4px; display:inline-block; vertical-align:middle">${exchangeLabel}</span></span>
               </div>
 
+              ${_watchlistSubView === 'F1' ? '<div></div><div></div><div></div>' : `
               <div style="display:flex; flex-direction:column; justify-content:center; align-items:flex-start; gap:3px; min-width:0; height:100%">
                 ${renderAiBadgeMob(a)}
               </div>
@@ -591,6 +617,7 @@
                 <div style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:900; color:${chgColor}; font-family:'SF Mono',monospace; white-space:nowrap">${todayVarStr}</div>
                 <div style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:700; color:${hasTotalGain ? _totGainColor : 'var(--mob-text-muted)'}; font-family:'SF Mono',monospace; white-space:nowrap">${absVarValStr}</div>
               </div>
+              `}
             </div>
           </div>`;
     }
@@ -646,6 +673,7 @@
                 <span style="font-size:calc(13px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${priceFmt}&nbsp;<span style="color:${chgColor}; font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:900">${todayVarPct}</span><span style="background:rgba(100,116,139,0.1); color:var(--mob-text-muted); border-radius:3px; padding:1px 4px; font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; margin-left:4px; display:inline-block; vertical-align:middle">${exchangeLabel}</span></span>
               </div>
 
+              ${_watchlistSubView === 'F1' ? '<div></div><div></div><div></div>' : `
               <!-- Col 2: P/E -->
               <div style="display:flex; flex-direction:column; justify-content:center; align-items:flex-end; gap:2px; min-width:0; height:100%; text-align:right">
                 <span style="font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:800; color:var(--mob-text-caption); text-transform:uppercase">P/E</span>
@@ -663,6 +691,7 @@
                 <span style="font-size:calc(9px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text-caption)">PEG: ${a.pegRatio ? a.pegRatio.toFixed(1) : '—'}</span>
                 <span style="font-size:calc(9px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text-caption)">BETA: ${a.beta ? a.beta.toFixed(2) : '—'}</span>
               </div>
+              `}
             </div>
           </div>`;
     }
