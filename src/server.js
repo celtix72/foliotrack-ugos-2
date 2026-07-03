@@ -701,7 +701,7 @@ function getLocalDate(timeZone) {
             dateParts[p.type] = parseInt(p.value, 10);
         }
     }
-    return new Date(Date.utc(dateParts.year, dateParts.month - 1, dateParts.day));
+    return new Date(Date.UTC(dateParts.year, dateParts.month - 1, dateParts.day));
 }
 
 function getGoodFriday(year) {
@@ -715,7 +715,7 @@ function getGoodFriday(year) {
           month = 3 + f((L + 40) / 44),
           day = L + 28 - 31 * f(month / 4);
 
-    const easter = new Date(Date.utc(year, month - 1, day));
+    const easter = new Date(Date.UTC(year, month - 1, day));
     const goodFriday = new Date(easter);
     goodFriday.setUTCDate(easter.getUTCDate() - 2);
     return goodFriday;
@@ -734,12 +734,12 @@ function isUSMarketHoliday(date) {
     const dayOfWeek = date.getUTCDay();
 
     const getObserved = (targetMonth, targetDay) => {
-        const d = new Date(Date.utc(year, targetMonth, targetDay));
+        const d = new Date(Date.UTC(year, targetMonth, targetDay));
         const dw = d.getUTCDay();
         if (dw === 6) {
-            return new Date(Date.utc(year, targetMonth, targetDay - 1));
+            return new Date(Date.UTC(year, targetMonth, targetDay - 1));
         } else if (dw === 0) {
-            return new Date(Date.utc(year, targetMonth, targetDay + 1));
+            return new Date(Date.UTC(year, targetMonth, targetDay + 1));
         }
         return d;
     };
