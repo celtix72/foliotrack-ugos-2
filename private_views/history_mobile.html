@@ -282,10 +282,10 @@
                                 </div>
                                 <div class="mob-holding-values">
                                     <div class="mob-holding-value" style="color: ${isTrade ? gainColor : 'inherit'}">
-                                        ${isTrade ? gainSign + formatCurrency(pos.realizedGain, 'EUR', 2) : formatCurrency(pos.totalProceeds, 'EUR', 2)}
+                                        ${isTrade ? gainSign + formatCurrency(pos.realizedGain, 'EUR', 0) : formatCurrency(pos.totalProceeds, 'EUR', 0)}
                                     </div>
                                     <div class="mob-holding-gain" style="color: var(--mob-text-muted); font-size: 11px;">
-                                        Proceeds: ${formatCurrency(pos.totalProceeds, 'EUR', 2)}
+                                        Proceeds: ${formatCurrency(pos.totalProceeds, 'EUR', 0)}
                                     </div>
                                 </div>
                             </div>
