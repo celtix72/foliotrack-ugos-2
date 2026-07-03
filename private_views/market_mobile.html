@@ -188,6 +188,12 @@
       <span class="mob-section-title">Posizioni Aperte</span>
       <div class="flex items-center gap-2">
         <span id="mob-pos-count" class="mob-header-subtitle">0 Assets</span>
+        <select id="mob-sort-select" onchange="setMarketSort(this.value)" class="bg-slate-100 dark:bg-slate-800 border-none text-[10px] font-black uppercase tracking-wider rounded-lg px-2 py-1 text-slate-700 dark:text-slate-300 focus:ring-0 cursor-pointer">
+          <option value="changePercent">Var. % Giorno</option>
+          <option value="name">Nome</option>
+          <option value="dailyVal">Var. Val Giorno</option>
+          <option value="totalGain">Var. Assoluta</option>
+        </select>
         <!-- View mode toggle -->
         <div class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 gap-0.5">
           <button id="btn-view-card" onclick="setMarketView('card')" title="Vista card (nuova)"  
@@ -323,6 +329,15 @@
     _marketViewMode = mode;
     localStorage.setItem('market_view_mode', mode);
     updateViewToggle();
+    mobLoadAssets();
+  };
+
+  // ── Sort Mode (changePercent / name / dailyVal / totalGain) ──────────────────────
+  let _marketSortMode = localStorage.getItem('market_sort_mode') || 'changePercent';
+
+  window.setMarketSort = function(mode) {
+    _marketSortMode = mode;
+    localStorage.setItem('market_sort_mode', mode);
     mobLoadAssets();
   };
 
@@ -488,10 +503,27 @@
       const res = await fetch('/api/assets');
       const assets = (await res.json()).filter(a => a.ticker !== 'CASH');
       
+      const sortSelect = document.getElementById('mob-sort-select');
+      if (sortSelect) sortSelect.value = _marketSortMode;
+      
       const posContainer = document.getElementById('mob-list-positions');
       const posCountEl = document.getElementById('mob-pos-count');
 
-      const openPos = assets.filter(a => a.hasPosition).sort((a, b) => (b.changePercent || 0) - (a.changePercent || 0));
+      const openPos = assets.filter(a => a.hasPosition).sort((a, b) => {
+        if (_marketSortMode === 'name') {
+          return (a.name || '').localeCompare(b.name || '');
+        } else if (_marketSortMode === 'dailyVal') {
+          const valA = (a.changeValue || 0) * (a.totalQuantity || 0);
+          const valB = (b.changeValue || 0) * (b.totalQuantity || 0);
+          return valB - valA;
+        } else if (_marketSortMode === 'totalGain') {
+          const valA = a.totalGainEUR !== undefined ? a.totalGainEUR : (((a.currentPrice || 0) * (a.totalQuantity || 0)) - (a.totalCostAssetCurr || 0));
+          const valB = b.totalGainEUR !== undefined ? b.totalGainEUR : (((b.currentPrice || 0) * (b.totalQuantity || 0)) - (b.totalCostAssetCurr || 0));
+          return valB - valA;
+        } else {
+          return (b.changePercent || 0) - (a.changePercent || 0);
+        }
+      });
 
       if (posCountEl) posCountEl.textContent = `${openPos.length} Assets`;
 
