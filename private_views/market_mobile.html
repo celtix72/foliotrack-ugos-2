@@ -67,7 +67,7 @@
     }
     .mkcard-row {
         display: grid;
-        grid-template-columns: 140px 1fr 68px 112px;
+        grid-template-columns: 1fr 75px 120px;
         align-items: center;
         background: var(--mob-surface);
         border-bottom: 1px solid var(--mob-border);
@@ -822,9 +822,6 @@
                 </div>
                 <span style="font-size:calc(13px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${priceFmt}&nbsp;<span style="color:${chgColor}; font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:900">${todayVarPct}</span><span style="background:rgba(100,116,139,0.1); color:var(--mob-text-muted); border-radius:3px; padding:1px 4px; font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; margin-left:4px; display:inline-block; vertical-align:middle">${exchangeLabel}</span></span>
               </div>
-
-              <!-- Col 2: Spacer -->
-              <div></div>
 
               <!-- Col 3: AI Target Price TAG -->
               <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; gap:3px; min-width:0; height:100%">
