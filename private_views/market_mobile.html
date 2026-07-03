@@ -511,13 +511,13 @@
 
   async function mobSyncMarketStatus() {
     try {
-      const res = await fetch('/api/market-status');
+      const res = await fetch('/api/market-status?t=' + Date.now());
       const s = await res.json();
       window._mobMarketOpen = s.anyOpen;
       const dotEu = document.getElementById('mob-dot-eu');
       const dotUs = document.getElementById('mob-dot-us');
-      if (dotEu) { dotEu.className = 'mob-market-dot' + (s.euOpen ? ' live' : ''); }
-      if (dotUs) { dotUs.className = 'mob-market-dot' + (s.usOpen ? ' live' : ''); }
+      if (dotEu) { dotEu.className = 'mob-market-dot' + (s.EU ? ' live' : ''); }
+      if (dotUs) { dotUs.className = 'mob-market-dot' + (s.US ? ' live' : ''); }
     } catch(e) {}
   }
 
@@ -583,11 +583,19 @@
   let _marketStatusData = null;
 
   function isAssetMarketOpen(a) {
+    const ticker = (a.ticker || '').toUpperCase();
+    const type = (a.type || '').toUpperCase();
+    const yfType = (a.yfType || '').toUpperCase();
+
+    // Conto Deposito / CD assets are always treated as closed markets
+    if (type === 'CONTO_DEPOSITO' || yfType === 'CONTO_DEPOSITO' || ticker.startsWith('CD_')) {
+      return false;
+    }
+
     const status = _marketStatusData;
     if (!status) return true;
     if (status.isWeekend) return false;
     
-    const ticker = (a.ticker || '').toUpperCase();
     const exchange = (a.exchange || '').toUpperCase();
     
     // US markets check
@@ -607,12 +615,12 @@
     try {
       if (!_marketStatusData) {
         try {
-          const statusRes = await fetch('/api/market-status');
+          const statusRes = await fetch('/api/market-status?t=' + Date.now());
           _marketStatusData = await statusRes.json();
         } catch(e) {}
       }
 
-      const res = await fetch('/api/assets');
+      const res = await fetch('/api/assets?t=' + Date.now());
       const assets = (await res.json()).filter(a => a.ticker !== 'CASH');
       
       const sortSelect = document.getElementById('mob-sort-select');
