@@ -619,8 +619,7 @@
 
         // Formatted Column 4 rows
         const todayVarPct = `${isPos ? '+' : ''}${change.toFixed(1)}%`;
-        const todayVarVal = hasDailyGain ? ` / ${_dgSign}${fmtPriceCompact(_chgVal, cur, 0)}` : '';
-        const todayVarStr = `${todayVarPct}${todayVarVal}`;
+        const todayVarStr = hasDailyGain ? `${_dgSign}${fmtPriceCompact(_chgVal, cur, 0)}` : '—';
 
         const absVarPct = hasTotalGain ? `${_absPct >= 0 ? '+' : ''}${_absPct.toFixed(1)}%` : '—';
         const absVarVal = hasTotalGain ? ` / ${_totGainSign}${fmtPriceCompact(_totalGain, _totGainCur, 0)}` : '';
@@ -638,7 +637,7 @@
               <!-- Col 1: Ticker TAG & Price -->
               <div style="display:flex; flex-direction:column; gap:3px; align-items:flex-start; min-width:0">
                 <span style="background:${colors.bg}; color:${colors.text}; border:1px solid ${colors.border}; border-radius:4px; padding:1px 5px; font-size:9px; font-weight:900; text-transform:uppercase; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; max-width:100%">${a.ticker}</span>
-                <span style="font-size:11px; font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${priceFmt}</span>
+                <span style="font-size:11px; font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${priceFmt}&nbsp;<span style="color:${chgColor}; font-size:10px; font-weight:900">${todayVarPct}</span></span>
               </div>
 
               <!-- Col 2: Name & Portafoglio / Mercato -->
