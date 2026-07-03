@@ -92,7 +92,9 @@
     .mkcard-row.neg::before { background: var(--mob-rose); }
     .mkcard-row.closed-market, .mob-holding-item.closed-market {
         background: var(--mob-surface-2) !important;
-        opacity: 0.75;
+    }
+    .mkcard-row.closed-market > *, .mob-holding-item.closed-market > * {
+        opacity: 0.7;
     }
 </style>
 <script src="/theme.js"></script>
