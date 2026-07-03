@@ -703,8 +703,14 @@
         const hasDailyGain = a.hasPosition && Math.abs(_chgVal) >= 0.01;
         const hasTotalGain = a.hasPosition && _totalVal > 0;
 
-        // Portfolio names concatenation
-        const portName = (a.portfoliosInfo && a.portfoliosInfo.length > 0) ? a.portfoliosInfo.map(p => p.name).join('/') : '';
+        // Portfolio tags (single-letter colored tags)
+        const portTags = (a.portfoliosInfo && a.portfoliosInfo.length > 0)
+          ? a.portfoliosInfo.map(p => {
+              const clr = p.color || '#64748b';
+              const firstLetter = (p.name || 'P').charAt(0).toUpperCase();
+              return `<span style="background:${clr}20; color:${clr}; border:1px solid ${clr}40; border-radius:3px; padding:1px 3px; font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:900; line-height:1; display:inline-block; vertical-align:middle; margin-left:3px;" title="${p.name}">${firstLetter}</span>`;
+            }).join('')
+          : '';
         const exchangeLabel = a.exchange || 'MKT';
 
         const priceFmt = fmtPriceCompact(price, cur, price >= 100 ? 0 : price >= 10 ? 1 : 2);
@@ -736,7 +742,10 @@
               
               <!-- Col 1: Ticker TAG & Price -->
               <div style="display:flex; flex-direction:column; gap:3px; align-items:flex-start; min-width:0">
-                <span style="background:${colors.bg}; color:${colors.text}; border:1px solid ${colors.border}; border-radius:4px; padding:1px 5px; font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; max-width:100%">${a.ticker}</span>
+                <div style="display:flex; align-items:center; max-width:100%">
+                  <span style="background:${colors.bg}; color:${colors.text}; border:1px solid ${colors.border}; border-radius:4px; padding:1px 5px; font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; flex-shrink:1">${a.ticker}</span>
+                  ${portTags}
+                </div>
                 <span style="font-size:calc(13px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${priceFmt}&nbsp;<span style="color:${chgColor}; font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:900">${todayVarPct}</span></span>
               </div>
 
@@ -744,7 +753,7 @@
               <div style="display:flex; flex-direction:column; gap:2px; min-width:0">
                 <div style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:900; color:var(--mob-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${abbreviateName(a.name, 15)}</div>
                 <div style="font-size:calc(9px * var(--mkcard-scale, 1)); font-weight:700; color:var(--mob-text-muted); text-transform:uppercase; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">
-                  ${portName ? `${abbreviateName(portName, 12)} / ${exchangeLabel}` : exchangeLabel}
+                  ${exchangeLabel}
                 </div>
               </div>
 
