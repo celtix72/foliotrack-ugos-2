@@ -14,7 +14,7 @@
   --mob-text: #f1f5f9;
   --mob-text-muted: #94a3b8; /* Lighter for dark mode */
   --mob-text-caption: #64748b; /* Lighter for dark mode */
-  --mob-emerald: #10b981;
+  --mob-emerald: #129a67;
   --mob-rose: #f43f5e;
   --mob-amber: #f59e0b;
   --mob-tab-h: 84px;
@@ -41,6 +41,7 @@ html:not(.dark) :root {
   --mob-header-bg: #0f1821;
   --mob-hero-bg: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
   --mob-tab-bg: #0f1821;
+  --mob-emerald: #0b7a4d;
 }
 
 /* Default Dark values */
