@@ -409,7 +409,11 @@
   // Formats price with currency symbol at the end: "182€", "42,3$", "4,87£"
   function fmtPriceCompact(price, currency, dec) {
     const sym = currency === 'USD' ? '$' : currency === 'GBP' ? '£' : '€';
-    const n = price.toLocaleString('it-IT', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+    const n = new Intl.NumberFormat('it-IT', {
+      minimumFractionDigits: dec,
+      maximumFractionDigits: dec,
+      useGrouping: true
+    }).format(price);
     return n + sym;
   }
 
