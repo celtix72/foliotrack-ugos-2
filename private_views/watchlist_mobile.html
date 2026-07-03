@@ -67,6 +67,13 @@
         .mkcard-row.closed-market > *, .mob-holding-item.closed-market > * {
             opacity: 0.7;
         }
+        .subview-az1 .mkcard-row {
+            grid-template-columns: 1fr 50px 50px 42px 42px;
+            gap: 8px;
+        }
+        .subview-etf1 .mkcard-row {
+            grid-template-columns: 1fr;
+        }
     </style>
     <script src="/auth.js"></script>
     <script>
@@ -146,22 +153,7 @@
             EXT
           </button>
           <span class="text-slate-300 dark:text-slate-700 mx-0.5">|</span>
-          <button id="btn-sort-pct" onclick="setWatchlistSort('changePercent')" 
-                  class="text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all whitespace-nowrap">
-            % Giorno
-          </button>
-          <button id="btn-sort-name" onclick="setWatchlistSort('name')" 
-                  class="text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all whitespace-nowrap">
-            Nome
-          </button>
-          <button id="btn-sort-val" onclick="setWatchlistSort('dailyVal')" 
-                  class="text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all whitespace-nowrap">
-            Val Giorno
-          </button>
-          <button id="btn-sort-abs" onclick="setWatchlistSort('totalGain')" 
-                  class="text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all whitespace-nowrap">
-            Assoluto
-          </button>
+          <div id="mob-sort-tags-inner" class="flex items-center gap-1.5"></div>
           <span class="text-slate-300 dark:text-slate-700 mx-1">|</span>
           <button onclick="changeWatchlistScale(0.1)" 
                   class="text-[11px] font-black bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-md active:scale-95 transition-all whitespace-nowrap">
@@ -358,7 +350,18 @@
     window.setWatchlistSubView = function(view) {
         _watchlistSubView = view;
         localStorage.setItem('watchlist_sub_view', view);
+        
+        // Reset sort mode if not supported
+        if (view === 'ETF1' && ['pe', 'forwardPE', 'pegRatio'].includes(_watchlistSortMode)) {
+            _watchlistSortMode = 'changePercent';
+            localStorage.setItem('watchlist_sort_mode', 'changePercent');
+        } else if (view === 'Az1' && ['name', 'dailyVal', 'totalGain'].includes(_watchlistSortMode)) {
+            _watchlistSortMode = 'changePercent';
+            localStorage.setItem('watchlist_sort_mode', 'changePercent');
+        }
+
         updateSubViewToggle();
+        updateSortToggle();
         renderWatchlist();
     };
 
@@ -388,15 +391,36 @@
         renderWatchlist();
     };
 
+    function renderSortTags() {
+        const container = document.getElementById('mob-sort-tags-inner');
+        if (!container) return;
+
+        let tags = [];
+        if (_watchlistSubView === 'Az1') {
+            tags = [
+                { id: 'btn-sort-pct', mode: 'changePercent', label: '% Giorno' },
+                { id: 'btn-sort-pe', mode: 'pe', label: 'P/E' },
+                { id: 'btn-sort-fwdpe', mode: 'forwardPE', label: 'FWD P/E' },
+                { id: 'btn-sort-peg', mode: 'pegRatio', label: 'PEG' }
+            ];
+        } else {
+            tags = [
+                { id: 'btn-sort-pct', mode: 'changePercent', label: '% Giorno' },
+                { id: 'btn-sort-name', mode: 'name', label: 'Nome' },
+                { id: 'btn-sort-val', mode: 'dailyVal', label: 'Val Giorno' },
+                { id: 'btn-sort-abs', mode: 'totalGain', label: 'Assoluto' }
+            ];
+        }
+
+        container.innerHTML = tags.map(t => {
+            const isActive = _watchlistSortMode === t.mode;
+            const cls = isActive ? _activeTag : _inactiveTag;
+            return `<button id="${t.id}" onclick="setWatchlistSort('${t.mode}')" class="${cls} whitespace-nowrap">${t.label}</button>`;
+        }).join('');
+    }
+
     function updateSortToggle() {
-        const btnPct  = document.getElementById('btn-sort-pct');
-        const btnName = document.getElementById('btn-sort-name');
-        const btnVal  = document.getElementById('btn-sort-val');
-        const btnAbs  = document.getElementById('btn-sort-abs');
-        if (btnPct)  btnPct.className  = _watchlistSortMode === 'changePercent' ? _activeTag : _inactiveTag;
-        if (btnName) btnName.className = _watchlistSortMode === 'name'          ? _activeTag : _inactiveTag;
-        if (btnVal)  btnVal.className  = _watchlistSortMode === 'dailyVal'       ? _activeTag : _inactiveTag;
-        if (btnAbs)  btnAbs.className  = _watchlistSortMode === 'totalGain'      ? _activeTag : _inactiveTag;
+        renderSortTags();
     }
 
     window.changeWatchlistScale = function(amount) {
@@ -579,7 +603,7 @@
                 <span style="font-size:calc(13px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${priceFmt}&nbsp;<span style="color:${chgColor}; font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:900">${todayVarPct}</span><span style="background:rgba(100,116,139,0.1); color:var(--mob-text-muted); border-radius:3px; padding:1px 4px; font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; margin-left:4px; display:inline-block; vertical-align:middle">${exchangeLabel}</span></span>
               </div>
 
-              ${_watchlistSubView === 'ETF1' ? '<div></div><div></div><div></div>' : `
+              ${_watchlistSubView === 'ETF1' ? '' : `
               <!-- Col 2: P/E -->
               <div style="display:flex; flex-direction:column; justify-content:center; align-items:flex-end; gap:2px; min-width:0; height:100%; text-align:right">
                 <span style="font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:800; color:var(--mob-text-caption); text-transform:uppercase">P/E</span>
@@ -588,14 +612,20 @@
 
               <!-- Col 3: Fwd P/E -->
               <div style="display:flex; flex-direction:column; justify-content:center; align-items:flex-end; gap:2px; min-width:0; height:100%; text-align:right">
-                <span style="font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:800; color:var(--mob-text-caption); text-transform:uppercase">Fwd P/E</span>
+                <span style="font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:800; color:var(--mob-text-caption); text-transform:uppercase">FWD</span>
                 <span style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${a.forwardPE ? a.forwardPE.toFixed(1) : '—'}</span>
               </div>
 
-              <!-- Col 4: PEG & Beta -->
+              <!-- Col 4: PEG -->
               <div style="display:flex; flex-direction:column; justify-content:center; align-items:flex-end; gap:2px; min-width:0; height:100%; text-align:right">
-                <span style="font-size:calc(9px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text-caption)">PEG: ${a.pegRatio ? a.pegRatio.toFixed(1) : '—'}</span>
-                <span style="font-size:calc(9px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text-caption)">BETA: ${a.beta ? a.beta.toFixed(2) : '—'}</span>
+                <span style="font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:800; color:var(--mob-text-caption); text-transform:uppercase">PEG</span>
+                <span style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${a.pegRatio ? a.pegRatio.toFixed(1) : '—'}</span>
+              </div>
+
+              <!-- Col 5: Beta -->
+              <div style="display:flex; flex-direction:column; justify-content:center; align-items:flex-end; gap:2px; min-width:0; height:100%; text-align:right">
+                <span style="font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:800; color:var(--mob-text-caption); text-transform:uppercase">BETA</span>
+                <span style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${a.beta ? a.beta.toFixed(2) : '—'}</span>
               </div>
               `}
             </div>
@@ -634,8 +664,8 @@
                 return 0;
             }
             
-            // When sorting by name or total gain, do not partition open/closed markets
-            if (_watchlistSortMode === 'name' || _watchlistSortMode === 'totalGain') {
+            // When sorting by name, total gain, or valuation metrics, do not partition open/closed markets
+            if (['name', 'totalGain', 'pe', 'forwardPE', 'pegRatio'].includes(_watchlistSortMode)) {
                 return 1;
             }
             
@@ -664,6 +694,18 @@
                 const valA = a.totalGainEUR !== undefined ? a.totalGainEUR : (((a.currentPrice || 0) * (a.totalQuantity || 0)) - (a.totalCostAssetCurr || 0));
                 const valB = b.totalGainEUR !== undefined ? b.totalGainEUR : (((b.currentPrice || 0) * (b.totalQuantity || 0)) - (b.totalCostAssetCurr || 0));
                 return valB - valA;
+            } else if (_watchlistSortMode === 'pe') {
+                const valA = a.pe || 999999;
+                const valB = b.pe || 999999;
+                return valA - valB;
+            } else if (_watchlistSortMode === 'forwardPE') {
+                const valA = a.forwardPE || 999999;
+                const valB = b.forwardPE || 999999;
+                return valA - valB;
+            } else if (_watchlistSortMode === 'pegRatio') {
+                const valA = a.pegRatio || 999999;
+                const valB = b.pegRatio || 999999;
+                return valA - valB;
             } else {
                 return (b.changePercent || 0) - (a.changePercent || 0);
             }
@@ -679,6 +721,7 @@
         if (empty) empty.classList.add('hidden');
 
         if (container) {
+            container.className = 'mob-list-edge ' + (_watchlistSubView === 'Az1' ? 'subview-az1' : 'subview-etf1');
             container.innerHTML = watchlist.map(a => renderFundamentalsCard(a)).join('') || '<div class="mob-empty">Watchlist vuota</div>';
             updateWatchlistScale();
         }
