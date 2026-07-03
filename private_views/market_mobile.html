@@ -208,7 +208,6 @@
     
     <!-- Sort tags row -->
     <div class="px-4 pb-3 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-      <span class="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500 mr-1 whitespace-nowrap">Ordina:</span>
       <button id="btn-sort-pct" onclick="setMarketSort('changePercent')" 
               class="text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all whitespace-nowrap">
         % Giorno
@@ -743,7 +742,7 @@
               <!-- Col 1: Ticker TAG & Price -->
               <div style="display:flex; flex-direction:column; gap:3px; align-items:flex-start; min-width:0">
                 <div style="display:flex; align-items:center; max-width:100%">
-                  <span style="background:${colors.bg}; color:${colors.text}; border:1px solid ${colors.border}; border-radius:4px; padding:1px 5px; font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; flex-shrink:1">${a.ticker}</span>
+                  <span style="background:${colors.bg}; color:#000000; border:1px solid ${colors.border}; border-radius:4px; padding:1px 5px; font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; flex-shrink:1">${a.ticker}</span>
                   ${portTags}
                 </div>
                 <span style="font-size:calc(13px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${priceFmt}&nbsp;<span style="color:${chgColor}; font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:900">${todayVarPct}</span></span>
