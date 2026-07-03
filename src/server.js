@@ -2839,23 +2839,44 @@ async function checkAndSendNewsAlert(userId, item, sourceName) {
         // 3. Find matching asset
         let matchedAsset = null;
         const titleLower = item.title.toLowerCase();
-        
+        // Helper: check if a keyword appears as a whole word in the title
+        function matchesWholeWord(text, keyword) {
+            if (!keyword || keyword.length === 0) return false;
+            // Escape regex special chars in the keyword
+            const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const re = new RegExp(`(?<![a-z0-9])${escaped}(?![a-z0-9])`, 'i');
+            return re.test(text);
+        }
+
         for (const asset of assets) {
             const ticker = asset.ticker;
             const name = asset.name;
-            
-            const cleanTicker = ticker.split('.')[0].replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-            if (cleanTicker.length >= 3 && titleLower.includes(cleanTicker)) {
+
+            // Match 1: full ticker with dot (e.g. "TIT.MI") - whole word
+            if (matchesWholeWord(item.title, ticker)) {
                 matchedAsset = asset;
                 break;
             }
-            if (titleLower.includes(ticker.toLowerCase())) {
+
+            // Match 2: ticker stem before dot (e.g. "TIT") — only if >= 4 chars to avoid short collisions
+            const tickerStem = ticker.split('.')[0].replace(/[^a-zA-Z0-9]/g, '');
+            if (tickerStem.length >= 4 && matchesWholeWord(item.title, tickerStem)) {
                 matchedAsset = asset;
                 break;
             }
+
+            // Match 3: asset full name (cleaned) — whole-word, with a minimum length guard
             if (name) {
-                const cleanName = name.toLowerCase().replace(/inc\.|corp\.|ltd\.|spa|s\.p\.a\./g, '').trim();
-                if (cleanName.length >= 4 && titleLower.includes(cleanName)) {
+                const cleanName = name.toLowerCase()
+                    .replace(/\binc\.?\b|\bcorp\.?\b|\bltd\.?\b|\bs\.?p\.?a\.?\b|\bplc\.?\b|\bgroup\b/gi, '')
+                    .trim();
+                if (cleanName.length >= 5 && matchesWholeWord(item.title, cleanName)) {
+                    matchedAsset = asset;
+                    break;
+                }
+                // Also try matching by first meaningful word of the name (>= 5 chars)
+                const firstWord = cleanName.split(/\s+/)[0];
+                if (firstWord && firstWord.length >= 5 && matchesWholeWord(item.title, firstWord)) {
                     matchedAsset = asset;
                     break;
                 }
