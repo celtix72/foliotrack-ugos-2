@@ -173,14 +173,7 @@
           </button>
         </div>
 
-        <div id="mob-watchlist-container" class="mob-list-edge">
-            <!-- Items injected here -->
-        </div>
 
-        <!-- Divider & Section 2: Dati Fondamentali -->
-        <div class="mob-section-header pb-1 mt-6">
-            <span class="mob-section-title">Valori Fondamentali</span>
-        </div>
         <div id="mob-watchlist-fundamentals-container" class="mob-list-edge">
             <!-- Items injected here -->
         </div>
@@ -542,90 +535,6 @@
         </div>`;
     }
 
-    function renderCardView(a) {
-        const price    = a.currentPrice || 0;
-        const change   = a.changePercent || 0;
-        const isPos    = change >= 0;
-        const chgColor = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-        const tickerEsc = a.ticker.replace(/'/g, "\\'");
-        const nameEsc   = (a.name || '').replace(/'/g, "\\'");
-        const cur = a.currency || 'EUR';
-
-        const _chgVal  = (a.changeValue || 0) * (a.totalQuantity || 0);
-        const _totalVal     = price * (a.totalQuantity || 0);
-        const _totalGain    = a.totalGainEUR !== undefined ? a.totalGainEUR : (_totalVal - (a.totalCostAssetCurr || 0));
-        const _totGainIsPos = _totalGain >= 0;
-        const _totGainColor = _totGainIsPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-        const _totGainSign  = (_totGainIsPos && Math.abs(_totalGain) >= 0.5) ? '+' : '';
-        const _totGainCur   = a.totalGainEUR !== undefined ? 'EUR' : cur;
-
-        const hasDailyGain = a.hasPosition && Math.abs(_chgVal) >= 0.01;
-        const hasTotalGain = a.hasPosition && _totalVal > 0;
-
-        const portTags = (a.portfoliosInfo && a.portfoliosInfo.length > 0)
-          ? a.portfoliosInfo.map(p => {
-              const clr = p.color || '#64748b';
-              const firstLetter = (p.name || 'P').charAt(0).toUpperCase();
-              return `<span style="background:${clr}22; color:${clr}; border:1px solid ${clr}44; border-radius:4px; padding:1px 5px; font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; display:inline-block; vertical-align:middle; margin-left:3px; text-transform:uppercase;" title="${p.name}">${firstLetter}</span>`;
-            }).join('')
-          : '';
-        const exchangeLabel = a.exchange || 'MKT';
-
-        const priceFmt = fmtPriceCompact(price, cur, price >= 100 ? 0 : price >= 10 ? 1 : 2);
-        
-        const colors = getAssetTypeColors(a.type || a.yfType, a.ticker);
-        const displaySymbol = _watchlistExtMode ? abbreviateName(a.name, 15) : a.ticker;
-        const isOpen = isAssetMarketOpen(a);
-
-        const invested = a.totalCostAssetCurr || 0;
-        const _absPct  = invested > 0 ? ((_totalVal - invested) / invested) * 100 : 0;
-        const absPctColor = _absPct >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-
-        const todayVarPct = `${isPos ? '+' : ''}${change.toFixed(1)}%`;
-        const todayVarStr = hasDailyGain ? `${_chgVal >= 0 ? '+' : ''}${fmtPriceCompact(_chgVal, cur, 0)}` : '—';
-        const absVarPct = hasTotalGain ? `${_absPct >= 0 ? '+' : ''}${_absPct.toFixed(1)}%` : '—';
-        const absVarValStr = hasTotalGain ? `${_totGainSign}${fmtPriceCompact(_totalGain, _totGainCur, 0)}` : '—';
-
-        return `
-          <div class="mob-holding-swipe-container"
-               ontouchstart="handleTouchStart(event,this)"
-               ontouchmove="handleTouchMove(event,this)"
-               ontouchend="handleTouchEnd(event,this)">
-            ${renderActions(a)}
-            <div class="mkcard-row ${isPos ? 'pos' : 'neg'} ${isOpen ? '' : 'closed-market'}"
-                 onclick="window.showMobDetails('${tickerEsc}','${nameEsc}','${cur}')">
-              
-              <div style="display:flex; flex-direction:column; gap:3px; align-items:flex-start; min-width:0">
-                <div style="display:flex; align-items:center; max-width:100%">
-                  <span style="background:${colors.bg}; color:#000000; border:1px solid ${colors.border}; border-radius:4px; padding:1px 5px; font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; flex-shrink:1">${displaySymbol}</span>
-                  ${portTags}
-                </div>
-                <span style="font-size:calc(13px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${priceFmt}&nbsp;<span style="color:${chgColor}; font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:900">${todayVarPct}</span><span style="background:rgba(100,116,139,0.1); color:var(--mob-text-muted); border-radius:3px; padding:1px 4px; font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; margin-left:4px; display:inline-block; vertical-align:middle">${exchangeLabel}</span></span>
-              </div>
-
-              ${_watchlistSubView === 'F1' ? '<div></div><div></div><div></div>' : `
-              <div style="display:flex; flex-direction:column; justify-content:center; align-items:flex-start; gap:3px; min-width:0; height:100%">
-                ${renderAiBadgeMob(a)}
-              </div>
-
-              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; min-width:0; text-align:right">
-                <div style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:900; color:${chgColor}; font-family:'SF Mono',monospace; white-space:nowrap">${todayVarPct}</div>
-                <div style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:700; color:${hasTotalGain ? absPctColor : 'var(--mob-text-muted)'}; font-family:'SF Mono',monospace; white-space:nowrap">${absVarPct}</div>
-              </div>
-
-              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; min-width:0; text-align:right">
-                <div style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:900; color:${chgColor}; font-family:'SF Mono',monospace; white-space:nowrap">${todayVarStr}</div>
-                <div style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:700; color:${hasTotalGain ? _totGainColor : 'var(--mob-text-muted)'}; font-family:'SF Mono',monospace; white-space:nowrap">${absVarValStr}</div>
-              </div>
-              `}
-            </div>
-          </div>`;
-    }
-
-    const renderCard = (a) => {
-        return renderCardView(a);
-    };
-
     function renderFundamentalsCardView(a) {
         const price    = a.currentPrice || 0;
         const change   = a.changePercent || 0;
@@ -701,7 +610,7 @@
     };
 
     function renderWatchlist() {
-        const container = document.getElementById('mob-watchlist-container');
+        const container = document.getElementById('mob-watchlist-fundamentals-container');
         const empty = document.getElementById('mob-watchlist-empty');
         const countEl = document.getElementById('mob-watchlist-count');
         let watchlist = window.watchlist || [];
@@ -754,20 +663,14 @@
 
         if (!watchlist || watchlist.length === 0) {
             if (container) container.innerHTML = '';
-            const fundamentalsContainer = document.getElementById('mob-watchlist-fundamentals-container');
-            if (fundamentalsContainer) fundamentalsContainer.innerHTML = '';
             if (empty) empty.classList.remove('hidden');
             return;
         }
         if (empty) empty.classList.add('hidden');
 
         if (container) {
-            container.innerHTML = watchlist.map(a => renderCard(a)).join('') || '<div class="mob-empty">Watchlist vuota</div>';
+            container.innerHTML = watchlist.map(a => renderFundamentalsCard(a)).join('') || '<div class="mob-empty">Watchlist vuota</div>';
             updateWatchlistScale();
-        }
-        const fundamentalsContainer = document.getElementById('mob-watchlist-fundamentals-container');
-        if (fundamentalsContainer) {
-            fundamentalsContainer.innerHTML = watchlist.map(a => renderFundamentalsCard(a)).join('') || '<div class="mob-empty">Watchlist vuota</div>';
         }
     }
     window.renderWatchlist = renderWatchlist;
