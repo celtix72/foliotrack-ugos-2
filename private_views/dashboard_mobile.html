@@ -378,13 +378,10 @@
                   const signReg = metrics.changeReg >= 0 ? '+' : '';
                   const signPP = metrics.changePP >= 0 ? '+' : '';
                   
-                  let html = `${signReg}${formatPrivacy(totalMove, 'EUR', 'mob-total-var')}`;
-                  
-                  // Optional: if you want to show them split like on desktop:
-                  // let html = `${signReg}${formattedReg}`;
-                  // if (metrics.changePP !== 0) {
-                  //     html += ` <span class="opacity-80 text-[8px] ml-1">(${signPP}${formattedPP})</span>`;
-                  // }
+                  let html = `${signReg}${formattedReg}`;
+                  if (metrics.changePP !== 0) {
+                      html += ` <span class="opacity-80 text-[8px] ml-1">(${signPP}${formattedPP})</span>`;
+                  }
                   varEl.innerHTML = html;
               }
               varEl.classList.remove('hidden');
