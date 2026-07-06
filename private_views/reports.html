@@ -215,52 +215,46 @@
 </section>
 <!-- Performance Chart Section -->
 <section class="bg-white dark:bg-surface-dark p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-<div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+<div class="flex flex-wrap items-center justify-between gap-4 mb-6">
     <div>
         <h3 class="text-xl font-bold">Performance Comparison</h3>
         <p class="text-sm text-slate-500">Portfolio vs Benchmark (normalizzati a 100)</p>
     </div>
-    <div class="flex items-center gap-3">
+    <div class="flex flex-wrap items-center gap-3">
+        <div id="rep-chart-legend" class="flex flex-wrap items-center gap-4 mr-2"></div>
         <button id="toggle-individual-btn" onclick="toggleIndividualPortfolios()" class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:border-primary hover:text-primary transition-all">Show Portfolios</button>
         <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Range: <span id="chart-range-label" class="text-primary">1Y</span></p>
     </div>
 </div>
 <!-- KPI bar -->
-<div class="flex flex-wrap items-center gap-5 mb-5 px-1" id="rep-kpi-bar">
-    <div class="flex flex-col gap-0.5">
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 px-1" id="rep-kpi-bar">
+    <div class="flex flex-col gap-1 p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl">
         <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Inizio periodo</span>
         <span id="rep-kpi-start" class="text-sm font-black text-slate-700 dark:text-slate-200">—</span>
-        <span id="rep-kpi-start-date" class="text-[9px] text-slate-400 font-bold">—</span>
+        <span id="rep-kpi-start-date" class="text-[9px] text-slate-500 dark:text-slate-400 font-bold">—</span>
     </div>
-    <div class="h-8 w-px bg-slate-100 dark:bg-slate-800"></div>
-    <div class="flex flex-col gap-0.5">
+    <div class="flex flex-col gap-1 p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl">
         <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Valore attuale</span>
         <span id="rep-kpi-end" class="text-sm font-black text-slate-700 dark:text-slate-200">—</span>
-        <span id="rep-kpi-end-date" class="text-[9px] text-slate-400 font-bold">—</span>
+        <span id="rep-kpi-end-date" class="text-[9px] text-slate-500 dark:text-slate-400 font-bold">—</span>
     </div>
-    <div class="h-8 w-px bg-slate-100 dark:bg-slate-800"></div>
-    <div class="flex flex-col gap-0.5">
+    <div class="flex flex-col gap-1 p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl">
         <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">TWR &Delta;</span>
         <span id="rep-kpi-delta" class="text-sm font-black">—</span>
         <span id="rep-kpi-delta-pct" class="text-[9px] font-bold">—</span>
     </div>
-    <div class="h-8 w-px bg-slate-100 dark:bg-slate-800"></div>
-    <div class="flex flex-col gap-0.5">
+    <div class="flex flex-col gap-1 p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl">
         <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Alpha vs S&P</span>
         <span id="rep-kpi-alpha" class="text-sm font-black">—</span>
     </div>
-    <div class="h-8 w-px bg-slate-100 dark:bg-slate-800"></div>
-    <div class="flex flex-col gap-0.5">
+    <div class="flex flex-col gap-1 p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl">
         <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Max Drawdown</span>
         <span id="rep-kpi-maxdd" class="text-sm font-black text-rose-500">—</span>
     </div>
-    <div class="h-8 w-px bg-slate-100 dark:bg-slate-800"></div>
-    <div class="flex flex-col gap-0.5">
+    <div class="flex flex-col gap-1 p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl">
         <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Volatilità Ann.</span>
         <span id="rep-kpi-vol" class="text-sm font-black text-slate-600 dark:text-slate-300">—</span>
     </div>
-    <!-- Legenda inline -->
-    <div id="rep-chart-legend" class="ml-auto flex flex-wrap items-center gap-4"></div>
 </div>
 <div class="h-96 w-full">
     <canvas id="performanceChart"></canvas>
