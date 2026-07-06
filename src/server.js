@@ -1164,11 +1164,14 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
         const vCurrEUR = vCurr / rate;
         const vPrevEUR = vPrev / prevRate;
         const vDeltaEUR_Total = vCurrEUR - vPrevEUR;
-        p.changeValueEUR = vDeltaEUR_Total;
+        p.totalValueEUR = vCurrEUR;
+        p.netValueEUR = p.netValue / rate;
         p.netValue = p.totalValue - p.totalTax;
         
         // Split between regular/PP for the Hero pill
         const ratioReg = vDelta !== 0 ? (p.performance1D / vDelta) : 1;
+        p.changeValueEUR = vDeltaEUR_Total * ratioReg;
+        p.changeValuePrePostEUR = vDeltaEUR_Total * (1 - ratioReg);
         
         // Aggregate totals
         totalValueEUR += vCurrEUR;
@@ -1180,6 +1183,7 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
         const history = individual[p.id] || [];
         if (history.length > 0) {
             const last = history[history.length - 1];
+            p.totalGainEUR = last ? last.profit : 0;
             const d7 = new Date(today); d7.setDate(today.getDate() - 7);
             const d7Str = d7.toISOString().split('T')[0];
             const firstW = history.findLast(h => h.date <= d7Str) || history[0];
@@ -1191,6 +1195,7 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
             p.changeValue1M = last.profit - firstM.profit;
             p.changePercent1M = firstM.value > 0 ? (p.changeValue1M / firstM.value) * 100 : 0;
         } else {
+            p.totalGainEUR = 0;
             p.changeValue1W = 0; p.changePercent1W = 0;
             p.changeValue1M = 0; p.changePercent1M = 0;
         }
@@ -1547,6 +1552,7 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
         twr,
         xirr: xirrValue,
         totalLatentTax,
+        totalGain: lastPPoint.profit || 0,
         transactions,
         holdings,
         allocation,

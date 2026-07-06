@@ -354,10 +354,10 @@
           }
 
           const metrics = {
-              net: filtered.reduce((sum, p) => sum + (parseFloat(p.netValue) || 0), 0),
-              gross: filtered.reduce((sum, p) => sum + (parseFloat(p.totalValue) || 0), 0),
-              changeReg: filtered.reduce((sum, p) => sum + (parseFloat(p.changeValue) || 0), 0),
-              changePP: filtered.reduce((sum, p) => sum + (parseFloat(p.changeValuePrePost) || 0), 0)
+              net: filtered.reduce((sum, p) => sum + (parseFloat(p.netValueEUR) || parseFloat(p.netValue) || 0), 0),
+              gross: filtered.reduce((sum, p) => sum + (parseFloat(p.totalValueEUR) || parseFloat(p.totalValue) || 0), 0),
+              changeReg: filtered.reduce((sum, p) => sum + (parseFloat(p.changeValueEUR) || parseFloat(p.changeValue) || 0), 0),
+              changePP: filtered.reduce((sum, p) => sum + (parseFloat(p.changeValuePrePostEUR) || parseFloat(p.changeValuePrePost) || 0), 0)
           };
 
           document.getElementById('mob-total-net').innerText = formatPrivacy(metrics.net, 'EUR', 'mob-net');
