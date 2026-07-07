@@ -3232,6 +3232,23 @@ updateMarketData();
 
 // ─── Start ──────────────────────────────────────────────────────────────────
 
+// Helper to notify all users that the server has restarted
+async function notifyAllUsersServerRestart() {
+    try {
+        const users = database.db.prepare("SELECT id FROM users").all();
+        for (const u of users) {
+            await notifyUser(u.id, 'STATUS', {
+                title: '⚡️ SERVER RIAVVIATO',
+                body: 'Il server FolioTrack è ripartito correttamente ed è ora online.',
+                telegramMessage: '⚡️ *SERVER RIAVVIATO*\n\nIl server FolioTrack è ripartito correttamente ed è ora online.'
+            }, true);
+        }
+        logger.info(`Startup notification sent to ${users.length} users.`);
+    } catch (err) {
+        logger.error('Error sending startup notification:', err);
+    }
+}
+
 if (require.main === module) {
     app.listen(PORT, '0.0.0.0', () => {
         logger.info(`FolioTrack server running on port ${PORT}`);
@@ -3239,6 +3256,9 @@ if (require.main === module) {
         
         // Start Telegram command listener
         startTelegramPolling().catch(e => logger.error('Telegram polling failed at startup', e));
+        
+        // Send server restart notification to all users
+        notifyAllUsersServerRestart().catch(e => logger.error('Server restart notification failed', e));
     });
 }
 
