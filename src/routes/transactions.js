@@ -232,17 +232,60 @@ module.exports = function(dependencies) {
 
         const liveRate = await getEurUsdRate();
 
-        // Automation for TRANSFER: Create a DEPOSIT in the destination portfolio
+        // Automation for TRANSFER: Create a DEPOSIT in the destination portfolio and link them
         if (type === 'TRANSFER' && destinationPortfolioId) {
-            database.db.prepare(`
-                INSERT INTO transactions (portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `).run(
-                parseInt(destinationPortfolioId), 'DEPOSIT', 'CASH',
-                date || new Date().toISOString().split('T')[0],
-                0, 0, 0, 0, 1, parseFloat(amount || 0)
-            );
-            database.recalculatePortfolio(destinationPortfolioId, liveRate);
+            const srcPort = database.db.prepare("SELECT currency FROM portfolios WHERE id = ?").get(parseInt(portfolioId));
+            const destPort = database.db.prepare("SELECT currency FROM portfolios WHERE id = ?").get(parseInt(destinationPortfolioId));
+            
+            if (srcPort && destPort) {
+                let fxRate = 1.0;
+                if (srcPort.currency !== destPort.currency) {
+                    const txDate = date || new Date().toISOString().split('T')[0];
+                    const quote = database.db.prepare("SELECT price FROM asset_quotes WHERE ticker = 'EURUSD=X' AND date = ?").get(txDate);
+                    if (quote && quote.price > 0) {
+                        fxRate = quote.price;
+                    } else {
+                        const current = database.db.prepare("SELECT currentPrice FROM assets WHERE ticker = 'EURUSD=X'").get();
+                        if (current && current.currentPrice > 0) {
+                            fxRate = current.currentPrice;
+                        } else {
+                            fxRate = liveRate || 1.1;
+                        }
+                    }
+                }
+                
+                let destAmount = parseFloat(amount || 0);
+                if (srcPort.currency === 'USD' && destPort.currency === 'EUR') {
+                    destAmount = parseFloat(amount || 0) / fxRate;
+                } else if (srcPort.currency === 'EUR' && destPort.currency === 'USD') {
+                    destAmount = parseFloat(amount || 0) * fxRate;
+                }
+
+                // Insert the DEPOSIT transaction in the destination portfolio
+                const destResult = database.db.prepare(`
+                    INSERT INTO transactions (portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                `).run(
+                    parseInt(destinationPortfolioId), 'DEPOSIT', 'CASH',
+                    date || new Date().toISOString().split('T')[0],
+                    0, 0, 0, 0, 1, destAmount
+                );
+                
+                const sourceTxId = result.lastInsertRowid;
+                const destTxId = destResult.lastInsertRowid;
+                
+                // Link both transactions together
+                database.db.prepare(`
+                    UPDATE transactions SET linkedTransactionId = ? WHERE id = ?
+                `).run(destTxId, sourceTxId);
+                
+                database.db.prepare(`
+                    UPDATE transactions SET linkedTransactionId = ? WHERE id = ?
+                `).run(sourceTxId, destTxId);
+                
+                database.recalculatePortfolio(destinationPortfolioId, liveRate);
+                triggerHistoryRebuild(destinationPortfolioId);
+            }
         }
 
         database.recalculatePortfolio(portfolioId, liveRate);
@@ -269,10 +312,24 @@ module.exports = function(dependencies) {
         
         const finalRow = row || database.db.prepare(`SELECT * FROM transactions WHERE id = ?`).get(req.params.id);
         if (!finalRow) return res.status(404).send('Transaction not found');
+
+        let linkedPortfolioId = null;
+        if (finalRow.linkedTransactionId) {
+            const linkedTx = database.db.prepare(`SELECT id, portfolioId FROM transactions WHERE id = ?`).get(finalRow.linkedTransactionId);
+            if (linkedTx) {
+                linkedPortfolioId = linkedTx.portfolioId;
+                database.db.prepare(`DELETE FROM transactions WHERE id = ?`).run(linkedTx.id);
+            }
+        }
         
         database.db.prepare(`DELETE FROM transactions WHERE id = ?`).run(req.params.id);
         const liveRate = await getEurUsdRate();
         database.recalculatePortfolio(row.portfolioId, liveRate);
+
+        if (linkedPortfolioId) {
+            database.recalculatePortfolio(linkedPortfolioId, liveRate);
+            triggerHistoryRebuild(linkedPortfolioId);
+        }
         
         // Check if the ticker has any remaining transactions globally
         if (row.assetTicker && row.assetTicker !== 'CASH') {
@@ -313,12 +370,87 @@ module.exports = function(dependencies) {
         const finalExisting = existing || database.db.prepare(`SELECT * FROM transactions WHERE id = ?`).get(req.params.id);
         if (!finalExisting) return res.status(404).send('Transaction not found');
 
+        const newType = type || finalExisting.type;
+        const typeChanged = finalExisting.type !== newType;
+
+        // If transaction has a link and the type changed (e.g. changed from TRANSFER to BUY), break the link
+        if (finalExisting.linkedTransactionId && typeChanged) {
+            const linkedId = finalExisting.linkedTransactionId;
+            database.db.prepare(`UPDATE transactions SET linkedTransactionId = NULL WHERE id = ?`).run(linkedId);
+            database.db.prepare(`UPDATE transactions SET linkedTransactionId = NULL WHERE id = ?`).run(finalExisting.id);
+            
+            const linkedTx = database.db.prepare(`SELECT portfolioId FROM transactions WHERE id = ?`).get(linkedId);
+            if (linkedTx) {
+                database.recalculatePortfolio(linkedTx.portfolioId);
+                triggerHistoryRebuild(linkedTx.portfolioId);
+            }
+        }
+
+        // If transaction is linked and type is unchanged, synchronize values to the paired transaction
+        if (finalExisting.linkedTransactionId && !typeChanged) {
+            const linkedTx = database.db.prepare(`SELECT * FROM transactions WHERE id = ?`).get(finalExisting.linkedTransactionId);
+            if (linkedTx) {
+                const srcPort = database.db.prepare("SELECT currency FROM portfolios WHERE id = ?").get(finalExisting.portfolioId);
+                const destPort = database.db.prepare("SELECT currency FROM portfolios WHERE id = ?").get(linkedTx.portfolioId);
+                
+                let fxRate = 1.0;
+                const newDate = date || finalExisting.date;
+                if (srcPort && destPort && srcPort.currency !== destPort.currency) {
+                    const quote = database.db.prepare("SELECT price FROM asset_quotes WHERE ticker = 'EURUSD=X' AND date = ?").get(newDate);
+                    if (quote && quote.price > 0) {
+                        fxRate = quote.price;
+                    } else {
+                        const current = database.db.prepare("SELECT currentPrice FROM assets WHERE ticker = 'EURUSD=X'").get();
+                        if (current && current.currentPrice > 0) {
+                            fxRate = current.currentPrice;
+                        } else {
+                            fxRate = 1.1;
+                        }
+                    }
+                }
+                
+                const newAmount = parseFloat(amount !== undefined ? amount : finalExisting.amount);
+                let linkedAmount = newAmount;
+                
+                if (srcPort && destPort && srcPort.currency !== destPort.currency) {
+                    if (finalExisting.type === 'TRANSFER') {
+                        if (srcPort.currency === 'USD' && destPort.currency === 'EUR') {
+                            linkedAmount = newAmount / fxRate;
+                        } else if (srcPort.currency === 'EUR' && destPort.currency === 'USD') {
+                            linkedAmount = newAmount * fxRate;
+                        }
+                    } else {
+                        if (destPort.currency === 'USD' && srcPort.currency === 'EUR') {
+                            linkedAmount = newAmount * fxRate;
+                        } else if (destPort.currency === 'EUR' && srcPort.currency === 'USD') {
+                            linkedAmount = newAmount / fxRate;
+                        }
+                    }
+                }
+                
+                // Update the linked transaction
+                database.db.prepare(`
+                    UPDATE transactions 
+                    SET date = ?, amount = ?
+                    WHERE id = ?
+                `).run(
+                    newDate,
+                    linkedAmount,
+                    linkedTx.id
+                );
+                
+                // Recalculate and rebuild history for the linked portfolio
+                database.recalculatePortfolio(linkedTx.portfolioId);
+                triggerHistoryRebuild(linkedTx.portfolioId);
+            }
+        }
+
         database.db.prepare(`
             UPDATE transactions 
             SET type = ?, assetTicker = ?, date = ?, quantity = ?, price = ?, commission = ?, tax = ?, exchangeRate = ?, amount = ?
             WHERE id = ?
         `).run(
-            type || finalExisting.type,
+            newType,
             sanitizeTicker(assetTicker) || finalExisting.assetTicker,
             date || finalExisting.date,
             parseFloat(quantity || 0),

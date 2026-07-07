@@ -939,20 +939,27 @@ module.exports = function (dependencies) {
 
             const normalizeRelative = (history) => {
                 if (history.length === 0) return [];
-                const first = history[0];
+                let prevVal = null;
+                let prevNet = null;
+                let twr = 100;
                 
-                const getRatio = (p) => {
-                    if (p.netDeposits > 0) return p.value / p.netDeposits;
-                    const impliedInvestment = Math.max(1, p.value - p.profit);
-                    return p.value / impliedInvestment;
-                };
-
-                const firstRatio = getRatio(first);
-                return history.map(p => {
-                    const currentRatio = getRatio(p);
+                return history.map((p, idx) => {
+                    if (idx === 0) {
+                        prevVal = p.value;
+                        prevNet = p.netDeposits;
+                        twr = 100;
+                    } else {
+                        const netFlow = (p.netDeposits || 0) - (prevNet || 0);
+                        const denominator = (prevVal || 0) + netFlow;
+                        if (denominator > 0) {
+                            twr = twr * (p.value / denominator);
+                        }
+                        prevVal = p.value;
+                        prevNet = p.netDeposits;
+                    }
                     return {
                         date: p.date.substring(0, 7),
-                        value: (currentRatio / (firstRatio || 1)) * 100,
+                        value: parseFloat(twr.toFixed(2)),
                         absoluteValue: Math.round(p.value),
                         profit: Math.round(p.profit),
                         netDeposits: p.netDeposits || 0

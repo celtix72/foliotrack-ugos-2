@@ -2012,6 +2012,8 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
     }));
 
     let previousDayNetDeposits = null;
+    let previousDayValue = null;
+    let compoundedTWR = 100;
     let portfolioFirstRatio = null;
 
     // Initial state and metadata caching per portfolio
@@ -2468,14 +2470,22 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
             }
         }
 
-        // Portfolio Normalization (TWR-like index starting at 100)
-        // We use the same "implied investment" logic as the reports page
-        const currentInv = dayNetDeposits > 0 ? dayNetDeposits : Math.max(1, dayValue - dayProfit);
-        const currentRatio = dayValue / currentInv;
-        if (portfolioFirstRatio === null) portfolioFirstRatio = currentRatio;
-        const portfolioNormalized = portfolioFirstRatio ? (currentRatio / portfolioFirstRatio) * 100 : 100;
-
-        previousDayNetDeposits = dayNetDeposits;
+        // Portfolio Normalization (Time-Weighted Return, starting at 100)
+        if (previousDayValue === null) {
+            previousDayValue = dayValue;
+            previousDayNetDeposits = dayNetDeposits;
+            compoundedTWR = 100;
+        } else {
+            const netFlow = dayNetDeposits - (previousDayNetDeposits !== null ? previousDayNetDeposits : dayNetDeposits);
+            const denominator = previousDayValue + netFlow;
+            if (denominator > 0) {
+                const dayReturnFactor = dayValue / denominator;
+                compoundedTWR = compoundedTWR * dayReturnFactor;
+            }
+            previousDayValue = dayValue;
+            previousDayNetDeposits = dayNetDeposits;
+        }
+        const portfolioNormalized = compoundedTWR;
 
         if (!isFinite(dayValue) || isNaN(dayValue)) {
             // Log exactly which portfolio and asset caused the issue if possible
