@@ -1,0 +1,51 @@
+2026-07-10T06:59:16.297Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-10T06:59:16.309Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-10T06:59:16.392Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-10T06:59:28.607Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-10T06:59:28.621Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-10T06:59:28.699Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-10T06:59:53.135Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-10T06:59:53.146Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-10T06:59:53.223Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-10T07:00:06.426Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-10T07:00:06.439Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-10T07:01:40.655Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-10T07:01:40.669Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-10T07:01:51.306Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-10T07:01:51.317Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-10T07:01:51.399Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 1, Watchlist: 0)
+2026-07-10T07:01:51.407Z [INFO] Fetching EOD history for ^GSPC (forceRefresh: true)...
+2026-07-10T07:01:51.419Z [INFO] Fetching EOD history for FTSEMIB.MI (forceRefresh: true)...
+2026-07-10T07:01:51.430Z [INFO] Fetching EOD history for EURUSD=X (forceRefresh: true)...
+2026-07-10T07:02:16.827Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-10T07:02:16.839Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-10T07:02:16.920Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 1, Watchlist: 0)
+2026-07-10T07:02:16.929Z [INFO] Fetching EOD history for ^GSPC (forceRefresh: true)...
+2026-07-10T07:02:16.945Z [INFO] Fetching EOD history for FTSEMIB.MI (forceRefresh: true)...
+2026-07-10T07:02:16.956Z [INFO] Fetching EOD history for EURUSD=X (forceRefresh: true)...
+2026-07-10T07:02:17.383Z [INFO] Sync assets: updated [EURUSD=X] currentPrice to 1.1445575952529907 (as of 2026-07-10)
+2026-07-10T07:02:17.407Z [INFO] Sync assets: updated [^GSPC] currentPrice to 7543.64013671875 (as of 2026-07-10)
+2026-07-10T07:02:17.426Z [INFO] Sync assets: updated [FTSEMIB.MI] currentPrice to 52382 (as of 2026-07-10)
+2026-07-10T07:02:17.435Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 1, Watchlist: 0)
+2026-07-10T07:02:17.443Z [INFO] Fetching EOD history for ^GSPC (forceRefresh: true)...
+2026-07-10T07:02:17.452Z [INFO] Fetching EOD history for FTSEMIB.MI (forceRefresh: true)...
+2026-07-10T07:02:17.460Z [INFO] Fetching EOD history for EURUSD=X (forceRefresh: true)...
+2026-07-10T07:02:17.556Z [INFO] Sync assets: updated [EURUSD=X] currentPrice to 1.1445575952529907 (as of 2026-07-10)
+2026-07-10T07:02:17.575Z [INFO] Sync assets: updated [FTSEMIB.MI] currentPrice to 52382 (as of 2026-07-10)
+2026-07-10T07:02:17.592Z [INFO] Sync assets: updated [^GSPC] currentPrice to 7543.64013671875 (as of 2026-07-10)
+2026-07-10T07:03:20.930Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-10T07:03:20.943Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-10T07:03:23.886Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 1, Watchlist: 0)
+2026-07-10T07:03:23.904Z [INFO] Fetching EOD history for ^GSPC (forceRefresh: true)...
+2026-07-10T07:03:23.917Z [INFO] Fetching EOD history for FTSEMIB.MI (forceRefresh: true)...
+2026-07-10T07:03:23.930Z [INFO] Fetching EOD history for EURUSD=X (forceRefresh: true)...
+2026-07-10T07:03:24.256Z [INFO] Sync assets: updated [EURUSD=X] currentPrice to 1.1442956924438477 (as of 2026-07-10)
+2026-07-10T07:03:24.284Z [INFO] Sync assets: updated [^GSPC] currentPrice to 7543.64013671875 (as of 2026-07-10)
+2026-07-10T07:03:24.306Z [INFO] Sync assets: updated [FTSEMIB.MI] currentPrice to 52382 (as of 2026-07-10)
+2026-07-10T07:03:24.315Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 1, Watchlist: 0)
+2026-07-10T07:03:24.323Z [INFO] Fetching EOD history for ^GSPC (forceRefresh: true)...
+2026-07-10T07:03:24.334Z [INFO] Fetching EOD history for FTSEMIB.MI (forceRefresh: true)...
+2026-07-10T07:03:24.342Z [INFO] Fetching EOD history for EURUSD=X (forceRefresh: true)...
+2026-07-10T07:03:24.495Z [INFO] Sync assets: updated [^GSPC] currentPrice to 7543.64013671875 (as of 2026-07-10)
+2026-07-10T07:03:24.518Z [INFO] Sync assets: updated [FTSEMIB.MI] currentPrice to 52382 (as of 2026-07-10)
+2026-07-10T07:03:24.536Z [INFO] Sync assets: updated [EURUSD=X] currentPrice to 1.1442956924438477 (as of 2026-07-10)

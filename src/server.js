@@ -1662,6 +1662,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
     const todayStr = today.toISOString().split('T')[0];
     const marketStatus = getMarketStatus();
     const overrides = calculateVariationOverrides(marketStatus);
+    const liveRate = await getEurUsdRate().catch(() => 1.08) || 1.08;
     const rangeKey = range || 'ALL';
     const cacheKey = `history_${pIdsInput ? pIdsInput.sort().join(',') : 'global'}_${userId || 'none'}_${rangeKey}_${includeIndividual}_${benchmarkTicker || 'none'}_${tagIds ? tagIds.sort().join(',') : 'all'}`;
 
@@ -1868,7 +1869,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
         const assetMeta = assetMetadataCache[ticker];
         
         // 1. Check DB Cache unless forced
-        const dbQuotes = !forceRefresh ? database.db.prepare(`SELECT date, price FROM asset_quotes WHERE ticker = ? AND date >= ? ORDER BY date ASC`).all(ticker, reqStart) : [];
+        const dbQuotes = !forceRefresh ? database.db.prepare(`SELECT date, price FROM asset_quotes WHERE ticker = ? ORDER BY date ASC`).all(ticker) : [];
         if (!forceRefresh && dbQuotes.length > 0) {
             const latestDate = dbQuotes.at(-1).date;
             const firstTxDate = allTransactions.find(t => t.assetTicker === ticker)?.date || reqStart;
@@ -2016,6 +2017,19 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
     let compoundedTWR = 100;
     let portfolioFirstRatio = null;
 
+    const getUsdRate = (dStr) => {
+        if (!fxRates['USD']) return liveRate;
+        if (fxRates['USD'][dStr]) return fxRates['USD'][dStr];
+        const availableFxDates = Object.keys(fxRates['USD']).sort();
+        const pastFx = availableFxDates.filter(d => d < dStr);
+        if (pastFx.length > 0) {
+            return fxRates['USD'][pastFx.at(-1)];
+        } else if (availableFxDates.length > 0) {
+            return fxRates['USD'][availableFxDates[0]];
+        }
+        return liveRate;
+    };
+
     // Initial state and metadata caching per portfolio
     const portfolioStates = {};
     const individualHistories = {};
@@ -2033,7 +2047,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
         portfolioStates[p.id] = {
             cash: p.initialCash || 0,
             netDeposits: p.initialCash || 0,
-            netDepositsEUR: (p.initialCash || 0) / (p.currency === 'USD' ? (fxRates['USD']?.[startDateStr] || liveRate) : 1), // Track invested capital in base currency
+            netDepositsEUR: (p.initialCash || 0) / (p.currency === 'USD' ? getUsdRate(p.startDate || startDateStr) : 1), // Track invested capital in base currency
             dividends: 0,
             holdings: {},
             holdingsTotalCost: {}, // Added fix for PMC tracking in simulation
@@ -2052,14 +2066,14 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                 case 'DEPOSIT': {
                     portfolioStates[p.id].cash += effectAmt; 
                     portfolioStates[p.id].netDeposits += effectAmt; 
-                    const rateOnDate = (p.currency === 'USD') ? (fxRates['USD']?.[t.date] || 1) : 1;
+                    const rateOnDate = (p.currency === 'USD') ? getUsdRate(t.date) : 1;
                     portfolioStates[p.id].netDepositsEUR += effectAmt / rateOnDate;
                     break;
                 }
                 case 'WITHDRAWAL': {
                     portfolioStates[p.id].cash -= effectAmt; 
                     portfolioStates[p.id].netDeposits -= effectAmt; 
-                    const rateOnDate = (p.currency === 'USD') ? (fxRates['USD']?.[t.date] || 1) : 1;
+                    const rateOnDate = (p.currency === 'USD') ? getUsdRate(t.date) : 1;
                     portfolioStates[p.id].netDepositsEUR -= effectAmt / rateOnDate;
                     break;
                 }
@@ -2119,7 +2133,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                 let ast = rec.assetValue || 0;
 
                 if (p && p.currency === 'USD') {
-                    const rate = fxRates['USD']?.[dateStr] || 1;
+                    const rate = getUsdRate(dateStr);
                     val /= rate;
                     csh /= rate;
                     ast /= rate;
@@ -2155,14 +2169,14 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                         case 'DEPOSIT': {
                             state.cash += effectAmt; 
                             state.netDeposits += effectAmt; 
-                            const rateOnDate = (p.currency === 'USD') ? (fxRates['USD']?.[dateStr] || 1) : 1;
+                            const rateOnDate = (p.currency === 'USD') ? getUsdRate(dateStr) : 1;
                             state.netDepositsEUR += effectAmt / rateOnDate;
                             break;
                         }
                         case 'WITHDRAWAL': {
                             state.cash -= effectAmt; 
                             state.netDeposits -= effectAmt; 
-                            const rateOnDate = (p.currency === 'USD') ? (fxRates['USD']?.[dateStr] || 1) : 1;
+                            const rateOnDate = (p.currency === 'USD') ? getUsdRate(dateStr) : 1;
                             state.netDepositsEUR -= effectAmt / rateOnDate;
                             break;
                         }
@@ -2170,7 +2184,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                         case 'TRANSFER': {
                             state.cash -= effectAmt; 
                             state.netDeposits -= effectAmt; 
-                            const rateOnDate = (p.currency === 'USD') ? (fxRates['USD']?.[dateStr] || 1) : 1;
+                            const rateOnDate = (p.currency === 'USD') ? getUsdRate(dateStr) : 1;
                             state.netDepositsEUR -= effectAmt / rateOnDate;
                             break;
                         }
@@ -2211,13 +2225,13 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                 
                 let pNet = state.netDeposits;
                 if (p.currency === 'USD') {
-                    const rate = fxRates['USD']?.[dateStr] || 1;
+                    const rate = getUsdRate(dateStr);
                     pNet /= rate;
                 }
                 totalNetDeps += pNet;
 
                 if (rec && includeIndividual) {
-                    const rate = (p.currency === 'USD') ? (fxRates['USD']?.[dateStr] || 1) : 1;
+                    const rate = (p.currency === 'USD') ? getUsdRate(dateStr) : 1;
                     const pValEUR = (rec.totalValue || 0) / rate;
                     const pProfitEUR = pValEUR - state.netDepositsEUR;
                     
@@ -2257,14 +2271,14 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                         case 'DEPOSIT': {
                             state.cash += effectAmt; 
                             state.netDeposits += effectAmt; 
-                            const rateOnDate = (p.currency === 'USD') ? (fxRates['USD']?.[dateStr] || 1) : 1;
+                            const rateOnDate = (p.currency === 'USD') ? getUsdRate(dateStr) : 1;
                             state.netDepositsEUR += effectAmt / rateOnDate;
                             break;
                         }
                         case 'WITHDRAWAL': {
                             state.cash -= effectAmt; 
                             state.netDeposits -= effectAmt; 
-                            const rateOnDate = (p.currency === 'USD') ? (fxRates['USD']?.[dateStr] || 1) : 1;
+                            const rateOnDate = (p.currency === 'USD') ? getUsdRate(dateStr) : 1;
                             state.netDepositsEUR -= effectAmt / rateOnDate;
                             break;
                         }
@@ -2272,7 +2286,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                         case 'TRANSFER': {
                             state.cash -= effectAmt; 
                             state.netDeposits -= effectAmt; 
-                            const rateOnDate = (p.currency === 'USD') ? (fxRates['USD']?.[dateStr] || 1) : 1;
+                            const rateOnDate = (p.currency === 'USD') ? getUsdRate(dateStr) : 1;
                             state.netDepositsEUR -= effectAmt / rateOnDate;
                             break;
                         }
@@ -2360,21 +2374,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                     const aCurr = assetMeta.currency || 'EUR';
                     let rate = 1;
                     if (aCurr === 'USD' && p.currency === 'EUR') {
-                        rate = fxRates['USD']?.[dateStr];
-                        if (rate === undefined) {
-                            // Robust fallback: find nearest PAST date, then nearest FUTURE date
-                            const availableFxDates = Object.keys(fxRates['USD'] || {}).sort();
-                            const pastFx = availableFxDates.filter(d => d < dateStr);
-                            if (pastFx.length > 0) {
-                                rate = fxRates['USD'][pastFx.at(-1)];
-                            } else if (availableFxDates.length > 0) {
-                                rate = fxRates['USD'][availableFxDates[0]];
-                            } else {
-                                // Last resort fallback to live rate or 1
-                                const live = await getEurUsdRate();
-                                rate = live || 1;
-                            }
-                        }
+                        rate = getUsdRate(dateStr);
                     } else if (aCurr !== p.currency) {
                         const lastFx = allTransactions.filter(t => t.assetTicker === ticker && t.date <= dateStr && t.exchangeRate).at(-1);
                         rate = lastFx ? lastFx.exchangeRate : 1;
@@ -2405,13 +2405,13 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                 // PROFIT CALCULATION: Total Wealth Change in base currency (EUR)
                 // If it's EUR portfolio, rate is 1. If USD, we convert current total value to EUR 
                 // and subtract the total invested capital expressed in EUR (historical).
-                const pValueEUR = p.currency === 'USD' ? pValue / (fxRates['USD']?.[dateStr] || 1) : pValue;
+                const pValueEUR = p.currency === 'USD' ? pValue / getUsdRate(dateStr) : pValue;
                 let pProfit = pValueEUR - state.netDepositsEUR;
                 let pCash = state.cash;
                 let pAssetsVal = pAssets;
 
                 if (p.currency === 'USD') {
-                    const rate = fxRates['USD']?.[dateStr] || 1;
+                    const rate = getUsdRate(dateStr);
                     pValue /= rate;
                     pProfit /= rate;
                     pCash /= rate;
@@ -2423,11 +2423,11 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                     dayProfit += pProfit;
                     dayCash += pCash;
                     dayAssets += pAssetsVal;
-                    dayNetDeposits += (portfolioStates[p.id].netDeposits / (p.currency === 'USD' ? (fxRates['USD']?.[dateStr] || 1) : 1));
+                    dayNetDeposits += (portfolioStates[p.id].netDeposits / (p.currency === 'USD' ? getUsdRate(dateStr) : 1));
                 }
 
                 if (includeIndividual) {
-                    const rateForP = p.currency === 'USD' ? (fxRates['USD']?.[dateStr] || 1) : 1;
+                    const rateForP = p.currency === 'USD' ? getUsdRate(dateStr) : 1;
                     individualHistories[p.id].push({
                         date: dateStr,
                         value: Math.round(pValue),
@@ -2502,7 +2502,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
             if (portfolios.length > 1 && p.include_in_totals === 0) continue;
             let pDivs = portfolioStates[p.id].dividends;
             if (p.currency === 'USD') {
-                const rate = fxRates['USD']?.[dateStr] || 1;
+                const rate = getUsdRate(dateStr);
                 pDivs /= rate;
             }
             dayDividends += pDivs;
