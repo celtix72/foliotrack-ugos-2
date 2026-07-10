@@ -90,35 +90,55 @@
     </aside>
 
     <main class="flex-1 flex flex-col h-screen overflow-hidden">
-        <header class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-surface-dark/80 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-50">
-    <div class="flex items-center gap-6">
-        <div id="header-live-indicator" class="flex items-center gap-2 bg-slate-100 dark:bg-slate-900 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-800">
+            <header class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-surface-dark px-6 flex items-center justify-between shrink-0 sticky top-0 z-50">
+    <!-- LEFT: date · live · EU/US · separator -->
+    <div class="flex items-center gap-3 min-w-0">
+        <!-- Date -->
+        <div class="flex items-center gap-2 text-slate-400 shrink-0">
+            <span class="material-symbols-outlined text-[18px]">calendar_today</span>
+            <span class="text-[10px] font-bold uppercase tracking-widest" id="header-date">--</span>
+        </div>
+        <div class="h-4 w-px bg-slate-200 dark:bg-slate-700 shrink-0"></div>
+        <!-- Live indicator -->
+        <div id="header-live-indicator" class="flex items-center gap-1.5 shrink-0">
             <span class="header-live-dot w-2 h-2 rounded-full bg-slate-400"></span>
-            <span class="header-live-text text-[10px] font-black uppercase tracking-widest text-slate-500">Connecting...</span>
+            <span class="header-live-text text-[9px] font-black uppercase tracking-widest text-slate-500 hidden sm:inline">Live</span>
         </div>
-        <div class="flex items-center gap-4 border-l border-slate-200 dark:border-slate-800 pl-6">
-            <span id="header-last-update" class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Upd: --:--</span>
-            <div id="header-market-status" class="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest"></div>
+        <!-- EU/US market dots -->
+        <div class="flex items-center gap-2 shrink-0">
+            <div class="flex items-center gap-1.5">
+                <span class="text-[9px] font-bold text-slate-400 uppercase">EU</span>
+                <span id="market-dot-eu" class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <span class="text-[9px] font-bold text-slate-400 uppercase">US</span>
+                <span id="market-dot-us" class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+            </div>
         </div>
-        <div class="h-4 w-px bg-slate-200 dark:bg-slate-700"></div>
-        <div id="header-indices" class="flex items-center gap-2"></div>
     </div>
-    <div class="flex items-center gap-4">
-        <div class="flex items-center gap-2">
-            <!-- Notifications Bell -->
-            <a href="/notifications" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all shadow-sm relative" title="Notifications">
-                <span class="material-symbols-outlined text-sm">notifications</span>
-                <span id="header-notif-badge" class="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900" style="display: none;">0</span>
-            </a>
-            <!-- Privacy Toggle -->
-            <button onclick="togglePrivacy()" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all shadow-sm" title="Toggle Privacy">
-                <span class="material-symbols-outlined text-sm" id="header-privacy-icon">visibility</span>
-            </button>
-            <!-- Theme Toggle -->
-            <button onclick="toggleTheme()" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all shadow-sm" title="Toggle Theme">
-                <span class="material-symbols-outlined text-sm" id="header-theme-icon">dark_mode</span>
-            </button>
-        </div>
+
+    <!-- CENTER: Portfolio Daily Gain -->
+    <div id="header-portfolio-var" class="flex items-center"></div>
+
+    <!-- RIGHT: actions + user -->
+    <div class="flex items-center gap-3 shrink-0">
+        <!-- Notifications Bell -->
+        <a href="/notifications" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all shadow-sm relative" title="Notifications">
+            <span class="material-symbols-outlined text-sm">notifications</span>
+            <span id="header-notif-badge" class="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900" style="display: none;">0</span>
+        </a>
+        <!-- Privacy Toggle -->
+        <button onclick="togglePrivacy()" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all shadow-sm" title="Toggle Privacy">
+            <span class="material-symbols-outlined text-sm" id="header-privacy-icon">visibility</span>
+        </button>
+        <!-- Theme Toggle -->
+        <button onclick="toggleTheme()" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all shadow-sm" title="Toggle Theme">
+            <span class="material-symbols-outlined text-sm" id="header-theme-icon">dark_mode</span>
+        </button>
+        <!-- Mobile View Toggle -->
+        <button onclick="toggleMobileView()" class="layout-toggle-btn w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all shadow-sm" title="Toggle Mobile View">
+            <span class="material-symbols-outlined text-sm">smartphone</span>
+        </button>
         <div class="text-right hidden sm:block">
             <p class="text-xs font-bold" id="header-user-name">User</p>
             <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter" id="header-user-role">M2T</p>

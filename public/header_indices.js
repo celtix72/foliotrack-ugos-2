@@ -16,7 +16,7 @@
     ];
 
     const STORAGE_KEY   = 'ft_header_indices';
-    const CONTAINER_ID  = 'header-indices';
+    const CONTAINER_ID  = 'sidebar-indices';
     const MODAL_ID      = 'indices-config-modal';
     const REFRESH_MS    = 60_000;
 
@@ -59,24 +59,44 @@
         if (!container) return;
 
         const config = getConfig();
-        container.innerHTML = config.map(({ ticker, label }) => {
+        container.innerHTML = `
+            <div class="flex items-center justify-between px-1 mb-2">
+                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400/80">Market Indices</p>
+                <button id="idx-gear-btn" title="Configura indici" class="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-primary transition-colors flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[14px]">settings</span>
+                </button>
+            </div>
+        ` + config.map(({ ticker, label }) => {
             const d = dataMap[ticker];
             if (!d) {
-                return `<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 opacity-50">
-                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">${label}</span>
-                    <span class="text-[9px] text-slate-400 font-mono">—</span>
+                return `<div class="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-all border border-transparent">
+                    <div class="flex flex-col overflow-hidden">
+                        <span class="text-[11px] font-black leading-tight truncate text-slate-500">${label}</span>
+                    </div>
+                    <div class="text-right flex flex-col items-end">
+                        <p class="text-[11px] font-black font-mono text-slate-400">—</p>
+                    </div>
                 </div>`;
             }
             const pos   = d.changePercent >= 0;
             const color = pos ? 'text-emerald-500' : 'text-rose-500';
-            const bg    = pos ? 'border-emerald-500/20' : 'border-rose-500/20';
             return `
-            <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-default" title="${d.name}">
-                <span class="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest whitespace-nowrap">${label}</span>
-                <span class="text-[10px] font-black font-mono text-slate-800 dark:text-slate-100 whitespace-nowrap">${fmtPrice(d.price, d.currency)}</span>
-                <span class="text-[9px] font-black ${color} whitespace-nowrap">${fmtPct(d.changePercent)}</span>
+            <div class="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/60 group relative transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-800 shadow-sm hover:shadow-md cursor-default" title="${d.name}">
+                <div class="flex flex-col overflow-hidden">
+                    <span class="text-[11px] font-black leading-tight truncate max-w-[80px] text-slate-900 dark:text-white">${label}</span>
+                    <span class="text-[9px] text-slate-500 truncate max-w-[80px] font-bold">${d.ticker}</span>
+                </div>
+                <div class="text-right flex flex-col items-end">
+                    <p class="text-[11px] font-black font-mono leading-none mb-1">${fmtPrice(d.price, d.currency)}</p>
+                    <p class="text-[10px] font-black font-mono ${color}">
+                        ${fmtPct(d.changePercent)}
+                    </p>
+                </div>
             </div>`;
         }).join('');
+
+        // Re-attach listener since we re-rendered the button
+        document.getElementById('idx-gear-btn')?.addEventListener('click', buildModal);
     }
 
     // ─── Fetch ──────────────────────────────────────────────────────────────────
@@ -166,35 +186,14 @@
     }
 
     // ─── Inject gear button ─────────────────────────────────────────────────────
-    function injectGearButton() {
-        const container = document.getElementById(CONTAINER_ID);
-        if (!container || container.nextElementSibling?.id === 'idx-gear-btn') return;
-        const btn = document.createElement('button');
-        btn.id = 'idx-gear-btn';
-        btn.title = 'Configura indici';
-        btn.className = 'w-6 h-6 flex items-center justify-center text-slate-400 hover:text-primary transition-colors';
-        btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">settings</span>';
-        btn.addEventListener('click', buildModal);
-        container.insertAdjacentElement('afterend', btn);
-    }
+    // Removed because the button is now injected directly in render()
 
     // ─── Public API ─────────────────────────────────────────────────────────────
     window.openIndicesConfigModal = buildModal;
 
     // ─── Init ───────────────────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
-        // Render loading state
-        const container = document.getElementById(CONTAINER_ID);
-        if (!container) return;
-        const config = getConfig();
-        container.innerHTML = config.map(c =>
-            `<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 opacity-40">
-                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">${c.label}</span>
-                <span class="text-[9px] text-slate-400 font-mono">···</span>
-            </div>`
-        ).join('');
-
-        injectGearButton();
+        // Render loading state is handled by theme.js or first fetch
         fetchIndices();
         setInterval(fetchIndices, REFRESH_MS);
     });

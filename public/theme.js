@@ -365,49 +365,13 @@
                 </div>`;
             }
 
-            // 3. Watchlist Section
-            if (watchlist && watchlist.length >= 0) {
-                html += `
-                <div class="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800/60">
-                    <div class="flex items-center justify-between px-1">
-                        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400/80">Watchlist</p>
-                        <button onclick="toggleWatchlistSearch()" class="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-primary transition-colors">
-                            <span class="material-symbols-outlined text-sm">add</span>
-                        </button>
-                    </div>
-                    
-                    <!-- Search Container -->
-                    <div id="watchlist-search-container" class="hidden space-y-2">
-                        <div class="relative">
-                            <input type="text" id="watchlist-search-input" 
-                                   placeholder="Ticker or Name..." 
-                                   class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-[10px] focus:outline-none focus:ring-2 focus:ring-primary/20"
-                                   onkeyup="searchAssetsWatchlist(this.value)">
-                            <button onclick="toggleWatchlistSearch()" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-rose-500">
-                                <span class="material-symbols-outlined text-xs">close</span>
-                            </button>
-                        </div>
-                        <div id="watchlist-search-results" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden hidden shadow-2xl max-h-48 overflow-y-auto custom-scrollbar"></div>
-                    </div>
+            // 3. Market Indices Section
+            html += `
+            <div id="sidebar-indices" class="space-y-1.5 pt-4 border-t border-slate-100 dark:border-slate-800/60">
+                <!-- Injected by header_indices.js -->
+            </div>
+            `;
 
-                    <div class="space-y-1">`
-                + (watchlist.length === 0 ? `<p class="px-1 text-[10px] text-slate-500 italic">No assets pinned.</p>` : watchlist.map(a => `
-                    <div class="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/60 group relative transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-800 shadow-sm hover:shadow-md">
-                        <div class="flex flex-col overflow-hidden">
-                            <span class="text-[11px] font-black leading-tight truncate max-w-[80px] text-slate-900 dark:text-white">${a.ticker}</span>
-                            <span class="text-[9px] text-slate-500 truncate max-w-[80px] font-bold">${a.name}</span>
-                        </div>
-                        <div class="text-right flex flex-col items-end">
-                            <p class="text-[11px] font-black font-mono leading-none mb-1">${formatCurrency(a.currentPrice, a.currency || 'USD', 2)}</p>
-                            <p class="text-[10px] font-black font-mono ${a.changePercent >= 0 ? 'text-emerald-500' : 'text-rose-500'}">
-                                ${a.changePercent >= 0 ? '+' : ''}${a.changePercent.toFixed(2)}%
-                            </p>
-                        </div>
-                        <button onclick="removeFromWatchlist('${a.ticker}', ${!!a.hasPosition})" class="absolute -right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-500 transition-all">
-                            <span class="material-symbols-outlined text-xs">close</span>
-                        </button>
-                    </div>`).join('')) + `</div></div>`;
-            }
             html += '</div>';
             container.innerHTML = html;
         } finally { _sidebarLoading = false; }
@@ -639,12 +603,16 @@
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => { 
+            const dEl = document.getElementById('header-date');
+            if (dEl) dEl.innerText = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
             updateSidebarContents(); 
             updateNotifications(); 
             updateMarketStatusUI();
             injectSidebarToggle();
         });
     } else {
+        const dEl = document.getElementById('header-date');
+        if (dEl) dEl.innerText = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
         updateSidebarContents();
         updateNotifications();
         updateMarketStatusUI();
@@ -672,8 +640,10 @@
         const mobDotEU = document.getElementById('mob-dot-eu');
         const mobDotUS = document.getElementById('mob-dot-us');
         const mobMarketStatus = document.getElementById('mob-market-status');
+        const headerDotEU = document.getElementById('market-dot-eu');
+        const headerDotUS = document.getElementById('market-dot-us');
         
-        if (!liveIndicator && !updateLabel && !marketStatus && !portfolioVar && !mobDotEU && !mobMarketStatus) return;
+        if (!liveIndicator && !updateLabel && !marketStatus && !portfolioVar && !mobDotEU && !mobMarketStatus && !headerDotEU && !headerDotUS) return;
 
         try {
             // 1. Market Status
@@ -739,6 +709,13 @@
                         <span class="font-black">US</span>
                     </div>
                 `;
+            }
+
+            if (headerDotEU && headerDotUS) {
+                const euOpen = status.EU;
+                const usOpen = status.US;
+                headerDotEU.className = `w-1.5 h-1.5 rounded-full ${euOpen ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-300 dark:bg-slate-700'}`;
+                headerDotUS.className = `w-1.5 h-1.5 rounded-full ${usOpen ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-300 dark:bg-slate-700'}`;
             }
 
             // --- Mobile Market Dots & Pillars Injection ---
