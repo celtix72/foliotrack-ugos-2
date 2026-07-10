@@ -243,6 +243,8 @@ body.mobile-view-active #mobile-ui {
   letter-spacing: -0.3px;
   min-width: 65px;
   text-align: center;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
 }
 
 /* Notification Badge */

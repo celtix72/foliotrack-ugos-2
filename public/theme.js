@@ -249,6 +249,19 @@
                 display: flex; align-items: center; gap: 4px;
                 font-size: 15px; font-weight: 900; letter-spacing: -0.5px;
                 margin-right: 12px;
+                background: rgba(0,0,0,0.22);
+            }
+            /* Variation Pill */
+            .mob-header-var-pill {
+              padding: 6px 12px;
+              border-radius: 12px;
+              font-size: 15px;
+              font-weight: 900;
+              letter-spacing: -0.3px;
+              min-width: 65px;
+              text-align: center;
+              background: rgba(255,255,255,0.06);
+              border: 1px solid rgba(255,255,255,0.10);
             }
         `;
     }
@@ -779,9 +792,9 @@
             // --- Mobile Var Pill Redesign ---
             let mobVar = document.getElementById('mob-header-var-day');
             if (mobVar) {
-                const bg = isPos ? 'rgba(16,185,129,0.1)' : 'rgba(244,63,94,0.1)';
-                const color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-                const border = isPos ? 'rgba(16,185,129,0.2)' : 'rgba(244,63,94,0.2)';
+                const bg = isPos ? 'rgba(16,185,129,0.22)' : 'rgba(244,63,94,0.22)';
+                const color = isPos ? '#34d399' : '#fb7185';
+                const border = isPos ? 'rgba(16,185,129,0.45)' : 'rgba(244,63,94,0.45)';
                 mobVar.style.backgroundColor = bg;
                 mobVar.style.color = color;
                 mobVar.style.border = `1px solid ${border}`;
