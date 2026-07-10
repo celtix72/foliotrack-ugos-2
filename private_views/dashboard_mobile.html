@@ -85,7 +85,7 @@
       <div class="flex items-baseline gap-2 mb-4">
         <div class="mob-hero-value" id="mob-total-net" style="font-size: 28px;">€ 0</div>
         <div class="text-[14px] font-bold text-slate-500 opacity-80" id="mob-total-gross">(€ 0)</div>
-        <div id="mob-day-var" class="ml-auto px-2 py-0.5 rounded-lg text-[10px] font-black shadow-sm hidden"></div>
+        <div id="mob-day-var" class="ml-auto px-2 py-0.5 rounded-lg text-[13px] font-black shadow-sm hidden"></div>
       </div>
       <div class="flex justify-between items-center mb-2 mt-4">
         <span class="text-[11px] font-black uppercase text-slate-500 tracking-widest opacity-0">Rank</span>
@@ -367,7 +367,7 @@
           if (varEl) {
               const totalMove = metrics.changeReg + metrics.changePP;
               const isPos = totalMove >= 0;
-              varEl.className = `ml-auto px-2 py-0.5 rounded-lg text-[10px] font-black shadow-sm ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`;
+              varEl.className = `ml-auto px-2 py-0.5 rounded-lg text-[13px] font-black shadow-sm ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`;
               
               const formattedReg = formatPrivacy(metrics.changeReg, 'EUR', 'mob-var');
               const formattedPP = formatPrivacy(metrics.changePP, 'EUR', 'mob-pp-var');
@@ -380,7 +380,7 @@
                   
                   let html = `${signReg}${formattedReg}`;
                   if (metrics.changePP !== 0) {
-                      html += ` <span class="opacity-80 text-[8px] ml-1">(${signPP}${formattedPP})</span>`;
+                      html += ` <span class="opacity-80 text-[11px] ml-1">(${signPP}${formattedPP})</span>`;
                   }
                   varEl.innerHTML = html;
               }
