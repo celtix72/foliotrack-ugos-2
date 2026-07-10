@@ -2157,7 +2157,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                 for (const t of dayTx) {
                     const amount = t.amount || 0;
                     
-                    if (['BUY', 'SELL', 'DIVIDEND', 'DEPOSIT', 'WITHDRAWAL'].includes(t.type)) {
+                    if (['BUY', 'SELL', 'DIVIDEND', 'DEPOSIT', 'WITHDRAWAL', 'TRANSFER'].includes(t.type)) {
                         const ticker = t.assetTicker || 'CASH';
                         const assetMeta = assetMetadataCache[ticker] || { name: ticker };
                         dayEvents.push({ 
@@ -2262,7 +2262,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                     if (t.type === 'BUY' && t.assetTicker && price > 0) {
                         state.lastBuyPrices[t.assetTicker] = price;
                     }
-                    if (['BUY', 'SELL', 'DIVIDEND', 'DEPOSIT', 'WITHDRAWAL'].includes(t.type)) {
+                    if (['BUY', 'SELL', 'DIVIDEND', 'DEPOSIT', 'WITHDRAWAL', 'TRANSFER'].includes(t.type)) {
                         const tickerForEvent = t.assetTicker || 'CASH';
                         const assetMeta = assetMetadataCache[tickerForEvent] || { name: tickerForEvent };
                         dayEvents.push({ 

@@ -664,7 +664,22 @@
                                   const delta = (_mobChartDataPoints[idx].value || 0) - (_mobChartDataPoints[0].value || 0);
                                   const pct = _mobChartDataPoints[0].value ? (delta / _mobChartDataPoints[0].value) * 100 : 0;
                                   const sign = delta >= 0 ? '+' : '';
-                                  return ['', `Δ da inizio: ${sign}${formatCurrency(delta,'EUR',0)} (${sign}${pct.toFixed(2)}%)`];
+                                  const lines = ['', `Δ da inizio: ${sign}${formatCurrency(delta,'EUR',0)} (${sign}${pct.toFixed(2)}%)`];
+                                  const events = _mobChartDataPoints[idx].events || [];
+                                  const cashflowEvents = events.filter(e => ['DEPOSIT', 'WITHDRAWAL', 'TRANSFER'].includes(e.type));
+                                  if (cashflowEvents.length > 0) {
+                                      lines.push('');
+                                      lines.push('--- Movimenti ---');
+                                      cashflowEvents.forEach(e => {
+                                          let t = e.type;
+                                          let amtSign = e.amount >= 0 ? '+' : '-';
+                                          if (e.type === 'DEPOSIT') { t = 'Deposito'; amtSign = '+'; }
+                                          else if (e.type === 'WITHDRAWAL') { t = 'Prelievo'; amtSign = '-'; }
+                                          else if (e.type === 'TRANSFER') { t = 'Trasferimento'; }
+                                          lines.push(`${t}: ${amtSign}${formatCurrency(Math.abs(e.amount || 0), 'EUR', 0)}`);
+                                      });
+                                  }
+                                  return lines;
                               }
                           }
                       },
