@@ -549,8 +549,8 @@ app.use('/api/history', require('./routes/history')({
 
 // ─── MARKET STATUS LOGIC ─────────────────────────────────────────────────────
 const MARKET_HOURS = {
-    MIL: { open: '09:00', close: '17:30', name: 'Borsa Italiana' },
-    GER: { open: '09:00', close: '17:30', name: 'XETRA' },
+    MIL: { open: '09:05', close: '17:30', name: 'Borsa Italiana' },
+    GER: { open: '09:05', close: '17:30', name: 'XETRA' },
     USA: { open: '15:30', close: '22:00', name: 'NYSE/NASDAQ' }
 };
 
