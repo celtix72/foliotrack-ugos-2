@@ -2078,7 +2078,13 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                     break;
                 }
                 case 'TAX':        portfolioStates[p.id].cash -= effectAmt; break;
-                case 'TRANSFER':   portfolioStates[p.id].cash -= effectAmt; portfolioStates[p.id].netDeposits -= effectAmt; break;
+                case 'TRANSFER': {
+                    portfolioStates[p.id].cash -= effectAmt;
+                    portfolioStates[p.id].netDeposits -= effectAmt;
+                    const rateOnDate = (p.currency === 'USD') ? getUsdRate(t.date) : 1;
+                    portfolioStates[p.id].netDepositsEUR -= effectAmt / rateOnDate;
+                    break;
+                }
                 case 'DIVIDEND': {
                     const divAmt = amount ? amount : (Math.abs(amount || (qty * price - comm - tax))) / fx;
                     portfolioStates[p.id].cash += divAmt; 
