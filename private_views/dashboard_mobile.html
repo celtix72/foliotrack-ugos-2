@@ -842,7 +842,12 @@
               return (d.events && d.events.some(e => ['DEPOSIT', 'WITHDRAWAL', 'TRANSFER'].includes(e.type))) ? 4 : 0;
           });
           mobPerfChart.data.datasets[0].pointBackgroundColor = points.map(d => {
-              return (d.events && d.events.some(e => ['DEPOSIT', 'WITHDRAWAL', 'TRANSFER'].includes(e.type))) ? '#f59e0b' : (isPos ? '#135bec' : '#f43f5e');
+              if (d.events) {
+                  if (d.events.some(e => e.type === 'DEPOSIT')) return '#10b981'; // Green
+                  if (d.events.some(e => e.type === 'WITHDRAWAL')) return '#f43f5e'; // Red
+                  if (d.events.some(e => e.type === 'TRANSFER')) return '#3b82f6'; // Blue
+              }
+              return (isPos ? '#135bec' : '#f43f5e');
           });
 
           mobPerfChart.data.datasets[1].hidden = true;
