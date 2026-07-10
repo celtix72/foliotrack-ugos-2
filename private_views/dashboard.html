@@ -1385,30 +1385,30 @@
                     return buildChartGradient(c, chartArea, isPos);
                 };
 
-                if (benchmark && dataPoints[0]?.benchmarkNormalized !== undefined) {
+                if (benchmark && dataPoints[0]?.benchmarkProfit !== undefined) {
                     dashboardChart.data.datasets[2].label = benchmark;
-                    dashboardChart.data.datasets[2].data = dataPoints.map(d => d.benchmarkNormalized);
+                    dashboardChart.data.datasets[2].data = dataPoints.map(d => d.benchmarkProfit);
                     dashboardChart.data.datasets[2].hidden = false;
-                    dashboardChart.data.datasets[2].yAxisID = 'y';
+                    dashboardChart.data.datasets[2].yAxisID = 'y1';
                 } else {
                     dashboardChart.data.datasets[2].hidden = true;
                 }
 
-                const sp500Data = dataPoints.map(d => d.sp500Normalized);
+                const sp500Data = dataPoints.map(d => d.sp500Profit);
                 const hasSp500 = sp500Data.some(v => v != null && v !== 0);
                 dashboardChart.data.datasets[3].label = 'S&P 500';
                 dashboardChart.data.datasets[3].data = sp500Data;
                 dashboardChart.data.datasets[3].hidden = !hasSp500;
-                dashboardChart.data.datasets[3].yAxisID = 'y';
+                dashboardChart.data.datasets[3].yAxisID = 'y1';
 
-                const ftseData = dataPoints.map(d => d.ftsemibNormalized);
+                const ftseData = dataPoints.map(d => d.ftsemibProfit);
                 const hasFtse = ftseData.some(v => v != null && v !== 0);
                 dashboardChart.data.datasets[4].label = 'FTSE MIB';
                 dashboardChart.data.datasets[4].data = ftseData;
                 dashboardChart.data.datasets[4].hidden = !hasFtse;
-                dashboardChart.data.datasets[4].yAxisID = 'y';
+                dashboardChart.data.datasets[4].yAxisID = 'y1';
 
-                dashboardChart.options.scales.y.display = true;
+                dashboardChart.options.scales.y.display = false;
                 dashboardChart.options.scales.y1.display = true;
 
                 // Baseline a 0
