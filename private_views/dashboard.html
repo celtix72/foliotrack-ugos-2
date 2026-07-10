@@ -1436,6 +1436,12 @@
                     if (!chartArea) return 'rgba(19,91,236,0.10)';
                     return buildChartGradient(c, chartArea, isPos);
                 };
+                dashboardChart.data.datasets[0].pointRadius = dataPoints.map(d => {
+                    return (d.events && d.events.some(e => ['DEPOSIT', 'WITHDRAWAL', 'TRANSFER'].includes(e.type))) ? 4 : 0;
+                });
+                dashboardChart.data.datasets[0].pointBackgroundColor = dataPoints.map(d => {
+                    return (d.events && d.events.some(e => ['DEPOSIT', 'WITHDRAWAL', 'TRANSFER'].includes(e.type))) ? '#f59e0b' : (isPos ? '#135bec' : '#f43f5e');
+                });
 
                 dashboardChart.data.datasets[1].hidden = true;
 

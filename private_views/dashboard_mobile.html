@@ -838,6 +838,12 @@
               if (!chartArea) return 'transparent';
               return mobBuildGradient(c, chartArea, isPos);
           };
+          mobPerfChart.data.datasets[0].pointRadius = points.map(d => {
+              return (d.events && d.events.some(e => ['DEPOSIT', 'WITHDRAWAL', 'TRANSFER'].includes(e.type))) ? 4 : 0;
+          });
+          mobPerfChart.data.datasets[0].pointBackgroundColor = points.map(d => {
+              return (d.events && d.events.some(e => ['DEPOSIT', 'WITHDRAWAL', 'TRANSFER'].includes(e.type))) ? '#f59e0b' : (isPos ? '#135bec' : '#f43f5e');
+          });
 
           mobPerfChart.data.datasets[1].hidden = true;
 
