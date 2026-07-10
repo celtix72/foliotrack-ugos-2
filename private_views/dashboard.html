@@ -1370,11 +1370,30 @@
                     return buildChartGradient(c, chartArea, isPos);
                 };
 
-                dashboardChart.data.datasets[2].hidden = true;
-                dashboardChart.data.datasets[3].hidden = true;
-                dashboardChart.data.datasets[4].hidden = true;
+                if (benchmark && dataPoints[0]?.benchmarkNormalized !== undefined) {
+                    dashboardChart.data.datasets[2].label = benchmark;
+                    dashboardChart.data.datasets[2].data = dataPoints.map(d => d.benchmarkNormalized);
+                    dashboardChart.data.datasets[2].hidden = false;
+                    dashboardChart.data.datasets[2].yAxisID = 'y';
+                } else {
+                    dashboardChart.data.datasets[2].hidden = true;
+                }
 
-                dashboardChart.options.scales.y.display = false;
+                const sp500Data = dataPoints.map(d => d.sp500Normalized);
+                const hasSp500 = sp500Data.some(v => v != null && v !== 0);
+                dashboardChart.data.datasets[3].label = 'S&P 500';
+                dashboardChart.data.datasets[3].data = sp500Data;
+                dashboardChart.data.datasets[3].hidden = !hasSp500;
+                dashboardChart.data.datasets[3].yAxisID = 'y';
+
+                const ftseData = dataPoints.map(d => d.ftsemibNormalized);
+                const hasFtse = ftseData.some(v => v != null && v !== 0);
+                dashboardChart.data.datasets[4].label = 'FTSE MIB';
+                dashboardChart.data.datasets[4].data = ftseData;
+                dashboardChart.data.datasets[4].hidden = !hasFtse;
+                dashboardChart.data.datasets[4].yAxisID = 'y';
+
+                dashboardChart.options.scales.y.display = true;
                 dashboardChart.options.scales.y1.display = true;
 
                 // Baseline a 0
@@ -1405,28 +1424,9 @@
 
                 dashboardChart.data.datasets[1].hidden = true;
 
-                if (benchmark) {
-                    dashboardChart.data.datasets[2].label = benchmark;
-                    dashboardChart.data.datasets[2].data = dataPoints.map(d => d.benchmarkValue);
-                    dashboardChart.data.datasets[2].hidden = false;
-                    dashboardChart.data.datasets[2].yAxisID = 'y';
-                } else {
-                    dashboardChart.data.datasets[2].hidden = true;
-                }
-
-                const sp500Data = dataPoints.map(d => d.sp500Value);
-                const hasSp500 = sp500Data.some(v => v != null && v !== 0);
-                dashboardChart.data.datasets[3].label = 'S&P 500';
-                dashboardChart.data.datasets[3].data = sp500Data;
-                dashboardChart.data.datasets[3].hidden = !hasSp500;
-                dashboardChart.data.datasets[3].yAxisID = 'y';
-
-                const ftseData = dataPoints.map(d => d.ftsemibValue);
-                const hasFtse = ftseData.some(v => v != null && v !== 0);
-                dashboardChart.data.datasets[4].label = 'FTSE MIB';
-                dashboardChart.data.datasets[4].data = ftseData;
-                dashboardChart.data.datasets[4].hidden = !hasFtse;
-                dashboardChart.data.datasets[4].yAxisID = 'y';
+                dashboardChart.data.datasets[2].hidden = true;
+                dashboardChart.data.datasets[3].hidden = true;
+                dashboardChart.data.datasets[4].hidden = true;
 
                 dashboardChart.options.scales.y.display = true;
                 dashboardChart.options.scales.y1.display = false;

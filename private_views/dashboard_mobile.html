@@ -786,10 +786,19 @@
               return mobBuildGradient(c, chartArea, isPos);
           };
 
-          mobPerfChart.data.datasets[2].hidden = true;
-          mobPerfChart.data.datasets[3].hidden = true;
+          const sp500Data = points.map(d => d.sp500Normalized);
+          const hasSp500 = sp500Data.some(v => v != null && v !== 0);
+          mobPerfChart.data.datasets[2].data = sp500Data;
+          mobPerfChart.data.datasets[2].hidden = !hasSp500;
+          mobPerfChart.data.datasets[2].yAxisID = 'y';
 
-          mobPerfChart.options.scales.y.display = false;
+          const ftseData = points.map(d => d.ftsemibNormalized);
+          const hasFtse = ftseData.some(v => v != null && v !== 0);
+          mobPerfChart.data.datasets[3].data = ftseData;
+          mobPerfChart.data.datasets[3].hidden = !hasFtse;
+          mobPerfChart.data.datasets[3].yAxisID = 'y';
+
+          mobPerfChart.options.scales.y.display = true;
           mobPerfChart.options.scales.y1.display = true;
 
           mobPerfChart.options.plugins.annotation.annotations.baseline.yMin = 0;
@@ -817,17 +826,8 @@
 
           mobPerfChart.data.datasets[1].hidden = true;
 
-          const sp500Data = points.map(d => d.sp500Value);
-          const hasSp500 = sp500Data.some(v => v != null && v !== 0);
-          mobPerfChart.data.datasets[2].data = sp500Data;
-          mobPerfChart.data.datasets[2].hidden = !hasSp500;
-          mobPerfChart.data.datasets[2].yAxisID = 'y';
-
-          const ftseData = points.map(d => d.ftsemibValue);
-          const hasFtse = ftseData.some(v => v != null && v !== 0);
-          mobPerfChart.data.datasets[3].data = ftseData;
-          mobPerfChart.data.datasets[3].hidden = !hasFtse;
-          mobPerfChart.data.datasets[3].yAxisID = 'y';
+          mobPerfChart.data.datasets[2].hidden = true;
+          mobPerfChart.data.datasets[3].hidden = true;
 
           mobPerfChart.options.scales.y.display = true;
           mobPerfChart.options.scales.y1.display = false;
