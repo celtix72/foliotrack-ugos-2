@@ -780,11 +780,21 @@
             const sign = (formatted !== '****' && totalMove >= 0) ? '+' : '';
 
             if (portfolioVar) {
+                const signReg = changeReg >= 0 ? '+' : '';
+                const formattedReg = window.formatPrivacy(changeReg, 'EUR', 'h-var-reg', 0);
+                const hasPP = changePP !== 0;
+                const signPP = changePP >= 0 ? '+' : '';
+                const formattedPP = hasPP ? window.formatPrivacy(changePP, 'EUR', 'h-var-pp', 0) : '';
+
+                const pillClass = isPos
+                    ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/25'
+                    : 'bg-rose-500/10 text-rose-500 border-rose-500/25';
+
                 portfolioVar.innerHTML = `
-                    <span class="flex items-center gap-1.5 ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'} font-bold px-3 py-1 rounded-full border ${isPos ? 'border-emerald-500/20' : 'border-rose-500/20'}">
+                    <span class="flex items-center gap-1.5 ${pillClass} font-bold px-3 py-1 rounded-full border">
                         <span class="material-symbols-outlined text-[16px]">${isPos ? 'trending_up' : 'trending_down'}</span>
-                        ${sign}${formatted}
-                        ${changePP !== 0 ? '<span class="text-[10px] opacity-80 ml-0.5" title="Pre/Post Market Inc.">EXT</span>' : ''}
+                        <span class="text-[13px] font-black">${signReg}${formattedReg}</span>
+                        ${hasPP ? `<span class="text-[10px] opacity-75 font-bold">(${signPP}${formattedPP})</span>` : ''}
                     </span>
                  `;
             }
