@@ -185,6 +185,7 @@
                             <th class="px-6 py-4">Year</th>
                             <th class="px-6 py-4">Qty</th>
                             <th class="px-6 py-4 font-mono">PMC</th>
+                            <th class="px-6 py-4 font-mono text-slate-400">Sell Price</th>
                             <th class="px-6 py-4">Proceeds</th>
                             <th class="px-6 py-4">Cost Basis</th>
                             <th class="px-6 py-4 text-right">Realized Gain</th>
@@ -302,6 +303,7 @@
                             <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800"></td>
                             <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800"></td>
                             <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800"></td>
+                            <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800"></td>
                             <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800 font-mono text-[11px] font-bold text-slate-500">
                                 ${formatCurrency(group.totalProceeds, 'EUR', 0)}
                             </td>
@@ -344,8 +346,9 @@
                     <span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-bold">${pos.portfolioName}</span>
                 </td>
                 <td class="px-6 py-4 font-bold text-slate-400 text-xs">${pos.year}</td>
-                <td class="px-6 py-4 font-bold text-xs">${isTrade ? formatNumber(pos.quantity, 2) : '—'}</td>
-                <td class="px-6 py-4 font-mono text-[11px] text-slate-500">${isTrade ? formatCurrency(pos.pmc, 'EUR') + ' <span class="text-slate-400">/ ' + formatCurrency(pos.sellPrice, 'EUR') + '</span>' : '—'}</td>
+                <td class="px-6 py-4 font-bold text-xs">${isTrade ? formatNumber(pos.quantity, 0) : '—'}</td>
+                <td class="px-6 py-4 font-mono text-[11px] text-slate-500">${isTrade ? formatCurrency(pos.pmc, 'EUR') : '—'}</td>
+                <td class="px-6 py-4 font-mono text-[11px] text-slate-500">${isTrade ? formatCurrency(pos.sellPrice, 'EUR') : '—'}</td>
                 <td class="px-6 py-4 font-mono text-xs ${!isTrade ? 'text-' + cashColor + '-600 font-bold' : ''}">
                     ${!isTrade ? cashSign : ''}${formatCurrency(pos.totalProceeds, 'EUR', 0)}
                 </td>
