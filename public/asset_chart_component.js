@@ -1137,7 +1137,7 @@
                         <div class="text-slate-700 dark:text-slate-300" style="font-size: 12px; opacity: 0.9; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 12px; line-height: 1.5;">
                             ${item.reasoning.replace(/\\n/g, ' ').replace(/[*#]/g, '')}
                         </div>
-                        <button onclick="window.openAssetAiDetail('${ticker}', '${item.action}', \`${(item.reasoning || '').replace(/`/g, '\\`').replace(/'/g, "\\'").replace(/"/g, '&quot;')}\`, '${date}')" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid rgba(148,163,184,0.3); background: rgba(148,163,184,0.05); font-size: 11px; font-weight: 900; cursor: pointer; transition: all 0.2s;" class="text-indigo-600 dark:text-indigo-400 hover:bg-slate-200 dark:hover:bg-slate-700">Espandi Dettaglio</button>
+                        <button onclick="window.openAssetAiDetail('${ticker}', '${item.action}', '${encodeURIComponent(item.reasoning || '')}', '${date}')" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid rgba(148,163,184,0.3); background: rgba(148,163,184,0.05); font-size: 11px; font-weight: 900; cursor: pointer; transition: all 0.2s;" class="text-indigo-600 dark:text-indigo-400 hover:bg-slate-200 dark:hover:bg-slate-700">Espandi Dettaglio</button>
                     </div>
                 `;
             }).join('');
@@ -1287,7 +1287,9 @@
         } catch (e) { }
     };
 
-    window.openAssetAiDetail = function (ticker, action, reasoning, date) {
+    window.openAssetAiDetail = function (ticker, action, encodedReasoning, date) {
+        let reasoning = '';
+        try { reasoning = decodeURIComponent(encodedReasoning); } catch(e) { reasoning = encodedReasoning; }
         let detailModal = document.getElementById('chart-ai-detail-modal');
         if (!detailModal) {
             const isDark = document.documentElement.classList.contains('dark');
