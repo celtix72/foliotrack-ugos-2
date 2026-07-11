@@ -139,89 +139,16 @@ async function callAIModel(engine, prompt, keys) {
 
     logger.info(`[AI Iteration] Starting analysis with engine: ${engine}`);
     logger.info(`[AI Prompt] \n${prompt}`);
-    if (baseEngine === 'Qwen') {
-        const apiKey = tier === 'Free' ? keys.qwenApiKeyFree : (keys.qwenApiKeyPay || keys.qwenApiKey || process.env.QWEN_API_KEY);
-        if (!apiKey) throw new Error(`Qwen API Key (${tier}) mancante.`);
-        let res;
-        try {
-            res = await axios.post('https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions', {
-                model: 'qwen-plus',
-                messages: [{ role: 'user', content: prompt }],
-                temperature: 0.1
-            }, {
-                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
-            });
-        } catch (apiErr) {
-            logger.error('[AI API Error (Qwen)]', apiErr.response ? apiErr.response.data : apiErr.message);
-            throw apiErr;
-        }
-        const content = res.data.choices?.[0]?.message?.content || '{}';
-        logger.info(`[AI Response (${engine})] \n${content}`);
-        return { text: content, usage: res.data.usage || {}, modelUsed: 'qwen-plus' };
-    } else if (baseEngine === 'OpenAI') {
-        const apiKey = tier === 'Free' ? keys.openaiApiKeyFree : (keys.openaiApiKeyPay || keys.openaiApiKey || process.env.OPENAI_API_KEY);
-        if (!apiKey) throw new Error(`OpenAI API Key (${tier}) mancante.`);
-        let res;
-        try {
-            res = await axios.post('https://api.openai.com/v1/chat/completions', {
-                model: 'gpt-4o',
-                messages: [{ role: 'user', content: prompt }],
-                temperature: 0.1
-            }, {
-                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
-            });
-        } catch (apiErr) {
-            logger.error('[AI API Error (OpenAI)]', apiErr.response ? apiErr.response.data : apiErr.message);
-            throw apiErr;
-        }
-        const content = res.data.choices?.[0]?.message?.content || '{}';
-        logger.info(`[AI Response (${engine})] \n${content}`);
-        return { text: content, usage: res.data.usage || {}, modelUsed: 'gpt-4o' };
-    } else if (baseEngine === 'Agnes') {
-        const apiKey = tier === 'Free' ? keys.agnesApiKeyFree : (keys.agnesApiKeyPay || keys.agnesApiKey || process.env.AGNES_API_KEY);
-        if (!apiKey) throw new Error(`Agnes API Key (${tier}) mancante.`);
-        let res;
-        try {
-            res = await axios.post('https://apihub.agnes-ai.com/v1/chat/completions', {
-                model: 'agnes-2.0-flash',
-                messages: [{ role: 'user', content: prompt }],
-                temperature: 0.1
-            }, {
-                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
-            });
-        } catch (apiErr) {
-            logger.error('[AI API Error (Agnes)]', apiErr.response ? apiErr.response.data : apiErr.message);
-            throw apiErr;
-        }
-        const content = res.data.choices?.[0]?.message?.content || '{}';
-        logger.info(`[AI Response (${engine})] \n${content}`);
-        return { text: content, usage: res.data.usage || {}, modelUsed: 'agnes-2.0-flash' };
-    } else if (baseEngine === 'Aimlapi') {
-        const apiKey = tier === 'Free' ? keys.aimlapiApiKeyFree : (keys.aimlapiApiKeyPay || keys.aimlapiApiKey || process.env.AIMLAPI_API_KEY);
-        if (!apiKey) throw new Error(`AIML API Key (${tier}) mancante.`);
-        let res;
-        try {
-            res = await axios.post('https://api.aimlapi.com/v1/chat/completions', {
-                model: 'gpt-4o',
-                messages: [{ role: 'user', content: prompt }],
-                temperature: 0.1
-            }, {
-                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
-            });
-        } catch (apiErr) {
-            logger.error('[AI API Error (Aimlapi)]', apiErr.response ? apiErr.response.data : apiErr.message);
-            throw apiErr;
-        }
-        const content = res.data.choices?.[0]?.message?.content || '{}';
-        logger.info(`[AI Response (${engine})] \n${content}`);
-        return { text: content, usage: res.data.usage || {}, modelUsed: 'gpt-4o' };
-    } else if (baseEngine === 'OpenRouter') {
-        const apiKey = tier === 'Free' ? keys.openrouterApiKeyFree : (keys.openrouterApiKeyPay || process.env.OPENROUTER_API_KEY);
-        if (!apiKey) throw new Error(`OpenRouter API Key (${tier}) mancante.`);
+    if (baseEngine === 'OR1' || baseEngine === 'OR2' || baseEngine === 'OR3') {
+        const apiKey = keys.openrouterApiKey || keys.openrouterApiKeyPay || process.env.OPENROUTER_API_KEY;
+        if (!apiKey) throw new Error(`OpenRouter API Key mancante.`);
         
-        const defaultFreeModel = 'meta-llama/llama-3.2-3b-instruct:free';
-        const defaultPayModel = 'google/gemini-1.5-flash';
-        const orModel = tier === 'Free' ? (keys.openrouterModelFree || defaultFreeModel) : (keys.openrouterModelPay || defaultPayModel);
+        let orModel = '';
+        if (baseEngine === 'OR1') orModel = keys.openrouterModel1;
+        if (baseEngine === 'OR2') orModel = keys.openrouterModel2;
+        if (baseEngine === 'OR3') orModel = keys.openrouterModel3;
+        
+        if (!orModel) throw new Error(`Nessun modello configurato per ${baseEngine}. Selezionalo nei Settings dell'amministratore.`);
         
         let res;
         try {

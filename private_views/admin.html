@@ -469,17 +469,9 @@
                             <select id="ai-engine" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-indigo-500 outline-none">
                                 <option value="Gemini_Free">Gemini (Free)</option>
                                 <option value="Gemini_Pay">Gemini (Pay)</option>
-                                <option value="Qwen_Free">Qwen (Free)</option>
-                                <option value="Qwen_Pay">Qwen (Pay)</option>
-                                <option value="OpenAI_Free">OpenAI (Free)</option>
-                                <option value="OpenAI_Pay">OpenAI (Pay)</option>
-                                <option value="Agnes_Free">Agnes AI (Free)</option>
-                                <option value="Agnes_Pay">Agnes AI (Pay)</option>
-                                <option value="Aimlapi_Free">AIML API (Free)</option>
-                                <option value="Aimlapi_Pay">AIML API (Pay)</option>
-                                <option value="OpenRouter_Free">OpenRouter (Free)</option>
-                                <option value="OpenRouter_Pay">OpenRouter (Pay)</option>
-                                <option value="Both">Confronto (Gemini + Qwen)</option>
+                                <option value="OR1">OpenRouter (Modello 1)</option>
+                                <option value="OR2">OpenRouter (Modello 2)</option>
+                                <option value="OR3">OpenRouter (Modello 3)</option>
                             </select>
                             <p class="text-[10px] text-slate-500 mt-1">Scegli quale motore usare per le analisi. "Confronto" userà entrambi per comparare i risultati.</p>
                         </div>
@@ -498,82 +490,36 @@
                                     <input type="password" id="ai-gemini-key-pay" placeholder="AIzaSy..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
                                 </div>
                             </div>
-                            <!-- Qwen -->
-                            <div class="p-3 border border-slate-200 dark:border-slate-800 rounded-lg space-y-3">
-                                <h4 class="text-xs font-black text-slate-700 dark:text-slate-300">Qwen</h4>
-                                <div>
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">API Key (Free)</label>
-                                    <input type="password" id="ai-qwen-key-free" placeholder="sk-..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
-                                </div>
-                                <div>
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">API Key (Pay)</label>
-                                    <input type="password" id="ai-qwen-key-pay" placeholder="sk-..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
-                                </div>
-                            </div>
-                            <!-- OpenAI -->
-                            <div class="p-3 border border-slate-200 dark:border-slate-800 rounded-lg space-y-3">
-                                <h4 class="text-xs font-black text-slate-700 dark:text-slate-300">OpenAI</h4>
-                                <div>
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">API Key (Free)</label>
-                                    <input type="password" id="ai-openai-key-free" placeholder="sk-..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
-                                </div>
-                                <div>
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">API Key (Pay)</label>
-                                    <input type="password" id="ai-openai-key-pay" placeholder="sk-..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
-                                </div>
-                            </div>
-                            <!-- Agnes -->
-                            <div class="p-3 border border-slate-200 dark:border-slate-800 rounded-lg space-y-3">
-                                <h4 class="text-xs font-black text-slate-700 dark:text-slate-300">Agnes</h4>
-                                <div>
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">API Key (Free)</label>
-                                    <input type="password" id="ai-agnes-key-free" placeholder="sk-..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
-                                </div>
-                                <div>
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">API Key (Pay)</label>
-                                    <input type="password" id="ai-agnes-key-pay" placeholder="sk-..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
-                                </div>
-                            </div>
-                            <!-- AIML API -->
-                            <div class="p-3 border border-slate-200 dark:border-slate-800 rounded-lg space-y-3">
-                                <h4 class="text-xs font-black text-slate-700 dark:text-slate-300">AIML API</h4>
-                                <div>
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">API Key (Free)</label>
-                                    <input type="password" id="ai-aimlapi-key-free" placeholder="Key..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
-                                </div>
-                                <div>
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">API Key (Pay)</label>
-                                    <input type="password" id="ai-aimlapi-key-pay" placeholder="Key..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
-                                </div>
-                            </div>
                             <!-- OpenRouter -->
                             <div class="p-3 border border-slate-200 dark:border-slate-800 rounded-lg space-y-3">
                                 <h4 class="text-xs font-black text-slate-700 dark:text-slate-300">OpenRouter</h4>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div class="grid grid-cols-1 sm:grid-cols-1 gap-3">
                                     <div>
-                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">API Key (Free)</label>
-                                        <input type="password" id="ai-openrouter-key-free" placeholder="sk-or-v1-..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">API Key</label>
+                                        <input type="password" id="ai-openrouter-key" placeholder="sk-or-v1-..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 gap-3 mt-2">
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Modello OpenRouter 1 (OR1)</label>
+                                        <select id="ai-openrouter-model-1" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-600 dark:text-slate-400">
+                                            <option value="">Caricamento modelli...</option>
+                                        </select>
                                     </div>
                                     <div>
-                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Modello (Free)</label>
-                                        <select id="ai-openrouter-model-free" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-600 dark:text-slate-400">
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Modello OpenRouter 2 (OR2)</label>
+                                        <select id="ai-openrouter-model-2" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-600 dark:text-slate-400">
+                                            <option value="">Caricamento modelli...</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Modello OpenRouter 3 (OR3)</label>
+                                        <select id="ai-openrouter-model-3" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-600 dark:text-slate-400">
                                             <option value="">Caricamento modelli...</option>
                                         </select>
                                     </div>
                                 </div>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
-                                    <div>
-                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">API Key (Pay)</label>
-                                        <input type="password" id="ai-openrouter-key-pay" placeholder="sk-or-v1-..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
-                                    </div>
-                                    <div>
-                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Modello (Pay)</label>
-                                        <select id="ai-openrouter-model-pay" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-600 dark:text-slate-400">
-                                            <option value="">Caricamento modelli...</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <p class="text-[10px] text-slate-500">I modelli OpenRouter si possono customizzare. Usa <code>google/gemini-1.5-flash</code> o <code>openai/gpt-4o-mini</code> per la versione a pagamento per rispettare fedelmente le istruzioni strutturate (es. Fair Value). Se lasci vuoti verranno usati i default.</p>
+                                <p class="text-[10px] text-slate-500">Scegli fino a 3 modelli tra quelli disponibili su OpenRouter.</p>
                             </div>
                         </div>
 
@@ -1031,23 +977,26 @@
         };
 
         // --- AI Settings ---
-        async function loadOpenRouterModels(savedFree, savedPay) {
+        async function loadOpenRouterModels(saved1, saved2, saved3) {
             try {
                 const res = await fetchAdmin('/api/admin/openrouter-models');
                 if (res && res.models) {
-                    const freeSelect = document.getElementById('ai-openrouter-model-free');
-                    const paySelect = document.getElementById('ai-openrouter-model-pay');
+                    const sel1 = document.getElementById('ai-openrouter-model-1');
+                    const sel2 = document.getElementById('ai-openrouter-model-2');
+                    const sel3 = document.getElementById('ai-openrouter-model-3');
                     
-                    let optionsHtml = '<option value="">(Usa Default)</option>';
+                    let optionsHtml = '<option value="">(Nessun modello)</option>';
                     res.models.forEach(m => {
                         optionsHtml += `<option value="${m.id}">${m.name} (${m.priceLabel})</option>`;
                     });
                     
-                    freeSelect.innerHTML = optionsHtml;
-                    paySelect.innerHTML = optionsHtml;
+                    sel1.innerHTML = optionsHtml;
+                    sel2.innerHTML = optionsHtml;
+                    sel3.innerHTML = optionsHtml;
                     
-                    if (savedFree) freeSelect.value = savedFree;
-                    if (savedPay) paySelect.value = savedPay;
+                    if (saved1) sel1.value = saved1;
+                    if (saved2) sel2.value = saved2;
+                    if (saved3) sel3.value = saved3;
                 }
             } catch(e) {
                 console.error('Failed to load OR models', e);
@@ -1061,19 +1010,10 @@
                     document.getElementById('ai-engine').value = settings.aiEngine || 'Gemini_Free';
                     document.getElementById('ai-gemini-key-free').value = settings.geminiApiKeyFree || '';
                     document.getElementById('ai-gemini-key-pay').value = settings.geminiApiKeyPay || '';
-                    document.getElementById('ai-qwen-key-free').value = settings.qwenApiKeyFree || '';
-                    document.getElementById('ai-qwen-key-pay').value = settings.qwenApiKeyPay || '';
-                    document.getElementById('ai-openai-key-free').value = settings.openaiApiKeyFree || '';
-                    document.getElementById('ai-openai-key-pay').value = settings.openaiApiKeyPay || '';
-                    document.getElementById('ai-agnes-key-free').value = settings.agnesApiKeyFree || '';
-                    document.getElementById('ai-agnes-key-pay').value = settings.agnesApiKeyPay || '';
-                    document.getElementById('ai-aimlapi-key-free').value = settings.aimlapiApiKeyFree || '';
-                    document.getElementById('ai-aimlapi-key-pay').value = settings.aimlapiApiKeyPay || '';
-                    document.getElementById('ai-openrouter-key-free').value = settings.openrouterApiKeyFree || '';
-                    document.getElementById('ai-openrouter-key-pay').value = settings.openrouterApiKeyPay || '';
+                    document.getElementById('ai-openrouter-key').value = settings.openrouterApiKey || '';
                     
                     // Carica i modelli dinamicamente e imposta i valori salvati
-                    await loadOpenRouterModels(settings.openrouterModelFree, settings.openrouterModelPay);
+                    await loadOpenRouterModels(settings.openrouterModel1, settings.openrouterModel2, settings.openrouterModel3);
                     document.getElementById('ai-asset-prompt').value = settings.aiAssetPrompt || '';
                     document.getElementById('ai-portfolio-prompt').value = settings.aiPortfolioPrompt || '';
                     
@@ -1097,18 +1037,10 @@
                     aiEngine: document.getElementById('ai-engine').value,
                     geminiApiKeyFree: document.getElementById('ai-gemini-key-free').value,
                     geminiApiKeyPay: document.getElementById('ai-gemini-key-pay').value,
-                    qwenApiKeyFree: document.getElementById('ai-qwen-key-free').value,
-                    qwenApiKeyPay: document.getElementById('ai-qwen-key-pay').value,
-                    openaiApiKeyFree: document.getElementById('ai-openai-key-free').value,
-                    openaiApiKeyPay: document.getElementById('ai-openai-key-pay').value,
-                    agnesApiKeyFree: document.getElementById('ai-agnes-key-free').value,
-                    agnesApiKeyPay: document.getElementById('ai-agnes-key-pay').value,
-                    aimlapiApiKeyFree: document.getElementById('ai-aimlapi-key-free').value,
-                    aimlapiApiKeyPay: document.getElementById('ai-aimlapi-key-pay').value,
-                    openrouterApiKeyFree: document.getElementById('ai-openrouter-key-free').value,
-                    openrouterApiKeyPay: document.getElementById('ai-openrouter-key-pay').value,
-                    openrouterModelFree: document.getElementById('ai-openrouter-model-free').value,
-                    openrouterModelPay: document.getElementById('ai-openrouter-model-pay').value,
+                    openrouterApiKey: document.getElementById('ai-openrouter-key').value,
+                    openrouterModel1: document.getElementById('ai-openrouter-model-1').value,
+                    openrouterModel2: document.getElementById('ai-openrouter-model-2').value,
+                    openrouterModel3: document.getElementById('ai-openrouter-model-3').value,
                     aiAssetPrompt: document.getElementById('ai-asset-prompt').value,
                     aiPortfolioPrompt: document.getElementById('ai-portfolio-prompt').value
                 };

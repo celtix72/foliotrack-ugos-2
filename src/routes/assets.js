@@ -1193,50 +1193,15 @@ NB:
         let usage = {};
 
         try {
-            if (engine === 'Both') {
-                sendEvent('progress', { message: 'Generazione in corso (Gemini + Qwen)...' });
-                const [geminiRes, qwenRes] = await Promise.allSettled([
-                    callAIModel('Gemini', prompt, globalSettings),
-                    callAIModel('Qwen', prompt, globalSettings)
-                ]);
-
-                let geminiText = "{}";
-                if (geminiRes.status === 'fulfilled') {
-                    geminiText = geminiRes.value.text;
-                    tokensUsed += (geminiRes.value.usage.totalTokenCount || 0);
-                }
-
-                let qwenText = "{}";
-                if (qwenRes.status === 'fulfilled') {
-                    qwenText = qwenRes.value.text;
-                    // Qwen tokens approximation or tracking if provided
-                    tokensUsed += (qwenRes.value.usage.total_tokens || 0);
-                }
-
-                let parsedGemini = {};
-                let parsedQwen = {};
-                
-                parsedGemini = parseAIResponse(geminiText);
-                
-                parsedQwen = parseAIResponse(qwenText);
-
-                parsedResponse = {
-                    action: parsedGemini.action || parsedQwen.action || 'HOLD',
-                    targetProfit: parsedGemini.targetProfit || parsedQwen.targetProfit || 0,
-                    stopLoss: parsedGemini.stopLoss || parsedQwen.stopLoss || 0,
-                    reasoning: `${fontiDatiStr}### Analisi prodotta da Gemini (${geminiRes.value?.modelUsed || 'N/D'})\n\n${parsedGemini.reasoning || 'Nessuna risposta valida da Gemini.'}\n\n---\n\n### Analisi prodotta da Qwen (${qwenRes.value?.modelUsed || 'N/D'})\n\n${parsedQwen.reasoning || 'Nessuna risposta valida da Qwen.'}`
-                };
-
-            } else {
-                sendEvent('progress', { message: `Generazione responso IA in corso tramite ${engine}...` });
-                const res = await callAIModel(engine, prompt, globalSettings);
-                const rawText = res.text;
-                tokensUsed = res.usage.totalTokenCount || res.usage.total_tokens || 0;
-                usage = res.usage;
-                
-                parsedResponse = parseAIResponse(rawText);
-                parsedResponse.reasoning = `${fontiDatiStr}### Analisi prodotta da ${engine} (${res.modelUsed || 'N/D'})\n\n` + (parsedResponse.reasoning || '');
-            }
+        try {
+            sendEvent('progress', { message: `Generazione responso IA in corso tramite ${engine}...` });
+            const res = await callAIModel(engine, prompt, globalSettings);
+            const rawText = res.text;
+            tokensUsed = res.usage.totalTokenCount || res.usage.total_tokens || 0;
+            usage = res.usage;
+            
+            parsedResponse = parseAIResponse(rawText);
+            parsedResponse.reasoning = `${fontiDatiStr}### Analisi prodotta da ${engine} (${res.modelUsed || 'N/D'})\n\n` + (parsedResponse.reasoning || '');
         } catch (e) {
             console.error('Failed to parse AI JSON response or execute model:', e);
             throw e;

@@ -60,34 +60,25 @@ module.exports = function (dependencies) {
             
             if (settings.geminiApiKeyFree) available.push('Gemini_Free');
             if (settings.geminiApiKeyPay || settings.geminiApiKey || process.env.GEMINI_API_KEY) available.push('Gemini_Pay');
-            if (settings.qwenApiKeyFree) available.push('Qwen_Free');
-            if (settings.qwenApiKeyPay || settings.qwenApiKey || process.env.QWEN_API_KEY) available.push('Qwen_Pay');
-            if (settings.openaiApiKeyFree) available.push('OpenAI_Free');
-            if (settings.openaiApiKeyPay || settings.openaiApiKey || process.env.OPENAI_API_KEY) available.push('OpenAI_Pay');
-            if (settings.agnesApiKeyFree) available.push('Agnes_Free');
-            if (settings.agnesApiKeyPay || settings.agnesApiKey || process.env.AGNES_API_KEY) available.push('Agnes_Pay');
-            if (settings.aimlapiApiKeyFree) available.push('Aimlapi_Free');
-            if (settings.aimlapiApiKeyPay || process.env.AIMLAPI_API_KEY) available.push('Aimlapi_Pay');
             
-            if (settings.openrouterApiKeyFree) available.push('OpenRouter_Free');
-            if (settings.openrouterApiKeyPay || process.env.OPENROUTER_API_KEY) available.push('OpenRouter_Pay');
-            
-            const hasGemini = available.some(e => e.startsWith('Gemini'));
-            const hasQwen = available.some(e => e.startsWith('Qwen'));
-            if (hasGemini && hasQwen) {
-                available.push('Both');
+            const orKey = settings.openrouterApiKey || settings.openrouterApiKeyPay || process.env.OPENROUTER_API_KEY;
+            if (orKey) {
+                if (settings.openrouterModel1) available.push('OR1');
+                if (settings.openrouterModel2) available.push('OR2');
+                if (settings.openrouterModel3) available.push('OR3');
             }
             
             const enginesWithLabels = available.map(e => {
-                let label = e.replace(/_(Free|Pay)/, ' ($1)');
-                if (e === 'Both') label = 'Gemini + Qwen';
+                let label = e;
+                if (e === 'Gemini_Free') label = 'Gemini (Free)';
+                if (e === 'Gemini_Pay') label = 'Gemini (Pay)';
                 
-                if (e === 'OpenRouter_Free') {
-                    const model = settings.openrouterModelFree || 'meta-llama/llama-3.2-3b-instruct:free';
-                    label += ` [${model}]`;
-                } else if (e === 'OpenRouter_Pay') {
-                    const model = settings.openrouterModelPay || 'google/gemini-1.5-flash';
-                    label += ` [${model}]`;
+                if (e === 'OR1') {
+                    label = `OpenRouter 1 [${settings.openrouterModel1}]`;
+                } else if (e === 'OR2') {
+                    label = `OpenRouter 2 [${settings.openrouterModel2}]`;
+                } else if (e === 'OR3') {
+                    label = `OpenRouter 3 [${settings.openrouterModel3}]`;
                 }
                 
                 return { id: e, label };
@@ -107,18 +98,10 @@ module.exports = function (dependencies) {
                 aiEngine: settings.aiEngine || 'Gemini_Free',
                 geminiApiKeyFree: settings.geminiApiKeyFree || '',
                 geminiApiKeyPay: settings.geminiApiKeyPay || settings.geminiApiKey || '',
-                qwenApiKeyFree: settings.qwenApiKeyFree || '',
-                qwenApiKeyPay: settings.qwenApiKeyPay || settings.qwenApiKey || '',
-                openaiApiKeyFree: settings.openaiApiKeyFree || '',
-                openaiApiKeyPay: settings.openaiApiKeyPay || settings.openaiApiKey || '',
-                agnesApiKeyFree: settings.agnesApiKeyFree || '',
-                agnesApiKeyPay: settings.agnesApiKeyPay || '',
-                aimlapiApiKeyFree: settings.aimlapiApiKeyFree || '',
-                aimlapiApiKeyPay: settings.aimlapiApiKeyPay || '',
-                openrouterApiKeyFree: settings.openrouterApiKeyFree || '',
-                openrouterApiKeyPay: settings.openrouterApiKeyPay || '',
-                openrouterModelFree: settings.openrouterModelFree || '',
-                openrouterModelPay: settings.openrouterModelPay || '',
+                openrouterApiKey: settings.openrouterApiKey || settings.openrouterApiKeyPay || '',
+                openrouterModel1: settings.openrouterModel1 || '',
+                openrouterModel2: settings.openrouterModel2 || '',
+                openrouterModel3: settings.openrouterModel3 || '',
                 tavilyApiKey: settings.tavilyApiKey || '',
                 aiAssetPrompt: settings.aiAssetPrompt || '',
                 aiPortfolioPrompt: settings.aiPortfolioPrompt || '',
@@ -132,23 +115,15 @@ module.exports = function (dependencies) {
 
     // POST /api/admin/ai-settings
     router.post('/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
-        const { aiEngine, geminiApiKeyFree, geminiApiKeyPay, qwenApiKeyFree, qwenApiKeyPay, openaiApiKeyFree, openaiApiKeyPay, agnesApiKeyFree, agnesApiKeyPay, aimlapiApiKeyFree, aimlapiApiKeyPay, openrouterApiKeyFree, openrouterApiKeyPay, openrouterModelFree, openrouterModelPay, tavilyApiKey, aiAssetPrompt, aiPortfolioPrompt } = req.body;
+        const { aiEngine, geminiApiKeyFree, geminiApiKeyPay, openrouterApiKey, openrouterModel1, openrouterModel2, openrouterModel3, tavilyApiKey, aiAssetPrompt, aiPortfolioPrompt } = req.body;
         try {
             if (aiEngine !== undefined) database.setSetting(1, 'aiEngine', aiEngine);
             if (geminiApiKeyFree !== undefined) database.setSetting(1, 'geminiApiKeyFree', geminiApiKeyFree);
             if (geminiApiKeyPay !== undefined) database.setSetting(1, 'geminiApiKeyPay', geminiApiKeyPay);
-            if (qwenApiKeyFree !== undefined) database.setSetting(1, 'qwenApiKeyFree', qwenApiKeyFree);
-            if (qwenApiKeyPay !== undefined) database.setSetting(1, 'qwenApiKeyPay', qwenApiKeyPay);
-            if (openaiApiKeyFree !== undefined) database.setSetting(1, 'openaiApiKeyFree', openaiApiKeyFree);
-            if (openaiApiKeyPay !== undefined) database.setSetting(1, 'openaiApiKeyPay', openaiApiKeyPay);
-            if (agnesApiKeyFree !== undefined) database.setSetting(1, 'agnesApiKeyFree', agnesApiKeyFree);
-            if (agnesApiKeyPay !== undefined) database.setSetting(1, 'agnesApiKeyPay', agnesApiKeyPay);
-            if (aimlapiApiKeyFree !== undefined) database.setSetting(1, 'aimlapiApiKeyFree', aimlapiApiKeyFree);
-            if (aimlapiApiKeyPay !== undefined) database.setSetting(1, 'aimlapiApiKeyPay', aimlapiApiKeyPay);
-            if (openrouterApiKeyFree !== undefined) database.setSetting(1, 'openrouterApiKeyFree', openrouterApiKeyFree);
-            if (openrouterApiKeyPay !== undefined) database.setSetting(1, 'openrouterApiKeyPay', openrouterApiKeyPay);
-            if (openrouterModelFree !== undefined) database.setSetting(1, 'openrouterModelFree', openrouterModelFree);
-            if (openrouterModelPay !== undefined) database.setSetting(1, 'openrouterModelPay', openrouterModelPay);
+            if (openrouterApiKey !== undefined) database.setSetting(1, 'openrouterApiKey', openrouterApiKey);
+            if (openrouterModel1 !== undefined) database.setSetting(1, 'openrouterModel1', openrouterModel1);
+            if (openrouterModel2 !== undefined) database.setSetting(1, 'openrouterModel2', openrouterModel2);
+            if (openrouterModel3 !== undefined) database.setSetting(1, 'openrouterModel3', openrouterModel3);
             if (tavilyApiKey !== undefined) database.setSetting(1, 'tavilyApiKey', tavilyApiKey);
             if (aiAssetPrompt !== undefined) database.setSetting(1, 'aiAssetPrompt', aiAssetPrompt);
             if (aiPortfolioPrompt !== undefined) database.setSetting(1, 'aiPortfolioPrompt', aiPortfolioPrompt);
