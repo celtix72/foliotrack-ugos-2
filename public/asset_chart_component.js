@@ -1319,9 +1319,10 @@
         let formattedReasoning = reasoning.replace(/\\n/g, '\n');
 
         // Headings
-        formattedReasoning = formattedReasoning.replace(/^### (.*$)/gim, '<h4 class="text-indigo-600 dark:text-indigo-400" style="font-size: 13px; font-weight: 900; margin-top: 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined" style="font-size: 14px;">psychiatry</span> $1</h4>');
-        formattedReasoning = formattedReasoning.replace(/^## (.*$)/gim, '<h3 class="text-indigo-600 dark:text-indigo-400" style="font-size: 14px; font-weight: 900; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid rgba(148,163,184,0.1); padding-bottom: 4px;">$1</h3>');
-        formattedReasoning = formattedReasoning.replace(/^# (.*$)/gim, '<h2 class="text-indigo-600 dark:text-indigo-400" style="font-size: 15px; font-weight: 900; margin-top: 18px; margin-bottom: 10px;">$1</h2>');
+        formattedReasoning = formattedReasoning.replace(/^####\s+(.*$)/gim, '<h5 class="text-indigo-600 dark:text-indigo-400" style="font-size: 12px; font-weight: 900; margin-top: 12px; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em;">$1</h5>');
+        formattedReasoning = formattedReasoning.replace(/^###\s+(.*$)/gim, '<h4 class="text-indigo-600 dark:text-indigo-400" style="font-size: 13px; font-weight: 900; margin-top: 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined" style="font-size: 14px;">psychiatry</span> $1</h4>');
+        formattedReasoning = formattedReasoning.replace(/^##\s+(.*$)/gim, '<h3 class="text-indigo-600 dark:text-indigo-400" style="font-size: 14px; font-weight: 900; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid rgba(148,163,184,0.1); padding-bottom: 4px;">$1</h3>');
+        formattedReasoning = formattedReasoning.replace(/^#\s+(.*$)/gim, '<h2 class="text-indigo-600 dark:text-indigo-400" style="font-size: 15px; font-weight: 900; margin-top: 18px; margin-bottom: 10px;">$1</h2>');
 
         // Bold
         formattedReasoning = formattedReasoning.replace(/\*\*(.*?)\*\*/g, '<strong class="text-indigo-600 dark:text-indigo-400" style="font-weight: 900; background: rgba(148,163,184,0.1); padding: 0 4px; border-radius: 4px;">$1</strong>');
@@ -1330,12 +1331,15 @@
         formattedReasoning = formattedReasoning.replace(/\*(.*?)\*/g, '<em class="text-slate-500 dark:text-slate-400">$1</em>');
 
         // Lists
-        formattedReasoning = formattedReasoning.replace(/^\s*[-*]\s+(.*)$/gim, '<div style="display: flex; gap: 8px; margin-bottom: 6px; padding-left: 4px;"><span class="text-indigo-600 dark:text-indigo-400" style="font-size: 14px; font-weight: 900;">&bull;</span><span style="flex: 1;">$1</span></div>');
-        formattedReasoning = formattedReasoning.replace(/^\s*\d+\.\s+(.*)$/gim, '<div style="display: flex; gap: 8px; margin-bottom: 6px; padding-left: 4px;"><span class="text-indigo-600 dark:text-indigo-400" style="font-size: 14px; font-weight: 900;">&bull;</span><span style="flex: 1;">$1</span></div>');
+        formattedReasoning = formattedReasoning.replace(/^\s*[-*]\s+(.*)$/gim, '<div style="display: flex; align-items: flex-start; gap: 8px; margin-bottom: 4px; padding-left: 4px;"><span class="text-indigo-600 dark:text-indigo-400" style="font-size: 14px; font-weight: 900; line-height: 1.4;">&bull;</span><span style="flex: 1; line-height: 1.4;">$1</span></div>');
+        formattedReasoning = formattedReasoning.replace(/^\s*\d+\.\s+(.*)$/gim, '<div style="display: flex; align-items: flex-start; gap: 8px; margin-bottom: 4px; padding-left: 4px;"><span class="text-indigo-600 dark:text-indigo-400" style="font-size: 14px; font-weight: 900; line-height: 1.4;">&bull;</span><span style="flex: 1; line-height: 1.4;">$1</span></div>');
+
+        // Horizontal Rule
+        formattedReasoning = formattedReasoning.replace(/^\s*---\s*$/gim, '<hr style="border: none; border-top: 1px solid rgba(148,163,184,0.2); margin: 16px 0;">');
 
         // Newlines to BR
-        formattedReasoning = formattedReasoning.replace(/\n\n/g, '<div style="height: 12px;"></div>');
-        formattedReasoning = formattedReasoning.replace(/\n/g, '<br>');
+        formattedReasoning = formattedReasoning.replace(/\n\n/g, '<div style="height: 10px;"></div>');
+        formattedReasoning = formattedReasoning.replace(/\n(?!(<div|<h|<span|<strong|<em|<hr))/g, '<br>');
 
         detailModal.innerHTML = `
             <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800" style="border-radius: 20px; width: 95%; max-width: 600px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
