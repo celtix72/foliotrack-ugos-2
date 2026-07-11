@@ -78,7 +78,22 @@ module.exports = function (dependencies) {
                 available.push('Both');
             }
             
-            res.json({ engines: available, default: settings.aiEngine || 'Gemini_Free' });
+            const enginesWithLabels = available.map(e => {
+                let label = e.replace(/_(Free|Pay)/, ' ($1)');
+                if (e === 'Both') label = 'Gemini + Qwen';
+                
+                if (e === 'OpenRouter_Free') {
+                    const model = settings.openrouterModelFree || 'meta-llama/llama-3.2-3b-instruct:free';
+                    label += ` [${model}]`;
+                } else if (e === 'OpenRouter_Pay') {
+                    const model = settings.openrouterModelPay || 'google/gemini-1.5-flash';
+                    label += ` [${model}]`;
+                }
+                
+                return { id: e, label };
+            });
+            
+            res.json({ engines: enginesWithLabels, default: settings.aiEngine || 'Gemini_Free' });
         } catch (e) {
             res.status(500).json({ error: e.message });
         }

@@ -1033,10 +1033,15 @@
             const select = document.getElementById('ai-modal-engine-select');
             if (select && data.engines) {
                 select.innerHTML = data.engines.map(e => {
-                    let label = e;
-                    if (e === 'Both') label = 'Gemini + Qwen';
-                    else label = e.replace(/_(Free|Pay)/, ' ($1)');
-                    return `<option value="${e}" ${e === data.default ? 'selected' : ''}>${label}</option>`;
+                    const id = typeof e === 'object' ? e.id : e;
+                    let label = typeof e === 'object' ? e.label : e;
+                    
+                    if (typeof e !== 'object') {
+                        if (e === 'Both') label = 'Gemini + Qwen';
+                        else label = e.replace(/_(Free|Pay)/, ' ($1)');
+                    }
+                    
+                    return `<option value="${id}" ${id === data.default ? 'selected' : ''}>${label}</option>`;
                 }).join('');
             }
         }).catch(e => console.error("Error loading engines", e));
