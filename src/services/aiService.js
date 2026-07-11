@@ -23,7 +23,12 @@ async function fetchOpenRouterModels() {
                 if (promptPrice > 15) return false;
                 
                 // Esclude versioni obsolete, vision, roleplay o non adatte ad analisi testuale finanziaria
-                if (/legacy|deprecated|vision|image|roleplay|uncensored|mythomax|nous|openchat|gemma-7b|llama-2|gpt-3\.5|claude-2|claude-instant|pixtral|llava/.test(id)) {
+                if (/legacy|deprecated|vision|image|roleplay|uncensored|mythomax|nous|openchat|gemma|llama-2|gpt-3\.5|claude-2|claude-instant|pixtral|llava|gpt-oss|lyria/.test(id)) {
+                    return false;
+                }
+                
+                // Filtra la maggior parte dei modelli ":free" inaffidabili, salvaguarda Llama, Qwen, DeepSeek
+                if (id.endsWith(':free') && !/llama|qwen|deepseek|mistral/.test(id)) {
                     return false;
                 }
                 
@@ -45,13 +50,17 @@ async function fetchOpenRouterModels() {
                 // Punteggio di rilevanza per ordinamento
                 let score = 0;
                 const id = m.id.toLowerCase();
-                if (isFree) score += 50; 
-                // Flagships / High reasoning
-                if (/gpt-4o(?!-mini)|claude-3\.5-sonnet|gemini-1\.5-pro|gemini-2\.0|llama-3\.3|deepseek-chat|qwen-2\.5-72b|mistral-large/.test(id)) score += 100;
-                // Fast / Mini
-                if (/mini|flash|haiku|8b/.test(id)) score += 30;
-                // Penalizza modelli troppo vecchi ma non catturati dal regex prima
-                if (/llama-3-/.test(id)) score -= 20;
+                if (isFree) score += 20; 
+                
+                // Flagships / High reasoning (include GPT-5, Claude 4/5, Gemini Pro)
+                if (/gpt-5(?!.*mini)|gpt-4o(?!.*mini)|claude-[345]-(sonnet|opus)|gemini-[123]\.[0-9]-pro|llama-3\.[123]-70b|deepseek-chat|mistral-large|o[134]-pro/.test(id)) score += 200;
+                // Fast / Good performance
+                else if (/qwen-[23]|gemini-[123]\.[0-9]-flash|claude-[345]-haiku|o[134](?!.*pro)/.test(id)) score += 100;
+                // Minis
+                else if (/mini|flash|haiku|8b|nano/.test(id)) score += 30;
+                
+                // Penalizza modelli troppo vecchi
+                if (/llama-3-8b|gpt-4-|claude-3-/.test(id)) score -= 20;
 
                 return {
                     id: m.id,
