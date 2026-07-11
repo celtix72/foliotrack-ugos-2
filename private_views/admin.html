@@ -549,14 +549,27 @@
                             <!-- OpenRouter -->
                             <div class="p-3 border border-slate-200 dark:border-slate-800 rounded-lg space-y-3">
                                 <h4 class="text-xs font-black text-slate-700 dark:text-slate-300">OpenRouter</h4>
-                                <div>
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">API Key (Free)</label>
-                                    <input type="password" id="ai-openrouter-key-free" placeholder="sk-or-v1-..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">API Key (Free)</label>
+                                        <input type="password" id="ai-openrouter-key-free" placeholder="sk-or-v1-..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Modello (Free)</label>
+                                        <input type="text" id="ai-openrouter-model-free" placeholder="es. meta-llama/llama-3.2-3b-instruct:free" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-600 dark:text-slate-400">
+                                    </div>
                                 </div>
-                                <div>
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">API Key (Pay)</label>
-                                    <input type="password" id="ai-openrouter-key-pay" placeholder="sk-or-v1-..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">API Key (Pay)</label>
+                                        <input type="password" id="ai-openrouter-key-pay" placeholder="sk-or-v1-..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Modello (Pay)</label>
+                                        <input type="text" id="ai-openrouter-model-pay" placeholder="es. google/gemini-1.5-flash" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-600 dark:text-slate-400">
+                                    </div>
                                 </div>
+                                <p class="text-[10px] text-slate-500">I modelli OpenRouter si possono customizzare. Usa <code>google/gemini-1.5-flash</code> o <code>openai/gpt-4o-mini</code> per la versione a pagamento per rispettare fedelmente le istruzioni strutturate (es. Fair Value). Se lasci vuoti verranno usati i default.</p>
                             </div>
                         </div>
 
@@ -1031,6 +1044,8 @@
                     document.getElementById('ai-aimlapi-key-pay').value = settings.aimlapiApiKeyPay || '';
                     document.getElementById('ai-openrouter-key-free').value = settings.openrouterApiKeyFree || '';
                     document.getElementById('ai-openrouter-key-pay').value = settings.openrouterApiKeyPay || '';
+                    document.getElementById('ai-openrouter-model-free').value = settings.openrouterModelFree || '';
+                    document.getElementById('ai-openrouter-model-pay').value = settings.openrouterModelPay || '';
                     document.getElementById('ai-asset-prompt').value = settings.aiAssetPrompt || '';
                     document.getElementById('ai-portfolio-prompt').value = settings.aiPortfolioPrompt || '';
                     
@@ -1064,6 +1079,8 @@
                     aimlapiApiKeyPay: document.getElementById('ai-aimlapi-key-pay').value,
                     openrouterApiKeyFree: document.getElementById('ai-openrouter-key-free').value,
                     openrouterApiKeyPay: document.getElementById('ai-openrouter-key-pay').value,
+                    openrouterModelFree: document.getElementById('ai-openrouter-model-free').value,
+                    openrouterModelPay: document.getElementById('ai-openrouter-model-pay').value,
                     aiAssetPrompt: document.getElementById('ai-asset-prompt').value,
                     aiPortfolioPrompt: document.getElementById('ai-portfolio-prompt').value
                 };

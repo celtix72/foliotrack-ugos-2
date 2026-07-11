@@ -172,10 +172,15 @@ async function callAIModel(engine, prompt, keys) {
     } else if (baseEngine === 'OpenRouter') {
         const apiKey = tier === 'Free' ? keys.openrouterApiKeyFree : (keys.openrouterApiKeyPay || process.env.OPENROUTER_API_KEY);
         if (!apiKey) throw new Error(`OpenRouter API Key (${tier}) mancante.`);
+        
+        const defaultFreeModel = 'meta-llama/llama-3.2-3b-instruct:free';
+        const defaultPayModel = 'google/gemini-1.5-flash';
+        const orModel = tier === 'Free' ? (keys.openrouterModelFree || defaultFreeModel) : (keys.openrouterModelPay || defaultPayModel);
+        
         let res;
         try {
             res = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
-                model: tier === 'Free' ? 'meta-llama/llama-3.2-3b-instruct:free' : 'anthropic/claude-3-haiku',
+                model: orModel,
                 messages: [{ role: 'user', content: prompt }],
                 temperature: 0.1
             }, {

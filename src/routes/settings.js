@@ -101,6 +101,8 @@ module.exports = function (dependencies) {
                 aimlapiApiKeyPay: settings.aimlapiApiKeyPay || '',
                 openrouterApiKeyFree: settings.openrouterApiKeyFree || '',
                 openrouterApiKeyPay: settings.openrouterApiKeyPay || '',
+                openrouterModelFree: settings.openrouterModelFree || '',
+                openrouterModelPay: settings.openrouterModelPay || '',
                 tavilyApiKey: settings.tavilyApiKey || '',
                 aiAssetPrompt: settings.aiAssetPrompt || '',
                 aiPortfolioPrompt: settings.aiPortfolioPrompt || '',
@@ -114,7 +116,7 @@ module.exports = function (dependencies) {
 
     // POST /api/admin/ai-settings
     router.post('/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
-        const { aiEngine, geminiApiKeyFree, geminiApiKeyPay, qwenApiKeyFree, qwenApiKeyPay, openaiApiKeyFree, openaiApiKeyPay, agnesApiKeyFree, agnesApiKeyPay, aimlapiApiKeyFree, aimlapiApiKeyPay, openrouterApiKeyFree, openrouterApiKeyPay, tavilyApiKey, aiAssetPrompt, aiPortfolioPrompt } = req.body;
+        const { aiEngine, geminiApiKeyFree, geminiApiKeyPay, qwenApiKeyFree, qwenApiKeyPay, openaiApiKeyFree, openaiApiKeyPay, agnesApiKeyFree, agnesApiKeyPay, aimlapiApiKeyFree, aimlapiApiKeyPay, openrouterApiKeyFree, openrouterApiKeyPay, openrouterModelFree, openrouterModelPay, tavilyApiKey, aiAssetPrompt, aiPortfolioPrompt } = req.body;
         try {
             if (aiEngine !== undefined) database.setSetting(1, 'aiEngine', aiEngine);
             if (geminiApiKeyFree !== undefined) database.setSetting(1, 'geminiApiKeyFree', geminiApiKeyFree);
@@ -129,6 +131,8 @@ module.exports = function (dependencies) {
             if (aimlapiApiKeyPay !== undefined) database.setSetting(1, 'aimlapiApiKeyPay', aimlapiApiKeyPay);
             if (openrouterApiKeyFree !== undefined) database.setSetting(1, 'openrouterApiKeyFree', openrouterApiKeyFree);
             if (openrouterApiKeyPay !== undefined) database.setSetting(1, 'openrouterApiKeyPay', openrouterApiKeyPay);
+            if (openrouterModelFree !== undefined) database.setSetting(1, 'openrouterModelFree', openrouterModelFree);
+            if (openrouterModelPay !== undefined) database.setSetting(1, 'openrouterModelPay', openrouterModelPay);
             if (tavilyApiKey !== undefined) database.setSetting(1, 'tavilyApiKey', tavilyApiKey);
             if (aiAssetPrompt !== undefined) database.setSetting(1, 'aiAssetPrompt', aiAssetPrompt);
             if (aiPortfolioPrompt !== undefined) database.setSetting(1, 'aiPortfolioPrompt', aiPortfolioPrompt);
