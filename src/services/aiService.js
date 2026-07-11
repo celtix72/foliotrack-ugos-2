@@ -225,8 +225,8 @@ async function callAIModel(engine, prompt, keys) {
         logger.info(`[AI Response (${engine})] \n${content}`);
         return { text: content, usage: res.data.usage || {}, modelUsed: orModel };
     } else {
-        const apiKey = tier === 'Free' ? keys.geminiApiKeyFree : (keys.geminiApiKeyPay || keys.geminiApiKey || process.env.GEMINI_API_KEY);
-        if (!apiKey) throw new Error(`Gemini API Key (${tier}) mancante.`);
+        const apiKey = keys.geminiApiKeyFree || keys.geminiApiKeyPay || keys.geminiApiKey || process.env.GEMINI_API_KEY;
+        if (!apiKey) throw new Error(`Gemini API Key mancante.`);
         const geminiModel = await getBestGeminiModel(apiKey);
         let res;
         try {

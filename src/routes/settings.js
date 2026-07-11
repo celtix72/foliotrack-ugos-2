@@ -53,13 +53,14 @@ module.exports = function (dependencies) {
     });
 
     // GET /api/ai/available-engines
-    router.get('/ai/available-engines', requireAuth, (req, res) => {
+    router.get('/ai/available-engines', requireAuth, async (req, res) => {
         try {
             const settings = database.getSettings(1);
             const available = [];
             
-            if (settings.geminiApiKeyFree) available.push('Gemini_Free');
-            if (settings.geminiApiKeyPay || settings.geminiApiKey || process.env.GEMINI_API_KEY) available.push('Gemini_Pay');
+            if (settings.geminiApiKeyFree || settings.geminiApiKeyPay || settings.geminiApiKey || process.env.GEMINI_API_KEY) {
+                available.push('Gemini_Free');
+            }
             
             const orKey = settings.openrouterApiKey || settings.openrouterApiKeyPay || process.env.OPENROUTER_API_KEY;
             if (orKey) {
@@ -68,10 +69,15 @@ module.exports = function (dependencies) {
                 if (settings.openrouterModel3) available.push('OR3');
             }
             
+            let geminiModelName = '';
+            if (available.includes('Gemini_Free')) {
+                const key = settings.geminiApiKeyFree || settings.geminiApiKeyPay || settings.geminiApiKey || process.env.GEMINI_API_KEY;
+                geminiModelName = await aiService.getBestGeminiModel(key);
+            }
+            
             const enginesWithLabels = available.map(e => {
                 let label = e;
-                if (e === 'Gemini_Free') label = 'Gemini (Free)';
-                if (e === 'Gemini_Pay') label = 'Gemini (Pay)';
+                if (e === 'Gemini_Free') label = `Gemini [${geminiModelName || 'caricamento...'}]`;
                 
                 if (e === 'OR1') {
                     label = `OpenRouter 1 [${settings.openrouterModel1}]`;
@@ -84,7 +90,11 @@ module.exports = function (dependencies) {
                 return { id: e, label };
             });
             
-            res.json({ engines: enginesWithLabels, default: settings.aiEngine || 'Gemini_Free' });
+            // Fix eventual default settings that might still reference Gemini_Pay
+            let defaultEngine = settings.aiEngine || 'Gemini_Free';
+            if (defaultEngine === 'Gemini_Pay') defaultEngine = 'Gemini_Free';
+            
+            res.json({ engines: enginesWithLabels, default: defaultEngine });
         } catch (e) {
             res.status(500).json({ error: e.message });
         }
