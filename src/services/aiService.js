@@ -175,7 +175,7 @@ async function callAIModel(engine, prompt, keys) {
         let res;
         try {
             res = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
-                model: tier === 'Free' ? 'meta-llama/llama-3.3-70b-instruct:free' : 'anthropic/claude-3-haiku',
+                model: tier === 'Free' ? 'meta-llama/llama-3.2-3b-instruct:free' : 'anthropic/claude-3-haiku',
                 messages: [{ role: 'user', content: prompt }],
                 temperature: 0.1
             }, {
