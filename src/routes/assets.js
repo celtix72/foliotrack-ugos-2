@@ -1219,7 +1219,7 @@ NB:
                     action: parsedGemini.action || parsedQwen.action || 'HOLD',
                     targetProfit: parsedGemini.targetProfit || parsedQwen.targetProfit || 0,
                     stopLoss: parsedGemini.stopLoss || parsedQwen.stopLoss || 0,
-                    reasoning: `### Analisi prodotta da Gemini\n\n${parsedGemini.reasoning || 'Nessuna risposta valida da Gemini.'}\n\n---\n\n### Analisi prodotta da Qwen\n\n${parsedQwen.reasoning || 'Nessuna risposta valida da Qwen.'}`
+                    reasoning: `### Analisi prodotta da Gemini (${geminiRes.value?.modelUsed || 'N/D'})\n\n${parsedGemini.reasoning || 'Nessuna risposta valida da Gemini.'}\n\n---\n\n### Analisi prodotta da Qwen (${qwenRes.value?.modelUsed || 'N/D'})\n\n${parsedQwen.reasoning || 'Nessuna risposta valida da Qwen.'}`
                 };
 
             } else {
@@ -1230,7 +1230,7 @@ NB:
                 usage = res.usage;
                 
                 parsedResponse = parseAIResponse(rawText);
-                parsedResponse.reasoning = `### Analisi prodotta da ${engine}\n\n` + (parsedResponse.reasoning || '');
+                parsedResponse.reasoning = `### Analisi prodotta da ${engine} (${res.modelUsed || 'N/D'})\n\n` + (parsedResponse.reasoning || '');
             }
         } catch (e) {
             console.error('Failed to parse AI JSON response or execute model:', e);

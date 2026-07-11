@@ -133,7 +133,7 @@ Rispondi in JSON: { "riskScore": 7, "diversification": "...", "actions": ["...",
                 riskScore: parsed.riskScore || 5,
                 diversification: parsed.diversification || '',
                 actions: parsed.actions || [],
-                reasoning: parsed.reasoning || '',
+                reasoning: `### Analisi prodotta da ${engine} (${aiRes.modelUsed || 'N/D'})\n\n` + (parsed.reasoning || ''),
                 raw_response: aiRes.text,
                 tokens_used: aiRes.usage?.totalTokenCount || 0
             };

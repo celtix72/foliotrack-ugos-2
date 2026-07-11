@@ -157,7 +157,7 @@ async function callAIModel(engine, prompt, keys) {
         }
         const content = res.data.choices?.[0]?.message?.content || '{}';
         logger.info(`[AI Response (${engine})] \n${content}`);
-        return { text: content, usage: res.data.usage || {} };
+        return { text: content, usage: res.data.usage || {}, modelUsed: 'qwen-plus' };
     } else if (baseEngine === 'OpenAI') {
         const apiKey = tier === 'Free' ? keys.openaiApiKeyFree : (keys.openaiApiKeyPay || keys.openaiApiKey || process.env.OPENAI_API_KEY);
         if (!apiKey) throw new Error(`OpenAI API Key (${tier}) mancante.`);
@@ -176,7 +176,7 @@ async function callAIModel(engine, prompt, keys) {
         }
         const content = res.data.choices?.[0]?.message?.content || '{}';
         logger.info(`[AI Response (${engine})] \n${content}`);
-        return { text: content, usage: res.data.usage || {} };
+        return { text: content, usage: res.data.usage || {}, modelUsed: 'gpt-4o' };
     } else if (baseEngine === 'Agnes') {
         const apiKey = tier === 'Free' ? keys.agnesApiKeyFree : (keys.agnesApiKeyPay || keys.agnesApiKey || process.env.AGNES_API_KEY);
         if (!apiKey) throw new Error(`Agnes API Key (${tier}) mancante.`);
@@ -195,7 +195,7 @@ async function callAIModel(engine, prompt, keys) {
         }
         const content = res.data.choices?.[0]?.message?.content || '{}';
         logger.info(`[AI Response (${engine})] \n${content}`);
-        return { text: content, usage: res.data.usage || {} };
+        return { text: content, usage: res.data.usage || {}, modelUsed: 'agnes-2.0-flash' };
     } else if (baseEngine === 'Aimlapi') {
         const apiKey = tier === 'Free' ? keys.aimlapiApiKeyFree : (keys.aimlapiApiKeyPay || keys.aimlapiApiKey || process.env.AIMLAPI_API_KEY);
         if (!apiKey) throw new Error(`AIML API Key (${tier}) mancante.`);
@@ -214,7 +214,7 @@ async function callAIModel(engine, prompt, keys) {
         }
         const content = res.data.choices?.[0]?.message?.content || '{}';
         logger.info(`[AI Response (${engine})] \n${content}`);
-        return { text: content, usage: res.data.usage || {} };
+        return { text: content, usage: res.data.usage || {}, modelUsed: 'gpt-4o' };
     } else if (baseEngine === 'OpenRouter') {
         const apiKey = tier === 'Free' ? keys.openrouterApiKeyFree : (keys.openrouterApiKeyPay || process.env.OPENROUTER_API_KEY);
         if (!apiKey) throw new Error(`OpenRouter API Key (${tier}) mancante.`);
@@ -243,7 +243,7 @@ async function callAIModel(engine, prompt, keys) {
         }
         const content = res.data.choices?.[0]?.message?.content || '{}';
         logger.info(`[AI Response (${engine})] \n${content}`);
-        return { text: content, usage: res.data.usage || {} };
+        return { text: content, usage: res.data.usage || {}, modelUsed: orModel };
     } else {
         const apiKey = tier === 'Free' ? keys.geminiApiKeyFree : (keys.geminiApiKeyPay || keys.geminiApiKey || process.env.GEMINI_API_KEY);
         if (!apiKey) throw new Error(`Gemini API Key (${tier}) mancante.`);
@@ -265,7 +265,7 @@ async function callAIModel(engine, prompt, keys) {
         const content = res.data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
         logger.info(`[AI Response (${engine})] \n${content}`);
         const usage = res.data.usageMetadata || {};
-        return { text: content, usage: { totalTokenCount: usage.totalTokenCount || 0 } };
+        return { text: content, usage: { totalTokenCount: usage.totalTokenCount || 0 }, modelUsed: geminiModel };
     }
 }
 
