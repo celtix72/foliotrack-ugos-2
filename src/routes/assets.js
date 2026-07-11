@@ -1223,12 +1223,13 @@ NB:
             const stopLoss = parsedResponse.stopLoss > 0 ? parsedResponse.stopLoss : assetRow.stopLoss;
             const action = (parsedResponse.action || 'HOLD').toUpperCase();
             const reasoning = parsedResponse.reasoning || '';
+            const finalEngineName = res.modelUsed || engine;
 
             database.db.prepare(`
                 UPDATE assets 
                 SET targetPrice = ?, stopLoss = ?, ai_action = ?, ai_reasoning = ?, ai_engine = ?, ai_updated_at = CURRENT_TIMESTAMP
                 WHERE ticker = ?
-            `).run(targetPrice, stopLoss, action, reasoning, engine, ticker);
+            `).run(targetPrice, stopLoss, action, reasoning, finalEngineName, ticker);
 
             // Se l'utente ha una watchlist per questo asset, sovrascrivi anche le sue impostazioni personali
             const userId = req.user.id;
@@ -1250,7 +1251,7 @@ NB:
             database.db.prepare(`
                 INSERT INTO asset_ai_history (ticker, action, reasoning, targetPrice, stopLoss, engine)
                 VALUES (?, ?, ?, ?, ?, ?)
-            `).run(ticker, action, reasoning, targetPrice, stopLoss, engine);
+            `).run(ticker, action, reasoning, targetPrice, stopLoss, finalEngineName);
         })();
 
         sendEvent('complete', { 

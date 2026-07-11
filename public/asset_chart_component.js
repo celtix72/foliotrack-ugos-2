@@ -1079,13 +1079,27 @@
                 const date = dObj.toLocaleDateString() + ' ' + dObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 let actionColor = 'rgba(148,163,184,0.1)';
 
-                const engine = item.engine || 'X';
+                let engine = item.engine || 'X';
+                
+                // Estrae il vero nome del modello se presente nel testo (retrocompatibilità per vecchi record)
+                if (item.reasoning) {
+                    const modelMatch = item.reasoning.match(/Analisi prodotta da .*?\((.*?)\)/);
+                    if (modelMatch && modelMatch[1] && modelMatch[1] !== 'N/D') {
+                        engine = modelMatch[1];
+                    }
+                }
+
                 let engineIcon = 'smart_toy';
-                if (engine === 'Gemini') engineIcon = 'auto_awesome';
-                else if (engine === 'Qwen') engineIcon = 'chat_spark';
-                else if (engine === 'Agnes') engineIcon = 'psychiatry';
-                else if (engine === 'OpenAI') engineIcon = 'data_exploration';
+                const engineLower = engine.toLowerCase();
+                if (engineLower.includes('gemini')) engineIcon = 'auto_awesome';
+                else if (engineLower.includes('qwen')) engineIcon = 'chat_spark';
+                else if (engineLower.includes('gpt') || engineLower.includes('openai')) engineIcon = 'data_exploration';
                 else if (engine === 'X') engineIcon = 'close';
+
+                // Formatta il nome del modello per la UI (rimuove il prefisso provider e il suffisso :free)
+                let engineDisplay = engine.includes('/') ? engine.split('/').pop() : engine;
+                engineDisplay = engineDisplay.replace(':free', '');
+                if (engineDisplay.length > 22) engineDisplay = engineDisplay.substring(0, 20) + '...';
 
                 let actionTextColor = '#64748b';
                 if (item.action === 'BUY' || item.action === 'INCREASE') {
@@ -1104,7 +1118,7 @@
                                     <span class="material-symbols-outlined" style="font-size: 14px;">calendar_today</span> ${date}
                                 </span>
                                 <span style="font-size: 10px; font-weight: 900; color: #64748b; background: rgba(148,163,184,0.1); padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 3px;" title="Motore IA: ${engine}">
-                                    <span class="material-symbols-outlined" style="font-size: 12px;">${engineIcon}</span> ${engine}
+                                    <span class="material-symbols-outlined" style="font-size: 12px;">${engineIcon}</span> ${engineDisplay}
                                 </span>
                                 ${item.targetPrice ? `<span style="font-size: 10px; font-weight: 900; color: #64748b; background: rgba(148,163,184,0.1); padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 3px;" title="Fair Value">
                                     <span class="material-symbols-outlined" style="font-size: 12px;">monetization_on</span> FV: ${window.formatAiFv ? window.formatAiFv(item.targetPrice, '') : item.targetPrice}
