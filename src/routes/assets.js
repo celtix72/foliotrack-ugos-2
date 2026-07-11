@@ -1193,7 +1193,6 @@ NB:
         let usage = {};
 
         try {
-        try {
             sendEvent('progress', { message: `Generazione responso IA in corso tramite ${engine}...` });
             const res = await callAIModel(engine, prompt, globalSettings);
             const rawText = res.text;
