@@ -1002,6 +1002,9 @@
                                 <select id="ai-modal-engine-select" style="font-size: 11px; padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(148,163,184,0.3); background: transparent; cursor: pointer; outline: none; font-weight: 600;" class="text-slate-700 dark:text-slate-300">
                                     <option value="">Default (Caricamento...)</option>
                                 </select>
+                                <button onclick="window.downloadAssetAiHistoryPdf()" style="background: rgba(148,163,184,0.1); color: #64748b; padding: 8px 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 11px; display: flex; align-items: center; gap: 4px; transition: all 0.2s;" class="hover:bg-slate-200 dark:hover:bg-slate-700" title="Scarica PDF Storico">
+                                    <span class="material-symbols-outlined" style="font-size: 16px;">picture_as_pdf</span>
+                                </button>
                                 <button id="ai-modal-run-btn" onclick="window.runAssetAi()" style="background: var(--mob-primary); color: white; padding: 8px 16px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 11px; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(19,91,236,0.2);">
                                     <span class="material-symbols-outlined" style="font-size: 16px;">add</span> Nuova Analisi
                                 </button>
@@ -1122,6 +1125,81 @@
         } catch (e) {
             listEl.innerHTML = '<div style="text-align:center; padding: 20px; color: rgb(239,68,68); font-weight: bold; font-size: 12px;">Errore di caricamento</div>';
         }
+    };
+
+    window.downloadAssetAiHistoryPdf = async function() {
+        const ticker = _aiModalTicker;
+        if (!ticker) return;
+
+        let history = [];
+        try {
+            const res = await fetch('/api/assets/' + encodeURIComponent(ticker) + '/ai-history?t=' + Date.now());
+            history = await res.json();
+        } catch(e) {
+            console.error(e);
+        }
+
+        if (!history || history.length === 0) {
+            alert('Nessuna analisi da esportare');
+            return;
+        }
+
+        if (!window.jspdf) {
+            await new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'pt', 'a4');
+        
+        let startY = 40;
+        doc.setFontSize(18);
+        doc.setFont("helvetica", "bold");
+        doc.text(`Storico Analisi IA: ${ticker}`, 40, startY);
+        startY += 30;
+
+        history.forEach((h, index) => {
+            const dObj = new Date(h.created_at);
+            const dateStr = dObj.toLocaleDateString() + ' ' + dObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            if (startY > doc.internal.pageSize.getHeight() - 60) {
+                doc.addPage();
+                startY = 40;
+            }
+
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.text(`Data: ${dateStr}  |  Azione: ${h.action}  |  Motore: ${h.engine || 'N/D'}`, 40, startY);
+            startY += 15;
+            
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            
+            const rawText = (h.reasoning || '').replace(/###/g, '').replace(/\*\*/g, '');
+            const textLines = doc.splitTextToSize(rawText, 515);
+            
+            textLines.forEach(line => {
+                if (startY > doc.internal.pageSize.getHeight() - 40) {
+                    doc.addPage();
+                    startY = 40;
+                }
+                doc.text(line, 40, startY);
+                startY += 12;
+            });
+            
+            startY += 20;
+            doc.setLineWidth(0.5);
+            doc.setDrawColor(200, 200, 200);
+            doc.line(40, startY, 555, startY);
+            startY += 20;
+        });
+
+        doc.save(`Analisi_IA_${ticker}.pdf`);
     };
 
     window.runAssetAi = async function () {
