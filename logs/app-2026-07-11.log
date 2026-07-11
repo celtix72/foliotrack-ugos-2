@@ -1,0 +1,10 @@
+2026-07-11T11:48:46.403Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-11T11:48:46.415Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-11T11:48:46.528Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-11T11:48:46.537Z [INFO] Starting RSS News Sync (isFirstSync: true)...
+2026-07-11T11:48:47.516Z [INFO] News Sync completed. Saved 83 new articles.
+2026-07-11T12:00:40.210Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-11T12:00:40.223Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-11T12:00:40.323Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-11T12:00:40.331Z [INFO] Starting RSS News Sync (isFirstSync: true)...
+2026-07-11T12:00:41.348Z [INFO] News Sync completed. Saved 24 new articles.

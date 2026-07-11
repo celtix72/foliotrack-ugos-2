@@ -3,7 +3,7 @@
  * Centralizes historical chart modal and BUY/SELL visualization.
  */
 
-(function() {
+(function () {
     let _assetChartInstance = null;
     let _allChartData = [];
     let _chartTicker = null;
@@ -126,12 +126,12 @@
         target.appendChild(div.firstElementChild);
 
         // close on backdrop click
-        document.getElementById('asset-chart-modal').addEventListener('click', function(e) {
+        document.getElementById('asset-chart-modal').addEventListener('click', function (e) {
             if (e.target === this) closeAssetChartModal();
         });
     }
 
-    window.stepVol = function(val) {
+    window.stepVol = function (val) {
         const input = document.getElementById('modal-vol-input');
         if (!input) return;
         let v = parseInt(input.value || 0) + val;
@@ -140,23 +140,23 @@
         input.value = v;
     };
 
-    window.closeAssetChartModal = function() {
+    window.closeAssetChartModal = function () {
         const modal = document.getElementById('asset-chart-modal');
         if (modal) modal.style.display = 'none';
-        if (_assetChartInstance) { 
-            _assetChartInstance.destroy(); 
-            _assetChartInstance = null; 
+        if (_assetChartInstance) {
+            _assetChartInstance.destroy();
+            _assetChartInstance = null;
         }
     };
 
-    window.saveModalAlerts = async function() {
+    window.saveModalAlerts = async function () {
         if (!_chartTicker) return;
         const btn = document.getElementById('modal-save-alerts-btn');
         const tp = parseFloat(document.getElementById('modal-tp-input').value || 0);
         const tp2 = parseFloat(document.getElementById('modal-tp2-input').value || 0);
         const sl = parseFloat(document.getElementById('modal-sl-input').value || 0);
         const vol = parseInt(document.getElementById('modal-vol-input').value || 0);
-        
+
         const originalText = btn.textContent;
         const originalBg = btn.style.backgroundColor;
         btn.disabled = true;
@@ -166,24 +166,24 @@
             const res = await fetch(`/api/assets/${encodeURIComponent(_chartTicker)}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    targetPrice: tp, 
+                body: JSON.stringify({
+                    targetPrice: tp,
                     targetPrice2: tp2,
-                    stopLoss: sl, 
+                    stopLoss: sl,
                     volatilityAlert: vol,
-                    isMonitored: 1 
+                    isMonitored: 1
                 })
             });
             if (res.ok) {
                 btn.textContent = 'SAVED!';
                 btn.style.backgroundColor = 'var(--mob-emerald)';
-                
+
                 setTimeout(() => {
                     btn.disabled = false;
                     btn.textContent = originalText;
                     btn.style.backgroundColor = originalBg;
                 }, 2000);
-                
+
                 if (typeof loadAssets === 'function') loadAssets();
                 if (typeof mobLoadAssets === 'function') mobLoadAssets();
                 if (typeof loadWatchlist === 'function') loadWatchlist();
@@ -199,11 +199,11 @@
         }
     };
 
-    window.openAssetChartModal = function(ticker, name, currency) {
+    window.openAssetChartModal = function (ticker, name, currency) {
         window.loadAssetChart(ticker, '1y');
     };
 
-    window.loadAssetChart = async function(ticker, range = '1y') {
+    window.loadAssetChart = async function (ticker, range = '1y') {
         ensureModalExists();
         if (ticker) _chartTicker = ticker;
         if (!_chartTicker) return;
@@ -238,7 +238,7 @@
 
             _allChartData = await quotesRes.json();
             const transactions = await txRes.json();
-            
+
             // Normalize transaction dates to YYYY-MM-DD
             if (transactions && Array.isArray(transactions)) {
                 transactions.forEach(t => {
@@ -251,11 +251,11 @@
             const allAssets = await assetRes.json();
             let detailsData = {};
             if (detailsRes && detailsRes.ok) {
-                try { detailsData = await detailsRes.json(); } catch(e) {}
+                try { detailsData = await detailsRes.json(); } catch (e) { }
             }
 
             const assetInfo = allAssets.find(a => a.ticker === _chartTicker);
-            
+
             // Append latest live price if valid and not already the last point
             if (assetInfo && assetInfo.currentPrice > 0) {
                 const todayStr = new Date().toISOString().split('T')[0];
@@ -269,7 +269,7 @@
 
             if (assetInfo) {
                 _chartCurrency = assetInfo.currency || 'EUR';
-                document.getElementById('chart-modal-subtitle').textContent = 
+                document.getElementById('chart-modal-subtitle').textContent =
                     `${assetInfo.name} • ${assetInfo.exchange || 'Market'}`;
 
                 const currSym = _chartCurrency === 'EUR' ? '€' : (_chartCurrency === 'USD' ? '$' : _chartCurrency);
@@ -291,7 +291,7 @@
                             alert(`L'asset ${assetInfo.ticker} ha posizioni aperte.\n\nPer rimuoverlo completamente, devi prima eliminare tutte le singole transazioni associate.`);
                             return;
                         }
-                        
+
                         // Otherwise use the global/standard removeFromWatchlist
                         window.removeFromWatchlist(assetInfo.ticker, false);
                         closeAssetChartModal();
@@ -301,7 +301,7 @@
                 // Populate Unified Grid
                 const grid = document.getElementById('chart-modal-grid');
                 const dataArea = document.getElementById('chart-modal-data-area');
-                
+
                 const sd = detailsData?.summaryDetail || {};
                 const ks = detailsData?.defaultKeyStatistics || {};
                 const ce = detailsData?.calendarEvents || {};
@@ -376,7 +376,7 @@
                         </div>
                     `;
                 }).join('');
-                
+
                 dataArea.style.display = 'block';
             }
 
@@ -414,7 +414,7 @@
                 if (absVal >= 1) return val.toFixed(2);
                 return val.toFixed(3);
             };
-            
+
             const getCurrencySymbol = (curr) => {
                 if (curr === 'EUR') return '€';
                 if (curr === 'USD') return '$';
@@ -424,30 +424,30 @@
             };
 
             const prices = displayData.map(d => d.price);
-            
+
             // Calculate daily variations
             const dailyVars = displayData.map((d, i) => {
                 const fullIdx = _allChartData.findIndex(ad => ad.date === d.date);
                 if (fullIdx > 0) {
                     const prev = _allChartData[fullIdx - 1];
                     const diff = d.price - prev.price;
-                    return { 
-                        pct: (diff / prev.price) * 100, 
-                        val: diff 
+                    return {
+                        pct: (diff / prev.price) * 100,
+                        val: diff
                     };
                 }
                 return { pct: 0, val: 0 };
             });
 
             // --- Calculate accurate QTY and PMC from JS transactions ---
-            const sortedTxAll = [...transactions].sort((a,b) => new Date(a.date) - new Date(b.date));
+            const sortedTxAll = [...transactions].sort((a, b) => new Date(a.date) - new Date(b.date));
             let accurateQty = 0;
             let accurateTotalCost = 0;
-            
+
             for (const t of sortedTxAll) {
                 const q = Math.abs(parseFloat(String(t.quantity).replace(',', '.'))) || 0;
                 const p = parseFloat(String(t.price).replace(',', '.')) || 0;
-                
+
                 if (t.type === 'BUY') {
                     accurateTotalCost += q * p;
                     accurateQty += q;
@@ -458,7 +458,7 @@
                 }
                 // NOTE: SPLIT is an audit marker — DB already retroactively adjusts
                 // historical BUY/SELL quantities and prices, so do NOT re-apply here.
-                
+
                 if (Math.abs(accurateQty) < 0.00001) {
                     accurateQty = 0;
                     accurateTotalCost = 0;
@@ -482,7 +482,7 @@
                 if (currentPriceVal > 0) {
                     currentPriceStr = formatDynamicPrice(currentPriceVal);
                 }
-                
+
                 // Use JS accurate computation over backend's potentially flawed SQL calculation
                 if (accurateQty > 0.0001) {
                     const qty = accurateQty;
@@ -490,10 +490,10 @@
                     const gainEUR = assetInfo ? (assetInfo.totalGainEUR || 0) : 0;
                     const gainSign = gainEUR >= 0 ? '+' : '';
                     gainColor = gainEUR >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-                    
+
                     let pctGainStr = '';
                     const costAsset = accurateTotalCost;
-                    
+
                     if (accuratePMC > 0) {
                         pmcStr = formatDynamicPrice(accuratePMC);
                     }
@@ -504,7 +504,7 @@
                         const pctSign = pctGain >= 0 ? '+' : '';
                         pctGainStr = ` (${pctSign}${pctGain.toFixed(1)}%)`;
                     }
-                    
+
                     const formattedGainVal = new Intl.NumberFormat('it-IT', {
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 0
@@ -647,20 +647,20 @@
             document.getElementById('chart-modal-content').style.display = 'block';
             document.getElementById('chart-modal-points').textContent = `${displayData.length} data points`;
             document.getElementById('chart-modal-range-label').textContent =
-                `${displayData[0]?.date} → ${displayData[displayData.length-1]?.date}`;
+                `${displayData[0]?.date} → ${displayData[displayData.length - 1]?.date}`;
             document.getElementById('chart-modal-range-label').style.color = isUp ? 'rgb(16,185,129)' : 'rgb(239,68,68)';
 
             if (_assetChartInstance) _assetChartInstance.destroy();
             const ctx = document.getElementById('asset-history-chart').getContext('2d');
-            
+
             // Filter trades that fall within the current display range
             const buyPoints = [];
             const sellPoints = [];
-            
+
             // We use a scatter dataset approach or point style override. 
             // Better to use separate datasets for markers to avoid cluttering the main line
             const tradeDatasets = [];
-            
+
             // Snap transaction dates to the closest available label to handle weekend/holiday transactions
             const snapToLabel = (txDate) => {
                 if (labels.includes(txDate)) return txDate;
@@ -728,7 +728,7 @@
             }
 
             // Calculate Performance Visualization (PMC Basis + Gain/Loss Area)
-            const sortedTx = [...transactions].sort((a,b) => new Date(a.date) - new Date(b.date));
+            const sortedTx = [...transactions].sort((a, b) => new Date(a.date) - new Date(b.date));
             let currentQty = 0;
             let currentTotalCost = 0;
             let txIndex = 0;
@@ -739,13 +739,13 @@
 
             labels.forEach((date, idx) => {
                 const dayBeforeQty = currentQty;
-                
+
                 // Process all transactions chronologically up to and including 'date'
                 while (txIndex < sortedTx.length && sortedTx[txIndex].date <= date) {
                     const t = sortedTx[txIndex];
                     const q = Math.abs(parseFloat(String(t.quantity).replace(',', '.'))) || 0;
                     const p = parseFloat(String(t.price).replace(',', '.')) || 0;
-                    
+
                     if (t.type === 'BUY') {
                         currentTotalCost += q * p;
                         currentQty += q;
@@ -757,7 +757,7 @@
                     // NOTE: SPLIT is an audit marker — DB already retroactively adjusts
                     // historical BUY/SELL quantities and prices, so do NOT re-apply here.
 
-                    
+
                     // Prevent floating point residue from causing ghost positions
                     if (Math.abs(currentQty) < 0.00001) {
                         currentQty = 0;
@@ -875,33 +875,33 @@
                         legend: { display: false },
                         tooltip: {
                             callbacks: {
-                                label: function(context) {
-                                const datasetLabel = context.dataset.label || '';
-                                if (datasetLabel === 'BUY' || datasetLabel === 'SELL' || datasetLabel === 'DIVIDEND') {
-                                    const dt = context.label;
-                                    const trades = tradesByDate[dt] || [];
-                                    const trade = trades.find(tr => tr.type === datasetLabel);
-                                    if (trade) {
-                                        return ` ${trade.type}: ${_chartTicker} (${trade.quantity} @ ${formatDynamicPrice(trade.price)})`;
+                                label: function (context) {
+                                    const datasetLabel = context.dataset.label || '';
+                                    if (datasetLabel === 'BUY' || datasetLabel === 'SELL' || datasetLabel === 'DIVIDEND') {
+                                        const dt = context.label;
+                                        const trades = tradesByDate[dt] || [];
+                                        const trade = trades.find(tr => tr.type === datasetLabel);
+                                        if (trade) {
+                                            return ` ${trade.type}: ${_chartTicker} (${trade.quantity} @ ${formatDynamicPrice(trade.price)})`;
+                                        }
                                     }
+                                    // Default price & variation
+                                    if (context.dataset.label === _chartTicker) {
+                                        const idx = context.dataIndex;
+                                        const v = dailyVars[idx];
+                                        const sign = v.pct >= 0 ? '+' : '';
+                                        const price = formatDynamicPrice(context.parsed.y);
+                                        return ` Price: ${price} ${_chartCurrency} (${sign}${v.pct.toFixed(1)}%)`;
+                                    }
+                                    return null;
+                                },
+                                title: function (tooltipItems) {
+                                    const datasetLabel = tooltipItems[0].dataset.label || '';
+                                    if (datasetLabel === 'BUY' || datasetLabel === 'SELL' || datasetLabel === 'DIVIDEND') {
+                                        return tooltipItems[0].label;
+                                    }
+                                    return null;
                                 }
-                                // Default price & variation
-                                if (context.dataset.label === _chartTicker) {
-                                    const idx = context.dataIndex;
-                                    const v = dailyVars[idx];
-                                    const sign = v.pct >= 0 ? '+' : '';
-                                    const price = formatDynamicPrice(context.parsed.y);
-                                    return ` Price: ${price} ${_chartCurrency} (${sign}${v.pct.toFixed(1)}%)`;
-                                }
-                                return null;
-                            },
-                            title: function(tooltipItems) {
-                                const datasetLabel = tooltipItems[0].dataset.label || '';
-                                if (datasetLabel === 'BUY' || datasetLabel === 'SELL' || datasetLabel === 'DIVIDEND') {
-                                    return tooltipItems[0].label;
-                                }
-                                return null;
-                            }
                             }
                         },
                         annotation: {
@@ -917,14 +917,14 @@
                                 minRotation: 45,
                                 font: { size: 9 },
                                 color: tickColor,
-                                callback: function(value) {
+                                callback: function (value) {
                                     const dateStr = this.getLabelForValue(value);
                                     if (!dateStr) return '';
                                     const parts = dateStr.split('-');
                                     if (parts.length !== 3) return dateStr;
                                     const [yyyy, mm, dd] = parts;
                                     const yy = yyyy.substring(2);
-                                    
+
                                     if (range === '1d' || range === '1w' || range === '1m') {
                                         return `${dd}/${mm}`;
                                     } else if (range === '6m' || range === '1y') {
@@ -959,23 +959,23 @@
     };
 
     // ─── AI Analysis Logic for Standalone Modal ────────────────────────────────────────────────────────
-    
+
     let _aiModalTicker = null;
     let _aiModalName = null;
 
-    window.openAssetAiHistoryModal = function(ticker, name, currency) {
+    window.openAssetAiHistoryModal = function (ticker, name, currency) {
         _aiModalTicker = ticker;
         _aiModalName = name;
-        
+
         let modal = document.getElementById('asset-ai-history-modal');
         if (!modal) {
             const isDark = document.documentElement.classList.contains('dark');
             const backdropColor = isDark ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.7)';
-            
+
             modal = document.createElement('div');
             modal.id = 'asset-ai-history-modal';
             modal.style.cssText = `display: none; position: fixed; inset: 0; z-index: 10000; align-items: center; justify-content: center; background-color: ${backdropColor}; backdrop-filter: blur(12px); padding: 16px; flex-direction: column;`;
-            
+
             modal.innerHTML = `
                 <div class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800" style="width: 100%; max-width: 500px; max-height: 85vh; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column; overflow: hidden;">
                     <!-- Header -->
@@ -1015,9 +1015,9 @@
                 </div>
             `;
             document.body.appendChild(modal);
-            
+
             // Close on backdrop click
-            modal.addEventListener('click', function(e) {
+            modal.addEventListener('click', function (e) {
                 if (e.target === this) this.style.display = 'none';
             });
         }
@@ -1025,9 +1025,9 @@
         document.getElementById('ai-modal-title').textContent = `AI: ${ticker}`;
         document.getElementById('ai-modal-subtitle').textContent = name || '';
         modal.style.display = 'flex';
-        
+
         window.loadAssetAiHistory(ticker);
-        
+
         // Fetch available engines
         fetch('/api/ai/available-engines').then(r => r.json()).then(data => {
             const select = document.getElementById('ai-modal-engine-select');
@@ -1042,15 +1042,15 @@
         }).catch(e => console.error("Error loading engines", e));
     };
 
-    window.loadAssetAiHistory = async function(ticker) {
+    window.loadAssetAiHistory = async function (ticker) {
         const listEl = document.getElementById('ai-modal-list');
         if (!listEl) return;
         listEl.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height: 100px;"><span class="material-symbols-outlined animate-spin" style="font-size: 28px; color: var(--mob-primary);">sync</span></div>';
-        
+
         try {
             const res = await fetch('/api/assets/' + encodeURIComponent(ticker) + '/ai-history?t=' + Date.now());
             const history = await res.json();
-            
+
             if (!history || history.length === 0) {
                 listEl.innerHTML = `
                     <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height: 150px; text-align:center; color: #94a3b8;">
@@ -1066,9 +1066,9 @@
 
             listEl.innerHTML = history.map(item => {
                 const dObj = new Date(item.created_at);
-                const date = dObj.toLocaleDateString() + ' ' + dObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                const date = dObj.toLocaleDateString() + ' ' + dObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 let actionColor = 'rgba(148,163,184,0.1)';
-                
+
                 const engine = item.engine || 'X';
                 let engineIcon = 'smart_toy';
                 if (engine === 'Gemini') engineIcon = 'auto_awesome';
@@ -1085,7 +1085,7 @@
                     actionColor = 'rgba(239,68,68,0.1)';
                     actionTextColor = 'rgb(239,68,68)';
                 }
-                
+
                 return `
                     <div style="border: 1px solid rgba(148,163,184,0.2); border-radius: 14px; padding: 14px; background: ${itemBg}; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
@@ -1114,16 +1114,16 @@
                     </div>
                 `;
             }).join('');
-        } catch(e) {
+        } catch (e) {
             listEl.innerHTML = '<div style="text-align:center; padding: 20px; color: rgb(239,68,68); font-weight: bold; font-size: 12px;">Errore di caricamento</div>';
         }
     };
 
-    window.runAssetAi = async function() {
+    window.runAssetAi = async function () {
         if (!_aiModalTicker) return;
         const btn = document.getElementById('ai-modal-run-btn');
         const listEl = document.getElementById('ai-modal-list');
-        
+
         btn.disabled = true;
         btn.innerHTML = '<span class="material-symbols-outlined animate-spin" style="font-size: 16px;">sync</span> Attendere...';
         listEl.innerHTML = `
@@ -1136,14 +1136,14 @@
         const engineSelect = document.getElementById('ai-modal-engine-select');
         const engine = engineSelect && engineSelect.value ? '?engine=' + encodeURIComponent(engineSelect.value) : '';
         const source = new EventSource('/api/assets/' + encodeURIComponent(_aiModalTicker) + '/ai-analysis' + engine);
-        
-        source.addEventListener('progress', function(e) {
+
+        source.addEventListener('progress', function (e) {
             const data = JSON.parse(e.data);
             const pt = document.getElementById('ai-modal-progress-text');
-            if(pt) pt.textContent = data.message;
+            if (pt) pt.textContent = data.message;
         });
-        
-        source.addEventListener('complete', function(e) {
+
+        source.addEventListener('complete', function (e) {
             source.close();
             btn.disabled = false;
             btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px;">add</span> Nuova Analisi';
@@ -1152,16 +1152,16 @@
             if (typeof window.loadWatchlist === 'function') window.loadWatchlist();
             if (typeof window.loadPortfolioDetails === 'function') window.loadPortfolioDetails();
         });
-        
-        source.addEventListener('error', function(e) {
+
+        source.addEventListener('error', function (e) {
             source.close();
             btn.disabled = false;
             btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px;">refresh</span> Riprova';
-            
+
             let errorData = {};
-            try { errorData = JSON.parse(e.data || '{}'); } catch(err){}
+            try { errorData = JSON.parse(e.data || '{}'); } catch (err) { }
             const errorMsg = errorData.error || "Errore sconosciuto durante l'analisi IA";
-            
+
             listEl.innerHTML = `
                 <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 24px; text-align:center; color: rgb(239,68,68); background: rgba(239,68,68,0.1); border-radius: 12px; margin-bottom: 16px; border: 1px solid rgba(239,68,68,0.3);">
                     <span class="material-symbols-outlined" style="font-size: 40px; margin-bottom: 8px;">error</span>
@@ -1172,20 +1172,20 @@
         });
     };
 
-    window.deleteAssetAiHistory = async function(id, ticker) {
+    window.deleteAssetAiHistory = async function (id, ticker) {
         if (!confirm('Eliminare analisi?')) return;
         try {
             const res = await fetch('/api/assets/ai-history/' + id, { method: 'DELETE' });
-            if((await res.json()).success) {
+            if ((await res.json()).success) {
                 window.loadAssetAiHistory(ticker);
                 if (typeof window.loadAssets === 'function') window.loadAssets();
                 if (typeof window.loadWatchlist === 'function') window.loadWatchlist();
                 if (typeof window.loadPortfolioDetails === 'function') window.loadPortfolioDetails();
             }
-        } catch(e) {}
+        } catch (e) { }
     };
 
-    window.openAssetAiDetail = function(ticker, action, reasoning, date) {
+    window.openAssetAiDetail = function (ticker, action, reasoning, date) {
         let detailModal = document.getElementById('chart-ai-detail-modal');
         if (!detailModal) {
             const isDark = document.documentElement.classList.contains('dark');
@@ -1193,12 +1193,12 @@
             detailModal = document.createElement('div');
             detailModal.id = 'chart-ai-detail-modal';
             detailModal.style.cssText = `display: none; position: fixed; inset: 0; z-index: 20000; align-items: center; justify-content: center; background-color: ${backdropColor}; backdrop-filter: blur(8px); padding: 16px;`;
-            
+
             const target = document.body;
             target.appendChild(detailModal);
-            
+
             // Close on backdrop click
-            detailModal.addEventListener('click', function(e) {
+            detailModal.addEventListener('click', function (e) {
                 if (e.target === this) this.style.display = 'none';
             });
         }
@@ -1212,25 +1212,25 @@
             actionColor = 'rgba(239,68,68,0.1)';
             actionTextColor = 'rgb(239,68,68)';
         }
-        
+
         // Formatta markdown basico per una UI accattivante
         let formattedReasoning = reasoning.replace(/\\n/g, '\n');
-        
+
         // Headings
         formattedReasoning = formattedReasoning.replace(/^### (.*$)/gim, '<h4 class="text-indigo-600 dark:text-indigo-400" style="font-size: 13px; font-weight: 900; margin-top: 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined" style="font-size: 14px;">psychiatry</span> $1</h4>');
         formattedReasoning = formattedReasoning.replace(/^## (.*$)/gim, '<h3 class="text-indigo-600 dark:text-indigo-400" style="font-size: 14px; font-weight: 900; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid rgba(148,163,184,0.1); padding-bottom: 4px;">$1</h3>');
         formattedReasoning = formattedReasoning.replace(/^# (.*$)/gim, '<h2 class="text-indigo-600 dark:text-indigo-400" style="font-size: 15px; font-weight: 900; margin-top: 18px; margin-bottom: 10px;">$1</h2>');
-        
+
         // Bold
         formattedReasoning = formattedReasoning.replace(/\*\*(.*?)\*\*/g, '<strong class="text-indigo-600 dark:text-indigo-400" style="font-weight: 900; background: rgba(148,163,184,0.1); padding: 0 4px; border-radius: 4px;">$1</strong>');
-        
+
         // Italics
         formattedReasoning = formattedReasoning.replace(/\*(.*?)\*/g, '<em class="text-slate-500 dark:text-slate-400">$1</em>');
-        
+
         // Lists
         formattedReasoning = formattedReasoning.replace(/^\s*[-*]\s+(.*)$/gim, '<div style="display: flex; gap: 8px; margin-bottom: 6px; padding-left: 4px;"><span class="text-indigo-600 dark:text-indigo-400" style="font-size: 14px; font-weight: 900;">&bull;</span><span style="flex: 1;">$1</span></div>');
         formattedReasoning = formattedReasoning.replace(/^\s*\d+\.\s+(.*)$/gim, '<div style="display: flex; gap: 8px; margin-bottom: 6px; padding-left: 4px;"><span class="text-indigo-600 dark:text-indigo-400" style="font-size: 14px; font-weight: 900;">&bull;</span><span style="flex: 1;">$1</span></div>');
-        
+
         // Newlines to BR
         formattedReasoning = formattedReasoning.replace(/\n\n/g, '<div style="height: 12px;"></div>');
         formattedReasoning = formattedReasoning.replace(/\n/g, '<br>');

@@ -169,6 +169,30 @@ async function callAIModel(engine, prompt, keys) {
         const content = res.data.choices?.[0]?.message?.content || '{}';
         logger.info(`[AI Response (${engine})] \n${content}`);
         return { text: content, usage: res.data.usage || {} };
+    } else if (baseEngine === 'OpenRouter') {
+        const apiKey = tier === 'Free' ? keys.openrouterApiKeyFree : (keys.openrouterApiKeyPay || process.env.OPENROUTER_API_KEY);
+        if (!apiKey) throw new Error(`OpenRouter API Key (${tier}) mancante.`);
+        let res;
+        try {
+            res = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
+                model: tier === 'Free' ? 'meta-llama/llama-3-8b-instruct:free' : 'anthropic/claude-3-haiku',
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.1
+            }, {
+                headers: { 
+                    'Authorization': `Bearer ${apiKey}`, 
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': 'https://github.com/celtix72/foliotrack', 
+                    'X-Title': 'FolioTrack'
+                }
+            });
+        } catch (apiErr) {
+            logger.error('[AI API Error (OpenRouter)]', apiErr.response ? apiErr.response.data : apiErr.message);
+            throw apiErr;
+        }
+        const content = res.data.choices?.[0]?.message?.content || '{}';
+        logger.info(`[AI Response (${engine})] \n${content}`);
+        return { text: content, usage: res.data.usage || {} };
     } else {
         const apiKey = tier === 'Free' ? keys.geminiApiKeyFree : (keys.geminiApiKeyPay || keys.geminiApiKey || process.env.GEMINI_API_KEY);
         if (!apiKey) throw new Error(`Gemini API Key (${tier}) mancante.`);

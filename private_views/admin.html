@@ -477,6 +477,8 @@
                                 <option value="Agnes_Pay">Agnes AI (Pay)</option>
                                 <option value="Aimlapi_Free">AIML API (Free)</option>
                                 <option value="Aimlapi_Pay">AIML API (Pay)</option>
+                                <option value="OpenRouter_Free">OpenRouter (Free)</option>
+                                <option value="OpenRouter_Pay">OpenRouter (Pay)</option>
                                 <option value="Both">Confronto (Gemini + Qwen)</option>
                             </select>
                             <p class="text-[10px] text-slate-500 mt-1">Scegli quale motore usare per le analisi. "Confronto" userà entrambi per comparare i risultati.</p>
@@ -542,6 +544,18 @@
                                 <div>
                                     <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">API Key (Pay)</label>
                                     <input type="password" id="ai-aimlapi-key-pay" placeholder="Key..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
+                                </div>
+                            </div>
+                            <!-- OpenRouter -->
+                            <div class="p-3 border border-slate-200 dark:border-slate-800 rounded-lg space-y-3">
+                                <h4 class="text-xs font-black text-slate-700 dark:text-slate-300">OpenRouter</h4>
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">API Key (Free)</label>
+                                    <input type="password" id="ai-openrouter-key-free" placeholder="sk-or-v1-..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">API Key (Pay)</label>
+                                    <input type="password" id="ai-openrouter-key-pay" placeholder="sk-or-v1-..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
                                 </div>
                             </div>
                         </div>
@@ -1015,6 +1029,8 @@
                     document.getElementById('ai-agnes-key-pay').value = settings.agnesApiKeyPay || '';
                     document.getElementById('ai-aimlapi-key-free').value = settings.aimlapiApiKeyFree || '';
                     document.getElementById('ai-aimlapi-key-pay').value = settings.aimlapiApiKeyPay || '';
+                    document.getElementById('ai-openrouter-key-free').value = settings.openrouterApiKeyFree || '';
+                    document.getElementById('ai-openrouter-key-pay').value = settings.openrouterApiKeyPay || '';
                     document.getElementById('ai-asset-prompt').value = settings.aiAssetPrompt || '';
                     document.getElementById('ai-portfolio-prompt').value = settings.aiPortfolioPrompt || '';
                     
@@ -1046,6 +1062,8 @@
                     agnesApiKeyPay: document.getElementById('ai-agnes-key-pay').value,
                     aimlapiApiKeyFree: document.getElementById('ai-aimlapi-key-free').value,
                     aimlapiApiKeyPay: document.getElementById('ai-aimlapi-key-pay').value,
+                    openrouterApiKeyFree: document.getElementById('ai-openrouter-key-free').value,
+                    openrouterApiKeyPay: document.getElementById('ai-openrouter-key-pay').value,
                     aiAssetPrompt: document.getElementById('ai-asset-prompt').value,
                     aiPortfolioPrompt: document.getElementById('ai-portfolio-prompt').value
                 };

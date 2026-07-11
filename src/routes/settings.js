@@ -68,6 +68,9 @@ module.exports = function (dependencies) {
             if (settings.aimlapiApiKeyFree) available.push('Aimlapi_Free');
             if (settings.aimlapiApiKeyPay || process.env.AIMLAPI_API_KEY) available.push('Aimlapi_Pay');
             
+            if (settings.openrouterApiKeyFree) available.push('OpenRouter_Free');
+            if (settings.openrouterApiKeyPay || process.env.OPENROUTER_API_KEY) available.push('OpenRouter_Pay');
+            
             const hasGemini = available.some(e => e.startsWith('Gemini'));
             const hasQwen = available.some(e => e.startsWith('Qwen'));
             if (hasGemini && hasQwen) {
@@ -96,6 +99,8 @@ module.exports = function (dependencies) {
                 agnesApiKeyPay: settings.agnesApiKeyPay || '',
                 aimlapiApiKeyFree: settings.aimlapiApiKeyFree || '',
                 aimlapiApiKeyPay: settings.aimlapiApiKeyPay || '',
+                openrouterApiKeyFree: settings.openrouterApiKeyFree || '',
+                openrouterApiKeyPay: settings.openrouterApiKeyPay || '',
                 tavilyApiKey: settings.tavilyApiKey || '',
                 aiAssetPrompt: settings.aiAssetPrompt || '',
                 aiPortfolioPrompt: settings.aiPortfolioPrompt || '',
@@ -109,7 +114,7 @@ module.exports = function (dependencies) {
 
     // POST /api/admin/ai-settings
     router.post('/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
-        const { aiEngine, geminiApiKeyFree, geminiApiKeyPay, qwenApiKeyFree, qwenApiKeyPay, openaiApiKeyFree, openaiApiKeyPay, agnesApiKeyFree, agnesApiKeyPay, aimlapiApiKeyFree, aimlapiApiKeyPay, tavilyApiKey, aiAssetPrompt, aiPortfolioPrompt } = req.body;
+        const { aiEngine, geminiApiKeyFree, geminiApiKeyPay, qwenApiKeyFree, qwenApiKeyPay, openaiApiKeyFree, openaiApiKeyPay, agnesApiKeyFree, agnesApiKeyPay, aimlapiApiKeyFree, aimlapiApiKeyPay, openrouterApiKeyFree, openrouterApiKeyPay, tavilyApiKey, aiAssetPrompt, aiPortfolioPrompt } = req.body;
         try {
             if (aiEngine !== undefined) database.setSetting(1, 'aiEngine', aiEngine);
             if (geminiApiKeyFree !== undefined) database.setSetting(1, 'geminiApiKeyFree', geminiApiKeyFree);
@@ -122,6 +127,8 @@ module.exports = function (dependencies) {
             if (agnesApiKeyPay !== undefined) database.setSetting(1, 'agnesApiKeyPay', agnesApiKeyPay);
             if (aimlapiApiKeyFree !== undefined) database.setSetting(1, 'aimlapiApiKeyFree', aimlapiApiKeyFree);
             if (aimlapiApiKeyPay !== undefined) database.setSetting(1, 'aimlapiApiKeyPay', aimlapiApiKeyPay);
+            if (openrouterApiKeyFree !== undefined) database.setSetting(1, 'openrouterApiKeyFree', openrouterApiKeyFree);
+            if (openrouterApiKeyPay !== undefined) database.setSetting(1, 'openrouterApiKeyPay', openrouterApiKeyPay);
             if (tavilyApiKey !== undefined) database.setSetting(1, 'tavilyApiKey', tavilyApiKey);
             if (aiAssetPrompt !== undefined) database.setSetting(1, 'aiAssetPrompt', aiAssetPrompt);
             if (aiPortfolioPrompt !== undefined) database.setSetting(1, 'aiPortfolioPrompt', aiPortfolioPrompt);

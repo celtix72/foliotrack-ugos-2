@@ -22,6 +22,8 @@ const SECRET_SETTING_KEYS = new Set([
     'agnesApiKeyPay',
     'aimlapiApiKeyFree',
     'aimlapiApiKeyPay',
+    'openrouterApiKeyFree',
+    'openrouterApiKeyPay',
     'tavilyApiKey',
     'smtp_pass'
 ]);
@@ -893,6 +895,8 @@ function initDb() {
         agnesApiKeyPay: '',
         aimlapiApiKeyFree: '',
         aimlapiApiKeyPay: '',
+        openrouterApiKeyFree: '',
+        openrouterApiKeyPay: '',
         tavilyApiKey: '',
         aiAssetPrompt: '',
         aiPortfolioPrompt: '',
