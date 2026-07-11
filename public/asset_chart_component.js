@@ -1108,6 +1108,9 @@
                 } else if (item.action === 'SELL' || item.action === 'DECREASE') {
                     actionColor = 'rgba(239,68,68,0.1)';
                     actionTextColor = 'rgb(239,68,68)';
+                } else if (item.action === 'NO DATA') {
+                    actionColor = 'rgba(245,158,11,0.1)';
+                    actionTextColor = 'rgb(245,158,11)';
                 }
 
                 return `
