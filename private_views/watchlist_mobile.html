@@ -556,6 +556,42 @@
         </div>`;
     }
 
+    function renderAiBadge(a) {
+        const tickerEsc = a.ticker.replace(/'/g, "\\'");
+        const nameEsc = (a.name || '').replace(/'/g, "\\'");
+        const cur = a.currency || 'EUR';
+        if (a.aiBadges && a.aiBadges.length > 0) {
+            return a.aiBadges.map(badge => {
+                const engine = badge.engine || 'X';
+                let icon = 'smart_toy';
+                if (engine === 'Gemini') icon = 'auto_awesome';
+                else if (engine === 'Qwen') icon = 'chat_spark';
+                else if (engine === 'Agnes') icon = 'psychiatry';
+                else if (engine === 'OpenAI') icon = 'data_exploration';
+                let clr = 'border-slate-500/30 text-slate-500 bg-slate-500/10';
+                if (badge.aiAction === 'BUY' || badge.aiAction === 'INCREASE') clr = 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10';
+                else if (badge.aiAction === 'SELL' || badge.aiAction === 'DECREASE') clr = 'border-rose-500/30 text-rose-500 bg-rose-500/10';
+                
+                let fvStr = badge.aiAction;
+                if (badge.aiTargetPrice) {
+                    const num = parseFloat(badge.aiTargetPrice);
+                    let dec = 2;
+                    if (num > 30) dec = 0;
+                    else if (num > 10) dec = 1;
+                    fvStr = num.toLocaleString('it-IT', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+                }
+                
+                return `<span onclick="event.stopPropagation();window.openAssetAiHistoryModal('${tickerEsc}','${nameEsc}','${cur}')" class="px-1.5 py-0.5 rounded font-black uppercase tracking-tighter flex items-center gap-1 border ${clr} cursor-pointer whitespace-nowrap ml-1" style="font-size: calc(10px * var(--mkcard-scale, 1))">
+                    <span class="material-symbols-outlined" style="font-size: calc(12px * var(--mkcard-scale, 1))">${icon}</span> ${fvStr}</span>`;
+            }).join('');
+        } else if ((a.aiHistoryCount || 0) > 0) {
+            return `<span onclick="event.stopPropagation();window.openAssetAiHistoryModal('${tickerEsc}','${nameEsc}','${cur}')" class="px-1.5 py-0.5 rounded font-black uppercase tracking-tighter flex items-center gap-1 border border-slate-500/30 text-slate-500 bg-slate-500/10 cursor-pointer ml-1" style="font-size: calc(10px * var(--mkcard-scale, 1))">
+                <span class="material-symbols-outlined" style="font-size: calc(12px * var(--mkcard-scale, 1))">smart_toy</span> ${a.aiHistoryCount}</span>`;
+        }
+        return `<span onclick="event.stopPropagation();window.openAssetAiHistoryModal('${tickerEsc}','${nameEsc}','${cur}')" class="px-1.5 py-0.5 rounded font-black uppercase tracking-tighter flex items-center gap-1 border border-slate-400/30 text-slate-400 bg-slate-400/10 cursor-pointer ml-1" style="font-size: calc(10px * var(--mkcard-scale, 1))">
+            <span class="material-symbols-outlined" style="font-size: calc(12px * var(--mkcard-scale, 1))">smart_toy</span></span>`;
+    }
+
     function renderFundamentalsCardView(a) {
         const price    = a.currentPrice || 0;
         const change   = a.changePercent || 0;
@@ -585,6 +621,8 @@
         const isOpen = isAssetMarketOpen(a);
         const todayVarPct = `${isPos ? '+' : ''}${change.toFixed(1)}%`;
 
+        const aiBadge = renderAiBadge(a);
+
         return `
           <div class="mob-holding-swipe-container"
                ontouchstart="handleTouchStart(event,this)"
@@ -599,6 +637,7 @@
                 <div style="display:flex; align-items:center; max-width:100%">
                   <span style="background:${colors.bg}; color:#000000; border:1px solid ${colors.border}; border-radius:4px; padding:1px 5px; font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; flex-shrink:1">${displaySymbol}</span>
                   ${portTags}
+                  ${aiBadge}
                 </div>
                 <span style="font-size:calc(13px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${priceFmt}&nbsp;<span style="color:${chgColor}; font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:900">${todayVarPct}</span><span style="background:rgba(100,116,139,0.1); color:var(--mob-text-muted); border-radius:3px; padding:1px 4px; font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; margin-left:4px; display:inline-block; vertical-align:middle">${exchangeLabel}</span></span>
               </div>

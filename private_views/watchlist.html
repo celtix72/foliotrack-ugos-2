@@ -151,6 +151,13 @@
 </header>
 
     <main class="flex-1 overflow-y-auto custom-scrollbar p-8">
+        <div class="mb-6 relative">
+            <div class="relative">
+                <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400">search</span>
+                <input type="text" id="asset-search" placeholder="Search and add tickers (e.g. AAPL)..." class="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-primary shadow-sm text-sm" autocomplete="off" />
+            </div>
+            <div id="search-suggestions" class="absolute z-[100] w-full mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl hidden max-h-60 overflow-y-auto custom-scrollbar"></div>
+        </div>
         <div class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
             <table class="w-full text-left">
                 <thead>
@@ -459,19 +466,21 @@
     const suggestionsBox = document.getElementById('search-suggestions');
     let searchTimeout;
 
-    searchInput.addEventListener('input', () => {
-        clearTimeout(searchTimeout);
-        const q = searchInput.value.trim();
-        if (q.length < 2) {
-            suggestionsBox.classList.add('hidden');
-            return;
-        }
-        searchTimeout = setTimeout(async () => {
-            const res = await fetch(`/api/market/search?q=${encodeURIComponent(q)}`);
-            const suggestions = await res.json();
-            renderSuggestions(suggestions);
-        }, 300);
-    });
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            const q = searchInput.value.trim();
+            if (q.length < 2) {
+                if (suggestionsBox) suggestionsBox.classList.add('hidden');
+                return;
+            }
+            searchTimeout = setTimeout(async () => {
+                const res = await fetch(`/api/market/search?q=${encodeURIComponent(q)}`);
+                const suggestions = await res.json();
+                renderSuggestions(suggestions);
+            }, 300);
+        });
+    }
 
     function renderSuggestions(list) {
         if (!list.length) {
@@ -492,8 +501,8 @@
     }
 
     async function addToWatchlist(ticker) {
-        suggestionsBox.classList.add('hidden');
-        searchInput.value = '';
+        if (suggestionsBox) suggestionsBox.classList.add('hidden');
+        if (searchInput) searchInput.value = '';
         try {
             await fetch('/api/watchlist', {
                 method: 'POST',
@@ -507,8 +516,10 @@
     }
 
     document.addEventListener('click', (e) => {
-        if (!searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
-            suggestionsBox.classList.add('hidden');
+        if (searchInput && suggestionsBox) {
+            if (!searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+                suggestionsBox.classList.add('hidden');
+            }
         }
     });
 
