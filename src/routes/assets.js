@@ -1077,6 +1077,7 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
 
         // Fetch recent news
         let newsTitles = '';
+        let newsSource = 'Yahoo Finance';
         const tavilyKey = globalSettings.tavilyApiKey || process.env.TAVILY_API_KEY;
         if (tavilyKey) {
             sendEvent('progress', { message: 'Ricerca news recenti tramite Tavily...' });
@@ -1089,6 +1090,7 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
                 });
                 if (tavilyRes.data && Array.isArray(tavilyRes.data.results)) {
                     newsTitles = tavilyRes.data.results.map(r => `${r.title}: ${r.content}`).join('\n');
+                    newsSource = 'Tavily Search API';
                 }
             } catch (err) {
                 logger.error('[Tavily API Error]', err.message);
@@ -1099,7 +1101,10 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
             sendEvent('progress', { message: 'Ricerca news recenti...' });
             const newsRes = await yahooFinance.search(ticker, { newsCount: 3 }).catch(() => ({}));
             newsTitles = (newsRes.news || []).map(n => n.title).join('; ');
+            newsSource = 'Yahoo Finance';
         }
+        
+        const fontiDatiStr = `**Fonti Dati Utilizzate:**\n- Dati di Borsa: Yahoo Finance / Finnhub / Local DB\n- Fondamentali e Bilanci: Yahoo Finance\n- Notizie e Trend: ${newsSource}\n\n---\n\n`;
         
         // Fetch earnings/fundamentals
         sendEvent('progress', { message: 'Recupero dati fondamentali (presenti e storici)...' });
@@ -1219,7 +1224,7 @@ NB:
                     action: parsedGemini.action || parsedQwen.action || 'HOLD',
                     targetProfit: parsedGemini.targetProfit || parsedQwen.targetProfit || 0,
                     stopLoss: parsedGemini.stopLoss || parsedQwen.stopLoss || 0,
-                    reasoning: `### Analisi prodotta da Gemini (${geminiRes.value?.modelUsed || 'N/D'})\n\n${parsedGemini.reasoning || 'Nessuna risposta valida da Gemini.'}\n\n---\n\n### Analisi prodotta da Qwen (${qwenRes.value?.modelUsed || 'N/D'})\n\n${parsedQwen.reasoning || 'Nessuna risposta valida da Qwen.'}`
+                    reasoning: `${fontiDatiStr}### Analisi prodotta da Gemini (${geminiRes.value?.modelUsed || 'N/D'})\n\n${parsedGemini.reasoning || 'Nessuna risposta valida da Gemini.'}\n\n---\n\n### Analisi prodotta da Qwen (${qwenRes.value?.modelUsed || 'N/D'})\n\n${parsedQwen.reasoning || 'Nessuna risposta valida da Qwen.'}`
                 };
 
             } else {
@@ -1230,7 +1235,7 @@ NB:
                 usage = res.usage;
                 
                 parsedResponse = parseAIResponse(rawText);
-                parsedResponse.reasoning = `### Analisi prodotta da ${engine} (${res.modelUsed || 'N/D'})\n\n` + (parsedResponse.reasoning || '');
+                parsedResponse.reasoning = `${fontiDatiStr}### Analisi prodotta da ${engine} (${res.modelUsed || 'N/D'})\n\n` + (parsedResponse.reasoning || '');
             }
         } catch (e) {
             console.error('Failed to parse AI JSON response or execute model:', e);
