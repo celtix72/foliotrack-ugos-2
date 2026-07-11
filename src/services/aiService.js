@@ -12,7 +12,26 @@ async function fetchOpenRouterModels() {
     try {
         const res = await axios.get('https://openrouter.ai/api/v1/models');
         if (res.data && res.data.data) {
-            _cachedOpenRouterModels = res.data.data.map(m => {
+            
+            const preferredProviders = ['openai/', 'anthropic/', 'google/', 'meta-llama/', 'mistralai/', 'deepseek/', 'qwen/'];
+            
+            let filtered = res.data.data.filter(m => {
+                const id = m.id.toLowerCase();
+                const promptPrice = parseFloat(m.pricing?.prompt || 0) * 1000000;
+                
+                // Esclude i modelli troppo costosi (> $15 per 1M token in input)
+                if (promptPrice > 15) return false;
+                
+                // Esclude versioni obsolete, vision, roleplay o non adatte ad analisi testuale finanziaria
+                if (/legacy|deprecated|vision|image|roleplay|uncensored|mythomax|nous|openchat|gemma-7b|llama-2|gpt-3\.5|claude-2|claude-instant|pixtral|llava/.test(id)) {
+                    return false;
+                }
+                
+                // Seleziona solo provider leader affidabili per compiti di ragionamento
+                return preferredProviders.some(p => id.startsWith(p));
+            });
+
+            let mappedModels = filtered.map(m => {
                 const promptPrice = parseFloat(m.pricing?.prompt || 0);
                 const compPrice = parseFloat(m.pricing?.completion || 0);
                 const isFree = promptPrice === 0 && compPrice === 0;
@@ -23,21 +42,46 @@ async function fetchOpenRouterModels() {
                 
                 let priceLabel = isFree ? 'Free' : `$${prompt1M} / $${comp1M}`;
                 
+                // Punteggio di rilevanza per ordinamento
+                let score = 0;
+                const id = m.id.toLowerCase();
+                if (isFree) score += 50; 
+                // Flagships / High reasoning
+                if (/gpt-4o(?!-mini)|claude-3\.5-sonnet|gemini-1\.5-pro|gemini-2\.0|llama-3\.3|deepseek-chat|qwen-2\.5-72b|mistral-large/.test(id)) score += 100;
+                // Fast / Mini
+                if (/mini|flash|haiku|8b/.test(id)) score += 30;
+                // Penalizza modelli troppo vecchi ma non catturati dal regex prima
+                if (/llama-3-/.test(id)) score -= 20;
+
                 return {
                     id: m.id,
-                    name: m.name,
+                    name: m.name.replace(' (beta)', '').replace(' (free)', ''),
                     priceLabel: priceLabel,
-                    isFree: isFree
+                    isFree: isFree,
+                    score: score,
+                    costScore: promptPrice + compPrice
                 };
             });
-            // Sort: free first, then by name
+
+            // Ordina per score (desc), poi per costo (asc), poi per nome
+            mappedModels.sort((a, b) => {
+                if (a.score !== b.score) return b.score - a.score;
+                if (a.costScore !== b.costScore) return a.costScore - b.costScore;
+                return a.name.localeCompare(b.name);
+            });
+            
+            // Prendi solo i primi 30
+            _cachedOpenRouterModels = mappedModels.slice(0, 30);
+            
+            // Riordina i 30 selezionati in modo che i Free stiano in cima, poi ordine alfabetico (migliore UX)
             _cachedOpenRouterModels.sort((a, b) => {
                 if (a.isFree && !b.isFree) return -1;
                 if (!a.isFree && b.isFree) return 1;
                 return a.name.localeCompare(b.name);
             });
+
             _openRouterModelsCachedAt = Date.now();
-            logger.info(`[OpenRouter] Cached ${_cachedOpenRouterModels.length} models.`);
+            logger.info(`[OpenRouter] Cached ${_cachedOpenRouterModels.length} top models for financial analysis.`);
         }
     } catch (err) {
         logger.error('[OpenRouter] Failed to fetch models for cache', err.message);
