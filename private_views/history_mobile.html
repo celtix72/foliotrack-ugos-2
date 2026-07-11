@@ -278,7 +278,7 @@
                                         <div class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border" style="background: ${colors.bg}; color: #000000; border-color: ${colors.border}; display: inline-block;">${pos.ticker || pos.name}</div>
                                         <div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter ${pos.realizedGain >= 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'}">${isTrade ? pos.type : 'CLOSED'}</div>
                                     </div>
-                                    <div class="mob-holding-name" style="margin-top:2px;">${pos.portfolioName || 'N/A'} • ${isTrade ? formatNumber(pos.quantity, 0) + ' qta' : pos.type}</div>
+                                    <div class="mob-holding-name" style="margin-top:2px;">${pos.portfolioName || 'N/A'} • ${isTrade ? formatNumber(pos.quantity, 0) + ' qta • PMC ' + formatCurrency(pos.pmc, 'EUR') + ' / ' + formatCurrency(pos.sellPrice, 'EUR') : pos.type}</div>
                                 </div>
                                 <div class="mob-holding-values">
                                     <div class="mob-holding-value" style="color: ${isTrade ? gainColor : 'inherit'}">

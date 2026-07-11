@@ -423,7 +423,7 @@ module.exports = function (dependencies) {
             const todayStr = new Date().toISOString().split('T')[0];
 
             const cutoff = new Date();
-            cutoff.setDate(cutoff.getDate() - 9);
+            cutoff.setDate(cutoff.getDate() - 15);
             const cutoffStr = cutoff.toISOString().split('T')[0];
 
             const placeholders = pIds.map(() => '?').join(',');
@@ -466,7 +466,17 @@ module.exports = function (dependencies) {
                 days.push({ date: last.date, gain: Math.round(gain * 100) / 100 });
             }
 
-            res.json({ days: days.slice(-7) });
+            const validDays = days.filter(d => {
+                const dateObj = new Date(d.date);
+                const dayOfWeek = dateObj.getDay();
+                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                // Exclude weekends, and exclude exactly 0 gain days (which are likely holidays)
+                // We keep 0 gain if it's the current live day which just hasn't moved yet.
+                const isHoliday = !isWeekend && d.gain === 0 && d.date !== todayStr;
+                return !isWeekend && !isHoliday;
+            });
+
+            res.json({ days: validDays.slice(-7) });
         } catch (err) {
             logger.error('Daily gains error:', err);
             res.status(500).json({ error: err.message });
@@ -519,6 +529,7 @@ module.exports = function (dependencies) {
                             year,
                             quantity: sellQty,
                             pmc: Math.round(pmc * 100) / 100,
+                            sellPrice: Math.round((t.price / (t.exchangeRate || 1)) * 100) / 100,
                             totalProceeds: Math.round(proceeds * 100) / 100,
                             totalCostBasis: Math.round(sellCostBasis * 100) / 100,
                             realizedGain: Math.round(gain * 100) / 100,
