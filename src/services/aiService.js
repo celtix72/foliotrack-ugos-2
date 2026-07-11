@@ -100,7 +100,8 @@ async function callAIModel(engine, prompt, keys) {
         try {
             res = await axios.post('https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions', {
                 model: 'qwen-plus',
-                messages: [{ role: 'user', content: prompt }]
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.1
             }, {
                 headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
             });
@@ -118,7 +119,8 @@ async function callAIModel(engine, prompt, keys) {
         try {
             res = await axios.post('https://api.openai.com/v1/chat/completions', {
                 model: 'gpt-4o',
-                messages: [{ role: 'user', content: prompt }]
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.1
             }, {
                 headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
             });
@@ -136,7 +138,8 @@ async function callAIModel(engine, prompt, keys) {
         try {
             res = await axios.post('https://apihub.agnes-ai.com/v1/chat/completions', {
                 model: 'agnes-2.0-flash',
-                messages: [{ role: 'user', content: prompt }]
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.1
             }, {
                 headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
             });
@@ -154,7 +157,8 @@ async function callAIModel(engine, prompt, keys) {
         try {
             res = await axios.post('https://api.aimlapi.com/v1/chat/completions', {
                 model: 'gpt-4o',
-                messages: [{ role: 'user', content: prompt }]
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.1
             }, {
                 headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
             });
@@ -173,7 +177,10 @@ async function callAIModel(engine, prompt, keys) {
         try {
             res = await axios.post(
                 `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`,
-                { contents: [{ parts: [{ text: prompt }] }] },
+                { 
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: { temperature: 0.1 }
+                },
                 { headers: { 'Content-Type': 'application/json' } }
             );
         } catch (apiErr) {
