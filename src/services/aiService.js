@@ -5,6 +5,52 @@ let _cachedGeminiModel = null;
 let _geminiModelCachedAt = 0;
 const GEMINI_MODEL_CACHE_MS = 60 * 60 * 1000; // 1 hour
 
+let _cachedOpenRouterModels = [];
+let _openRouterModelsCachedAt = 0;
+
+async function fetchOpenRouterModels() {
+    try {
+        const res = await axios.get('https://openrouter.ai/api/v1/models');
+        if (res.data && res.data.data) {
+            _cachedOpenRouterModels = res.data.data.map(m => {
+                const promptPrice = parseFloat(m.pricing?.prompt || 0);
+                const compPrice = parseFloat(m.pricing?.completion || 0);
+                const isFree = promptPrice === 0 && compPrice === 0;
+                
+                // Convert to per 1M tokens
+                const prompt1M = (promptPrice * 1000000).toFixed(2);
+                const comp1M = (compPrice * 1000000).toFixed(2);
+                
+                let priceLabel = isFree ? 'Free' : `$${prompt1M} / $${comp1M}`;
+                
+                return {
+                    id: m.id,
+                    name: m.name,
+                    priceLabel: priceLabel,
+                    isFree: isFree
+                };
+            });
+            // Sort: free first, then by name
+            _cachedOpenRouterModels.sort((a, b) => {
+                if (a.isFree && !b.isFree) return -1;
+                if (!a.isFree && b.isFree) return 1;
+                return a.name.localeCompare(b.name);
+            });
+            _openRouterModelsCachedAt = Date.now();
+            logger.info(`[OpenRouter] Cached ${_cachedOpenRouterModels.length} models.`);
+        }
+    } catch (err) {
+        logger.error('[OpenRouter] Failed to fetch models for cache', err.message);
+    }
+}
+
+// Fetch on startup
+fetchOpenRouterModels();
+
+function getOpenRouterModels() {
+    return _cachedOpenRouterModels;
+}
+
 const GEMINI_MODEL_PREFERENCE = [
     'gemini-3.5-flash',
     'gemini-3.1-flash-lite',
@@ -225,6 +271,8 @@ async function callAIModel(engine, prompt, keys) {
 
 module.exports = {
     getBestGeminiModel,
+    fetchOpenRouterModels,
+    getOpenRouterModels,
     parseAIResponse,
     callAIModel
 };

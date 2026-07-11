@@ -1,5 +1,6 @@
 const express = require('express');
 const fs = require('fs');
+const aiService = require('../services/aiService');
 
 module.exports = function (dependencies) {
     const router = express.Router();
@@ -364,6 +365,17 @@ module.exports = function (dependencies) {
             res.json({ success: true });
         } catch (err) {
             res.status(500).json({ error: err.message });
+        }
+    });
+
+    // GET /api/admin/openrouter-models
+    router.get('/admin/openrouter-models', requireAuth, requireAdmin, (req, res) => {
+        try {
+            const models = aiService.getOpenRouterModels();
+            res.json({ success: true, models: models });
+        } catch (err) {
+            logger.error('[OpenRouter Models API Error]', err.message);
+            res.status(500).json({ success: false, message: 'Errore interno.' });
         }
     });
 

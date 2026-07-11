@@ -556,7 +556,9 @@
                                     </div>
                                     <div>
                                         <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Modello (Free)</label>
-                                        <input type="text" id="ai-openrouter-model-free" placeholder="es. meta-llama/llama-3.2-3b-instruct:free" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-600 dark:text-slate-400">
+                                        <select id="ai-openrouter-model-free" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-600 dark:text-slate-400">
+                                            <option value="">Caricamento modelli...</option>
+                                        </select>
                                     </div>
                                 </div>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
@@ -566,7 +568,9 @@
                                     </div>
                                     <div>
                                         <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Modello (Pay)</label>
-                                        <input type="text" id="ai-openrouter-model-pay" placeholder="es. google/gemini-1.5-flash" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-600 dark:text-slate-400">
+                                        <select id="ai-openrouter-model-pay" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-600 dark:text-slate-400">
+                                            <option value="">Caricamento modelli...</option>
+                                        </select>
                                     </div>
                                 </div>
                                 <p class="text-[10px] text-slate-500">I modelli OpenRouter si possono customizzare. Usa <code>google/gemini-1.5-flash</code> o <code>openai/gpt-4o-mini</code> per la versione a pagamento per rispettare fedelmente le istruzioni strutturate (es. Fair Value). Se lasci vuoti verranno usati i default.</p>
@@ -1026,7 +1030,30 @@
             }
         };
 
-        // --- SMTP Settings ---
+        // --- AI Settings ---
+        async function loadOpenRouterModels(savedFree, savedPay) {
+            try {
+                const res = await fetchAdmin('/api/admin/openrouter-models');
+                if (res && res.models) {
+                    const freeSelect = document.getElementById('ai-openrouter-model-free');
+                    const paySelect = document.getElementById('ai-openrouter-model-pay');
+                    
+                    let optionsHtml = '<option value="">(Usa Default)</option>';
+                    res.models.forEach(m => {
+                        optionsHtml += `<option value="${m.id}">${m.name} (${m.priceLabel})</option>`;
+                    });
+                    
+                    freeSelect.innerHTML = optionsHtml;
+                    paySelect.innerHTML = optionsHtml;
+                    
+                    if (savedFree) freeSelect.value = savedFree;
+                    if (savedPay) paySelect.value = savedPay;
+                }
+            } catch(e) {
+                console.error('Failed to load OR models', e);
+            }
+        }
+
         async function loadAiSettings() {
             try {
                 const settings = await fetchAdmin('/api/admin/ai-settings'); 
@@ -1044,8 +1071,9 @@
                     document.getElementById('ai-aimlapi-key-pay').value = settings.aimlapiApiKeyPay || '';
                     document.getElementById('ai-openrouter-key-free').value = settings.openrouterApiKeyFree || '';
                     document.getElementById('ai-openrouter-key-pay').value = settings.openrouterApiKeyPay || '';
-                    document.getElementById('ai-openrouter-model-free').value = settings.openrouterModelFree || '';
-                    document.getElementById('ai-openrouter-model-pay').value = settings.openrouterModelPay || '';
+                    
+                    // Carica i modelli dinamicamente e imposta i valori salvati
+                    await loadOpenRouterModels(settings.openrouterModelFree, settings.openrouterModelPay);
                     document.getElementById('ai-asset-prompt').value = settings.aiAssetPrompt || '';
                     document.getElementById('ai-portfolio-prompt').value = settings.aiPortfolioPrompt || '';
                     
