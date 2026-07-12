@@ -1154,72 +1154,165 @@
         try {
             const res = await fetch('/api/assets/' + encodeURIComponent(ticker) + '/ai-history?t=' + Date.now());
             history = await res.json();
-        } catch(e) {
-            console.error(e);
-        }
+        } catch(e) { console.error(e); }
 
-        if (!history || history.length === 0) {
-            alert('Nessuna analisi da esportare');
-            return;
-        }
+        if (!history || history.length === 0) { alert('Nessuna analisi da esportare'); return; }
 
         if (!window.jspdf) {
             await new Promise((resolve, reject) => {
                 const script = document.createElement('script');
                 script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-                script.onload = resolve;
-                script.onerror = reject;
+                script.onload = resolve; script.onerror = reject;
                 document.head.appendChild(script);
             });
         }
 
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('p', 'pt', 'a4');
-        
-        let startY = 40;
-        doc.setFontSize(18);
-        doc.setFont("helvetica", "bold");
-        doc.text(`Storico Analisi IA: ${ticker}`, 40, startY);
-        startY += 30;
+        const pageW = doc.internal.pageSize.getWidth();
+        const pageH = doc.internal.pageSize.getHeight();
+        const margin = 44;
+        const contentW = pageW - margin * 2;
 
-        history.forEach((h, index) => {
-            const dObj = new Date(h.created_at);
-            const dateStr = dObj.toLocaleDateString() + ' ' + dObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            
-            if (startY > doc.internal.pageSize.getHeight() - 60) {
-                doc.addPage();
-                startY = 40;
-            }
+        const C = {
+            primary: [79, 70, 229], dark: [15, 23, 42], mid: [71, 85, 105],
+            light: [148, 163, 184], rule: [226, 232, 240], headerBg: [238, 242, 255],
+            buy: [16, 185, 129], sell: [239, 68, 68], hold: [100, 116, 139], nodata: [245, 158, 11],
+        };
 
-            doc.setFontSize(12);
-            doc.setFont("helvetica", "bold");
-            doc.text(`Data: ${dateStr}  |  Azione: ${h.action}  |  Motore: ${h.engine || 'N/D'}`, 40, startY);
-            startY += 15;
-            
-            doc.setFontSize(10);
-            doc.setFont("helvetica", "normal");
-            
-            const rawText = (h.reasoning || '').replace(/###/g, '').replace(/\*\*/g, '');
-            const textLines = doc.splitTextToSize(rawText, 515);
-            
-            textLines.forEach(line => {
-                if (startY > doc.internal.pageSize.getHeight() - 40) {
-                    doc.addPage();
-                    startY = 40;
-                }
-                doc.text(line, 40, startY);
-                startY += 12;
-            });
-            
-            startY += 20;
+        let pageNum = 1;
+
+        function addPageHeader() {
+            doc.setFillColor(...C.headerBg);
+            doc.rect(0, 0, pageW, 36, 'F');
+            doc.setDrawColor(...C.rule);
             doc.setLineWidth(0.5);
-            doc.setDrawColor(200, 200, 200);
-            doc.line(40, startY, 555, startY);
-            startY += 20;
+            doc.line(0, 36, pageW, 36);
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...C.primary);
+            doc.text('FolioTrack  \u00b7  Storico Analisi IA: ' + ticker, margin, 23);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(...C.light);
+            doc.text('Pagina ' + pageNum, pageW - margin, 23, { align: 'right' });
+        }
+
+        function addPageFooter() {
+            doc.setDrawColor(...C.rule);
+            doc.setLineWidth(0.5);
+            doc.line(margin, pageH - 28, pageW - margin, pageH - 28);
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(...C.light);
+            const dn = new Date().toLocaleDateString('it-IT');
+            doc.text('Generato il ' + dn + '  \u00b7  FolioTrack', margin, pageH - 14);
+        }
+
+        addPageHeader(); addPageFooter();
+
+        let y = 68;
+        doc.setFontSize(22); doc.setFont('helvetica', 'bold'); doc.setTextColor(...C.dark);
+        doc.text('Storico Analisi IA', margin, y); y += 24;
+        doc.setFontSize(12); doc.setFont('helvetica', 'normal'); doc.setTextColor(...C.mid);
+        doc.text('Asset: ' + ticker + '   \u00b7   ' + history.length + ' analisi nel registro', margin, y); y += 14;
+        doc.setDrawColor(...C.primary); doc.setLineWidth(2);
+        doc.line(margin, y, margin + 80, y); doc.setLineWidth(0.5); y += 28;
+
+        function ensureSpace(needed) {
+            if (y + needed > pageH - 44) {
+                addPageFooter(); doc.addPage(); pageNum++;
+                addPageHeader(); addPageFooter(); y = 56;
+            }
+        }
+
+        function actionStyle(action) {
+            if (action === 'BUY' || action === 'INCREASE') return { color: C.buy, label: action };
+            if (action === 'SELL' || action === 'DECREASE') return { color: C.sell, label: action };
+            if (action === 'NO DATA') return { color: C.nodata, label: action };
+            return { color: C.hold, label: action || 'N/D' };
+        }
+
+        function renderLine(line) {
+            line = line.replace(/\\n/g, ' ').trim();
+            if (!line) { y += 4; return; }
+            if (/^[-]{3,}$/.test(line)) {
+                ensureSpace(12);
+                doc.setDrawColor(...C.rule); doc.setLineWidth(0.5);
+                doc.line(margin, y, pageW - margin, y); y += 10; return;
+            }
+            const h3 = line.match(/^###?\s*(.*)/);
+            if (h3) {
+                ensureSpace(20);
+                doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(...C.primary);
+                const t = h3[1].replace(/\*\*/g, '').trim();
+                doc.text(t, margin, y); y += 5;
+                doc.setDrawColor(...C.primary); doc.setLineWidth(0.3);
+                doc.line(margin, y, margin + Math.min(doc.getTextWidth(t), contentW), y); y += 11; return;
+            }
+            const h2 = line.match(/^##\s*(.*)/);
+            if (h2) {
+                ensureSpace(22);
+                doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(...C.dark);
+                doc.text(h2[1].replace(/\*\*/g, '').trim(), margin, y); y += 15; return;
+            }
+            const bullet = line.match(/^\s*[-*]\s+(.*)/);
+            if (bullet) {
+                const rawB = bullet[1].replace(/\*\*/g, '').trim();
+                const wrapped = doc.splitTextToSize('\u2022 ' + rawB, contentW - 10);
+                wrapped.forEach((wl, i) => {
+                    ensureSpace(13);
+                    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(...C.mid);
+                    doc.text(i === 0 ? wl : '  ' + wl.trim(), margin + 8, y); y += 12;
+                }); return;
+            }
+            const clean = line.replace(/\*\*/g, '').replace(/\*/g, '').trim();
+            if (!clean) return;
+            const wrapped = doc.splitTextToSize(clean, contentW);
+            wrapped.forEach(wl => {
+                ensureSpace(13);
+                doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(...C.mid);
+                doc.text(wl, margin, y); y += 12;
+            });
+        }
+
+        history.forEach((h) => {
+            const dObj = new Date(h.created_at);
+            const dateStr = dObj.toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit', year:'numeric' })
+                + ' ' + dObj.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+
+            ensureSpace(58);
+
+            // Card header bar
+            doc.setFillColor(...C.headerBg);
+            doc.roundedRect(margin, y, contentW, 38, 4, 4, 'F');
+
+            const ast = actionStyle(h.action);
+            doc.setFillColor(...ast.color);
+            const bLabel = ast.label;
+            const bW = doc.getTextWidth(bLabel) + 16;
+            doc.roundedRect(margin + 8, y + 9, bW, 20, 3, 3, 'F');
+            doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
+            doc.text(bLabel, margin + 8 + 8, y + 22);
+
+            let eng = h.engine || 'N/D';
+            if (eng.includes('/')) eng = eng.split('/').pop().replace(':free', '');
+            if (eng.length > 32) eng = eng.substring(0, 30) + '\u2026';
+            doc.setFontSize(8.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(...C.mid);
+            doc.text(dateStr + '   \u00b7   ' + eng, margin + bW + 18, y + 22);
+            y += 48;
+
+            const rawText = h.reasoning || '';
+            rawText.split(/\\n|\n/).forEach(line => renderLine(line));
+
+            y += 6;
+            ensureSpace(20);
+            doc.setDrawColor(...C.rule); doc.setLineWidth(1);
+            doc.line(margin, y, pageW - margin, y); y += 22;
         });
 
-        doc.save(`Analisi_IA_${ticker}.pdf`);
+        doc.save('Analisi_IA_' + ticker + '.pdf');
     };
+
 
     window.runAssetAi = async function () {
         if (!_aiModalTicker) return;
