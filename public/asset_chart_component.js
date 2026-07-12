@@ -1108,6 +1108,12 @@
                 } else if (item.action === 'SELL' || item.action === 'DECREASE') {
                     actionColor = 'rgba(239,68,68,0.1)';
                     actionTextColor = 'rgb(239,68,68)';
+                } else if (item.action === 'AVOID') {
+                    actionColor = 'rgba(15,23,42,0.08)';
+                    actionTextColor = 'rgb(15,23,42)';
+                } else if (item.action === 'WATCHLIST') {
+                    actionColor = 'rgba(139,92,246,0.1)';
+                    actionTextColor = 'rgb(139,92,246)';
                 } else if (item.action === 'NO DATA') {
                     actionColor = 'rgba(245,158,11,0.1)';
                     actionTextColor = 'rgb(245,158,11)';
@@ -1408,6 +1414,15 @@
         } else if (action === 'SELL' || action === 'DECREASE') {
             actionColor = 'rgba(239,68,68,0.1)';
             actionTextColor = 'rgb(239,68,68)';
+        } else if (action === 'AVOID') {
+            actionColor = 'rgba(15,23,42,0.08)';
+            actionTextColor = 'rgb(15,23,42)';
+        } else if (action === 'WATCHLIST') {
+            actionColor = 'rgba(139,92,246,0.1)';
+            actionTextColor = 'rgb(139,92,246)';
+        } else if (action === 'NO DATA') {
+            actionColor = 'rgba(245,158,11,0.1)';
+            actionTextColor = 'rgb(245,158,11)';
         }
 
         // Formatta markdown basico per una UI accattivante

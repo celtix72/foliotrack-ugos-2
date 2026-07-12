@@ -1182,7 +1182,7 @@ Struttura JSON richiesta:
 }
 
 NB: 
-- "action" deve essere una singola parola in maiuscolo (es. BUY, SELL, HOLD, INCREASE, DECREASE). Se i dati forniti o recuperabili sono insufficienti per esprimere un giudizio, devi obbligatoriamente restituire "NO DATA" nel campo "action".
+- "action" deve essere UNA SINGOLA PAROLA in maiuscolo, scelta ESCLUSIVAMENTE tra: BUY, SELL, HOLD, INCREASE, DECREASE, AVOID, WATCHLIST. Se i dati forniti o recuperabili sono insufficienti per esprimere un giudizio, devi obbligatoriamente restituire "NO DATA".
 - "targetProfit" e "stopLoss" devono essere numeri (usa il punto per i decimali, es. 10.50). Se non hai un target o stop loss definito, inserisci 0.
 - IMPORTANTE: Per i ritorni a capo all'interno di "reasoning", devi ASSOLUTAMENTE USARE il carattere di escape "\n" e non andare mai a capo fisicamente. Fai l'escape anche delle eventuali virgolette interne con \" per non invalidare il JSON.
 `;
