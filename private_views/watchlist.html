@@ -299,18 +299,18 @@
                             const fvStr = badge.aiTargetPrice ? formatAiFv(badge.aiTargetPrice, item.currency) : badge.aiAction;
                             
                             return `
-                            <span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'")}', '${item.currency || 'EUR'}')" class="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 border ${colorClass} cursor-pointer transition-colors ml-2 whitespace-nowrap" title="${engine}: ${badge.aiAction} ">
+                            <span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${item.currency || 'EUR'}')" class="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 border ${colorClass} cursor-pointer transition-colors ml-2 whitespace-nowrap" title="${engine}: ${badge.aiAction} ">
                                 <span class="material-symbols-outlined" style="font-size: 12px;">${icon}</span> ${fvStr}
                             </span>`;
                         }).join('');
                     } else if (count > 0) {
                          aiBadge = `
-                        <span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'")}', '${item.currency || 'EUR'}')" class="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 border border-slate-500/30 text-slate-500 bg-slate-500/10 cursor-pointer hover:bg-slate-500/20 transition-colors ml-2" title="Storico Analisi IA">
+                        <span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${item.currency || 'EUR'}')" class="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 border border-slate-500/30 text-slate-500 bg-slate-500/10 cursor-pointer hover:bg-slate-500/20 transition-colors ml-2" title="Storico Analisi IA">
                             <span class="material-symbols-outlined" style="font-size: 12px;">smart_toy</span> ${count}
                         </span>`;
                     } else {
                         aiBadge = `
-                        <span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'")}', '${item.currency || 'EUR'}')" class="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 border border-slate-400/30 text-slate-400 bg-slate-400/10 cursor-pointer hover:bg-slate-400/20 transition-colors ml-2" title="Genera Analisi IA">
+                        <span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${item.currency || 'EUR'}')" class="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 border border-slate-400/30 text-slate-400 bg-slate-400/10 cursor-pointer hover:bg-slate-400/20 transition-colors ml-2" title="Genera Analisi IA">
                             <span class="material-symbols-outlined" style="font-size: 12px;">smart_toy</span>
                         </span>
                         `;

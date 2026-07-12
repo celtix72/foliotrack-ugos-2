@@ -712,7 +712,7 @@
       // ── AI badge renderer (reusable) ────────────────────────────────
       function renderAiBadgeMob(a) {
         const tickerEsc = a.ticker.replace(/'/g, "\\'");
-        const nameEsc = (a.name || '').replace(/'/g, "\\'");
+        const nameEsc = (a.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
         const cur = a.currency || 'EUR';
         if (a.aiBadges && a.aiBadges.length > 0) {
           return a.aiBadges.map(badge => {
