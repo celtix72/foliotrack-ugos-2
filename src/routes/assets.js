@@ -1265,33 +1265,53 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
             customPromptText = customPromptText.replace(/\[ASSET\]/gi, assetName);
         }
 
-        const customPrompt = customPromptText ? `\nIstruzioni personalizzate dall'utente:\n${customPromptText}\n` : '';
+        const customPromptSection = customPromptText ? `\n**USER CUSTOM INSTRUCTIONS**\n${customPromptText}\n` : '';
 
-        const prompt = `
-Sei un esperto analista finanziario. Il tuo compito è analizzare questo asset in base ai dati forniti e soddisfare scrupolosamente le istruzioni personalizzate dell'utente.
+        const prompt = `**SYSTEM ROLE & BEHAVIOR**
+Act as an elite financial analyst and a strict value investor. Your analysis must be deeply rooted in Benjamin Graham's and Warren Buffett's core principles. You will be provided with fundamental financial data, forward estimates, and historical metrics for an asset.
 
-${customPrompt}
-
-Dati Asset Attuali:
-${contextData}
-
-REGOLE DI OUTPUT FONDAMENTALI:
-Devi restituire ESATTAMENTE ed ESCLUSIVAMENTE un oggetto JSON valido. NESSUN TESTO al di fuori del JSON. Nessun blocco markdown \`\`\`json.
-Tutta la tua analisi discorsiva, comprese le risposte alle istruzioni dell'utente e la scheda tecnica richiesta, DEVONO ESSERE INSERITE ALL'INTERNO del campo testuale "reasoning" formattato in Markdown.
-Inoltre, devi estrarre l'indicazione operativa e i prezzi chiave per popolare i campi strutturati "action", "targetProfit" and "stopLoss".
-
-Struttura JSON richiesta:
+**TASK**
+Analyze the provided input data strictly, objectively, and exclusively. Do not hallucinate external data. If a specific metric required for the analysis is missing from the input, explicitly state "N/D" and adapt your evaluation.
+${customPromptSection}
+**OUTPUT CONSTRAINTS (CRITICAL)**
+You MUST output EXACTLY and EXCLUSIVELY a valid JSON object. No conversational text before or after. No markdown code blocks (like \`\`\`json). 
+The JSON structure must be exactly as follows:
 {
-  "action": "BUY",
-  "reasoning": "INSERISCI QUI TUTTA L'ANALISI COMPLETA E LA SCHEDA TECNICA RICHIESTA (in formato Markdown).",
-  "targetProfit": 150.50,
-  "stopLoss": 90.00
+  "action": "<ONE WORD: BUY, SELL, HOLD, AVOID, WATCHLIST, or NO DATA>",
+  "reasoning": "<Insert the full Markdown-formatted report here. You MUST escape all newlines with \\\\n and internal quotes with \\\" >",
+  "targetProfit": <number or 0>,
+  "stopLoss": <number or 0>
 }
 
-NB: 
-- "action" deve essere UNA SINGOLA PAROLA in maiuscolo, scelta ESCLUSIVAMENTE tra: BUY, SELL, HOLD, INCREASE, DECREASE, AVOID, WATCHLIST. Se i dati forniti o recuperabili sono insufficienti per esprimere un giudizio, devi obbligatoriamente restituire "NO DATA".
-- "targetProfit" e "stopLoss" devono essere numeri (usa il punto per i decimali, es. 10.50). Se non hai un target o stop loss definito, inserisci 0.
-- IMPORTANTE: Per i ritorni a capo all'interno di "reasoning", devi ASSOLUTAMENTE USARE il carattere di escape "\n" e non andare mai a capo fisicamente. Fai l'escape anche delle eventuali virgolette interne con \" per non invalidare il JSON.
+**REPORT STRUCTURE (To be generated inside the JSON "reasoning" field)**
+Write the discursive report in Italian, formatted in Markdown, following these exact sections:
+
+### 1. Business Moat
+Describe the company's competitive advantage based on its margins (Gross/Operating/Net) and market position. Why is it difficult for competitors to replicate?
+
+### 2. Financial Health
+Evaluate the Return on Equity/Assets, Debt-to-Equity ratio, liquidity ratios (Current/Quick), and Free Cash Flow (FCF) trends. Explicitly highlight any "Red Flags".
+
+### 3. Margin of Safety
+Compare current Valuation Multiples (Trailing/Forward P/E, P/B, EV/EBITDA, PEG) to historical averages and growth rates. Is the stock trading below its intrinsic value? 
+
+### 4. Management & Capital Allocation
+Evaluate capital efficiency based on FCF generation vs. CapEx and margin trends. Do they reinvest wisely?
+
+### 5. Proiezioni e Livelli Operativi
+Calculate conservative Fair Values using the provided Forward EPS estimates, historical P/E multiples, and Growth rates. 
+- **Fair Value 1Y:** [Prezzo calcolato e breve spiegazione]
+- **Fair Value 3Y:** [Prezzo calcolato e breve spiegazione]
+- **Fair Value 5Y:** [Prezzo calcolato e breve spiegazione]
+- **Trend di fondo:** [Rialzista / Ribassista / Laterale]
+- **Area di Supporto critico:** [Prezzo stimato dai minimi a 52 settimane e dati]
+- **Area di Resistenza critica:** [Prezzo stimato dai massimi a 52 settimane e target analisti]
+- **Zona di Ingresso ideale (Buy):** [Prezzo o Range che garantisce un margine di sicurezza]
+- **Take Profit suggerito (TP):** [Prezzo - DEVE COINCIDERE CON IL CAMPO JSON "targetProfit"]
+- **Stop Loss rigoroso (SL):** [Prezzo - DEVE COINCIDERE CON IL CAMPO JSON "stopLoss"]
+
+**INPUT DATA TO ANALYZE:**
+${contextData}
 `;
 
         const engine = req.query.engine || globalSettings.aiEngine || 'Gemini';
