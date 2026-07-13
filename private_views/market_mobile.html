@@ -852,8 +852,9 @@
               </div>
 
               <!-- Col 2: AI Target Price TAG -->
-              <div style="display:flex; flex-direction:column; justify-content:center; align-items:flex-start; gap:3px; min-width:0; height:100%">
+              <div style="display:flex; flex-direction:row; align-items:center; gap:3px; min-width:0; height:100%">
                 ${renderAiBadgeMob(a)}
+                <span onclick="event.stopPropagation(); window.openAssetFundamentalsModal('${tickerEsc}', '${nameEsc}')" class="px-1 py-0.5 rounded font-black uppercase tracking-tighter border border-indigo-500/30 text-indigo-500 bg-indigo-500/10 cursor-pointer ml-1" style="font-size: calc(9px * var(--mkcard-scale, 1))">D</span>
               </div>
 
               <!-- Col 3: Today Var % & Absolute Var % -->
@@ -908,6 +909,7 @@
                 <div class="flex items-center gap-2">
                   <div class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border" style="background:${colors.bg};color:#000000;border-color:${colors.border};display:inline-block">${a.ticker}</div>
                   ${renderAiBadgeMob(a)}
+                  <span onclick="event.stopPropagation(); window.openAssetFundamentalsModal('${tickerEsc}', '${nameEsc}')" class="px-1 py-0.5 rounded font-black uppercase tracking-tighter border border-indigo-500/30 text-indigo-500 bg-indigo-500/10 cursor-pointer ml-1" style="font-size: calc(9px * var(--mkcard-scale, 1))">D</span>
                 </div>
                 <div class="mob-holding-name" style="margin-top:2px">${abbreviateName(a.name)||''}</div>
               </div>

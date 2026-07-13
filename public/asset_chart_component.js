@@ -1688,6 +1688,195 @@
         detailModal.style.display = 'flex';
     };
 
+    };
+
+    window.openAssetFundamentalsModal = async function(ticker, name) {
+        let detailModal = document.getElementById('asset-fundamentals-data-modal');
+        if (!detailModal) {
+            const isDark = document.documentElement.classList.contains('dark');
+            const backdropColor = isDark ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.7)';
+            detailModal = document.createElement('div');
+            detailModal.id = 'asset-fundamentals-data-modal';
+            detailModal.style.cssText = `display: none; position: fixed; inset: 0; z-index: 10001; align-items: center; justify-content: center; background-color: ${backdropColor}; backdrop-filter: blur(12px); padding: 16px; flex-direction: column;`;
+            document.body.appendChild(detailModal);
+            detailModal.addEventListener('click', function (e) {
+                if (e.target === this) this.style.display = 'none';
+            });
+        }
+
+        const isDark = document.documentElement.classList.contains('dark');
+        const textMuted = isDark ? '#94a3b8' : '#64748b';
+        const cardBg = isDark ? 'rgba(30,41,59,0.7)' : '#f8fafc';
+        const cardBorder = isDark ? 'rgba(51,65,85,0.8)' : '#e2e8f0';
+
+        detailModal.innerHTML = `
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800" style="border-radius: 20px; width: 95%; max-width: 700px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
+                <div class="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800" style="padding: 16px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h3 class="text-indigo-600 dark:text-indigo-400 font-black" style="font-size: 14px; display: flex; align-items: center; gap: 8px; margin: 0;">
+                            <span class="material-symbols-outlined">analytics</span> Fondamentali: ${ticker}
+                        </h3>
+                        <p style="font-size: 10px; color: ${textMuted}; margin: 2px 0 0 0; font-weight: bold;">${name || ''}</p>
+                    </div>
+                    <button onclick="document.getElementById('asset-fundamentals-data-modal').style.display='none'" class="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700" style="background:rgba(148,163,184,0.1); border-radius:50%; border:none; cursor:pointer; display: flex; padding: 6px; transition: all 0.2s;"><span class="material-symbols-outlined" style="font-size: 18px;">close</span></button>
+                </div>
+                <div id="fundamentals-modal-content" style="padding: 20px 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; -webkit-overflow-scrolling: touch;">
+                    <div style="display:flex; justify-content:center; align-items:center; height: 150px;"><span class="material-symbols-outlined animate-spin" style="font-size: 28px; color: var(--mob-primary);">sync</span></div>
+                </div>
+            </div>
+        `;
+        detailModal.style.display = 'flex';
+
+        try {
+            const res = await fetch('/api/fundamentals/' + encodeURIComponent(ticker));
+            if (!res.ok) throw new Error('Impossibile caricare i dati');
+            const data = await res.json();
+
+            const renderVal = (val, type = 'num', currency = '') => {
+                if (val === null || val === undefined || isNaN(val)) return '<span style="color:#94a3b8">N/D</span>';
+                if (type === 'percent') return `<strong>${val.toFixed(1)}%</strong>`;
+                if (type === 'curr') {
+                    const formatted = Math.abs(val) >= 1e9 ? (val/1e9).toFixed(2)+'B' : (val/1e6).toFixed(2)+'M';
+                    return `<strong>${formatted} ${currency}</strong>`;
+                }
+                return `<strong>${val.toFixed(2)}</strong>`;
+            };
+
+            const ks = data.keyStats || {};
+            const sd = data.summaryDetail || {};
+            const fd = data.financialData || {};
+            const currency = fd.currency || sd.currency || 'USD';
+
+            let financialsHtml = '';
+            if (data.historicalFinancials && data.historicalFinancials.length > 0) {
+                financialsHtml = `
+                    <div style="margin-top: 8px;">
+                        <h4 class="text-slate-800 dark:text-slate-200" style="font-size: 11px; font-weight:900; text-transform:uppercase; margin-bottom:8px; display:flex; align-items:center; gap:4px;"><span class="material-symbols-outlined" style="font-size:14px">history</span> Bilancio Storico (Annuale)</h4>
+                        <div style="overflow-x:auto;">
+                            <table style="width:100%; border-collapse:collapse; font-size:11px; text-align:left;">
+                                <thead>
+                                    <tr style="border-bottom:1px solid ${cardBorder}; color:${textMuted}; font-weight:bold;">
+                                        <th style="padding:6px 4px;">Anno</th>
+                                        <th style="padding:6px 4px;">Revenue</th>
+                                        <th style="padding:6px 4px;">Net Income</th>
+                                        <th style="padding:6px 4px;">EPS</th>
+                                        <th style="padding:6px 4px;">P/E</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${data.historicalFinancials.map(f => {
+                                        const yr = f.date ? String(f.date).substring(0,4) : 'TTM';
+                                        return `
+                                            <tr style="border-bottom:1px solid rgba(148,163,184,0.1);">
+                                                <td style="padding:6px 4px; font-weight:bold;">${yr}</td>
+                                                <td style="padding:6px 4px;">${renderVal(f.totalRevenue, 'curr', currency)}</td>
+                                                <td style="padding:6px 4px;">${renderVal(f.netIncome, 'curr', currency)}</td>
+                                                <td style="padding:6px 4px;">${renderVal(f.eps)}</td>
+                                                <td style="padding:6px 4px;">${renderVal(f.pe)}</td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+
+            let cashflowHtml = '';
+            if (data.fcfAnnual && data.fcfAnnual.length > 0) {
+                cashflowHtml = `
+                    <div style="margin-top: 8px;">
+                        <h4 class="text-slate-800 dark:text-slate-200" style="font-size: 11px; font-weight:900; text-transform:uppercase; margin-bottom:8px; display:flex; align-items:center; gap:4px;"><span class="material-symbols-outlined" style="font-size:14px">payments</span> Cash Flow Storico (Annuale)</h4>
+                        <div style="overflow-x:auto;">
+                            <table style="width:100%; border-collapse:collapse; font-size:11px; text-align:left;">
+                                <thead>
+                                    <tr style="border-bottom:1px solid ${cardBorder}; color:${textMuted}; font-weight:bold;">
+                                        <th style="padding:6px 4px;">Anno</th>
+                                        <th style="padding:6px 4px;">Operating Cash Flow</th>
+                                        <th style="padding:6px 4px;">CapEx</th>
+                                        <th style="padding:6px 4px;">Free Cash Flow</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${data.fcfAnnual.map(f => {
+                                        const yr = f.date ? String(f.date).substring(0,4) : 'N/D';
+                                        const fcf = f.freeCashFlow ?? f.fcfCalculated;
+                                        return `
+                                            <tr style="border-bottom:1px solid rgba(148,163,184,0.1);">
+                                                <td style="padding:6px 4px; font-weight:bold;">${yr}</td>
+                                                <td style="padding:6px 4px;">${renderVal(f.operatingCashFlow, 'curr', currency)}</td>
+                                                <td style="padding:6px 4px;">${renderVal(f.capitalExpenditure, 'curr', currency)}</td>
+                                                <td style="padding:6px 4px;">${renderVal(fcf, 'curr', currency)}</td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('fundamentals-modal-content').innerHTML = `
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
+                    <!-- Valutazione -->
+                    <div style="background:${cardBg}; border:1px solid ${cardBorder}; border-radius:12px; padding:12px;">
+                        <h4 style="font-size:10px; font-weight:900; text-transform:uppercase; color:var(--mob-primary); margin-bottom:8px; display:flex; align-items:center; gap:4px;"><span class="material-symbols-outlined" style="font-size:14px">sell</span> Multipli Valutazione</h4>
+                        <div style="display:flex; flex-direction:column; gap:6px; font-size:11px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;"><span>P/E (Trailing):</span> ${renderVal(sd.trailingPE)}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;"><span>P/E (Forward):</span> ${renderVal(ks.forwardPE)}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;"><span>PEG Ratio:</span> ${renderVal(data.pegRatio)}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;"><span>Price/Book:</span> ${renderVal(ks.priceToBook)}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;"><span>EV/EBITDA:</span> ${renderVal(ks.enterpriseToEbitda)}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;"><span>EV/Revenue:</span> ${renderVal(ks.enterpriseToRevenue)}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;"><span>Beta:</span> ${renderVal(sd.beta)}</div>
+                        </div>
+                    </div>
+
+                    <!-- Margini e Redditività -->
+                    <div style="background:${cardBg}; border:1px solid ${cardBorder}; border-radius:12px; padding:12px;">
+                        <h4 style="font-size:10px; font-weight:900; text-transform:uppercase; color:#10b981; margin-bottom:8px; display:flex; align-items:center; gap:4px;"><span class="material-symbols-outlined" style="font-size:14px">trending_up</span> Redditività e Margini</h4>
+                        <div style="display:flex; flex-direction:column; gap:6px; font-size:11px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;"><span>Gross Margin:</span> ${renderVal(fd.grossMargins ? fd.grossMargins*100 : null, 'percent')}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;"><span>Operating Margin:</span> ${renderVal(fd.operatingMargins ? fd.operatingMargins*100 : null, 'percent')}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;"><span>EBITDA Margin:</span> ${renderVal(fd.ebitdaMargins ? fd.ebitdaMargins*100 : null, 'percent')}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;"><span>Profit Margin:</span> ${renderVal(fd.profitMargins ? fd.profitMargins*100 : null, 'percent')}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;"><span>ROE:</span> ${renderVal(fd.returnOnEquity ? fd.returnOnEquity*100 : null, 'percent')}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;"><span>ROA:</span> ${renderVal(fd.returnOnAssets ? fd.returnOnAssets*100 : null, 'percent')}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;"><span>Dividend Yield:</span> ${renderVal(sd.dividendYield ? sd.dividendYield*100 : null, 'percent')}</div>
+                        </div>
+                    </div>
+
+                    <!-- Bilancio e Liquidità -->
+                    <div style="background:${cardBg}; border:1px solid ${cardBorder}; border-radius:12px; padding:12px;">
+                        <h4 style="font-size:10px; font-weight:900; text-transform:uppercase; color:#f59e0b; margin-bottom:8px; display:flex; align-items:center; gap:4px;"><span class="material-symbols-outlined" style="font-size:14px">account_balance</span> Bilancio e Liquidità</h4>
+                        <div style="display:flex; flex-direction:column; gap:6px; font-size:11px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;"><span>Total Cash:</span> ${renderVal(fd.totalCash, 'curr', currency)}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;"><span>Total Debt:</span> ${renderVal(fd.totalDebt, 'curr', currency)}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;"><span>Debt/Equity:</span> ${renderVal(fd.debtToEquity)}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;"><span>Current Ratio:</span> ${renderVal(fd.currentRatio)}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;"><span>Quick Ratio:</span> ${renderVal(fd.quickRatio)}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;"><span>Shares Out:</span> ${renderVal(ks.sharesOutstanding ? ks.sharesOutstanding/1e9 : null)} B</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;"><span>Book Value:</span> ${renderVal(ks.bookValue)} ${currency}</div>
+                        </div>
+                    </div>
+                </div>
+
+                ${financialsHtml}
+                ${cashflowHtml}
+            `;
+        } catch(e) {
+            document.getElementById('fundamentals-modal-content').innerHTML = `
+                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height: 150px; text-align:center; color: #f43f5e;">
+                    <span class="material-symbols-outlined" style="font-size: 32px; margin-bottom: 8px;">error</span>
+                    <div style="font-size: 12px; font-weight: bold;">Errore nel caricamento dei dati</div>
+                    <div style="font-size: 10px;">${e.message}</div>
+                </div>
+            `;
+        }
+    };
+
     // Ensure we expose necessary functions globally
     document.addEventListener('DOMContentLoaded', () => {
         ensureModalExists();
