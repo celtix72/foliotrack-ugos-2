@@ -66,7 +66,7 @@ async function getAssetFundamentals(ticker) {
     const cached = fundamentalsCache.get(ticker);
     if (cached && (Date.now() - cached.ts) < FUNDAMENTALS_CACHE_TTL_MS) {
         logger.info(`[Fundamentals] Cache hit: ${ticker}`);
-        return res.json(cached.data);
+        return cached.data;
     }
 
     logger.info(`[Fundamentals] Fetching data for: ${ticker}`);

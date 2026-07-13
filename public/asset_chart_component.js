@@ -1013,6 +1013,15 @@
                             </div>
                         </div>
                         
+                        <!-- Fundamentals Charts Panel -->
+                        <div id="ai-fundamentals-charts" style="margin-bottom: 14px; display: none;">
+                            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 10px;">
+                                <span class="material-symbols-outlined" style="font-size: 15px; color: var(--mob-primary);">bar_chart</span>
+                                <span class="text-slate-700 dark:text-slate-300" style="font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.06em;">Dati Fondamentali Storici</span>
+                            </div>
+                            <div id="ai-charts-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;"></div>
+                        </div>
+
                         <div id="ai-modal-list" style="overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 12px; padding-right: 4px; -webkit-overflow-scrolling: touch;">
                             <!-- AI items injected here -->
                         </div>
@@ -1032,6 +1041,7 @@
         modal.style.display = 'flex';
 
         window.loadAssetAiHistory(ticker);
+        window.loadAiFundamentalsCharts(ticker);
 
         // Fetch available engines
         fetch('/api/ai/available-engines').then(r => r.json()).then(data => {
@@ -1050,6 +1060,184 @@
                 }).join('');
             }
         }).catch(e => console.error("Error loading engines", e));
+    };
+
+    window.loadAiFundamentalsCharts = async function(ticker) {
+        const panel = document.getElementById('ai-fundamentals-charts');
+        const grid = document.getElementById('ai-charts-grid');
+        if (!panel || !grid) return;
+
+        panel.style.display = 'none';
+        grid.innerHTML = '';
+
+        try {
+            const res = await fetch('/api/fundamentals/' + encodeURIComponent(ticker) + '?t=' + Date.now());
+            if (!res.ok) return;
+            const fd = await res.json();
+
+            const isDark = document.documentElement.classList.contains('dark');
+            const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+            const labelColor = isDark ? '#94a3b8' : '#64748b';
+            const cardBg = isDark ? 'rgba(30,41,59,0.7)' : '#f8fafc';
+            const cardBorder = isDark ? 'rgba(51,65,85,0.8)' : '#e2e8f0';
+
+            // Load Chart.js if not already loaded
+            if (!window.Chart) {
+                await new Promise((resolve, reject) => {
+                    const s = document.createElement('script');
+                    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js';
+                    s.onload = resolve; s.onerror = reject;
+                    document.head.appendChild(s);
+                });
+            }
+
+            const baseChartOpts = (title, color) => ({
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    title: {
+                        display: true,
+                        text: title,
+                        color: labelColor,
+                        font: { size: 10, weight: '900' },
+                        padding: { bottom: 4 }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => {
+                                const v = ctx.parsed.y;
+                                if (Math.abs(v) >= 1) return `${v >= 0 ? '' : '-'}${Math.abs(v).toFixed(2)}B`;
+                                return `${(v * 1000).toFixed(0)}M`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { ticks: { color: labelColor, font: { size: 9 } }, grid: { color: gridColor } },
+                    y: { ticks: { color: labelColor, font: { size: 9 }, callback: v => Math.abs(v) >= 1 ? v.toFixed(1)+'B' : (v*1000).toFixed(0)+'M' }, grid: { color: gridColor } }
+                }
+            });
+
+            function makeCard(id) {
+                const wrap = document.createElement('div');
+                wrap.style.cssText = `background:${cardBg}; border:1px solid ${cardBorder}; border-radius:10px; padding:10px; position:relative; height:140px;`;
+                const canvas = document.createElement('canvas');
+                canvas.id = id;
+                wrap.appendChild(canvas);
+                grid.appendChild(wrap);
+                return canvas;
+            }
+
+            function destroyIfExists(id) {
+                const existing = Chart.getChart(id);
+                if (existing) existing.destroy();
+            }
+
+            let chartsRendered = 0;
+
+            // ── Revenue & Net Income ─────────────────────────────────────
+            if (fd.historicalFinancials && fd.historicalFinancials.length > 1) {
+                const fin = fd.historicalFinancials.filter(f => f.date && (f.totalRevenue || f.netIncome)).slice(-6);
+                const labels = fin.map(f => String(f.date).substring(0, 4));
+
+                // Revenue chart
+                destroyIfExists('chart-revenue');
+                const cvRev = makeCard('chart-revenue');
+                new Chart(cvRev, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [{
+                            data: fin.map(f => f.totalRevenue ? f.totalRevenue / 1e9 : null),
+                            backgroundColor: 'rgba(79,70,229,0.7)',
+                            borderColor: 'rgba(79,70,229,1)',
+                            borderWidth: 1, borderRadius: 3
+                        }]
+                    },
+                    options: baseChartOpts('Revenue (B)', 'rgba(79,70,229,0.7)')
+                });
+                chartsRendered++;
+
+                // Net Income chart
+                destroyIfExists('chart-netincome');
+                const cvNi = makeCard('chart-netincome');
+                new Chart(cvNi, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [{
+                            data: fin.map(f => f.netIncome ? f.netIncome / 1e9 : null),
+                            backgroundColor: fin.map(f => (f.netIncome ?? 0) >= 0 ? 'rgba(16,185,129,0.7)' : 'rgba(239,68,68,0.7)'),
+                            borderColor: fin.map(f => (f.netIncome ?? 0) >= 0 ? 'rgba(16,185,129,1)' : 'rgba(239,68,68,1)'),
+                            borderWidth: 1, borderRadius: 3
+                        }]
+                    },
+                    options: baseChartOpts('Net Income (B)', 'rgba(16,185,129,0.7)')
+                });
+                chartsRendered++;
+            }
+
+            // ── FCF Annuale ──────────────────────────────────────────────
+            if (fd.fcfAnnual && fd.fcfAnnual.length > 1) {
+                const fcfData = fd.fcfAnnual.filter(f => f.date).slice(-6).map(f => ({
+                    year: String(f.date).substring(0, 4),
+                    val: (f.freeCashFlow ?? f.fcfCalculated ?? null)
+                })).filter(f => f.val !== null);
+
+                if (fcfData.length > 1) {
+                    destroyIfExists('chart-fcf');
+                    const cvFcf = makeCard('chart-fcf');
+                    new Chart(cvFcf, {
+                        type: 'bar',
+                        data: {
+                            labels: fcfData.map(f => f.year),
+                            datasets: [{
+                                data: fcfData.map(f => f.val / 1e9),
+                                backgroundColor: fcfData.map(f => f.val >= 0 ? 'rgba(6,182,212,0.7)' : 'rgba(239,68,68,0.7)'),
+                                borderColor: fcfData.map(f => f.val >= 0 ? 'rgba(6,182,212,1)' : 'rgba(239,68,68,1)'),
+                                borderWidth: 1, borderRadius: 3
+                            }]
+                        },
+                        options: baseChartOpts('Free Cash Flow (B)', 'rgba(6,182,212,0.7)')
+                    });
+                    chartsRendered++;
+                }
+            }
+
+            // ── EPS storico ──────────────────────────────────────────────
+            if (fd.earningsHistory && fd.earningsHistory.length > 1) {
+                const epsData = fd.earningsHistory.filter(h => h.date && h.epsActual != null).slice(-8);
+                if (epsData.length > 1) {
+                    destroyIfExists('chart-eps');
+                    const cvEps = makeCard('chart-eps');
+                    const epsOpts = { ...baseChartOpts('EPS Trimestrale', 'rgba(245,158,11,0.7)') };
+                    epsOpts.scales.y.ticks.callback = v => v.toFixed(2);
+                    epsOpts.plugins.tooltip.callbacks.label = ctx => ctx.parsed.y.toFixed(2);
+                    new Chart(cvEps, {
+                        type: 'line',
+                        data: {
+                            labels: epsData.map(h => h.date ? h.date.substring(0, 7) : ''),
+                            datasets: [{
+                                data: epsData.map(h => h.epsActual),
+                                borderColor: 'rgba(245,158,11,1)',
+                                backgroundColor: 'rgba(245,158,11,0.15)',
+                                pointBackgroundColor: epsData.map(h => (h.epsActual ?? 0) >= 0 ? 'rgba(245,158,11,1)' : 'rgba(239,68,68,1)'),
+                                pointRadius: 4, fill: true, tension: 0.35, borderWidth: 2
+                            }]
+                        },
+                        options: epsOpts
+                    });
+                    chartsRendered++;
+                }
+            }
+
+            if (chartsRendered > 0) {
+                panel.style.display = 'block';
+            }
+        } catch(e) {
+            console.warn('[FundamentalsCharts] Error:', e.message);
+        }
     };
 
     window.loadAssetAiHistory = async function (ticker) {
