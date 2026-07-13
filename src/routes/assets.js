@@ -1263,11 +1263,23 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
             customPromptText = customPromptText.replace(/\[INSERIRE TICKER E MERCATO\]/gi, `${assetRow.ticker} (${assetExchange})`);
             customPromptText = customPromptText.replace(/\[TICKER\]/gi, assetRow.ticker);
             customPromptText = customPromptText.replace(/\[ASSET\]/gi, assetName);
+            customPromptText = customPromptText.replace(/\[INSERISCI QUI I DATI DELL'ASSET\]/gi, contextData);
+            customPromptText = customPromptText.replace(/\[INSERISCI I DATI DELL'ASSET\]/gi, contextData);
+            customPromptText = customPromptText.replace(/\[DATI ASSET\]/gi, contextData);
         }
 
-        const customPromptSection = customPromptText ? `\n**USER CUSTOM INSTRUCTIONS**\n${customPromptText}\n` : '';
-
-        const prompt = `**SYSTEM ROLE & BEHAVIOR**
+        let prompt = '';
+        // Se il prompt personalizzato contiene già la struttura o le istruzioni intere, usalo direttamente
+        if (customPromptText.includes('SYSTEM ROLE') || customPromptText.includes('INPUT DATA TO ANALYZE') || customPromptText.includes('Business Moat') || customPromptText.includes('PROIEZIONI E LIVELLI')) {
+            prompt = customPromptText;
+            // Se non contiene già i dati compilati al suo interno, li accodiamo per sicurezza
+            if (!customPromptText.includes(contextData.substring(0, 15))) {
+                prompt += `\n\n**INPUT DATA TO ANALYZE:**\n${contextData}`;
+            }
+        } else {
+            // Altrimenti usa la struttura predefinita e accoda le istruzioni custom dell'utente
+            const customPromptSection = customPromptText ? `\n**USER CUSTOM INSTRUCTIONS**\n${customPromptText}\n` : '';
+            prompt = `**SYSTEM ROLE & BEHAVIOR**
 Act as an elite financial analyst and a strict value investor. Your analysis must be deeply rooted in Benjamin Graham's and Warren Buffett's core principles. You will be provided with fundamental financial data, forward estimates, and historical metrics for an asset.
 
 **TASK**
@@ -1313,6 +1325,7 @@ Calculate conservative Fair Values using the provided Forward EPS estimates, his
 **INPUT DATA TO ANALYZE:**
 ${contextData}
 `;
+        }
 
         const engine = req.query.engine || globalSettings.aiEngine || 'Gemini';
         let parsedResponse = null;
