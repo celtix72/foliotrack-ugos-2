@@ -499,7 +499,7 @@
                                         <input type="password" id="ai-openrouter-key" placeholder="sk-or-v1-..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
                                     </div>
                                 </div>
-                                <div class="grid grid-cols-1 gap-3 mt-2">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
                                     <div>
                                         <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Modello OpenRouter 1 (OR1)</label>
                                         <select id="ai-openrouter-model-1" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-600 dark:text-slate-400">
@@ -518,8 +518,20 @@
                                             <option value="">Caricamento modelli...</option>
                                         </select>
                                     </div>
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Modello OpenRouter 4 (OR4)</label>
+                                        <select id="ai-openrouter-model-4" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-600 dark:text-slate-400">
+                                            <option value="">Caricamento modelli...</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Modello OpenRouter 5 (OR5)</label>
+                                        <select id="ai-openrouter-model-5" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-600 dark:text-slate-400">
+                                            <option value="">Caricamento modelli...</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <p class="text-[10px] text-slate-500">Scegli fino a 3 modelli tra quelli disponibili su OpenRouter.</p>
+                                <p class="text-[10px] text-slate-500 mt-1">Scegli fino a 5 modelli tra quelli disponibili su OpenRouter.</p>
                             </div>
                         </div>
 
@@ -1065,13 +1077,15 @@
         };
 
         // --- AI Settings ---
-        async function loadOpenRouterModels(saved1, saved2, saved3) {
+        async function loadOpenRouterModels(saved1, saved2, saved3, saved4, saved5) {
             try {
                 const res = await fetchAdmin('/api/admin/openrouter-models');
                 if (res && res.models) {
                     const sel1 = document.getElementById('ai-openrouter-model-1');
                     const sel2 = document.getElementById('ai-openrouter-model-2');
                     const sel3 = document.getElementById('ai-openrouter-model-3');
+                    const sel4 = document.getElementById('ai-openrouter-model-4');
+                    const sel5 = document.getElementById('ai-openrouter-model-5');
                     
                     let optionsHtml = '<option value="">(Nessun modello)</option>';
                     res.models.forEach(m => {
@@ -1081,10 +1095,14 @@
                     sel1.innerHTML = optionsHtml;
                     sel2.innerHTML = optionsHtml;
                     sel3.innerHTML = optionsHtml;
+                    sel4.innerHTML = optionsHtml;
+                    sel5.innerHTML = optionsHtml;
                     
                     if (saved1) sel1.value = saved1;
                     if (saved2) sel2.value = saved2;
                     if (saved3) sel3.value = saved3;
+                    if (saved4) sel4.value = saved4;
+                    if (saved5) sel5.value = saved5;
                 }
             } catch(e) {
                 console.error('Failed to load OR models', e);
@@ -1101,7 +1119,7 @@
                     document.getElementById('ai-openrouter-key').value = settings.openrouterApiKey || '';
                     
                     // Carica i modelli dinamicamente e imposta i valori salvati
-                    await loadOpenRouterModels(settings.openrouterModel1, settings.openrouterModel2, settings.openrouterModel3);
+                    await loadOpenRouterModels(settings.openrouterModel1, settings.openrouterModel2, settings.openrouterModel3, settings.openrouterModel4, settings.openrouterModel5);
                     document.getElementById('ai-asset-prompt').value = settings.aiAssetPrompt || '';
                     document.getElementById('ai-portfolio-prompt').value = settings.aiPortfolioPrompt || '';
                     
@@ -1129,6 +1147,8 @@
                     openrouterModel1: document.getElementById('ai-openrouter-model-1').value,
                     openrouterModel2: document.getElementById('ai-openrouter-model-2').value,
                     openrouterModel3: document.getElementById('ai-openrouter-model-3').value,
+                    openrouterModel4: document.getElementById('ai-openrouter-model-4').value,
+                    openrouterModel5: document.getElementById('ai-openrouter-model-5').value,
                     aiAssetPrompt: document.getElementById('ai-asset-prompt').value,
                     aiPortfolioPrompt: document.getElementById('ai-portfolio-prompt').value
                 };

@@ -67,6 +67,8 @@ module.exports = function (dependencies) {
                 if (settings.openrouterModel1) available.push('OR1');
                 if (settings.openrouterModel2) available.push('OR2');
                 if (settings.openrouterModel3) available.push('OR3');
+                if (settings.openrouterModel4) available.push('OR4');
+                if (settings.openrouterModel5) available.push('OR5');
             }
             
             let geminiModelName = '';
@@ -85,6 +87,10 @@ module.exports = function (dependencies) {
                     label = `OpenRouter 2 [${settings.openrouterModel2}]`;
                 } else if (e === 'OR3') {
                     label = `OpenRouter 3 [${settings.openrouterModel3}]`;
+                } else if (e === 'OR4') {
+                    label = `OpenRouter 4 [${settings.openrouterModel4}]`;
+                } else if (e === 'OR5') {
+                    label = `OpenRouter 5 [${settings.openrouterModel5}]`;
                 }
                 
                 return { id: e, label };
@@ -112,6 +118,8 @@ module.exports = function (dependencies) {
                 openrouterModel1: settings.openrouterModel1 || '',
                 openrouterModel2: settings.openrouterModel2 || '',
                 openrouterModel3: settings.openrouterModel3 || '',
+                openrouterModel4: settings.openrouterModel4 || '',
+                openrouterModel5: settings.openrouterModel5 || '',
                 tavilyApiKey: settings.tavilyApiKey || '',
                 aiAssetPrompt: settings.aiAssetPrompt || '',
                 aiPortfolioPrompt: settings.aiPortfolioPrompt || '',
@@ -125,7 +133,7 @@ module.exports = function (dependencies) {
 
     // POST /api/admin/ai-settings
     router.post('/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
-        const { aiEngine, geminiApiKeyFree, geminiApiKeyPay, openrouterApiKey, openrouterModel1, openrouterModel2, openrouterModel3, tavilyApiKey, aiAssetPrompt, aiPortfolioPrompt } = req.body;
+        const { aiEngine, geminiApiKeyFree, geminiApiKeyPay, openrouterApiKey, openrouterModel1, openrouterModel2, openrouterModel3, openrouterModel4, openrouterModel5, tavilyApiKey, aiAssetPrompt, aiPortfolioPrompt } = req.body;
         try {
             if (aiEngine !== undefined) database.setSetting(1, 'aiEngine', aiEngine);
             if (geminiApiKeyFree !== undefined) database.setSetting(1, 'geminiApiKeyFree', geminiApiKeyFree);
@@ -134,6 +142,8 @@ module.exports = function (dependencies) {
             if (openrouterModel1 !== undefined) database.setSetting(1, 'openrouterModel1', openrouterModel1);
             if (openrouterModel2 !== undefined) database.setSetting(1, 'openrouterModel2', openrouterModel2);
             if (openrouterModel3 !== undefined) database.setSetting(1, 'openrouterModel3', openrouterModel3);
+            if (openrouterModel4 !== undefined) database.setSetting(1, 'openrouterModel4', openrouterModel4);
+            if (openrouterModel5 !== undefined) database.setSetting(1, 'openrouterModel5', openrouterModel5);
             if (tavilyApiKey !== undefined) database.setSetting(1, 'tavilyApiKey', tavilyApiKey);
             if (aiAssetPrompt !== undefined) database.setSetting(1, 'aiAssetPrompt', aiAssetPrompt);
             if (aiPortfolioPrompt !== undefined) database.setSetting(1, 'aiPortfolioPrompt', aiPortfolioPrompt);

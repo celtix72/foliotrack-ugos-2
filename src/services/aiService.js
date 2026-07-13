@@ -192,7 +192,7 @@ async function callAIModel(engine, prompt, keys) {
 
     logger.info(`[AI Iteration] Starting analysis with engine: ${engine}`);
     logger.info(`[AI Prompt] \n${prompt}`);
-    if (baseEngine === 'OR1' || baseEngine === 'OR2' || baseEngine === 'OR3') {
+    if (baseEngine === 'OR1' || baseEngine === 'OR2' || baseEngine === 'OR3' || baseEngine === 'OR4' || baseEngine === 'OR5') {
         const apiKey = keys.openrouterApiKey || keys.openrouterApiKeyPay || process.env.OPENROUTER_API_KEY;
         if (!apiKey) throw new Error(`OpenRouter API Key mancante.`);
         
@@ -200,6 +200,8 @@ async function callAIModel(engine, prompt, keys) {
         if (baseEngine === 'OR1') orModel = keys.openrouterModel1;
         if (baseEngine === 'OR2') orModel = keys.openrouterModel2;
         if (baseEngine === 'OR3') orModel = keys.openrouterModel3;
+        if (baseEngine === 'OR4') orModel = keys.openrouterModel4;
+        if (baseEngine === 'OR5') orModel = keys.openrouterModel5;
         
         if (!orModel) throw new Error(`Nessun modello configurato per ${baseEngine}. Selezionalo nei Settings dell'amministratore.`);
         
