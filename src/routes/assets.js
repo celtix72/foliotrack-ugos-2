@@ -1128,15 +1128,55 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
             });
             historicalStr = '\n  - Storico Dati Finanziari (Annuale):\n' + lines.join('\n');
         }
-        
+
+        // FCF storico annuale
+        let fcfStr = '';
+        if (fundamentalsData.fcfAnnual && fundamentalsData.fcfAnnual.length > 0) {
+            const fcfLines = fundamentalsData.fcfAnnual
+                .filter(f => f.date)
+                .slice(0, 5)
+                .map(f => {
+                    const fcfVal = f.freeCashFlow ?? f.fcfCalculated;
+                    const year = String(f.date).substring(0, 4);
+                    return `    * ${year}: FCF ${fcfVal != null ? (fcfVal/1e9).toFixed(2)+'B' : 'N/D'}` +
+                        (f.operatingCashFlow != null ? `, OCF ${(f.operatingCashFlow/1e9).toFixed(2)}B` : '') +
+                        (f.capitalExpenditure != null ? `, CapEx ${(f.capitalExpenditure/1e9).toFixed(2)}B` : '');
+                });
+            fcfStr = '\n  - Storico Free Cash Flow (Annuale):\n' + fcfLines.join('\n');
+        }
+
+        // FCF TTM e dati finanziari live
+        const fd = fundamentalsData.financialData || {};
+        const fcfTTM = fundamentalsData.fcfTTM ?? fd.freeCashflow;
+        const fcfTTMStr = fcfTTM != null ? (fcfTTM/1e9).toFixed(2)+'B' : 'N/D';
+        const ocfTTM = fundamentalsData.operatingCFTTM ?? fd.operatingCashflow;
+        const ocfTTMStr = ocfTTM != null ? (ocfTTM/1e9).toFixed(2)+'B' : 'N/D';
+
         const fundamentalsStr = `
   - P/E (Trailing): ${sd.trailingPE ? sd.trailingPE.toFixed(2) : 'N/D'}
   - P/E (Forward): ${ks.forwardPE ? ks.forwardPE.toFixed(2) : 'N/D'}
   - PEG Ratio: ${fundamentalsData.pegRatio ? fundamentalsData.pegRatio.toFixed(2) : 'N/D'}
   - EPS (Trailing): ${ks.trailingEps ? ks.trailingEps.toFixed(2) : 'N/D'}
   - EPS (Forward): ${ks.forwardEps ? ks.forwardEps.toFixed(2) : 'N/D'}
+  - Price/Book: ${ks.priceToBook ? ks.priceToBook.toFixed(2) : 'N/D'}
+  - EV/EBITDA: ${ks.enterpriseToEbitda ? ks.enterpriseToEbitda.toFixed(2) : 'N/D'}
+  - Debt/Equity: ${fd.debtToEquity ? fd.debtToEquity.toFixed(2) : 'N/D'}
+  - Current Ratio: ${fd.currentRatio ? fd.currentRatio.toFixed(2) : 'N/D'}
+  - Gross Margin: ${fd.grossMargins ? (fd.grossMargins*100).toFixed(1)+'%' : 'N/D'}
+  - Operating Margin: ${fd.operatingMargins ? (fd.operatingMargins*100).toFixed(1)+'%' : 'N/D'}
+  - Net Margin: ${fd.profitMargins ? (fd.profitMargins*100).toFixed(1)+'%' : 'N/D'}
+  - ROE: ${fd.returnOnEquity ? (fd.returnOnEquity*100).toFixed(1)+'%' : 'N/D'}
+  - ROA: ${fd.returnOnAssets ? (fd.returnOnAssets*100).toFixed(1)+'%' : 'N/D'}
+  - FCF TTM: ${fcfTTMStr}
+  - Operating CF TTM: ${ocfTTMStr}
+  - Total Cash: ${fd.totalCash ? (fd.totalCash/1e9).toFixed(2)+'B' : 'N/D'}
+  - Total Debt: ${fd.totalDebt ? (fd.totalDebt/1e9).toFixed(2)+'B' : 'N/D'}
+  - Revenue Growth (YoY): ${fd.revenueGrowth ? (fd.revenueGrowth*100).toFixed(1)+'%' : 'N/D'}
+  - Earnings Growth (YoY): ${fd.earningsGrowth ? (fd.earningsGrowth*100).toFixed(1)+'%' : 'N/D'}
+  - Analyst Target (Mean): ${fd.targetMeanPrice ? fd.targetMeanPrice.toFixed(2) : 'N/D'}
+  - Analyst Consensus: ${fd.recommendationKey ? fd.recommendationKey.toUpperCase() : 'N/D'} (${fd.numberOfAnalysts ? fd.numberOfAnalysts + ' analisti' : 'N/D'})
   - Dividend Yield: ${sd.dividendYield ? (sd.dividendYield * 100).toFixed(2) + '%' : 'N/D'}
-  - Beta: ${sd.beta ? sd.beta.toFixed(2) : 'N/D'}${historicalStr}`;
+  - Beta: ${sd.beta ? sd.beta.toFixed(2) : 'N/D'}${historicalStr}${fcfStr}`;
         
         const contextData = `
 - **${assetRow.ticker} (${assetRow.name})**:
