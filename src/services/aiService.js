@@ -13,7 +13,7 @@ async function fetchOpenRouterModels() {
         const res = await axios.get('https://openrouter.ai/api/v1/models');
         if (res.data && res.data.data) {
             
-            const preferredProviders = ['openai/', 'anthropic/', 'google/', 'meta-llama/', 'mistralai/', 'deepseek/', 'qwen/'];
+            const preferredProviders = ['openai/', 'anthropic/', 'google/', 'meta-llama/', 'mistralai/', 'deepseek/', 'qwen/', 'xiaomi/'];
             
             let filtered = res.data.data.filter(m => {
                 const id = m.id.toLowerCase();
@@ -27,8 +27,8 @@ async function fetchOpenRouterModels() {
                     return false;
                 }
                 
-                // Filtra la maggior parte dei modelli ":free" inaffidabili, salvaguarda Llama, Qwen, DeepSeek
-                if (id.endsWith(':free') && !/llama|qwen|deepseek|mistral/.test(id)) {
+                // Filtra la maggior parte dei modelli ":free" inaffidabili, salvaguarda Llama, Qwen, DeepSeek, Xiaomi
+                if (id.endsWith(':free') && !/llama|qwen|deepseek|mistral|xiaomi/.test(id)) {
                     return false;
                 }
                 
@@ -52,8 +52,8 @@ async function fetchOpenRouterModels() {
                 const id = m.id.toLowerCase();
                 if (isFree) score += 20; 
                 
-                // Flagships / High reasoning (include GPT-5, Claude 4/5, Gemini Pro)
-                if (/gpt-5(?!.*mini)|gpt-4o(?!.*mini)|claude-[345]-(sonnet|opus)|gemini-[123]\.[0-9]-pro|llama-3\.[123]-70b|deepseek-chat|mistral-large|o[134]-pro/.test(id)) score += 200;
+                // Flagships / High reasoning (include GPT-5, Claude 4/5, Gemini Pro, DeepSeek R1, QwQ, MiMo)
+                if (/gpt-5(?!.*mini)|gpt-4o(?!.*mini)|claude-[345]-(sonnet|opus)|gemini-[123]\.[0-9]-pro|llama-3\.[123]-70b|deepseek-chat|deepseek-r1|qwq|mimo|mistral-large|o[134]-pro/.test(id)) score += 200;
                 // Fast / Good performance
                 else if (/qwen-[23]|gemini-[123]\.[0-9]-flash|claude-[345]-haiku|o[134](?!.*pro)/.test(id)) score += 100;
                 // Minis
@@ -79,8 +79,8 @@ async function fetchOpenRouterModels() {
                 return a.name.localeCompare(b.name);
             });
             
-            // Prendi solo i primi 30
-            _cachedOpenRouterModels = mappedModels.slice(0, 30);
+            // Prendi solo i primi 50
+            _cachedOpenRouterModels = mappedModels.slice(0, 50);
             
             // Riordina i 30 selezionati in modo che i Free stiano in cima, poi ordine alfabetico (migliore UX)
             _cachedOpenRouterModels.sort((a, b) => {
