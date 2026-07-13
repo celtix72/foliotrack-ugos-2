@@ -42731,3 +42731,58 @@
 2026-07-13T20:56:23.116Z [INFO] Performance history sync: processing 1 tickers (Portfolios: 1, Watchlist: 0)
 2026-07-13T20:56:23.130Z [INFO] Calculating history for Portafoglio Test...
 2026-07-13T20:58:00.644Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-13T21:04:00.656Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-13T21:10:00.733Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-13T21:16:00.682Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-13T21:22:00.688Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-13T21:24:21.654Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-13T21:24:21.669Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-13T21:24:31.684Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-13T21:24:31.695Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-13T21:24:31.800Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-13T21:24:31.813Z [INFO] FolioTrack server running on port 3000
+2026-07-13T21:24:31.822Z [INFO] Database: /Users/mauro/Documents/Progetti_Sviluppo/FolioTrack3/foliotrack.db
+2026-07-13T21:24:31.834Z [INFO] Startup notification sent to 1 users.
+2026-07-13T21:24:31.954Z [INFO] [OpenRouter] Cached 50 top models for financial analysis.
+2026-07-13T21:24:36.764Z [INFO] Starting RSS News Sync (isFirstSync: true)...
+2026-07-13T21:24:37.949Z [INFO] News Sync completed. Saved 31 new articles.
+2026-07-13T21:24:41.520Z [INFO] Performance history sync: processing 2 tickers (Portfolios: 1, Watchlist: 2)
+2026-07-13T21:24:41.558Z [INFO] Calculating history for Portafoglio Test...
+2026-07-13T21:24:41.573Z [INFO] Performance history sync: processing 1 tickers (Portfolios: 1, Watchlist: 0)
+2026-07-13T21:24:41.588Z [INFO] Calculating history for Portafoglio Test...
+2026-07-13T21:24:41.769Z [INFO] Performance history sync: processing 2 tickers (Portfolios: 1, Watchlist: 2)
+2026-07-13T21:24:41.801Z [INFO] Calculating history for Portafoglio Test...
+2026-07-13T21:24:47.759Z [INFO] Performance history sync: processing 1 tickers (Portfolios: 1, Watchlist: 0)
+2026-07-13T21:24:57.306Z [INFO] [Fundamentals] Fetching data for: AAPL
+2026-07-13T21:25:00.181Z [INFO] [Fundamentals] Done for AAPL: PEG=2.55, FCF TTM=101090746368, FCF annual records=5, quarterly=6
+2026-07-13T21:25:42.000Z [INFO] [Fundamentals] Cache hit: AAPL
+2026-07-13T21:26:33.665Z [INFO] Performance history sync: processing 2 tickers (Portfolios: 1, Watchlist: 2)
+2026-07-13T21:26:33.695Z [INFO] Calculating history for Portafoglio Test...
+2026-07-13T21:26:33.709Z [INFO] Performance history sync: processing 1 tickers (Portfolios: 1, Watchlist: 0)
+2026-07-13T21:26:33.726Z [INFO] Calculating history for Portafoglio Test...
+2026-07-13T21:26:57.688Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-13T21:26:57.702Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-13T21:26:57.802Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-13T21:26:57.812Z [INFO] FolioTrack server running on port 3000
+2026-07-13T21:26:57.820Z [INFO] Database: /Users/mauro/Documents/Progetti_Sviluppo/FolioTrack3/foliotrack.db
+2026-07-13T21:26:57.830Z [INFO] Startup notification sent to 1 users.
+2026-07-13T21:26:57.920Z [INFO] [OpenRouter] Cached 50 top models for financial analysis.
+2026-07-13T21:27:02.775Z [INFO] Starting RSS News Sync (isFirstSync: true)...
+2026-07-13T21:27:03.591Z [INFO] News Sync completed. Saved 27 new articles.
+2026-07-13T21:27:10.750Z [INFO] Performance history sync: processing 2 tickers (Portfolios: 1, Watchlist: 2)
+2026-07-13T21:27:10.779Z [INFO] Calculating history for Portafoglio Test...
+2026-07-13T21:27:10.791Z [INFO] Performance history sync: processing 1 tickers (Portfolios: 1, Watchlist: 0)
+2026-07-13T21:27:10.805Z [INFO] Calculating history for Portafoglio Test...
+2026-07-13T21:27:10.818Z [INFO] Performance history sync: processing 2 tickers (Portfolios: 1, Watchlist: 2)
+2026-07-13T21:27:10.833Z [INFO] Calculating history for Portafoglio Test...
+2026-07-13T21:27:14.086Z [INFO] Performance history sync: processing 1 tickers (Portfolios: 1, Watchlist: 0)
+2026-07-13T21:27:23.403Z [INFO] [Fundamentals] Fetching data for: AAPL
+2026-07-13T21:27:26.445Z [INFO] [Fundamentals] Done for AAPL: PEG=2.55, FCF TTM=101090746368, FCF annual records=5, quarterly=6
+2026-07-13T21:27:56.516Z [INFO] [Fundamentals] Cache hit: AAPL
+2026-07-13T21:28:24.524Z [INFO] [Fundamentals] Cache hit: AAPL
+2026-07-13T21:28:49.089Z [INFO] Performance history sync: processing 2 tickers (Portfolios: 1, Watchlist: 2)
+2026-07-13T21:28:49.168Z [INFO] Calculating history for Portafoglio Test...
+2026-07-13T21:28:49.191Z [INFO] Performance history sync: processing 1 tickers (Portfolios: 1, Watchlist: 0)
+2026-07-13T21:28:49.214Z [INFO] Calculating history for Portafoglio Test...
+2026-07-13T21:28:58.164Z [INFO] [Fundamentals] Fetching data for: MSFT
+2026-07-13T21:29:00.750Z [INFO] [Fundamentals] Done for MSFT: PEG=1.19, FCF TTM=37011251200, FCF annual records=4, quarterly=6

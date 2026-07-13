@@ -83,6 +83,23 @@ async function getAssetFundamentals(ticker) {
         fcfQuarterly: [],
         financialData: {},
         earningsHistory: [],
+        workingCapital: null,
+        netTangibleAssets: null,
+        retainedEarnings: null,
+        totalAssets: null,
+        totalLiab: null,
+        ebit: null,
+        interestExpense: null,
+        researchDevelopment: null,
+        sellingGeneralAdministrative: null,
+        interestCoverageRatio: null,
+        insiderTransactions: [],
+        recentInsiders: [],
+        insiderSummary: null,
+        recommendationTrend: [],
+        altmanZScore: null,
+        altmanZScoreZone: 'N/D',
+        netTangibleAssetsPerShare: null,
         errors: []
     };
 
@@ -231,8 +248,9 @@ async function getAssetFundamentals(ticker) {
         from.setFullYear(from.getFullYear() - 6);
         const p1 = from.toISOString().split('T')[0];
         
-        const [finAnnual, chartData] = await Promise.all([
+        const [finAnnual, bsAnnual, chartData] = await Promise.all([
             yahooFinance.fundamentalsTimeSeries(ticker, { period1: p1, type: 'annual', module: 'financials' }).catch(() => null),
+            yahooFinance.fundamentalsTimeSeries(ticker, { period1: p1, type: 'annual', module: 'balance-sheet' }).catch(() => null),
             yahooFinance.chart(ticker, { period1: p1, interval: '1mo' }).catch(() => null)
         ]);
         
@@ -267,6 +285,35 @@ async function getAssetFundamentals(ticker) {
             };
         }).filter(i => i.date && (i.totalRevenue !== null || i.netIncome !== null));
         
+        // Extract latest values for advanced metrics
+        if (bsAnnual && bsAnnual.length > 0) {
+            const b = bsAnnual[bsAnnual.length - 1];
+            result.netTangibleAssets = b.netTangibleAssets ?? b.tangibleBookValue ?? null;
+            result.retainedEarnings = b.retainedEarnings ?? null;
+            result.totalAssets = b.totalAssets ?? null;
+            result.totalLiab = b.totalLiabilitiesNetMinorityInterest ?? (b.totalAssets !== undefined && b.stockholdersEquity !== undefined ? b.totalAssets - b.stockholdersEquity : null) ?? null;
+            
+            const ca = b.currentAssets ?? null;
+            const cl = b.currentLiabilities ?? null;
+            result.workingCapital = b.workingCapital ?? ((ca !== null && cl !== null) ? ca - cl : null);
+        }
+
+        if (finAnnual && finAnnual.length > 0) {
+            const i = finAnnual[finAnnual.length - 1];
+            result.ebit = i.EBIT ?? i.operatingIncome ?? null;
+            result.interestExpense = i.interestExpense ?? null;
+            result.researchDevelopment = i.researchAndDevelopment ?? null;
+            result.sellingGeneralAdministrative = i.sellingGeneralAndAdministration ?? null;
+            
+            if (result.ebit !== null && result.interestExpense !== null) {
+                if (Math.abs(result.interestExpense) > 0) {
+                    result.interestCoverageRatio = result.ebit / Math.abs(result.interestExpense);
+                } else {
+                    result.interestCoverageRatio = Infinity;
+                }
+            }
+        }
+
         // Append current year (TTM)
         if (result.financialData && result.keyStats) {
             const tr = result.financialData.totalRevenue;
@@ -389,6 +436,94 @@ async function getAssetFundamentals(ticker) {
         }
     } catch (e) {
         logger.warn(`[Fundamentals] Technical analysis fetch error for ${ticker}: ${e.message}`);
+    }
+
+
+    // ── 11. insiderTransactions & recommendationTrend ───────────────────────────
+    try {
+        const extra = await yahooFinance.quoteSummary(ticker, {
+            modules: ['insiderTransactions', 'recommendationTrend']
+        });
+        
+        let buys = 0;
+        let sells = 0;
+        const txs = extra.insiderTransactions?.transactions || [];
+        txs.forEach(tx => {
+            const txt = (tx.transactionText || '').toLowerCase();
+            if (txt.includes('purchase') || txt.includes('buy') || txt.includes('acquisto')) {
+                buys++;
+            } else if (txt.includes('sale') || txt.includes('sell') || txt.includes('vendita')) {
+                sells++;
+            }
+        });
+        if (buys > 0 || sells > 0) {
+            result.insiderSummary = `${buys} Buy, ${sells} Sell (recenti)`;
+        } else if (txs.length > 0) {
+            result.insiderSummary = 'Transazioni non dirette';
+        } else {
+            result.insiderSummary = 'Nessuna transazione';
+        }
+
+        result.insiderTransactions = txs.slice(0, 5).map(item => ({
+            signerName: item.signerName ?? 'N/D',
+            position: item.position ?? 'N/D',
+            transactionText: item.transactionText ?? 'N/D',
+            shares: item.shares?.raw ?? item.shares ?? null,
+            value: item.value?.raw ?? item.value ?? null,
+            date: item.startDate ? (item.startDate instanceof Date ? item.startDate.toISOString().split('T')[0] : item.startDate) : null
+        }));
+
+        const trends = extra.recommendationTrend?.trend || [];
+        result.recommendationTrend = trends.map(t => ({
+            period: t.period ?? null,
+            strongBuy: t.strongBuy ?? 0,
+            buy: t.buy ?? 0,
+            hold: t.hold ?? 0,
+            sell: t.sell ?? 0,
+            strongSell: t.strongSell ?? 0
+        }));
+    } catch (e) {
+        logger.warn(`[Fundamentals] insider/recommendation Trend error for ${ticker}: ${e.message}`);
+        result.errors.push({ module: 'insider-recommendation-trend', error: e.message });
+    }
+
+    // ── 12. Calcolo Altman Z-Score & Net Tangible per Share ────────────────────────
+    try {
+        const totalAssets = result.totalAssets;
+        const workingCapital = result.workingCapital;
+        const retainedEarnings = result.retainedEarnings;
+        const ebit = result.ebit;
+        const totalLiab = result.totalLiab;
+        
+        const currentPrice = result.financialData?.currentPrice || null;
+        const sharesOutstanding = result.keyStats?.sharesOutstanding || null;
+        const totalRevenue = result.financialData?.totalRevenue || null;
+        
+        if (totalAssets && totalAssets > 0 && totalLiab && totalLiab > 0 && currentPrice && sharesOutstanding && totalRevenue) {
+            const marketCap = currentPrice * sharesOutstanding;
+            const A = (workingCapital || 0) / totalAssets;
+            const B = (retainedEarnings || 0) / totalAssets;
+            const C = (ebit || 0) / totalAssets;
+            const D = marketCap / totalLiab;
+            const E = totalRevenue / totalAssets;
+            
+            const z = 1.2 * A + 1.4 * B + 3.3 * C + 0.6 * D + 0.999 * E;
+            result.altmanZScore = z;
+            
+            if (z >= 3.0) {
+                result.altmanZScoreZone = 'Safe';
+            } else if (z > 1.8) {
+                result.altmanZScoreZone = 'Grey';
+            } else {
+                result.altmanZScoreZone = 'Distress';
+            }
+        }
+        
+        if (result.netTangibleAssets !== null && sharesOutstanding && sharesOutstanding > 0) {
+            result.netTangibleAssetsPerShare = result.netTangibleAssets / sharesOutstanding;
+        }
+    } catch (e) {
+        logger.warn(`[Fundamentals] Z-Score/NetTangible calculation error for ${ticker}: ${e.message}`);
     }
 
     // Salva in cache
@@ -1243,7 +1378,16 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
   - Analyst Target: ${fd.targetMeanPrice ? fd.targetMeanPrice.toFixed(2) : 'N/D'} (Low: ${fd.targetLowPrice ? fd.targetLowPrice.toFixed(2) : 'N/D'}, High: ${fd.targetHighPrice ? fd.targetHighPrice.toFixed(2) : 'N/D'})
   - Analyst Consensus: ${fd.recommendationKey ? fd.recommendationKey.toUpperCase() : 'N/D'} (${fd.numberOfAnalysts ? fd.numberOfAnalysts + ' analisti' : 'N/D'})
   - Dividend Yield: ${sd.dividendYield ? (sd.dividendYield * 100).toFixed(2) + '%' : 'N/D'}
-  - Beta: ${sd.beta ? sd.beta.toFixed(2) : 'N/D'}${historicalStr}${fcfStr}${fcfQuarterlyStr}${epsHistoryStr}${estimatesStr}${technicalStr}`;
+  - Beta: ${sd.beta ? sd.beta.toFixed(2) : 'N/D'}
+  - Altman Z-Score: ${fundamentalsData.altmanZScore !== undefined && fundamentalsData.altmanZScore !== null ? fundamentalsData.altmanZScore.toFixed(2) + ' (' + fundamentalsData.altmanZScoreZone + ')' : 'N/D'}
+  - Interest Coverage Ratio: ${fundamentalsData.interestCoverageRatio !== undefined && fundamentalsData.interestCoverageRatio !== null ? (fundamentalsData.interestCoverageRatio === Infinity ? 'Infinity' : fundamentalsData.interestCoverageRatio.toFixed(2) + 'x') : 'N/D'}
+  - Net Tangible Assets: ${fundamentalsData.netTangibleAssets !== undefined && fundamentalsData.netTangibleAssets !== null ? (fundamentalsData.netTangibleAssets/1e9).toFixed(2) + 'B' : 'N/D'}
+  - Net Tangible Assets per Share: ${fundamentalsData.netTangibleAssetsPerShare !== undefined && fundamentalsData.netTangibleAssetsPerShare !== null ? fundamentalsData.netTangibleAssetsPerShare.toFixed(2) : 'N/D'}
+  - Working Capital: ${fundamentalsData.workingCapital !== undefined && fundamentalsData.workingCapital !== null ? (fundamentalsData.workingCapital/1e9).toFixed(2) + 'B' : 'N/D'}
+  - Retained Earnings: ${fundamentalsData.retainedEarnings !== undefined && fundamentalsData.retainedEarnings !== null ? (fundamentalsData.retainedEarnings/1e9).toFixed(2) + 'B' : 'N/D'}
+  - Insider Trading (recenti): ${fundamentalsData.insiderSummary || 'N/D'}
+  - Spese R&D (R&D Expense): ${fundamentalsData.researchDevelopment !== undefined && fundamentalsData.researchDevelopment !== null ? (fundamentalsData.researchDevelopment/1e9).toFixed(2) + 'B' : 'N/D'}
+  - Spese SG&A: ${fundamentalsData.sellingGeneralAdministrative !== undefined && fundamentalsData.sellingGeneralAdministrative !== null ? (fundamentalsData.sellingGeneralAdministrative/1e9).toFixed(2) + 'B' : 'N/D'}${historicalStr}${fcfStr}${fcfQuarterlyStr}${epsHistoryStr}${estimatesStr}${technicalStr}`;
         
         const contextData = `
 - **${assetRow.ticker} (${assetRow.name})**:

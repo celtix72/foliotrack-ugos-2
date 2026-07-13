@@ -2016,6 +2016,42 @@
                             <div style="display:flex; justify-content:space-between; align-items:center;"><span>Book Value:</span> ${renderVal(ks.bookValue)} ${currency}</div>
                         </div>
                     </div>
+
+                    <!-- Valutazione Avanzata & Insider -->
+                    <div style="background:${cardBg}; border:1px solid ${cardBorder}; border-radius:12px; padding:12px;">
+                        <h4 style="font-size:10px; font-weight:900; text-transform:uppercase; color:#ec4899; margin-bottom:8px; display:flex; align-items:center; gap:4px;"><span class="material-symbols-outlined" style="font-size:14px">verified</span> Valutazione Avanzata</h4>
+                        <div style="display:flex; flex-direction:column; gap:6px; font-size:11px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span>Altman Z-Score:</span>
+                                <span>
+                                    ${(() => {
+                                        const z = data.altmanZScore;
+                                        if (z === null || z === undefined) return '<span style="color:#94a3b8">N/D</span>';
+                                        let color = '#ef4444'; // Distress
+                                        if (data.altmanZScoreZone === 'Safe') color = '#10b981'; // Safe
+                                        else if (data.altmanZScoreZone === 'Grey') color = '#f59e0b'; // Grey
+                                        return `<strong style="color:${color}">${z.toFixed(2)} (${data.altmanZScoreZone})</strong>`;
+                                    })()}
+                                </span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span>Interest Coverage:</span>
+                                <span>
+                                    ${(() => {
+                                        const ic = data.interestCoverageRatio;
+                                        if (ic === null || ic === undefined) return '<span style="color:#94a3b8">N/D</span>';
+                                        if (ic === Infinity) return '<strong>Infinity (No Debt)</strong>';
+                                        let color = ic < 1.5 ? '#ef4444' : '';
+                                        return `<strong style="${color ? 'color:' + color : ''}">${ic.toFixed(1)}x</strong>`;
+                                    })()}
+                                </span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;"><span>Working Capital:</span> ${renderVal(data.workingCapital, 'curr', currency)}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;"><span>Net Tangible Assets:</span> ${renderVal(data.netTangibleAssets, 'curr', currency)}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;"><span>Net Tangible/Share:</span> <strong>${data.netTangibleAssetsPerShare !== undefined && data.netTangibleAssetsPerShare !== null ? data.netTangibleAssetsPerShare.toFixed(2) + ' ' + currency : '<span style="color:#94a3b8">N/D</span>'}</strong></div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;"><span>Insider Summary:</span> <strong>${data.insiderSummary || '<span style="color:#94a3b8">N/D</span>'}</strong></div>
+                        </div>
+                    </div>
                 </div>
 
                 ${financialsHtml}
