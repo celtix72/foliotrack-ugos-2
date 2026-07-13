@@ -1688,8 +1688,6 @@
         detailModal.style.display = 'flex';
     };
 
-    };
-
     window.openAssetFundamentalsModal = async function(ticker, name) {
         let detailModal = document.getElementById('asset-fundamentals-data-modal');
         if (!detailModal) {
