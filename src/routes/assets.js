@@ -1124,7 +1124,11 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
                 const year = item.date ? String(item.date).substring(0,4) : 'N/D';
                 const rev = item.totalRevenue ?? null;
                 const ni = item.netIncome ?? null;
-                return `    * ${year}: Revenue ${rev ? (rev/1e9).toFixed(2)+'B' : 'N/D'}, Net Income ${ni ? (ni/1e9).toFixed(2)+'B' : 'N/D'}`;
+                const eps = item.eps ?? null;
+                const pe = item.pe ?? null;
+                return `    * ${year}: Revenue ${rev ? (rev/1e9).toFixed(2)+'B' : 'N/D'}, Net Income ${ni ? (ni/1e9).toFixed(2)+'B' : 'N/D'}` +
+                    (eps != null ? `, EPS ${eps.toFixed(2)}` : '') +
+                    (pe != null ? `, P/E ${pe.toFixed(1)}` : '');
             });
             historicalStr = '\n  - Storico Dati Finanziari (Annuale):\n' + lines.join('\n');
         }
@@ -1145,12 +1149,67 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
             fcfStr = '\n  - Storico Free Cash Flow (Annuale):\n' + fcfLines.join('\n');
         }
 
+        // FCF trimestrale (ultimi 4 trimestri)
+        let fcfQuarterlyStr = '';
+        if (fundamentalsData.fcfQuarterly && fundamentalsData.fcfQuarterly.length > 0) {
+            const qLines = fundamentalsData.fcfQuarterly
+                .filter(f => f.date)
+                .slice(0, 4)
+                .map(f => {
+                    const fcfVal = f.freeCashFlow ?? f.fcfCalculated;
+                    return `    * ${f.date.substring(0,7)}: FCF ${fcfVal != null ? (fcfVal/1e9).toFixed(2)+'B' : 'N/D'}`;
+                });
+            if (qLines.length > 0) fcfQuarterlyStr = '\n  - FCF Trimestrale (ultimi quarter):\n' + qLines.join('\n');
+        }
+
+        // Storico EPS (earnings history) con surprise
+        let epsHistoryStr = '';
+        if (fundamentalsData.earningsHistory && fundamentalsData.earningsHistory.length > 0) {
+            const epLines = fundamentalsData.earningsHistory
+                .filter(h => h.date && h.epsActual != null)
+                .slice(0, 6)
+                .map(h => {
+                    const surp = h.surprisePercent != null ? ` (${h.surprisePercent > 0 ? '+' : ''}${h.surprisePercent.toFixed(1)}% surprise)` : '';
+                    const est = h.epsEstimate != null ? ` vs Est. ${h.epsEstimate.toFixed(2)}` : '';
+                    return `    * ${h.date.substring(0,7)}: EPS ${h.epsActual.toFixed(2)}${est}${surp}`;
+                });
+            if (epLines.length > 0) epsHistoryStr = '\n  - Storico EPS Trimestrali (effettivi):\n' + epLines.join('\n');
+        }
+
+        // Stime EPS/Revenue future (earnings trend)
+        let estimatesStr = '';
+        if (fundamentalsData.pegRatioTrend && fundamentalsData.pegRatioTrend.length > 0) {
+            const estLines = fundamentalsData.pegRatioTrend
+                .filter(t => t.period && (t.epsEstimateMean != null || t.revenueEstimateMean != null))
+                .map(t => {
+                    const eps = t.epsEstimateMean != null ? `EPS Est. ${t.epsEstimateMean.toFixed(2)}` : '';
+                    const rev = t.revenueEstimateMean != null ? `Rev Est. ${(t.revenueEstimateMean/1e9).toFixed(2)}B` : '';
+                    const growth = t.growth != null ? `, Growth ${(t.growth*100).toFixed(1)}%` : '';
+                    return `    * ${t.period} (${t.endDate || ''}): ${[eps, rev].filter(Boolean).join(', ')}${growth}`;
+                });
+            if (estLines.length > 0) estimatesStr = '\n  - Stime Analisti (EPS/Revenue forward):\n' + estLines.join('\n');
+        }
+
+        // Analisi tecnica precedente (dal DB)
+        let technicalStr = '';
+        if (fundamentalsData.technicalAnalysis) {
+            const ta = fundamentalsData.technicalAnalysis;
+            const parts = [];
+            if (ta.trend) parts.push(`Trend: ${ta.trend}`);
+            if (ta.support) parts.push(`Supporto: ${ta.support}`);
+            if (ta.resistance) parts.push(`Resistenza: ${ta.resistance}`);
+            if (ta.buyZone) parts.push(`Zona Buy: ${ta.buyZone}`);
+            if (parts.length > 0) technicalStr = '\n  - Analisi Tecnica Precedente (dal DB):\n' + parts.map(p => `    * ${p}`).join('\n');
+        }
+
         // FCF TTM e dati finanziari live
         const fd = fundamentalsData.financialData || {};
         const fcfTTM = fundamentalsData.fcfTTM ?? fd.freeCashflow;
         const fcfTTMStr = fcfTTM != null ? (fcfTTM/1e9).toFixed(2)+'B' : 'N/D';
         const ocfTTM = fundamentalsData.operatingCFTTM ?? fd.operatingCashflow;
         const ocfTTMStr = ocfTTM != null ? (ocfTTM/1e9).toFixed(2)+'B' : 'N/D';
+        const evStr = ks.enterpriseValue ? (ks.enterpriseValue/1e9).toFixed(2)+'B' : 'N/D';
+        const ebitdaStr = fd.ebitda ? (fd.ebitda/1e9).toFixed(2)+'B' : 'N/D';
 
         const fundamentalsStr = `
   - P/E (Trailing): ${sd.trailingPE ? sd.trailingPE.toFixed(2) : 'N/D'}
@@ -1159,24 +1218,32 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
   - EPS (Trailing): ${ks.trailingEps ? ks.trailingEps.toFixed(2) : 'N/D'}
   - EPS (Forward): ${ks.forwardEps ? ks.forwardEps.toFixed(2) : 'N/D'}
   - Price/Book: ${ks.priceToBook ? ks.priceToBook.toFixed(2) : 'N/D'}
+  - Enterprise Value: ${evStr}
   - EV/EBITDA: ${ks.enterpriseToEbitda ? ks.enterpriseToEbitda.toFixed(2) : 'N/D'}
+  - EV/Revenue: ${ks.enterpriseToRevenue ? ks.enterpriseToRevenue.toFixed(2) : 'N/D'}
+  - EBITDA (TTM): ${ebitdaStr}
   - Debt/Equity: ${fd.debtToEquity ? fd.debtToEquity.toFixed(2) : 'N/D'}
   - Current Ratio: ${fd.currentRatio ? fd.currentRatio.toFixed(2) : 'N/D'}
+  - Quick Ratio: ${fd.quickRatio ? fd.quickRatio.toFixed(2) : 'N/D'}
   - Gross Margin: ${fd.grossMargins ? (fd.grossMargins*100).toFixed(1)+'%' : 'N/D'}
   - Operating Margin: ${fd.operatingMargins ? (fd.operatingMargins*100).toFixed(1)+'%' : 'N/D'}
+  - EBITDA Margin: ${fd.ebitdaMargins ? (fd.ebitdaMargins*100).toFixed(1)+'%' : 'N/D'}
   - Net Margin: ${fd.profitMargins ? (fd.profitMargins*100).toFixed(1)+'%' : 'N/D'}
   - ROE: ${fd.returnOnEquity ? (fd.returnOnEquity*100).toFixed(1)+'%' : 'N/D'}
   - ROA: ${fd.returnOnAssets ? (fd.returnOnAssets*100).toFixed(1)+'%' : 'N/D'}
+  - Shares Outstanding: ${ks.sharesOutstanding ? (ks.sharesOutstanding/1e9).toFixed(3)+'B' : 'N/D'}
+  - Book Value per Share: ${ks.bookValue ? ks.bookValue.toFixed(2) : 'N/D'}
+  - 52-Week Change: ${ks['52WeekChange'] ? (ks['52WeekChange']*100).toFixed(1)+'%' : 'N/D'}
   - FCF TTM: ${fcfTTMStr}
   - Operating CF TTM: ${ocfTTMStr}
   - Total Cash: ${fd.totalCash ? (fd.totalCash/1e9).toFixed(2)+'B' : 'N/D'}
   - Total Debt: ${fd.totalDebt ? (fd.totalDebt/1e9).toFixed(2)+'B' : 'N/D'}
   - Revenue Growth (YoY): ${fd.revenueGrowth ? (fd.revenueGrowth*100).toFixed(1)+'%' : 'N/D'}
   - Earnings Growth (YoY): ${fd.earningsGrowth ? (fd.earningsGrowth*100).toFixed(1)+'%' : 'N/D'}
-  - Analyst Target (Mean): ${fd.targetMeanPrice ? fd.targetMeanPrice.toFixed(2) : 'N/D'}
+  - Analyst Target: ${fd.targetMeanPrice ? fd.targetMeanPrice.toFixed(2) : 'N/D'} (Low: ${fd.targetLowPrice ? fd.targetLowPrice.toFixed(2) : 'N/D'}, High: ${fd.targetHighPrice ? fd.targetHighPrice.toFixed(2) : 'N/D'})
   - Analyst Consensus: ${fd.recommendationKey ? fd.recommendationKey.toUpperCase() : 'N/D'} (${fd.numberOfAnalysts ? fd.numberOfAnalysts + ' analisti' : 'N/D'})
   - Dividend Yield: ${sd.dividendYield ? (sd.dividendYield * 100).toFixed(2) + '%' : 'N/D'}
-  - Beta: ${sd.beta ? sd.beta.toFixed(2) : 'N/D'}${historicalStr}${fcfStr}`;
+  - Beta: ${sd.beta ? sd.beta.toFixed(2) : 'N/D'}${historicalStr}${fcfStr}${fcfQuarterlyStr}${epsHistoryStr}${estimatesStr}${technicalStr}`;
         
         const contextData = `
 - **${assetRow.ticker} (${assetRow.name})**:
