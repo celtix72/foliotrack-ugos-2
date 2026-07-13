@@ -7,3 +7,7 @@ node_modules
 *.sqlite
 *.db-shm
 *.db-wal
+
+# Log files and developer scratch files
+logs/
+scratch/
