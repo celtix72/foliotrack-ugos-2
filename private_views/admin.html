@@ -549,6 +549,28 @@
 
                         <button onclick="saveAiSettings()" class="w-full py-3 bg-indigo-500 hover:bg-indigo-600 transition-colors text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm">Salva Impostazioni AI</button>
                         <p id="ai-status" class="text-[9px] font-bold hidden text-center"></p>
+
+                        <!-- Manutenzione Analisi IA -->
+                        <div class="mt-6 p-4 bg-rose-50 dark:bg-rose-950/30 rounded-xl border border-rose-200 dark:border-rose-900/50">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="material-symbols-outlined text-rose-500" style="font-size:18px">warning</span>
+                                <span class="text-xs font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest">Manutenzione Analisi IA</span>
+                            </div>
+                            <div id="ai-history-stats" class="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                                <span id="ai-history-count" class="font-bold text-slate-700 dark:text-slate-300">–</span> analisi nel registro globale
+                            </div>
+                            <div class="space-y-2">
+                                <button onclick="clearAllAiHistory()" id="btn-clear-ai-history" class="w-full py-2.5 bg-rose-500 hover:bg-rose-600 transition-colors text-white text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center justify-center gap-2">
+                                    <span class="material-symbols-outlined" style="font-size:15px">delete_sweep</span>
+                                    Cancella Tutto lo Storico Analisi IA
+                                </button>
+                                <button onclick="resetAiFieldsOnAssets()" id="btn-reset-ai-assets" class="w-full py-2.5 bg-amber-500 hover:bg-amber-600 transition-colors text-white text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center justify-center gap-2">
+                                    <span class="material-symbols-outlined" style="font-size:15px">restart_alt</span>
+                                    Reset Campi IA su tutti gli Asset
+                                </button>
+                            </div>
+                            <p class="text-[10px] text-rose-500/70 mt-2">⚠️ Operazioni irreversibili. Cancella storico e/o azzera i campi ai_action, ai_reasoning, ai_engine degli asset.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -697,7 +719,7 @@
                 }
                 if (id === 'section-maintenance') loadBackups();
                 if (id === 'section-smtp') loadSmtpSettings();
-                if (id === 'section-ai') loadAiSettings();
+                if (id === 'section-ai') { loadAiSettings(); loadAiHistoryCount(); }
             }
         };
 
@@ -973,6 +995,72 @@
             } catch (err) {
                 alert('Errore: ' + err.message);
                 loadRoles(); 
+            }
+        };
+
+        // --- AI History Management ---
+        async function loadAiHistoryCount() {
+            try {
+                const res = await fetchAdmin('/api/admin/ai-history/count');
+                if (res && res.count != null) {
+                    document.getElementById('ai-history-count').textContent = res.count.toLocaleString('it-IT');
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        window.clearAllAiHistory = async function() {
+            const count = document.getElementById('ai-history-count').textContent;
+            if (!confirm(`⚠️ Stai per eliminare DEFINITIVAMENTE ${count} analisi IA dallo storico. Questa operazione è irreversibile.\n\nConfermi?`)) return;
+            const btn = document.getElementById('btn-clear-ai-history');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin" style="font-size:15px">sync</span> Eliminazione in corso...';
+            try {
+                const res = await fetchAdmin('/api/admin/ai-history/clear-all', { method: 'DELETE' });
+                if (res && res.success) {
+                    document.getElementById('ai-history-count').textContent = '0';
+                    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:15px">check_circle</span> Storico eliminato!';
+                    btn.classList.replace('bg-rose-500', 'bg-emerald-500');
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:15px">delete_sweep</span> Cancella Tutto lo Storico Analisi IA';
+                        btn.classList.replace('bg-emerald-500', 'bg-rose-500');
+                    }, 3000);
+                } else {
+                    alert('Errore durante la cancellazione: ' + (res?.error || 'Sconosciuto'));
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:15px">delete_sweep</span> Cancella Tutto lo Storico Analisi IA';
+                }
+            } catch (e) {
+                alert('Errore: ' + e.message);
+                btn.disabled = false;
+                btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:15px">delete_sweep</span> Cancella Tutto lo Storico Analisi IA';
+            }
+        };
+
+        window.resetAiFieldsOnAssets = async function() {
+            if (!confirm(`⚠️ Stai per azzerare i campi AI (valutazione, analisi, motore) su TUTTI gli asset. Questa operazione è irreversibile.\n\nConfermi?`)) return;
+            const btn = document.getElementById('btn-reset-ai-assets');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin" style="font-size:15px">sync</span> Reset in corso...';
+            try {
+                const res = await fetchAdmin('/api/admin/ai-history/reset-assets', { method: 'POST' });
+                if (res && res.success) {
+                    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:15px">check_circle</span> Reset completato!';
+                    btn.classList.replace('bg-amber-500', 'bg-emerald-500');
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:15px">restart_alt</span> Reset Campi IA su tutti gli Asset';
+                        btn.classList.replace('bg-emerald-500', 'bg-amber-500');
+                    }, 3000);
+                } else {
+                    alert('Errore: ' + (res?.error || 'Sconosciuto'));
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:15px">restart_alt</span> Reset Campi IA su tutti gli Asset';
+                }
+            } catch (e) {
+                alert('Errore: ' + e.message);
+                btn.disabled = false;
+                btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:15px">restart_alt</span> Reset Campi IA su tutti gli Asset';
             }
         };
 

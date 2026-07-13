@@ -261,5 +261,48 @@ module.exports = function (dependencies) {
         }
     });
 
+    // GET /api/admin/ai-history/count — totale analisi IA nel DB
+    router.get('/ai-history/count', requireAuth, requireAdmin, (req, res) => {
+        try {
+            const row = database.db.prepare('SELECT COUNT(*) as count FROM asset_ai_history').get();
+            res.json({ count: row ? row.count : 0 });
+        } catch (err) {
+            logger.error('[Admin] ai-history count error', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // DELETE /api/admin/ai-history/clear-all — elimina tutto lo storico analisi IA
+    router.delete('/ai-history/clear-all', requireAuth, requireAdmin, (req, res) => {
+        try {
+            const info = database.db.prepare('DELETE FROM asset_ai_history').run();
+            logAudit(req.user.id, 'AI_HISTORY_CLEAR_ALL', { deleted: info.changes }, req);
+            logger.info(`[Admin] All AI history cleared (${info.changes} records) by user ${req.user.id}`);
+            res.json({ success: true, deleted: info.changes });
+        } catch (err) {
+            logger.error('[Admin] ai-history clear-all error', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // POST /api/admin/ai-history/reset-assets — azzera i campi AI su tutti gli asset
+    router.post('/ai-history/reset-assets', requireAuth, requireAdmin, (req, res) => {
+        try {
+            const info = database.db.prepare(`
+                UPDATE assets SET 
+                    ai_action = NULL, 
+                    ai_reasoning = NULL, 
+                    ai_engine = NULL, 
+                    ai_updated_at = NULL
+            `).run();
+            logAudit(req.user.id, 'AI_FIELDS_RESET_ALL_ASSETS', { updated: info.changes }, req);
+            logger.info(`[Admin] AI fields reset on ${info.changes} assets by user ${req.user.id}`);
+            res.json({ success: true, updated: info.changes });
+        } catch (err) {
+            logger.error('[Admin] ai-history reset-assets error', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
     return router;
 };
