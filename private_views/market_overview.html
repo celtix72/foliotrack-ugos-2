@@ -645,6 +645,7 @@ function renderAssets(filter = '') {
                 <p class="text-lg font-black text-slate-900 dark:text-white font-mono">${formatCurrency(price, a.currency)}</p>
                 <div class="flex items-center gap-1 mt-1.5 flex-wrap">
                     ${renderAiBadges(a)}
+                    <span onclick="event.stopPropagation(); window.openAssetFundamentalsModal('${a.ticker}', '${(a.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter border border-indigo-500/30 text-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/20 cursor-pointer transition-colors" title="Dati Fondamentali Yahoo Finance">D</span>
                 </div>
             </td>
             <td class="px-5 py-1.5">

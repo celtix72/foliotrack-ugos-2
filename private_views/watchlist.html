@@ -392,6 +392,7 @@
                                         ${typeLabel}
                                     </span>
                                     ${aiBadge}
+                                    <span onclick="event.stopPropagation(); window.openAssetFundamentalsModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" class="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter border border-indigo-500/30 text-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/20 cursor-pointer transition-colors ml-1" title="Dati Fondamentali Yahoo Finance">D</span>
                                 </div>
                                 <div class="text-[10px] font-bold text-slate-400 uppercase tracking-tight truncate max-w-[180px] mt-1">${item.name}</div>
                             </td>

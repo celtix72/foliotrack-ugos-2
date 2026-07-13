@@ -648,6 +648,7 @@
                   <span style="background:${colors.bg}; color:#000000; border:1px solid ${colors.border}; border-radius:4px; padding:1px 5px; font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; flex-shrink:1">${displaySymbol}</span>
                   ${portTags}
                   ${aiBadge}
+                  <span onclick="event.stopPropagation(); window.openAssetFundamentalsModal('${tickerEsc}', '${nameEsc}')" class="px-1 py-0.5 rounded font-black uppercase tracking-tighter border border-indigo-500/30 text-indigo-500 bg-indigo-500/10 cursor-pointer ml-1" style="font-size: calc(9px * var(--mkcard-scale, 1))">D</span>
                 </div>
                 <span style="font-size:calc(13px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${priceFmt}&nbsp;<span style="color:${chgColor}; font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:900">${todayVarPct}</span><span style="background:rgba(100,116,139,0.1); color:var(--mob-text-muted); border-radius:3px; padding:1px 4px; font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; margin-left:4px; display:inline-block; vertical-align:middle">${exchangeLabel}</span></span>
               </div>
