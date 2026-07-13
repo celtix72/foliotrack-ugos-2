@@ -1376,9 +1376,12 @@
         if (!ticker) return;
 
         let history = [];
+        let fundamentals = null;
         try {
-            const res = await fetch('/api/assets/' + encodeURIComponent(ticker) + '/ai-history?t=' + Date.now());
-            history = await res.json();
+            const resH = await fetch('/api/assets/' + encodeURIComponent(ticker) + '/ai-history?t=' + Date.now());
+            history = await resH.json();
+            const resF = await fetch('/api/fundamentals/' + encodeURIComponent(ticker) + '?t=' + Date.now());
+            if (resF.ok) fundamentals = await resF.json();
         } catch(e) { console.error(e); }
 
         if (!history || history.length === 0) { alert('Nessuna analisi da esportare'); return; }
@@ -1447,6 +1450,160 @@
             if (y + needed > pageH - 44) {
                 addPageFooter(); doc.addPage(); pageNum++;
                 addPageHeader(); addPageFooter(); y = 56;
+            }
+        }
+
+        const formatVal = (val, type = 'num', currency = '') => {
+            if (val === null || val === undefined || isNaN(val)) return 'N/D';
+            if (type === 'percent') return `${val.toFixed(1)}%`;
+            if (type === 'curr') {
+                const formatted = Math.abs(val) >= 1e9 ? (val/1e9).toFixed(2)+'B' : (val/1e6).toFixed(2)+'M';
+                return `${formatted} ${currency}`;
+            }
+            return val.toFixed(2);
+        };
+
+        if (fundamentals) {
+            const ks = fundamentals.keyStats || {};
+            const sd = fundamentals.summaryDetail || {};
+            const fd = fundamentals.financialData || {};
+            const currency = fd.currency || sd.currency || 'USD';
+
+            // 1. Draw 3 structured boxes
+            const boxW = 160;
+            const boxH = 110;
+            const gap = 13;
+            const startY = y;
+            
+            const bgBox = [248, 250, 252];
+            const borderBox = [226, 232, 240];
+            const textL = [71, 85, 105];
+            const textV = [15, 23, 42];
+            const titleColor1 = [79, 70, 229];
+            const titleColor2 = [16, 185, 129];
+            const titleColor3 = [245, 158, 11];
+
+            const drawBox = (x, title, dataList, titleColor) => {
+                doc.setFillColor(...bgBox);
+                doc.setDrawColor(...borderBox);
+                doc.setLineWidth(0.5);
+                doc.roundedRect(x, startY, boxW, boxH, 6, 6, 'FD');
+
+                doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(...titleColor);
+                doc.text(title.toUpperCase(), x + 8, startY + 14);
+
+                doc.setFontSize(7.5); doc.setTextColor(...textL);
+                let rowY = startY + 28;
+                dataList.forEach(item => {
+                    doc.setFont('helvetica', 'normal');
+                    doc.text(item.label, x + 8, rowY);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(...textV);
+                    doc.text(item.value, x + boxW - 8, rowY, { align: 'right' });
+                    doc.setTextColor(...textL);
+                    rowY += 12;
+                });
+            };
+
+            const valData = [
+                { label: 'P/E (Trailing)', value: formatVal(sd.trailingPE) },
+                { label: 'P/E (Forward)', value: formatVal(ks.forwardPE) },
+                { label: 'PEG Ratio', value: formatVal(fundamentals.pegRatio) },
+                { label: 'Price/Book', value: formatVal(ks.priceToBook) },
+                { label: 'EV/EBITDA', value: formatVal(ks.enterpriseToEbitda) },
+                { label: 'EV/Revenue', value: formatVal(ks.enterpriseToRevenue) },
+                { label: 'Beta', value: formatVal(sd.beta) }
+            ];
+            
+            const redData = [
+                { label: 'Gross Margin', value: formatVal(fd.grossMargins ? fd.grossMargins*100 : null, 'percent') },
+                { label: 'Operating Margin', value: formatVal(fd.operatingMargins ? fd.operatingMargins*100 : null, 'percent') },
+                { label: 'EBITDA Margin', value: formatVal(fd.ebitdaMargins ? fd.ebitdaMargins*100 : null, 'percent') },
+                { label: 'Profit Margin', value: formatVal(fd.profitMargins ? fd.profitMargins*100 : null, 'percent') },
+                { label: 'ROE', value: formatVal(fd.returnOnEquity ? fd.returnOnEquity*100 : null, 'percent') },
+                { label: 'ROA', value: formatVal(fd.returnOnAssets ? fd.returnOnAssets*100 : null, 'percent') },
+                { label: 'Dividend Yield', value: formatVal(sd.dividendYield ? sd.dividendYield*100 : null, 'percent') }
+            ];
+
+            const bilData = [
+                { label: 'Total Cash', value: formatVal(fd.totalCash, 'curr', currency) },
+                { label: 'Total Debt', value: formatVal(fd.totalDebt, 'curr', currency) },
+                { label: 'Debt/Equity', value: formatVal(fd.debtToEquity) },
+                { label: 'Current Ratio', value: formatVal(fd.currentRatio) },
+                { label: 'Quick Ratio', value: formatVal(fd.quickRatio) },
+                { label: 'Shares Out', value: ks.sharesOutstanding ? (ks.sharesOutstanding/1e9).toFixed(2)+'B' : 'N/D' },
+                { label: 'Book Value', value: formatVal(ks.bookValue) + ' ' + currency }
+            ];
+
+            drawBox(margin, 'Multipli Valutazione', valData, titleColor1);
+            drawBox(margin + boxW + gap, 'Redditivita e Margini', redData, titleColor2);
+            drawBox(margin + (boxW + gap) * 2, 'Bilancio e Liquidita', bilData, titleColor3);
+
+            y += boxH + 20;
+
+            // 2. Draw historical financials table
+            if (fundamentals.historicalFinancials && fundamentals.historicalFinancials.length > 0) {
+                ensureSpace(120);
+                doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(...C.dark);
+                doc.text('BILANCIO STORICO (ANNUALE)', margin, y);
+                y += 8;
+                doc.setDrawColor(...C.rule); doc.setLineWidth(0.5);
+                doc.line(margin, y, pageW - margin, y);
+                y += 12;
+
+                doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(...C.mid);
+                doc.text('Anno', margin, y);
+                doc.text('Revenue', margin + 90, y);
+                doc.text('Net Income', margin + 200, y);
+                doc.text('EPS', margin + 310, y);
+                doc.text('P/E', margin + 400, y);
+                y += 6;
+                doc.line(margin, y, pageW - margin, y);
+                y += 12;
+
+                doc.setFont('helvetica', 'normal'); doc.setTextColor(...textV);
+                fundamentals.historicalFinancials.forEach(f => {
+                    const yr = f.date ? String(f.date).substring(0, 4) : 'TTM';
+                    doc.text(yr, margin, y);
+                    doc.text(formatVal(f.totalRevenue, 'curr', currency), margin + 90, y);
+                    doc.text(formatVal(f.netIncome, 'curr', currency), margin + 200, y);
+                    doc.text(formatVal(f.eps), margin + 310, y);
+                    doc.text(formatVal(f.pe), margin + 400, y);
+                    y += 12;
+                });
+                y += 14;
+            }
+
+            // 3. Draw annual FCF table
+            if (fundamentals.fcfAnnual && fundamentals.fcfAnnual.length > 0) {
+                ensureSpace(120);
+                doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(...C.dark);
+                doc.text('CASH FLOW STORICO (ANNUALE)', margin, y);
+                y += 8;
+                doc.setDrawColor(...C.rule); doc.setLineWidth(0.5);
+                doc.line(margin, y, pageW - margin, y);
+                y += 12;
+
+                doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(...C.mid);
+                doc.text('Anno', margin, y);
+                doc.text('Operating Cash Flow', margin + 90, y);
+                doc.text('CapEx', margin + 230, y);
+                doc.text('Free Cash Flow', margin + 350, y);
+                y += 6;
+                doc.line(margin, y, pageW - margin, y);
+                y += 12;
+
+                doc.setFont('helvetica', 'normal'); doc.setTextColor(...textV);
+                fundamentals.fcfAnnual.forEach(f => {
+                    const yr = f.date ? String(f.date).substring(0, 4) : 'N/D';
+                    const fcf = f.freeCashFlow ?? f.fcfCalculated;
+                    doc.text(yr, margin, y);
+                    doc.text(formatVal(f.operatingCashFlow, 'curr', currency), margin + 90, y);
+                    doc.text(formatVal(f.capitalExpenditure, 'curr', currency), margin + 230, y);
+                    doc.text(formatVal(fcf, 'curr', currency), margin + 350, y);
+                    y += 12;
+                });
+                y += 20;
             }
         }
 
