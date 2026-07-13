@@ -1014,12 +1014,15 @@
                         </div>
                         
                         <!-- Fundamentals Charts Panel -->
-                        <div id="ai-fundamentals-charts" style="margin-bottom: 14px; display: none;">
-                            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 10px;">
-                                <span class="material-symbols-outlined" style="font-size: 15px; color: var(--mob-primary);">bar_chart</span>
-                                <span class="text-slate-700 dark:text-slate-300" style="font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.06em;">Dati Fondamentali Storici</span>
+                        <div id="ai-fundamentals-charts" style="margin-bottom: 14px; display: none;" class="border border-slate-200 dark:border-slate-800 rounded-xl p-3 bg-slate-50/50 dark:bg-slate-900/30">
+                            <div onclick="window.toggleAiFundamentalsCharts()" style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none;">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <span class="material-symbols-outlined" style="font-size: 16px; color: var(--mob-primary);">bar_chart</span>
+                                    <span class="text-slate-700 dark:text-slate-300" style="font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.06em;">Dati Fondamentali Storici</span>
+                                </div>
+                                <span id="ai-fundamentals-toggle-icon" class="material-symbols-outlined text-slate-400" style="font-size: 18px; transition: transform 0.2s;">expand_less</span>
                             </div>
-                            <div id="ai-charts-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;"></div>
+                            <div id="ai-charts-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; transition: all 0.3s ease;"></div>
                         </div>
 
                         <div id="ai-modal-list" style="overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 12px; padding-right: 4px; -webkit-overflow-scrolling: touch;">
@@ -1062,6 +1065,23 @@
         }).catch(e => console.error("Error loading engines", e));
     };
 
+    window.toggleAiFundamentalsCharts = function() {
+        const grid = document.getElementById('ai-charts-grid');
+        const icon = document.getElementById('ai-fundamentals-toggle-icon');
+        if (!grid || !icon) return;
+        
+        const isCollapsed = grid.style.display === 'none';
+        if (isCollapsed) {
+            grid.style.display = 'grid';
+            icon.style.transform = 'rotate(0deg)';
+            localStorage.setItem('ai-fundamentals-collapsed', 'false');
+        } else {
+            grid.style.display = 'none';
+            icon.style.transform = 'rotate(180deg)';
+            localStorage.setItem('ai-fundamentals-collapsed', 'true');
+        }
+    };
+
     window.loadAiFundamentalsCharts = async function(ticker) {
         const panel = document.getElementById('ai-fundamentals-charts');
         const grid = document.getElementById('ai-charts-grid');
@@ -1069,6 +1089,10 @@
 
         panel.style.display = 'none';
         grid.innerHTML = '';
+
+        // Temporaneamente visibile per permettere a Chart.js di inizializzare le dimensioni corrette
+        grid.style.display = 'grid';
+        if (icon) icon.style.transform = 'rotate(0deg)';
 
         try {
             const res = await fetch('/api/fundamentals/' + encodeURIComponent(ticker) + '?t=' + Date.now());
@@ -1234,6 +1258,13 @@
 
             if (chartsRendered > 0) {
                 panel.style.display = 'block';
+                // Ora nascondi la griglia se lo stato memorizzato dell'utente era collassato
+                const collapsed = localStorage.getItem('ai-fundamentals-collapsed') === 'true';
+                const icon = document.getElementById('ai-fundamentals-toggle-icon');
+                if (collapsed) {
+                    grid.style.display = 'none';
+                    if (icon) icon.style.transform = 'rotate(180deg)';
+                }
             }
         } catch(e) {
             console.warn('[FundamentalsCharts] Error:', e.message);
