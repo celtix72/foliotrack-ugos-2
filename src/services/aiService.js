@@ -23,7 +23,7 @@ async function fetchOpenRouterModels() {
                 if (promptPrice > 15) return false;
                 
                 // Esclude versioni obsolete, vision, roleplay o non adatte ad analisi testuale finanziaria
-                if (/legacy|deprecated|vision|image|roleplay|uncensored|mythomax|nous|openchat|gemma|llama-2|gpt-3\.5|claude-2|claude-instant|pixtral|llava|gpt-oss|lyria/.test(id)) {
+                if (/legacy|deprecated|vision|image|roleplay|uncensored|mythomax|nous|openchat|gemma|llama-2|gpt-3\.5|claude-2|claude-instant|pixtral|llava|lyria/.test(id)) {
                     return false;
                 }
                 
@@ -55,7 +55,7 @@ async function fetchOpenRouterModels() {
                 // Flagships / High reasoning (include GPT-5, Claude 4/5, Gemini Pro, DeepSeek R1, QwQ, MiMo)
                 if (/gpt-5(?!.*mini)|gpt-4o(?!.*mini)|claude-[345]-(sonnet|opus)|gemini-[123]\.[0-9]-pro|llama-3\.[123]-70b|deepseek-chat|deepseek-r1|qwq|mimo|mistral-large|o[134]-pro/.test(id)) score += 200;
                 // Fast / Good performance
-                else if (/qwen-[23]|gemini-[123]\.[0-9]-flash|claude-[345]-haiku|o[134](?!.*pro)/.test(id)) score += 100;
+                else if (/qwen-?[23]|qwen3\.7|gemini-[123]\.[0-9]-flash|claude-[345]-haiku|o[134](?!.*pro)/.test(id)) score += 100;
                 // Minis
                 else if (/mini|flash|haiku|8b|nano/.test(id)) score += 30;
                 
@@ -119,7 +119,8 @@ async function fetchRequestyModels() {
                 const id = m.id.toLowerCase();
                 const promptPrice = parseFloat(m.input_price || 0) * 1000000;
                 if (promptPrice > 15) return false;
-                if (/legacy|deprecated|vision|image|roleplay|uncensored|mythomax|nous|openchat|gemma|llama-2|gpt-3\.5|claude-2|claude-instant|pixtral|llava|gpt-oss|lyria/.test(id)) {
+                if (id.includes('@')) return false; // Filtra duplicati specifici per regione/zona
+                if (/legacy|deprecated|vision|image|roleplay|uncensored|mythomax|nous|openchat|gemma|llama-2|gpt-3\.5|claude-2|claude-instant|pixtral|llava|lyria/.test(id)) {
                     return false;
                 }
                 return true;
@@ -137,7 +138,7 @@ async function fetchRequestyModels() {
                 const id = m.id.toLowerCase();
                 if (isFree) score += 20; 
                 if (/gpt-5|gpt-4o(?!.*mini)|claude-[345]-(sonnet|opus)|gemini-[123]\.[0-9]-pro|llama-3\.[123]-70b|deepseek-chat|deepseek-r1|qwq|mimo|mistral-large|o[134]-pro|deepseek-v4-pro/.test(id)) score += 200;
-                else if (/qwen-[23]|gemini-[123]\.[0-9]-flash|claude-[345]-haiku|o[134](?!.*pro)|deepseek-v4-flash/.test(id)) score += 100;
+                else if (/qwen-?[23]|qwen3\.7|gemini-[123]\.[0-9]-flash|claude-[345]-haiku|o[134](?!.*pro)|deepseek-v4-flash/.test(id)) score += 100;
                 else if (/mini|flash|haiku|8b|nano/.test(id)) score += 30;
 
                 return {
@@ -156,7 +157,7 @@ async function fetchRequestyModels() {
                 return a.name.localeCompare(b.name);
             });
             
-            _cachedRequestyModels = mappedModels.slice(0, 100);
+            _cachedRequestyModels = mappedModels.slice(0, 300);
             _cachedRequestyModels.sort((a, b) => {
                 if (a.isFree && !b.isFree) return -1;
                 if (!a.isFree && b.isFree) return 1;

@@ -44622,3 +44622,53 @@
 2026-07-14T16:46:04.602Z [INFO] Market data update cycle completed.
 2026-07-14T16:46:07.791Z [INFO] Starting RSS News Sync (isFirstSync: true)...
 2026-07-14T16:46:08.801Z [INFO] News Sync completed. Saved 30 new articles.
+2026-07-14T16:47:02.804Z [INFO] Performance history sync: processing 2 tickers (Portfolios: 1, Watchlist: 2)
+2026-07-14T16:47:02.855Z [INFO] Calculating history for Portafoglio Test...
+2026-07-14T16:47:02.873Z [INFO] Performance history sync: processing 1 tickers (Portfolios: 1, Watchlist: 0)
+2026-07-14T16:47:02.889Z [INFO] Calculating history for Portafoglio Test...
+2026-07-14T16:51:02.808Z [INFO] Updating market data for 1 assets...
+2026-07-14T16:51:02.841Z [INFO] Updating [AAPL] using [YF]...
+2026-07-14T16:51:03.332Z [INFO] YF ✓ AAPL: price=313.705 USD chg=-1.14%
+2026-07-14T16:51:03.349Z [INFO] Successfully updated AAPL: 313.705 USD
+2026-07-14T16:51:03.364Z [INFO] Market data update cycle completed.
+2026-07-14T16:55:43.438Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-14T16:55:43.460Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-14T16:55:43.570Z [INFO] Updating market data for 1 assets...
+2026-07-14T16:55:43.581Z [INFO] Updating [AAPL] using [YF]...
+2026-07-14T16:55:43.597Z [INFO] FolioTrack server running on port 3000
+2026-07-14T16:55:43.609Z [INFO] Database: /Users/mauro/Documents/Progetti_Sviluppo/FolioTrack3/foliotrack.db
+2026-07-14T16:55:43.625Z [INFO] Startup notification sent to 1 users.
+2026-07-14T16:55:43.718Z [INFO] [OpenRouter] Cached 50 top models for financial analysis.
+2026-07-14T16:55:43.875Z [INFO] [Requesty] Cached 100 top models for financial analysis.
+2026-07-14T16:55:45.235Z [INFO] YF ✓ AAPL: price=313.94 USD chg=-1.06%
+2026-07-14T16:55:45.248Z [INFO] Successfully updated AAPL: 313.94 USD
+2026-07-14T16:55:45.353Z [INFO] Market data update cycle completed.
+2026-07-14T16:55:48.539Z [INFO] Starting RSS News Sync (isFirstSync: true)...
+2026-07-14T16:55:49.510Z [INFO] News Sync completed. Saved 28 new articles.
+2026-07-14T16:55:54.821Z [INFO] [OpenRouter] Cached 50 top models for financial analysis.
+2026-07-14T16:55:54.957Z [INFO] [Requesty] Cached 100 top models for financial analysis.
+2026-07-14T16:55:54.976Z [INFO] [Requesty] Cached 100 top models for financial analysis.
+2026-07-14T16:56:12.878Z [INFO] [OpenRouter] Cached 50 top models for financial analysis.
+2026-07-14T16:56:12.992Z [INFO] [Requesty] Cached 100 top models for financial analysis.
+2026-07-14T16:56:13.052Z [INFO] [Requesty] Cached 100 top models for financial analysis.
+2026-07-14T16:56:43.557Z [INFO] Performance history sync: processing 2 tickers (Portfolios: 1, Watchlist: 2)
+2026-07-14T16:56:43.610Z [INFO] Calculating history for Portafoglio Test...
+2026-07-14T16:56:43.628Z [INFO] Performance history sync: processing 1 tickers (Portfolios: 1, Watchlist: 0)
+2026-07-14T16:56:43.647Z [INFO] Calculating history for Portafoglio Test...
+2026-07-14T16:56:50.557Z [INFO] [OpenRouter] Cached 50 top models for financial analysis.
+2026-07-14T16:56:50.653Z [INFO] [Requesty] Cached 300 top models for financial analysis.
+2026-07-14T16:56:50.727Z [INFO] [Requesty] Cached 300 top models for financial analysis.
+2026-07-14T16:56:57.347Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-14T16:56:57.358Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-14T16:56:57.459Z [INFO] Updating market data for 1 assets...
+2026-07-14T16:56:57.468Z [INFO] Updating [AAPL] using [YF]...
+2026-07-14T16:56:57.483Z [INFO] FolioTrack server running on port 3000
+2026-07-14T16:56:57.494Z [INFO] Database: /Users/mauro/Documents/Progetti_Sviluppo/FolioTrack3/foliotrack.db
+2026-07-14T16:56:57.509Z [INFO] Startup notification sent to 1 users.
+2026-07-14T16:56:57.623Z [INFO] [OpenRouter] Cached 50 top models for financial analysis.
+2026-07-14T16:56:57.828Z [INFO] [Requesty] Cached 300 top models for financial analysis.
+2026-07-14T16:56:59.004Z [INFO] YF ✓ AAPL: price=313.87 USD chg=-1.08%
+2026-07-14T16:56:59.016Z [INFO] Successfully updated AAPL: 313.87 USD
+2026-07-14T16:56:59.119Z [INFO] Market data update cycle completed.
+2026-07-14T16:57:02.446Z [INFO] Starting RSS News Sync (isFirstSync: true)...
+2026-07-14T16:57:03.267Z [INFO] News Sync completed. Saved 27 new articles.
