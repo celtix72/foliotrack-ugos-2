@@ -794,17 +794,19 @@
                 ftAuth.logout();
                 return null;
             }
+            const text = await res.text();
             if (!res.ok) {
                 let errorMsg = `Server returned status ${res.status}`;
                 try {
-                    const data = await res.json();
+                    const data = JSON.parse(text);
                     errorMsg = data.error || errorMsg;
                 } catch(e) {}
                 throw new Error(errorMsg);
             }
             try {
-                return await res.json();
+                return JSON.parse(text);
             } catch(e) {
+                console.error(`[fetchAdmin JSON Error] Endpoint: ${endpoint}, Response text (first 500 chars):`, text.substring(0, 500));
                 throw new Error('Risposta del server non valida (non JSON)');
             }
         }
