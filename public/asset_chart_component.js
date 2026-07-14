@@ -1092,7 +1092,8 @@
 
         // Temporaneamente visibile per permettere a Chart.js di inizializzare le dimensioni corrette
         grid.style.display = 'grid';
-        if (icon) icon.style.transform = 'rotate(0deg)';
+        const toggleIcon = document.getElementById('ai-fundamentals-toggle-icon');
+        if (toggleIcon) toggleIcon.style.transform = 'rotate(0deg)';
 
         try {
             const res = await fetch('/api/fundamentals/' + encodeURIComponent(ticker) + '?t=' + Date.now());
