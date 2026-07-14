@@ -795,10 +795,18 @@
                 return null;
             }
             if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.error || 'Server error');
+                let errorMsg = `Server returned status ${res.status}`;
+                try {
+                    const data = await res.json();
+                    errorMsg = data.error || errorMsg;
+                } catch(e) {}
+                throw new Error(errorMsg);
             }
-            return res.json();
+            try {
+                return await res.json();
+            } catch(e) {
+                throw new Error('Risposta del server non valida (non JSON)');
+            }
         }
 
         async function loadStats() {
