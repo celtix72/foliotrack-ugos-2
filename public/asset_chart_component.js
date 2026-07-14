@@ -1621,6 +1621,9 @@
             line = line.replace(/\\n/g, ' ').trim();
             if (!line) { y += 4; return; }
 
+            // Standardize bullet points to avoid font fallback issues with unicode symbols
+            line = line.replace(/^\s*[•\u2022\u25aa\u25fe\-*]\s+/, '- ');
+
             // Horizontal rule ---
             if (/^[-]{3,}$/.test(line)) {
                 ensureSpace(12);
@@ -1652,7 +1655,7 @@
             const bullet = line.match(/^\s*[-*]\s+(.*)/);
             if (bullet) {
                 const rawB = bullet[1].replace(/\*\*/g, '').trim();
-                const wrapped = doc.splitTextToSize('\u2022 ' + rawB, contentW - 10);
+                const wrapped = doc.splitTextToSize('- ' + rawB, contentW - 10);
                 wrapped.forEach((wl, i) => {
                     ensureSpace(13);
                     doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(...C.mid);
@@ -1663,10 +1666,19 @@
             // Inline bold: split **...** spans and render alternating normal/bold
             const hasBold = /\*\*/.test(line);
             if (hasBold) {
-                // Build single-line text by stripping bold markers (jsPDF lacks mixed-weight inline)
-                // But split into segments and render each with the right weight
                 const segments = line.split(/(\*\*[^*]+\*\*)/);
-                // We need to render them all on the same line. Measure each segment width.
+                // Check if any segment is too long to prevent wrapping bugs
+                const hasLongSegment = segments.some(seg => doc.getTextWidth(seg.replace(/\*\*/g, '')) > 200);
+                if (hasLongSegment) {
+                    const clean = line.replace(/\*\*/g, '').replace(/\*/g, '').trim();
+                    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(...C.mid);
+                    const wrapped = doc.splitTextToSize(clean, contentW);
+                    wrapped.forEach(wl => {
+                        ensureSpace(13);
+                        doc.text(wl, margin, y); y += 12;
+                    });
+                    return;
+                }
                 ensureSpace(14);
                 doc.setFontSize(9); doc.setTextColor(...C.mid);
                 let xCur = margin;
@@ -1675,7 +1687,6 @@
                     const text = seg.replace(/\*\*/g, '');
                     if (!text) return;
                     doc.setFont('helvetica', isBold ? 'bold' : 'normal');
-                    // If we'd overflow the line, don't split mid-segment (just wrap naively)
                     const segW = doc.getTextWidth(text);
                     if (xCur + segW > pageW - margin) {
                         y += 12; xCur = margin;
