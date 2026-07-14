@@ -101,6 +101,10 @@ async function fetchOpenRouterModels() {
 fetchOpenRouterModels();
 
 function getOpenRouterModels() {
+    const now = Date.now();
+    if (_cachedOpenRouterModels.length === 0 || (now - _openRouterModelsCachedAt) > 60 * 60 * 1000) {
+        fetchOpenRouterModels().catch(err => logger.error('[OpenRouter] On-demand fetch failed', err.message));
+    }
     return _cachedOpenRouterModels;
 }
 
@@ -170,6 +174,10 @@ async function fetchRequestyModels() {
 fetchRequestyModels();
 
 function getRequestyModels() {
+    const now = Date.now();
+    if (_cachedRequestyModels.length === 0 || (now - _requestyModelsCachedAt) > 60 * 60 * 1000) {
+        fetchRequestyModels().catch(err => logger.error('[Requesty] On-demand fetch failed', err.message));
+    }
     return _cachedRequestyModels;
 }
 
