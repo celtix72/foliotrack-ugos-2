@@ -1695,7 +1695,8 @@
             doc.line(margin, y, pageW - margin, y); y += 22;
         });
 
-        doc.save('Analisi_IA_' + ticker + '.pdf');
+        const dateStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+        doc.save('IA_' + ticker + '_' + dateStr + '.pdf');
     };
 
 
