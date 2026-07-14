@@ -472,12 +472,19 @@
                                 <option value="OR1">OpenRouter (Modello 1)</option>
                                 <option value="OR2">OpenRouter (Modello 2)</option>
                                 <option value="OR3">OpenRouter (Modello 3)</option>
+                                <option value="OR4">OpenRouter (Modello 4)</option>
+                                <option value="OR5">OpenRouter (Modello 5)</option>
+                                <option value="REQ1">Requesty (Modello 1)</option>
+                                <option value="REQ2">Requesty (Modello 2)</option>
+                                <option value="REQ3">Requesty (Modello 3)</option>
+                                <option value="REQ4">Requesty (Modello 4)</option>
+                                <option value="REQ5">Requesty (Modello 5)</option>
                             </select>
                             <p class="text-[10px] text-slate-500 mt-1">Scegli quale motore usare per le analisi. "Confronto" userà entrambi per comparare i risultati.</p>
                         </div>
 
                         <!-- API Keys -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                             <!-- Gemini -->
                             <div class="p-3 border border-slate-200 dark:border-slate-800 rounded-lg space-y-3">
                                 <h4 class="text-xs font-black text-slate-700 dark:text-slate-300">Gemini</h4>
@@ -532,6 +539,49 @@
                                     </div>
                                 </div>
                                 <p class="text-[10px] text-slate-500 mt-1">Scegli fino a 5 modelli tra quelli disponibili su OpenRouter.</p>
+                            </div>
+                            <!-- Requesty -->
+                            <div class="p-3 border border-slate-200 dark:border-slate-800 rounded-lg space-y-3">
+                                <h4 class="text-xs font-black text-slate-700 dark:text-slate-300">Requesty AI</h4>
+                                <div class="grid grid-cols-1 sm:grid-cols-1 gap-3">
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">API Key</label>
+                                        <input type="password" id="ai-requesty-key" placeholder="sk-..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Modello Requesty 1 (REQ1)</label>
+                                        <select id="ai-requesty-model-1" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-600 dark:text-slate-400">
+                                            <option value="">Caricamento modelli...</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Modello Requesty 2 (REQ2)</label>
+                                        <select id="ai-requesty-model-2" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-600 dark:text-slate-400">
+                                            <option value="">Caricamento modelli...</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Modello Requesty 3 (REQ3)</label>
+                                        <select id="ai-requesty-model-3" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-600 dark:text-slate-400">
+                                            <option value="">Caricamento modelli...</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Modello Requesty 4 (REQ4)</label>
+                                        <select id="ai-requesty-model-4" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-600 dark:text-slate-400">
+                                            <option value="">Caricamento modelli...</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Modello Requesty 5 (REQ5)</label>
+                                        <select id="ai-requesty-model-5" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-600 dark:text-slate-400">
+                                            <option value="">Caricamento modelli...</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <p class="text-[10px] text-slate-500 mt-1">Scegli fino a 5 modelli tra quelli disponibili su Requesty.</p>
                             </div>
                         </div>
 
@@ -1109,6 +1159,38 @@
             }
         }
 
+        async function loadRequestyModels(saved1, saved2, saved3, saved4, saved5) {
+            try {
+                const res = await fetchAdmin('/api/admin/requesty-models');
+                if (res && res.models) {
+                    const sel1 = document.getElementById('ai-requesty-model-1');
+                    const sel2 = document.getElementById('ai-requesty-model-2');
+                    const sel3 = document.getElementById('ai-requesty-model-3');
+                    const sel4 = document.getElementById('ai-requesty-model-4');
+                    const sel5 = document.getElementById('ai-requesty-model-5');
+                    
+                    let optionsHtml = '<option value="">(Nessun modello)</option>';
+                    res.models.forEach(m => {
+                        optionsHtml += `<option value="${m.id}">${m.name} (${m.priceLabel})</option>`;
+                    });
+                    
+                    sel1.innerHTML = optionsHtml;
+                    sel2.innerHTML = optionsHtml;
+                    sel3.innerHTML = optionsHtml;
+                    sel4.innerHTML = optionsHtml;
+                    sel5.innerHTML = optionsHtml;
+                    
+                    if (saved1) sel1.value = saved1;
+                    if (saved2) sel2.value = saved2;
+                    if (saved3) sel3.value = saved3;
+                    if (saved4) sel4.value = saved4;
+                    if (saved5) sel5.value = saved5;
+                }
+            } catch(e) {
+                console.error('Failed to load Requesty models', e);
+            }
+        }
+
         async function loadAiSettings() {
             try {
                 const settings = await fetchAdmin('/api/admin/ai-settings'); 
@@ -1117,9 +1199,11 @@
                     document.getElementById('ai-gemini-key-free').value = settings.geminiApiKeyFree || '';
                     document.getElementById('ai-gemini-key-pay').value = settings.geminiApiKeyPay || '';
                     document.getElementById('ai-openrouter-key').value = settings.openrouterApiKey || '';
+                    document.getElementById('ai-requesty-key').value = settings.requestyApiKey || '';
                     
                     // Carica i modelli dinamicamente e imposta i valori salvati
                     await loadOpenRouterModels(settings.openrouterModel1, settings.openrouterModel2, settings.openrouterModel3, settings.openrouterModel4, settings.openrouterModel5);
+                    await loadRequestyModels(settings.requestyModel1, settings.requestyModel2, settings.requestyModel3, settings.requestyModel4, settings.requestyModel5);
                     document.getElementById('ai-asset-prompt').value = settings.aiAssetPrompt || '';
                     document.getElementById('ai-portfolio-prompt').value = settings.aiPortfolioPrompt || '';
                     
@@ -1149,6 +1233,12 @@
                     openrouterModel3: document.getElementById('ai-openrouter-model-3').value,
                     openrouterModel4: document.getElementById('ai-openrouter-model-4').value,
                     openrouterModel5: document.getElementById('ai-openrouter-model-5').value,
+                    requestyApiKey: document.getElementById('ai-requesty-key').value,
+                    requestyModel1: document.getElementById('ai-requesty-model-1').value,
+                    requestyModel2: document.getElementById('ai-requesty-model-2').value,
+                    requestyModel3: document.getElementById('ai-requesty-model-3').value,
+                    requestyModel4: document.getElementById('ai-requesty-model-4').value,
+                    requestyModel5: document.getElementById('ai-requesty-model-5').value,
                     aiAssetPrompt: document.getElementById('ai-asset-prompt').value,
                     aiPortfolioPrompt: document.getElementById('ai-portfolio-prompt').value
                 };

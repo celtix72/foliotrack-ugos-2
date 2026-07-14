@@ -256,8 +256,77 @@ window.generateDetailedPDFReport = async function(buttonEl) {
                 styles: { fontSize: 8 },
                 margin: { left: marginLeft }
             });
+        }
+
+        // ── 7. Analisi Fondamentale degli Asset (Yahoo Finance) ──────────────────
+        const uniqueTickers = [...new Set(
+            allAssets
+                .filter(a => a.ticker && a.ticker !== 'CASH' && a.type !== 'Liquidity' && a.type !== 'Cash' && a.type !== 'Deposito Vincolato')
+                .map(a => a.ticker)
+        )];
+
+        if (uniqueTickers.length > 0) {
+            if (buttonEl) {
+                buttonEl.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Recupero Dati Fondamentali...';
+            }
             
-            startY = doc.lastAutoTable.finalY + 30;
+            const fundamentalsMap = {};
+            await Promise.all(uniqueTickers.map(async (ticker) => {
+                try {
+                    const res = await fetch(`/api/fundamentals/${encodeURIComponent(ticker)}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        fundamentalsMap[ticker] = data;
+                    }
+                } catch (err) {
+                    console.error(`Error fetching fundamentals for ${ticker}:`, err);
+                }
+            }));
+
+            doc.addPage();
+            startY = 40;
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(15, 23, 42);
+            doc.text('Analisi Fondamentale degli Asset (Yahoo Finance)', marginLeft, startY);
+            startY += 20;
+
+            const fundBody = [];
+            for (const ticker of uniqueTickers) {
+                const data = fundamentalsMap[ticker];
+                if (!data) continue;
+                
+                const ks = data.keyStats || {};
+                const sd = data.summaryDetail || {};
+                const fd = data.financialData || {};
+                
+                const zScore = data.altmanZScore !== undefined && data.altmanZScore !== null ? `${data.altmanZScore.toFixed(2)} (${data.altmanZScoreZone})` : 'N/D';
+                const ic = data.interestCoverageRatio !== undefined && data.interestCoverageRatio !== null ? (data.interestCoverageRatio === Infinity ? 'Infinity' : `${data.interestCoverageRatio.toFixed(1)}x`) : 'N/D';
+                const netTang = data.netTangibleAssetsPerShare !== undefined && data.netTangibleAssetsPerShare !== null ? `${data.netTangibleAssetsPerShare.toFixed(2)}` : 'N/D';
+                
+                fundBody.push([
+                    ticker,
+                    data.name || 'N/D',
+                    sd.trailingPE ? sd.trailingPE.toFixed(1) : 'N/D',
+                    ks.forwardPE ? ks.forwardPE.toFixed(1) : 'N/D',
+                    data.pegRatio ? data.pegRatio.toFixed(2) : 'N/D',
+                    ks.priceToBook ? ks.priceToBook.toFixed(2) : 'N/D',
+                    zScore,
+                    ic,
+                    netTang,
+                    data.insiderSummary || 'N/D'
+                ]);
+            }
+
+            doc.autoTable({
+                startY: startY,
+                head: [['Ticker', 'Nome', 'P/E Trail.', 'P/E Forw.', 'PEG', 'P/B', 'Altman Z-Score', 'Int. Coverage', 'Net Tang./Share', 'Insider Trading']],
+                body: fundBody,
+                theme: 'grid',
+                headStyles: { fillColor: [79, 70, 229] }, // Indigo-600
+                styles: { fontSize: 8 },
+                margin: { left: marginLeft }
+            });
         }
 
         // Save

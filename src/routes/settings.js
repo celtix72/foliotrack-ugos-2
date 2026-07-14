@@ -71,6 +71,15 @@ module.exports = function (dependencies) {
                 if (settings.openrouterModel5) available.push('OR5');
             }
             
+            const reqKey = settings.requestyApiKey || settings.requestyApiKeyPay || settings.requestyApiKeyFree || process.env.REQUESTY_API_KEY;
+            if (reqKey) {
+                if (settings.requestyModel1) available.push('REQ1');
+                if (settings.requestyModel2) available.push('REQ2');
+                if (settings.requestyModel3) available.push('REQ3');
+                if (settings.requestyModel4) available.push('REQ4');
+                if (settings.requestyModel5) available.push('REQ5');
+            }
+            
             let geminiModelName = '';
             if (available.includes('Gemini_Free')) {
                 const key = settings.geminiApiKeyFree || settings.geminiApiKeyPay || settings.geminiApiKey || process.env.GEMINI_API_KEY;
@@ -91,6 +100,16 @@ module.exports = function (dependencies) {
                     label = `OpenRouter 4 [${settings.openrouterModel4}]`;
                 } else if (e === 'OR5') {
                     label = `OpenRouter 5 [${settings.openrouterModel5}]`;
+                } else if (e === 'REQ1') {
+                    label = `Requesty 1 [${settings.requestyModel1}]`;
+                } else if (e === 'REQ2') {
+                    label = `Requesty 2 [${settings.requestyModel2}]`;
+                } else if (e === 'REQ3') {
+                    label = `Requesty 3 [${settings.requestyModel3}]`;
+                } else if (e === 'REQ4') {
+                    label = `Requesty 4 [${settings.requestyModel4}]`;
+                } else if (e === 'REQ5') {
+                    label = `Requesty 5 [${settings.requestyModel5}]`;
                 }
                 
                 return { id: e, label };
@@ -120,6 +139,12 @@ module.exports = function (dependencies) {
                 openrouterModel3: settings.openrouterModel3 || '',
                 openrouterModel4: settings.openrouterModel4 || '',
                 openrouterModel5: settings.openrouterModel5 || '',
+                requestyApiKey: settings.requestyApiKey || settings.requestyApiKeyPay || settings.requestyApiKeyFree || '',
+                requestyModel1: settings.requestyModel1 || '',
+                requestyModel2: settings.requestyModel2 || '',
+                requestyModel3: settings.requestyModel3 || '',
+                requestyModel4: settings.requestyModel4 || '',
+                requestyModel5: settings.requestyModel5 || '',
                 tavilyApiKey: settings.tavilyApiKey || '',
                 aiAssetPrompt: settings.aiAssetPrompt || '',
                 aiPortfolioPrompt: settings.aiPortfolioPrompt || '',
@@ -133,7 +158,7 @@ module.exports = function (dependencies) {
 
     // POST /api/admin/ai-settings
     router.post('/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
-        const { aiEngine, geminiApiKeyFree, geminiApiKeyPay, openrouterApiKey, openrouterModel1, openrouterModel2, openrouterModel3, openrouterModel4, openrouterModel5, tavilyApiKey, aiAssetPrompt, aiPortfolioPrompt } = req.body;
+        const { aiEngine, geminiApiKeyFree, geminiApiKeyPay, openrouterApiKey, openrouterModel1, openrouterModel2, openrouterModel3, openrouterModel4, openrouterModel5, requestyApiKey, requestyModel1, requestyModel2, requestyModel3, requestyModel4, requestyModel5, tavilyApiKey, aiAssetPrompt, aiPortfolioPrompt } = req.body;
         try {
             if (aiEngine !== undefined) database.setSetting(1, 'aiEngine', aiEngine);
             if (geminiApiKeyFree !== undefined) database.setSetting(1, 'geminiApiKeyFree', geminiApiKeyFree);
@@ -144,6 +169,12 @@ module.exports = function (dependencies) {
             if (openrouterModel3 !== undefined) database.setSetting(1, 'openrouterModel3', openrouterModel3);
             if (openrouterModel4 !== undefined) database.setSetting(1, 'openrouterModel4', openrouterModel4);
             if (openrouterModel5 !== undefined) database.setSetting(1, 'openrouterModel5', openrouterModel5);
+            if (requestyApiKey !== undefined) database.setSetting(1, 'requestyApiKey', requestyApiKey);
+            if (requestyModel1 !== undefined) database.setSetting(1, 'requestyModel1', requestyModel1);
+            if (requestyModel2 !== undefined) database.setSetting(1, 'requestyModel2', requestyModel2);
+            if (requestyModel3 !== undefined) database.setSetting(1, 'requestyModel3', requestyModel3);
+            if (requestyModel4 !== undefined) database.setSetting(1, 'requestyModel4', requestyModel4);
+            if (requestyModel5 !== undefined) database.setSetting(1, 'requestyModel5', requestyModel5);
             if (tavilyApiKey !== undefined) database.setSetting(1, 'tavilyApiKey', tavilyApiKey);
             if (aiAssetPrompt !== undefined) database.setSetting(1, 'aiAssetPrompt', aiAssetPrompt);
             if (aiPortfolioPrompt !== undefined) database.setSetting(1, 'aiPortfolioPrompt', aiPortfolioPrompt);
@@ -385,6 +416,17 @@ module.exports = function (dependencies) {
             res.json({ success: true, models: models });
         } catch (err) {
             logger.error('[OpenRouter Models API Error]', err.message);
+            res.status(500).json({ success: false, message: 'Errore interno.' });
+        }
+    });
+
+    // GET /api/admin/requesty-models
+    router.get('/api/admin/requesty-models', requireAuth, requireAdmin, (req, res) => {
+        try {
+            const models = aiService.getRequestyModels();
+            res.json({ success: true, models: models });
+        } catch (err) {
+            logger.error('[Requesty Models API Error]', err.message);
             res.status(500).json({ success: false, message: 'Errore interno.' });
         }
     });

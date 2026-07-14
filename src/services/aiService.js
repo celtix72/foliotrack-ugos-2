@@ -104,6 +104,75 @@ function getOpenRouterModels() {
     return _cachedOpenRouterModels;
 }
 
+let _cachedRequestyModels = [];
+let _requestyModelsCachedAt = 0;
+
+async function fetchRequestyModels() {
+    try {
+        const res = await axios.get('https://router.requesty.ai/v1/models');
+        if (res.data && res.data.data) {
+            let filtered = res.data.data.filter(m => {
+                const id = m.id.toLowerCase();
+                const promptPrice = parseFloat(m.input_price || 0) * 1000000;
+                if (promptPrice > 15) return false;
+                if (/legacy|deprecated|vision|image|roleplay|uncensored|mythomax|nous|openchat|gemma|llama-2|gpt-3\.5|claude-2|claude-instant|pixtral|llava|gpt-oss|lyria/.test(id)) {
+                    return false;
+                }
+                return true;
+            });
+
+            let mappedModels = filtered.map(m => {
+                const promptPrice = parseFloat(m.input_price || 0);
+                const compPrice = parseFloat(m.output_price || 0);
+                const isFree = promptPrice === 0 && compPrice === 0;
+                const prompt1M = (promptPrice * 1000000).toFixed(2);
+                const comp1M = (compPrice * 1000000).toFixed(2);
+                let priceLabel = isFree ? 'Free' : `$${prompt1M} / $${comp1M}`;
+                
+                let score = 0;
+                const id = m.id.toLowerCase();
+                if (isFree) score += 20; 
+                if (/gpt-5|gpt-4o(?!.*mini)|claude-[345]-(sonnet|opus)|gemini-[123]\.[0-9]-pro|llama-3\.[123]-70b|deepseek-chat|deepseek-r1|qwq|mimo|mistral-large|o[134]-pro|deepseek-v4-pro/.test(id)) score += 200;
+                else if (/qwen-[23]|gemini-[123]\.[0-9]-flash|claude-[345]-haiku|o[134](?!.*pro)|deepseek-v4-flash/.test(id)) score += 100;
+                else if (/mini|flash|haiku|8b|nano/.test(id)) score += 30;
+
+                return {
+                    id: m.id,
+                    name: m.id,
+                    priceLabel: priceLabel,
+                    isFree: isFree,
+                    score: score,
+                    costScore: promptPrice + compPrice
+                };
+            });
+
+            mappedModels.sort((a, b) => {
+                if (a.score !== b.score) return b.score - a.score;
+                if (a.costScore !== b.costScore) return a.costScore - b.costScore;
+                return a.name.localeCompare(b.name);
+            });
+            
+            _cachedRequestyModels = mappedModels.slice(0, 100);
+            _cachedRequestyModels.sort((a, b) => {
+                if (a.isFree && !b.isFree) return -1;
+                if (!a.isFree && b.isFree) return 1;
+                return a.name.localeCompare(b.name);
+            });
+
+            _requestyModelsCachedAt = Date.now();
+            logger.info(`[Requesty] Cached ${_cachedRequestyModels.length} top models for financial analysis.`);
+        }
+    } catch (err) {
+        logger.error('[Requesty] Failed to fetch models for cache', err.message);
+    }
+}
+
+fetchRequestyModels();
+
+function getRequestyModels() {
+    return _cachedRequestyModels;
+}
+
 const GEMINI_MODEL_PREFERENCE = [
     'gemini-3.5-flash',
     'gemini-3.1-flash-lite',
@@ -226,6 +295,38 @@ async function callAIModel(engine, prompt, keys) {
         const content = res.data.choices?.[0]?.message?.content || '{}';
         logger.info(`[AI Response (${engine})] \n${content}`);
         return { text: content, usage: res.data.usage || {}, modelUsed: orModel };
+    } else if (baseEngine === 'REQ1' || baseEngine === 'REQ2' || baseEngine === 'REQ3' || baseEngine === 'REQ4' || baseEngine === 'REQ5') {
+        const apiKey = keys.requestyApiKey || keys.requestyApiKeyPay || keys.requestyApiKeyFree || process.env.REQUESTY_API_KEY;
+        if (!apiKey) throw new Error(`Requesty API Key mancante.`);
+        
+        let reqModel = '';
+        if (baseEngine === 'REQ1') reqModel = keys.requestyModel1;
+        if (baseEngine === 'REQ2') reqModel = keys.requestyModel2;
+        if (baseEngine === 'REQ3') reqModel = keys.requestyModel3;
+        if (baseEngine === 'REQ4') reqModel = keys.requestyModel4;
+        if (baseEngine === 'REQ5') reqModel = keys.requestyModel5;
+        
+        if (!reqModel) throw new Error(`Nessun modello configurato per ${baseEngine}. Selezionalo nei Settings dell'amministratore.`);
+        
+        let res;
+        try {
+            res = await axios.post('https://router.requesty.ai/v1/chat/completions', {
+                model: reqModel,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.1
+            }, {
+                headers: { 
+                    'Authorization': `Bearer ${apiKey}`, 
+                    'Content-Type': 'application/json'
+                }
+            });
+        } catch (apiErr) {
+            logger.error('[AI API Error (Requesty)]', apiErr.response ? apiErr.response.data : apiErr.message);
+            throw apiErr;
+        }
+        const content = res.data.choices?.[0]?.message?.content || '{}';
+        logger.info(`[AI Response (${engine})] \n${content}`);
+        return { text: content, usage: res.data.usage || {}, modelUsed: reqModel };
     } else {
         const apiKey = keys.geminiApiKeyFree || keys.geminiApiKeyPay || keys.geminiApiKey || process.env.GEMINI_API_KEY;
         if (!apiKey) throw new Error(`Gemini API Key mancante.`);
@@ -255,6 +356,8 @@ module.exports = {
     getBestGeminiModel,
     fetchOpenRouterModels,
     getOpenRouterModels,
+    fetchRequestyModels,
+    getRequestyModels,
     parseAIResponse,
     callAIModel
 };
