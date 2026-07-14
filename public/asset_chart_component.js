@@ -977,11 +977,11 @@
             modal.style.cssText = `display: none; position: fixed; inset: 0; z-index: 10000; align-items: center; justify-content: center; background-color: ${backdropColor}; backdrop-filter: blur(12px); padding: 16px; flex-direction: column;`;
 
             modal.innerHTML = `
-                <div class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800" style="width: 100%; max-width: 500px; max-height: 85vh; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column; overflow: hidden;">
+                <div class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800" style="width: 100%; max-width: 780px; max-height: 88vh; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column; overflow: hidden;">
                     <!-- Header -->
-                    <div class="bg-slate-50 dark:bg-slate-900/50" style="padding: 16px 20px; border-bottom: 1px solid rgba(148,163,184,0.1); display: flex; justify-content: space-between; align-items: center;">
+                    <div class="bg-slate-50 dark:bg-slate-900/50" style="padding: 14px 20px; border-bottom: 1px solid rgba(148,163,184,0.1); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
                         <div>
-                            <h3 class="font-black text-sm md:text-lg dark:text-white" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                            <h3 class="font-black text-sm md:text-base dark:text-white" style="margin: 0; display: flex; align-items: center; gap: 8px;">
                                 <span class="material-symbols-outlined" style="background: linear-gradient(135deg, var(--mob-primary), #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">smart_toy</span> 
                                 <span id="ai-modal-title"></span>
                             </h3>
@@ -992,41 +992,40 @@
                         </button>
                     </div>
                     
-                    <!-- Content Area -->
-                    <div class="bg-white dark:bg-slate-900" style="padding: 20px; flex: 1; display: flex; flex-direction: column; overflow: hidden;">
-                        <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <h4 class="text-slate-900 dark:text-white" style="font-size: 13px; font-weight: 900; display: flex; align-items: center; gap: 4px; margin: 0;">
-                                    Storico Analisi
-                                </h4>
-                                <button onclick="window.downloadAssetAiHistoryPdf()" style="background: rgba(148,163,184,0.1); color: #64748b; padding: 6px 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 11px; display: flex; align-items: center; gap: 4px; transition: all 0.2s;" class="hover:bg-slate-200 dark:hover:bg-slate-700" title="Scarica PDF Storico">
-                                    <span class="material-symbols-outlined" style="font-size: 16px;">picture_as_pdf</span> Esporta
-                                </button>
-                            </div>
-                            <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
-                                <select id="ai-modal-engine-select" style="flex: 1; min-width: 0; text-overflow: ellipsis; font-size: 11px; padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(148,163,184,0.3); background: transparent; cursor: pointer; outline: none; font-weight: 600;" class="text-slate-700 dark:text-slate-300">
-                                    <option value="">Default (Caricamento...)</option>
-                                </select>
-                                <button id="ai-modal-run-btn" onclick="window.runAssetAi()" style="background: var(--mob-primary); color: white; padding: 8px 16px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 11px; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(19,91,236,0.2); white-space: nowrap;">
-                                    <span class="material-symbols-outlined" style="font-size: 16px;">add</span> Nuova
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- Fundamentals Charts Panel -->
-                        <div id="ai-fundamentals-charts" style="margin-bottom: 14px; display: none;" class="border border-slate-200 dark:border-slate-800 rounded-xl p-3 bg-slate-50/50 dark:bg-slate-900/30">
-                            <div onclick="window.toggleAiFundamentalsCharts()" style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none;">
-                                <div style="display: flex; align-items: center; gap: 6px;">
-                                    <span class="material-symbols-outlined" style="font-size: 16px; color: var(--mob-primary);">bar_chart</span>
-                                    <span class="text-slate-700 dark:text-slate-300" style="font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.06em;">Dati Fondamentali Storici</span>
-                                </div>
-                                <span id="ai-fundamentals-toggle-icon" class="material-symbols-outlined text-slate-400" style="font-size: 18px; transition: transform 0.2s;">expand_less</span>
-                            </div>
-                            <div id="ai-charts-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; transition: all 0.3s ease;"></div>
+                    <!-- Toolbar: engine selector + new analysis button -->
+                    <div class="bg-white dark:bg-slate-900" style="padding: 10px 20px; border-bottom: 1px solid rgba(148,163,184,0.08); display: flex; gap: 8px; align-items: center; flex-shrink: 0;">
+                        <h4 class="text-slate-900 dark:text-white" style="font-size: 12px; font-weight: 900; display: flex; align-items: center; gap: 4px; margin: 0; flex: 0 0 auto;">
+                            Storico Analisi
+                        </h4>
+                        <select id="ai-modal-engine-select" style="flex: 1; min-width: 0; text-overflow: ellipsis; font-size: 11px; padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(148,163,184,0.3); background: transparent; cursor: pointer; outline: none; font-weight: 600;" class="text-slate-700 dark:text-slate-300">
+                            <option value="">Default (Caricamento...)</option>
+                        </select>
+                        <button id="ai-modal-run-btn" onclick="window.runAssetAi()" style="background: var(--mob-primary); color: white; padding: 7px 14px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 11px; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(19,91,236,0.2); white-space: nowrap; flex-shrink: 0;">
+                            <span class="material-symbols-outlined" style="font-size: 16px;">add</span> Nuova
+                        </button>
+                        <button onclick="window.downloadAssetAiHistoryPdf()" style="background: rgba(148,163,184,0.1); color: #64748b; padding: 7px 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 11px; display: flex; align-items: center; gap: 4px; transition: all 0.2s; flex-shrink: 0;" class="hover:bg-slate-200 dark:hover:bg-slate-700" title="Scarica PDF Storico">
+                            <span class="material-symbols-outlined" style="font-size: 16px;">picture_as_pdf</span>
+                        </button>
+                    </div>
+
+                    <!-- Two-column body -->
+                    <div class="bg-white dark:bg-slate-900" style="flex: 1; display: flex; overflow: hidden; min-height: 0;">
+
+                        <!-- LEFT: AI history list -->
+                        <div style="flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; -webkit-overflow-scrolling: touch;" id="ai-modal-list">
+                            <!-- AI items injected here -->
                         </div>
 
-                        <div id="ai-modal-list" style="overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 12px; padding-right: 4px; -webkit-overflow-scrolling: touch;">
-                            <!-- AI items injected here -->
+                        <!-- RIGHT: Fundamentals mini-charts -->
+                        <div id="ai-fundamentals-charts" style="width: 280px; flex-shrink: 0; border-left: 1px solid rgba(148,163,184,0.12); display: none; flex-direction: column; overflow: hidden;">
+                            <div onclick="window.toggleAiFundamentalsCharts()" style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; padding: 10px 14px; border-bottom: 1px solid rgba(148,163,184,0.1); flex-shrink: 0;" class="bg-slate-50/60 dark:bg-slate-900/40">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <span class="material-symbols-outlined" style="font-size: 15px; color: var(--mob-primary);">bar_chart</span>
+                                    <span class="text-slate-700 dark:text-slate-300" style="font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.06em;">Fondamentali</span>
+                                </div>
+                                <span id="ai-fundamentals-toggle-icon" class="material-symbols-outlined text-slate-400" style="font-size: 17px; transition: transform 0.2s;">expand_less</span>
+                            </div>
+                            <div id="ai-charts-grid" style="overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; -webkit-overflow-scrolling: touch;"></div>
                         </div>
                     </div>
                 </div>
@@ -1066,13 +1065,14 @@
     };
 
     window.toggleAiFundamentalsCharts = function() {
+        const panel = document.getElementById('ai-fundamentals-charts');
         const grid = document.getElementById('ai-charts-grid');
         const icon = document.getElementById('ai-fundamentals-toggle-icon');
-        if (!grid || !icon) return;
+        if (!panel || !grid || !icon) return;
         
         const isCollapsed = grid.style.display === 'none';
         if (isCollapsed) {
-            grid.style.display = 'grid';
+            grid.style.display = 'flex';
             icon.style.transform = 'rotate(0deg)';
             localStorage.setItem('ai-fundamentals-collapsed', 'false');
         } else {
@@ -1146,7 +1146,7 @@
 
             function makeCard(id) {
                 const wrap = document.createElement('div');
-                wrap.style.cssText = `background:${cardBg}; border:1px solid ${cardBorder}; border-radius:10px; padding:10px; position:relative; height:140px;`;
+                wrap.style.cssText = `background:${cardBg}; border:1px solid ${cardBorder}; border-radius:10px; padding:10px; position:relative; height:120px; flex-shrink: 0;`;
                 const canvas = document.createElement('canvas');
                 canvas.id = id;
                 wrap.appendChild(canvas);
@@ -1258,13 +1258,15 @@
             }
 
             if (chartsRendered > 0) {
-                panel.style.display = 'block';
+                panel.style.display = 'flex';
                 // Ora nascondi la griglia se lo stato memorizzato dell'utente era collassato
                 const collapsed = localStorage.getItem('ai-fundamentals-collapsed') === 'true';
                 const icon = document.getElementById('ai-fundamentals-toggle-icon');
                 if (collapsed) {
                     grid.style.display = 'none';
                     if (icon) icon.style.transform = 'rotate(180deg)';
+                } else {
+                    grid.style.display = 'flex';
                 }
             }
         } catch(e) {
