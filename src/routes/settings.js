@@ -421,7 +421,7 @@ module.exports = function (dependencies) {
     });
 
     // GET /api/admin/requesty-models
-    router.get('/api/admin/requesty-models', requireAuth, requireAdmin, (req, res) => {
+    router.get('/admin/requesty-models', requireAuth, requireAdmin, (req, res) => {
         try {
             const models = aiService.getRequestyModels();
             res.json({ success: true, models: models });
