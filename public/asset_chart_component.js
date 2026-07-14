@@ -1620,26 +1620,35 @@
         function renderLine(line) {
             line = line.replace(/\\n/g, ' ').trim();
             if (!line) { y += 4; return; }
+
+            // Horizontal rule ---
             if (/^[-]{3,}$/.test(line)) {
                 ensureSpace(12);
                 doc.setDrawColor(...C.rule); doc.setLineWidth(0.5);
                 doc.line(margin, y, pageW - margin, y); y += 10; return;
             }
+
+            // ### heading
             const h3 = line.match(/^###?\s*(.*)/);
             if (h3) {
                 ensureSpace(20);
-                doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(...C.primary);
                 const t = h3[1].replace(/\*\*/g, '').trim();
+                doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(...C.primary);
                 doc.text(t, margin, y); y += 5;
                 doc.setDrawColor(...C.primary); doc.setLineWidth(0.3);
                 doc.line(margin, y, margin + Math.min(doc.getTextWidth(t), contentW), y); y += 11; return;
             }
+
+            // ## heading
             const h2 = line.match(/^##\s*(.*)/);
             if (h2) {
                 ensureSpace(22);
+                const t = h2[1].replace(/\*\*/g, '').trim();
                 doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(...C.dark);
-                doc.text(h2[1].replace(/\*\*/g, '').trim(), margin, y); y += 15; return;
+                doc.text(t, margin, y); y += 15; return;
             }
+
+            // Bullet point
             const bullet = line.match(/^\s*[-*]\s+(.*)/);
             if (bullet) {
                 const rawB = bullet[1].replace(/\*\*/g, '').trim();
@@ -1650,12 +1659,42 @@
                     doc.text(i === 0 ? wl : '  ' + wl.trim(), margin + 8, y); y += 12;
                 }); return;
             }
-            const clean = line.replace(/\*\*/g, '').replace(/\*/g, '').trim();
+
+            // Inline bold: split **...** spans and render alternating normal/bold
+            const hasBold = /\*\*/.test(line);
+            if (hasBold) {
+                // Build single-line text by stripping bold markers (jsPDF lacks mixed-weight inline)
+                // But split into segments and render each with the right weight
+                const segments = line.split(/(\*\*[^*]+\*\*)/);
+                // We need to render them all on the same line. Measure each segment width.
+                ensureSpace(14);
+                doc.setFontSize(9); doc.setTextColor(...C.mid);
+                let xCur = margin;
+                segments.forEach(seg => {
+                    const isBold = /^\*\*/.test(seg);
+                    const text = seg.replace(/\*\*/g, '');
+                    if (!text) return;
+                    doc.setFont('helvetica', isBold ? 'bold' : 'normal');
+                    // If we'd overflow the line, don't split mid-segment (just wrap naively)
+                    const segW = doc.getTextWidth(text);
+                    if (xCur + segW > pageW - margin) {
+                        y += 12; xCur = margin;
+                        ensureSpace(13);
+                    }
+                    doc.text(text, xCur, y);
+                    xCur += segW;
+                });
+                y += 12;
+                return;
+            }
+
+            // Plain paragraph text — always reset font to avoid bleed-through from headings
+            const clean = line.replace(/\*/g, '').trim();
             if (!clean) return;
+            doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(...C.mid);
             const wrapped = doc.splitTextToSize(clean, contentW);
             wrapped.forEach(wl => {
                 ensureSpace(13);
-                doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(...C.mid);
                 doc.text(wl, margin, y); y += 12;
             });
         }
