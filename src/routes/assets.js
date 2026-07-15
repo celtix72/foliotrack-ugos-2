@@ -1448,27 +1448,27 @@ Use these colors/emojis strictly based on the quality of the metric:
 - 🔴 = Negativo / Pericolo / Red Flag
 
 Do not write placeholders like "[Tabella con metriche]"; construct a real Markdown table with the requested metrics.
-After the table, write a brief analytical paragraph explaining your findings.
+After the table, write a brief analytical paragraph explaining your findings. Make extensive use of bullet points, bold text for key figures, and financial/business emojis to make the analysis aesthetically beautiful and easy to read.
 
 The exact sections must be:
 
-### 1. Growth & Business Moat
+### 🚀 1. Growth & Sostenibilità del Business Moat
 [Tabella con metriche: Gross Margin, Operating Margin, Net Margin, Crescita Ricavi, Crescita EPS]
 [Paragrafo di analisi della sostenibilità della crescita e del vantaggio competitivo]
 
-### 2. Financial Health
+### 🛡️ 2. Financial Health & Stabilità di Bilancio
 [Tabella con metriche: ROE, ROA, Debt/Equity, Current Ratio, Quick Ratio, FCF Trend]
 [Paragrafo di analisi della solidità patrimoniale e delle eventuali Red Flags]
 
-### 3. Valuation & PEG (GARP)
+### 📈 3. Valuation & PEG (GARP)
 [Tabella con metriche: P/E Trailing, P/E Forward, PEG Ratio, Prezzo/Cash Flow]
 [Paragrafo di analisi delle valutazioni in relazione alla crescita attesa]
 
-### 4. Capital Reinvestment & Expansion
+### 💰 4. Capital Reinvestment & Reinvestimento per l'Espansione
 [Tabella con metriche: Generazione FCF vs CapEx, ROIC, Efficienza nell'allocazione del capitale]
 [Paragrafo di analisi sulla reinvestimento degli utili per alimentare l'espansione]
 
-### 5. Proiezioni e Livelli Operativi
+### 🎯 5. Proiezioni e Livelli Operativi (Fair Value)
 Calculate growth-adjusted Fair Values using the provided Forward EPS estimates, growth rates, and reasonable P/E multiples.
 - **Fair Value 1Y:** [Prezzo calcolato e breve spiegazione]
 - **Fair Value 3Y:** [Prezzo calcolato e breve spiegazione]
@@ -1510,27 +1510,27 @@ Use these colors/emojis strictly based on the quality of the metric:
 - 🔴 = Negativo / Pericolo / Red Flag
 
 Do not write placeholders like "[Tabella con metriche]"; construct a real Markdown table with the requested metrics.
-After the table, write a brief analytical paragraph explaining your findings.
+After the table, write a brief analytical paragraph explaining your findings. Make extensive use of bullet points, bold text for key figures, and financial/business emojis to make the analysis aesthetically beautiful and easy to read.
 
 The exact sections must be:
 
-### 1. Business Moat
+### 🏰 1. Business Moat & Valutazione della Competitività
 [Tabella con metriche: Gross Margin, Operating Margin, Net Margin, Posizione Competitiva (Moat)]
 [Paragrafo di analisi del vantaggio competitivo]
 
-### 2. Financial Health
+### 🛡️ 2. Financial Health & Solide Basi Patrimoniali
 [Tabella con metriche: ROE, ROA, Debt/Equity, Current Ratio, Quick Ratio, Trend FCF]
 [Paragrafo di analisi delle passività, liquidità e Red Flags]
 
-### 3. Margin of Safety
+### 🔍 3. Margin of Safety & Sconto sul Valore Intrinseco
 [Tabella con metriche: P/E Trailing, P/E Forward, P/B, EV/EBITDA, Sconto su Intrinsic Value]
 [Paragrafo di analisi della presenza di un margine di sicurezza adeguato]
 
-### 4. Management & Capital Allocation
+### 💼 4. Management & Allocazione del Capitale
 [Tabella con metriche: FCF vs CapEx, Riacquisto Azioni proprie (Buyback), Dividendi, Efficienza di allocazione]
 [Paragrafo di analisi sull'allineamento del management con gli azionisti]
 
-### 5. Proiezioni e Livelli Operativi
+### 🎯 5. Proiezioni e Livelli Operativi (Fair Value)
 Calculate conservative Fair Values using the provided Forward EPS estimates, historical P/E multiples, and Growth rates. 
 - **Fair Value 1Y:** [Prezzo calcolato e breve spiegazione]
 - **Fair Value 3Y:** [Prezzo calcolato e breve spiegazione]
