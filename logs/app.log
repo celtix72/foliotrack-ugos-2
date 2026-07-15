@@ -44892,3 +44892,5 @@
 2026-07-15T05:19:55.370Z [INFO] [Requesty] Cached 300 top models for financial analysis.
 2026-07-15T05:20:00.017Z [INFO] Starting RSS News Sync (isFirstSync: true)...
 2026-07-15T05:20:00.855Z [INFO] News Sync completed. Saved 54 new articles.
+2026-07-15T05:24:55.025Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-15T05:30:55.052Z [INFO] Skipping automatic market update: all markets are closed.

@@ -1592,6 +1592,70 @@
             return { color: C.hold, label: action || 'N/D' };
         }
 
+        function renderPdfTable(rows) {
+            if (rows.length < 2) {
+                rows.forEach(r => renderLine(r));
+                return;
+            }
+            
+            const parsedRows = rows.map(r => {
+                const cells = r.split('|').map(c => c.trim());
+                if (cells[0] === '') cells.shift();
+                if (cells[cells.length - 1] === '') cells.pop();
+                return cells.map(cell => {
+                    if (cell === '🟢') return { type: 'green_dot', text: '' };
+                    if (cell === '🟡') return { type: 'yellow_dot', text: '' };
+                    if (cell === '🔴') return { type: 'red_dot', text: '' };
+                    const cleanText = cell.replace(/[🟢🟡🔴]/g, '').trim();
+                    return { type: 'text', text: cleanText };
+                });
+            });
+            
+            const cleanRows = parsedRows.filter(cells => !cells.every(c => /^[-:\s]+$/.test(c.text)));
+            if (cleanRows.length < 2) return;
+            
+            const header = cleanRows[0].map(c => c.text);
+            const body = cleanRows.slice(1).map(row => row.map(c => c.text));
+            
+            ensureSpace(body.length * 20 + 40);
+            
+            doc.autoTable({
+                startY: y,
+                head: [header],
+                body: body,
+                theme: 'striped',
+                headStyles: { fillColor: C.primary },
+                styles: { fontSize: 8, font: 'helvetica', textColor: C.dark },
+                margin: { left: margin },
+                tableWidth: contentW,
+                didDrawCell: function(data) {
+                    if (data.section === 'body') {
+                        const originalRow = cleanRows[data.row.index + 1];
+                        if (originalRow) {
+                            const cellObj = originalRow[data.column.index];
+                            if (cellObj && cellObj.type !== 'text') {
+                                const x = data.cell.x + data.cell.width / 2;
+                                const y = data.cell.y + data.cell.height / 2;
+                                
+                                doc.saveState();
+                                if (cellObj.type === 'green_dot') {
+                                    doc.setFillColor(16, 185, 129);
+                                } else if (cellObj.type === 'yellow_dot') {
+                                    doc.setFillColor(245, 158, 11);
+                                } else if (cellObj.type === 'red_dot') {
+                                    doc.setFillColor(239, 68, 68);
+                                }
+                                doc.circle(x, y, 4, 'F');
+                                doc.restoreState();
+                            }
+                        }
+                    }
+                }
+            });
+            
+            y = doc.lastAutoTable.finalY + 12;
+        }
+
         function renderLine(line) {
             line = line.replace(/\\n/g, ' ').trim();
             if (!line) { y += 4; return; }
@@ -1712,7 +1776,29 @@
             y += 48;
 
             const rawText = h.reasoning || '';
-            rawText.split(/\\n|\n/).forEach(line => renderLine(line));
+            const lines = rawText.split(/\\n|\n/);
+            let inTable = false;
+            let tableRows = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line.startsWith('|') && line.endsWith('|')) {
+                    if (!inTable) {
+                        inTable = true;
+                        tableRows = [];
+                    }
+                    tableRows.push(line);
+                } else {
+                    if (inTable) {
+                        renderPdfTable(tableRows);
+                        inTable = false;
+                    }
+                    renderLine(lines[i]);
+                }
+            }
+            if (inTable) {
+                renderPdfTable(tableRows);
+            }
 
             y += 6;
             ensureSpace(20);
