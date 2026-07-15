@@ -977,7 +977,7 @@
             modal.style.cssText = `display: none; position: fixed; inset: 0; z-index: 10000; align-items: center; justify-content: center; background-color: ${backdropColor}; backdrop-filter: blur(12px); padding: 16px; flex-direction: column;`;
 
             modal.innerHTML = `
-                <div class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800" style="width: 100%; max-width: 780px; max-height: 88vh; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column; overflow: hidden;">
+                <div class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800" style="width: 100%; max-width: 620px; max-height: 88vh; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column; overflow: hidden;">
                     <!-- Header -->
                     <div class="bg-slate-50 dark:bg-slate-900/50" style="padding: 14px 20px; border-bottom: 1px solid rgba(148,163,184,0.1); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
                         <div>
@@ -1012,26 +1012,11 @@
                         </button>
                     </div>
 
-                    <!-- Two-column body -->
-                    <div class="bg-white dark:bg-slate-900" style="flex: 1; display: flex; overflow: hidden; min-height: 0;">
-
-                        <!-- LEFT: AI history list -->
-                        <div style="flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; -webkit-overflow-scrolling: touch;" id="ai-modal-list">
-                            <!-- AI items injected here -->
-                        </div>
-
-                        <!-- RIGHT: Fundamentals mini-charts -->
-                        <div id="ai-fundamentals-charts" style="width: 280px; flex-shrink: 0; border-left: 1px solid rgba(148,163,184,0.12); display: none; flex-direction: column; overflow: hidden;">
-                            <div onclick="window.toggleAiFundamentalsCharts()" style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; padding: 10px 14px; border-bottom: 1px solid rgba(148,163,184,0.1); flex-shrink: 0;" class="bg-slate-50/60 dark:bg-slate-900/40">
-                                <div style="display: flex; align-items: center; gap: 6px;">
-                                    <span class="material-symbols-outlined" style="font-size: 15px; color: var(--mob-primary);">bar_chart</span>
-                                    <span class="text-slate-700 dark:text-slate-300" style="font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.06em;">Fondamentali</span>
-                                </div>
-                                <span id="ai-fundamentals-toggle-icon" class="material-symbols-outlined text-slate-400" style="font-size: 17px; transition: transform 0.2s;">expand_less</span>
-                            </div>
-                            <div id="ai-charts-grid" style="overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; -webkit-overflow-scrolling: touch;"></div>
-                        </div>
+                    <!-- Single-column body -->
+                    <div class="bg-white dark:bg-slate-900" style="flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; -webkit-overflow-scrolling: touch;" id="ai-modal-list">
+                        <!-- AI items injected here -->
                     </div>
+                </div>
                 </div>
             `;
             document.body.appendChild(modal);
@@ -1047,7 +1032,6 @@
         modal.style.display = 'flex';
 
         window.loadAssetAiHistory(ticker);
-        window.loadAiFundamentalsCharts(ticker);
 
         // Fetch available engines
         fetch('/api/ai/available-engines').then(r => r.json()).then(data => {
@@ -1087,17 +1071,13 @@
     };
 
     window.loadAiFundamentalsCharts = async function(ticker) {
-        const panel = document.getElementById('ai-fundamentals-charts');
         const grid = document.getElementById('ai-charts-grid');
-        if (!panel || !grid) return;
+        if (!grid) return;
 
-        panel.style.display = 'none';
         grid.innerHTML = '';
 
-        // Temporaneamente visibile per permettere a Chart.js di inizializzare le dimensioni corrette
+        // Make visible for dimensions calculation
         grid.style.display = 'grid';
-        const toggleIcon = document.getElementById('ai-fundamentals-toggle-icon');
-        if (toggleIcon) toggleIcon.style.transform = 'rotate(0deg)';
 
         try {
             const res = await fetch('/api/fundamentals/' + encodeURIComponent(ticker) + '?t=' + Date.now());
@@ -1262,16 +1242,7 @@
             }
 
             if (chartsRendered > 0) {
-                panel.style.display = 'flex';
-                // Ora nascondi la griglia se lo stato memorizzato dell'utente era collassato
-                const collapsed = localStorage.getItem('ai-fundamentals-collapsed') === 'true';
-                const icon = document.getElementById('ai-fundamentals-toggle-icon');
-                if (collapsed) {
-                    grid.style.display = 'none';
-                    if (icon) icon.style.transform = 'rotate(180deg)';
-                } else {
-                    grid.style.display = 'flex';
-                }
+                grid.style.display = 'grid';
             }
         } catch(e) {
             console.warn('[FundamentalsCharts] Error:', e.message);
@@ -2035,6 +2006,9 @@
             }
 
             document.getElementById('fundamentals-modal-content').innerHTML = `
+                <!-- Charts Grid -->
+                <div id="ai-charts-grid" style="display: none; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 16px;"></div>
+
                 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
                     <!-- Valutazione -->
                     <div style="background:${cardBg}; border:1px solid ${cardBorder}; border-radius:12px; padding:12px;">
@@ -2118,6 +2092,9 @@
                 ${financialsHtml}
                 ${cashflowHtml}
             `;
+
+            // Load and render Chart.js mini-charts
+            await window.loadAiFundamentalsCharts(ticker);
         } catch(e) {
             document.getElementById('fundamentals-modal-content').innerHTML = `
                 <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height: 150px; text-align:center; color: #f43f5e;">

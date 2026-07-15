@@ -831,8 +831,8 @@
         else if (num > 10) decimals = 1;
         
         let formatted = window.formatCurrency(num, currency, decimals);
-        if (promptType === 'garp') formatted += ' (GARP)';
-        else if (promptType === 'graham') formatted += ' (G&B)';
+        if (promptType === 'garp') formatted += ' (Gro)';
+        else if (promptType === 'graham') formatted += ' (Val)';
         return formatted;
     };
 

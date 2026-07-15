@@ -284,13 +284,19 @@
                         aiBadge = item.aiBadges.map(badge => {
                             const engine = badge.engine || 'X';
                             let icon = 'smart_toy';
-                            if (engine === 'Gemini') icon = 'auto_awesome';
-                            else if (engine === 'Qwen') icon = 'chat_spark';
-                            else if (engine === 'Agnes') icon = 'psychiatry';
-                            else if (engine === 'OpenAI') icon = 'data_exploration';
-                            else if (engine === 'Aimlapi') icon = 'api';
-                            else if (engine === 'OpenRouter') icon = 'hub';
-                            else if (engine === 'X') icon = 'close';
+                            if (badge.prompt_type === 'graham') {
+                                icon = 'shield';
+                            } else if (badge.prompt_type === 'garp') {
+                                icon = 'trending_up';
+                            } else {
+                                if (engine === 'Gemini') icon = 'auto_awesome';
+                                else if (engine === 'Qwen') icon = 'chat_spark';
+                                else if (engine === 'Agnes') icon = 'psychiatry';
+                                else if (engine === 'OpenAI') icon = 'data_exploration';
+                                else if (engine === 'Aimlapi') icon = 'api';
+                                else if (engine === 'OpenRouter') icon = 'hub';
+                                else if (engine === 'X') icon = 'close';
+                            }
                             
                             let colorClass = 'border-slate-500/30 text-slate-500 bg-slate-500/10 hover:bg-slate-500/20';
                             if (badge.aiAction === 'BUY' || badge.aiAction === 'INCREASE') colorClass = 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20';
@@ -391,8 +397,11 @@
                                     <span class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${typeColor}">
                                         ${typeLabel}
                                     </span>
-                                    ${aiBadge}
+                                    <span class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border border-slate-500/10 text-slate-400 bg-slate-500/5">
+                                        ${item.exchange || 'MKT'}
+                                    </span>
                                     <span onclick="event.stopPropagation(); window.openAssetFundamentalsModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" class="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter border border-indigo-500/30 text-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/20 cursor-pointer transition-colors ml-1" title="Dati Fondamentali Yahoo Finance">D</span>
+                                    ${aiBadge}
                                 </div>
                                 <div class="text-[10px] font-bold text-slate-400 uppercase tracking-tight truncate max-w-[180px] mt-1">${item.name}</div>
                             </td>

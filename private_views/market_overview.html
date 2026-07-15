@@ -490,13 +490,19 @@ function renderAiBadges(a) {
         return a.aiBadges.map(badge => {
             const engine = badge.engine || 'X';
             let icon = 'smart_toy';
-            if (engine === 'Gemini') icon = 'auto_awesome';
-            else if (engine === 'Qwen') icon = 'chat_spark';
-            else if (engine === 'Agnes') icon = 'psychiatry';
-            else if (engine === 'OpenAI') icon = 'data_exploration';
-            else if (engine === 'Aimlapi') icon = 'api';
-            else if (engine === 'OpenRouter') icon = 'hub';
-            else if (engine === 'X') icon = 'close';
+            if (badge.prompt_type === 'graham') {
+                icon = 'shield';
+            } else if (badge.prompt_type === 'garp') {
+                icon = 'trending_up';
+            } else {
+                if (engine === 'Gemini') icon = 'auto_awesome';
+                else if (engine === 'Qwen') icon = 'chat_spark';
+                else if (engine === 'Agnes') icon = 'psychiatry';
+                else if (engine === 'OpenAI') icon = 'data_exploration';
+                else if (engine === 'Aimlapi') icon = 'api';
+                else if (engine === 'OpenRouter') icon = 'hub';
+                else if (engine === 'X') icon = 'close';
+            }
             
             let colorClass = 'border-slate-500/30 text-slate-500 bg-slate-500/10 hover:bg-slate-500/20';
             if (badge.aiAction === 'BUY' || badge.aiAction === 'INCREASE') colorClass = 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20';
@@ -636,6 +642,7 @@ function renderAssets(filter = '') {
                             <span class="shrink-0 flex items-center gap-2">
                                 <span>${a.exchange || 'Market'}</span>
                                 <span class="px-1.5 py-0.5 rounded text-[8px] font-black leading-none ${a.dataSource === 'B_ITA' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400'}">${a.dataSource === 'B_ITA' ? 'BI' : 'YF'}</span>
+                                <span onclick="event.stopPropagation(); window.openAssetFundamentalsModal('${a.ticker}', '${(a.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter border border-indigo-500/30 text-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/20 cursor-pointer transition-colors" title="Dati Fondamentali Yahoo Finance">D</span>
                             </span>
                         </p>
                     </div>
@@ -645,7 +652,6 @@ function renderAssets(filter = '') {
                 <p class="text-lg font-black text-slate-900 dark:text-white font-mono">${formatCurrency(price, a.currency)}</p>
                 <div class="flex items-center gap-1 mt-1.5 flex-wrap">
                     ${renderAiBadges(a)}
-                    <span onclick="event.stopPropagation(); window.openAssetFundamentalsModal('${a.ticker}', '${(a.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter border border-indigo-500/30 text-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/20 cursor-pointer transition-colors" title="Dati Fondamentali Yahoo Finance">D</span>
                 </div>
             </td>
             <td class="px-5 py-1.5">
