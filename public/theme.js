@@ -822,14 +822,18 @@
     }
 
     // ─── Global Formatting ────────────────────────────────────────────────────
-    window.formatAiFv = function(val, currency = 'EUR') {
+    window.formatAiFv = function(val, currency = 'EUR', promptType = '') {
         if (val === null || val === undefined) return '—';
         const num = parseFloat(val);
         if (isNaN(num)) return val;
         let decimals = 2;
         if (num > 30) decimals = 0;
         else if (num > 10) decimals = 1;
-        return window.formatCurrency(num, currency, decimals);
+        
+        let formatted = window.formatCurrency(num, currency, decimals);
+        if (promptType === 'garp') formatted += ' (GARP)';
+        else if (promptType === 'graham') formatted += ' (G&B)';
+        return formatted;
     };
 
     window.formatCurrency = function(val, currency = 'EUR', decimals = 2) {

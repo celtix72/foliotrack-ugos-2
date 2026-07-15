@@ -661,7 +661,7 @@ router.get('/assets', requireAuth, async (req, res) => {
         if (allTickers.length > 0) {
             const placeholders = allTickers.map(() => '?').join(',');
             const aiHistoryStmt = database.db.prepare(`
-                SELECT ticker, engine, action as aiAction, targetPrice as aiTargetPrice, created_at
+                SELECT ticker, engine, action as aiAction, targetPrice as aiTargetPrice, prompt_type, created_at
                 FROM asset_ai_history
                 WHERE ticker IN (${placeholders}) AND engine IS NOT NULL
                 ORDER BY created_at DESC
@@ -1189,6 +1189,7 @@ router.delete('/assets/:id', requireAuth, (req, res) => {
 router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
     try {
         const globalSettings = database.getSettings(1) || {};
+        const promptType = req.query.prompt_type === 'garp' ? 'garp' : 'graham';
 
 
         // Setup SSE Headers
@@ -1400,7 +1401,7 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
 
         sendEvent('progress', { message: 'Generazione responso IA in corso...' });
 
-        let customPromptText = globalSettings.aiAssetPrompt || '';
+        let customPromptText = (promptType === 'garp') ? (globalSettings.aiAssetPromptGarp || '') : (globalSettings.aiAssetPrompt || '');
         if (customPromptText) {
             const assetName = assetRow.name || assetRow.ticker;
             const assetExchange = assetRow.exchange || 'Mercato';
@@ -1413,17 +1414,62 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
         }
 
         let prompt = '';
-        // Se il prompt personalizzato contiene già la struttura o le istruzioni intere, usalo direttamente
         if (customPromptText.includes('SYSTEM ROLE') || customPromptText.includes('INPUT DATA TO ANALYZE') || customPromptText.includes('Business Moat') || customPromptText.includes('PROIEZIONI E LIVELLI')) {
             prompt = customPromptText;
-            // Se non contiene già i dati compilati al suo interno, li accodiamo per sicurezza
             if (!customPromptText.includes(contextData.substring(0, 15))) {
                 prompt += `\n\n**INPUT DATA TO ANALYZE:**\n${contextData}`;
             }
         } else {
-            // Altrimenti usa la struttura predefinita e accoda le istruzioni custom dell'utente
             const customPromptSection = customPromptText ? `\n**USER CUSTOM INSTRUCTIONS**\n${customPromptText}\n` : '';
-            prompt = `**SYSTEM ROLE & BEHAVIOR**
+            if (promptType === 'garp') {
+                prompt = `**SYSTEM ROLE & BEHAVIOR**
+Act as an elite financial analyst specializing in the GARP (Growth At a Reasonable Price) investment philosophy. Your analysis must focus on identifying companies with solid, consistent earnings growth and reasonable valuations (PEG ratio typically below 1.2, robust EPS growth rates, and positive historical free cash flows). You will be provided with fundamental financial data, forward estimates, and historical metrics for an asset.
+
+**TASK**
+Analyze the provided input data strictly, objectively, and exclusively. Do not hallucinate external data. If a specific metric required for the analysis is missing from the input, explicitly state "N/D" and adapt your evaluation.
+${customPromptSection}
+**OUTPUT CONSTRAINTS (CRITICAL)**
+You MUST output EXACTLY and EXCLUSIVELY a valid JSON object. No conversational text before or after. No markdown code blocks (like \`\`\`json). 
+The JSON structure must be exactly as follows:
+{
+  "action": "<ONE WORD: BUY, SELL, HOLD, AVOID, WATCHLIST, or NO DATA>",
+  "reasoning": "<Insert the full Markdown-formatted report here. You MUST escape all newlines with \\\\n and internal quotes with \\\" >",
+  "targetProfit": <number or 0>,
+  "stopLoss": <number or 0>
+}
+
+**REPORT STRUCTURE (To be generated inside the JSON "reasoning" field)**
+Write the discursive report in Italian, formatted in Markdown, following these exact sections:
+
+### 1. Growth & Business Moat
+Describe the company's competitive advantage based on its margins (Gross/Operating/Net) and EPS/Revenue growth trajectory. Why is its growth sustainable?
+
+### 2. Financial Health
+Evaluate the Return on Equity/Assets, Debt-to-Equity ratio, liquidity ratios (Current/Quick), and Free Cash Flow (FCF) trends. Explicitly highlight any "Red Flags".
+
+### 3. Valuation & PEG (GARP)
+Analyze Valuation Multiples (Trailing/Forward P/E, PEG ratio). The PEG ratio is the primary metric: a PEG <= 1.0 is highly desirable, 1.0 to 1.5 is reasonable. Is the growth priced reasonably?
+
+### 4. Capital Reinvestment & Expansion
+Evaluate capital efficiency based on FCF generation vs. CapEx. How well does management allocate capital to fuel growth?
+
+### 5. Proiezioni e Livelli Operativi
+Calculate growth-adjusted Fair Values using the provided Forward EPS estimates, growth rates, and reasonable P/E multiples.
+- **Fair Value 1Y:** [Prezzo calcolato e breve spiegazione]
+- **Fair Value 3Y:** [Prezzo calcolato e breve spiegazione]
+- **Fair Value 5Y:** [Prezzo calcolato e breve spiegazione]
+- **Trend di fondo:** [Rialzista / Ribassista / Laterale]
+- **Area di Supporto critico:** [Prezzo stimato dai minimi a 52 settimane e dati]
+- **Area di Resistenza critica:** [Prezzo stimato dai massimi a 52 settimane e target analisti]
+- **Zona di Ingresso ideale (Buy):** [Prezzo o Range che garantisce un margine di sicurezza secondo GARP]
+- **Take Profit suggerito (TP):** [Prezzo - DEVE COINCIDERE CON IL CAMPO JSON "targetProfit"]
+- **Stop Loss rigoroso (SL):** [Prezzo - DEVE COINCIDERE CON IL CAMPO JSON "stopLoss"]
+
+**INPUT DATA TO ANALYZE:**
+${contextData}
+`;
+            } else {
+                prompt = `**SYSTEM ROLE & BEHAVIOR**
 Act as an elite financial analyst and a strict value investor. Your analysis must be deeply rooted in Benjamin Graham's and Warren Buffett's core principles. You will be provided with fundamental financial data, forward estimates, and historical metrics for an asset.
 
 **TASK**
@@ -1469,6 +1515,7 @@ Calculate conservative Fair Values using the provided Forward EPS estimates, his
 **INPUT DATA TO ANALYZE:**
 ${contextData}
 `;
+            }
         }
 
         const engine = req.query.engine || globalSettings.aiEngine || 'Gemini';
@@ -1533,9 +1580,9 @@ ${contextData}
 
             // Inserisci nello storico
             database.db.prepare(`
-                INSERT INTO asset_ai_history (ticker, action, reasoning, targetPrice, stopLoss, engine)
-                VALUES (?, ?, ?, ?, ?, ?)
-            `).run(ticker, action, reasoning, targetPrice, stopLoss, finalEngineName);
+                INSERT INTO asset_ai_history (ticker, action, reasoning, targetPrice, stopLoss, engine, prompt_type)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            `).run(ticker, action, reasoning, targetPrice, stopLoss, finalEngineName, promptType);
         })();
 
         sendEvent('complete', { 
@@ -1557,7 +1604,7 @@ ${contextData}
 router.get('/assets/:ticker/ai-history', requireAuth, (req, res) => {
     try {
         const history = database.db.prepare(`
-            SELECT id, action, reasoning, targetPrice, stopLoss, engine, created_at 
+            SELECT id, action, reasoning, targetPrice, stopLoss, engine, prompt_type, created_at 
             FROM asset_ai_history 
             WHERE ticker = ? 
             ORDER BY created_at DESC

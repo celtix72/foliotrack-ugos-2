@@ -993,14 +993,18 @@
                     </div>
                     
                     <!-- Toolbar: engine selector + new analysis button -->
-                    <div class="bg-white dark:bg-slate-900" style="padding: 10px 20px; border-bottom: 1px solid rgba(148,163,184,0.08); display: flex; gap: 8px; align-items: center; flex-shrink: 0;">
-                        <h4 class="text-slate-900 dark:text-white" style="font-size: 12px; font-weight: 900; display: flex; align-items: center; gap: 4px; margin: 0; flex: 0 0 auto;">
-                            Storico Analisi
+                    <div class="bg-white dark:bg-slate-900" style="padding: 10px 20px; border-bottom: 1px solid rgba(148,163,184,0.08); display: flex; gap: 8px; align-items: center; flex-shrink: 0; flex-wrap: wrap;">
+                        <h4 class="text-slate-900 dark:text-white" style="font-size: 11px; font-weight: 900; display: flex; align-items: center; gap: 4px; margin: 0; flex: 0 0 auto;">
+                            Storico
                         </h4>
-                        <select id="ai-modal-engine-select" style="flex: 1; min-width: 0; text-overflow: ellipsis; font-size: 11px; padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(148,163,184,0.3); background: transparent; cursor: pointer; outline: none; font-weight: 600;" class="text-slate-700 dark:text-slate-300">
+                        <select id="ai-modal-engine-select" style="width: 140px; text-overflow: ellipsis; font-size: 11px; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(148,163,184,0.3); background: transparent; cursor: pointer; outline: none; font-weight: 600;" class="text-slate-700 dark:text-slate-300">
                             <option value="">Default (Caricamento...)</option>
                         </select>
-                        <button id="ai-modal-run-btn" onclick="window.runAssetAi()" style="background: var(--mob-primary); color: white; padding: 7px 14px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 11px; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(19,91,236,0.2); white-space: nowrap; flex-shrink: 0;">
+                        <select id="ai-modal-prompt-select" style="width: 130px; text-overflow: ellipsis; font-size: 11px; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(148,163,184,0.3); background: transparent; cursor: pointer; outline: none; font-weight: 600;" class="text-slate-700 dark:text-slate-300">
+                            <option value="graham">Graham e Buffett</option>
+                            <option value="garp">GARP</option>
+                        </select>
+                        <button id="ai-modal-run-btn" onclick="window.runAssetAi()" style="background: var(--mob-primary); color: white; padding: 7px 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 11px; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(19,91,236,0.2); white-space: nowrap; flex-shrink: 0;">
                             <span class="material-symbols-outlined" style="font-size: 16px;">add</span> Nuova
                         </button>
                         <button onclick="window.downloadAssetAiHistoryPdf()" style="background: rgba(148,163,184,0.1); color: #64748b; padding: 7px 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 11px; display: flex; align-items: center; gap: 4px; transition: all 0.2s; flex-shrink: 0;" class="hover:bg-slate-200 dark:hover:bg-slate-700" title="Scarica PDF Storico">
@@ -1765,8 +1769,11 @@
             </div>`;
 
         const engineSelect = document.getElementById('ai-modal-engine-select');
-        const engine = engineSelect && engineSelect.value ? '?engine=' + encodeURIComponent(engineSelect.value) : '';
-        const source = new EventSource('/api/assets/' + encodeURIComponent(_aiModalTicker) + '/ai-analysis' + engine);
+        const promptSelect = document.getElementById('ai-modal-prompt-select');
+        const engineVal = engineSelect && engineSelect.value ? engineSelect.value : '';
+        const promptVal = promptSelect && promptSelect.value ? promptSelect.value : 'graham';
+        const query = `?engine=${encodeURIComponent(engineVal)}&prompt_type=${encodeURIComponent(promptVal)}`;
+        const source = new EventSource('/api/assets/' + encodeURIComponent(_aiModalTicker) + '/ai-analysis' + query);
 
         source.addEventListener('progress', function (e) {
             const data = JSON.parse(e.data);

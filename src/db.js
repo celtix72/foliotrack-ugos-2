@@ -910,6 +910,7 @@ function initDb() {
         requestyModel5: '',
         tavilyApiKey: '',
         aiAssetPrompt: '',
+        aiAssetPromptGarp: '',
         aiPortfolioPrompt: '',
         aiTokensUsedToday: '0',
         aiTokensDate: new Date().toISOString().split('T')[0]
@@ -934,6 +935,7 @@ function initDb() {
     try { dbConnection.prepare(`ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 1`).run(); } catch (e) {}
     try { dbConnection.prepare(`ALTER TABLE users ADD COLUMN reset_token TEXT`).run(); } catch (e) {}
     try { dbConnection.prepare(`ALTER TABLE users ADD COLUMN reset_token_expiry TEXT`).run(); } catch (e) {}
+    try { dbConnection.prepare(`ALTER TABLE asset_ai_history ADD COLUMN prompt_type TEXT DEFAULT 'graham'`).run(); } catch (e) {}
 
     // ─── Seed: default admin user (mauro / pippo) ───────────────────────────
     const existingAdmin = dbConnection.prepare(`SELECT id FROM users WHERE username = 'mauro'`).get();

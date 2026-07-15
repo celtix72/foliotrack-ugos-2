@@ -588,8 +588,12 @@
                         <!-- Custom Prompts -->
                         <div class="space-y-4">
                             <div>
-                                <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1">Prompt Valutazione Singolo Asset</label>
+                                <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1">Prompt Singolo Asset (Graham e Buffett)</label>
                                 <textarea id="ai-asset-prompt" rows="3" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-3 px-4 text-sm focus:ring-indigo-500/30 focus:border-indigo-500 transition-colors" placeholder="Es. Valuta i titoli con un'ottica da cassettista a lungo termine, privilegiando dividendi alti e stabili."></textarea>
+                            </div>
+                            <div>
+                                <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1">Prompt Singolo Asset (GARP - Growth at a Reasonable Price)</label>
+                                <textarea id="ai-asset-prompt-garp" rows="3" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-3 px-4 text-sm focus:ring-indigo-500/30 focus:border-indigo-500 transition-colors" placeholder="Es. Cerca aziende con tassi di crescita dell'EPS stabili (10-20%) e un PEG inferiore a 1.2."></textarea>
                             </div>
                             <div>
                                 <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1">Prompt Analisi Intero Portafoglio</label>
@@ -1215,6 +1219,7 @@
                     await loadOpenRouterModels(settings.openrouterModel1, settings.openrouterModel2, settings.openrouterModel3, settings.openrouterModel4, settings.openrouterModel5);
                     await loadRequestyModels(settings.requestyModel1, settings.requestyModel2, settings.requestyModel3, settings.requestyModel4, settings.requestyModel5);
                     document.getElementById('ai-asset-prompt').value = settings.aiAssetPrompt || '';
+                    document.getElementById('ai-asset-prompt-garp').value = settings.aiAssetPromptGarp || '';
                     document.getElementById('ai-portfolio-prompt').value = settings.aiPortfolioPrompt || '';
                     
                     if (document.getElementById('ai-tokens-used')) {
@@ -1250,6 +1255,7 @@
                     requestyModel4: document.getElementById('ai-requesty-model-4').value,
                     requestyModel5: document.getElementById('ai-requesty-model-5').value,
                     aiAssetPrompt: document.getElementById('ai-asset-prompt').value,
+                    aiAssetPromptGarp: document.getElementById('ai-asset-prompt-garp').value,
                     aiPortfolioPrompt: document.getElementById('ai-portfolio-prompt').value
                 };
                 const res = await fetch('/api/admin/ai-settings', {

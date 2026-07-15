@@ -524,6 +524,8 @@
                     if (num > 30) dec = 0;
                     else if (num > 10) dec = 1;
                     fvStr = num.toLocaleString('it-IT', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+                    if (badge.prompt_type === 'garp') fvStr += ' (GARP)';
+                    else if (badge.prompt_type === 'graham') fvStr += ' (G&B)';
                 }
                 
                 return `<span onclick="event.stopPropagation();window.openAssetAiHistoryModal('${tickerEsc}','${nameEsc}','${cur}')" class="px-1.5 py-0.5 rounded font-black uppercase tracking-tighter flex items-center gap-1 border ${clr} cursor-pointer whitespace-nowrap" style="font-size: calc(10px * var(--mkcard-scale, 1))">
@@ -589,6 +591,8 @@
                     if (num > 30) dec = 0;
                     else if (num > 10) dec = 1;
                     fvStr = num.toLocaleString('it-IT', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+                    if (badge.prompt_type === 'garp') fvStr += ' (GARP)';
+                    else if (badge.prompt_type === 'graham') fvStr += ' (G&B)';
                 }
                 
                 return `<span onclick="event.stopPropagation();window.openAssetAiHistoryModal('${tickerEsc}','${nameEsc}','${cur}')" class="px-1.5 py-0.5 rounded font-black uppercase tracking-tighter flex items-center gap-1 border ${clr} cursor-pointer whitespace-nowrap ml-1" style="font-size: calc(10px * var(--mkcard-scale, 1))">
