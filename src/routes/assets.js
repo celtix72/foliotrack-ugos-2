@@ -1438,20 +1438,34 @@ The JSON structure must be exactly as follows:
   "stopLoss": <number or 0>
 }
 
-**REPORT STRUCTURE (To be generated inside the JSON "reasoning" field)**
-Write the discursive report in Italian, formatted in Markdown, following these exact sections:
+**REPORT STRUCTURE & STYLE (To be generated inside the JSON "reasoning" field)**
+Write the report in Italian, formatted in Markdown. 
+CRITICAL STYLE REQUIREMENT: For each of the first 4 sections below, you MUST start the section with a Markdown Table summarizing the metrics evaluated in that section.
+The table must have EXACTLY these columns: | Metrica Evaluata | Valore Attuale | Valutazione (🟢/🟡/🔴) | Nota Sintetica |
+Use these colors/emojis strictly based on the quality of the metric:
+- 🟢 = Eccellente / Sicuro / Forte
+- 🟡 = Neutro / Attenzione / Marginale
+- 🔴 = Negativo / Pericolo / Red Flag
+
+After the table, write a brief analytical paragraph explaining your findings.
+
+The exact sections must be:
 
 ### 1. Growth & Business Moat
-Describe the company's competitive advantage based on its margins (Gross/Operating/Net) and EPS/Revenue growth trajectory. Why is its growth sustainable?
+[Tabella con metriche: Gross Margin, Operating Margin, Net Margin, Crescita Ricavi, Crescita EPS]
+[Paragrafo di analisi della sostenibilità della crescita e del vantaggio competitivo]
 
 ### 2. Financial Health
-Evaluate the Return on Equity/Assets, Debt-to-Equity ratio, liquidity ratios (Current/Quick), and Free Cash Flow (FCF) trends. Explicitly highlight any "Red Flags".
+[Tabella con metriche: ROE, ROA, Debt/Equity, Current Ratio, Quick Ratio, FCF Trend]
+[Paragrafo di analisi della solidità patrimoniale e delle eventuali Red Flags]
 
 ### 3. Valuation & PEG (GARP)
-Analyze Valuation Multiples (Trailing/Forward P/E, PEG ratio). The PEG ratio is the primary metric: a PEG <= 1.0 is highly desirable, 1.0 to 1.5 is reasonable. Is the growth priced reasonably?
+[Tabella con metriche: P/E Trailing, P/E Forward, PEG Ratio, Prezzo/Cash Flow]
+[Paragrafo di analisi delle valutazioni in relazione alla crescita attesa]
 
 ### 4. Capital Reinvestment & Expansion
-Evaluate capital efficiency based on FCF generation vs. CapEx. How well does management allocate capital to fuel growth?
+[Tabella con metriche: Generazione FCF vs CapEx, ROIC, Efficienza nell'allocazione del capitale]
+[Paragrafo di analisi sulla reinvestimento degli utili per alimentare l'espansione]
 
 ### 5. Proiezioni e Livelli Operativi
 Calculate growth-adjusted Fair Values using the provided Forward EPS estimates, growth rates, and reasonable P/E multiples.
@@ -1485,20 +1499,34 @@ The JSON structure must be exactly as follows:
   "stopLoss": <number or 0>
 }
 
-**REPORT STRUCTURE (To be generated inside the JSON "reasoning" field)**
-Write the discursive report in Italian, formatted in Markdown, following these exact sections:
+**REPORT STRUCTURE & STYLE (To be generated inside the JSON "reasoning" field)**
+Write the report in Italian, formatted in Markdown. 
+CRITICAL STYLE REQUIREMENT: For each of the first 4 sections below, you MUST start the section with a Markdown Table summarizing the metrics evaluated in that section.
+The table must have EXACTLY these columns: | Metrica Evaluata | Valore Attuale | Valutazione (🟢/🟡/🔴) | Nota Sintetica |
+Use these colors/emojis strictly based on the quality of the metric:
+- 🟢 = Eccellente / Sicuro / Forte
+- 🟡 = Neutro / Attenzione / Marginale
+- 🔴 = Negativo / Pericolo / Red Flag
+
+After the table, write a brief analytical paragraph explaining your findings.
+
+The exact sections must be:
 
 ### 1. Business Moat
-Describe the company's competitive advantage based on its margins (Gross/Operating/Net) and market position. Why is it difficult for competitors to replicate?
+[Tabella con metriche: Gross Margin, Operating Margin, Net Margin, Posizione Competitiva (Moat)]
+[Paragrafo di analisi del vantaggio competitivo]
 
 ### 2. Financial Health
-Evaluate the Return on Equity/Assets, Debt-to-Equity ratio, liquidity ratios (Current/Quick), and Free Cash Flow (FCF) trends. Explicitly highlight any "Red Flags".
+[Tabella con metriche: ROE, ROA, Debt/Equity, Current Ratio, Quick Ratio, Trend FCF]
+[Paragrafo di analisi delle passività, liquidità e Red Flags]
 
 ### 3. Margin of Safety
-Compare current Valuation Multiples (Trailing/Forward P/E, P/B, EV/EBITDA, PEG) to historical averages and growth rates. Is the stock trading below its intrinsic value? 
+[Tabella con metriche: P/E Trailing, P/E Forward, P/B, EV/EBITDA, Sconto su Intrinsic Value]
+[Paragrafo di analisi della presenza di un margine di sicurezza adeguato]
 
 ### 4. Management & Capital Allocation
-Evaluate capital efficiency based on FCF generation vs. CapEx and margin trends. Do they reinvest wisely?
+[Tabella con metriche: FCF vs CapEx, Riacquisto Azioni proprie (Buyback), Dividendi, Efficienza di allocazione]
+[Paragrafo di analisi sull'allineamento del management con gli azionisti]
 
 ### 5. Proiezioni e Livelli Operativi
 Calculate conservative Fair Values using the provided Forward EPS estimates, historical P/E multiples, and Growth rates. 
