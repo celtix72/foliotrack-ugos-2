@@ -1385,6 +1385,15 @@
             });
         }
 
+        if (!window.jspdf.jsPDF.API.autoTable) {
+            await new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js';
+                script.onload = resolve; script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('p', 'pt', 'a4');
         const pageW = doc.internal.pageSize.getWidth();
