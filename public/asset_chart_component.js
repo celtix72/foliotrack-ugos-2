@@ -1306,7 +1306,7 @@
                     actionColor = 'rgba(239,68,68,0.1)';
                     actionTextColor = 'rgb(239,68,68)';
                 } else if (item.action === 'AVOID') {
-                    actionColor = '#000000';
+                    actionColor = '#5c3a21';
                     actionTextColor = '#ffffff';
                 } else if (item.action === 'WATCHLIST') {
                     actionColor = 'rgba(139,92,246,0.1)';
@@ -1609,7 +1609,7 @@
         function actionStyle(action) {
             if (action === 'BUY' || action === 'INCREASE') return { color: C.buy, label: action };
             if (action === 'SELL' || action === 'DECREASE') return { color: C.sell, label: action };
-            if (action === 'AVOID') return { color: [0, 0, 0], label: action };
+            if (action === 'AVOID') return { color: [92, 58, 33], label: action };
             if (action === 'NO DATA') return { color: C.nodata, label: action };
             return { color: C.hold, label: action || 'N/D' };
         }
@@ -1929,7 +1929,7 @@
             actionColor = 'rgba(239,68,68,0.1)';
             actionTextColor = 'rgb(239,68,68)';
         } else if (action === 'AVOID') {
-            actionColor = '#000000';
+            actionColor = '#5c3a21';
             actionTextColor = '#ffffff';
         } else if (action === 'WATCHLIST') {
             actionColor = 'rgba(139,92,246,0.1)';
