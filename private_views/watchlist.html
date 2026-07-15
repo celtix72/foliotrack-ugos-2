@@ -334,12 +334,20 @@
                         if (!text) return '—';
                         const normalizedText = text.replace(/\\n/g, '\n');
                         const escapedParam = param.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                        const regex = new RegExp(`(?:\\-|\\•|\\*)\\s*${escapedParam}\\s*:\\s*([^\\n]+)`, 'i');
-                        let m = normalizedText.match(regex);
-                        if(m) return m[1].trim();
                         
-                        const regex2 = new RegExp(`${escapedParam}\\s*:\\s*([^\\n]+)`, 'i');
-                        m = normalizedText.match(regex2);
+                        // 1. Table format check: | **Param** | Value | ... |
+                        const tableRegex = new RegExp(`\\|\\s*(?:\\*\\*|__)?\\s*${escapedParam}\\s*(?:\\*\\*|__)?\\s*\\|\\s*([^\\|]+)`, 'i');
+                        let m = normalizedText.match(tableRegex);
+                        if (m) return m[1].trim();
+                        
+                        // 2. Bullet list format check: - Param: Value
+                        const listRegex = new RegExp(`(?:\\-|\\•|\\*)\\s*${escapedParam}\\s*:\\s*([^\\n]+)`, 'i');
+                        m = normalizedText.match(listRegex);
+                        if (m) return m[1].trim();
+                        
+                        // 3. Simple colon format check: Param: Value
+                        const simpleRegex = new RegExp(`${escapedParam}\\s*:\\s*([^\\n]+)`, 'i');
+                        m = normalizedText.match(simpleRegex);
                         return m ? m[1].trim() : '—';
                     };
 

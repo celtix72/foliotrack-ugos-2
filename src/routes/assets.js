@@ -410,12 +410,20 @@ async function getAssetFundamentals(ticker) {
                 if (!text) return null;
                 const normalizedText = text.replace(/\\n/g, '\n');
                 const escapedParam = param.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const regex = new RegExp(`(?:\\-|\\•|\\*)\\s*${escapedParam}\\s*:\\s*([^\\n]+)`, 'i');
-                let m = normalizedText.match(regex);
+                
+                // 1. Table format check: | **Param** | Value | ... |
+                const tableRegex = new RegExp(`\\|\\s*(?:\\*\\*|__)?\\s*${escapedParam}\\s*(?:\\*\\*|__)?\\s*\\|\\s*([^\\|]+)`, 'i');
+                let m = normalizedText.match(tableRegex);
                 if (m) return m[1].trim();
                 
-                const regex2 = new RegExp(`${escapedParam}\\s*:\\s*([^\\n]+)`, 'i');
-                m = normalizedText.match(regex2);
+                // 2. Bullet list format check: - Param: Value
+                const listRegex = new RegExp(`(?:\\-|\\•|\\*)\\s*${escapedParam}\\s*:\\s*([^\\n]+)`, 'i');
+                m = normalizedText.match(listRegex);
+                if (m) return m[1].trim();
+                
+                // 3. Simple colon format check: Param: Value
+                const simpleRegex = new RegExp(`${escapedParam}\\s*:\\s*([^\\n]+)`, 'i');
+                m = normalizedText.match(simpleRegex);
                 return m ? m[1].trim() : null;
             };
 
@@ -1438,6 +1446,8 @@ Here are the metrics for each section's table:
 - Section 2: ROE, ROA, Debt/Equity, Current Ratio, Quick Ratio, Trend FCF
 - Section 3: P/E Trailing, P/E Forward, P/B, EV/EBITDA, Sconto su Intrinsic Value
 - Section 4: FCF vs CapEx, Riacquisto Azioni proprie (Buyback), Dividendi, Efficienza Allocazione
+- Section 5: Organizza le proiezioni e i livelli operativi in una tabella con colonne: | Parametro Operativo | Valore / Livello | Dettaglio / Razionale |
+  Popola la tabella con le seguenti righe: Fair Value 1Y, Fair Value 3Y, Fair Value 5Y, Trend di fondo, Area di Supporto critico, Area di Resistenza critica, Zona di Ingresso ideale (Buy), Take Profit suggerito (TP), Stop Loss rigoroso (SL).
 \n`;
                 // Try to inject right before the REPORT STRUCTURE section
                 if (prompt.includes('**REPORT STRUCTURE')) {
@@ -1525,16 +1535,19 @@ Il tuo campo JSON "reasoning" DEVE seguire esattamente questa struttura e format
 [Paragrafo analitico sul reinvestimento degli utili per alimentare l'espansione con emoji]
 
 ### 🎯 5. Proiezioni e Livelli Operativi (Fair Value)
-Calculate growth-adjusted Fair Values using the provided Forward EPS estimates, growth rates, and reasonable P/E multiples.
-- **Fair Value 1Y:** [Prezzo calcolato e breve spiegazione]
-- **Fair Value 3Y:** [Prezzo calcolato e breve spiegazione]
-- **Fair Value 5Y:** [Prezzo calcolato e breve spiegazione]
-- **Trend di fondo:** [Rialzista / Ribassista / Laterale]
-- **Area di Supporto critico:** [Prezzo stimato dai minimi a 52 settimane e dati]
-- **Area di Resistenza critica:** [Prezzo stimato dai massimi a 52 settimane e target analisti]
-- **Zona di Ingresso ideale (Buy):** [Prezzo o Range che garantisce un margine di sicurezza secondo GARP]
-- **Take Profit suggerito (TP):** [Prezzo - DEVE COINCIDERE CON IL CAMPO JSON "targetProfit"]
-- **Stop Loss rigoroso (SL):** [Prezzo - DEVE COINCIDERE CON IL CAMPO JSON "stopLoss"]
+Il report DEVE presentare le proiezioni e i livelli operativi organizzati in una tabella con colonne: | Parametro Operativo | Valore / Livello | Dettaglio / Razionale |
+Esegui i calcoli conservativi e popola la tabella con le seguenti righe:
+| Parametro Operativo | Valore / Livello | Dettaglio / Razionale |
+| :--- | :--- | :--- |
+| **Fair Value 1Y** | ... | [Prezzo calcolato e breve spiegazione] |
+| **Fair Value 3Y** | ... | [Prezzo calcolato e breve spiegazione] |
+| **Fair Value 5Y** | ... | [Prezzo calcolato e breve spiegazione] |
+| **Trend di fondo** | ... | [Rialzista / Ribassista / Laterale] |
+| **Area di Supporto critico** | ... | [Prezzo stimato dai minimi a 52 settimane e dati] |
+| **Area di Resistenza critica** | ... | [Prezzo stimato dai massimi a 52 settimane e target analisti] |
+| **Zona di Ingresso ideale (Buy)** | ... | [Prezzo o Range che garantisce un margine di sicurezza secondo GARP] |
+| **Take Profit suggerito (TP)** | ... | [Prezzo - DEVE COINCIDERE CON IL CAMPO JSON "targetProfit"] |
+| **Stop Loss rigoroso (SL)** | ... | [Prezzo - DEVE COINCIDERE CON IL CAMPO JSON "stopLoss"] |
 
 **INPUT DATA TO ANALYZE:**
 ${contextData}
@@ -1610,16 +1623,19 @@ Il tuo campo JSON "reasoning" DEVE seguire esattamente questa struttura e format
 [Paragrafo analitico sul management e sull'allineamento con gli azionisti con emoji]
 
 ### 🎯 5. Proiezioni e Livelli Operativi (Fair Value)
-Calculate conservative Fair Values using the provided Forward EPS estimates, historical P/E multiples, and Growth rates. 
-- **Fair Value 1Y:** [Prezzo calcolato e breve spiegazione]
-- **Fair Value 3Y:** [Prezzo calcolato e breve spiegazione]
-- **Fair Value 5Y:** [Prezzo calcolato e breve spiegazione]
-- **Trend di fondo:** [Rialzista / Ribassista / Laterale]
-- **Area di Supporto critico:** [Prezzo stimato dai minimi a 52 settimane e dati]
-- **Area di Resistenza critica:** [Prezzo stimato dai massimi a 52 settimane e target analisti]
-- **Zona di Ingresso ideale (Buy):** [Prezzo o Range che garantisce un margine di sicurezza]
-- **Take Profit suggerito (TP):** [Prezzo - DEVE COINCIDERE CON IL CAMPO JSON "targetProfit"]
-- **Stop Loss rigoroso (SL):** [Prezzo - DEVE COINCIDERE CON IL CAMPO JSON "stopLoss"]
+Il report DEVE presentare le proiezioni e i livelli operativi organizzati in una tabella con colonne: | Parametro Operativo | Valore / Livello | Dettaglio / Razionale |
+Esegui i calcoli conservativi e popola la tabella con le seguenti righe:
+| Parametro Operativo | Valore / Livello | Dettaglio / Razionale |
+| :--- | :--- | :--- |
+| **Fair Value 1Y** | ... | [Prezzo calcolato e breve spiegazione] |
+| **Fair Value 3Y** | ... | [Prezzo calcolato e breve spiegazione] |
+| **Fair Value 5Y** | ... | [Prezzo calcolato e breve spiegazione] |
+| **Trend di fondo** | ... | [Rialzista / Ribassista / Laterale] |
+| **Area di Supporto critico** | ... | [Prezzo stimato dai minimi a 52 settimane e dati] |
+| **Area di Resistenza critica** | ... | [Prezzo stimato dai massimi a 52 settimane e target analisti] |
+| **Zona di Ingresso ideale (Buy)** | ... | [Prezzo o Range che garantisce un margine di sicurezza] |
+| **Take Profit suggerito (TP)** | ... | [Prezzo - DEVE COINCIDERE CON IL CAMPO JSON "targetProfit"] |
+| **Stop Loss rigoroso (SL)** | ... | [Prezzo - DEVE COINCIDERE CON IL CAMPO JSON "stopLoss"] |
 
 **INPUT DATA TO ANALYZE:**
 ${contextData}
