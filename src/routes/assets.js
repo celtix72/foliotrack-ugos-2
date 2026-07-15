@@ -1661,19 +1661,46 @@ ${contextData}
                 : `**VALUE INVESTING** (Principi di Graham & Buffett: Margine di Sicurezza, Moat, Salute Finanziaria)`;
                 
             const userId = req.user.id;
-            const holdingStats = database.db.prepare(`
-                SELECT 
-                    SUM(CASE WHEN t.type = 'BUY' THEN t.quantity WHEN t.type = 'SELL' THEN -t.quantity ELSE 0 END) as totalQty,
-                    SUM(CASE WHEN t.type = 'BUY' THEN (t.quantity * t.price) ELSE 0 END) as totalBuyVal,
-                    SUM(CASE WHEN t.type = 'BUY' THEN t.quantity ELSE 0 END) as totalBuyQty
-                FROM transactions t
-                JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
-                WHERE pu.user_id = ? AND t.assetTicker = ?
-            `).get(userId, ticker);
-
-            const pmcVal = (holdingStats && holdingStats.totalQty > 0.0001 && holdingStats.totalBuyQty > 0) 
-                ? (holdingStats.totalBuyVal / holdingStats.totalBuyQty) 
-                : null;
+            // Calcola il PMC esatto considerando cronologicamente gli acquisti/vendite e commissioni/tasse
+            const userPortfolios = database.db.prepare(`
+                SELECT p.id 
+                FROM portfolios p
+                JOIN portfolio_users pu ON p.id = pu.portfolio_id
+                WHERE pu.user_id = ?
+            `).all(userId);
+            
+            let totalQty = 0;
+            let totalCostInAssetCurrency = 0;
+            
+            for (const p of userPortfolios) {
+                const txs = database.db.prepare(`
+                    SELECT type, quantity, price, commission, tax 
+                    FROM transactions 
+                    WHERE portfolioId = ? AND assetTicker = ?
+                    ORDER BY date ASC
+                `).all(p.id, ticker);
+                
+                let qty = 0;
+                let cost = 0;
+                for (const t of txs) {
+                    if (t.type === 'BUY') {
+                        qty += t.quantity;
+                        cost += (t.quantity * t.price + (t.commission || 0) + (t.tax || 0));
+                    } else if (t.type === 'SELL') {
+                        if (qty > 0) {
+                            const currentPmc = cost / qty;
+                            qty -= t.quantity;
+                            cost -= t.quantity * currentPmc;
+                        }
+                    }
+                }
+                if (qty > 0) {
+                    totalQty += qty;
+                    totalCostInAssetCurrency += cost;
+                }
+            }
+            
+            const pmcVal = totalQty > 0.0001 ? (totalCostInAssetCurrency / totalQty) : null;
                 
             const pmcStr = pmcVal !== null 
                 ? `**${pmcVal.toFixed(2)} ${assetRow.currency}**`
