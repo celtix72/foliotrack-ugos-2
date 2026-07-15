@@ -1748,13 +1748,16 @@
         actionEl.className = `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest border shadow-sm ${
             action === 'BUY' || action === 'INCREASE' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30 shadow-emerald-500/10' : 
             action === 'SELL' || action === 'DECREASE' ? 'bg-rose-500/10 text-rose-500 border-rose-500/30 shadow-rose-500/10' : 
+            action === 'AVOID' ? 'bg-black text-white border-black shadow-black/10 dark:border-slate-800' :
             'bg-slate-500/10 text-slate-500 border-slate-500/30 shadow-slate-500/10'
         }`;
         
         // Add icon to action
         const iconSpan = document.createElement('span');
         iconSpan.className = 'material-symbols-outlined text-[14px]';
-        iconSpan.innerText = (action === 'BUY' || action === 'INCREASE') ? 'trending_up' : ((action === 'SELL' || action === 'DECREASE') ? 'trending_down' : 'horizontal_rule');
+        iconSpan.innerText = (action === 'BUY' || action === 'INCREASE') ? 'trending_up' : 
+                             ((action === 'SELL' || action === 'DECREASE') ? 'trending_down' : 
+                             (action === 'AVOID' ? 'block' : 'horizontal_rule'));
         actionEl.prepend(iconSpan);
 
         // Parse Markdown

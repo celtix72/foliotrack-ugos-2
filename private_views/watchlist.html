@@ -301,7 +301,7 @@
                             let colorClass = 'border-slate-500/30 text-slate-500 bg-slate-500/10 hover:bg-slate-500/20';
                             if (badge.aiAction === 'BUY' || badge.aiAction === 'INCREASE') colorClass = 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20';
                             else if (badge.aiAction === 'SELL' || badge.aiAction === 'DECREASE') colorClass = 'border-rose-500/30 text-rose-500 bg-rose-500/10 hover:bg-rose-500/20';
-                            else if (badge.aiAction === 'AVOID') colorClass = 'border-slate-900/50 text-slate-900 bg-slate-900/10 hover:bg-slate-900/20 dark:border-white/50 dark:text-white dark:bg-white/10';
+                            else if (badge.aiAction === 'AVOID') colorClass = 'border-black text-white bg-black hover:opacity-90 dark:border-white dark:bg-black';
                             else if (badge.aiAction === 'WATCHLIST') colorClass = 'border-violet-500/30 text-violet-500 bg-violet-500/10 hover:bg-violet-500/20';
                             else if (badge.aiAction === 'NO DATA') colorClass = 'border-amber-500/30 text-amber-500 bg-amber-500/10 hover:bg-amber-500/20';
                             
@@ -547,13 +547,16 @@
         actionEl.className = `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest border shadow-sm ${
             action === 'BUY' || action === 'INCREASE' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30 shadow-emerald-500/10' : 
             action === 'SELL' || action === 'DECREASE' ? 'bg-rose-500/10 text-rose-500 border-rose-500/30 shadow-rose-500/10' : 
+            action === 'AVOID' ? 'bg-black text-white border-black shadow-black/10 dark:border-slate-800' :
             'bg-slate-500/10 text-slate-500 border-slate-500/30 shadow-slate-500/10'
         }`;
         
         // Add icon to action
         const iconSpan = document.createElement('span');
         iconSpan.className = 'material-symbols-outlined text-[14px]';
-        iconSpan.innerText = (action === 'BUY' || action === 'INCREASE') ? 'trending_up' : ((action === 'SELL' || action === 'DECREASE') ? 'trending_down' : 'horizontal_rule');
+        iconSpan.innerText = (action === 'BUY' || action === 'INCREASE') ? 'trending_up' : 
+                             ((action === 'SELL' || action === 'DECREASE') ? 'trending_down' : 
+                             (action === 'AVOID' ? 'block' : 'horizontal_rule'));
         actionEl.prepend(iconSpan);
 
         // Parse Markdown
