@@ -731,16 +731,20 @@
               else if (engine === 'OpenRouter') icon = 'hub';
             }
             const act = (badge.aiAction || '').toUpperCase();
-            let clr = 'border-slate-500/30 text-slate-500 bg-slate-500/10';
-            let avoidStyle = '';
-            if (act === 'BUY' || act === 'INCREASE') clr = 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10';
-            else if (act === 'SELL' || act === 'DECREASE') clr = 'border-rose-500/30 text-rose-500 bg-rose-500/10';
-            else if (act === 'AVOID') {
-              clr = '';
-              avoidStyle = 'background-color: #78350f !important; color: #ffffff !important; border-color: #78350f !important;';
+            let badgeStyle = '';
+            if (act === 'BUY' || act === 'INCREASE') {
+              badgeStyle = 'background-color: #10b981 !important; color: #ffffff !important; border-color: #10b981 !important;';
+            } else if (act === 'SELL' || act === 'DECREASE') {
+              badgeStyle = 'background-color: #ef4444 !important; color: #ffffff !important; border-color: #ef4444 !important;';
+            } else if (act === 'AVOID') {
+              badgeStyle = 'background-color: #78350f !important; color: #ffffff !important; border-color: #78350f !important;';
+            } else if (act === 'WATCHLIST') {
+              badgeStyle = 'background-color: #8b5cf6 !important; color: #ffffff !important; border-color: #8b5cf6 !important;';
+            } else if (act === 'NO DATA') {
+              badgeStyle = 'background-color: #f59e0b !important; color: #ffffff !important; border-color: #f59e0b !important;';
+            } else {
+              badgeStyle = 'background-color: #64748b !important; color: #ffffff !important; border-color: #64748b !important;';
             }
-            else if (act === 'WATCHLIST') clr = 'border-violet-500/30 text-violet-500 bg-violet-500/10';
-            else if (act === 'NO DATA') clr = 'border-amber-500/30 text-amber-500 bg-amber-500/10';
             
             let fvStr = badge.aiAction;
             if (badge.aiTargetPrice) {
@@ -753,7 +757,7 @@
               else if (badge.prompt_type === 'graham') fvStr += ' (Val)';
             }
             
-            return `<span onclick="event.stopPropagation();window.openAssetAiHistoryModal('${tickerEsc}','${nameEsc}','${cur}')" class="px-1.5 py-0.5 rounded font-black uppercase tracking-tighter flex items-center gap-1 border ${clr} cursor-pointer whitespace-nowrap" style="${avoidStyle} font-size: calc(10px * var(--mkcard-scale, 1))">
+            return `<span onclick="event.stopPropagation();window.openAssetAiHistoryModal('${tickerEsc}','${nameEsc}','${cur}')" class="px-1.5 py-0.5 rounded font-black uppercase tracking-tighter flex items-center gap-1 border cursor-pointer whitespace-nowrap" style="${badgeStyle} font-size: calc(10px * var(--mkcard-scale, 1))">
               <span class="material-symbols-outlined" style="font-size: calc(12px * var(--mkcard-scale, 1))">${icon}</span> ${fvStr}</span>`;
           }).join('');
           return `<div style="display: flex; flex-direction: column; gap: 3px; align-items: flex-end;">${badgesHtml}</div>`;

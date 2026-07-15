@@ -505,21 +505,25 @@ function renderAiBadges(a) {
             }
             
             const act = (badge.aiAction || '').toUpperCase();
-            let colorClass = 'border-slate-500/30 text-slate-500 bg-slate-500/10 hover:bg-slate-500/20';
-            let avoidStyle = '';
-            if (act === 'BUY' || act === 'INCREASE') colorClass = 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20';
-            else if (act === 'SELL' || act === 'DECREASE') colorClass = 'border-rose-500/30 text-rose-500 bg-rose-500/10 hover:bg-rose-500/20';
-            else if (act === 'AVOID') {
-                colorClass = '';
-                avoidStyle = 'style="background-color: #78350f !important; color: #ffffff !important; border-color: #78350f !important;"';
+            let badgeStyle = '';
+            if (act === 'BUY' || act === 'INCREASE') {
+                badgeStyle = 'style="background-color: #10b981 !important; color: #ffffff !important; border-color: #10b981 !important;"';
+            } else if (act === 'SELL' || act === 'DECREASE') {
+                badgeStyle = 'style="background-color: #ef4444 !important; color: #ffffff !important; border-color: #ef4444 !important;"';
+            } else if (act === 'AVOID') {
+                badgeStyle = 'style="background-color: #78350f !important; color: #ffffff !important; border-color: #78350f !important;"';
+            } else if (act === 'WATCHLIST') {
+                badgeStyle = 'style="background-color: #8b5cf6 !important; color: #ffffff !important; border-color: #8b5cf6 !important;"';
+            } else if (act === 'NO DATA') {
+                badgeStyle = 'style="background-color: #f59e0b !important; color: #ffffff !important; border-color: #f59e0b !important;"';
+            } else {
+                badgeStyle = 'style="background-color: #64748b !important; color: #ffffff !important; border-color: #64748b !important;"';
             }
-            else if (act === 'WATCHLIST') colorClass = 'border-violet-500/30 text-violet-500 bg-violet-500/10 hover:bg-violet-500/20';
-            else if (act === 'NO DATA') colorClass = 'border-amber-500/30 text-amber-500 bg-amber-500/10 hover:bg-amber-500/20';
             
             const fvStr = badge.aiTargetPrice ? formatAiFv(badge.aiTargetPrice, a.currency, badge.prompt_type) : badge.aiAction;
             
             return `
-            <span ${avoidStyle} onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${a.ticker}', '${(a.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${a.currency || 'EUR'}')" class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter flex items-center gap-1 border ${colorClass} cursor-pointer transition-colors whitespace-nowrap" title="${engine}: ${badge.aiAction} ">
+            <span ${badgeStyle} onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${a.ticker}', '${(a.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${a.currency || 'EUR'}')" class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter flex items-center gap-1 border cursor-pointer transition-colors whitespace-nowrap" title="${engine}: ${badge.aiAction} ">
                 <span class="material-symbols-outlined" style="font-size: 11px;">${icon}</span> ${fvStr}
             </span>`;
         }).join('');

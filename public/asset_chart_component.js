@@ -1298,22 +1298,19 @@
                 engineDisplay = engineDisplay.replace(':free', '');
                 if (engineDisplay.length > 22) engineDisplay = engineDisplay.substring(0, 20) + '...';
 
-                let actionTextColor = '#64748b';
+                let actionTextColor = '#ffffff';
                 if (item.action === 'BUY' || item.action === 'INCREASE') {
-                    actionColor = 'rgba(16,185,129,0.1)';
-                    actionTextColor = 'rgb(16,185,129)';
+                    actionColor = 'rgb(16,185,129)';
                 } else if (item.action === 'SELL' || item.action === 'DECREASE') {
-                    actionColor = 'rgba(239,68,68,0.1)';
-                    actionTextColor = 'rgb(239,68,68)';
+                    actionColor = 'rgb(239,68,68)';
                 } else if (item.action === 'AVOID') {
-                    actionColor = '#5c3a21';
-                    actionTextColor = '#ffffff';
+                    actionColor = '#78350f';
                 } else if (item.action === 'WATCHLIST') {
-                    actionColor = 'rgba(139,92,246,0.1)';
-                    actionTextColor = 'rgb(139,92,246)';
+                    actionColor = 'rgb(139,92,246)';
                 } else if (item.action === 'NO DATA') {
-                    actionColor = 'rgba(245,158,11,0.1)';
-                    actionTextColor = 'rgb(245,158,11)';
+                    actionColor = 'rgb(245,158,11)';
+                } else {
+                    actionColor = '#64748b';
                 }
 
                 return `
@@ -1927,23 +1924,18 @@
             });
         }
 
-        let actionColor = 'rgba(148,163,184,0.1)';
-        let actionTextColor = '#64748b';
+        let actionColor = '#64748b';
+        let actionTextColor = '#ffffff';
         if (action === 'BUY' || action === 'INCREASE') {
-            actionColor = 'rgba(16,185,129,0.1)';
-            actionTextColor = 'rgb(16,185,129)';
+            actionColor = 'rgb(16,185,129)';
         } else if (action === 'SELL' || action === 'DECREASE') {
-            actionColor = 'rgba(239,68,68,0.1)';
-            actionTextColor = 'rgb(239,68,68)';
+            actionColor = 'rgb(239,68,68)';
         } else if (action === 'AVOID') {
-            actionColor = '#5c3a21';
-            actionTextColor = '#ffffff';
+            actionColor = '#78350f';
         } else if (action === 'WATCHLIST') {
-            actionColor = 'rgba(139,92,246,0.1)';
-            actionTextColor = 'rgb(139,92,246)';
+            actionColor = 'rgb(139,92,246)';
         } else if (action === 'NO DATA') {
-            actionColor = 'rgba(245,158,11,0.1)';
-            actionTextColor = 'rgb(245,158,11)';
+            actionColor = 'rgb(245,158,11)';
         }
 
         // Formatta markdown basico per una UI accattivante
