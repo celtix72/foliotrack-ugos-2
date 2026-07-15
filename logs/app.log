@@ -44894,3 +44894,51 @@
 2026-07-15T05:20:00.855Z [INFO] News Sync completed. Saved 54 new articles.
 2026-07-15T05:24:55.025Z [INFO] Skipping automatic market update: all markets are closed.
 2026-07-15T05:30:55.052Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-15T05:36:55.067Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-15T05:48:19.330Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-15T06:05:14.436Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-15T06:11:56.754Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-15T06:17:56.769Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-15T06:19:55.069Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-15T06:19:55.140Z [ERROR] Failed to fetch RSS for https://feeds.finance.yahoo.com/rss/2.0/headline?s=AAPL,MSFT&region=US&lang=en-US:  - getaddrinfo ENOTFOUND feeds.finance.yahoo.com
+2026-07-15T06:19:55.155Z [ERROR] Failed to fetch RSS for https://it.investing.com/rss/news_25.rss:  - getaddrinfo ENOTFOUND it.investing.com
+2026-07-15T06:19:55.166Z [ERROR] Failed to fetch RSS for https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664:  - getaddrinfo ENOTFOUND search.cnbc.com
+2026-07-15T06:19:55.177Z [ERROR] Failed to fetch RSS for https://www.ilsole24ore.com/rss/finanza.xml:  - getaddrinfo ENOTFOUND www.ilsole24ore.com
+2026-07-15T06:19:55.188Z [ERROR] Failed to fetch RSS for https://xml.corriereobjects.it/rss/economia.xml:  - getaddrinfo ENOTFOUND xml.corriereobjects.it
+2026-07-15T06:19:55.196Z [INFO] News Sync completed. Saved 0 new articles.
+2026-07-15T06:23:56.784Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-15T06:29:56.804Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-15T06:35:56.782Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-15T06:41:56.799Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-15T06:46:56.840Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-15T06:52:56.854Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-15T06:58:56.861Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-15T07:03:56.898Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-15T07:05:59.223Z [INFO] Performance history sync: processing 2 tickers (Portfolios: 1, Watchlist: 2)
+2026-07-15T07:05:59.269Z [INFO] Calculating history for Portafoglio Test...
+2026-07-15T07:05:59.286Z [INFO] Performance history sync: processing 1 tickers (Portfolios: 1, Watchlist: 0)
+2026-07-15T07:05:59.301Z [INFO] Calculating history for Portafoglio Test...
+2026-07-15T07:09:56.917Z [INFO] Updating market data for 1 assets...
+2026-07-15T07:09:56.949Z [INFO] Updating [AAPL] using [YF]...
+2026-07-15T07:09:57.685Z [INFO] YF ✓ AAPL: price=314.86 USD chg=-0.77%
+2026-07-15T07:09:57.708Z [INFO] Successfully updated AAPL: 314.86 USD
+2026-07-15T07:09:57.724Z [INFO] Market data update cycle completed.
+2026-07-15T07:15:56.934Z [INFO] Updating market data for 1 assets...
+2026-07-15T07:15:56.961Z [INFO] Updating [AAPL] using [YF]...
+2026-07-15T07:16:00.540Z [INFO] YF ✓ AAPL: price=314.86 USD chg=-0.77%
+2026-07-15T07:16:00.565Z [INFO] Successfully updated AAPL: 314.86 USD
+2026-07-15T07:16:00.716Z [INFO] Market data update cycle completed.
+2026-07-15T07:19:42.953Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-15T07:19:42.968Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-15T07:19:43.060Z [INFO] Updating market data for 1 assets...
+2026-07-15T07:19:43.069Z [INFO] Updating [AAPL] using [YF]...
+2026-07-15T07:19:43.083Z [INFO] FolioTrack server running on port 3000
+2026-07-15T07:19:43.093Z [INFO] Database: /Users/mauro/Documents/Progetti_Sviluppo/FolioTrack3/foliotrack.db
+2026-07-15T07:19:43.107Z [INFO] Startup notification sent to 1 users.
+2026-07-15T07:19:43.359Z [INFO] [OpenRouter] Cached 50 top models for financial analysis.
+2026-07-15T07:19:43.500Z [INFO] [Requesty] Cached 300 top models for financial analysis.
+2026-07-15T07:19:46.270Z [INFO] YF ✓ AAPL: price=314.86 USD chg=-0.77%
+2026-07-15T07:19:46.291Z [INFO] Successfully updated AAPL: 314.86 USD
+2026-07-15T07:19:46.441Z [INFO] Market data update cycle completed.
+2026-07-15T07:19:48.044Z [INFO] Starting RSS News Sync (isFirstSync: true)...
+2026-07-15T07:19:50.221Z [INFO] News Sync completed. Saved 56 new articles.

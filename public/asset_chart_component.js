@@ -1319,13 +1319,25 @@
                 return `
                     <div style="border: 1px solid rgba(148,163,184,0.2); border-radius: 14px; padding: 14px; background: ${itemBg}; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                                 <span style="font-size: 10px; font-weight: 900; color: #94a3b8; display: flex; align-items: center; gap: 4px;">
                                     <span class="material-symbols-outlined" style="font-size: 14px;">calendar_today</span> ${date}
                                 </span>
                                 <span style="font-size: 10px; font-weight: 900; color: #64748b; background: rgba(148,163,184,0.1); padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 3px;" title="Motore IA: ${engine}">
                                     <span class="material-symbols-outlined" style="font-size: 12px;">${engineIcon}</span> ${engineDisplay}
                                 </span>
+                                ${(() => {
+                                    if (item.prompt_type === 'garp') {
+                                        return `<span style="font-size: 10px; font-weight: 900; color: #10b981; background: rgba(16,185,129,0.1); padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 3px;" title="Analisi Growth">
+                                            <span class="material-symbols-outlined" style="font-size: 12px;">trending_up</span> GARP
+                                        </span>`;
+                                    } else if (item.prompt_type === 'graham') {
+                                        return `<span style="font-size: 10px; font-weight: 900; color: #6366f1; background: rgba(99,102,241,0.1); padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 3px;" title="Analisi Value">
+                                            <span class="material-symbols-outlined" style="font-size: 12px;">shield</span> VALUE
+                                        </span>`;
+                                    }
+                                    return '';
+                                })()}
                                 ${item.targetPrice ? `<span style="font-size: 10px; font-weight: 900; color: #64748b; background: rgba(148,163,184,0.1); padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 3px;" title="Fair Value">
                                     <span class="material-symbols-outlined" style="font-size: 12px;">monetization_on</span> FV: ${window.formatAiFv ? window.formatAiFv(item.targetPrice, '') : item.targetPrice}
                                 </span>` : ''}
