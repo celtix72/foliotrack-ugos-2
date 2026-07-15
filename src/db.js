@@ -364,6 +364,26 @@ function initDb() {
         dbConnection.prepare(`ALTER TABLE assets ADD COLUMN ai_engine TEXT`).run();
     } catch (e) {}
 
+    // Migration: Add ai_prompt_type to assets
+    try {
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN ai_prompt_type TEXT`).run();
+    } catch (e) {}
+
+    // Backfill ai_prompt_type based on the latest history entry
+    try {
+        dbConnection.prepare(`
+            UPDATE assets
+            SET ai_prompt_type = (
+                SELECT prompt_type 
+                FROM asset_ai_history 
+                WHERE ticker = assets.ticker 
+                ORDER BY created_at DESC 
+                LIMIT 1
+            )
+            WHERE ai_prompt_type IS NULL
+        `).run();
+    } catch (e) {}
+
     // Backfill ai_engine based on ai_reasoning for existing assets
     try {
         const assetsWithoutEngine = dbConnection.prepare("SELECT ticker, ai_reasoning FROM assets WHERE ai_engine IS NULL AND ai_reasoning IS NOT NULL AND ai_reasoning != ''").all();

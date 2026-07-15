@@ -1447,6 +1447,7 @@ Use these colors/emojis strictly based on the quality of the metric:
 - 🟡 = Neutro / Attenzione / Marginale
 - 🔴 = Negativo / Pericolo / Red Flag
 
+Do not write placeholders like "[Tabella con metriche]"; construct a real Markdown table with the requested metrics.
 After the table, write a brief analytical paragraph explaining your findings.
 
 The exact sections must be:
@@ -1508,6 +1509,7 @@ Use these colors/emojis strictly based on the quality of the metric:
 - 🟡 = Neutro / Attenzione / Marginale
 - 🔴 = Negativo / Pericolo / Red Flag
 
+Do not write placeholders like "[Tabella con metriche]"; construct a real Markdown table with the requested metrics.
 After the table, write a brief analytical paragraph explaining your findings.
 
 The exact sections must be:
@@ -1559,7 +1561,13 @@ ${contextData}
             usage = res.usage;
             
             parsedResponse = parseAIResponse(rawText);
-            parsedResponse.reasoning = `${fontiDatiStr}### Analisi prodotta da ${engine} (${res.modelUsed || 'N/D'})\n\n` + (parsedResponse.reasoning || '');
+            const filosofiaStr = promptType === 'garp' 
+                ? `**GROWTH (GARP)** (Principi di Peter Lynch: Crescita Sostenibile, PEG, multipli ragionevoli)`
+                : `**VALUE INVESTING** (Principi di Graham & Buffett: Margine di Sicurezza, Moat, Salute Finanziaria)`;
+                
+            const headerStr = `### 📊 METODOLOGIA DI ANALISI IA\\n- **Filosofia Applicata:** ${filosofiaStr}\\n- **Modello LLM:** **${engine} (${res.modelUsed || 'N/D'})**\\n- **Fonti Dati:** Yahoo Finance, Finnhub, Notizie RSS (${newsSource})\\n\\n---\\n\\n`;
+            
+            parsedResponse.reasoning = headerStr + (parsedResponse.reasoning || '');
         } catch (e) {
             console.error('Failed to parse AI JSON response or execute model:', e);
             throw e;
@@ -1586,9 +1594,9 @@ ${contextData}
 
             database.db.prepare(`
                 UPDATE assets 
-                SET targetPrice = ?, stopLoss = ?, ai_action = ?, ai_reasoning = ?, ai_engine = ?, ai_updated_at = CURRENT_TIMESTAMP
+                SET targetPrice = ?, stopLoss = ?, ai_action = ?, ai_reasoning = ?, ai_engine = ?, ai_prompt_type = ?, ai_updated_at = CURRENT_TIMESTAMP
                 WHERE ticker = ?
-            `).run(targetPrice, stopLoss, action, reasoning, finalEngineName, ticker);
+            `).run(targetPrice, stopLoss, action, reasoning, finalEngineName, promptType, ticker);
 
             // Se l'utente ha una watchlist per questo asset, sovrascrivi anche le sue impostazioni personali
             const userId = req.user.id;

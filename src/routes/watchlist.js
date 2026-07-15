@@ -32,6 +32,7 @@ module.exports = function(dependencies) {
                        a.ai_reasoning as aiReasoning,
                        a.ai_updated_at as aiUpdatedAt,
                        a.ai_engine as aiEngine,
+                       a.ai_prompt_type as aiPromptType,
                        a.targetPrice as aiTargetPrice,
                        (SELECT COUNT(*) FROM asset_ai_history ah WHERE ah.ticker = a.ticker) as aiHistoryCount,
                        CASE WHEN t.balance IS NOT NULL AND t.balance > 0.0001 THEN 1 ELSE 0 END as hasPosition
@@ -174,6 +175,7 @@ module.exports = function(dependencies) {
                      targetPrice: a.userTargetPrice,
                      stopLoss: a.userStopLoss,
                      aiEngine: a.aiEngine,
+                     aiPromptType: a.aiPromptType,
                      aiTargetPrice: a.aiTargetPrice,
                      aiAction: a.aiAction,
                      aiReasoning: a.aiReasoning,
