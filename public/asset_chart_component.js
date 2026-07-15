@@ -1769,12 +1769,18 @@
             });
         }
 
-        history.forEach((h) => {
+        history.forEach((h, idx) => {
+            // Force a new page for each analysis
+            addPageFooter();
+            doc.addPage();
+            pageNum++;
+            addPageHeader();
+            addPageFooter();
+            y = 68;
+
             const dObj = new Date(h.created_at);
             const dateStr = dObj.toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit', year:'numeric' })
                 + ' ' + dObj.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-
-            ensureSpace(58);
 
             // Card header bar
             doc.setFillColor(...C.headerBg);
@@ -1826,6 +1832,7 @@
             doc.line(margin, y, pageW - margin, y); y += 22;
         });
 
+        addPageFooter();
         const dateStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
         doc.save('IA_' + ticker + '_' + dateStr + '.pdf');
     };

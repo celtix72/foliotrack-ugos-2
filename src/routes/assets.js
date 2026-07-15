@@ -1560,12 +1560,33 @@ ${contextData}
             tokensUsed = res.usage.totalTokenCount || res.usage.total_tokens || 0;
             usage = res.usage;
             
-            parsedResponse = parseAIResponse(rawText);
+             parsedResponse = parseAIResponse(rawText);
             const filosofiaStr = promptType === 'garp' 
                 ? `**GROWTH (GARP)** (Principi di Peter Lynch: Crescita Sostenibile, PEG, multipli ragionevoli)`
                 : `**VALUE INVESTING** (Principi di Graham & Buffett: Margine di Sicurezza, Moat, Salute Finanziaria)`;
                 
-            const headerStr = `### 📊 METODOLOGIA DI ANALISI IA\\n- **Filosofia Applicata:** ${filosofiaStr}\\n- **Modello LLM:** **${engine} (${res.modelUsed || 'N/D'})**\\n- **Fonti Dati:** Yahoo Finance, Finnhub, Notizie RSS (${newsSource})\\n\\n---\\n\\n`;
+            const userId = req.user.id;
+            const holdingStats = database.db.prepare(`
+                SELECT 
+                    SUM(CASE WHEN t.type = 'BUY' THEN t.quantity WHEN t.type = 'SELL' THEN -t.quantity ELSE 0 END) as totalQty,
+                    SUM(CASE WHEN t.type = 'BUY' THEN (t.quantity * t.price) ELSE 0 END) as totalBuyVal,
+                    SUM(CASE WHEN t.type = 'BUY' THEN t.quantity ELSE 0 END) as totalBuyQty
+                FROM transactions t
+                JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
+                WHERE pu.user_id = ? AND t.assetTicker = ?
+            `).get(userId, ticker);
+
+            const pmcVal = (holdingStats && holdingStats.totalQty > 0.0001 && holdingStats.totalBuyQty > 0) 
+                ? (holdingStats.totalBuyVal / holdingStats.totalBuyQty) 
+                : null;
+                
+            const pmcStr = pmcVal !== null 
+                ? `**${pmcVal.toFixed(2)} ${assetRow.currency}**`
+                : `Non presente in portafoglio`;
+
+            const priceStr = `**${assetRow.currentPrice ? assetRow.currentPrice.toFixed(2) : 'N/D'} ${assetRow.currency}**`;
+                
+            const headerStr = `### 📊 METODOLOGIA DI ANALISI IA\\n- **Filosofia Applicata:** ${filosofiaStr}\\n- **Modello LLM:** **${engine} (${res.modelUsed || 'N/D'})**\\n- **Prezzo Rilevato all\\'Analisi:** ${priceStr}\\n- **Prezzo Medio di Carico (PMC):** ${pmcStr}\\n- **Fonti Dati:** Yahoo Finance, Finnhub, Notizie RSS (${newsSource})\\n\\n---\\n\\n`;
             
             parsedResponse.reasoning = headerStr + (parsedResponse.reasoning || '');
         } catch (e) {
