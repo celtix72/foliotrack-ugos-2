@@ -1312,12 +1312,26 @@
                             <!-- Name row -->
                             <div class="flex items-center gap-2 flex-wrap">
                                 <p class="font-black text-sm text-slate-900 dark:text-white leading-tight flex items-center">${h.name}
-                                    ${h.aiAction ? `<span onclick="event.stopPropagation(); openAiModal('${h.ticker}', '${h.aiAction}', \`${(h.aiReasoning || '').replace(/`/g, '\\`').replace(/'/g, "\\'").replace(/"/g, '&quot;')}\`, '${h.aiUpdatedAt || ''}')" class="px-1.5 py-0.5 ml-2 cursor-pointer rounded text-[8px] font-black uppercase tracking-tighter hover:opacity-80 transition-opacity flex items-center gap-1
-                                    ${h.aiAction === 'BUY' || h.aiAction === 'INCREASE' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 
-                                      h.aiAction === 'SELL' || h.aiAction === 'DECREASE' ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' : 
-                                      'bg-slate-500/10 text-slate-500 border border-slate-500/20'}">
-                                    <span class="material-symbols-outlined text-[10px]">smart_toy</span> ${h.aiAction}
-                                    </span>` : ''}
+                                    ${h.aiAction ? (() => {
+                                        const act = (h.aiAction || '').toUpperCase();
+                                        let badgeStyle = '';
+                                        if (act === 'BUY' || act === 'INCREASE') {
+                                            badgeStyle = 'style="background-color: #10b981 !important; color: #ffffff !important; border-color: #10b981 !important;"';
+                                        } else if (act === 'SELL' || act === 'DECREASE') {
+                                            badgeStyle = 'style="background-color: #ef4444 !important; color: #ffffff !important; border-color: #ef4444 !important;"';
+                                        } else if (act === 'AVOID') {
+                                            badgeStyle = 'style="background-color: #78350f !important; color: #ffffff !important; border-color: #78350f !important;"';
+                                        } else if (act === 'WATCHLIST') {
+                                            badgeStyle = 'style="background-color: #8b5cf6 !important; color: #ffffff !important; border-color: #8b5cf6 !important;"';
+                                        } else if (act === 'NO DATA') {
+                                            badgeStyle = 'style="background-color: #f59e0b !important; color: #ffffff !important; border-color: #f59e0b !important;"';
+                                        } else {
+                                            badgeStyle = 'style="background-color: #64748b !important; color: #ffffff !important; border-color: #64748b !important;"';
+                                        }
+                                        return `<span ${badgeStyle} onclick="event.stopPropagation(); openAiModal('${h.ticker}', '${h.aiAction}', \`${(h.aiReasoning || '').replace(/`/g, '\\`').replace(/'/g, "\\'").replace(/"/g, '&quot;')}\`, '${h.aiUpdatedAt || ''}')" class="px-1.5 py-0.5 ml-2 cursor-pointer rounded text-[8px] font-black uppercase tracking-tighter hover:opacity-80 transition-opacity flex items-center gap-1 border">
+                                        <span class="material-symbols-outlined text-[10px]">smart_toy</span> ${h.aiAction}
+                                        </span>`;
+                                    })() : ''}
                                 </p>
                                 ${manualBtn}
                             </div>
