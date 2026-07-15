@@ -1836,6 +1836,81 @@
         // Formatta markdown basico per una UI accattivante
         let formattedReasoning = reasoning.replace(/\\n/g, '\n');
 
+        // Parse Markdown tables before other formatting
+        const lines = formattedReasoning.split('\n');
+        let inTable = false;
+        let tableRows = [];
+        let newLines = [];
+        
+        function renderMarkdownTable(rows) {
+            if (rows.length < 2) return rows.join('\n');
+            const parsedRows = rows.map(r => {
+                const cells = r.split('|').map(c => c.trim());
+                if (cells[0] === '') cells.shift();
+                if (cells[cells.length - 1] === '') cells.pop();
+                return cells;
+            });
+            
+            const isDark = document.documentElement.classList.contains('dark');
+            const borderColor = isDark ? 'rgba(148,163,184,0.12)' : '#e2e8f0';
+            const headerBg = isDark ? 'rgba(15,23,42,0.3)' : '#f8fafc';
+            const rowBgOdd = isDark ? 'rgba(30,41,59,0.3)' : '#ffffff';
+            const textColor = isDark ? '#e2e8f0' : '#334155';
+            
+            let html = `<div style="overflow-x:auto; width:100%; border:1px solid ${borderColor}; border-radius:10px; margin: 12px 0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">`;
+            html += `<table style="width:100%; border-collapse:collapse; font-size:11px; text-align:left; color:${textColor};">`;
+            
+            let headerDone = false;
+            let rowIndex = 0;
+            
+            for (const cells of parsedRows) {
+                if (cells.every(c => /^[-:\s]+$/.test(c))) {
+                    continue;
+                }
+                
+                if (!headerDone) {
+                    html += `<thead style="background-color:${headerBg}; border-bottom:2px solid ${borderColor};"><tr>`;
+                    for (const cell of cells) {
+                        html += `<th style="padding:8px 10px; font-weight:900; text-transform:uppercase; font-size:10px; letter-spacing:0.03em;">${cell}</th>`;
+                    }
+                    html += `</tr></thead><tbody>`;
+                    headerDone = true;
+                } else {
+                    const bg = rowIndex % 2 === 0 ? rowBgOdd : 'transparent';
+                    html += `<tr style="border-bottom:1px solid ${borderColor}; background-color:${bg}; transition: background-color 0.2s;">`;
+                    for (const cell of cells) {
+                        html += `<td style="padding:8px 10px; line-height:1.4;">${cell}</td>`;
+                    }
+                    html += `</tr>`;
+                    rowIndex++;
+                }
+            }
+            
+            html += `</tbody></table></div>`;
+            return html;
+        }
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line.startsWith('|') && line.endsWith('|')) {
+                if (!inTable) {
+                    inTable = true;
+                    tableRows = [];
+                }
+                tableRows.push(line);
+            } else {
+                if (inTable) {
+                    newLines.push(renderMarkdownTable(tableRows));
+                    inTable = false;
+                }
+                newLines.push(lines[i]);
+            }
+        }
+        if (inTable) {
+            newLines.push(renderMarkdownTable(tableRows));
+        }
+        formattedReasoning = newLines.join('\n');
+
         // Headings
         formattedReasoning = formattedReasoning.replace(/^####\s+(.*$)/gim, '<h5 class="text-indigo-600 dark:text-indigo-400" style="font-size: 12px; font-weight: 900; margin-top: 12px; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em;">$1</h5>');
         formattedReasoning = formattedReasoning.replace(/^###\s+(.*$)/gim, '<h4 class="text-indigo-600 dark:text-indigo-400" style="font-size: 13px; font-weight: 900; margin-top: 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined" style="font-size: 14px;">psychiatry</span> $1</h4>');
