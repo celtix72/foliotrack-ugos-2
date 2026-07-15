@@ -1450,23 +1450,46 @@ Use these colors/emojis strictly based on the quality of the metric:
 Do not write placeholders like "[Tabella con metriche]"; construct a real Markdown table with the requested metrics.
 After the table, write a brief analytical paragraph explaining your findings. Make extensive use of bullet points, bold text for key figures, and financial/business emojis to make the analysis aesthetically beautiful and easy to read.
 
-The exact sections must be:
+**TEMPLATE REQUISITO PER IL REPORT (reasoning)**
+Il tuo campo JSON "reasoning" DEVE seguire esattamente questa struttura e formattazione Markdown:
 
 ### 🚀 1. Growth & Sostenibilità del Business Moat
-[Tabella con metriche: Gross Margin, Operating Margin, Net Margin, Crescita Ricavi, Crescita EPS]
-[Paragrafo di analisi della sostenibilità della crescita e del vantaggio competitivo]
+| Metrica Evaluata | Valore Attuale | Valutazione (🟢/🟡/🔴) | Nota Sintetica |
+| :--- | :--- | :--- | :--- |
+| Margine Lordo / Operativo | ... | ... | ... |
+| Margine Netto | ... | ... | ... |
+| Crescita Ricavi | ... | ... | ... |
+| Crescita EPS | ... | ... | ... |
+
+[Paragrafo analitico sulla crescita e sul vantaggio competitivo con emoji]
 
 ### 🛡️ 2. Financial Health & Stabilità di Bilancio
-[Tabella con metriche: ROE, ROA, Debt/Equity, Current Ratio, Quick Ratio, FCF Trend]
-[Paragrafo di analisi della solidità patrimoniale e delle eventuali Red Flags]
+| Metrica Evaluata | Valore Attuale | Valutazione (🟢/🟡/🔴) | Nota Sintetica |
+| :--- | :--- | :--- | :--- |
+| ROE / ROA | ... | ... | ... |
+| Debt/Equity | ... | ... | ... |
+| Current / Quick Ratio | ... | ... | ... |
+| Trend FCF | ... | ... | ... |
+
+[Paragrafo analitico sulla salute finanziaria e solidità patrimoniale con emoji]
 
 ### 📈 3. Valuation & PEG (GARP)
-[Tabella con metriche: P/E Trailing, P/E Forward, PEG Ratio, Prezzo/Cash Flow]
-[Paragrafo di analisi delle valutazioni in relazione alla crescita attesa]
+| Metrica Evaluata | Valore Attuale | Valutazione (🟢/🟡/🔴) | Nota Sintetica |
+| :--- | :--- | :--- | :--- |
+| P/E Trailing / Forward | ... | ... | ... |
+| PEG Ratio | ... | ... | ... |
+| Prezzo / Cash Flow | ... | ... | ... |
+
+[Paragrafo analitico sulle valutazioni in relazione alla crescita con emoji]
 
 ### 💰 4. Capital Reinvestment & Reinvestimento per l'Espansione
-[Tabella con metriche: Generazione FCF vs CapEx, ROIC, Efficienza nell'allocazione del capitale]
-[Paragrafo di analisi sulla reinvestimento degli utili per alimentare l'espansione]
+| Metrica Evaluata | Valore Attuale | Valutazione (🟢/🟡/🔴) | Nota Sintetica |
+| :--- | :--- | :--- | :--- |
+| Generazione FCF vs CapEx | ... | ... | ... |
+| ROIC | ... | ... | ... |
+| Efficienza Allocazione | ... | ... | ... |
+
+[Paragrafo analitico sul reinvestimento degli utili per alimentare l'espansione con emoji]
 
 ### 🎯 5. Proiezioni e Livelli Operativi (Fair Value)
 Calculate growth-adjusted Fair Values using the provided Forward EPS estimates, growth rates, and reasonable P/E multiples.
@@ -1512,23 +1535,46 @@ Use these colors/emojis strictly based on the quality of the metric:
 Do not write placeholders like "[Tabella con metriche]"; construct a real Markdown table with the requested metrics.
 After the table, write a brief analytical paragraph explaining your findings. Make extensive use of bullet points, bold text for key figures, and financial/business emojis to make the analysis aesthetically beautiful and easy to read.
 
-The exact sections must be:
+**TEMPLATE REQUISITO PER IL REPORT (reasoning)**
+Il tuo campo JSON "reasoning" DEVE seguire esattamente questa struttura e formattazione Markdown:
 
 ### 🏰 1. Business Moat & Valutazione della Competitività
-[Tabella con metriche: Gross Margin, Operating Margin, Net Margin, Posizione Competitiva (Moat)]
-[Paragrafo di analisi del vantaggio competitivo]
+| Metrica Evaluata | Valore Attuale | Valutazione (🟢/🟡/🔴) | Nota Sintetica |
+| :--- | :--- | :--- | :--- |
+| Margine Lordo (Gross Margin) | ... | ... | ... |
+| Margine Operativo (Op. Margin) | ... | ... | ... |
+| Margine Netto (Net Margin) | ... | ... | ... |
+| Vantaggio Competitivo (Moat) | ... | ... | ... |
+
+[Paragrafo analitico sul Business Moat e sul vantaggio competitivo con emoji]
 
 ### 🛡️ 2. Financial Health & Solide Basi Patrimoniali
-[Tabella con metriche: ROE, ROA, Debt/Equity, Current Ratio, Quick Ratio, Trend FCF]
-[Paragrafo di analisi delle passività, liquidità e Red Flags]
+| Metrica Evaluata | Valore Attuale | Valutazione (🟢/🟡/🔴) | Nota Sintetica |
+| :--- | :--- | :--- | :--- |
+| ROE / ROA | ... | ... | ... |
+| Debt/Equity | ... | ... | ... |
+| Current / Quick Ratio | ... | ... | ... |
+| Trend Free Cash Flow (FCF) | ... | ... | ... |
+
+[Paragrafo analitico sulla salute finanziaria, liquidità e solidità patrimoniale con emoji]
 
 ### 🔍 3. Margin of Safety & Sconto sul Valore Intrinseco
-[Tabella con metriche: P/E Trailing, P/E Forward, P/B, EV/EBITDA, Sconto su Intrinsic Value]
-[Paragrafo di analisi della presenza di un margine di sicurezza adeguato]
+| Metrica Evaluata | Valore Attuale | Valutazione (🟢/🟡/🔴) | Nota Sintetica |
+| :--- | :--- | :--- | :--- |
+| P/E Trailing / Forward | ... | ... | ... |
+| P/B / EV/EBITDA | ... | ... | ... |
+| Sconto su Intrinsic Value | ... | ... | ... |
+
+[Paragrafo analitico sul Margine di Sicurezza e sconto di prezzo con emoji]
 
 ### 💼 4. Management & Allocazione del Capitale
-[Tabella con metriche: FCF vs CapEx, Riacquisto Azioni proprie (Buyback), Dividendi, Efficienza di allocazione]
-[Paragrafo di analisi sull'allineamento del management con gli azionisti]
+| Metrica Evaluata | Valore Attuale | Valutazione (🟢/🟡/🔴) | Nota Sintetica |
+| :--- | :--- | :--- | :--- |
+| FCF vs CapEx | ... | ... | ... |
+| Buyback / Dividendi | ... | ... | ... |
+| Efficienza Allocazione | ... | ... | ... |
+
+[Paragrafo analitico sul management e sull'allineamento con gli azionisti con emoji]
 
 ### 🎯 5. Proiezioni e Livelli Operativi (Fair Value)
 Calculate conservative Fair Values using the provided Forward EPS estimates, historical P/E multiples, and Growth rates. 
