@@ -1658,7 +1658,6 @@
                                 const x = data.cell.x + data.cell.width / 2;
                                 const y = data.cell.y + data.cell.height / 2;
                                 
-                                doc.saveState();
                                 if (cellObj.type === 'green_dot') {
                                     doc.setFillColor(16, 185, 129);
                                 } else if (cellObj.type === 'yellow_dot') {
@@ -1667,7 +1666,6 @@
                                     doc.setFillColor(239, 68, 68);
                                 }
                                 doc.circle(x, y, 4, 'F');
-                                doc.restoreState();
                             }
                         }
                     }
