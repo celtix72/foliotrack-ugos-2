@@ -414,6 +414,12 @@
       } catch(e) { console.error(e); }
   }
 
+  window.addEventListener('portfolios-updated', (e) => {
+      if (e.detail) {
+          mobUpdateDashboard(e.detail);
+      }
+  });
+
   function mobUpdateWinnersLosers(global) {
       const winners = document.getElementById('mob-top-winners');
       const losers = document.getElementById('mob-top-losers');
