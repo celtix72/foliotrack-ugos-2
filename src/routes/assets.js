@@ -1416,6 +1416,39 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
         let prompt = '';
         if (customPromptText.includes('SYSTEM ROLE') || customPromptText.includes('INPUT DATA TO ANALYZE') || customPromptText.includes('Business Moat') || customPromptText.includes('PROIEZIONI E LIVELLI')) {
             prompt = customPromptText;
+            
+            // Inject table constraints if they are missing from the custom prompt
+            if (!prompt.includes('Metrica Evaluata') && !prompt.includes('| Metrica Evaluata')) {
+                const tableInstructions = `
+**CRITICAL STYLE REQUIREMENT (MANDATORY):**
+For each of the first 4 sections, you MUST start the section with a Markdown Table summarizing the metrics evaluated in that section.
+The table must have EXACTLY these columns: | Metrica Evaluata | Valore Attuale | Valutazione (🟢/🟡/🔴) | Nota Sintetica |
+Do not write placeholders like "[Tabella con metriche]"; construct a real Markdown table.
+Make extensive use of bullet points and appropriate financial/business emojis to make the report visually beautiful and easy to read.
+
+Ensure you use these emojis in the section headers:
+- 🏰 1. Business Moat
+- 🛡️ 2. Financial Health
+- 🔍 3. Margin of Safety
+- 💼 4. Management
+- 🎯 5. Proiezioni e Livelli Operativi
+
+Here are the metrics for each section's table:
+- Section 1: Margine Lordo, Margine Operativo, Margine Netto, Vantaggio Competitivo (Moat)
+- Section 2: ROE, ROA, Debt/Equity, Current Ratio, Quick Ratio, Trend FCF
+- Section 3: P/E Trailing, P/E Forward, P/B, EV/EBITDA, Sconto su Intrinsic Value
+- Section 4: FCF vs CapEx, Riacquisto Azioni proprie (Buyback), Dividendi, Efficienza Allocazione
+\n`;
+                // Try to inject right before the REPORT STRUCTURE section
+                if (prompt.includes('**REPORT STRUCTURE')) {
+                    prompt = prompt.replace('**REPORT STRUCTURE', tableInstructions + '\n**REPORT STRUCTURE');
+                } else if (prompt.includes('REPORT STRUCTURE')) {
+                    prompt = prompt.replace('REPORT STRUCTURE', tableInstructions + '\nREPORT STRUCTURE');
+                } else {
+                    prompt = tableInstructions + '\n' + prompt;
+                }
+            }
+
             if (!customPromptText.includes(contextData.substring(0, 15))) {
                 prompt += `\n\n**INPUT DATA TO ANALYZE:**\n${contextData}`;
             }
