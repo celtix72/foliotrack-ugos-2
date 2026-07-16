@@ -369,6 +369,28 @@ function initDb() {
         dbConnection.prepare(`ALTER TABLE assets ADD COLUMN ai_prompt_type TEXT`).run();
     } catch (e) {}
 
+    // Migration: Add nextEarningsDate to assets
+    try {
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN nextEarningsDate TEXT`).run();
+    } catch (e) {}
+
+    // Migration: Create earnings_alerts table
+    try {
+        dbConnection.prepare(`
+            CREATE TABLE IF NOT EXISTS earnings_alerts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ticker TEXT NOT NULL,
+                quarter TEXT NOT NULL,
+                eps_estimate REAL,
+                eps_actual REAL,
+                surprise_percent REAL,
+                released_date TEXT NOT NULL,
+                is_read INTEGER DEFAULT 0,
+                UNIQUE(ticker, quarter)
+            )
+        `).run();
+    } catch (e) {}
+
     // Backfill ai_prompt_type based on the latest history entry
     try {
         dbConnection.prepare(`

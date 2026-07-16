@@ -80,6 +80,20 @@
         </a>
     </div>
 
+    <!-- Earnings Alert Banner -->
+    <div id="earnings-alert-container" class="hidden" style="margin: 8px 12px 0;">
+        <div style="display:flex; align-items:center; gap:8px; background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.2); border-radius:10px; padding:7px 10px; text-decoration:none; color:inherit; -webkit-tap-highlight-color:transparent;">
+            <span class="material-symbols-outlined animate-pulse" style="font-size:16px; color:#6366f1; flex-shrink:0; font-variation-settings:'FILL' 1;">analytics</span>
+            <div style="flex:1; min-width:0;">
+                <div style="font-size:9px; font-weight:900; text-transform:uppercase; letter-spacing:0.05em; color:#6366f1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="earnings-alert-title">DATI TRIMESTRALI RILASCIATI</div>
+                <div style="font-size:9px; font-weight:700; color:var(--mob-text-muted); line-height:1.2; word-wrap:break-word;" id="earnings-alert-msg">Caricamento trimestrale...</div>
+            </div>
+            <button onclick="dismissCurrentEarningsAlert()" style="background:#6366f1; color:#ffffff; border:none; outline:none; border-radius:6px; padding:4px 8px; font-size:9px; font-weight:900; text-transform:uppercase; letter-spacing:0.05em; flex-shrink:0; cursor:pointer;">
+                OK
+            </button>
+        </div>
+    </div>
+
     <!-- Hero Card -->
     <div class="mob-hero">
       <div class="mob-hero-label">Patrimonio</div>
@@ -930,6 +944,7 @@
       mobLoadDailyGains();
       mobLoadSixMonthSparkline();
       loadDividendAlert();
+      loadEarningsAlert();
       mobSetNewsFilter(_mobNewsFilter); // inits buttons + calls loadMobNews()
   });
 
@@ -959,6 +974,58 @@
               container.classList.add('hidden');
           }
       } catch (err) { console.error(err); }
+  }
+
+  let currentEarningsAlertId = null;
+
+  async function loadEarningsAlert() {
+      const container = document.getElementById('earnings-alert-container');
+      const titleEl = document.getElementById('earnings-alert-title');
+      const msgEl = document.getElementById('earnings-alert-msg');
+      if (!container || !titleEl || !msgEl) return;
+
+      try {
+          const res = await fetch('/api/analytics/earnings-alerts');
+          const alerts = await res.json();
+          if (alerts && alerts.length > 0) {
+              const alert = alerts[0];
+              currentEarningsAlertId = alert.id;
+              
+              titleEl.innerHTML = `<span style="display:flex; align-items:center; gap:4px;"><span class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span> TRIMESTRALE RILASCIATA: ${alert.ticker}</span>`;
+              
+              const epsEst = alert.eps_estimate !== null ? alert.eps_estimate.toFixed(2) : 'N/D';
+              const epsAct = alert.eps_actual !== null ? alert.eps_actual.toFixed(2) : 'N/D';
+              let surpriseStr = '';
+              if (alert.surprise_percent !== null) {
+                  const sign = alert.surprise_percent >= 0 ? '+' : '';
+                  const color = alert.surprise_percent >= 0 ? '#10b981' : '#ef4444';
+                  surpriseStr = ` (Sorpresa: <span style="color:${color}; font-weight:900;">${sign}${(alert.surprise_percent * 100).toFixed(2)}%</span>)`;
+              }
+              
+              msgEl.innerHTML = `<b>${alert.assetName}</b> ha pubblicato i dati per il trimestre terminato il <b>${alert.quarter}</b>.<br>EPS Effettivo: <b>${epsAct}</b> vs Stima: <b>${epsEst}</b>${surpriseStr}.`;
+              container.classList.remove('hidden');
+          } else {
+              container.classList.add('hidden');
+              currentEarningsAlertId = null;
+          }
+      } catch (err) {
+          console.error('Failed to load earnings alerts:', err);
+      }
+  }
+
+  async function dismissCurrentEarningsAlert() {
+      if (!currentEarningsAlertId) return;
+      try {
+          const res = await fetch(`/api/analytics/earnings-alerts/${currentEarningsAlertId}/read`, {
+              method: 'POST'
+          });
+          const data = await res.json();
+          if (data.success) {
+              loadEarningsAlert();
+          }
+      } catch (err) {
+          console.error('Failed to dismiss earnings alert:', err);
+      }
   }
 
   async function mobLoadDailyGains() {

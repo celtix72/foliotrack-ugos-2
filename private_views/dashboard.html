@@ -174,6 +174,23 @@
             <a href="/dividend" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg transition-all shadow-md shadow-amber-500/10">
                 Dettagli
             </a>
+    </div>
+
+    <!-- Earnings Alert Banner -->
+    <div id="earnings-alert-container" class="px-8 mt-6 -mb-2 hidden">
+        <div class="bg-indigo-500/10 dark:bg-indigo-500/5 border border-indigo-500/20 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-xl bg-indigo-500 text-white flex items-center justify-center shadow-lg shadow-indigo-500/20 animate-pulse">
+                    <span class="material-symbols-outlined">analytics</span>
+                </div>
+                <div class="min-w-0">
+                    <h4 class="text-sm font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-tight" id="earnings-alert-title">DATI TRIMESTRALI RILASCIATI</h4>
+                    <p class="text-xs text-slate-700 dark:text-slate-300 font-bold" id="earnings-alert-msg">Caricamento trimestrale...</p>
+                </div>
+            </div>
+            <button id="earnings-dismiss-btn" onclick="dismissCurrentEarningsAlert()" class="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg transition-all shadow-md shadow-indigo-500/10 ml-4">
+                Ok
+            </button>
         </div>
     </div>
 
@@ -621,6 +638,7 @@
                 initDashboardChart();
                 initAllocationChart();
                 loadDividendAlert();
+                loadEarningsAlert();
                 loadDailyGains();
                 loadSixMonthSparkline();
                 
@@ -820,6 +838,58 @@
                 container.classList.add('hidden');
             }
         } catch (err) { console.error(err); }
+    }
+
+    let currentEarningsAlertId = null;
+
+    async function loadEarningsAlert() {
+        const container = document.getElementById('earnings-alert-container');
+        const titleEl = document.getElementById('earnings-alert-title');
+        const msgEl = document.getElementById('earnings-alert-msg');
+        if (!container || !titleEl || !msgEl) return;
+
+        try {
+            const res = await fetch('/api/analytics/earnings-alerts');
+            const alerts = await res.json();
+            if (alerts && alerts.length > 0) {
+                const alert = alerts[0];
+                currentEarningsAlertId = alert.id;
+                
+                titleEl.innerHTML = `<span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span> TRIMESTRALE RILASCIATA: ${alert.ticker}</span>`;
+                
+                const epsEst = alert.eps_estimate !== null ? alert.eps_estimate.toFixed(2) : 'N/D';
+                const epsAct = alert.eps_actual !== null ? alert.eps_actual.toFixed(2) : 'N/D';
+                let surpriseStr = '';
+                if (alert.surprise_percent !== null) {
+                    const sign = alert.surprise_percent >= 0 ? '+' : '';
+                    const color = alert.surprise_percent >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
+                    surpriseStr = ` (Sorpresa: <span class="${color} font-black">${sign}${(alert.surprise_percent * 100).toFixed(2)}%</span>)`;
+                }
+                
+                msgEl.innerHTML = `<b>${alert.assetName}</b> ha pubblicato i dati per il trimestre terminato il <b>${alert.quarter}</b>.<br>EPS Effettivo: <b>${epsAct}</b> vs Stima: <b>${epsEst}</b>${surpriseStr}.`;
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+                currentEarningsAlertId = null;
+            }
+        } catch (err) {
+            console.error('Failed to load earnings alerts:', err);
+        }
+    }
+
+    async function dismissCurrentEarningsAlert() {
+        if (!currentEarningsAlertId) return;
+        try {
+            const res = await fetch(`/api/analytics/earnings-alerts/${currentEarningsAlertId}/read`, {
+                method: 'POST'
+            });
+            const data = await res.json();
+            if (data.success) {
+                loadEarningsAlert();
+            }
+        } catch (err) {
+            console.error('Failed to dismiss earnings alert:', err);
+        }
     }
 
     async function loadDailyGains() {

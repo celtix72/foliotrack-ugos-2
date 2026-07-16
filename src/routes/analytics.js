@@ -810,6 +810,44 @@ module.exports = function (dependencies) {
         }
     });
 
+    // GET /api/analytics/earnings-alerts
+    router.get('/analytics/earnings-alerts', requireAuth, async (req, res) => {
+        try {
+            const userId = req.user.id;
+            const alerts = database.db.prepare(`
+                SELECT ea.*, a.name as assetName, a.currency
+                FROM earnings_alerts ea
+                JOIN assets a ON ea.ticker = a.ticker
+                LEFT JOIN (
+                    SELECT assetTicker, SUM(CASE WHEN type = 'BUY' THEN quantity WHEN type = 'SELL' THEN -quantity ELSE 0 END) as balance
+                    FROM transactions t
+                    JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
+                    WHERE pu.user_id = ?
+                    GROUP BY assetTicker
+                ) t ON a.ticker = t.assetTicker
+                WHERE ea.is_read = 0 
+                  AND (a.inWatchlist = 1 OR IFNULL(t.balance, 0) > 0.0001)
+                ORDER BY ea.released_date DESC, ea.id DESC
+            `).all(userId);
+            
+            res.json(alerts);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // POST /api/analytics/earnings-alerts/:id/read
+    router.post('/analytics/earnings-alerts/:id/read', requireAuth, async (req, res) => {
+        try {
+            database.db.prepare(`
+                UPDATE earnings_alerts SET is_read = 1 WHERE id = ?
+            `).run(req.params.id);
+            res.json({ success: true });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
     // GET /api/analytics/reports
     router.get('/analytics/reports', requireAuth, async (req, res) => {
         try {

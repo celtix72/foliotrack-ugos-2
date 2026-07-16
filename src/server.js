@@ -588,7 +588,7 @@ async function fetchAssetMetadata(ticker) {
         if (quote.quoteType === 'BOND') detailedType = 'Bond';
 
         const summary = await yahooFinance.quoteSummary(ticker, { 
-            modules: ["summaryProfile", "assetProfile", "fundProfile", "summaryDetail", "defaultKeyStatistics", "calendarEvents"] 
+            modules: ["summaryProfile", "assetProfile", "fundProfile", "summaryDetail", "defaultKeyStatistics", "calendarEvents", "earningsHistory"] 
         }).catch(err => {
             if (err.message.includes('429') || err.message.includes('Too Many Requests')) {
                 throw new Error('YF_RATE_LIMIT');
@@ -668,6 +668,13 @@ async function fetchAssetMetadata(ticker) {
             beta: quote.beta || (summary.summaryDetail ? summary.summaryDetail.beta : null),
             pegRatio: summary.defaultKeyStatistics ? summary.defaultKeyStatistics.pegRatio : null,
             nextDividendDate: (summary.calendarEvents && summary.calendarEvents.exDividendDate) ? new Date(summary.calendarEvents.exDividendDate).toISOString().split('T')[0] : (quote.dividendDate ? new Date(quote.dividendDate * 1000).toISOString().split('T')[0] : null),
+            nextEarningsDate: (summary.calendarEvents && summary.calendarEvents.earnings && summary.calendarEvents.earnings.earningsDate && summary.calendarEvents.earnings.earningsDate[0]) ? new Date(summary.calendarEvents.earnings.earningsDate[0]).toISOString().split('T')[0] : null,
+            earningsHistory: (summary.earningsHistory && summary.earningsHistory.history) ? summary.earningsHistory.history.map(h => ({
+                quarter: h.quarter?.fmt || h.quarter || null,
+                epsEstimate: h.epsEstimate?.raw ?? h.epsEstimate ?? null,
+                epsActual: h.epsActual?.raw ?? h.epsActual ?? null,
+                surprisePercent: h.surprisePercent?.raw ?? h.surprisePercent ?? null
+            })) : [],
             quoteDate: quote.regularMarketTime ? new Date(quote.regularMarketTime).toISOString().split('T')[0] : null,
             isin: (function() {
                 let i = quote.isin || (summary.summaryDetail ? summary.summaryDetail.isin : null) || (summary.defaultKeyStatistics ? summary.defaultKeyStatistics.isin : null);
@@ -2793,6 +2800,8 @@ async function updateMarketData(force = false) {
                     preMarketChangePercent: metadata.preMarketChangePercent || 0,
                     postMarketChangePercent: metadata.postMarketChangePercent || 0,
                     nextDividendDate: metadata.nextDividendDate || asset.nextDividendDate,
+                    nextEarningsDate: metadata.nextEarningsDate || asset.nextEarningsDate,
+                    earningsHistory: metadata.earningsHistory || [],
                     name: metadata.name || asset.name,
                     currency: metadata.currency || asset.currency,
                     exchange: metadata.exchange || asset.exchange,
@@ -2805,7 +2814,7 @@ async function updateMarketData(force = false) {
             if (updateData) {
                 database.db.prepare(`
                     UPDATE assets
-                    SET currentPrice=?, changePercent=?, changeValue=?, preMarketChangePercent=?, postMarketChangePercent=?, pe=?, forwardPE=?, dividendYield=?, eps=?, beta=?, pegRatio=?, nextDividendDate=?, name=?, currency=?, exchange=?, country=?, quoteDate=?, lastUpdateError=NULL, updatedAt=datetime('now')
+                    SET currentPrice=?, changePercent=?, changeValue=?, preMarketChangePercent=?, postMarketChangePercent=?, pe=?, forwardPE=?, dividendYield=?, eps=?, beta=?, pegRatio=?, nextDividendDate=?, nextEarningsDate=?, name=?, currency=?, exchange=?, country=?, quoteDate=?, lastUpdateError=NULL, updatedAt=datetime('now')
                     WHERE ticker=?
                 `).run(
                     updateData.price,
@@ -2820,6 +2829,7 @@ async function updateMarketData(force = false) {
                     updateData.beta,
                     updateData.pegRatio,
                     updateData.nextDividendDate,
+                    updateData.nextEarningsDate || null,
                     updateData.name,
                     updateData.currency,
                     updateData.exchange,
@@ -2827,6 +2837,36 @@ async function updateMarketData(force = false) {
                     updateData.quoteDate,
                     asset.ticker
                 );
+                
+                // Track new trimestrali / earnings releases
+                if (updateData.earningsHistory && updateData.earningsHistory.length > 0) {
+                    const validReports = updateData.earningsHistory.filter(h => h.quarter && h.epsActual !== null && h.epsActual !== undefined);
+                    if (validReports.length > 0) {
+                        // Sort chronologically/alphabetically by quarter to get the latest one
+                        validReports.sort((a, b) => String(a.quarter).localeCompare(String(b.quarter)));
+                        const latestReport = validReports[validReports.length - 1];
+                        
+                        // Check if alert already exists for this (ticker, quarter)
+                        const existingAlert = database.db.prepare(`
+                            SELECT id FROM earnings_alerts WHERE ticker = ? AND quarter = ?
+                        `).get(asset.ticker, latestReport.quarter);
+                        
+                        if (!existingAlert) {
+                            database.db.prepare(`
+                                INSERT INTO earnings_alerts (ticker, quarter, eps_estimate, eps_actual, surprise_percent, released_date, is_read)
+                                VALUES (?, ?, ?, ?, ?, date('now'), 0)
+                            `).run(
+                                asset.ticker,
+                                latestReport.quarter,
+                                latestReport.epsEstimate,
+                                latestReport.epsActual,
+                                latestReport.surprisePercent
+                            );
+                            logger.info(`New earnings alert registered for ${asset.ticker} Q/Year: ${latestReport.quarter}`);
+                        }
+                    }
+                }
+
                 logger.info(`Successfully updated ${asset.ticker}: ${updateData.price} ${updateData.currency}`);
 
                 // Alert Checks (Per User)
