@@ -1460,7 +1460,7 @@ Here are the metrics for each section's table:
             }
 
             if (!customPromptText.includes(contextData.substring(0, 15))) {
-                prompt += `\n\n**INPUT DATA TO ANALYZE:**\n${contextData}`;
+                prompt += `\n\n**CRITICAL INSTRUCTION:**\nYou MUST analyze and incorporate the latest quarterly earnings report data (specifically actual EPS vs estimate, surprise percent, and publication date) and the analyst estimates (consensus rating, target prices, and current quarter estimates) provided in the input below.\n\n**INPUT DATA TO ANALYZE:**\n${contextData}`;
             }
         } else {
             const customPromptSection = customPromptText ? `\n**USER CUSTOM INSTRUCTIONS**\n${customPromptText}\n` : '';
@@ -1470,6 +1470,7 @@ Act as an elite financial analyst specializing in the GARP (Growth At a Reasonab
 
 **TASK**
 Analyze the provided input data strictly, objectively, and exclusively. Do not hallucinate external data. If a specific metric required for the analysis is missing from the input, explicitly state "N/D" and adapt your evaluation.
+You MUST evaluate and analyze the latest quarterly earnings data (specifically actual EPS vs estimate, surprise percent, and publication date) and the future analyst estimates (consensus rating, target prices, and current quarter expectations) provided in the input.
 ${customPromptSection}
 **OUTPUT CONSTRAINTS (CRITICAL)**
 You MUST output EXACTLY and EXCLUSIVELY a valid JSON object. No conversational text before or after. No markdown code blocks (like \`\`\`json). 
@@ -1558,6 +1559,7 @@ Act as an elite financial analyst and a strict value investor. Your analysis mus
 
 **TASK**
 Analyze the provided input data strictly, objectively, and exclusively. Do not hallucinate external data. If a specific metric required for the analysis is missing from the input, explicitly state "N/D" and adapt your evaluation.
+You MUST evaluate and analyze the latest quarterly earnings data (specifically actual EPS vs estimate, surprise percent, and publication date) and the future analyst estimates (consensus rating, target prices, and current quarter expectations) provided in the input.
 ${customPromptSection}
 **OUTPUT CONSTRAINTS (CRITICAL)**
 You MUST output EXACTLY and EXCLUSIVELY a valid JSON object. No conversational text before or after. No markdown code blocks (like \`\`\`json). 
