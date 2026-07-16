@@ -670,7 +670,7 @@ async function fetchAssetMetadata(ticker) {
             nextDividendDate: (summary.calendarEvents && summary.calendarEvents.exDividendDate) ? new Date(summary.calendarEvents.exDividendDate).toISOString().split('T')[0] : (quote.dividendDate ? new Date(quote.dividendDate * 1000).toISOString().split('T')[0] : null),
             nextEarningsDate: (summary.calendarEvents && summary.calendarEvents.earnings && summary.calendarEvents.earnings.earningsDate && summary.calendarEvents.earnings.earningsDate[0]) ? new Date(summary.calendarEvents.earnings.earningsDate[0]).toISOString().split('T')[0] : null,
             earningsHistory: (summary.earningsHistory && summary.earningsHistory.history) ? summary.earningsHistory.history.map(h => ({
-                quarter: h.quarter?.fmt || h.quarter || null,
+                quarter: h.quarter instanceof Date ? h.quarter.toISOString().split('T')[0] : (typeof h.quarter === 'string' ? h.quarter : (h.quarter?.fmt || (h.quarter ? String(h.quarter) : null))),
                 epsEstimate: h.epsEstimate?.raw ?? h.epsEstimate ?? null,
                 epsActual: h.epsActual?.raw ?? h.epsActual ?? null,
                 surprisePercent: h.surprisePercent?.raw ?? h.surprisePercent ?? null
@@ -2736,14 +2736,15 @@ async function updateMarketData(force = false) {
         logger.info('Markets are closed, but fetching quotes for assets with 0.00€ price...');
     }
     const assets = database.db.prepare(`
-        SELECT a.* 
+        SELECT DISTINCT a.* 
         FROM assets a
         LEFT JOIN (
             SELECT assetTicker, SUM(CASE WHEN type = 'BUY' THEN quantity WHEN type = 'SELL' THEN -quantity ELSE 0 END) as balance
             FROM transactions
             GROUP BY assetTicker
         ) t ON a.ticker = t.assetTicker
-        WHERE a.inWatchlist = 1 OR IFNULL(t.balance, 0) > 0.0001
+        LEFT JOIN user_watchlist uw ON a.ticker = uw.ticker
+        WHERE uw.ticker IS NOT NULL OR IFNULL(t.balance, 0) > 0.0001
     `).all();
     if (assets.length === 0) return;
     logger.info(`Updating market data for ${assets.length} assets...`);
@@ -2812,31 +2813,33 @@ async function updateMarketData(force = false) {
             }
 
             if (updateData) {
+                const params = [
+                    updateData.price ?? null,
+                    updateData.change ?? null,
+                    updateData.changeValue ?? null,
+                    updateData.preMarketChangePercent ?? 0,
+                    updateData.postMarketChangePercent ?? 0,
+                    updateData.pe ?? null,
+                    updateData.forwardPE ?? null,
+                    updateData.dividendYield ?? null,
+                    updateData.eps ?? null,
+                    updateData.beta ?? null,
+                    updateData.pegRatio ?? null,
+                    updateData.nextDividendDate ?? null,
+                    updateData.nextEarningsDate ?? null,
+                    updateData.name ?? null,
+                    updateData.currency ?? null,
+                    updateData.exchange ?? null,
+                    updateData.country ?? null,
+                    updateData.quoteDate ?? null,
+                    asset.ticker
+                ];
+
                 database.db.prepare(`
                     UPDATE assets
                     SET currentPrice=?, changePercent=?, changeValue=?, preMarketChangePercent=?, postMarketChangePercent=?, pe=?, forwardPE=?, dividendYield=?, eps=?, beta=?, pegRatio=?, nextDividendDate=?, nextEarningsDate=?, name=?, currency=?, exchange=?, country=?, quoteDate=?, lastUpdateError=NULL, updatedAt=datetime('now')
                     WHERE ticker=?
-                `).run(
-                    updateData.price,
-                    updateData.change,
-                    updateData.changeValue,
-                    updateData.preMarketChangePercent || 0,
-                    updateData.postMarketChangePercent || 0,
-                    updateData.pe,
-                    updateData.forwardPE,
-                    updateData.dividendYield,
-                    updateData.eps,
-                    updateData.beta,
-                    updateData.pegRatio,
-                    updateData.nextDividendDate,
-                    updateData.nextEarningsDate || null,
-                    updateData.name,
-                    updateData.currency,
-                    updateData.exchange,
-                    updateData.country,
-                    updateData.quoteDate,
-                    asset.ticker
-                );
+                `).run(...params);
                 
                 // Track new trimestrali / earnings releases
                 if (updateData.earningsHistory && updateData.earningsHistory.length > 0) {
@@ -2977,6 +2980,35 @@ async function updateMarketData(force = false) {
             if (err.message === 'YF_RATE_LIMIT') {
                 logger.warn('Yahoo Finance API Rate Limit Reached. Suspending current update batch to avoid further blocks.');
                 return; // BREAK the loop and stop the entire update batch
+            }
+            if (err.message.includes('bind') || err.message.includes('SQLite3')) {
+                console.log("=== DB BIND ERROR DIAGNOSTIC ===");
+                if (typeof updateData !== 'undefined') {
+                    const params = [
+                        updateData.price ?? null,
+                        updateData.change ?? null,
+                        updateData.changeValue ?? null,
+                        updateData.preMarketChangePercent ?? 0,
+                        updateData.postMarketChangePercent ?? 0,
+                        updateData.pe ?? null,
+                        updateData.forwardPE ?? null,
+                        updateData.dividendYield ?? null,
+                        updateData.eps ?? null,
+                        updateData.beta ?? null,
+                        updateData.pegRatio ?? null,
+                        updateData.nextDividendDate ?? null,
+                        updateData.nextEarningsDate ?? null,
+                        updateData.name ?? null,
+                        updateData.currency ?? null,
+                        updateData.exchange ?? null,
+                        updateData.country ?? null,
+                        updateData.quoteDate ?? null,
+                        asset.ticker
+                    ];
+                    params.forEach((p, idx) => {
+                        console.log(`Param ${idx+1}: value=`, p, `type=`, typeof p);
+                    });
+                }
             }
             logger.error(`Failed to update ${asset.ticker}`, err);
             database.db.prepare(`UPDATE assets SET lastUpdateError=? WHERE ticker=?`).run(err.message, asset.ticker);
