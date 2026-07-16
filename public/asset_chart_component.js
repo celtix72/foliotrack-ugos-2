@@ -2114,6 +2114,104 @@
             const fd = data.financialData || {};
             const currency = fd.currency || sd.currency || 'USD';
 
+            const formatRecKey = (key) => {
+                if (!key) return '<span style="color:#94a3b8">N/D</span>';
+                const map = {
+                    'buy': '<span style="color:#10b981; font-weight:bold;">BUY</span>',
+                    'strong_buy': '<span style="color:#10b981; font-weight:bold;">STRONG BUY</span>',
+                    'hold': '<span style="color:#f59e0b; font-weight:bold;">HOLD</span>',
+                    'sell': '<span style="color:#ef4444; font-weight:bold;">SELL</span>',
+                    'strong_sell': '<span style="color:#ef4444; font-weight:bold;">STRONG SELL</span>',
+                    'underperform': '<span style="color:#ef4444; font-weight:bold;">UNDERPERFORM</span>',
+                    'outperform': '<span style="color:#10b981; font-weight:bold;">OUTPERFORM</span>'
+                };
+                return map[key.toLowerCase()] || `<strong>${key.toUpperCase()}</strong>`;
+            };
+
+            // Card 5: Trimestrali
+            let earningsCardHtml = '';
+            const validHistory = (data.earningsHistory || []).filter(h => h.epsActual !== null && h.epsActual !== undefined);
+            validHistory.sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
+            const lastReport = validHistory[validHistory.length - 1];
+            
+            const nextEarnings = data.calendarEvents?.earnings?.earningsDate?.[0];
+            const nextEarningsFormatted = nextEarnings ? new Date(nextEarnings).toLocaleDateString('it-IT') : 'N/D';
+            const isEstimate = data.calendarEvents?.earnings?.isEarningsDateEstimate ? ' (Stima)' : '';
+            
+            let lastReportHtml = 'Non disponibile';
+            if (lastReport) {
+                const epsEst = lastReport.epsEstimate !== null ? lastReport.epsEstimate.toFixed(2) : 'N/D';
+                const epsAct = lastReport.epsActual !== null ? lastReport.epsActual.toFixed(2) : 'N/D';
+                let surpriseStr = 'N/D';
+                if (lastReport.surprisePercent !== null) {
+                    const sign = lastReport.surprisePercent >= 0 ? '+' : '';
+                    const color = lastReport.surprisePercent >= 0 ? '#10b981' : '#ef4444';
+                    surpriseStr = `<span style="color:${color}; font-weight:bold;">${sign}${(lastReport.surprisePercent * 100).toFixed(1)}%</span>`;
+                }
+                
+                const repDate = lastReport.date ? new Date(lastReport.date).toLocaleDateString('it-IT') : 'N/D';
+                
+                lastReportHtml = `
+                    <div style="display:flex; justify-content:space-between; align-items:center;"><span>Data Rilascio:</span> <strong>${repDate}</strong></div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;"><span>EPS Effettivo:</span> <strong>${epsAct}</strong></div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;"><span>EPS Stima:</span> <strong>${epsEst}</strong></div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;"><span>Sorpresa:</span> ${surpriseStr}</div>
+                `;
+            }
+            
+            earningsCardHtml = `
+                <div style="background:${cardBg}; border:1px solid ${cardBorder}; border-radius:12px; padding:12px;">
+                    <h4 style="font-size:10px; font-weight:900; text-transform:uppercase; color:#6366f1; margin-bottom:8px; display:flex; align-items:center; gap:4px;"><span class="material-symbols-outlined" style="font-size:14px">event_note</span> Trimestrali (Earnings)</h4>
+                    <div style="display:flex; flex-direction:column; gap:6px; font-size:11px;">
+                        <div style="border-bottom: 1px dashed ${cardBorder}; padding-bottom: 6px; margin-bottom: 4px;">
+                            <div style="font-weight: bold; color: var(--mob-primary); margin-bottom: 4px; font-size: 10px; text-transform: uppercase;">Ultima Pubblicata</div>
+                            ${lastReportHtml}
+                        </div>
+                        <div>
+                            <div style="font-weight: bold; color: var(--mob-primary); margin-bottom: 4px; font-size: 10px; text-transform: uppercase;">Prossima Prevista</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;"><span>Data:</span> <strong>${nextEarningsFormatted}${isEstimate}</strong></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Card 6: Stime Analisti
+            let analystsCardHtml = '';
+            const fd2 = data.financialData || {};
+            const recKey = formatRecKey(fd2.recommendationKey);
+            const numAnalysts = fd2.numberOfAnalysts ? ` (su ${fd2.numberOfAnalysts} analisti)` : '';
+            
+            const targetMean = fd2.targetMeanPrice ? `${fd2.targetMeanPrice.toFixed(2)} ${currency}` : 'N/D';
+            const targetRange = (fd2.targetLowPrice && fd2.targetHighPrice) ? `(${fd2.targetLowPrice.toFixed(0)} - ${fd2.targetHighPrice.toFixed(0)} ${currency})` : '';
+            
+            const currentQEst = (data.pegRatioTrend || []).find(t => t.period === '0q');
+            let qEstHtml = '';
+            if (currentQEst) {
+                const epsEstMean = currentQEst.epsEstimateMean !== null ? currentQEst.epsEstimateMean.toFixed(2) : 'N/D';
+                const revEstMean = currentQEst.revenueEstimateMean !== null ? 
+                    (Math.abs(currentQEst.revenueEstimateMean) >= 1e9 ? (currentQEst.revenueEstimateMean/1e9).toFixed(2)+'B' : (currentQEst.revenueEstimateMean/1e6).toFixed(2)+'M') + ` ${currency}` : 'N/D';
+                
+                qEstHtml = `
+                    <div style="border-top: 1px dashed ${cardBorder}; padding-top: 6px; margin-top: 4px;">
+                        <div style="font-weight: bold; color: #ec4899; margin-bottom: 4px; font-size: 10px; text-transform: uppercase;">Stime Trimestre Corrente</div>
+                        <div style="display:flex; justify-content:space-between; align-items:center;"><span>EPS Stima Medio:</span> <strong>${epsEstMean}</strong></div>
+                        <div style="display:flex; justify-content:space-between; align-items:center;"><span>Fatturato Medio:</span> <strong>${revEstMean}</strong></div>
+                    </div>
+                `;
+            }
+            
+            analystsCardHtml = `
+                <div style="background:${cardBg}; border:1px solid ${cardBorder}; border-radius:12px; padding:12px;">
+                    <h4 style="font-size:10px; font-weight:900; text-transform:uppercase; color:#ec4899; margin-bottom:8px; display:flex; align-items:center; gap:4px;"><span class="material-symbols-outlined" style="font-size:14px">groups</span> Stime Analisti</h4>
+                    <div style="display:flex; flex-direction:column; gap:6px; font-size:11px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;"><span>Consenso:</span> ${recKey}${numAnalysts}</div>
+                        <div style="display:flex; justify-content:space-between; align-items:center;"><span>Target Price Medio:</span> <strong>${targetMean}</strong></div>
+                        ${targetRange ? `<div style="font-size:9px; text-align:right; color:${textMuted}; margin-top:-4px;">${targetRange}</div>` : ''}
+                        ${qEstHtml}
+                    </div>
+                </div>
+            `;
+
             let financialsHtml = '';
             if (data.historicalFinancials && data.historicalFinancials.length > 0) {
                 financialsHtml = `
@@ -2267,6 +2365,9 @@
                             <div style="display:flex; justify-content:space-between; align-items:center;"><span>Insider Summary:</span> <strong>${data.insiderSummary || '<span style="color:#94a3b8">N/D</span>'}</strong></div>
                         </div>
                     </div>
+
+                    ${earningsCardHtml}
+                    ${analystsCardHtml}
                 </div>
 
                 ${financialsHtml}
