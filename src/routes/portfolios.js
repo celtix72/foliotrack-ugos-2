@@ -95,18 +95,42 @@ Asset: {ASSETS_JSON}
 
 Rispondi in JSON: { "riskScore": 7, "diversification": "...", "actions": ["...", "...", "..."], "reasoning": "..." }`;
 
-            const assetsList = portfolio.holdings.map(h => ({
-                ticker: h.ticker,
-                name: h.name,
-                value: h.currentValue,
-                unrealizedGainPct: h.unrealizedGainPct,
-                allocation: h.currentValue / portfolio.totalValue
-            }));
+            const assetsList = portfolio.holdings.map(h => {
+                let fundamentals = null;
+                try {
+                    const row = database.db.prepare('SELECT data FROM asset_fundamentals WHERE ticker = ?').get(h.ticker);
+                    if (row) {
+                        const parsed = JSON.parse(row.data);
+                        fundamentals = {
+                            peTrailing: parsed.summaryDetail?.trailingPE || parsed.keyStats?.trailingPE || null,
+                            peForward: parsed.keyStats?.forwardPE || null,
+                            pegRatio: parsed.pegRatio || null,
+                            debtToEquity: parsed.financialData?.debtToEquity || null,
+                            roe: parsed.financialData?.returnOnEquity ? (parsed.financialData.returnOnEquity * 100).toFixed(1) + '%' : null,
+                            netMargin: parsed.financialData?.profitMargins ? (parsed.financialData.profitMargins * 100).toFixed(1) + '%' : null,
+                            dividendYield: parsed.summaryDetail?.dividendYield ? (parsed.summaryDetail.dividendYield * 100).toFixed(2) + '%' : null,
+                            recommendation: parsed.financialData?.recommendationKey || null,
+                            altmanZScore: parsed.altmanZScore !== null ? parsed.altmanZScore.toFixed(2) + ' (' + parsed.altmanZScoreZone + ')' : null,
+                        };
+                    }
+                } catch (err) {
+                    logger.error(`Error reading fundamentals for ${h.ticker} in portfolio analysis:`, err);
+                }
+
+                return {
+                    ticker: h.ticker,
+                    name: h.name,
+                    value: h.currentValue,
+                    unrealizedGainPct: h.unrealizedGainPct,
+                    allocation: h.currentValue / portfolio.totalValue,
+                    fundamentals: fundamentals
+                };
+            });
 
             const prompt = promptTemplate
                 .replace('{TOTAL_VALUE}', portfolio.totalValue.toFixed(2))
                 .replace('{PERF_1D}', portfolio.changePercent.toFixed(2))
-                .replace('{ASSETS_JSON}', JSON.stringify(assetsList));
+                .replace('{ASSETS_JSON}', JSON.stringify(assetsList, null, 2));
 
             const engine = globalSettings.aiEngine || 'Gemini_Free';
             

@@ -634,6 +634,10 @@
                                     <span class="material-symbols-outlined" style="font-size:15px">restart_alt</span>
                                     Reset Campi IA su tutti gli Asset
                                 </button>
+                                <button onclick="syncAllFundamentals()" id="btn-sync-fundamentals" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 transition-colors text-white text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center justify-center gap-2">
+                                    <span class="material-symbols-outlined" style="font-size:15px">sync</span>
+                                    Sincronizza Dati Fondamentali (DB)
+                                </button>
                             </div>
                             <p class="text-[10px] text-rose-500/70 mt-2">⚠️ Operazioni irreversibili. Cancella storico e/o azzera i campi ai_action, ai_reasoning, ai_engine degli asset.</p>
                         </div>
@@ -1137,6 +1141,33 @@
                 alert('Errore: ' + e.message);
                 btn.disabled = false;
                 btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:15px">restart_alt</span> Reset Campi IA su tutti gli Asset';
+            }
+        };
+
+        window.syncAllFundamentals = async function() {
+            if (!confirm(`Vuoi sincronizzare i dati fondamentali di tutti i titoli in portafoglio e watchlist? L'operazione avverrà in background.`)) return;
+            const btn = document.getElementById('btn-sync-fundamentals');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin" style="font-size:15px">sync</span> Sincronizzazione in corso...';
+            try {
+                const res = await fetchAdmin('/api/fundamentals/sync', { method: 'POST' });
+                if (res && res.success) {
+                    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:15px">check_circle</span> Avviata!';
+                    btn.classList.replace('bg-indigo-600', 'bg-emerald-500');
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:15px">sync</span> Sincronizza Dati Fondamentali (DB)';
+                        btn.classList.replace('bg-emerald-500', 'bg-indigo-600');
+                    }, 3000);
+                } else {
+                    alert('Errore: ' + (res?.error || 'Sconosciuto'));
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:15px">sync</span> Sincronizza Dati Fondamentali (DB)';
+                }
+            } catch (e) {
+                alert('Errore: ' + e.message);
+                btn.disabled = false;
+                btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:15px">sync</span> Sincronizza Dati Fondamentali (DB)';
             }
         };
 

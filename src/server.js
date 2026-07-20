@@ -155,6 +155,7 @@ async function calculateMarketStats(userId) {
         return {
             totalNetValue: stats.totalNetValue,
             totalChange: stats.totalChange,
+            totalChangePrePost: stats.totalChangePrePost,
             totalChangePercent: stats.changePercent,
             liveRate: liveRate,
             individualPortfolios: stats.portfolios || [], // Added to support granular push info
@@ -324,8 +325,15 @@ async function sendStatusNotification(targetUserId = null, eventType = 'STATUS',
             msg += `${escapeV2('🕒')} \`${escapeCodeV2(tsFormatted)}\` · \`${escapeCodeV2(APP_VERSION)}\``;
 
             // Compact Push Notification Body for iOS
-            const totalVarEUR = (stats.totalChange || 0) + (stats.totalChangePrePost || 0);
-            const totalVarStr = (totalVarEUR >= 0 ? '+' : '') + '€' + Math.round(totalVarEUR).toLocaleString('it-IT');
+            const regVar = stats.totalChange || 0;
+            const pmVar = stats.totalChangePrePost || 0;
+            const totalVarEUR = regVar + pmVar;
+            
+            let totalVarStr = (totalVarEUR >= 0 ? '+' : '') + '€' + Math.round(totalVarEUR).toLocaleString('it-IT');
+            if (pmVar !== 0) {
+                const pmSign = pmVar >= 0 ? '+' : '';
+                totalVarStr += ` (Pre: ${pmSign}€${Math.round(pmVar).toLocaleString('it-IT')})`;
+            }
             const abbreviatedNet = (totalVal / 1000).toFixed(1) + 'K';
 
             // First line (NET) becomes the Title for maximum compactness
@@ -334,18 +342,33 @@ async function sendStatusNotification(targetUserId = null, eventType = 'STATUS',
             // Portfolios for the body: those with variation > 0 (positive or negative)
             let portfoliosForPush = [];
             if (stats.individualPortfolios && stats.individualPortfolios.length > 0) {
-                // Sort by absolute EUR variation descending to show most significant moves first
-                const sorted = [...stats.individualPortfolios].sort((a, b) => Math.abs(b.changeValueEUR || 0) - Math.abs(a.changeValueEUR || 0));
+                // Sort by absolute total EUR variation descending to show most significant moves first
+                const sorted = [...stats.individualPortfolios].sort((a, b) => {
+                    const totalA = Math.abs((a.changeValueEUR || 0) + (a.changeValuePrePostEUR || 0));
+                    const totalB = Math.abs((b.changeValueEUR || 0) + (b.changeValuePrePostEUR || 0));
+                    return totalB - totalA;
+                });
                 
                 // Take those with variation != 0, ensuring at least 2 if available
-                portfoliosForPush = sorted.filter((p, index) => index < 2 || Math.abs(p.changeValueEUR || 0) >= 0.01);
+                portfoliosForPush = sorted.filter((p, index) => {
+                    const totalVar = Math.abs((p.changeValueEUR || 0) + (p.changeValuePrePostEUR || 0));
+                    return index < 2 || totalVar >= 0.01;
+                });
             }
 
             let pushBody = '';
             portfoliosForPush.forEach(p => {
-                const icon = (p.changeValueEUR || 0) >= 0 ? '🟢' : '🔴';
+                const pReg = p.changeValueEUR || 0;
+                const pPM = p.changeValuePrePostEUR || 0;
+                const pTotal = pReg + pPM;
+                const icon = pTotal >= 0 ? '🟢' : '🔴';
                 const shortName = (p.name || '???').substring(0, 3).toUpperCase();
-                const pVarStr = (p.changeValueEUR >= 0 ? '+' : '') + '€' + Math.round(Math.abs(p.changeValueEUR)).toLocaleString('it-IT');
+                
+                let pVarStr = (pTotal >= 0 ? '+' : '') + '€' + Math.round(Math.abs(pTotal)).toLocaleString('it-IT');
+                if (pPM !== 0) {
+                    const pPMSign = pPM >= 0 ? '+' : '';
+                    pVarStr += ` (Pre: ${pPMSign}€${Math.round(pPM).toLocaleString('it-IT')})`;
+                }
                 pushBody += `${icon} ${shortName} (${pVarStr})\n`;
             });
 
@@ -485,13 +508,14 @@ const refreshDividendProjections = analyticsRouter.refreshDividendProjections;
 app.use('/api', analyticsRouter);
 
 // ─── Assets & Fundamentals Routes ────────────────────────────────────────────
-app.use('/api', require('./routes/assets')({
+const assetsRouter = require('./routes/assets')({
     requireAuth, requireAdmin, requirePortfolioAccess, database, logger, yahooFinance,
     getEurUsdRate, getMarketStatus, isUSMarket, fetchAssetMetadata,
     clearPerformanceCache, callAIModel, parseAIResponse, notifyUser, APP_VERSION,
     triggerHistoryRebuild, recalculateAllPortfoliosWithOverrides, historicalPricesCache,
     isValidISIN, sanitizeTicker, B_ITA
-}));
+});
+app.use('/api', assetsRouter);
 
 // ─── Market Routes ────────────────────────────────────────────────────────────
 app.use('/api', require('./routes/market')({
@@ -3209,6 +3233,20 @@ setInterval(() => {
 }, 1 * 60 * 60 * 1000); // 1 hour
 
 setTimeout(syncNews, 5000); // Run first sync 5s after startup
+
+// Schedule periodic fundamentals sync every 12 hours
+setInterval(() => {
+    if (assetsRouter && typeof assetsRouter.syncAllFundamentals === 'function') {
+        assetsRouter.syncAllFundamentals(false).catch(e => logger.error('Error in periodic fundamentals sync:', e));
+    }
+}, 12 * 60 * 60 * 1000);
+
+// Run first fundamentals sync 15 seconds after startup
+setTimeout(() => {
+    if (assetsRouter && typeof assetsRouter.syncAllFundamentals === 'function') {
+        assetsRouter.syncAllFundamentals(false).catch(e => logger.error('Error in startup fundamentals sync:', e));
+    }
+}, 15000);
 
 setInterval(async () => {
     const settings = database.getSettings(1);

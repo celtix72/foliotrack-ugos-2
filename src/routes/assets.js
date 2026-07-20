@@ -32,6 +32,7 @@ module.exports = function(dependencies) {
 
     const fundamentalsCache = new Map();
     const FUNDAMENTALS_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+    let isSyncingFundamentals = false;
 
 // ════════════════════════════════════════════════════════════════════════════
 // FUNDAMENTALS API  — PEG Ratio, FCF, indicatori fondamentali
@@ -60,16 +61,31 @@ async function getAssetFundamentals(ticker) {
     if (!ticker) throw new Error('Ticker mancante');
     ticker = ticker.toUpperCase();
 
-    
-
-    // Check cache
+    // Check cache (in-memory)
     const cached = fundamentalsCache.get(ticker);
     if (cached && (Date.now() - cached.ts) < FUNDAMENTALS_CACHE_TTL_MS) {
-        logger.info(`[Fundamentals] Cache hit: ${ticker}`);
+        logger.info(`[Fundamentals] Cache hit (in-memory): ${ticker}`);
         return cached.data;
     }
 
-    logger.info(`[Fundamentals] Fetching data for: ${ticker}`);
+    // Check cache (SQLite DB)
+    try {
+        const dbRow = database.db.prepare('SELECT data, updatedAt FROM asset_fundamentals WHERE ticker = ?').get(ticker);
+        if (dbRow) {
+            const updatedAtMs = new Date(dbRow.updatedAt + ' UTC').getTime();
+            const ageMs = Date.now() - updatedAtMs;
+            if (ageMs < FUNDAMENTALS_CACHE_TTL_MS) {
+                logger.info(`[Fundamentals] Cache hit (DB): ${ticker} (age: ${Math.round(ageMs / 1000 / 60)} mins)`);
+                const parsedData = JSON.parse(dbRow.data);
+                fundamentalsCache.set(ticker, { ts: Date.now() - ageMs, data: parsedData });
+                return parsedData;
+            }
+        }
+    } catch (dbErr) {
+        logger.warn(`[Fundamentals] Error checking DB cache for ${ticker}: ${dbErr.message}`);
+    }
+
+    logger.info(`[Fundamentals] Fetching data from Yahoo Finance for: ${ticker}`);
 
     const result = {
         ticker,
@@ -534,8 +550,36 @@ async function getAssetFundamentals(ticker) {
         logger.warn(`[Fundamentals] Z-Score/NetTangible calculation error for ${ticker}: ${e.message}`);
     }
 
+    // Check if the sync had errors for key YF modules, and if we have a fallback database record
+    const hasKeyErrors = result.errors && result.errors.some(err => err.module === 'defaultKeyStatistics' || err.module === 'financialData');
+    if (hasKeyErrors) {
+        try {
+            const dbRow = database.db.prepare('SELECT data FROM asset_fundamentals WHERE ticker = ?').get(ticker);
+            if (dbRow) {
+                logger.info(`[Fundamentals] YF fetch for ${ticker} had key errors. Falling back to stale local DB data.`);
+                const fallbackData = JSON.parse(dbRow.data);
+                fundamentalsCache.set(ticker, { ts: Date.now() - 2 * FUNDAMENTALS_CACHE_TTL_MS, data: fallbackData });
+                return fallbackData;
+            }
+        } catch (dbErr) {
+            logger.warn(`[Fundamentals] Error reading DB fallback for ${ticker}: ${dbErr.message}`);
+        }
+    }
+
     // Salva in cache
     fundamentalsCache.set(ticker, { ts: Date.now(), data: result });
+
+    // Salva in DB
+    try {
+        database.db.prepare(`
+            INSERT INTO asset_fundamentals (ticker, data, updatedAt)
+            VALUES (?, ?, datetime('now'))
+            ON CONFLICT(ticker) DO UPDATE SET data = excluded.data, updatedAt = datetime('now')
+        `).run(ticker, JSON.stringify(result));
+        logger.info(`[Fundamentals] Successfully saved local database entry for ${ticker}`);
+    } catch (dbErr) {
+        logger.error(`[Fundamentals] Failed to save database entry for ${ticker}: ${dbErr.message}`);
+    }
 
     logger.info(`[Fundamentals] Done for ${ticker}: PEG=${result.pegRatio}, FCF TTM=${result.fcfTTM}, FCF annual records=${result.fcfAnnual.length}, quarterly=${result.fcfQuarterly.length}`);
     return result;
@@ -1806,5 +1850,75 @@ router.delete('/assets/ai-history/:id', requireAuth, (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+    // Background sync function
+    async function syncAllFundamentals(force = false) {
+        if (isSyncingFundamentals) {
+            logger.info('[Sync Fundamentals] Sync already in progress, skipping.');
+            return { skipped: true, reason: 'Already running' };
+        }
+        isSyncingFundamentals = true;
+        logger.info('[Sync Fundamentals] Starting fundamentals synchronization...');
+        try {
+            const assets = database.db.prepare(`
+                SELECT DISTINCT a.ticker 
+                FROM assets a
+                LEFT JOIN (
+                    SELECT assetTicker, SUM(CASE WHEN type = 'BUY' THEN quantity WHEN type = 'SELL' THEN -quantity ELSE 0 END) as balance
+                    FROM transactions
+                    GROUP BY assetTicker
+                ) t ON a.ticker = t.assetTicker
+                LEFT JOIN user_watchlist uw ON a.ticker = uw.ticker
+                WHERE uw.ticker IS NOT NULL OR IFNULL(t.balance, 0) > 0.0001
+            `).all();
+
+            const tickers = assets.map(a => a.ticker).filter(t => t && t !== 'CASH');
+            logger.info(`[Sync Fundamentals] Found ${tickers.length} tickers to sync.`);
+
+            let successCount = 0;
+            let failCount = 0;
+
+            for (const ticker of tickers) {
+                try {
+                    if (ticker.startsWith('CD_')) continue;
+                    
+                    if (force) {
+                        fundamentalsCache.delete(ticker);
+                    }
+                    
+                    logger.info(`[Sync Fundamentals] Syncing ticker: ${ticker}`);
+                    await getAssetFundamentals(ticker);
+                    successCount++;
+                    // Delay of 1.5 seconds to respect Yahoo Finance rate limit
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                } catch (err) {
+                    logger.error(`[Sync Fundamentals] Failed syncing ${ticker}: ${err.message}`);
+                    failCount++;
+                }
+            }
+            logger.info(`[Sync Fundamentals] Completed sync. Success: ${successCount}, Failed: ${failCount}`);
+            return { success: true, total: tickers.length, successCount, failCount };
+        } catch (err) {
+            logger.error('[Sync Fundamentals] Error during sync:', err);
+            throw err;
+        } finally {
+            isSyncingFundamentals = false;
+        }
+    }
+
+    // Manual sync endpoint
+    router.post('/fundamentals/sync', requireAuth, requireAdmin, async (req, res) => {
+        const force = req.query.force === 'true';
+        try {
+            syncAllFundamentals(force).catch(err => logger.error('[Sync Fundamentals Background Error]', err));
+            res.json({ success: true, message: 'Fundamentals synchronization started in the background.' });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // Expose background sync function on router
+    router.syncAllFundamentals = syncAllFundamentals;
+
     return router;
 };

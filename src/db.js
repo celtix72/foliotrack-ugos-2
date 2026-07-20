@@ -249,6 +249,12 @@ function initDb() {
         created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(user_id, link)
       );
+
+      CREATE TABLE IF NOT EXISTS asset_fundamentals (
+        ticker    TEXT    PRIMARY KEY COLLATE NOCASE,
+        data      TEXT    NOT NULL,
+        updatedAt TEXT    NOT NULL DEFAULT (datetime('now'))
+      );
     `);
 
     // Migration: Add type to portfolios if it doesn't exist
