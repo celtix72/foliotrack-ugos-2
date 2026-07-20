@@ -68,11 +68,12 @@
             opacity: 0.7;
         }
         .subview-az1 .mkcard-row {
-            grid-template-columns: 1fr 50px 50px 42px 42px;
-            gap: 8px;
+            grid-template-columns: 1fr auto 55px 45px;
+            gap: 6px;
         }
         .subview-etf1 .mkcard-row {
-            grid-template-columns: 1fr;
+            grid-template-columns: 1fr auto;
+            gap: 6px;
         }
     </style>
     <script src="/auth.js"></script>
@@ -496,65 +497,6 @@
     }
     window.loadWatchlist = loadWatchlist;
 
-    function renderAiBadgeMob(a) {
-        const tickerEsc = a.ticker.replace(/'/g, "\\'");
-        const nameEsc = (a.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-        const cur = a.currency || 'EUR';
-        if (a.aiBadges && a.aiBadges.length > 0) {
-            const badgesHtml = a.aiBadges.map(badge => {
-                const engine = badge.engine || 'X';
-                let icon = 'smart_toy';
-                if (badge.prompt_type === 'graham') {
-                    icon = 'shield';
-                } else if (badge.prompt_type === 'garp') {
-                    icon = 'trending_up';
-                } else {
-                    if (engine === 'Gemini') icon = 'auto_awesome';
-                    else if (engine === 'Qwen') icon = 'chat_spark';
-                    else if (engine === 'Agnes') icon = 'psychiatry';
-                    else if (engine === 'OpenAI') icon = 'data_exploration';
-                    else if (engine === 'Aimlapi') icon = 'api';
-                    else if (engine === 'OpenRouter') icon = 'hub';
-                }
-                const act = (badge.aiAction || '').toUpperCase();
-                let badgeStyle = '';
-                if (act === 'BUY' || act === 'INCREASE') {
-                    badgeStyle = 'background-color: #10b981 !important; color: #ffffff !important; border-color: #10b981 !important;';
-                } else if (act === 'SELL' || act === 'DECREASE') {
-                    badgeStyle = 'background-color: #ef4444 !important; color: #ffffff !important; border-color: #ef4444 !important;';
-                } else if (act === 'AVOID') {
-                    badgeStyle = 'background-color: #78350f !important; color: #ffffff !important; border-color: #78350f !important;';
-                } else if (act === 'WATCHLIST') {
-                    badgeStyle = 'background-color: #8b5cf6 !important; color: #ffffff !important; border-color: #8b5cf6 !important;';
-                } else if (act === 'NO DATA') {
-                    badgeStyle = 'background-color: #f59e0b !important; color: #ffffff !important; border-color: #f59e0b !important;';
-                } else {
-                    badgeStyle = 'background-color: #64748b !important; color: #ffffff !important; border-color: #64748b !important;';
-                }
-                
-                let fvStr = badge.aiAction;
-                if (badge.aiTargetPrice) {
-                    const num = parseFloat(badge.aiTargetPrice);
-                    let dec = 2;
-                    if (num > 30) dec = 0;
-                    else if (num > 10) dec = 1;
-                    fvStr = num.toLocaleString('it-IT', { minimumFractionDigits: dec, maximumFractionDigits: dec });
-                    if (badge.prompt_type === 'garp') fvStr += ' (Gro)';
-                    else if (badge.prompt_type === 'graham') fvStr += ' (Val)';
-                }
-                
-                return `<span onclick="event.stopPropagation();window.openAssetAiHistoryModal('${tickerEsc}','${nameEsc}','${cur}')" class="px-1.5 py-0.5 rounded font-black uppercase tracking-tighter flex items-center gap-1 border cursor-pointer whitespace-nowrap" style="${badgeStyle} font-size: calc(10px * var(--mkcard-scale, 1))">
-                    <span class="material-symbols-outlined" style="font-size: calc(12px * var(--mkcard-scale, 1))">${icon}</span> ${fvStr}</span>`;
-            }).join('');
-            return `<div style="display: flex; flex-direction: column; gap: 3px; align-items: flex-end;">${badgesHtml}</div>`;
-        } else if ((a.aiHistoryCount || 0) > 0) {
-            return `<span onclick="event.stopPropagation();window.openAssetAiHistoryModal('${tickerEsc}','${nameEsc}','${cur}')" class="px-1.5 py-0.5 rounded font-black uppercase tracking-tighter flex items-center gap-1 border border-slate-500/30 text-slate-500 bg-slate-500/10 cursor-pointer" style="font-size: calc(10px * var(--mkcard-scale, 1))">
-                <span class="material-symbols-outlined" style="font-size: calc(12px * var(--mkcard-scale, 1))">smart_toy</span> ${a.aiHistoryCount}</span>`;
-        }
-        return `<span onclick="event.stopPropagation();window.openAssetAiHistoryModal('${tickerEsc}','${nameEsc}','${cur}')" class="px-1.5 py-0.5 rounded font-black uppercase tracking-tighter flex items-center gap-1 border border-slate-400/30 text-slate-400 bg-slate-400/10 cursor-pointer" style="font-size: calc(10px * var(--mkcard-scale, 1))">
-            <span class="material-symbols-outlined" style="font-size: calc(12px * var(--mkcard-scale, 1))">smart_toy</span></span>`;
-    }
-
     function renderActions(a) {
         const tickerEsc = a.ticker.replace(/'/g, "\\'");
         const countryEsc = (a.country || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
@@ -629,7 +571,7 @@
                 return `<span onclick="event.stopPropagation();window.openAssetAiHistoryModal('${tickerEsc}','${nameEsc}','${cur}')" class="px-1.5 py-0.5 rounded font-black uppercase tracking-tighter flex items-center gap-1 border cursor-pointer whitespace-nowrap" style="${badgeStyle} font-size: calc(10px * var(--mkcard-scale, 1))">
                     <span class="material-symbols-outlined" style="font-size: calc(12px * var(--mkcard-scale, 1))">${icon}</span> ${fvStr}</span>`;
             }).join('');
-            return `<div style="display: flex; flex-direction: row; gap: 3px; align-items: center; flex-wrap: wrap;">${badgesHtml}</div>`;
+            return `<div style="display: flex; flex-direction: column; gap: 3px; align-items: center;">${badgesHtml}</div>`;
         } else if ((a.aiHistoryCount || 0) > 0) {
             return `<span onclick="event.stopPropagation();window.openAssetAiHistoryModal('${tickerEsc}','${nameEsc}','${cur}')" class="px-1.5 py-0.5 rounded font-black uppercase tracking-tighter flex items-center gap-1 border border-slate-500/30 text-slate-500 bg-slate-500/10 cursor-pointer" style="font-size: calc(10px * var(--mkcard-scale, 1))">
                 <span class="material-symbols-outlined" style="font-size: calc(12px * var(--mkcard-scale, 1))">smart_toy</span> ${a.aiHistoryCount}</span>`;
@@ -678,7 +620,7 @@
             <div class="mkcard-row ${isPos ? 'pos' : 'neg'} ${isOpen ? '' : 'closed-market'}"
                  onclick="window.showMobDetails('${tickerEsc}','${nameEsc}','${cur}')">
               
-              <!-- Col 1: Disposti su 3 righe (Riga 1: Ticker/Nome + Portfolios, Riga 2: Quotazione + Var% Day, Riga 3: Stats + AI) -->
+              <!-- Col 1: Asset Info su 3 righe (Riga 1: Ticker/Nome + Portfolios, Riga 2: Quotazione + Var% Day, Riga 3: Dati Fondamentali Yahoo) -->
               <div style="display:flex; flex-direction:column; gap:3px; align-items:flex-start; min-width:0">
                 <!-- Riga 1: Ticker / Nome & Portfolio Tags -->
                 <div style="display:flex; align-items:center; gap:4px; max-width:100%; overflow:hidden;">
@@ -694,38 +636,36 @@
                   <span style="background:rgba(100,116,139,0.1); color:var(--mob-text-muted); border-radius:3px; padding:1px 4px; font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase;">${exchangeLabel}</span>
                 </div>
 
-                <!-- Riga 3: Dati Fondamentali Yahoo Button & AI Badges -->
+                <!-- Riga 3: Dati Fondamentali Yahoo Button -->
                 <div style="display:flex; align-items:center; gap:4px; margin-top:1px;">
                   <span onclick="event.stopPropagation(); window.openAssetFundamentalsModal('${tickerEsc}', '${nameEsc}')" class="px-1.5 py-0.5 rounded border border-indigo-500/30 text-indigo-500 bg-indigo-500/10 cursor-pointer flex items-center justify-center" style="padding: 1px 4px; border-radius:4px;" title="Dati Fondamentali Yahoo Finance">
                     <span class="material-symbols-outlined" style="font-size: calc(11px * var(--mkcard-scale, 1)); font-weight: bold;">query_stats</span>
                   </span>
-                  ${aiBadge}
                 </div>
               </div>
 
+              <!-- Col 2: Tag IA da soli -->
+              <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; gap:2px; min-width:0; height:100%;">
+                ${aiBadge}
+              </div>
+
               ${_watchlistSubView === 'ETF1' ? '' : `
-              <!-- Col 2: P/E -->
+              <!-- Col 3: PE e PE Forward -->
               <div style="display:flex; flex-direction:column; justify-content:center; align-items:flex-end; gap:2px; min-width:0; height:100%; text-align:right">
-                <span style="font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:800; color:var(--mob-text-caption); text-transform:uppercase">P/E</span>
-                <span style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${a.pe ? a.pe.toFixed(1) : '—'}</span>
+                <div style="display:flex; align-items:baseline; gap:3px">
+                  <span style="font-size:calc(7px * var(--mkcard-scale, 1)); font-weight:800; color:var(--mob-text-caption); text-transform:uppercase">P/E</span>
+                  <span style="font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${a.pe ? a.pe.toFixed(1) : '—'}</span>
+                </div>
+                <div style="display:flex; align-items:baseline; gap:3px">
+                  <span style="font-size:calc(7px * var(--mkcard-scale, 1)); font-weight:800; color:var(--mob-text-caption); text-transform:uppercase">FWD</span>
+                  <span style="font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${a.forwardPE ? a.forwardPE.toFixed(1) : '—'}</span>
+                </div>
               </div>
 
-              <!-- Col 3: Fwd P/E -->
+              <!-- Col 4: PEG RATIO -->
               <div style="display:flex; flex-direction:column; justify-content:center; align-items:flex-end; gap:2px; min-width:0; height:100%; text-align:right">
-                <span style="font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:800; color:var(--mob-text-caption); text-transform:uppercase">FWD</span>
-                <span style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${a.forwardPE ? a.forwardPE.toFixed(1) : '—'}</span>
-              </div>
-
-              <!-- Col 4: PEG -->
-              <div style="display:flex; flex-direction:column; justify-content:center; align-items:flex-end; gap:2px; min-width:0; height:100%; text-align:right">
-                <span style="font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:800; color:var(--mob-text-caption); text-transform:uppercase">PEG</span>
-                <span style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${a.pegRatio ? a.pegRatio.toFixed(1) : '—'}</span>
-              </div>
-
-              <!-- Col 5: Beta -->
-              <div style="display:flex; flex-direction:column; justify-content:center; align-items:flex-end; gap:2px; min-width:0; height:100%; text-align:right">
-                <span style="font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:800; color:var(--mob-text-caption); text-transform:uppercase">BETA</span>
-                <span style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${a.beta ? a.beta.toFixed(2) : '—'}</span>
+                <span style="font-size:calc(7px * var(--mkcard-scale, 1)); font-weight:800; color:var(--mob-text-caption); text-transform:uppercase">PEG</span>
+                <span style="font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${a.pegRatio ? a.pegRatio.toFixed(1) : '—'}</span>
               </div>
               `}
             </div>
