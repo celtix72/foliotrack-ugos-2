@@ -762,15 +762,16 @@
             
             // Format only the leading regular value for the header to keep it compact, 
             // but use the total sum for the color/sign.
-            const formatted = window.formatPrivacy(totalMove, 'EUR', 'h-var', 0);
-            const sign = (formatted !== '****' && totalMove >= 0) ? '+' : '';
+            // La variazione giornaliera NON è soggetta alla modalità privacy nella top bar
+            const formatted = window.formatCurrency(totalMove, 'EUR', 0);
+            const sign = totalMove >= 0 ? '+' : '';
 
             if (portfolioVar) {
                 const signReg = changeReg >= 0 ? '+' : '';
-                const formattedReg = window.formatPrivacy(changeReg, 'EUR', 'h-var-reg', 0);
+                const formattedReg = window.formatCurrency(changeReg, 'EUR', 0);
                 const hasPP = changePP !== 0;
                 const signPP = changePP >= 0 ? '+' : '';
-                const formattedPP = hasPP ? window.formatPrivacy(changePP, 'EUR', 'h-var-pp', 0) : '';
+                const formattedPP = hasPP ? window.formatCurrency(changePP, 'EUR', 0) : '';
 
                 const pillClass = isPos
                     ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/25'
