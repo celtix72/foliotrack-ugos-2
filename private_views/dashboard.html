@@ -1673,9 +1673,13 @@
     }
 
     function togglePrivacy() {
-        window.privacyState.enabled = !window.privacyState.enabled;
-        localStorage.setItem('privacy-enabled', window.privacyState.enabled);
-        document.dispatchEvent(new CustomEvent('privacy-changed'));
+        if (typeof window.togglePrivacy === 'function') {
+            window.togglePrivacy();
+        } else {
+            window.privacyState.enabled = !window.privacyState.enabled;
+            localStorage.setItem('privacy-enabled', window.privacyState.enabled);
+            document.dispatchEvent(new CustomEvent('privacy-changed'));
+        }
     }
 
     window.toggleNetWorthVisibility = function() {

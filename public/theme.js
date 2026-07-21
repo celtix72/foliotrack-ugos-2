@@ -273,6 +273,10 @@
     const localTheme = localStorage.getItem('app-theme') || defaultTheme;
     applyTheme(localFont, localSize, localTheme, localMobFont, localMobSize);
 
+    window.privacyState = {
+        enabled: localStorage.getItem('privacy-enabled') === 'true'
+    };
+
     fetch(`/api/settings?t=${Date.now()}`)
         .then(async res => {
             const contentType = res.headers.get("content-type");
@@ -288,7 +292,12 @@
                 console.warn("Settings API returned error (likely unauthenticated):", settings.error);
                 return; // Do not apply or overwrite local settings
             }
-            window.privacyState.enabled = settings.privacyMode === 'true';
+            const serverPrivacy = settings.privacyMode === 'true';
+            if (window.privacyState.enabled !== serverPrivacy) {
+                window.privacyState.enabled = serverPrivacy;
+                localStorage.setItem('privacy-enabled', String(serverPrivacy));
+                document.dispatchEvent(new CustomEvent('privacy-changed'));
+            }
             const privacyIcon = document.getElementById('header-privacy-icon');
             if (privacyIcon) {
                 privacyIcon.innerText = window.privacyState.enabled ? 'visibility_off' : 'visibility';
@@ -864,9 +873,7 @@
     };
 
     // ─── Privacy Mode ────────────────────────────────────────────────────────
-    window.privacyState = {
-        enabled: false
-    };
+    // Initialized at top of scope from localStorage
 
 
     window.formatPrivacy = function(val, currency = 'EUR', id = null, decimals = 0) {
@@ -944,7 +951,12 @@
             );
             
             // Update Privacy Mode state
-            window.privacyState.enabled = settings.privacyMode === 'true';
+            const serverPrivacy = settings.privacyMode === 'true';
+            if (window.privacyState.enabled !== serverPrivacy) {
+                window.privacyState.enabled = serverPrivacy;
+                localStorage.setItem('privacy-enabled', String(serverPrivacy));
+                document.dispatchEvent(new CustomEvent('privacy-changed'));
+            }
             
             const privacyIcon = document.getElementById('header-privacy-icon');
             if (privacyIcon) {
@@ -963,6 +975,9 @@
 
     window.togglePrivacy = function() {
         const newPrivacy = !window.privacyState.enabled;
+        window.privacyState.enabled = newPrivacy;
+        localStorage.setItem('privacy-enabled', String(newPrivacy));
+        document.dispatchEvent(new CustomEvent('privacy-changed'));
         window.updateAppSettings({ privacyMode: String(newPrivacy) });
     };
 

@@ -206,7 +206,7 @@ module.exports = function (dependencies) {
                     database.setSetting(userId, key, value);
                 }
             })();
-            res.json({ ok: true });
+            res.json(database.getSettings(userId));
         } catch (e) {
             res.status(500).json({ error: e.message });
         }
