@@ -296,7 +296,7 @@
             if (window.privacyState.enabled !== serverPrivacy) {
                 window.privacyState.enabled = serverPrivacy;
                 localStorage.setItem('privacy-enabled', String(serverPrivacy));
-                document.dispatchEvent(new CustomEvent('privacy-changed'));
+                window.dispatchEvent(new CustomEvent('privacy-changed'));
             }
             const privacyIcon = document.getElementById('header-privacy-icon');
             if (privacyIcon) {
@@ -955,7 +955,7 @@
             if (window.privacyState.enabled !== serverPrivacy) {
                 window.privacyState.enabled = serverPrivacy;
                 localStorage.setItem('privacy-enabled', String(serverPrivacy));
-                document.dispatchEvent(new CustomEvent('privacy-changed'));
+                window.dispatchEvent(new CustomEvent('privacy-changed'));
             }
             
             const privacyIcon = document.getElementById('header-privacy-icon');
@@ -977,7 +977,7 @@
         const newPrivacy = !window.privacyState.enabled;
         window.privacyState.enabled = newPrivacy;
         localStorage.setItem('privacy-enabled', String(newPrivacy));
-        document.dispatchEvent(new CustomEvent('privacy-changed'));
+        window.dispatchEvent(new CustomEvent('privacy-changed'));
         window.updateAppSettings({ privacyMode: String(newPrivacy) });
     };
 
