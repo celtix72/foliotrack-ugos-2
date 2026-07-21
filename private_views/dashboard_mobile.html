@@ -384,21 +384,18 @@
               const isPos = totalMove >= 0;
               varEl.className = `ml-auto px-2 py-0.5 rounded-lg text-[13px] font-black shadow-sm ${isPos ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`;
               
-              const formattedReg = formatPrivacy(metrics.changeReg, 'EUR', 'mob-var');
-              const formattedPP = formatPrivacy(metrics.changePP, 'EUR', 'mob-pp-var');
+              // Usa formatCurrency direttamente — il delta giornaliero NON è soggetto alla modalità privacy
+              const formattedReg = formatCurrency(metrics.changeReg, 'EUR', 0);
+              const formattedPP = formatCurrency(metrics.changePP, 'EUR', 0);
               
-              if (formattedReg === '****') {
-                  varEl.innerText = '****';
-              } else {
-                  const signReg = metrics.changeReg >= 0 ? '+' : '';
-                  const signPP = metrics.changePP >= 0 ? '+' : '';
-                  
-                  let html = `${signReg}${formattedReg}`;
-                  if (metrics.changePP !== 0) {
-                      html += ` <span class="opacity-80 text-[11px] ml-1">(${signPP}${formattedPP})</span>`;
-                  }
-                  varEl.innerHTML = html;
+              const signReg = metrics.changeReg >= 0 ? '+' : '';
+              const signPP = metrics.changePP >= 0 ? '+' : '';
+              
+              let html = `${signReg}${formattedReg}`;
+              if (metrics.changePP !== 0) {
+                  html += ` <span class="opacity-80 text-[11px] ml-1">(${signPP}${formattedPP})</span>`;
               }
+              varEl.innerHTML = html;
               varEl.classList.remove('hidden');
           }
 
