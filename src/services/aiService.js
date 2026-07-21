@@ -5,7 +5,22 @@ let _cachedGeminiModel = null;
 let _geminiModelCachedAt = 0;
 const GEMINI_MODEL_CACHE_MS = 60 * 60 * 1000; // 1 hour
 
-let _cachedOpenRouterModels = [];
+let _cachedOpenRouterModels = [
+    { id: 'nvidia/llama-3.1-nemotron-70b-instruct:free', name: 'NVIDIA: Llama 3.1 Nemotron 70B (free)', priceLabel: 'Free', isFree: true },
+    { id: 'nvidia/nemotron-4-340b-instruct:free', name: 'NVIDIA: Nemotron 4 340B (free)', priceLabel: 'Free', isFree: true },
+    { id: 'meta-llama/llama-3.3-70b-instruct:free', name: 'Meta: Llama 3.3 70B Instruct (free)', priceLabel: 'Free', isFree: true },
+    { id: 'meta-llama/llama-3.1-405b-instruct:free', name: 'Meta: Llama 3.1 405B Instruct (free)', priceLabel: 'Free', isFree: true },
+    { id: 'deepseek/deepseek-r1:free', name: 'DeepSeek: R1 Reasoning (free)', priceLabel: 'Free', isFree: true },
+    { id: 'deepseek/deepseek-chat:free', name: 'DeepSeek: V3 Chat (free)', priceLabel: 'Free', isFree: true },
+    { id: 'qwen/qwen-2.5-72b-instruct:free', name: 'Qwen: 2.5 72B Instruct (free)', priceLabel: 'Free', isFree: true },
+    { id: 'qwen/qwq-32b:free', name: 'Qwen: QwQ 32B (free)', priceLabel: 'Free', isFree: true },
+    { id: 'mistralai/mistral-small-24b-instruct-2501:free', name: 'Mistral: Small 24B (free)', priceLabel: 'Free', isFree: true },
+    { id: 'google/gemini-2.0-flash-exp:free', name: 'Google: Gemini 2.0 Flash (free)', priceLabel: 'Free', isFree: true },
+    { id: 'openai/gpt-4o-mini', name: 'OpenAI: GPT-4o Mini', priceLabel: '$0.15 / $0.60', isFree: false },
+    { id: 'openai/gpt-4o', name: 'OpenAI: GPT-4o', priceLabel: '$2.50 / $10.00', isFree: false },
+    { id: 'anthropic/claude-3.5-sonnet', name: 'Anthropic: Claude 3.5 Sonnet', priceLabel: '$3.00 / $15.00', isFree: false },
+    { id: 'deepseek/deepseek-r1', name: 'DeepSeek: R1', priceLabel: '$0.55 / $2.19', isFree: false }
+];
 let _openRouterModelsCachedAt = 0;
 
 async function fetchOpenRouterModels() {
@@ -13,7 +28,7 @@ async function fetchOpenRouterModels() {
         const res = await axios.get('https://openrouter.ai/api/v1/models');
         if (res.data && res.data.data) {
             
-            const preferredProviders = ['openai/', 'anthropic/', 'google/', 'meta-llama/', 'mistralai/', 'deepseek/', 'qwen/', 'xiaomi/'];
+            const preferredProviders = ['openai/', 'anthropic/', 'google/', 'meta-llama/', 'mistralai/', 'deepseek/', 'qwen/', 'xiaomi/', 'nvidia/', 'cohere/', 'liquid/'];
             
             let filtered = res.data.data.filter(m => {
                 const id = m.id.toLowerCase();
@@ -23,12 +38,12 @@ async function fetchOpenRouterModels() {
                 if (promptPrice > 15) return false;
                 
                 // Esclude versioni obsolete, vision, roleplay o non adatte ad analisi testuale finanziaria
-                if (/legacy|deprecated|vision|image|roleplay|uncensored|mythomax|nous|openchat|gemma|llama-2|gpt-3\.5|claude-2|claude-instant|pixtral|llava|lyria/.test(id)) {
+                if (/legacy|deprecated|vision|image|roleplay|uncensored|mythomax|nous|openchat|llama-2|gpt-3\.5|claude-2|claude-instant|pixtral|llava|lyria/.test(id)) {
                     return false;
                 }
                 
-                // Filtra la maggior parte dei modelli ":free" inaffidabili, salvaguarda Llama, Qwen, DeepSeek, Xiaomi
-                if (id.endsWith(':free') && !/llama|qwen|deepseek|mistral|xiaomi/.test(id)) {
+                // Filtra la maggior parte dei modelli ":free" inaffidabili, salvaguarda Llama, Qwen, DeepSeek, Xiaomi, NVIDIA, Nemotron, Mistral, Gemma
+                if (id.endsWith(':free') && !/llama|qwen|deepseek|mistral|xiaomi|nvidia|nemotron|gemma/.test(id)) {
                     return false;
                 }
                 
@@ -39,7 +54,7 @@ async function fetchOpenRouterModels() {
             let mappedModels = filtered.map(m => {
                 const promptPrice = parseFloat(m.pricing?.prompt || 0);
                 const compPrice = parseFloat(m.pricing?.completion || 0);
-                const isFree = promptPrice === 0 && compPrice === 0;
+                const isFree = (promptPrice === 0 && compPrice === 0) || m.id.endsWith(':free');
                 
                 // Convert to per 1M tokens
                 const prompt1M = (promptPrice * 1000000).toFixed(2);
@@ -50,17 +65,17 @@ async function fetchOpenRouterModels() {
                 // Punteggio di rilevanza per ordinamento
                 let score = 0;
                 const id = m.id.toLowerCase();
-                if (isFree) score += 20; 
+                if (isFree) score += 50; 
                 
-                // Flagships / High reasoning (include GPT-5, Claude 4/5, Gemini Pro, DeepSeek R1, QwQ, MiMo)
-                if (/gpt-5(?!.*mini)|gpt-4o(?!.*mini)|claude-[345]-(sonnet|opus)|gemini-[123]\.[0-9]-pro|llama-3\.[123]-70b|deepseek-chat|deepseek-r1|qwq|mimo|mistral-large|o[134]-pro/.test(id)) score += 200;
+                // Flagships / High reasoning (include NVIDIA Nemotron, GPT-5, Claude 4/5, Gemini Pro, DeepSeek R1, QwQ, MiMo)
+                if (/nvidia|nemotron|gpt-5(?!.*mini)|gpt-4o(?!.*mini)|claude-[345]-(sonnet|opus)|gemini-[123]\.[0-9]-pro|llama-3\.[1234]-(70b|405b)|deepseek-chat|deepseek-r1|qwq|mimo|mistral-large|o[134]-pro/.test(id)) score += 200;
                 // Fast / Good performance
-                else if (/qwen-?[23]|qwen3\.7|gemini-[123]\.[0-9]-flash|claude-[345]-haiku|o[134](?!.*pro)/.test(id)) score += 100;
+                else if (/qwen-?[23]|qwen3\.7|gemini-[123]\.[0-9]-flash|claude-[345]-haiku|o[134](?!.*pro)|llama-3\.[123]/.test(id)) score += 100;
                 // Minis
                 else if (/mini|flash|haiku|8b|nano/.test(id)) score += 30;
                 
                 // Penalizza modelli troppo vecchi
-                if (/llama-3-8b|gpt-4-|claude-3-/.test(id)) score -= 20;
+                if (/llama-3-8b(?!.*3\.[123])|gpt-4-0|claude-3-haiku/.test(id)) score -= 20;
 
                 return {
                     id: m.id,
@@ -79,10 +94,10 @@ async function fetchOpenRouterModels() {
                 return a.name.localeCompare(b.name);
             });
             
-            // Prendi solo i primi 50
-            _cachedOpenRouterModels = mappedModels.slice(0, 50);
+            // Prendi i primi 80
+            _cachedOpenRouterModels = mappedModels.slice(0, 80);
             
-            // Riordina i 30 selezionati in modo che i Free stiano in cima, poi ordine alfabetico (migliore UX)
+            // Riordina i selezionati in modo che i Free stiano in cima, poi ordine alfabetico (migliore UX)
             _cachedOpenRouterModels.sort((a, b) => {
                 if (a.isFree && !b.isFree) return -1;
                 if (!a.isFree && b.isFree) return 1;
@@ -90,7 +105,7 @@ async function fetchOpenRouterModels() {
             });
 
             _openRouterModelsCachedAt = Date.now();
-            logger.info(`[OpenRouter] Cached ${_cachedOpenRouterModels.length} top models for financial analysis.`);
+            logger.info(`[OpenRouter] Cached ${_cachedOpenRouterModels.length} top models for financial analysis (including NVIDIA free models).`);
         }
     } catch (err) {
         logger.error('[OpenRouter] Failed to fetch models for cache', err.message);
