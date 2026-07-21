@@ -1672,17 +1672,7 @@
         };
     }
 
-    function togglePrivacy() {
-        if (typeof window.togglePrivacy === 'function') {
-            window.togglePrivacy();
-        } else {
-            window.privacyState.enabled = !window.privacyState.enabled;
-            localStorage.setItem('privacy-enabled', window.privacyState.enabled);
-            document.dispatchEvent(new CustomEvent('privacy-changed'));
-        }
-    }
-
-    window.toggleNetWorthVisibility = function() {
+     window.toggleNetWorthVisibility = function() {
         if (!dashboardChart) return;
         const isNetWorth = document.getElementById('toggle-net-worth').checked;
         setChartMode(isNetWorth ? 'eur' : 'pnl');
