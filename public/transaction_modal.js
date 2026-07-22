@@ -162,10 +162,8 @@
                     </div>
                     <div id="tm-amount-wrap">
                         <label class="block text-[9px] font-bold text-emerald-500 uppercase tracking-wider mb-1" id="tm-amount-label">Importo Totale</label>
-                        <div class="relative">
-                            <input id="tm-amount" type="number" step="any" placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-xs font-mono font-black focus:ring-2 focus:ring-emerald-500/20 outline-none" oninput="if(typeof tmCalcFromAmount === 'function') tmCalcFromAmount()" />
-                            <p class="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] font-bold italic text-slate-400 dark:text-slate-500" id="tm-amount-hint"></p>
-                        </div>
+                        <input id="tm-amount" type="number" step="any" placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-xs font-mono font-black focus:ring-2 focus:ring-emerald-500/20 outline-none" oninput="if(typeof tmCalcFromAmount === 'function') tmCalcFromAmount()" />
+                        <p class="mt-1 text-[8px] font-bold italic text-slate-400 dark:text-slate-500 leading-tight" id="tm-amount-hint"></p>
                     </div>
                 </div>
 
