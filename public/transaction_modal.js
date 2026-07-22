@@ -22,112 +22,44 @@
 
     // ─── HTML Template ──────────────────────────────────────────────────────────
     function _getModalHtml() {
-        const isDark = document.documentElement.classList.contains('dark');
-        const backdropColor = isDark ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.7)';
-
         return `
-<style>
-    /* Compact Desktop Styles */
-    @media (min-width: 1024px) {
-        #transaction-modal .tm-container {
-            max-width: 420px !important;
-            border-radius: 8px !important;
-        }
-        #transaction-modal .tm-header {
-            padding: 6px 10px !important;
-        }
-        #transaction-modal .tm-header-icon-wrap {
-            width: 22px !important;
-            height: 22px !important;
-        }
-        #transaction-modal .tm-header-icon-wrap span {
-            font-size: 14px !important;
-        }
-        #transaction-modal #tm-title {
-            font-size: 12px !important;
-        }
-        #transaction-modal #tm-title + p {
-            display: none !important; /* Hide subtitle to save space */
-        }
-        #transaction-modal .tm-body {
-            padding: 8px 12px !important;
-        }
-        #transaction-modal .tm-row {
-            gap: 6px !important;
-            margin-bottom: 6px !important;
-        }
-        #transaction-modal .mob-input-label {
-            font-size: 8px !important;
-            margin-bottom: 1px !important;
-            text-transform: uppercase !important;
-            letter-spacing: 0.05em !important;
-        }
-        #transaction-modal .mob-input-field {
-            padding: 4px 8px !important;
-            font-size: 11px !important;
-            border-radius: 6px !important;
-            height: 28px !important;
-        }
-        #transaction-modal .tm-footer {
-            padding: 6px 10px !important;
-        }
-        #transaction-modal .mob-btn {
-            padding: 6px !important;
-            font-size: 8px !important;
-            border-radius: 6px !important;
-            height: 28px !important;
-        }
-        #transaction-modal #tm-asset-meta {
-            padding: 4px 8px !important;
-            gap: 4px !important;
-            margin-bottom: 6px !important;
-        }
-        #transaction-modal #tm-asset-meta p {
-            font-size: 8px !important;
-        }
-        #transaction-modal #tm-search-results {
-            max-height: 120px !important;
-        }
-    }
-</style>
-<div id="transaction-modal" 
-     style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 20000; align-items: center; justify-content: center; background-color: ${backdropColor}; backdrop-filter: blur(12px); padding: 0.5rem; flex-direction: column;"
-     class="flex">
-    <div class="tm-container" 
-         style="width: 100%; max-width: 800px; max-height: 94vh; position: relative; z-index: 20001; display: flex; flex-direction: column; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; background: var(--mob-surface); border: 1px solid var(--mob-border); color: var(--mob-text);">
-        
+<div id="transaction-modal"
+     class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[20000] flex items-center justify-center p-4"
+     style="display:none;">
+    <div class="bg-white dark:bg-surface-dark w-full max-w-lg rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col max-h-[92vh]">
+
         <!-- Header -->
-        <div class="tm-header" style="padding: 16px 20px; border-bottom: 1px solid var(--mob-border); display: flex; justify-content: space-between; align-items: center; background: var(--mob-surface);">
+        <div class="flex justify-between items-center px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex-shrink-0">
             <div class="flex items-center gap-3">
-                <div class="tm-header-icon-wrap w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <span class="material-symbols-outlined text-primary text-xl" id="tm-header-icon">swap_horiz</span>
+                <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined text-primary text-base" id="tm-header-icon">swap_horiz</span>
                 </div>
                 <div>
-                    <h3 id="tm-title" class="font-black text-sm md:text-lg" style="margin: 0; color: var(--mob-text);">Nuova Transazione</h3>
-                    <p class="text-[9px] uppercase tracking-widest font-bold" style="margin: 2px 0 0 0; color: var(--mob-text-muted);">Dettagli Operazione</p>
+                    <h3 id="tm-title" class="text-sm font-black uppercase tracking-widest text-primary">Nuova Transazione</h3>
+                    <p class="text-[9px] text-slate-400 dark:text-slate-500 font-bold mt-0.5 uppercase tracking-widest">Dettagli Operazione</p>
                 </div>
             </div>
-            <button type="button" onclick="closeTransactionModal()" style="background: rgba(148,163,184,0.1); border: none; border-radius: 50%; cursor: pointer; color: #94a3b8; padding: 6px; display: flex;">
-                <span class="material-symbols-outlined" style="font-size: 18px;">close</span>
+            <button type="button" onclick="closeTransactionModal()" class="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                <span class="material-symbols-outlined text-sm">close</span>
             </button>
         </div>
 
         <!-- Form Body -->
         <form id="tm-form" class="flex flex-col flex-1 min-h-0" onsubmit="handleTransactionSubmit(event)">
             <input type="hidden" id="tm-id" />
-            <div class="tm-body mob-modal-body custom-scrollbar" style="padding: 20px; overflow-y: auto;">
+            <div class="p-5 overflow-y-auto flex-1 space-y-3 custom-scrollbar">
 
                 <!-- Row 1: Portafoglio + Tipo + Sorgente -->
-                <div class="tm-row" style="display: grid; grid-template-columns: 1.8fr 1.2fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+                <div class="grid gap-3" style="grid-template-columns: 1.8fr 1.2fr 1fr;">
                     <div id="tm-portfolio-wrap">
-                        <label class="mob-input-label">Portafoglio</label>
-                        <select id="tm-portfolio" class="mob-input-field">
+                        <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Portafoglio</label>
+                        <select id="tm-portfolio" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-primary/20 outline-none">
                             <option value="">— Caricamento... —</option>
                         </select>
                     </div>
                     <div>
-                        <label class="mob-input-label">Tipo</label>
-                        <select id="tm-type" class="mob-input-field" onchange="toggleTransactionFields()">
+                        <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Tipo</label>
+                        <select id="tm-type" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-primary/20 outline-none" onchange="toggleTransactionFields()">
                             <option value="BUY">ACQUISTO</option>
                             <option value="SELL">VENDITA</option>
                             <option value="DIVIDEND">DIVIDENDO</option>
@@ -138,8 +70,8 @@
                         </select>
                     </div>
                     <div id="tm-source-wrap" class="hidden">
-                        <label class="mob-input-label">Sorgente</label>
-                        <select id="tm-source" class="mob-input-field" onchange="toggleTransactionFields()">
+                        <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Sorgente</label>
+                        <select id="tm-source" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-primary/20 outline-none" onchange="toggleTransactionFields()">
                             <option value="YF">Yahoo</option>
                             <option value="B_ITA">B_ITA</option>
                             <option value="MANUAL">Manual</option>
@@ -148,33 +80,33 @@
                 </div>
 
                 <!-- Row 2: Data + Asset Search -->
-                <div class="tm-row" style="display: grid; grid-template-columns: 1fr 2fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+                <div class="grid gap-3" style="grid-template-columns: 1fr 2fr;">
                     <div>
-                        <label class="mob-input-label">Data</label>
-                        <input id="tm-date" type="date" required class="mob-input-field" />
+                        <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Data</label>
+                        <input id="tm-date" type="date" required class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-primary/20 outline-none" />
                     </div>
                     <div id="tm-asset-wrap" class="hidden relative">
-                        <label class="mob-input-label">Asset (Ticker / Cerca)</label>
-                        <input id="tm-asset-search" type="text" autocomplete="off" placeholder="AAPL, ISP.MI..." class="mob-input-field" oninput="handleTMAssetInput(this.value)" onfocus="handleTMAssetFocus()" onclick="handleTMAssetFocus()" />
+                        <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Asset (Ticker / Cerca)</label>
+                        <input id="tm-asset-search" type="text" autocomplete="off" placeholder="AAPL, ISP.MI..." class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-primary/20 outline-none" oninput="handleTMAssetInput(this.value)" onfocus="handleTMAssetFocus()" onclick="handleTMAssetFocus()" />
                         <div id="tm-search-results" class="hidden absolute left-0 right-0 top-full mt-1 z-50 bg-white dark:bg-[#1a2332] border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-48 overflow-y-auto"></div>
                         <input type="hidden" id="tm-asset-ticker" />
                         <input type="hidden" id="tm-asset-currency" value="EUR" />
                     </div>
                 </div>
 
-                <!-- Row 3: Meta (ISIN / Manual) + Asset Info -->
-                <div id="tm-meta-row" class="tm-row hidden" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+                <!-- Row 3: Meta (ISIN / Manual) -->
+                <div id="tm-meta-row" class="hidden grid gap-3" style="grid-template-columns: 1fr 1fr 1fr;">
                     <div id="tm-isin-wrap" class="hidden">
-                        <label class="mob-input-label">ISIN</label>
-                        <input id="tm-isin" type="text" placeholder="ISIN" class="mob-input-field font-mono" />
+                        <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">ISIN</label>
+                        <input id="tm-isin" type="text" placeholder="ISIN" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs font-mono focus:ring-2 focus:ring-primary/20 outline-none" />
                     </div>
                     <div id="tm-manual-name-wrap" class="hidden">
-                        <label class="mob-input-label">Nome Asset</label>
-                        <input id="tm-asset-name" type="text" placeholder="Nome" class="mob-input-field" />
+                        <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Nome Asset</label>
+                        <input id="tm-asset-name" type="text" placeholder="Nome" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-primary/20 outline-none" />
                     </div>
                     <div id="tm-manual-curr-wrap" class="hidden">
-                        <label class="mob-input-label">Valuta</label>
-                        <select id="tm-asset-currency-manual" class="mob-input-field" onchange="tmCheckFX()">
+                        <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Valuta</label>
+                        <select id="tm-asset-currency-manual" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-primary/20 outline-none" onchange="tmCheckFX()">
                             <option value="EUR">EUR</option>
                             <option value="USD">USD</option>
                             <option value="GBP">GBP</option>
@@ -182,74 +114,99 @@
                     </div>
                 </div>
 
-                <!-- Row 4: Asset Meta Badges (Super Compact) -->
-                <div id="tm-asset-meta" class="hidden tm-row p-2 rounded-lg flex justify-between gap-4 mb-2" style="background: var(--mob-surface-2); border: 1px solid var(--mob-border);">
-                    <div class="flex gap-2 items-center"><span class="text-[7px] uppercase font-black" style="color: var(--mob-text-muted);">Mercato:</span><span id="tm-meta-exchange" class="text-[10px] font-black" style="color: var(--mob-text);">—</span></div>
-                    <div class="flex gap-2 items-center"><span class="text-[7px] uppercase font-black" style="color: var(--mob-text-muted);">Tipo:</span><span id="tm-meta-type" class="text-[10px] font-black" style="color: var(--mob-text);">—</span></div>
-                    <div class="flex gap-2 items-center"><span class="text-[7px] uppercase font-black" style="color: var(--mob-text-muted);">Prezzo:</span><span id="tm-meta-price" class="text-[10px] font-black text-primary">—</span></div>
+                <!-- Row 4: Asset Meta Badges -->
+                <div id="tm-asset-meta" class="hidden flex items-center justify-between gap-3 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+                    <div class="flex gap-1.5 items-center">
+                        <span class="text-[8px] uppercase font-black text-slate-400 dark:text-slate-500">Mercato:</span>
+                        <span id="tm-meta-exchange" class="text-[10px] font-black text-slate-700 dark:text-slate-200">—</span>
+                    </div>
+                    <div class="flex gap-1.5 items-center">
+                        <span class="text-[8px] uppercase font-black text-slate-400 dark:text-slate-500">Tipo:</span>
+                        <span id="tm-meta-type" class="text-[10px] font-black text-slate-700 dark:text-slate-200">—</span>
+                    </div>
+                    <div class="flex gap-1.5 items-center">
+                        <span class="text-[8px] uppercase font-black text-slate-400 dark:text-slate-500">Prezzo:</span>
+                        <span id="tm-meta-price" class="text-[10px] font-black text-primary">—</span>
+                    </div>
                 </div>
 
                 <!-- Row 5: Qty + Price -->
-                <div id="tm-qty-price-row" class="tm-row hidden" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
-                    <div><label class="mob-input-label" id="tm-qty-label">Quantità</label><input id="tm-qty" type="number" step="any" placeholder="0" class="mob-input-field font-mono" oninput="tmCalcNet(); tmUpdateSellGain()" /></div>
-                    <div><label class="mob-input-label" id="tm-price-label">Prezzo</label><input id="tm-price" type="number" step="any" placeholder="0.00" class="mob-input-field font-mono" oninput="tmCalcNet(); tmUpdateSellGain()" /></div>
+                <div id="tm-qty-price-row" class="hidden grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1" id="tm-qty-label">Quantità</label>
+                        <input id="tm-qty" type="number" step="any" placeholder="0" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs font-mono focus:ring-2 focus:ring-primary/20 outline-none" oninput="tmCalcNet(); tmUpdateSellGain()" />
+                    </div>
+                    <div>
+                        <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1" id="tm-price-label">Prezzo</label>
+                        <input id="tm-price" type="number" step="any" placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs font-mono focus:ring-2 focus:ring-primary/20 outline-none" oninput="tmCalcNet(); tmUpdateSellGain()" />
+                    </div>
                 </div>
 
                 <!-- Row 6: Comm + Tax -->
-                <div id="tm-comm-tax-row" class="tm-row hidden" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
-                    <div id="tm-comm-wrap"><label class="mob-input-label">Commissioni</label><input id="tm-comm" type="number" step="any" value="0" class="mob-input-field font-mono" oninput="tmCalcNet(); tmUpdateSellGain()" /></div>
+                <div id="tm-comm-tax-row" class="hidden grid grid-cols-2 gap-3">
+                    <div id="tm-comm-wrap">
+                        <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Commissioni</label>
+                        <input id="tm-comm" type="number" step="any" value="0" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs font-mono focus:ring-2 focus:ring-primary/20 outline-none" oninput="tmCalcNet(); tmUpdateSellGain()" />
+                    </div>
                     <div id="tm-tax-wrap">
-                        <label class="mob-input-label">Tax</label>
-                        <input id="tm-tax" type="number" step="any" value="0" class="mob-input-field font-mono" oninput="tmCalcNet(); tmUpdateSellGain()" />
+                        <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Tax</label>
+                        <input id="tm-tax" type="number" step="any" value="0" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs font-mono focus:ring-2 focus:ring-primary/20 outline-none" oninput="tmCalcNet(); tmUpdateSellGain()" />
                     </div>
                 </div>
 
                 <!-- Row 7: FX + Amount -->
-                <div id="tm-fx-amount-row" class="tm-row hidden" style="display: grid; grid-template-columns: 1fr 2fr; gap: 0.75rem; margin-bottom: 0.75rem;">
-                    <div id="tm-fx-wrap"><label class="mob-input-label">FX (<span id="tm-fx-from">USD</span>)</label><input id="tm-fx" type="number" step="any" value="1" class="mob-input-field font-mono" oninput="tmCalcNet(); tmUpdateSellGain()" /></div>
-                    <div id="tm-amount-wrap"><label class="mob-input-label" id="tm-amount-label">Importo Totale</label>
-                        <div class="relative"><input id="tm-amount" type="number" step="any" placeholder="0.00" class="mob-input-field font-mono" style="background: var(--mob-surface-2);" oninput="if(typeof tmCalcFromAmount === 'function') tmCalcFromAmount()" /><p class="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] font-bold italic" style="color: var(--mob-text-muted);" id="tm-amount-hint"></p></div>
+                <div id="tm-fx-amount-row" class="hidden grid gap-3" style="grid-template-columns: 1fr 2fr;">
+                    <div id="tm-fx-wrap">
+                        <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">FX (<span id="tm-fx-from">USD</span>)</label>
+                        <input id="tm-fx" type="number" step="any" value="1" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs font-mono focus:ring-2 focus:ring-primary/20 outline-none" oninput="tmCalcNet(); tmUpdateSellGain()" />
+                    </div>
+                    <div id="tm-amount-wrap">
+                        <label class="block text-[9px] font-bold text-emerald-500 uppercase tracking-wider mb-1" id="tm-amount-label">Importo Totale</label>
+                        <div class="relative">
+                            <input id="tm-amount" type="number" step="any" placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-xs font-mono font-black focus:ring-2 focus:ring-emerald-500/20 outline-none" oninput="if(typeof tmCalcFromAmount === 'function') tmCalcFromAmount()" />
+                            <p class="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] font-bold italic text-slate-400 dark:text-slate-500" id="tm-amount-hint"></p>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Sell Gain Projection Panel -->
-                <div id="tm-sell-gain-panel" class="hidden tm-row" style="margin-bottom: 0.75rem; border-radius: 10px; overflow: hidden; border: 1px solid var(--mob-border);">
-                    <div style="padding: 6px 12px; background: var(--mob-surface-2); border-bottom: 1px solid var(--mob-border); display: flex; align-items: center; gap: 6px;">
-                        <span class="material-symbols-outlined" style="font-size: 13px; color: var(--mob-text-muted);">trending_up</span>
-                        <span style="font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em; color: var(--mob-text-muted);">Proiezione Vendita</span>
-                        <span id="tm-sgp-qty-badge" style="margin-left: auto; font-size: 9px; font-weight: 900; color: var(--mob-text-muted);"></span>
+                <div id="tm-sell-gain-panel" class="hidden rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800">
+                    <div class="px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-slate-400 dark:text-slate-500" style="font-size:13px;">trending_up</span>
+                        <span class="text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Proiezione Vendita</span>
+                        <span id="tm-sgp-qty-badge" class="ml-auto text-[9px] font-black text-slate-500 dark:text-slate-400"></span>
                     </div>
-                    <div style="padding: 8px 12px; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; background: var(--mob-surface);">
-                        <div style="text-align: center;">
-                            <div style="font-size: 8px; font-weight: 700; text-transform: uppercase; color: var(--mob-text-muted); margin-bottom: 2px;">PMC</div>
-                            <div id="tm-sgp-avgcost" style="font-size: 11px; font-weight: 900; font-family: monospace; color: var(--mob-text);">—</div>
+                    <div class="grid grid-cols-4 gap-2 px-3 py-2.5 bg-white dark:bg-surface-dark">
+                        <div class="text-center">
+                            <div class="text-[8px] font-bold uppercase text-slate-400 dark:text-slate-500 mb-1">PMC</div>
+                            <div id="tm-sgp-avgcost" class="text-xs font-black font-mono text-slate-700 dark:text-slate-200">—</div>
                         </div>
-                        <div style="text-align: center;">
-                            <div style="font-size: 8px; font-weight: 700; text-transform: uppercase; color: var(--mob-text-muted); margin-bottom: 2px;">Prezzo Vend.</div>
-                            <div id="tm-sgp-sellprice" style="font-size: 11px; font-weight: 900; font-family: monospace; color: var(--mob-text);">—</div>
+                        <div class="text-center">
+                            <div class="text-[8px] font-bold uppercase text-slate-400 dark:text-slate-500 mb-1">Prezzo Vend.</div>
+                            <div id="tm-sgp-sellprice" class="text-xs font-black font-mono text-slate-700 dark:text-slate-200">—</div>
                         </div>
-                        <div style="text-align: center;">
-                            <div style="font-size: 8px; font-weight: 700; text-transform: uppercase; color: var(--mob-text-muted); margin-bottom: 2px;">Gain Lordo</div>
-                            <div id="tm-sgp-gross" style="font-size: 11px; font-weight: 900; font-family: monospace;">—</div>
+                        <div class="text-center">
+                            <div class="text-[8px] font-bold uppercase text-slate-400 dark:text-slate-500 mb-1">Gain Lordo</div>
+                            <div id="tm-sgp-gross" class="text-xs font-black font-mono">—</div>
                         </div>
-                        <div style="text-align: center;">
-                            <div style="font-size: 8px; font-weight: 700; text-transform: uppercase; color: var(--mob-text-muted); margin-bottom: 2px;">Gain Netto</div>
-                            <div id="tm-sgp-net" style="font-size: 13px; font-weight: 900; font-family: monospace;">—</div>
+                        <div class="text-center">
+                            <div class="text-[8px] font-bold uppercase text-slate-400 dark:text-slate-500 mb-1">Gain Netto</div>
+                            <div id="tm-sgp-net" class="text-sm font-black font-mono">—</div>
                         </div>
                     </div>
-                    <div style="padding: 4px 12px 6px; background: var(--mob-surface); border-top: 1px solid var(--mob-border); display: flex; gap: 8px; align-items: center; justify-content: center;">
-                        <div id="tm-sgp-pct" style="font-size: 10px; font-weight: 900; font-family: monospace;">—</div>
-                        <div style="width: 1px; height: 12px; background: var(--mob-border);"></div>
-                        <div style="font-size: 9px; color: var(--mob-text-muted); font-weight: 700;">Incasso: <span id="tm-sgp-proceeds" style="font-weight: 900; color: var(--mob-text);">—</span></div>
-                        <div style="width: 1px; height: 12px; background: var(--mob-border);"></div>
-                        <div style="font-size: 9px; color: var(--mob-text-muted); font-weight: 700;">Costi: <span id="tm-sgp-costs" style="font-weight: 900; color: var(--mob-text);">—</span></div>
+                    <div class="px-3 py-2 bg-white dark:bg-surface-dark border-t border-slate-200 dark:border-slate-800 flex gap-3 items-center justify-center">
+                        <div id="tm-sgp-pct" class="text-xs font-black font-mono">—</div>
+                        <div class="w-px h-3 bg-slate-200 dark:bg-slate-700"></div>
+                        <div class="text-[9px] text-slate-500 dark:text-slate-400 font-bold">Incasso: <span id="tm-sgp-proceeds" class="font-black text-slate-700 dark:text-slate-200">—</span></div>
+                        <div class="w-px h-3 bg-slate-200 dark:bg-slate-700"></div>
+                        <div class="text-[9px] text-slate-500 dark:text-slate-400 font-bold">Costi: <span id="tm-sgp-costs" class="font-black text-slate-700 dark:text-slate-200">—</span></div>
                     </div>
                 </div>
 
                 <!-- Target Transfer -->
-                <div id="tm-dest-wrap" class="hidden" style="margin-top: 0.5rem;">
-                    <label class="mob-input-label">Target Transfer</label>
-                    <select id="tm-dest-portfolio" class="mob-input-field">
+                <div id="tm-dest-wrap" class="hidden">
+                    <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Target Transfer</label>
+                    <select id="tm-dest-portfolio" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-primary/20 outline-none">
                         <option value="">— Seleziona Target —</option>
                     </select>
                 </div>
@@ -257,11 +214,11 @@
             </div>
 
             <!-- Footer -->
-            <div class="tm-footer" style="padding: 16px 20px; border-top: 1px solid var(--mob-border); background: var(--mob-surface); display: flex; gap: 10px;">
-                <button type="button" onclick="closeTransactionModal()" class="mob-btn" style="flex: 1; background: rgba(148,163,184,0.1); color: var(--mob-text-muted); border: none; font-weight: 900; text-transform: uppercase; font-size: 11px;">
+            <div class="px-5 py-4 border-t border-slate-200 dark:border-slate-800 flex gap-3 flex-shrink-0 bg-white dark:bg-surface-dark">
+                <button type="button" onclick="closeTransactionModal()" class="px-5 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
                     Annulla
                 </button>
-                <button type="submit" id="tm-submit-btn" class="mob-btn" style="flex: 2; background: var(--mob-primary); color: white; border: none; font-weight: 900; text-transform: uppercase; font-size: 11px; box-shadow: 0 4px 12px rgba(19,91,236,0.2); display: flex; items-center; justify-center; gap: 8px;">
+                <button type="submit" id="tm-submit-btn" class="flex-1 py-2.5 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg text-xs transition-colors shadow-sm shadow-primary/20 flex items-center justify-center gap-2">
                     <span class="material-symbols-outlined text-base" id="tm-submit-icon">check_circle</span>
                     <span id="tm-submit-label">Conferma</span>
                 </button>
