@@ -762,11 +762,17 @@
         const source = document.getElementById('tm-source')?.value || 'YF';
         const type = document.getElementById('tm-type')?.value;
 
+        // If the hidden ticker field is empty (user typed in search box but didn't pick from dropdown),
+        // fall back to the visible search field value so DIVIDEND/SELL are not saved with 'CASH' as ticker.
+        const tickerHidden = document.getElementById('tm-asset-ticker')?.value?.trim();
+        const tickerSearch = document.getElementById('tm-asset-search')?.value?.trim().toUpperCase();
+        const resolvedTicker = tickerHidden || tickerSearch || 'CASH';
+
         const payload = {
             portfolioId: parseInt(portfolioId),
             type,
             date: document.getElementById('tm-date')?.value,
-            assetTicker: document.getElementById('tm-asset-ticker')?.value || 'CASH',
+            assetTicker: resolvedTicker,
             quantity: parseFloat(document.getElementById('tm-qty')?.value) || 0,
             price: parseFloat(document.getElementById('tm-price')?.value) || 0,
             commission: parseFloat(document.getElementById('tm-comm')?.value) || 0,
