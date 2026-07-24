@@ -516,16 +516,54 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
                 doc.text("AI Strategic Report", marginLeft, startY);
                 startY += 25;
                 
+                const stripEmojis = (str) => {
+                    if (!str) return '';
+                    return str.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim();
+                };
+
                 const lines = aiReportText.split('\n');
+                let tableMode = false;
+                let tableRows = [];
+
+                const renderTable = () => {
+                    if (tableRows.length < 3) { tableMode = false; tableRows = []; return; }
+                    const parseRow = (r) => r.split('|').map(s => stripEmojis(s.replace(/\*\*/g, '').trim())).filter((_, idx, arr) => idx !== 0 && idx !== arr.length - 1);
+                    const head = [parseRow(tableRows[0])];
+                    const body = tableRows.slice(2).map(parseRow).filter(r => r.length > 0 && r[0] !== '' && !r[0].match(/^---+$/));
+                    if (body.length > 0) {
+                        doc.autoTable({
+                            startY: startY + 5,
+                            head: head,
+                            body: body,
+                            theme: 'striped',
+                            headStyles: { fillColor: [15, 23, 42] },
+                            styles: { fontSize: 9 },
+                            margin: { left: marginLeft }
+                        });
+                        startY = doc.lastAutoTable.finalY + 15;
+                    }
+                    tableMode = false;
+                    tableRows = [];
+                };
                 
-                for (let line of lines) {
-                    line = line.trim();
+                for (let i = 0; i < lines.length; i++) {
+                    let line = lines[i].trim();
+                    
+                    if (line.startsWith('|') && line.endsWith('|')) {
+                        tableMode = true;
+                        tableRows.push(line);
+                        continue;
+                    } else if (tableMode) {
+                        renderTable();
+                    }
+                    
                     if (!line) {
                         startY += 8;
                         continue;
                     }
                     
                     checkPageBreak(25);
+                    line = stripEmojis(line);
                     
                     // Header ##
                     if (line.startsWith('## ') || line.startsWith('### ')) {
@@ -537,39 +575,43 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
                         doc.text(text, marginLeft, startY);
                         startY += 18;
                     } 
-                    // Bold line or list
-                    else if (line.startsWith('- ') || line.startsWith('* ')) {
-                        doc.setFontSize(10);
-                        doc.setTextColor(51, 65, 85); // slate-700
-                        doc.setFont("helvetica", "normal");
+                    // Bullet or normal line
+                    else {
+                        const isBullet = line.startsWith('- ') || line.startsWith('* ');
+                        const hasBold = line.includes('**');
                         
-                        let text = line.substring(2).trim();
-                        // highlight bold parts
-                        text = text.replace(/\*\*/g, ''); // strip markdown bold for simple jsPDF
+                        let text = isBullet ? line.substring(2).trim() : line;
+                        text = text.replace(/\*\*/g, ''); 
                         
-                        // draw bullet
-                        doc.setFillColor(79, 70, 229);
-                        doc.circle(marginLeft + 4, startY - 3, 2, 'F');
+                        if (hasBold) {
+                            // Highlight background
+                            doc.setFillColor(241, 245, 249); 
+                            const splitText = doc.splitTextToSize(text, pageWidth - (marginLeft * 2) - (isBullet ? 15 : 0));
+                            const boxHeight = splitText.length * 14 + 6;
+                            doc.rect(marginLeft - 4, startY - 10, pageWidth - (marginLeft * 2) + 8, boxHeight, 'F');
+                            
+                            doc.setTextColor(15, 23, 42);
+                            doc.setFont("helvetica", "bold");
+                        } else {
+                            doc.setTextColor(51, 65, 85); 
+                            doc.setFont("helvetica", "normal");
+                        }
                         
-                        const splitText = doc.splitTextToSize(text, pageWidth - (marginLeft * 2) - 15);
+                        const splitText = doc.splitTextToSize(text, pageWidth - (marginLeft * 2) - (isBullet ? 15 : 0));
                         for (let j = 0; j < splitText.length; j++) {
                             checkPageBreak(15);
-                            doc.text(splitText[j], marginLeft + 12, startY);
+                            if (isBullet && j === 0) {
+                                doc.setFillColor(79, 70, 229);
+                                doc.circle(marginLeft + 4, startY - 3, 2, 'F');
+                            }
+                            doc.text(splitText[j], marginLeft + (isBullet ? 12 : 0), startY);
                             startY += 14;
                         }
-                    } else {
-                        // normal text
-                        doc.setFontSize(10);
-                        doc.setTextColor(51, 65, 85);
-                        doc.setFont("helvetica", "normal");
-                        let text = line.replace(/\*\*/g, ''); // simple strip
-                        const splitText = doc.splitTextToSize(text, pageWidth - (marginLeft * 2));
-                        for (let j = 0; j < splitText.length; j++) {
-                            checkPageBreak(15);
-                            doc.text(splitText[j], marginLeft, startY);
-                            startY += 14;
-                        }
+                        if (hasBold) startY += 4;
                     }
+                }
+                if (tableMode) {
+                    renderTable();
                 }
             } else {
                 doc.setFontSize(10);
