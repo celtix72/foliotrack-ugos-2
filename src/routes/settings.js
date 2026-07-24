@@ -149,7 +149,7 @@ module.exports = function (dependencies) {
                 aiAssetPrompt: settings.aiAssetPrompt || '',
                 aiAssetPromptGarp: settings.aiAssetPromptGarp || '',
                 aiPortfolioPrompt: settings.aiPortfolioPrompt || '',
-                aiReportPrompt: settings.aiReportPrompt || 'Analizza il seguente portafoglio fornendo un report strutturato in due sezioni:\n\n1. Analisi delle posizioni aperte (rischio, diversificazione e prospettive).\n2. Analisi delle posizioni chiuse e dei dividendi suddivisi per anno (valutazione della performance storica e della continuità dei dividendi).',
+                aiReportPrompt: settings.aiReportPrompt || 'Sei un analista finanziario esperto. Analizza il seguente portafoglio basandoti sui dati forniti (lista degli asset con PMC, prezzo attuale, gain, diversificazione, asset allocation e tutte le transizioni storiche). Fornisci un report strutturato in due sezioni:\n\n1. Analisi delle posizioni aperte (rischio, diversificazione e prospettive).\n2. Analisi delle posizioni chiuse e dei dividendi suddivisi per anno (valutazione della performance storica e della continuità dei dividendi).',
                 aiReportEngine: settings.aiReportEngine || 'Gemini_Free',
                 aiTokensUsedToday: settings.aiTokensUsedToday || '0',
                 aiTokensDate: settings.aiTokensDate || ''
