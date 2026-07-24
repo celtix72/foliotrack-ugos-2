@@ -1378,7 +1378,7 @@ module.exports = function (dependencies) {
     });
 
     // POST /api/analytics/ai-report
-    router.post('/ai-report', requireAuth, async (req, res) => {
+    router.post('/analytics/ai-report', requireAuth, async (req, res) => {
         try {
             const { contextData } = req.body;
             const settings = database.getSettings(1);
@@ -1444,7 +1444,7 @@ module.exports = function (dependencies) {
     });
 
     // GET /api/analytics/ai-report/latest
-    router.get('/ai-report/latest', requireAuth, (req, res) => {
+    router.get('/analytics/ai-report/latest', requireAuth, (req, res) => {
         try {
             const userSettings = database.getSettings(req.user.id);
             if (userSettings.lastAiReportText && userSettings.lastAiReportDate) {
