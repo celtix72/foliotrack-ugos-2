@@ -1393,8 +1393,14 @@ module.exports = function (dependencies) {
 
             const promptTemplate = settings.aiReportPrompt || 'Sei un analista finanziario esperto. Analizza il seguente portafoglio basandoti sui dati forniti (lista degli asset con PMC, prezzo attuale, gain, diversificazione, asset allocation e tutte le transizioni storiche). Fornisci un report strutturato in due sezioni:\n\n1. Analisi delle posizioni aperte (rischio, diversificazione e prospettive).\n2. Analisi delle posizioni chiuse e dei dividendi suddivisi per anno (valutazione della performance storica e della continuità dei dividendi).';
             
-            // Get all transactions
-            const txs = database.db.prepare('SELECT assetTicker, type, date, quantity, price, amount, currency, exchangeRate, commission, tax FROM transactions WHERE user_id = ? ORDER BY date ASC').all(req.user.id);
+            // Get all transactions for the user's portfolios
+            const txs = database.db.prepare(`
+                SELECT t.assetTicker, t.type, t.date, t.quantity, t.price, t.amount, p.currency, t.exchangeRate, t.commission, t.tax 
+                FROM transactions t
+                JOIN portfolios p ON t.portfolioId = p.id
+                WHERE p.user_id = ?
+                ORDER BY t.date ASC
+            `).all(req.user.id);
             
             const pmcMap = {};
             for (const t of txs) {
