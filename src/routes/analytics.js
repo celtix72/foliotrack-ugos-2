@@ -1380,33 +1380,22 @@ module.exports = function (dependencies) {
     // POST /api/analytics/ai-report
     router.post('/analytics/ai-report', requireAuth, async (req, res) => {
         try {
+            logger.info(`[AI Report] Requested by user: ${req.user ? req.user.id : 'unknown'}`);
             const { contextData } = req.body;
-            // Read settings for the logged-in user (not hardcoded admin id=1)
+            
+            // Read settings for the logged-in user (merged with admin settings)
             const adminSettings = database.getSettings(1);
-            const userSettings = database.getSettings(req.user.id);
-            // Merge: user settings override admin settings for API keys
+            const userSettings = database.getSettings(req.user ? req.user.id : 1);
             const settings = { ...adminSettings, ...userSettings };
+            
             const engine = settings.aiReportEngine || settings.aiEngine || 'Gemini_Free';
+            logger.info(`[AI Report] Selected engine: ${engine}`);
+
             const promptTemplate = settings.aiReportPrompt || 'Sei un analista finanziario esperto. Analizza il seguente portafoglio basandoti sui dati forniti (lista degli asset con PMC, prezzo attuale, gain, diversificazione, asset allocation e tutte le transizioni storiche). Fornisci un report strutturato in due sezioni:\n\n1. Analisi delle posizioni aperte (rischio, diversificazione e prospettive).\n2. Analisi delle posizioni chiuse e dei dividendi suddivisi per anno (valutazione della performance storica e della continuità dei dividendi).';
             
             // Get all transactions
             const txs = database.db.prepare('SELECT assetTicker, type, date, quantity, price, amount, currency, exchangeRate, commission, tax FROM transactions WHERE user_id = ? ORDER BY date ASC').all(req.user.id);
             
-            // Get PMC and current price from all portfolios
-            const portfolios = database.db.prepare('SELECT id FROM portfolios WHERE user_id = ?').all(req.user.id);
-            const openPositions = [];
-            
-            for (const p of portfolios) {
-                // Not calling full getPortfolioDetails to avoid circular deps if not available, 
-                // but we can query openMap logic or just rely on assetGains + txs which the AI can understand.
-                // However, doing a quick query for current prices is easy:
-                // Actually, the user asked to have PMC, Current Price, Gain, etc.
-                // contextData already has assetGains which has realizedGain, unrealizedGain, totalGain.
-            }
-            
-            // Let's just pass contextData (which has gains) and transactions. The AI can deduce PMC from txs, 
-            // but it's better to explicitly provide it.
-            // Since we don't have getPortfolioDetails imported here, we can calculate PMC quickly:
             const pmcMap = {};
             for (const t of txs) {
                 if (!t.assetTicker) continue;
@@ -1421,8 +1410,16 @@ module.exports = function (dependencies) {
                 }
             }
             
+            let parsedContext = {};
+            try {
+                parsedContext = typeof contextData === 'string' ? JSON.parse(contextData) : (contextData || {});
+            } catch (pErr) {
+                logger.warn('[AI Report] Context parse warning:', pErr.message);
+                parsedContext = contextData || {};
+            }
+
             const enhancedContext = {
-                portfolioStats: JSON.parse(contextData),
+                portfolioStats: parsedContext,
                 pmcData: Object.fromEntries(
                     Object.entries(pmcMap)
                     .filter(([, data]) => data.shares > 0)
@@ -1433,8 +1430,10 @@ module.exports = function (dependencies) {
             
             const fullPrompt = `${promptTemplate}\n\nDATI PORTAFOGLIO:\n${JSON.stringify(enhancedContext)}`;
             
+            logger.info(`[AI Report] Invoking AI model for user ${req.user.id}...`);
             const aiResponse = await aiService.callAIModel(engine, fullPrompt, settings);
-            
+            logger.info(`[AI Report] Success! Generated ${aiResponse.text ? aiResponse.text.length : 0} characters.`);
+
             // Save the report in the user's settings
             const now = new Date().toISOString();
             database.setSetting(req.user.id, 'lastAiReportText', aiResponse.text);
@@ -1442,8 +1441,9 @@ module.exports = function (dependencies) {
             
             res.json({ text: aiResponse.text, date: now });
         } catch (err) {
-            console.error(err);
-            res.status(500).json({ error: err.message });
+            logger.error('[AI Report Error]', err.stack || err.message || err);
+            console.error('[AI Report Error]', err);
+            res.status(500).json({ error: err.message || 'Errore nella generazione del report IA', stack: err.stack });
         }
     });
 

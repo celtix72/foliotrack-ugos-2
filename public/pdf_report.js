@@ -30,17 +30,25 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
         // Fetch AI Report
         let aiReportText = '';
         if (mode === 'latest_ai' || mode === 'new_ai') {
+            console.log(`[PDF Report] Initiating AI Report mode: ${mode}`);
             if (buttonEl) {
                 buttonEl.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Analisi IA in corso...';
             }
             try {
                 if (mode === 'latest_ai') {
+                    console.log('[PDF Report] Fetching latest saved AI report from /api/analytics/ai-report/latest');
                     const aiRes = await fetch('/api/analytics/ai-report/latest');
+                    console.log('[PDF Report] GET latest response status:', aiRes.status);
                     if (aiRes.ok) {
                         const aiData = await aiRes.json();
+                        console.log('[PDF Report] Latest AI report data:', aiData);
                         aiReportText = aiData.text || '';
+                    } else {
+                        const errBody = await aiRes.text();
+                        console.error('[PDF Report] GET latest failed:', aiRes.status, errBody);
                     }
                 } else if (mode === 'new_ai') {
+                    console.log('[PDF Report] Requesting NEW AI report generation via POST /api/analytics/ai-report');
                     const contextData = JSON.stringify({
                         assetGains: reportsData.assetGains || [],
                         annualGains: reportsData.annualGains || {},
@@ -51,10 +59,11 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ contextData })
                     });
+                    console.log('[PDF Report] POST ai-report response status:', aiRes.status);
                     if (aiRes.ok) {
                         const aiData = await aiRes.json();
+                        console.log(`[PDF Report] AI generation successful! Received ${aiData.text ? aiData.text.length : 0} chars.`);
                         aiReportText = aiData.text || '';
-                        // Also update the UI with the new date if available
                         if (aiData.date) {
                             const dateStr = new Date(aiData.date).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
                             const btnDownloadAi = document.getElementById('btn-download-ai');
@@ -64,10 +73,18 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
                                 btnDownloadAi.classList.remove('hidden');
                             }
                         }
+                    } else {
+                        const errData = await aiRes.json().catch(async () => ({ error: await aiRes.text() }));
+                        console.error('[PDF Report] POST ai-report error:', aiRes.status, errData);
+                        const errMsg = errData.error || `Errore HTTP ${aiRes.status}`;
+                        alert(`[Errore Report IA] ${errMsg}\n\nVerifica le impostazioni delle chiavi API nelle Impostazioni Amministratore.`);
+                        aiReportText = `Errore durante la generazione IA: ${errMsg}`;
                     }
                 }
             } catch (aiErr) {
-                console.error('Failed to fetch AI report:', aiErr);
+                console.error('[PDF Report] Exception fetching AI report:', aiErr);
+                alert(`[Errore Connessione IA] ${aiErr.message}`);
+                aiReportText = `Errore di connessione: ${aiErr.message}`;
             }
             if (buttonEl) {
                 buttonEl.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Impaginazione PDF...';

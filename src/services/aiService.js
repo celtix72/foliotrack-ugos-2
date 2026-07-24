@@ -351,9 +351,43 @@ async function callAIModel(engine, prompt, keys) {
         const content = res.data.choices?.[0]?.message?.content || '{}';
         logger.info(`[AI Response (${engine})] \n${content}`);
         return { text: content, usage: res.data.usage || {}, modelUsed: reqModel };
+    } else if (baseEngine === 'Aimlapi') {
+        const apiKey = keys.aimlapiApiKeyFree || keys.aimlapiApiKeyPay || keys.aimlapiApiKey || process.env.AIMLAPI_API_KEY;
+        if (!apiKey) throw new Error(`AIML API Key mancante nelle impostazioni.`);
+        let res;
+        try {
+            res = await axios.post('https://api.aimlapi.com/v1/chat/completions', {
+                model: 'gpt-4o',
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.1
+            }, {
+                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
+            });
+        } catch (apiErr) {
+            logger.error('[AI API Error (Aimlapi)]', apiErr.response ? apiErr.response.data : apiErr.message);
+            throw apiErr;
+        }
+        const content = res.data.choices?.[0]?.message?.content || '{}';
+        logger.info(`[AI Response (${engine})] \n${content}`);
+        return { text: content, usage: res.data.usage || {}, modelUsed: 'gpt-4o' };
     } else {
         const apiKey = keys.geminiApiKeyFree || keys.geminiApiKeyPay || keys.geminiApiKey || process.env.GEMINI_API_KEY;
-        if (!apiKey) throw new Error(`Gemini API Key mancante.`);
+        if (!apiKey) {
+            // Check fallback keys if Gemini is missing
+            if (keys.aimlapiApiKeyFree || keys.aimlapiApiKeyPay || keys.aimlapiApiKey) {
+                logger.info('[AI Fallback] Gemini key missing, falling back to Aimlapi');
+                return callAIModel('Aimlapi_Free', prompt, keys);
+            }
+            if (keys.openrouterApiKey || keys.openrouterApiKeyPay) {
+                logger.info('[AI Fallback] Gemini key missing, falling back to OpenRouter (OR1)');
+                return callAIModel('OR1', prompt, keys);
+            }
+            if (keys.requestyApiKey || keys.requestyApiKeyPay) {
+                logger.info('[AI Fallback] Gemini key missing, falling back to Requesty (REQ1)');
+                return callAIModel('REQ1', prompt, keys);
+            }
+            throw new Error(`Gemini API Key mancante e nessuna altra chiave IA trovata nelle impostazioni.`);
+        }
         const geminiModel = await getBestGeminiModel(apiKey);
         let res;
         try {
