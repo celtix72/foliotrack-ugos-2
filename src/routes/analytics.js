@@ -1,4 +1,5 @@
 const express = require('express');
+const aiService = require('../services/aiService');
 
 module.exports = function (dependencies) {
     const router = express.Router();
