@@ -158,6 +158,20 @@ function initDb() {
         created_at   DATETIME DEFAULT CURRENT_TIMESTAMP
       );
 
+      CREATE TABLE IF NOT EXISTS ai_portfolio_reports (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          date TEXT NOT NULL,
+          risk_score INTEGER,
+          diversification_score INTEGER,
+          allocation_score INTEGER,
+          quality_score INTEGER,
+          pe_value REAL,
+          markdown_content TEXT NOT NULL,
+          raw_context TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
       CREATE TABLE IF NOT EXISTS asset_ai_analyses (
           portfolio_id INTEGER NOT NULL REFERENCES portfolios(id) ON DELETE CASCADE,
           ticker       TEXT    NOT NULL,
@@ -759,6 +773,27 @@ function initDb() {
     try {
         dbConnection.prepare(`ALTER TABLE users ADD COLUMN telegram_chat_id TEXT`).run();
     } catch (e) {}
+
+    // Migration: Add ai_portfolio_reports table
+    try {
+        dbConnection.prepare(`
+            CREATE TABLE IF NOT EXISTS ai_portfolio_reports (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                date TEXT NOT NULL,
+                risk_score INTEGER,
+                diversification_score INTEGER,
+                allocation_score INTEGER,
+                quality_score INTEGER,
+                pe_value REAL,
+                markdown_content TEXT NOT NULL,
+                raw_context TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `).run();
+    } catch (e) {
+        console.error("Migration error ai_portfolio_reports:", e);
+    }
 
     // Data Migration for user 1 (mauro)
     try {

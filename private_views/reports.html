@@ -187,13 +187,13 @@
                 <span class="material-symbols-outlined text-[14px]">description</span>
                 <span>PDF Classico</span>
             </button>
-            <button onclick="window.generateDetailedPDFReport(this, 'latest_ai')" id="btn-download-ai" class="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-lg font-bold text-xs flex items-center gap-2 transition-all shadow-sm hidden">
-                <span class="material-symbols-outlined text-[14px]">smart_toy</span>
-                <span>Scarica IA (<span id="ai-report-date"></span>)</span>
+            <button onclick="openAiReportsHistory()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-lg font-bold text-xs flex items-center gap-2 transition-all shadow-sm">
+                <span class="material-symbols-outlined text-[14px]">history</span>
+                <span>Storico IA</span>
             </button>
-            <button onclick="window.generateDetailedPDFReport(this, 'new_ai')" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-lg font-bold text-xs flex items-center gap-2 transition-all shadow-sm">
+            <button onclick="generateNewAiReport(this)" class="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg font-bold text-xs flex items-center gap-2 transition-all shadow-sm">
                 <span class="material-symbols-outlined text-[14px]">auto_awesome</span>
-                <span>Genera Report IA</span>
+                <span>Nuovo Report IA</span>
             </button>
         </div>
         <button class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 transition-all shadow-lg shadow-emerald-500/20" onclick="window.location.href='/api/export-all-transactions'">
@@ -1213,5 +1213,72 @@
         }
     });
 </script>
+<!-- AI Reports History Modal -->
+<div id="ai-reports-history-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+    <div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-xl flex flex-col max-h-[80vh] border border-slate-200 dark:border-slate-800 overflow-hidden">
+        <div class="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
+            <h3 class="font-black text-lg text-slate-800 dark:text-white flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">history</span>
+                Storico Report IA
+            </h3>
+            <button onclick="closeAiReportsHistory()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div id="ai-reports-list" class="overflow-y-auto custom-scrollbar flex-1 p-2">
+            <!-- Loaded via JS -->
+            <div class="p-8 text-center"><span class="material-symbols-outlined animate-spin text-slate-400">refresh</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Report Viewer Modal -->
+<div id="ai-report-viewer-modal" class="fixed inset-0 z-[60] hidden flex-col bg-white dark:bg-background-dark overflow-hidden">
+    <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-surface-dark shadow-sm shrink-0">
+        <h3 class="font-black text-xl text-slate-800 dark:text-white flex items-center gap-2">
+            <span class="material-symbols-outlined text-indigo-500">auto_awesome</span>
+            Report Analisi IA
+        </h3>
+        <button onclick="closeAiReportViewer()" class="p-2 bg-slate-200 dark:bg-slate-800 rounded-full hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+    </div>
+    
+    <div class="flex-1 overflow-y-auto custom-scrollbar p-6 sm:p-8">
+        <div class="max-w-4xl mx-auto">
+            <!-- KPIs Header -->
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+                <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-center">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Rischio</p>
+                    <div id="ai-score-risk" class="flex justify-center gap-0.5"></div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-center">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Diversif.</p>
+                    <div id="ai-score-div" class="flex justify-center gap-0.5"></div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-center">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Allocation</p>
+                    <div id="ai-score-alloc" class="flex justify-center gap-0.5"></div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-center">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Qualità</p>
+                    <div id="ai-score-qual" class="flex justify-center gap-0.5"></div>
+                </div>
+                <div class="bg-emerald-50 dark:bg-emerald-900/10 p-4 rounded-xl border border-emerald-100 dark:border-emerald-900/30 text-center col-span-2 md:col-span-1">
+                    <p class="text-[10px] font-bold text-emerald-600 dark:text-emerald-500 uppercase tracking-widest mb-1">P/E Portafoglio</p>
+                    <h4 class="text-2xl font-black text-emerald-700 dark:text-emerald-400" id="ai-pe-value">--</h4>
+                </div>
+            </div>
+            
+            <!-- Markdown Content -->
+            <div id="ai-report-content" class="bg-white dark:bg-surface-dark p-6 sm:p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm text-slate-800 dark:text-slate-200">
+                <div class="flex justify-center p-10"><span class="material-symbols-outlined animate-spin text-4xl text-slate-300">refresh</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="/ai_reports.js"></script>
 </body>
 </html>

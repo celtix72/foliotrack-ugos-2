@@ -1392,8 +1392,17 @@ module.exports = function (dependencies) {
             const engine = settings.aiReportEngine || settings.aiEngine || 'Gemini_Free';
             logger.info(`[AI Report] Selected engine: ${engine}`);
 
-            const promptTemplate = settings.aiReportPrompt || 'Sei un analista finanziario esperto. Analizza il seguente portafoglio basandoti sui dati forniti (lista degli asset con PMC, prezzo attuale, gain, diversificazione, asset allocation e tutte le transizioni storiche). Fornisci un report strutturato e professionale.\n\nRegole di formattazione:\n1. Usa TITOLI in grassetto (## Titolo o ### Sottotitolo).\n2. Usa TABELLE in formato Markdown (es. | Colonna 1 | Colonna 2 |) per elencare i Top Performer, i Peggiori e la stima dei Dividendi.\n3. Evidenzia in grassetto (**testo**) i concetti chiave e i numeri più importanti.\n4. Utilizza Emoji pertinenti per arricchire il testo (es. 🚀, 📉, 💰), le gestiremo automaticamente nel PDF.\n\nSezioni richieste:\n1. Snapshot e Asset Allocation (overview del portafoglio).\n2. Analisi delle Posizioni Aperte (con tabella Top & Flop).\n3. Analisi dei Dividendi (con tabella raggruppata per anno).\n4. Conclusioni e Prospettive.';
-            
+            const promptTemplate = settings.aiReportPrompt || `Sei un analista finanziario esperto. Analizza il seguente portafoglio.
+Restituisci la tua risposta ESCLUSIVAMENTE in formato JSON con questa esatta struttura:
+{
+  "risk_score": <numero da 1 a 5, 1=Basso, 5=Alto>,
+  "diversification_score": <numero da 1 a 5, 1=Scarsa, 5=Ottima>,
+  "allocation_score": <numero da 1 a 5, 1=Scarsa, 5=Ottima>,
+  "quality_score": <numero da 1 a 5, 1=Bassa, 5=Alta>,
+  "markdown_content": "<IL TUO REPORT IN MARKDOWN>"
+}
+Nel report markdown usa TITOLI (## Titolo), TABELLE in formato Markdown (| Col 1 | Col 2 |) per Top Performer, Peggiori e Dividendi, metti in grassetto i dati chiave e usa Emoji. Il json deve essere formattato correttamente.`;
+
             // Get all transactions for the user's portfolios
             const txs = database.db.prepare(`
                 SELECT t.assetTicker, t.type, t.date, t.quantity, t.price, t.amount, p.currency, t.exchangeRate, t.commission, t.tax 
@@ -1436,18 +1445,62 @@ module.exports = function (dependencies) {
                 transactionsHistory: txs
             };
             
+            // Calculate Portfolio P/E
+            let totalValueForPE = 0;
+            let weightedPE = 0;
+            if (parsedContext.assetGains) {
+                for (const a of parsedContext.assetGains) {
+                    if (a.ticker === 'CASH' || !a.currentValue) continue;
+                    // fetch PE from DB
+                    const fund = database.db.prepare('SELECT forwardPE, pegRatio FROM asset_fundamentals WHERE ticker = ? COLLATE NOCASE').get(a.ticker);
+                    if (fund && fund.forwardPE && fund.forwardPE > 0) {
+                        weightedPE += (fund.forwardPE * a.currentValue);
+                        totalValueForPE += a.currentValue;
+                    }
+                }
+            }
+            const portfolioPE = totalValueForPE > 0 ? (weightedPE / totalValueForPE) : null;
+            enhancedContext.portfolioPE = portfolioPE;
+            
             const fullPrompt = `${promptTemplate}\n\nDATI PORTAFOGLIO:\n${JSON.stringify(enhancedContext)}`;
             
             logger.info(`[AI Report] Invoking AI model for user ${req.user.id}...`);
             const aiResponse = await aiService.callAIModel(engine, fullPrompt, settings);
-            logger.info(`[AI Report] Success! Generated ${aiResponse.text ? aiResponse.text.length : 0} characters.`);
-
-            // Save the report in the user's settings
-            const now = new Date().toISOString();
-            database.setSetting(req.user.id, 'lastAiReportText', aiResponse.text);
-            database.setSetting(req.user.id, 'lastAiReportDate', now);
             
-            res.json({ text: aiResponse.text, date: now });
+            let reportData;
+            try {
+                // Pulizia json se l'AI mette i backtick
+                let cleanText = aiResponse.text.replace(/```json/gi, '').replace(/```/g, '').trim();
+                reportData = JSON.parse(cleanText);
+            } catch(e) {
+                logger.warn('[AI Report] JSON parse failed, falling back to dummy scores');
+                reportData = {
+                    risk_score: 3, diversification_score: 3, allocation_score: 3, quality_score: 3,
+                    markdown_content: aiResponse.text
+                };
+            }
+            
+            logger.info(`[AI Report] Success! Generated content.`);
+
+            const now = new Date().toISOString();
+            
+            // Save to DB
+            const stmt = database.db.prepare(`
+                INSERT INTO ai_portfolio_reports (user_id, date, risk_score, diversification_score, allocation_score, quality_score, pe_value, markdown_content, raw_context)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `);
+            const info = stmt.run(
+                req.user.id, now,
+                reportData.risk_score || 0,
+                reportData.diversification_score || 0,
+                reportData.allocation_score || 0,
+                reportData.quality_score || 0,
+                portfolioPE,
+                reportData.markdown_content || '',
+                JSON.stringify(parsedContext)
+            );
+            
+            res.json({ id: info.lastInsertRowid, date: now, data: reportData, portfolioPE });
         } catch (err) {
             logger.error('[AI Report Error]', err.stack || err.message || err);
             console.error('[AI Report Error]', err);
@@ -1455,15 +1508,28 @@ module.exports = function (dependencies) {
         }
     });
 
-    // GET /api/analytics/ai-report/latest
-    router.get('/analytics/ai-report/latest', requireAuth, (req, res) => {
+    // GET /api/analytics/ai-reports
+    router.get('/analytics/ai-reports', requireAuth, (req, res) => {
         try {
-            const userSettings = database.getSettings(req.user.id);
-            if (userSettings.lastAiReportText && userSettings.lastAiReportDate) {
-                res.json({ text: userSettings.lastAiReportText, date: userSettings.lastAiReportDate });
-            } else {
-                res.json({ text: null, date: null });
-            }
+            const reports = database.db.prepare(`
+                SELECT id, date, risk_score, diversification_score, allocation_score, quality_score, pe_value, markdown_content, raw_context 
+                FROM ai_portfolio_reports 
+                WHERE user_id = ? 
+                ORDER BY date DESC
+            `).all(req.user.id);
+            res.json(reports);
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // DELETE /api/analytics/ai-reports/:id
+    router.delete('/analytics/ai-reports/:id', requireAuth, (req, res) => {
+        try {
+            const reportId = req.params.id;
+            database.db.prepare(`DELETE FROM ai_portfolio_reports WHERE id = ? AND user_id = ?`).run(reportId, req.user.id);
+            res.json({ success: true });
         } catch (err) {
             console.error(err);
             res.status(500).json({ error: err.message });
