@@ -1398,7 +1398,8 @@ module.exports = function (dependencies) {
                 SELECT t.assetTicker, t.type, t.date, t.quantity, t.price, t.amount, p.currency, t.exchangeRate, t.commission, t.tax 
                 FROM transactions t
                 JOIN portfolios p ON t.portfolioId = p.id
-                WHERE p.user_id = ?
+                JOIN portfolio_users pu ON p.id = pu.portfolio_id
+                WHERE pu.user_id = ?
                 ORDER BY t.date ASC
             `).all(req.user.id);
             

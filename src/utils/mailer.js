@@ -11,15 +11,20 @@ function getTransporter() {
     const smtpPass = settings.smtp_pass || process.env.SMTP_PASS || '';
     const smtpFrom = settings.smtp_from || process.env.SMTP_FROM || smtpUser || 'noreply@foliotrack.com';
     
-    transporterInstance = nodemailer.createTransport({
+    const config = {
         host: smtpHost,
         port: smtpPort,
-        secure: smtpPort === 465,
-        auth: {
+        secure: smtpPort === 465
+    };
+
+    if (smtpUser && smtpPass) {
+        config.auth = {
             user: smtpUser,
             pass: smtpPass
-        }
-    });
+        };
+    }
+    
+    transporterInstance = nodemailer.createTransport(config);
     // Add the from address to the instance for easy access
     transporterInstance.defaultFrom = smtpFrom;
     return transporterInstance;

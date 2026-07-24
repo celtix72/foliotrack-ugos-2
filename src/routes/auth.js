@@ -123,8 +123,8 @@ router.post('/register', registerLimiter, async (req, res) => {
         logger.info(`[AUTH] Registered new user: ${username}`);
         res.json({ ok: true, message: 'Account creato. Controlla l\'email per la password.' });
     } catch (e) {
-        logger.error(`[AUTH] Registration error: ${e.message}`);
-        res.status(500).json({ error: 'Errore durante la registrazione' });
+        logger.error(`[AUTH] Registration error: ${e.message}`, e);
+        res.status(500).json({ error: `Errore durante la registrazione: ${e.message}` });
     }
 });
 
