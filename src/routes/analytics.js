@@ -1382,7 +1382,7 @@ module.exports = function (dependencies) {
         try {
             const { contextData } = req.body;
             const settings = database.getSettings(1);
-            const engine = settings.aiReportEngine || 'Gemini_Free';
+            const engine = settings.aiReportEngine || settings.aiEngine || 'Gemini_Free';
             const promptTemplate = settings.aiReportPrompt || 'Sei un analista finanziario esperto. Analizza il seguente portafoglio basandoti sui dati forniti (lista degli asset con PMC, prezzo attuale, gain, diversificazione, asset allocation e tutte le transizioni storiche). Fornisci un report strutturato in due sezioni:\n\n1. Analisi delle posizioni aperte (rischio, diversificazione e prospettive).\n2. Analisi delle posizioni chiuse e dei dividendi suddivisi per anno (valutazione della performance storica e della continuità dei dividendi).';
             
             // Get all transactions
