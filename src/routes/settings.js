@@ -149,6 +149,8 @@ module.exports = function (dependencies) {
                 aiAssetPrompt: settings.aiAssetPrompt || '',
                 aiAssetPromptGarp: settings.aiAssetPromptGarp || '',
                 aiPortfolioPrompt: settings.aiPortfolioPrompt || '',
+                aiReportPrompt: settings.aiReportPrompt || 'Analizza il seguente portafoglio fornendo un report strutturato in due sezioni:\n\n1. Analisi delle posizioni aperte (rischio, diversificazione e prospettive).\n2. Analisi delle posizioni chiuse e dei dividendi suddivisi per anno (valutazione della performance storica e della continuità dei dividendi).',
+                aiReportEngine: settings.aiReportEngine || 'Gemini_Free',
                 aiTokensUsedToday: settings.aiTokensUsedToday || '0',
                 aiTokensDate: settings.aiTokensDate || ''
             });
@@ -159,7 +161,7 @@ module.exports = function (dependencies) {
 
     // POST /api/admin/ai-settings
     router.post('/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
-        const { aiEngine, geminiApiKeyFree, geminiApiKeyPay, openrouterApiKey, openrouterModel1, openrouterModel2, openrouterModel3, openrouterModel4, openrouterModel5, requestyApiKey, requestyModel1, requestyModel2, requestyModel3, requestyModel4, requestyModel5, tavilyApiKey, aiAssetPrompt, aiAssetPromptGarp, aiPortfolioPrompt } = req.body;
+        const { aiEngine, geminiApiKeyFree, geminiApiKeyPay, openrouterApiKey, openrouterModel1, openrouterModel2, openrouterModel3, openrouterModel4, openrouterModel5, requestyApiKey, requestyModel1, requestyModel2, requestyModel3, requestyModel4, requestyModel5, tavilyApiKey, aiAssetPrompt, aiAssetPromptGarp, aiPortfolioPrompt, aiReportPrompt, aiReportEngine } = req.body;
         try {
             if (aiEngine !== undefined) database.setSetting(1, 'aiEngine', aiEngine);
             if (geminiApiKeyFree !== undefined) database.setSetting(1, 'geminiApiKeyFree', geminiApiKeyFree);
@@ -180,6 +182,8 @@ module.exports = function (dependencies) {
             if (aiAssetPrompt !== undefined) database.setSetting(1, 'aiAssetPrompt', aiAssetPrompt);
             if (aiAssetPromptGarp !== undefined) database.setSetting(1, 'aiAssetPromptGarp', aiAssetPromptGarp);
             if (aiPortfolioPrompt !== undefined) database.setSetting(1, 'aiPortfolioPrompt', aiPortfolioPrompt);
+            if (aiReportPrompt !== undefined) database.setSetting(1, 'aiReportPrompt', aiReportPrompt);
+            if (aiReportEngine !== undefined) database.setSetting(1, 'aiReportEngine', aiReportEngine);
             
             logger.info(`[ADMIN] AI settings updated by ${req.user.username}`);
             res.json({ ok: true });

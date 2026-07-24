@@ -1377,5 +1377,23 @@ module.exports = function (dependencies) {
         }
     });
 
+    // POST /api/analytics/ai-report
+    router.post('/ai-report', requireAuth, async (req, res) => {
+        try {
+            const { contextData } = req.body;
+            const settings = database.getSettings(1);
+            const engine = settings.aiReportEngine || 'Gemini_Free';
+            const promptTemplate = settings.aiReportPrompt || 'Analizza il seguente portafoglio fornendo un report strutturato in due sezioni:\n\n1. Analisi delle posizioni aperte (rischio, diversificazione e prospettive).\n2. Analisi delle posizioni chiuse e dei dividendi suddivisi per anno (valutazione della performance storica e della continuità dei dividendi).';
+            
+            const fullPrompt = `${promptTemplate}\n\nDATI PORTAFOGLIO:\n${contextData}`;
+            
+            const aiResponse = await aiService.callAIModel(engine, fullPrompt, settings);
+            res.json({ text: aiResponse.text });
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
     return router;
 };

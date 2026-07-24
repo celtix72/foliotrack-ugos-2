@@ -585,8 +585,29 @@
                             </div>
                         </div>
 
-                        <!-- Custom Prompts -->
+                        <!-- Custom Prompts & Report Settings -->
                         <div class="space-y-4">
+                            <div>
+                                <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1">Motore AI per Report PDF</label>
+                                <select id="ai-report-engine" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-indigo-500 outline-none">
+                                    <option value="Gemini_Free">Gemini (Free)</option>
+                                    <option value="Gemini_Pay">Gemini (Pay)</option>
+                                    <option value="OR1">OpenRouter (Modello 1)</option>
+                                    <option value="OR2">OpenRouter (Modello 2)</option>
+                                    <option value="OR3">OpenRouter (Modello 3)</option>
+                                    <option value="OR4">OpenRouter (Modello 4)</option>
+                                    <option value="OR5">OpenRouter (Modello 5)</option>
+                                    <option value="REQ1">Requesty (Modello 1)</option>
+                                    <option value="REQ2">Requesty (Modello 2)</option>
+                                    <option value="REQ3">Requesty (Modello 3)</option>
+                                    <option value="REQ4">Requesty (Modello 4)</option>
+                                    <option value="REQ5">Requesty (Modello 5)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1">Prompt Generazione Report PDF</label>
+                                <textarea id="ai-report-prompt" rows="4" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-3 px-4 text-sm focus:ring-indigo-500/30 focus:border-indigo-500 transition-colors" placeholder="Es. Analizza le posizioni aperte e chiuse..."></textarea>
+                            </div>
                             <div>
                                 <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1">Prompt Singolo Asset (Graham e Buffett)</label>
                                 <textarea id="ai-asset-prompt" rows="3" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-3 px-4 text-sm focus:ring-indigo-500/30 focus:border-indigo-500 transition-colors" placeholder="Es. Valuta i titoli con un'ottica da cassettista a lungo termine, privilegiando dividendi alti e stabili."></textarea>
@@ -1252,6 +1273,8 @@
                     document.getElementById('ai-asset-prompt').value = settings.aiAssetPrompt || '';
                     document.getElementById('ai-asset-prompt-garp').value = settings.aiAssetPromptGarp || '';
                     document.getElementById('ai-portfolio-prompt').value = settings.aiPortfolioPrompt || '';
+                    document.getElementById('ai-report-prompt').value = settings.aiReportPrompt || '';
+                    document.getElementById('ai-report-engine').value = settings.aiReportEngine || 'Gemini_Free';
                     
                     if (document.getElementById('ai-tokens-used')) {
                         const tokens = parseInt(settings.aiTokensUsedToday) || 0;
@@ -1287,7 +1310,9 @@
                     requestyModel5: document.getElementById('ai-requesty-model-5').value,
                     aiAssetPrompt: document.getElementById('ai-asset-prompt').value,
                     aiAssetPromptGarp: document.getElementById('ai-asset-prompt-garp').value,
-                    aiPortfolioPrompt: document.getElementById('ai-portfolio-prompt').value
+                    aiPortfolioPrompt: document.getElementById('ai-portfolio-prompt').value,
+                    aiReportPrompt: document.getElementById('ai-report-prompt').value,
+                    aiReportEngine: document.getElementById('ai-report-engine').value
                 };
                 const res = await fetch('/api/admin/ai-settings', {
                     method: 'POST',

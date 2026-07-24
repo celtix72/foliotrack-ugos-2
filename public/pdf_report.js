@@ -26,6 +26,35 @@ window.generateDetailedPDFReport = async function(buttonEl) {
             portfolioDetailsList.push({ portfolio: p, details: detailData });
         }
 
+        if (buttonEl) {
+            buttonEl.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Analisi IA in corso...';
+        }
+
+        // Fetch AI Report
+        let aiReportText = '';
+        try {
+            const contextData = JSON.stringify({
+                assetGains: reportsData.assetGains || [],
+                annualGains: reportsData.annualGains || {},
+                dividends: reportsData.dividends || []
+            });
+            const aiRes = await fetch('/api/analytics/ai-report', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contextData })
+            });
+            if (aiRes.ok) {
+                const aiData = await aiRes.json();
+                aiReportText = aiData.text || '';
+            }
+        } catch (aiErr) {
+            console.error('Failed to fetch AI report:', aiErr);
+        }
+
+        if (buttonEl) {
+            buttonEl.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Impaginazione PDF...';
+        }
+
         // --- PDF Generation Logic ---
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
@@ -327,6 +356,33 @@ window.generateDetailedPDFReport = async function(buttonEl) {
                 styles: { fontSize: 8 },
                 margin: { left: marginLeft }
             });
+            startY = doc.lastAutoTable.finalY + 30;
+        }
+        
+        // AI Report Section
+        if (aiReportText) {
+            doc.addPage();
+            startY = 40;
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(79, 70, 229); // Indigo
+            doc.text('Analisi Portfolio (Intelligenza Artificiale)', marginLeft, startY);
+            startY += 25;
+            
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(40, 40, 40);
+            
+            // Clean up basic markdown
+            let cleanAiText = aiReportText.replace(/\*\*/g, '').replace(/\*/g, '-').replace(/#/g, '');
+            
+            const splitText = doc.splitTextToSize(cleanAiText, pageWidth - (marginLeft * 2));
+            
+            for (let i = 0; i < splitText.length; i++) {
+                checkPageBreak(15);
+                doc.text(splitText[i], marginLeft, startY);
+                startY += 12;
+            }
         }
 
         // Save
