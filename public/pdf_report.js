@@ -87,6 +87,19 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
             }
         };
 
+        if (mode === 'classic') {
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const marginLeft = 40;
+        let startY = 40;
+
+        const checkPageBreak = (neededHeight) => {
+            if (startY + neededHeight > pageHeight - 40) {
+                doc.addPage();
+                startY = 40;
+            }
+        };
+
         const formatValue = (val) => {
             if (val === undefined || val === null || isNaN(val)) return '0';
             return Number(val).toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -378,29 +391,173 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
             startY = doc.lastAutoTable.finalY + 30;
         }
         
-        // AI Report Section
-        if (aiReportText) {
+        } else if (mode === 'latest_ai' || mode === 'new_ai') {
+            // ==========================================
+            // PROFESSIONAL AI REPORT LAYOUT
+            // ==========================================
             doc.addPage();
-            startY = 40;
-            doc.setFontSize(14);
+            doc.deletePage(1); // Remove the initial blank page created by jsPDF constructor
+            startY = 50;
+
+            // BACKGROUND / HEADER
+            doc.setFillColor(30, 41, 59); // slate-800
+            doc.rect(0, 0, pageWidth, 120, 'F');
+            
             doc.setFont("helvetica", "bold");
-            doc.setTextColor(79, 70, 229); // Indigo
-            doc.text('Analisi Portfolio (Intelligenza Artificiale)', marginLeft, startY);
-            startY += 25;
+            doc.setFontSize(28);
+            doc.setTextColor(255, 255, 255);
+            doc.text("AI Portfolio Analysis", marginLeft, 60);
             
-            doc.setFontSize(10);
+            doc.setFontSize(12);
             doc.setFont("helvetica", "normal");
-            doc.setTextColor(40, 40, 40);
+            doc.setTextColor(203, 213, 225); // slate-300
+            const dateStr = new Date().toLocaleDateString('it-IT', { year: 'numeric', month: 'long', day: 'numeric' });
+            doc.text(`Generated on ${dateStr} • FolioTrack Intelligence`, marginLeft, 80);
             
-            // Clean up basic markdown
-            let cleanAiText = aiReportText.replace(/\*\*/g, '').replace(/\*/g, '-').replace(/#/g, '');
+            startY = 160;
+
+            // SNAPSHOT METRICS (ROI, Invested)
+            let invested = 0;
+            let currentVal = 0;
+            let totalGain = 0;
+            let totalDiv = 0;
             
-            const splitText = doc.splitTextToSize(cleanAiText, pageWidth - (marginLeft * 2));
+            if (reportsData.assetGains) {
+                reportsData.assetGains.forEach(a => {
+                    invested += (a.totalInvested || 0);
+                    currentVal += (a.currentValue || 0);
+                    totalGain += (a.totalGain || 0);
+                    totalDiv += (a.dividends || 0);
+                });
+            }
+
+            const formatCurrency = (val) => '€ ' + Number(val).toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
             
-            for (let i = 0; i < splitText.length; i++) {
-                checkPageBreak(15);
-                doc.text(splitText[i], marginLeft, startY);
-                startY += 12;
+            const printMetricBox = (x, y, w, h, label, value, valColor) => {
+                doc.setDrawColor(226, 232, 240); // slate-200
+                doc.setFillColor(248, 250, 252); // slate-50
+                doc.roundedRect(x, y, w, h, 4, 4, 'FD');
+                
+                doc.setFontSize(10);
+                doc.setTextColor(100, 116, 139); // slate-500
+                doc.setFont("helvetica", "bold");
+                doc.text(label, x + 10, y + 20);
+                
+                doc.setFontSize(16);
+                doc.setTextColor(valColor[0], valColor[1], valColor[2]);
+                doc.text(value, x + 10, y + 45);
+            };
+
+            const boxW = (pageWidth - (marginLeft * 2) - 30) / 4;
+            printMetricBox(marginLeft, startY, boxW, 60, 'INVESTITO', formatCurrency(invested), [15, 23, 42]);
+            printMetricBox(marginLeft + boxW + 10, startY, boxW, 60, 'VALORE ATTUALE', formatCurrency(currentVal), [15, 23, 42]);
+            
+            const gainColor = totalGain >= 0 ? [16, 185, 129] : [239, 68, 68];
+            printMetricBox(marginLeft + (boxW * 2) + 20, startY, boxW, 60, 'GAIN TOTALE', formatCurrency(totalGain), gainColor);
+            printMetricBox(marginLeft + (boxW * 3) + 30, startY, boxW, 60, 'DIVIDENDI', formatCurrency(totalDiv), [16, 185, 129]);
+            
+            startY += 90;
+
+            // TRY TO EMBED CHARTS
+            try {
+                const addChart = (canvasId, title, x, w, h) => {
+                    const canvas = document.getElementById(canvasId);
+                    if (canvas) {
+                        doc.setFontSize(12);
+                        doc.setTextColor(15, 23, 42);
+                        doc.setFont("helvetica", "bold");
+                        doc.text(title, x, startY);
+                        const imgData = canvas.toDataURL('image/png', 1.0);
+                        // Add white background behind transparent canvas
+                        doc.setFillColor(255, 255, 255);
+                        doc.rect(x, startY + 10, w, h, 'F');
+                        doc.addImage(imgData, 'PNG', x, startY + 10, w, h);
+                        return true;
+                    }
+                    return false;
+                };
+
+                let chartAdded = false;
+                const chartW = (pageWidth - (marginLeft * 2) - 20) / 2;
+                if (addChart('performanceChart', 'Performance History', marginLeft, chartW, 140)) chartAdded = true;
+                if (addChart('diversificationAssetChart', 'Asset Allocation', marginLeft + chartW + 20, chartW, 140)) chartAdded = true;
+                
+                if (chartAdded) {
+                    startY += 180;
+                }
+            } catch (e) {
+                console.warn('Could not embed charts in AI PDF', e);
+            }
+
+            // AI TEXT PARSING
+            if (aiReportText) {
+                checkPageBreak(50);
+                
+                doc.setFontSize(16);
+                doc.setTextColor(79, 70, 229); // Indigo
+                doc.setFont("helvetica", "bold");
+                doc.text("AI Strategic Report", marginLeft, startY);
+                startY += 25;
+                
+                const lines = aiReportText.split('\n');
+                
+                for (let line of lines) {
+                    line = line.trim();
+                    if (!line) {
+                        startY += 8;
+                        continue;
+                    }
+                    
+                    checkPageBreak(25);
+                    
+                    // Header ##
+                    if (line.startsWith('## ') || line.startsWith('### ')) {
+                        startY += 10;
+                        doc.setFontSize(14);
+                        doc.setTextColor(15, 23, 42);
+                        doc.setFont("helvetica", "bold");
+                        const text = line.replace(/^#+\s/, '').replace(/\*\*/g, '');
+                        doc.text(text, marginLeft, startY);
+                        startY += 18;
+                    } 
+                    // Bold line or list
+                    else if (line.startsWith('- ') || line.startsWith('* ')) {
+                        doc.setFontSize(10);
+                        doc.setTextColor(51, 65, 85); // slate-700
+                        doc.setFont("helvetica", "normal");
+                        
+                        let text = line.substring(2).trim();
+                        // highlight bold parts
+                        text = text.replace(/\*\*/g, ''); // strip markdown bold for simple jsPDF
+                        
+                        // draw bullet
+                        doc.setFillColor(79, 70, 229);
+                        doc.circle(marginLeft + 4, startY - 3, 2, 'F');
+                        
+                        const splitText = doc.splitTextToSize(text, pageWidth - (marginLeft * 2) - 15);
+                        for (let j = 0; j < splitText.length; j++) {
+                            checkPageBreak(15);
+                            doc.text(splitText[j], marginLeft + 12, startY);
+                            startY += 14;
+                        }
+                    } else {
+                        // normal text
+                        doc.setFontSize(10);
+                        doc.setTextColor(51, 65, 85);
+                        doc.setFont("helvetica", "normal");
+                        let text = line.replace(/\*\*/g, ''); // simple strip
+                        const splitText = doc.splitTextToSize(text, pageWidth - (marginLeft * 2));
+                        for (let j = 0; j < splitText.length; j++) {
+                            checkPageBreak(15);
+                            doc.text(splitText[j], marginLeft, startY);
+                            startY += 14;
+                        }
+                    }
+                }
+            } else {
+                doc.setFontSize(10);
+                doc.setTextColor(200, 0, 0);
+                doc.text("Errore: Testo IA non disponibile.", marginLeft, startY);
             }
         }
 
