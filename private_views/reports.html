@@ -182,10 +182,20 @@
         </div>
     </div>
     <div class="flex items-center gap-3 flex-wrap">
-        <button onclick="window.generateDetailedPDFReport(this)" class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 transition-all shadow-lg shadow-primary/20">
-            <span class="material-symbols-outlined text-sm font-normal">picture_as_pdf</span>
-            <span>Export PDF</span>
-        </button>
+        <div class="flex gap-2 bg-slate-100 dark:bg-slate-900/50 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
+            <button onclick="window.generateDetailedPDFReport(this, 'classic')" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs flex items-center gap-2 transition-all shadow-sm">
+                <span class="material-symbols-outlined text-[14px]">description</span>
+                <span>PDF Classico</span>
+            </button>
+            <button onclick="window.generateDetailedPDFReport(this, 'latest_ai')" id="btn-download-ai" class="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-lg font-bold text-xs flex items-center gap-2 transition-all shadow-sm hidden">
+                <span class="material-symbols-outlined text-[14px]">smart_toy</span>
+                <span>Scarica IA (<span id="ai-report-date"></span>)</span>
+            </button>
+            <button onclick="window.generateDetailedPDFReport(this, 'new_ai')" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-lg font-bold text-xs flex items-center gap-2 transition-all shadow-sm">
+                <span class="material-symbols-outlined text-[14px]">auto_awesome</span>
+                <span>Genera Report IA</span>
+            </button>
+        </div>
         <button class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 transition-all shadow-lg shadow-emerald-500/20" onclick="window.location.href='/api/export-all-transactions'">
             <span class="material-symbols-outlined text-sm">csv</span>Export CSV
         </button>
@@ -1198,6 +1208,9 @@
     document.addEventListener('DOMContentLoaded', () => {
         loadPortfolios();
         loadReportData();
+        if (typeof window.checkLatestAiReport === 'function') {
+            window.checkLatestAiReport();
+        }
     });
 </script>
 </body>

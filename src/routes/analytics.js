@@ -1430,7 +1430,28 @@ module.exports = function (dependencies) {
             const fullPrompt = `${promptTemplate}\n\nDATI PORTAFOGLIO:\n${JSON.stringify(enhancedContext)}`;
             
             const aiResponse = await aiService.callAIModel(engine, fullPrompt, settings);
-            res.json({ text: aiResponse.text });
+            
+            // Save the report in the user's settings
+            const now = new Date().toISOString();
+            database.setSetting(req.user.id, 'lastAiReportText', aiResponse.text);
+            database.setSetting(req.user.id, 'lastAiReportDate', now);
+            
+            res.json({ text: aiResponse.text, date: now });
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // GET /api/analytics/ai-report/latest
+    router.get('/ai-report/latest', requireAuth, (req, res) => {
+        try {
+            const userSettings = database.getSettings(req.user.id);
+            if (userSettings.lastAiReportText && userSettings.lastAiReportDate) {
+                res.json({ text: userSettings.lastAiReportText, date: userSettings.lastAiReportDate });
+            } else {
+                res.json({ text: null, date: null });
+            }
         } catch (err) {
             console.error(err);
             res.status(500).json({ error: err.message });

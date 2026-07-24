@@ -1,7 +1,8 @@
-window.generateDetailedPDFReport = async function(buttonEl) {
+window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
+    let originalText = '';
     if (buttonEl) {
         buttonEl.disabled = true;
-        const originalText = buttonEl.innerHTML;
+        originalText = buttonEl.innerHTML;
         buttonEl.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Generazione PDF...';
     }
 
@@ -26,33 +27,51 @@ window.generateDetailedPDFReport = async function(buttonEl) {
             portfolioDetailsList.push({ portfolio: p, details: detailData });
         }
 
-        if (buttonEl) {
-            buttonEl.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Analisi IA in corso...';
-        }
-
         // Fetch AI Report
         let aiReportText = '';
-        try {
-            const contextData = JSON.stringify({
-                assetGains: reportsData.assetGains || [],
-                annualGains: reportsData.annualGains || {},
-                dividends: reportsData.dividends || []
-            });
-            const aiRes = await fetch('/api/analytics/ai-report', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contextData })
-            });
-            if (aiRes.ok) {
-                const aiData = await aiRes.json();
-                aiReportText = aiData.text || '';
+        if (mode === 'latest_ai' || mode === 'new_ai') {
+            if (buttonEl) {
+                buttonEl.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Analisi IA in corso...';
             }
-        } catch (aiErr) {
-            console.error('Failed to fetch AI report:', aiErr);
-        }
-
-        if (buttonEl) {
-            buttonEl.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Impaginazione PDF...';
+            try {
+                if (mode === 'latest_ai') {
+                    const aiRes = await fetch('/api/analytics/ai-report/latest');
+                    if (aiRes.ok) {
+                        const aiData = await aiRes.json();
+                        aiReportText = aiData.text || '';
+                    }
+                } else if (mode === 'new_ai') {
+                    const contextData = JSON.stringify({
+                        assetGains: reportsData.assetGains || [],
+                        annualGains: reportsData.annualGains || {},
+                        dividends: reportsData.dividends || []
+                    });
+                    const aiRes = await fetch('/api/analytics/ai-report', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contextData })
+                    });
+                    if (aiRes.ok) {
+                        const aiData = await aiRes.json();
+                        aiReportText = aiData.text || '';
+                        // Also update the UI with the new date if available
+                        if (aiData.date) {
+                            const dateStr = new Date(aiData.date).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
+                            const btnDownloadAi = document.getElementById('btn-download-ai');
+                            const dateSpan = document.getElementById('ai-report-date');
+                            if (btnDownloadAi && dateSpan) {
+                                dateSpan.textContent = dateStr;
+                                btnDownloadAi.classList.remove('hidden');
+                            }
+                        }
+                    }
+                }
+            } catch (aiErr) {
+                console.error('Failed to fetch AI report:', aiErr);
+            }
+            if (buttonEl) {
+                buttonEl.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Impaginazione PDF...';
+            }
         }
 
         // --- PDF Generation Logic ---
@@ -393,14 +412,30 @@ window.generateDetailedPDFReport = async function(buttonEl) {
         console.error('Error generating PDF:', err);
         alert('Errore durante la generazione del report PDF.');
     } finally {
-        if (buttonEl && buttonEl.innerHTML) {
+        if (buttonEl && originalText) {
             buttonEl.disabled = false;
-            // Restore text by removing the spinner html, simplest way is to check class
-            if (buttonEl.id === 'mob-pdf-btn') {
-                buttonEl.innerHTML = '<span class="material-symbols-outlined">picture_as_pdf</span>';
-            } else {
-                buttonEl.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px;">picture_as_pdf</span> Scarica PDF';
+            buttonEl.innerHTML = originalText;
+        }
+    }
+};
+
+// Check if we have an AI report saved and update UI
+window.checkLatestAiReport = async function() {
+    try {
+        const res = await fetch('/api/analytics/ai-report/latest');
+        if (res.ok) {
+            const data = await res.json();
+            if (data.date && data.text) {
+                const dateStr = new Date(data.date).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
+                const btnDownloadAi = document.getElementById('btn-download-ai');
+                const dateSpan = document.getElementById('ai-report-date');
+                if (btnDownloadAi && dateSpan) {
+                    dateSpan.textContent = dateStr;
+                    btnDownloadAi.classList.remove('hidden');
+                }
             }
         }
+    } catch (e) {
+        console.error('Error checking latest AI report:', e);
     }
 };
