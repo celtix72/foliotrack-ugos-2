@@ -2797,8 +2797,8 @@ async function updateMarketData(force = false) {
                 if (result.success) {
                     const changeVal = result.variation !== null ? (result.price * (result.variation / (100 + result.variation))) : 0;
                     updateData = {
-                        price: result.price,
-                        change: result.variation,
+                        price: result.price || asset.currentPrice,
+                        change: result.variation !== null ? result.variation : asset.changePercent,
                         changeValue: changeVal,
                         pe: asset.pe,
                         name: asset.name,
