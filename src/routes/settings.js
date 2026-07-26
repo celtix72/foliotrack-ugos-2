@@ -152,7 +152,8 @@ module.exports = function (dependencies) {
                 aiReportPrompt: settings.aiReportPrompt || 'Sei un analista finanziario esperto. Analizza il seguente portafoglio basandoti sui dati forniti (lista degli asset con PMC, prezzo attuale, gain, diversificazione, asset allocation e tutte le transizioni storiche). Fornisci un report strutturato in due sezioni:\n\n1. Analisi delle posizioni aperte (rischio, diversificazione e prospettive).\n2. Analisi delle posizioni chiuse e dei dividendi suddivisi per anno (valutazione della performance storica e della continuità dei dividendi).',
                 aiReportEngine: settings.aiReportEngine || 'Gemini_Free',
                 aiTokensUsedToday: settings.aiTokensUsedToday || '0',
-                aiTokensDate: settings.aiTokensDate || ''
+                aiTokensDate: settings.aiTokensDate || '',
+                geminiModelPreferences: settings.geminiModelPreferences || ''
             });
         } catch (e) {
             console.error(e); res.status(500).json({ error: e.message });
@@ -161,7 +162,7 @@ module.exports = function (dependencies) {
 
     // POST /api/admin/ai-settings
     router.post('/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
-        const { aiEngine, geminiApiKeyFree, geminiApiKeyPay, openrouterApiKey, openrouterModel1, openrouterModel2, openrouterModel3, openrouterModel4, openrouterModel5, requestyApiKey, requestyModel1, requestyModel2, requestyModel3, requestyModel4, requestyModel5, tavilyApiKey, aiAssetPrompt, aiAssetPromptGarp, aiPortfolioPrompt, aiReportPrompt, aiReportEngine } = req.body;
+        const { aiEngine, geminiApiKeyFree, geminiApiKeyPay, openrouterApiKey, openrouterModel1, openrouterModel2, openrouterModel3, openrouterModel4, openrouterModel5, requestyApiKey, requestyModel1, requestyModel2, requestyModel3, requestyModel4, requestyModel5, tavilyApiKey, aiAssetPrompt, aiAssetPromptGarp, aiPortfolioPrompt, aiReportPrompt, aiReportEngine, geminiModelPreferences } = req.body;
         try {
             if (aiEngine !== undefined) database.setSetting(1, 'aiEngine', aiEngine);
             if (geminiApiKeyFree !== undefined) database.setSetting(1, 'geminiApiKeyFree', geminiApiKeyFree);
@@ -184,6 +185,7 @@ module.exports = function (dependencies) {
             if (aiPortfolioPrompt !== undefined) database.setSetting(1, 'aiPortfolioPrompt', aiPortfolioPrompt);
             if (aiReportPrompt !== undefined) database.setSetting(1, 'aiReportPrompt', aiReportPrompt);
             if (aiReportEngine !== undefined) database.setSetting(1, 'aiReportEngine', aiReportEngine);
+            if (geminiModelPreferences !== undefined) database.setSetting(1, 'geminiModelPreferences', geminiModelPreferences);
             
             logger.info(`[ADMIN] AI settings updated by ${req.user.username}`);
             res.json({ ok: true });

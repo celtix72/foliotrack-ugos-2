@@ -496,6 +496,10 @@
                                     <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">API Key (Pay)</label>
                                     <input type="password" id="ai-gemini-key-pay" placeholder="AIzaSy..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
                                 </div>
+                                <div class="col-span-2">
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Modelli Preferiti (JSON Array)</label>
+                                    <textarea id="ai-gemini-models" rows="2" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-xs font-mono outline-none focus:ring-1 focus:ring-indigo-500" placeholder='["gemini-2.5-flash", "gemini-1.5-flash"]'></textarea>
+                                </div>
                             </div>
                             <!-- OpenRouter -->
                             <div class="p-3 border border-slate-200 dark:border-slate-800 rounded-lg space-y-3">
@@ -1264,6 +1268,7 @@
                     document.getElementById('ai-engine').value = settings.aiEngine || 'Gemini_Free';
                     document.getElementById('ai-gemini-key-free').value = settings.geminiApiKeyFree || '';
                     document.getElementById('ai-gemini-key-pay').value = settings.geminiApiKeyPay || '';
+                    document.getElementById('ai-gemini-models').value = settings.geminiModelPreferences || '';
                     document.getElementById('ai-openrouter-key').value = settings.openrouterApiKey || '';
                     document.getElementById('ai-requesty-key').value = settings.requestyApiKey || '';
                     
@@ -1296,6 +1301,7 @@
                     aiEngine: document.getElementById('ai-engine').value,
                     geminiApiKeyFree: document.getElementById('ai-gemini-key-free').value,
                     geminiApiKeyPay: document.getElementById('ai-gemini-key-pay').value,
+                    geminiModelPreferences: document.getElementById('ai-gemini-models').value,
                     openrouterApiKey: document.getElementById('ai-openrouter-key').value,
                     openrouterModel1: document.getElementById('ai-openrouter-model-1').value,
                     openrouterModel2: document.getElementById('ai-openrouter-model-2').value,

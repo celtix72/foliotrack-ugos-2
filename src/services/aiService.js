@@ -196,8 +196,7 @@ function getRequestyModels() {
     }
     return _cachedRequestyModels;
 }
-
-const GEMINI_MODEL_PREFERENCE = [
+const DEFAULT_GEMINI_MODEL_PREFERENCE = [
     'gemini-3.5-flash',
     'gemini-3.1-flash-lite',
     'gemini-3.0-flash',
@@ -207,6 +206,20 @@ const GEMINI_MODEL_PREFERENCE = [
     'gemini-2.0-flash-lite',
     'gemini-1.5-flash',
 ];
+
+function getGeminiModelPreference() {
+    try {
+        const database = require('../db');
+        const settings = database.getSettings(1);
+        if (settings.geminiModelPreferences) {
+            const parsed = JSON.parse(settings.geminiModelPreferences);
+            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+    } catch (e) {
+        logger.error('[Gemini] Failed to parse geminiModelPreferences', e);
+    }
+    return DEFAULT_GEMINI_MODEL_PREFERENCE;
+}
 
 async function getBestGeminiModel(apiKey) {
     const now = Date.now();
@@ -221,7 +234,8 @@ async function getBestGeminiModel(apiKey) {
             .filter(m => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
             .map(m => m.name.replace('models/', ''));
 
-        for (const preferred of GEMINI_MODEL_PREFERENCE) {
+        const prefs = getGeminiModelPreference();
+        for (const preferred of prefs) {
             if (available.includes(preferred)) {
                 _cachedGeminiModel = preferred;
                 _geminiModelCachedAt = now;
@@ -247,6 +261,57 @@ async function getBestGeminiModel(apiKey) {
     }
     return 'gemini-2.5-flash';
 }
+
+async function checkNewGeminiModels() {
+    try {
+        const database = require('../db');
+        const { notifyUser } = require('./notificationService');
+        const settings = database.getSettings(1);
+        const apiKey = settings.geminiApiKeyFree || settings.geminiApiKeyPay || settings.geminiApiKey || process.env.GEMINI_API_KEY;
+        if (!apiKey) return;
+
+        const listRes = await axios.get(
+            `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}&pageSize=100`
+        );
+        const available = (listRes.data.models || [])
+            .filter(m => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+            .map(m => m.name.replace('models/', ''));
+
+        const currentPrefs = getGeminiModelPreference();
+        
+        // Find Gemini models that are NOT in current preferences but seem to be new text/chat models
+        const newModels = available.filter(m => 
+            m.startsWith('gemini-') && 
+            !currentPrefs.includes(m) && 
+            !m.includes('vision') && 
+            !m.includes('embedding')
+        );
+
+        if (newModels.length > 0) {
+            logger.info(`[Gemini] Found ${newModels.length} new models not in preferences:`, newModels);
+            
+            const title = "Nuovi modelli Gemini disponibili";
+            const message = `Trovati nuovi modelli Gemini gratuiti:\n${newModels.join(', ')}\nVai nelle Impostazioni AI per aggiungerli alla selezione.`;
+            
+            // Check if we already notified recently to avoid spam (can check if there's an exact notification in DB)
+            const existing = database.db.prepare(`
+                SELECT id FROM notifications 
+                WHERE user_id = 1 AND title = ? AND message = ? 
+                ORDER BY created_at DESC LIMIT 1
+            `).get(title, message);
+
+            if (!existing) {
+                notifyUser(1, 'STATUS', {
+                    title,
+                    body: message
+                });
+            }
+        }
+    } catch (err) {
+        logger.error('[Gemini] Failed to check for new models:', err.message);
+    }
+}
+
 
 function parseAIResponse(rawText) {
     let cleanText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
@@ -416,6 +481,8 @@ module.exports = {
     getOpenRouterModels,
     fetchRequestyModels,
     getRequestyModels,
+    getGeminiModelPreference,
+    checkNewGeminiModels,
     parseAIResponse,
     callAIModel
 };

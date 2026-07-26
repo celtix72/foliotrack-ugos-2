@@ -13,7 +13,7 @@ const webpush      = require('web-push');
 const { xirr, calculateTWR } = require('./utils/finance');
 const Parser = require('rss-parser');
 const rssParser = new Parser();
-const { callAIModel, parseAIResponse } = require('./services/aiService');
+const { callAIModel, parseAIResponse, checkNewGeminiModels } = require('./services/aiService');
 const { notifyUser } = require('./services/notificationService');
 
 
@@ -3382,6 +3382,11 @@ if (require.main === module) {
         
         // Send server restart notification to all users
         notifyAllUsersServerRestart().catch(e => logger.error('Server restart notification failed', e));
+
+        // Check for new Gemini models on boot
+        setTimeout(() => {
+            checkNewGeminiModels().catch(e => logger.error('Failed to check for new Gemini models at startup', e));
+        }, 5000); // delay to not block startup
     });
 }
 

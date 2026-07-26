@@ -47912,3 +47912,314 @@ Test
 2026-07-24T19:44:29.961Z [INFO] YF ✓ MSFT: price=382.68 USD chg=0.29%
 2026-07-24T19:44:29.983Z [INFO] Successfully updated MSFT: 382.68 USD
 2026-07-24T19:44:30.098Z [INFO] Market data update cycle completed.
+2026-07-24T19:50:28.805Z [INFO] Updating market data for 2 assets...
+2026-07-24T19:50:28.843Z [INFO] Updating [AAPL] using [YF]...
+2026-07-24T19:50:30.805Z [INFO] YF ✓ AAPL: price=332.34 USD chg=3.32%
+2026-07-24T19:50:30.832Z [INFO] Successfully updated AAPL: 332.34 USD
+2026-07-24T19:50:30.852Z [INFO] Updating [MSFT] using [YF]...
+2026-07-24T19:50:31.358Z [INFO] YF ✓ MSFT: price=383.205 USD chg=0.43%
+2026-07-24T19:50:31.381Z [INFO] Successfully updated MSFT: 383.205 USD
+2026-07-24T19:50:31.556Z [INFO] Market data update cycle completed.
+2026-07-24T19:56:28.815Z [INFO] Updating market data for 2 assets...
+2026-07-24T19:56:28.847Z [INFO] Updating [AAPL] using [YF]...
+2026-07-24T19:56:29.413Z [INFO] YF ✓ AAPL: price=333.27 USD chg=3.61%
+2026-07-24T19:56:29.436Z [INFO] Successfully updated AAPL: 333.27 USD
+2026-07-24T19:56:29.454Z [INFO] Updating [MSFT] using [YF]...
+2026-07-24T19:56:30.253Z [INFO] YF ✓ MSFT: price=382.34 USD chg=0.20%
+2026-07-24T19:56:30.272Z [INFO] Successfully updated MSFT: 382.34 USD
+2026-07-24T19:56:30.630Z [INFO] Market data update cycle completed.
+2026-07-24T20:02:28.823Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-24T20:03:28.753Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-24T20:03:33.632Z [INFO] News Sync completed. Saved 56 new articles.
+2026-07-24T20:08:28.852Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-24T20:14:28.857Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-24T20:15:29.098Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-07-24T20:15:29.133Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-07-24T20:15:29.149Z [INFO] Performance history sync: processing 2 tickers (Portfolios: 1, Watchlist: 2)
+2026-07-24T20:15:29.174Z [INFO] Calculating history for Portafoglio Test...
+2026-07-24T20:15:29.186Z [INFO] Performance history sync: processing 1 tickers (Portfolios: 1, Watchlist: 0)
+2026-07-24T20:15:29.200Z [INFO] Calculating history for Portafoglio Test...
+2026-07-24T20:20:28.868Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-24T20:26:28.871Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-24T20:32:28.890Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-24T21:00:18.582Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-24T21:03:31.962Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-24T21:03:33.020Z [INFO] News Sync completed. Saved 39 new articles.
+2026-07-24T22:37:58.228Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-24T22:37:58.257Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-24T22:37:59.300Z [INFO] News Sync completed. Saved 48 new articles.
+2026-07-24T23:28:48.669Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T01:10:41.072Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T01:10:41.093Z [INFO] Recording daily snapshots for portfolios and dashboard...
+2026-07-25T01:10:41.114Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-25T01:10:41.325Z [INFO] Daily snapshots completed.
+2026-07-25T01:10:42.220Z [INFO] News Sync completed. Saved 49 new articles.
+2026-07-25T01:27:25.748Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T01:43:29.173Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T03:22:29.435Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T03:22:29.468Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-25T03:22:30.409Z [INFO] News Sync completed. Saved 42 new articles.
+2026-07-25T03:38:47.813Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T04:20:57.959Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T04:36:19.943Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T04:36:19.965Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-25T04:36:20.966Z [INFO] News Sync completed. Saved 40 new articles.
+2026-07-25T04:51:41.786Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T05:00:25.500Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T05:33:00.228Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T05:37:19.968Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-25T05:37:20.889Z [INFO] News Sync completed. Saved 43 new articles.
+2026-07-25T06:27:32.546Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T06:38:17.235Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T06:38:17.259Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-25T06:38:18.176Z [INFO] News Sync completed. Saved 40 new articles.
+2026-07-25T07:14:11.000Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T07:14:11.031Z [INFO] [Sync Fundamentals] Starting fundamentals synchronization...
+2026-07-25T07:14:11.046Z [INFO] [Sync Fundamentals] Found 2 tickers to sync.
+2026-07-25T07:14:11.057Z [INFO] [Sync Fundamentals] Syncing ticker: AAPL
+2026-07-25T07:14:11.068Z [INFO] [Fundamentals] Fetching data from Yahoo Finance for: AAPL
+2026-07-25T07:14:13.490Z [INFO] [Fundamentals] Successfully saved local database entry for AAPL
+2026-07-25T07:14:13.510Z [INFO] [Fundamentals] Done for AAPL: PEG=2.59, FCF TTM=101090746368, FCF annual records=5, quarterly=6
+2026-07-25T07:29:37.735Z [INFO] [Sync Fundamentals] Syncing ticker: MSFT
+2026-07-25T07:29:37.763Z [INFO] [Fundamentals] Fetching data from Yahoo Finance for: MSFT
+2026-07-25T07:29:37.778Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T07:29:37.826Z [WARN] [Fundamentals] defaultKeyStatistics error for MSFT: fetch failed
+2026-07-25T07:29:39.548Z [INFO] [Fundamentals] YF fetch for MSFT had key errors. Falling back to stale local DB data.
+2026-07-25T07:29:41.073Z [INFO] [Sync Fundamentals] Completed sync. Success: 2, Failed: 0
+2026-07-25T07:38:52.768Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T07:38:52.788Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-25T07:38:53.904Z [INFO] News Sync completed. Saved 41 new articles.
+2026-07-25T07:54:50.660Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T08:39:56.745Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T08:39:56.782Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-25T08:39:57.696Z [INFO] News Sync completed. Saved 44 new articles.
+2026-07-25T09:40:53.848Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T09:40:53.878Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-25T09:40:55.076Z [INFO] News Sync completed. Saved 41 new articles.
+2026-07-25T10:04:53.876Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T11:30:55.641Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T11:30:55.719Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-25T11:30:57.090Z [INFO] News Sync completed. Saved 43 new articles.
+2026-07-25T11:38:57.567Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T11:44:57.585Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T12:33:48.694Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T12:33:48.727Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-25T12:33:49.630Z [INFO] News Sync completed. Saved 42 new articles.
+2026-07-25T12:41:49.265Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T12:47:49.259Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T12:53:49.275Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T12:59:49.275Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T13:05:49.289Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T13:11:49.315Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T13:17:49.333Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T13:23:49.339Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T13:29:49.352Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T13:33:48.751Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-25T13:33:49.784Z [INFO] News Sync completed. Saved 43 new articles.
+2026-07-25T13:35:49.371Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T13:41:49.384Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T13:47:49.405Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T13:53:49.404Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T13:59:49.417Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T14:53:05.806Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T14:53:05.838Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-25T14:53:06.771Z [INFO] News Sync completed. Saved 42 new articles.
+2026-07-25T15:08:43.210Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T15:16:05.838Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T15:32:17.178Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T15:37:17.234Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T15:43:17.244Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T15:49:17.265Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T15:53:05.870Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-25T15:53:06.902Z [INFO] News Sync completed. Saved 42 new articles.
+2026-07-25T15:55:17.278Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T16:01:17.288Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T16:07:17.303Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T16:13:17.315Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T16:19:17.321Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T16:25:17.324Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T16:31:17.335Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T16:37:17.351Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T16:43:17.380Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T17:18:01.862Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T17:18:01.906Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-25T17:18:02.932Z [INFO] News Sync completed. Saved 46 new articles.
+2026-07-25T17:24:01.810Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T17:29:01.851Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T17:35:01.867Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T17:41:01.883Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T17:47:01.896Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T17:53:01.910Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T17:59:01.939Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T18:05:01.947Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T18:11:01.963Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T18:17:01.982Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T18:18:02.006Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-25T18:18:02.993Z [INFO] News Sync completed. Saved 40 new articles.
+2026-07-25T18:23:01.959Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T18:29:01.973Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T18:35:01.989Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T18:41:02.007Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T18:47:02.011Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T18:53:02.019Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T18:59:02.034Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T19:05:02.047Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T19:11:02.077Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T19:14:11.399Z [INFO] [Sync Fundamentals] Starting fundamentals synchronization...
+2026-07-25T19:14:11.438Z [INFO] [Sync Fundamentals] Found 2 tickers to sync.
+2026-07-25T19:14:11.453Z [INFO] [Sync Fundamentals] Syncing ticker: AAPL
+2026-07-25T19:14:11.467Z [INFO] [Fundamentals] Fetching data from Yahoo Finance for: AAPL
+2026-07-25T19:14:13.498Z [INFO] [Fundamentals] Successfully saved local database entry for AAPL
+2026-07-25T19:14:13.519Z [INFO] [Fundamentals] Done for AAPL: PEG=2.59, FCF TTM=101090746368, FCF annual records=5, quarterly=6
+2026-07-25T19:14:15.039Z [INFO] [Sync Fundamentals] Syncing ticker: MSFT
+2026-07-25T19:14:15.062Z [INFO] [Fundamentals] Fetching data from Yahoo Finance for: MSFT
+2026-07-25T19:14:16.800Z [INFO] [Fundamentals] Successfully saved local database entry for MSFT
+2026-07-25T19:14:16.824Z [INFO] [Fundamentals] Done for MSFT: PEG=1.18, FCF TTM=37011251200, FCF annual records=4, quarterly=6
+2026-07-25T19:14:18.341Z [INFO] [Sync Fundamentals] Completed sync. Success: 2, Failed: 0
+2026-07-25T19:17:02.092Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T19:18:01.970Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-25T19:18:02.925Z [INFO] News Sync completed. Saved 41 new articles.
+2026-07-25T19:23:02.109Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T19:29:02.123Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T19:34:02.170Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T19:40:02.188Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T19:46:02.202Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T19:52:02.221Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T19:58:02.249Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T20:04:02.271Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T20:10:02.289Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T20:15:02.608Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-07-25T20:15:02.641Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-07-25T20:15:02.695Z [INFO] Performance history sync: processing 2 tickers (Portfolios: 1, Watchlist: 2)
+2026-07-25T20:15:02.714Z [INFO] Calculating history for Portafoglio Test...
+2026-07-25T20:15:02.726Z [INFO] Performance history sync: processing 1 tickers (Portfolios: 1, Watchlist: 0)
+2026-07-25T20:15:02.738Z [INFO] Calculating history for Portafoglio Test...
+2026-07-25T20:16:02.305Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T20:18:02.057Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-25T20:18:03.059Z [INFO] News Sync completed. Saved 44 new articles.
+2026-07-25T20:22:02.329Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T20:28:02.346Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T20:34:02.368Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T20:40:02.380Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T20:46:02.395Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T20:52:02.414Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T20:58:02.431Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T21:04:02.443Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T21:10:02.465Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T21:16:02.484Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T21:18:02.108Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-25T21:18:03.278Z [INFO] News Sync completed. Saved 41 new articles.
+2026-07-25T21:22:02.514Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T21:28:02.501Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T21:34:02.517Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T21:40:02.533Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T21:46:02.547Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T21:52:02.570Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T21:58:02.590Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T22:04:02.603Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T22:10:02.618Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T23:06:19.136Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T23:06:19.175Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-25T23:06:20.147Z [INFO] News Sync completed. Saved 41 new articles.
+2026-07-25T23:22:50.360Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-25T23:33:55.820Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T00:40:21.900Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T00:40:21.938Z [INFO] Recording daily snapshots for portfolios and dashboard...
+2026-07-26T00:40:21.968Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-26T00:40:22.199Z [INFO] Daily snapshots completed.
+2026-07-26T00:40:22.925Z [INFO] News Sync completed. Saved 43 new articles.
+2026-07-26T00:57:20.090Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T01:12:48.503Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T02:53:17.697Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T02:53:17.724Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-26T02:53:18.686Z [INFO] News Sync completed. Saved 42 new articles.
+2026-07-26T03:09:43.553Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T03:31:02.161Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T03:46:35.184Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T05:00:05.781Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T05:00:05.819Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-26T05:00:06.747Z [INFO] News Sync completed. Saved 46 new articles.
+2026-07-26T05:31:56.431Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T06:09:28.303Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T06:09:28.343Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-26T06:09:29.261Z [INFO] News Sync completed. Saved 45 new articles.
+2026-07-26T06:32:56.947Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T07:18:58.821Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T07:18:58.857Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-26T07:18:58.900Z [INFO] [Sync Fundamentals] Starting fundamentals synchronization...
+2026-07-26T07:18:58.916Z [INFO] [Sync Fundamentals] Found 2 tickers to sync.
+2026-07-26T07:18:58.924Z [INFO] [Sync Fundamentals] Syncing ticker: AAPL
+2026-07-26T07:18:58.934Z [INFO] [Fundamentals] Fetching data from Yahoo Finance for: AAPL
+2026-07-26T07:18:59.905Z [INFO] News Sync completed. Saved 40 new articles.
+2026-07-26T07:19:00.938Z [INFO] [Fundamentals] Successfully saved local database entry for AAPL
+2026-07-26T07:19:00.958Z [INFO] [Fundamentals] Done for AAPL: PEG=2.59, FCF TTM=101090746368, FCF annual records=5, quarterly=6
+2026-07-26T07:19:02.473Z [INFO] [Sync Fundamentals] Syncing ticker: MSFT
+2026-07-26T07:19:02.495Z [INFO] [Fundamentals] Fetching data from Yahoo Finance for: MSFT
+2026-07-26T07:19:04.246Z [INFO] [Fundamentals] Successfully saved local database entry for MSFT
+2026-07-26T07:19:04.272Z [INFO] [Fundamentals] Done for MSFT: PEG=1.18, FCF TTM=37011251200, FCF annual records=4, quarterly=6
+2026-07-26T07:19:05.789Z [INFO] [Sync Fundamentals] Completed sync. Success: 2, Failed: 0
+2026-07-26T07:57:27.550Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T08:42:17.784Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T08:42:17.822Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-26T08:42:18.895Z [INFO] News Sync completed. Saved 47 new articles.
+2026-07-26T08:48:15.017Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T08:54:15.021Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T08:59:15.078Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T09:05:15.047Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T09:11:15.058Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T09:17:15.069Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T09:23:15.080Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T09:29:15.098Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T09:35:15.112Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T09:52:52.048Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T09:52:52.114Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-26T09:57:01.065Z [ERROR] Failed to fetch RSS for https://feeds.finance.yahoo.com/rss/2.0/headline?s=AAPL,MSFT&region=US&lang=en-US:  - read ECONNRESET
+2026-07-26T09:57:01.768Z [INFO] News Sync completed. Saved 44 new articles.
+2026-07-26T10:13:42.328Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T11:38:04.670Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T11:38:04.701Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-26T11:38:05.616Z [INFO] News Sync completed. Saved 46 new articles.
+2026-07-26T12:28:49.137Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T12:39:31.866Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T12:39:31.905Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-26T12:39:32.831Z [INFO] News Sync completed. Saved 43 new articles.
+2026-07-26T13:31:08.307Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T13:40:29.021Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T13:40:29.057Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-26T13:40:30.043Z [INFO] News Sync completed. Saved 48 new articles.
+2026-07-26T14:13:31.705Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T14:41:26.096Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T14:41:26.131Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-26T14:41:27.123Z [INFO] News Sync completed. Saved 46 new articles.
+2026-07-26T15:13:58.237Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T15:19:02.210Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T15:25:02.218Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T15:31:02.228Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T16:02:27.271Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T16:02:27.307Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-26T16:02:28.325Z [INFO] News Sync completed. Saved 45 new articles.
+2026-07-26T16:08:27.286Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T16:14:27.299Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T16:20:27.296Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T16:26:27.303Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T16:32:27.312Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T16:38:27.323Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T16:44:27.329Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T16:50:27.340Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T16:56:27.356Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T17:02:27.373Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-26T17:02:27.431Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T17:02:28.376Z [INFO] News Sync completed. Saved 44 new articles.
+2026-07-26T17:07:27.456Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T17:13:27.472Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T17:19:27.482Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T17:25:27.501Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T17:31:27.519Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T17:37:27.537Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T17:53:27.911Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T17:59:27.918Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T18:02:27.360Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-07-26T18:02:28.440Z [INFO] News Sync completed. Saved 49 new articles.
+2026-07-26T18:05:27.954Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T18:11:27.938Z [INFO] Skipping automatic market update: all markets are closed.
+2026-07-26T18:16:27.994Z [INFO] Skipping automatic market update: all markets are closed.
