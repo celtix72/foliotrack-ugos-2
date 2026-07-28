@@ -289,7 +289,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="flex gap-8">
+                <div class="flex items-center gap-3 sm:gap-6">
                     <div class="text-right">
                         <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Gross Latent Gain</p>
                         <p class="text-sm font-black text-slate-700 dark:text-slate-300" id="taxation-gross-gain">0.00 EUR</p>
@@ -298,6 +298,10 @@
                         <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Estimated Tax</p>
                         <p class="text-sm font-black text-rose-500" id="total-latent-tax-label">0.00 EUR</p>
                     </div>
+                    <button type="button" onclick="event.stopPropagation(); toggleTaxDetail();" class="p-2 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors flex items-center gap-1.5 text-xs font-bold" title="Modifica Minusvalenze">
+                        <span class="material-symbols-outlined text-base">edit_note</span>
+                        <span class="hidden sm:inline">Modifica Minusvalenze</span>
+                    </button>
                     <div class="flex items-center text-slate-400">
                         <span class="material-symbols-outlined">expand_more</span>
                     </div>
@@ -323,7 +327,15 @@
                         </tbody>
                     </table>
                 </div>
-                <p class="mt-4 text-[9px] text-slate-400 italic">Taxes are calculated per asset type by offsetting latent gains on open positions with manually entered capital losses (minusvalenze). Realized gains from closed positions are excluded.</p>
+                <div class="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-amber-200/60 dark:border-amber-800/40 pt-4">
+                    <p class="text-[9px] text-slate-400 italic max-w-xl">
+                        Le imposte sono calcolate per categoria compensando i guadagni latenti con le minusvalenze inserite direttamente. Modifica i valori nella tabella in alto e premi Salva per aggiornare.
+                    </p>
+                    <button type="button" onclick="saveFiscalMinusvalenze()" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 self-end sm:self-auto">
+                        <span class="material-symbols-outlined text-sm">save</span>
+                        <span>Salva Minusvalenze</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -1209,7 +1221,13 @@
                     <tr class="border-b border-slate-50 dark:border-slate-800/50 hover:bg-amber-100/30 transition-colors">
                         <td class="py-3 font-bold text-slate-700 dark:text-slate-300">${b.type} <span class="text-[10px] text-slate-400 font-normal ml-1">(${b.rate}%)</span></td>
                         <td class="py-3 text-right font-medium">${formatPrivacy(b.grossGain, p.currency, 'tax-row-gross-' + b.type, 0)}</td>
-                        <td class="py-3 text-right text-amber-600 font-bold">${formatPrivacy(b.minusvalenze, p.currency, 'tax-row-min-' + b.type, 0)}</td>
+                        <td class="py-2 text-right">
+                            <input type="number" step="any" min="0" data-type="${b.type}" 
+                                   class="fiscal-minusvalenza-input w-28 text-right bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700/60 rounded-lg px-2.5 py-1 text-xs font-mono font-bold text-amber-600 dark:text-amber-400 focus:ring-2 focus:ring-amber-500/40 outline-none shadow-sm transition-all" 
+                                   value="${b.minusvalenze || 0}" 
+                                   placeholder="0.00" 
+                                   onchange="saveFiscalMinusvalenze()" />
+                        </td>
                         <td class="py-3 text-right font-bold">${formatPrivacy(b.taxableGain, p.currency, 'tax-row-taxable-' + b.type, 0)}</td>
                         <td class="py-3 text-right text-rose-500 font-black">${formatPrivacy(b.tax, p.currency, 'tax-row-tax-' + b.type, 0)}</td>
                         <td class="py-3 text-right text-emerald-600 font-black">${formatPrivacy(b.netGain, p.currency, 'tax-row-net-' + b.type, 0)}</td>
@@ -1237,6 +1255,32 @@
             navigateToList();
         }
     }
+
+    window.saveFiscalMinusvalenze = async function() {
+        const losses = {};
+        document.querySelectorAll('.fiscal-minusvalenza-input').forEach(input => {
+            const type = input.getAttribute('data-type');
+            const val = parseFloat(input.value) || 0;
+            if (type) losses[type] = val;
+        });
+
+        try {
+            const res = await fetch(`/api/portfolios/${currentPortfolioId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ losses })
+            });
+            if (res.ok) {
+                if (window.showNotification) window.showNotification('Minusvalenze aggiornate!', 'success');
+                init();
+            } else {
+                const errText = await res.text();
+                alert('Errore nel salvataggio delle minusvalenze: ' + errText);
+            }
+        } catch (err) {
+            alert('Errore nel salvataggio delle minusvalenze: ' + err.message);
+        }
+    };
 
     function renderAssetsTable(holdings, transactions, currency) {
         const tBody = document.getElementById('assets-table-body');

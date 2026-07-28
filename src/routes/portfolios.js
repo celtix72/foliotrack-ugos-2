@@ -303,6 +303,17 @@ Rispondi in JSON: { "riskScore": 7, "diversification": "...", "actions": ["...",
                     }
                 })();
             }
+
+            if (losses && typeof losses === 'object') {
+                database.db.transaction(() => {
+                    database.db.prepare('DELETE FROM portfolio_losses WHERE portfolioId = ?').run(req.params.id);
+                    const stmt = database.db.prepare('INSERT INTO portfolio_losses (portfolioId, asset_type, amount) VALUES (?, ?, ?)');
+                    for (const [type, amount] of Object.entries(losses)) {
+                        const val = parseFloat(amount) || 0;
+                        if (val > 0) stmt.run(req.params.id, type, val);
+                    }
+                })();
+            }
             
             if (typeof clearPerformanceCache === 'function') clearPerformanceCache();
 

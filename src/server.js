@@ -1482,9 +1482,10 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
         aggregateGains[h.type].unrealized += h.unrealizedGain;
     });
 
+    const allTaxTypes = new Set([...Object.keys(aggregateGains), ...Object.keys(lossMap), ...Object.keys(trMap)]);
     let totalLatentTax = 0;
-    const taxBreakdown = Object.entries(aggregateGains).map(([type, gains]) => {
-        const grossGain = gains.unrealized;
+    const taxBreakdown = Array.from(allTaxTypes).map(type => {
+        const grossGain = aggregateGains[type] ? aggregateGains[type].unrealized : 0;
         const minusvalenze = lossMap[type] || 0;
         const taxableGain = Math.max(0, grossGain - minusvalenze);
         const rate = trMap[type] || 26;
@@ -1492,10 +1493,10 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
         const netGain = grossGain - tax;
         totalLatentTax += tax;
         return {
-            type, grossGain, unrealized: gains.unrealized, realized: 0,
+            type, grossGain, unrealized: grossGain, realized: 0,
             minusvalenze, taxableGain, rate, tax, netGain
         };
-    }).filter(b => b.grossGain !== 0 || b.minusvalenze !== 0);
+    }).sort((a, b) => b.grossGain - a.grossGain || b.minusvalenze - a.minusvalenze);
 
     const totalAssetsValue = holdings.reduce((s, h) => s + h.currentValue, 0);
     const roundedCash = Math.round((portfolio.currentCash || 0) * 100) / 100;
