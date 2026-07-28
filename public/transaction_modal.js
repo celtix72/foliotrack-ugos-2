@@ -297,10 +297,14 @@
         document.getElementById('tm-submit-label').innerText = type === 'SELL' ? 'Conferma Vendita' : 'Conferma';
         document.getElementById('tm-submit-icon').innerText = type === 'SELL' ? 'sell' : 'check_circle';
 
-        // Pre-fill ticker BEFORE toggleTransactionFields
+        // Pre-fill ticker & currency BEFORE toggleTransactionFields
         if (options.ticker) {
             document.getElementById('tm-asset-search').value = options.name || options.ticker;
             document.getElementById('tm-asset-ticker').value = options.ticker;
+            if (options.currency) {
+                const curEl = document.getElementById('tm-asset-currency');
+                if (curEl) curEl.value = options.currency;
+            }
         }
 
         toggleTransactionFields();
@@ -310,6 +314,10 @@
         if (options.price !== undefined) document.getElementById('tm-price').value = options.price;
         if (options.comm !== undefined) document.getElementById('tm-comm').value = options.comm;
         if (options.tax !== undefined) document.getElementById('tm-tax').value = options.tax;
+        if (options.fx !== undefined || options.exchangeRate !== undefined) {
+            const fxVal = options.fx || options.exchangeRate;
+            document.getElementById('tm-fx').value = fxVal;
+        }
 
         // Store sell holding context for gain projection
         if (type === 'SELL' && (options.avgCost !== undefined || options.totalQty !== undefined || options.qty !== undefined)) {
@@ -319,6 +327,26 @@
                 currency: options.currency || 'EUR'
             };
             tmUpdateSellGain();
+        }
+
+        // Async fallback if ticker provided but missing price or currency
+        if (options.ticker && (options.price === undefined || options.currency === undefined)) {
+            fetch(`/api/validate-ticker?ticker=${options.ticker}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.valid) {
+                        if (options.currency === undefined && data.currency) {
+                            const curEl = document.getElementById('tm-asset-currency');
+                            if (curEl) curEl.value = data.currency;
+                            tmCheckFX();
+                        }
+                        if (options.price === undefined && data.currentPrice) {
+                            document.getElementById('tm-price').value = data.currentPrice;
+                            if (type === 'SELL') tmUpdateSellGain();
+                        }
+                    }
+                })
+                .catch(() => {});
         }
         } catch (err) {
             console.error('[TM] Error opening modal:', err);

@@ -1724,9 +1724,9 @@
     // We wrap here to inject the current portfolio context automatically
     const _origOpenTM = window.openTransactionModal;
     window.openTransactionModal = function(options) {
-        const pid = (typeof options === 'object' && options?.portfolioId) ? options.portfolioId : currentPortfolioId;
-        const type = (typeof options === 'object' && options?.type) ? options.type : undefined;
-        if (typeof _origOpenTM === 'function') _origOpenTM({ portfolioId: pid, type: type });
+        let opts = (typeof options === 'object' && options !== null) ? { ...options } : {};
+        if (!opts.portfolioId) opts.portfolioId = currentPortfolioId;
+        if (typeof _origOpenTM === 'function') _origOpenTM(opts);
     };
 
 

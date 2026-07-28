@@ -1396,7 +1396,7 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
         // historical BUY/SELL prices & quantities, so do NOT re-apply ratio here.
 
         if (t.type === 'DIVIDEND' && t.assetTicker) {
-            const net = (qty && price && t.type !== 'DIVIDEND_MANUAL') ? ((qty * price - comm - tax) / fx) : (amount / fx);
+            const net = (qty && price && t.type !== 'DIVIDEND_MANUAL') ? ((qty * price - comm - tax) / fx) : (amount ? Math.abs(amount) : 0);
             dividends.push({ ticker: t.assetTicker, date: t.date, year, amount: net, tax: tax / fx });
         }
     }

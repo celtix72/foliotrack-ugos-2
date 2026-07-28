@@ -508,7 +508,8 @@ module.exports = function (dependencies) {
 
                     if (t.type === 'BUY' && t.assetTicker) {
                         if (!holdingsMap[t.assetTicker]) holdingsMap[t.assetTicker] = { shares: 0, costBasis: 0 };
-                        const totalCost = (t.amount || (t.quantity * t.price + t.commission + t.tax)) / t.exchangeRate;
+                        const fx = t.exchangeRate || 1;
+                        const totalCost = t.amount ? Math.abs(t.amount) : (t.quantity * t.price + t.commission + t.tax) / fx;
                         holdingsMap[t.assetTicker].shares += t.quantity;
                         holdingsMap[t.assetTicker].costBasis += totalCost;
 
@@ -517,7 +518,8 @@ module.exports = function (dependencies) {
                         const h = holdingsMap[t.assetTicker] || { shares: 0, costBasis: 0 };
                         const pmc = h.shares > 0 ? h.costBasis / h.shares : 0;
                         const sellCostBasis = sellQty * pmc;
-                        const proceeds = (t.amount || (t.quantity * t.price - t.commission - t.tax)) / t.exchangeRate;
+                        const fx = t.exchangeRate || 1;
+                        const proceeds = t.amount ? Math.abs(t.amount) : (t.quantity * t.price - t.commission - t.tax) / fx;
                         const gain = proceeds - sellCostBasis;
                         const gainPct = sellCostBasis > 0 ? ((gain / sellCostBasis) * 100).toFixed(2) : 0;
 
@@ -1139,7 +1141,7 @@ module.exports = function (dependencies) {
                 const mStr = d.toISOString().substring(0, 7);
                 const monthlyDiv = allTransactions
                     .filter(t => t.type === 'DIVIDEND' && t.date.startsWith(mStr))
-                    .reduce((sum, t) => sum + (t.amount || (t.quantity * t.price - t.commission - t.tax)) / (t.exchangeRate || 1), 0);
+                    .reduce((sum, t) => sum + (t.amount ? Math.abs(t.amount) : (t.quantity * t.price - t.commission - t.tax) / (t.exchangeRate || 1)), 0);
                 dividends.push({ date: mStr, amount: monthlyDiv });
             }
 
@@ -1209,7 +1211,8 @@ module.exports = function (dependencies) {
                 let costBasis = 0;
                 const tks = allTransactions.filter(t => t.assetTicker === ticker);
                 for (const t of tks) {
-                    const total = (t.amount || (t.quantity * t.price + (t.type==='BUY'?1:-1)*(t.commission+t.tax))) / (t.exchangeRate||1);
+                    const fx = t.exchangeRate || 1;
+                    const total = t.amount ? Math.abs(t.amount) : (t.quantity * t.price + (t.type==='BUY'?1:-1)*(t.commission+t.tax)) / fx;
                     if (t.type === 'BUY') {
                         qty += t.quantity;
                         costBasis += total;
@@ -1219,7 +1222,7 @@ module.exports = function (dependencies) {
                         qty -= t.quantity;
                         costBasis -= (t.quantity * avgCost);
                     } else if (t.type === 'DIVIDEND') {
-                        realized += (t.amount || (t.quantity * t.price - t.commission - t.tax)) / (t.exchangeRate || 1);
+                        realized += t.amount ? Math.abs(t.amount) : (t.quantity * t.price - t.commission - t.tax) / fx;
                     }
                 }
                 unrealized = qty * (a.currentPrice / (tks.filter(tx=>tx.exchangeRate).at(-1)?.exchangeRate||1)) - costBasis;
@@ -1298,7 +1301,7 @@ module.exports = function (dependencies) {
                         qty -= q;
                         if (Math.abs(qty) < 0.00001) { qty = 0; totalCostAsset = 0; }
                     } else if (t.type === 'DIVIDEND') {
-                        const net = t.amount ? (Math.abs(t.amount) / fxRate) : ((q * p - comm - tax) / fxRate);
+                        const net = t.amount ? Math.abs(t.amount) : ((q * p - comm - tax) / fxRate);
                         dividends += net;
                     }
                     // NOTE: SPLIT transactions are audit markers only.
