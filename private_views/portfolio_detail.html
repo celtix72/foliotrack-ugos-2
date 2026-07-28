@@ -1257,18 +1257,25 @@
     }
 
     window.saveFiscalMinusvalenze = async function() {
-        const losses = {};
-        document.querySelectorAll('.fiscal-minusvalenza-input').forEach(input => {
-            const type = input.getAttribute('data-type');
+        const lossesMap = {};
+        const inputs = document.querySelectorAll('.fiscal-minusvalenza-input, .minusvalenza-input');
+        inputs.forEach(input => {
+            const type = input.getAttribute('data-type') || (input.dataset ? input.dataset.type : null);
             const val = parseFloat(input.value) || 0;
-            if (type) losses[type] = val;
+            if (type) lossesMap[type] = val;
         });
 
+        const targetId = currentPortfolioId || getParam('id');
+        if (!targetId) {
+            console.error('Portfolio ID not found for saving minusvalenze');
+            return;
+        }
+
         try {
-            const res = await fetch(`/api/portfolios/${currentPortfolioId}`, {
+            const res = await fetch(`/api/portfolios/${targetId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ losses })
+                body: JSON.stringify({ losses: lossesMap })
             });
             if (res.ok) {
                 if (window.showNotification) window.showNotification('Minusvalenze aggiornate!', 'success');
