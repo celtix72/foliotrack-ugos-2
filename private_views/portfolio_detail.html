@@ -1254,7 +1254,10 @@
             console.error("Error loading portfolio details:", err);
             navigateToList();
         }
-    }
+    window.toggleTaxDetail = function() {
+        const el = document.getElementById('tax-detail-body');
+        if (el) el.classList.toggle('hidden');
+    };
 
     window.saveFiscalMinusvalenze = async function() {
         const lossesMap = {};

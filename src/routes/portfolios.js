@@ -274,7 +274,7 @@ Rispondi in JSON: { "riskScore": 7, "diversification": "...", "actions": ["...",
 
     // PUT /api/portfolios/:id
     router.put('/:id', requireAuth, requirePortfolioAccess, async (req, res) => {
-        const { name, currency, include_in_totals, user_ids, tags } = req.body;
+        const { name, currency, include_in_totals, user_ids, tags, losses } = req.body;
         try {
             if (name) database.db.prepare('UPDATE portfolios SET name = ? WHERE id = ?').run(name, req.params.id);
             if (currency) database.db.prepare('UPDATE portfolios SET currency = ? WHERE id = ?').run(currency, req.params.id);
