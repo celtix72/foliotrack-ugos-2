@@ -383,13 +383,20 @@
 
   // ── Sort Mode (changePercent / name / dailyVal / totalGain) ──────────────────────
   let _marketSortMode = localStorage.getItem('market_sort_mode') || 'changePercent';
+  let _marketSortDir  = localStorage.getItem('market_sort_dir')  || 'desc';
 
   const _activeTag   = 'text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all bg-primary text-white shadow-sm';
   const _inactiveTag = 'text-[9px] font-black uppercase px-2.5 py-1 rounded-md transition-all bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700';
 
   window.setMarketSort = function(mode) {
-    _marketSortMode = mode;
+    if (_marketSortMode === mode) {
+      _marketSortDir = _marketSortDir === 'desc' ? 'asc' : 'desc';
+    } else {
+      _marketSortMode = mode;
+      _marketSortDir = (mode === 'name') ? 'asc' : 'desc';
+    }
     localStorage.setItem('market_sort_mode', mode);
+    localStorage.setItem('market_sort_dir', _marketSortDir);
     updateSortToggle();
     mobLoadAssets();
   };
@@ -399,10 +406,25 @@
     const btnName = document.getElementById('btn-sort-name');
     const btnVal  = document.getElementById('btn-sort-val');
     const btnAbs  = document.getElementById('btn-sort-abs');
-    if (btnPct)  btnPct.className  = _marketSortMode === 'changePercent' ? _activeTag : _inactiveTag;
-    if (btnName) btnName.className = _marketSortMode === 'name'          ? _activeTag : _inactiveTag;
-    if (btnVal)  btnVal.className  = _marketSortMode === 'dailyVal'       ? _activeTag : _inactiveTag;
-    if (btnAbs)  btnAbs.className  = _marketSortMode === 'totalGain'      ? _activeTag : _inactiveTag;
+
+    const arrow = _marketSortDir === 'desc' ? ' ↓' : ' ↑';
+
+    if (btnPct)  {
+      btnPct.className  = _marketSortMode === 'changePercent' ? _activeTag : _inactiveTag;
+      btnPct.textContent = '% Giorno' + (_marketSortMode === 'changePercent' ? arrow : '');
+    }
+    if (btnName) {
+      btnName.className = _marketSortMode === 'name'          ? _activeTag : _inactiveTag;
+      btnName.textContent = 'Nome' + (_marketSortMode === 'name' ? arrow : '');
+    }
+    if (btnVal)  {
+      btnVal.className  = _marketSortMode === 'dailyVal'       ? _activeTag : _inactiveTag;
+      btnVal.textContent = 'Val Giorno' + (_marketSortMode === 'dailyVal' ? arrow : '');
+    }
+    if (btnAbs)  {
+      btnAbs.className  = _marketSortMode === 'totalGain'      ? _activeTag : _inactiveTag;
+      btnAbs.textContent = 'Assoluto' + (_marketSortMode === 'totalGain' ? arrow : '');
+    }
   }
 
   // ── Font Scaling (0.7 to 1.5) ──────────────────────────────────────────────────
@@ -640,14 +662,26 @@
         if (type === 'CONTO_DEPOSITO' || yfType === 'CONTO_DEPOSITO' || ticker.startsWith('CD_')) {
           return 0;
         }
-        
-        // When sorting by name or total gain, do not partition open/closed markets
-        if (_marketSortMode === 'name' || _marketSortMode === 'totalGain') {
-          return 1;
+        return 1;
+      };
+
+      const getSortValue = (a, mode) => {
+        if (mode === 'name') {
+          return (a.name || a.ticker || '').toLowerCase();
         }
-        
-        // Group 2: Open, Group 1: Closed
-        return isAssetMarketOpen(x) ? 2 : 1;
+        if (mode === 'dailyVal') {
+          const chgVal = a.changeValue !== null && a.changeValue !== undefined 
+            ? a.changeValue 
+            : ((a.currentPrice || 0) * (a.changePercent || 0) / 100);
+          return chgVal * (a.totalQuantity || 0);
+        }
+        if (mode === 'totalGain') {
+          if (a.totalGainEUR !== undefined) return a.totalGainEUR;
+          const totalVal = (a.currentPrice || 0) * (a.totalQuantity || 0);
+          return totalVal - (a.totalCostAssetCurr || 0);
+        }
+        // Default: changePercent
+        return a.changePercent || 0;
       };
 
       const openPos = assets.filter(a => a.hasPosition).sort((a, b) => {
@@ -655,27 +689,21 @@
         const groupB = getSortGroup(b);
         
         if (groupA !== groupB) {
-          return groupB - groupA; // Group 2 first, then Group 1, then Group 0
+          return groupB - groupA;
         }
         
-        // Group 0 (CD) does not participate in active sorting; sort statically by ticker/name
         if (groupA === 0) {
           return (a.ticker || '').localeCompare(b.ticker || '');
         }
 
-        if (_marketSortMode === 'name') {
-          return (a.name || '').localeCompare(b.name || '');
-        } else if (_marketSortMode === 'dailyVal') {
-          const valA = (a.changeValue || 0) * (a.totalQuantity || 0);
-          const valB = (b.changeValue || 0) * (b.totalQuantity || 0);
-          return valB - valA;
-        } else if (_marketSortMode === 'totalGain') {
-          const valA = a.totalGainEUR !== undefined ? a.totalGainEUR : (((a.currentPrice || 0) * (a.totalQuantity || 0)) - (a.totalCostAssetCurr || 0));
-          const valB = b.totalGainEUR !== undefined ? b.totalGainEUR : (((b.currentPrice || 0) * (b.totalQuantity || 0)) - (b.totalCostAssetCurr || 0));
-          return valB - valA;
-        } else {
-          return (b.changePercent || 0) - (a.changePercent || 0);
+        const valA = getSortValue(a, _marketSortMode);
+        const valB = getSortValue(b, _marketSortMode);
+
+        if (typeof valA === 'string' && typeof valB === 'string') {
+          return _marketSortDir === 'desc' ? valB.localeCompare(valA) : valA.localeCompare(valB);
         }
+
+        return _marketSortDir === 'desc' ? valB - valA : valA - valB;
       });
 
       if (posCountEl) posCountEl.textContent = `${openPos.length} Assets`;
