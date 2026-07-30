@@ -1590,6 +1590,9 @@ Usa i colori:
 - [Rischio 1: es. Obsolescenza tecnologica]
 - [Rischio 2: es. Esaurimento cassa]
 - [Rischio 3: es. Regolatorio]
+
+**INPUT DATA TO ANALYZE:**
+${contextData}
 `;
             } else if (promptType === 'garp') {
                 prompt = `**SYSTEM ROLE & BEHAVIOR**
