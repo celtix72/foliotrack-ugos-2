@@ -1003,6 +1003,7 @@
                         <select id="ai-modal-prompt-select" style="width: 130px; text-overflow: ellipsis; font-size: 11px; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(148,163,184,0.3); background: transparent; cursor: pointer; outline: none; font-weight: 600;" class="text-slate-700 dark:text-slate-300">
                             <option value="graham">Graham e Buffett</option>
                             <option value="garp">GARP</option>
+                            <option value="disruptive">Disruptive</option>
                         </select>
                         <button id="ai-modal-run-btn" onclick="window.runAssetAi()" style="background: var(--mob-primary); color: white; padding: 7px 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 11px; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(19,91,236,0.2); white-space: nowrap; flex-shrink: 0;">
                             <span class="material-symbols-outlined" style="font-size: 16px;">add</span> Nuova
@@ -1324,7 +1325,11 @@
                                     <span class="material-symbols-outlined" style="font-size: 12px;">${engineIcon}</span> ${engineDisplay}
                                 </span>
                                 ${(() => {
-                                    if (item.prompt_type === 'garp') {
+                                    if (item.prompt_type === 'disruptive') {
+                                        return `<span style="font-size: 10px; font-weight: 900; color: #8b5cf6; background: rgba(139,92,246,0.1); padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 3px;" title="Analisi Disruptive">
+                                            <span class="material-symbols-outlined" style="font-size: 12px;">rocket_launch</span> DISRUPT
+                                        </span>`;
+                                    } else if (item.prompt_type === 'garp') {
                                         return `<span style="font-size: 10px; font-weight: 900; color: #10b981; background: rgba(16,185,129,0.1); padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 3px;" title="Analisi Growth">
                                             <span class="material-symbols-outlined" style="font-size: 12px;">trending_up</span> GARP
                                         </span>`;

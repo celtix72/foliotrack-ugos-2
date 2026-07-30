@@ -148,6 +148,7 @@ module.exports = function (dependencies) {
                 tavilyApiKey: settings.tavilyApiKey || '',
                 aiAssetPrompt: settings.aiAssetPrompt || '',
                 aiAssetPromptGarp: settings.aiAssetPromptGarp || '',
+                aiAssetPromptDisruptive: settings.aiAssetPromptDisruptive || '',
                 aiPortfolioPrompt: settings.aiPortfolioPrompt || '',
                 aiReportPrompt: settings.aiReportPrompt || 'Sei un analista finanziario esperto. Analizza il seguente portafoglio basandoti sui dati forniti (lista degli asset con PMC, prezzo attuale, gain, diversificazione, asset allocation e tutte le transizioni storiche). Fornisci un report strutturato in due sezioni:\n\n1. Analisi delle posizioni aperte (rischio, diversificazione e prospettive).\n2. Analisi delle posizioni chiuse e dei dividendi suddivisi per anno (valutazione della performance storica e della continuità dei dividendi).',
                 aiReportEngine: settings.aiReportEngine || 'Gemini_Free',
@@ -162,7 +163,7 @@ module.exports = function (dependencies) {
 
     // POST /api/admin/ai-settings
     router.post('/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
-        const { aiEngine, geminiApiKeyFree, geminiApiKeyPay, openrouterApiKey, openrouterModel1, openrouterModel2, openrouterModel3, openrouterModel4, openrouterModel5, requestyApiKey, requestyModel1, requestyModel2, requestyModel3, requestyModel4, requestyModel5, tavilyApiKey, aiAssetPrompt, aiAssetPromptGarp, aiPortfolioPrompt, aiReportPrompt, aiReportEngine, geminiModelPreferences } = req.body;
+        const { aiEngine, geminiApiKeyFree, geminiApiKeyPay, openrouterApiKey, openrouterModel1, openrouterModel2, openrouterModel3, openrouterModel4, openrouterModel5, requestyApiKey, requestyModel1, requestyModel2, requestyModel3, requestyModel4, requestyModel5, tavilyApiKey, aiAssetPrompt, aiAssetPromptGarp, aiAssetPromptDisruptive, aiPortfolioPrompt, aiReportPrompt, aiReportEngine, geminiModelPreferences } = req.body;
         try {
             if (aiEngine !== undefined) database.setSetting(1, 'aiEngine', aiEngine);
             if (geminiApiKeyFree !== undefined) database.setSetting(1, 'geminiApiKeyFree', geminiApiKeyFree);
@@ -182,6 +183,7 @@ module.exports = function (dependencies) {
             if (tavilyApiKey !== undefined) database.setSetting(1, 'tavilyApiKey', tavilyApiKey);
             if (aiAssetPrompt !== undefined) database.setSetting(1, 'aiAssetPrompt', aiAssetPrompt);
             if (aiAssetPromptGarp !== undefined) database.setSetting(1, 'aiAssetPromptGarp', aiAssetPromptGarp);
+            if (aiAssetPromptDisruptive !== undefined) database.setSetting(1, 'aiAssetPromptDisruptive', aiAssetPromptDisruptive);
             if (aiPortfolioPrompt !== undefined) database.setSetting(1, 'aiPortfolioPrompt', aiPortfolioPrompt);
             if (aiReportPrompt !== undefined) database.setSetting(1, 'aiReportPrompt', aiReportPrompt);
             if (aiReportEngine !== undefined) database.setSetting(1, 'aiReportEngine', aiReportEngine);

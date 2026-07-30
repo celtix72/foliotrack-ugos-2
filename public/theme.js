@@ -843,6 +843,7 @@
         let formatted = window.formatCurrency(num, currency, decimals);
         if (promptType === 'garp') formatted += ' (Gro)';
         else if (promptType === 'graham') formatted += ' (Val)';
+        else if (promptType === 'disruptive') formatted += ' (Dis)';
         return formatted;
     };
 

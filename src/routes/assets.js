@@ -1241,7 +1241,7 @@ router.delete('/assets/:id', requireAuth, (req, res) => {
 router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
     try {
         const globalSettings = database.getSettings(1) || {};
-        const promptType = req.query.prompt_type === 'garp' ? 'garp' : 'graham';
+        const promptType = req.query.prompt_type === 'garp' ? 'garp' : (req.query.prompt_type === 'disruptive' ? 'disruptive' : 'graham');
 
 
         // Setup SSE Headers
@@ -1457,7 +1457,7 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
 
         sendEvent('progress', { message: 'Generazione responso IA in corso...' });
 
-        let customPromptText = (promptType === 'garp') ? (globalSettings.aiAssetPromptGarp || '') : (globalSettings.aiAssetPrompt || '');
+        let customPromptText = (promptType === 'garp') ? (globalSettings.aiAssetPromptGarp || '') : (promptType === 'disruptive' ? (globalSettings.aiAssetPromptDisruptive || '') : (globalSettings.aiAssetPrompt || ''));
         if (customPromptText) {
             const assetName = assetRow.name || assetRow.ticker;
             const assetExchange = assetRow.exchange || 'Mercato';
@@ -1512,7 +1512,84 @@ Here are the metrics for each section's table:
             }
         } else {
             const customPromptSection = customPromptText ? `\n**USER CUSTOM INSTRUCTIONS**\n${customPromptText}\n` : '';
-            if (promptType === 'garp') {
+            if (promptType === 'disruptive') {
+                prompt = `**SYSTEM ROLE & BEHAVIOR**
+Agisci come un Senior Equity Research Analyst specializzato in Deep Tech, Biotecnologie Avanzate e Tecnologie Disruptive, con una forte disciplina nell'analisi fondamentale dei mercati azionari. L'obiettivo è valutare il potenziale di un asset azionario di sovraperformare massicciamente il mercato nel lungo periodo (5-10 anni). L'analisi deve mappare la validità tecnologica, l'opzionalità dei prodotti emergenti, la sostenibilità del Moat e la solidità finanziaria per superare la fase di burn rate.
+
+**TASK**
+Analyze the provided input data strictly, objectively, and exclusively. Do not hallucinate external data. Se un dato manca, indicalo come "N/D".
+Valuta specialmente R&D, Cash Runway, Bilancio, e il potenziale asimmetrico.
+${customPromptSection}
+**OUTPUT CONSTRAINTS (CRITICAL)**
+You MUST output EXACTLY and EXCLUSIVELY a valid JSON object. No conversational text prima o dopo. Nessun blocco di codice markdown (\`\`\`json).
+The JSON structure must be exactly as follows:
+{
+  "action": "<ONE WORD: BUY, SELL, HOLD, AVOID, WATCHLIST, or NO DATA>",
+  "reasoning": "<Insert the full Markdown-formatted report here. You MUST escape all newlines with \\\\n and internal quotes with \\\" >",
+  "targetProfit": <number or 0>,
+  "stopLoss": <number or 0>
+}
+
+**REPORT STRUCTURE & STYLE (To be generated inside the JSON "reasoning" field)**
+Scrivi il report in Italiano, formattato in Markdown. 
+CRITICAL STYLE REQUIREMENT: Per le prime 4 sezioni devi iniziare con una Tabella Markdown che riassume le metriche.
+Colonne tabella: | Metrica Evaluata | Valore Attuale | Valutazione (🟢/🟡/🔴) | Nota Sintetica |
+Usa i colori:
+- 🟢 = Eccellente / Sicuro / Forte
+- 🟡 = Neutro / Attenzione / Marginale
+- 🔴 = Negativo / Pericolo / Red Flag
+
+**TEMPLATE REQUISITO PER IL REPORT (reasoning)**
+
+### 🚀 1. Mappatura dell'Opzionalità e dei Prodotti Emergenti
+| Metrica Evaluata | Valore Attuale | Valutazione (🟢/🟡/🔴) | Nota Sintetica |
+| :--- | :--- | :--- | :--- |
+| S-Curve / Hype Cycle | ... | ... | ... |
+| Dipendenza Prodotto Core vs Futuro | ... | ... | ... |
+
+[Paragrafo di analisi: Quali sono le tecnologie non ancora mature? Sono binarie o progressive?]
+
+### 🏰 2. Analisi dell'Emerging Moat (Il Fossato Competitivo)
+| Metrica Evaluata | Valore Attuale | Valutazione (🟢/🟡/🔴) | Nota Sintetica |
+| :--- | :--- | :--- | :--- |
+| IP / Brevetti | ... | ... | ... |
+| Switching Costs / Network Effect | ... | ... | ... |
+
+[Paragrafo: Vantaggio competitivo, replicabilità da Big Tech, vantaggio su infrastruttura/talenti]
+
+### 🛡️ 3. Reality Check Finanziario (Cash Runway & Burn Rate)
+| Metrica Evaluata | Valore Attuale | Valutazione (🟢/🟡/🔴) | Nota Sintetica |
+| :--- | :--- | :--- | :--- |
+| R&D / Revenue (R&D Efficiency) | ... | ... | ... |
+| Total Cash vs Debt | ... | ... | ... |
+| Burn Rate / Cash Runway stimata | ... | ... | ... |
+
+[Paragrafo: L'azienda ha abbastanza "carburante finanziario" per fare centro prima che finiscano i soldi?]
+
+### 🎯 4. Contesto Macro-Tecnologico e Competitivo
+| Metrica Evaluata | Valore Attuale | Valutazione (🟢/🟡/🔴) | Nota Sintetica |
+| :--- | :--- | :--- | :--- |
+| Corsa all'R&D (Competitors) | ... | ... | ... |
+| Regolamentazione / Standard | ... | ... | ... |
+
+[Paragrafo: Chi sta correndo di più? Il contesto gioca a favore?]
+
+### 💡 5. Sintesi e Tesi di Investimento Asimmetrico
+| Parametro Operativo | Valore / Livello | Dettaglio / Razionale |
+| :--- | :--- | :--- |
+| Punteggio Conviction (1-10) | ... | Bilanciamento tra potenziale e fondamentali |
+| Catalizzatore Futuro | ... | ... |
+| Area di Supporto critico | ... | ... |
+| Area di Resistenza | ... | ... |
+| Zona di Ingresso (Buy) | ... | ... |
+
+**La Tesi di Innovazione:** [Perché questo titolo può sovraperformare? Qual è il catalizzatore?]
+**I 3 Rischi Chiave:** 
+- [Rischio 1: es. Obsolescenza tecnologica]
+- [Rischio 2: es. Esaurimento cassa]
+- [Rischio 3: es. Regolatorio]
+`;
+            } else if (promptType === 'garp') {
                 prompt = `**SYSTEM ROLE & BEHAVIOR**
 Act as an elite financial analyst specializing in the GARP (Growth At a Reasonable Price) investment philosophy. Your analysis must focus on identifying companies with solid, consistent earnings growth and reasonable valuations (PEG ratio typically below 1.2, robust EPS growth rates, and positive historical free cash flows). You will be provided with fundamental financial data, forward estimates, and historical metrics for an asset.
 
@@ -1706,9 +1783,11 @@ ${contextData}
             usage = res.usage;
             
              parsedResponse = parseAIResponse(rawText);
-            const filosofiaStr = promptType === 'garp' 
-                ? `**GROWTH (GARP)** (Principi di Peter Lynch: Crescita Sostenibile, PEG, multipli ragionevoli)`
-                : `**VALUE INVESTING** (Principi di Graham & Buffett: Margine di Sicurezza, Moat, Salute Finanziaria)`;
+            const filosofiaStr = promptType === 'disruptive' 
+                ? `**DISRUPTIVE INNOVATION** (Opzionalità, Emerging Moats, Cash Runway)`
+                : (promptType === 'garp' 
+                    ? `**GROWTH (GARP)** (Principi di Peter Lynch: Crescita Sostenibile, PEG, multipli ragionevoli)` 
+                    : `**VALUE INVESTING** (Principi di Graham & Buffett: Margine di Sicurezza, Moat, Salute Finanziaria)`);
                 
             const userId = req.user.id;
             // Calcola il PMC esatto considerando cronologicamente gli acquisti/vendite e commissioni/tasse

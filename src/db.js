@@ -994,6 +994,7 @@ function initDb() {
         tavilyApiKey: '',
         aiAssetPrompt: '',
         aiAssetPromptGarp: '',
+        aiAssetPromptDisruptive: '',
         aiPortfolioPrompt: '',
         aiTokensUsedToday: '0',
         aiTokensDate: new Date().toISOString().split('T')[0]
