@@ -1399,8 +1399,12 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
         const evStr = ks.enterpriseValue ? (ks.enterpriseValue/1e9).toFixed(2)+'B' : 'N/D';
         const ebitdaStr = fd.ebitda ? (fd.ebitda/1e9).toFixed(2)+'B' : 'N/D';
 
+        const dynamicPE = (assetRow.currentPrice && ks.trailingEps && ks.trailingEps > 0) 
+            ? (assetRow.currentPrice / ks.trailingEps) 
+            : (sd.trailingPE || assetRow.pe || null);
+
         const fundamentalsStr = `
-  - P/E (Trailing): ${sd.trailingPE ? sd.trailingPE.toFixed(2) : 'N/D'}
+  - P/E (Trailing / Dinamico su Prezzo €${assetRow.currentPrice}): ${dynamicPE ? dynamicPE.toFixed(2) : 'N/D'}
   - P/E (Forward): ${ks.forwardPE ? ks.forwardPE.toFixed(2) : 'N/D'}
   - PEG Ratio: ${fundamentalsData.pegRatio ? fundamentalsData.pegRatio.toFixed(2) : 'N/D'}
   - EPS (Trailing): ${ks.trailingEps ? ks.trailingEps.toFixed(2) : 'N/D'}

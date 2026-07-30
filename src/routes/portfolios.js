@@ -101,8 +101,11 @@ Rispondi in JSON: { "riskScore": 7, "diversification": "...", "actions": ["...",
                     const row = database.db.prepare('SELECT data FROM asset_fundamentals WHERE ticker = ?').get(h.ticker);
                     if (row) {
                         const parsed = JSON.parse(row.data);
+                        const eps = parsed.keyStats?.trailingEps;
+                        const currentPrice = h.currentPrice;
+                        const dynPE = (currentPrice && eps && eps > 0) ? (currentPrice / eps) : (parsed.summaryDetail?.trailingPE || parsed.keyStats?.trailingPE || null);
                         fundamentals = {
-                            peTrailing: parsed.summaryDetail?.trailingPE || parsed.keyStats?.trailingPE || null,
+                            peTrailing: dynPE ? parseFloat(dynPE.toFixed(2)) : null,
                             peForward: parsed.keyStats?.forwardPE || null,
                             pegRatio: parsed.pegRatio || null,
                             debtToEquity: parsed.financialData?.debtToEquity || null,
