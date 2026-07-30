@@ -197,7 +197,11 @@ function getRequestyModels() {
     return _cachedRequestyModels;
 }
 const DEFAULT_GEMINI_MODEL_PREFERENCE = [
+    'gemini-3.6-flash',
+    'gemini-3.6-pro',
+    'gemini-3.6-flash-preview',
     'gemini-3.5-flash',
+    'gemini-3.5-pro',
     'gemini-3.1-flash-lite',
     'gemini-3.0-flash',
     'gemini-2.5-flash',
