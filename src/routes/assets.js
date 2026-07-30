@@ -1272,7 +1272,9 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
             try {
                 const tavilyRes = await axios.post('https://api.tavily.com/search', {
                     api_key: tavilyKey,
-                    query: `${assetRow.ticker} ${assetRow.name} stock news latest analysis`,
+                    query: promptType === 'disruptive' 
+                        ? `${assetRow.ticker} ${assetRow.name} technology pipeline competitive moat patents R&D strategy analysis`
+                        : `${assetRow.ticker} ${assetRow.name} stock news latest analysis`,
                     search_depth: 'basic',
                     max_results: 5
                 });
