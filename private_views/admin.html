@@ -587,6 +587,17 @@
                                 </div>
                                 <p class="text-[10px] text-slate-500 mt-1">Scegli fino a 5 modelli tra quelli disponibili su Requesty.</p>
                             </div>
+                            <!-- Tavily -->
+                            <div class="p-3 border border-slate-200 dark:border-slate-800 rounded-lg space-y-3">
+                                <h4 class="text-xs font-black text-slate-700 dark:text-slate-300">Tavily Search API</h4>
+                                <div class="grid grid-cols-1 sm:grid-cols-1 gap-3">
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">API Key</label>
+                                        <input type="password" id="ai-tavily-key" placeholder="tvly-..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
+                                    </div>
+                                </div>
+                                <p class="text-[10px] text-slate-500 mt-1">Necessario per recuperare notizie aggiornate per le analisi IA degli asset e il prompt Disruptive.</p>
+                            </div>
                         </div>
 
                         <!-- Custom Prompts & Report Settings -->
@@ -1275,6 +1286,7 @@
                     document.getElementById('ai-gemini-models').value = settings.geminiModelPreferences || '';
                     document.getElementById('ai-openrouter-key').value = settings.openrouterApiKey || '';
                     document.getElementById('ai-requesty-key').value = settings.requestyApiKey || '';
+                    document.getElementById('ai-tavily-key').value = settings.tavilyApiKey || '';
                     
                     // Carica i modelli dinamicamente e imposta i valori salvati
                     await loadOpenRouterModels(settings.openrouterModel1, settings.openrouterModel2, settings.openrouterModel3, settings.openrouterModel4, settings.openrouterModel5);
@@ -1314,6 +1326,7 @@
                     openrouterModel4: document.getElementById('ai-openrouter-model-4').value,
                     openrouterModel5: document.getElementById('ai-openrouter-model-5').value,
                     requestyApiKey: document.getElementById('ai-requesty-key').value,
+                    tavilyApiKey: document.getElementById('ai-tavily-key').value,
                     requestyModel1: document.getElementById('ai-requesty-model-1').value,
                     requestyModel2: document.getElementById('ai-requesty-model-2').value,
                     requestyModel3: document.getElementById('ai-requesty-model-3').value,
