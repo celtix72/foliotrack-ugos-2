@@ -1043,12 +1043,13 @@
                 <option value="disruptive">Disruptive</option>
             `;
             
-            fetch('/api/fundamentals/' + ticker)
+            fetch('/api/assets/' + ticker + '/details')
                 .then(r => r.json())
                 .then(data => {
-                    if (!data.profile) return;
-                    const sector = (data.profile.sector || '').toLowerCase();
-                    const industry = (data.profile.industry || '').toLowerCase();
+                    const profile = data.assetProfile || data.fundProfile;
+                    if (!profile) return;
+                    const sector = (profile.sector || '').toLowerCase();
+                    const industry = (profile.industry || '').toLowerCase();
                     
                     let recommended = 'garp';
                     
