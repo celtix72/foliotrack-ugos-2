@@ -1968,7 +1968,7 @@ ${contextData}
                 `- **Prezzo Rilevato all'Analisi:** ${priceStr}`,
                 `- **Prezzo Medio di Carico (PMC):** ${pmcStr}`,
                 `- **Posizione:** ${portfolioStatusStr}`,
-                `- **Fonti Dati:** Yahoo Finance, Finnhub, ${newsSource}`,
+                `- **Fonti Dati:** Mercato (Yahoo Finance, Finnhub) · News & Contesto (${newsSource === 'Yahoo Finance' ? 'Yahoo Finance News' : newsSource})`,
                 ``,
                 `---`,
                 ``,
