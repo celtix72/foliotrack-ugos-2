@@ -1013,6 +1013,11 @@
                         </button>
                     </div>
 
+                    <!-- AI Strategy Recommendation Banner -->
+                    <div id="ai-strategy-banner" style="display: none; padding: 10px 16px; flex-shrink: 0; border-bottom: 1px solid rgba(148,163,184,0.08);">
+                        <!-- populated by JS -->
+                    </div>
+
                     <!-- Single-column body -->
                     <div class="bg-white dark:bg-slate-900" style="flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; -webkit-overflow-scrolling: touch;" id="ai-modal-list">
                         <!-- AI items injected here -->
@@ -1036,12 +1041,15 @@
 
         // Fetch fundamentals to recommend a philosophy based on sector
         const promptSelect = document.getElementById('ai-modal-prompt-select');
-        if (promptSelect) {
+        const strategyBanner = document.getElementById('ai-strategy-banner');
+        if (promptSelect && strategyBanner) {
             promptSelect.innerHTML = `
                 <option value="graham">Graham e Buffett</option>
                 <option value="garp">GARP</option>
                 <option value="disruptive">Disruptive</option>
             `;
+            strategyBanner.style.display = 'none';
+            strategyBanner.innerHTML = '';
             
             fetch('/api/assets/' + ticker + '/details')
                 .then(r => r.json())
@@ -1050,6 +1058,8 @@
                     if (!profile) return;
                     const sector = (profile.sector || '').toLowerCase();
                     const industry = (profile.industry || '').toLowerCase();
+                    const sectorLabel = profile.sector || (profile.industry || 'N/D');
+                    const industryLabel = profile.industry || '';
                     
                     let recommended = 'garp';
                     
@@ -1065,14 +1075,63 @@
                         recommended = 'garp';
                     }
                     
+                    // Select the recommended option
                     Array.from(promptSelect.options).forEach(opt => {
-                        if (opt.value === recommended) {
-                            opt.text = opt.text.replace(' (Consigliata)', '') + ' (Consigliata)';
-                            opt.selected = true;
-                        }
+                        opt.selected = opt.value === recommended;
                     });
+
+                    // Build the visual recommendation banner
+                    const strategies = {
+                        graham: {
+                            label: 'Value Investing',
+                            sublabel: 'Graham & Buffett',
+                            icon: 'shield',
+                            color: '#16a34a',
+                            bg: 'rgba(22,163,74,0.08)',
+                            border: 'rgba(22,163,74,0.25)',
+                            reason: 'Settore maturo/difensivo: analisi su fondamentali, dividendi e margine di sicurezza.'
+                        },
+                        garp: {
+                            label: 'GARP',
+                            sublabel: 'Growth at Reasonable Price',
+                            icon: 'balance',
+                            color: '#2563eb',
+                            bg: 'rgba(37,99,235,0.08)',
+                            border: 'rgba(37,99,235,0.25)',
+                            reason: 'Settore ibrido: bilancia crescita e valutazione, ideale per asset ciclici o misti.'
+                        },
+                        disruptive: {
+                            label: 'Disruptive / Innovation',
+                            sublabel: 'Growth & Tech',
+                            icon: 'rocket_launch',
+                            color: '#7c3aed',
+                            bg: 'rgba(124,58,237,0.08)',
+                            border: 'rgba(124,58,237,0.25)',
+                            reason: 'Settore tech/innovativo: focalizzata su crescita, TAM e disruption del mercato.'
+                        }
+                    };
+                    const s = strategies[recommended];
+                    strategyBanner.style.display = 'block';
+                    strategyBanner.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: ${s.bg}; border: 1px solid ${s.border}; border-radius: 12px; cursor: default;">
+                            <div style="width: 36px; height: 36px; border-radius: 10px; background: ${s.color}22; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <span class="material-symbols-outlined" style="font-size: 20px; color: ${s.color};">${s.icon}</span>
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                    <span style="font-size: 10px; font-weight: 900; color: ${s.color}; letter-spacing: 0.5px; text-transform: uppercase;">${s.label}</span>
+                                    <span style="font-size: 9px; background: ${s.color}; color: white; padding: 1px 6px; border-radius: 20px; font-weight: 700;">CONSIGLIATA</span>
+                                </div>
+                                <div style="font-size: 9px; color: #94a3b8; margin-top: 1px;">${s.reason}</div>
+                            </div>
+                            <div style="text-align: right; flex-shrink: 0;">
+                                <div style="font-size: 9px; color: #64748b; font-weight: 600;">${sectorLabel}</div>
+                                ${industryLabel ? '<div style="font-size: 8px; color: #94a3b8;">' + industryLabel + '</div>' : ''}
+                            </div>
+                        </div>
+                    `;
                 })
-                .catch(err => console.error("Error fetching fundamentals for AI recommendation:", err));
+                .catch(err => console.error("Error fetching strategy recommendation:", err));
         }
 
         // Fetch available engines
