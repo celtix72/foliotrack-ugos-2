@@ -1376,7 +1376,7 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
                 .filter(h => h.date && h.epsActual != null)
                 .slice(0, 6)
                 .map(h => {
-                    const surp = h.surprisePercent != null ? ` (${h.surprisePercent > 0 ? '+' : ''}${h.surprisePercent.toFixed(1)}% surprise)` : '';
+                    const surp = h.surprisePercent != null ? ` (${h.surprisePercent > 0 ? '+' : ''}${(h.surprisePercent * 100).toFixed(1)}% surprise)` : '';
                     const est = h.epsEstimate != null ? ` vs Est. ${h.epsEstimate.toFixed(2)}` : '';
                     return `    * ${h.date.substring(0,7)}: EPS ${h.epsActual.toFixed(2)}${est}${surp}`;
                 });
