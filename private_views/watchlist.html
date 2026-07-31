@@ -316,6 +316,10 @@
                                 badgeStyle = 'style="background-color: #64748b !important; color: #ffffff !important; border-color: #64748b !important;"';
                             }
                             
+                            if (badge.isOutdated) {
+                                badgeStyle = badgeStyle.replace(/border-color: [^!]+!important;/, 'border-color: #eab308 !important; border-width: 2px !important;');
+                            }
+                            
                             const fvStr = badge.aiTargetPrice ? formatAiFv(badge.aiTargetPrice, item.currency, badge.prompt_type) : badge.aiAction;
                             
                             return `

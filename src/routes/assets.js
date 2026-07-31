@@ -719,7 +719,24 @@ router.get('/assets', requireAuth, async (req, res) => {
                 ORDER BY created_at DESC
             `);
             const allBadges = aiHistoryStmt.all(...allTickers);
+            
+            const fundStmt = database.db.prepare(`SELECT ticker, data FROM asset_fundamentals WHERE ticker IN (${placeholders})`);
+            const fundamentalsList = fundStmt.all(...allTickers);
+            const latestQuarterlyDates = {};
+            for (const row of fundamentalsList) {
+                try {
+                    const parsed = JSON.parse(row.data);
+                    if (parsed.earningsHistory && parsed.earningsHistory.length > 0) {
+                        const validDates = parsed.earningsHistory.filter(h => h.epsActual != null && h.date).map(h => new Date(h.date).getTime());
+                        if (validDates.length > 0) {
+                            latestQuarterlyDates[row.ticker] = Math.max(...validDates);
+                        }
+                    }
+                } catch(e) {}
+            }
+
             for (const b of allBadges) {
+                b.isOutdated = latestQuarterlyDates[b.ticker] && new Date(b.created_at).getTime() < latestQuarterlyDates[b.ticker];
                 if (!badgesByTicker[b.ticker]) badgesByTicker[b.ticker] = [];
                 if (badgesByTicker[b.ticker].length < 5) badgesByTicker[b.ticker].push(b);
             }
