@@ -1400,7 +1400,7 @@
                 if (engineDisplay.length > 22) engineDisplay = engineDisplay.substring(0, 20) + '...';
 
                 let actionTextColor = '#ffffff';
-                if (item.action === 'BUY' || item.action === 'INCREASE') {
+                if (item.action === 'BUY' || item.action === 'INCREASE' || item.action === 'INC') {
                     actionColor = 'rgb(16,185,129)';
                 } else if (item.action === 'SELL' || item.action === 'DECREASE') {
                     actionColor = 'rgb(239,68,68)';
@@ -1413,6 +1413,41 @@
                 } else {
                     actionColor = '#64748b';
                 }
+
+                // Extract Fair Value 1Y, 3Y, 5Y from reasoning text
+                const extractFV = (text, label) => {
+                    if (!text) return null;
+                    // Match patterns like: | **Fair Value 1Y** | 123.45 | or Fair Value 1Y | 123.45
+                    const re = new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[^|\\n]*\\|\\s*([0-9][0-9.,\\s]*)\\s*(?:USD|EUR|GBP|CHF|JPY|[A-Z]{3})?\\s*\\|', 'i');
+                    const m = text.match(re);
+                    if (m) return m[1].trim().replace(',', '.');
+                    // Also try inline: Fair Value 1Y: 123.45
+                    const re2 = new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[:\\s]+([0-9][0-9.,]*)\\s*(?:USD|EUR|GBP|CHF|JPY|[A-Z]{3})?', 'i');
+                    const m2 = text.match(re2);
+                    return m2 ? m2[1].trim().replace(',', '.') : null;
+                };
+
+                const reasoningText = (item.reasoning || '').replace(/\\n/g, '\n');
+                const fv1y = extractFV(reasoningText, 'Fair Value 1Y');
+                const fv3y = extractFV(reasoningText, 'Fair Value 3Y');
+                const fv5y = extractFV(reasoningText, 'Fair Value 5Y');
+                const hasFv = fv1y || fv3y || fv5y;
+
+                const fvTableHtml = hasFv ? `
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; margin-bottom: 6px;">
+                        ${fv1y ? `<div style="flex: 1; min-width: 70px; background: rgba(99,102,241,0.07); border: 1px solid rgba(99,102,241,0.2); border-radius: 8px; padding: 5px 8px; text-align: center;">
+                            <div style="font-size: 8px; font-weight: 900; color: #6366f1; text-transform: uppercase; letter-spacing: 0.5px;">FV 1Y</div>
+                            <div style="font-size: 12px; font-weight: 900; color: #6366f1; margin-top: 1px;">${parseFloat(fv1y).toLocaleString('it-IT', {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
+                        </div>` : ''}
+                        ${fv3y ? `<div style="flex: 1; min-width: 70px; background: rgba(99,102,241,0.07); border: 1px solid rgba(99,102,241,0.2); border-radius: 8px; padding: 5px 8px; text-align: center;">
+                            <div style="font-size: 8px; font-weight: 900; color: #6366f1; text-transform: uppercase; letter-spacing: 0.5px;">FV 3Y</div>
+                            <div style="font-size: 12px; font-weight: 900; color: #6366f1; margin-top: 1px;">${parseFloat(fv3y).toLocaleString('it-IT', {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
+                        </div>` : ''}
+                        ${fv5y ? `<div style="flex: 1; min-width: 70px; background: rgba(99,102,241,0.07); border: 1px solid rgba(99,102,241,0.2); border-radius: 8px; padding: 5px 8px; text-align: center;">
+                            <div style="font-size: 8px; font-weight: 900; color: #6366f1; text-transform: uppercase; letter-spacing: 0.5px;">FV 5Y</div>
+                            <div style="font-size: 12px; font-weight: 900; color: #6366f1; margin-top: 1px;">${parseFloat(fv5y).toLocaleString('it-IT', {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
+                        </div>` : ''}
+                    </div>` : '';
 
                 return `
                     <div style="border: 1px solid rgba(148,163,184,0.2); border-radius: 14px; padding: 14px; background: ${itemBg}; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
@@ -1451,6 +1486,7 @@
                                 </button>
                             </div>
                         </div>
+                        ${fvTableHtml}
                         <div class="text-slate-700 dark:text-slate-300" style="font-size: 12px; opacity: 0.9; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 12px; line-height: 1.5;">
                             ${item.reasoning.replace(/\\n/g, ' ').replace(/[*#]/g, '')}
                         </div>
