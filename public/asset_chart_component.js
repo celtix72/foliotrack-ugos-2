@@ -1417,14 +1417,20 @@
                 // Extract Fair Value 1Y, 3Y, 5Y from reasoning text
                 const extractFV = (text, label) => {
                     if (!text) return null;
-                    // Match patterns like: | **Fair Value 1Y** | 123.45 | or Fair Value 1Y | 123.45
-                    const re = new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[^|\\n]*\\|\\s*([0-9][0-9.,\\s]*)\\s*(?:USD|EUR|GBP|CHF|JPY|[A-Z]{3})?\\s*\\|', 'i');
+                    const labelEscaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const re = new RegExp(labelEscaped + '[^|\\n]*\\|([^|\\n]+)\\|', 'i');
                     const m = text.match(re);
-                    if (m) return m[1].trim().replace(',', '.');
-                    // Also try inline: Fair Value 1Y: 123.45
-                    const re2 = new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[:\\s]+([0-9][0-9.,]*)\\s*(?:USD|EUR|GBP|CHF|JPY|[A-Z]{3})?', 'i');
+                    if (m) {
+                        const numMatch = m[1].match(/[0-9]+(?:[.,][0-9]+)?/);
+                        if (numMatch) return numMatch[0].replace(',', '.');
+                    }
+                    const re2 = new RegExp(labelEscaped + '[:\\s]+([^\\n]+)', 'i');
                     const m2 = text.match(re2);
-                    return m2 ? m2[1].trim().replace(',', '.') : null;
+                    if (m2) {
+                        const numMatch = m2[1].match(/[0-9]+(?:[.,][0-9]+)?/);
+                        if (numMatch) return numMatch[0].replace(',', '.');
+                    }
+                    return null;
                 };
 
                 const reasoningText = (item.reasoning || '').replace(/\\n/g, '\n');
