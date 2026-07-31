@@ -1686,9 +1686,12 @@ Usa i colori:
 
 [Paragrafo: Chi sta correndo di più? Il contesto gioca a favore?]
 
-### 💡 5. Sintesi e Tesi di Investimento Asimmetrico
+### 💡 5. Sintesi, Livelli Operativi e Tesi di Investimento Asimmetrico
 | Parametro Operativo | Valore / Livello | Dettaglio / Razionale |
 | :--- | :--- | :--- |
+| **Fair Value 1Y** | ... | [Prezzo calcolato e breve spiegazione] |
+| **Fair Value 3Y** | ... | [Prezzo calcolato e breve spiegazione] |
+| **Fair Value 5Y** | ... | [Prezzo calcolato e breve spiegazione] |
 | Punteggio Conviction (1-10) | ... | Bilanciamento tra potenziale e fondamentali |
 | Catalizzatore Futuro | ... | ... |
 | Area di Supporto critico | ... | ... |

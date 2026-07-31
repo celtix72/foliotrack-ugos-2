@@ -1419,6 +1419,25 @@
                 }
 
                 // Extract Fair Value 1Y, 3Y, 5Y from reasoning text
+                const parseNumber = (str) => {
+                    let clean = str.replace(/[^0-9.,]/g, '');
+                    if (clean.includes('.') && clean.includes(',')) {
+                        if (clean.indexOf(',') < clean.indexOf('.')) {
+                            clean = clean.replace(/,/g, ''); // US format
+                        } else {
+                            clean = clean.replace(/\./g, '').replace(',', '.'); // EU format
+                        }
+                    } else if (clean.includes(',')) {
+                        const parts = clean.split(',');
+                        if (parts.length === 2 && parts[1].length === 3) {
+                            clean = clean.replace(',', ''); // likely thousands
+                        } else {
+                            clean = clean.replace(',', '.'); // likely decimal
+                        }
+                    }
+                    return clean; // string format, to be parsed
+                };
+
                 const extractFV = (text, label) => {
                     if (!text) return null;
                     const labelEscaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -1426,13 +1445,13 @@
                     const m = text.match(re);
                     if (m) {
                         const numMatch = m[1].match(/[0-9]+(?:[.,][0-9]+)?/);
-                        if (numMatch) return numMatch[0].replace(',', '.');
+                        if (numMatch) return parseNumber(numMatch[0]);
                     }
                     const re2 = new RegExp(labelEscaped + '[:\\s]+([^\\n]+)', 'i');
                     const m2 = text.match(re2);
                     if (m2) {
                         const numMatch = m2[1].match(/[0-9]+(?:[.,][0-9]+)?/);
-                        if (numMatch) return numMatch[0].replace(',', '.');
+                        if (numMatch) return parseNumber(numMatch[0]);
                     }
                     return null;
                 };
