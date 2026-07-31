@@ -1342,23 +1342,53 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
             throw new Error('Asset non trovato.');
         }
 
-        // Fetch recent news
+        // Fetch recent news via Tavily (multi-query, type-aware)
         let newsTitles = '';
         let newsSource = 'Yahoo Finance';
         const tavilyKey = globalSettings.tavilyApiKey || process.env.TAVILY_API_KEY;
         if (tavilyKey) {
-            sendEvent('progress', { message: 'Ricerca news recenti tramite Tavily...' });
+            sendEvent('progress', { message: 'Ricerca news e analisi esterna tramite Tavily...' });
             try {
-                const tavilyRes = await axios.post('https://api.tavily.com/search', {
-                    api_key: tavilyKey,
-                    query: promptType === 'disruptive' 
-                        ? `${assetRow.ticker} ${assetRow.name} technology pipeline competitive moat patents R&D strategy analysis`
-                        : `${assetRow.ticker} ${assetRow.name} stock news latest analysis`,
-                    search_depth: 'basic',
-                    max_results: 5
-                });
-                if (tavilyRes.data && Array.isArray(tavilyRes.data.results)) {
-                    newsTitles = tavilyRes.data.results.map(r => `${r.title}: ${r.content}`).join('\n');
+                // Build two targeted queries based on analysis philosophy
+                const assetLabel = `${assetRow.ticker} ${assetRow.name}`;
+                const queries = {
+                    graham: [
+                        `${assetLabel} dividend yield financial health balance sheet earnings 2024 2025`,
+                        `${assetLabel} value stock intrinsic value analyst report book value`
+                    ],
+                    garp: [
+                        `${assetLabel} revenue growth earnings growth guidance 2024 2025`,
+                        `${assetLabel} PEG ratio growth at reasonable price analyst outlook`
+                    ],
+                    disruptive: [
+                        `${assetLabel} technology innovation patents R&D pipeline competitive moat`,
+                        `${assetLabel} market disruption total addressable market TAM strategy 2025`
+                    ]
+                };
+                const selectedQueries = queries[promptType] || queries.graham;
+                const tavilyResults = [];
+                for (const q of selectedQueries) {
+                    try {
+                        const r = await axios.post('https://api.tavily.com/search', {
+                            api_key: tavilyKey,
+                            query: q,
+                            search_depth: 'basic',
+                            max_results: 4
+                        });
+                        if (r.data && Array.isArray(r.data.results)) {
+                            tavilyResults.push(...r.data.results);
+                        }
+                    } catch (qErr) {
+                        logger.warn('[Tavily] Query failed:', q, qErr.message);
+                    }
+                }
+                if (tavilyResults.length > 0) {
+                    // Deduplicate by title and format
+                    const seen = new Set();
+                    newsTitles = tavilyResults
+                        .filter(r => { if (seen.has(r.title)) return false; seen.add(r.title); return true; })
+                        .map(r => `[${r.url ? new URL(r.url).hostname : 'web'}] ${r.title}: ${(r.content || '').substring(0, 300)}`)
+                        .join('\n---\n');
                     newsSource = 'Tavily Search API';
                 }
             } catch (err) {
@@ -1367,8 +1397,8 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
         }
         
         if (!newsTitles) {
-            sendEvent('progress', { message: 'Ricerca news recenti...' });
-            const newsRes = await yahooFinance.search(ticker, { newsCount: 3 }).catch(() => ({}));
+            sendEvent('progress', { message: 'Ricerca news recenti tramite Yahoo Finance...' });
+            const newsRes = await yahooFinance.search(ticker, { newsCount: 5 }).catch(() => ({}));
             newsTitles = (newsRes.news || []).map(n => n.title).join('; ');
             newsSource = 'Yahoo Finance';
         }
@@ -1923,10 +1953,36 @@ ${contextData}
                 : `Non presente in portafoglio`;
 
             const priceStr = `**${assetRow.currentPrice ? assetRow.currentPrice.toFixed(2) : 'N/D'} ${assetRow.currency}**`;
-                
-            const headerStr = `### 📊 METODOLOGIA DI ANALISI IA\\n- **Filosofia Applicata:** ${filosofiaStr}\\n- **Modello LLM:** **${engine} (${res.modelUsed || 'N/D'})**\\n- **Prezzo Rilevato all\\'Analisi:** ${priceStr}\\n- **Prezzo Medio di Carico (PMC):** ${pmcStr}\\n- **Fonti Dati:** Yahoo Finance, Finnhub, Notizie RSS (${newsSource})\\n\\n---\\n\\n`;
+
+            const portfolioStatusStr = pmcVal !== null
+                ? `**IN PORTAFOGLIO** ✅ (${totalQty.toFixed(4)} quote · PMC: ${pmcVal.toFixed(2)} ${assetRow.currency})`
+                : `**Solo in Watchlist** 👁️ (non in portafoglio)`;
+
+            const headerStr = `### 📊 METODOLOGIA DI ANALISI IA\\\\n- **Filosofia Applicata:** ${filosofiaStr}\\\\n- **Modello LLM:** **${engine} (${res.modelUsed || 'N/D'})**\\\\n- **Prezzo Rilevato all\\\\'Analisi:** ${priceStr}\\\\n- **Prezzo Medio di Carico (PMC):** ${pmcStr}\\\\n- **Posizione:** ${portfolioStatusStr}\\\\n- **Fonti Dati:** Yahoo Finance, Finnhub, ${newsSource}\\\\n\\\\n---\\\\n\\\\n`;
             
             parsedResponse.reasoning = headerStr + (parsedResponse.reasoning || '');
+
+            // ── Portfolio-aware TAG adjustment ─────────────────────────────────
+            // pmcVal !== null means the user holds this asset in their portfolio
+            const isInPortfolio = pmcVal !== null && totalQty > 0.0001;
+            const rawAction = (parsedResponse.action || 'HOLD').toUpperCase();
+            let adjustedAction = rawAction;
+
+            if (isInPortfolio) {
+                if (rawAction === 'WATCHLIST') adjustedAction = 'HOLD';       // Can't watchlist what you own
+                else if (rawAction === 'AVOID') adjustedAction = 'SELL';      // Should exit if avoiding
+                else if (rawAction === 'BUY') adjustedAction = 'INC';         // Already own it: increment
+            }
+
+            if (adjustedAction !== rawAction) {
+                const adjustNote = `\\n\\n> ⚠️ **Nota operativa:** Il titolo è **in portafoglio** (PMC: ${pmcVal.toFixed(2)} ${assetRow.currency}, ${totalQty.toFixed(4)} quote). Il segnale originale era **${rawAction}**, adattato a **${adjustedAction}** considerando la posizione aperta.\\n`;
+                parsedResponse.reasoning = parsedResponse.reasoning + adjustNote;
+                parsedResponse.action = adjustedAction;
+            } else {
+                parsedResponse.action = adjustedAction;
+            }
+            // ──────────────────────────────────────────────────────────────────
+
         } catch (e) {
             console.error('Failed to parse AI JSON response or execute model:', e);
             throw e;
