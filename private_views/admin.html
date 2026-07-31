@@ -1057,7 +1057,7 @@
         };
 
         async function deleteUser(id, username) {
-            if (!confirm(`Sei sicuro di voler eliminare l'utente ${username}? Questa operazione NON è in grado di eliminare i portafogli associati (verranno orfanati).`)) return;
+            if (!(await ftConfirm(`Sei sicuro di voler eliminare l'utente ${username}? Questa operazione NON è in grado di eliminare i portafogli associati (verranno orfanati).`))) return;
             try {
                 await fetchAdmin(`/api/admin/users/${id}`, { method: 'DELETE' });
                 loadUsers();
@@ -1130,7 +1130,7 @@
 
         window.clearAllAiHistory = async function() {
             const count = document.getElementById('ai-history-count').textContent;
-            if (!confirm(`⚠️ Stai per eliminare DEFINITIVAMENTE ${count} analisi IA dallo storico. Questa operazione è irreversibile.\n\nConfermi?`)) return;
+            if (!(await ftConfirm(`⚠️ Stai per eliminare DEFINITIVAMENTE ${count} analisi IA dallo storico. Questa operazione è irreversibile.\n\nConfermi?`))) return;
             const btn = document.getElementById('btn-clear-ai-history');
             btn.disabled = true;
             btn.innerHTML = '<span class="material-symbols-outlined animate-spin" style="font-size:15px">sync</span> Eliminazione in corso...';
@@ -1158,7 +1158,7 @@
         };
 
         window.resetAiFieldsOnAssets = async function() {
-            if (!confirm(`⚠️ Stai per azzerare i campi AI (valutazione, analisi, motore) su TUTTI gli asset. Questa operazione è irreversibile.\n\nConfermi?`)) return;
+            if (!(await ftConfirm(`⚠️ Stai per azzerare i campi AI (valutazione, analisi, motore) su TUTTI gli asset. Questa operazione è irreversibile.\n\nConfermi?`))) return;
             const btn = document.getElementById('btn-reset-ai-assets');
             btn.disabled = true;
             btn.innerHTML = '<span class="material-symbols-outlined animate-spin" style="font-size:15px">sync</span> Reset in corso...';
@@ -1185,7 +1185,7 @@
         };
 
         window.syncAllFundamentals = async function() {
-            if (!confirm(`Vuoi sincronizzare i dati fondamentali di tutti i titoli in portafoglio e watchlist? L'operazione avverrà in background.`)) return;
+            if (!(await ftConfirm(`Vuoi sincronizzare i dati fondamentali di tutti i titoli in portafoglio e watchlist? L'operazione avverrà in background.`))) return;
             const btn = document.getElementById('btn-sync-fundamentals');
             btn.disabled = true;
             btn.innerHTML = '<span class="material-symbols-outlined animate-spin" style="font-size:15px">sync</span> Sincronizzazione in corso...';
@@ -1478,7 +1478,7 @@
         }
 
         window.deleteBackup = async function(filename) {
-            if (!confirm(`Delete backup ${filename}?`)) return;
+            if (!(await ftConfirm(`Delete backup ${filename}?`))) return;
             try {
                 await fetchAdmin(`/api/backups/${filename}`, { method: 'DELETE' });
                 await loadBackups();
@@ -1488,7 +1488,7 @@
         };
 
         window.restoreBackup = async function(filename) {
-            if (!confirm(`CRITICAL: Restore system backup ${filename}? The application will restart and ALL current data will be overwritten.`)) return;
+            if (!(await ftConfirm(`CRITICAL: Restore system backup ${filename}? The application will restart and ALL current data will be overwritten.`))) return;
             try {
                 await fetchAdmin('/api/backups/restore', {
                     method: 'POST',
@@ -1503,7 +1503,7 @@
         };
 
         async function purgeGlobalPerformance() {
-            if (!confirm('This will delete historical performance points for ALL users. Global dashboard charts will be reset. Portfolios and transactions will be KEPT. Continue?')) return;
+            if (!(await ftConfirm('This will delete historical performance points for ALL users. Global dashboard charts will be reset. Portfolios and transactions will be KEPT. Continue?'))) return;
             try {
                 const res = await fetchAdmin('/api/admin/purge-performance?scope=system', { method: 'POST' });
                 alert(res.message || 'Performance purged.');
@@ -1514,8 +1514,8 @@
         }
 
         async function fullSystemReset() {
-            if (!confirm('CRITICAL: This will wipe the ENTIRE database for ALL users. This action is irreversible. Are you absolutely sure?')) return;
-            if (!confirm('FINAL CONFIRMATION: Wipe EVERYTHING?')) return;
+            if (!(await ftConfirm('CRITICAL: This will wipe the ENTIRE database for ALL users. This action is irreversible. Are you absolutely sure?'))) return;
+            if (!(await ftConfirm('FINAL CONFIRMATION: Wipe EVERYTHING?'))) return;
             try {
                 await fetchAdmin('/api/reset-data?scope=system', { method: 'POST' });
                 alert('System wiped. Redirecting to login.');
@@ -1550,7 +1550,7 @@
         }
 
         window.killSession = async function(sid) {
-            if (!confirm('Revoke this session? The user will be logged out immediately.')) return;
+            if (!(await ftConfirm('Revoke this session? The user will be logged out immediately.'))) return;
             try {
                 await fetchAdmin(`/api/admin/sessions/${sid}`, { method: 'DELETE' });
                 await loadSessions();
@@ -1632,7 +1632,7 @@
         }
 
         window.unbanIp = async function(ip) {
-            if (!confirm(`Sbloccare l'IP ${ip}?`)) return;
+            if (!(await ftConfirm(`Sbloccare l'IP ${ip}?`))) return;
             try {
                 await fetchAdmin(`/api/admin/banned-ips/${ip}`, { method: 'DELETE' });
                 loadBannedIps();

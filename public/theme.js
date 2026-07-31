@@ -1159,3 +1159,57 @@
 
 })();
 
+window.ftConfirm = function(message) {
+    return new Promise((resolve) => {
+        let modal = document.getElementById('ft-global-confirm-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'ft-global-confirm-modal';
+            modal.className = 'fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[99999] hidden flex items-center justify-center p-4';
+            modal.innerHTML = `
+                <div class="bg-white dark:bg-surface-dark w-full max-w-sm rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 transform transition-all scale-95 opacity-0 duration-200" id="ft-global-confirm-content">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined font-bold">warning</span>
+                        </div>
+                        <h3 class="text-lg font-black text-slate-800 dark:text-slate-100">Conferma Azione</h3>
+                    </div>
+                    <p id="ft-global-confirm-msg" class="text-sm text-slate-600 dark:text-slate-400 mb-6 whitespace-pre-wrap"></p>
+                    <div class="flex items-center gap-3">
+                        <button id="ft-global-confirm-cancel" class="flex-1 py-2.5 rounded-xl font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/50 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">Annulla</button>
+                        <button id="ft-global-confirm-ok" class="flex-1 py-2.5 rounded-xl font-bold text-white bg-rose-500 hover:bg-rose-600 shadow-lg shadow-rose-500/20 transition-all">Conferma</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+        
+        document.getElementById('ft-global-confirm-msg').textContent = message;
+        modal.classList.remove('hidden');
+        
+        // Animate in
+        requestAnimationFrame(() => {
+            const content = document.getElementById('ft-global-confirm-content');
+            content.classList.remove('scale-95', 'opacity-0');
+            content.classList.add('scale-100', 'opacity-100');
+        });
+
+        const btnOk = document.getElementById('ft-global-confirm-ok');
+        const btnCancel = document.getElementById('ft-global-confirm-cancel');
+
+        const cleanup = (result) => {
+            const content = document.getElementById('ft-global-confirm-content');
+            content.classList.remove('scale-100', 'opacity-100');
+            content.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                btnOk.onclick = null;
+                btnCancel.onclick = null;
+                resolve(result);
+            }, 200);
+        };
+
+        btnOk.onclick = () => cleanup(true);
+        btnCancel.onclick = () => cleanup(false);
+    });
+};

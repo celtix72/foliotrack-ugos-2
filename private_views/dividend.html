@@ -1005,7 +1005,7 @@
         };
 
         window.deleteConfirmedDividend = async (txId) => {
-            if (!confirm('Eliminare definitivamente questa transazione di dividendo?')) return;
+            if (!(await ftConfirm('Eliminare definitivamente questa transazione di dividendo?'))) return;
             try {
                 const res = await fetch(`/api/dividends/transactions/${txId}`, { method: 'DELETE' });
                 if (res.ok) {
@@ -1026,7 +1026,7 @@
         };
         
         window.deleteProjection = async (id) => {
-            if(!confirm('Vuoi davvero rimuovere questa proiezione? Se rimuovi una previsione generata automaticamente, il sistema non la riproporrà più a meno che tu non prema "Ricalcola".')) return;
+            if(!(await ftConfirm('Vuoi davvero rimuovere questa proiezione? Se rimuovi una previsione generata automaticamente, il sistema non la riproporrà più a meno che tu non prema "Ricalcola".'))) return;
             try {
                 const res = await fetch('/api/dividends/projections/' + id, { method: 'DELETE' });
                 if(res.ok) loadProjections();
@@ -1034,7 +1034,7 @@
         };
 
         window.resetProjections = async () => {
-            if(window.hasTriedReset || confirm('Verranno cancellate tutte le proiezioni automatiche attuali e ricalcolate da zero basandosi sul portafoglio. Le tue aggiunte/modifiche testuali ("Manuale") verranno conservate.\nProcedere?')) {
+            if(window.hasTriedReset || await ftConfirm('Verranno cancellate tutte le proiezioni automatiche attuali e ricalcolate da zero basandosi sul portafoglio. Le tue aggiunte/modifiche testuali ("Manuale") verranno conservate.\nProcedere?')) {
                 const btn = document.getElementById('btn-recalc');
                 if(btn) btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">refresh</span> Calcolo...';
                 try {

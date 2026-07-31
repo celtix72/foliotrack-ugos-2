@@ -1232,7 +1232,7 @@
             }
             // Load News Sources
             window.deleteNewsSource = async function(id) {
-                if (!confirm("Sei sicuro di voler eliminare questa sorgente RSS?")) return;
+                if (!(await ftConfirm("Sei sicuro di voler eliminare questa sorgente RSS?"))) return;
                 try {
                     const res = await fetch(`/api/settings/news-sources/${id}`, { method: 'DELETE' });
                     if (res.ok) {
@@ -1527,7 +1527,7 @@
                 reader.onload = async (event) => {
                     try {
                         const data = JSON.parse(event.target.result);
-                        if (!confirm('Import data from JSON? This will ADD the data to your current account.')) return;
+                        if (!(await ftConfirm('Import data from JSON? This will ADD the data to your current account.'))) return;
                         
                         const importBtn = document.getElementById('import-json-btn');
                         importBtn.disabled = true;
@@ -1574,7 +1574,7 @@
         }
 
         window.deleteBackup = async (filename) => {
-            if (!confirm('Delete this backup?')) return;
+            if (!(await ftConfirm('Delete this backup?'))) return;
             try {
                 await fetch(`/api/backups/${filename}`, { method: 'DELETE' });
                 loadBackups();
@@ -1628,11 +1628,11 @@
                 const isAdmin = ftAuth.getUser()?.role === 'admin';
                 let scope = 'user';
                 if (isAdmin) {
-                    if (confirm('Clear system-wide performance history (all users)? OK for SYSTEM, Cancel for just MY data.')) {
+                    if (await ftConfirm('Clear system-wide performance history (all users)? OK for SYSTEM, Cancel for just MY data.')) {
                         scope = 'system';
                     }
                 } else {
-                    if (!confirm('This will delete your historical performance data. Portfolios and transactions will be kept. Continue?')) return;
+                    if (!(await ftConfirm('This will delete your historical performance data. Portfolios and transactions will be kept. Continue?'))) return;
                 }
                 
                 resetPerfBtn.disabled = true;
@@ -1691,8 +1691,8 @@
         const sysResetBtn = document.getElementById('system-reset-btn');
         if (sysResetBtn) {
             sysResetBtn.addEventListener('click', async () => {
-                if (!confirm('CRITICAL: This will wipe the ENTIRE database for ALL users. This is irreversible. Are you absolutely sure?')) return;
-                if (!confirm('FINAL CONFIRMATION: Wipe EVERYTHING?')) return;
+                if (!(await ftConfirm('CRITICAL: This will wipe the ENTIRE database for ALL users. This is irreversible. Are you absolutely sure?'))) return;
+                if (!(await ftConfirm('FINAL CONFIRMATION: Wipe EVERYTHING?'))) return;
                 
                 sysResetBtn.disabled = true;
                 sysResetBtn.textContent = 'Wiping System...';
@@ -2013,7 +2013,7 @@
         }
 
         window.deleteHistoryEntry = async function(id) {
-            if (!confirm('Delete this record?')) return;
+            if (!(await ftConfirm('Delete this record?'))) return;
             try {
                 await fetch(`/api/history/${id}`, { method: 'DELETE' });
                 loadHistoryData();
@@ -2065,7 +2065,7 @@
         const rebuildHistoryBtn = document.getElementById('rebuild-history-btn');
         if (rebuildHistoryBtn) {
             rebuildHistoryBtn.addEventListener('click', async () => {
-                if (!confirm('This will delete all saved performance history and recalculate it from the beginning. This process may take a minute. Continue?')) return;
+                if (!(await ftConfirm('This will delete all saved performance history and recalculate it from the beginning. This process may take a minute. Continue?'))) return;
                 
                 rebuildHistoryBtn.disabled = true;
                 rebuildHistoryBtn.innerText = 'Rebuilding...';
@@ -2385,7 +2385,7 @@
         };
 
         window.deleteTransactionAudit = async function(id) {
-            if (!confirm('Are you sure you want to delete this transaction? This will affect your portfolio balance and history.')) return;
+            if (!(await ftConfirm('Are you sure you want to delete this transaction? This will affect your portfolio balance and history.'))) return;
             try {
                 const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
                 if (res.ok) {
@@ -2794,7 +2794,7 @@
 
     async function deleteEditTx() {
         const id = document.getElementById('edit-tx-id').value;
-        if (!confirm('Are you sure you want to delete this transaction?')) return;
+        if (!(await ftConfirm('Are you sure you want to delete this transaction?'))) return;
         try {
             const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
             if (res.ok) {

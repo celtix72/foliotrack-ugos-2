@@ -573,7 +573,7 @@
         };
 
         async function deleteMobNewsSource(id) {
-            if (!confirm('Remove this news source?')) return;
+            if (!(await ftConfirm('Remove this news source?'))) return;
             try {
                 await fetch(`/api/settings/news-sources/${id}`, { method: 'DELETE' });
                 await loadNewsSources();
@@ -703,7 +703,7 @@
 
         if (rebuildHistoryBtn) {
             rebuildHistoryBtn.addEventListener('click', async () => {
-                if (!confirm('This will delete all saved performance history and recalculate it. Continue?')) return;
+                if (!(await ftConfirm('This will delete all saved performance history and recalculate it. Continue?'))) return;
                 rebuildHistoryBtn.disabled = true;
                 rebuildHistoryBtn.innerText = 'Rebuilding...';
                 try {
@@ -775,7 +775,7 @@
         }
 
         window.deleteHistoryEntry = async function(id) {
-            if (!confirm('Delete record?')) return;
+            if (!(await ftConfirm('Delete record?'))) return;
             await fetch(`/api/history/${id}`, { method: 'DELETE' });
             loadHistoryData();
         }
@@ -959,7 +959,7 @@
     };
 
     window.logoutMob = async () => {
-        if (confirm('Vuoi uscire?')) {
+        if (await ftConfirm('Vuoi uscire?')) {
             await fetch('/api/auth/logout', { method: 'POST' });
             window.location.href = '/login';
         }
@@ -1001,7 +1001,7 @@
     };
 
     window.confirmRestore = (filename) => {
-        if (confirm(`Restore backup "${filename}"? Server will restart.`)) {
+        if (await ftConfirm(`Restore backup "${filename}"? Server will restart.`)) {
             fetch('/api/backups/restore', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1014,7 +1014,7 @@
     };
 
     window.deleteBackup = async (filename) => {
-        if (confirm('Delete this backup?')) {
+        if (await ftConfirm('Delete this backup?')) {
             await fetch(`/api/backups/${filename}`, { method: 'DELETE' });
             location.reload(); // Simple refresh for mobile
         }

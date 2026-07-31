@@ -279,7 +279,7 @@
                     const assets = projData.assets || [];
                     if (assets.length === 0 && !hasTriedReset) {
                         sessionStorage.setItem('ft_div_reset_tried', 'true');
-                        if(confirm('Nessuna proiezione presente per quest\'anno. Vuoi ricalcolarle automaticamente in base al tuo portafoglio attuale?')) {
+                        if(await ftConfirm('Nessuna proiezione presente per quest\'anno. Vuoi ricalcolarle automaticamente in base al tuo portafoglio attuale?')) {
                             window.resetProjections(true);
                             return;
                         }
@@ -472,7 +472,7 @@
             };
 
             window.deleteProjection = async (id) => {
-                if(!confirm('Cancellare questa proiezione?\nSe era automatica, sparirà fino al prossimo "Ricalcolo".')) return;
+                if(!(await ftConfirm('Cancellare questa proiezione?\nSe era automatica, sparirà fino al prossimo "Ricalcolo".'))) return;
                 try {
                     const res = await fetch('/api/dividends/projections/' + id, { method: 'DELETE' });
                     if(res.ok) loadMobData();
@@ -480,7 +480,7 @@
             };
 
             window.resetProjections = async (skipConfirm = false) => {
-                if(skipConfirm || confirm('Le stime verranno rigenerate cancellando le attuali (tranne quelle "Manuali"). Procedere?')) {
+                if(skipConfirm || await ftConfirm('Le stime verranno rigenerate cancellando le attuali (tranne quelle "Manuali"). Procedere?')) {
                     const btn = document.getElementById('btn-recalc');
                     if(btn) btn.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">refresh</span>';
                     try {
@@ -493,7 +493,7 @@
             };
 
             window.deleteConfirmedDividend = async (txId) => {
-                if (!confirm('Eliminare definitivamente questa transazione?')) return;
+                if (!(await ftConfirm('Eliminare definitivamente questa transazione?'))) return;
                 try {
                     const res = await fetch(`/api/dividends/transactions/${txId}`, { method: 'DELETE' });
                     if (res.ok) loadMobData();

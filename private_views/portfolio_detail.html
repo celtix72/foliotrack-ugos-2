@@ -947,7 +947,7 @@
     };
 
     window.deleteTag = async function(id) {
-        if (!confirm('Eliminare questo TAG?')) return;
+        if (!(await ftConfirm('Eliminare questo TAG?'))) return;
         const res = await fetch(`/api/tags/${id}`, { method: 'DELETE' });
         if (res.ok) { await loadTags(); renderTagManagerList(); }
     };

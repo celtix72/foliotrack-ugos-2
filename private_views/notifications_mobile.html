@@ -290,7 +290,7 @@
         }
 
         async function clearAllNotifications() {
-            if (!confirm('Sei sicuro di voler rimuovere tutte le notifiche?')) return;
+            if (!(await ftConfirm('Sei sicuro di voler rimuovere tutte le notifiche?'))) return;
             try {
                 await fetch('/api/notifications', { method: 'DELETE' });
                 notifications = [];

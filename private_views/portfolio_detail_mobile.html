@@ -698,7 +698,7 @@
   };
 
   window.mobDeleteTag = async function(id) {
-    if (!confirm('Eliminare questo TAG?')) return;
+    if (!(await ftConfirm('Eliminare questo TAG?'))) return;
     const res = await fetch(`/api/tags/${id}`, { method: 'DELETE' });
     if (res.ok) { await mobLoadTags(); mobRenderTagManagerList(); }
   };
@@ -2061,8 +2061,8 @@
         }
     }
 
-    function deleteAiHistory(id) {
-        if (!confirm('Sei sicuro di voler eliminare questa analisi?')) return;
+    async function deleteAiHistory(id) {
+        if (!(await ftConfirm('Sei sicuro di voler eliminare questa analisi?'))) return;
         
         fetch('/api/portfolios/' + currentPortfolioId + '/ai-history/' + id, { method: 'DELETE' })
             .then(res => res.json())

@@ -485,7 +485,7 @@
     }
 
     async function deleteAsset(id) {
-        if (!confirm('Stop monitoring this asset?')) return;
+        if (!(await ftConfirm('Stop monitoring this asset?'))) return;
         try {
             await fetch(`/api/assets/${id}`, { method: 'DELETE' });
             loadAssets();
