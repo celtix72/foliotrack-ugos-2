@@ -510,10 +510,47 @@
     </div>
 </section>
 
-<!-- Intelligenza Artificiale -->
+<!-- Gestione SL / TP / Volatilità -->
 <section class="space-y-2">
-
+    <div class="flex items-center justify-between cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-900/50 p-2 -mx-2 rounded-xl transition-colors" onclick="toggleSection('sltp-mgmt-content')">
+        <div class="flex items-center gap-3">
+            <h2 class="text-lg font-bold border-l-4 border-amber-500 pl-3">Stop Loss / Target Price / Volatilità</h2>
+            <span id="sltp-mgmt-count-badge" class="text-[9px] font-black bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full hidden"></span>
+        </div>
+        <span id="sltp-mgmt-content-icon" class="material-symbols-outlined text-slate-400 group-hover:text-amber-500 transition-transform">expand_more</span>
+    </div>
+    <div id="sltp-mgmt-content" class="hidden">
+        <div class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+            <!-- Toolbar -->
+            <div class="flex items-center justify-between gap-3 p-4 border-b border-slate-100 dark:border-slate-800">
+                <p class="text-xs text-slate-500 dark:text-slate-400">Modifica, azzera o ripristina i valori AI di <strong>Stop Loss</strong>, <strong>Target Price 1</strong> e <strong>Volatilità Alert</strong> per tutti gli asset monitorati.</p>
+                <button onclick="loadSltpData()" class="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-1.5 rounded-lg transition-all whitespace-nowrap">
+                    <span class="material-symbols-outlined text-sm">refresh</span> Aggiorna
+                </button>
+            </div>
+            <!-- Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs" id="sltp-table">
+                    <thead>
+                        <tr class="bg-slate-50 dark:bg-slate-900/60 text-[10px] text-slate-500 uppercase tracking-wider font-black">
+                            <th class="px-4 py-3">Asset</th>
+                            <th class="px-3 py-3 text-right">Prezzo</th>
+                            <th class="px-3 py-3 text-center">Stop Loss</th>
+                            <th class="px-3 py-3 text-center">Target Price</th>
+                            <th class="px-3 py-3 text-center">Volatilità %</th>
+                            <th class="px-3 py-3 text-center">Ultima AI</th>
+                            <th class="px-3 py-3 text-center">Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sltp-tbody" class="divide-y divide-slate-100 dark:divide-slate-800/50">
+                        <tr><td colspan="7" class="text-center py-8 text-slate-400 text-xs italic">Caricamento...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </section>
+
 
 <!-- Notification Center -->
 <section class="space-y-2">
@@ -1766,11 +1803,151 @@
                 if (icon) icon.style.transform = 'rotate(180deg)';
                 if (id === 'history-management-content') loadHistoryData();
                 if (id === 'taxation-management-content') loadTaxRates();
+                if (id === 'sltp-mgmt-content') loadSltpData();
             } else {
                 content.classList.add('hidden');
                 if (icon) icon.style.transform = 'rotate(0deg)';
             }
         };
+
+        // ─── SL / TP / Volatility Management ───────────────────────────────────
+        let _sltpData = [];
+
+        window.loadSltpData = async function() {
+            const tbody = document.getElementById('sltp-tbody');
+            if (!tbody) return;
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400 text-xs italic">
+                <span class="material-symbols-outlined animate-spin text-xl align-middle text-primary">autorenew</span> Caricamento...
+            </td></tr>`;
+            try {
+                const res = await fetch('/api/assets/sl-tp-overview');
+                _sltpData = await res.json();
+                renderSltpTable();
+            } catch(e) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-rose-400 text-xs">Errore nel caricamento dati.</td></tr>`;
+            }
+        };
+
+        function renderSltpTable() {
+            const tbody = document.getElementById('sltp-tbody');
+            const badge = document.getElementById('sltp-mgmt-count-badge');
+            if (!tbody) return;
+
+            if (badge) {
+                badge.textContent = _sltpData.length + ' asset';
+                badge.classList.toggle('hidden', _sltpData.length === 0);
+            }
+
+            if (_sltpData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-10 text-slate-400 text-xs italic">
+                    <span class="material-symbols-outlined text-2xl block mb-2">manage_search</span>
+                    Nessun asset con Stop Loss, Target Price o Volatilità Alert impostati.
+                </td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = _sltpData.map((a, i) => {
+                const fmt = (v, cur) => v != null ? Number(v).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + (cur || '') : '—';
+                const fmtPct = v => v != null ? Number(v).toFixed(1) + '%' : '—';
+                const chgColor = a.changePercent > 0 ? 'text-emerald-500' : a.changePercent < 0 ? 'text-rose-500' : 'text-slate-400';
+                const chgSign = a.changePercent > 0 ? '+' : '';
+
+                const slVsPrice = a.stopLoss && a.currentPrice ? ((a.stopLoss - a.currentPrice) / a.currentPrice * 100).toFixed(1) : null;
+                const tpVsPrice = a.targetPrice && a.currentPrice ? ((a.targetPrice - a.currentPrice) / a.currentPrice * 100).toFixed(1) : null;
+                const aiDate = a.lastAiDate ? new Date(a.lastAiDate).toLocaleDateString('it-IT', {day:'2-digit',month:'short',year:'2-digit'}) : null;
+                const hasAi = a.aiTargetPrice || a.aiStopLoss;
+
+                return `
+                <tr class="hover:bg-amber-50/30 dark:hover:bg-amber-900/10 transition-colors">
+                    <td class="px-4 py-3">
+                        <div class="font-black text-xs">${a.ticker}</div>
+                        <div class="text-[10px] text-slate-400 max-w-[120px] truncate">${a.name}</div>
+                    </td>
+                    <td class="px-3 py-3 text-right">
+                        <div class="font-bold text-sm whitespace-nowrap">${fmt(a.currentPrice, a.currency)}</div>
+                        <div class="text-[10px] ${chgColor}">${chgSign}${fmtPct(a.changePercent)}</div>
+                    </td>
+                    <td class="px-3 py-3 text-center">
+                        <div class="flex flex-col items-center gap-0.5">
+                            <input type="number" step="0.01" value="${a.stopLoss || ''}" placeholder="—" id="sl-input-${i}"
+                                class="w-24 text-center text-xs font-bold px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-rose-400/40 focus:border-rose-400 outline-none transition-all">
+                            ${slVsPrice !== null ? `<span class="text-[9px] ${parseFloat(slVsPrice) < 0 ? 'text-rose-400' : 'text-amber-400'}">${slVsPrice > 0 ? '+' : ''}${slVsPrice}%</span>` : ''}
+                            ${a.aiStopLoss ? `<span class="text-[9px] text-violet-400 flex items-center gap-0.5"><span class="material-symbols-outlined text-[10px]">smart_toy</span>${fmt(a.aiStopLoss)}</span>` : ''}
+                        </div>
+                    </td>
+                    <td class="px-3 py-3 text-center">
+                        <div class="flex flex-col items-center gap-0.5">
+                            <input type="number" step="0.01" value="${a.targetPrice || ''}" placeholder="—" id="tp-input-${i}"
+                                class="w-24 text-center text-xs font-bold px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400 outline-none transition-all">
+                            ${tpVsPrice !== null ? `<span class="text-[9px] ${parseFloat(tpVsPrice) > 0 ? 'text-emerald-400' : 'text-rose-400'}">${tpVsPrice > 0 ? '+' : ''}${tpVsPrice}%</span>` : ''}
+                            ${a.aiTargetPrice ? `<span class="text-[9px] text-violet-400 flex items-center gap-0.5"><span class="material-symbols-outlined text-[10px]">smart_toy</span>${fmt(a.aiTargetPrice)}</span>` : ''}
+                        </div>
+                    </td>
+                    <td class="px-3 py-3 text-center">
+                        <input type="number" step="0.1" min="0" max="100" value="${a.volatilityAlert || ''}" placeholder="—" id="vol-input-${i}"
+                            class="w-20 text-center text-xs font-bold px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400 outline-none transition-all">
+                    </td>
+                    <td class="px-3 py-3 text-center">
+                        ${aiDate ? `<span class="text-[9px] text-violet-500 dark:text-violet-400 font-bold">${aiDate}</span>` : `<span class="text-[9px] text-slate-400">—</span>`}
+                    </td>
+                    <td class="px-3 py-3">
+                        <div class="flex items-center justify-center gap-1.5 flex-wrap">
+                            <button onclick="saveSltpRow(${i})" title="Salva modifiche"
+                                class="flex items-center gap-1 text-[9px] font-bold bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1.5 rounded-lg transition-all">
+                                <span class="material-symbols-outlined text-[11px]">save</span> Salva
+                            </button>
+                            ${hasAi ? `
+                            <button onclick="restoreAiSltpRow(${i})" title="Ripristina valori AI"
+                                class="flex items-center gap-1 text-[9px] font-bold bg-violet-500 hover:bg-violet-600 text-white px-2 py-1.5 rounded-lg transition-all">
+                                <span class="material-symbols-outlined text-[11px]">smart_toy</span> AI
+                            </button>` : ''}
+                            <button onclick="clearSltpRow(${i})" title="Azzera tutti i valori"
+                                class="flex items-center gap-1 text-[9px] font-bold bg-slate-200 dark:bg-slate-700 hover:bg-rose-100 dark:hover:bg-rose-900/30 hover:text-rose-600 text-slate-600 dark:text-slate-300 px-2 py-1.5 rounded-lg transition-all">
+                                <span class="material-symbols-outlined text-[11px]">delete</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        window.saveSltpRow = async function(i) {
+            const a = _sltpData[i];
+            const sl = parseFloat(document.getElementById('sl-input-' + i).value) || 0;
+            const tp = parseFloat(document.getElementById('tp-input-' + i).value) || 0;
+            const vol = parseFloat(document.getElementById('vol-input-' + i).value) || 0;
+            try {
+                await fetch('/api/assets/' + a.ticker, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ stopLoss: sl, targetPrice: tp, volatilityAlert: vol })
+                });
+                _sltpData[i].stopLoss = sl || null;
+                _sltpData[i].targetPrice = tp || null;
+                _sltpData[i].volatilityAlert = vol || null;
+                if (window.ftNotify) ftNotify('success', a.ticker + ' aggiornato', 'SL/TP/Volatilità salvati.');
+                renderSltpTable();
+            } catch(e) { if (window.ftNotify) ftNotify('error', 'Errore', 'Impossibile salvare.'); }
+        };
+
+        window.restoreAiSltpRow = async function(i) {
+            const a = _sltpData[i];
+            if (!(await ftConfirm('Ripristinare i valori suggeriti dalla AI per ' + a.ticker + '?\nSL: ' + (a.aiStopLoss || '—') + ' | TP: ' + (a.aiTargetPrice || '—')))) return;
+            if (a.aiStopLoss) document.getElementById('sl-input-' + i).value = a.aiStopLoss;
+            if (a.aiTargetPrice) document.getElementById('tp-input-' + i).value = a.aiTargetPrice;
+            await window.saveSltpRow(i);
+        };
+
+        window.clearSltpRow = async function(i) {
+            const a = _sltpData[i];
+            if (!(await ftConfirm('Azzerare Stop Loss, Target Price e Volatilità Alert per ' + a.ticker + '?'))) return;
+            document.getElementById('sl-input-' + i).value = '';
+            document.getElementById('tp-input-' + i).value = '';
+            document.getElementById('vol-input-' + i).value = '';
+            await window.saveSltpRow(i);
+        };
+        // ────────────────────────────────────────────────────────────────────────
+
 
         window.toggleMobSection = function(id) {
             const el = document.getElementById(id);

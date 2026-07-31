@@ -812,7 +812,68 @@ router.get('/assets', requireAuth, async (req, res) => {
     res.json(result);
 });
 
-// Historical quotes for a specific asset (for chart popup)
+// ─── SL/TP/Volatility Overview (for Settings page) ─────────────────────────
+router.get('/assets/sl-tp-overview', requireAuth, (req, res) => {
+    try {
+        const userId = req.user.id;
+        const rows = database.db.prepare(`
+            SELECT 
+                a.ticker, a.name, a.currentPrice, a.currency, a.changePercent,
+                a.targetPrice as assetTP,
+                a.stopLoss as assetSL,
+                uw.targetPrice as userTP,
+                uw.stopLoss as userSL,
+                uw.volatilityAlert as userVolatility,
+                (
+                    SELECT targetPrice FROM asset_ai_history
+                    WHERE ticker = a.ticker AND targetPrice IS NOT NULL AND targetPrice > 0
+                    ORDER BY created_at DESC LIMIT 1
+                ) as aiTP,
+                (
+                    SELECT stopLoss FROM asset_ai_history
+                    WHERE ticker = a.ticker AND stopLoss IS NOT NULL AND stopLoss > 0
+                    ORDER BY created_at DESC LIMIT 1
+                ) as aiSL,
+                (
+                    SELECT created_at FROM asset_ai_history
+                    WHERE ticker = a.ticker
+                    ORDER BY created_at DESC LIMIT 1
+                ) as lastAiDate
+            FROM assets a
+            LEFT JOIN user_watchlist uw ON a.ticker = uw.ticker AND uw.user_id = ?
+            WHERE a.ticker != 'CASH'
+            AND (
+                (uw.targetPrice IS NOT NULL AND uw.targetPrice != 0) OR
+                (uw.stopLoss IS NOT NULL AND uw.stopLoss != 0) OR
+                (uw.volatilityAlert IS NOT NULL AND uw.volatilityAlert != 0) OR
+                (a.targetPrice IS NOT NULL AND a.targetPrice != 0) OR
+                (a.stopLoss IS NOT NULL AND a.stopLoss != 0)
+            )
+            ORDER BY a.name ASC
+        `).all(userId);
+
+        const result = rows.map(r => ({
+            ticker: r.ticker,
+            name: r.name,
+            currentPrice: r.currentPrice,
+            currency: r.currency,
+            changePercent: r.changePercent,
+            targetPrice: r.userTP !== null ? r.userTP : (r.assetTP || null),
+            stopLoss: r.userSL !== null ? r.userSL : (r.assetSL || null),
+            volatilityAlert: r.userVolatility || null,
+            aiTargetPrice: r.aiTP || null,
+            aiStopLoss: r.aiSL || null,
+            lastAiDate: r.lastAiDate || null,
+        }));
+
+        res.json(result);
+    } catch(e) {
+        logger.error('sl-tp-overview error', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+
 router.get('/asset-quotes/:ticker', requireAuth, (req, res) => {
     const { ticker } = req.params;
     const { from, to } = req.query;
