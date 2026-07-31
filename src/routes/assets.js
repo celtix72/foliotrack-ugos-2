@@ -1493,7 +1493,7 @@ Ensure you use these emojis in the section headers:
 
 Here are the metrics for each section's table:
 - Section 1: Margine Lordo, Margine Operativo, Margine Netto, Vantaggio Competitivo (Moat)
-- Section 2: ROE, ROA, Debt/Equity, Current Ratio, Quick Ratio, Trend FCF
+- Section 2: ROE, ROA, Debt/Equity, Current Ratio, Quick Ratio, Trend FCF, Ultima Trimestrale (EPS/Surprise)
 - Section 3: P/E Trailing, P/E Forward, P/B, EV/EBITDA, Sconto su Intrinsic Value
 - Section 4: FCF vs CapEx, Riacquisto Azioni proprie (Buyback), Dividendi, Efficienza Allocazione
 - Section 5: Organizza le proiezioni e i livelli operativi in una tabella con colonne: | Parametro Operativo | Valore / Livello | Dettaglio / Razionale |
@@ -1565,8 +1565,9 @@ Usa i colori:
 | R&D / Revenue (R&D Efficiency) | ... | ... | ... |
 | Total Cash vs Debt | ... | ... | ... |
 | Burn Rate / Cash Runway stimata | ... | ... | ... |
+| Ultima Trimestrale (EPS/Surprise) | ... | ... | ... |
 
-[Paragrafo: L'azienda ha abbastanza "carburante finanziario" per fare centro prima che finiscano i soldi?]
+[Paragrafo: L'azienda ha abbastanza "carburante finanziario" per fare centro prima che finiscano i soldi? Valuta anche l'impatto dell'ultima trimestrale.]
 
 ### 🎯 4. Contesto Macro-Tecnologico e Competitivo
 | Metrica Evaluata | Valore Attuale | Valutazione (🟢/🟡/🔴) | Nota Sintetica |
@@ -1644,8 +1645,9 @@ Il tuo campo JSON "reasoning" DEVE seguire esattamente questa struttura e format
 | Debt/Equity | ... | ... | ... |
 | Current / Quick Ratio | ... | ... | ... |
 | Trend FCF | ... | ... | ... |
+| Ultima Trimestrale (EPS/Surprise) | ... | ... | ... |
 
-[Paragrafo analitico sulla salute finanziaria e solidità patrimoniale con emoji]
+[Paragrafo analitico sulla salute finanziaria, solidità patrimoniale e sugli ultimi risultati trimestrali con emoji]
 
 ### 📈 3. Valuation & PEG (GARP)
 | Metrica Evaluata | Valore Attuale | Valutazione (🟢/🟡/🔴) | Nota Sintetica |
@@ -1733,8 +1735,9 @@ Il tuo campo JSON "reasoning" DEVE seguire esattamente questa struttura e format
 | Debt/Equity | ... | ... | ... |
 | Current / Quick Ratio | ... | ... | ... |
 | Trend Free Cash Flow (FCF) | ... | ... | ... |
+| Ultima Trimestrale (EPS/Surprise) | ... | ... | ... |
 
-[Paragrafo analitico sulla salute finanziaria, liquidità e solidità patrimoniale con emoji]
+[Paragrafo analitico sulla salute finanziaria, liquidità, solidità patrimoniale e sugli ultimi risultati trimestrali con emoji]
 
 ### 🔍 3. Margin of Safety & Sconto sul Valore Intrinseco
 | Metrica Evaluata | Valore Attuale | Valutazione (🟢/🟡/🔴) | Nota Sintetica |
@@ -1931,8 +1934,10 @@ router.get('/assets/:ticker/ai-history', requireAuth, (req, res) => {
 
 router.delete('/assets/ai-history/:id', requireAuth, (req, res) => {
     try {
-        database.db.prepare('DELETE FROM asset_ai_history WHERE id = ?').run(req.params.id);
-        res.json({ success: true });
+        console.log(`[DEBUG] Deleting AI history id=${req.params.id}`);
+        const result = database.db.prepare('DELETE FROM asset_ai_history WHERE id = ?').run(req.params.id);
+        console.log(`[DEBUG] Rows deleted: ${result.changes}`);
+        res.json({ success: true, deleted: result.changes });
     } catch (err) {
         logger.error('Error deleting asset AI history', err);
         res.status(500).json({ error: err.message });

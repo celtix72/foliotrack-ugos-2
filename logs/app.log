@@ -48617,3 +48617,22 @@ Test
 2026-07-27T10:14:13.934Z [INFO] Market data update cycle completed.
 2026-07-27T10:20:12.054Z [INFO] Updating market data for 2 assets...
 2026-07-27T10:20:12.086Z [INFO] Updating [AAPL] using [YF]...
+2026-07-30T19:51:50.627Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-30T19:51:50.658Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-07-30T19:51:50.833Z [INFO] Updating market data for 2 assets...
+2026-07-30T19:51:50.858Z [INFO] Updating [AAPL] using [YF]...
+2026-07-30T19:51:50.891Z [INFO] FolioTrack server running on port 3000
+2026-07-30T19:51:50.908Z [INFO] Database: /Users/mauro/Documents/Progetti_Sviluppo/FolioTrack3/foliotrack.db
+2026-07-30T19:51:50.946Z [INFO] Startup notification sent to 3 users.
+2026-07-30T19:51:51.180Z [INFO] [OpenRouter] Cached 80 top models for financial analysis (including NVIDIA free models).
+2026-07-30T19:51:51.337Z [INFO] [Requesty] Cached 300 top models for financial analysis.
+2026-07-30T19:51:52.725Z [INFO] YF ✓ AAPL: price=332.87 USD chg=-1.57%
+2026-07-30T19:51:52.750Z [INFO] Successfully updated AAPL: 332.87 USD
+2026-07-30T19:51:52.766Z [INFO] Updating [MSFT] using [YF]...
+2026-07-30T19:51:53.271Z [INFO] YF ✓ MSFT: price=454.91 USD chg=16.48%
+2026-07-30T19:51:53.306Z [INFO] New earnings alert registered for MSFT Q/Year: 2026-06-30
+2026-07-30T19:51:53.342Z [INFO] Successfully updated MSFT: 454.91 USD
+2026-07-30T19:51:53.497Z [INFO] Market data update cycle completed.
+2026-07-30T19:51:53.537Z [INFO] [REQ] GET /api/schedules
+2026-07-30T19:51:53.835Z [INFO] [REQ] DELETE /api/assets/ai-history/2
+2026-07-30T19:51:55.764Z [INFO] Starting RSS News Sync (isFirstSync: true)...

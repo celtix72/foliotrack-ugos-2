@@ -1346,7 +1346,7 @@
                             </div>
                             <div style="display: flex; gap: 8px; align-items: center;">
                                 <span style="padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: 900; background: ${actionColor}; color: ${actionTextColor}; border: 1px solid ${actionTextColor}; box-shadow: 0 2px 8px ${actionColor};">${item.action}</span>
-                                <button onclick="window.deleteAssetAiHistory(${item.id}, '${ticker}')" style="background: rgba(239,68,68,0.1); border: none; border-radius: 6px; color: rgb(239,68,68); padding: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" class="hover:bg-red-500/20">
+                                <button onclick="event.preventDefault(); event.stopPropagation(); window.deleteAssetAiHistory(${item.id}, '${ticker}')" style="background: rgba(239,68,68,0.1); border: none; border-radius: 6px; color: rgb(239,68,68); padding: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" class="hover:bg-red-500/20">
                                     <span class="material-symbols-outlined" style="font-size: 14px;">delete</span>
                                 </button>
                             </div>
