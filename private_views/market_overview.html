@@ -508,7 +508,7 @@ function renderAiBadges(a) {
             
             const act = (badge.aiAction || '').toUpperCase();
             let badgeStyle = '';
-            if (act === 'BUY' || act === 'INCREASE') {
+            if (act === 'BUY' || act === 'INCREASE' || act === 'INC') {
                 badgeStyle = 'style="background-color: #10b981 !important; color: #ffffff !important; border-color: #10b981 !important;"';
             } else if (act === 'SELL' || act === 'DECREASE') {
                 badgeStyle = 'style="background-color: #ef4444 !important; color: #ffffff !important; border-color: #ef4444 !important;"';
