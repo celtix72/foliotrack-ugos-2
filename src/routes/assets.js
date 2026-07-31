@@ -1958,7 +1958,18 @@ ${contextData}
                 ? `**IN PORTAFOGLIO** ✅ (${totalQty.toFixed(4)} quote · PMC: ${pmcVal.toFixed(2)} ${assetRow.currency})`
                 : `**Solo in Watchlist** 👁️ (non in portafoglio)`;
 
-            const headerStr = `### 📊 METODOLOGIA DI ANALISI IA\\\\n- **Filosofia Applicata:** ${filosofiaStr}\\\\n- **Modello LLM:** **${engine} (${res.modelUsed || 'N/D'})**\\\\n- **Prezzo Rilevato all\\\\'Analisi:** ${priceStr}\\\\n- **Prezzo Medio di Carico (PMC):** ${pmcStr}\\\\n- **Posizione:** ${portfolioStatusStr}\\\\n- **Fonti Dati:** Yahoo Finance, Finnhub, ${newsSource}\\\\n\\\\n---\\\\n\\\\n`;
+            const headerStr = [
+                `### 📊 METODOLOGIA DI ANALISI IA`,
+                `- **Filosofia Applicata:** ${filosofiaStr}`,
+                `- **Modello LLM:** **${engine} (${res.modelUsed || 'N/D'})**`,
+                `- **Prezzo Rilevato all'Analisi:** ${priceStr}`,
+                `- **Prezzo Medio di Carico (PMC):** ${pmcStr}`,
+                `- **Posizione:** ${portfolioStatusStr}`,
+                `- **Fonti Dati:** Yahoo Finance, Finnhub, ${newsSource}`,
+                ``,
+                `---`,
+                ``,
+            ].join('\n') + '\n\n';
             
             parsedResponse.reasoning = headerStr + (parsedResponse.reasoning || '');
 
