@@ -1346,6 +1346,7 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
         let newsTitles = '';
         let newsSource = 'Yahoo Finance';
         const tavilyKey = globalSettings.tavilyApiKey || process.env.TAVILY_API_KEY;
+        logger.info(`[Tavily Debug] Starting Tavily check. Key present? ${!!tavilyKey}`);
         if (tavilyKey) {
             sendEvent('progress', { message: 'Ricerca news e analisi esterna tramite Tavily...' });
             try {
@@ -1369,19 +1370,26 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
                 const tavilyResults = [];
                 for (const q of selectedQueries) {
                     try {
+                        logger.info(`[Tavily Debug] Executing query: "${q}"`);
                         const r = await axios.post('https://api.tavily.com/search', {
                             api_key: tavilyKey,
                             query: q,
                             search_depth: 'basic',
                             max_results: 4
                         });
+                        logger.info(`[Tavily Debug] Query success. Results count: ${r.data && r.data.results ? r.data.results.length : 0}`);
                         if (r.data && Array.isArray(r.data.results)) {
                             tavilyResults.push(...r.data.results);
                         }
                     } catch (qErr) {
-                        logger.warn('[Tavily] Query failed:', q, qErr.message);
+                        logger.warn(`[Tavily Debug] Query failed: ${q} | Error: ${qErr.message}`);
+                        if (qErr.response && qErr.response.data) {
+                            logger.warn(`[Tavily Debug] API Response details: ${JSON.stringify(qErr.response.data)}`);
+                        }
                     }
                 }
+                
+                logger.info(`[Tavily Debug] Total results aggregated: ${tavilyResults.length}`);
                 if (tavilyResults.length > 0) {
                     // Deduplicate by title and format
                     const seen = new Set();
@@ -1390,9 +1398,10 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
                         .map(r => `[${r.url ? new URL(r.url).hostname : 'web'}] ${r.title}: ${(r.content || '').substring(0, 300)}`)
                         .join('\n---\n');
                     newsSource = 'Tavily Search API';
+                    logger.info(`[Tavily Debug] Final formatted string length: ${newsTitles.length} characters`);
                 }
             } catch (err) {
-                logger.error('[Tavily API Error]', err.message);
+                logger.error(`[Tavily Debug] General error: ${err.message}`);
             }
         }
         
