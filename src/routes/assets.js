@@ -122,7 +122,7 @@ async function getAssetFundamentals(ticker) {
     // ── 1. defaultKeyStatistics: PEG forward + FCF TTM ──────────────────────
     try {
         const ks = await yahooFinance.quoteSummary(ticker, {
-            modules: ['defaultKeyStatistics', 'summaryDetail', 'calendarEvents']
+            modules: ['defaultKeyStatistics', 'summaryDetail', 'calendarEvents', 'assetProfile', 'fundProfile']
         });
         const s = ks.defaultKeyStatistics || {};
         result.pegRatio        = s.pegRatio       ?? null;
@@ -132,6 +132,7 @@ async function getAssetFundamentals(ticker) {
         const ce = ks.calendarEvents || {};
         result.summaryDetail = sd;
         result.calendarEvents = ce;
+        result.profile = ks.assetProfile || ks.fundProfile || {};
         result.keyStats = {
             forwardPE:      s.forwardPE       ?? null,
             trailingEps:    s.trailingEps     ?? null,

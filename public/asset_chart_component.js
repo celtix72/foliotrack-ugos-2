@@ -1034,6 +1034,46 @@
 
         window.loadAssetAiHistory(ticker);
 
+        // Fetch fundamentals to recommend a philosophy based on sector
+        const promptSelect = document.getElementById('ai-modal-prompt-select');
+        if (promptSelect) {
+            promptSelect.innerHTML = `
+                <option value="graham">Graham e Buffett</option>
+                <option value="garp">GARP</option>
+                <option value="disruptive">Disruptive</option>
+            `;
+            
+            fetch('/api/fundamentals/' + ticker)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.profile) return;
+                    const sector = (data.profile.sector || '').toLowerCase();
+                    const industry = (data.profile.industry || '').toLowerCase();
+                    
+                    let recommended = 'garp';
+                    
+                    const valueSectors = ['financial services', 'utilities', 'energy', 'basic materials', 'real estate', 'industrials', 'consumer defensive'];
+                    const disruptiveSectors = ['technology', 'communication services'];
+                    const disruptiveIndustries = ['biotechnology', 'software', 'internet', 'semiconductors', 'solar', 'renewable', 'crypto', 'aerospace', 'health information'];
+
+                    if (valueSectors.some(s => sector.includes(s))) {
+                        recommended = 'graham';
+                    } else if (disruptiveSectors.some(s => sector.includes(s)) || disruptiveIndustries.some(i => industry.includes(i))) {
+                        recommended = 'disruptive';
+                    } else {
+                        recommended = 'garp';
+                    }
+                    
+                    Array.from(promptSelect.options).forEach(opt => {
+                        if (opt.value === recommended) {
+                            opt.text = opt.text.replace(' (Consigliata)', '') + ' (Consigliata)';
+                            opt.selected = true;
+                        }
+                    });
+                })
+                .catch(err => console.error("Error fetching fundamentals for AI recommendation:", err));
+        }
+
         // Fetch available engines
         fetch('/api/ai/available-engines').then(r => r.json()).then(data => {
             const select = document.getElementById('ai-modal-engine-select');
