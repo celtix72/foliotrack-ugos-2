@@ -469,8 +469,12 @@
             // Update Stats Bar
             if (dailyVars.length > 0) {
                 const latestVar = dailyVars[dailyVars.length - 1];
-                const vColor = latestVar.pct >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-                const vSign = latestVar.pct >= 0 ? '+' : '';
+                const dayPct = (assetInfo && assetInfo.changePercent !== undefined && assetInfo.changePercent !== null) 
+                    ? assetInfo.changePercent 
+                    : latestVar.pct;
+                const vColor = dayPct >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+                const vSign = dayPct > 0 ? '+' : '';
+                const vPctStr = dayPct.toFixed(2);
                 
                 let qtyStr = '0';
                 let gainStr = '—';
@@ -534,7 +538,7 @@
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 2px;">
                             <span style="font-size: 8px; text-transform: uppercase; color: var(--mob-text-muted); font-weight: 900; letter-spacing: 0.05em;">GAIN DAY</span>
-                            <span style="font-size: 13px; font-weight: 900; color: ${vColor};">${vSign}${latestVar.pct.toFixed(1)}%</span>
+                            <span style="font-size: 13px; font-weight: 900; color: ${vColor};">${vSign}${vPctStr}%</span>
                         </div>
                     `;
                 }
