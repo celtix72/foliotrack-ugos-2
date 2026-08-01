@@ -157,17 +157,29 @@
                 <input type="text" id="asset-search" placeholder="Search and add tickers (e.g. AAPL)..." class="w-full pl-9 pr-4 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-primary shadow-sm text-xs" autocomplete="off" />
                 <div id="search-suggestions" class="absolute z-[100] w-full mt-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl hidden max-h-60 overflow-y-auto custom-scrollbar"></div>
             </div>
-            <div class="flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1 shadow-sm shrink-0">
-                <span class="text-[9px] font-black uppercase text-slate-400 px-2 tracking-wider">Visualizza:</span>
-                <button id="display-mode-name-btn" onclick="setDisplayMode('name')" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all bg-primary text-white shadow-xs">
-                    Nome
-                </button>
-                <button id="display-mode-ticker-btn" onclick="setDisplayMode('ticker')" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all text-slate-500 hover:text-slate-900 dark:hover:text-white">
-                    Ticker
-                </button>
+            <div class="flex items-center gap-2 shrink-0">
+                <div class="flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1 shadow-sm">
+                    <span class="text-[9px] font-black uppercase text-slate-400 px-2 tracking-wider">Visualizza:</span>
+                    <button id="display-mode-name-btn" onclick="setDisplayMode('name')" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all bg-primary text-white shadow-xs cursor-pointer">
+                        Nome
+                    </button>
+                    <button id="display-mode-ticker-btn" onclick="setDisplayMode('ticker')" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all text-slate-500 hover:text-slate-900 dark:hover:text-white cursor-pointer">
+                        Ticker
+                    </button>
+                </div>
+                <div class="flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1 shadow-sm">
+                    <span class="text-[9px] font-black uppercase text-slate-400 px-1.5 tracking-wider">Font:</span>
+                    <button onclick="changeWatchlistDesktopScale(-0.05)" class="w-6 h-6 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-all cursor-pointer" title="Riduci font">
+                        <span class="material-symbols-outlined text-[14px]">remove</span>
+                    </button>
+                    <span id="font-scale-display" class="text-[10px] font-mono font-bold px-1 text-slate-500 min-w-[34px] text-center">100%</span>
+                    <button onclick="changeWatchlistDesktopScale(0.05)" class="w-6 h-6 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-all cursor-pointer" title="Aumenta font">
+                        <span class="material-symbols-outlined text-[14px]">add</span>
+                    </button>
+                </div>
             </div>
         </div>
-        <div class="bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+        <div id="watchlist-table-container" class="bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
             <table class="w-full text-left">
                 <thead>
                     <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
@@ -222,6 +234,25 @@
     let performanceData = {};
     let detailChart = null;
     let displayMode = localStorage.getItem('watchlist_display_mode') || 'name';
+    let fontScale = parseFloat(localStorage.getItem('watchlist_desktop_scale')) || 1.0;
+
+    function changeWatchlistDesktopScale(amount) {
+        fontScale = Math.round(Math.max(0.75, Math.min(1.35, fontScale + amount)) * 100) / 100;
+        localStorage.setItem('watchlist_desktop_scale', fontScale);
+        applyWatchlistDesktopScale();
+    }
+
+    function applyWatchlistDesktopScale() {
+        const tableContainer = document.getElementById('watchlist-table-container');
+        const displayEl = document.getElementById('font-scale-display');
+        if (displayEl) {
+            displayEl.innerText = Math.round(fontScale * 100) + '%';
+        }
+        if (tableContainer) {
+            tableContainer.style.zoom = fontScale;
+            tableContainer.style.setProperty('--wl-table-zoom', fontScale);
+        }
+    }
 
     function setDisplayMode(mode) {
         displayMode = mode;
@@ -236,17 +267,18 @@
         if (!nameBtn || !tickerBtn) return;
         
         if (displayMode === 'name') {
-            nameBtn.className = "px-2.5 py-1 rounded-lg text-xs font-bold transition-all bg-primary text-white shadow-xs";
-            tickerBtn.className = "px-2.5 py-1 rounded-lg text-xs font-bold transition-all text-slate-500 hover:text-slate-900 dark:hover:text-white";
+            nameBtn.className = "px-2.5 py-1 rounded-lg text-xs font-bold transition-all bg-primary text-white shadow-xs cursor-pointer";
+            tickerBtn.className = "px-2.5 py-1 rounded-lg text-xs font-bold transition-all text-slate-500 hover:text-slate-900 dark:hover:text-white cursor-pointer";
         } else {
-            nameBtn.className = "px-2.5 py-1 rounded-lg text-xs font-bold transition-all text-slate-500 hover:text-slate-900 dark:hover:text-white";
-            tickerBtn.className = "px-2.5 py-1 rounded-lg text-xs font-bold transition-all bg-primary text-white shadow-xs";
+            nameBtn.className = "px-2.5 py-1 rounded-lg text-xs font-bold transition-all text-slate-500 hover:text-slate-900 dark:hover:text-white cursor-pointer";
+            tickerBtn.className = "px-2.5 py-1 rounded-lg text-xs font-bold transition-all bg-primary text-white shadow-xs cursor-pointer";
         }
     }
 
     async function loadWatchlist() {
         try {
             updateDisplayModeUI();
+            applyWatchlistDesktopScale();
             const [resW, resP] = await Promise.all([
                 fetch('/api/watchlist'),
                 fetch('/api/watchlist/performance')
