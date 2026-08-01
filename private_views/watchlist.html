@@ -14,7 +14,7 @@
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
-        .performance-chip { font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 6px; }
+        .performance-chip { font-size: 9px; font-weight: 800; padding: 1px 4px; border-radius: 4px; line-height: 1.2; }
     </style>
     <script src="/theme.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -150,34 +150,34 @@
     </div>
 </header>
 
-    <main class="flex-1 overflow-y-auto custom-scrollbar p-8">
-        <div class="mb-6 relative">
+    <main class="flex-1 overflow-y-auto custom-scrollbar p-5">
+        <div class="mb-4 relative">
             <div class="relative">
-                <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400">search</span>
-                <input type="text" id="asset-search" placeholder="Search and add tickers (e.g. AAPL)..." class="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-primary shadow-sm text-sm" autocomplete="off" />
+                <span class="material-symbols-outlined absolute left-3 top-2 text-slate-400 text-sm">search</span>
+                <input type="text" id="asset-search" placeholder="Search and add tickers (e.g. AAPL)..." class="w-full pl-9 pr-4 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-primary shadow-sm text-xs" autocomplete="off" />
             </div>
-            <div id="search-suggestions" class="absolute z-[100] w-full mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl hidden max-h-60 overflow-y-auto custom-scrollbar"></div>
+            <div id="search-suggestions" class="absolute z-[100] w-full mt-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl hidden max-h-60 overflow-y-auto custom-scrollbar"></div>
         </div>
-        <div class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+        <div class="bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
             <table class="w-full text-left">
                 <thead>
                     <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
-                        <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Asset</th>
-                        <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Price</th>
-                        <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Perf (1D / 1W / 1M / 1Y)</th>
-                        <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Trend</th>
-                        <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Buy Zone</th>
-                        <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">TP / SL</th>
-                        <th class="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
+                        <th class="px-4 py-1.5 text-[9px] font-black uppercase tracking-widest text-slate-400">Asset</th>
+                        <th class="px-4 py-1.5 text-[9px] font-black uppercase tracking-widest text-slate-400">Price</th>
+                        <th class="px-4 py-1.5 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">Perf (1D / 1W / 1M / 1Y)</th>
+                        <th class="px-4 py-1.5 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">Trend</th>
+                        <th class="px-4 py-1.5 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">Buy Zone</th>
+                        <th class="px-4 py-1.5 text-[9px] font-black uppercase tracking-widest text-slate-400 text-right">TP / SL</th>
+                        <th class="px-4 py-1.5 text-[9px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="watchlist-body">
                     <!-- Rows injected via JS -->
                 </tbody>
             </table>
-            <div id="watchlist-empty" class="p-20 text-center hidden">
-                <span class="material-symbols-outlined text-6xl text-slate-200 dark:text-slate-800 mb-4">visibility_off</span>
-                <p class="text-slate-500 font-bold">Your watchlist is empty.</p>
+            <div id="watchlist-empty" class="p-12 text-center hidden">
+                <span class="material-symbols-outlined text-5xl text-slate-200 dark:text-slate-800 mb-3">visibility_off</span>
+                <p class="text-slate-500 font-bold text-sm">Your watchlist is empty.</p>
                 <p class="text-xs text-slate-400">Start by searching and adding tickers above.</p>
             </div>
         </div>
@@ -259,7 +259,7 @@
             if (items.length === 0) return '';
             return `
                 <tr class="bg-slate-100/50 dark:bg-slate-800/80">
-                    <td colspan="8" class="px-5 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+                    <td colspan="8" class="px-4 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
                         ${title} (${items.length})
                     </td>
                 </tr>
@@ -323,19 +323,19 @@
                             const fvStr = badge.aiTargetPrice ? formatAiFv(badge.aiTargetPrice, item.currency, badge.prompt_type) : badge.aiAction;
                             
                             return `
-                            <span ${badgeStyle} onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${item.currency || 'EUR'}')" class="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 border cursor-pointer transition-colors ml-2 whitespace-nowrap" title="${engine}: ${badge.aiAction} ">
-                                <span class="material-symbols-outlined" style="font-size: 12px;">${icon}</span> ${fvStr}
+                            <span ${badgeStyle} onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${item.currency || 'EUR'}')" class="px-1 py-0 rounded text-[9px] font-black uppercase tracking-tighter flex items-center gap-0.5 border cursor-pointer transition-colors ml-1 whitespace-nowrap" title="${engine}: ${badge.aiAction} ">
+                                <span class="material-symbols-outlined" style="font-size: 10px;">${icon}</span> ${fvStr}
                             </span>`;
                         }).join('');
                     } else if (count > 0) {
                          aiBadge = `
-                        <span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${item.currency || 'EUR'}')" class="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 border border-slate-500/30 text-slate-500 bg-slate-500/10 cursor-pointer hover:bg-slate-500/20 transition-colors ml-2" title="Storico Analisi IA">
-                            <span class="material-symbols-outlined" style="font-size: 12px;">smart_toy</span> ${count}
+                        <span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${item.currency || 'EUR'}')" class="px-1 py-0 rounded text-[9px] font-black uppercase tracking-tighter flex items-center gap-0.5 border border-slate-500/30 text-slate-500 bg-slate-500/10 cursor-pointer hover:bg-slate-500/20 transition-colors ml-1" title="Storico Analisi IA">
+                            <span class="material-symbols-outlined" style="font-size: 10px;">smart_toy</span> ${count}
                         </span>`;
                     } else {
                         aiBadge = `
-                        <span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${item.currency || 'EUR'}')" class="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 border border-slate-400/30 text-slate-400 bg-slate-400/10 cursor-pointer hover:bg-slate-400/20 transition-colors ml-2" title="Genera Analisi IA">
-                            <span class="material-symbols-outlined" style="font-size: 12px;">smart_toy</span>
+                        <span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${item.currency || 'EUR'}')" class="px-1 py-0 rounded text-[9px] font-black uppercase tracking-tighter flex items-center gap-0.5 border border-slate-400/30 text-slate-400 bg-slate-400/10 cursor-pointer hover:bg-slate-400/20 transition-colors ml-1" title="Genera Analisi IA">
+                            <span class="material-symbols-outlined" style="font-size: 10px;">smart_toy</span>
                         </span>
                         `;
                     }
@@ -392,14 +392,14 @@
                     if (trendMatch) {
                         const t = trendMatch[1].toLowerCase();
                         if (t === 'rialzista' || t === 'buy' || t === 'positivo') {
-                            shortTrend = '<span class="material-symbols-outlined text-emerald-500" style="font-size: 20px;">trending_up</span>';
+                            shortTrend = '<span class="material-symbols-outlined text-emerald-500" style="font-size: 16px;">trending_up</span>';
                         } else if (t === 'ribassista' || t === 'sell' || t === 'negativo') {
-                            shortTrend = '<span class="material-symbols-outlined text-rose-500" style="font-size: 20px;">trending_down</span>';
+                            shortTrend = '<span class="material-symbols-outlined text-rose-500" style="font-size: 16px;">trending_down</span>';
                         } else {
-                            shortTrend = '<span class="material-symbols-outlined text-amber-500" style="font-size: 20px;">trending_flat</span>';
+                            shortTrend = '<span class="material-symbols-outlined text-amber-500" style="font-size: 16px;">trending_flat</span>';
                         }
                     } else if (trendClean !== '—') {
-                        shortTrend = '<span class="material-symbols-outlined text-slate-400" style="font-size: 18px;">info</span>';
+                        shortTrend = '<span class="material-symbols-outlined text-slate-400" style="font-size: 16px;">info</span>';
                     } else {
                         shortTrend = '<span class="text-slate-400">—</span>';
                     }
@@ -414,74 +414,74 @@
 
                     return `
                         <tr class="border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group cursor-pointer" ondblclick="openAssetChartModal('${item.ticker}')">
-                            <td class="px-5 py-1">
-                                <div class="flex items-center gap-4">
-                                    <div class="min-w-10 px-2 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-[10px] shrink-0 uppercase border border-primary/20">
+                            <td class="px-4 py-0.5">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="min-w-8 px-1.5 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-black text-[9px] shrink-0 uppercase border border-primary/20">
                                         ${item.ticker}
                                     </div>
                                     <div>
-                                        <div class="flex items-center gap-2 flex-wrap">
-                                            <p class="font-black text-sm text-slate-900 dark:text-white leading-none truncate max-w-[240px]" title="${item.name}">${item.name}</p>
-                                            ${!item.isMonitored ? '<span class="text-[8px] font-black bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-500 tracking-tighter uppercase shrink-0">Inactive</span>' : ''}
-                                            ${item.lastUpdateError ? `<span class="px-1.5 py-0.5 rounded-full bg-rose-500 text-[8px] font-black text-white uppercase tracking-tighter shrink-0" title="${item.lastUpdateError.replace(/"/g, '&quot;')}">Err</span>` : ''}
+                                        <div class="flex items-center gap-1.5 flex-wrap">
+                                            <p class="font-bold text-xs text-slate-900 dark:text-white leading-tight truncate max-w-[240px]" title="${item.name}">${item.name}</p>
+                                            ${!item.isMonitored ? '<span class="text-[7px] font-black bg-slate-200 dark:bg-slate-800 px-1 py-0 rounded text-slate-500 tracking-tighter uppercase shrink-0">Inactive</span>' : ''}
+                                            ${item.lastUpdateError ? `<span class="px-1 py-0 rounded-full bg-rose-500 text-[7px] font-black text-white uppercase tracking-tighter shrink-0" title="${item.lastUpdateError.replace(/"/g, '&quot;')}">Err</span>` : ''}
                                         </div>
-                                        <p class="text-[9px] text-slate-400 uppercase font-black tracking-widest mt-1.5 flex items-center gap-2 flex-wrap">
+                                        <p class="text-[8px] text-slate-400 uppercase font-black tracking-widest mt-0.5 flex items-center gap-1.5 flex-wrap">
                                             ${(item.portfoliosInfo && item.portfoliosInfo.length > 0) ? item.portfoliosInfo.map(p => `
-                                                <span class="px-1.5 py-0.5 rounded text-[7px] font-black tracking-tighter uppercase shrink-0" 
+                                                <span class="px-1 py-0 rounded text-[7px] font-black tracking-tighter uppercase shrink-0" 
                                                       style="background-color: ${p.color || '#64748b'}15; color: ${p.color || '#64748b'}; border: 1px solid ${p.color || '#64748b'}30;">
                                                     ${p.name}
                                                 </span>
                                             `).join('<span class="text-slate-200 dark:text-slate-800">•</span>') : ''}
 
-                                            ${(item.portfoliosInfo && item.portfoliosInfo.length > 0) ? '<span class="text-slate-300 dark:text-slate-700 mx-1">|</span>' : ''}
+                                            ${(item.portfoliosInfo && item.portfoliosInfo.length > 0) ? '<span class="text-slate-300 dark:text-slate-700 mx-0.5">|</span>' : ''}
 
-                                            <span class="shrink-0 flex items-center gap-2">
+                                            <span class="shrink-0 flex items-center gap-1.5">
                                                 <span>${item.exchange || 'Market'}</span>
-                                                <span class="px-1.5 py-0.5 rounded text-[8px] font-black leading-none ${item.dataSource === 'B_ITA' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400'}">${item.dataSource === 'B_ITA' ? 'BI' : 'YF'}</span>
-                                                <span onclick="event.stopPropagation(); window.openAssetFundamentalsModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" class="px-1 py-0.5 rounded border border-indigo-500/30 text-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/20 cursor-pointer transition-colors inline-flex items-center justify-center" title="Dati Fondamentali Yahoo Finance">
-                                                    <span class="material-symbols-outlined" style="font-size: 11px; font-weight: bold;">query_stats</span>
+                                                <span class="px-1 py-0 rounded text-[7px] font-black leading-none ${item.dataSource === 'B_ITA' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400'}">${item.dataSource === 'B_ITA' ? 'BI' : 'YF'}</span>
+                                                <span onclick="event.stopPropagation(); window.openAssetFundamentalsModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" class="px-1 py-0 rounded border border-indigo-500/30 text-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/20 cursor-pointer transition-colors inline-flex items-center justify-center" title="Dati Fondamentali Yahoo Finance">
+                                                    <span class="material-symbols-outlined" style="font-size: 10px; font-weight: bold;">query_stats</span>
                                                 </span>
                                             </span>
                                         </p>
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-5 py-1.5">
-                                <p class="text-lg font-black text-slate-900 dark:text-white font-mono">${formatCurrency(item.currentPrice, item.currency, 2)}</p>
-                                <div class="flex items-center gap-1 mt-1.5 flex-wrap">
+                            <td class="px-4 py-0.5">
+                                <p class="text-xs font-black text-slate-900 dark:text-white font-mono leading-tight">${formatCurrency(item.currentPrice, item.currency, 2)}</p>
+                                <div class="flex items-center gap-1 mt-0.5 flex-wrap">
                                     ${aiBadge}
                                 </div>
                             </td>
-                            <td class="px-5 py-2 text-center">
-                                <div class="flex items-center justify-center gap-1">
+                            <td class="px-4 py-0.5 text-center">
+                                <div class="flex items-center justify-center gap-0.5">
                                     ${renderPerf(d1)}
                                     ${renderPerf(perf.perf1W)}
                                     ${renderPerf(perf.perf1M)}
                                     ${renderPerf(perf.perf1Y)}
                                 </div>
                             </td>
-                            <td class="px-5 py-2 text-center font-bold text-slate-600 dark:text-slate-300 text-xs cursor-help" title="${trendClean.replace(/"/g, '&quot;')}">
+                            <td class="px-4 py-0.5 text-center font-bold text-slate-600 dark:text-slate-300 text-xs cursor-help" title="${trendClean.replace(/"/g, '&quot;')}">
                                 ${shortTrend}
                             </td>
-                            <td class="px-5 py-2 text-center font-bold text-slate-600 dark:text-slate-300 text-xs cursor-help" title="${buyZoneClean.replace(/"/g, '&quot;')}">
+                            <td class="px-4 py-0.5 text-center font-bold text-slate-600 dark:text-slate-300 text-xs cursor-help" title="${buyZoneClean.replace(/"/g, '&quot;')}">
                                 ${shortVal(buyZoneClean)}
                             </td>
-                            <td class="px-5 py-2 text-right text-[10px] font-bold text-slate-500">
+                            <td class="px-4 py-0.5 text-right text-[9px] font-bold text-slate-500 leading-tight">
                                 TP: <span class="text-emerald-500 cursor-help" title="${tpClean.replace(/"/g, '&quot;')}">${shortVal(tpClean)}</span><br>
                                 ${slLabel}: <span class="text-rose-500 cursor-help" title="${slOrTp2Clean.replace(/"/g, '&quot;')}">${shortVal(slOrTp2Clean)}</span>
                             </td>
-                            <td class="px-5 py-2 text-right">
-                                    <div class="flex items-center justify-end gap-2">
-                                        <button onclick="event.stopPropagation(); window.openAssetFundamentalsModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'")}')" class="px-2 py-1 rounded-lg bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500 hover:text-white transition-all text-[10px] font-black uppercase tracking-widest border border-indigo-500/10" title="Dati Fondamentali e Analisi Tecnica">
+                            <td class="px-4 py-0.5 text-right">
+                                    <div class="flex items-center justify-end gap-1.5">
+                                        <button onclick="event.stopPropagation(); window.openAssetFundamentalsModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'")}')" class="px-1.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500 hover:text-white transition-all text-[9px] font-black uppercase tracking-widest border border-indigo-500/10" title="Dati Fondamentali e Analisi Tecnica">
                                             Fund.
                                         </button>
                                         ${typeLabel === 'ETF' ? `
-                                        <a href="${(item.isin && item.isin.trim() !== '') ? `https://www.justetf.com/it/etf-profile.html?isin=${item.isin}` : `https://www.justetf.com/it/find-etf.html?query=${item.ticker}`}" target="_blank" class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white transition-all flex items-center justify-center border border-amber-500/10" title="JustETF">
-                                            <span class="material-symbols-outlined text-sm">open_in_new</span>
+                                        <a href="${(item.isin && item.isin.trim() !== '') ? `https://www.justetf.com/it/etf-profile.html?isin=${item.isin}` : `https://www.justetf.com/it/find-etf.html?query=${item.ticker}`}" target="_blank" class="w-6 h-6 rounded-md bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white transition-all flex items-center justify-center border border-amber-500/10" title="JustETF">
+                                            <span class="material-symbols-outlined text-[13px]">open_in_new</span>
                                         </a>
                                         ` : ''}
-                                        <button onclick="event.stopPropagation(); removeFromWatchlist('${item.ticker}')" class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center border border-rose-500/10">
-                                            <span class="material-symbols-outlined text-sm">delete</span>
+                                        <button onclick="event.stopPropagation(); removeFromWatchlist('${item.ticker}')" class="w-6 h-6 rounded-md bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center border border-rose-500/10">
+                                            <span class="material-symbols-outlined text-[13px]">delete</span>
                                         </button>
                                     </div>
                             </td>
