@@ -269,7 +269,6 @@ module.exports = function(dependencies) {
              res.status(500).json({ error: err.message });
          }
      });
- 
      // ─── WATCHLIST PERFORMANCE ───────────────────────────────────────────────
      router.get('/watchlist/performance', requireAuth, async (req, res) => {
         try {
@@ -281,7 +280,7 @@ module.exports = function(dependencies) {
             }
 
             const watchlist = database.db.prepare(`
-                SELECT a.ticker 
+                SELECT a.ticker, a.currentPrice, a.currency
                 FROM assets a
                 JOIN user_watchlist uw ON a.ticker = uw.ticker
                 WHERE uw.user_id = ? 
@@ -296,46 +295,99 @@ module.exports = function(dependencies) {
             const oneMonthAgo = new Date(nowDate.getTime() - 30 * 24 * 60 * 60 * 1000);
             const oneYearAgo = new Date(nowDate.getTime() - 365 * 24 * 60 * 60 * 1000);
 
-            // Fetch in parallel
-            await Promise.all(watchlist.map(async (item) => {
-                const ticker = item.ticker;
-                try {
-                    // Fetch historical data from YF
-                    const historical = await yahooFinance.historical(ticker, {
-                        period1: oneYearAgo,
-                        period2: nowDate,
-                        interval: '1d'
-                    }).catch(() => []);
+            // Process in chunks of 5 to prevent Yahoo Finance rate-limiting
+            const CHUNK_SIZE = 5;
+            for (let i = 0; i < watchlist.length; i += CHUNK_SIZE) {
+                const chunk = watchlist.slice(i, i + CHUNK_SIZE);
+                await Promise.all(chunk.map(async (item) => {
+                    const ticker = item.ticker;
+                    try {
+                        let quotes = [];
 
-                    if (historical.length > 0) {
-                        const quote = await yahooFinance.quote(ticker).catch(() => null);
-                        const currentPrice = quote?.regularMarketPrice || 0;
-                        
-                        if (currentPrice > 0) {
-                            const getPerformance = (pastDate, minDaysDiff) => {
-                                // Find the entry closest to the pastDate (first entry that is >= pastDate)
-                                const pastEntry = historical.find(h => new Date(h.date) >= pastDate);
-                                if (pastEntry && pastEntry.close) {
-                                    // Validate if the date found is actually "past" enough
-                                    const diffDays = (nowDate - new Date(pastEntry.date)) / (1000 * 3600 * 24);
-                                    if (diffDays < minDaysDiff) return null;
+                        // 1. Try yahooFinance.chart (most reliable for global & European assets)
+                        try {
+                            const chartRes = await yahooFinance.chart(ticker, {
+                                period1: Math.floor(oneYearAgo.getTime() / 1000),
+                                period2: Math.floor(nowDate.getTime() / 1000),
+                                interval: '1d'
+                            }).catch(() => null);
 
-                                    return ((currentPrice - pastEntry.close) / pastEntry.close) * 100;
+                            if (chartRes && Array.isArray(chartRes.quotes) && chartRes.quotes.length > 0) {
+                                quotes = chartRes.quotes
+                                    .filter(q => q && q.close != null && q.close > 0)
+                                    .map(q => ({ date: new Date(q.date), price: q.close }));
+                            }
+                        } catch (e) {}
+
+                        // 2. Fallback to yahooFinance.historical if chart returned empty
+                        if (quotes.length === 0) {
+                            try {
+                                const histRes = await yahooFinance.historical(ticker, {
+                                    period1: oneYearAgo,
+                                    period2: nowDate,
+                                    interval: '1d'
+                                }).catch(() => []);
+
+                                if (histRes && histRes.length > 0) {
+                                    quotes = histRes
+                                        .filter(h => h && h.close != null && h.close > 0)
+                                        .map(h => ({ date: new Date(h.date), price: h.close }));
+                                }
+                            } catch (e) {}
+                        }
+
+                        // 3. Fallback to local DB asset_quotes if network calls failed
+                        if (quotes.length === 0) {
+                            try {
+                                const dbQuotes = database.db.prepare(`
+                                    SELECT date, price FROM asset_quotes 
+                                    WHERE UPPER(ticker) = UPPER(?) AND price > 0
+                                    ORDER BY date ASC
+                                `).all(ticker);
+                                if (dbQuotes && dbQuotes.length > 0) {
+                                    quotes = dbQuotes.map(q => ({ date: new Date(q.date), price: q.price }));
+                                }
+                            } catch (e) {}
+                        }
+
+                        // Determine current price: use item.currentPrice from DB first, or latest quote price
+                        const currentPrice = (item.currentPrice && item.currentPrice > 0)
+                            ? item.currentPrice
+                            : (quotes.length > 0 ? quotes[quotes.length - 1].price : 0);
+
+                        if (currentPrice > 0 && quotes.length > 0) {
+                            const getPerformance = (targetDate, minDaysDiff, maxDaysDiff) => {
+                                let closest = null;
+                                let minDiffMs = Infinity;
+
+                                for (const q of quotes) {
+                                    const diffMs = Math.abs(q.date.getTime() - targetDate.getTime());
+                                    if (diffMs < minDiffMs) {
+                                        minDiffMs = diffMs;
+                                        closest = q;
+                                    }
+                                }
+
+                                if (closest && closest.price > 0) {
+                                    const actualAgeDays = (nowDate.getTime() - closest.date.getTime()) / (1000 * 3600 * 24);
+                                    if (actualAgeDays >= minDaysDiff && actualAgeDays <= maxDaysDiff) {
+                                        return ((currentPrice - closest.price) / closest.price) * 100;
+                                    }
                                 }
                                 return null;
                             };
 
                             results[ticker] = {
-                                perf1W: getPerformance(oneWeekAgo, 4),   // 1W needs at least 4 days back (handles weekends)
-                                perf1M: getPerformance(oneMonthAgo, 20), // 1M needs at least 20 days back
-                                perf1Y: getPerformance(oneYearAgo, 300)  // 1Y needs at least 300 days back
+                                perf1W: getPerformance(oneWeekAgo, 4, 14),   // 1W: 4 to 14 days old
+                                perf1M: getPerformance(oneMonthAgo, 18, 45), // 1M: 18 to 45 days old
+                                perf1Y: getPerformance(oneYearAgo, 180, 450) // 1Y: 180 to 450 days old
                             };
                         }
+                    } catch (e) {
+                        console.error(`Error fetching performance for ${ticker}:`, e.message);
                     }
-                } catch (e) {
-                    console.error(`Error fetching performance for ${ticker}:`, e.message);
-                }
-            }));
+                }));
+            }
 
             watchlistPerformanceCache.data = results;
             watchlistPerformanceCache.lastUpdated = Date.now();
