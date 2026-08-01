@@ -151,12 +151,21 @@
 </header>
 
     <main class="flex-1 overflow-y-auto custom-scrollbar p-5">
-        <div class="mb-4 relative">
-            <div class="relative">
+        <div class="mb-4 flex items-center justify-between gap-3">
+            <div class="flex-1 relative">
                 <span class="material-symbols-outlined absolute left-3 top-2 text-slate-400 text-sm">search</span>
                 <input type="text" id="asset-search" placeholder="Search and add tickers (e.g. AAPL)..." class="w-full pl-9 pr-4 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-primary shadow-sm text-xs" autocomplete="off" />
+                <div id="search-suggestions" class="absolute z-[100] w-full mt-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl hidden max-h-60 overflow-y-auto custom-scrollbar"></div>
             </div>
-            <div id="search-suggestions" class="absolute z-[100] w-full mt-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl hidden max-h-60 overflow-y-auto custom-scrollbar"></div>
+            <div class="flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1 shadow-sm shrink-0">
+                <span class="text-[9px] font-black uppercase text-slate-400 px-2 tracking-wider">Visualizza:</span>
+                <button id="display-mode-name-btn" onclick="setDisplayMode('name')" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all bg-primary text-white shadow-xs">
+                    Nome
+                </button>
+                <button id="display-mode-ticker-btn" onclick="setDisplayMode('ticker')" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all text-slate-500 hover:text-slate-900 dark:hover:text-white">
+                    Ticker
+                </button>
+            </div>
         </div>
         <div class="bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
             <table class="w-full text-left">
@@ -212,9 +221,32 @@
     let watchlist = [];
     let performanceData = {};
     let detailChart = null;
+    let displayMode = localStorage.getItem('watchlist_display_mode') || 'name';
+
+    function setDisplayMode(mode) {
+        displayMode = mode;
+        localStorage.setItem('watchlist_display_mode', mode);
+        updateDisplayModeUI();
+        renderWatchlist();
+    }
+
+    function updateDisplayModeUI() {
+        const nameBtn = document.getElementById('display-mode-name-btn');
+        const tickerBtn = document.getElementById('display-mode-ticker-btn');
+        if (!nameBtn || !tickerBtn) return;
+        
+        if (displayMode === 'name') {
+            nameBtn.className = "px-2.5 py-1 rounded-lg text-xs font-bold transition-all bg-primary text-white shadow-xs";
+            tickerBtn.className = "px-2.5 py-1 rounded-lg text-xs font-bold transition-all text-slate-500 hover:text-slate-900 dark:hover:text-white";
+        } else {
+            nameBtn.className = "px-2.5 py-1 rounded-lg text-xs font-bold transition-all text-slate-500 hover:text-slate-900 dark:hover:text-white";
+            tickerBtn.className = "px-2.5 py-1 rounded-lg text-xs font-bold transition-all bg-primary text-white shadow-xs";
+        }
+    }
 
     async function loadWatchlist() {
         try {
+            updateDisplayModeUI();
             const [resW, resP] = await Promise.all([
                 fetch('/api/watchlist'),
                 fetch('/api/watchlist/performance')
@@ -266,6 +298,12 @@
                 ${items.map(item => {
                     const perf = performanceData[item.ticker] || {};
                     const d1 = item.changePercent || 0;
+                    
+                    const isNameMode = displayMode === 'name';
+                    const primaryTitle = isNameMode ? (item.name || item.ticker) : item.ticker;
+                    const secondaryIdentifier = isNameMode 
+                        ? `<span class="font-black text-primary/90">${item.ticker}</span>`
+                        : `<span class="font-semibold text-slate-600 dark:text-slate-300 truncate max-w-[200px]" title="${(item.name || '').replace(/"/g, '&quot;')}">${item.name || ''}</span>`;
                     
                     // Standardize Type Label for display
                     let typeLabel = item.type || 'Other';
@@ -415,35 +453,34 @@
                     return `
                         <tr class="border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group cursor-pointer" ondblclick="openAssetChartModal('${item.ticker}')">
                             <td class="px-4 py-0.5">
-                                <div class="flex items-center gap-2.5">
-                                    <div class="min-w-8 px-1.5 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-black text-[9px] shrink-0 uppercase border border-primary/20">
-                                        ${item.ticker}
+                                <div>
+                                    <div class="flex items-center gap-1.5 flex-wrap">
+                                        <p class="font-bold text-xs text-slate-900 dark:text-white leading-tight truncate max-w-[280px]" title="${(item.name || '').replace(/"/g, '&quot;')}">${primaryTitle}</p>
+                                        ${!item.isMonitored ? '<span class="text-[7px] font-black bg-slate-200 dark:bg-slate-800 px-1 py-0 rounded text-slate-500 tracking-tighter uppercase shrink-0">Inactive</span>' : ''}
+                                        ${item.lastUpdateError ? `<span class="px-1 py-0 rounded-full bg-rose-500 text-[7px] font-black text-white uppercase tracking-tighter shrink-0" title="${item.lastUpdateError.replace(/"/g, '&quot;')}">Err</span>` : ''}
                                     </div>
-                                    <div>
-                                        <div class="flex items-center gap-1.5 flex-wrap">
-                                            <p class="font-bold text-xs text-slate-900 dark:text-white leading-tight truncate max-w-[240px]" title="${item.name}">${item.name}</p>
-                                            ${!item.isMonitored ? '<span class="text-[7px] font-black bg-slate-200 dark:bg-slate-800 px-1 py-0 rounded text-slate-500 tracking-tighter uppercase shrink-0">Inactive</span>' : ''}
-                                            ${item.lastUpdateError ? `<span class="px-1 py-0 rounded-full bg-rose-500 text-[7px] font-black text-white uppercase tracking-tighter shrink-0" title="${item.lastUpdateError.replace(/"/g, '&quot;')}">Err</span>` : ''}
-                                        </div>
-                                        <p class="text-[8px] text-slate-400 uppercase font-black tracking-widest mt-0.5 flex items-center gap-1.5 flex-wrap">
-                                            ${(item.portfoliosInfo && item.portfoliosInfo.length > 0) ? item.portfoliosInfo.map(p => `
-                                                <span class="px-1 py-0 rounded text-[7px] font-black tracking-tighter uppercase shrink-0" 
-                                                      style="background-color: ${p.color || '#64748b'}15; color: ${p.color || '#64748b'}; border: 1px solid ${p.color || '#64748b'}30;">
-                                                    ${p.name}
-                                                </span>
-                                            `).join('<span class="text-slate-200 dark:text-slate-800">•</span>') : ''}
+                                    <p class="text-[8px] text-slate-400 uppercase font-black tracking-widest mt-0.5 flex items-center gap-1.5 flex-wrap">
+                                        ${secondaryIdentifier}
 
-                                            ${(item.portfoliosInfo && item.portfoliosInfo.length > 0) ? '<span class="text-slate-300 dark:text-slate-700 mx-0.5">|</span>' : ''}
+                                        <span class="text-slate-300 dark:text-slate-700">•</span>
 
-                                            <span class="shrink-0 flex items-center gap-1.5">
-                                                <span>${item.exchange || 'Market'}</span>
-                                                <span class="px-1 py-0 rounded text-[7px] font-black leading-none ${item.dataSource === 'B_ITA' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400'}">${item.dataSource === 'B_ITA' ? 'BI' : 'YF'}</span>
-                                                <span onclick="event.stopPropagation(); window.openAssetFundamentalsModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" class="px-1 py-0 rounded border border-indigo-500/30 text-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/20 cursor-pointer transition-colors inline-flex items-center justify-center" title="Dati Fondamentali Yahoo Finance">
-                                                    <span class="material-symbols-outlined" style="font-size: 10px; font-weight: bold;">query_stats</span>
-                                                </span>
+                                        ${(item.portfoliosInfo && item.portfoliosInfo.length > 0) ? item.portfoliosInfo.map(p => `
+                                            <span class="px-1 py-0 rounded text-[7px] font-black tracking-tighter uppercase shrink-0" 
+                                                  style="background-color: ${p.color || '#64748b'}15; color: ${p.color || '#64748b'}; border: 1px solid ${p.color || '#64748b'}30;">
+                                                ${p.name}
                                             </span>
-                                        </p>
-                                    </div>
+                                        `).join('<span class="text-slate-200 dark:text-slate-800">•</span>') : ''}
+
+                                        ${(item.portfoliosInfo && item.portfoliosInfo.length > 0) ? '<span class="text-slate-300 dark:text-slate-700 mx-0.5">|</span>' : ''}
+
+                                        <span class="shrink-0 flex items-center gap-1.5">
+                                            <span>${item.exchange || 'Market'}</span>
+                                            <span class="px-1 py-0 rounded text-[7px] font-black leading-none ${item.dataSource === 'B_ITA' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400'}">${item.dataSource === 'B_ITA' ? 'BI' : 'YF'}</span>
+                                            <span onclick="event.stopPropagation(); window.openAssetFundamentalsModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" class="px-1 py-0 rounded border border-indigo-500/30 text-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/20 cursor-pointer transition-colors inline-flex items-center justify-center" title="Dati Fondamentali Yahoo Finance">
+                                                <span class="material-symbols-outlined" style="font-size: 10px; font-weight: bold;">query_stats</span>
+                                            </span>
+                                        </span>
+                                    </p>
                                 </div>
                             </td>
                             <td class="px-4 py-0.5">
