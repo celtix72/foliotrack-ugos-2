@@ -42,8 +42,8 @@
             align-items: center;
             background: var(--mob-surface);
             border-bottom: 1px solid var(--mob-border);
-            padding: 6px 8px;
-            gap: 8px;
+            padding: 3px 8px;
+            gap: 6px;
             cursor: pointer;
             transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
             position: relative;
@@ -627,52 +627,48 @@
             <div class="mkcard-row ${isPos ? 'pos' : 'neg'} ${isOpen ? '' : 'closed-market'}"
                  onclick="window.showMobDetails('${tickerEsc}','${nameEsc}','${cur}')">
               
-              <!-- Col 1: Asset Info su 3 righe (Riga 1: Ticker/Nome + Portfolios, Riga 2: Quotazione + Var% Day, Riga 3: Dati Fondamentali Yahoo) -->
-              <div style="display:flex; flex-direction:column; gap:3px; align-items:flex-start; min-width:0">
-                <!-- Riga 1: Ticker / Nome & Portfolio Tags -->
-                <div style="display:flex; align-items:center; gap:4px; max-width:100%; overflow:hidden;">
-                  <span style="background:${colors.bg}; color:#000000; border:1px solid ${colors.border}; border-radius:4px; padding:1px 5px; font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; flex-shrink:0;">${displaySymbol}</span>
-                  ${a.name && !_watchlistExtMode ? `<span style="font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:700; color:var(--mob-text); text-overflow:ellipsis; overflow:hidden; white-space:nowrap; flex-shrink:1;">${abbreviateName(a.name, 16)}</span>` : ''}
+              <!-- Col 1: Asset Info compatta su 2 righe -->
+              <div style="display:flex; flex-direction:column; gap:2px; align-items:flex-start; min-width:0">
+                <!-- Riga 1: Badge + Nome/Ticker + Prezzo + Var% + Exchange -->
+                <div style="display:flex; align-items:center; gap:4px; max-width:100%; overflow:hidden; flex-wrap:nowrap;">
+                  <span style="background:${colors.bg}; color:#000000; border:1px solid ${colors.border}; border-radius:4px; padding:1px 5px; font-size:calc(9px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; flex-shrink:0;">${displaySymbol}</span>
+                  ${a.name && !_watchlistExtMode ? `<span style="font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:700; color:var(--mob-text); text-overflow:ellipsis; overflow:hidden; white-space:nowrap; flex-shrink:1; max-width:90px;">${abbreviateName(a.name, 14)}</span>` : ''}
+                  <span style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text); flex-shrink:0;">${priceFmt}</span>
+                  <span style="color:${chgColor}; font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; flex-shrink:0;">${todayVarPct}</span>
+                  <span style="background:rgba(100,116,139,0.1); color:var(--mob-text-muted); border-radius:3px; padding:1px 3px; font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; flex-shrink:0;">${exchangeLabel}</span>
+                </div>
+
+                <!-- Riga 2: Portfolio tags + Fondamentali button -->
+                <div style="display:flex; align-items:center; gap:4px;">
                   ${portTags}
-                </div>
-
-                <!-- Riga 2: Quotazione + Var% Day + Exchange -->
-                <div style="display:flex; align-items:center; gap:6px;">
-                  <span style="font-size:calc(13px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${priceFmt}</span>
-                  <span style="color:${chgColor}; font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:900">${todayVarPct}</span>
-                  <span style="background:rgba(100,116,139,0.1); color:var(--mob-text-muted); border-radius:3px; padding:1px 4px; font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase;">${exchangeLabel}</span>
-                </div>
-
-                <!-- Riga 3: Dati Fondamentali Yahoo Button -->
-                <div style="display:flex; align-items:center; gap:4px; margin-top:1px;">
-                  <span onclick="event.stopPropagation(); window.openAssetFundamentalsModal('${tickerEsc}', '${nameEsc}')" class="px-1.5 py-0.5 rounded border border-indigo-500/30 text-indigo-500 bg-indigo-500/10 cursor-pointer flex items-center justify-center" style="padding: 1px 4px; border-radius:4px;" title="Dati Fondamentali Yahoo Finance">
-                    <span class="material-symbols-outlined" style="font-size: calc(11px * var(--mkcard-scale, 1)); font-weight: bold;">query_stats</span>
+                  <span onclick="event.stopPropagation(); window.openAssetFundamentalsModal('${tickerEsc}', '${nameEsc}')" class="border border-indigo-500/30 text-indigo-500 bg-indigo-500/10 cursor-pointer flex items-center justify-center" style="padding: 1px 4px; border-radius:4px;" title="Dati Fondamentali Yahoo Finance">
+                    <span class="material-symbols-outlined" style="font-size: calc(10px * var(--mkcard-scale, 1)); font-weight: bold;">query_stats</span>
                   </span>
                 </div>
               </div>
 
-              <!-- Col 2: Tag IA da soli -->
+              <!-- Col 2: Tag IA -->
               <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; gap:2px; min-width:0; height:100%;">
                 ${aiBadge}
               </div>
 
               ${_watchlistSubView === 'ETF1' ? '' : `
-              <!-- Col 3: PE e PE Forward -->
-              <div style="display:flex; flex-direction:column; justify-content:center; align-items:flex-end; gap:2px; min-width:0; height:100%; text-align:right">
-                <div style="display:flex; align-items:baseline; gap:3px">
+              <!-- Col 3: PE e FWD PE -->
+              <div style="display:flex; flex-direction:column; justify-content:center; align-items:flex-end; gap:1px; min-width:0; height:100%; text-align:right">
+                <div style="display:flex; align-items:baseline; gap:2px">
                   <span style="font-size:calc(7px * var(--mkcard-scale, 1)); font-weight:800; color:var(--mob-text-caption); text-transform:uppercase">P/E</span>
-                  <span style="font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${a.pe ? a.pe.toFixed(1) : '—'}</span>
+                  <span style="font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${a.pe ? a.pe.toFixed(1) : '—'}</span>
                 </div>
-                <div style="display:flex; align-items:baseline; gap:3px">
+                <div style="display:flex; align-items:baseline; gap:2px">
                   <span style="font-size:calc(7px * var(--mkcard-scale, 1)); font-weight:800; color:var(--mob-text-caption); text-transform:uppercase">FWD</span>
-                  <span style="font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${a.forwardPE ? a.forwardPE.toFixed(1) : '—'}</span>
+                  <span style="font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${a.forwardPE ? a.forwardPE.toFixed(1) : '—'}</span>
                 </div>
               </div>
 
-              <!-- Col 4: PEG RATIO -->
-              <div style="display:flex; flex-direction:column; justify-content:center; align-items:flex-end; gap:2px; min-width:0; height:100%; text-align:right">
+              <!-- Col 4: PEG -->
+              <div style="display:flex; flex-direction:column; justify-content:center; align-items:flex-end; gap:1px; min-width:0; height:100%; text-align:right">
                 <span style="font-size:calc(7px * var(--mkcard-scale, 1)); font-weight:800; color:var(--mob-text-caption); text-transform:uppercase">PEG</span>
-                <span style="font-size:calc(11px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${a.pegRatio ? a.pegRatio.toFixed(1) : '—'}</span>
+                <span style="font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${a.pegRatio ? a.pegRatio.toFixed(1) : '—'}</span>
               </div>
               `}
             </div>
