@@ -450,8 +450,13 @@
                         return val;
                     };
 
+                    const isOwned = (item.portfoliosInfo && item.portfoliosInfo.length > 0) || (item.totalQuantity && item.totalQuantity > 0);
+                    const rowBgClass = isOwned 
+                        ? 'bg-emerald-500/[0.07] dark:bg-emerald-500/10 hover:bg-emerald-500/15 dark:hover:bg-emerald-500/20' 
+                        : 'bg-white dark:bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800/30';
+
                     return `
-                        <tr class="border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group cursor-pointer" ondblclick="openAssetChartModal('${item.ticker}')">
+                        <tr class="border-b border-slate-100 dark:border-slate-800/50 transition-colors group cursor-pointer ${rowBgClass}" ondblclick="openAssetChartModal('${item.ticker}')">
                             <td class="px-4 py-0.5">
                                 <div>
                                     <div class="flex items-center gap-1.5 flex-wrap">
