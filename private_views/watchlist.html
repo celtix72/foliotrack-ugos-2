@@ -346,13 +346,13 @@
                     const primaryTitleText = isNameMode ? (item.name || item.ticker) : item.ticker;
                     
                     const titleTag = isOwned
-                        ? `<span class="px-2.5 py-0.5 rounded-md bg-blue-600 text-white font-black text-xs leading-tight inline-block truncate max-w-[280px] shadow-xs" title="${(item.name || '').replace(/"/g, '&quot;')}">${primaryTitleText}</span>`
+                        ? `<span style="background:#2563eb;color:#ffffff;padding:2px 8px;border-radius:6px;font-weight:900;font-size:0.75rem;line-height:1.25;display:inline-block;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(item.name || '').replace(/"/g, '&quot;')}">${primaryTitleText}</span>`
                         : `<p class="font-bold text-xs text-slate-900 dark:text-white leading-tight truncate max-w-[280px]" title="${(item.name || '').replace(/"/g, '&quot;')}">${primaryTitleText}</p>`;
 
                     const secondaryIdentifier = isOwned
                         ? (isNameMode 
-                            ? `<span class="font-black px-1.5 py-0.5 rounded-md bg-blue-600 text-white text-[8px] uppercase tracking-wider">${item.ticker}</span>`
-                            : `<span class="font-bold px-2 py-0.5 rounded-md bg-blue-600 text-white text-[9px] truncate max-w-[200px]" title="${(item.name || '').replace(/"/g, '&quot;')}">${item.name || ''}</span>`)
+                            ? `<span style="background:#2563eb;color:#ffffff;padding:1px 6px;border-radius:4px;font-weight:900;font-size:0.625rem;text-transform:uppercase;letter-spacing:0.05em;">${item.ticker}</span>`
+                            : `<span style="background:#2563eb;color:#ffffff;padding:1px 6px;border-radius:4px;font-weight:700;font-size:0.5625rem;" title="${(item.name || '').replace(/"/g, '&quot;')}">${item.name || ''}</span>`)
                         : (isNameMode 
                             ? `<span class="font-black text-primary/90">${item.ticker}</span>`
                             : `<span class="font-semibold text-slate-600 dark:text-slate-300 truncate max-w-[200px]" title="${(item.name || '').replace(/"/g, '&quot;')}">${item.name || ''}</span>`);
