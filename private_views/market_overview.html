@@ -741,7 +741,7 @@ function renderAssets(filter = '') {
             <td class="px-4 py-0.5">
                 <div class="flex flex-col gap-0.5">
                     <div class="flex items-center gap-1">
-                        <span class="material-symbols-outlined text-[12px] text-${color}-500">${change >= 0 ? 'trending_up' : 'trending_down'}</span>
+                        <span class="material-symbols-outlined text-${color}-500" style="font-size:12px;line-height:1;vertical-align:middle;">${change >= 0 ? 'trending_up' : 'trending_down'}</span>
                         <p class="text-xs font-black text-${color}-500 font-mono leading-tight">${sign}${formatNumber(change, 1)}%</p>
                     </div>
                     ${((a.preMarketChangePercent && Math.abs(a.preMarketChangePercent) > 0.01) || (a.postMarketChangePercent && Math.abs(a.postMarketChangePercent) > 0.01)) ? `
