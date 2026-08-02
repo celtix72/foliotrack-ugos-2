@@ -611,12 +611,17 @@
         // Asset type colors
         const colors = getAssetTypeColors(a.type || a.yfType, a.ticker);
 
-        // Toggle ticker symbol or abbreviated name based on extended mode setting
+        // Owned asset check for solid blue tag styling
+        const isOwnedMob = (a.portfoliosInfo && a.portfoliosInfo.length > 0) || (a.totalQuantity && a.totalQuantity > 0) || a.hasPosition;
         const displaySymbol = _watchlistExtMode ? abbreviateName(a.name, 15) : a.ticker;
-        const isOpen = isAssetMarketOpen(a);
-        const todayVarPct = `${isPos ? '+' : ''}${change.toFixed(1)}%`;
 
-        const aiBadge = renderAiBadge(a);
+        const displaySymbolStyle = isOwnedMob
+            ? `background:#2563eb; color:#ffffff; border-radius:4px; padding:1px 5px; font-size:calc(9px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; flex-shrink:0;`
+            : `background:${colors.bg}; color:#000000; border:1px solid ${colors.border}; border-radius:4px; padding:1px 5px; font-size:calc(9px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; flex-shrink:0;`;
+
+        const nameStyle = isOwnedMob && a.name && !_watchlistExtMode
+            ? `background:#2563eb; color:#ffffff; border-radius:4px; padding:1px 5px; font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; flex-shrink:1; max-width:90px;`
+            : `font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:700; color:var(--mob-text); text-overflow:ellipsis; overflow:hidden; white-space:nowrap; flex-shrink:1; max-width:90px;`;
 
         return `
           <div class="mob-holding-swipe-container"
@@ -631,8 +636,8 @@
               <div style="display:flex; flex-direction:column; gap:2px; align-items:flex-start; min-width:0">
                 <!-- Riga 1: Badge + Nome/Ticker + Prezzo + Var% + Exchange -->
                 <div style="display:flex; align-items:center; gap:4px; max-width:100%; overflow:hidden; flex-wrap:nowrap;">
-                  <span style="background:${colors.bg}; color:#000000; border:1px solid ${colors.border}; border-radius:4px; padding:1px 5px; font-size:calc(9px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; flex-shrink:0;">${displaySymbol}</span>
-                  ${a.name && !_watchlistExtMode ? `<span style="font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:700; color:var(--mob-text); text-overflow:ellipsis; overflow:hidden; white-space:nowrap; flex-shrink:1; max-width:90px;">${abbreviateName(a.name, 14)}</span>` : ''}
+                  <span style="${displaySymbolStyle}">${displaySymbol}</span>
+                  ${a.name && !_watchlistExtMode ? `<span style="${nameStyle}">${abbreviateName(a.name, 14)}</span>` : ''}
                   <span style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text); flex-shrink:0;">${priceFmt}</span>
                   <span style="color:${chgColor}; font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; flex-shrink:0;">${todayVarPct}</span>
                   <span style="background:rgba(100,116,139,0.1); color:var(--mob-text-muted); border-radius:3px; padding:1px 3px; font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; flex-shrink:0;">${exchangeLabel}</span>
