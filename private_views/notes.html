@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html class="dark" lang="it">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>M2T - Appunti</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="M2T">
+    <link rel="stylesheet" href="/dist/output.css">
+    <link rel="stylesheet" href="/mobile.css?v=1780588387906">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+
+        .note-card { transition: all 0.15s ease; cursor: pointer; border-left: 3px solid transparent; }
+        .note-card:hover { transform: translateX(2px); }
+        .note-card.active { border-left-color: var(--note-color, #3b82f6); background: rgba(59,130,246,0.06); }
+
+        #editor-textarea {
+            resize: none;
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 0.875rem;
+            line-height: 1.7;
+            field-sizing: content;
+            min-height: 400px;
+        }
+
+        .color-dot {
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border-color 0.15s, transform 0.15s;
+        }
+        .color-dot:hover, .color-dot.selected { border-color: white; transform: scale(1.2); }
+
+        /* Animate new note appearance */
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-8px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+        .note-card { animation: slideIn 0.18s ease; }
+
+        /* Fade editor on load */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+        #editor-panel { animation: fadeIn 0.2s ease; }
+
+        /* Autosave indicator */
+        .save-indicator { transition: opacity 0.4s ease; }
+    </style>
+    <script src="/theme.js"></script>
+    <script src="/auth.js"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            if (window.ftAuth) ftAuth.initAuthGuard();
+        });
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex">
+
+<!-- Sidebar -->
+<aside class="w-72 border-r border-slate-200 dark:border-slate-800 flex flex-col h-screen sticky top-0 bg-white dark:bg-surface-dark">
+    <div class="p-6 flex items-center gap-3">
+        <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white">
+            <span class="material-symbols-outlined">query_stats</span>
+        </div>
+        <div>
+            <h1 class="text-lg font-bold tracking-tight">M2T</h1>
+            <p class="text-xs text-slate-500 dark:text-slate-400">M2T</p>
+        </div>
+    </div>
+    <nav class="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
+        <div class="pb-4">
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/dashboard">
+                <span class="material-symbols-outlined text-[20px]">dashboard</span>
+                <span>Dashboard</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/market">
+                <span class="material-symbols-outlined text-[20px]">trending_up</span>
+                <span>Market</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/watchlist">
+                <span class="material-symbols-outlined text-[20px]">visibility</span>
+                <span>Watchlist</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/reports">
+                <span class="material-symbols-outlined text-[20px]">pie_chart</span>
+                <span>Reports</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/history">
+                <span class="material-symbols-outlined text-[20px]">history</span>
+                <span>History</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/dividend">
+                <span class="material-symbols-outlined text-[20px]">payments</span>
+                <span>Dividend</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary font-medium" href="/notes">
+                <span class="material-symbols-outlined text-[20px]">note_stack</span>
+                <span>Appunti</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/settings">
+                <span class="material-symbols-outlined text-[20px]">settings</span>
+                <span>Settings</span>
+            </a>
+            <a id="sidebar-admin-link" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/admin" style="display: none;">
+                <span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
+                <span>Admin Panel</span>
+            </a>
+        </div>
+    </nav>
+    <div class="p-4 border-t border-slate-200 dark:border-slate-800">
+        <div class="flex items-center gap-3 p-2 rounded-xl bg-slate-100 dark:bg-slate-900">
+            <div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-400 font-bold text-xs" id="sidebar-user-initials">UN</div>
+            <div class="flex-1 overflow-hidden">
+                <p class="text-sm font-bold truncate" id="sidebar-user-name">User</p>
+                <p class="text-xs text-slate-500 truncate" id="sidebar-user-role">Free Plan</p>
+            </div>
+            <span class="material-symbols-outlined text-slate-400 text-sm cursor-pointer" id="sidebar-logout-btn">logout</span>
+        </div>
+    </div>
+</aside>
+
+<!-- Main Content -->
+<div class="flex-1 flex h-screen overflow-hidden">
+
+    <!-- Notes List Panel -->
+    <div class="w-72 border-r border-slate-200 dark:border-slate-800 flex flex-col h-full bg-white dark:bg-surface-dark">
+        <!-- Header -->
+        <div class="px-4 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
+            <div>
+                <h2 class="text-sm font-black uppercase tracking-widest text-slate-800 dark:text-slate-200">Appunti</h2>
+                <p class="text-[10px] text-slate-400 mt-0.5" id="notes-count">0 note</p>
+            </div>
+            <button id="btn-new-note"
+                class="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 transition-colors shadow-sm"
+                title="Nuova nota">
+                <span class="material-symbols-outlined text-[16px]">add</span>
+                Nuova
+            </button>
+        </div>
+
+        <!-- Search -->
+        <div class="px-3 py-2 shrink-0 border-b border-slate-100 dark:border-slate-800/60">
+            <div class="relative">
+                <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[16px]">search</span>
+                <input id="notes-search" type="text" placeholder="Cerca nelle note..."
+                    class="w-full pl-8 pr-3 py-1.5 rounded-lg text-xs bg-slate-100 dark:bg-slate-800 border border-transparent focus:border-primary/40 focus:outline-none text-slate-800 dark:text-slate-200 placeholder-slate-400">
+            </div>
+        </div>
+
+        <!-- Notes list -->
+        <div id="notes-list" class="flex-1 overflow-y-auto custom-scrollbar py-2 px-2 space-y-1">
+            <div class="flex flex-col items-center justify-center h-40 text-slate-400" id="notes-empty" style="display:none!important">
+                <span class="material-symbols-outlined text-4xl mb-2 opacity-30">note_stack</span>
+                <p class="text-xs text-center">Nessun appunto ancora.<br>Crea la tua prima nota!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Editor Panel -->
+    <div id="editor-panel" class="flex-1 flex flex-col h-full overflow-hidden">
+
+        <!-- Empty state -->
+        <div id="editor-empty" class="flex-1 flex flex-col items-center justify-center text-slate-300 dark:text-slate-700 gap-4">
+            <span class="material-symbols-outlined text-7xl opacity-20">note_stack</span>
+            <div class="text-center">
+                <p class="text-sm font-semibold text-slate-400 dark:text-slate-600">Seleziona una nota</p>
+                <p class="text-xs text-slate-400 dark:text-slate-700 mt-1">oppure crea una nuova nota</p>
+            </div>
+            <button onclick="createNewNote()"
+                class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors shadow-md">
+                <span class="material-symbols-outlined text-[18px]">add</span>
+                Nuova nota
+            </button>
+        </div>
+
+        <!-- Editor -->
+        <div id="editor-active" style="display:none" class="flex-1 flex flex-col h-full overflow-hidden">
+            <!-- Editor toolbar -->
+            <div class="px-6 py-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-surface-dark flex items-center gap-3 shrink-0">
+                <!-- Title input -->
+                <input id="editor-title" type="text" placeholder="Titolo della nota..."
+                    class="flex-1 text-base font-bold bg-transparent border-none outline-none text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600">
+
+                <!-- Color picker -->
+                <div class="flex items-center gap-1.5" title="Colore etichetta">
+                    <div class="color-dot" style="background:#3b82f6" data-color="#3b82f6"></div>
+                    <div class="color-dot" style="background:#10b981" data-color="#10b981"></div>
+                    <div class="color-dot" style="background:#f59e0b" data-color="#f59e0b"></div>
+                    <div class="color-dot" style="background:#ef4444" data-color="#ef4444"></div>
+                    <div class="color-dot" style="background:#8b5cf6" data-color="#8b5cf6"></div>
+                    <div class="color-dot" style="background:#ec4899" data-color="#ec4899"></div>
+                    <div class="color-dot" style="background:#64748b" data-color="#64748b"></div>
+                </div>
+
+                <!-- Pin button -->
+                <button id="btn-pin" title="Pin/Unpin" class="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-amber-500">
+                    <span class="material-symbols-outlined text-[20px]" id="pin-icon">keep</span>
+                </button>
+
+                <!-- Autosave indicator -->
+                <span id="save-indicator" class="save-indicator text-[10px] text-slate-400 opacity-0 select-none">Salvato ✓</span>
+
+                <!-- Delete button -->
+                <button id="btn-delete" title="Elimina nota" class="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors text-slate-400 hover:text-rose-500">
+                    <span class="material-symbols-outlined text-[20px]">delete</span>
+                </button>
+            </div>
+
+            <!-- Meta row -->
+            <div class="px-6 py-1.5 border-b border-slate-100 dark:border-slate-800/50 bg-white dark:bg-surface-dark flex items-center gap-4 shrink-0">
+                <span class="text-[10px] text-slate-400 uppercase tracking-wider" id="editor-meta-created">Creato: —</span>
+                <span class="text-[10px] text-slate-400 uppercase tracking-wider" id="editor-meta-updated">Aggiornato: —</span>
+                <span class="text-[10px] text-slate-400 uppercase tracking-wider ml-auto" id="editor-char-count">0 caratteri</span>
+            </div>
+
+            <!-- Textarea -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-6 bg-white dark:bg-surface-dark">
+                <textarea id="editor-textarea"
+                    class="w-full bg-transparent border-none outline-none text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600"
+                    placeholder="Scrivi qui i tuoi appunti..."></textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ── State ─────────────────────────────────────────────────────────────────
+    let notes = [];
+    let currentNote = null;
+    let saveTimer = null;
+    const AUTOSAVE_DELAY = 900; // ms
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    const $ = id => document.getElementById(id);
+    
+    function fmtDate(str) {
+        if (!str) return '—';
+        const d = new Date(str.replace(' ', 'T') + (str.includes('T') ? '' : 'Z'));
+        return d.toLocaleDateString('it-IT', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    }
+
+    function countChars(str) { return (str || '').length; }
+
+    // ── Render note list ──────────────────────────────────────────────────────
+    function renderNoteList(filter = '') {
+        const list = $('notes-list');
+        const empty = $('notes-empty');
+        const q = filter.trim().toLowerCase();
+        const filtered = q
+            ? notes.filter(n => (n.title + n.content).toLowerCase().includes(q))
+            : notes;
+
+        // Clear existing cards
+        Array.from(list.querySelectorAll('.note-card')).forEach(el => el.remove());
+
+        if (filtered.length === 0) {
+            empty.style.display = 'flex';
+            $('notes-count').textContent = '0 note';
+            return;
+        }
+        empty.style.display = 'none';
+        $('notes-count').textContent = `${filtered.length} nota${filtered.length !== 1 ? 'e' : ''}`;
+
+        filtered.forEach(note => {
+            const card = document.createElement('div');
+            card.className = `note-card rounded-lg px-3 py-2.5 ${currentNote && currentNote.id === note.id ? 'active' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'}`;
+            card.style.setProperty('--note-color', note.color || '#3b82f6');
+            card.dataset.id = note.id;
+
+            const preview = (note.content || '').replace(/\n/g, ' ').substring(0, 80);
+            const pinIcon = note.pinned ? '<span class="material-symbols-outlined text-amber-500" style="font-size:12px">keep</span>' : '';
+
+            card.innerHTML = `
+                <div class="flex items-start gap-2">
+                    <div class="w-2 h-2 rounded-full mt-1.5 shrink-0" style="background:${note.color || '#3b82f6'}"></div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-1">
+                            <p class="text-xs font-bold truncate text-slate-800 dark:text-slate-200 flex-1">${note.title || '<em class="text-slate-400 font-normal">Senza titolo</em>'}</p>
+                            ${pinIcon}
+                        </div>
+                        <p class="text-[10px] text-slate-400 truncate mt-0.5">${preview || '<em>Nota vuota</em>'}</p>
+                        <p class="text-[9px] text-slate-300 dark:text-slate-600 mt-1">${fmtDate(note.updated_at)}</p>
+                    </div>
+                </div>
+            `;
+            card.addEventListener('click', () => openNote(note));
+            list.appendChild(card);
+        });
+    }
+
+    // ── Open Note ─────────────────────────────────────────────────────────────
+    function openNote(note) {
+        currentNote = note;
+        renderNoteList($('notes-search').value);
+
+        $('editor-empty').style.display = 'none';
+        $('editor-active').style.display = 'flex';
+
+        $('editor-title').value = note.title || '';
+        $('editor-textarea').value = note.content || '';
+        $('editor-meta-created').textContent = 'Creato: ' + fmtDate(note.created_at);
+        $('editor-meta-updated').textContent = 'Aggiornato: ' + fmtDate(note.updated_at);
+        $('editor-char-count').textContent = countChars(note.content) + ' caratteri';
+
+        // Color dots
+        document.querySelectorAll('.color-dot').forEach(d => {
+            d.classList.toggle('selected', d.dataset.color === (note.color || '#3b82f6'));
+        });
+
+        // Pin icon
+        updatePinIcon(note.pinned);
+    }
+
+    function updatePinIcon(pinned) {
+        const icon = $('pin-icon');
+        if (pinned) {
+            icon.textContent = 'keep_off';
+            icon.style.color = '#f59e0b';
+        } else {
+            icon.textContent = 'keep';
+            icon.style.color = '';
+        }
+    }
+
+    // ── Load notes from API ───────────────────────────────────────────────────
+    async function loadNotes() {
+        try {
+            const res = await fetch('/api/notes');
+            if (!res.ok) throw new Error('Failed to load notes');
+            notes = await res.json();
+            renderNoteList($('notes-search').value);
+            if (currentNote) {
+                // Refresh current note data
+                const refreshed = notes.find(n => n.id === currentNote.id);
+                if (refreshed) currentNote = refreshed;
+            }
+        } catch (e) {
+            console.error('Load notes error:', e);
+        }
+    }
+
+    // ── Create new note ───────────────────────────────────────────────────────
+    async function createNewNote() {
+        try {
+            const res = await fetch('/api/notes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: '', content: '', color: '#3b82f6', pinned: false })
+            });
+            if (!res.ok) throw new Error('Failed to create note');
+            const note = await res.json();
+            notes.unshift(note);
+            renderNoteList($('notes-search').value);
+            openNote(note);
+            $('editor-title').focus();
+        } catch (e) {
+            console.error('Create note error:', e);
+        }
+    }
+
+    // ── Autosave ──────────────────────────────────────────────────────────────
+    async function saveCurrentNote() {
+        if (!currentNote) return;
+        const title   = $('editor-title').value;
+        const content = $('editor-textarea').value;
+        const color   = currentNote.color;
+        const pinned  = currentNote.pinned;
+
+        try {
+            const res = await fetch(`/api/notes/${currentNote.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, content, color, pinned })
+            });
+            if (!res.ok) throw new Error('Save failed');
+            const saved = await res.json();
+            // Update in memory
+            currentNote = saved;
+            const idx = notes.findIndex(n => n.id === saved.id);
+            if (idx !== -1) notes[idx] = saved;
+            $('editor-meta-updated').textContent = 'Aggiornato: ' + fmtDate(saved.updated_at);
+            renderNoteList($('notes-search').value);
+
+            // Show save indicator
+            const ind = $('save-indicator');
+            ind.style.opacity = '1';
+            setTimeout(() => { ind.style.opacity = '0'; }, 2000);
+        } catch (e) {
+            console.error('Save error:', e);
+        }
+    }
+
+    function scheduleAutosave() {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(saveCurrentNote, AUTOSAVE_DELAY);
+    }
+
+    // ── Pin toggle ────────────────────────────────────────────────────────────
+    async function togglePin() {
+        if (!currentNote) return;
+        try {
+            const res = await fetch(`/api/notes/${currentNote.id}/pin`, { method: 'PATCH' });
+            if (!res.ok) throw new Error('Pin failed');
+            const updated = await res.json();
+            currentNote = updated;
+            const idx = notes.findIndex(n => n.id === updated.id);
+            if (idx !== -1) notes[idx] = updated;
+            // Re-sort (pinned first)
+            notes.sort((a, b) => (b.pinned - a.pinned) || (new Date(b.updated_at) - new Date(a.updated_at)));
+            renderNoteList($('notes-search').value);
+            updatePinIcon(updated.pinned);
+        } catch (e) {
+            console.error('Pin error:', e);
+        }
+    }
+
+    // ── Delete note ───────────────────────────────────────────────────────────
+    async function deleteCurrentNote() {
+        if (!currentNote) return;
+        if (!confirm(`Eliminare la nota "${currentNote.title || 'Senza titolo'}"?`)) return;
+        try {
+            const res = await fetch(`/api/notes/${currentNote.id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error('Delete failed');
+            notes = notes.filter(n => n.id !== currentNote.id);
+            currentNote = null;
+            $('editor-active').style.display = 'none';
+            $('editor-empty').style.display = 'flex';
+            renderNoteList($('notes-search').value);
+        } catch (e) {
+            console.error('Delete error:', e);
+        }
+    }
+
+    // ── Color selection ───────────────────────────────────────────────────────
+    async function setNoteColor(color) {
+        if (!currentNote) return;
+        currentNote.color = color;
+        document.querySelectorAll('.color-dot').forEach(d => {
+            d.classList.toggle('selected', d.dataset.color === color);
+        });
+        // Update card color immediately
+        renderNoteList($('notes-search').value);
+        await saveCurrentNote();
+    }
+
+    // ── Event listeners ───────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        loadNotes();
+
+        $('btn-new-note').addEventListener('click', createNewNote);
+        $('btn-pin').addEventListener('click', togglePin);
+        $('btn-delete').addEventListener('click', deleteCurrentNote);
+
+        $('editor-title').addEventListener('input', scheduleAutosave);
+        $('editor-textarea').addEventListener('input', () => {
+            $('editor-char-count').textContent = countChars($('editor-textarea').value) + ' caratteri';
+            scheduleAutosave();
+        });
+
+        $('notes-search').addEventListener('input', (e) => {
+            renderNoteList(e.target.value);
+        });
+
+        document.querySelectorAll('.color-dot').forEach(dot => {
+            dot.addEventListener('click', () => setNoteColor(dot.dataset.color));
+        });
+
+        // Save on Ctrl+S / Cmd+S
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                clearTimeout(saveTimer);
+                saveCurrentNote();
+            }
+        });
+
+        // Auth sidebar
+        if (window.ftAuth) {
+            ftAuth.initAuthGuard();
+            const user = ftAuth.getUser?.();
+            if (user) {
+                const initials = (user.username || 'U').slice(0, 2).toUpperCase();
+                const el = $('sidebar-user-initials');
+                if (el) el.textContent = initials;
+                const nm = $('sidebar-user-name');
+                if (nm) nm.textContent = user.username || 'User';
+                const rl = $('sidebar-user-role');
+                if (rl) rl.textContent = user.role || 'user';
+                if (user.role === 'admin') {
+                    const adminLink = $('sidebar-admin-link');
+                    if (adminLink) adminLink.style.display = 'flex';
+                }
+            }
+        }
+
+        const logoutBtn = $('sidebar-logout-btn');
+        if (logoutBtn) logoutBtn.addEventListener('click', () => {
+            fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/login');
+        });
+    });
+</script>
+</body>
+</html>

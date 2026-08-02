@@ -756,6 +756,22 @@ function initDb() {
       );
     `);
 
+    // Notes table
+    try {
+        dbConnection.prepare(`
+            CREATE TABLE IF NOT EXISTS notes (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                title      TEXT NOT NULL DEFAULT '',
+                content    TEXT NOT NULL DEFAULT '',
+                color      TEXT NOT NULL DEFAULT '#3b82f6',
+                pinned     INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+            )
+        `).run();
+    } catch (e) { console.error('Migration error notes:', e.message); }
+
     // Migration: Add endpoint to push_subscriptions
     try {
         dbConnection.prepare(`ALTER TABLE push_subscriptions ADD COLUMN endpoint TEXT`).run();
@@ -1492,6 +1508,45 @@ function getUserPermissions(role) {
     return result;
 }
 
+// ─── Notes CRUD ─────────────────────────────────────────────────────────────
+
+function getNotes(userId) {
+    return dbConnection.prepare(
+        `SELECT * FROM notes WHERE user_id = ? ORDER BY pinned DESC, updated_at DESC`
+    ).all(userId);
+}
+
+function getNote(id, userId) {
+    return dbConnection.prepare(
+        `SELECT * FROM notes WHERE id = ? AND user_id = ?`
+    ).get(id, userId);
+}
+
+function createNote(userId, { title = '', content = '', color = '#3b82f6', pinned = 0 } = {}) {
+    const result = dbConnection.prepare(
+        `INSERT INTO notes (user_id, title, content, color, pinned) VALUES (?, ?, ?, ?, ?)`
+    ).run(userId, title, content, color, pinned ? 1 : 0);
+    return dbConnection.prepare(`SELECT * FROM notes WHERE id = ?`).get(result.lastInsertRowid);
+}
+
+function updateNote(id, userId, { title, content, color, pinned } = {}) {
+    const note = dbConnection.prepare(`SELECT * FROM notes WHERE id = ? AND user_id = ?`).get(id, userId);
+    if (!note) return null;
+    const newTitle   = title   !== undefined ? title   : note.title;
+    const newContent = content !== undefined ? content : note.content;
+    const newColor   = color   !== undefined ? color   : note.color;
+    const newPinned  = pinned  !== undefined ? (pinned ? 1 : 0) : note.pinned;
+    dbConnection.prepare(
+        `UPDATE notes SET title = ?, content = ?, color = ?, pinned = ?, updated_at = datetime('now') WHERE id = ? AND user_id = ?`
+    ).run(newTitle, newContent, newColor, newPinned, id, userId);
+    return dbConnection.prepare(`SELECT * FROM notes WHERE id = ?`).get(id);
+}
+
+function deleteNote(id, userId) {
+    const info = dbConnection.prepare(`DELETE FROM notes WHERE id = ? AND user_id = ?`).run(id, userId);
+    return info.changes > 0;
+}
+
 module.exports = { 
     get db() { return dbConnection; }, 
     initDb, 
@@ -1517,5 +1572,12 @@ module.exports = {
     // Permissions
     getRolePermissions,
     updateRolePermission,
-    getUserPermissions
+    getUserPermissions,
+
+    // Notes
+    getNotes,
+    getNote,
+    createNote,
+    updateNote,
+    deleteNote
 };

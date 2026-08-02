@@ -502,6 +502,11 @@ app.use('/api/tags', require('./routes/tags')({
     database
 }));
 
+app.use('/api/notes', require('./routes/notes')({
+    requireAuth,
+    database
+}));
+
 // ─── Analytics Routes ─────────────────────────────────────────────────────────
 const analyticsRouter = require('./routes/analytics')({
     requireAuth, requirePortfolioAccess, database, logger, yahooFinance, getEurUsdRate,
@@ -2733,6 +2738,11 @@ app.get('/watchlist', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'watchlist_mobile.html' : 'watchlist.html';
     res.sendFile(path.join(__dirname, '../private_views', file));
 });
+
+app.get('/notes', requireAuth, (req, res) => {
+    res.sendFile(path.join(__dirname, '../private_views', 'notes.html'));
+});
+
 
 // Legacy /assets route → redirect to /market
 app.get('/assets', requireAuth, (req, res) => res.redirect('/market'));
