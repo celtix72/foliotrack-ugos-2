@@ -28,7 +28,10 @@ const SECRET_SETTING_KEYS = new Set([
     'requestyApiKeyFree',
     'requestyApiKeyPay',
     'tavilyApiKey',
-    'smtp_pass'
+    'smtp_pass',
+    'gdrive_private_key',
+    'gdrive_client_secret',
+    'gdrive_refresh_token'
 ]);
 
 function getSettingsEncryptionKey() {

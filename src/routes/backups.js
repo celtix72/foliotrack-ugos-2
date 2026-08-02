@@ -29,6 +29,53 @@ module.exports = function (dependencies) {
         }
     });
 
+    // ── Google Drive Backup Endpoints ──
+    const gdriveService = require('../services/gdriveBackupService');
+
+    // POST /api/backups/gdrive/test (Admin Only)
+    router.post('/gdrive/test', requireAuth, requireAdmin, async (req, res) => {
+        try {
+            const result = await gdriveService.testGDriveConnection();
+            res.json(result);
+        } catch (err) {
+            res.status(500).json({ success: false, error: err.message });
+        }
+    });
+
+    // POST /api/backups/gdrive/run (Admin Only) - Manual Zip Backup to Google Drive
+    router.post('/gdrive/run', requireAuth, requireAdmin, async (req, res) => {
+        try {
+            const result = await gdriveService.runGDriveBackup(false);
+            if (logAudit) logAudit(req.user.id, 'GDRIVE_BACKUP_MANUAL', { zipName: result.zipName, size: result.size }, req);
+            res.json(result);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // GET /api/backups/gdrive/files (Admin Only) - List files on Google Drive
+    router.get('/gdrive/files', requireAuth, requireAdmin, async (req, res) => {
+        try {
+            const files = await gdriveService.listRemoteBackups();
+            const gdriveFiles = files.filter(f => f.name.startsWith('foliotrack_backup_') && f.name.endsWith('.zip'));
+            const { keepers, toDelete } = gdriveService.evaluateRetentionPolicy(gdriveFiles);
+            
+            const result = gdriveFiles.map(f => {
+                const isKeeper = keepers.some(k => k.id === f.id);
+                return {
+                    id: f.id,
+                    name: f.name,
+                    createdTime: f.createdTime,
+                    size: f.size,
+                    status: isKeeper ? 'Conservato (Retention)' : 'In eliminazione'
+                };
+            });
+            res.json({ files: result });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
     // POST /api/backups/restore (Admin Only)
     router.post('/restore', requireAuth, requireAdmin, async (req, res) => {
         try {

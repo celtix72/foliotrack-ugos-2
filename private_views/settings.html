@@ -830,6 +830,85 @@
                         <p class="text-xs text-slate-400 italic">Checking...</p>
                     </div>
                 </div>
+
+                <div class="h-px bg-slate-100 dark:bg-slate-800 w-full"></div>
+
+                <!-- Google Drive Backup (Admin Only) -->
+                <div id="gdrive-backup-section" class="space-y-4 pt-2">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="font-bold text-sm flex items-center gap-2">
+                                <span class="material-symbols-outlined text-indigo-500">cloud_upload</span>
+                                Backup Giornaliero su Google Drive (.zip)
+                            </p>
+                            <p class="text-[10px] text-slate-400 mt-0.5">
+                                Backup automatico ogni notte alle 23:50 su cartella Google Drive con archiviazione zippata (.zip).
+                            </p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="gdrive-enabled-check" class="sr-only peer">
+                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-indigo-600"></div>
+                        </label>
+                    </div>
+
+                    <div class="bg-slate-50 dark:bg-slate-900/60 rounded-xl p-4 space-y-4 border border-slate-200/60 dark:border-slate-800">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest mb-1">ID Cartella Google Drive</label>
+                                <input id="gdrive-folder-id" type="text" placeholder="es. 1A2b3C4d5E6f7G8h9I..."
+                                    class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
+                            </div>
+                            <div>
+                                <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest mb-1">Email Service Account Google</label>
+                                <input id="gdrive-client-email" type="text" placeholder="service-account@project.iam.gserviceaccount.com"
+                                    class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest mb-1">Google Private Key (PEM)</label>
+                            <textarea id="gdrive-private-key" rows="3" placeholder="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
+                                class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-[11px] font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/30 resize-none"></textarea>
+                        </div>
+
+                        <div class="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-[11px] text-amber-600 dark:text-amber-400 font-medium leading-relaxed flex items-start gap-2">
+                            <span class="material-symbols-outlined text-sm shrink-0 mt-0.5">auto_delete</span>
+                            <div>
+                                <strong>Politica di Retention Intelligente attiva:</strong><br>
+                                • 1 backup al giorno per gli ultimi <strong>7 giorni</strong><br>
+                                • 1 backup a settimana per le <strong>4 settimane</strong> precedenti<br>
+                                I backup obsoleti fuori da questa regola vengono eliminati automaticamente da Google Drive.
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-3 pt-1 flex-wrap">
+                            <button id="gdrive-save-btn" onclick="saveGDriveSettings()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-sm">save</span> Salva Impostazioni Drive
+                            </button>
+                            <button id="gdrive-test-btn" onclick="testGDriveConnection()" class="px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-sm">cell_tower</span> Test Connessione
+                            </button>
+                            <button id="gdrive-run-btn" onclick="runGDriveBackupManual()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 ml-auto">
+                                <span class="material-symbols-outlined text-sm">cloud_upload</span> Backup Ora su Google Drive
+                            </button>
+                        </div>
+                        <div id="gdrive-status-msg" class="text-xs font-bold hidden p-2 rounded-lg"></div>
+
+                        <!-- Remote Files List -->
+                        <div class="pt-2">
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest">Backup Archiviati su Google Drive</label>
+                                <button onclick="loadGDriveFileList()" class="text-[10px] text-indigo-500 font-bold hover:underline flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-xs">refresh</span> Aggiorna lista
+                                </button>
+                            </div>
+                            <div id="gdrive-files-list" class="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar pr-1">
+                                <p class="text-xs text-slate-400 italic">Clicca "Aggiorna lista" per visualizzare i file remoti.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="h-px bg-slate-100 dark:bg-slate-800 w-full"></div>
             </div>
 
@@ -1251,6 +1330,17 @@
 
             if (volatilityEnabledCheck) volatilityEnabledCheck.checked = settings.volatilityNotificationsEnabled === 'true';
             if (volatilityThresholdInput && settings.volatilityThreshold) volatilityThresholdInput.value = settings.volatilityThreshold || 5.0;
+
+            // Google Drive inputs
+            const gdriveCheck = document.getElementById('gdrive-enabled-check');
+            const gdriveFolder = document.getElementById('gdrive-folder-id');
+            const gdriveEmail = document.getElementById('gdrive-client-email');
+            const gdriveKey = document.getElementById('gdrive-private-key');
+
+            if (gdriveCheck) gdriveCheck.checked = settings.gdrive_enabled === 'true';
+            if (gdriveFolder && settings.gdrive_folder_id) gdriveFolder.value = settings.gdrive_folder_id;
+            if (gdriveEmail && settings.gdrive_client_email) gdriveEmail.value = settings.gdrive_client_email;
+            if (gdriveKey && settings.gdrive_private_key) gdriveKey.value = settings.gdrive_private_key;
             
             // Sync Mobile fields
             if (mobTgEnabled) mobTgEnabled.checked = settings.telegramEnabled === 'true';
@@ -1595,6 +1685,139 @@
                 reader.readAsText(file);
             });
         }
+
+        // ── Google Drive Backup Handlers ──
+        window.saveGDriveSettings = async () => {
+            const enabled = document.getElementById('gdrive-enabled-check')?.checked ? 'true' : 'false';
+            const folderId = document.getElementById('gdrive-folder-id')?.value.trim() || '';
+            const clientEmail = document.getElementById('gdrive-client-email')?.value.trim() || '';
+            const privateKey = document.getElementById('gdrive-private-key')?.value.trim() || '';
+
+            if (window.updateAppSettings) {
+                await window.updateAppSettings({
+                    gdrive_enabled: enabled,
+                    gdrive_folder_id: folderId,
+                    gdrive_client_email: clientEmail,
+                    gdrive_private_key: privateKey
+                });
+                const msg = document.getElementById('gdrive-status-msg');
+                if (msg) {
+                    msg.className = 'text-xs font-bold p-2 rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20';
+                    msg.textContent = 'Impostazioni Google Drive salvate con successo!';
+                    msg.classList.remove('hidden');
+                    setTimeout(() => msg.classList.add('hidden'), 3000);
+                }
+            }
+        };
+
+        window.testGDriveConnection = async () => {
+            const btn = document.getElementById('gdrive-test-btn');
+            const msg = document.getElementById('gdrive-status-msg');
+            if (btn) btn.disabled = true;
+            if (msg) {
+                msg.className = 'text-xs font-bold p-2 rounded-lg bg-indigo-500/10 text-indigo-500 border border-indigo-500/20';
+                msg.textContent = 'Verifica connessione a Google Drive in corso...';
+                msg.classList.remove('hidden');
+            }
+            try {
+                await saveGDriveSettings();
+                const res = await fetch('/api/backups/gdrive/test', { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    if (msg) {
+                        msg.className = 'text-xs font-bold p-2 rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20';
+                        msg.textContent = data.message;
+                    }
+                    loadGDriveFileList();
+                } else {
+                    if (msg) {
+                        msg.className = 'text-xs font-bold p-2 rounded-lg bg-rose-500/10 text-rose-500 border border-rose-500/20';
+                        msg.textContent = 'Errore: ' + data.error;
+                    }
+                }
+            } catch (err) {
+                if (msg) {
+                    msg.className = 'text-xs font-bold p-2 rounded-lg bg-rose-500/10 text-rose-500 border border-rose-500/20';
+                    msg.textContent = 'Errore di rete: ' + err.message;
+                }
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        };
+
+        window.runGDriveBackupManual = async () => {
+            const btn = document.getElementById('gdrive-run-btn');
+            const msg = document.getElementById('gdrive-status-msg');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">sync</span> Esecuzione Backup...';
+            }
+            if (msg) {
+                msg.className = 'text-xs font-bold p-2 rounded-lg bg-indigo-500/10 text-indigo-500 border border-indigo-500/20';
+                msg.textContent = 'Creazione file .zip e caricamento su Google Drive in corso...';
+                msg.classList.remove('hidden');
+            }
+            try {
+                await saveGDriveSettings();
+                const res = await fetch('/api/backups/gdrive/run', { method: 'POST' });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Backup fallito');
+                if (msg) {
+                    msg.className = 'text-xs font-bold p-2 rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20';
+                    msg.textContent = `Backup zippato creato e caricato su Google Drive! (${data.zipName})`;
+                }
+                loadGDriveFileList();
+                loadBackups();
+            } catch (err) {
+                if (msg) {
+                    msg.className = 'text-xs font-bold p-2 rounded-lg bg-rose-500/10 text-rose-500 border border-rose-500/20';
+                    msg.textContent = 'Errore backup Google Drive: ' + err.message;
+                }
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class="material-symbols-outlined text-sm">cloud_upload</span> Backup Ora su Google Drive';
+                }
+            }
+        };
+
+        window.loadGDriveFileList = async () => {
+            const container = document.getElementById('gdrive-files-list');
+            if (!container) return;
+            try {
+                const res = await fetch('/api/backups/gdrive/files');
+                if (!res.ok) {
+                    container.innerHTML = '<p class="text-xs text-slate-400 italic">Google Drive non configurato o connessione non riuscita.</p>';
+                    return;
+                }
+                const data = await res.json();
+                const files = data.files || [];
+                if (files.length === 0) {
+                    container.innerHTML = '<p class="text-xs text-slate-400 italic">Nessun backup trovato su Google Drive.</p>';
+                    return;
+                }
+                container.innerHTML = files.map(f => {
+                    const dateStr = new Date(f.createdTime).toLocaleString('it-IT');
+                    const sizeMb = (f.size / (1024 * 1024)).toFixed(2);
+                    const isKeeper = f.status.includes('Conservato');
+                    return `
+                    <div class="flex items-center justify-between p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 text-xs">
+                        <div class="flex items-center gap-2 min-w-0 flex-1 pr-2">
+                            <span class="material-symbols-outlined text-indigo-500 shrink-0 text-base">folder_zip</span>
+                            <div class="min-w-0">
+                                <p class="font-mono font-bold truncate text-[11px]">${f.name}</p>
+                                <p class="text-[9px] text-slate-400">${dateStr} • ${sizeMb} MB</p>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full text-[9px] font-black shrink-0 ${isKeeper ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border border-rose-500/20'}">
+                            ${f.status}
+                        </span>
+                    </div>`;
+                }).join('');
+            } catch (err) {
+                container.innerHTML = '<p class="text-xs text-rose-400 italic">Errore caricamento lista Drive.</p>';
+            }
+        };
 
 
         if (runBackupBtn) {

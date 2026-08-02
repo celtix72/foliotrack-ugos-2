@@ -376,8 +376,14 @@
                   <div class="mob-settings-value"><span id="mob-backup-area-icon" class="material-symbols-outlined text-[14px] transition-transform">expand_more</span></div>
               </div>
               <div id="mob-backup-area" class="hidden bg-slate-50/50 dark:bg-black/20 border-t border-slate-100 dark:border-slate-800">
-                  <div class="p-4 flex gap-2">
-                       <button id="mob-run-backup-btn" class="flex-1 py-2 bg-indigo-500 text-white text-[10px] font-black uppercase rounded-lg shadow-sm">Run Manual Backup</button>
+                  <div class="p-4 flex flex-col gap-2">
+                       <div class="flex gap-2">
+                           <button id="mob-run-backup-btn" class="flex-1 py-2 bg-indigo-500 text-white text-[10px] font-black uppercase rounded-lg shadow-sm">Run Manual Backup</button>
+                           <button onclick="runMobGDriveBackup()" id="mob-gdrive-btn" class="flex-1 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase rounded-lg shadow-sm flex items-center justify-center gap-1">
+                               <span class="material-symbols-outlined text-xs">cloud_upload</span> GDrive Zip Backup
+                           </button>
+                       </div>
+                       <p class="text-[9px] text-slate-400 font-bold">Auto Backup ore 23:50 su GDrive con retention 7gg + 4sett.</p>
                   </div>
                   <div id="mob-backups-list" class="max-h-60 overflow-y-auto">
                       <p class="p-5 text-center text-xs text-slate-400 italic">No backups found.</p>
@@ -703,6 +709,22 @@
                 runBackupBtn.innerText = 'Run Manual Backup';
             });
         }
+
+        window.runMobGDriveBackup = async () => {
+            const btn = document.getElementById('mob-gdrive-btn');
+            if (btn) { btn.disabled = true; btn.innerText = 'Uploading...'; }
+            try {
+                const res = await fetch('/api/backups/gdrive/run', { method: 'POST' });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Backup GDrive fallito');
+                alert(`Backup .zip salvato su Google Drive!\n(${data.zipName})`);
+                await loadBackups();
+            } catch (err) {
+                alert('Errore Backup GDrive: ' + err.message);
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerText = 'GDrive Zip Backup'; }
+            }
+        };
 
         if (rebuildHistoryBtn) {
             rebuildHistoryBtn.addEventListener('click', async () => {

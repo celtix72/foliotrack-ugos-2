@@ -3070,6 +3070,7 @@ async function updateMarketData(force = false) {
 // ─── Scheduler ──────────────────────────────────────────────────────────────
 let lastUpdateTime = Date.now();
 let lastBackupDate = ''; // 'YYYY-MM-DD'
+let lastGDriveBackupDate = ''; // 'YYYY-MM-DD'
 let lastSnapshotDate = '';
 try {
     const row = database.db.prepare('SELECT MAX(date) as lastDate FROM portfolio_history').get();
@@ -3343,6 +3344,24 @@ setInterval(async () => {
             }
         }
     }
+
+    // 2b. Scheduled Google Drive Zip Backup (Daily at 23:50 CET)
+    const gdriveEnabled = settings.gdrive_enabled === 'true';
+    const nowHour = now.getHours();
+    const nowMin = now.getMinutes();
+
+    if (gdriveEnabled && lastGDriveBackupDate !== todayStr && nowHour === 23 && nowMin === 50) {
+        logger.info(`[GDrive] Starting 23:50 automated zipped backup to Google Drive...`);
+        try {
+            const gdriveService = require('./services/gdriveBackupService');
+            const result = await gdriveService.runGDriveBackup(true);
+            logger.info(`[GDrive] Automated backup completed successfully: ${result.zipName}`);
+            lastGDriveBackupDate = todayStr;
+        } catch (e) {
+            logger.error('[GDrive] Automated backup failed:', e);
+        }
+    }
+
     // 3. Daily History Snapshots
     if (lastSnapshotDate !== todayStr) {
         logger.info(`Recording daily snapshots for portfolios and dashboard...`);
