@@ -1582,6 +1582,7 @@
             if (user && user.role === 'admin') {
                 const adminTools = document.getElementById('admin-backup-tools');
                 if (adminTools) adminTools.classList.remove('hidden');
+                if (window.loadGDriveFileList) window.loadGDriveFileList();
                 
                 const sysResetBtn = document.getElementById('system-reset-btn');
                 if (sysResetBtn) sysResetBtn.classList.remove('hidden');
