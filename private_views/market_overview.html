@@ -739,23 +739,16 @@ function renderAssets(filter = '') {
                 </div>
             </td>
             <td class="px-4 py-0.5">
-                <div class="flex items-center gap-2">
-                    <div class="flex flex-col">
-                        <div class="flex items-center gap-1 flex-wrap">
-                            <span class="material-symbols-outlined text-[12px] text-${color}-500">${change >= 0 ? 'trending_up' : 'trending_down'}</span>
-                            <p class="text-xs font-black text-${color}-500 font-mono leading-tight">${sign}${formatNumber(change, 1)}%</p>
-                        </div>
-                        ${(a.preMarketChangePercent && Math.abs(a.preMarketChangePercent) > 0.01) ? `
-                            <div class="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">
-                                Pre: <span class="${a.preMarketChangePercent >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${a.preMarketChangePercent >= 0 ? '+' : ''}${formatNumber(a.preMarketChangePercent, 1)}%</span>
-                            </div>
-                        ` : ''}
-                        ${(a.postMarketChangePercent && Math.abs(a.postMarketChangePercent) > 0.01) ? `
-                            <div class="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">
-                                Post: <span class="${a.postMarketChangePercent >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${a.postMarketChangePercent >= 0 ? '+' : ''}${formatNumber(a.postMarketChangePercent, 1)}%</span>
-                            </div>
-                        ` : ''}
+                <div class="flex flex-col gap-0.5">
+                    <div class="flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[12px] text-${color}-500">${change >= 0 ? 'trending_up' : 'trending_down'}</span>
+                        <p class="text-xs font-black text-${color}-500 font-mono leading-tight">${sign}${formatNumber(change, 1)}%</p>
                     </div>
+                    ${((a.preMarketChangePercent && Math.abs(a.preMarketChangePercent) > 0.01) || (a.postMarketChangePercent && Math.abs(a.postMarketChangePercent) > 0.01)) ? `
+                    <div class="flex items-center gap-2 text-[8px] font-bold text-slate-400 uppercase tracking-tighter">
+                        ${(a.preMarketChangePercent && Math.abs(a.preMarketChangePercent) > 0.01) ? `<span>Pre:<span class="${a.preMarketChangePercent >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${a.preMarketChangePercent >= 0 ? '+' : ''}${formatNumber(a.preMarketChangePercent, 1)}%</span></span>` : ''}
+                        ${(a.postMarketChangePercent && Math.abs(a.postMarketChangePercent) > 0.01) ? `<span>Post:<span class="${a.postMarketChangePercent >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${a.postMarketChangePercent >= 0 ? '+' : ''}${formatNumber(a.postMarketChangePercent, 1)}%</span></span>` : ''}
+                    </div>` : ''}
                 </div>
             </td>
             <td class="px-4 py-0.5">
