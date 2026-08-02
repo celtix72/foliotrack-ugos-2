@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html class="dark" lang="it">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>M2T - Appunti</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="M2T">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="stylesheet" href="/dist/output.css">
+    <link rel="stylesheet" href="/mobile.css?v=1780588387907">
+    <script src="/theme.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <style>
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+
+        /* ── Note Card ── */
+        .note-mob-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 14px;
+            background: var(--mob-surface);
+            border-bottom: 1px solid var(--mob-border);
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            transition: background 0.1s;
+            position: relative;
+        }
+        .note-mob-card:active { background: var(--mob-border); }
+        .note-mob-card .note-color-bar {
+            width: 3px;
+            min-height: 36px;
+            border-radius: 2px;
+            flex-shrink: 0;
+            align-self: stretch;
+        }
+        .note-mob-card .note-pin-icon {
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            font-size: 14px;
+            color: #f59e0b;
+        }
+
+        /* ── Sliding Editor Panel ── */
+        #note-editor-panel {
+            position: fixed;
+            inset: 0;
+            bottom: var(--mob-tab-h, 56px);
+            background: var(--mob-bg, #0f172a);
+            z-index: 9000;
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #note-editor-panel.open { transform: translateX(0); }
+
+        #note-editor-panel .editor-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--mob-border);
+            background: var(--mob-surface);
+            flex-shrink: 0;
+        }
+        #note-editor-panel textarea {
+            flex: 1;
+            width: 100%;
+            border: none;
+            outline: none;
+            background: transparent;
+            color: var(--mob-text, #e2e8f0);
+            font-size: 14px;
+            line-height: 1.7;
+            padding: 16px 14px;
+            resize: none;
+            font-family: -apple-system, sans-serif;
+            -webkit-appearance: none;
+        }
+
+        /* ── FAB ── */
+        #notes-fab {
+            position: fixed;
+            bottom: calc(var(--mob-tab-h, 56px) + 16px);
+            right: 16px;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: #2563eb;
+            color: white;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(37,99,235,0.5);
+            cursor: pointer;
+            z-index: 100;
+            -webkit-tap-highlight-color: transparent;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        #notes-fab:active { transform: scale(0.93); box-shadow: 0 2px 10px rgba(37,99,235,0.4); }
+
+        /* ── Color dots ── */
+        .mob-color-dot {
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            transition: border-color 0.15s, transform 0.15s;
+            flex-shrink: 0;
+        }
+        .mob-color-dot.selected { border-color: white; transform: scale(1.15); }
+
+        /* ── Save indicator ── */
+        #mob-save-indicator {
+            font-size: 10px;
+            color: #64748b;
+            transition: opacity 0.4s;
+            opacity: 0;
+        }
+
+        /* ── Empty state ── */
+        #notes-empty {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: #475569;
+            padding: 40px 20px;
+        }
+
+        /* ── Search bar ── */
+        #mob-notes-search {
+            width: 100%;
+            padding: 8px 12px 8px 36px;
+            border-radius: 10px;
+            border: none;
+            background: var(--mob-surface-2, #1e293b);
+            color: var(--mob-text, #e2e8f0);
+            font-size: 12px;
+            font-weight: 700;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .note-mob-card { animation: slideUp 0.18s ease both; }
+    </style>
+    <script src="/auth.js"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            if (window.ftAuth) ftAuth.initAuthGuard();
+        });
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 mobile-view-active">
+
+<div id="mobile-ui" class="flex flex-col fixed inset-0 w-full overflow-hidden" style="display:flex!important;height:100dvh!important;">
+
+    <!-- ── Header ── -->
+    <div class="mob-header">
+        <img src="/m2t_mobile_logo_dark.png" style="width:96px;height:48px;border-radius:4px;object-fit:cover;object-position:center;margin-right:8px;" alt="M2T Logo">
+        <div style="flex:1"></div>
+        <div class="mob-header-actions">
+            <a href="/notifications" class="mob-icon-btn relative" title="Notifications">
+                <span class="material-symbols-outlined">notifications</span>
+                <span id="mob-notification-badge" class="mob-badge" style="display:none;">0</span>
+            </a>
+            <a href="/settings" class="mob-icon-btn" title="Settings">
+                <span class="material-symbols-outlined">settings</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- ── Section header ── -->
+    <div class="mob-section-header">
+        <span class="mob-section-title">Appunti</span>
+        <span id="mob-notes-count" style="font-size:10px;color:#64748b;font-weight:700;">0 note</span>
+    </div>
+
+    <!-- ── Search ── -->
+    <div style="padding:8px 12px;background:var(--mob-bg);border-bottom:1px solid var(--mob-border);position:relative;">
+        <span class="material-symbols-outlined" style="position:absolute;left:22px;top:50%;transform:translateY(-50%);font-size:16px;color:#64748b;">search</span>
+        <input id="mob-notes-search" type="text" placeholder="Cerca nelle note...">
+    </div>
+
+    <!-- ── Notes list ── -->
+    <div class="mob-scroll" id="mob-notes-scroll">
+        <!-- Empty state -->
+        <div id="notes-empty" style="display:none;">
+            <span class="material-symbols-outlined" style="font-size:52px;opacity:0.2;">note_stack</span>
+            <p style="font-size:13px;font-weight:600;text-align:center;">Nessun appunto ancora.<br>Crea la tua prima nota!</p>
+        </div>
+        <!-- Cards injected here -->
+        <div id="mob-notes-list"></div>
+    </div>
+
+    <!-- ── Tab Bar ── -->
+    <div class="mob-tab-bar">
+        <a href="/dashboard" class="mob-tab-item">
+            <span class="material-symbols-outlined">dashboard</span>
+        </a>
+        <a href="/market" class="mob-tab-item">
+            <span class="material-symbols-outlined">trending_up</span>
+        </a>
+        <a href="/watchlist" class="mob-tab-item">
+            <span class="material-symbols-outlined">visibility</span>
+        </a>
+        <a href="/history" class="mob-tab-item">
+            <span class="material-symbols-outlined">history</span>
+        </a>
+        <a href="/dividend" class="mob-tab-item">
+            <span class="material-symbols-outlined">payments</span>
+        </a>
+        <a href="/reports" class="mob-tab-item">
+            <span class="material-symbols-outlined">pie_chart</span>
+        </a>
+        <a href="/notes" class="mob-tab-item active">
+            <span class="material-symbols-outlined">note_stack</span>
+        </a>
+        <a href="/settings" class="mob-tab-item">
+            <span class="material-symbols-outlined">settings</span>
+        </a>
+    </div>
+</div>
+
+<!-- ── FAB: new note ── -->
+<button id="notes-fab" onclick="createNewNote()" title="Nuova nota">
+    <span class="material-symbols-outlined" style="font-size:26px;">add</span>
+</button>
+
+<!-- ── Sliding Editor Panel ── -->
+<div id="note-editor-panel">
+    <!-- Editor Header -->
+    <div class="editor-header">
+        <!-- Back -->
+        <button onclick="closeEditor()" style="background:none;border:none;color:#94a3b8;padding:2px;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+            <span class="material-symbols-outlined" style="font-size:24px;">arrow_back</span>
+        </button>
+
+        <!-- Title -->
+        <input id="mob-editor-title" type="text" placeholder="Titolo..."
+            style="flex:1;border:none;outline:none;background:transparent;font-size:15px;font-weight:700;color:var(--mob-text,#e2e8f0);padding:0 4px;">
+
+        <!-- Pin -->
+        <button id="mob-btn-pin" onclick="togglePin()" style="background:none;border:none;color:#94a3b8;padding:4px;cursor:pointer;">
+            <span class="material-symbols-outlined" id="mob-pin-icon" style="font-size:20px;">keep</span>
+        </button>
+
+        <!-- Delete -->
+        <button onclick="deleteCurrentNote()" style="background:none;border:none;color:#ef4444;padding:4px;cursor:pointer;">
+            <span class="material-symbols-outlined" style="font-size:20px;">delete</span>
+        </button>
+    </div>
+
+    <!-- Color picker row -->
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--mob-surface);border-bottom:1px solid var(--mob-border);flex-shrink:0;">
+        <div class="mob-color-dot" style="background:#3b82f6" data-color="#3b82f6"></div>
+        <div class="mob-color-dot" style="background:#10b981" data-color="#10b981"></div>
+        <div class="mob-color-dot" style="background:#f59e0b" data-color="#f59e0b"></div>
+        <div class="mob-color-dot" style="background:#ef4444" data-color="#ef4444"></div>
+        <div class="mob-color-dot" style="background:#8b5cf6" data-color="#8b5cf6"></div>
+        <div class="mob-color-dot" style="background:#ec4899" data-color="#ec4899"></div>
+        <div class="mob-color-dot" style="background:#64748b" data-color="#64748b"></div>
+        <span id="mob-save-indicator" style="margin-left:auto;">Salvato ✓</span>
+    </div>
+
+    <!-- Meta -->
+    <div style="padding:4px 14px;background:var(--mob-bg);border-bottom:1px solid var(--mob-border);flex-shrink:0;display:flex;gap:12px;">
+        <span id="mob-editor-meta" style="font-size:9px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;"></span>
+        <span id="mob-editor-chars" style="font-size:9px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;margin-left:auto;"></span>
+    </div>
+
+    <!-- Textarea -->
+    <textarea id="mob-editor-textarea" placeholder="Scrivi qui i tuoi appunti..."></textarea>
+</div>
+
+<script>
+    // ── State ─────────────────────────────────────────────────────────────────
+    let notes = [];
+    let currentNote = null;
+    let saveTimer = null;
+    const AUTOSAVE_MS = 900;
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    function fmtDate(str) {
+        if (!str) return '—';
+        const d = new Date(str.replace(' ', 'T') + (str.includes('T') ? '' : 'Z'));
+        return d.toLocaleDateString('it-IT', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+    }
+
+    // ── Render list ───────────────────────────────────────────────────────────
+    function renderList(filter = '') {
+        const list = document.getElementById('mob-notes-list');
+        const empty = document.getElementById('notes-empty');
+        const q = filter.trim().toLowerCase();
+        const filtered = q
+            ? notes.filter(n => (n.title + n.content).toLowerCase().includes(q))
+            : notes;
+
+        document.getElementById('mob-notes-count').textContent = `${filtered.length} nota${filtered.length !== 1 ? 'e' : ''}`;
+
+        if (filtered.length === 0) {
+            empty.style.display = 'flex';
+            list.innerHTML = '';
+            return;
+        }
+        empty.style.display = 'none';
+
+        list.innerHTML = filtered.map(note => {
+            const preview = (note.content || '').replace(/\n/g, ' ').substring(0, 90);
+            const pinIcon = note.pinned ? `<span class="note-pin-icon material-symbols-outlined">keep</span>` : '';
+            return `
+            <div class="note-mob-card" onclick="openNote(${note.id})" data-id="${note.id}">
+                <div class="note-color-bar" style="background:${note.color || '#3b82f6'}"></div>
+                <div style="flex:1;min-width:0;padding-right:${note.pinned ? '20px' : '0'}">
+                    <div style="font-size:13px;font-weight:800;color:var(--mob-text,#e2e8f0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                        ${note.title || '<em style="font-style:italic;color:#64748b;font-weight:400;">Senza titolo</em>'}
+                    </div>
+                    <div style="font-size:11px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;">
+                        ${preview || '<em style="font-style:italic;">Nota vuota</em>'}
+                    </div>
+                    <div style="font-size:9px;color:#475569;font-weight:700;margin-top:4px;text-transform:uppercase;letter-spacing:0.05em;">
+                        ${fmtDate(note.updated_at)}
+                    </div>
+                </div>
+                ${pinIcon}
+            </div>`;
+        }).join('');
+    }
+
+    // ── Load notes ────────────────────────────────────────────────────────────
+    async function loadNotes() {
+        try {
+            const res = await fetch('/api/notes');
+            if (!res.ok) throw new Error('Load failed');
+            notes = await res.json();
+            renderList(document.getElementById('mob-notes-search').value);
+        } catch (e) {
+            console.error('Load notes error:', e);
+        }
+    }
+
+    // ── Create new note ───────────────────────────────────────────────────────
+    async function createNewNote() {
+        try {
+            const res = await fetch('/api/notes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: '', content: '', color: '#3b82f6', pinned: false })
+            });
+            if (!res.ok) throw new Error('Create failed');
+            const note = await res.json();
+            notes.unshift(note);
+            renderList(document.getElementById('mob-notes-search').value);
+            openNote(note.id);
+            setTimeout(() => document.getElementById('mob-editor-title').focus(), 350);
+        } catch (e) { console.error('Create note error:', e); }
+    }
+
+    // ── Open note in editor ───────────────────────────────────────────────────
+    function openNote(id) {
+        const note = notes.find(n => n.id === id);
+        if (!note) return;
+        currentNote = note;
+
+        document.getElementById('mob-editor-title').value = note.title || '';
+        document.getElementById('mob-editor-textarea').value = note.content || '';
+        document.getElementById('mob-editor-meta').textContent = 'Agg: ' + fmtDate(note.updated_at);
+        document.getElementById('mob-editor-chars').textContent = (note.content || '').length + ' car.';
+        updatePinIcon(note.pinned);
+
+        // Color dots
+        document.querySelectorAll('.mob-color-dot').forEach(d => {
+            d.classList.toggle('selected', d.dataset.color === (note.color || '#3b82f6'));
+        });
+
+        document.getElementById('note-editor-panel').classList.add('open');
+    }
+
+    // ── Close editor ──────────────────────────────────────────────────────────
+    function closeEditor() {
+        clearTimeout(saveTimer);
+        if (currentNote) saveCurrentNote();
+        document.getElementById('note-editor-panel').classList.remove('open');
+        currentNote = null;
+    }
+
+    // ── Update pin icon ───────────────────────────────────────────────────────
+    function updatePinIcon(pinned) {
+        const icon = document.getElementById('mob-pin-icon');
+        icon.textContent = pinned ? 'keep_off' : 'keep';
+        icon.style.color = pinned ? '#f59e0b' : '';
+    }
+
+    // ── Autosave ──────────────────────────────────────────────────────────────
+    async function saveCurrentNote() {
+        if (!currentNote) return;
+        const title   = document.getElementById('mob-editor-title').value;
+        const content = document.getElementById('mob-editor-textarea').value;
+        try {
+            const res = await fetch(`/api/notes/${currentNote.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, content, color: currentNote.color, pinned: currentNote.pinned })
+            });
+            if (!res.ok) throw new Error('Save failed');
+            const saved = await res.json();
+            currentNote = saved;
+            const idx = notes.findIndex(n => n.id === saved.id);
+            if (idx !== -1) notes[idx] = saved;
+            notes.sort((a, b) => (b.pinned - a.pinned) || (new Date(b.updated_at) - new Date(a.updated_at)));
+            renderList(document.getElementById('mob-notes-search').value);
+            document.getElementById('mob-editor-meta').textContent = 'Agg: ' + fmtDate(saved.updated_at);
+
+            const ind = document.getElementById('mob-save-indicator');
+            ind.style.opacity = '1';
+            setTimeout(() => { ind.style.opacity = '0'; }, 2000);
+        } catch (e) { console.error('Save error:', e); }
+    }
+
+    function scheduleAutosave() {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(saveCurrentNote, AUTOSAVE_MS);
+    }
+
+    // ── Toggle pin ────────────────────────────────────────────────────────────
+    async function togglePin() {
+        if (!currentNote) return;
+        try {
+            const res = await fetch(`/api/notes/${currentNote.id}/pin`, { method: 'PATCH' });
+            if (!res.ok) throw new Error('Pin failed');
+            const updated = await res.json();
+            currentNote = updated;
+            const idx = notes.findIndex(n => n.id === updated.id);
+            if (idx !== -1) notes[idx] = updated;
+            notes.sort((a, b) => (b.pinned - a.pinned) || (new Date(b.updated_at) - new Date(a.updated_at)));
+            renderList(document.getElementById('mob-notes-search').value);
+            updatePinIcon(updated.pinned);
+        } catch (e) { console.error('Pin error:', e); }
+    }
+
+    // ── Delete note ───────────────────────────────────────────────────────────
+    async function deleteCurrentNote() {
+        if (!currentNote) return;
+        if (!confirm(`Eliminare "${currentNote.title || 'questa nota'}"?`)) return;
+        try {
+            const res = await fetch(`/api/notes/${currentNote.id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error('Delete failed');
+            notes = notes.filter(n => n.id !== currentNote.id);
+            renderList(document.getElementById('mob-notes-search').value);
+            document.getElementById('note-editor-panel').classList.remove('open');
+            currentNote = null;
+        } catch (e) { console.error('Delete error:', e); }
+    }
+
+    // ── Set color ─────────────────────────────────────────────────────────────
+    async function setColor(color) {
+        if (!currentNote) return;
+        currentNote.color = color;
+        document.querySelectorAll('.mob-color-dot').forEach(d => {
+            d.classList.toggle('selected', d.dataset.color === color);
+        });
+        await saveCurrentNote();
+        renderList(document.getElementById('mob-notes-search').value);
+    }
+
+    // ── Event listeners ───────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        loadNotes();
+
+        document.getElementById('mob-editor-title').addEventListener('input', scheduleAutosave);
+        document.getElementById('mob-editor-textarea').addEventListener('input', () => {
+            document.getElementById('mob-editor-chars').textContent =
+                document.getElementById('mob-editor-textarea').value.length + ' car.';
+            scheduleAutosave();
+        });
+
+        document.getElementById('mob-notes-search').addEventListener('input', e => {
+            renderList(e.target.value);
+        });
+
+        document.querySelectorAll('.mob-color-dot').forEach(dot => {
+            dot.addEventListener('click', () => setColor(dot.dataset.color));
+        });
+
+        // Swipe right to close editor
+        let touchStartX = 0;
+        const panel = document.getElementById('note-editor-panel');
+        panel.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+        panel.addEventListener('touchend', e => {
+            const dx = e.changedTouches[0].clientX - touchStartX;
+            if (dx > 80 && touchStartX < 60) closeEditor();
+        }, { passive: true });
+    });
+</script>
+</body>
+</html>

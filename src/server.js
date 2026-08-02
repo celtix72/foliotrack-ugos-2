@@ -2740,7 +2740,8 @@ app.get('/watchlist', requireAuth, (req, res) => {
 });
 
 app.get('/notes', requireAuth, (req, res) => {
-    res.sendFile(path.join(__dirname, '../private_views', 'notes.html'));
+    const file = isMobile(req) ? 'notes_mobile.html' : 'notes.html';
+    res.sendFile(path.join(__dirname, '../private_views', file));
 });
 
 
