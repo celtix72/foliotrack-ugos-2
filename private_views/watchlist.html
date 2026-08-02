@@ -511,9 +511,6 @@
                                         ${item.lastUpdateError ? `<span class="px-1 py-0 rounded-full bg-rose-500 text-[7px] font-black text-white uppercase tracking-tighter shrink-0" title="${item.lastUpdateError.replace(/"/g, '&quot;')}">Err</span>` : ''}
                                     </div>
                                     <p class="text-[8px] text-slate-400 uppercase font-black tracking-widest mt-0.5 flex items-center gap-1.5 flex-wrap">
-                                        ${secondaryIdentifier}
-
-                                        <span class="text-slate-300 dark:text-slate-700">•</span>
 
                                         ${(item.portfoliosInfo && item.portfoliosInfo.length > 0) ? item.portfoliosInfo.map(p => `
                                             <span class="px-1 py-0 rounded text-[7px] font-black tracking-tighter uppercase shrink-0" 
