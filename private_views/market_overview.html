@@ -177,10 +177,31 @@
             <span>Force Sync</span>
         </button>
     </div>
-    <!-- Search/Filter -->
-    <div class="relative">
-        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
-        <input id="table-search" type="text" placeholder="Filter assets..." class="pl-9 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm w-64 shadow-sm" oninput="filterAssets(this.value)"/>
+    <!-- Search/Filter & Controls -->
+    <div class="flex items-center gap-2 flex-wrap">
+        <div class="relative">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+            <input id="table-search" type="text" placeholder="Filter assets..." class="pl-9 pr-4 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs w-64 shadow-sm focus:outline-none focus:border-primary" oninput="filterAssets(this.value)"/>
+        </div>
+        <div class="flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1 shadow-sm">
+            <span class="text-[9px] font-black uppercase text-slate-400 px-2 tracking-wider">Visualizza:</span>
+            <button id="display-mode-name-btn" onclick="setDisplayMode('name')" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all bg-primary text-white shadow-xs cursor-pointer">
+                Nome
+            </button>
+            <button id="display-mode-ticker-btn" onclick="setDisplayMode('ticker')" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all text-slate-500 hover:text-slate-900 dark:hover:text-white cursor-pointer">
+                Ticker
+            </button>
+        </div>
+        <div class="flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1 shadow-sm">
+            <span class="text-[9px] font-black uppercase text-slate-400 px-1.5 tracking-wider">Font:</span>
+            <button onclick="changeMarketDesktopScale(-0.05)" class="w-6 h-6 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-all cursor-pointer" title="Riduci font">
+                <span class="material-symbols-outlined text-[14px]">remove</span>
+            </button>
+            <span id="font-scale-display" class="text-[10px] font-mono font-bold px-1 text-slate-500 min-w-[34px] text-center">100%</span>
+            <button onclick="changeMarketDesktopScale(0.05)" class="w-6 h-6 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-all cursor-pointer" title="Aumenta font">
+                <span class="material-symbols-outlined text-[14px]">add</span>
+            </button>
+        </div>
     </div>
 </div>
 
@@ -208,38 +229,36 @@
 <div class="space-y-6">
 
 <!-- Unified List -->
-
-<!-- Unified List -->
 <div class="space-y-8">
     <!-- Section 1: Open Positions -->
     <div id="section-positions" class="space-y-4">
         <div class="flex items-center justify-between px-2">
             <h3 class="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Open Positions</h3>
         </div>
-        <div class="overflow-hidden bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+        <div id="market-table-container" class="overflow-hidden bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
             <table class="w-full text-left border-collapse">
                 <thead>
-                    <tr class="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 select-none">
-                        <th class="px-5 py-3">Asset</th>
-                        <th class="px-5 py-3 cursor-pointer hover:text-primary transition-colors" onclick="toggleSort('price')">
+                    <tr class="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 select-none">
+                        <th class="px-4 py-1.5">Asset</th>
+                        <th class="px-4 py-1.5 cursor-pointer hover:text-primary transition-colors" onclick="toggleSort('price')">
                             Price <span id="sort-icon-price"></span>
                         </th>
-                        <th class="px-5 py-3 cursor-pointer hover:text-primary transition-colors" onclick="toggleSort('perf24h')">
+                        <th class="px-4 py-1.5 cursor-pointer hover:text-primary transition-colors" onclick="toggleSort('perf24h')">
                             Perf. 24h <span id="sort-icon-perf24h"></span>
                         </th>
-                        <th class="px-5 py-3 cursor-pointer hover:text-primary transition-colors" id="th-total-daily-gain" onclick="toggleSort('dailyGain')">
+                        <th class="px-4 py-1.5 cursor-pointer hover:text-primary transition-colors" id="th-total-daily-gain" onclick="toggleSort('dailyGain')">
                             Daily Gain <span id="sort-icon-dailyGain"></span>
                         </th>
-                        <th class="px-5 py-3 cursor-pointer hover:text-primary transition-colors" onclick="toggleSort('invested')">
+                        <th class="px-4 py-1.5 cursor-pointer hover:text-primary transition-colors" onclick="toggleSort('invested')">
                             Investito <span id="sort-icon-invested"></span>
                         </th>
-                        <th class="px-5 py-3 cursor-pointer hover:text-primary transition-colors" onclick="toggleSort('cumulated')">
+                        <th class="px-4 py-1.5 cursor-pointer hover:text-primary transition-colors" onclick="toggleSort('cumulated')">
                             Cumulato <span id="sort-icon-cumulated"></span>
                         </th>
-                        <th class="px-5 py-3 cursor-pointer hover:text-primary transition-colors" onclick="toggleSort('gain')">
+                        <th class="px-4 py-1.5 cursor-pointer hover:text-primary transition-colors" onclick="toggleSort('gain')">
                             Gain <span id="sort-icon-gain"></span>
                         </th>
-                        <th class="px-5 py-3 text-right">Actions</th>
+                        <th class="px-4 py-1.5 text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="list-positions" class="divide-y divide-slate-100 dark:divide-slate-800">
@@ -425,6 +444,61 @@ let allAssets = [];
 let usdEurRate = 1.0;
 let currentSortField = 'perf24h';
 let currentSortDir = 'desc';
+let displayMode = localStorage.getItem('market_display_mode') || 'name';
+let fontScale = parseFloat(localStorage.getItem('market_desktop_scale')) || 1.0;
+
+function changeMarketDesktopScale(amount) {
+    fontScale = Math.round(Math.max(0.75, Math.min(1.35, fontScale + amount)) * 100) / 100;
+    localStorage.setItem('market_desktop_scale', fontScale);
+    applyMarketDesktopScale();
+}
+
+function applyMarketDesktopScale() {
+    const container = document.getElementById('market-table-container');
+    const displayEl = document.getElementById('font-scale-display');
+    if (displayEl) {
+        displayEl.innerText = Math.round(fontScale * 100) + '%';
+    }
+    if (container) {
+        container.style.zoom = fontScale;
+    }
+}
+
+function setDisplayMode(mode) {
+    displayMode = mode;
+    localStorage.setItem('market_display_mode', mode);
+    updateDisplayModeUI();
+    renderAssets(document.getElementById('table-search')?.value || '');
+}
+
+function updateDisplayModeUI() {
+    const nameBtn = document.getElementById('display-mode-name-btn');
+    const tickerBtn = document.getElementById('display-mode-ticker-btn');
+    if (!nameBtn || !tickerBtn) return;
+    
+    if (displayMode === 'name') {
+        nameBtn.className = "px-2.5 py-1 rounded-lg text-xs font-bold transition-all bg-primary text-white shadow-xs cursor-pointer";
+        tickerBtn.className = "px-2.5 py-1 rounded-lg text-xs font-bold transition-all text-slate-500 hover:text-slate-900 dark:hover:text-white cursor-pointer";
+    } else {
+        nameBtn.className = "px-2.5 py-1 rounded-lg text-xs font-bold transition-all text-slate-500 hover:text-slate-900 dark:hover:text-white cursor-pointer";
+        tickerBtn.className = "px-2.5 py-1 rounded-lg text-xs font-bold transition-all bg-primary text-white shadow-xs cursor-pointer";
+    }
+}
+
+function getAssetCategory(a) {
+    const t = (a.asset_type || a.type || '').toUpperCase();
+    const tk = (a.ticker || '').toUpperCase();
+    if (t.includes('DEPOSITO') || t.includes('CONTO DEPOSITO') || t === 'CD' || t.includes('DEPOSITO VINCOLATO')) {
+        return 'CD';
+    }
+    if (t.includes('ETF') || t.includes('EXCHANGE TRADED FUND')) {
+        return 'ETF';
+    }
+    if (t.includes('BOND') || t.includes('OBBLIGAZION') || t === 'OBBLIGAZIONI' || t === 'OBBLIGAZIONE' || tk.startsWith('BTP')) {
+        return 'Obbligazioni';
+    }
+    return 'Azioni';
+}
 
 function getSortValue(a, field) {
     switch (field) {
@@ -448,7 +522,7 @@ function getSortValue(a, field) {
             return val;
         }
         case 'gain': {
-            let cumulated = (a.totalQuantity || 0) * (a.currentPrice || 0);
+            let cumulated = (a.totalQuantity || 0) * a.currentPrice;
             let invested = a.totalCostAssetCurr || 0;
             let val = cumulated - invested;
             if (a.currency === 'USD') val /= usdEurRate;
@@ -466,7 +540,7 @@ function toggleSort(field) {
         currentSortField = field;
         currentSortDir = 'desc';
     }
-    renderAssets(document.getElementById('search-assets')?.value || '');
+    renderAssets(document.getElementById('table-search')?.value || '');
 }
 
 function updateSortHeaders() {
@@ -529,19 +603,19 @@ function renderAiBadges(a) {
             const fvStr = badge.aiTargetPrice ? formatAiFv(badge.aiTargetPrice, a.currency, badge.prompt_type) : badge.aiAction;
             
             return `
-            <span ${badgeStyle} onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${a.ticker}', '${(a.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${a.currency || 'EUR'}')" class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter flex items-center gap-1 border cursor-pointer transition-colors whitespace-nowrap" title="${engine}: ${badge.aiAction} ">
-                <span class="material-symbols-outlined" style="font-size: 11px;">${icon}</span> ${fvStr}
+            <span ${badgeStyle} onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${a.ticker}', '${(a.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${a.currency || 'EUR'}')" class="px-1 py-0 rounded text-[9px] font-black uppercase tracking-tighter flex items-center gap-0.5 border cursor-pointer transition-colors whitespace-nowrap" title="${engine}: ${badge.aiAction} ">
+                <span class="material-symbols-outlined" style="font-size: 10px;">${icon}</span> ${fvStr}
             </span>`;
         }).join('');
     } else if (count > 0) {
         return `
-        <span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${a.ticker}', '${(a.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${a.currency || 'EUR'}')" class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter flex items-center gap-1 border border-slate-500/30 text-slate-500 bg-slate-500/10 cursor-pointer hover:bg-slate-500/20 transition-colors" title="Storico Analisi IA">
-            <span class="material-symbols-outlined" style="font-size: 11px;">smart_toy</span> ${count}
+        <span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${a.ticker}', '${(a.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${a.currency || 'EUR'}')" class="px-1 py-0 rounded text-[9px] font-black uppercase tracking-tighter flex items-center gap-0.5 border border-slate-500/30 text-slate-500 bg-slate-500/10 cursor-pointer hover:bg-slate-500/20 transition-colors" title="Storico Analisi IA">
+            <span class="material-symbols-outlined" style="font-size: 10px;">smart_toy</span> ${count}
         </span>`;
     } else {
         return `
-        <span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${a.ticker}', '${(a.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${a.currency || 'EUR'}')" class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter flex items-center gap-1 border border-slate-400/30 text-slate-400 bg-slate-400/10 cursor-pointer hover:bg-slate-400/20 transition-colors" title="Genera Analisi IA">
-            <span class="material-symbols-outlined" style="font-size: 11px;">smart_toy</span>
+        <span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${a.ticker}', '${(a.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${a.currency || 'EUR'}')" class="px-1 py-0 rounded text-[9px] font-black uppercase tracking-tighter flex items-center gap-0.5 border border-slate-400/30 text-slate-400 bg-slate-400/10 cursor-pointer hover:bg-slate-400/20 transition-colors" title="Genera Analisi IA">
+            <span class="material-symbols-outlined" style="font-size: 10px;">smart_toy</span>
         </span>`;
     }
 }
@@ -549,12 +623,12 @@ function renderAiBadges(a) {
 // ─── Data loading ─────────────────────────────────────────────────────────────
 async function loadAssets() {
     try {
+        updateDisplayModeUI();
+        applyMarketDesktopScale();
         // Fetch exchange rate
         const exRes = await fetch('/api/market/exchange-rate');
         const exData = await exRes.json();
         if (exData && exData.rate) {
-            // Note: server returns EURUSD rate (1 EUR = X USD)
-            // To get EUR from USD, we divide by rate.
             usdEurRate = exData.rate;
         }
 
@@ -612,7 +686,6 @@ function renderAssets(filter = '') {
         const change = a.changePercent || 0;
         const color = change >= 0 ? 'emerald' : 'rose';
         const sign = change >= 0 ? '+' : '';
-        const opacity = ''; // Removed opacity-40 for unmonitored assets to avoid "disabled" look
         
         // Alert highlights
         const targetReached = a.targetPrice > 0 && price >= a.targetPrice;
@@ -620,93 +693,85 @@ function renderAssets(filter = '') {
         const alertClass = targetReached ? 'bg-emerald-500/5' : (stopLossHit ? 'bg-rose-500/5' : '');
 
         const dailyGain = (a.totalQuantity || 0) * (a.changeValue || 0);
-        const count = a.aiHistoryCount || 0;
-        const aiBadge = count > 0 ? `
-            <span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${a.ticker}', '${(a.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${a.currency || 'EUR'}')" class="px-1.5 py-0.5 ml-2 rounded text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 border border-emerald-500/30 text-emerald-500 bg-emerald-500/10 cursor-pointer hover:bg-emerald-500/20 transition-colors" title="Storico Analisi IA">
-                <span class="material-symbols-outlined" style="font-size: 12px;">smart_toy</span> ${count}
-            </span>
-        ` : `
-            <span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${a.ticker}', '${(a.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${a.currency || 'EUR'}')" class="px-1.5 py-0.5 ml-2 rounded text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 border border-slate-400/30 text-slate-400 bg-slate-400/10 cursor-pointer hover:bg-slate-400/20 transition-colors" title="Genera Analisi IA">
-                <span class="material-symbols-outlined" style="font-size: 12px;">smart_toy</span>
-            </span>
-        `;
+        
+        const isNameMode = displayMode === 'name';
+        const primaryTitle = isNameMode ? (a.name || a.ticker) : a.ticker;
+        const secondaryIdentifier = isNameMode 
+            ? `<span class="font-black text-primary/90">${a.ticker}</span>`
+            : `<span class="font-semibold text-slate-600 dark:text-slate-300 truncate max-w-[200px]" title="${(a.name || '').replace(/"/g, '&quot;')}">${a.name || ''}</span>`;
 
         return `
-        <tr class="group transition-colors hover:bg-slate-50 dark:hover:bg-white/[0.02] ${alertClass} ${opacity} cursor-pointer" ondblclick="loadAssetChart('${a.ticker}')">
-            <td class="px-5 py-1">
-                <div class="flex items-center gap-4">
-                    <div class="min-w-10 px-2 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-[10px] shrink-0 uppercase border border-primary/20">
-                        ${a.ticker}
+        <tr class="group transition-colors hover:bg-slate-50 dark:hover:bg-white/[0.02] ${alertClass} cursor-pointer border-b border-slate-100 dark:border-slate-800/50" ondblclick="loadAssetChart('${a.ticker}')">
+            <td class="px-4 py-0.5">
+                <div>
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <p class="font-bold text-xs text-slate-900 dark:text-white leading-tight truncate max-w-[280px]" title="${(a.name || '').replace(/"/g, '&quot;')}">${primaryTitle}</p>
+                        ${!a.isMonitored ? '<span class="text-[7px] font-black bg-slate-200 dark:bg-slate-800 px-1 py-0 rounded text-slate-500 tracking-tighter uppercase shrink-0">Inactive</span>' : ''}
+                        ${a.lastUpdateError ? `<span class="px-1 py-0 rounded-full bg-rose-500 text-[7px] font-black text-white uppercase tracking-tighter shrink-0" title="${a.lastUpdateError.replace(/"/g, '&quot;')}">Err</span>` : ''}
                     </div>
-                    <div>
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <p class="font-black text-sm text-slate-900 dark:text-white leading-none truncate max-w-[240px]" title="${a.name}">${a.name}</p>
-                            ${!a.isMonitored ? '<span class="text-[8px] font-black bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-500 tracking-tighter uppercase shrink-0">Inactive</span>' : ''}
-                            ${a.lastUpdateError ? `<span class="px-1.5 py-0.5 rounded-full bg-rose-500 text-[8px] font-black text-white uppercase tracking-tighter shrink-0" title="${a.lastUpdateError.replace(/"/g, '&quot;')}">Err</span>` : ''}
-                        </div>
-                        <p class="text-[9px] text-slate-400 uppercase font-black tracking-widest mt-1.5 flex items-center gap-2 flex-wrap">
-                            ${(a.portfoliosInfo && a.portfoliosInfo.length > 0) ? a.portfoliosInfo.map(p => `
-                                <span class="px-1.5 py-0.5 rounded text-[7px] font-black tracking-tighter uppercase shrink-0" 
-                                      style="background-color: ${p.color || '#64748b'}15; color: ${p.color || '#64748b'}; border: 1px solid ${p.color || '#64748b'}30;">
-                                    ${p.name}
-                                </span>
-                            `).join('<span class="text-slate-200 dark:text-slate-800">•</span>') : ''}
+                    <p class="text-[8px] text-slate-400 uppercase font-black tracking-widest mt-0.5 flex items-center gap-1.5 flex-wrap">
+                        ${secondaryIdentifier}
 
-                            ${(a.portfoliosInfo && a.portfoliosInfo.length > 0) ? '<span class="text-slate-300 dark:text-slate-700 mx-1">|</span>' : ''}
+                        <span class="text-slate-300 dark:text-slate-700">•</span>
 
-                            <span class="shrink-0 flex items-center gap-2">
-                                <span>${a.exchange || 'Market'}</span>
-                                <span class="px-1.5 py-0.5 rounded text-[8px] font-black leading-none ${a.dataSource === 'B_ITA' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400'}">${a.dataSource === 'B_ITA' ? 'BI' : 'YF'}</span>
-                                <span onclick="event.stopPropagation(); window.openAssetFundamentalsModal('${a.ticker}', '${(a.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" class="px-1 py-0.5 rounded border border-indigo-500/30 text-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/20 cursor-pointer transition-colors inline-flex items-center justify-center" title="Dati Fondamentali Yahoo Finance">
-                                    <span class="material-symbols-outlined" style="font-size: 11px; font-weight: bold;">query_stats</span>
-                                </span>
+                        ${(a.portfoliosInfo && a.portfoliosInfo.length > 0) ? a.portfoliosInfo.map(p => `
+                            <span class="px-1 py-0 rounded text-[7px] font-black tracking-tighter uppercase shrink-0" 
+                                  style="background-color: ${p.color || '#64748b'}15; color: ${p.color || '#64748b'}; border: 1px solid ${p.color || '#64748b'}30;">
+                                ${p.name}
                             </span>
-                        </p>
-                    </div>
+                        `).join('<span class="text-slate-200 dark:text-slate-800">•</span>') : ''}
+
+                        ${(a.portfoliosInfo && a.portfoliosInfo.length > 0) ? '<span class="text-slate-300 dark:text-slate-700 mx-0.5">|</span>' : ''}
+
+                        <span class="shrink-0 flex items-center gap-1.5">
+                            <span>${a.exchange || 'Market'}</span>
+                            <span class="px-1 py-0 rounded text-[7px] font-black leading-none ${a.dataSource === 'B_ITA' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400'}">${a.dataSource === 'B_ITA' ? 'BI' : 'YF'}</span>
+                            <span onclick="event.stopPropagation(); window.openAssetFundamentalsModal('${a.ticker}', '${(a.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" class="px-1 py-0 rounded border border-indigo-500/30 text-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/20 cursor-pointer transition-colors inline-flex items-center justify-center" title="Dati Fondamentali Yahoo Finance">
+                                <span class="material-symbols-outlined" style="font-size: 10px; font-weight: bold;">query_stats</span>
+                            </span>
+                        </span>
+                    </p>
                 </div>
             </td>
-            <td class="px-5 py-1.5">
-                <p class="text-lg font-black text-slate-900 dark:text-white font-mono">${formatCurrency(price, a.currency)}</p>
-                <div class="flex items-center gap-1 mt-1.5 flex-wrap">
+            <td class="px-4 py-0.5">
+                <p class="text-xs font-black text-slate-900 dark:text-white font-mono leading-tight">${formatCurrency(price, a.currency)}</p>
+                <div class="flex items-center gap-1 mt-0.5 flex-wrap">
                     ${renderAiBadges(a)}
                 </div>
             </td>
-            <td class="px-5 py-1.5">
-                <div class="flex items-center gap-4">
-                    
+            <td class="px-4 py-0.5">
+                <div class="flex items-center gap-2">
                     <div class="flex flex-col">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <div class="flex items-center gap-1.5">
-                                <span class="material-symbols-outlined text-xs text-${color}-500">${change >= 0 ? 'trending_up' : 'trending_down'}</span>
-                                <p class="text-base font-black text-${color}-500 font-mono">${sign}${formatNumber(change, 1)}%</p>
-                            </div>
-                            ${(a.preMarketChangePercent && Math.abs(a.preMarketChangePercent) > 0.01) ? `
-                                <div class="text-[11px] font-bold text-slate-400 uppercase tracking-tighter self-center">
-                                    Pre: <span class="${a.preMarketChangePercent >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${a.preMarketChangePercent >= 0 ? '+' : ''}${formatNumber(a.preMarketChangePercent, 1)}%</span>
-                                </div>
-                            ` : ''}
+                        <div class="flex items-center gap-1 flex-wrap">
+                            <span class="material-symbols-outlined text-[12px] text-${color}-500">${change >= 0 ? 'trending_up' : 'trending_down'}</span>
+                            <p class="text-xs font-black text-${color}-500 font-mono leading-tight">${sign}${formatNumber(change, 1)}%</p>
                         </div>
+                        ${(a.preMarketChangePercent && Math.abs(a.preMarketChangePercent) > 0.01) ? `
+                            <div class="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">
+                                Pre: <span class="${a.preMarketChangePercent >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${a.preMarketChangePercent >= 0 ? '+' : ''}${formatNumber(a.preMarketChangePercent, 1)}%</span>
+                            </div>
+                        ` : ''}
                         ${(a.postMarketChangePercent && Math.abs(a.postMarketChangePercent) > 0.01) ? `
-                            <div class="text-[11px] font-bold text-slate-400 mt-0.5 uppercase tracking-tighter">
+                            <div class="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">
                                 Post: <span class="${a.postMarketChangePercent >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${a.postMarketChangePercent >= 0 ? '+' : ''}${formatNumber(a.postMarketChangePercent, 1)}%</span>
                             </div>
                         ` : ''}
                     </div>
                 </div>
             </td>
-            <td class="px-5 py-1.5">
-                <p class="text-base font-black ${dailyGain >= 0 ? 'text-emerald-500' : 'text-rose-500'} font-mono">${formatCurrency(dailyGain, a.currency, 0)}</p>
+            <td class="px-4 py-0.5">
+                <p class="text-xs font-black ${dailyGain >= 0 ? 'text-emerald-500' : 'text-rose-500'} font-mono leading-tight">${formatCurrency(dailyGain, a.currency, 0)}</p>
             </td>
-            <td class="px-5 py-1.5">
-                <p class="text-base font-black text-slate-900 dark:text-white font-mono">${formatCurrency(a.totalCostAssetCurr || 0, a.currency, 0)}</p>
+            <td class="px-4 py-0.5">
+                <p class="text-xs font-black text-slate-900 dark:text-white font-mono leading-tight">${formatCurrency(a.totalCostAssetCurr || 0, a.currency, 0)}</p>
             </td>
-            <td class="px-5 py-1.5">
-                <p class="text-base font-black text-slate-900 dark:text-white font-mono">${formatCurrency(price * (a.totalQuantity || 0), a.currency, 0)}</p>
-                <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">
+            <td class="px-4 py-0.5">
+                <p class="text-xs font-black text-slate-900 dark:text-white font-mono leading-tight">${formatCurrency(price * (a.totalQuantity || 0), a.currency, 0)}</p>
+                <p class="text-[8px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">
                     Q.tà: <span class="font-mono text-slate-500 dark:text-slate-400">${formatNumber(a.totalQuantity || 0, 0)}</span>
                 </p>
             </td>
-            <td class="px-5 py-1.5 font-mono">
+            <td class="px-4 py-0.5 font-mono">
                 ${(function() {
                     const cumulated = (a.totalQuantity || 0) * price;
                     const invested = a.totalCostAssetCurr || 0;
@@ -715,23 +780,22 @@ function renderAssets(filter = '') {
                     const clr = gain >= 0 ? 'text-emerald-500' : 'text-rose-500';
                     const sgn = gain >= 0 ? '+' : '';
                     return `
-                        <p class="text-base font-black ${clr}">${sgn}${formatCurrency(gain, a.currency, 0)}</p>
-                        <p class="text-[10px] font-bold ${clr} mt-0.5">${sgn}${formatNumber(gainPct, 1)}%</p>
+                        <p class="text-xs font-black ${clr} leading-tight">${sgn}${formatCurrency(gain, a.currency, 0)}</p>
+                        <p class="text-[8px] font-bold ${clr} mt-0.5">${sgn}${formatNumber(gainPct, 1)}%</p>
                     `;
                 })()}
             </td>
-            <td class="px-5 py-1.5 text-right">
+            <td class="px-4 py-0.5 text-right">
                 <div class="flex items-center justify-end gap-1">
-
-                    <button onclick="event.stopPropagation(); openAlertModal('${a.ticker}')" class="h-8 w-8 rounded-lg bg-slate-100 dark:bg-white/[0.05] text-slate-500 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-all flex items-center justify-center">
-                        <span class="material-symbols-outlined text-base">settings_alert</span>
+                    <button onclick="event.stopPropagation(); openAlertModal('${a.ticker}')" class="w-6 h-6 rounded-md bg-slate-100 dark:bg-white/[0.05] text-slate-500 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-all flex items-center justify-center" title="Alerts Settings">
+                        <span class="material-symbols-outlined text-[13px]">settings_alert</span>
                     </button>
                     ${a.isMonitored ? `
-                    <button onclick="event.stopPropagation(); unmonitorAsset('${a.ticker}')" class="h-8 w-8 rounded-lg bg-slate-100 dark:bg-white/[0.05] text-slate-400 hover:bg-rose-500/10 hover:text-rose-500 transition-all flex items-center justify-center">
-                        <span class="material-symbols-outlined text-base">visibility_off</span>
+                    <button onclick="event.stopPropagation(); unmonitorAsset('${a.ticker}')" class="w-6 h-6 rounded-md bg-slate-100 dark:bg-white/[0.05] text-slate-400 hover:bg-rose-500/10 hover:text-rose-500 transition-all flex items-center justify-center" title="Nascondi da Monitor">
+                        <span class="material-symbols-outlined text-[13px]">visibility_off</span>
                     </button>` : `
-                    <button onclick="event.stopPropagation(); restoreMonitoring('${a.ticker}')" class="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all flex items-center justify-center">
-                        <span class="material-symbols-outlined text-base">visibility</span>
+                    <button onclick="event.stopPropagation(); restoreMonitoring('${a.ticker}')" class="w-6 h-6 rounded-md bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all flex items-center justify-center" title="Mostra su Monitor">
+                        <span class="material-symbols-outlined text-[13px]">visibility</span>
                     </button>
                     `}
                 </div>
@@ -741,9 +805,29 @@ function renderAssets(filter = '') {
 
     if (listPos) {
         if (openPositions.length) {
-            listPos.innerHTML = openPositions.map(renderRow).join('');
+            const azioni = openPositions.filter(a => getAssetCategory(a) === 'Azioni');
+            const etfs = openPositions.filter(a => getAssetCategory(a) === 'ETF');
+            const obbligazioni = openPositions.filter(a => getAssetCategory(a) === 'Obbligazioni');
+            const cd = openPositions.filter(a => getAssetCategory(a) === 'CD');
+
+            const renderSection = (items, title) => {
+                if (items.length === 0) return '';
+                return `
+                    <tr class="bg-slate-100/50 dark:bg-slate-800/80">
+                        <td colspan="8" class="px-4 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+                            ${title} (${items.length})
+                        </td>
+                    </tr>
+                    ${items.map(renderRow).join('')}
+                `;
+            };
+
+            listPos.innerHTML = renderSection(azioni, 'Azioni') +
+                                renderSection(etfs, 'ETF') +
+                                renderSection(obbligazioni, 'Obbligazioni') +
+                                renderSection(cd, 'CD');
         } else {
-            listPos.innerHTML = `<tr><td colspan="6" class="px-6 py-12 text-center text-slate-500 italic bg-white dark:bg-surface-dark">No open positions.</td></tr>`;
+            listPos.innerHTML = `<tr><td colspan="8" class="px-6 py-12 text-center text-slate-500 italic bg-white dark:bg-surface-dark">No open positions.</td></tr>`;
         }
     }
 

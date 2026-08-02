@@ -291,6 +291,21 @@
         }
     }
 
+    function getAssetCategory(item) {
+        const t = (item.type || '').toUpperCase();
+        const tk = (item.ticker || '').toUpperCase();
+        if (t.includes('DEPOSITO') || t.includes('CONTO DEPOSITO') || t === 'CD' || t.includes('DEPOSITO VINCOLATO')) {
+            return 'CD';
+        }
+        if (t.includes('ETF') || t.includes('EXCHANGE TRADED FUND')) {
+            return 'ETF';
+        }
+        if (t.includes('BOND') || t.includes('OBBLIGAZION') || t === 'OBBLIGAZIONI' || t === 'OBBLIGAZIONE' || tk.startsWith('BTP')) {
+            return 'Obbligazioni';
+        }
+        return 'Azioni';
+    }
+
     function renderWatchlist() {
         const tbody = document.getElementById('watchlist-body');
         const empty = document.getElementById('watchlist-empty');
@@ -303,21 +318,11 @@
         
         empty.classList.add('hidden');
 
-        // Robust grouping logic
-        const equities = watchlist.filter(item => {
-            const t = (item.type || '').toUpperCase();
-            return t === 'AZIONI' || t === 'EQUITY' || t === 'STOCK' || t === 'COMMON STOCK';
-        });
-        const etfs = watchlist.filter(item => {
-            const t = (item.type || '').toUpperCase();
-            return t.includes('ETF') || t.includes('EXCHANGE TRADED FUND');
-        });
-        const other = watchlist.filter(item => {
-            const t = (item.type || '').toUpperCase();
-            const isEq = t === 'AZIONI' || t === 'EQUITY' || t === 'STOCK' || t === 'COMMON STOCK';
-            const isEtf = t.includes('ETF') || t.includes('EXCHANGE TRADED FUND');
-            return !isEq && !isEtf;
-        });
+        // Robust grouping logic for 4 sections: Azioni, ETF, Obbligazioni, CD
+        const azioni = watchlist.filter(item => getAssetCategory(item) === 'Azioni');
+        const etfs = watchlist.filter(item => getAssetCategory(item) === 'ETF');
+        const obbligazioni = watchlist.filter(item => getAssetCategory(item) === 'Obbligazioni');
+        const cd = watchlist.filter(item => getAssetCategory(item) === 'CD');
 
         const renderSection = (items, title) => {
             if (items.length === 0) return '';
@@ -565,9 +570,10 @@
             `;
         };
 
-        tbody.innerHTML = renderSection(equities, 'Equity') + 
+        tbody.innerHTML = renderSection(azioni, 'Azioni') + 
                           renderSection(etfs, 'ETF') + 
-                          renderSection(other, 'Other');
+                          renderSection(obbligazioni, 'Obbligazioni') + 
+                          renderSection(cd, 'CD');
     }
 
     function renderPerf(val) {

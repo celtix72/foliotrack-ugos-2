@@ -999,8 +999,45 @@
 
 
 
+      function getAssetCategoryMob(a) {
+        const t = (a.type || a.yfType || '').toUpperCase();
+        const tk = (a.ticker || '').toUpperCase();
+        if (t.includes('DEPOSITO') || t.includes('CONTO DEPOSITO') || t === 'CD' || t.includes('DEPOSITO VINCOLATO')) {
+          return 'CD';
+        }
+        if (t.includes('ETF') || t.includes('EXCHANGE TRADED FUND')) {
+          return 'ETF';
+        }
+        if (t.includes('BOND') || t.includes('OBBLIGAZION') || t === 'OBBLIGAZIONI' || t === 'OBBLIGAZIONE' || tk.startsWith('BTP')) {
+          return 'Obbligazioni';
+        }
+        return 'Azioni';
+      }
+
       if (posContainer) {
-        posContainer.innerHTML = openPos.map(a => renderCard(a, true)).join('') || '<div class="mob-empty">Nessuna posizione</div>';
+        if (openPos.length) {
+          const azioni = openPos.filter(a => getAssetCategoryMob(a) === 'Azioni');
+          const etfs = openPos.filter(a => getAssetCategoryMob(a) === 'ETF');
+          const obbligazioni = openPos.filter(a => getAssetCategoryMob(a) === 'Obbligazioni');
+          const cd = openPos.filter(a => getAssetCategoryMob(a) === 'CD');
+
+          const renderSectionMob = (items, title) => {
+            if (items.length === 0) return '';
+            return `
+              <div class="px-3 py-1 bg-slate-100 dark:bg-slate-800/80 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 border-y border-slate-200/50 dark:border-slate-700/50">
+                ${title} (${items.length})
+              </div>
+              ${items.map(a => renderCard(a, true)).join('')}
+            `;
+          };
+
+          posContainer.innerHTML = renderSectionMob(azioni, 'Azioni') +
+                                   renderSectionMob(etfs, 'ETF') +
+                                   renderSectionMob(obbligazioni, 'Obbligazioni') +
+                                   renderSectionMob(cd, 'CD');
+        } else {
+          posContainer.innerHTML = '<div class="mob-empty">Nessuna posizione</div>';
+        }
         updateMarketScale();
       }
 
