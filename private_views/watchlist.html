@@ -357,6 +357,151 @@
                             ? `<span class="font-black text-primary/90">${item.ticker}</span>`
                             : `<span class="font-semibold text-slate-600 dark:text-slate-300 truncate max-w-[200px]" title="${(item.name || '').replace(/"/g, '&quot;')}">${item.name || ''}</span>`);
 
+                    // Standardize Type Label for display
+                    let typeLabel = item.type || 'Other';
+                    const t = typeLabel.toUpperCase();
+                    if (t === 'AZIONI' || t === 'EQUITY' || t === 'STOCK' || t === 'COMMON STOCK') typeLabel = 'Equity';
+                    else if (t.includes('ETF') || t.includes('EXCHANGE TRADED FUND')) typeLabel = 'ETF';
+                    else if (t.includes('MUTUAL FUND')) typeLabel = 'Fund';
+
+                    const typeColor = typeLabel === 'Equity' ? 'bg-primary/10 text-primary border-primary/20' : 
+                                    typeLabel === 'ETF' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 
+                                    'bg-slate-500/10 text-slate-500 border-slate-500/20';
+
+                    const count = item.aiHistoryCount || 0;
+                    let aiBadge = '';
+                    if (item.aiBadges && item.aiBadges.length > 0) {
+                        aiBadge = item.aiBadges.map(badge => {
+                            const engine = badge.engine || 'X';
+                            let icon = 'smart_toy';
+                            if (badge.prompt_type === 'graham') {
+                                icon = 'shield';
+                            } else if (badge.prompt_type === 'garp') {
+                                icon = 'trending_up';
+                            } else if (badge.prompt_type === 'disruptive') {
+                                icon = 'rocket_launch';
+                            } else {
+                                if (engine === 'Gemini') icon = 'auto_awesome';
+                                else if (engine === 'Qwen') icon = 'chat_spark';
+                                else if (engine === 'Agnes') icon = 'psychiatry';
+                                else if (engine === 'OpenAI') icon = 'data_exploration';
+                                else if (engine === 'Aimlapi') icon = 'api';
+                                else if (engine === 'OpenRouter') icon = 'hub';
+                                else if (engine === 'X') icon = 'close';
+                            }
+                            
+                            const act = (badge.aiAction || '').toUpperCase();
+                            let badgeStyle = '';
+                            if (act === 'BUY' || act === 'INCREASE') {
+                                badgeStyle = 'style="background-color: #10b981 !important; color: #ffffff !important; border-color: #10b981 !important;"';
+                            } else if (act === 'SELL' || act === 'DECREASE') {
+                                badgeStyle = 'style="background-color: #ef4444 !important; color: #ffffff !important; border-color: #ef4444 !important;"';
+                            } else if (act === 'AVOID') {
+                                badgeStyle = 'style="background-color: #78350f !important; color: #ffffff !important; border-color: #78350f !important;"';
+                            } else if (act === 'WATCHLIST') {
+                                badgeStyle = 'style="background-color: #8b5cf6 !important; color: #ffffff !important; border-color: #8b5cf6 !important;"';
+                            } else if (act === 'NO DATA') {
+                                badgeStyle = 'style="background-color: #f59e0b !important; color: #ffffff !important; border-color: #f59e0b !important;"';
+                            } else {
+                                badgeStyle = 'style="background-color: #64748b !important; color: #ffffff !important; border-color: #64748b !important;"';
+                            }
+                            
+                            if (badge.isOutdated) {
+                                badgeStyle = badgeStyle.replace(/border-color: [^!]+!important;/, 'border-color: #eab308 !important; border-width: 2px !important;');
+                            }
+                            
+                            const fvStr = badge.aiTargetPrice ? formatAiFv(badge.aiTargetPrice, item.currency, badge.prompt_type) : badge.aiAction;
+                            
+                            return `
+                            <span ${badgeStyle} onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${item.currency || 'EUR'}')" class="px-1 py-0 rounded text-[9px] font-black uppercase tracking-tighter flex items-center gap-0.5 border cursor-pointer transition-colors ml-1 whitespace-nowrap" title="${engine}: ${badge.aiAction} ">
+                                <span class="material-symbols-outlined" style="font-size: 10px;">${icon}</span> ${fvStr}
+                            </span>`;
+                        }).join('');
+                    } else if (count > 0) {
+                         aiBadge = `
+                        <span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${item.currency || 'EUR'}')" class="px-1 py-0 rounded text-[9px] font-black uppercase tracking-tighter flex items-center gap-0.5 border border-slate-500/30 text-slate-500 bg-slate-500/10 cursor-pointer hover:bg-slate-500/20 transition-colors ml-1" title="Storico Analisi IA">
+                            <span class="material-symbols-outlined" style="font-size: 10px;">smart_toy</span> ${count}
+                        </span>`;
+                    } else {
+                        aiBadge = `
+                        <span onclick="event.stopPropagation(); window.openAssetAiHistoryModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}', '${item.currency || 'EUR'}')" class="px-1 py-0 rounded text-[9px] font-black uppercase tracking-tighter flex items-center gap-0.5 border border-slate-400/30 text-slate-400 bg-slate-400/10 cursor-pointer hover:bg-slate-400/20 transition-colors ml-1" title="Genera Analisi IA">
+                            <span class="material-symbols-outlined" style="font-size: 10px;">smart_toy</span>
+                        </span>
+                        `;
+                    }
+
+                    const getAiParam = (text, param) => {
+                        if (!text) return '—';
+                        const normalizedText = text.replace(/\\n/g, '\n');
+                        const escapedParam = param.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                        
+                        // 1. Table format check: | **Param** | Value | ... |
+                        const tableRegex = new RegExp(`\\|\\s*(?:\\*\\*|__)?\\s*${escapedParam}\\s*(?:\\*\\*|__)?\\s*\\|\\s*([^\\|]+)`, 'i');
+                        let m = normalizedText.match(tableRegex);
+                        if (m) return m[1].trim();
+                        
+                        // 2. Bullet list format check: - Param: Value
+                        const listRegex = new RegExp(`(?:\\-|\\•|\\*)\\s*${escapedParam}\\s*:\\s*([^\\n]+)`, 'i');
+                        m = normalizedText.match(listRegex);
+                        if (m) return m[1].trim();
+                        
+                        // 3. Simple colon format check: Param: Value
+                        const simpleRegex = new RegExp(`${escapedParam}\\s*:\\s*([^\\n]+)`, 'i');
+                        m = normalizedText.match(simpleRegex);
+                        return m ? m[1].trim() : '—';
+                    };
+
+                    const trend = getAiParam(item.aiReasoning, 'Trend di fondo') !== '—' ? getAiParam(item.aiReasoning, 'Trend di fondo') : getAiParam(item.aiReasoning, 'View Operativa');
+                    const buyZone = getAiParam(item.aiReasoning, 'Zona di Ingresso ideale (Buy)') !== '—' ? getAiParam(item.aiReasoning, 'Zona di Ingresso ideale (Buy)') : getAiParam(item.aiReasoning, 'Livello di Ingresso (Buy Zone)');
+                    
+                    let tp = getAiParam(item.aiReasoning, 'Take Profit suggerito (TP)');
+                    if (tp === '—') tp = getAiParam(item.aiReasoning, 'Take Profit (TP)');
+                    if (tp === '—') tp = getAiParam(item.aiReasoning, 'Take Profit 1 (TP1)');
+                    
+                    let sl = getAiParam(item.aiReasoning, 'Stop Loss rigoroso (SL)');
+                    if (sl === '—') sl = getAiParam(item.aiReasoning, 'Stop Loss (SL)');
+                    
+                    const sup = getAiParam(item.aiReasoning, 'Area di Supporto critico');
+                    
+                    // If SL is not found, maybe show TP2 from old format
+                    const slOrTp2 = sl !== '—' ? sl : getAiParam(item.aiReasoning, 'Take Profit 2 (TP2)');
+                    const slLabel = sl !== '—' ? 'SL' : 'TP2';
+
+                    const res = getAiParam(item.aiReasoning, 'Area di Resistenza critica');
+                    
+                    const cleanParam = (val) => val === '—' ? val : val.replace(/\*/g, '').trim();
+                    const trendClean = cleanParam(trend);
+                    const buyZoneClean = cleanParam(buyZone);
+                    const tpClean = cleanParam(tp);
+                    const slOrTp2Clean = cleanParam(slOrTp2);
+                    const supClean = cleanParam(sup);
+                    const resClean = cleanParam(res);
+
+                    let shortTrend = trendClean;
+                    const trendMatch = trendClean.match(/^(Rialzista|Ribassista|Laterale|Buy|Sell|Hold|Positivo|Negativo)/i);
+                    if (trendMatch) {
+                        const t = trendMatch[1].toLowerCase();
+                        if (t === 'rialzista' || t === 'buy' || t === 'positivo') {
+                            shortTrend = '<span class="material-symbols-outlined text-emerald-500" style="font-size: 16px;">trending_up</span>';
+                        } else if (t === 'ribassista' || t === 'sell' || t === 'negativo') {
+                            shortTrend = '<span class="material-symbols-outlined text-rose-500" style="font-size: 16px;">trending_down</span>';
+                        } else {
+                            shortTrend = '<span class="material-symbols-outlined text-amber-500" style="font-size: 16px;">trending_flat</span>';
+                        }
+                    } else if (trendClean !== '—') {
+                        shortTrend = '<span class="material-symbols-outlined text-slate-400" style="font-size: 16px;">info</span>';
+                    } else {
+                        shortTrend = '<span class="text-slate-400">—</span>';
+                    }
+
+                    const shortVal = (val) => {
+                        if (val === '—') return val;
+                        const m = val.match(/^([€$\d.,]+)/);
+                        if (m) return m[1];
+                        if (val.length > 15) return val.substring(0, 12) + '...';
+                        return val;
+                    };
+
                     const rowBgClass = 'bg-white dark:bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800/30';
 
                     return `
