@@ -598,6 +598,7 @@
         const change   = a.changePercent || 0;
         const isPos    = change >= 0;
         const chgColor = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        const todayVarPct = `${isPos ? '+' : ''}${change.toFixed(1)}%`;
         const tickerEsc = a.ticker.replace(/'/g, "\\'");
         const nameEsc   = (a.name || '').replace(/'/g, "\\'");
         const cur = a.currency || 'EUR';
