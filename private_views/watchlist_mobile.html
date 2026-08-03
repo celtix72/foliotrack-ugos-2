@@ -696,16 +696,25 @@
         const countEl = document.getElementById('mob-watchlist-count');
         let watchlist = window.watchlist || [];
 
+        const getAssetCategoryMob = (a) => {
+            const t = (a.type || a.yfType || '').toUpperCase();
+            const tk = (a.ticker || '').toUpperCase();
+            if (t.includes('DEPOSITO') || t.includes('CONTO DEPOSITO') || t === 'CD' || t.includes('DEPOSITO VINCOLATO')) return 'CD';
+            if (t.includes('ETF') || t.includes('EXCHANGE TRADED FUND')) return 'ETF';
+            if (t.includes('BOND') || t.includes('OBBLIGAZION') || t === 'OBBLIGAZIONI' || t === 'OBBLIGAZIONE' || tk.startsWith('BTP')) return 'Obbligazioni';
+            return 'Azioni';
+        };
+
         // Filter based on selected sub-view (Az1 = Stocks/Equity, ETF1 = ETFs)
         if (_watchlistSubView === 'Az1') {
             watchlist = watchlist.filter(a => {
-                const t = (a.type || a.yfType || '').toUpperCase();
-                return (t.includes('AZION') || t.includes('STOCK') || t.includes('EQUITY')) && !t.includes('ETF');
+                const cat = getAssetCategoryMob(a);
+                return cat !== 'ETF'; // Show Azioni, CD, Obbligazioni
             });
         } else if (_watchlistSubView === 'ETF1') {
             watchlist = watchlist.filter(a => {
-                const t = (a.type || a.yfType || '').toUpperCase();
-                return t.includes('ETF');
+                const cat = getAssetCategoryMob(a);
+                return cat === 'ETF';
             });
         }
 
@@ -777,14 +786,7 @@
         if (container) {
             container.className = 'mob-list-edge ' + (_watchlistSubView === 'Az1' ? 'subview-az1' : 'subview-etf1');
             
-            const getAssetCategoryMob = (a) => {
-                const t = (a.type || a.yfType || '').toUpperCase();
-                const tk = (a.ticker || '').toUpperCase();
-                if (t.includes('DEPOSITO') || t.includes('CONTO DEPOSITO') || t === 'CD' || t.includes('DEPOSITO VINCOLATO')) return 'CD';
-                if (t.includes('ETF') || t.includes('EXCHANGE TRADED FUND')) return 'ETF';
-                if (t.includes('BOND') || t.includes('OBBLIGAZION') || t === 'OBBLIGAZIONI' || t === 'OBBLIGAZIONE' || tk.startsWith('BTP')) return 'Obbligazioni';
-                return 'Azioni';
-            };
+            // getAssetCategoryMob moved to the top of renderWatchlist
 
             const azioni = watchlist.filter(a => getAssetCategoryMob(a) === 'Azioni');
             const etfs = watchlist.filter(a => getAssetCategoryMob(a) === 'ETF');
