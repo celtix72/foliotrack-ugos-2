@@ -265,10 +265,6 @@
             icon.style.transform = isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
         }
     }
-        fontScale = Math.round(Math.max(0.75, Math.min(1.35, fontScale + amount)) * 100) / 100;
-        localStorage.setItem('watchlist_desktop_scale', fontScale);
-        applyWatchlistDesktopScale();
-    }
 
     function applyWatchlistDesktopScale() {
         const tableContainer = document.getElementById('watchlist-table-container');
