@@ -629,9 +629,7 @@
             ? `background:#2563eb; color:#ffffff; border-radius:4px; padding:1px 5px; font-size:calc(9px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; flex-shrink:0;`
             : `background:${colors.bg}; color:#000000; border:1px solid ${colors.border}; border-radius:4px; padding:1px 5px; font-size:calc(9px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; flex-shrink:0;`;
 
-        const nameStyle = isOwnedMob && a.name && !_watchlistExtMode
-            ? `background:#2563eb; color:#ffffff; border-radius:4px; padding:1px 5px; font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; flex-shrink:1; max-width:90px;`
-            : `font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:700; color:var(--mob-text); text-overflow:ellipsis; overflow:hidden; white-space:nowrap; flex-shrink:1; max-width:90px;`;
+        const nameStyle = `font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:700; color:var(--mob-text); text-overflow:ellipsis; overflow:hidden; white-space:nowrap; flex-shrink:1; max-width:90px;`;
 
         return `
           <div class="mob-holding-swipe-container"

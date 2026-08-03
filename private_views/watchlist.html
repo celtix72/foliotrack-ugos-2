@@ -246,6 +246,30 @@
         applyWatchlistDesktopScale();
     }
 
+    function toggleSection(sectionId) {
+        const rows = document.querySelectorAll(`.section-row-${sectionId}`);
+        const icon = document.getElementById(`icon-${sectionId}`);
+        let isCollapsed = false;
+        
+        rows.forEach(row => {
+            if (row.style.display === 'none') {
+                row.style.display = '';
+                isCollapsed = false;
+            } else {
+                row.style.display = 'none';
+                isCollapsed = true;
+            }
+        });
+        
+        if (icon) {
+            icon.style.transform = isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
+        }
+    }
+        fontScale = Math.round(Math.max(0.75, Math.min(1.35, fontScale + amount)) * 100) / 100;
+        localStorage.setItem('watchlist_desktop_scale', fontScale);
+        applyWatchlistDesktopScale();
+    }
+
     function applyWatchlistDesktopScale() {
         const tableContainer = document.getElementById('watchlist-table-container');
         const displayEl = document.getElementById('font-scale-display');
@@ -322,25 +346,19 @@
         
         empty.classList.add('hidden');
 
-        // Robust grouping logic for 4 sections: Azioni, ETF, Obbligazioni, CD
-        const azioni = watchlist.filter(item => getAssetCategory(item) === 'Azioni');
+        // Robust grouping logic for sections: Azioni (EUR/USD/Altre), ETF, Obbligazioni, CD
+        const azioniEur = watchlist.filter(item => getAssetCategory(item) === 'Azioni' && item.currency === 'EUR');
+        const azioniUsd = watchlist.filter(item => getAssetCategory(item) === 'Azioni' && item.currency === 'USD');
+        const azioniOther = watchlist.filter(item => getAssetCategory(item) === 'Azioni' && item.currency !== 'EUR' && item.currency !== 'USD');
         const etfs = watchlist.filter(item => getAssetCategory(item) === 'ETF');
         const obbligazioni = watchlist.filter(item => getAssetCategory(item) === 'Obbligazioni');
         const cd = watchlist.filter(item => getAssetCategory(item) === 'CD');
 
         const renderSection = (items, title) => {
             if (items.length === 0) return '';
-            return `
-                <tr class="select-none">
-                    <td colspan="8" class="px-4 py-2 text-xs font-black uppercase tracking-[0.15em] bg-slate-300 dark:bg-slate-700 text-slate-900 dark:text-white border-y-2 border-slate-400 dark:border-slate-600">
-                        <div class="flex items-center gap-2">
-                            <span class="w-2 h-4 bg-primary rounded-full inline-block"></span>
-                            <span>${title}</span>
-                            <span class="text-[10px] font-bold text-slate-900 dark:text-slate-100 bg-slate-400/60 dark:bg-slate-600/90 px-2.5 py-0.5 rounded-full font-mono">${items.length}</span>
-                        </div>
-                    </td>
-                </tr>
-                ${items.map(item => {
+            const sectionId = title.replace(/\s+/g, '-').toLowerCase().replace(/[^a-z0-9-]/g, '');
+            
+            const rowsHtml = items.map(item => {
                     const perf = performanceData[item.ticker] || {};
                     const d1 = item.changePercent || 0;
                     
@@ -506,7 +524,7 @@
                     const rowBgClass = 'bg-white dark:bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800/30';
 
                     return `
-                        <tr class="border-b border-slate-100 dark:border-slate-800/50 transition-colors group cursor-pointer ${rowBgClass}" ondblclick="openAssetChartModal('${item.ticker}')">
+                        <tr class="section-row-${sectionId} border-b border-slate-100 dark:border-slate-800/50 transition-colors group cursor-pointer ${rowBgClass}" ondblclick="openAssetChartModal('${item.ticker}')">
                             <td class="px-4 py-0.5">
                                 <div>
                                     <div class="flex items-center gap-1.5 flex-wrap">
@@ -578,9 +596,27 @@
                     `;
                 }).join('')}
             `;
+            
+            return `
+                <tr class="select-none cursor-pointer hover:bg-yellow-200/50 dark:hover:bg-yellow-800/30 transition-colors" onclick="toggleSection('${sectionId}')">
+                    <td colspan="7" class="px-4 py-2 text-xs font-black uppercase tracking-[0.15em] bg-yellow-100 dark:bg-yellow-900/20 text-yellow-900 dark:text-yellow-100 border-y-2 border-yellow-300 dark:border-yellow-700/50">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[16px] transition-transform duration-200" id="icon-${sectionId}" style="transform: rotate(0deg);">expand_more</span>
+                                <span class="w-2 h-4 bg-primary rounded-full inline-block"></span>
+                                <span>${title}</span>
+                            </div>
+                            <span class="text-[10px] font-bold text-slate-900 dark:text-slate-100 bg-slate-400/60 dark:bg-slate-600/90 px-2.5 py-0.5 rounded-full font-mono">${items.length}</span>
+                        </div>
+                    </td>
+                </tr>
+                ${rowsHtml}
+            `;
         };
 
-        tbody.innerHTML = renderSection(azioni, 'Azioni') + 
+        tbody.innerHTML = renderSection(azioniEur, 'Azioni EUR') + 
+                          renderSection(azioniUsd, 'Azioni USD') + 
+                          renderSection(azioniOther, 'Azioni Altre') + 
                           renderSection(etfs, 'ETF') + 
                           renderSection(obbligazioni, 'Obbligazioni') + 
                           renderSection(cd, 'CD');
