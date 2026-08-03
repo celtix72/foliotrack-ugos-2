@@ -241,7 +241,7 @@
         <div id="market-table-container" class="overflow-hidden bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
             <table class="w-full text-left border-collapse">
                 <thead>
-                    <tr class="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 select-none">
+                    <tr class="text-[9px] font-black text-white dark:text-slate-900 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 bg-slate-800 dark:bg-slate-200 select-none">
                         <th class="px-4 py-1.5">Asset</th>
                         <th class="px-4 py-1.5 cursor-pointer hover:text-primary transition-colors" onclick="toggleSort('price')">
                             Price <span id="sort-icon-price"></span>
@@ -842,7 +842,6 @@ function renderAssets(filter = '') {
                                 <span class="material-symbols-outlined text-[16px] transition-transform duration-200" id="icon-${sectionId}" style="transform: rotate(0deg);">expand_more</span>
                                 <span class="w-2 h-4 bg-primary rounded-full inline-block"></span>
                                 <span>${title}</span>
-                                <span class="text-[10px] font-bold text-yellow-900 dark:text-yellow-100 bg-yellow-200 dark:bg-yellow-800/50 px-2.5 py-0.5 rounded-full font-mono">${items.length}</span>
                             </div>
                         </td>
                         <td class="px-4 py-2 bg-yellow-100 dark:bg-yellow-900/20 border-y-2 border-yellow-300 dark:border-yellow-700/50 font-mono">
