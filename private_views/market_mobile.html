@@ -1032,17 +1032,22 @@
             
             let totalInvested = 0;
             let totalCumulated = 0;
+            let totalDailyGain = 0;
             
             items.forEach(a => {
                 const price = a.currentPrice || 0;
                 totalCumulated += (a.totalQuantity || 0) * price;
                 totalInvested += a.totalCostAssetCurr || 0;
+                totalDailyGain += (a.totalQuantity || 0) * (a.changeValue || 0);
             });
             
             const sectionGain = totalCumulated - totalInvested;
             const sectionGainPct = totalInvested > 0 ? (sectionGain / totalInvested) * 100 : 0;
             const clr = sectionGain >= 0 ? 'text-emerald-500' : 'text-rose-500';
             const sgn = sectionGain >= 0 ? '+' : '';
+
+            const dailyClr = totalDailyGain >= 0 ? 'text-emerald-500' : 'text-rose-500';
+            const dailySgn = totalDailyGain >= 0 ? '+' : '';
             
             const sectionId = title.replace(/\s+/g, '-').toLowerCase();
 
@@ -1055,6 +1060,10 @@
                 </div>
                 <div class="flex items-center gap-3">
                     <div class="text-right font-mono">
+                        <p class="${dailyClr} leading-tight">${dailySgn}${formatCurrency(totalDailyGain, 'EUR', 0)}</p>
+                        <p class="text-[8px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 uppercase tracking-tighter">Daily</p>
+                    </div>
+                    <div class="text-right font-mono border-l border-slate-400/30 pl-3">
                         <p class="${clr} leading-tight">${sgn}${formatCurrency(sectionGain, 'EUR', 0)}</p>
                         <p class="text-[8px] ${clr} mt-0.5">${sgn}${formatNumber(sectionGainPct, 1)}%</p>
                     </div>
