@@ -822,10 +822,10 @@ function renderAssets(filter = '') {
                 
                 const sectionGain = totalCumulated - totalInvested;
                 const sectionGainPct = totalInvested > 0 ? (sectionGain / totalInvested) * 100 : 0;
-                const clr = sectionGain >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
+                const clr = sectionGain >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400';
                 const sgn = sectionGain >= 0 ? '+' : '';
 
-                const dailyClr = totalDailyGain >= 0 ? 'text-emerald-500' : 'text-rose-500';
+                const dailyClr = totalDailyGain >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400';
                 const dailySgn = totalDailyGain >= 0 ? '+' : '';
                 
                 const sectionId = title.replace(/\s+/g, '-').toLowerCase();
@@ -836,26 +836,26 @@ function renderAssets(filter = '') {
                 }).join('');
 
                 return `
-                    <tr class="select-none cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors" onclick="toggleSection('${sectionId}')">
-                        <td colspan="3" class="px-4 py-2 text-xs font-black uppercase tracking-[0.15em] bg-slate-300 dark:bg-slate-700 text-slate-900 dark:text-white border-y-2 border-slate-400 dark:border-slate-600">
+                    <tr class="select-none cursor-pointer hover:bg-yellow-200/50 dark:hover:bg-yellow-800/30 transition-colors" onclick="toggleSection('${sectionId}')">
+                        <td colspan="3" class="px-4 py-2 text-xs font-black uppercase tracking-[0.15em] bg-yellow-100 dark:bg-yellow-900/20 text-yellow-900 dark:text-yellow-100 border-y-2 border-yellow-300 dark:border-yellow-700/50">
                             <div class="flex items-center gap-2">
                                 <span class="material-symbols-outlined text-[16px] transition-transform duration-200" id="icon-${sectionId}" style="transform: rotate(0deg);">expand_more</span>
                                 <span class="w-2 h-4 bg-primary rounded-full inline-block"></span>
                                 <span>${title}</span>
-                                <span class="text-[10px] font-bold text-slate-900 dark:text-slate-100 bg-slate-400/60 dark:bg-slate-600/90 px-2.5 py-0.5 rounded-full font-mono">${items.length}</span>
+                                <span class="text-[10px] font-bold text-yellow-900 dark:text-yellow-100 bg-yellow-200 dark:bg-yellow-800/50 px-2.5 py-0.5 rounded-full font-mono">${items.length}</span>
                             </div>
                         </td>
-                        <td class="px-4 py-2 bg-slate-300 dark:bg-slate-700 border-y-2 border-slate-400 dark:border-slate-600 font-mono">
+                        <td class="px-4 py-2 bg-yellow-100 dark:bg-yellow-900/20 border-y-2 border-yellow-300 dark:border-yellow-700/50 font-mono">
                             <p class="text-xs font-black ${dailyClr} leading-tight">${dailySgn}${formatCurrency(totalDailyGain, 'EUR', 0)}</p>
-                            <p class="text-[8px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 uppercase tracking-tighter">Daily</p>
+                            <p class="text-[8px] font-bold text-yellow-700 dark:text-yellow-500 mt-0.5 uppercase tracking-tighter">Daily</p>
                         </td>
-                        <td colspan="2" class="px-4 py-2 bg-slate-300 dark:bg-slate-700 border-y-2 border-slate-400 dark:border-slate-600">
+                        <td colspan="2" class="px-4 py-2 bg-yellow-100 dark:bg-yellow-900/20 border-y-2 border-yellow-300 dark:border-yellow-700/50">
                         </td>
-                        <td class="px-4 py-2 bg-slate-300 dark:bg-slate-700 border-y-2 border-slate-400 dark:border-slate-600 font-mono">
+                        <td class="px-4 py-2 bg-yellow-100 dark:bg-yellow-900/20 border-y-2 border-yellow-300 dark:border-yellow-700/50 font-mono">
                             <p class="text-xs font-black ${clr} leading-tight">${sgn}${formatCurrency(sectionGain, 'EUR', 0)}</p>
                             <p class="text-[8px] font-bold ${clr} mt-0.5">${sgn}${formatNumber(sectionGainPct, 1)}%</p>
                         </td>
-                        <td class="px-4 py-2 bg-slate-300 dark:bg-slate-700 border-y-2 border-slate-400 dark:border-slate-600 text-right">
+                        <td class="px-4 py-2 bg-yellow-100 dark:bg-yellow-900/20 border-y-2 border-yellow-300 dark:border-yellow-700/50 text-right">
                         </td>
                     </tr>
                     ${rowsHtml}
