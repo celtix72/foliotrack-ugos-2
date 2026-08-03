@@ -616,6 +616,8 @@
 
         const priceFmt = fmtPriceCompact(price, cur, price >= 100 ? 0 : price >= 10 ? 1 : 2);
         
+        const aiBadge = renderAiBadge(a);
+        
         // Asset type colors
         const colors = getAssetTypeColors(a.type || a.yfType, a.ticker);
 
