@@ -601,6 +601,7 @@
         const tickerEsc = a.ticker.replace(/'/g, "\\'");
         const nameEsc   = (a.name || '').replace(/'/g, "\\'");
         const cur = a.currency || 'EUR';
+        const isOpen = isAssetMarketOpen(a);
 
         // Portfolio tags
         const portTags = (a.portfoliosInfo && a.portfoliosInfo.length > 0)
