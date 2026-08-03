@@ -808,17 +808,46 @@ function renderAssets(filter = '') {
 
             const renderSection = (items, title) => {
                 if (items.length === 0) return '';
+                
+                let totalInvested = 0;
+                let totalCumulated = 0;
+                
+                items.forEach(a => {
+                    const price = a.currentPrice || 0;
+                    totalCumulated += (a.totalQuantity || 0) * price;
+                    totalInvested += a.totalCostAssetCurr || 0;
+                });
+                
+                const sectionGain = totalCumulated - totalInvested;
+                const sectionGainPct = totalInvested > 0 ? (sectionGain / totalInvested) * 100 : 0;
+                const clr = sectionGain >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
+                const sgn = sectionGain >= 0 ? '+' : '';
+                
+                const sectionId = title.replace(/\s+/g, '-').toLowerCase();
+
+                const rowsHtml = items.map(a => {
+                    let rowHtml = renderRow(a);
+                    return rowHtml.replace('<tr class="', `<tr class="section-row-${sectionId} `);
+                }).join('');
+
                 return `
-                    <tr class="select-none">
-                        <td colspan="8" class="px-4 py-2 text-xs font-black uppercase tracking-[0.15em] bg-slate-300 dark:bg-slate-700 text-slate-900 dark:text-white border-y-2 border-slate-400 dark:border-slate-600">
+                    <tr class="select-none cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors" onclick="toggleSection('${sectionId}')">
+                        <td colspan="6" class="px-4 py-2 text-xs font-black uppercase tracking-[0.15em] bg-slate-300 dark:bg-slate-700 text-slate-900 dark:text-white border-y-2 border-slate-400 dark:border-slate-600">
                             <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[16px] transition-transform duration-200" id="icon-${sectionId}" style="transform: rotate(0deg);">expand_more</span>
                                 <span class="w-2 h-4 bg-primary rounded-full inline-block"></span>
                                 <span>${title}</span>
                                 <span class="text-[10px] font-bold text-slate-900 dark:text-slate-100 bg-slate-400/60 dark:bg-slate-600/90 px-2.5 py-0.5 rounded-full font-mono">${items.length}</span>
                             </div>
                         </td>
+                        <td class="px-4 py-2 bg-slate-300 dark:bg-slate-700 border-y-2 border-slate-400 dark:border-slate-600 font-mono">
+                            <p class="text-xs font-black ${clr} leading-tight">${sgn}${formatCurrency(sectionGain, 'EUR', 0)}</p>
+                            <p class="text-[8px] font-bold ${clr} mt-0.5">${sgn}${formatNumber(sectionGainPct, 1)}%</p>
+                        </td>
+                        <td class="px-4 py-2 bg-slate-300 dark:bg-slate-700 border-y-2 border-slate-400 dark:border-slate-600 text-right">
+                        </td>
                     </tr>
-                    ${items.map(renderRow).join('')}
+                    ${rowsHtml}
                 `;
             };
 
@@ -1093,5 +1122,24 @@ document.addEventListener('DOMContentLoaded', () => {
         loadMovers();
     }, 60000); 
 });
+// ─── Utility functions for market page ──────────────────────────────────────────────────────────────────
+window.toggleSection = function(sectionId) {
+    const rows = document.querySelectorAll(`.section-row-${sectionId}`);
+    const icon = document.getElementById(`icon-${sectionId}`);
+    let isHidden = false;
+    
+    if (rows.length > 0) {
+        isHidden = rows[0].style.display === 'none';
+        rows.forEach(row => {
+            row.style.display = isHidden ? '' : 'none';
+        });
+    }
+    
+    if (icon) {
+        icon.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
+    }
+};
+
 </script>
-</body></html>
+</body>
+</html>

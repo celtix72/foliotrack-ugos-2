@@ -1029,15 +1029,41 @@
 
           const renderSectionMob = (items, title) => {
             if (items.length === 0) return '';
+            
+            let totalInvested = 0;
+            let totalCumulated = 0;
+            
+            items.forEach(a => {
+                const price = a.currentPrice || 0;
+                totalCumulated += (a.totalQuantity || 0) * price;
+                totalInvested += a.totalCostAssetCurr || 0;
+            });
+            
+            const sectionGain = totalCumulated - totalInvested;
+            const sectionGainPct = totalInvested > 0 ? (sectionGain / totalInvested) * 100 : 0;
+            const clr = sectionGain >= 0 ? 'text-emerald-500' : 'text-rose-500';
+            const sgn = sectionGain >= 0 ? '+' : '';
+            
+            const sectionId = title.replace(/\s+/g, '-').toLowerCase();
+
             return `
-              <div class="px-3 py-2 bg-slate-300 dark:bg-slate-700 text-xs font-black uppercase tracking-[0.15em] text-slate-900 dark:text-white border-y-2 border-slate-400 dark:border-slate-600 flex items-center justify-between">
+              <div class="px-3 py-2 bg-slate-300 dark:bg-slate-700 text-xs font-black uppercase tracking-[0.15em] text-slate-900 dark:text-white border-y-2 border-slate-400 dark:border-slate-600 flex items-center justify-between cursor-pointer" onclick="toggleSectionMob('${sectionId}')">
                 <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[16px] transition-transform duration-200" id="icon-mob-${sectionId}" style="transform: rotate(0deg);">expand_more</span>
                     <span class="w-2 h-4 bg-primary rounded-full inline-block"></span>
                     <span>${title}</span>
                 </div>
-                <span class="text-[10px] font-bold text-slate-900 dark:text-slate-100 bg-slate-400/60 dark:bg-slate-600/90 px-2.5 py-0.5 rounded-full font-mono">${items.length}</span>
+                <div class="flex items-center gap-3">
+                    <div class="text-right font-mono">
+                        <p class="${clr} leading-tight">${sgn}${formatCurrency(sectionGain, 'EUR', 0)}</p>
+                        <p class="text-[8px] ${clr} mt-0.5">${sgn}${formatNumber(sectionGainPct, 1)}%</p>
+                    </div>
+                    <span class="text-[10px] font-bold text-slate-900 dark:text-slate-100 bg-slate-400/60 dark:bg-slate-600/90 px-2.5 py-0.5 rounded-full font-mono">${items.length}</span>
+                </div>
               </div>
-              ${items.map(a => renderCard(a, true)).join('')}
+              <div id="section-mob-${sectionId}">
+                  ${items.map(a => renderCard(a, true)).join('')}
+              </div>
             `;
           };
 
@@ -1129,6 +1155,22 @@
     if (window._mobileViewActive) mobLoadAssets();
   });
 })();
+// ─── Utility functions for market page ──────────────────────────────────────────────────────────────────
+window.toggleSectionMob = function(sectionId) {
+    const sectionBody = document.getElementById(`section-mob-${sectionId}`);
+    const icon = document.getElementById(`icon-mob-${sectionId}`);
+    
+    if (sectionBody) {
+        if (sectionBody.style.display === 'none') {
+            sectionBody.style.display = '';
+            if (icon) icon.style.transform = 'rotate(0deg)';
+        } else {
+            sectionBody.style.display = 'none';
+            if (icon) icon.style.transform = 'rotate(-90deg)';
+        }
+    }
+};
+
 </script>
 </body>
 </html>
