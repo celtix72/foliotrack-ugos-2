@@ -383,7 +383,7 @@ async function callAIModel(engine, prompt, keys) {
                         'HTTP-Referer': 'https://github.com/celtix72/foliotrack', 
                         'X-Title': 'FolioTrack'
                     },
-                    timeout: 60000
+                    timeout: 180000
                 });
                 break; // success
             } catch (apiErr) {
@@ -428,7 +428,7 @@ async function callAIModel(engine, prompt, keys) {
                         'Authorization': `Bearer ${apiKey}`, 
                         'Content-Type': 'application/json'
                     },
-                    timeout: 60000
+                    timeout: 180000
                 });
                 break; // success
             } catch (apiErr) {
@@ -460,7 +460,7 @@ async function callAIModel(engine, prompt, keys) {
                     temperature: 0.1
                 }, {
                     headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-                    timeout: 60000
+                    timeout: 180000
                 });
                 break;
             } catch (apiErr) {
@@ -509,7 +509,7 @@ async function callAIModel(engine, prompt, keys) {
                     },
                     { 
                         headers: { 'Content-Type': 'application/json' },
-                        timeout: 60000
+                        timeout: 180000
                     }
                 );
                 break;
