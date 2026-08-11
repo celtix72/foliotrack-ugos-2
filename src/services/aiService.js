@@ -368,22 +368,34 @@ async function callAIModel(engine, prompt, keys) {
         if (!orModel) throw new Error(`Nessun modello configurato per ${baseEngine}. Selezionalo nei Settings dell'amministratore.`);
         
         let res;
-        try {
-            res = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
-                model: orModel,
-                messages: [{ role: 'user', content: prompt }],
-                temperature: 0.1
-            }, {
-                headers: { 
-                    'Authorization': `Bearer ${apiKey}`, 
-                    'Content-Type': 'application/json',
-                    'HTTP-Referer': 'https://github.com/celtix72/foliotrack', 
-                    'X-Title': 'FolioTrack'
+        let attempt = 0;
+        let maxAttempts = 3;
+        while (attempt < maxAttempts) {
+            try {
+                res = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
+                    model: orModel,
+                    messages: [{ role: 'user', content: prompt }],
+                    temperature: 0.1
+                }, {
+                    headers: { 
+                        'Authorization': `Bearer ${apiKey}`, 
+                        'Content-Type': 'application/json',
+                        'HTTP-Referer': 'https://github.com/celtix72/foliotrack', 
+                        'X-Title': 'FolioTrack'
+                    }
+                });
+                break; // success
+            } catch (apiErr) {
+                attempt++;
+                const errMsg = apiErr.response ? JSON.stringify(apiErr.response.data) : apiErr.message;
+                aiLogger.warn(`[AI API Error (OpenRouter)] Attempt ${attempt}/${maxAttempts} failed: ${errMsg}`);
+                if (attempt >= maxAttempts) {
+                    aiLogger.error('[AI API Error (OpenRouter)] Max attempts reached.');
+                    throw apiErr;
                 }
-            });
-        } catch (apiErr) {
-            aiLogger.error('[AI API Error (OpenRouter)]', apiErr.response ? apiErr.response.data : apiErr.message);
-            throw apiErr;
+                // Wait before retrying (exponential backoff: 2s, 4s...)
+                await new Promise(resolve => setTimeout(resolve, attempt * 2000));
+            }
         }
         const content = res.data.choices?.[0]?.message?.content || '{}';
         aiLogger.info(`[AI Response (${engine})] \n${content}`);
@@ -402,20 +414,32 @@ async function callAIModel(engine, prompt, keys) {
         if (!reqModel) throw new Error(`Nessun modello configurato per ${baseEngine}. Selezionalo nei Settings dell'amministratore.`);
         
         let res;
-        try {
-            res = await axios.post('https://router.requesty.ai/v1/chat/completions', {
-                model: reqModel,
-                messages: [{ role: 'user', content: prompt }],
-                temperature: 0.1
-            }, {
-                headers: { 
-                    'Authorization': `Bearer ${apiKey}`, 
-                    'Content-Type': 'application/json'
+        let attempt = 0;
+        let maxAttempts = 3;
+        while (attempt < maxAttempts) {
+            try {
+                res = await axios.post('https://router.requesty.ai/v1/chat/completions', {
+                    model: reqModel,
+                    messages: [{ role: 'user', content: prompt }],
+                    temperature: 0.1
+                }, {
+                    headers: { 
+                        'Authorization': `Bearer ${apiKey}`, 
+                        'Content-Type': 'application/json'
+                    }
+                });
+                break; // success
+            } catch (apiErr) {
+                attempt++;
+                const errMsg = apiErr.response ? JSON.stringify(apiErr.response.data) : apiErr.message;
+                aiLogger.warn(`[AI API Error (Requesty)] Attempt ${attempt}/${maxAttempts} failed: ${errMsg}`);
+                if (attempt >= maxAttempts) {
+                    aiLogger.error('[AI API Error (Requesty)] Max attempts reached.');
+                    throw apiErr;
                 }
-            });
-        } catch (apiErr) {
-            aiLogger.error('[AI API Error (Requesty)]', apiErr.response ? apiErr.response.data : apiErr.message);
-            throw apiErr;
+                // Wait before retrying (exponential backoff: 2s, 4s...)
+                await new Promise(resolve => setTimeout(resolve, attempt * 2000));
+            }
         }
         const content = res.data.choices?.[0]?.message?.content || '{}';
         aiLogger.info(`[AI Response (${engine})] \n${content}`);
