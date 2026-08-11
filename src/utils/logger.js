@@ -4,29 +4,33 @@ const path = require('path');
 // __dirname is now src/utils, so logs is ../../logs
 const LOGS_DIR = path.join(__dirname, '../../logs');
 const LOG_FILE = path.join(LOGS_DIR, 'app.log');
+const AI_LOG_FILE = path.join(LOGS_DIR, 'ai.log');
 const TELEGRAM_LOG_FILE = path.join(LOGS_DIR, 'telegram.log');
 
 // Daily-rotating log helper
-function getRotatedLogFile(date) {
+function getRotatedLogFile(date, prefix = 'app') {
     const d = date || new Date();
     const key = d.toISOString().split('T')[0]; // YYYY-MM-DD
-    return path.join(LOGS_DIR, `app-${key}.log`);
+    return path.join(LOGS_DIR, `${prefix}-${key}.log`);
 }
 
-function writeLog(level, msg) {
+function writeLog(level, msg, isAi = false) {
     const ts = new Date();
     const line = `${ts.toISOString()} [${level}] ${msg}\n`;
+    const targetFile = isAi ? AI_LOG_FILE : LOG_FILE;
+    const prefix = isAi ? 'ai' : 'app';
+    
     // Write to today's rotated file
     try {
         if (!fs.existsSync(LOGS_DIR)) fs.mkdirSync(LOGS_DIR, { recursive: true });
-        fs.appendFileSync(getRotatedLogFile(ts), line);
-        fs.appendFileSync(LOG_FILE, line);
+        fs.appendFileSync(getRotatedLogFile(ts, prefix), line);
+        fs.appendFileSync(targetFile, line);
         // Trim master log to last 50000 lines to avoid unbounded growth
         try {
-            const raw = fs.readFileSync(LOG_FILE, 'utf8');
+            const raw = fs.readFileSync(targetFile, 'utf8');
             const lines = raw.split('\n');
             if (lines.length > 50000) {
-                fs.writeFileSync(LOG_FILE, lines.slice(-40000).join('\n') + '\n');
+                fs.writeFileSync(targetFile, lines.slice(-40000).join('\n') + '\n');
             }
         } catch(_) {}
     } catch(e) { /* ignore if fs not available */ }
@@ -36,7 +40,7 @@ const logger = {
     info: (msg) => {
         const line = `${new Date().toISOString()} [INFO] ${msg}\n`;
         process.stdout.write(line);
-        writeLog('INFO', msg);
+        writeLog('INFO', msg, false);
     },
     error: (msg, err) => {
         let errStr = err;
@@ -49,12 +53,38 @@ const logger = {
         const errMsg = errStr ? ` - ${errStr}` : '';
         const line = `${new Date().toISOString()} [ERROR] ${msg}${errMsg}\n`;
         process.stderr.write(line);
-        writeLog('ERROR', `${msg}${errMsg}`);
+        writeLog('ERROR', `${msg}${errMsg}`, false);
     },
     warn: (msg) => {
         const line = `${new Date().toISOString()} [WARN] ${msg}\n`;
         process.stdout.write(line);
-        writeLog('WARN', msg);
+        writeLog('WARN', msg, false);
+    }
+};
+
+const aiLogger = {
+    info: (msg) => {
+        const line = `${new Date().toISOString()} [AI-INFO] ${msg}\n`;
+        process.stdout.write(line);
+        writeLog('INFO', msg, true);
+    },
+    error: (msg, err) => {
+        let errStr = err;
+        if (err) {
+            if (err.message) errStr = err.message;
+            else if (typeof err === 'object') {
+                try { errStr = JSON.stringify(err); } catch(e) { errStr = String(err); }
+            }
+        }
+        const errMsg = errStr ? ` - ${errStr}` : '';
+        const line = `${new Date().toISOString()} [AI-ERROR] ${msg}${errMsg}\n`;
+        process.stderr.write(line);
+        writeLog('ERROR', `${msg}${errMsg}`, true);
+    },
+    warn: (msg) => {
+        const line = `${new Date().toISOString()} [AI-WARN] ${msg}\n`;
+        process.stdout.write(line);
+        writeLog('WARN', msg, true);
     }
 };
 
@@ -115,9 +145,11 @@ function getLastLogLines(filePath, lineCount = 100) {
 
 module.exports = {
     logger,
+    aiLogger,
     telegramLogger,
     getLastLogLines,
     LOG_FILE,
+    AI_LOG_FILE,
     LOGS_DIR,
     TELEGRAM_LOG_FILE,
     getRotatedLogFile

@@ -128,16 +128,21 @@ module.exports = function (dependencies) {
         try {
             const maxLines = parseInt(req.query.lines) || 200;
             const dateParam = req.query.date; // YYYY-MM-DD
+            const logType = req.query.type || 'app'; // 'app' or 'ai'
+
+            const { LOG_FILE, AI_LOG_FILE, getRotatedLogFile } = require('../utils/logger');
+            const targetMasterFile = logType === 'ai' ? AI_LOG_FILE : LOG_FILE;
+            const prefix = logType === 'ai' ? 'ai' : 'app';
 
             let content = '';
             if (dateParam) {
-                const rotatedFile = getRotatedLogFile(new Date(dateParam));
+                const rotatedFile = getRotatedLogFile(new Date(dateParam), prefix);
                 if (fs.existsSync(rotatedFile)) {
                     content = fs.readFileSync(rotatedFile, 'utf8');
                 }
             } else {
-                if (fs.existsSync(LOG_FILE)) {
-                    content = fs.readFileSync(LOG_FILE, 'utf8');
+                if (fs.existsSync(targetMasterFile)) {
+                    content = fs.readFileSync(targetMasterFile, 'utf8');
                 }
             }
             
@@ -154,11 +159,15 @@ module.exports = function (dependencies) {
     // GET /api/admin/logs/dates
     router.get('/logs/dates', requireAuth, requireAdmin, (req, res) => {
         try {
+            const { LOGS_DIR } = require('../utils/logger');
+            const logType = req.query.type || 'app'; // 'app' or 'ai'
+            const prefix = logType === 'ai' ? 'ai.log.' : 'app.log.';
+            
             if (!fs.existsSync(LOGS_DIR)) return res.json([]);
             const files = fs.readdirSync(LOGS_DIR);
             const dates = files
-                .filter(f => f.startsWith('app.log.'))
-                .map(f => f.replace('app.log.', ''))
+                .filter(f => f.startsWith(prefix))
+                .map(f => f.replace(prefix, ''))
                 .sort((a, b) => b.localeCompare(a));
             
             // Add today

@@ -1,5 +1,6 @@
 const express = require('express');
 const aiService = require('../services/aiService');
+const { aiLogger } = require('../utils/logger');
 
 module.exports = function (dependencies) {
     const router = express.Router();
@@ -1384,7 +1385,7 @@ module.exports = function (dependencies) {
     // POST /api/analytics/ai-report
     router.post('/analytics/ai-report', requireAuth, async (req, res) => {
         try {
-            logger.info(`[AI Report] Requested by user: ${req.user ? req.user.id : 'unknown'}`);
+            aiLogger.info(`[AI Report] Requested by user: ${req.user ? req.user.id : 'unknown'}`);
             const { contextData } = req.body;
             
             // Read settings for the logged-in user (merged with admin settings)
@@ -1393,7 +1394,7 @@ module.exports = function (dependencies) {
             const settings = { ...adminSettings, ...userSettings };
             
             const engine = settings.aiReportEngine || settings.aiEngine || 'Gemini_Free';
-            logger.info(`[AI Report] Selected engine: ${engine}`);
+            aiLogger.info(`[AI Report] Selected engine: ${engine}`);
 
             const promptTemplate = settings.aiReportPrompt || `Sei un analista finanziario esperto. Analizza il seguente portafoglio.
 Restituisci la tua risposta ESCLUSIVAMENTE in formato JSON con questa esatta struttura:
@@ -1434,7 +1435,7 @@ Nel report markdown usa TITOLI (## Titolo), TABELLE in formato Markdown (| Col 1
             try {
                 parsedContext = typeof contextData === 'string' ? JSON.parse(contextData) : (contextData || {});
             } catch (pErr) {
-                logger.warn('[AI Report] Context parse warning:', pErr.message);
+                aiLogger.warn('[AI Report] Context parse warning:', pErr.message);
                 parsedContext = contextData || {};
             }
 
@@ -1531,7 +1532,7 @@ Nel report markdown usa TITOLI (## Titolo), TABELLE in formato Markdown (| Col 1
             
             const fullPrompt = `${promptTemplate}\n\n${openAssetsText}\n\nDATI COMPLETI PORTAFOGLIO (JSON):\n${JSON.stringify(enhancedContext)}`;
             
-            logger.info(`[AI Report] Invoking AI model for user ${req.user.id}...`);
+            aiLogger.info(`[AI Report] Invoking AI model for user ${req.user.id}...`);
             const aiResponse = await aiService.callAIModel(engine, fullPrompt, settings);
             
             let reportData;
@@ -1540,14 +1541,14 @@ Nel report markdown usa TITOLI (## Titolo), TABELLE in formato Markdown (| Col 1
                 let cleanText = aiResponse.text.replace(/```json/gi, '').replace(/```/g, '').trim();
                 reportData = JSON.parse(cleanText);
             } catch(e) {
-                logger.warn('[AI Report] JSON parse failed, falling back to dummy scores');
+                aiLogger.warn('[AI Report] JSON parse failed, falling back to dummy scores');
                 reportData = {
                     risk_score: 3, diversification_score: 3, allocation_score: 3, quality_score: 3,
                     markdown_content: aiResponse.text
                 };
             }
             
-            logger.info(`[AI Report] Success! Generated content.`);
+            aiLogger.info(`[AI Report] Success! Generated content.`);
 
             const now = new Date().toISOString();
             
@@ -1569,7 +1570,7 @@ Nel report markdown usa TITOLI (## Titolo), TABELLE in formato Markdown (| Col 1
             
             res.json({ id: info.lastInsertRowid, date: now, data: reportData, portfolioPE });
         } catch (err) {
-            logger.error('[AI Report Error]', err.stack || err.message || err);
+            aiLogger.error('[AI Report Error]', err.stack || err.message || err);
             console.error('[AI Report Error]', err);
             res.status(500).json({ error: err.message || 'Errore nella generazione del report IA', stack: err.stack });
         }

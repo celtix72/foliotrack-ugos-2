@@ -170,6 +170,13 @@
                         <!-- Filters -->
                         <div class="flex flex-wrap items-center gap-4 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
                             <div class="flex items-center gap-2">
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tipo</label>
+                                <select id="log-type-select" onchange="onLogTypeChange()" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-bold focus:ring-1 focus:ring-primary outline-none min-w-[120px]">
+                                    <option value="app">Application (app.log)</option>
+                                    <option value="ai">AI & Report (ai.log)</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center gap-2">
                                 <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Giorno</label>
                                 <select id="log-date-select" onchange="loadLogs()" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-bold focus:ring-1 focus:ring-primary outline-none min-w-[120px]">
                                     <option value="">Oggi</option>
@@ -791,7 +798,8 @@
 
         async function loadLogDates() {
             try {
-                const dates = await fetchAdmin('/api/admin/logs/dates');
+                const type = document.getElementById('log-type-select')?.value || 'app';
+                const dates = await fetchAdmin(`/api/admin/logs/dates?type=${type}`);
                 const sel = document.getElementById('log-date-select');
                 if (!sel) return;
                 
@@ -806,6 +814,10 @@
                     sel.appendChild(opt);
                 });
             } catch (e) { console.warn('Failed to load log dates', e); }
+        }
+        
+        function onLogTypeChange() {
+            loadLogDates().then(() => loadLogs());
         }
 
         window.toggleAdminSection = function(id) {
@@ -896,6 +908,7 @@
 
         async function loadLogs() {
             try {
+                const type = document.getElementById('log-type-select')?.value || 'app';
                 const date = document.getElementById('log-date-select')?.value || '';
                 const lines = document.getElementById('log-lines-select')?.value || 200;
                 const level = document.getElementById('log-level-filter')?.value || '';
@@ -903,7 +916,7 @@
 
                 if (statusLabel) statusLabel.innerText = 'CARICAMENTO...';
 
-                let url = `/api/admin/logs?lines=${lines}`;
+                let url = `/api/admin/logs?type=${type}&lines=${lines}`;
                 if (date) url += `&date=${date}`;
 
                 const data = await fetchAdmin(url);
@@ -923,9 +936,9 @@
                 if (area) {
                     // Syntax highlighting for logs
                     const formatted = logContent.split('\n').map(line => {
-                        if (line.includes('[ERROR]')) return `<span class="text-rose-500 font-bold">${line}</span>`;
-                        if (line.includes('[WARN]')) return `<span class="text-amber-500">${line}</span>`;
-                        if (line.includes('[INFO]')) return `<span class="text-emerald-400">${line}</span>`;
+                        if (line.includes('[ERROR]') || line.includes('[AI-ERROR]')) return `<span class="text-rose-500 font-bold">${line}</span>`;
+                        if (line.includes('[WARN]') || line.includes('[AI-WARN]')) return `<span class="text-amber-500">${line}</span>`;
+                        if (line.includes('[INFO]') || line.includes('[AI-INFO]')) return `<span class="text-emerald-400">${line}</span>`;
                         return line;
                     }).join('\n');
 

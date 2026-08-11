@@ -1,5 +1,5 @@
 const axios = require('axios');
-const { logger } = require('../utils/logger');
+const { aiLogger } = require('../utils/logger');
 
 let _cachedGeminiModel = null;
 let _geminiModelCachedAt = 0;
@@ -105,10 +105,10 @@ async function fetchOpenRouterModels() {
             });
 
             _openRouterModelsCachedAt = Date.now();
-            logger.info(`[OpenRouter] Cached ${_cachedOpenRouterModels.length} top models for financial analysis (including NVIDIA free models).`);
+            aiLogger.info(`[OpenRouter] Cached ${_cachedOpenRouterModels.length} top models for financial analysis (including NVIDIA free models).`);
         }
     } catch (err) {
-        logger.error('[OpenRouter] Failed to fetch models for cache', err.message);
+        aiLogger.error('[OpenRouter] Failed to fetch models for cache', err.message);
     }
 }
 
@@ -118,7 +118,7 @@ fetchOpenRouterModels();
 function getOpenRouterModels() {
     const now = Date.now();
     if (_cachedOpenRouterModels.length === 0 || (now - _openRouterModelsCachedAt) > 60 * 60 * 1000) {
-        fetchOpenRouterModels().catch(err => logger.error('[OpenRouter] On-demand fetch failed', err.message));
+        fetchOpenRouterModels().catch(err => aiLogger.error('[OpenRouter] On-demand fetch failed', err.message));
     }
     return _cachedOpenRouterModels;
 }
@@ -180,10 +180,10 @@ async function fetchRequestyModels() {
             });
 
             _requestyModelsCachedAt = Date.now();
-            logger.info(`[Requesty] Cached ${_cachedRequestyModels.length} top models for financial analysis.`);
+            aiLogger.info(`[Requesty] Cached ${_cachedRequestyModels.length} top models for financial analysis.`);
         }
     } catch (err) {
-        logger.error('[Requesty] Failed to fetch models for cache', err.message);
+        aiLogger.error('[Requesty] Failed to fetch models for cache', err.message);
     }
 }
 
@@ -192,7 +192,7 @@ fetchRequestyModels();
 function getRequestyModels() {
     const now = Date.now();
     if (_cachedRequestyModels.length === 0 || (now - _requestyModelsCachedAt) > 60 * 60 * 1000) {
-        fetchRequestyModels().catch(err => logger.error('[Requesty] On-demand fetch failed', err.message));
+        fetchRequestyModels().catch(err => aiLogger.error('[Requesty] On-demand fetch failed', err.message));
     }
     return _cachedRequestyModels;
 }
@@ -220,7 +220,7 @@ function getGeminiModelPreference() {
             if (Array.isArray(parsed) && parsed.length > 0) return parsed;
         }
     } catch (e) {
-        logger.error('[Gemini] Failed to parse geminiModelPreferences', e);
+        aiLogger.error('[Gemini] Failed to parse geminiModelPreferences', e);
     }
     return DEFAULT_GEMINI_MODEL_PREFERENCE;
 }
@@ -292,7 +292,7 @@ async function checkNewGeminiModels() {
         );
 
         if (newModels.length > 0) {
-            logger.info(`[Gemini] Found ${newModels.length} new models not in preferences:`, newModels);
+            aiLogger.info(`[Gemini] Found ${newModels.length} new models not in preferences:`, newModels);
             
             const title = "Nuovi modelli Gemini disponibili";
             const message = `Trovati nuovi modelli Gemini gratuiti:\n${newModels.join(', ')}\nVai nelle Impostazioni AI per aggiungerli alla selezione.`;
@@ -312,7 +312,7 @@ async function checkNewGeminiModels() {
             }
         }
     } catch (err) {
-        logger.error('[Gemini] Failed to check for new models:', err.message);
+        aiLogger.error('[Gemini] Failed to check for new models:', err.message);
     }
 }
 
@@ -352,8 +352,8 @@ async function callAIModel(engine, prompt, keys) {
     const baseEngine = parts[0] || 'Gemini';
     const tier = parts[1] || 'Pay';
 
-    logger.info(`[AI Iteration] Starting analysis with engine: ${engine}`);
-    logger.info(`[AI Prompt] \n${prompt}`);
+    aiLogger.info(`[AI Iteration] Starting analysis with engine: ${engine}`);
+    aiLogger.info(`[AI Prompt] \n${prompt}`);
     if (baseEngine === 'OR1' || baseEngine === 'OR2' || baseEngine === 'OR3' || baseEngine === 'OR4' || baseEngine === 'OR5') {
         const apiKey = keys.openrouterApiKey || keys.openrouterApiKeyPay || process.env.OPENROUTER_API_KEY;
         if (!apiKey) throw new Error(`OpenRouter API Key mancante.`);
@@ -382,11 +382,11 @@ async function callAIModel(engine, prompt, keys) {
                 }
             });
         } catch (apiErr) {
-            logger.error('[AI API Error (OpenRouter)]', apiErr.response ? apiErr.response.data : apiErr.message);
+            aiLogger.error('[AI API Error (OpenRouter)]', apiErr.response ? apiErr.response.data : apiErr.message);
             throw apiErr;
         }
         const content = res.data.choices?.[0]?.message?.content || '{}';
-        logger.info(`[AI Response (${engine})] \n${content}`);
+        aiLogger.info(`[AI Response (${engine})] \n${content}`);
         return { text: content, usage: res.data.usage || {}, modelUsed: orModel };
     } else if (baseEngine === 'REQ1' || baseEngine === 'REQ2' || baseEngine === 'REQ3' || baseEngine === 'REQ4' || baseEngine === 'REQ5') {
         const apiKey = keys.requestyApiKey || keys.requestyApiKeyPay || keys.requestyApiKeyFree || process.env.REQUESTY_API_KEY;
@@ -414,11 +414,11 @@ async function callAIModel(engine, prompt, keys) {
                 }
             });
         } catch (apiErr) {
-            logger.error('[AI API Error (Requesty)]', apiErr.response ? apiErr.response.data : apiErr.message);
+            aiLogger.error('[AI API Error (Requesty)]', apiErr.response ? apiErr.response.data : apiErr.message);
             throw apiErr;
         }
         const content = res.data.choices?.[0]?.message?.content || '{}';
-        logger.info(`[AI Response (${engine})] \n${content}`);
+        aiLogger.info(`[AI Response (${engine})] \n${content}`);
         return { text: content, usage: res.data.usage || {}, modelUsed: reqModel };
     } else if (baseEngine === 'Aimlapi') {
         const apiKey = keys.aimlapiApiKeyFree || keys.aimlapiApiKeyPay || keys.aimlapiApiKey || process.env.AIMLAPI_API_KEY;
@@ -433,26 +433,26 @@ async function callAIModel(engine, prompt, keys) {
                 headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
             });
         } catch (apiErr) {
-            logger.error('[AI API Error (Aimlapi)]', apiErr.response ? apiErr.response.data : apiErr.message);
+            aiLogger.error('[AI API Error (Aimlapi)]', apiErr.response ? apiErr.response.data : apiErr.message);
             throw apiErr;
         }
         const content = res.data.choices?.[0]?.message?.content || '{}';
-        logger.info(`[AI Response (${engine})] \n${content}`);
+        aiLogger.info(`[AI Response (${engine})] \n${content}`);
         return { text: content, usage: res.data.usage || {}, modelUsed: 'gpt-4o' };
     } else {
         const apiKey = keys.geminiApiKeyFree || keys.geminiApiKeyPay || keys.geminiApiKey || process.env.GEMINI_API_KEY;
         if (!apiKey) {
             // Check fallback keys if Gemini is missing
             if (keys.aimlapiApiKeyFree || keys.aimlapiApiKeyPay || keys.aimlapiApiKey) {
-                logger.info('[AI Fallback] Gemini key missing, falling back to Aimlapi');
+                aiLogger.info('[AI Fallback] Gemini key missing, falling back to Aimlapi');
                 return callAIModel('Aimlapi_Free', prompt, keys);
             }
             if (keys.openrouterApiKey || keys.openrouterApiKeyPay) {
-                logger.info('[AI Fallback] Gemini key missing, falling back to OpenRouter (OR1)');
+                aiLogger.info('[AI Fallback] Gemini key missing, falling back to OpenRouter (OR1)');
                 return callAIModel('OR1', prompt, keys);
             }
             if (keys.requestyApiKey || keys.requestyApiKeyPay) {
-                logger.info('[AI Fallback] Gemini key missing, falling back to Requesty (REQ1)');
+                aiLogger.info('[AI Fallback] Gemini key missing, falling back to Requesty (REQ1)');
                 return callAIModel('REQ1', prompt, keys);
             }
             throw new Error(`Gemini API Key mancante e nessuna altra chiave IA trovata nelle impostazioni.`);
@@ -469,11 +469,11 @@ async function callAIModel(engine, prompt, keys) {
                 { headers: { 'Content-Type': 'application/json' } }
             );
         } catch (apiErr) {
-            logger.error('[AI API Error (Gemini)]', apiErr.response ? apiErr.response.data : apiErr.message);
+            aiLogger.error('[AI API Error (Gemini)]', apiErr.response ? apiErr.response.data : apiErr.message);
             throw apiErr;
         }
         const content = res.data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-        logger.info(`[AI Response (${engine})] \n${content}`);
+        aiLogger.info(`[AI Response (${engine})] \n${content}`);
         const usage = res.data.usageMetadata || {};
         return { text: content, usage: { totalTokenCount: usage.totalTokenCount || 0 }, modelUsed: geminiModel };
     }
