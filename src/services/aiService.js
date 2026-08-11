@@ -382,7 +382,8 @@ async function callAIModel(engine, prompt, keys) {
                         'Content-Type': 'application/json',
                         'HTTP-Referer': 'https://github.com/celtix72/foliotrack', 
                         'X-Title': 'FolioTrack'
-                    }
+                    },
+                    timeout: 60000
                 });
                 break; // success
             } catch (apiErr) {
@@ -426,7 +427,8 @@ async function callAIModel(engine, prompt, keys) {
                     headers: { 
                         'Authorization': `Bearer ${apiKey}`, 
                         'Content-Type': 'application/json'
-                    }
+                    },
+                    timeout: 60000
                 });
                 break; // success
             } catch (apiErr) {
@@ -448,17 +450,29 @@ async function callAIModel(engine, prompt, keys) {
         const apiKey = keys.aimlapiApiKeyFree || keys.aimlapiApiKeyPay || keys.aimlapiApiKey || process.env.AIMLAPI_API_KEY;
         if (!apiKey) throw new Error(`AIML API Key mancante nelle impostazioni.`);
         let res;
-        try {
-            res = await axios.post('https://api.aimlapi.com/v1/chat/completions', {
-                model: 'gpt-4o',
-                messages: [{ role: 'user', content: prompt }],
-                temperature: 0.1
-            }, {
-                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
-            });
-        } catch (apiErr) {
-            aiLogger.error('[AI API Error (Aimlapi)]', apiErr.response ? apiErr.response.data : apiErr.message);
-            throw apiErr;
+        let attempt = 0;
+        let maxAttempts = 3;
+        while (attempt < maxAttempts) {
+            try {
+                res = await axios.post('https://api.aimlapi.com/v1/chat/completions', {
+                    model: 'gpt-4o',
+                    messages: [{ role: 'user', content: prompt }],
+                    temperature: 0.1
+                }, {
+                    headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+                    timeout: 60000
+                });
+                break;
+            } catch (apiErr) {
+                attempt++;
+                const errMsg = apiErr.response ? JSON.stringify(apiErr.response.data) : apiErr.message;
+                aiLogger.warn(`[AI API Error (Aimlapi)] Attempt ${attempt}/${maxAttempts} failed: ${errMsg}`);
+                if (attempt >= maxAttempts) {
+                    aiLogger.error('[AI API Error (Aimlapi)] Max attempts reached.');
+                    throw apiErr;
+                }
+                await new Promise(resolve => setTimeout(resolve, attempt * 2000));
+            }
         }
         const content = res.data.choices?.[0]?.message?.content || '{}';
         aiLogger.info(`[AI Response (${engine})] \n${content}`);
@@ -483,18 +497,32 @@ async function callAIModel(engine, prompt, keys) {
         }
         const geminiModel = await getBestGeminiModel(apiKey);
         let res;
-        try {
-            res = await axios.post(
-                `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`,
-                { 
-                    contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: { temperature: 0.1 }
-                },
-                { headers: { 'Content-Type': 'application/json' } }
-            );
-        } catch (apiErr) {
-            aiLogger.error('[AI API Error (Gemini)]', apiErr.response ? apiErr.response.data : apiErr.message);
-            throw apiErr;
+        let attempt = 0;
+        let maxAttempts = 3;
+        while (attempt < maxAttempts) {
+            try {
+                res = await axios.post(
+                    `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`,
+                    { 
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { temperature: 0.1 }
+                    },
+                    { 
+                        headers: { 'Content-Type': 'application/json' },
+                        timeout: 60000
+                    }
+                );
+                break;
+            } catch (apiErr) {
+                attempt++;
+                const errMsg = apiErr.response ? JSON.stringify(apiErr.response.data) : apiErr.message;
+                aiLogger.warn(`[AI API Error (Gemini)] Attempt ${attempt}/${maxAttempts} failed: ${errMsg}`);
+                if (attempt >= maxAttempts) {
+                    aiLogger.error('[AI API Error (Gemini)] Max attempts reached.');
+                    throw apiErr;
+                }
+                await new Promise(resolve => setTimeout(resolve, attempt * 2000));
+            }
         }
         const content = res.data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
         aiLogger.info(`[AI Response (${engine})] \n${content}`);
