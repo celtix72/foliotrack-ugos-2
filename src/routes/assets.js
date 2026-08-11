@@ -123,7 +123,7 @@ async function getAssetFundamentals(ticker) {
     // ── 1. defaultKeyStatistics: PEG forward + FCF TTM ──────────────────────
     try {
         const ks = await yahooFinance.quoteSummary(ticker, {
-            modules: ['defaultKeyStatistics', 'summaryDetail', 'calendarEvents', 'assetProfile', 'fundProfile']
+            modules: ['defaultKeyStatistics', 'summaryDetail', 'calendarEvents', 'assetProfile', 'fundProfile', 'quoteType']
         });
         const s = ks.defaultKeyStatistics || {};
         result.pegRatio        = s.pegRatio       ?? null;
@@ -134,6 +134,7 @@ async function getAssetFundamentals(ticker) {
         result.summaryDetail = sd;
         result.calendarEvents = ce;
         result.profile = ks.assetProfile || ks.fundProfile || {};
+        result.quoteType = ks.quoteType || {};
         result.keyStats = {
             forwardPE:      s.forwardPE       ?? null,
             trailingEps:    s.trailingEps     ?? null,
@@ -153,6 +154,24 @@ async function getAssetFundamentals(ticker) {
         logger.warn(`[Fundamentals] defaultKeyStatistics error for ${ticker}: ${e.message}`);
         result.errors.push({ module: 'defaultKeyStatistics', error: e.message });
     }
+
+    if (result.quoteType?.quoteType === 'ETF' || result.quoteType?.quoteType === 'MUTUALFUND') {
+        logger.info(`[Fundamentals] Skipping further fundamentals fetch for ${ticker} because it is an ETF/Fund.`);
+        
+        // Salva in cache e in DB ed esci subito
+        fundamentalsCache.set(ticker, { ts: Date.now(), data: result });
+        try {
+            database.db.prepare(`
+                INSERT INTO asset_fundamentals (ticker, data, updatedAt)
+                VALUES (?, ?, datetime('now'))
+                ON CONFLICT(ticker) DO UPDATE SET data = excluded.data, updatedAt = datetime('now')
+            `).run(ticker, JSON.stringify(result));
+        } catch (dbErr) {
+            logger.error(`[Fundamentals] Failed to save early database entry for ${ticker}: ${dbErr.message}`);
+        }
+        return result;
+    }
+
 
     // ── 2. financialData: margini, crescita, target price ───────────────────
     try {

@@ -301,7 +301,7 @@ async function checkNewGeminiModels() {
             const existing = database.db.prepare(`
                 SELECT id FROM notifications 
                 WHERE user_id = 1 AND title = ? AND message = ? 
-                ORDER BY created_at DESC LIMIT 1
+                ORDER BY date DESC LIMIT 1
             `).get(title, message);
 
             if (!existing) {
