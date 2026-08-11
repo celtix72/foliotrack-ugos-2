@@ -73,6 +73,7 @@ async function generateNewAiReport(btn) {
             annualGains: window.reportsData?.annualGains || {},
             dividends: window.reportsData?.dividends || []
         });
+        if (window.refreshAiStatus) window.refreshAiStatus();
         
         const res = await fetch('/api/analytics/ai-report', {
             method: 'POST',

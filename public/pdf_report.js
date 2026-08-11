@@ -54,6 +54,7 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
                         annualGains: reportsData.annualGains || {},
                         dividends: reportsData.dividends || []
                     });
+                    if (window.refreshAiStatus) window.refreshAiStatus();
                     const aiRes = await fetch('/api/analytics/ai-report', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },

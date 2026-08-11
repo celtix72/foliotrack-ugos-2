@@ -2,6 +2,9 @@ const express = require('express');
 const aiService = require('../services/aiService');
 const { aiLogger } = require('../utils/logger');
 
+// Stato in memoria delle analisi IA in corso per ogni utente
+const aiJobStatus = {};
+
 module.exports = function (dependencies) {
     const router = express.Router();
     
@@ -1384,8 +1387,13 @@ module.exports = function (dependencies) {
 
     // POST /api/analytics/ai-report
     router.post('/analytics/ai-report', requireAuth, async (req, res) => {
+        const userId = req.user.id;
         try {
-            aiLogger.info(`[AI Report] Requested by user: ${req.user ? req.user.id : 'unknown'}`);
+            aiLogger.info(`[AI Report] Requested by user: ${userId || 'unknown'}`);
+            
+            // Imposta lo stato su in corso
+            aiJobStatus[userId] = { status: 'running', ts: Date.now() };
+            
             const { contextData } = req.body;
             
             // Read settings for the logged-in user (merged with admin settings)
@@ -1568,12 +1576,31 @@ Nel report markdown usa TITOLI (## Titolo), TABELLE in formato Markdown (| Col 1
                 JSON.stringify(parsedContext)
             );
             
+            aiJobStatus[userId] = { status: 'success', reportId: info.lastInsertRowid, ts: Date.now() };
+            
             res.json({ id: info.lastInsertRowid, date: now, data: reportData, portfolioPE });
         } catch (err) {
             aiLogger.error('[AI Report Error]', err.stack || err.message || err);
             console.error('[AI Report Error]', err);
+            
+            aiJobStatus[userId] = { status: 'error', error: err.message, ts: Date.now() };
+            
             res.status(500).json({ error: err.message || 'Errore nella generazione del report IA', stack: err.stack });
         }
+    });
+
+    // GET /api/analytics/ai-status
+    router.get('/analytics/ai-status', requireAuth, (req, res) => {
+        const status = aiJobStatus[req.user.id] || { status: 'idle' };
+        res.json(status);
+    });
+
+    // DELETE /api/analytics/ai-status
+    router.delete('/analytics/ai-status', requireAuth, (req, res) => {
+        if (aiJobStatus[req.user.id]) {
+            delete aiJobStatus[req.user.id];
+        }
+        res.json({ success: true });
     });
 
     // GET /api/analytics/ai-reports

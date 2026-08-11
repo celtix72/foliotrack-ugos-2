@@ -188,13 +188,95 @@
     // ─── Inject gear button ─────────────────────────────────────────────────────
     // Removed because the button is now injected directly in render()
 
+    // ─── AI Status Indicator ────────────────────────────────────────────────────
+    let aiStatusTimeout = null;
+    
+    function renderAiStatus(status, data) {
+        const container = document.getElementById('header-ai-status');
+        if (!container) return;
+        
+        container.classList.remove('hidden');
+        container.innerHTML = '';
+        
+        // Remove old classes
+        container.className = 'flex items-center gap-1.5 shrink-0 cursor-pointer transition-all hover:opacity-80';
+        
+        if (status === 'running') {
+            container.innerHTML = `
+                <span class="material-symbols-outlined text-primary text-sm animate-spin">sync</span>
+                <span class="text-[9px] font-black uppercase tracking-widest text-primary hidden sm:inline">IA in corso...</span>
+            `;
+            container.onclick = null;
+        } else if (status === 'success') {
+            container.innerHTML = `
+                <span class="material-symbols-outlined text-emerald-500 text-sm">check_circle</span>
+                <span class="text-[9px] font-black uppercase tracking-widest text-emerald-500 hidden sm:inline">IA Pronta</span>
+            `;
+            container.onclick = async () => {
+                await fetch('/api/analytics/ai-status', { method: 'DELETE' });
+                window.location.href = '/reports';
+            };
+        } else if (status === 'error') {
+            container.innerHTML = `
+                <span class="material-symbols-outlined text-rose-500 text-sm">error</span>
+                <span class="text-[9px] font-black uppercase tracking-widest text-rose-500 hidden sm:inline">IA Fallita</span>
+            `;
+            container.onclick = async () => {
+                await fetch('/api/analytics/ai-status', { method: 'DELETE' });
+                container.classList.add('hidden');
+            };
+        } else {
+            container.classList.add('hidden');
+        }
+    }
+    
+    async function fetchAiStatus() {
+        try {
+            const res = await fetch('/api/analytics/ai-status');
+            if (res.ok) {
+                const data = await res.json();
+                renderAiStatus(data.status, data);
+                
+                // Poll more frequently if running
+                const delay = data.status === 'running' ? 5000 : 30000;
+                clearTimeout(aiStatusTimeout);
+                aiStatusTimeout = setTimeout(fetchAiStatus, delay);
+            }
+        } catch (e) {
+            clearTimeout(aiStatusTimeout);
+            aiStatusTimeout = setTimeout(fetchAiStatus, 30000);
+        }
+    }
+    
+    function initAiStatusIndicator() {
+        const liveIndicator = document.getElementById('header-live-indicator');
+        if (!liveIndicator) return;
+        
+        const aiContainer = document.createElement('div');
+        aiContainer.id = 'header-ai-status';
+        aiContainer.className = 'hidden';
+        
+        liveIndicator.parentNode.insertBefore(aiContainer, liveIndicator.nextSibling);
+        
+        // Add a separator dot if needed
+        const dot = document.createElement('div');
+        dot.className = 'h-1 w-1 rounded-full bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block';
+        dot.id = 'header-ai-separator';
+        liveIndicator.parentNode.insertBefore(dot, aiContainer);
+        
+        fetchAiStatus();
+    }
+    
     // ─── Public API ─────────────────────────────────────────────────────────────
     window.openIndicesConfigModal = buildModal;
+    window.refreshAiStatus = fetchAiStatus;
 
     // ─── Init ───────────────────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
         // Render loading state is handled by theme.js or first fetch
         fetchIndices();
         setInterval(fetchIndices, REFRESH_MS);
+        
+        setTimeout(initAiStatusIndicator, 500);
     });
 })();
