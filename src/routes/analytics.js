@@ -1433,9 +1433,17 @@ Nel report markdown usa TITOLI (## Titolo), TABELLE in formato Markdown (| Col 1
                     pmcMap[t.assetTicker].shares += (t.quantity || 0);
                     pmcMap[t.assetTicker].cost += (t.quantity || 0) * (t.price || 0);
                 } else if (t.type === 'SELL') {
+                    const oldShares = pmcMap[t.assetTicker].shares;
+                    const oldCost = pmcMap[t.assetTicker].cost;
+                    const avgPrice = oldShares > 0 ? (oldCost / oldShares) : 0;
+                    
                     pmcMap[t.assetTicker].shares -= (t.quantity || 0);
-                    const avg = pmcMap[t.assetTicker].shares > 0 ? (pmcMap[t.assetTicker].cost / (pmcMap[t.assetTicker].shares + (t.quantity || 0))) : 0;
-                    pmcMap[t.assetTicker].cost -= (t.quantity || 0) * avg;
+                    if (pmcMap[t.assetTicker].shares <= 0.000001) {
+                        pmcMap[t.assetTicker].shares = 0;
+                        pmcMap[t.assetTicker].cost = 0;
+                    } else {
+                        pmcMap[t.assetTicker].cost -= (t.quantity || 0) * avgPrice;
+                    }
                 }
             }
             
