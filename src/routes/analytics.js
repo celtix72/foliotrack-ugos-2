@@ -1438,6 +1438,55 @@ Nel report markdown usa TITOLI (## Titolo), TABELLE in formato Markdown (| Col 1
                 parsedContext = contextData || {};
             }
 
+            // Get open positions details for formatting
+            const openAssetsList = database.db.prepare(`
+                SELECT 
+                    COALESCE(NULLIF(NULLIF(t.assetTicker, 'null'), ''), 'Sconosciuto') as ticker,
+                    SUM(CASE WHEN t.type = 'BUY' THEN t.quantity WHEN t.type = 'SELL' THEN -t.quantity ELSE 0 END) as shares,
+                    a.name as name,
+                    a.type as assetType,
+                    a.currency as currency,
+                    a.currentPrice as currentPrice
+                FROM transactions t
+                JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
+                LEFT JOIN assets a ON t.assetTicker = a.ticker
+                WHERE pu.user_id = ?
+                GROUP BY ticker
+                HAVING shares > 0.0001
+            `).all(req.user.id);
+
+            const assetGainMap = {};
+            if (parsedContext.assetGains && Array.isArray(parsedContext.assetGains)) {
+                for (const ag of parsedContext.assetGains) {
+                    if (ag.ticker) assetGainMap[ag.ticker] = ag;
+                }
+            }
+
+            const formattedAssetLines = openAssetsList.map(pos => {
+                const ticker = pos.ticker;
+                const pmcVal = (pmcMap[ticker] && pmcMap[ticker].shares > 0) ? (pmcMap[ticker].cost / pmcMap[ticker].shares) : 0;
+                
+                const ag = assetGainMap[ticker] || {};
+                const nameStr = pos.name || ag.name || ticker;
+                const typeStr = pos.assetType || ag.assetType || 'Generico';
+                const currencyStr = pos.currency || ag.currency || 'EUR';
+                const currSymbol = currencyStr === 'USD' ? '$' : '€';
+                
+                const currentPriceVal = (pos.currentPrice > 0 ? pos.currentPrice : (ag.currentPrice > 0 ? ag.currentPrice : pmcVal)) || 0;
+                
+                const pmcStr = pmcVal > 0 
+                    ? pmcVal.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 4 })
+                    : '0,00';
+                const priceStr = currentPriceVal > 0 
+                    ? currentPriceVal.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 4 })
+                    : '0,00';
+                const qtyStr = Number(pos.shares).toLocaleString('it-IT', { maximumFractionDigits: 4 });
+
+                return `- ${ticker} | ${nameStr} | Tipo: ${typeStr} | Q.tà: ${qtyStr} | PMC: ${pmcStr} ${currSymbol} | Prezzo Attuale: ${priceStr} ${currSymbol}`;
+            });
+
+            const openAssetsText = `ASSET APERTI:\n` + (formattedAssetLines.length > 0 ? formattedAssetLines.join('\n') : '- Nessun asset aperto.');
+
             const enhancedContext = {
                 portfolioStats: parsedContext,
                 pmcData: Object.fromEntries(
@@ -1445,6 +1494,21 @@ Nel report markdown usa TITOLI (## Titolo), TABELLE in formato Markdown (| Col 1
                     .filter(([, data]) => data.shares > 0)
                     .map(([ticker, data]) => [ticker, { pmc: data.cost / data.shares, shares: data.shares }])
                 ),
+                openAssetsFormatted: openAssetsText,
+                openAssetsList: openAssetsList.map(pos => {
+                    const ticker = pos.ticker;
+                    const pmcVal = (pmcMap[ticker] && pmcMap[ticker].shares > 0) ? (pmcMap[ticker].cost / pmcMap[ticker].shares) : 0;
+                    const ag = assetGainMap[ticker] || {};
+                    return {
+                        ticker,
+                        name: pos.name || ag.name || ticker,
+                        type: pos.assetType || ag.assetType || 'Generico',
+                        quantity: pos.shares,
+                        pmc: pmcVal,
+                        currentPrice: pos.currentPrice || ag.currentPrice || pmcVal,
+                        currency: pos.currency || ag.currency || 'EUR'
+                    };
+                }),
                 transactionsHistory: txs
             };
             
@@ -1465,7 +1529,7 @@ Nel report markdown usa TITOLI (## Titolo), TABELLE in formato Markdown (| Col 1
             const portfolioPE = totalValueForPE > 0 ? (weightedPE / totalValueForPE) : null;
             enhancedContext.portfolioPE = portfolioPE;
             
-            const fullPrompt = `${promptTemplate}\n\nDATI PORTAFOGLIO:\n${JSON.stringify(enhancedContext)}`;
+            const fullPrompt = `${promptTemplate}\n\n${openAssetsText}\n\nDATI COMPLETI PORTAFOGLIO (JSON):\n${JSON.stringify(enhancedContext)}`;
             
             logger.info(`[AI Report] Invoking AI model for user ${req.user.id}...`);
             const aiResponse = await aiService.callAIModel(engine, fullPrompt, settings);

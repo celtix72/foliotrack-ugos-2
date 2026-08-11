@@ -150,7 +150,15 @@ module.exports = function (dependencies) {
                 aiAssetPromptGarp: settings.aiAssetPromptGarp || '',
                 aiAssetPromptDisruptive: settings.aiAssetPromptDisruptive || '',
                 aiPortfolioPrompt: settings.aiPortfolioPrompt || '',
-                aiReportPrompt: settings.aiReportPrompt || 'Sei un analista finanziario esperto. Analizza il seguente portafoglio basandoti sui dati forniti (lista degli asset con PMC, prezzo attuale, gain, diversificazione, asset allocation e tutte le transizioni storiche). Fornisci un report strutturato in due sezioni:\n\n1. Analisi delle posizioni aperte (rischio, diversificazione e prospettive).\n2. Analisi delle posizioni chiuse e dei dividendi suddivisi per anno (valutazione della performance storica e della continuità dei dividendi).',
+                aiReportPrompt: settings.aiReportPrompt || `Sei un analista finanziario esperto. Analizza il seguente portafoglio basandoti sui dati forniti nella sezione ASSET APERTI e nei DATI COMPLETI PORTAFOGLIO.
+
+IMPORTANTE:
+1. Rispetta tassativamente la classificazione ed il Tipo di ciascuno strumento indicato in ASSET APERTI (es. XEON.DE è un ETF Monetario, BTP è Obbligazione Governativa, ecc.). NON allucinare o modificare la categoria degli asset.
+2. Esegui l'analisi sia sul Valore di Costo (PMC x Quantità) sia sul Valore Attuale di Mercato (Prezzo Attuale x Quantità).
+3. Fornisci un report strutturato con:
+   - Analisi posizioni aperte (rischio, diversificazione, duration, home bias Italia).
+   - Analisi posizioni chiuse e dividendi per anno.
+   - Matrice di Rebalancing ed indicazioni operative concrete.`,
                 aiReportEngine: settings.aiReportEngine || 'Gemini_Free',
                 aiTokensUsedToday: settings.aiTokensUsedToday || '0',
                 aiTokensDate: settings.aiTokensDate || '',
