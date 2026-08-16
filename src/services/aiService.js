@@ -5,6 +5,11 @@ let _cachedGeminiModel = null;
 let _geminiModelCachedAt = 0;
 const GEMINI_MODEL_CACHE_MS = 60 * 60 * 1000; // 1 hour
 
+// Cache per la lista completa dei modelli Gemini disponibili (per la UI admin)
+let _cachedGeminiModels = [];
+let _geminiModelsCachedAt = 0;
+const GEMINI_MODELS_CACHE_MS = 60 * 60 * 1000; // 1 hour
+
 // Modelli statici di fallback — aggiornati agosto 2026
 // Questi vengono usati se la fetch da OpenRouter API fallisce
 let _cachedOpenRouterModels = [
@@ -202,6 +207,7 @@ function getRequestyModels() {
     return _cachedRequestyModels;
 }
 const DEFAULT_GEMINI_MODEL_PREFERENCE = [
+    'gemini-3.7-flash',
     'gemini-3.6-flash',
     'gemini-3.6-pro',
     'gemini-3.6-flash-preview',
@@ -216,10 +222,101 @@ const DEFAULT_GEMINI_MODEL_PREFERENCE = [
     'gemini-1.5-flash',
 ];
 
+/**
+ * Fallback statico: modelli Gemini free — usato se l'API non è raggiungibile
+ */
+const STATIC_GEMINI_FREE_MODELS = [
+    { id: 'gemini-2.5-flash',      name: 'Gemini 2.5 Flash',       isFree: true },
+    { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite',  isFree: true },
+    { id: 'gemini-2.0-flash',      name: 'Gemini 2.0 Flash',       isFree: true },
+    { id: 'gemini-1.5-flash',      name: 'Gemini 1.5 Flash',       isFree: true },
+];
+
+/**
+ * Fetch + caching dei modelli Gemini disponibili dall'API.
+ * Richiede la API key (free o pay). Popola _cachedGeminiModels.
+ */
+async function fetchGeminiModels(apiKey) {
+    if (!apiKey) return;
+    try {
+        const listRes = await axios.get(
+            `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}&pageSize=100`
+        );
+        const raw = (listRes.data.models || []);
+        const generateModels = raw.filter(m =>
+            Array.isArray(m.supportedGenerationMethods) &&
+            m.supportedGenerationMethods.includes('generateContent') &&
+            m.name.includes('gemini-') &&
+            !m.name.includes('vision') &&
+            !m.name.includes('embedding') &&
+            !m.name.includes('aqa')
+        );
+
+        // Converti in oggetti { id, name, isFree }
+        // I modelli Gemini free non hanno costi espliciti nel listModels,
+        // ma quelli con 'flash' o 'lite' nel nome sono tipicamente in tier free.
+        // Usiamo la lista preferenze per capire se sono "conosciuti come free".
+        const knownFreePatterns = /flash|lite/i;
+        const mapped = generateModels.map(m => {
+            const id = m.name.replace('models/', '');
+            const displayName = m.displayName || id;
+            const isFree = knownFreePatterns.test(id);
+            return { id, name: displayName, isFree };
+        });
+
+        // Ordina: prima i flash/lite (free), poi per versione decrescente
+        mapped.sort((a, b) => {
+            if (a.isFree && !b.isFree) return -1;
+            if (!a.isFree && b.isFree) return 1;
+            // Estrai il numero versione per ordinamento decrescente
+            const verA = parseFloat(a.id.match(/gemini-([\d.]+)/)?.[1] || '0');
+            const verB = parseFloat(b.id.match(/gemini-([\d.]+)/)?.[1] || '0');
+            if (verB !== verA) return verB - verA;
+            return a.id.localeCompare(b.id);
+        });
+
+        _cachedGeminiModels = mapped;
+        _geminiModelsCachedAt = Date.now();
+        aiLogger.info(`[Gemini] Cached ${mapped.length} models from API (${mapped.filter(m => m.isFree).length} free).`);
+    } catch (err) {
+        aiLogger.warn('[Gemini] Failed to fetch model list for admin cache:', err.message);
+        // Mantieni il fallback statico
+        if (_cachedGeminiModels.length === 0) {
+            _cachedGeminiModels = STATIC_GEMINI_FREE_MODELS;
+        }
+    }
+}
+
+/**
+ * Restituisce la lista dei modelli Gemini (per la UI admin).
+ * Se non ancora in cache, tenta il fetch; altrimenti usa il fallback statico.
+ */
+function getGeminiModels() {
+    const now = Date.now();
+    if (_cachedGeminiModels.length === 0 || (now - _geminiModelsCachedAt) > GEMINI_MODELS_CACHE_MS) {
+        // Tenta fetch in background con la chiave salvata
+        try {
+            const database = require('../db');
+            const settings = database.getSettings(1);
+            const apiKey = settings.geminiApiKeyFree || settings.geminiApiKeyPay || settings.geminiApiKey || process.env.GEMINI_API_KEY;
+            if (apiKey) {
+                fetchGeminiModels(apiKey).catch(e => aiLogger.warn('[Gemini] Background model fetch failed:', e.message));
+            }
+        } catch (e) { /* ignore */ }
+        // Ritorna il fallback statico se la cache è vuota
+        if (_cachedGeminiModels.length === 0) return STATIC_GEMINI_FREE_MODELS;
+    }
+    return _cachedGeminiModels;
+}
+
 function getGeminiModelPreference() {
     try {
         const database = require('../db');
         const settings = database.getSettings(1);
+        // Nuovi campi individuali (geminiModel1/2/3) — priorità massima
+        const slots = [settings.geminiModel1, settings.geminiModel2, settings.geminiModel3].filter(Boolean);
+        if (slots.length > 0) return slots;
+        // Retrocompatibilità: vecchio JSON array
         if (settings.geminiModelPreferences) {
             const parsed = JSON.parse(settings.geminiModelPreferences);
             if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -591,6 +688,8 @@ module.exports = {
     getOpenRouterModels,
     fetchRequestyModels,
     getRequestyModels,
+    fetchGeminiModels,
+    getGeminiModels,
     getGeminiModelPreference,
     getRecommendedModels,
     checkNewGeminiModels,

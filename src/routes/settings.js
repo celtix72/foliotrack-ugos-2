@@ -168,6 +168,9 @@ module.exports = function (dependencies) {
                 aiEngine: settings.aiEngine || 'Gemini_Free',
                 geminiApiKeyFree: settings.geminiApiKeyFree || '',
                 geminiApiKeyPay: settings.geminiApiKeyPay || settings.geminiApiKey || '',
+                geminiModel1: settings.geminiModel1 || '',
+                geminiModel2: settings.geminiModel2 || '',
+                geminiModel3: settings.geminiModel3 || '',
                 openrouterApiKey: settings.openrouterApiKey || settings.openrouterApiKeyPay || '',
                 openrouterModel1: settings.openrouterModel1 || '',
                 openrouterModel2: settings.openrouterModel2 || '',
@@ -206,11 +209,14 @@ IMPORTANTE:
 
     // POST /api/admin/ai-settings
     router.post('/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
-        const { aiEngine, geminiApiKeyFree, geminiApiKeyPay, openrouterApiKey, openrouterModel1, openrouterModel2, openrouterModel3, openrouterModel4, openrouterModel5, requestyApiKey, requestyModel1, requestyModel2, requestyModel3, requestyModel4, requestyModel5, tavilyApiKey, aiAssetPrompt, aiAssetPromptGarp, aiAssetPromptDisruptive, aiPortfolioPrompt, aiReportPrompt, aiReportEngine, geminiModelPreferences } = req.body;
+        const { aiEngine, geminiApiKeyFree, geminiApiKeyPay, geminiModel1, geminiModel2, geminiModel3, openrouterApiKey, openrouterModel1, openrouterModel2, openrouterModel3, openrouterModel4, openrouterModel5, requestyApiKey, requestyModel1, requestyModel2, requestyModel3, requestyModel4, requestyModel5, tavilyApiKey, aiAssetPrompt, aiAssetPromptGarp, aiAssetPromptDisruptive, aiPortfolioPrompt, aiReportPrompt, aiReportEngine, geminiModelPreferences } = req.body;
         try {
             if (aiEngine !== undefined) database.setSetting(1, 'aiEngine', aiEngine);
             if (geminiApiKeyFree !== undefined) database.setSetting(1, 'geminiApiKeyFree', geminiApiKeyFree);
             if (geminiApiKeyPay !== undefined) database.setSetting(1, 'geminiApiKeyPay', geminiApiKeyPay);
+            if (geminiModel1 !== undefined) database.setSetting(1, 'geminiModel1', geminiModel1);
+            if (geminiModel2 !== undefined) database.setSetting(1, 'geminiModel2', geminiModel2);
+            if (geminiModel3 !== undefined) database.setSetting(1, 'geminiModel3', geminiModel3);
             if (openrouterApiKey !== undefined) database.setSetting(1, 'openrouterApiKey', openrouterApiKey);
             if (openrouterModel1 !== undefined) database.setSetting(1, 'openrouterModel1', openrouterModel1);
             if (openrouterModel2 !== undefined) database.setSetting(1, 'openrouterModel2', openrouterModel2);
@@ -462,6 +468,17 @@ IMPORTANTE:
         }
     });
 
+    // GET /api/admin/gemini-models
+    router.get('/admin/gemini-models', requireAuth, requireAdmin, (req, res) => {
+        try {
+            const models = aiService.getGeminiModels();
+            res.json({ success: true, models: models });
+        } catch (err) {
+            logger.error('[Gemini Models API Error]', err.message);
+            res.status(500).json({ success: false, message: 'Errore interno.' });
+        }
+    });
+
     // GET /api/admin/openrouter-models
     router.get('/admin/openrouter-models', requireAuth, requireAdmin, (req, res) => {
         try {
@@ -500,8 +517,11 @@ IMPORTANTE:
     // Forza il refresh manuale dei modelli da OpenRouter e Requesty
     router.post('/admin/refresh-ai-models', requireAuth, requireAdmin, async (req, res) => {
         try {
-            await aiService.fetchOpenRouterModels();
-            await aiService.fetchRequestyModels();
+            const settings = database.getSettings(1);
+            const geminiKey = settings.geminiApiKeyFree || settings.geminiApiKeyPay || settings.geminiApiKey || process.env.GEMINI_API_KEY;
+            const refreshPromises = [aiService.fetchOpenRouterModels(), aiService.fetchRequestyModels()];
+            if (geminiKey) refreshPromises.push(aiService.fetchGeminiModels(geminiKey));
+            await Promise.allSettled(refreshPromises);
             logger.info(`[ADMIN] AI models refreshed manually by ${req.user.username}`);
             res.json({ success: true, message: 'Modelli aggiornati con successo.' });
         } catch (err) {

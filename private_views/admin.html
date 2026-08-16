@@ -508,8 +508,28 @@
                                     <input type="password" id="ai-gemini-key-pay" placeholder="AIzaSy..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
                                 </div>
                                 <div class="col-span-2">
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Modelli Preferiti (JSON Array)</label>
-                                    <textarea id="ai-gemini-models" rows="2" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-xs font-mono outline-none focus:ring-1 focus:ring-indigo-500" placeholder='["gemini-2.5-flash", "gemini-1.5-flash"]'></textarea>
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Modelli Preferiti (ordine di priorità)</label>
+                                    <div class="grid grid-cols-1 gap-2">
+                                        <div>
+                                            <label class="text-[9px] text-slate-400 block mb-1">Modello 1 (priorità massima)</label>
+                                            <select id="ai-gemini-model-1" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-600 dark:text-slate-400">
+                                                <option value="">Caricamento modelli...</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="text-[9px] text-slate-400 block mb-1">Modello 2 (fallback)</label>
+                                            <select id="ai-gemini-model-2" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-600 dark:text-slate-400">
+                                                <option value="">Caricamento modelli...</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="text-[9px] text-slate-400 block mb-1">Modello 3 (fallback)</label>
+                                            <select id="ai-gemini-model-3" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-600 dark:text-slate-400">
+                                                <option value="">Caricamento modelli...</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <p class="text-[10px] text-slate-400 mt-1">Il sistema usa il primo modello disponibile tra i tre. I modelli vengono caricati dall'API Google.</p>
                                 </div>
                             </div>
                             <!-- OpenRouter -->
@@ -1261,18 +1281,33 @@
             }
         };
 
-        // Aggiunge un modello Gemini alla textarea JSON
-        window.addGeminiModelToPrefs = function(modelId) {
-            const ta = document.getElementById('ai-gemini-models');
-            let current = [];
-            try { current = JSON.parse(ta.value || '[]'); } catch(e) { current = []; }
-            if (!current.includes(modelId)) {
-                current.unshift(modelId); // Aggiunge in cima
-                ta.value = JSON.stringify(current, null, 0);
-                ta.style.borderColor = '#6366f1';
-                setTimeout(() => ta.style.borderColor = '', 1000);
+        // Assegna un modello Gemini al primo slot libero
+        window.setGeminiRecommended = function(modelId, modelName) {
+            const slots = ['ai-gemini-model-1','ai-gemini-model-2','ai-gemini-model-3'];
+            for (const slotId of slots) {
+                const sel = document.getElementById(slotId);
+                if (sel && !sel.value) {
+                    const opt = sel.querySelector(`option[value="${modelId}"]`);
+                    if (opt) {
+                        sel.value = modelId;
+                    } else {
+                        const newOpt = document.createElement('option');
+                        newOpt.value = modelId;
+                        newOpt.textContent = modelName + ' — Free';
+                        sel.appendChild(newOpt);
+                        sel.value = modelId;
+                    }
+                    sel.style.borderColor = '#6366f1';
+                    setTimeout(() => sel.style.borderColor = '', 1200);
+                    updateEngineDropdownsLabels();
+                    return;
+                }
             }
+            alert('Tutti gli slot Gemini Free sono già occupati. Svuota uno slot prima di assegnare un nuovo modello.');
         };
+
+        // Retrocompatibilità: mantieni la vecchia funzione come alias
+        window.addGeminiModelToPrefs = window.setGeminiRecommended;
 
         // Slot OpenRouter usati — trova il prossimo libero
         let _orRecommendedQueue = [];
@@ -1330,6 +1365,9 @@
         // Aggiorna i dropdown motore AI con i nomi leggibili dei modelli configurati
         function updateEngineDropdownsLabels() {
             const slots = {
+                GFM1: document.getElementById('ai-gemini-model-1'),
+                GFM2: document.getElementById('ai-gemini-model-2'),
+                GFM3: document.getElementById('ai-gemini-model-3'),
                 OR1: document.getElementById('ai-openrouter-model-1'),
                 OR2: document.getElementById('ai-openrouter-model-2'),
                 OR3: document.getElementById('ai-openrouter-model-3'),
@@ -1349,6 +1387,9 @@
                 return `${prefix} · ${name}${isFree ? ' (Free)' : ''}`;
             }
             const updates = [
+                { id: 'GFM1', label: getModelLabel(slots.GFM1, 'Gemini Free', 1) },
+                { id: 'GFM2', label: getModelLabel(slots.GFM2, 'Gemini Free', 2) },
+                { id: 'GFM3', label: getModelLabel(slots.GFM3, 'Gemini Free', 3) },
                 { id: 'OR1', label: getModelLabel(slots.OR1, 'OpenRouter', 1) },
                 { id: 'OR2', label: getModelLabel(slots.OR2, 'OpenRouter', 2) },
                 { id: 'OR3', label: getModelLabel(slots.OR3, 'OpenRouter', 3) },
@@ -1381,6 +1422,7 @@
                 // Ricarica i modelli nei dropdown
                 const settings = await fetchAdmin('/api/admin/ai-settings');
                 if (settings) {
+                    await loadGeminiModels(settings.geminiModel1, settings.geminiModel2, settings.geminiModel3);
                     await loadOpenRouterModels(settings.openrouterModel1, settings.openrouterModel2, settings.openrouterModel3, settings.openrouterModel4, settings.openrouterModel5);
                     await loadRequestyModels(settings.requestyModel1, settings.requestyModel2, settings.requestyModel3, settings.requestyModel4, settings.requestyModel5);
                 }
@@ -1395,6 +1437,47 @@
         };
 
         // --- AI Settings ---
+        async function loadGeminiModels(saved1, saved2, saved3) {
+            try {
+                const res = await fetchAdmin('/api/admin/gemini-models');
+                if (res && res.models) {
+                    const sels = [
+                        document.getElementById('ai-gemini-model-1'),
+                        document.getElementById('ai-gemini-model-2'),
+                        document.getElementById('ai-gemini-model-3')
+                    ];
+                    const saved = [saved1, saved2, saved3];
+
+                    const freeModels = res.models.filter(m => m.isFree);
+                    const payModels = res.models.filter(m => !m.isFree);
+
+                    let optionsHtml = '<option value="">(Nessuno — slot disattivato)</option>';
+                    if (freeModels.length > 0) {
+                        optionsHtml += '<optgroup label="✅ Free">';
+                        freeModels.forEach(m => {
+                            optionsHtml += `<option value="${m.id}">${m.name} — Free</option>`;
+                        });
+                        optionsHtml += '</optgroup>';
+                    }
+                    if (payModels.length > 0) {
+                        optionsHtml += '<optgroup label="💎 Pay">';
+                        payModels.forEach(m => {
+                            optionsHtml += `<option value="${m.id}">${m.name}</option>`;
+                        });
+                        optionsHtml += '</optgroup>';
+                    }
+
+                    sels.forEach((sel, i) => {
+                        sel.innerHTML = optionsHtml;
+                        if (saved[i]) sel.value = saved[i];
+                    });
+                    updateEngineDropdownsLabels();
+                }
+            } catch(e) {
+                console.error('Failed to load Gemini models', e);
+            }
+        }
+
         async function loadOpenRouterModels(saved1, saved2, saved3, saved4, saved5) {
             try {
                 const res = await fetchAdmin('/api/admin/openrouter-models');
@@ -1488,12 +1571,12 @@
                 if (settings) {
                     document.getElementById('ai-gemini-key-free').value = settings.geminiApiKeyFree || '';
                     document.getElementById('ai-gemini-key-pay').value = settings.geminiApiKeyPay || '';
-                    document.getElementById('ai-gemini-models').value = settings.geminiModelPreferences || '';
                     document.getElementById('ai-openrouter-key').value = settings.openrouterApiKey || '';
                     document.getElementById('ai-requesty-key').value = settings.requestyApiKey || '';
                     document.getElementById('ai-tavily-key').value = settings.tavilyApiKey || '';
                     
                     // Carica i modelli dinamicamente e imposta i valori salvati
+                    await loadGeminiModels(settings.geminiModel1, settings.geminiModel2, settings.geminiModel3);
                     await loadOpenRouterModels(settings.openrouterModel1, settings.openrouterModel2, settings.openrouterModel3, settings.openrouterModel4, settings.openrouterModel5);
                     await loadRequestyModels(settings.requestyModel1, settings.requestyModel2, settings.requestyModel3, settings.requestyModel4, settings.requestyModel5);
                     
@@ -1529,7 +1612,9 @@
                     aiEngine: document.getElementById('ai-engine').value,
                     geminiApiKeyFree: document.getElementById('ai-gemini-key-free').value,
                     geminiApiKeyPay: document.getElementById('ai-gemini-key-pay').value,
-                    geminiModelPreferences: document.getElementById('ai-gemini-models').value,
+                    geminiModel1: document.getElementById('ai-gemini-model-1').value,
+                    geminiModel2: document.getElementById('ai-gemini-model-2').value,
+                    geminiModel3: document.getElementById('ai-gemini-model-3').value,
                     openrouterApiKey: document.getElementById('ai-openrouter-key').value,
                     openrouterModel1: document.getElementById('ai-openrouter-model-1').value,
                     openrouterModel2: document.getElementById('ai-openrouter-model-2').value,
