@@ -1558,6 +1558,9 @@
                                     }
                                     return '';
                                 })()}
+                                ${item.asset_price ? `<span style="font-size: 10px; font-weight: 900; color: #64748b; background: rgba(148,163,184,0.1); padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 3px;" title="Prezzo al momento dell'analisi">
+                                    <span class="material-symbols-outlined" style="font-size: 12px;">sell</span> Price: ${window.formatAiFv ? window.formatAiFv(item.asset_price, '') : item.asset_price}
+                                </span>` : ''}
                                 ${item.targetPrice ? `<span style="font-size: 10px; font-weight: 900; color: #64748b; background: rgba(148,163,184,0.1); padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 3px;" title="Fair Value">
                                     <span class="material-symbols-outlined" style="font-size: 12px;">monetization_on</span> FV: ${window.formatAiFv ? window.formatAiFv(item.targetPrice, '') : item.targetPrice}
                                 </span>` : ''}

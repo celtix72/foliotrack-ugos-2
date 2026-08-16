@@ -2093,9 +2093,9 @@ ${contextData}
 
             // Inserisci nello storico
             database.db.prepare(`
-                INSERT INTO asset_ai_history (ticker, action, reasoning, targetPrice, stopLoss, engine, prompt_type)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            `).run(ticker, action, reasoning, targetPrice, stopLoss, finalEngineName, promptType);
+                INSERT INTO asset_ai_history (ticker, action, reasoning, targetPrice, stopLoss, engine, prompt_type, asset_price)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `).run(ticker, action, reasoning, targetPrice, stopLoss, finalEngineName, promptType, assetRow.currentPrice);
         })();
 
         sendEvent('complete', { 
@@ -2117,7 +2117,7 @@ ${contextData}
 router.get('/assets/:ticker/ai-history', requireAuth, (req, res) => {
     try {
         const history = database.db.prepare(`
-            SELECT id, action, reasoning, targetPrice, stopLoss, engine, prompt_type, created_at 
+            SELECT id, action, reasoning, targetPrice, stopLoss, engine, prompt_type, created_at, asset_price 
             FROM asset_ai_history 
             WHERE ticker = ? 
             ORDER BY created_at DESC

@@ -1042,6 +1042,7 @@ function initDb() {
     try { dbConnection.prepare(`ALTER TABLE users ADD COLUMN reset_token TEXT`).run(); } catch (e) {}
     try { dbConnection.prepare(`ALTER TABLE users ADD COLUMN reset_token_expiry TEXT`).run(); } catch (e) {}
     try { dbConnection.prepare(`ALTER TABLE asset_ai_history ADD COLUMN prompt_type TEXT DEFAULT 'graham'`).run(); } catch (e) {}
+    try { dbConnection.prepare(`ALTER TABLE asset_ai_history ADD COLUMN asset_price REAL`).run(); } catch (e) {}
 
     // ─── Seed: default admin user (mauro / pippo) ───────────────────────────
     const existingAdmin = dbConnection.prepare(`SELECT id FROM users WHERE username = 'mauro'`).get();
