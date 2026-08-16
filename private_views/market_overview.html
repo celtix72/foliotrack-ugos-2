@@ -605,7 +605,9 @@ function renderAiBadges(a) {
                 badgeStyle = 'style="background-color: #64748b !important; color: #ffffff !important; border-color: #64748b !important;"';
             }
             
-            if (badge.isOutdated) {
+            if (badge.is_best) {
+                badgeStyle = badgeStyle.replace(/border-color: [^!]+!important;/, 'border-color: #22c55e !important; border-width: 2px !important;');
+            } else if (badge.isOutdated) {
                 badgeStyle = badgeStyle.replace(/border-color: [^!]+!important;/, 'border-color: #eab308 !important; border-width: 2px !important;');
             }
             

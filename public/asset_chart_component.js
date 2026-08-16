@@ -1567,6 +1567,9 @@
                             </div>
                             <div style="display: flex; gap: 8px; align-items: center;">
                                 <span style="padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: 900; background: ${actionColor}; color: ${actionTextColor}; border: 1px solid ${actionTextColor}; box-shadow: 0 2px 8px ${actionColor};">${item.action}</span>
+                                <button onclick="event.preventDefault(); event.stopPropagation(); window.setAssetAiHistoryBest(${item.id}, '${ticker}')" style="background: ${item.is_best ? 'rgba(34,197,94,0.2)' : 'rgba(148,163,184,0.1)'}; border: none; border-radius: 6px; color: ${item.is_best ? '#22c55e' : '#64748b'}; padding: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" class="hover:bg-green-500/20" title="${item.is_best ? 'Analisi Preferita' : 'Imposta come migliore'}">
+                                    <span class="material-symbols-outlined" style="font-size: 14px; ${item.is_best ? 'font-variation-settings: \\\'FILL\\\' 1;' : ''}">star</span>
+                                </button>
                                 <button onclick="event.preventDefault(); event.stopPropagation(); window.deleteAssetAiHistory(${item.id}, '${ticker}')" style="background: rgba(239,68,68,0.1); border: none; border-radius: 6px; color: rgb(239,68,68); padding: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" class="hover:bg-red-500/20">
                                     <span class="material-symbols-outlined" style="font-size: 14px;">delete</span>
                                 </button>

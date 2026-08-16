@@ -109,7 +109,7 @@ module.exports = function(dependencies) {
              if (allTickers.length > 0) {
                  const placeholders = allTickers.map(() => '?').join(',');
                  const aiHistoryStmt = database.db.prepare(`
-                     SELECT ticker, engine, action as aiAction, targetPrice as aiTargetPrice, prompt_type, created_at
+                     SELECT ticker, engine, action as aiAction, targetPrice as aiTargetPrice, prompt_type, created_at, is_best
                      FROM asset_ai_history
                      WHERE ticker IN (${placeholders}) AND engine IS NOT NULL
                      ORDER BY created_at DESC

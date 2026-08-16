@@ -734,7 +734,8 @@ router.get('/assets', requireAuth, async (req, res) => {
         if (allTickers.length > 0) {
             const placeholders = allTickers.map(() => '?').join(',');
             const aiHistoryStmt = database.db.prepare(`
-                SELECT ticker, engine, action as aiAction, targetPrice as aiTargetPrice, prompt_type, created_at
+                SELECT ticker, engine, action as aiAction, targetPrice as aiTargetPrice, prompt_type, created_at, is_best
+
                 FROM asset_ai_history
                 WHERE ticker IN (${placeholders}) AND engine IS NOT NULL
                 ORDER BY created_at DESC
@@ -2117,7 +2118,7 @@ ${contextData}
 router.get('/assets/:ticker/ai-history', requireAuth, (req, res) => {
     try {
         const history = database.db.prepare(`
-            SELECT id, action, reasoning, targetPrice, stopLoss, engine, prompt_type, created_at, asset_price 
+            SELECT id, action, reasoning, targetPrice, stopLoss, engine, prompt_type, created_at, asset_price, is_best 
             FROM asset_ai_history 
             WHERE ticker = ? 
             ORDER BY created_at DESC
@@ -2125,6 +2126,22 @@ router.get('/assets/:ticker/ai-history', requireAuth, (req, res) => {
         res.json(history);
     } catch (err) {
         logger.error('Error fetching asset AI history', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.post('/assets/ai-history/:id/best', requireAuth, (req, res) => {
+    try {
+        const id = req.params.id;
+        const historyItem = database.db.prepare('SELECT ticker FROM asset_ai_history WHERE id = ?').get(id);
+        if (!historyItem) return res.status(404).json({ error: 'Storico non trovato' });
+        
+        database.db.prepare('UPDATE asset_ai_history SET is_best = 0 WHERE ticker = ?').run(historyItem.ticker);
+        database.db.prepare('UPDATE asset_ai_history SET is_best = 1 WHERE id = ?').run(id);
+        
+        res.json({ success: true });
+    } catch (err) {
+        logger.error('Error setting AI history as best', err);
         res.status(500).json({ error: err.message });
     }
 });
