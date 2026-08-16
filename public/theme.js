@@ -844,6 +844,9 @@
         if (promptType === 'garp') formatted += ' (Gro)';
         else if (promptType === 'graham') formatted += ' (Val)';
         else if (promptType === 'disruptive') formatted += ' (Dis)';
+        else if (promptType === 'tech') formatted += ' (Tec)';
+        else if (promptType === 'fin') formatted += ' (Fin)';
+        else if (promptType === 'capital') formatted += ' (Cap)';
         return formatted;
     };
 

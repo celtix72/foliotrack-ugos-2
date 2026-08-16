@@ -395,6 +395,12 @@
                                 icon = 'trending_up';
                             } else if (badge.prompt_type === 'disruptive') {
                                 icon = 'rocket_launch';
+                            } else if (badge.prompt_type === 'tech') {
+                                icon = 'cloud';
+                            } else if (badge.prompt_type === 'fin') {
+                                icon = 'account_balance';
+                            } else if (badge.prompt_type === 'capital') {
+                                icon = 'factory';
                             } else {
                                 if (engine === 'Gemini') icon = 'auto_awesome';
                                 else if (engine === 'Qwen') icon = 'chat_spark';

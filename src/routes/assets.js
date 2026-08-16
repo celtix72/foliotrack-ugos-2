@@ -1340,7 +1340,8 @@ router.delete('/assets/:id', requireAuth, (req, res) => {
 router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
     try {
         const globalSettings = database.getSettings(1) || {};
-        const promptType = req.query.prompt_type === 'garp' ? 'garp' : (req.query.prompt_type === 'disruptive' ? 'disruptive' : 'graham');
+        const allowedTypes = ['garp', 'disruptive', 'tech', 'fin', 'capital', 'graham'];
+        const promptType = allowedTypes.includes(req.query.prompt_type) ? req.query.prompt_type : 'graham';
 
 
         // Setup SSE Headers
@@ -1384,6 +1385,18 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
                     disruptive: [
                         `${assetLabel} technology innovation patents R&D pipeline competitive moat`,
                         `${assetLabel} market disruption total addressable market TAM strategy 2025`
+                    ],
+                    tech: [
+                        `${assetLabel} cloud SaaS net retention rate Rule of 40 growth margins 2024 2025`,
+                        `${assetLabel} operating leverage R&D customer acquisition cost scalability`
+                    ],
+                    fin: [
+                        `${assetLabel} tangible book value CET1 ratio net interest margin NPL`,
+                        `${assetLabel} cost of risk financial sector provisions ROE ROTE 2025`
+                    ],
+                    capital: [
+                        `${assetLabel} ROIC WACC infrastructure capex free cash flow yield FFO AFFO`,
+                        `${assetLabel} net debt to EBITDA utilities telecom real estate sustainability`
                     ]
                 };
                 const selectedQueries = queries[promptType] || queries.graham;
@@ -1597,7 +1610,13 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
 
         sendEvent('progress', { message: 'Generazione responso IA in corso...' });
 
-        let customPromptText = (promptType === 'garp') ? (globalSettings.aiAssetPromptGarp || '') : (promptType === 'disruptive' ? (globalSettings.aiAssetPromptDisruptive || '') : (globalSettings.aiAssetPrompt || ''));
+        let customPromptText = globalSettings.aiAssetPrompt || '';
+        if (promptType === 'garp') customPromptText = globalSettings.aiAssetPromptGarp || '';
+        else if (promptType === 'disruptive') customPromptText = globalSettings.aiAssetPromptDisruptive || '';
+        else if (promptType === 'tech') customPromptText = globalSettings.aiAssetPromptTech || '';
+        else if (promptType === 'fin') customPromptText = globalSettings.aiAssetPromptFin || '';
+        else if (promptType === 'capital') customPromptText = globalSettings.aiAssetPromptCapital || '';
+
         if (customPromptText) {
             const assetName = assetRow.name || assetRow.ticker;
             const assetExchange = assetRow.exchange || 'Mercato';

@@ -1014,6 +1014,9 @@ function initDb() {
         aiAssetPrompt: '',
         aiAssetPromptGarp: '',
         aiAssetPromptDisruptive: '',
+        aiAssetPromptTech: '',
+        aiAssetPromptFin: '',
+        aiAssetPromptCapital: '',
         aiPortfolioPrompt: '',
         aiTokensUsedToday: '0',
         aiTokensDate: new Date().toISOString().split('T')[0]

@@ -672,6 +672,18 @@
                                 <textarea id="ai-asset-prompt-disruptive" rows="3" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-3 px-4 text-sm focus:ring-indigo-500/30 focus:border-indigo-500 transition-colors" placeholder="Es. Valuta l'opzionalità dei prodotti emergenti, la sostenibilità finanziaria per superare il burn rate..."></textarea>
                             </div>
                             <div>
+                                <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1">Prompt Singolo Asset — Scalabilità e Leva Operativa (Tech & Growth)</label>
+                                <textarea id="ai-asset-prompt-tech" rows="3" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-3 px-4 text-sm focus:ring-indigo-500/30 focus:border-indigo-500 transition-colors" placeholder="Es. Analizza EV/Sales, EV/Gross Profit, Rule of 40, Net Retention Rate..."></textarea>
+                            </div>
+                            <div>
+                                <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1">Prompt Singolo Asset — Solidità Patrimoniale e Margine d'Interesse (Finanziario)</label>
+                                <textarea id="ai-asset-prompt-fin" rows="3" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-3 px-4 text-sm focus:ring-indigo-500/30 focus:border-indigo-500 transition-colors" placeholder="Es. Analizza P/TBV, CET1 Ratio, Net Interest Margin, Cost of Risk..."></textarea>
+                            </div>
+                            <div>
+                                <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1">Prompt Singolo Asset — Efficienza Capitale e Copertura Debito (Capital-Intensive)</label>
+                                <textarea id="ai-asset-prompt-capital" rows="3" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-3 px-4 text-sm focus:ring-indigo-500/30 focus:border-indigo-500 transition-colors" placeholder="Es. Analizza ROIC vs WACC, Net Debt/EBITDA, Free Cash Flow Yield, FFO/AFFO..."></textarea>
+                            </div>
+                            <div>
                                 <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1">Prompt Analisi Intero Portafoglio</label>
                                 <textarea id="ai-portfolio-prompt" rows="3" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-3 px-4 text-sm focus:ring-indigo-500/30 focus:border-indigo-500 transition-colors" placeholder="Es. Analizza la diversificazione settoriale e valuta se l'esposizione all'azionario è troppo elevata per un profilo moderato."></textarea>
                             </div>
@@ -1588,6 +1600,9 @@
                     document.getElementById('ai-asset-prompt').value = settings.aiAssetPrompt || '';
                     document.getElementById('ai-asset-prompt-garp').value = settings.aiAssetPromptGarp || '';
                     document.getElementById('ai-asset-prompt-disruptive').value = settings.aiAssetPromptDisruptive || '';
+                    document.getElementById('ai-asset-prompt-tech').value = settings.aiAssetPromptTech || '';
+                    document.getElementById('ai-asset-prompt-fin').value = settings.aiAssetPromptFin || '';
+                    document.getElementById('ai-asset-prompt-capital').value = settings.aiAssetPromptCapital || '';
                     document.getElementById('ai-portfolio-prompt').value = settings.aiPortfolioPrompt || '';
                     document.getElementById('ai-report-prompt').value = settings.aiReportPrompt || '';
                     
@@ -1631,6 +1646,9 @@
                     aiAssetPrompt: document.getElementById('ai-asset-prompt').value,
                     aiAssetPromptGarp: document.getElementById('ai-asset-prompt-garp').value,
                     aiAssetPromptDisruptive: document.getElementById('ai-asset-prompt-disruptive').value,
+                    aiAssetPromptTech: document.getElementById('ai-asset-prompt-tech').value,
+                    aiAssetPromptFin: document.getElementById('ai-asset-prompt-fin').value,
+                    aiAssetPromptCapital: document.getElementById('ai-asset-prompt-capital').value,
                     aiPortfolioPrompt: document.getElementById('ai-portfolio-prompt').value,
                     aiReportPrompt: document.getElementById('ai-report-prompt').value,
                     aiReportEngine: document.getElementById('ai-report-engine').value

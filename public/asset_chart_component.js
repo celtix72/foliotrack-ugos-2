@@ -1004,9 +1004,12 @@
                         <select id="ai-modal-engine-select" style="width: 140px; text-overflow: ellipsis; font-size: 11px; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(148,163,184,0.3); background: transparent; cursor: pointer; outline: none; font-weight: 600;" class="text-slate-700 dark:text-slate-300">
                             <option value="">Default (Caricamento...)</option>
                         </select>
-                        <select id="ai-modal-prompt-select" style="width: 130px; text-overflow: ellipsis; font-size: 11px; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(148,163,184,0.3); background: transparent; cursor: pointer; outline: none; font-weight: 600;" class="text-slate-700 dark:text-slate-300">
-                            <option value="graham">Graham e Buffett</option>
-                            <option value="garp">GARP</option>
+                        <select id="ai-modal-prompt-select" style="width: 140px; text-overflow: ellipsis; font-size: 11px; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(148,163,184,0.3); background: transparent; cursor: pointer; outline: none; font-weight: 600;" class="text-slate-700 dark:text-slate-300">
+                            <option value="graham">Value (Graham/Buffett)</option>
+                            <option value="garp">GARP (Growth)</option>
+                            <option value="tech">Tech & Growth</option>
+                            <option value="fin">Finanziario</option>
+                            <option value="capital">Capital-Intensive</option>
                             <option value="disruptive">Disruptive</option>
                         </select>
                         <button id="ai-modal-run-btn" onclick="window.runAssetAi()" style="background: var(--mob-primary); color: white; padding: 7px 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 11px; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(19,91,236,0.2); white-space: nowrap; flex-shrink: 0;">
@@ -1048,8 +1051,11 @@
         const strategyBanner = document.getElementById('ai-strategy-banner');
         if (promptSelect && strategyBanner) {
             promptSelect.innerHTML = `
-                <option value="graham">Graham e Buffett</option>
-                <option value="garp">GARP</option>
+                <option value="graham">Value (Graham/Buffett)</option>
+                <option value="garp">GARP (Growth)</option>
+                <option value="tech">Tech & Growth</option>
+                <option value="fin">Finanziario</option>
+                <option value="capital">Capital-Intensive</option>
                 <option value="disruptive">Disruptive</option>
             `;
             strategyBanner.style.display = 'none';
@@ -1067,14 +1073,23 @@
                     
                     let recommended = 'garp';
                     
-                    const valueSectors = ['financial services', 'utilities', 'energy', 'basic materials', 'real estate', 'industrials', 'consumer defensive'];
-                    const disruptiveSectors = ['technology', 'communication services'];
-                    const disruptiveIndustries = ['biotechnology', 'software', 'internet', 'semiconductors', 'solar', 'renewable', 'crypto', 'aerospace', 'health information'];
+                    const finSectors = ['financial services'];
+                    const capitalSectors = ['utilities', 'energy', 'real estate', 'industrials', 'basic materials'];
+                    const techSectors = ['technology', 'communication services'];
+                    const techIndustries = ['software', 'internet', 'semiconductors'];
+                    const disruptiveIndustries = ['biotechnology', 'crypto', 'aerospace', 'health information'];
+                    const valueSectors = ['consumer defensive', 'consumer cyclical'];
 
-                    if (valueSectors.some(s => sector.includes(s))) {
-                        recommended = 'graham';
-                    } else if (disruptiveSectors.some(s => sector.includes(s)) || disruptiveIndustries.some(i => industry.includes(i))) {
+                    if (finSectors.some(s => sector.includes(s))) {
+                        recommended = 'fin';
+                    } else if (capitalSectors.some(s => sector.includes(s))) {
+                        recommended = 'capital';
+                    } else if (techSectors.some(s => sector.includes(s)) || techIndustries.some(i => industry.includes(i))) {
+                        recommended = 'tech';
+                    } else if (disruptiveIndustries.some(i => industry.includes(i))) {
                         recommended = 'disruptive';
+                    } else if (valueSectors.some(s => sector.includes(s))) {
+                        recommended = 'graham';
                     } else {
                         recommended = 'garp';
                     }
@@ -1093,7 +1108,7 @@
                             color: '#16a34a',
                             bg: 'rgba(22,163,74,0.08)',
                             border: 'rgba(22,163,74,0.25)',
-                            reason: 'Settore maturo/difensivo: analisi su fondamentali, dividendi e margine di sicurezza.'
+                            reason: 'Settore difensivo/maturo: focus su fondamentali, margini e dividendi.'
                         },
                         garp: {
                             label: 'GARP',
@@ -1102,16 +1117,43 @@
                             color: '#2563eb',
                             bg: 'rgba(37,99,235,0.08)',
                             border: 'rgba(37,99,235,0.25)',
-                            reason: 'Settore ibrido: bilancia crescita e valutazione, ideale per asset ciclici o misti.'
+                            reason: 'Azienda mista: bilancia crescita degli utili ed espansione dei multipli.'
+                        },
+                        tech: {
+                            label: 'Tech & Growth',
+                            sublabel: 'Scalabilità e Leva',
+                            icon: 'cloud',
+                            color: '#06b6d4',
+                            bg: 'rgba(6,182,212,0.08)',
+                            border: 'rgba(6,182,212,0.25)',
+                            reason: 'Settore tecnologico: analisi su Rule of 40, ritenzione clienti e R&D.'
+                        },
+                        fin: {
+                            label: 'Finanziario',
+                            sublabel: 'Banche e Assicurazioni',
+                            icon: 'account_balance',
+                            color: '#eab308',
+                            bg: 'rgba(234,179,8,0.08)',
+                            border: 'rgba(234,179,8,0.25)',
+                            reason: 'Settore finanziario: analisi incentrata su CET1, NIM e rischio credito.'
+                        },
+                        capital: {
+                            label: 'Capital-Intensive',
+                            sublabel: 'Asset Pesanti',
+                            icon: 'factory',
+                            color: '#f97316',
+                            bg: 'rgba(249,115,22,0.08)',
+                            border: 'rgba(249,115,22,0.25)',
+                            reason: 'Industria pesante/REIT: focus su ROIC, copertura debito e Capex.'
                         },
                         disruptive: {
-                            label: 'Disruptive / Innovation',
-                            sublabel: 'Growth & Tech',
+                            label: 'Disruptive Innovation',
+                            sublabel: 'Deep Tech & Biotech',
                             icon: 'rocket_launch',
                             color: '#7c3aed',
                             bg: 'rgba(124,58,237,0.08)',
                             border: 'rgba(124,58,237,0.25)',
-                            reason: 'Settore tech/innovativo: focalizzata su crescita, TAM e disruption del mercato.'
+                            reason: 'Innovazione radicale: focus su opzionalità, TAM espanso e moat tecnologico.'
                         }
                     };
                     const s = strategies[recommended];
@@ -1500,6 +1542,18 @@
                                     } else if (item.prompt_type === 'graham') {
                                         return `<span style="font-size: 10px; font-weight: 900; color: #6366f1; background: rgba(99,102,241,0.1); padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 3px;" title="Analisi Value">
                                             <span class="material-symbols-outlined" style="font-size: 12px;">shield</span> VALUE
+                                        </span>`;
+                                    } else if (item.prompt_type === 'tech') {
+                                        return `<span style="font-size: 10px; font-weight: 900; color: #06b6d4; background: rgba(6,182,212,0.1); padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 3px;" title="Analisi Tech & Growth">
+                                            <span class="material-symbols-outlined" style="font-size: 12px;">cloud</span> TECH
+                                        </span>`;
+                                    } else if (item.prompt_type === 'fin') {
+                                        return `<span style="font-size: 10px; font-weight: 900; color: #eab308; background: rgba(234,179,8,0.1); padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 3px;" title="Analisi Finanziario">
+                                            <span class="material-symbols-outlined" style="font-size: 12px;">account_balance</span> FIN
+                                        </span>`;
+                                    } else if (item.prompt_type === 'capital') {
+                                        return `<span style="font-size: 10px; font-weight: 900; color: #f97316; background: rgba(249,115,22,0.1); padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 3px;" title="Analisi Capital-Intensive">
+                                            <span class="material-symbols-outlined" style="font-size: 12px;">factory</span> CAP
                                         </span>`;
                                     }
                                     return '';

@@ -758,6 +758,12 @@
               icon = 'trending_up';
             } else if (badge.prompt_type === 'disruptive') {
               icon = 'rocket_launch';
+            } else if (badge.prompt_type === 'tech') {
+              icon = 'cloud';
+            } else if (badge.prompt_type === 'fin') {
+              icon = 'account_balance';
+            } else if (badge.prompt_type === 'capital') {
+              icon = 'factory';
             } else {
               if (engine === 'Gemini') icon = 'auto_awesome';
               else if (engine === 'Qwen') icon = 'chat_spark';
@@ -796,6 +802,9 @@
               if (badge.prompt_type === 'garp') fvStr += ' (Gro)';
               else if (badge.prompt_type === 'graham') fvStr += ' (Val)';
               else if (badge.prompt_type === 'disruptive') fvStr += ' (Dis)';
+              else if (badge.prompt_type === 'tech') fvStr += ' (Tec)';
+              else if (badge.prompt_type === 'fin') fvStr += ' (Fin)';
+              else if (badge.prompt_type === 'capital') fvStr += ' (Cap)';
             }
             
             return `<span onclick="event.stopPropagation();window.openAssetAiHistoryModal('${tickerEsc}','${nameEsc}','${cur}')" class="px-1.5 py-0.5 rounded font-black uppercase tracking-tighter flex items-center gap-1 border cursor-pointer whitespace-nowrap" style="${badgeStyle} font-size: calc(10px * var(--mkcard-scale, 1))">

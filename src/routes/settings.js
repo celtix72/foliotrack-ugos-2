@@ -187,6 +187,9 @@ module.exports = function (dependencies) {
                 aiAssetPrompt: settings.aiAssetPrompt || '',
                 aiAssetPromptGarp: settings.aiAssetPromptGarp || '',
                 aiAssetPromptDisruptive: settings.aiAssetPromptDisruptive || '',
+                aiAssetPromptTech: settings.aiAssetPromptTech || '',
+                aiAssetPromptFin: settings.aiAssetPromptFin || '',
+                aiAssetPromptCapital: settings.aiAssetPromptCapital || '',
                 aiPortfolioPrompt: settings.aiPortfolioPrompt || '',
                 aiReportPrompt: settings.aiReportPrompt || `Sei un analista finanziario esperto. Analizza il seguente portafoglio basandoti sui dati forniti nella sezione ASSET APERTI e nei DATI COMPLETI PORTAFOGLIO.
 
@@ -209,7 +212,7 @@ IMPORTANTE:
 
     // POST /api/admin/ai-settings
     router.post('/admin/ai-settings', requireAuth, requireAdmin, (req, res) => {
-        const { aiEngine, geminiApiKeyFree, geminiApiKeyPay, geminiModel1, geminiModel2, geminiModel3, openrouterApiKey, openrouterModel1, openrouterModel2, openrouterModel3, openrouterModel4, openrouterModel5, requestyApiKey, requestyModel1, requestyModel2, requestyModel3, requestyModel4, requestyModel5, tavilyApiKey, aiAssetPrompt, aiAssetPromptGarp, aiAssetPromptDisruptive, aiPortfolioPrompt, aiReportPrompt, aiReportEngine, geminiModelPreferences } = req.body;
+        const { aiEngine, geminiApiKeyFree, geminiApiKeyPay, geminiModel1, geminiModel2, geminiModel3, openrouterApiKey, openrouterModel1, openrouterModel2, openrouterModel3, openrouterModel4, openrouterModel5, requestyApiKey, requestyModel1, requestyModel2, requestyModel3, requestyModel4, requestyModel5, tavilyApiKey, aiAssetPrompt, aiAssetPromptGarp, aiAssetPromptDisruptive, aiAssetPromptTech, aiAssetPromptFin, aiAssetPromptCapital, aiPortfolioPrompt, aiReportPrompt, aiReportEngine, geminiModelPreferences } = req.body;
         try {
             if (aiEngine !== undefined) database.setSetting(1, 'aiEngine', aiEngine);
             if (geminiApiKeyFree !== undefined) database.setSetting(1, 'geminiApiKeyFree', geminiApiKeyFree);
@@ -233,6 +236,9 @@ IMPORTANTE:
             if (aiAssetPrompt !== undefined) database.setSetting(1, 'aiAssetPrompt', aiAssetPrompt);
             if (aiAssetPromptGarp !== undefined) database.setSetting(1, 'aiAssetPromptGarp', aiAssetPromptGarp);
             if (aiAssetPromptDisruptive !== undefined) database.setSetting(1, 'aiAssetPromptDisruptive', aiAssetPromptDisruptive);
+            if (aiAssetPromptTech !== undefined) database.setSetting(1, 'aiAssetPromptTech', aiAssetPromptTech);
+            if (aiAssetPromptFin !== undefined) database.setSetting(1, 'aiAssetPromptFin', aiAssetPromptFin);
+            if (aiAssetPromptCapital !== undefined) database.setSetting(1, 'aiAssetPromptCapital', aiAssetPromptCapital);
             if (aiPortfolioPrompt !== undefined) database.setSetting(1, 'aiPortfolioPrompt', aiPortfolioPrompt);
             if (aiReportPrompt !== undefined) database.setSetting(1, 'aiReportPrompt', aiReportPrompt);
             if (aiReportEngine !== undefined) database.setSetting(1, 'aiReportEngine', aiReportEngine);
