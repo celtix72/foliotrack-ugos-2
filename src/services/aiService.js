@@ -5,21 +5,26 @@ let _cachedGeminiModel = null;
 let _geminiModelCachedAt = 0;
 const GEMINI_MODEL_CACHE_MS = 60 * 60 * 1000; // 1 hour
 
+// Modelli statici di fallback — aggiornati agosto 2026
+// Questi vengono usati se la fetch da OpenRouter API fallisce
 let _cachedOpenRouterModels = [
-    { id: 'nvidia/llama-3.1-nemotron-70b-instruct:free', name: 'NVIDIA: Llama 3.1 Nemotron 70B (free)', priceLabel: 'Free', isFree: true },
-    { id: 'nvidia/nemotron-4-340b-instruct:free', name: 'NVIDIA: Nemotron 4 340B (free)', priceLabel: 'Free', isFree: true },
-    { id: 'meta-llama/llama-3.3-70b-instruct:free', name: 'Meta: Llama 3.3 70B Instruct (free)', priceLabel: 'Free', isFree: true },
-    { id: 'meta-llama/llama-3.1-405b-instruct:free', name: 'Meta: Llama 3.1 405B Instruct (free)', priceLabel: 'Free', isFree: true },
-    { id: 'deepseek/deepseek-r1:free', name: 'DeepSeek: R1 Reasoning (free)', priceLabel: 'Free', isFree: true },
-    { id: 'deepseek/deepseek-chat:free', name: 'DeepSeek: V3 Chat (free)', priceLabel: 'Free', isFree: true },
-    { id: 'qwen/qwen-2.5-72b-instruct:free', name: 'Qwen: 2.5 72B Instruct (free)', priceLabel: 'Free', isFree: true },
-    { id: 'qwen/qwq-32b:free', name: 'Qwen: QwQ 32B (free)', priceLabel: 'Free', isFree: true },
-    { id: 'mistralai/mistral-small-24b-instruct-2501:free', name: 'Mistral: Small 24B (free)', priceLabel: 'Free', isFree: true },
-    { id: 'google/gemini-2.0-flash-exp:free', name: 'Google: Gemini 2.0 Flash (free)', priceLabel: 'Free', isFree: true },
-    { id: 'openai/gpt-4o-mini', name: 'OpenAI: GPT-4o Mini', priceLabel: '$0.15 / $0.60', isFree: false },
-    { id: 'openai/gpt-4o', name: 'OpenAI: GPT-4o', priceLabel: '$2.50 / $10.00', isFree: false },
-    { id: 'anthropic/claude-3.5-sonnet', name: 'Anthropic: Claude 3.5 Sonnet', priceLabel: '$3.00 / $15.00', isFree: false },
-    { id: 'deepseek/deepseek-r1', name: 'DeepSeek: R1', priceLabel: '$0.55 / $2.19', isFree: false }
+    // --- FREE ---
+    { id: 'deepseek/deepseek-r1:free', name: 'DeepSeek: R1 Reasoning', priceLabel: 'Free', isFree: true, recommended: true },
+    { id: 'google/gemini-2.0-flash-exp:free', name: 'Google: Gemini 2.0 Flash', priceLabel: 'Free', isFree: true, recommended: true },
+    { id: 'meta-llama/llama-3.3-70b-instruct:free', name: 'Meta: Llama 3.3 70B Instruct', priceLabel: 'Free', isFree: true, recommended: true },
+    { id: 'qwen/qwq-32b:free', name: 'Qwen: QwQ 32B', priceLabel: 'Free', isFree: true, recommended: false },
+    { id: 'nvidia/llama-3.1-nemotron-70b-instruct:free', name: 'NVIDIA: Llama 3.1 Nemotron 70B', priceLabel: 'Free', isFree: true, recommended: false },
+    { id: 'meta-llama/llama-3.1-405b-instruct:free', name: 'Meta: Llama 3.1 405B Instruct', priceLabel: 'Free', isFree: true, recommended: false },
+    { id: 'qwen/qwen-2.5-72b-instruct:free', name: 'Qwen: 2.5 72B Instruct', priceLabel: 'Free', isFree: true, recommended: false },
+    { id: 'mistralai/mistral-small-24b-instruct-2501:free', name: 'Mistral: Small 24B', priceLabel: 'Free', isFree: true, recommended: false },
+    { id: 'nvidia/nemotron-4-340b-instruct:free', name: 'NVIDIA: Nemotron 4 340B', priceLabel: 'Free', isFree: true, recommended: false },
+    // --- PAY ---
+    { id: 'anthropic/claude-3.5-sonnet', name: 'Anthropic: Claude 3.5 Sonnet', priceLabel: '$3.00 / $15.00', isFree: false, recommended: true },
+    { id: 'openai/gpt-4o', name: 'OpenAI: GPT-4o', priceLabel: '$2.50 / $10.00', isFree: false, recommended: true },
+    { id: 'deepseek/deepseek-r1', name: 'DeepSeek: R1', priceLabel: '$0.55 / $2.19', isFree: false, recommended: true },
+    { id: 'openai/gpt-4o-mini', name: 'OpenAI: GPT-4o Mini', priceLabel: '$0.15 / $0.60', isFree: false, recommended: false },
+    { id: 'google/gemini-2.5-pro', name: 'Google: Gemini 2.5 Pro', priceLabel: '$1.25 / $5.00', isFree: false, recommended: false },
+    { id: 'anthropic/claude-3-haiku', name: 'Anthropic: Claude 3 Haiku', priceLabel: '$0.25 / $1.25', isFree: false, recommended: false },
 ];
 let _openRouterModelsCachedAt = 0;
 
@@ -531,6 +536,55 @@ async function callAIModel(engine, prompt, keys) {
     }
 }
 
+// Modelli Requesty consigliati (statici)
+const RECOMMENDED_REQUESTY_FREE = [
+    { id: 'deepseek/deepseek-chat', name: 'DeepSeek: V3 Chat', priceLabel: 'Best Value', isFree: true, recommended: true },
+    { id: 'deepseek/deepseek-r1', name: 'DeepSeek: R1 Reasoning', priceLabel: 'Best Value', isFree: true, recommended: true },
+    { id: 'qwen/qwq-32b', name: 'Qwen: QwQ 32B', priceLabel: 'Best Value', isFree: true, recommended: true },
+];
+const RECOMMENDED_REQUESTY_PAY = [
+    { id: 'anthropic/claude-3-5-sonnet-20241022', name: 'Anthropic: Claude 3.5 Sonnet', priceLabel: 'Pay', isFree: false, recommended: true },
+    { id: 'openai/gpt-4o-2024-11-20', name: 'OpenAI: GPT-4o (Nov 2024)', priceLabel: 'Pay', isFree: false, recommended: true },
+    { id: 'google/gemini-2.5-pro', name: 'Google: Gemini 2.5 Pro', priceLabel: 'Pay', isFree: false, recommended: true },
+];
+
+// Modelli Gemini consigliati (statici)
+const RECOMMENDED_GEMINI_FREE = [
+    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', priceLabel: 'Free', isFree: true, recommended: true },
+    { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite', priceLabel: 'Free', isFree: true, recommended: true },
+    { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', priceLabel: 'Free', isFree: true, recommended: true },
+];
+const RECOMMENDED_GEMINI_PAY = [
+    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', priceLabel: 'Pay', isFree: false, recommended: true },
+    { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', priceLabel: 'Pay', isFree: false, recommended: true },
+    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (avanzato)', priceLabel: 'Pay', isFree: false, recommended: true },
+];
+
+/**
+ * Restituisce i modelli consigliati (top 3 free + top 3 pay) per ogni provider.
+ * Usato dall'endpoint /api/admin/recommended-models
+ */
+function getRecommendedModels() {
+    // OpenRouter: prendi i primi 3 free e 3 pay dalla cache (o dal fallback statico)
+    const orModels = _cachedOpenRouterModels;
+    const orFree = orModels.filter(m => m.isFree && m.recommended).slice(0, 3);
+    const orPay = orModels.filter(m => !m.isFree && m.recommended).slice(0, 3);
+
+    // Requesty: statici aggiornati
+    const reqFree = RECOMMENDED_REQUESTY_FREE;
+    const reqPay = RECOMMENDED_REQUESTY_PAY;
+
+    // Gemini: statici
+    const gemFree = RECOMMENDED_GEMINI_FREE;
+    const gemPay = RECOMMENDED_GEMINI_PAY;
+
+    return {
+        openrouter: { free: orFree, pay: orPay },
+        requesty: { free: reqFree, pay: reqPay },
+        gemini: { free: gemFree, pay: gemPay }
+    };
+}
+
 module.exports = {
     getBestGeminiModel,
     fetchOpenRouterModels,
@@ -538,6 +592,7 @@ module.exports = {
     fetchRequestyModels,
     getRequestyModels,
     getGeminiModelPreference,
+    getRecommendedModels,
     checkNewGeminiModels,
     parseAIResponse,
     callAIModel

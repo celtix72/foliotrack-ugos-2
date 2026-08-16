@@ -88,28 +88,63 @@ module.exports = function (dependencies) {
             
             const enginesWithLabels = available.map(e => {
                 let label = e;
-                if (e === 'Gemini_Free') label = `Gemini [${geminiModelName || 'caricamento...'}]`;
-                
-                if (e === 'OR1') {
-                    label = `OpenRouter 1 [${settings.openrouterModel1}]`;
+                const orModels = aiService.getOpenRouterModels();
+                const reqModels = aiService.getRequestyModels();
+
+                function modelShortName(modelId) {
+                    if (!modelId) return '';
+                    // Prende la parte dopo l'ultimo '/' e rimuove ':free'
+                    const base = modelId.split('/').pop().replace(':free', '').replace(/-\d{8}$/, '');
+                    return base.length > 30 ? base.slice(0, 28) + '…' : base;
+                }
+
+                if (e === 'Gemini_Free') {
+                    label = `Gemini · ${geminiModelName || 'auto-detect'}`;
+                } else if (e === 'OR1') {
+                    const m = orModels.find(x => x.id === settings.openrouterModel1);
+                    const mName = m ? m.name : modelShortName(settings.openrouterModel1);
+                    const free = m?.isFree ? ' (Free)' : '';
+                    label = `OpenRouter · ${mName || 'Slot 1'}${free}`;
                 } else if (e === 'OR2') {
-                    label = `OpenRouter 2 [${settings.openrouterModel2}]`;
+                    const m = orModels.find(x => x.id === settings.openrouterModel2);
+                    const mName = m ? m.name : modelShortName(settings.openrouterModel2);
+                    const free = m?.isFree ? ' (Free)' : '';
+                    label = `OpenRouter · ${mName || 'Slot 2'}${free}`;
                 } else if (e === 'OR3') {
-                    label = `OpenRouter 3 [${settings.openrouterModel3}]`;
+                    const m = orModels.find(x => x.id === settings.openrouterModel3);
+                    const mName = m ? m.name : modelShortName(settings.openrouterModel3);
+                    const free = m?.isFree ? ' (Free)' : '';
+                    label = `OpenRouter · ${mName || 'Slot 3'}${free}`;
                 } else if (e === 'OR4') {
-                    label = `OpenRouter 4 [${settings.openrouterModel4}]`;
+                    const m = orModels.find(x => x.id === settings.openrouterModel4);
+                    const mName = m ? m.name : modelShortName(settings.openrouterModel4);
+                    const free = m?.isFree ? ' (Free)' : '';
+                    label = `OpenRouter · ${mName || 'Slot 4'}${free}`;
                 } else if (e === 'OR5') {
-                    label = `OpenRouter 5 [${settings.openrouterModel5}]`;
+                    const m = orModels.find(x => x.id === settings.openrouterModel5);
+                    const mName = m ? m.name : modelShortName(settings.openrouterModel5);
+                    const free = m?.isFree ? ' (Free)' : '';
+                    label = `OpenRouter · ${mName || 'Slot 5'}${free}`;
                 } else if (e === 'REQ1') {
-                    label = `Requesty 1 [${settings.requestyModel1}]`;
+                    const m = reqModels.find(x => x.id === settings.requestyModel1);
+                    const mName = m ? m.name : modelShortName(settings.requestyModel1);
+                    label = `Requesty · ${mName || 'Slot 1'}`;
                 } else if (e === 'REQ2') {
-                    label = `Requesty 2 [${settings.requestyModel2}]`;
+                    const m = reqModels.find(x => x.id === settings.requestyModel2);
+                    const mName = m ? m.name : modelShortName(settings.requestyModel2);
+                    label = `Requesty · ${mName || 'Slot 2'}`;
                 } else if (e === 'REQ3') {
-                    label = `Requesty 3 [${settings.requestyModel3}]`;
+                    const m = reqModels.find(x => x.id === settings.requestyModel3);
+                    const mName = m ? m.name : modelShortName(settings.requestyModel3);
+                    label = `Requesty · ${mName || 'Slot 3'}`;
                 } else if (e === 'REQ4') {
-                    label = `Requesty 4 [${settings.requestyModel4}]`;
+                    const m = reqModels.find(x => x.id === settings.requestyModel4);
+                    const mName = m ? m.name : modelShortName(settings.requestyModel4);
+                    label = `Requesty · ${mName || 'Slot 4'}`;
                 } else if (e === 'REQ5') {
-                    label = `Requesty 5 [${settings.requestyModel5}]`;
+                    const m = reqModels.find(x => x.id === settings.requestyModel5);
+                    const mName = m ? m.name : modelShortName(settings.requestyModel5);
+                    label = `Requesty · ${mName || 'Slot 5'}`;
                 }
                 
                 return { id: e, label };
@@ -446,6 +481,32 @@ IMPORTANTE:
         } catch (err) {
             logger.error('[Requesty Models API Error]', err.message);
             res.status(500).json({ success: false, message: 'Errore interno.' });
+        }
+    });
+
+    // GET /api/admin/recommended-models
+    // Restituisce i top 3 free + top 3 pay per ogni provider
+    router.get('/admin/recommended-models', requireAuth, requireAdmin, (req, res) => {
+        try {
+            const recommended = aiService.getRecommendedModels();
+            res.json({ success: true, ...recommended });
+        } catch (err) {
+            logger.error('[Recommended Models API Error]', err.message);
+            res.status(500).json({ success: false, message: 'Errore interno.' });
+        }
+    });
+
+    // POST /api/admin/refresh-ai-models
+    // Forza il refresh manuale dei modelli da OpenRouter e Requesty
+    router.post('/admin/refresh-ai-models', requireAuth, requireAdmin, async (req, res) => {
+        try {
+            await aiService.fetchOpenRouterModels();
+            await aiService.fetchRequestyModels();
+            logger.info(`[ADMIN] AI models refreshed manually by ${req.user.username}`);
+            res.json({ success: true, message: 'Modelli aggiornati con successo.' });
+        } catch (err) {
+            logger.error('[Refresh AI Models Error]', err.message);
+            res.status(500).json({ success: false, message: 'Errore durante il refresh.' });
         }
     });
 
