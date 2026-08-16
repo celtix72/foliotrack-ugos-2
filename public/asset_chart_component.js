@@ -2134,6 +2134,22 @@
         } catch (e) { }
     };
 
+    window.setAssetAiHistoryBest = async function(id, ticker) {
+        try {
+            const res = await fetch(`/api/assets/ai-history/${id}/best`, {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+            });
+            if (res.ok) {
+                window.loadAssetAiHistory(ticker);
+                if (typeof window.loadMarketOverview === 'function') window.loadMarketOverview();
+                if (typeof window.loadWatchlist === 'function') window.loadWatchlist();
+            }
+        } catch(e) {
+            console.error('Error setting best AI history', e);
+        }
+    };
+
     window.openAssetAiDetail = function (ticker, action, encodedReasoning, date) {
         let reasoning = '';
         try { reasoning = decodeURIComponent(encodedReasoning); } catch(e) { reasoning = encodedReasoning; }
