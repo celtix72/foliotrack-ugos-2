@@ -138,10 +138,33 @@ let _requestyModelsCachedAt = 0;
 
 async function fetchRequestyModels() {
     try {
-        const res = await axios.get('https://router.requesty.ai/v1/models');
+        let apiKey = process.env.REQUESTY_API_KEY || '';
+        try {
+            const db = require('../db');
+            if (db && db.getSettings) {
+                const settings = db.getSettings(1) || {};
+                apiKey = settings.requestyApiKey || settings.requestyApiKeyPay || settings.requestyApiKeyFree || apiKey;
+            }
+        } catch(e) {}
+        
+        const config = {};
+        if (apiKey) {
+            config.headers = { 'Authorization': `Bearer ${apiKey}` };
+        }
+        
+        const res = await axios.get('https://router.requesty.ai/v1/models', config);
         if (res.data && res.data.data) {
+            // Check if Requesty injects an approval/routed flag when auth is provided
+            const hasApprovalFlags = res.data.data.some(m => m.approved === true || m.is_approved === true || m.status === 'approved' || m.routed === true);
+
             let filtered = res.data.data.filter(m => {
                 const id = m.id.toLowerCase();
+                
+                // If the user has configured an Approved Models list in Requesty, strictly adhere to it
+                if (hasApprovalFlags) {
+                    if (!(m.approved === true || m.is_approved === true || m.status === 'approved' || m.routed === true)) return false;
+                }
+
                 const promptPrice = parseFloat(m.input_price || 0) * 1000000;
                 if (promptPrice > 15) return false;
                 if (id.includes('@')) return false; // Filtra duplicati specifici per regione/zona
