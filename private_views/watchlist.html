@@ -156,10 +156,16 @@
 
     <main class="flex-1 overflow-y-auto custom-scrollbar p-5">
         <div class="mb-4 flex items-center justify-between gap-3">
-            <div class="flex-1 relative">
-                <span class="material-symbols-outlined absolute left-3 top-2 text-slate-400 text-sm">search</span>
-                <input type="text" id="asset-search" placeholder="Search and add tickers (e.g. AAPL)..." class="w-full pl-9 pr-4 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-primary shadow-sm text-xs" autocomplete="off" />
-                <div id="search-suggestions" class="absolute z-[100] w-full mt-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl hidden max-h-60 overflow-y-auto custom-scrollbar"></div>
+            <div class="flex-1 flex flex-col sm:flex-row gap-3">
+                <div class="flex-1 relative">
+                    <span class="material-symbols-outlined absolute left-3 top-2 text-slate-400 text-sm">add_circle</span>
+                    <input type="text" id="asset-search" placeholder="Search and add tickers (e.g. AAPL)..." class="w-full pl-9 pr-4 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-primary shadow-sm text-xs" autocomplete="off" />
+                    <div id="search-suggestions" class="absolute z-[100] w-full mt-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl hidden max-h-60 overflow-y-auto custom-scrollbar"></div>
+                </div>
+                <div class="flex-1 relative">
+                    <span class="material-symbols-outlined absolute left-3 top-2 text-slate-400 text-sm">filter_list</span>
+                    <input type="text" id="asset-filter" placeholder="Filter by name or ticker..." class="w-full pl-9 pr-4 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-primary shadow-sm text-xs" autocomplete="off" oninput="renderWatchlist()" />
+                </div>
             </div>
             <div class="flex items-center gap-2 shrink-0">
                 <div class="flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1 shadow-sm">
@@ -333,8 +339,18 @@
     function renderWatchlist() {
         const tbody = document.getElementById('watchlist-body');
         const empty = document.getElementById('watchlist-empty');
+        const filterText = (document.getElementById('asset-filter')?.value || '').toLowerCase();
         
-        if (watchlist.length === 0) {
+        let filteredWatchlist = watchlist;
+        if (filterText) {
+            filteredWatchlist = watchlist.filter(item => {
+                const name = (item.name || '').toLowerCase();
+                const ticker = (item.ticker || '').toLowerCase();
+                return name.includes(filterText) || ticker.includes(filterText);
+            });
+        }
+        
+        if (filteredWatchlist.length === 0) {
             tbody.innerHTML = '';
             empty.classList.remove('hidden');
             return;
@@ -343,12 +359,12 @@
         empty.classList.add('hidden');
 
         // Robust grouping logic for sections: Azioni (EUR/USD/Altre), ETF, Obbligazioni, CD
-        const azioniEur = watchlist.filter(item => getAssetCategory(item) === 'Azioni' && item.currency === 'EUR');
-        const azioniUsd = watchlist.filter(item => getAssetCategory(item) === 'Azioni' && item.currency === 'USD');
-        const azioniOther = watchlist.filter(item => getAssetCategory(item) === 'Azioni' && item.currency !== 'EUR' && item.currency !== 'USD');
-        const etfs = watchlist.filter(item => getAssetCategory(item) === 'ETF');
-        const obbligazioni = watchlist.filter(item => getAssetCategory(item) === 'Obbligazioni');
-        const cd = watchlist.filter(item => getAssetCategory(item) === 'CD');
+        const azioniEur = filteredWatchlist.filter(item => getAssetCategory(item) === 'Azioni' && item.currency === 'EUR');
+        const azioniUsd = filteredWatchlist.filter(item => getAssetCategory(item) === 'Azioni' && item.currency === 'USD');
+        const azioniOther = filteredWatchlist.filter(item => getAssetCategory(item) === 'Azioni' && item.currency !== 'EUR' && item.currency !== 'USD');
+        const etfs = filteredWatchlist.filter(item => getAssetCategory(item) === 'ETF');
+        const obbligazioni = filteredWatchlist.filter(item => getAssetCategory(item) === 'Obbligazioni');
+        const cd = filteredWatchlist.filter(item => getAssetCategory(item) === 'CD');
 
         const renderSection = (items, title) => {
             if (items.length === 0) return '';
