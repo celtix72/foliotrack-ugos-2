@@ -87,10 +87,11 @@ router.get('/market/movers', requireAuth, async (req, res) => {
         const userId = req.user.id;
         const todayStr = new Date().toISOString().split('T')[0];
         const marketStatus = getMarketStatus();
+        const rate = await getEurUsdRate();
         
         // Return assets that have open positions for THIS user
         let rows = database.db.prepare(`
-            SELECT a.* 
+            SELECT a.*, t.balance as totalQuantity 
             FROM assets a
             JOIN (
                 SELECT t.assetTicker, 
@@ -119,7 +120,11 @@ router.get('/market/movers', requireAuth, async (req, res) => {
             return Math.abs(a.changePercent) > 0;
         })
           .sort((a, b) => Math.abs(b.changePercent) - Math.abs(a.changePercent))
-          .slice(0, 10);
+          .slice(0, 10).map(a => {
+            const dailyGainLocal = (a.changeValue || 0) * (a.totalQuantity || 0);
+            a.dailyGainEUR = (a.currency === 'USD') ? (dailyGainLocal / rate) : dailyGainLocal;
+            return a;
+        });
 
         res.json(rows);
     } catch (err) {
