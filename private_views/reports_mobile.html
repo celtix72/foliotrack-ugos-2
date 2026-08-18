@@ -90,9 +90,9 @@
   <div class="mob-scroll" id="mob-reports-scroll">
     <!-- TABS -->
     <div class="mob-tabs" style="margin-bottom: 12px; padding: 16px 16px 4px 16px;">
-        <div class="mob-tab-pill active" onclick="switchRepTab('portafogli')" id="tab-portafogli">Portafogli</div>
-        <div class="mob-tab-pill" onclick="switchRepTab('performance')" id="tab-performance">Performance</div>
+        <div class="mob-tab-pill active" onclick="switchRepTab('performance')" id="tab-performance">Performance</div>
         <div class="mob-tab-pill" onclick="switchRepTab('allocazione')" id="tab-allocazione">Allocazione</div>
+        <div class="mob-tab-pill" onclick="switchRepTab('portafogli')" id="tab-portafogli">Portafogli</div>
     </div>
 
     <!-- Tag Filters -->
@@ -101,7 +101,7 @@
     </div>
 
     <!-- VIEW: PORTAFOGLI -->
-    <div id="view-portafogli">
+    <div id="view-portafogli" class="hidden">
         <div class="mob-section-header">
             <span class="mob-section-title">Portafogli Breakdown</span>
         </div>
@@ -111,7 +111,10 @@
     </div>
 
     <!-- VIEW: PERFORMANCE -->
-    <div id="view-performance" class="hidden">
+    <div id="view-performance">
+        <!-- Risk Profile Breakdown -->
+        <div id="mob-risk-profile-widget" class="px-4 mb-4"></div>
+        
         <!-- Hero metrics (Performance summary) -->
         <div class="mob-hero" style="margin-top: 0;">
           <div class="mob-hero-label">TOTAL ROI</div>
@@ -446,6 +449,7 @@
 
             // Charts
             mobRenderCharts(data);
+            mobRenderRiskProfile(data);
             if (data.annualGains) mobRenderAnnualGains(data.annualGains);
             if (data.assetGains) {
                 window._mobAssetGainsData = data.assetGains;
@@ -479,6 +483,80 @@
         } catch(e) {
             console.error('Mobile Reports sync error:', e);
         }
+    }
+
+    function mobRenderRiskProfile(data) {
+        const container = document.getElementById('mob-risk-profile-widget');
+        if (!container) return;
+
+        if (!data || !data.diversification || !data.diversification.assetType) {
+            container.innerHTML = '';
+            return;
+        }
+
+        const assets = data.diversification.assetType;
+        let safe = 0; // Green
+        let moderate = 0; // Yellow
+        let risky = 0; // Red
+
+        for (const [type, value] of Object.entries(assets)) {
+            const t = type.toLowerCase();
+            if (t.includes('liquidità') || t.includes('conto deposito') || t.includes('cd') || t.includes('monetari')) {
+                safe += value;
+            } else if (t.includes('obbligazion') || t.includes('bond')) {
+                moderate += value;
+            } else {
+                risky += value;
+            }
+        }
+
+        const total = safe + moderate + risky;
+        if (total <= 0) {
+            container.innerHTML = '';
+            return;
+        }
+
+        const safePct = (safe / total) * 100;
+        const modPct = (moderate / total) * 100;
+        const riskyPct = (risky / total) * 100;
+
+        container.innerHTML = `
+            <div class="mob-card p-3" style="border-radius: 12px; display: flex; flex-direction: column; gap: 8px;">
+                <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--mob-text-muted); letter-spacing: 0.5px;">Profilo di Rischio</div>
+                
+                <div style="display: flex; width: 100%; height: 8px; border-radius: 4px; overflow: hidden; background: var(--mob-border);">
+                    <div style="width: ${safePct}%; background-color: var(--mob-emerald);"></div>
+                    <div style="width: ${modPct}%; background-color: #f59e0b;"></div>
+                    <div style="width: ${riskyPct}%; background-color: var(--mob-rose);"></div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                    <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px;">
+                        <div style="display: flex; align-items: center; gap: 4px;">
+                            <div style="width: 8px; height: 8px; border-radius: 2px; background-color: var(--mob-emerald);"></div>
+                            <span style="font-size: 9px; font-weight: 700; color: var(--mob-text);">Basso rischio</span>
+                        </div>
+                        <span style="font-size: 10px; font-weight: 900; color: var(--mob-text);">${safePct.toFixed(1)}%</span>
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+                        <div style="display: flex; align-items: center; gap: 4px;">
+                            <div style="width: 8px; height: 8px; border-radius: 2px; background-color: #f59e0b;"></div>
+                            <span style="font-size: 9px; font-weight: 700; color: var(--mob-text);">Medio rischio</span>
+                        </div>
+                        <span style="font-size: 10px; font-weight: 900; color: var(--mob-text);">${modPct.toFixed(1)}%</span>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+                        <div style="display: flex; align-items: center; gap: 4px;">
+                            <div style="width: 8px; height: 8px; border-radius: 2px; background-color: var(--mob-rose);"></div>
+                            <span style="font-size: 9px; font-weight: 700; color: var(--mob-text);">Alto rischio</span>
+                        </div>
+                        <span style="font-size: 10px; font-weight: 900; color: var(--mob-text);">${riskyPct.toFixed(1)}%</span>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 
     function mobRenderAnnualGains(gains) {
