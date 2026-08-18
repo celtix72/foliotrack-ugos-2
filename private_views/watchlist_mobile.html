@@ -658,17 +658,17 @@
               
               <!-- Col 1: Asset Info compatta su 2 righe -->
               <div style="display:flex; flex-direction:column; gap:2px; align-items:flex-start; min-width:0">
-                <!-- Riga 1: Badge + Nome/Ticker + Prezzo + Var% + Exchange -->
+                <!-- Riga 1: Badge + Nome/Ticker + Prezzo + Var% -->
                 <div style="display:flex; align-items:center; gap:4px; max-width:100%; overflow:hidden; flex-wrap:nowrap;">
                   <span style="${displaySymbolStyle}">${displaySymbol}</span>
                   ${a.name && !_watchlistExtMode ? `<span style="${nameStyle}">${abbreviateName(a.name, 14)}</span>` : ''}
                   <span style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text); flex-shrink:0;">${priceFmt}</span>
                   <span style="color:${chgColor}; font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; flex-shrink:0;">${todayVarPct}</span>
-                  <span style="background:rgba(100,116,139,0.1); color:var(--mob-text-muted); border-radius:3px; padding:1px 3px; font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; flex-shrink:0;">${exchangeLabel}</span>
                 </div>
 
-                <!-- Riga 2: Portfolio tags + Fondamentali button -->
+                <!-- Riga 2: Exchange tag + Portfolio tags + Fondamentali button -->
                 <div style="display:flex; align-items:center; gap:4px;">
+                  <span style="background:rgba(100,116,139,0.1); color:var(--mob-text-muted); border-radius:3px; padding:1px 4px; font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; flex-shrink:0;">${exchangeLabel}</span>
                   ${portTags}
                   <span onclick="event.stopPropagation(); window.openAssetFundamentalsModal('${tickerEsc}', '${nameEsc}')" class="border border-indigo-500/30 text-indigo-500 bg-indigo-500/10 cursor-pointer flex items-center justify-center" style="padding: 1px 4px; border-radius:4px;" title="Dati Fondamentali Yahoo Finance">
                     <span class="material-symbols-outlined" style="font-size: calc(10px * var(--mkcard-scale, 1)); font-weight: bold;">query_stats</span>
@@ -823,15 +823,19 @@
 
             const renderSectionMob = (items, title) => {
                 if (items.length === 0) return '';
+                const sectionId = 'wl-' + title.replace(/\s+/g, '-').toLowerCase().replace(/[^a-z0-9-]/g, '');
                 return `
-                  <div class="px-3 py-2 bg-slate-300 dark:bg-slate-700 text-xs font-black uppercase tracking-[0.15em] text-slate-900 dark:text-white border-y-2 border-slate-400 dark:border-slate-600 flex items-center justify-between">
+                  <div class="px-3 py-2 bg-yellow-100 dark:bg-yellow-900/20 text-xs font-black uppercase tracking-[0.15em] text-yellow-900 dark:text-yellow-100 border-y-2 border-yellow-300 dark:border-yellow-700/50 flex items-center justify-between cursor-pointer" onclick="toggleWatchlistSectionMob('${sectionId}')">
                     <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[16px] transition-transform duration-200" id="icon-${sectionId}" style="transform: rotate(0deg);">expand_more</span>
                         <span class="w-2 h-4 bg-primary rounded-full inline-block"></span>
                         <span>${title}</span>
                     </div>
-                    <span class="text-[10px] font-bold text-slate-900 dark:text-slate-100 bg-slate-400/60 dark:bg-slate-600/90 px-2.5 py-0.5 rounded-full font-mono">${items.length}</span>
+                    <span class="text-[10px] font-bold text-yellow-900 dark:text-yellow-100 bg-yellow-400/40 dark:bg-yellow-700/60 px-2.5 py-0.5 rounded-full font-mono">${items.length}</span>
                   </div>
-                  ${items.map(a => renderFundamentalsCard(a)).join('')}
+                  <div id="section-${sectionId}">
+                    ${items.map(a => renderFundamentalsCard(a)).join('')}
+                  </div>
                 `;
             };
 
@@ -843,6 +847,20 @@
         }
     }
     window.renderWatchlist = renderWatchlist;
+
+    window.toggleWatchlistSectionMob = function(sectionId) {
+        const body = document.getElementById(`section-${sectionId}`);
+        const icon = document.getElementById(`icon-${sectionId}`);
+        if (body) {
+            if (body.style.display === 'none') {
+                body.style.display = '';
+                if (icon) icon.style.transform = 'rotate(0deg)';
+            } else {
+                body.style.display = 'none';
+                if (icon) icon.style.transform = 'rotate(-90deg)';
+            }
+        }
+    };
 
     async function showMobDetails(ticker, name, currency) {
         if (typeof openAssetChartModal === 'function') {
