@@ -1611,6 +1611,28 @@ Nel report markdown usa TITOLI (## Titolo), TABELLE in formato Markdown (| Col 1
         res.json({ success: true });
     });
 
+    // GET /api/analytics/ai-report/latest
+    router.get('/analytics/ai-report/latest', requireAuth, (req, res) => {
+        try {
+            const report = database.db.prepare(`
+                SELECT id, date, markdown_content as text
+                FROM ai_portfolio_reports 
+                WHERE user_id = ? 
+                ORDER BY date DESC 
+                LIMIT 1
+            `).get(req.user.id);
+            
+            if (report) {
+                res.json(report);
+            } else {
+                res.status(404).json({ error: 'No report found' });
+            }
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
     // GET /api/analytics/ai-reports
     router.get('/analytics/ai-reports', requireAuth, (req, res) => {
         try {
