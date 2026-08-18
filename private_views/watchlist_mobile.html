@@ -121,16 +121,16 @@
     </div>
 
     <!-- Search Bar matching Market style but always visible here -->
-    <div class="p-4 border-b border-slate-100 dark:border-slate-800/50 bg-white dark:bg-slate-900 relative z-[10000]" style="overflow: visible !important; display: flex; flex-direction: column; gap: 8px;">
-        <div class="relative">
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-sm">add_circle</span>
-            <input type="text" id="mob-asset-search" placeholder="Cerca e aggiungi (es. AAPL)..." 
-                   class="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/20">
+    <div class="px-3 py-2 border-b border-slate-100 dark:border-slate-800/50 bg-white dark:bg-slate-900 relative z-[10000] flex flex-row gap-2" style="overflow: visible !important;">
+        <div class="relative flex-1">
+            <span class="absolute left-2.5 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400" style="font-size:16px;">add_circle</span>
+            <input type="text" id="mob-asset-search" placeholder="Aggiungi ticker..." 
+                   class="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-xl pl-8 pr-2 py-2 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/20">
         </div>
-        <div class="relative">
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-sm">filter_list</span>
-            <input type="text" id="mob-asset-filter" placeholder="Filtra (nome o ticker)..." 
-                   class="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/20" oninput="renderWatchlist()">
+        <div class="relative flex-1">
+            <span class="absolute left-2.5 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400" style="font-size:16px;">filter_list</span>
+            <input type="text" id="mob-asset-filter" placeholder="Filtra..." 
+                   class="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-xl pl-8 pr-2 py-2 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/20" oninput="renderWatchlist()">
         </div>
     </div>
 
