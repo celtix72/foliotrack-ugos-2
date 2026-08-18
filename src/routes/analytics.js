@@ -1131,7 +1131,8 @@ module.exports = function (dependencies) {
                     const value = shares * (curPx / lastExRate);
 
                     const geo = a.country || 'Unknown';
-                    const type = a.type || 'Other';
+                    let type = a.type || 'Other';
+                    if (ticker.startsWith('CD_') || ticker.startsWith('CASH')) type = 'Liquidità';
                     const currency = a.currency || p.currency || 'EUR';
                     diversification.geography[geo] = (diversification.geography[geo] || 0) + value;
                     diversification.assetType[type] = (diversification.assetType[type] || 0) + value;
@@ -1327,10 +1328,13 @@ module.exports = function (dependencies) {
                 if (totalInvested < 0.01 && totalGain === 0) continue;
                 const gainPct = totalInvested > 0 ? (totalGain / totalInvested) * 100 : 0;
 
+                let assetType = a.type || 'Stock';
+                if (ticker.startsWith('CD_') || ticker.startsWith('CASH')) assetType = 'Liquidità';
+
                 assetGainsMap[ticker] = {
                     ticker,
                     name: a.name || ticker,
-                    type: a.type || 'Stock',
+                    type: assetType,
                     currency: a.currency || 'EUR',
                     realizedGain: Math.round(realizedGain * 100) / 100,
                     dividends: Math.round(dividends * 100) / 100,
