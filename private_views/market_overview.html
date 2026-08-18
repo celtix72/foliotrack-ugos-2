@@ -1107,23 +1107,56 @@ async function loadMovers() {
         }
 
         if (section) section.classList.remove('hidden');
-        if (carousel) carousel.innerHTML = movers.map(m => {
+
+        const gainers = movers.filter(m => m.changePercent > 0)
+                              .sort((a, b) => b.changePercent - a.changePercent)
+                              .slice(0, 5);
+        const losers  = movers.filter(m => m.changePercent < 0)
+                              .sort((a, b) => a.changePercent - b.changePercent)
+                              .slice(0, 5);
+
+        const renderCard = (m) => {
             const isPos = m.changePercent >= 0;
-            const color = isPos ? 'emerald' : 'rose';
-            const hasPre = m.preMarketChangePercent && Math.abs(m.preMarketChangePercent) > 0.01;
-            const hasPost = m.postMarketChangePercent && Math.abs(m.postMarketChangePercent) > 0.01;
+            const textColor = isPos ? 'text-emerald-500' : 'text-rose-500';
+            const bgColor = isPos ? 'bg-emerald-500/10 dark:bg-emerald-500/20' : 'bg-rose-500/10 dark:bg-rose-500/20';
+            const borderColor = isPos ? 'border-emerald-500/30' : 'border-rose-500/30';
+            const sign = isPos ? '+' : '';
+            const price = (m.currentPrice || 0).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const currency = m.currency || '';
             
             return `
-                <div class="snap-start shrink-0 w-36 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 p-1.5 rounded-xl hover:border-primary transition-all cursor-pointer flex flex-col items-center justify-center text-center group shadow-sm" onclick="loadAssetChart('${m.ticker}')">
-                    <span class="text-base font-black text-slate-400 uppercase tracking-[0.1em] mb-1 group-hover:text-primary transition-colors">${m.ticker}</span>
-                    <div class="flex items-baseline gap-1.5 justify-center">
-                        <div class="${isPos ? 'text-emerald-500' : 'text-rose-500'} text-xl font-black leading-tight">${isPos ? '+' : ''}${m.changePercent.toFixed(1)}%</div>
-                        ${hasPre ? `<div class="text-[11px] font-bold text-slate-400 uppercase tracking-tighter">Pre: <span class="${m.preMarketChangePercent >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${m.preMarketChangePercent >= 0 ? '+' : ''}${m.preMarketChangePercent.toFixed(1)}%</span></div>` : ''}
-                    </div>
-                    ${hasPost ? `<div class="text-[11px] font-bold text-slate-400 mt-0.5 uppercase tracking-tighter">Post: <span class="${m.postMarketChangePercent >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${m.postMarketChangePercent >= 0 ? '+' : ''}${m.postMarketChangePercent.toFixed(1)}%</span></div>` : ''}
+                <div onclick="loadAssetChart('${m.ticker}')"
+                     class="shrink-0 w-28 rounded-xl px-2 py-2.5 flex flex-col items-center justify-center text-center cursor-pointer ${bgColor} border ${borderColor} hover:scale-105 transition-all shadow-sm">
+                    <span class="text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none mb-1.5">${m.ticker}</span>
+                    <span class="text-[16px] font-black ${textColor} leading-none mb-1">${sign}${m.changePercent.toFixed(1)}%</span>
+                    <span class="text-[9px] font-bold text-slate-500">${price} ${currency}</span>
                 </div>
             `;
-        }).join('');
+        };
+
+        let finalHtml = '';
+        if (gainers.length > 0) {
+            finalHtml += `
+                <div class="flex flex-col gap-1.5">
+                    <div class="text-[9px] font-black text-emerald-500 uppercase tracking-widest px-1">▲ Top</div>
+                    <div class="flex gap-3">
+                        ${gainers.map(renderCard).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        if (losers.length > 0) {
+            finalHtml += `
+                <div class="flex flex-col gap-1.5 ${gainers.length > 0 ? 'ml-6' : ''}">
+                    <div class="text-[9px] font-black text-rose-500 uppercase tracking-widest px-1">▼ Flop</div>
+                    <div class="flex gap-3">
+                        ${losers.map(renderCard).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        if (carousel) carousel.innerHTML = finalHtml;
     } catch (err) { console.error('Error loading movers:', err); }
 }
 
