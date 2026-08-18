@@ -198,6 +198,7 @@
                         <th class="px-4 py-1.5 text-[9px] font-black uppercase tracking-widest text-slate-400">Asset</th>
                         <th class="px-4 py-1.5 text-[9px] font-black uppercase tracking-widest text-slate-400">Price</th>
                         <th class="px-4 py-1.5 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">Perf (1D / 1W / 1M / 1Y)</th>
+                        <th class="px-4 py-1.5 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">Div Yield</th>
                         <th class="px-4 py-1.5 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">Trend</th>
                         <th class="px-4 py-1.5 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">Buy Zone</th>
                         <th class="px-4 py-1.5 text-[9px] font-black uppercase tracking-widest text-slate-400 text-right">TP / SL</th>
@@ -409,9 +410,7 @@
                                     typeLabel === 'ETF' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 
                                     'bg-slate-500/10 text-slate-500 border-slate-500/20';
 
-                    const divYieldHtml = (typeLabel === 'Equity' && item.dividendYield > 0) 
-                        ? `<span class="px-1 py-0 rounded text-[7px] font-black uppercase tracking-widest border bg-indigo-500/10 text-indigo-500 border-indigo-500/20" title="Dividend Yield">DY: ${(item.dividendYield * 100).toFixed(2)}%</span>` 
-                        : '';
+                    
 
                     const count = item.aiHistoryCount || 0;
                     let aiBadge = '';
@@ -583,7 +582,7 @@
                                             <span onclick="event.stopPropagation(); window.openAssetFundamentalsModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" class="px-1 py-0 rounded border border-indigo-500/30 text-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/20 cursor-pointer transition-colors inline-flex items-center justify-center" title="Dati Fondamentali Yahoo Finance">
                                                 <span class="material-symbols-outlined" style="font-size: 10px; font-weight: bold;">query_stats</span>
                                             </span>
-                                            ${divYieldHtml}
+                                            
                                         </span>
                                     </p>
                                 </div>
@@ -601,6 +600,9 @@
                                     ${renderPerf(perf.perf1M)}
                                     ${renderPerf(perf.perf1Y)}
                                 </div>
+                            </td>
+                            <td class="px-4 py-0.5 text-center font-mono font-bold text-indigo-500 text-xs">
+                                ${(item.dividendYield && item.dividendYield > 0) ? (item.dividendYield * 100).toFixed(2) + '%' : '<span class="text-slate-300 dark:text-slate-700">—</span>'}
                             </td>
                             <td class="px-4 py-0.5 text-center font-bold text-slate-600 dark:text-slate-300 text-xs cursor-help" title="${trendClean.replace(/"/g, '&quot;')}">
                                 ${shortTrend}
@@ -633,7 +635,7 @@
             
             return `
                 <tr class="select-none cursor-pointer hover:bg-yellow-200/50 dark:hover:bg-yellow-800/30 transition-colors" onclick="toggleSection('${sectionId}')">
-                    <td colspan="7" class="px-4 py-2 text-xs font-black uppercase tracking-[0.15em] bg-yellow-100 dark:bg-yellow-900/20 text-yellow-900 dark:text-yellow-100 border-y-2 border-yellow-300 dark:border-yellow-700/50">
+                    <td colspan="8" class="px-4 py-2 text-xs font-black uppercase tracking-[0.15em] bg-yellow-100 dark:bg-yellow-900/20 text-yellow-900 dark:text-yellow-100 border-y-2 border-yellow-300 dark:border-yellow-700/50">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-2">
                                 <span class="material-symbols-outlined text-[16px] transition-transform duration-200" id="icon-${sectionId}" style="transform: rotate(0deg);">expand_more</span>

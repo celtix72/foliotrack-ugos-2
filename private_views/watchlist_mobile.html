@@ -365,7 +365,7 @@
         localStorage.setItem('watchlist_sub_view', view);
         
         // Reset sort mode if not supported
-        if (view === 'ETF1' && ['pe', 'forwardPE', 'pegRatio'].includes(_watchlistSortMode)) {
+        if (view === 'ETF1' && ['pe', 'forwardPE', 'dividendYield'].includes(_watchlistSortMode)) {
             _watchlistSortMode = 'changePercent';
             localStorage.setItem('watchlist_sort_mode', 'changePercent');
         } else if (view === 'Az1' && ['name', 'dailyVal', 'totalGain'].includes(_watchlistSortMode)) {
@@ -414,7 +414,7 @@
                 { id: 'btn-sort-pct', mode: 'changePercent', label: '% Giorno' },
                 { id: 'btn-sort-pe', mode: 'pe', label: 'P/E' },
                 { id: 'btn-sort-fwdpe', mode: 'forwardPE', label: 'FWD P/E' },
-                { id: 'btn-sort-peg', mode: 'pegRatio', label: 'PEG' }
+                { id: 'btn-sort-dy', mode: 'dividendYield', label: 'Div %' }
             ];
         } else {
             tags = [
@@ -657,9 +657,7 @@
         const t = typeLabel.toUpperCase();
         if (t === 'AZIONI' || t === 'EQUITY' || t === 'STOCK' || t === 'COMMON STOCK') typeLabel = 'Equity';
         
-        const divYieldMobHtml = (typeLabel === 'Equity' && a.dividendYield > 0)
-            ? `<span style="background:rgba(99, 102, 241, 0.1); color:#6366f1; border:1px solid rgba(99, 102, 241, 0.2); border-radius:4px; padding:1px 4px; font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:900; display:inline-block; vertical-align:middle;">DY ${(a.dividendYield * 100).toFixed(2)}%</span>`
-            : '';
+        
 
         return `
           <div class="mob-holding-swipe-container"
@@ -707,10 +705,10 @@
                 </div>
               </div>
 
-              <!-- Col 4: PEG -->
+              <!-- Col 4: Div Yield -->
               <div style="display:flex; flex-direction:column; justify-content:center; align-items:flex-end; gap:1px; min-width:0; height:100%; text-align:right">
-                <span style="font-size:calc(7px * var(--mkcard-scale, 1)); font-weight:800; color:var(--mob-text-caption); text-transform:uppercase">PEG</span>
-                <span style="font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${a.pegRatio ? a.pegRatio.toFixed(1) : '—'}</span>
+                <span style="font-size:calc(7px * var(--mkcard-scale, 1)); font-weight:800; color:var(--mob-text-caption); text-transform:uppercase">DIV %</span>
+                <span style="font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${(a.dividendYield && a.dividendYield > 0) ? (a.dividendYield * 100).toFixed(2) + '%' : '—'}</span>
               </div>
               `}
             </div>
@@ -758,7 +756,7 @@
             }
             
             // When sorting by name, total gain, or valuation metrics, do not partition open/closed markets
-            if (['name', 'totalGain', 'pe', 'forwardPE', 'pegRatio'].includes(_watchlistSortMode)) {
+            if (['name', 'totalGain', 'pe', 'forwardPE', 'dividendYield'].includes(_watchlistSortMode)) {
                 return 1;
             }
             
@@ -795,10 +793,10 @@
                 const valA = a.forwardPE || 999999;
                 const valB = b.forwardPE || 999999;
                 return valA - valB;
-            } else if (_watchlistSortMode === 'pegRatio') {
-                const valA = a.pegRatio || 999999;
-                const valB = b.pegRatio || 999999;
-                return valA - valB;
+            } else if (_watchlistSortMode === 'dividendYield') {
+                const dyA = a.dividendYield || -999;
+                const dyB = b.dividendYield || -999;
+                return dyB - dyA;
             } else {
                 return (b.changePercent || 0) - (a.changePercent || 0);
             }
