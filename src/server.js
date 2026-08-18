@@ -443,6 +443,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// ─── Security Headers (Helmet + CORS + Rate Limiter) ────────────────────────
+configureSecurity(app);
+
 // ─── Auth Middleware ─────────────────────────────────────────────────────────
 const { 
     requireAuth, 
