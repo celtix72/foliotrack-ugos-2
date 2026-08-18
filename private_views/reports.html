@@ -172,7 +172,7 @@
     </div>
 </header>
 <!-- Reports Scrollable Area -->
-<main class="flex-1 overflow-y-auto custom-scrollbar p-8 bg-background-light dark:bg-background-dark">
+<main class="flex-1 overflow-y-auto custom-scrollbar px-0 pt-6 pb-4 bg-background-light dark:bg-background-dark">
 <!-- Reports Header Section -->
 <div class="flex flex-wrap items-end justify-between mb-8 gap-4">
     <div>
@@ -216,7 +216,7 @@
 <div class="space-y-8 max-w-7xl mx-auto">
 <!-- Key Metrics Grid -->
 <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-<div class="bg-white dark:bg-surface-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="bg-white dark:bg-surface-dark p-5 sm:p-6 flex flex-col rounded-none sm:rounded-xl border-y sm:border-x border-slate-200 dark:border-slate-800 shadow-sm">
 <div class="flex justify-between items-start mb-4 text-slate-500">
 <p class="text-xs font-bold uppercase tracking-widest">Total ROI</p>
 <span class="material-symbols-outlined text-primary">trending_up</span>
@@ -224,7 +224,7 @@
 <h3 class="text-3xl font-black" id="metric-roi">--%</h3>
 <p class="text-xs text-slate-500 font-bold mt-2">Simple Return · <span id="kpi-period-label" class="text-primary">1Y</span></p>
 </div>
-<div class="bg-white dark:bg-surface-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="bg-white dark:bg-surface-dark p-5 sm:p-6 flex flex-col rounded-none sm:rounded-xl border-y sm:border-x border-slate-200 dark:border-slate-800 shadow-sm">
 <div class="flex justify-between items-start mb-4 text-slate-500">
 <p class="text-xs font-bold uppercase tracking-widest">Time-Weighted (TWR)</p>
 <span class="material-symbols-outlined text-primary">analytics</span>
@@ -232,7 +232,7 @@
 <h3 class="text-3xl font-black" id="metric-twr">--%</h3>
 <p class="text-xs text-slate-500 font-bold mt-2">Geometric Return · <span class="text-primary kpi-period-sub">1Y</span></p>
 </div>
-<div class="bg-white dark:bg-surface-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="bg-white dark:bg-surface-dark p-5 sm:p-6 flex flex-col rounded-none sm:rounded-xl border-y sm:border-x border-slate-200 dark:border-slate-800 shadow-sm">
 <div class="flex justify-between items-start mb-4 text-slate-500">
 <p class="text-xs font-bold uppercase tracking-widest">Internal Rate (XIRR)</p>
 <span class="material-symbols-outlined text-primary">monitoring</span>
@@ -240,7 +240,7 @@
 <h3 class="text-3xl font-black" id="metric-xirr">--%</h3>
 <p class="text-xs text-slate-500 font-bold mt-2">Annualized Return · <span class="text-primary kpi-period-sub">1Y</span></p>
 </div>
-<div class="bg-white dark:bg-surface-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+<div class="bg-white dark:bg-surface-dark p-5 sm:p-6 flex flex-col rounded-none sm:rounded-xl border-y sm:border-x border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
 <div class="flex justify-between items-start mb-4 text-slate-500">
 <p class="text-xs font-bold uppercase tracking-widest">Sharpe Ratio</p>
 <span class="material-symbols-outlined text-primary">workspace_premium</span>
@@ -250,7 +250,7 @@
 </div>
 </section>
 <!-- Performance Chart Section -->
-<section class="bg-white dark:bg-surface-dark p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<section class="bg-white dark:bg-surface-dark p-5 sm:p-6 flex flex-col rounded-none sm:rounded-xl border-y sm:border-x border-slate-200 dark:border-slate-800 shadow-sm">
 <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
     <div>
         <h3 class="text-xl font-bold">Performance Comparison</h3>
@@ -298,7 +298,7 @@
 </section>
 
 <!-- Portfolio Breakdown Table -->
-<section class="bg-white dark:bg-surface-dark p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<section class="bg-white dark:bg-surface-dark p-5 sm:p-6 flex flex-col rounded-none sm:rounded-xl border-y sm:border-x border-slate-200 dark:border-slate-800 shadow-sm">
     <div class="flex items-center justify-between mb-8">
         <div>
             <h3 class="text-xl font-bold">Portfolios Breakdown</h3>
@@ -326,7 +326,7 @@
 </section>
 
 <!-- Annual Gains Summary Section -->
-<section class="bg-white dark:bg-surface-dark p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<section class="bg-white dark:bg-surface-dark p-5 sm:p-6 flex flex-col rounded-none sm:rounded-xl border-y sm:border-x border-slate-200 dark:border-slate-800 shadow-sm">
     <div class="flex items-center justify-between mb-8">
         <div>
             <h3 class="text-xl font-bold">Annual Gains Summary</h3>
@@ -352,7 +352,7 @@
 </section>
 
 <!-- ── Asset Gains Section ──────────────────────────────────────────── -->
-<section class="bg-white dark:bg-surface-dark p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm" id="asset-gains-section">
+<section class="bg-white dark:bg-surface-dark p-5 sm:p-6 flex flex-col rounded-none sm:rounded-xl border-y sm:border-x border-slate-200 dark:border-slate-800 shadow-sm" id="asset-gains-section">
     <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
             <h3 class="text-xl font-bold">Gain Cumulativi per Asset</h3>
@@ -397,7 +397,7 @@
 
 <div class="grid grid-cols-1 gap-8 pb-8">
 <!-- Diversification — 3 charts -->
-<section class="bg-white dark:bg-surface-dark p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<section class="bg-white dark:bg-surface-dark p-5 sm:p-6 flex flex-col rounded-none sm:rounded-xl border-y sm:border-x border-slate-200 dark:border-slate-800 shadow-sm">
 <div class="mb-8">
 <h3 class="text-xl font-bold">Portfolio Allocation</h3>
 <p class="text-sm text-slate-500">Asset type, geographic and currency exposure</p>
@@ -430,7 +430,7 @@
 </div>
 </section>
 <!-- Dividends -->
-<section class="bg-white dark:bg-surface-dark p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+<section class="bg-white dark:bg-surface-dark p-5 sm:p-6 flex flex-col rounded-none sm:rounded-xl border-y sm:border-x border-slate-200 dark:border-slate-800 shadow-sm">
 <div class="flex justify-between items-start mb-8">
 <div>
 <h3 class="text-xl font-bold">Dividends</h3>
@@ -1219,7 +1219,7 @@
 </script>
 <!-- AI Reports History Modal -->
 <div id="ai-reports-history-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-    <div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-xl flex flex-col max-h-[80vh] border border-slate-200 dark:border-slate-800 overflow-hidden">
+    <div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-none sm:rounded-xl shadow-xl flex flex-col max-h-[80vh] border-y sm:border-x border-slate-200 dark:border-slate-800 overflow-hidden">
         <div class="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
             <h3 class="font-black text-lg text-slate-800 dark:text-white flex items-center gap-2">
                 <span class="material-symbols-outlined text-primary">history</span>
@@ -1231,7 +1231,7 @@
         </div>
         <div id="ai-reports-list" class="overflow-y-auto custom-scrollbar flex-1 p-2">
             <!-- Loaded via JS -->
-            <div class="p-8 text-center"><span class="material-symbols-outlined animate-spin text-slate-400">refresh</span></div>
+            <div class="px-0 pt-6 pb-4 text-center"><span class="material-symbols-outlined animate-spin text-slate-400">refresh</span></div>
         </div>
     </div>
 </div>
@@ -1248,7 +1248,7 @@
         </button>
     </div>
     
-    <div class="flex-1 overflow-y-auto custom-scrollbar p-6 sm:p-8">
+    <div class="flex-1 overflow-y-auto custom-scrollbar p-6 sm:px-0 pt-6 pb-4">
         <div class="max-w-4xl mx-auto">
             <!-- KPIs Header -->
             <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
@@ -1275,7 +1275,7 @@
             </div>
             
             <!-- Markdown Content -->
-            <div id="ai-report-content" class="bg-white dark:bg-surface-dark p-6 sm:p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm text-slate-800 dark:text-slate-200">
+            <div id="ai-report-content" class="bg-white dark:bg-surface-dark p-6 sm:p-8 rounded-none sm:rounded-xl border-y sm:border-x border-slate-200 dark:border-slate-800 shadow-sm text-slate-800 dark:text-slate-200">
                 <div class="flex justify-center p-10"><span class="material-symbols-outlined animate-spin text-4xl text-slate-300">refresh</span></div>
             </div>
         </div>
