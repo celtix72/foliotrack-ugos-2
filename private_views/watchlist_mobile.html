@@ -652,6 +652,14 @@
             : `background:${colors.bg}; color:#000000; border:1px solid ${colors.border}; border-radius:4px; padding:1px 5px; font-size:calc(9px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; flex-shrink:0;`;
 
         const nameStyle = `font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:700; color:var(--mob-text); text-overflow:ellipsis; overflow:hidden; white-space:nowrap; flex-shrink:1; max-width:90px;`;
+        
+        let typeLabel = a.type || a.yfType || 'Other';
+        const t = typeLabel.toUpperCase();
+        if (t === 'AZIONI' || t === 'EQUITY' || t === 'STOCK' || t === 'COMMON STOCK') typeLabel = 'Equity';
+        
+        const divYieldMobHtml = (typeLabel === 'Equity' && a.dividendYield > 0)
+            ? `<span style="background:rgba(99, 102, 241, 0.1); color:#6366f1; border:1px solid rgba(99, 102, 241, 0.2); border-radius:4px; padding:1px 4px; font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:900; display:inline-block; vertical-align:middle;">DY ${(a.dividendYield * 100).toFixed(2)}%</span>`
+            : '';
 
         return `
           <div class="mob-holding-swipe-container"

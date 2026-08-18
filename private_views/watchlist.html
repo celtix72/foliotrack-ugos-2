@@ -409,6 +409,10 @@
                                     typeLabel === 'ETF' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 
                                     'bg-slate-500/10 text-slate-500 border-slate-500/20';
 
+                    const divYieldHtml = (typeLabel === 'Equity' && item.dividendYield > 0) 
+                        ? `<span class="px-1 py-0 rounded text-[7px] font-black uppercase tracking-widest border bg-indigo-500/10 text-indigo-500 border-indigo-500/20" title="Dividend Yield">DY: ${(item.dividendYield * 100).toFixed(2)}%</span>` 
+                        : '';
+
                     const count = item.aiHistoryCount || 0;
                     let aiBadge = '';
                     if (item.aiBadges && item.aiBadges.length > 0) {
@@ -579,6 +583,7 @@
                                             <span onclick="event.stopPropagation(); window.openAssetFundamentalsModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" class="px-1 py-0 rounded border border-indigo-500/30 text-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/20 cursor-pointer transition-colors inline-flex items-center justify-center" title="Dati Fondamentali Yahoo Finance">
                                                 <span class="material-symbols-outlined" style="font-size: 10px; font-weight: bold;">query_stats</span>
                                             </span>
+                                            ${divYieldHtml}
                                         </span>
                                     </p>
                                 </div>
