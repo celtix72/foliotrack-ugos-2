@@ -495,9 +495,31 @@
         }
 
         const assets = data.diversification.assetType;
-        let safe = 0; // Green
-        let moderate = 0; // Yellow
-        let risky = 0; // Red
+        let safe = 0;
+        let moderate = 0;
+        let risky = 0;
+
+        const safeList = [];
+        const modList = [];
+        const riskyList = [];
+
+        // Analyze individual assets from data.assetGains
+        if (data.assetGains) {
+            data.assetGains.forEach(ag => {
+                if (!ag.hasOpenPosition) return;
+                const t = (ag.type || '').toLowerCase();
+                const name = (ag.name || '').toLowerCase();
+                const displayName = ag.ticker.startsWith('CD_') ? 'Conto Deposito' : ag.name || ag.ticker;
+                
+                if (t.includes('liquidità') || t.includes('conto deposito') || t.includes('cd') || t.includes('monetari') || name.includes('monetar')) {
+                    safeList.push(displayName);
+                } else if (t.includes('obbligazion') || t.includes('bond') || name.includes('bond')) {
+                    modList.push(displayName);
+                } else {
+                    riskyList.push(displayName);
+                }
+            });
+        }
 
         for (const [type, value] of Object.entries(assets)) {
             const t = type.toLowerCase();
@@ -520,40 +542,80 @@
         const modPct = (moderate / total) * 100;
         const riskyPct = (risky / total) * 100;
 
+        const formatK = (val) => {
+            if (val >= 1000) return (val / 1000).toFixed(1) + 'k';
+            return val.toFixed(0);
+        };
+
+        window.toggleRiskList = function(category) {
+            const lists = ['safe-list', 'mod-list', 'risky-list'];
+            lists.forEach(l => {
+                if (l !== category) document.getElementById(l).style.display = 'none';
+            });
+            const el = document.getElementById(category);
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+        };
+
         container.innerHTML = `
             <div class="mob-card p-3" style="border-radius: 12px; display: flex; flex-direction: column; gap: 8px;">
                 <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--mob-text-muted); letter-spacing: 0.5px;">Profilo di Rischio</div>
                 
-                <div style="display: flex; width: 100%; height: 8px; border-radius: 4px; overflow: hidden; background: var(--mob-border);">
-                    <div style="width: ${safePct}%; background-color: var(--mob-emerald);"></div>
-                    <div style="width: ${modPct}%; background-color: #f59e0b;"></div>
-                    <div style="width: ${riskyPct}%; background-color: var(--mob-rose);"></div>
+                <div style="display: flex; width: 100%; height: 24px; border-radius: 6px; overflow: hidden; background: var(--mob-border);">
+                    <div onclick="toggleRiskList('safe-list')" style="width: ${safePct}%; background-color: var(--mob-emerald); display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                        ${safePct >= 10 ? \`<span style="color: white; font-size: 10px; font-weight: 800;">\${formatK(safe)}</span>\` : ''}
+                    </div>
+                    <div onclick="toggleRiskList('mod-list')" style="width: ${modPct}%; background-color: #f59e0b; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                        ${modPct >= 10 ? \`<span style="color: white; font-size: 10px; font-weight: 800;">\${formatK(moderate)}</span>\` : ''}
+                    </div>
+                    <div onclick="toggleRiskList('risky-list')" style="width: ${riskyPct}%; background-color: var(--mob-rose); display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                        ${riskyPct >= 10 ? \`<span style="color: white; font-size: 10px; font-weight: 800;">\${formatK(risky)}</span>\` : ''}
+                    </div>
                 </div>
 
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
-                    <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px;">
-                        <div style="display: flex; align-items: center; gap: 4px;">
+                <!-- Legends -->
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-top: 4px;">
+                    <!-- Safe -->
+                    <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px; flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 4px; cursor: pointer;" onclick="toggleRiskList('safe-list')">
                             <div style="width: 8px; height: 8px; border-radius: 2px; background-color: var(--mob-emerald);"></div>
                             <span style="font-size: 9px; font-weight: 700; color: var(--mob-text);">Basso rischio</span>
                         </div>
-                        <span style="font-size: 10px; font-weight: 900; color: var(--mob-text);">${safePct.toFixed(1)}%</span>
+                        <span style="font-size: 10px; font-weight: 900; color: var(--mob-text);">\${safePct.toFixed(1)}%</span>
                     </div>
                     
-                    <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
-                        <div style="display: flex; align-items: center; gap: 4px;">
+                    <!-- Moderate -->
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 4px; cursor: pointer;" onclick="toggleRiskList('mod-list')">
                             <div style="width: 8px; height: 8px; border-radius: 2px; background-color: #f59e0b;"></div>
                             <span style="font-size: 9px; font-weight: 700; color: var(--mob-text);">Medio rischio</span>
                         </div>
-                        <span style="font-size: 10px; font-weight: 900; color: var(--mob-text);">${modPct.toFixed(1)}%</span>
+                        <span style="font-size: 10px; font-weight: 900; color: var(--mob-text);">\${modPct.toFixed(1)}%</span>
                     </div>
 
-                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
-                        <div style="display: flex; align-items: center; gap: 4px;">
+                    <!-- Risky -->
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 4px; cursor: pointer;" onclick="toggleRiskList('risky-list')">
                             <div style="width: 8px; height: 8px; border-radius: 2px; background-color: var(--mob-rose);"></div>
                             <span style="font-size: 9px; font-weight: 700; color: var(--mob-text);">Alto rischio</span>
                         </div>
-                        <span style="font-size: 10px; font-weight: 900; color: var(--mob-text);">${riskyPct.toFixed(1)}%</span>
+                        <span style="font-size: 10px; font-weight: 900; color: var(--mob-text);">\${riskyPct.toFixed(1)}%</span>
                     </div>
+                </div>
+
+                <!-- Asset Lists -->
+                <div id="safe-list" style="display: none; margin-top: 8px; padding: 8px; background: rgba(16, 185, 129, 0.1); border-radius: 6px; font-size: 11px; color: var(--mob-text);">
+                    <div style="font-weight: 800; margin-bottom: 4px; color: var(--mob-emerald);">Asset a basso rischio:</div>
+                    \${safeList.length > 0 ? safeList.map(a => '• ' + a).join('<br>') : 'Nessun asset'}
+                </div>
+                
+                <div id="mod-list" style="display: none; margin-top: 8px; padding: 8px; background: rgba(245, 158, 11, 0.1); border-radius: 6px; font-size: 11px; color: var(--mob-text);">
+                    <div style="font-weight: 800; margin-bottom: 4px; color: #f59e0b;">Asset a medio rischio:</div>
+                    \${modList.length > 0 ? modList.map(a => '• ' + a).join('<br>') : 'Nessun asset'}
+                </div>
+                
+                <div id="risky-list" style="display: none; margin-top: 8px; padding: 8px; background: rgba(244, 63, 94, 0.1); border-radius: 6px; font-size: 11px; color: var(--mob-text);">
+                    <div style="font-weight: 800; margin-bottom: 4px; color: var(--mob-rose);">Asset ad alto rischio:</div>
+                    \${riskyList.length > 0 ? riskyList.map(a => '• ' + a).join('<br>') : 'Nessun asset'}
                 </div>
             </div>
         `;
