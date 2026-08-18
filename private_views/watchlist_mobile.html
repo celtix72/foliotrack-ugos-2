@@ -732,18 +732,7 @@
             return 'Azioni';
         };
 
-        // Filter based on selected sub-view (Az1 = Stocks/Equity, ETF1 = ETFs)
-        if (_watchlistSubView === 'Az1') {
-            watchlist = watchlist.filter(a => {
-                const cat = getAssetCategoryMob(a);
-                return cat !== 'ETF'; // Show Azioni, CD, Obbligazioni
-            });
-        } else if (_watchlistSubView === 'ETF1') {
-            watchlist = watchlist.filter(a => {
-                const cat = getAssetCategoryMob(a);
-                return cat === 'ETF';
-            });
-        }
+
 
         const getSortGroup = (x) => {
             const ticker = (x.ticker || '').toUpperCase();
@@ -811,11 +800,11 @@
         if (empty) empty.classList.add('hidden');
 
         if (container) {
-            container.className = 'mob-list-edge ' + (_watchlistSubView === 'Az1' ? 'subview-az1' : 'subview-etf1');
-            
-            // getAssetCategoryMob moved to the top of renderWatchlist
+            container.className = 'mob-list-edge';
 
-            const azioni = watchlist.filter(a => getAssetCategoryMob(a) === 'Azioni');
+            const azioniEur = watchlist.filter(a => getAssetCategoryMob(a) === 'Azioni' && (a.currency || 'EUR') === 'EUR');
+            const azioniUsd = watchlist.filter(a => getAssetCategoryMob(a) === 'Azioni' && a.currency === 'USD');
+            const azioniAltre = watchlist.filter(a => getAssetCategoryMob(a) === 'Azioni' && a.currency !== 'EUR' && a.currency !== 'USD');
             const etfs = watchlist.filter(a => getAssetCategoryMob(a) === 'ETF');
             const obbligazioni = watchlist.filter(a => getAssetCategoryMob(a) === 'Obbligazioni');
             const cd = watchlist.filter(a => getAssetCategoryMob(a) === 'CD');
@@ -838,7 +827,9 @@
                 `;
             };
 
-            container.innerHTML = (renderSectionMob(azioni, 'Azioni') +
+            container.innerHTML = (renderSectionMob(azioniEur, 'Azioni EUR') +
+                                  renderSectionMob(azioniUsd, 'Azioni USD') +
+                                  renderSectionMob(azioniAltre, 'Azioni Altre') +
                                   renderSectionMob(etfs, 'ETF') +
                                   renderSectionMob(obbligazioni, 'Obbligazioni') +
                                   renderSectionMob(cd, 'CD')) || '<div class="mob-empty">Watchlist vuota</div>';
