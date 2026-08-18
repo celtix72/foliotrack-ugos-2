@@ -500,9 +500,14 @@
 
             renderWatchlist();
 
-            const resP = await fetch('/api/watchlist/performance?t=' + Date.now());
-            window.performanceData = await resP.json();
-            renderWatchlist();
+            // Fetch heavy performance data asynchronously in the background
+            fetch('/api/watchlist/performance?t=' + Date.now())
+                .then(res => res.json())
+                .then(data => {
+                    window.performanceData = data;
+                    renderWatchlist();
+                })
+                .catch(err => console.error('Failed to load performance data:', err));
         } catch (err) {
             console.error('Failed to load watchlist:', err);
         }

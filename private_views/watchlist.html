@@ -311,13 +311,21 @@
         try {
             updateDisplayModeUI();
             applyWatchlistDesktopScale();
-            const [resW, resP] = await Promise.all([
-                fetch('/api/watchlist'),
-                fetch('/api/watchlist/performance')
-            ]);
+            
+            // 1. Fetch main watchlist data immediately and render
+            const resW = await fetch('/api/watchlist');
             watchlist = await resW.json();
-            performanceData = await resP.json();
             renderWatchlist();
+
+            // 2. Fetch heavy performance data asynchronously in the background
+            fetch('/api/watchlist/performance')
+                .then(res => res.json())
+                .then(data => {
+                    performanceData = data;
+                    renderWatchlist(); // Re-render to inject performance numbers
+                })
+                .catch(err => console.error('Failed to load performance data:', err));
+
         } catch (err) {
             console.error('Failed to load watchlist:', err);
         }
