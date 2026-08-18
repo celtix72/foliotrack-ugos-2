@@ -48654,3 +48654,44 @@ Test
 2026-08-03T16:51:39.501Z [INFO] Market data update cycle completed.
 2026-08-11T18:51:32.348Z [INFO] [OpenRouter] Cached 80 top models for financial analysis (including NVIDIA free models).
 2026-08-11T18:51:32.515Z [INFO] [Requesty] Cached 300 top models for financial analysis.
+2026-08-18T16:37:56.230Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-08-18T16:37:56.248Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-08-18T16:37:56.359Z [INFO] Updating market data for 2 assets...
+2026-08-18T16:37:56.369Z [INFO] Updating [AAPL] using [YF]...
+2026-08-18T16:37:56.384Z [INFO] FolioTrack server running on port 3000
+2026-08-18T16:37:56.393Z [INFO] Database: /Users/mauro/Documents/Progetti_Sviluppo/FolioTrack3/foliotrack.db
+2026-08-18T16:37:56.409Z [INFO] Startup notification sent to 3 users.
+2026-08-18T16:37:58.066Z [INFO] YF ✓ AAPL: price=310.315 USD chg=1.55%
+2026-08-18T16:37:58.080Z [INFO] Successfully updated AAPL: 310.315 USD
+2026-08-18T16:37:58.093Z [INFO] Updating [MSFT] using [YF]...
+2026-08-18T16:37:58.408Z [INFO] YF ✓ MSFT: price=481.57 USD chg=0.25%
+2026-08-18T16:37:58.434Z [INFO] Successfully updated MSFT: 481.57 USD
+2026-08-18T16:37:58.576Z [INFO] Market data update cycle completed.
+2026-08-18T16:38:01.330Z [INFO] Starting RSS News Sync (isFirstSync: true)...
+2026-08-18T16:38:02.567Z [INFO] News Sync completed. Saved 174 new articles.
+2026-08-18T16:38:11.331Z [INFO] [Sync Fundamentals] Starting fundamentals synchronization...
+2026-08-18T16:38:11.359Z [INFO] [Sync Fundamentals] Found 2 tickers to sync.
+2026-08-18T16:38:11.379Z [INFO] [Sync Fundamentals] Syncing ticker: AAPL
+2026-08-18T16:38:11.395Z [INFO] [Fundamentals] Fetching data from Yahoo Finance for: AAPL
+2026-08-18T16:38:14.586Z [INFO] [Fundamentals] Successfully saved local database entry for AAPL
+2026-08-18T16:38:14.608Z [INFO] [Fundamentals] Done for AAPL: PEG=2.47, FCF TTM=107721875456, FCF annual records=5, quarterly=6
+2026-08-18T16:38:16.124Z [INFO] [Sync Fundamentals] Syncing ticker: MSFT
+2026-08-18T16:38:16.149Z [INFO] [Fundamentals] Fetching data from Yahoo Finance for: MSFT
+2026-08-18T16:38:18.188Z [INFO] [Fundamentals] Successfully saved local database entry for MSFT
+2026-08-18T16:38:18.204Z [INFO] [Fundamentals] Done for MSFT: PEG=1.61, FCF TTM=16545500160, FCF annual records=5, quarterly=7
+2026-08-18T16:38:19.717Z [INFO] [Sync Fundamentals] Completed sync. Success: 2, Failed: 0
+2026-08-18T16:38:27.783Z [INFO] [REQ] HEAD /watchlist
+2026-08-18T16:38:56.353Z [INFO] Performance history sync: processing 2 tickers (Portfolios: 1, Watchlist: 2)
+2026-08-18T16:38:56.383Z [INFO] Fetching EOD history for AAPL (forceRefresh: false)...
+2026-08-18T16:38:56.408Z [INFO] Fetching EOD history for MSFT (forceRefresh: false)...
+2026-08-18T16:38:56.420Z [INFO] Fetching EOD history for EURUSD=X (forceRefresh: false)...
+2026-08-18T16:38:56.794Z [INFO] Sync assets: updated [EURUSD=X] currentPrice to 1.1582117080688477 (as of 2026-08-18)
+2026-08-18T16:38:56.859Z [INFO] Sync assets: updated [AAPL] currentPrice to 305.5899963378906 (as of 2026-08-18)
+2026-08-18T16:38:57.135Z [INFO] Sync assets: updated [MSFT] currentPrice to 480.3500061035156 (as of 2026-08-18)
+2026-08-18T16:38:57.149Z [INFO] Calculating history for Portafoglio Test...
+2026-08-18T16:38:57.166Z [INFO] Performance history sync: processing 1 tickers (Portfolios: 1, Watchlist: 0)
+2026-08-18T16:38:57.183Z [INFO] Calculating history for Portafoglio Test...
+2026-08-18T16:38:57.202Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-08-18T16:38:57.215Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-08-18T16:38:57.229Z [INFO] Recording daily snapshots for portfolios and dashboard...
+2026-08-18T16:38:57.242Z [INFO] Daily snapshots completed.
