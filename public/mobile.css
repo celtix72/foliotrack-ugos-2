@@ -88,9 +88,10 @@ body.mobile-view-active {
   perspective: none !important;
 }
 
-body.mobile-view-active .flex-1,
 body.mobile-view-active main {
   overflow: hidden !important;
+  height: 100dvh !important;
+}
   height: 100dvh !important;
 }
 

@@ -48695,3 +48695,237 @@ Test
 2026-08-18T16:38:57.215Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
 2026-08-18T16:38:57.229Z [INFO] Recording daily snapshots for portfolios and dashboard...
 2026-08-18T16:38:57.242Z [INFO] Daily snapshots completed.
+2026-08-18T16:55:23.764Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-08-18T16:55:23.780Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-08-18T16:55:23.924Z [INFO] Updating market data for 2 assets...
+2026-08-18T16:55:23.933Z [INFO] Updating [AAPL] using [YF]...
+2026-08-18T16:55:23.949Z [INFO] FolioTrack server running on port 3000
+2026-08-18T16:55:23.959Z [INFO] Database: /Users/mauro/Documents/Progetti_Sviluppo/FolioTrack3/foliotrack.db
+2026-08-18T16:55:23.976Z [INFO] Startup notification sent to 3 users.
+2026-08-18T16:55:25.971Z [INFO] YF ✓ AAPL: price=310.535 USD chg=1.62%
+2026-08-18T16:55:25.988Z [INFO] Successfully updated AAPL: 310.535 USD
+2026-08-18T16:55:26.003Z [INFO] Updating [MSFT] using [YF]...
+2026-08-18T16:55:26.332Z [INFO] YF ✓ MSFT: price=482.1 USD chg=0.36%
+2026-08-18T16:55:26.346Z [INFO] Successfully updated MSFT: 482.1 USD
+2026-08-18T16:55:26.496Z [INFO] Market data update cycle completed.
+2026-08-18T16:55:28.895Z [INFO] Starting RSS News Sync (isFirstSync: true)...
+2026-08-18T16:55:29.971Z [INFO] News Sync completed. Saved 28 new articles.
+2026-08-18T16:55:38.894Z [INFO] [Sync Fundamentals] Starting fundamentals synchronization...
+2026-08-18T16:55:38.916Z [INFO] [Sync Fundamentals] Found 2 tickers to sync.
+2026-08-18T16:55:38.933Z [INFO] [Sync Fundamentals] Syncing ticker: AAPL
+2026-08-18T16:55:38.949Z [INFO] [Fundamentals] Cache hit (DB): AAPL (age: 17 mins)
+2026-08-18T16:55:40.463Z [INFO] [Sync Fundamentals] Syncing ticker: MSFT
+2026-08-18T16:55:40.495Z [INFO] [Fundamentals] Cache hit (DB): MSFT (age: 17 mins)
+2026-08-18T16:55:42.010Z [INFO] [Sync Fundamentals] Completed sync. Success: 2, Failed: 0
+2026-08-18T16:55:59.168Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-08-18T16:55:59.184Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-08-18T16:55:59.271Z [INFO] Updating market data for 2 assets...
+2026-08-18T16:55:59.280Z [INFO] Updating [AAPL] using [YF]...
+2026-08-18T16:55:59.295Z [INFO] FolioTrack server running on port 3000
+2026-08-18T16:55:59.306Z [INFO] Database: /Users/mauro/Documents/Progetti_Sviluppo/FolioTrack3/foliotrack.db
+2026-08-18T16:55:59.319Z [INFO] Startup notification sent to 3 users.
+2026-08-18T16:56:00.878Z [INFO] YF ✓ AAPL: price=310.54 USD chg=1.62%
+2026-08-18T16:56:00.899Z [INFO] Successfully updated AAPL: 310.54 USD
+2026-08-18T16:56:00.914Z [INFO] Updating [MSFT] using [YF]...
+2026-08-18T16:56:01.256Z [INFO] YF ✓ MSFT: price=481.875 USD chg=0.32%
+2026-08-18T16:56:01.280Z [INFO] Successfully updated MSFT: 481.875 USD
+2026-08-18T16:56:01.423Z [INFO] Market data update cycle completed.
+2026-08-18T16:56:04.260Z [INFO] Starting RSS News Sync (isFirstSync: true)...
+2026-08-18T16:56:05.433Z [INFO] News Sync completed. Saved 23 new articles.
+2026-08-18T16:56:14.261Z [INFO] [Sync Fundamentals] Starting fundamentals synchronization...
+2026-08-18T16:56:14.291Z [INFO] [Sync Fundamentals] Found 2 tickers to sync.
+2026-08-18T16:56:14.312Z [INFO] [Sync Fundamentals] Syncing ticker: AAPL
+2026-08-18T16:56:14.332Z [INFO] [Fundamentals] Cache hit (DB): AAPL (age: 18 mins)
+2026-08-18T16:56:15.849Z [INFO] [Sync Fundamentals] Syncing ticker: MSFT
+2026-08-18T16:56:15.873Z [INFO] [Fundamentals] Cache hit (DB): MSFT (age: 18 mins)
+2026-08-18T16:56:17.390Z [INFO] [Sync Fundamentals] Completed sync. Success: 2, Failed: 0
+2026-08-18T16:56:59.276Z [INFO] Performance history sync: processing 2 tickers (Portfolios: 1, Watchlist: 2)
+2026-08-18T16:56:59.332Z [INFO] Calculating history for Portafoglio Test...
+2026-08-18T16:56:59.348Z [INFO] Performance history sync: processing 1 tickers (Portfolios: 1, Watchlist: 0)
+2026-08-18T16:56:59.364Z [INFO] Calculating history for Portafoglio Test...
+2026-08-18T16:56:59.384Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-08-18T16:56:59.394Z [INFO] Performance history sync: processing 0 tickers (Portfolios: 0, Watchlist: 0)
+2026-08-18T17:00:59.287Z [INFO] Updating market data for 2 assets...
+2026-08-18T17:00:59.327Z [INFO] Updating [AAPL] using [YF]...
+2026-08-18T17:00:59.855Z [INFO] YF ✓ AAPL: price=310.8505 USD chg=1.72%
+2026-08-18T17:00:59.884Z [INFO] Successfully updated AAPL: 310.8505 USD
+2026-08-18T17:00:59.902Z [INFO] Updating [MSFT] using [YF]...
+2026-08-18T17:01:00.474Z [INFO] YF ✓ MSFT: price=481.84 USD chg=0.31%
+2026-08-18T17:01:00.499Z [INFO] Successfully updated MSFT: 481.84 USD
+2026-08-18T17:01:00.515Z [INFO] Market data update cycle completed.
+2026-08-18T17:01:09.837Z [INFO] [REQ] GET /api/watchlist?t=1
+2026-08-18T17:01:51.759Z [INFO] [REQ] GET /watchlist
+2026-08-18T17:01:51.803Z [INFO] [REQ] GET /dist/output.css
+2026-08-18T17:01:51.829Z [INFO] [REQ] GET /mobile.css?v=1780588387907
+2026-08-18T17:01:51.852Z [INFO] [REQ] GET /theme.js
+2026-08-18T17:01:51.865Z [INFO] [REQ] GET /manifest.json
+2026-08-18T17:01:51.895Z [INFO] [REQ] GET /api/settings?t=1787072511893
+2026-08-18T17:01:51.917Z [INFO] [REQ] GET /transaction_modal.js
+2026-08-18T17:01:51.932Z [INFO] [REQ] GET /mobile_transactions.js
+2026-08-18T17:01:52.106Z [INFO] [REQ] GET /asset_chart_component.js
+2026-08-18T17:01:52.121Z [INFO] [REQ] GET /auth.js
+2026-08-18T17:01:52.166Z [INFO] [REQ] GET /m2t_mobile_logo_dark.png
+2026-08-18T17:01:52.203Z [INFO] [REQ] GET /api/market-status
+2026-08-18T17:01:52.232Z [INFO] [REQ] GET /api/notifications
+2026-08-18T17:01:52.247Z [INFO] [REQ] GET /api/market-status?t=1787072512206
+2026-08-18T17:01:52.260Z [INFO] [REQ] GET /api/portfolios
+2026-08-18T17:01:52.274Z [INFO] Performance history sync: processing 2 tickers (Portfolios: 1, Watchlist: 2)
+2026-08-18T17:01:52.293Z [INFO] Calculating history for Portafoglio Test...
+2026-08-18T17:01:52.307Z [INFO] Performance history sync: processing 1 tickers (Portfolios: 1, Watchlist: 0)
+2026-08-18T17:01:52.320Z [INFO] Calculating history for Portafoglio Test...
+2026-08-18T17:01:52.334Z [INFO] [REQ] GET /api/auth/me
+2026-08-18T17:01:52.349Z [INFO] [REQ] GET /api/market-status?t=1787072512206
+2026-08-18T17:01:52.364Z [INFO] [REQ] GET /api/auth/permissions
+2026-08-18T17:01:52.380Z [INFO] [REQ] GET /api/watchlist?t=1787072512366
+2026-08-18T17:01:52.400Z [INFO] [REQ] GET /api/watchlist/performance?t=1787072512399
+2026-08-18T17:01:52.497Z [INFO] [REQ] GET /favicon.ico
+2026-08-18T17:01:52.509Z [INFO] [REQ] GET /logo.png
+2026-08-18T17:01:52.530Z [INFO] [REQ] GET /login
+2026-08-18T17:02:06.760Z [INFO] [REQ] GET /watchlist
+2026-08-18T17:02:06.824Z [INFO] [REQ] GET /dist/output.css
+2026-08-18T17:02:06.836Z [INFO] [REQ] GET /mobile.css?v=1780588387907
+2026-08-18T17:02:06.847Z [INFO] [REQ] GET /manifest.json
+2026-08-18T17:02:06.857Z [INFO] [REQ] GET /theme.js
+2026-08-18T17:02:06.885Z [INFO] [REQ] GET /api/settings?t=1787072526884
+2026-08-18T17:02:06.904Z [INFO] [REQ] GET /transaction_modal.js
+2026-08-18T17:02:06.918Z [INFO] [REQ] GET /mobile_transactions.js
+2026-08-18T17:02:07.074Z [INFO] [REQ] GET /asset_chart_component.js
+2026-08-18T17:02:07.091Z [INFO] [REQ] GET /auth.js
+2026-08-18T17:02:07.123Z [INFO] [REQ] GET /m2t_mobile_logo_dark.png
+2026-08-18T17:02:07.163Z [INFO] [REQ] GET /api/market-status
+2026-08-18T17:02:07.196Z [INFO] [REQ] GET /api/notifications
+2026-08-18T17:02:07.209Z [INFO] [REQ] GET /api/market-status?t=1787072527171
+2026-08-18T17:02:07.223Z [INFO] [REQ] GET /api/portfolios
+2026-08-18T17:02:07.237Z [INFO] [REQ] GET /api/auth/me
+2026-08-18T17:02:07.247Z [INFO] [REQ] GET /api/market-status?t=1787072527171
+2026-08-18T17:02:07.278Z [INFO] [REQ] GET /api/auth/permissions
+2026-08-18T17:02:07.290Z [INFO] [REQ] GET /api/watchlist?t=1787072527276
+2026-08-18T17:02:07.306Z [INFO] [REQ] GET /api/watchlist/performance?t=1787072527305
+2026-08-18T17:02:07.351Z [INFO] [REQ] GET /favicon.ico
+2026-08-18T17:02:07.364Z [INFO] [REQ] GET /logo.png
+2026-08-18T17:02:07.382Z [INFO] [REQ] GET /login
+2026-08-18T17:02:19.818Z [INFO] [REQ] GET /watchlist
+2026-08-18T17:02:19.866Z [INFO] [REQ] GET /dist/output.css
+2026-08-18T17:02:19.879Z [INFO] [REQ] GET /mobile.css?v=1780588387907
+2026-08-18T17:02:19.893Z [INFO] [REQ] GET /theme.js
+2026-08-18T17:02:19.904Z [INFO] [REQ] GET /manifest.json
+2026-08-18T17:02:19.928Z [INFO] [REQ] GET /api/settings?t=1787072539927
+2026-08-18T17:02:19.946Z [INFO] [REQ] GET /transaction_modal.js
+2026-08-18T17:02:19.959Z [INFO] [REQ] GET /mobile_transactions.js
+2026-08-18T17:02:20.117Z [INFO] [REQ] GET /asset_chart_component.js
+2026-08-18T17:02:20.135Z [INFO] [REQ] GET /auth.js
+2026-08-18T17:02:20.180Z [INFO] [REQ] GET /m2t_mobile_logo_dark.png
+2026-08-18T17:02:20.218Z [INFO] [REQ] GET /api/market-status
+2026-08-18T17:02:20.247Z [INFO] [REQ] GET /api/notifications
+2026-08-18T17:02:20.259Z [INFO] [REQ] GET /api/market-status?t=1787072540224
+2026-08-18T17:02:20.271Z [INFO] [REQ] GET /api/portfolios
+2026-08-18T17:02:20.286Z [INFO] [REQ] GET /api/auth/me
+2026-08-18T17:02:20.297Z [INFO] [REQ] GET /api/market-status?t=1787072540224
+2026-08-18T17:02:20.307Z [INFO] [REQ] GET /api/auth/permissions
+2026-08-18T17:02:20.319Z [INFO] [REQ] GET /api/watchlist?t=1787072540308
+2026-08-18T17:02:20.335Z [INFO] [REQ] GET /api/watchlist/performance?t=1787072540334
+2026-08-18T17:02:20.437Z [INFO] [REQ] GET /favicon.ico
+2026-08-18T17:02:20.448Z [INFO] [REQ] GET /logo.png
+2026-08-18T17:02:20.471Z [INFO] [REQ] GET /login
+2026-08-18T17:02:38.159Z [INFO] [REQ] GET /watchlist
+2026-08-18T17:02:38.200Z [INFO] [REQ] GET /dist/output.css
+2026-08-18T17:02:38.210Z [INFO] [REQ] GET /mobile.css?v=1780588387907
+2026-08-18T17:02:38.221Z [INFO] [REQ] GET /theme.js
+2026-08-18T17:02:38.235Z [INFO] [REQ] GET /manifest.json
+2026-08-18T17:02:38.259Z [INFO] [REQ] GET /api/settings?t=1787072558258
+2026-08-18T17:02:38.271Z [INFO] [REQ] GET /transaction_modal.js
+2026-08-18T17:02:38.284Z [INFO] [REQ] GET /mobile_transactions.js
+2026-08-18T17:02:38.455Z [INFO] [REQ] GET /asset_chart_component.js
+2026-08-18T17:02:38.477Z [INFO] [REQ] GET /auth.js
+2026-08-18T17:02:38.516Z [INFO] [REQ] GET /m2t_mobile_logo_dark.png
+2026-08-18T17:02:38.540Z [INFO] [REQ] GET /api/market-status
+2026-08-18T17:02:38.559Z [INFO] [REQ] GET /api/notifications
+2026-08-18T17:02:38.573Z [INFO] [REQ] GET /api/market-status?t=1787072558543
+2026-08-18T17:02:38.586Z [INFO] [REQ] GET /api/portfolios
+2026-08-18T17:02:38.597Z [INFO] [REQ] GET /api/auth/me
+2026-08-18T17:02:38.612Z [INFO] [REQ] GET /api/market-status?t=1787072558544
+2026-08-18T17:02:38.623Z [INFO] [REQ] GET /api/auth/permissions
+2026-08-18T17:02:38.634Z [INFO] [REQ] GET /api/watchlist?t=1787072558623
+2026-08-18T17:02:38.651Z [INFO] [REQ] GET /api/watchlist/performance?t=1787072558650
+2026-08-18T17:02:38.720Z [INFO] [REQ] GET /logo.png
+2026-08-18T17:02:38.730Z [INFO] [REQ] GET /favicon.ico
+2026-08-18T17:02:38.752Z [INFO] [REQ] GET /login
+2026-08-18T17:02:51.355Z [INFO] [REQ] GET /watchlist
+2026-08-18T17:02:51.391Z [INFO] [REQ] GET /dist/output.css
+2026-08-18T17:02:51.407Z [INFO] [REQ] GET /mobile.css?v=1780588387907
+2026-08-18T17:02:51.423Z [INFO] [REQ] GET /theme.js
+2026-08-18T17:02:51.433Z [INFO] [REQ] GET /manifest.json
+2026-08-18T17:02:51.459Z [INFO] [REQ] GET /api/settings?t=1787072571459
+2026-08-18T17:02:51.470Z [INFO] [REQ] GET /transaction_modal.js
+2026-08-18T17:02:51.483Z [INFO] [REQ] GET /mobile_transactions.js
+2026-08-18T17:02:51.647Z [INFO] [REQ] GET /asset_chart_component.js
+2026-08-18T17:02:51.667Z [INFO] [REQ] GET /auth.js
+2026-08-18T17:02:51.710Z [INFO] [REQ] GET /m2t_mobile_logo_dark.png
+2026-08-18T17:02:51.735Z [INFO] [REQ] GET /api/market-status
+2026-08-18T17:02:51.760Z [INFO] [REQ] GET /api/notifications
+2026-08-18T17:02:51.774Z [INFO] [REQ] GET /api/market-status?t=1787072571739
+2026-08-18T17:02:51.785Z [INFO] [REQ] GET /api/portfolios
+2026-08-18T17:02:51.797Z [INFO] [REQ] GET /api/auth/me
+2026-08-18T17:02:51.808Z [INFO] [REQ] GET /api/market-status?t=1787072571739
+2026-08-18T17:02:51.820Z [INFO] [REQ] GET /api/auth/permissions
+2026-08-18T17:02:51.831Z [INFO] [REQ] GET /api/watchlist?t=1787072571821
+2026-08-18T17:02:51.846Z [INFO] [REQ] GET /api/watchlist/performance?t=1787072571846
+2026-08-18T17:02:52.125Z [INFO] [REQ] GET /favicon.ico
+2026-08-18T17:02:52.137Z [INFO] [REQ] GET /logo.png
+2026-08-18T17:02:52.158Z [INFO] [REQ] GET /login
+2026-08-18T17:03:22.585Z [INFO] [REQ] GET /market
+2026-08-18T17:03:22.630Z [INFO] [REQ] GET /mobile.css?v=1780588387888
+2026-08-18T17:03:22.641Z [INFO] [REQ] GET /dist/output.css
+2026-08-18T17:03:22.653Z [INFO] [REQ] GET /theme.js
+2026-08-18T17:03:22.667Z [INFO] [REQ] GET /transaction_modal.js
+2026-08-18T17:03:22.678Z [INFO] [REQ] GET /auth.js
+2026-08-18T17:03:22.691Z [INFO] [REQ] GET /mobile_transactions.js
+2026-08-18T17:03:22.703Z [INFO] [REQ] GET /asset_chart_component.js
+2026-08-18T17:03:22.714Z [INFO] [REQ] GET /m2t_mobile_logo_dark.png
+2026-08-18T17:03:22.725Z [INFO] [REQ] GET /manifest.json
+2026-08-18T17:03:22.751Z [INFO] [REQ] GET /api/settings?t=1787072602750
+2026-08-18T17:03:22.782Z [INFO] [REQ] GET /api/market-status
+2026-08-18T17:03:22.799Z [INFO] [REQ] GET /api/notifications
+2026-08-18T17:03:22.816Z [INFO] [REQ] GET /api/market/indices
+2026-08-18T17:03:22.842Z [INFO] [REQ] GET /api/market/movers
+2026-08-18T17:03:22.857Z [INFO] [REQ] GET /api/market-status?t=1787072602787
+2026-08-18T17:03:22.873Z [INFO] [REQ] GET /api/auth/me
+2026-08-18T17:03:22.888Z [INFO] [REQ] GET /api/market-status?t=1787072602832
+2026-08-18T17:03:22.900Z [INFO] [REQ] GET /api/market/movers
+2026-08-18T17:03:22.912Z [INFO] [REQ] GET /api/market-status?t=1787072602787
+2026-08-18T17:03:22.924Z [INFO] [REQ] GET /api/portfolios
+2026-08-18T17:03:22.937Z [INFO] Performance history sync: processing 2 tickers (Portfolios: 1, Watchlist: 2)
+2026-08-18T17:03:22.957Z [INFO] Calculating history for Portafoglio Test...
+2026-08-18T17:03:22.974Z [INFO] Performance history sync: processing 1 tickers (Portfolios: 1, Watchlist: 0)
+2026-08-18T17:03:22.988Z [INFO] Calculating history for Portafoglio Test...
+2026-08-18T17:03:23.000Z [INFO] [REQ] GET /api/market-status?t=1787072602832
+2026-08-18T17:03:23.012Z [INFO] [REQ] GET /api/assets?t=1787072602925
+2026-08-18T17:03:23.026Z [INFO] [REQ] GET /api/auth/permissions
+2026-08-18T17:03:23.045Z [INFO] [REQ] GET /api/assets?t=1787072603013
+2026-08-18T17:03:23.119Z [INFO] [REQ] GET /favicon.ico
+2026-08-18T17:03:23.131Z [INFO] [REQ] GET /logo.png
+2026-08-18T17:03:23.146Z [INFO] [REQ] GET /login
+2026-08-18T17:03:23.262Z [INFO] [REQ] GET /api/market/indices
+2026-08-18T17:03:43.415Z [INFO] [REQ] GET /watchlist
+2026-08-18T17:03:43.454Z [INFO] [REQ] GET /dist/output.css
+2026-08-18T17:03:43.473Z [INFO] [REQ] GET /mobile.css?v=1780588387907
+2026-08-18T17:03:43.488Z [INFO] [REQ] GET /manifest.json
+2026-08-18T17:03:43.497Z [INFO] [REQ] GET /theme.js
+2026-08-18T17:03:43.520Z [INFO] [REQ] GET /api/settings?t=1787072623519
+2026-08-18T17:03:43.531Z [INFO] [REQ] GET /transaction_modal.js
+2026-08-18T17:03:43.543Z [INFO] [REQ] GET /mobile_transactions.js
+2026-08-18T17:03:43.689Z [INFO] [REQ] GET /asset_chart_component.js
+2026-08-18T17:03:43.707Z [INFO] [REQ] GET /auth.js
+2026-08-18T17:03:43.743Z [INFO] [REQ] GET /m2t_mobile_logo_dark.png
+2026-08-18T17:03:43.767Z [INFO] [REQ] GET /api/market-status
+2026-08-18T17:03:43.793Z [INFO] [REQ] GET /api/notifications
+2026-08-18T17:03:43.807Z [INFO] [REQ] GET /api/market-status?t=1787072623772
+2026-08-18T17:03:43.818Z [INFO] [REQ] GET /api/market-status?t=1787072623772
+2026-08-18T17:03:43.829Z [INFO] [REQ] GET /api/portfolios
+2026-08-18T17:03:43.845Z [INFO] [REQ] GET /api/auth/me
+2026-08-18T17:03:43.856Z [INFO] [REQ] GET /api/watchlist?t=1787072623830
+2026-08-18T17:03:43.870Z [INFO] [REQ] GET /api/auth/permissions
+2026-08-18T17:03:43.882Z [INFO] [REQ] GET /api/watchlist/performance?t=1787072623875
+2026-08-18T17:03:43.947Z [INFO] [REQ] GET /favicon.ico
+2026-08-18T17:03:43.958Z [INFO] [REQ] GET /logo.png
+2026-08-18T17:03:43.980Z [INFO] [REQ] GET /login
