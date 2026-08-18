@@ -83,9 +83,9 @@
         });
     </script>
 </head>
-<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display min-h-screen mobile-view-active">
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display min-h-screen flex mobile-view-active">
 
-<div id="mobile-ui" class="flex flex-col fixed inset-0 w-full overflow-hidden" style="display: flex !important; height: 100dvh !important;">
+<div id="mobile-ui">
     <!-- Header -->
     <div class="mob-header">
     <img src="/m2t_mobile_logo_dark.png" style="width:96px;height:48px;border-radius:4px;object-fit:cover;object-position:center;margin-right:8px;" alt="M2T Logo">
@@ -121,7 +121,7 @@
     </div>
 
     <!-- Search Bar matching Market style but always visible here -->
-    <div class="px-3 py-2 border-b border-slate-100 dark:border-slate-800/50 bg-white dark:bg-slate-900 flex flex-row gap-2" style="overflow: visible;">
+    <div class="px-3 py-2 border-b border-slate-100 dark:border-slate-800/50 bg-white dark:bg-slate-900 flex flex-row gap-2 shrink-0" style="overflow: visible;">
         <div class="relative flex-1">
             <span class="absolute left-2.5 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400" style="font-size:16px;">add_circle</span>
             <input type="text" id="mob-asset-search" placeholder="Aggiungi ticker..." 
