@@ -1122,14 +1122,14 @@ async function loadMovers() {
             const borderColor = isPos ? 'border-emerald-500/30' : 'border-rose-500/30';
             const sign = isPos ? '+' : '';
             const gainSign = (m.dailyGainEUR > 0) ? '+' : ((m.dailyGainEUR < 0) ? '-' : '');
-            const gainEURStr = gainSign + '€' + Math.abs(m.dailyGainEUR || 0).toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            const gainEURStr = gainSign + Math.abs(m.dailyGainEUR || 0).toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
             
             return `
                 <div onclick="loadAssetChart('${m.ticker}')"
                      class="shrink-0 w-28 rounded-xl px-2 py-2.5 flex flex-col items-center justify-center text-center cursor-pointer ${bgColor} border ${borderColor} hover:scale-105 transition-all shadow-sm">
                     <span class="text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none mb-1.5">${m.ticker}</span>
                     <span class="text-[16px] font-black ${textColor} leading-none mb-1">${sign}${m.changePercent.toFixed(1)}%</span>
-                    <span class="text-[10px] font-black text-slate-900 dark:text-white">${gainEURStr}</span>
+                    <span class="text-[10px] font-black ${textColor}">${gainEURStr}</span>
                 </div>
             `;
         };
