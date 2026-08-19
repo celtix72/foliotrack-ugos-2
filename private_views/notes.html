@@ -488,6 +488,7 @@
 
     // ── Create new note ───────────────────────────────────────────────────────
     async function createNewNote(assetSymbol = null) {
+        if (assetSymbol instanceof Event) assetSymbol = null;
         try {
             const res = await fetch('/api/notes', {
                 method: 'POST',
@@ -607,7 +608,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         loadNotes();
 
-        $('btn-new-note').addEventListener('click', createNewNote);
+        $('btn-new-note').addEventListener('click', () => createNewNote());
         $('btn-pin').addEventListener('click', togglePin);
         $('btn-delete').addEventListener('click', deleteCurrentNote);
 
