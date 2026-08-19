@@ -229,11 +229,12 @@
 
         try {
             // 1. Fetch asset info, historical quotes, transactions AND details in parallel
-            const [quotesRes, txRes, assetRes, detailsRes] = await Promise.all([
+            const [quotesRes, txRes, assetRes, detailsRes, fundamentalsRes] = await Promise.all([
                 fetch(`/api/asset-quotes/${encodeURIComponent(_chartTicker)}`),
                 fetch(`/api/transactions?assetTicker=${encodeURIComponent(_chartTicker)}`),
                 fetch(`/api/assets`),
-                fetch(`/api/assets/${encodeURIComponent(_chartTicker)}/details`).catch(() => null)
+                fetch(`/api/assets/${encodeURIComponent(_chartTicker)}/details`).catch(() => null),
+                fetch(`/api/fundamentals/${encodeURIComponent(_chartTicker)}`).catch(() => null)
             ]);
 
             _allChartData = await quotesRes.json();
@@ -252,6 +253,11 @@
             let detailsData = {};
             if (detailsRes && detailsRes.ok) {
                 try { detailsData = await detailsRes.json(); } catch (e) { }
+            }
+            
+            let fundamentalsData = {};
+            if (fundamentalsRes && fundamentalsRes.ok) {
+                try { fundamentalsData = await fundamentalsRes.json(); } catch (e) { }
             }
 
             const assetInfo = allAssets.find(a => a.ticker === _chartTicker);
@@ -424,6 +430,30 @@
             };
 
             const prices = displayData.map(d => d.price);
+
+            // Calculate Historical P/E
+            let peData = [];
+            let hasValidPe = false;
+            if (fundamentalsData && fundamentalsData.historicalFinancials) {
+                const hf = fundamentalsData.historicalFinancials.slice().sort((a,b) => new Date(a.date) - new Date(b.date));
+                peData = displayData.map(d => {
+                    let applicableEps = null;
+                    for (let i = hf.length - 1; i >= 0; i--) {
+                        if (new Date(hf[i].date) <= new Date(d.date)) {
+                            applicableEps = hf[i].eps;
+                            break;
+                        }
+                    }
+                    if (applicableEps === null && hf.length > 0) {
+                        applicableEps = hf[0].eps;
+                    }
+                    if (applicableEps && applicableEps > 0) {
+                        hasValidPe = true;
+                        return d.price / applicableEps;
+                    }
+                    return null;
+                });
+            }
 
             // Calculate daily variations
             const dailyVars = displayData.map((d, i) => {
@@ -843,6 +873,20 @@
 
             // unshift ensures these are at the start of datasets array (behind others)
             tradeDatasets.unshift(perfAreaSet, basisSet);
+            
+            if (hasValidPe) {
+                tradeDatasets.push({
+                    label: 'P/E Storico',
+                    data: peData,
+                    borderColor: 'rgba(168, 85, 247, 0.8)',
+                    borderWidth: 1.5,
+                    borderDash: [2, 2],
+                    pointRadius: 0,
+                    fill: false,
+                    tension: 0.1,
+                    yAxisID: 'yPE'
+                });
+            }
 
             _assetChartInstance = new Chart(ctx, {
                 type: 'line',
@@ -896,6 +940,9 @@
                                         const sign = v.pct >= 0 ? '+' : '';
                                         const price = formatDynamicPrice(context.parsed.y);
                                         return ` Price: ${price} ${_chartCurrency} (${sign}${v.pct.toFixed(1)}%)`;
+                                    }
+                                    if (context.dataset.label === 'P/E Storico') {
+                                        return ` P/E Storico: ${context.parsed.y.toFixed(1)}`;
                                     }
                                     return null;
                                 },
@@ -951,7 +998,19 @@
                             // SCALE strictly on the min/max of the period, including TP/SL
                             min: adjustedMin * 0.99,
                             max: adjustedMax * 1.01
-                        }
+                        },
+                        ...(hasValidPe ? {
+                            yPE: {
+                                position: 'right',
+                                grid: { drawOnChartArea: false },
+                                ticks: {
+                                    color: 'rgba(168, 85, 247, 0.8)',
+                                    font: { size: 10 },
+                                    callback: v => v.toFixed(1)
+                                },
+                                min: 0
+                            }
+                        } : {})
                     }
                 }
             });
