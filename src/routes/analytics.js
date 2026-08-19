@@ -802,8 +802,8 @@ module.exports = function (dependencies) {
             
             const dividendList = [...projList, ...recList].sort((a, b) => new Date(a.exDate || a.paymentDate) - new Date(b.exDate || b.paymentDate));
 
-            const totalAmount = (projections.total || 0) + (received.total || 0);
-            const totalCount = (projections.count || 0) + (received.count || 0);
+            const totalAmount = dividendList.reduce((sum, d) => sum + (d.amount || 0), 0);
+            const totalCount = dividendList.length;
 
             const todayStr = now.toISOString().split('T')[0];
             const exDateTodayAssets = database.db.prepare(`
