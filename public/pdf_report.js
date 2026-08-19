@@ -409,6 +409,199 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
             startY = doc.lastAutoTable.finalY + 30;
         }
         
+        } else if (mode === 'balance_sheet') {
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            const marginLeft = 40;
+            let startY = 40;
+
+            const checkPageBreak = (neededHeight) => {
+                if (startY + neededHeight > pageHeight - 40) {
+                    doc.addPage();
+                    startY = 40;
+                }
+            };
+
+            const formatValue = (val) => {
+                if (val === undefined || val === null || isNaN(val)) return '0';
+                return Number(val).toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+            };
+
+            const formatCurrency = (val) => {
+                if (val === undefined || val === null || isNaN(val)) return '€ 0';
+                return '€ ' + Number(val).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            };
+            
+            const formatAssetCurrency = (val, currency) => {
+                if (val === undefined || val === null || isNaN(val)) return '0';
+                const sign = currency === 'USD' ? '$' : (currency === 'EUR' ? '€' : (currency === 'GBP' ? '£' : currency));
+                return sign + ' ' + Number(val).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            };
+
+            const formatPercent = (val) => {
+                if (val === undefined || val === null || isNaN(val)) return '0,0%';
+                return Number(val).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+            };
+
+            // Header
+            doc.setFontSize(22);
+            doc.setFont("helvetica", "bold");
+            doc.text('M2T - Stato Patrimoniale', marginLeft, startY);
+            
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const dateStr = new Date().toLocaleDateString('it-IT', { year: 'numeric', month: 'long', day: 'numeric' });
+            doc.text(`Generato il: ${dateStr}`, pageWidth - marginLeft - 150, startY);
+            startY += 30;
+
+            // Aggregation
+            const aggregated = {};
+            for (const pItem of portfolioDetailsList) {
+                const holdings = pItem.details.holdings || [];
+                for (const h of holdings) {
+                    if (h.shares <= 0) continue;
+                    if (!aggregated[h.ticker]) {
+                        aggregated[h.ticker] = {
+                            ticker: h.ticker,
+                            name: h.name,
+                            type: h.type || 'Altro',
+                            qty: 0,
+                            totalCostEUR: 0,
+                            currentValueEUR: 0,
+                            totalCostAssetCurr: 0,
+                            currency: h.currency
+                        };
+                    }
+                    aggregated[h.ticker].qty += h.shares;
+                    aggregated[h.ticker].currentValueEUR += h.currentValue || 0;
+                    aggregated[h.ticker].totalCostEUR += h.totalCostInPCurr || 0;
+                    aggregated[h.ticker].totalCostAssetCurr += (h.avgCostAssetCurr * h.shares) || 0;
+                }
+            }
+
+            // Categorization
+            const categories = {
+                'Liquidità': [],
+                'Conti Deposito': [],
+                'ETF Monetari': [],
+                'ETF Azionari': [],
+                'Obbligazioni': [],
+                'Azioni': [],
+                'Altro': []
+            };
+
+            for (const key in aggregated) {
+                const a = aggregated[key];
+                const t = a.type.toLowerCase();
+                
+                a.pmcAssetCurr = a.qty > 0 ? (a.totalCostAssetCurr / a.qty) : 0;
+                a.gainAssoluto = a.currentValueEUR - a.totalCostEUR;
+                a.gainPct = a.totalCostEUR > 0 ? (a.gainAssoluto / a.totalCostEUR) * 100 : 0;
+
+                if (t.includes('cash') || t.includes('liquidit')) {
+                    categories['Liquidità'].push(a);
+                } else if (t.includes('deposito')) {
+                    categories['Conti Deposito'].push(a);
+                } else if (t.includes('monetari')) {
+                    categories['ETF Monetari'].push(a);
+                } else if (t.includes('etf azionari') || (t.includes('etf') && !t.includes('obblig'))) {
+                    categories['ETF Azionari'].push(a);
+                } else if (t.includes('bond') || t.includes('obblig')) {
+                    categories['Obbligazioni'].push(a);
+                } else if (t.includes('azioni') || t.includes('stock')) {
+                    categories['Azioni'].push(a);
+                } else {
+                    categories['Altro'].push(a);
+                }
+            }
+
+            let grandTotalValue = 0;
+            let grandTotalCost = 0;
+
+            // Generate Tables
+            for (const [catName, assets] of Object.entries(categories)) {
+                if (assets.length === 0) continue;
+                
+                // Sort by current value
+                assets.sort((a,b) => b.currentValueEUR - a.currentValueEUR);
+
+                checkPageBreak(50);
+                
+                doc.setFontSize(14);
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(30, 64, 175); // Blue-800
+                doc.text(catName, marginLeft, startY);
+                startY += 15;
+
+                let catTotalValue = 0;
+                let catTotalCost = 0;
+
+                const tableBody = assets.map(a => {
+                    catTotalValue += a.currentValueEUR;
+                    catTotalCost += a.totalCostEUR;
+                    
+                    const gainColor = a.gainAssoluto >= 0 ? [22, 163, 74] : [220, 38, 38];
+                    return [
+                        { content: `${a.ticker}\n${a.name}`, styles: { fontStyle: 'bold' } },
+                        formatValue(a.qty),
+                        formatAssetCurrency(a.pmcAssetCurr, a.currency),
+                        { content: formatPercent(a.gainPct), styles: { textColor: gainColor } },
+                        { content: formatCurrency(a.gainAssoluto), styles: { textColor: gainColor } },
+                        { content: formatCurrency(a.currentValueEUR), styles: { fontStyle: 'bold' } }
+                    ];
+                });
+
+                const catGain = catTotalValue - catTotalCost;
+                const catGainPct = catTotalCost > 0 ? (catGain / catTotalCost) * 100 : 0;
+                const catGainColor = catGain >= 0 ? [22, 163, 74] : [220, 38, 38];
+
+                tableBody.push([
+                    { content: 'TOTALE ' + catName.toUpperCase(), colSpan: 3, styles: { fontStyle: 'bold', fillColor: [241, 245, 249], textColor: [15, 23, 42] } },
+                    { content: formatPercent(catGainPct), styles: { fontStyle: 'bold', textColor: catGainColor, fillColor: [241, 245, 249] } },
+                    { content: formatCurrency(catGain), styles: { fontStyle: 'bold', textColor: catGainColor, fillColor: [241, 245, 249] } },
+                    { content: formatCurrency(catTotalValue), styles: { fontStyle: 'bold', fillColor: [241, 245, 249], textColor: [15, 23, 42] } }
+                ]);
+
+                grandTotalValue += catTotalValue;
+                grandTotalCost += catTotalCost;
+
+                doc.autoTable({
+                    startY: startY,
+                    head: [['Asset', 'Qtà', 'PMC', 'Gain %', 'Gain Assoluto', 'Controvalore']],
+                    body: tableBody,
+                    theme: 'grid',
+                    headStyles: { fillColor: [59, 130, 246] }, // Blue-500
+                    styles: { fontSize: 9, cellPadding: 4, valign: 'middle' },
+                    margin: { left: marginLeft },
+                    didDrawPage: function (data) {
+                        startY = data.cursor.y;
+                    }
+                });
+                startY = doc.lastAutoTable.finalY + 20;
+            }
+
+            // Grand Total
+            checkPageBreak(80);
+            
+            doc.setFillColor(30, 58, 138); // Blue-900
+            doc.rect(marginLeft, startY, pageWidth - (marginLeft * 2), 60, 'F');
+            
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(12);
+            doc.text('PATRIMONIO NETTO COMPLESSIVO', marginLeft + 15, startY + 25);
+            
+            doc.setFontSize(20);
+            doc.text(formatCurrency(grandTotalValue), pageWidth - marginLeft - 15, startY + 30, { align: 'right' });
+            
+            const grandGain = grandTotalValue - grandTotalCost;
+            const grandGainPct = grandTotalCost > 0 ? (grandGain / grandTotalCost) * 100 : 0;
+            const sign = grandGain >= 0 ? '+' : '';
+            
+            doc.setFontSize(10);
+            doc.text(`Costo: ${formatCurrency(grandTotalCost)} | Gain: ${sign}${formatCurrency(grandGain)} (${sign}${formatPercent(grandGainPct)})`, pageWidth - marginLeft - 15, startY + 45, { align: 'right' });
+            
+            startY += 80;
+
         } else if (mode === 'latest_ai' || mode === 'new_ai') {
             // ==========================================
             // PROFESSIONAL AI REPORT LAYOUT
