@@ -785,6 +785,23 @@ module.exports = function (dependencies) {
                 WHERE pu.user_id = ? AND t.type = 'DIVIDEND' AND t.date LIKE ?
             `).get(req.user.id, yearMonth + '%');
 
+            const projList = database.db.prepare(`
+                SELECT ticker, totalAmount as amount, paymentDate, exDate, 'PROJECTION' as type
+                FROM dividend_projections
+                WHERE user_id = ? AND exDate LIKE ?
+                ORDER BY exDate ASC
+            `).all(req.user.id, yearMonth + '%');
+
+            const recList = database.db.prepare(`
+                SELECT t.ticker, t.amount, t.date as paymentDate, t.date as exDate, 'RECEIVED' as type
+                FROM transactions t
+                JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
+                WHERE pu.user_id = ? AND t.type = 'DIVIDEND' AND t.date LIKE ?
+                ORDER BY t.date ASC
+            `).all(req.user.id, yearMonth + '%');
+            
+            const dividendList = [...projList, ...recList].sort((a, b) => new Date(a.exDate || a.paymentDate) - new Date(b.exDate || b.paymentDate));
+
             const totalAmount = (projections.total || 0) + (received.total || 0);
             const totalCount = (projections.count || 0) + (received.count || 0);
 
@@ -809,7 +826,8 @@ module.exports = function (dependencies) {
                 hasDividends: totalCount > 0,
                 isExDateToday: todayCount > 0,
                 todayCount: todayCount,
-                todayAssets: exDateTodayAssets
+                todayAssets: exDateTodayAssets,
+                dividendList: dividendList
             });
         } catch (err) {
             logger.error('Current month dividends error', err);
