@@ -772,28 +772,17 @@ module.exports = function (dependencies) {
             const monthStr = currentMonth.toString().padStart(2, '0');
             const yearMonth = `${currentYear}-${monthStr}`;
 
-            const projections = database.db.prepare(`
-                SELECT SUM(dp.totalAmount) as total, COUNT(*) as count 
-                FROM dividend_projections dp
-                WHERE dp.user_id = ? AND dp.exDate LIKE ?
-            `).get(req.user.id, yearMonth + '%');
 
-            const received = database.db.prepare(`
-                SELECT SUM(t.amount) as total, COUNT(*) as count 
-                FROM transactions t
-                JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
-                WHERE pu.user_id = ? AND t.type = 'DIVIDEND' AND t.date LIKE ?
-            `).get(req.user.id, yearMonth + '%');
 
             const projList = database.db.prepare(`
-                SELECT ticker, totalAmount as amount, paymentDate, exDate, 'PROJECTION' as type
+                SELECT ticker, totalAmount as amount, exDate as paymentDate, exDate, 'PROJECTION' as type
                 FROM dividend_projections
                 WHERE user_id = ? AND exDate LIKE ?
                 ORDER BY exDate ASC
             `).all(req.user.id, yearMonth + '%');
 
             const recList = database.db.prepare(`
-                SELECT t.ticker, t.amount, t.date as paymentDate, t.date as exDate, 'RECEIVED' as type
+                SELECT t.assetTicker as ticker, t.amount, t.date as paymentDate, t.date as exDate, 'RECEIVED' as type
                 FROM transactions t
                 JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
                 WHERE pu.user_id = ? AND t.type = 'DIVIDEND' AND t.date LIKE ?
