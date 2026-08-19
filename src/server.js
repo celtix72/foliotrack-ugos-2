@@ -2672,6 +2672,7 @@ async function triggerHistoryRebuild(portfolioId = null) {
 // ════════════════════════════════════════════════════════════════════════════
 
 app.use(express.static(path.join(__dirname, '../public')));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Helper to detect mobile devices
 const isMobile = (req) => {

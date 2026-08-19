@@ -222,10 +222,31 @@
             </div>
 
             <!-- Textarea -->
-            <div class="flex-1 overflow-y-auto custom-scrollbar px-0 pt-6 pb-4 bg-white dark:bg-surface-dark">
+            <div class="flex-1 overflow-y-auto custom-scrollbar px-0 pt-6 pb-4 bg-white dark:bg-surface-dark flex flex-col">
                 <textarea id="editor-textarea"
-                    class="w-full bg-transparent border-none outline-none text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600"
+                    class="w-full flex-1 bg-transparent border-none outline-none text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600"
                     placeholder="Scrivi qui i tuoi appunti..."></textarea>
+                
+                <!-- Attachments Section -->
+                <div class="px-6 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/50">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500">Allegati</h3>
+                        <label class="cursor-pointer text-xs font-bold text-primary hover:text-primary/80 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">attach_file</span>
+                            Aggiungi file
+                            <input type="file" id="note-attachment-input" class="hidden" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.txt" multiple>
+                        </label>
+                    </div>
+                    <div id="note-attachments-list" class="flex flex-col gap-2">
+                        <!-- Attachments will be listed here -->
+                    </div>
+                    <div id="note-attachment-progress" class="hidden mt-2">
+                        <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5">
+                            <div class="bg-primary h-1.5 rounded-full" style="width: 100%"></div>
+                        </div>
+                        <p class="text-[10px] text-slate-500 mt-1">Caricamento in corso...</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -328,7 +349,109 @@
             icon.textContent = 'keep';
             icon.style.color = '';
         }
+        
+        renderAttachments(note.attachments || []);
     }
+
+    // ── Attachments ───────────────────────────────────────────────────────────
+    function renderAttachments(attachments) {
+        const list = $('note-attachments-list');
+        list.innerHTML = '';
+        if (attachments.length === 0) {
+            list.innerHTML = '<p class="text-[10px] text-slate-400">Nessun allegato</p>';
+            return;
+        }
+        
+        attachments.forEach(att => {
+            const el = document.createElement('div');
+            el.className = 'flex items-center justify-between p-2 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700';
+            
+            let icon = 'description';
+            if (att.file_type && att.file_type.includes('pdf')) icon = 'picture_as_pdf';
+            else if (att.file_type && att.file_type.includes('image')) icon = 'image';
+            
+            const sizeKb = Math.round(att.file_size / 1024);
+            
+            el.innerHTML = `
+                <a href="/uploads/notes/${att.stored_name}" target="_blank" class="flex items-center gap-2 overflow-hidden hover:opacity-80 transition-opacity">
+                    <span class="material-symbols-outlined text-primary text-[20px] shrink-0">${icon}</span>
+                    <div class="overflow-hidden">
+                        <p class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">${att.original_name}</p>
+                        <p class="text-[9px] text-slate-500 uppercase tracking-widest">${sizeKb} KB</p>
+                    </div>
+                </a>
+                <button onclick="deleteAttachment(${att.id})" class="shrink-0 w-6 h-6 flex items-center justify-center rounded-md text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors" title="Elimina file">
+                    <span class="material-symbols-outlined text-[16px]">close</span>
+                </button>
+            `;
+            list.appendChild(el);
+        });
+    }
+
+    async function handleFileUpload(event) {
+        if (!currentNote) return;
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+
+        $('note-attachment-progress').classList.remove('hidden');
+        
+        try {
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (file.size > 10 * 1024 * 1024) {
+                    alert(`Il file ${file.name} supera il limite di 10MB.`);
+                    continue;
+                }
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const res = await fetch(`/api/notes/${currentNote.id}/attachments`, {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    alert(`Errore caricamento ${file.name}: ` + (err.error || 'Sconosciuto'));
+                    continue;
+                }
+                const newAtt = await res.json();
+                if (!currentNote.attachments) currentNote.attachments = [];
+                currentNote.attachments.push(newAtt);
+                
+                // Update in memory list
+                const idx = notes.findIndex(n => n.id === currentNote.id);
+                if (idx !== -1) notes[idx] = currentNote;
+            }
+            renderAttachments(currentNote.attachments || []);
+        } catch (e) {
+            console.error('Upload error:', e);
+            alert('Errore durante il caricamento del file');
+        } finally {
+            $('note-attachment-progress').classList.add('hidden');
+            $('note-attachment-input').value = '';
+        }
+    }
+
+    window.deleteAttachment = async function(attId) {
+        if (!currentNote) return;
+        if (!confirm('Sei sicuro di voler eliminare questo allegato?')) return;
+        
+        try {
+            const res = await fetch(`/api/notes/${currentNote.id}/attachments/${attId}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error('Delete failed');
+            
+            if (currentNote.attachments) {
+                currentNote.attachments = currentNote.attachments.filter(a => a.id !== attId);
+            }
+            const idx = notes.findIndex(n => n.id === currentNote.id);
+            if (idx !== -1) notes[idx] = currentNote;
+            
+            renderAttachments(currentNote.attachments || []);
+        } catch (e) {
+            console.error('Delete attachment error:', e);
+            alert('Errore durante l\'eliminazione dell\'allegato');
+        }
+    };
 
     // ── Load notes from API ───────────────────────────────────────────────────
     async function loadNotes() {

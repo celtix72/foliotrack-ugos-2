@@ -776,6 +776,21 @@ function initDb() {
         `).run();
     } catch (e) { console.error('Migration error notes:', e.message); }
 
+    // Note Attachments table
+    try {
+        dbConnection.prepare(`
+            CREATE TABLE IF NOT EXISTS note_attachments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                note_id INTEGER NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+                original_name TEXT NOT NULL,
+                stored_name TEXT NOT NULL,
+                file_type TEXT,
+                file_size INTEGER,
+                created_at TEXT NOT NULL DEFAULT (datetime('now'))
+            )
+        `).run();
+    } catch (e) { console.error('Migration error note_attachments:', e.message); }
+
     // Migration: Add asset_symbol to notes
     try {
         dbConnection.prepare(`ALTER TABLE notes ADD COLUMN asset_symbol TEXT`).run();
@@ -1525,15 +1540,25 @@ function getUserPermissions(role) {
 // ─── Notes CRUD ─────────────────────────────────────────────────────────────
 
 function getNotes(userId) {
-    return dbConnection.prepare(
+    const notes = dbConnection.prepare(
         `SELECT * FROM notes WHERE user_id = ? ORDER BY pinned DESC, updated_at DESC`
     ).all(userId);
+    
+    for (const note of notes) {
+        note.attachments = getNoteAttachments(note.id);
+    }
+    return notes;
 }
 
 function getNote(id, userId) {
-    return dbConnection.prepare(
+    const note = dbConnection.prepare(
         `SELECT * FROM notes WHERE id = ? AND user_id = ?`
     ).get(id, userId);
+    
+    if (note) {
+        note.attachments = getNoteAttachments(note.id);
+    }
+    return note;
 }
 
 function createNote(userId, { title = '', content = '', color = '#3b82f6', pinned = 0, asset_symbol = null } = {}) {
@@ -1559,6 +1584,30 @@ function updateNote(id, userId, { title, content, color, pinned, asset_symbol } 
 
 function deleteNote(id, userId) {
     const info = dbConnection.prepare(`DELETE FROM notes WHERE id = ? AND user_id = ?`).run(id, userId);
+    return info.changes > 0;
+}
+
+// ─── Note Attachments ────────────────────────────────────────────────────────
+
+function getNoteAttachments(noteId) {
+    return dbConnection.prepare(
+        `SELECT * FROM note_attachments WHERE note_id = ? ORDER BY created_at ASC`
+    ).all(noteId);
+}
+
+function addNoteAttachment(noteId, originalName, storedName, fileType, fileSize) {
+    const result = dbConnection.prepare(
+        `INSERT INTO note_attachments (note_id, original_name, stored_name, file_type, file_size) VALUES (?, ?, ?, ?, ?)`
+    ).run(noteId, originalName, storedName, fileType, fileSize);
+    return dbConnection.prepare(`SELECT * FROM note_attachments WHERE id = ?`).get(result.lastInsertRowid);
+}
+
+function getNoteAttachment(id) {
+    return dbConnection.prepare(`SELECT * FROM note_attachments WHERE id = ?`).get(id);
+}
+
+function deleteNoteAttachment(id) {
+    const info = dbConnection.prepare(`DELETE FROM note_attachments WHERE id = ?`).run(id);
     return info.changes > 0;
 }
 
@@ -1594,5 +1643,11 @@ module.exports = {
     getNote,
     createNote,
     updateNote,
-    deleteNote
+    deleteNote,
+    
+    // Note Attachments
+    getNoteAttachments,
+    addNoteAttachment,
+    getNoteAttachment,
+    deleteNoteAttachment
 };
