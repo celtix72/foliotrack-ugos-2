@@ -611,6 +611,7 @@
         $('btn-new-note').addEventListener('click', () => createNewNote());
         $('btn-pin').addEventListener('click', togglePin);
         $('btn-delete').addEventListener('click', deleteCurrentNote);
+        $('note-attachment-input').addEventListener('change', handleFileUpload);
 
         $('editor-title').addEventListener('input', scheduleAutosave);
         $('editor-textarea').addEventListener('input', () => {
