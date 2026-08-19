@@ -249,6 +249,20 @@
     let detailChart = null;
     let displayMode = localStorage.getItem('watchlist_display_mode') || 'name';
     let fontScale = parseFloat(localStorage.getItem('watchlist_desktop_scale')) || 1.0;
+    let _marketStatusData = null;
+
+    function renderNoteBadgeDesktop(ticker) {
+        const note = notesMap[ticker];
+        if (!note) return '';
+        let tooltipText = note.content || '';
+        tooltipText = tooltipText.substring(0, 1000).replace(/"/g, '&quot;').replace(/\n/g, '&#10;');
+        if (!tooltipText) tooltipText = "Nota vuota";
+        
+        return `
+        <span onclick="event.stopPropagation(); window.location.href='/notes?asset=' + encodeURIComponent('${ticker}')" class="px-1 py-0 rounded text-[9px] font-black uppercase tracking-tighter flex items-center gap-0.5 border border-blue-500/30 text-blue-500 bg-blue-500/10 cursor-help transition-colors ml-1" title="${tooltipText}">
+            <span class="material-symbols-outlined" style="font-size: 10px;">note_stack</span> Note
+        </span>`;
+    }
 
     function changeWatchlistDesktopScale(amount) {
         fontScale = Math.round(Math.max(0.75, Math.min(1.35, fontScale + amount)) * 100) / 100;
@@ -573,7 +587,6 @@
                                 <div>
                                     <div class="flex items-center gap-1.5 flex-wrap">
                                         ${titleTag}
-                                        ${notesMap[item.ticker] ? `<span class="material-symbols-outlined text-[14px] text-blue-500 cursor-help" title="${(notesMap[item.ticker].content || '').replace(/"/g, '&quot;')}">note_stack</span>` : ''}
                                         ${!item.isMonitored ? '<span class="text-[7px] font-black bg-slate-200 dark:bg-slate-800 px-1 py-0 rounded text-slate-500 tracking-tighter uppercase shrink-0">Inactive</span>' : ''}
                                         ${item.lastUpdateError ? `<span class="px-1 py-0 rounded-full bg-rose-500 text-[7px] font-black text-white uppercase tracking-tighter shrink-0" title="${item.lastUpdateError.replace(/"/g, '&quot;')}">Err</span>` : ''}
                                     </div>
@@ -603,6 +616,7 @@
                                 <p class="text-xs font-black text-slate-900 dark:text-white font-mono leading-tight">${formatCurrency(item.currentPrice, item.currency, 2)}</p>
                                 <div class="flex items-center gap-1 mt-0.5 flex-wrap">
                                     ${aiBadge}
+                                    ${renderNoteBadgeDesktop(item.ticker)}
                                 </div>
                             </td>
                             <td class="px-4 py-0.5 text-center">

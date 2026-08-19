@@ -554,6 +554,18 @@
         </div>`;
     }
 
+    function renderNoteBadgeMob(ticker) {
+        if (!window.mobNotesMap) return '';
+        const note = window.mobNotesMap[ticker];
+        if (!note) return '';
+        let tooltipText = note.content || '';
+        tooltipText = tooltipText.substring(0, 1000).replace(/"/g, '&quot;').replace(/\n/g, '&#10;');
+        if (!tooltipText) tooltipText = "Nota vuota";
+        
+        return `<span onclick="event.stopPropagation(); window.location.href='/notes?asset=' + encodeURIComponent('${ticker}')" class="px-1.5 py-0.5 rounded font-black uppercase tracking-tighter flex items-center gap-1 border border-blue-500/30 text-blue-500 bg-blue-500/10 cursor-help" style="font-size: calc(10px * var(--mkcard-scale, 1))" title="${tooltipText}">
+          <span class="material-symbols-outlined" style="font-size: calc(12px * var(--mkcard-scale, 1))">note_stack</span></span>`;
+    }
+
     function renderAiBadge(a) {
         const tickerEsc = a.ticker.replace(/'/g, "\\'");
         const nameEsc = (a.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
@@ -689,9 +701,8 @@
                 <!-- Riga 1: Badge + Nome/Ticker + Prezzo + Var% -->
                 <div style="display:flex; align-items:center; gap:4px; max-width:100%; overflow:hidden; flex-wrap:nowrap;">
                   <span style="${displaySymbolStyle}">${displaySymbol}</span>
-                  ${window.mobNotesMap && window.mobNotesMap[a.ticker] ? `<span class="material-symbols-outlined text-[12px] text-blue-500 cursor-help" style="font-size:calc(12px * var(--mkcard-scale, 1)); flex-shrink:0;" title="${(window.mobNotesMap[a.ticker].content || '').replace(/"/g, '&quot;')}">note_stack</span>` : ''}
-                  <span style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text); flex-shrink:0;">${priceFmt}</span>
-                  <span style="color:${chgColor}; font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; flex-shrink:0;">${todayVarPct}</span>
+                  <span style="font-size:calc(14px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text); flex-shrink:0;">${priceFmt}</span>
+                  <span style="color:${chgColor}; font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:900; flex-shrink:0;">${todayVarPct}</span>
                 </div>
 
                 <!-- Riga 2: Exchange tag + Portfolio tags + Fondamentali button -->
@@ -704,9 +715,10 @@
                 </div>
               </div>
 
-              <!-- Col 2: Tag IA -->
-              <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; gap:2px; min-width:0; height:100%;">
+              <!-- Right (Values) -->
+              <div style="display:flex; flex-direction:column; justify-content:center; align-items:flex-end; gap:2px; min-width:0; height:100%;">
                 ${aiBadge}
+                ${renderNoteBadgeMob(a.ticker)}
               </div>
 
               ${_watchlistSubView === 'ETF1' ? '' : `

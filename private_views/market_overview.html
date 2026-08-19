@@ -632,6 +632,20 @@ function renderAiBadges(a) {
     }
 }
 
+function renderNoteBadgeDesktop(ticker) {
+    const note = notesMap[ticker];
+    if (!note) return '';
+    let tooltipText = note.content || '';
+    // Limit length to avoid massive tooltips and replace quotes/newlines
+    tooltipText = tooltipText.substring(0, 1000).replace(/"/g, '&quot;').replace(/\n/g, '&#10;');
+    if (!tooltipText) tooltipText = "Nota vuota";
+    
+    return `
+    <span onclick="event.stopPropagation(); window.location.href='/notes?asset=' + encodeURIComponent('${ticker}')" class="px-1 py-0 rounded text-[9px] font-black uppercase tracking-tighter flex items-center gap-0.5 border border-blue-500/30 text-blue-500 bg-blue-500/10 cursor-help transition-colors ml-1" title="${tooltipText}">
+        <span class="material-symbols-outlined" style="font-size: 10px;">note_stack</span> Note
+    </span>`;
+}
+
 // ─── Data loading ─────────────────────────────────────────────────────────────
 async function loadAssets() {
     try {
@@ -727,7 +741,6 @@ function renderAssets(filter = '') {
                 <div>
                     <div class="flex items-center gap-1.5 flex-wrap">
                         <p class="font-bold text-xs text-slate-900 dark:text-white leading-tight truncate max-w-[280px]" title="${(a.name || '').replace(/"/g, '&quot;')}">${primaryTitle}</p>
-                        ${notesMap[a.ticker] ? `<span class="material-symbols-outlined text-[14px] text-blue-500 cursor-help" title="${(notesMap[a.ticker].content || '').replace(/"/g, '&quot;')}">note_stack</span>` : ''}
                         ${!a.isMonitored ? '<span class="text-[7px] font-black bg-slate-200 dark:bg-slate-800 px-1 py-0 rounded text-slate-500 tracking-tighter uppercase shrink-0">Inactive</span>' : ''}
                         ${a.lastUpdateError ? `<span class="px-1 py-0 rounded-full bg-rose-500 text-[7px] font-black text-white uppercase tracking-tighter shrink-0" title="${a.lastUpdateError.replace(/"/g, '&quot;')}">Err</span>` : ''}
                     </div>
@@ -759,6 +772,7 @@ function renderAssets(filter = '') {
                 <p class="text-xs font-black text-slate-900 dark:text-white font-mono leading-tight">${formatCurrency(price, a.currency)}</p>
                 <div class="flex items-center gap-1 mt-0.5 flex-wrap">
                     ${renderAiBadges(a)}
+                    ${renderNoteBadgeDesktop(a.ticker)}
                 </div>
             </td>
             <td class="px-4 py-0.5">
