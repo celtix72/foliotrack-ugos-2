@@ -245,6 +245,7 @@
 <script>
     let watchlist = [];
     let performanceData = {};
+    let notesMap = {};
     let detailChart = null;
     let displayMode = localStorage.getItem('watchlist_display_mode') || 'name';
     let fontScale = parseFloat(localStorage.getItem('watchlist_desktop_scale')) || 1.0;
@@ -314,8 +315,18 @@
             applyWatchlistDesktopScale();
             
             // 1. Fetch main watchlist data immediately and render
-            const resW = await fetch('/api/watchlist');
+            const [resW, resN] = await Promise.all([
+                fetch('/api/watchlist'),
+                fetch('/api/notes')
+            ]);
             watchlist = await resW.json();
+            const notesList = await resN.json();
+            notesMap = {};
+            notesList.forEach(n => {
+                if (n.asset_symbol) {
+                    notesMap[n.asset_symbol] = n;
+                }
+            });
             renderWatchlist();
 
             // 2. Fetch heavy performance data asynchronously in the background
@@ -618,6 +629,9 @@
                                     <div class="flex items-center justify-end gap-1.5">
                                         <button onclick="event.stopPropagation(); window.openAssetFundamentalsModal('${item.ticker}', '${(item.name || '').replace(/'/g, "\\'")}')" class="px-1.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500 hover:text-white transition-all text-[9px] font-black uppercase tracking-widest border border-indigo-500/10" title="Dati Fondamentali e Analisi Tecnica">
                                             Fund.
+                                        </button>
+                                        <button onclick="event.stopPropagation(); window.location.href='/notes?asset=' + encodeURIComponent('${item.ticker}')" class="w-6 h-6 rounded-md bg-slate-100 dark:bg-white/[0.05] ${notesMap[item.ticker] ? 'text-blue-500 hover:bg-blue-500/10' : 'text-slate-500 dark:text-slate-400 hover:bg-primary/10 hover:text-primary'} transition-all flex items-center justify-center border border-slate-200 dark:border-slate-800" title="${notesMap[item.ticker] ? 'Vedi Nota' : 'Aggiungi Nota'}">
+                                            <span class="material-symbols-outlined text-[13px]">${notesMap[item.ticker] ? 'note_stack' : 'note_add'}</span>
                                         </button>
                                         ${typeLabel === 'ETF' ? `
                                         <a href="${(item.isin && item.isin.trim() !== '') ? `https://www.justetf.com/it/etf-profile.html?isin=${item.isin}` : `https://www.justetf.com/it/find-etf.html?query=${item.ticker}`}" target="_blank" class="w-6 h-6 rounded-md bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white transition-all flex items-center justify-center border border-amber-500/10" title="JustETF">

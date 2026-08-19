@@ -336,11 +336,28 @@
             const res = await fetch('/api/notes');
             if (!res.ok) throw new Error('Failed to load notes');
             notes = await res.json();
+            
+            const params = new URLSearchParams(window.location.search);
+            const targetAsset = params.get('asset');
+            
+            if (targetAsset) {
+                const existing = notes.find(n => n.asset_symbol === targetAsset);
+                if (existing) {
+                    currentNote = existing;
+                } else {
+                    await createNewNote(targetAsset);
+                    return; // createNewNote handles rendering and opening
+                }
+            }
+            
             renderNoteList($('notes-search').value);
             if (currentNote) {
                 // Refresh current note data
                 const refreshed = notes.find(n => n.id === currentNote.id);
-                if (refreshed) currentNote = refreshed;
+                if (refreshed) {
+                    currentNote = refreshed;
+                    openNote(currentNote);
+                }
             }
         } catch (e) {
             console.error('Load notes error:', e);
@@ -348,12 +365,18 @@
     }
 
     // ── Create new note ───────────────────────────────────────────────────────
-    async function createNewNote() {
+    async function createNewNote(assetSymbol = null) {
         try {
             const res = await fetch('/api/notes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title: '', content: '', color: '#3b82f6', pinned: false })
+                body: JSON.stringify({ 
+                    title: assetSymbol ? `Appunti: ${assetSymbol}` : '', 
+                    content: '', 
+                    color: '#3b82f6', 
+                    pinned: false,
+                    asset_symbol: assetSymbol 
+                })
             });
             if (!res.ok) throw new Error('Failed to create note');
             const note = await res.json();
@@ -373,12 +396,13 @@
         const content = $('editor-textarea').value;
         const color   = currentNote.color;
         const pinned  = currentNote.pinned;
+        const asset_symbol = currentNote.asset_symbol;
 
         try {
             const res = await fetch(`/api/notes/${currentNote.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, content, color, pinned })
+                body: JSON.stringify({ title, content, color, pinned, asset_symbol })
             });
             if (!res.ok) throw new Error('Save failed');
             const saved = await res.json();

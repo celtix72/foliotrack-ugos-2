@@ -769,11 +769,17 @@ function initDb() {
                 content    TEXT NOT NULL DEFAULT '',
                 color      TEXT NOT NULL DEFAULT '#3b82f6',
                 pinned     INTEGER NOT NULL DEFAULT 0,
+                asset_symbol TEXT,
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
                 updated_at TEXT NOT NULL DEFAULT (datetime('now'))
             )
         `).run();
     } catch (e) { console.error('Migration error notes:', e.message); }
+
+    // Migration: Add asset_symbol to notes
+    try {
+        dbConnection.prepare(`ALTER TABLE notes ADD COLUMN asset_symbol TEXT`).run();
+    } catch (e) { /* ignore if already exists */ }
 
     // Migration: Add endpoint to push_subscriptions
     try {
@@ -1530,23 +1536,24 @@ function getNote(id, userId) {
     ).get(id, userId);
 }
 
-function createNote(userId, { title = '', content = '', color = '#3b82f6', pinned = 0 } = {}) {
+function createNote(userId, { title = '', content = '', color = '#3b82f6', pinned = 0, asset_symbol = null } = {}) {
     const result = dbConnection.prepare(
-        `INSERT INTO notes (user_id, title, content, color, pinned) VALUES (?, ?, ?, ?, ?)`
-    ).run(userId, title, content, color, pinned ? 1 : 0);
+        `INSERT INTO notes (user_id, title, content, color, pinned, asset_symbol) VALUES (?, ?, ?, ?, ?, ?)`
+    ).run(userId, title, content, color, pinned ? 1 : 0, asset_symbol);
     return dbConnection.prepare(`SELECT * FROM notes WHERE id = ?`).get(result.lastInsertRowid);
 }
 
-function updateNote(id, userId, { title, content, color, pinned } = {}) {
+function updateNote(id, userId, { title, content, color, pinned, asset_symbol } = {}) {
     const note = dbConnection.prepare(`SELECT * FROM notes WHERE id = ? AND user_id = ?`).get(id, userId);
     if (!note) return null;
     const newTitle   = title   !== undefined ? title   : note.title;
     const newContent = content !== undefined ? content : note.content;
     const newColor   = color   !== undefined ? color   : note.color;
     const newPinned  = pinned  !== undefined ? (pinned ? 1 : 0) : note.pinned;
+    const newAssetSymbol = asset_symbol !== undefined ? asset_symbol : note.asset_symbol;
     dbConnection.prepare(
-        `UPDATE notes SET title = ?, content = ?, color = ?, pinned = ?, updated_at = datetime('now') WHERE id = ? AND user_id = ?`
-    ).run(newTitle, newContent, newColor, newPinned, id, userId);
+        `UPDATE notes SET title = ?, content = ?, color = ?, pinned = ?, asset_symbol = ?, updated_at = datetime('now') WHERE id = ? AND user_id = ?`
+    ).run(newTitle, newContent, newColor, newPinned, newAssetSymbol, id, userId);
     return dbConnection.prepare(`SELECT * FROM notes WHERE id = ?`).get(id);
 }
 

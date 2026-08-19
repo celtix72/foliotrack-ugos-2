@@ -345,6 +345,20 @@
             const res = await fetch('/api/notes');
             if (!res.ok) throw new Error('Load failed');
             notes = await res.json();
+            
+            const params = new URLSearchParams(window.location.search);
+            const targetAsset = params.get('asset');
+            
+            if (targetAsset) {
+                const existing = notes.find(n => n.asset_symbol === targetAsset);
+                if (existing) {
+                    openNote(existing.id);
+                } else {
+                    await createNewNote(targetAsset);
+                    return;
+                }
+            }
+            
             renderList(document.getElementById('mob-notes-search').value);
         } catch (e) {
             console.error('Load notes error:', e);
@@ -352,12 +366,18 @@
     }
 
     // ── Create new note ───────────────────────────────────────────────────────
-    async function createNewNote() {
+    async function createNewNote(assetSymbol = null) {
         try {
             const res = await fetch('/api/notes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title: '', content: '', color: '#3b82f6', pinned: false })
+                body: JSON.stringify({ 
+                    title: assetSymbol ? `Appunti: ${assetSymbol}` : '', 
+                    content: '', 
+                    color: '#3b82f6', 
+                    pinned: false,
+                    asset_symbol: assetSymbol
+                })
             });
             if (!res.ok) throw new Error('Create failed');
             const note = await res.json();
@@ -412,7 +432,7 @@
             const res = await fetch(`/api/notes/${currentNote.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, content, color: currentNote.color, pinned: currentNote.pinned })
+                body: JSON.stringify({ title, content, color: currentNote.color, pinned: currentNote.pinned, asset_symbol: currentNote.asset_symbol })
             });
             if (!res.ok) throw new Error('Save failed');
             const saved = await res.json();

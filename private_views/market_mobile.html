@@ -651,8 +651,16 @@
         } catch(e) {}
       }
 
-      const res = await fetch('/api/assets?t=' + Date.now());
+      const [res, notesRes] = await Promise.all([
+        fetch('/api/assets?t=' + Date.now()),
+        fetch('/api/notes')
+      ]);
       const assets = (await res.json()).filter(a => a.ticker !== 'CASH');
+      const notesList = await notesRes.json();
+      window.mobNotesMap = {};
+      notesList.forEach(n => {
+          if (n.asset_symbol) window.mobNotesMap[n.asset_symbol] = n;
+      });
       
       const sortSelect = document.getElementById('mob-sort-select');
       if (sortSelect) sortSelect.value = _marketSortMode;
@@ -827,6 +835,7 @@
         const tickerEsc = a.ticker.replace(/'/g, "\\'");
         const countryEsc = (a.country || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
         const openModal = `openManualModal('${tickerEsc}','${a.currency}',${a.currentPrice},'${a.type}','${countryEsc}','${a.dataSource}','${a.isin}')`;
+        const hasNote = window.mobNotesMap && window.mobNotesMap[a.ticker];
         if (a.hasPosition) {
           return `<div class="mob-holding-actions">
             <div class="mob-action-btn bg-blue-ios" ontouchend="mobActionTap(event,()=>mobViewAssetTransactions('${tickerEsc}'))" onclick="event.stopPropagation();mobViewAssetTransactions('${tickerEsc}')">
@@ -834,6 +843,9 @@
             </div>
             <div class="mob-action-btn bg-orange-ios" ontouchend="mobActionTap(event,()=>${openModal})" onclick="event.stopPropagation();${openModal}">
               <span class="material-symbols-outlined">edit_note</span><span>Modifica</span>
+            </div>
+            <div class="mob-action-btn" style="background-color: #64748b" ontouchend="mobActionTap(event,()=>window.location.href='/notes?asset=' + encodeURIComponent('${tickerEsc}'))" onclick="event.stopPropagation();window.location.href='/notes?asset=' + encodeURIComponent('${tickerEsc}')">
+              <span class="material-symbols-outlined" style="${hasNote ? 'color:#60a5fa' : ''}">${hasNote ? 'note_stack' : 'note_add'}</span><span>Note</span>
             </div>
           </div>`;
         }
@@ -843,6 +855,9 @@
           </div>
           <div class="mob-action-btn bg-red-ios" ontouchend="mobActionTap(event,()=>removeFromWatchlist('${tickerEsc}',${!!a.hasPosition}))" onclick="event.stopPropagation();removeFromWatchlist('${tickerEsc}',${!!a.hasPosition})">
             <span class="material-symbols-outlined">delete</span><span>Rimuovi</span>
+          </div>
+          <div class="mob-action-btn" style="background-color: #64748b" ontouchend="mobActionTap(event,()=>window.location.href='/notes?asset=' + encodeURIComponent('${tickerEsc}'))" onclick="event.stopPropagation();window.location.href='/notes?asset=' + encodeURIComponent('${tickerEsc}')">
+            <span class="material-symbols-outlined" style="${hasNote ? 'color:#60a5fa' : ''}">${hasNote ? 'note_stack' : 'note_add'}</span><span>Note</span>
           </div>
         </div>`;
       }
