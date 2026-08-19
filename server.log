@@ -1,0 +1,12 @@
+2026-08-19T19:48:51.643Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+[dotenv@17.3.1] injecting env (2) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+2026-08-19T19:48:51.660Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-08-19T19:48:51.788Z [INFO] Updating market data for 2 assets...
+2026-08-19T19:48:51.797Z [INFO] Updating [AAPL] using [YF]...
+Please consider completing the survey at https://bit.ly/yahoo-finance-api-feedback if you haven't already; for more info see https://github.com/gadicc/yahoo-finance2/issues/764#issuecomment-2056623851.  This will only be shown once, but you can suppress this message in future with `new YahooFinance({ suppressNotices: ['yahooSurvey'] })`.
+2026-08-19T19:48:51.812Z [INFO] FolioTrack server running on port 3001
+2026-08-19T19:48:51.822Z [INFO] Database: /Users/mauro/Documents/Progetti_Sviluppo/FolioTrack3/foliotrack.db
+2026-08-19T19:48:51.837Z [INFO] Startup notification sent to 3 users.
+2026-08-19T19:48:51.931Z [AI-INFO] [OpenRouter] Cached 80 top models for financial analysis (including NVIDIA free models).
+2026-08-19T19:48:52.069Z [AI-INFO] [Requesty] Cached 300 top models for financial analysis.
+2026-08-19T19:48:52.969Z [INFO] [REQ] POST /api/notes

@@ -338,6 +338,7 @@
 
         // Pin icon
         updatePinIcon(note.pinned);
+        renderAttachments(note.attachments || []);
     }
 
     function updatePinIcon(pinned) {
@@ -349,8 +350,6 @@
             icon.textContent = 'keep';
             icon.style.color = '';
         }
-        
-        renderAttachments(note.attachments || []);
     }
 
     // ── Attachments ───────────────────────────────────────────────────────────
@@ -501,7 +500,10 @@
                     asset_symbol: assetSymbol 
                 })
             });
-            if (!res.ok) throw new Error('Failed to create note');
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || 'Failed to create note');
+            }
             const note = await res.json();
             notes.unshift(note);
             renderNoteList($('notes-search').value);
@@ -527,7 +529,10 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ title, content, color, pinned, asset_symbol })
             });
-            if (!res.ok) throw new Error('Save failed');
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || 'Save failed');
+            }
             const saved = await res.json();
             // Update in memory
             currentNote = saved;
