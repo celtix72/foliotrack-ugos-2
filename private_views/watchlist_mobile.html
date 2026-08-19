@@ -689,6 +689,7 @@
                 <!-- Riga 1: Badge + Nome/Ticker + Prezzo + Var% -->
                 <div style="display:flex; align-items:center; gap:4px; max-width:100%; overflow:hidden; flex-wrap:nowrap;">
                   <span style="${displaySymbolStyle}">${displaySymbol}</span>
+                  ${window.mobNotesMap && window.mobNotesMap[a.ticker] ? `<span class="material-symbols-outlined text-[12px] text-blue-500 cursor-help" style="font-size:calc(12px * var(--mkcard-scale, 1)); flex-shrink:0;" title="${(window.mobNotesMap[a.ticker].content || '').replace(/"/g, '&quot;')}">note_stack</span>` : ''}
                   <span style="font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text); flex-shrink:0;">${priceFmt}</span>
                   <span style="color:${chgColor}; font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; flex-shrink:0;">${todayVarPct}</span>
                 </div>

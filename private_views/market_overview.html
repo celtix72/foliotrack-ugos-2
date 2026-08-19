@@ -727,6 +727,7 @@ function renderAssets(filter = '') {
                 <div>
                     <div class="flex items-center gap-1.5 flex-wrap">
                         <p class="font-bold text-xs text-slate-900 dark:text-white leading-tight truncate max-w-[280px]" title="${(a.name || '').replace(/"/g, '&quot;')}">${primaryTitle}</p>
+                        ${notesMap[a.ticker] ? `<span class="material-symbols-outlined text-[14px] text-blue-500 cursor-help" title="${(notesMap[a.ticker].content || '').replace(/"/g, '&quot;')}">note_stack</span>` : ''}
                         ${!a.isMonitored ? '<span class="text-[7px] font-black bg-slate-200 dark:bg-slate-800 px-1 py-0 rounded text-slate-500 tracking-tighter uppercase shrink-0">Inactive</span>' : ''}
                         ${a.lastUpdateError ? `<span class="px-1 py-0 rounded-full bg-rose-500 text-[7px] font-black text-white uppercase tracking-tighter shrink-0" title="${a.lastUpdateError.replace(/"/g, '&quot;')}">Err</span>` : ''}
                     </div>

@@ -573,6 +573,7 @@
                                 <div>
                                     <div class="flex items-center gap-1.5 flex-wrap">
                                         ${titleTag}
+                                        ${notesMap[item.ticker] ? `<span class="material-symbols-outlined text-[14px] text-blue-500 cursor-help" title="${(notesMap[item.ticker].content || '').replace(/"/g, '&quot;')}">note_stack</span>` : ''}
                                         ${!item.isMonitored ? '<span class="text-[7px] font-black bg-slate-200 dark:bg-slate-800 px-1 py-0 rounded text-slate-500 tracking-tighter uppercase shrink-0">Inactive</span>' : ''}
                                         ${item.lastUpdateError ? `<span class="px-1 py-0 rounded-full bg-rose-500 text-[7px] font-black text-white uppercase tracking-tighter shrink-0" title="${item.lastUpdateError.replace(/"/g, '&quot;')}">Err</span>` : ''}
                                     </div>

@@ -933,6 +933,7 @@
                 <div style="display:flex; align-items:center; max-width:100%">
                   <span style="background:${colors.bg}; color:#000000; border:1px solid ${colors.border}; border-radius:4px; padding:1px 5px; font-size:calc(10px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; flex-shrink:1">${displaySymbol}</span>
                   ${portTags}
+                  ${window.mobNotesMap && window.mobNotesMap[a.ticker] ? `<span class="material-symbols-outlined text-[12px] text-blue-500 cursor-help" style="font-size:calc(12px * var(--mkcard-scale, 1));" title="${(window.mobNotesMap[a.ticker].content || '').replace(/"/g, '&quot;')}">note_stack</span>` : ''}
                   <span onclick="event.stopPropagation(); window.openAssetFundamentalsModal('${tickerEsc}', '${nameEsc}')" class="px-1 py-0.5 rounded border border-indigo-500/30 text-indigo-500 bg-indigo-500/10 cursor-pointer flex items-center justify-center ml-1" style="padding: 1px 4px; border-radius:4px;" title="Dati Fondamentali Yahoo Finance">
                     <span class="material-symbols-outlined" style="font-size: calc(11px * var(--mkcard-scale, 1)); font-weight: bold;">query_stats</span>
                   </span>
@@ -996,6 +997,7 @@
               <div class="mob-holding-info">
                 <div class="flex items-center gap-2">
                   <div class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border" style="background:${colors.bg};color:#000000;border-color:${colors.border};display:inline-block">${a.ticker}</div>
+                  ${window.mobNotesMap && window.mobNotesMap[a.ticker] ? `<span class="material-symbols-outlined text-[14px] text-blue-500 cursor-help" title="${(window.mobNotesMap[a.ticker].content || '').replace(/"/g, '&quot;')}">note_stack</span>` : ''}
                   <span onclick="event.stopPropagation(); window.openAssetFundamentalsModal('${tickerEsc}', '${nameEsc}')" class="px-1 py-0.5 rounded border border-indigo-500/30 text-indigo-500 bg-indigo-500/10 cursor-pointer flex items-center justify-center ml-1" style="padding: 1px 4px; border-radius:4px;" title="Dati Fondamentali">
                     <span class="material-symbols-outlined" style="font-size: calc(11px * var(--mkcard-scale, 1)); font-weight: bold;">query_stats</span>
                   </span>
