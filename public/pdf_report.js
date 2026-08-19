@@ -457,6 +457,30 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
             // Aggregation
             const aggregated = {};
             for (const pItem of portfolioDetailsList) {
+                const p = pItem.portfolio;
+                if (p && p.currentCash > 0) {
+                    const cashTicker = 'CASH_' + p.currency;
+                    if (!aggregated[cashTicker]) {
+                        aggregated[cashTicker] = {
+                            ticker: cashTicker,
+                            name: `Liquidità (${p.currency})`,
+                            type: 'Liquidità',
+                            qty: 0,
+                            totalCostEUR: 0,
+                            currentValueEUR: 0,
+                            totalCostAssetCurr: 0,
+                            currency: p.currency
+                        };
+                    }
+                    const rate = (p.totalValue > 0 && p.totalValueEUR > 0) ? (p.totalValue / p.totalValueEUR) : (p.currency === 'USD' ? 1.08 : 1);
+                    const cashEUR = p.currentCash / rate;
+                    
+                    aggregated[cashTicker].qty += p.currentCash;
+                    aggregated[cashTicker].currentValueEUR += cashEUR;
+                    aggregated[cashTicker].totalCostEUR += cashEUR;
+                    aggregated[cashTicker].totalCostAssetCurr += p.currentCash;
+                }
+
                 const holdings = pItem.details.holdings || [];
                 for (const h of holdings) {
                     if (h.shares <= 0) continue;
