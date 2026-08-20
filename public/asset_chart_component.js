@@ -430,6 +430,31 @@
             };
 
             const prices = displayData.map(d => d.price);
+            
+            // Calculate SMAs
+            const sma50 = displayData.map(d => {
+                const fullIdx = _allChartData.findIndex(ad => ad.date === d.date);
+                if (fullIdx >= 49) {
+                    let sum = 0;
+                    for (let i = fullIdx - 49; i <= fullIdx; i++) {
+                        sum += _allChartData[i].price;
+                    }
+                    return sum / 50;
+                }
+                return null;
+            });
+
+            const sma200 = displayData.map(d => {
+                const fullIdx = _allChartData.findIndex(ad => ad.date === d.date);
+                if (fullIdx >= 199) {
+                    let sum = 0;
+                    for (let i = fullIdx - 199; i <= fullIdx; i++) {
+                        sum += _allChartData[i].price;
+                    }
+                    return sum / 200;
+                }
+                return null;
+            });
 
             // Calculate Historical P/E
             let peData = [];
@@ -888,6 +913,31 @@
                 });
             }
 
+            if (sma50.some(val => val !== null)) {
+                tradeDatasets.push({
+                    label: 'SMA 50',
+                    data: sma50,
+                    borderColor: 'rgba(59, 130, 246, 0.8)', // blue-500
+                    borderWidth: 1.5,
+                    pointRadius: 0,
+                    fill: false,
+                    tension: 0.1,
+                    yAxisID: 'y'
+                });
+            }
+            if (sma200.some(val => val !== null)) {
+                tradeDatasets.push({
+                    label: 'SMA 200',
+                    data: sma200,
+                    borderColor: 'rgba(239, 68, 68, 0.8)', // red-500
+                    borderWidth: 1.5,
+                    pointRadius: 0,
+                    fill: false,
+                    tension: 0.1,
+                    yAxisID: 'y'
+                });
+            }
+
             _assetChartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -943,6 +993,9 @@
                                     }
                                     if (context.dataset.label === 'P/E Storico') {
                                         return ` P/E Storico: ${context.parsed.y.toFixed(1)}`;
+                                    }
+                                    if (context.dataset.label === 'SMA 50' || context.dataset.label === 'SMA 200') {
+                                        return ` ${context.dataset.label}: ${formatDynamicPrice(context.parsed.y)} ${_chartCurrency}`;
                                     }
                                     return null;
                                 },
