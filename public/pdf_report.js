@@ -469,9 +469,11 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
                             totalCostEUR: 0,
                             currentValueEUR: 0,
                             totalCostAssetCurr: 0,
-                            currency: p.currency
+                            currency: p.currency,
+                            portfolios: new Set()
                         };
                     }
+                    aggregated[cashTicker].portfolios.add(p.name);
                     const rate = (p.totalValue > 0 && p.totalValueEUR > 0) ? (p.totalValue / p.totalValueEUR) : (p.currency === 'USD' ? 1.08 : 1);
                     const cashEUR = p.currentCash / rate;
                     
@@ -493,9 +495,11 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
                             totalCostEUR: 0,
                             currentValueEUR: 0,
                             totalCostAssetCurr: 0,
-                            currency: h.currency
+                            currency: h.currency,
+                            portfolios: new Set()
                         };
                     }
+                    aggregated[h.ticker].portfolios.add(pItem.portfolio.name);
                     aggregated[h.ticker].qty += h.shares;
                     aggregated[h.ticker].currentValueEUR += h.currentValue || 0;
                     aggregated[h.ticker].totalCostEUR += h.totalCostInPCurr || 0;
@@ -565,8 +569,9 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
                     catTotalCost += a.totalCostEUR;
                     
                     const gainColor = a.gainAssoluto >= 0 ? [22, 163, 74] : [220, 38, 38];
+                    const portsStr = Array.from(a.portfolios).join(', ');
                     return [
-                        { content: `${a.ticker}\n${a.name}`, styles: { fontStyle: 'bold' } },
+                        { content: `${a.ticker}\n${a.name}\n[${portsStr}]`, styles: { fontStyle: 'bold' } },
                         formatValue(a.qty),
                         formatAssetCurrency(a.pmcAssetCurr, a.currency),
                         { content: formatPercent(a.gainPct), styles: { textColor: gainColor } },
@@ -839,7 +844,10 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
         }
 
         // Save
-        const fileName = `M2T_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+        let fileName = `M2T_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+        if (mode === 'balance_sheet') {
+            fileName = `stato_patrimoniale_${new Date().toISOString().split('T')[0]}.pdf`;
+        }
         doc.save(fileName);
 
     } catch (err) {
