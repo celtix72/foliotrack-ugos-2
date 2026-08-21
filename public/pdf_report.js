@@ -640,6 +640,9 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
                 startY += 20;
             }
 
+            let estimatedTaxes = 0;
+            let potentialMinusvalenze = 0;
+
             // Generate Tables
             for (const [catName, assets] of Object.entries(categories)) {
                 if (assets.length === 0) continue;
@@ -661,6 +664,13 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
                 const tableBody = assets.map(a => {
                     catTotalValue += a.currentValueEUR;
                     catTotalCost += a.totalCostEUR;
+
+                    if (a.gainAssoluto > 0) {
+                        const taxRate = catName === 'Obbligazioni' ? 0.125 : 0.26;
+                        estimatedTaxes += (a.gainAssoluto * taxRate);
+                    } else if (a.gainAssoluto < 0) {
+                        potentialMinusvalenze += Math.abs(a.gainAssoluto);
+                    }
                     
                     const gainColor = a.gainAssoluto >= 0 ? [22, 163, 74] : [220, 38, 38];
                     const portsStr = Array.from(a.portfolios).join(', ');
@@ -695,6 +705,14 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
                     theme: 'grid',
                     headStyles: { fillColor: [59, 130, 246] }, // Blue-500
                     styles: { fontSize: 9, cellPadding: 4, valign: 'middle' },
+                    columnStyles: {
+                        0: { cellWidth: 175 },
+                        1: { cellWidth: 45, halign: 'right' },
+                        2: { cellWidth: 65, halign: 'right' },
+                        3: { cellWidth: 65, halign: 'right' },
+                        4: { cellWidth: 80, halign: 'right' },
+                        5: { cellWidth: 85, halign: 'right' }
+                    },
                     margin: { left: marginLeft },
                     didDrawPage: function (data) {
                         startY = data.cursor.y;
@@ -704,10 +722,10 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
             }
 
             // Grand Total
-            checkPageBreak(80);
+            checkPageBreak(90);
             
             doc.setFillColor(30, 58, 138); // Blue-900
-            doc.rect(marginLeft, startY, pageWidth - (marginLeft * 2), 60, 'F');
+            doc.rect(marginLeft, startY, pageWidth - (marginLeft * 2), 75, 'F');
             
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(12);
@@ -723,7 +741,11 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
             doc.setFontSize(10);
             doc.text(`Costo: ${formatCurrency(grandTotalCost)} | Gain: ${sign}${formatCurrency(grandGain)} (${sign}${formatPercent(grandGainPct)})`, pageWidth - marginLeft - 15, startY + 45, { align: 'right' });
             
-            startY += 80;
+            doc.setFontSize(9);
+            doc.setTextColor(203, 213, 225); // slate-300
+            doc.text(`Minusvalenze latenti: ${formatCurrency(potentialMinusvalenze)} | Tasse previste sui gain latenti: ${formatCurrency(estimatedTaxes)}`, pageWidth - marginLeft - 15, startY + 60, { align: 'right' });
+            
+            startY += 90;
 
         } else if (mode === 'latest_ai' || mode === 'new_ai') {
             // ==========================================
