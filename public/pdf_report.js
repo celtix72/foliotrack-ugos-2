@@ -547,31 +547,37 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
             let grandTotalCost = 0;
 
             // Calculate Risk Allocation
-            let lowRiskValue = 0;
-            let mediumRiskValue = 0;
-            let highRiskValue = 0;
+            const riskSegments = [
+                { id: 'liquidita', label: 'Liquidità/Cash', color: [22, 101, 52], value: 0 },
+                { id: 'cd', label: 'Conti Deposito', color: [21, 128, 61], value: 0 },
+                { id: 'etf_mon', label: 'ETF Monetario', color: [34, 197, 94], value: 0 },
+                { id: 'obbligazioni', label: 'Obbligazioni', color: [234, 179, 8], value: 0 },
+                { id: 'etf_az', label: 'ETF Azionari', color: [249, 115, 22], value: 0 },
+                { id: 'azioni', label: 'Azioni', color: [239, 68, 68], value: 0 }
+            ];
+            let altroValue = 0;
             let totalValueForRisk = 0;
 
             for (const [catName, assets] of Object.entries(categories)) {
                 for (const a of assets) {
                     if (a.currentValueEUR > 0) {
                         totalValueForRisk += a.currentValueEUR;
-                        if (['Liquidità', 'Conti Deposito', 'ETF Monetari', 'Obbligazioni'].includes(catName)) {
-                            lowRiskValue += a.currentValueEUR;
-                        } else if (['Azioni', 'ETF Azionari'].includes(catName)) {
-                            highRiskValue += a.currentValueEUR;
-                        } else {
-                            mediumRiskValue += a.currentValueEUR;
-                        }
+                        if (catName === 'Liquidità') riskSegments[0].value += a.currentValueEUR;
+                        else if (catName === 'Conti Deposito') riskSegments[1].value += a.currentValueEUR;
+                        else if (catName === 'ETF Monetari') riskSegments[2].value += a.currentValueEUR;
+                        else if (catName === 'Obbligazioni') riskSegments[3].value += a.currentValueEUR;
+                        else if (catName === 'ETF Azionari') riskSegments[4].value += a.currentValueEUR;
+                        else if (catName === 'Azioni') riskSegments[5].value += a.currentValueEUR;
+                        else altroValue += a.currentValueEUR;
                     }
                 }
             }
 
-            if (totalValueForRisk > 0) {
-                const lowPct = lowRiskValue / totalValueForRisk;
-                const mediumPct = mediumRiskValue / totalValueForRisk;
-                const highPct = highRiskValue / totalValueForRisk;
+            if (altroValue > 0) {
+                riskSegments.push({ id: 'altro', label: 'Altro', color: [148, 163, 184], value: altroValue });
+            }
 
+            if (totalValueForRisk > 0) {
                 const barWidth = pageWidth - (marginLeft * 2);
                 const barHeight = 10;
                 
@@ -583,30 +589,15 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
 
                 // Draw segments
                 let currentX = marginLeft;
-                
-                // Low risk (Green / Emerald-500)
-                if (lowPct > 0) {
-                    const w = barWidth * lowPct;
-                    doc.setFillColor(16, 185, 129);
-                    doc.rect(currentX, startY, w, barHeight, 'F');
-                    currentX += w;
+                for (const seg of riskSegments) {
+                    if (seg.value > 0) {
+                        const w = barWidth * (seg.value / totalValueForRisk);
+                        doc.setFillColor(...seg.color);
+                        doc.rect(currentX, startY, w, barHeight, 'F');
+                        currentX += w;
+                    }
                 }
                 
-                // Medium risk (Yellow / Amber-500)
-                if (mediumPct > 0) {
-                    const w = barWidth * mediumPct;
-                    doc.setFillColor(245, 158, 11);
-                    doc.rect(currentX, startY, w, barHeight, 'F');
-                    currentX += w;
-                }
-                
-                // High risk (Red / Rose-500)
-                if (highPct > 0) {
-                    const w = barWidth * highPct;
-                    doc.setFillColor(244, 63, 94);
-                    doc.rect(currentX, startY, w, barHeight, 'F');
-                }
-
                 startY += barHeight + 6;
 
                 // Legend
@@ -614,30 +605,29 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
                 doc.setFont("helvetica", "normal");
                 
                 let legendX = marginLeft;
-                if (lowPct > 0) {
-                    doc.setFillColor(16, 185, 129);
-                    doc.circle(legendX + 2, startY - 3, 3, 'F');
-                    doc.setTextColor(15, 23, 42);
-                    doc.text(`Basso: ${formatPercent(lowPct * 100)}`, legendX + 7, startY);
-                    legendX += Math.max(70, doc.getTextWidth(`Basso: ${formatPercent(lowPct * 100)}`) + 15);
-                }
+                let legendY = startY;
                 
-                if (mediumPct > 0) {
-                    doc.setFillColor(245, 158, 11);
-                    doc.circle(legendX + 2, startY - 3, 3, 'F');
-                    doc.setTextColor(15, 23, 42);
-                    doc.text(`Medio: ${formatPercent(mediumPct * 100)}`, legendX + 7, startY);
-                    legendX += Math.max(70, doc.getTextWidth(`Medio: ${formatPercent(mediumPct * 100)}`) + 15);
-                }
-                
-                if (highPct > 0) {
-                    doc.setFillColor(244, 63, 94);
-                    doc.circle(legendX + 2, startY - 3, 3, 'F');
-                    doc.setTextColor(15, 23, 42);
-                    doc.text(`Alto: ${formatPercent(highPct * 100)}`, legendX + 7, startY);
+                for (const seg of riskSegments) {
+                    if (seg.value > 0) {
+                        const pctStr = formatPercent((seg.value / totalValueForRisk) * 100);
+                        const text = `${seg.label}: ${pctStr}`;
+                        const textWidth = doc.getTextWidth(text);
+                        
+                        if (legendX + textWidth + 15 > pageWidth - marginLeft) {
+                            legendX = marginLeft;
+                            legendY += 12;
+                        }
+                        
+                        doc.setFillColor(...seg.color);
+                        doc.circle(legendX + 2, legendY - 3, 3, 'F');
+                        doc.setTextColor(15, 23, 42);
+                        doc.text(text, legendX + 7, legendY);
+                        
+                        legendX += textWidth + 15;
+                    }
                 }
 
-                startY += 20;
+                startY = legendY + 20;
             }
 
             let estimatedTaxes = 0;
@@ -675,7 +665,8 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
                     const gainColor = a.gainAssoluto >= 0 ? [22, 163, 74] : [220, 38, 38];
                     const portsStr = Array.from(a.portfolios).join(', ');
                     return [
-                        { content: `${a.ticker}\n${a.name}\n[${portsStr}]`, styles: { fontStyle: 'bold' } },
+                        { content: `${a.ticker}\n${a.name}`, styles: { fontStyle: 'bold' } },
+                        portsStr,
                         formatValue(a.qty),
                         formatAssetCurrency(a.pmcAssetCurr, a.currency),
                         { content: formatPercent(a.gainPct), styles: { textColor: gainColor } },
@@ -689,7 +680,7 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
                 const catGainColor = catGain >= 0 ? [22, 163, 74] : [220, 38, 38];
 
                 tableBody.push([
-                    { content: 'TOTALE ' + catName.toUpperCase(), colSpan: 3, styles: { fontStyle: 'bold', fillColor: [241, 245, 249], textColor: [15, 23, 42] } },
+                    { content: 'TOTALE ' + catName.toUpperCase(), colSpan: 4, styles: { fontStyle: 'bold', fillColor: [241, 245, 249], textColor: [15, 23, 42] } },
                     { content: formatPercent(catGainPct), styles: { fontStyle: 'bold', textColor: catGainColor, fillColor: [241, 245, 249] } },
                     { content: formatCurrency(catGain), styles: { fontStyle: 'bold', textColor: catGainColor, fillColor: [241, 245, 249] } },
                     { content: formatCurrency(catTotalValue), styles: { fontStyle: 'bold', fillColor: [241, 245, 249], textColor: [15, 23, 42] } }
@@ -700,18 +691,19 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
 
                 doc.autoTable({
                     startY: startY,
-                    head: [['Asset', 'Qtà', 'PMC', 'Gain %', 'Gain Assoluto', 'Controvalore']],
+                    head: [['Asset', 'Portafoglio', 'Qtà', 'PMC', 'Gain %', 'Gain Assoluto', 'Controvalore']],
                     body: tableBody,
                     theme: 'grid',
                     headStyles: { fillColor: [59, 130, 246] }, // Blue-500
                     styles: { fontSize: 9, cellPadding: 4, valign: 'middle' },
                     columnStyles: {
-                        0: { cellWidth: 175 },
-                        1: { cellWidth: 45, halign: 'right' },
-                        2: { cellWidth: 65, halign: 'right' },
-                        3: { cellWidth: 65, halign: 'right' },
-                        4: { cellWidth: 80, halign: 'right' },
-                        5: { cellWidth: 85, halign: 'right' }
+                        0: { cellWidth: 125 },
+                        1: { cellWidth: 65 },
+                        2: { cellWidth: 35, halign: 'right' },
+                        3: { cellWidth: 55, halign: 'right' },
+                        4: { cellWidth: 55, halign: 'right' },
+                        5: { cellWidth: 80, halign: 'right' },
+                        6: { cellWidth: 100, halign: 'right' }
                     },
                     margin: { left: marginLeft },
                     didDrawPage: function (data) {
