@@ -546,6 +546,100 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
             let grandTotalValue = 0;
             let grandTotalCost = 0;
 
+            // Calculate Risk Allocation
+            let lowRiskValue = 0;
+            let mediumRiskValue = 0;
+            let highRiskValue = 0;
+            let totalValueForRisk = 0;
+
+            for (const [catName, assets] of Object.entries(categories)) {
+                for (const a of assets) {
+                    if (a.currentValueEUR > 0) {
+                        totalValueForRisk += a.currentValueEUR;
+                        if (['Liquidità', 'Conti Deposito', 'ETF Monetari', 'Obbligazioni'].includes(catName)) {
+                            lowRiskValue += a.currentValueEUR;
+                        } else if (['Azioni', 'ETF Azionari'].includes(catName)) {
+                            highRiskValue += a.currentValueEUR;
+                        } else {
+                            mediumRiskValue += a.currentValueEUR;
+                        }
+                    }
+                }
+            }
+
+            if (totalValueForRisk > 0) {
+                const lowPct = lowRiskValue / totalValueForRisk;
+                const mediumPct = mediumRiskValue / totalValueForRisk;
+                const highPct = highRiskValue / totalValueForRisk;
+
+                const barWidth = pageWidth - (marginLeft * 2);
+                const barHeight = 10;
+                
+                doc.setFontSize(12);
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(15, 23, 42); // slate-900
+                doc.text("Allocazione per Rischio", marginLeft, startY);
+                startY += 6;
+
+                // Draw segments
+                let currentX = marginLeft;
+                
+                // Low risk (Green / Emerald-500)
+                if (lowPct > 0) {
+                    const w = barWidth * lowPct;
+                    doc.setFillColor(16, 185, 129);
+                    doc.rect(currentX, startY, w, barHeight, 'F');
+                    currentX += w;
+                }
+                
+                // Medium risk (Yellow / Amber-500)
+                if (mediumPct > 0) {
+                    const w = barWidth * mediumPct;
+                    doc.setFillColor(245, 158, 11);
+                    doc.rect(currentX, startY, w, barHeight, 'F');
+                    currentX += w;
+                }
+                
+                // High risk (Red / Rose-500)
+                if (highPct > 0) {
+                    const w = barWidth * highPct;
+                    doc.setFillColor(244, 63, 94);
+                    doc.rect(currentX, startY, w, barHeight, 'F');
+                }
+
+                startY += barHeight + 6;
+
+                // Legend
+                doc.setFontSize(9);
+                doc.setFont("helvetica", "normal");
+                
+                let legendX = marginLeft;
+                if (lowPct > 0) {
+                    doc.setFillColor(16, 185, 129);
+                    doc.circle(legendX + 2, startY - 3, 3, 'F');
+                    doc.setTextColor(15, 23, 42);
+                    doc.text(`Basso: ${formatPercent(lowPct * 100)}`, legendX + 7, startY);
+                    legendX += Math.max(70, doc.getTextWidth(`Basso: ${formatPercent(lowPct * 100)}`) + 15);
+                }
+                
+                if (mediumPct > 0) {
+                    doc.setFillColor(245, 158, 11);
+                    doc.circle(legendX + 2, startY - 3, 3, 'F');
+                    doc.setTextColor(15, 23, 42);
+                    doc.text(`Medio: ${formatPercent(mediumPct * 100)}`, legendX + 7, startY);
+                    legendX += Math.max(70, doc.getTextWidth(`Medio: ${formatPercent(mediumPct * 100)}`) + 15);
+                }
+                
+                if (highPct > 0) {
+                    doc.setFillColor(244, 63, 94);
+                    doc.circle(legendX + 2, startY - 3, 3, 'F');
+                    doc.setTextColor(15, 23, 42);
+                    doc.text(`Alto: ${formatPercent(highPct * 100)}`, legendX + 7, startY);
+                }
+
+                startY += 20;
+            }
+
             // Generate Tables
             for (const [catName, assets] of Object.entries(categories)) {
                 if (assets.length === 0) continue;
