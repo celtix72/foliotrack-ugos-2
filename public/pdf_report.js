@@ -424,12 +424,12 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
 
             const formatValue = (val) => {
                 if (val === undefined || val === null || isNaN(val)) return '0';
-                return Number(val).toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+                return Number(val).toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
             };
 
             const formatCurrency = (val) => {
                 if (val === undefined || val === null || isNaN(val)) return '€ 0';
-                return '€ ' + Number(val).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                return '€ ' + Number(val).toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
             };
             
             const formatAssetCurrency = (val, currency) => {
@@ -439,8 +439,8 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
             };
 
             const formatPercent = (val) => {
-                if (val === undefined || val === null || isNaN(val)) return '0,0%';
-                return Number(val).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+                if (val === undefined || val === null || isNaN(val)) return '0%';
+                return Number(val).toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + '%';
             };
 
             // Header
