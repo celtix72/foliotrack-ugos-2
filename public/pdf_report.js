@@ -669,9 +669,10 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
                         portsStr,
                         formatValue(a.qty),
                         formatAssetCurrency(a.pmcAssetCurr, a.currency),
+                        formatCurrency(a.totalCostEUR),
+                        { content: formatCurrency(a.currentValueEUR), styles: { fontStyle: 'bold' } },
                         { content: formatPercent(a.gainPct), styles: { textColor: gainColor } },
-                        { content: formatCurrency(a.gainAssoluto), styles: { textColor: gainColor } },
-                        { content: formatCurrency(a.currentValueEUR), styles: { fontStyle: 'bold' } }
+                        { content: formatCurrency(a.gainAssoluto), styles: { textColor: gainColor } }
                     ];
                 });
 
@@ -681,9 +682,10 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
 
                 tableBody.push([
                     { content: 'TOTALE ' + catName.toUpperCase(), colSpan: 4, styles: { fontStyle: 'bold', fillColor: [241, 245, 249], textColor: [15, 23, 42] } },
+                    { content: formatCurrency(catTotalCost), styles: { fontStyle: 'bold', fillColor: [241, 245, 249], textColor: [15, 23, 42] } },
+                    { content: formatCurrency(catTotalValue), styles: { fontStyle: 'bold', fillColor: [241, 245, 249], textColor: [15, 23, 42] } },
                     { content: formatPercent(catGainPct), styles: { fontStyle: 'bold', textColor: catGainColor, fillColor: [241, 245, 249] } },
-                    { content: formatCurrency(catGain), styles: { fontStyle: 'bold', textColor: catGainColor, fillColor: [241, 245, 249] } },
-                    { content: formatCurrency(catTotalValue), styles: { fontStyle: 'bold', fillColor: [241, 245, 249], textColor: [15, 23, 42] } }
+                    { content: formatCurrency(catGain), styles: { fontStyle: 'bold', textColor: catGainColor, fillColor: [241, 245, 249] } }
                 ]);
 
                 grandTotalValue += catTotalValue;
@@ -691,7 +693,7 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
 
                 doc.autoTable({
                     startY: startY,
-                    head: [['Asset', 'Portafoglio', 'Qtà', 'PMC', 'Gain %', 'Gain Assoluto', 'Controvalore']],
+                    head: [['Asset', 'Portafoglio', 'Qtà', 'PMC', 'Val.ACQ', 'Val.NOW', 'Gain %', 'Gain Assoluto']],
                     body: tableBody,
                     theme: 'grid',
                     headStyles: { fillColor: [59, 130, 246] }, // Blue-500
@@ -700,10 +702,11 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
                         0: { cellWidth: 125 },
                         1: { cellWidth: 65 },
                         2: { cellWidth: 35, halign: 'right' },
-                        3: { cellWidth: 55, halign: 'right' },
-                        4: { cellWidth: 55, halign: 'right' },
-                        5: { cellWidth: 80, halign: 'right' },
-                        6: { cellWidth: 100, halign: 'right' }
+                        3: { cellWidth: 50, halign: 'right' },
+                        4: { cellWidth: 60, halign: 'right' },
+                        5: { cellWidth: 60, halign: 'right' },
+                        6: { cellWidth: 50, halign: 'right' },
+                        7: { cellWidth: 70, halign: 'right' }
                     },
                     margin: { left: marginLeft },
                     didDrawPage: function (data) {
