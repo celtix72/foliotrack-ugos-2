@@ -8,7 +8,7 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
 
     try {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('l', 'pt', 'a4'); // 'l' for landscape
+        const doc = new jsPDF('p', 'pt', 'a4'); // 'p' for portrait
 
         // Fetch Global Reports Data
         const reportsRes = await fetch('/api/analytics/reports?range=1Y');
@@ -578,56 +578,58 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
             }
 
             if (totalValueForRisk > 0) {
-                const barWidth = pageWidth - (marginLeft * 2);
-                const barHeight = 10;
-                
                 doc.setFontSize(12);
                 doc.setFont("helvetica", "bold");
                 doc.setTextColor(15, 23, 42); // slate-900
                 doc.text("Allocazione per Rischio", marginLeft, startY);
-                startY += 6;
+                startY += 15;
 
-                // Draw segments
-                let currentX = marginLeft;
+                const centerX = marginLeft + 60;
+                const centerY = startY + 50;
+                const radius = 50;
+
+                let startAngle = -90; // Start from top
                 for (const seg of riskSegments) {
                     if (seg.value > 0) {
-                        const w = barWidth * (seg.value / totalValueForRisk);
                         doc.setFillColor(...seg.color);
-                        doc.rect(currentX, startY, w, barHeight, 'F');
-                        currentX += w;
+                        const sliceAngle = (seg.value / totalValueForRisk) * 360;
+                        const endAngle = startAngle + sliceAngle;
+                        
+                        // Draw slice using small triangles
+                        for (let a = startAngle; a < endAngle; a += 0.5) {
+                            const rad1 = a * Math.PI / 180;
+                            const rad2 = Math.min((a + 0.5), endAngle) * Math.PI / 180;
+                            const x1 = centerX + radius * Math.cos(rad1);
+                            const y1 = centerY + radius * Math.sin(rad1);
+                            const x2 = centerX + radius * Math.cos(rad2);
+                            const y2 = centerY + radius * Math.sin(rad2);
+                            doc.triangle(centerX, centerY, x1, y1, x2, y2, 'F');
+                        }
+                        startAngle = endAngle;
                     }
                 }
-                
-                startY += barHeight + 6;
 
                 // Legend
                 doc.setFontSize(9);
                 doc.setFont("helvetica", "normal");
                 
-                let legendX = marginLeft;
-                let legendY = startY;
+                let legendX = centerX + radius + 30;
+                let legendY = startY + 10;
                 
                 for (const seg of riskSegments) {
                     if (seg.value > 0) {
                         const pctStr = formatPercent((seg.value / totalValueForRisk) * 100);
                         const text = `${seg.label}: ${pctStr}`;
-                        const textWidth = doc.getTextWidth(text);
-                        
-                        if (legendX + textWidth + 15 > pageWidth - marginLeft) {
-                            legendX = marginLeft;
-                            legendY += 12;
-                        }
                         
                         doc.setFillColor(...seg.color);
                         doc.circle(legendX + 2, legendY - 3, 3, 'F');
                         doc.setTextColor(15, 23, 42);
                         doc.text(text, legendX + 7, legendY);
-                        
-                        legendX += textWidth + 15;
+                        legendY += 14;
                     }
                 }
-
-                startY = legendY + 20;
+                
+                startY += 110;
             }
 
             let estimatedTaxes = 0;
