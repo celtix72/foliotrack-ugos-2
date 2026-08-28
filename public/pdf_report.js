@@ -120,12 +120,12 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
 
         const formatValue = (val) => {
             if (val === undefined || val === null || isNaN(val)) return '0';
-            return Number(val).toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            return Number(val).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
         };
 
         const formatCurrency = (val) => {
             if (val === undefined || val === null || isNaN(val)) return '€ 0';
-            return '€ ' + Number(val).toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            return '€ ' + Number(val).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
         };
 
         const formatPercent = (val) => {
@@ -424,12 +424,12 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
 
             const formatValue = (val) => {
                 if (val === undefined || val === null || isNaN(val)) return '0';
-                return Number(val).toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+                return Number(val).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
             };
 
             const formatCurrency = (val) => {
                 if (val === undefined || val === null || isNaN(val)) return '€ 0';
-                return '€ ' + Number(val).toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+                return '€ ' + Number(val).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
             };
             
             const formatAssetCurrency = (val, currency) => {
@@ -782,7 +782,7 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
                 });
             }
 
-            const formatCurrency = (val) => '€ ' + Number(val).toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            const formatCurrency = (val) => '€ ' + Number(val).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
             
             const printMetricBox = (x, y, w, h, label, value, valColor) => {
                 doc.setDrawColor(226, 232, 240); // slate-200
