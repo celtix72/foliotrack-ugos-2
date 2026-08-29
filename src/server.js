@@ -2752,6 +2752,30 @@ function serveWithSidebar(req, res, file) {
     });
 }
 
+// ─── CSP Violation Report (DIAGNOSTICA TEMPORANEA) ──────────────────────────
+// Raccoglie le violation report dal browser mobile per identificare il CSP applicato.
+// Rimuovere dopo il debug.
+const _cspReports = [];
+app.post('/api/csp-report', express.json({ type: ['application/json', 'application/csp-report'] }), (req, res) => {
+    const report = req.body['csp-report'] || req.body;
+    const entry = {
+        ts: new Date().toISOString(),
+        ua: req.headers['user-agent'],
+        blockedUri: report['blocked-uri'],
+        violatedDirective: report['violated-directive'],
+        effectiveDirective: report['effective-directive'],
+        originalPolicy: report['original-policy'],
+        documentUri: report['document-uri'],
+        lineNumber: report['line-number'],
+    };
+    _cspReports.unshift(entry);
+    if (_cspReports.length > 50) _cspReports.pop();
+    console.warn('[CSP-REPORT]', JSON.stringify(entry));
+    res.status(204).end();
+});
+app.get('/api/csp-report/log', requireAuth, (req, res) => res.json(_cspReports));
+// ──────────────────────────────────────────────────────────────────────────────
+
 // Protected app pages
 app.get('/dashboard', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'dashboard_mobile.html' : 'dashboard.html';

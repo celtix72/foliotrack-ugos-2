@@ -27,8 +27,11 @@ function configureSecurity(app) {
         frameSrc: ["'self'"],
         objectSrc: ["'none'"],
         baseUri: ["'self'"],
-        formAction: ["'self'"]
+        formAction: ["'self'"],
+        // DIAGNOSTICA TEMPORANEA: riceve i violation report dal browser
+        reportUri: ['/api/csp-report'],
     };
+
 
     const helmetHTTPS = helmet({
         contentSecurityPolicy: isCspDisabled ? false : { directives: cspDirectivesBase },
