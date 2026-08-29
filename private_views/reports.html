@@ -181,9 +181,6 @@
             <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
             Analisi portafoglio live
         </p>
-        <div id="tag-filter-container" class="flex flex-wrap gap-2 mt-4">
-            <!-- JS filled portfolio tags -->
-        </div>
     </div>
     <div class="flex items-center gap-3 flex-wrap">
         <div class="flex gap-2 bg-slate-100 dark:bg-slate-900/50 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
@@ -506,18 +503,34 @@
     }
 
     function renderPortfolioFilters() {
-        const container = document.getElementById('tag-filter-container'); // Reusing same container for consistency
-        if (!container || !window._allPortfolios) return;
+        const sidebar = document.getElementById('sidebar-portfolios');
+        if (!sidebar || !window._allPortfolios) return;
         
-        container.innerHTML = window._allPortfolios.map(p => {
+        sidebar.innerHTML = window._allPortfolios.map(p => {
+            const isPrivate = window.privacyState && window.privacyState.enabled;
+            const displayVal = isPrivate ? '****' : formatCurrency(p.totalValue, p.currency, 0);
             const isSelected = selectedPortfolioIds.includes(p.id);
+            const bgColor = isSelected ? 'bg-slate-200 dark:bg-slate-800' : 'hover:bg-slate-100 dark:hover:bg-slate-800';
+            
             return `
-                <button onclick="togglePortfolioFilter(${p.id})" 
-                        class="px-3 py-1 rounded-full text-[10px] font-bold border transition-all ${isSelected ? 'bg-primary text-white border-primary shadow-sm shadow-primary/20' : 'bg-slate-50 dark:bg-slate-900 text-slate-500 border-slate-200 dark:border-slate-800 hover:border-primary/50'}">
-                    ${p.name}
-                </button>
+                <div class="flex items-center justify-between px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 transition-colors group cursor-pointer ${bgColor}" onclick="togglePortfolioFilter(${p.id})">
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <div class="flex items-center justify-center w-3 h-3 rounded-sm border ${isSelected ? 'border-transparent' : 'border-slate-300 dark:border-slate-600'}" style="${isSelected ? 'background-color:' + (p.color || '#6366f1') : ''}">
+                            <span class="material-symbols-outlined text-[10px] text-white ${isSelected ? '' : 'hidden'}">check</span>
+                        </div>
+                        <div class="flex flex-col min-w-0">
+                            <span class="text-xs font-medium truncate ${isSelected ? 'text-slate-900 dark:text-white font-bold' : ''}">${p.name}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">${displayVal}</span>
+                        <a href="/portfolio?id=${p.id}" onclick="event.stopPropagation()" class="text-slate-400 hover:text-primary transition-colors" title="Dettagli Portafoglio">
+                            <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+                        </a>
+                    </div>
+                </div>
             `;
-        }).join('') + (window._allPortfolios.length === 0 ? '<span class="text-[10px] text-slate-400 italic">No portfolios defined.</span>' : '');
+        }).join('') || '<div class="px-3 py-2 text-xs text-slate-400 italic">Nessun portafoglio</div>';
     }
 
     function togglePortfolioFilter(pId) {

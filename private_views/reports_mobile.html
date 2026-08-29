@@ -98,11 +98,6 @@
         <div class="mob-tab-pill" onclick="switchRepTab('portafogli')" id="tab-portafogli">Portafogli</div>
     </div>
 
-    <!-- Tag Filters -->
-    <div class="px-4 pb-2 overflow-x-auto no-scrollbar flex gap-2" id="mob-tag-filters">
-        <!-- JS filled -->
-    </div>
-
     <!-- VIEW: PORTAFOGLI -->
     <div id="view-portafogli" class="hidden">
         <div class="mob-section-header">
@@ -344,22 +339,9 @@
         const res = await fetch('/api/portfolios');
         const data = await res.json();
         window._allPortfolios = data.portfolios || [];
-        mobRenderPortfolioFilters();
       } catch (e) { console.error('Error loading portfolios:', e); }
     }
 
-    function mobRenderPortfolioFilters() {
-      const container = document.getElementById('mob-tag-filters');
-      if (!container || !window._allPortfolios) return;
-      container.innerHTML = window._allPortfolios.map(p => {
-        const isSelected = selectedPortfolioIds.includes(p.id);
-        return `
-          <button onclick="mobTogglePortfolioFilter(${p.id})" 
-                  class="px-4 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${isSelected ? 'bg-primary text-white shadow-md' : 'bg-white/10 text-white/70 border border-white/10'}">
-            ${p.name}
-          </button>`;
-      }).join('');
-    }
 
     function mobTogglePortfolioFilter(pId) {
       const idx = selectedPortfolioIds.indexOf(pId);
@@ -369,7 +351,6 @@
         selectedPortfolioIds.push(pId);
       }
       localStorage.setItem('selectedPortfolioIds', JSON.stringify(selectedPortfolioIds));
-      mobRenderPortfolioFilters();
       mobLoadReportData();
     }
 

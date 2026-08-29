@@ -266,10 +266,6 @@
         <h3 class="text-lg font-bold">Performance</h3>
         <p class="text-xs text-slate-500 hidden sm:block">Patrimonio netto aggregato</p>
     </div>
-    <div class="hidden sm:block w-px h-8 bg-slate-200 dark:bg-slate-700"></div>
-    <div id="portfolio-filter-container" class="flex flex-wrap gap-1">
-        <!-- JS filled portfolio buttons -->
-    </div>
 </div>
 
                     <div class="flex flex-wrap items-center gap-3">
@@ -597,29 +593,6 @@
 
     let selectedPortfolioIds = JSON.parse(localStorage.getItem('selectedPortfolioIds') || '[]');
 
-    function renderPortfolioFilters() {
-        const container = document.getElementById('portfolio-filter-container');
-        if (!container || !window._dashboardData) return;
-        
-        const portfolios = window._dashboardData.portfolios || [];
-        
-        container.innerHTML = portfolios.map(p => {
-            const isSelected = selectedPortfolioIds.includes(p.id);
-            // Gray if not selected, portfolio color if selected
-            const style = isSelected 
-                ? `background-color: ${p.color || '#6366f1'}; color: white; border-color: ${p.color || '#6366f1'};` 
-                : `background-color: #f1f5f9; color: #64748b; border-color: #e2e8f0; opacity: 0.6;`;
-            
-            return `
-                <button onclick="togglePortfolioFilter(${p.id})" 
-                        style="${style}"
-                        class="px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border transition-all hover:scale-105 shadow-sm flex items-center gap-1.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-white ${isSelected ? '' : 'hidden'}"></span>
-                    ${p.name}
-                </button>
-            `;
-        }).join('') || '<span class="text-[10px] text-slate-400 italic">Nessun portafoglio definito.</span>';
-    }
 
     window.togglePortfolioFilter = function(pId) {
         const idx = selectedPortfolioIds.indexOf(pId);
@@ -629,7 +602,7 @@
             selectedPortfolioIds.push(pId);
         }
         localStorage.setItem('selectedPortfolioIds', JSON.stringify(selectedPortfolioIds));
-        renderPortfolioFilters();
+        renderSidebarPortfolios(window._dashboardData ? window._dashboardData.portfolios : []);
         
         if (window._dashboardData) {
             updateDashboardUI(window._dashboardData);
@@ -681,8 +654,6 @@
         if (selectedPortfolioIds.length > 0) {
             filteredPortfolios = portfolios.filter(p => selectedPortfolioIds.includes(p.id));
         }
-
-        renderPortfolioFilters();
 
         const metrics = {
             totalNetValue: filteredPortfolios.reduce((sum, p) => sum + (parseFloat(p.netValueEUR) || parseFloat(p.netValue) || parseFloat(p.totalValue) || 0), 0),
@@ -740,17 +711,26 @@
         sidebar.innerHTML = portfolios.map(p => {
             const isPrivate = window.privacyState && window.privacyState.enabled;
             const displayVal = isPrivate ? '****' : formatCurrency(p.totalValue, p.currency, 0);
+            const isSelected = selectedPortfolioIds.includes(p.id);
+            const bgColor = isSelected ? 'bg-slate-200 dark:bg-slate-800' : 'hover:bg-slate-100 dark:hover:bg-slate-800';
             
             return `
-                <a href="/portfolio?id=${p.id}" class="flex items-center justify-between px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group">
+                <div class="flex items-center justify-between px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 transition-colors group cursor-pointer ${bgColor}" onclick="togglePortfolioFilter(${p.id})">
                     <div class="flex items-center gap-3 overflow-hidden">
-                        <div class="w-1.5 h-1.5 rounded-full shrink-0" style="background-color: ${p.color || '#6366f1'}"></div>
+                        <div class="flex items-center justify-center w-3 h-3 rounded-sm border ${isSelected ? 'border-transparent' : 'border-slate-300 dark:border-slate-600'}" style="${isSelected ? 'background-color:' + (p.color || '#6366f1') : ''}">
+                            <span class="material-symbols-outlined text-[10px] text-white ${isSelected ? '' : 'hidden'}">check</span>
+                        </div>
                         <div class="flex flex-col min-w-0">
-                            <span class="text-xs font-medium truncate">${p.name}</span>
+                            <span class="text-xs font-medium truncate ${isSelected ? 'text-slate-900 dark:text-white font-bold' : ''}">${p.name}</span>
                         </div>
                     </div>
-                    <span class="text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">${displayVal}</span>
-                </a>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">${displayVal}</span>
+                        <a href="/portfolio?id=${p.id}" onclick="event.stopPropagation()" class="text-slate-400 hover:text-primary transition-colors" title="Dettagli Portafoglio">
+                            <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+                        </a>
+                    </div>
+                </div>
             `;
         }).join('') || '<div class="px-3 py-2 text-xs text-slate-400 italic">Nessun portafoglio</div>';
     }

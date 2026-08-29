@@ -126,10 +126,7 @@
       </div>
     </div>
     
-    <!-- Portfolio Filters -->
-    <div class="px-4 pb-4 overflow-x-auto no-scrollbar flex gap-2 mt-2 mob-tag-scroll" id="mob-portfolio-filters">
-        <!-- Filled by JS -->
-    </div>
+
 
     <!-- Chart -->
     <div class="mob-chart-card">
@@ -353,18 +350,7 @@
   let mobCurrentRange = '1M';
   let selectedPortfolioIds = JSON.parse(localStorage.getItem('selectedPortfolioIds') || '[]');
 
-  function mobRenderPortfolioFilters() {
-      const container = document.getElementById('mob-portfolio-filters');
-      if (!container || !window._dashboardData) return;
-      const portfolios = window._dashboardData.portfolios || [];
-      container.innerHTML = portfolios.map(p => {
-          const isSelected = selectedPortfolioIds.includes(p.id);
-          const style = isSelected 
-              ? `background-color: ${p.color || 'var(--primary)'}; color: white; border-color: ${p.color || 'var(--primary)'};` 
-              : `background-color: rgba(255,255,255,0.05); color: #94a3b8; border-color: rgba(255,255,255,0.1);`;
-          return `<button onclick="mobTogglePortfolioFilter(${p.id})" style="${style}" class="px-4 py-1.5 rounded-full text-[10px] font-bold transition-all shrink-0 border">${p.name}</button>`;
-      }).join('') || '<span class="text-[10px] text-slate-400 italic px-2">Nessun portafoglio.</span>';
-  }
+
 
   window.mobTogglePortfolioFilter = function(pId) {
       if (selectedPortfolioIds.includes(pId)) {
@@ -373,7 +359,6 @@
           selectedPortfolioIds.push(pId);
       }
       localStorage.setItem('selectedPortfolioIds', JSON.stringify(selectedPortfolioIds));
-      mobRenderPortfolioFilters();
       mobUpdateDashboard(window._dashboardData);
       mobUpdateChart();
       mobLoadDailyGains();
@@ -398,7 +383,7 @@
               changePP: filtered.reduce((sum, p) => sum + (parseFloat(p.changeValuePrePostEUR) || parseFloat(p.changeValuePrePost) || 0), 0)
           };
 
-          document.getElementById('mob-total-net').innerText = formatPrivacy(metrics.net, 'EUR', 'mob-net');
+          document.getElementById('mob-total-net').innerText = formatPrivacy(metrics.totalNetValue, 'EUR', 'networth');
           document.getElementById('mob-total-gross').innerText = `(${formatPrivacy(metrics.gross, 'EUR', 'mob-gross')})`;
           
           const varEl = document.getElementById('mob-day-var');
