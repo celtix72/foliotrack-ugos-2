@@ -1280,6 +1280,10 @@ window.addEventListener('privacy-changed', () => {
     }
 });
 
+window.addEventListener('portfolios-updated', () => {
+    window.loadGlobalSidebarPortfolios();
+});
+
 // ─── Active Menu Link Highlighting & Sidebar Init ─────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     const currentPath = window.location.pathname;

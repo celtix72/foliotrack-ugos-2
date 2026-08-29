@@ -248,13 +248,26 @@ Rispondi in JSON: { "riskScore": 7, "diversification": "...", "actions": ["...",
 
     // POST /api/portfolios
     router.post('/', requireAuth, (req, res) => {
-        const { name, currency, user_ids } = req.body;
+        const { name, type, currency, startDate, initialCash, color, include_in_totals, user_ids, tags, losses } = req.body;
         if (!name) return res.status(400).json({ error: 'Name is required' });
         
         try {
             database.db.transaction(() => {
-                const todayStr = new Date().toISOString().split('T')[0];
-                const info = database.db.prepare('INSERT INTO portfolios (name, currency, startDate, include_in_totals) VALUES (?, ?, ?, 1)').run(name, currency || 'EUR', todayStr);
+                const todayStr = startDate || new Date().toISOString().split('T')[0];
+                const initCash = parseFloat(initialCash || 0) || 0;
+                const info = database.db.prepare(`
+                    INSERT INTO portfolios (name, type, currency, startDate, initialCash, currentCash, color, include_in_totals)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                `).run(
+                    name,
+                    type || 'Investimento',
+                    currency || 'EUR',
+                    todayStr,
+                    initCash,
+                    initCash,
+                    color || '#6366f1',
+                    include_in_totals !== undefined ? (include_in_totals ? 1 : 0) : 1
+                );
                 const pid = info.lastInsertRowid;
                 
                 database.db.prepare('INSERT INTO portfolio_users (portfolio_id, user_id) VALUES (?, ?)')
@@ -268,7 +281,23 @@ Rispondi in JSON: { "riskScore": 7, "diversification": "...", "actions": ["...",
                         }
                     }
                 }
+
+                if (tags && Array.isArray(tags)) {
+                    const tagStmt = database.db.prepare('INSERT INTO portfolio_tags (portfolio_id, tag_id) VALUES (?, ?)');
+                    for (const tagId of tags) {
+                        tagStmt.run(pid, tagId);
+                    }
+                }
+
+                if (losses && typeof losses === 'object') {
+                    const lossStmt = database.db.prepare('INSERT INTO portfolio_losses (portfolioId, asset_type, amount) VALUES (?, ?, ?)');
+                    for (const [lType, amount] of Object.entries(losses)) {
+                        const val = parseFloat(amount) || 0;
+                        if (val > 0) lossStmt.run(pid, lType, val);
+                    }
+                }
             })();
+            if (typeof clearPerformanceCache === 'function') clearPerformanceCache();
             res.json({ ok: true });
         } catch (e) {
             res.status(500).json({ error: e.message });
@@ -277,10 +306,16 @@ Rispondi in JSON: { "riskScore": 7, "diversification": "...", "actions": ["...",
 
     // PUT /api/portfolios/:id
     router.put('/:id', requireAuth, requirePortfolioAccess, async (req, res) => {
-        const { name, currency, include_in_totals, user_ids, tags, losses } = req.body;
+        const { name, type, currency, startDate, initialCash, color, include_in_totals, user_ids, tags, losses } = req.body;
         try {
-            if (name) database.db.prepare('UPDATE portfolios SET name = ? WHERE id = ?').run(name, req.params.id);
-            if (currency) database.db.prepare('UPDATE portfolios SET currency = ? WHERE id = ?').run(currency, req.params.id);
+            if (name !== undefined) database.db.prepare('UPDATE portfolios SET name = ? WHERE id = ?').run(name, req.params.id);
+            if (type !== undefined) database.db.prepare('UPDATE portfolios SET type = ? WHERE id = ?').run(type, req.params.id);
+            if (currency !== undefined) database.db.prepare('UPDATE portfolios SET currency = ? WHERE id = ?').run(currency, req.params.id);
+            if (startDate !== undefined) database.db.prepare('UPDATE portfolios SET startDate = ? WHERE id = ?').run(startDate, req.params.id);
+            if (initialCash !== undefined && !isNaN(parseFloat(initialCash))) {
+                database.db.prepare('UPDATE portfolios SET initialCash = ? WHERE id = ?').run(parseFloat(initialCash), req.params.id);
+            }
+            if (color !== undefined) database.db.prepare('UPDATE portfolios SET color = ? WHERE id = ?').run(color, req.params.id);
             if (include_in_totals !== undefined) {
                 database.db.prepare('UPDATE portfolios SET include_in_totals = ? WHERE id = ?').run(include_in_totals ? 1 : 0, req.params.id);
             }
@@ -311,9 +346,9 @@ Rispondi in JSON: { "riskScore": 7, "diversification": "...", "actions": ["...",
                 database.db.transaction(() => {
                     database.db.prepare('DELETE FROM portfolio_losses WHERE portfolioId = ?').run(req.params.id);
                     const stmt = database.db.prepare('INSERT INTO portfolio_losses (portfolioId, asset_type, amount) VALUES (?, ?, ?)');
-                    for (const [type, amount] of Object.entries(losses)) {
+                    for (const [lType, amount] of Object.entries(losses)) {
                         const val = parseFloat(amount) || 0;
-                        if (val > 0) stmt.run(req.params.id, type, val);
+                        if (val > 0) stmt.run(req.params.id, lType, val);
                     }
                 })();
             }

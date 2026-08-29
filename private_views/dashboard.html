@@ -1571,6 +1571,7 @@
             });
             if (res.ok) {
                 closePortfolioModal();
+                window.dispatchEvent(new CustomEvent('portfolios-updated'));
                 loadDashboard();
             }
         };

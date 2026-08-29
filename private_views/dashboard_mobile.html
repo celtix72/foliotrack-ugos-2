@@ -944,7 +944,11 @@
       const method = id ? 'PUT' : 'POST';
       const url = id ? `/api/portfolios/${id}` : '/api/portfolios';
       const res = await fetch(url, { method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
-      if (res.ok) { closePortfolioModal(); mobUpdateDashboard(); }
+      if (res.ok) { 
+        closePortfolioModal(); 
+        window.dispatchEvent(new CustomEvent('portfolios-updated'));
+        mobUpdateDashboard(); 
+      }
   };
 
   document.addEventListener('DOMContentLoaded', () => {

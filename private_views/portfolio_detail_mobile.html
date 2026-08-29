@@ -767,6 +767,7 @@
       });
       if (res.ok) {
         closePortfolioModal();
+        window.dispatchEvent(new CustomEvent('portfolios-updated'));
         if (id) mobLoadPortfolioDetail(id);
         else mobLoadPortfolioList();
       } else {
