@@ -4,32 +4,41 @@ const rateLimit = require('express-rate-limit');
 
 function configureSecurity(app) {
     // ─── Security Headers (Helmet) ───────────────────────────────────────────────
+    const isCspDisabled = process.env.DISABLE_CSP === 'true';
+
     const cspDirectivesBase = {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'",
-            'cdn.jsdelivr.net', 'cdnjs.cloudflare.com'],
+            'cdn.jsdelivr.net', 'cdnjs.cloudflare.com', 'https:'],
+        scriptSrcElem: ["'self'", "'unsafe-inline'", "'unsafe-eval'",
+            'cdn.jsdelivr.net', 'cdnjs.cloudflare.com', 'https:'],
         scriptSrcAttr: ["'unsafe-inline'"],
         styleSrc: ["'self'", "'unsafe-inline'",
             'fonts.googleapis.com', 'cdnjs.cloudflare.com',
-            'fonts.gstatic.com'],
+            'fonts.gstatic.com', 'https:'],
+        styleSrcElem: ["'self'", "'unsafe-inline'",
+            'fonts.googleapis.com', 'cdnjs.cloudflare.com',
+            'fonts.gstatic.com', 'https:'],
         fontSrc: ["'self'", 'fonts.gstatic.com', 'cdn.jsdelivr.net',
-            'cdnjs.cloudflare.com'],
-        imgSrc: ["'self'", 'data:', 'blob:'],
-        connectSrc: ["'self'", 'cdn.jsdelivr.net', 'cdnjs.cloudflare.com'],
+            'cdnjs.cloudflare.com', 'data:', 'https:'],
+        imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
+        connectSrc: ["'self'", 'cdn.jsdelivr.net', 'cdnjs.cloudflare.com', 'https:', 'wss:', 'ws:'],
         workerSrc: ["'self'", 'blob:'],
-        frameSrc: ["'none'"],
+        frameSrc: ["'self'"],
         objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"]
     };
 
     const helmetHTTPS = helmet({
-        contentSecurityPolicy: { directives: cspDirectivesBase },
+        contentSecurityPolicy: isCspDisabled ? false : { directives: cspDirectivesBase },
         crossOriginEmbedderPolicy: false,
         crossOriginOpenerPolicy: { policy: 'same-origin' },
         strictTransportSecurity: { maxAge: 31536000, includeSubDomains: true },
     });
 
     const helmetHTTP = helmet({
-        contentSecurityPolicy: {
+        contentSecurityPolicy: isCspDisabled ? false : {
             directives: {
                 ...cspDirectivesBase,
                 upgradeInsecureRequests: null,
