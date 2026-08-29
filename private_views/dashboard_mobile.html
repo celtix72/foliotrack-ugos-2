@@ -101,11 +101,16 @@
 
     <!-- Hero Card -->
     <div class="mob-hero">
-      <div class="mob-hero-label">Patrimonio</div>
-      <div class="flex items-baseline gap-2 mb-4">
-        <div class="mob-hero-value cursor-pointer select-none" id="mob-total-net" onclick="window.togglePrivacy()" style="font-size: 28px;" title="Clicca per modalità privata">€ 0</div>
-        <div class="text-[14px] font-bold text-slate-500 opacity-80" id="mob-total-gross">(€ 0)</div>
-        <div id="mob-day-var" class="ml-auto px-2 py-0.5 rounded-lg text-[13px] font-black shadow-sm hidden"></div>
+      <div class="mob-hero-label flex items-center gap-1.5 mb-1">
+        <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+        <span>PATRIMONIO NETTO</span>
+      </div>
+      <div class="flex items-baseline justify-between gap-2 mb-1">
+        <div class="mob-hero-value cursor-pointer select-none" id="mob-total-net" onclick="window.togglePrivacy()" style="font-size: 30px; font-weight: 900; line-height: 1.1; margin-bottom: 0;" title="Clicca per modalità privata">€ 0</div>
+        <div id="mob-day-var" class="ml-auto px-2.5 py-1 rounded-lg text-[13px] font-black shadow-sm hidden"></div>
+      </div>
+      <div class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">
+        Lordo: <span id="mob-total-gross" class="text-slate-500 dark:text-slate-400 font-bold">€ 0</span>
       </div>
       <div class="flex justify-between items-center mb-2 mt-4">
         <span class="text-[11px] font-black uppercase text-slate-500 tracking-widest opacity-0">Rank</span>
@@ -377,14 +382,15 @@
           }
 
           const metrics = {
-              net: filtered.reduce((sum, p) => sum + (parseFloat(p.netValueEUR) || parseFloat(p.netValue) || 0), 0),
-              gross: filtered.reduce((sum, p) => sum + (parseFloat(p.totalValueEUR) || parseFloat(p.totalValue) || 0), 0),
+              totalNetValue: filtered.reduce((sum, p) => sum + (parseFloat(p.netValueEUR) || parseFloat(p.netValue) || parseFloat(p.totalValue) || 0), 0),
+              totalValue: filtered.reduce((sum, p) => sum + (parseFloat(p.totalValueEUR) || parseFloat(p.totalValue) || 0), 0),
+              totalGain: filtered.reduce((sum, p) => sum + (parseFloat(p.totalGainEUR) || parseFloat(p.totalGain) || 0), 0),
               changeReg: filtered.reduce((sum, p) => sum + (parseFloat(p.changeValueEUR) || parseFloat(p.changeValue) || 0), 0),
               changePP: filtered.reduce((sum, p) => sum + (parseFloat(p.changeValuePrePostEUR) || parseFloat(p.changeValuePrePost) || 0), 0)
           };
 
           document.getElementById('mob-total-net').innerText = formatPrivacy(metrics.totalNetValue, 'EUR', 'networth');
-          document.getElementById('mob-total-gross').innerText = `(${formatPrivacy(metrics.gross, 'EUR', 'mob-gross')})`;
+          document.getElementById('mob-total-gross').innerText = formatPrivacy(metrics.totalValue, 'EUR', 'gross');
           
           const varEl = document.getElementById('mob-day-var');
           if (varEl) {
