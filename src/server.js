@@ -2772,6 +2772,9 @@ app.get('/dividend', requireAuth, (req, res) => {
 });
 
 app.get('/settings', requireAuth, (req, res) => {
+    if (req.user && req.user.role === 'admin') {
+        return res.redirect('/admin');
+    }
     const file = isMobile(req) ? 'settings_mobile.html' : 'settings.html';
     serveWithSidebar(req, res, file);
 });
