@@ -106,309 +106,538 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
         };
 
         if (mode === 'classic') {
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const pageHeight = doc.internal.pageSize.getHeight();
-        const marginLeft = 40;
-        let startY = 40;
+            const formatNumber = (val, decimals = 2) => {
+                if (val === undefined || val === null || isNaN(val)) return '0';
+                return Number(val).toLocaleString('it-IT', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+            };
 
-        const checkPageBreak = (neededHeight) => {
-            if (startY + neededHeight > pageHeight - 40) {
-                doc.addPage();
-                startY = 40;
-            }
-        };
+            const formatCurrency = (val, decimals = 2) => {
+                if (val === undefined || val === null || isNaN(val)) return '€ 0,00';
+                const sign = val < 0 ? '-€ ' : '€ ';
+                return sign + Math.abs(Number(val)).toLocaleString('it-IT', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+            };
 
-        const formatValue = (val) => {
-            if (val === undefined || val === null || isNaN(val)) return '0';
-            return Number(val).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-        };
+            const formatCurrencyShort = (val) => {
+                if (val === undefined || val === null || isNaN(val)) return '€ 0';
+                const sign = val < 0 ? '-€ ' : '€ ';
+                return sign + Math.abs(Number(val)).toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            };
 
-        const formatCurrency = (val) => {
-            if (val === undefined || val === null || isNaN(val)) return '€ 0';
-            return '€ ' + Number(val).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-        };
+            const formatAssetCurrency = (val, currency = 'EUR', decimals = 2) => {
+                if (val === undefined || val === null || isNaN(val)) return '0,00';
+                const symbol = currency === 'USD' ? '$' : (currency === 'EUR' ? '€' : (currency === 'GBP' ? '£' : (currency || '€')));
+                return symbol + ' ' + Number(val).toLocaleString('it-IT', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+            };
 
-        const formatPercent = (val) => {
-            if (val === undefined || val === null || isNaN(val)) return '0,0%';
-            return Number(val).toLocaleString('it-IT', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
-        };
+            const formatPercent = (val, decimals = 1, showSign = true) => {
+                if (val === undefined || val === null || isNaN(val)) return '0,0%';
+                const num = Number(val);
+                const sgn = (showSign && num > 0) ? '+' : '';
+                return sgn + num.toLocaleString('it-IT', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + '%';
+            };
 
-        // Header
-        doc.setFontSize(22);
-        doc.setFont("helvetica", "bold");
-        doc.text('M2T - Portfolio Report', marginLeft, startY);
-        
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-        const dateStr = new Date().toLocaleDateString('it-IT', { year: 'numeric', month: 'long', day: 'numeric' });
-        doc.text(`Generato il: ${dateStr}`, pageWidth - marginLeft - 150, startY);
-        startY += 40;
+            // ─── 1. TOP HEADER BANNER ──────────────────────────────────────────────
+            doc.setFillColor(15, 23, 42); // slate-900
+            doc.rect(0, 0, pageWidth, 75, 'F');
+            
+            doc.setFillColor(37, 99, 235); // blue-600 accent bar
+            doc.rect(0, 72, pageWidth, 3, 'F');
 
-        // Global Metrics Summary
-        const metrics = reportsData.metrics || {};
-        doc.setFontSize(14);
-        doc.setFont("helvetica", "bold");
-        doc.text('Performance Summary', marginLeft, startY);
-        startY += 20;
-
-        doc.autoTable({
-            startY: startY,
-            head: [['Total ROI', 'Total Gain', 'Sharpe Ratio', 'Miglior Asset']],
-            body: [[
-                metrics.totalROI !== undefined ? formatPercent(metrics.totalROI * 100) : 'N/A',
-                metrics.totalGain !== undefined ? formatCurrency(metrics.totalGain) : 'N/A',
-                metrics.sharpeRatio !== undefined ? Number(metrics.sharpeRatio).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'N/A',
-                metrics.bestAsset || 'N/A'
-            ]],
-            theme: 'striped',
-            headStyles: { fillColor: [30, 41, 59] },
-            margin: { left: marginLeft }
-        });
-        startY = doc.lastAutoTable.finalY + 30;
-        checkPageBreak(50);
-
-        // Portfolios Breakdown
-        doc.setFontSize(14);
-        doc.setFont("helvetica", "bold");
-        doc.text('Breakdown per Portafoglio', marginLeft, startY);
-        startY += 20;
-
-        const pBreakdownBody = [];
-        if (reportsData.performance && reportsData.performance.individual) {
-            const ind = reportsData.performance.individual;
-            for (const pid in ind) {
-                const p = ind[pid];
-                const pm = p.metrics || {};
-                pBreakdownBody.push([
-                    p.name,
-                    formatCurrency(pm.currentValue || 0),
-                    pm.totalROI !== undefined ? formatPercent(pm.totalROI * 100) : '0,0%',
-                    pm.twr !== undefined ? formatPercent(pm.twr * 100) : '0,0%',
-                    pm.xirr !== undefined ? formatPercent(pm.xirr * 100) : '0,0%'
-                ]);
-            }
-        }
-
-        doc.autoTable({
-            startY: startY,
-            head: [['Portafoglio', 'Valore Attuale (EUR)', 'ROI', 'TWR', 'XIRR']],
-            body: pBreakdownBody,
-            theme: 'grid',
-            headStyles: { fillColor: [71, 85, 105] },
-            margin: { left: marginLeft }
-        });
-        startY = doc.lastAutoTable.finalY + 30;
-
-        // Asset Allocation
-        if (reportsData.diversification) {
-            checkPageBreak(60);
-
-            doc.setFontSize(14);
             doc.setFont("helvetica", "bold");
-            doc.text('Asset Allocation (Tipologia)', marginLeft, startY);
-            startY += 20;
+            doc.setFontSize(20);
+            doc.setTextColor(255, 255, 255);
+            doc.text("FOLIOTRACK", marginLeft, 34);
 
-            const allocBody = [];
-            const at = reportsData.diversification.assetType;
-            let totalVal = Object.values(at).reduce((a, b) => a + b, 0);
-            for (const [type, val] of Object.entries(at)) {
-                allocBody.push([type, formatCurrency(val), totalVal > 0 ? formatPercent((val / totalVal) * 100) : '0,0%']);
-            }
-            allocBody.sort((a, b) => parseFloat(b[2].replace(',', '.')) - parseFloat(a[2].replace(',', '.')));
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(148, 163, 184); // slate-400
+            doc.text("Report Patrimoniale & Rendiconto Portafogli", marginLeft, 52);
 
-            doc.autoTable({
-                startY: startY,
-                head: [['Asset Type', 'Valore (EUR)', 'Peso %']],
-                body: allocBody,
-                theme: 'striped',
-                headStyles: { fillColor: [99, 102, 241] },
-                margin: { left: marginLeft }
-            });
-            startY = doc.lastAutoTable.finalY + 30;
-        }
+            const dateStr = new Date().toLocaleDateString('it-IT', { year: 'numeric', month: 'long', day: 'numeric' });
+            doc.setFontSize(9);
+            doc.setTextColor(226, 232, 240); // slate-200
+            doc.text(`Data: ${dateStr}`, pageWidth - marginLeft, 34, { align: 'right' });
+            doc.text(`Portafogli Inclusi: ${portfolios.length}`, pageWidth - marginLeft, 52, { align: 'right' });
 
-        // Owned Assets Detail
-        doc.addPage();
-        startY = 40;
-        doc.setFontSize(14);
-        doc.setFont("helvetica", "bold");
-        doc.text('Dettaglio Asset Posseduti', marginLeft, startY);
-        startY += 20;
+            startY = 95;
 
-        // Aggregate open positions across portfolios
-        const allAssets = [];
-        for (const p of portfolioDetailsList) {
-            const pName = p.portfolio.name;
-            const pCurr = p.portfolio.currency;
-            if (p.details) {
-                // Add Cash manually since it's not in holdings
-                if (p.details.currentCash > 0) {
-                    allAssets.push({
-                        port: pName,
-                        ticker: 'CASH',
-                        name: 'Liquidità ' + pCurr,
-                        type: 'Liquidity',
-                        qty: p.details.currentCash,
-                        price: 1,
-                        unrealized: 0,
-                        dividends: 0,
-                        currency: pCurr
-                    });
-                }
-                
-                if (p.details.holdings) {
-                    for (const h of p.details.holdings) {
-                        let annualDividend = 0;
-                        if (h.currentPrice && h.dividendYield) {
-                            annualDividend = h.currentPrice * h.dividendYield * h.shares;
-                        }
-                        
+            // ─── 2. CALCULATE GLOBAL METRICS & AGGREGATE ASSETS ────────────────────
+            let totalInvestedEUR = 0;
+            let totalCurrentValEUR = 0;
+            let totalCashEUR = 0;
+            let totalEstimatedDividends = 0;
+            let totalLatentMinusvalenze = 0;
+            let totalEstimatedTaxes = 0;
+
+            const allAssets = [];
+
+            for (const pItem of portfolioDetailsList) {
+                const p = pItem.portfolio || {};
+                const pName = p.name || 'Portafoglio';
+                const pCurr = p.currency || 'EUR';
+                const rate = (p.totalValue > 0 && p.totalValueEUR > 0) ? (p.totalValue / p.totalValueEUR) : (pCurr === 'USD' ? 1.08 : 1);
+
+                if (pItem.details) {
+                    const cashVal = pItem.details.currentCash || 0;
+                    if (cashVal > 0) {
+                        const cashInEUR = cashVal / rate;
+                        totalCashEUR += cashInEUR;
+                        totalInvestedEUR += cashInEUR;
+                        totalCurrentValEUR += cashInEUR;
+
                         allAssets.push({
-                            port: pName,
+                            portfolioName: pName,
+                            ticker: 'CASH',
+                            name: `Liquidità (${pCurr})`,
+                            type: 'Liquidità',
+                            qty: cashVal,
+                            currency: pCurr,
+                            pmcAssetCurr: 1,
+                            valAcqEUR: cashInEUR,
+                            valNowEUR: cashInEUR,
+                            gainPct: 0,
+                            gainAssolutoEUR: 0,
+                            annualDividendEUR: 0
+                        });
+                    }
+
+                    const holdings = pItem.details.holdings || [];
+                    for (const h of holdings) {
+                        if (h.shares <= 0) continue;
+                        const qty = h.shares || 0;
+                        const pmc = h.avgCostAssetCurr || (h.totalCostAssetCurr ? h.totalCostAssetCurr / qty : 0);
+                        const valAcqEUR = h.totalCostInPCurr ? (h.totalCostInPCurr / rate) : ((pmc * qty) / rate);
+                        const valNowEUR = h.currentValue ? (h.currentValue / rate) : ((h.currentPrice * qty) / rate);
+                        const gainAssEUR = valNowEUR - valAcqEUR;
+                        const gainPct = valAcqEUR > 0 ? (gainAssEUR / valAcqEUR) * 100 : 0;
+
+                        totalInvestedEUR += valAcqEUR;
+                        totalCurrentValEUR += valNowEUR;
+
+                        let annualDivEUR = 0;
+                        if (h.currentPrice && h.dividendYield) {
+                            annualDivEUR = ((h.currentPrice * h.dividendYield * qty) / rate) || 0;
+                            totalEstimatedDividends += annualDivEUR;
+                        }
+
+                        if (gainAssEUR > 0) {
+                            const isBond = (h.type || '').toUpperCase().includes('BOND') || (h.type || '').toUpperCase().includes('OBBLIG') || (h.ticker || '').toUpperCase().startsWith('BTP') || (h.ticker || '').toUpperCase().startsWith('BOT');
+                            totalEstimatedTaxes += gainAssEUR * (isBond ? 0.125 : 0.26);
+                        } else if (gainAssEUR < 0) {
+                            totalLatentMinusvalenze += Math.abs(gainAssEUR);
+                        }
+
+                        allAssets.push({
+                            portfolioName: pName,
                             ticker: h.ticker,
-                            name: h.name,
+                            name: h.name || h.ticker,
                             type: h.type || 'Other',
-                            qty: h.shares || 0,
-                            price: h.currentPrice || 0,
-                            unrealized: h.unrealizedGain || 0,
-                            dividends: annualDividend,
-                            currency: h.currency || pCurr
+                            qty: qty,
+                            currency: h.currency || pCurr,
+                            pmcAssetCurr: pmc,
+                            valAcqEUR: valAcqEUR,
+                            valNowEUR: valNowEUR,
+                            gainPct: gainPct,
+                            gainAssolutoEUR: gainAssEUR,
+                            annualDividendEUR: annualDivEUR
                         });
                     }
                 }
             }
-        }
 
-        // Mapping for types to match user's requested grouping and names
-        const typeMap = {
-            'Liquidity': { name: "LIQUIDITA'", order: 1 },
-            'Cash': { name: "LIQUIDITA'", order: 1 },
-            'ETF Monetario': { name: "ETF MONETARIO", order: 2 },
-            'Deposito Vincolato': { name: "CONTI DEPOSITO", order: 3 },
-            'Bond': { name: "OBBLIGAZIONI", order: 4 },
-            'ETF Obblig': { name: "OBBLIGAZIONI", order: 4 },
-            'ETF Azionario': { name: "ETF AZIONARI", order: 5 },
-            'Azioni': { name: "AZIONI", order: 6 },
-            'Stock': { name: "AZIONI", order: 6 }
-        };
+            const totalGainEUR = totalCurrentValEUR - totalInvestedEUR;
+            const totalGainPct = totalInvestedEUR > 0 ? (totalGainEUR / totalInvestedEUR) * 100 : 0;
 
-        const getGroup = (type) => typeMap[type] || { name: type.toUpperCase(), order: 99 };
+            // ─── 3. KPI SUMMARY CARDS (Top Grid) ───────────────────────────────────
+            const kpiCardWidth = (pageWidth - (marginLeft * 2) - 30) / 4;
+            const kpiCardHeight = 52;
 
-        // Group assets
-        const groupedAssets = {};
-        for (const a of allAssets) {
-            const groupInfo = getGroup(a.type);
-            const gName = groupInfo.name;
-            if (!groupedAssets[gName]) groupedAssets[gName] = { order: groupInfo.order, assets: [] };
-            groupedAssets[gName].assets.push(a);
-        }
+            const drawKpiCard = (x, y, w, h, label, mainText, subText, subColor) => {
+                doc.setDrawColor(226, 232, 240); // slate-200
+                doc.setFillColor(248, 250, 252); // slate-50
+                doc.roundedRect(x, y, w, h, 4, 4, 'FD');
 
-        const sortedGroups = Object.entries(groupedAssets).sort((a, b) => a[1].order - b[1].order);
+                doc.setFontSize(7.5);
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(100, 116, 139); // slate-500
+                doc.text(label.toUpperCase(), x + 8, y + 14);
 
-        for (const [gName, group] of sortedGroups) {
-            checkPageBreak(80);
-            
-            doc.setFontSize(12);
-            doc.setFont("helvetica", "bold");
-            doc.setTextColor(50, 50, 50);
-            doc.text(gName, marginLeft, startY);
-            startY += 10;
-            
-            group.assets.sort((a, b) => b.unrealized - a.unrealized);
+                doc.setFontSize(12.5);
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(15, 23, 42); // slate-900
+                doc.text(mainText, x + 8, y + 31);
 
-            const assetsBody = group.assets.map(a => [
-                a.port,
-                a.ticker,
-                a.name,
-                formatValue(a.qty),
-                formatValue(a.price) + ' ' + a.currency,
-                formatCurrency(a.unrealized),
-                formatCurrency(a.dividends)
-            ]);
-
-            doc.autoTable({
-                startY: startY,
-                head: [['Portafoglio', 'Ticker', 'Nome', 'Quantità', 'Prezzo', 'Unrealized', 'Dividendi Previsti']],
-                body: assetsBody,
-                theme: 'grid',
-                headStyles: { fillColor: [15, 23, 42] },
-                styles: { fontSize: 8 },
-                margin: { left: marginLeft }
-            });
-        }
-
-        // ── 7. Analisi Fondamentale degli Asset (Yahoo Finance) ──────────────────
-        const uniqueTickers = [...new Set(
-            allAssets
-                .filter(a => a.ticker && a.ticker !== 'CASH' && a.type !== 'Liquidity' && a.type !== 'Cash' && a.type !== 'Deposito Vincolato')
-                .map(a => a.ticker)
-        )];
-
-        if (uniqueTickers.length > 0) {
-            if (buttonEl) {
-                buttonEl.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Recupero Dati Fondamentali...';
-            }
-            
-            const fundamentalsMap = {};
-            await Promise.all(uniqueTickers.map(async (ticker) => {
-                try {
-                    const res = await fetch(`/api/fundamentals/${encodeURIComponent(ticker)}`);
-                    if (res.ok) {
-                        const data = await res.json();
-                        fundamentalsMap[ticker] = data;
-                    }
-                } catch (err) {
-                    console.error(`Error fetching fundamentals for ${ticker}:`, err);
+                if (subText) {
+                    doc.setFontSize(8);
+                    doc.setFont("helvetica", "bold");
+                    doc.setTextColor(subColor[0], subColor[1], subColor[2]);
+                    doc.text(subText, x + 8, y + 44);
                 }
-            }));
+            };
 
-            doc.addPage();
-            startY = 40;
-            doc.setFontSize(14);
+            const gainColor = totalGainEUR >= 0 ? [16, 185, 129] : [239, 68, 68];
+            drawKpiCard(marginLeft, startY, kpiCardWidth, kpiCardHeight, 'Patrimonio Netto', formatCurrencyShort(totalCurrentValEUR), `Valuta Base: EUR`, [100, 116, 139]);
+            drawKpiCard(marginLeft + kpiCardWidth + 10, startY, kpiCardWidth, kpiCardHeight, 'Capitale Investito', formatCurrencyShort(totalInvestedEUR), `Costo di Carico`, [100, 116, 139]);
+            drawKpiCard(marginLeft + (kpiCardWidth * 2) + 20, startY, kpiCardWidth, kpiCardHeight, 'Gain / Loss Totale', formatCurrencyShort(totalGainEUR), formatPercent(totalGainPct), gainColor);
+            drawKpiCard(marginLeft + (kpiCardWidth * 3) + 30, startY, kpiCardWidth, kpiCardHeight, 'Dividendi Stimati', formatCurrencyShort(totalEstimatedDividends), `Proiezione Annua`, [16, 185, 129]);
+
+            startY += kpiCardHeight + 18;
+
+            // ─── 4. RIEPILOGO PORTAFOGLI TABLE ─────────────────────────────────────
+            doc.setFontSize(11);
             doc.setFont("helvetica", "bold");
             doc.setTextColor(15, 23, 42);
-            doc.text('Analisi Fondamentale degli Asset (Yahoo Finance)', marginLeft, startY);
-            startY += 20;
+            doc.text("Riepilogo per Portafoglio", marginLeft, startY);
+            startY += 10;
 
-            const fundBody = [];
-            for (const ticker of uniqueTickers) {
-                const data = fundamentalsMap[ticker];
-                if (!data) continue;
-                
-                const ks = data.keyStats || {};
-                const sd = data.summaryDetail || {};
-                const fd = data.financialData || {};
-                
-                const zScore = data.altmanZScore !== undefined && data.altmanZScore !== null ? `${data.altmanZScore.toFixed(2)} (${data.altmanZScoreZone})` : 'N/D';
-                const ic = data.interestCoverageRatio !== undefined && data.interestCoverageRatio !== null ? (data.interestCoverageRatio === Infinity ? 'Infinity' : `${data.interestCoverageRatio.toFixed(1)}x`) : 'N/D';
-                const netTang = data.netTangibleAssetsPerShare !== undefined && data.netTangibleAssetsPerShare !== null ? `${data.netTangibleAssetsPerShare.toFixed(2)}` : 'N/D';
-                
-                fundBody.push([
-                    ticker,
-                    data.name || 'N/D',
-                    sd.trailingPE ? sd.trailingPE.toFixed(1) : 'N/D',
-                    ks.forwardPE ? ks.forwardPE.toFixed(1) : 'N/D',
-                    data.pegRatio ? data.pegRatio.toFixed(2) : 'N/D',
-                    ks.priceToBook ? ks.priceToBook.toFixed(2) : 'N/D',
-                    zScore,
-                    ic,
-                    netTang,
-                    data.insiderSummary || 'N/D'
+            const pTableBody = [];
+            for (const pItem of portfolioDetailsList) {
+                const p = pItem.portfolio || {};
+                const d = pItem.details || {};
+                const pValEUR = p.totalValueEUR || (d.totalValue || 0);
+                const pCash = d.currentCash || 0;
+                const pInvested = d.investedCapital || 0;
+                const pGain = (d.totalGain !== undefined) ? d.totalGain : (pValEUR - pInvested);
+                const pRoi = pInvested > 0 ? (pGain / pInvested) * 100 : (d.roi !== undefined ? d.roi * 100 : 0);
+                const pColor = pGain >= 0 ? [16, 185, 129] : [239, 68, 68];
+
+                pTableBody.push([
+                    { content: p.name || 'Portafoglio', styles: { fontStyle: 'bold' } },
+                    p.currency || 'EUR',
+                    formatCurrency(pCash, 0),
+                    formatCurrency(pInvested, 0),
+                    { content: formatCurrency(pValEUR, 0), styles: { fontStyle: 'bold' } },
+                    { content: formatCurrency(pGain, 0), styles: { fontStyle: 'bold', textColor: pColor } },
+                    { content: formatPercent(pRoi, 1), styles: { fontStyle: 'bold', textColor: pColor } },
+                    d.twr !== undefined ? formatPercent(d.twr * 100, 1) : 'N/D',
+                    d.xirr !== undefined ? formatPercent(d.xirr * 100, 1) : 'N/D'
                 ]);
             }
 
             doc.autoTable({
                 startY: startY,
-                head: [['Ticker', 'Nome', 'P/E Trail.', 'P/E Forw.', 'PEG', 'P/B', 'Altman Z-Score', 'Int. Coverage', 'Net Tang./Share', 'Insider Trading']],
-                body: fundBody,
+                head: [['Portafoglio', 'Valuta', 'Liquidità', 'Investito', 'Valore Attuale', 'Gain Assoluto', 'ROI', 'TWR', 'XIRR']],
+                body: pTableBody,
                 theme: 'grid',
-                headStyles: { fillColor: [79, 70, 229] }, // Indigo-600
-                styles: { fontSize: 8 },
+                headStyles: { fillColor: [30, 41, 59], fontSize: 8, fontStyle: 'bold', halign: 'left' },
+                styles: { fontSize: 7.5, cellPadding: 3.5, valign: 'middle' },
+                columnStyles: {
+                    0: { cellWidth: 105 },
+                    1: { cellWidth: 35, halign: 'center' },
+                    2: { cellWidth: 50, halign: 'right' },
+                    3: { cellWidth: 55, halign: 'right' },
+                    4: { cellWidth: 60, halign: 'right' },
+                    5: { cellWidth: 60, halign: 'right' },
+                    6: { cellWidth: 42, halign: 'right' },
+                    7: { cellWidth: 42, halign: 'right' },
+                    8: { cellWidth: 42, halign: 'right' }
+                },
                 margin: { left: marginLeft }
             });
-            startY = doc.lastAutoTable.finalY + 30;
-        }
-        
+
+            startY = doc.lastAutoTable.finalY + 18;
+
+            // ─── 5. ASSET ALLOCATION & RISK DOUGHNUT CHART ─────────────────────────
+            checkPageBreak(135);
+
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(15, 23, 42);
+            doc.text("Allocazione Asset per Tipologia e Profilo di Rischio", marginLeft, startY);
+            startY += 12;
+
+            const getAssetCategory = (a) => {
+                const tk = (a.ticker || '').toUpperCase();
+                const tp = (a.type || '').toUpperCase();
+                if (tk === 'CASH' || tk.startsWith('CASH_') || tp.includes('LIQUIDIT')) return 'Liquidità';
+                if (tk.startsWith('CD_') || tp.includes('DEPOSITO') || tp === 'CONTO DEPOSITO' || tp.includes('DEPOSITO VINCOLATO')) return 'Conti Deposito';
+                if (tk.startsWith('BP_') || tp.includes('POSTALE') || tp.includes('BUONO POSTALE') || tp.includes('BUONO FRUTTIFERO')) return 'Buoni Postali';
+                if (tp.includes('MONETAR')) return 'ETF Monetari';
+                if (tp.includes('BOND') || tp.includes('OBBLIGAZION') || tk.startsWith('BTP') || tk.startsWith('BOT')) return 'Obbligazioni';
+                if (tp.includes('ETF')) return 'ETF Azionari';
+                if (tp.includes('AZION') || tp.includes('STOCK') || tp.includes('EQUITY')) return 'Azioni';
+                return 'Altro';
+            };
+
+            const allocationCategories = [
+                { id: 'Liquidità', label: 'Liquidità', color: [22, 101, 52], order: 1, value: 0 },
+                { id: 'Conti Deposito', label: 'Conti Deposito', color: [21, 128, 61], order: 2, value: 0 },
+                { id: 'Buoni Postali', label: 'Buoni Postali', color: [16, 185, 129], order: 3, value: 0 },
+                { id: 'ETF Monetari', label: 'ETF Monetari', color: [34, 197, 94], order: 4, value: 0 },
+                { id: 'Obbligazioni', label: 'Obbligazioni & Bond', color: [234, 179, 8], order: 5, value: 0 },
+                { id: 'ETF Azionari', label: 'ETF Azionari', color: [249, 115, 22], order: 6, value: 0 },
+                { id: 'Azioni', label: 'Azioni', color: [239, 68, 68], order: 7, value: 0 },
+                { id: 'Altro', label: 'Altro / Cripto', color: [139, 92, 246], order: 8, value: 0 }
+            ];
+
+            for (const a of allAssets) {
+                const cat = getAssetCategory(a);
+                const found = allocationCategories.find(c => c.id === cat) || allocationCategories.find(c => c.id === 'Altro');
+                if (found) found.value += a.valNowEUR;
+            }
+
+            const activeAllocations = allocationCategories.filter(c => c.value > 0);
+            const totalAllocValue = activeAllocations.reduce((sum, c) => sum + c.value, 0);
+
+            if (totalAllocValue > 0) {
+                const chartCenterX = marginLeft + 65;
+                const chartCenterY = startY + 45;
+                const outerRadius = 45;
+                const innerRadius = 24;
+
+                let currentAngle = -90;
+
+                for (const item of activeAllocations) {
+                    const sliceAngle = (item.value / totalAllocValue) * 360;
+                    const endAngle = currentAngle + sliceAngle;
+                    doc.setFillColor(...item.color);
+
+                    for (let a = currentAngle; a < endAngle; a += 0.5) {
+                        const r1 = a * Math.PI / 180;
+                        const r2 = Math.min(a + 0.5, endAngle) * Math.PI / 180;
+                        const x1 = chartCenterX + outerRadius * Math.cos(r1);
+                        const y1 = chartCenterY + outerRadius * Math.sin(r1);
+                        const x2 = chartCenterX + outerRadius * Math.cos(r2);
+                        const y2 = chartCenterY + outerRadius * Math.sin(r2);
+                        doc.triangle(chartCenterX, chartCenterY, x1, y1, x2, y2, 'F');
+                    }
+                    currentAngle = endAngle;
+                }
+
+                doc.setFillColor(255, 255, 255);
+                doc.circle(chartCenterX, chartCenterY, innerRadius, 'F');
+
+                doc.setFontSize(7.5);
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(100, 116, 139);
+                doc.text("TOTALE", chartCenterX, chartCenterY - 2, { align: 'center' });
+                doc.setFontSize(8.5);
+                doc.setTextColor(15, 23, 42);
+                doc.text(formatCurrencyShort(totalAllocValue), chartCenterX, chartCenterY + 8, { align: 'center' });
+
+                const legendX = chartCenterX + outerRadius + 30;
+                let legendY = startY + 8;
+                const colWidth = (pageWidth - marginLeft - legendX) / 2;
+
+                activeAllocations.forEach((item, idx) => {
+                    const col = idx % 2;
+                    const row = Math.floor(idx / 2);
+                    const curX = legendX + (col * colWidth);
+                    const curY = legendY + (row * 20);
+
+                    const pct = (item.value / totalAllocValue) * 100;
+
+                    doc.setFillColor(...item.color);
+                    doc.circle(curX + 4, curY + 2, 3.5, 'F');
+
+                    doc.setFontSize(8);
+                    doc.setFont("helvetica", "bold");
+                    doc.setTextColor(15, 23, 42);
+                    doc.text(item.label, curX + 11, curY + 4);
+
+                    doc.setFont("helvetica", "normal");
+                    doc.setTextColor(100, 116, 139);
+                    doc.text(`${formatCurrencyShort(item.value)} (${formatPercent(pct, 1, false)})`, curX + 11, curY + 13);
+                });
+
+                startY += 105;
+            }
+
+            // ─── 6. DETTAGLIO ASSET POSSEDUTI (CATEGORIZZATI) ──────────────────────
+            doc.addPage();
+            startY = 40;
+
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(15, 23, 42);
+            doc.text("Dettaglio Asset Posseduti", marginLeft, startY);
+            
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(100, 116, 139);
+            doc.text("Elenco posizioni raggruppate per tipologia con indicazione di PMC, Valore Acquisto e Valore Attuale", marginLeft, startY + 14);
+            startY += 26;
+
+            const groupedAssets = {};
+            for (const cat of allocationCategories) {
+                groupedAssets[cat.id] = [];
+            }
+
+            for (const a of allAssets) {
+                const cat = getAssetCategory(a);
+                if (!groupedAssets[cat]) groupedAssets[cat] = [];
+                groupedAssets[cat].push(a);
+            }
+
+            for (const cat of allocationCategories) {
+                const assets = groupedAssets[cat.id] || [];
+                if (assets.length === 0) continue;
+
+                assets.sort((a, b) => b.valNowEUR - a.valNowEUR);
+
+                checkPageBreak(65);
+
+                doc.setFontSize(11);
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(...cat.color);
+                doc.text(`• ${cat.label.toUpperCase()}`, marginLeft, startY);
+                startY += 8;
+
+                let catValAcq = 0;
+                let catValNow = 0;
+
+                const tableBody = assets.map(a => {
+                    catValAcq += a.valAcqEUR;
+                    catValNow += a.valNowEUR;
+
+                    const rowGainColor = a.gainAssolutoEUR >= 0 ? [16, 185, 129] : [239, 68, 68];
+                    return [
+                        { content: `${a.ticker}\n${a.name}`, styles: { fontStyle: 'bold' } },
+                        a.portfolioName,
+                        formatNumber(a.qty, a.qty % 1 === 0 ? 0 : 2),
+                        formatAssetCurrency(a.pmcAssetCurr, a.currency),
+                        formatCurrency(a.valAcqEUR),
+                        { content: formatCurrency(a.valNowEUR), styles: { fontStyle: 'bold' } },
+                        { content: formatPercent(a.gainPct), styles: { fontStyle: 'bold', textColor: rowGainColor } },
+                        { content: formatCurrency(a.gainAssolutoEUR), styles: { fontStyle: 'bold', textColor: rowGainColor } }
+                    ];
+                });
+
+                const catGainAss = catValNow - catValAcq;
+                const catGainPct = catValAcq > 0 ? (catGainAss / catValAcq) * 100 : 0;
+                const catGainColor = catGainAss >= 0 ? [16, 185, 129] : [239, 68, 68];
+
+                tableBody.push([
+                    { content: `SUBTOTALE ${cat.label.toUpperCase()}`, colSpan: 4, styles: { fontStyle: 'bold', fillColor: [241, 245, 249], textColor: [15, 23, 42] } },
+                    { content: formatCurrency(catValAcq), styles: { fontStyle: 'bold', fillColor: [241, 245, 249], textColor: [15, 23, 42] } },
+                    { content: formatCurrency(catValNow), styles: { fontStyle: 'bold', fillColor: [241, 245, 249], textColor: [15, 23, 42] } },
+                    { content: formatPercent(catGainPct), styles: { fontStyle: 'bold', textColor: catGainColor, fillColor: [241, 245, 249] } },
+                    { content: formatCurrency(catGainAss), styles: { fontStyle: 'bold', textColor: catGainColor, fillColor: [241, 245, 249] } }
+                ]);
+
+                doc.autoTable({
+                    startY: startY,
+                    head: [['Asset', 'Portafoglio', 'Qtà', 'PMC', 'Val.ACQ', 'Val.NOW', 'Gain %', 'Gain Assoluto']],
+                    body: tableBody,
+                    theme: 'grid',
+                    headStyles: { fillColor: cat.color, fontSize: 8, fontStyle: 'bold' },
+                    styles: { fontSize: 8, cellPadding: 3.5, valign: 'middle' },
+                    columnStyles: {
+                        0: { cellWidth: 120 },
+                        1: { cellWidth: 65 },
+                        2: { cellWidth: 40, halign: 'right' },
+                        3: { cellWidth: 55, halign: 'right' },
+                        4: { cellWidth: 60, halign: 'right' },
+                        5: { cellWidth: 65, halign: 'right' },
+                        6: { cellWidth: 48, halign: 'right' },
+                        7: { cellWidth: 68, halign: 'right' }
+                    },
+                    margin: { left: marginLeft }
+                });
+
+                startY = doc.lastAutoTable.finalY + 16;
+            }
+
+            // ─── 7. GRAND TOTAL & FISCAL SUMMARY BOX ───────────────────────────────
+            checkPageBreak(85);
+
+            doc.setFillColor(15, 23, 42); // slate-900
+            doc.roundedRect(marginLeft, startY, pageWidth - (marginLeft * 2), 70, 4, 4, 'F');
+
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(10.5);
+            doc.setFont("helvetica", "bold");
+            doc.text('PATRIMONIO NETTO COMPLESSIVO', marginLeft + 14, startY + 22);
+
+            doc.setFontSize(16);
+            doc.text(formatCurrency(totalCurrentValEUR), pageWidth - marginLeft - 14, startY + 24, { align: 'right' });
+
+            const sgn = totalGainEUR >= 0 ? '+' : '';
+            doc.setFontSize(9);
+            doc.setTextColor(203, 213, 225); // slate-300
+            doc.text(`Capitale Investito: ${formatCurrency(totalInvestedEUR)}   |   Gain Totale: ${sgn}${formatCurrency(totalGainEUR)} (${sgn}${formatPercent(totalGainPct, 1, false)})`, marginLeft + 14, startY + 42);
+
+            doc.setFontSize(8);
+            doc.setTextColor(148, 163, 184); // slate-400
+            doc.text(`Minusvalenze Latenti Potenziali: ${formatCurrency(totalLatentMinusvalenze)}   •   Stima Imposte Gain Latenti: ${formatCurrency(totalEstimatedTaxes)}`, marginLeft + 14, startY + 57);
+
+            startY += 85;
+
+            // ─── 8. ANALISI FONDAMENTALE (YAHOO FINANCE) SE PRESENTI ───────────────
+            const uniqueTickers = [...new Set(
+                allAssets
+                    .filter(a => a.ticker && a.ticker !== 'CASH' && !a.ticker.startsWith('CD_') && !a.ticker.startsWith('BP_') && !['Liquidità', 'Conti Deposito', 'Buoni Postali'].includes(getAssetCategory(a)))
+                    .map(a => a.ticker)
+            )];
+
+            if (uniqueTickers.length > 0) {
+                if (buttonEl) {
+                    buttonEl.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Recupero Dati Fondamentali...';
+                }
+
+                const fundamentalsMap = {};
+                await Promise.all(uniqueTickers.map(async (ticker) => {
+                    try {
+                        const res = await fetch(`/api/fundamentals/${encodeURIComponent(ticker)}`);
+                        if (res.ok) {
+                            fundamentalsMap[ticker] = await res.json();
+                        }
+                    } catch (err) {
+                        console.error(`Error fetching fundamentals for ${ticker}:`, err);
+                    }
+                }));
+
+                const fundRows = [];
+                for (const ticker of uniqueTickers) {
+                    const data = fundamentalsMap[ticker];
+                    if (!data) continue;
+
+                    const ks = data.keyStats || {};
+                    const sd = data.summaryDetail || {};
+
+                    const zScore = data.altmanZScore !== undefined && data.altmanZScore !== null ? `${data.altmanZScore.toFixed(2)} (${data.altmanZScoreZone || ''})` : 'N/D';
+                    const ic = data.interestCoverageRatio !== undefined && data.interestCoverageRatio !== null ? (data.interestCoverageRatio === Infinity ? 'Inf' : `${data.interestCoverageRatio.toFixed(1)}x`) : 'N/D';
+                    const netTang = data.netTangibleAssetsPerShare !== undefined && data.netTangibleAssetsPerShare !== null ? `${data.netTangibleAssetsPerShare.toFixed(2)}` : 'N/D';
+
+                    fundRows.push([
+                        ticker,
+                        data.name || ticker,
+                        sd.trailingPE ? sd.trailingPE.toFixed(1) : 'N/D',
+                        ks.forwardPE ? ks.forwardPE.toFixed(1) : 'N/D',
+                        data.pegRatio ? data.pegRatio.toFixed(2) : 'N/D',
+                        ks.priceToBook ? ks.priceToBook.toFixed(2) : 'N/D',
+                        zScore,
+                        ic,
+                        netTang
+                    ]);
+                }
+
+                if (fundRows.length > 0) {
+                    doc.addPage();
+                    startY = 40;
+
+                    doc.setFontSize(14);
+                    doc.setFont("helvetica", "bold");
+                    doc.setTextColor(15, 23, 42);
+                    doc.text("Analisi Fondamentale degli Asset (Yahoo Finance)", marginLeft, startY);
+
+                    doc.setFontSize(9);
+                    doc.setFont("helvetica", "normal");
+                    doc.setTextColor(100, 116, 139);
+                    doc.text("Indicatori finanziari, multipli di valutazione e indici di solidità patrimoniale", marginLeft, startY + 14);
+                    startY += 26;
+
+                    doc.autoTable({
+                        startY: startY,
+                        head: [['Ticker', 'Nome', 'P/E Trail.', 'P/E Forw.', 'PEG', 'P/B', 'Altman Z-Score', 'Int. Coverage', 'Net Tang./Share']],
+                        body: fundRows,
+                        theme: 'grid',
+                        headStyles: { fillColor: [79, 70, 229], fontSize: 8, fontStyle: 'bold' },
+                        styles: { fontSize: 7.5, cellPadding: 3.5, valign: 'middle' },
+                        margin: { left: marginLeft }
+                    });
+                }
+            }
         } else if (mode === 'balance_sheet') {
             const pageWidth = doc.internal.pageSize.getWidth();
             const pageHeight = doc.internal.pageSize.getHeight();
@@ -956,8 +1185,25 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
             }
         }
 
+        // Running Page Numbers & Footer
+        const pageCount = doc.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            
+            // Skip footer on page 1 if AI header covers full top, but for classic and balance_sheet always draw
+            doc.setDrawColor(226, 232, 240); // slate-200
+            doc.setLineWidth(0.75);
+            doc.line(marginLeft, pageHeight - 26, pageWidth - marginLeft, pageHeight - 26);
+            
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(148, 163, 184); // slate-400
+            doc.text("FolioTrack • Report Patrimoniale Riservato", marginLeft, pageHeight - 14);
+            doc.text(`Pagina ${i} di ${pageCount}`, pageWidth - marginLeft, pageHeight - 14, { align: 'right' });
+        }
+
         // Save
-        let fileName = `M2T_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+        let fileName = `FolioTrack_Report_${new Date().toISOString().split('T')[0]}.pdf`;
         if (mode === 'balance_sheet') {
             fileName = `stato_patrimoniale_${new Date().toISOString().split('T')[0]}.pdf`;
         }

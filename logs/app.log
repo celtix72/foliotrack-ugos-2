@@ -49174,3 +49174,103 @@ Test
 2026-08-29T14:59:22.667Z [INFO] Database: /Users/mauro/Documents/Progetti_Sviluppo/FolioTrack3/foliotrack.db
 2026-08-29T14:59:22.682Z [INFO] Startup notification sent to 2 users.
 2026-08-29T14:59:23.888Z [INFO] [REQ] GET /api/health
+2026-08-29T14:59:27.612Z [INFO] Starting RSS News Sync (isFirstSync: true)...
+2026-08-29T14:59:28.199Z [INFO] News Sync completed. Saved 0 new articles.
+2026-08-29T14:59:37.610Z [INFO] [Sync Fundamentals] Starting fundamentals synchronization...
+2026-08-29T14:59:37.622Z [INFO] [Sync Fundamentals] Found 1 tickers to sync.
+2026-08-29T14:59:37.632Z [INFO] [Sync Fundamentals] Syncing ticker: AAPL
+2026-08-29T14:59:37.644Z [INFO] [Fundamentals] Cache hit (DB): AAPL (age: 79 mins)
+2026-08-29T14:59:39.157Z [INFO] [Sync Fundamentals] Completed sync. Success: 1, Failed: 0
+2026-08-29T15:01:26.941Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T15:01:27.577Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T15:01:28.636Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T15:01:32.505Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T15:01:40.837Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T15:01:43.214Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T15:02:47.981Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T15:02:48.108Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T15:04:22.619Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T15:07:26.949Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T15:07:27.588Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T15:07:28.647Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T15:07:32.516Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T15:07:40.847Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T15:07:43.224Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T15:08:47.987Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T15:08:48.117Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T15:10:22.664Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T15:13:26.971Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T15:13:27.606Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T15:13:28.661Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T15:13:32.535Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T15:13:40.875Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T15:13:43.246Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T15:13:48.141Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T15:30:53.536Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T15:30:53.574Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-08-29T15:30:53.620Z [ERROR] Failed to fetch RSS for https://it.investing.com/rss/news_25.rss:  - getaddrinfo ENOTFOUND it.investing.com
+2026-08-29T15:30:53.636Z [ERROR] Failed to fetch RSS for https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664:  - getaddrinfo ENOTFOUND search.cnbc.com
+2026-08-29T15:30:53.650Z [ERROR] Failed to fetch RSS for https://www.ilsole24ore.com/rss/finanza.xml:  - getaddrinfo ENOTFOUND www.ilsole24ore.com
+2026-08-29T15:30:53.661Z [ERROR] Failed to fetch RSS for https://xml.corriereobjects.it/rss/economia.xml:  - getaddrinfo ENOTFOUND xml.corriereobjects.it
+2026-08-29T15:30:53.671Z [INFO] News Sync completed. Saved 0 new articles.
+2026-08-29T15:30:57.433Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T15:30:57.451Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-08-29T15:30:57.477Z [ERROR] Failed to fetch RSS for https://it.investing.com/rss/news_25.rss:  - getaddrinfo ENOTFOUND it.investing.com
+2026-08-29T15:30:57.492Z [ERROR] Failed to fetch RSS for https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664:  - getaddrinfo ENOTFOUND search.cnbc.com
+2026-08-29T15:30:57.508Z [ERROR] Failed to fetch RSS for https://www.ilsole24ore.com/rss/finanza.xml:  - getaddrinfo ENOTFOUND www.ilsole24ore.com
+2026-08-29T15:30:57.518Z [ERROR] Failed to fetch RSS for https://xml.corriereobjects.it/rss/economia.xml:  - getaddrinfo ENOTFOUND xml.corriereobjects.it
+2026-08-29T15:30:57.528Z [INFO] News Sync completed. Saved 0 new articles.
+2026-08-29T15:48:17.354Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T15:48:21.217Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:04:32.201Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:04:32.222Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-08-29T16:04:32.878Z [INFO] News Sync completed. Saved 0 new articles.
+2026-08-29T16:04:33.781Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:04:34.567Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:04:34.597Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-08-29T16:04:35.204Z [INFO] News Sync completed. Saved 0 new articles.
+2026-08-29T16:11:41.570Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:11:42.277Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:11:45.247Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:11:45.271Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-08-29T16:11:45.414Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:11:45.433Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-08-29T16:11:46.039Z [INFO] News Sync completed. Saved 0 new articles.
+2026-08-29T16:11:46.095Z [INFO] News Sync completed. Saved 0 new articles.
+2026-08-29T16:11:49.787Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:11:49.816Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-08-29T16:11:50.540Z [INFO] News Sync completed. Saved 0 new articles.
+2026-08-29T16:11:54.181Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:11:54.205Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-08-29T16:11:54.805Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:11:54.820Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-08-29T16:11:54.830Z [INFO] News Sync completed. Saved 0 new articles.
+2026-08-29T16:11:55.455Z [INFO] News Sync completed. Saved 0 new articles.
+2026-08-29T16:12:04.867Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:12:09.728Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:16:42.317Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:16:45.273Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:16:45.445Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:16:54.833Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:17:41.610Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:17:49.812Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:17:54.198Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:18:04.885Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:18:09.746Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:22:42.325Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:22:45.289Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:22:45.458Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:22:54.846Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:23:41.618Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:23:49.820Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:23:54.209Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:24:04.897Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:24:09.764Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:28:26.492Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-08-29T16:28:26.511Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-08-29T16:28:26.643Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T16:28:26.656Z [INFO] FolioTrack server running on port 3000
+2026-08-29T16:28:26.666Z [INFO] Database: /Users/mauro/Documents/Progetti_Sviluppo/FolioTrack3/foliotrack.db
+2026-08-29T16:28:26.681Z [INFO] Startup notification sent to 2 users.
+2026-08-29T16:28:29.163Z [INFO] [REQ] GET /api/health
+2026-08-29T16:28:31.606Z [INFO] Starting RSS News Sync (isFirstSync: true)...
