@@ -230,19 +230,13 @@ function getRequestyModels() {
     return _cachedRequestyModels;
 }
 const DEFAULT_GEMINI_MODEL_PREFERENCE = [
-    'gemini-3.7-flash',
-    'gemini-3.6-flash',
-    'gemini-3.6-pro',
-    'gemini-3.6-flash-preview',
-    'gemini-3.5-flash',
-    'gemini-3.5-pro',
-    'gemini-3.1-flash-lite',
-    'gemini-3.0-flash',
     'gemini-2.5-flash',
-    'gemini-2.5-flash-lite',
-    'gemini-2.5-pro',
-    'gemini-2.0-flash-lite',
+    'gemini-2.0-flash',
     'gemini-1.5-flash',
+    'gemini-2.5-flash-lite',
+    'gemini-2.0-flash-lite',
+    'gemini-2.5-pro',
+    'gemini-1.5-pro',
 ];
 
 /**
@@ -250,9 +244,12 @@ const DEFAULT_GEMINI_MODEL_PREFERENCE = [
  */
 const STATIC_GEMINI_FREE_MODELS = [
     { id: 'gemini-2.5-flash',      name: 'Gemini 2.5 Flash',       isFree: true },
-    { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite',  isFree: true },
     { id: 'gemini-2.0-flash',      name: 'Gemini 2.0 Flash',       isFree: true },
     { id: 'gemini-1.5-flash',      name: 'Gemini 1.5 Flash',       isFree: true },
+    { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite',  isFree: true },
+    { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Flash Lite',  isFree: true },
+    { id: 'gemini-2.5-pro',        name: 'Gemini 2.5 Pro',         isFree: false },
+    { id: 'gemini-1.5-pro',        name: 'Gemini 1.5 Pro',         isFree: false },
 ];
 
 /**
@@ -350,45 +347,61 @@ function getGeminiModelPreference() {
     return DEFAULT_GEMINI_MODEL_PREFERENCE;
 }
 
+async function getGeminiCandidateModels(apiKey) {
+    const candidates = [];
+    const prefs = getGeminiModelPreference();
+    for (const p of prefs) {
+        if (p && !candidates.includes(p)) candidates.push(p);
+    }
+
+    const defaultFallbacks = [
+        'gemini-2.5-flash',
+        'gemini-2.0-flash',
+        'gemini-1.5-flash',
+        'gemini-2.5-flash-lite',
+        'gemini-2.0-flash-lite',
+        'gemini-2.5-pro',
+        'gemini-1.5-pro'
+    ];
+    for (const d of defaultFallbacks) {
+        if (!candidates.includes(d)) candidates.push(d);
+    }
+
+    if (apiKey) {
+        try {
+            const listRes = await axios.get(
+                `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}&pageSize=100`,
+                { timeout: 8000 }
+            );
+            const available = (listRes.data.models || [])
+                .filter(m => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+                .map(m => m.name.replace('models/', ''));
+
+            if (available.length > 0) {
+                const validCandidates = candidates.filter(c => available.includes(c));
+                for (const a of available) {
+                    if ((a.includes('flash') || a.includes('lite') || a.includes('pro')) && !validCandidates.includes(a)) {
+                        validCandidates.push(a);
+                    }
+                }
+                if (validCandidates.length > 0) return validCandidates;
+            }
+        } catch (e) {
+            // In caso di errore di rete temporaneo per la lista, procedi con i candidati
+        }
+    }
+    return candidates;
+}
+
 async function getBestGeminiModel(apiKey) {
     const now = Date.now();
     if (_cachedGeminiModel && (now - _geminiModelCachedAt) < GEMINI_MODEL_CACHE_MS) {
         return _cachedGeminiModel;
     }
-    try {
-        const listRes = await axios.get(
-            `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}&pageSize=100`
-        );
-        const available = (listRes.data.models || [])
-            .filter(m => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
-            .map(m => m.name.replace('models/', ''));
-
-        const prefs = getGeminiModelPreference();
-        for (const preferred of prefs) {
-            if (available.includes(preferred)) {
-                _cachedGeminiModel = preferred;
-                _geminiModelCachedAt = now;
-                console.log(`[Gemini] Selected model: ${preferred}`);
-                return preferred;
-            }
-        }
-        const anyFlash = available.find(m => m.includes('flash'));
-        if (anyFlash) {
-            _cachedGeminiModel = anyFlash;
-            _geminiModelCachedAt = now;
-            console.log(`[Gemini] Fallback model: ${anyFlash}`);
-            return anyFlash;
-        }
-        if (available.length > 0) {
-            _cachedGeminiModel = available[0];
-            _geminiModelCachedAt = now;
-            console.log(`[Gemini] Last-resort model: ${available[0]}`);
-            return available[0];
-        }
-    } catch (err) {
-        console.warn('[Gemini] Could not fetch model list, using static fallback:', err.message);
-    }
-    return 'gemini-2.5-flash';
+    const candidates = await getGeminiCandidateModels(apiKey);
+    _cachedGeminiModel = candidates[0] || 'gemini-2.5-flash';
+    _geminiModelCachedAt = now;
+    return _cachedGeminiModel;
 }
 
 async function checkNewGeminiModels() {
@@ -606,53 +619,104 @@ async function callAIModel(engine, prompt, keys) {
         const apiKey = keys.geminiApiKeyFree || keys.geminiApiKeyPay || keys.geminiApiKey || process.env.GEMINI_API_KEY;
         if (!apiKey) {
             // Check fallback keys if Gemini is missing
+            if (keys.openrouterApiKey || keys.openrouterApiKeyPay || keys.openrouterModel1) {
+                aiLogger.info('[AI Fallback] Gemini key missing, falling back to OpenRouter (OR1)');
+                return callAIModel('OR1', prompt, keys);
+            }
+            if (keys.requestyApiKey || keys.requestyApiKeyPay || keys.requestyModel1) {
+                aiLogger.info('[AI Fallback] Gemini key missing, falling back to Requesty (REQ1)');
+                return callAIModel('REQ1', prompt, keys);
+            }
             if (keys.aimlapiApiKeyFree || keys.aimlapiApiKeyPay || keys.aimlapiApiKey) {
                 aiLogger.info('[AI Fallback] Gemini key missing, falling back to Aimlapi');
                 return callAIModel('Aimlapi_Free', prompt, keys);
             }
-            if (keys.openrouterApiKey || keys.openrouterApiKeyPay) {
-                aiLogger.info('[AI Fallback] Gemini key missing, falling back to OpenRouter (OR1)');
-                return callAIModel('OR1', prompt, keys);
-            }
-            if (keys.requestyApiKey || keys.requestyApiKeyPay) {
-                aiLogger.info('[AI Fallback] Gemini key missing, falling back to Requesty (REQ1)');
-                return callAIModel('REQ1', prompt, keys);
-            }
             throw new Error(`Gemini API Key mancante e nessuna altra chiave IA trovata nelle impostazioni.`);
         }
-        const geminiModel = await getBestGeminiModel(apiKey);
-        let res;
-        let attempt = 0;
-        let maxAttempts = 3;
-        while (attempt < maxAttempts) {
-            try {
-                res = await axios.post(
-                    `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`,
-                    { 
-                        contents: [{ parts: [{ text: prompt }] }],
-                        generationConfig: { temperature: 0.1 }
-                    },
-                    { 
-                        headers: { 'Content-Type': 'application/json' },
-                        timeout: 180000
-                    }
-                );
-                break;
-            } catch (apiErr) {
+
+        const candidateModels = await getGeminiCandidateModels(apiKey);
+        let res = null;
+        let lastError = null;
+        let modelUsed = null;
+
+        for (let i = 0; i < candidateModels.length; i++) {
+            const currentModel = candidateModels[i];
+            let attempt = 0;
+            const maxModelAttempts = 2;
+            let modelSuccess = false;
+
+            while (attempt < maxModelAttempts) {
                 attempt++;
-                const errMsg = apiErr.response ? JSON.stringify(apiErr.response.data) : apiErr.message;
-                aiLogger.warn(`[AI API Error (Gemini)] Attempt ${attempt}/${maxAttempts} failed: ${errMsg}`);
-                if (attempt >= maxAttempts) {
-                    aiLogger.error('[AI API Error (Gemini)] Max attempts reached.');
-                    throw apiErr;
+                try {
+                    aiLogger.info(`[Gemini] Attempting generation with model: ${currentModel} (attempt ${attempt}/${maxModelAttempts})`);
+                    res = await axios.post(
+                        `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`,
+                        { 
+                            contents: [{ parts: [{ text: prompt }] }],
+                            generationConfig: { temperature: 0.1 }
+                        },
+                        { 
+                            headers: { 'Content-Type': 'application/json' },
+                            timeout: 120000
+                        }
+                    );
+                    modelUsed = currentModel;
+                    modelSuccess = true;
+                    _cachedGeminiModel = currentModel;
+                    _geminiModelCachedAt = Date.now();
+                    break;
+                } catch (apiErr) {
+                    lastError = apiErr;
+                    const status = apiErr.response ? apiErr.response.status : null;
+                    const errData = apiErr.response ? apiErr.response.data : null;
+                    const errMsg = errData ? JSON.stringify(errData) : apiErr.message;
+
+                    // 503 (High demand/Overloaded), 429 (Resource exhausted / Quota limit), 404 (Model not found)
+                    if (status === 503 || status === 429 || status === 404) {
+                        aiLogger.warn(`[Gemini] Model ${currentModel} returned HTTP ${status} (High demand / Quota limit): ${errMsg}`);
+                        if (_cachedGeminiModel === currentModel) {
+                            _cachedGeminiModel = null;
+                        }
+                        // Non attendere inutilmente lo stesso modello sovraccarico: passa subito al prossimo modello candidato!
+                        break;
+                    } else {
+                        aiLogger.warn(`[AI API Error (Gemini)] Model ${currentModel} attempt ${attempt}/${maxModelAttempts} failed: ${errMsg}`);
+                        if (attempt < maxModelAttempts) {
+                            await new Promise(resolve => setTimeout(resolve, 1500));
+                        }
+                    }
                 }
-                await new Promise(resolve => setTimeout(resolve, attempt * 2000));
+            }
+
+            if (modelSuccess && res) {
+                break;
             }
         }
-        const content = res.data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-        aiLogger.info(`[AI Response (${engine})] \n${content}`);
+
+        if (!res || !modelUsed) {
+            // Cascade to alternative configured AI engines if all Gemini models failed
+            if (keys.openrouterApiKey || keys.openrouterApiKeyPay || keys.openrouterModel1) {
+                aiLogger.warn('[AI Fallback] All Gemini models overloaded (503/429), automatically falling back to OpenRouter (OR1)...');
+                return callAIModel('OR1', prompt, keys);
+            }
+            if (keys.requestyApiKey || keys.requestyApiKeyPay || keys.requestyModel1) {
+                aiLogger.warn('[AI Fallback] All Gemini models overloaded (503/429), automatically falling back to Requesty (REQ1)...');
+                return callAIModel('REQ1', prompt, keys);
+            }
+            if (keys.aimlapiApiKeyFree || keys.aimlapiApiKeyPay || keys.aimlapiApiKey) {
+                aiLogger.warn('[AI Fallback] All Gemini models overloaded (503/429), automatically falling back to Aimlapi...');
+                return callAIModel('Aimlapi_Free', prompt, keys);
+            }
+
+            const finalMsg = lastError?.response?.data?.error?.message || lastError?.message || 'Tutti i modelli Gemini risultano temporaneamente sovraccarichi (503/429).';
+            throw new Error(`[Gemini Error] ${finalMsg} Prova a selezionare un modello alternativo (es. Gemini 2.0 Flash o Gemini 1.5 Flash) nelle Impostazioni AI.`);
+        }
+
+        const candidate = res.data.candidates?.[0];
+        const content = candidate?.content?.parts?.[0]?.text || "{}";
+        aiLogger.info(`[AI Response (${engine} - ${modelUsed})] \n${content}`);
         const usage = res.data.usageMetadata || {};
-        return { text: content, usage: { totalTokenCount: usage.totalTokenCount || 0 }, modelUsed: geminiModel };
+        return { text: content, usage: { totalTokenCount: usage.totalTokenCount || 0 }, modelUsed: modelUsed };
     }
 }
 
@@ -707,6 +771,7 @@ function getRecommendedModels() {
 
 module.exports = {
     getBestGeminiModel,
+    getGeminiCandidateModels,
     fetchOpenRouterModels,
     getOpenRouterModels,
     fetchRequestyModels,
