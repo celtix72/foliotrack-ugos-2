@@ -97,6 +97,11 @@
                 OK
             </button>
         </div>
+    <!-- Portfolio Selection Filter Bar -->
+    <div class="px-3 pt-2.5 pb-2 bg-slate-50/90 dark:bg-slate-900/60 border-b border-slate-200/60 dark:border-slate-800/80">
+        <div class="flex items-center gap-2 overflow-x-auto custom-scrollbar no-scrollbar py-0.5" id="mob-portfolio-filters" style="-webkit-overflow-scrolling: touch; scrollbar-width: none;">
+            <!-- Populated dynamically by mobRenderPortfolioFilters() -->
+        </div>
     </div>
 
     <!-- Hero Card -->
@@ -353,22 +358,60 @@
 <script>
   let mobPerfChart = null;
   let mobCurrentRange = '1M';
-  let selectedPortfolioIds = JSON.parse(localStorage.getItem('selectedPortfolioIds') || '[]');
-
-
+  let selectedPortfolioIds = JSON.parse(localStorage.getItem('selectedPortfolioIds') || '[]').map(Number);
 
   window.mobTogglePortfolioFilter = function(pId) {
-      if (selectedPortfolioIds.includes(pId)) {
-          selectedPortfolioIds = selectedPortfolioIds.filter(id => id !== pId);
+      if (pId === 'all') {
+          selectedPortfolioIds = [];
       } else {
-          selectedPortfolioIds.push(pId);
+          const numId = Number(pId);
+          const idx = selectedPortfolioIds.indexOf(numId);
+          if (idx > -1) {
+              selectedPortfolioIds.splice(idx, 1);
+          } else {
+              selectedPortfolioIds.push(numId);
+          }
       }
       localStorage.setItem('selectedPortfolioIds', JSON.stringify(selectedPortfolioIds));
+      mobRenderPortfolioFilters();
       mobUpdateDashboard(window._dashboardData);
       mobUpdateChart();
       mobLoadDailyGains();
       mobLoadSixMonthSparkline();
-  }
+  };
+
+  window.mobRenderPortfolioFilters = function() {
+      const cont = document.getElementById('mob-portfolio-filters');
+      if (!cont) return;
+      const portfolios = window._dashboardData?.portfolios || [];
+      if (portfolios.length === 0) {
+          cont.innerHTML = '';
+          return;
+      }
+
+      const isAll = selectedPortfolioIds.length === 0;
+
+      let html = `
+          <button type="button" onclick="mobTogglePortfolioFilter('all')" class="px-3 py-1.5 rounded-full text-[11px] font-black shrink-0 transition-all flex items-center gap-1.5 select-none ${isAll ? 'bg-primary text-white shadow-sm shadow-primary/30 ring-1 ring-primary' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700/80 active:scale-95'}">
+              <span class="material-symbols-outlined text-[13px] ${isAll ? 'text-white' : 'text-primary'}">apps</span>
+              <span>Tutti (${portfolios.length})</span>
+          </button>
+      `;
+
+      portfolios.forEach(p => {
+          const isSelected = selectedPortfolioIds.includes(Number(p.id));
+          const color = p.color || '#6366f1';
+          html += `
+              <button type="button" onclick="mobTogglePortfolioFilter(${p.id})" class="px-3 py-1.5 rounded-full text-[11px] font-bold shrink-0 transition-all flex items-center gap-1.5 select-none ${isSelected ? 'bg-primary text-white shadow-sm shadow-primary/30 ring-1 ring-primary' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/80 active:scale-95'}">
+                  <span class="w-2 h-2 rounded-full shrink-0" style="background-color: ${color}"></span>
+                  <span class="truncate max-w-[120px]">${p.name}</span>
+                  ${isSelected ? '<span class="material-symbols-outlined text-[13px] font-black">check</span>' : ''}
+              </button>
+          `;
+      });
+
+      cont.innerHTML = html;
+  };
 
   async function mobUpdateDashboard(prefetchedData = null) {
       try {
@@ -378,7 +421,7 @@
           
           let filtered = portfolios;
           if (selectedPortfolioIds.length > 0) {
-              filtered = portfolios.filter(p => selectedPortfolioIds.includes(p.id));
+              filtered = portfolios.filter(p => selectedPortfolioIds.includes(Number(p.id)));
           }
 
           const metrics = {
@@ -415,10 +458,12 @@
 
           const pList = document.getElementById('mob-portfolio-list');
           if (pList) {
-              pList.innerHTML = portfolios.map(p => `
-                  <div class="p-4 bg-white dark:bg-surface-dark border-b border-slate-100 dark:border-slate-800 flex items-center justify-between" onclick="window.location.href='/portfolio?id=${p.id}'">
+              pList.innerHTML = portfolios.map(p => {
+                  const isDimmed = selectedPortfolioIds.length > 0 && !selectedPortfolioIds.includes(Number(p.id));
+                  return `
+                  <div class="p-4 bg-white dark:bg-surface-dark border-b border-slate-100 dark:border-slate-800 flex items-center justify-between transition-opacity ${isDimmed ? 'opacity-35' : ''}" onclick="window.location.href='/portfolio?id=${p.id}'">
                       <div class="flex items-center gap-3">
-                          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white" style="background-color:${p.color || '#6366f1'}">
+                          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0" style="background-color:${p.color || '#6366f1'}">
                               <span class="material-symbols-outlined">work</span>
                           </div>
                           <div>
@@ -431,7 +476,8 @@
                           <div class="text-[11px] font-bold ${p.changeValue >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${p.changeValue >= 0 ? '+' : ''}${formatPrivacy(p.changeValue, p.currency, 'dv-mob-'+p.id)}</div>
                       </div>
                   </div>
-              `).join('');
+              `;
+              }).join('');
           }
           mobRenderPortfolioFilters();
           mobUpdateWinnersLosers(data.global);
