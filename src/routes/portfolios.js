@@ -257,14 +257,14 @@ Rispondi in JSON: { "riskScore": 7, "diversification": "...", "actions": ["...",
                 const info = database.db.prepare('INSERT INTO portfolios (name, currency, startDate, include_in_totals) VALUES (?, ?, ?, 1)').run(name, currency || 'EUR', todayStr);
                 const pid = info.lastInsertRowid;
                 
-                database.db.prepare('INSERT INTO portfolio_users (portfolio_id, user_id, role) VALUES (?, ?, ?)')
-                    .run(pid, req.user.id, 'owner');
+                database.db.prepare('INSERT INTO portfolio_users (portfolio_id, user_id) VALUES (?, ?)')
+                    .run(pid, req.user.id);
                 
                 if (user_ids && Array.isArray(user_ids)) {
                     for (const uid of user_ids) {
                         if (uid !== req.user.id) {
-                            database.db.prepare('INSERT INTO portfolio_users (portfolio_id, user_id, role) VALUES (?, ?, ?)')
-                                .run(pid, uid, 'viewer');
+                            database.db.prepare('INSERT INTO portfolio_users (portfolio_id, user_id) VALUES (?, ?)')
+                                .run(pid, uid);
                         }
                     }
                 }
@@ -287,11 +287,11 @@ Rispondi in JSON: { "riskScore": 7, "diversification": "...", "actions": ["...",
             
             if (user_ids && Array.isArray(user_ids)) {
                 database.db.transaction(() => {
-                    database.db.prepare('DELETE FROM portfolio_users WHERE portfolio_id = ? AND role != ?').run(req.params.id, 'owner');
+                    database.db.prepare('DELETE FROM portfolio_users WHERE portfolio_id = ? AND user_id != ?').run(req.params.id, req.user.id);
                     for (const uid of user_ids) {
                         if (uid !== req.user.id) {
-                            database.db.prepare('INSERT INTO portfolio_users (portfolio_id, user_id, role) VALUES (?, ?, ?)')
-                                .run(req.params.id, uid, 'viewer');
+                            database.db.prepare('INSERT INTO portfolio_users (portfolio_id, user_id) VALUES (?, ?)')
+                                .run(req.params.id, uid);
                         }
                     }
                 })();
