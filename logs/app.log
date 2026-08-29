@@ -49010,3 +49010,17 @@ Test
 2026-08-29T12:10:21.622Z [INFO] FolioTrack server running on port 3000
 2026-08-29T12:10:21.632Z [INFO] Database: /Users/mauro/Documents/Progetti_Sviluppo/FolioTrack3/foliotrack.db
 2026-08-29T12:10:21.646Z [INFO] Startup notification sent to 2 users.
+2026-08-29T12:10:26.578Z [INFO] Starting RSS News Sync (isFirstSync: true)...
+2026-08-29T12:10:27.187Z [INFO] News Sync completed. Saved 0 new articles.
+2026-08-29T12:10:36.578Z [INFO] [Sync Fundamentals] Starting fundamentals synchronization...
+2026-08-29T12:10:36.597Z [INFO] [Sync Fundamentals] Found 1 tickers to sync.
+2026-08-29T12:10:36.610Z [INFO] [Sync Fundamentals] Syncing ticker: AAPL
+2026-08-29T12:10:36.626Z [INFO] [Fundamentals] Cache hit (DB): AAPL (age: 276 mins)
+2026-08-29T12:10:38.139Z [INFO] [Sync Fundamentals] Completed sync. Success: 1, Failed: 0
+2026-08-29T12:14:18.505Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T12:14:27.684Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-08-29T12:14:27.695Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-08-29T12:14:27.802Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T12:14:27.815Z [INFO] FolioTrack server running on port 3000
+2026-08-29T12:14:27.824Z [INFO] Database: /Users/mauro/Documents/Progetti_Sviluppo/FolioTrack3/foliotrack.db
+2026-08-29T12:14:27.841Z [INFO] Startup notification sent to 2 users.

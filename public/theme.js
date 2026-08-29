@@ -333,7 +333,7 @@
             if (pCont) {
                 container = document.createElement('div');
                 container.id = 'sidebar-widgets';
-                container.className = 'pt-4 mt-4 border-t border-slate-200 dark:border-slate-800';
+                container.className = 'pt-2 mt-2 border-t border-slate-200/80 dark:border-slate-800/60';
                 pCont.parentNode.insertBefore(container, pCont.nextSibling);
             }
         }
@@ -346,23 +346,23 @@
             const wRes = await fetch(`/api/watchlist?t=${Date.now()}`);
             const watchlist = await wRes.json();
 
-            let html = '<div class="px-2 pb-4 space-y-5">';
+            let html = '<div class="space-y-2">';
 
             // 2. EUR/USD Row
             if (exData && exData.rate) {
                 html += `
-                <div class="px-3 py-2 rounded-xl bg-slate-100/50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800/60 flex items-center justify-between shadow-sm">
-                    <div class="flex items-center gap-2">
-                        <span class="material-symbols-outlined text-xs text-primary">currency_exchange</span>
-                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">EUR / USD</span>
+                <div class="px-2.5 py-1.5 rounded-lg bg-slate-100/60 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between shadow-sm">
+                    <div class="flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-[13px] text-primary">currency_exchange</span>
+                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">EUR / USD</span>
                     </div>
-                    <span class="text-[11px] font-black font-mono text-primary">${parseFloat(exData.rate).toFixed(4)}</span>
+                    <span class="text-[10px] font-black font-mono text-primary">${parseFloat(exData.rate).toFixed(4)}</span>
                 </div>`;
             }
 
             // 3. Market Indices Section
             html += `
-            <div id="sidebar-indices" class="space-y-1.5 pt-4 border-t border-slate-100 dark:border-slate-800/60">
+            <div id="sidebar-indices" class="space-y-1 pt-2 border-t border-slate-100 dark:border-slate-800/40">
                 <!-- Injected by header_indices.js -->
             </div>
             `;
@@ -1208,7 +1208,7 @@ window.renderSidebarPortfolios = function(portfolios) {
     const sidebar = document.getElementById('sidebar-portfolios');
     if (!sidebar) return;
     if (!portfolios || portfolios.length === 0) {
-        sidebar.innerHTML = '<div class="px-3 py-2 text-xs text-slate-400 italic">Nessun portafoglio</div>';
+        sidebar.innerHTML = '<div class="px-2.5 py-1 text-[10px] text-slate-400 italic">Nessun portafoglio</div>';
         return;
     }
     window._cachedPortfolios = portfolios;
@@ -1219,22 +1219,22 @@ window.renderSidebarPortfolios = function(portfolios) {
         const val = p.totalValueEUR !== undefined ? p.totalValueEUR : (p.totalValue !== undefined ? p.totalValue : 0);
         const displayVal = isPrivate ? '****' : formatCurrency(val, p.currency || 'EUR', 0);
         const isSelected = selectedPortfolioIds.includes(p.id);
-        const bgColor = isSelected ? 'bg-slate-200 dark:bg-slate-800' : 'hover:bg-slate-100 dark:hover:bg-slate-800';
+        const bgColor = isSelected ? 'bg-slate-100 dark:bg-slate-800' : 'hover:bg-slate-100/70 dark:hover:bg-slate-800/50';
         
         return `
-            <div class="flex items-center justify-between px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 transition-colors group cursor-pointer ${bgColor}" onclick="window.togglePortfolioFilter(${p.id})">
-                <div class="flex items-center gap-3 overflow-hidden">
-                    <div class="flex items-center justify-center w-3 h-3 rounded-sm border ${isSelected ? 'border-transparent' : 'border-slate-300 dark:border-slate-600'}" style="${isSelected ? 'background-color:' + (p.color || '#6366f1') : ''}">
-                        <span class="material-symbols-outlined text-[10px] text-white ${isSelected ? '' : 'hidden'}">check</span>
+            <div class="flex items-center justify-between px-2 py-1 rounded-md text-slate-600 dark:text-slate-400 transition-all group cursor-pointer ${bgColor}" onclick="window.togglePortfolioFilter(${p.id})">
+                <div class="flex items-center gap-2 overflow-hidden min-w-0">
+                    <div class="flex items-center justify-center w-3 h-3 rounded-sm border shrink-0 ${isSelected ? 'border-transparent' : 'border-slate-300 dark:border-slate-600'}" style="${isSelected ? 'background-color:' + (p.color || '#6366f1') : ''}">
+                        <span class="material-symbols-outlined text-[9px] text-white ${isSelected ? '' : 'hidden'}">check</span>
                     </div>
                     <div class="flex flex-col min-w-0">
-                        <span class="text-xs font-medium truncate ${isSelected ? 'text-slate-900 dark:text-white font-bold' : ''}">${p.name}</span>
+                        <span class="text-[11px] font-medium truncate ${isSelected ? 'text-slate-900 dark:text-white font-bold' : ''}">${p.name}</span>
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <span class="text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">${displayVal}</span>
-                    <a href="/portfolio?id=${p.id}" onclick="event.stopPropagation()" class="text-slate-400 hover:text-primary transition-colors" title="Dettagli Portafoglio">
-                        <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <span class="text-[9px] font-bold opacity-0 group-hover:opacity-100 transition-opacity font-mono text-slate-400">${displayVal}</span>
+                    <a href="/portfolio?id=${p.id}" onclick="event.stopPropagation()" class="text-slate-400 hover:text-primary transition-colors flex items-center" title="Dettagli Portafoglio">
+                        <span class="material-symbols-outlined text-[13px]">open_in_new</span>
                     </a>
                 </div>
             </div>
