@@ -327,42 +327,28 @@
     // ─── Sidebar & Watchlist ──────────────────────────────────────────────────
     let _sidebarLoading = false;
     async function updateSidebarContents() {
-        const container = document.getElementById('sidebar-portfolios');
+        let container = document.getElementById('sidebar-widgets');
+        if (!container) {
+            const pCont = document.getElementById('sidebar-portfolios');
+            if (pCont) {
+                container = document.createElement('div');
+                container.id = 'sidebar-widgets';
+                container.className = 'pt-4 mt-4 border-t border-slate-200 dark:border-slate-800';
+                pCont.parentNode.insertBefore(container, pCont.nextSibling);
+            }
+        }
         if (!container) return;
         if (_sidebarLoading) return;
         _sidebarLoading = true;
         try {
             const exRes = await fetch(`/api/market/exchange-rate?t=${Date.now()}`);
             const exData = await exRes.json();
-            const pRes = await fetch(`/api/portfolios?t=${Date.now()}`);
-            const pData = await pRes.json();
-            const portfolios = pData.portfolios || [];
             const wRes = await fetch(`/api/watchlist?t=${Date.now()}`);
             const watchlist = await wRes.json();
 
-            let html = '<div class="px-2 pt-2 pb-4 space-y-5">';
+            let html = '<div class="px-2 pb-4 space-y-5">';
 
-            // 1. Portfolio Icons Row (Dedicated Top Row)
-            html += `
-            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
-                ${portfolios.map(p => {
-                    const bgColor = p.color || (p.currency === 'EUR' ? '#10b981' : '#3b82f6');
-                    return `
-                    <a href="/portfolio?id=${p.id}" 
-                       title="${p.name} (${p.currency})"
-                       style="background-color: ${bgColor}"
-                       class="w-8 h-8 rounded-lg flex items-center justify-center text-[12px] font-black text-white transition-all transform hover:scale-110 shadow-sm hover:shadow-lg shrink-0">
-                        ${p.name.charAt(0).toUpperCase()}
-                    </a>`;
-                }).join('')}
-                <button onclick="window.location.href='/portfolio'" 
-                        title="Manage Portfolios"
-                        class="w-8 h-8 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center text-slate-400 hover:border-primary hover:text-primary transition-all hover:bg-primary/5 shrink-0">
-                    <span class="material-symbols-outlined text-sm">add</span>
-                </button>
-            </div>`;
-
-            // 2. EUR/USD Row (Restored Standalone Style)
+            // 2. EUR/USD Row
             if (exData && exData.rate) {
                 html += `
                 <div class="px-3 py-2 rounded-xl bg-slate-100/50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800/60 flex items-center justify-between shadow-sm">
