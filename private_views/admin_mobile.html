@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+    <title>M2T - Admin &amp; Settings Mobile</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="M2T">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="stylesheet" href="/dist/output.css">
+    <link rel="stylesheet" href="/mobile.css?v=1780588387905">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        .mob-accordion-body {
+            transition: max-height 0.25s ease-out, opacity 0.2s ease-out;
+        }
+        .mob-accordion-body.hidden {
+            display: none;
+        }
+    </style>
+    <script src="/theme.js"></script>
+    <script src="/auth.js"></script>
+    <script src="/push-client.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.ftAuth) ftAuth.initAuthGuard();
+            loadMobInitialData();
+        });
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex mobile-view-active">
+<div id="mobile-ui">
+    
+    <!-- ── Mobile Header ── -->
+    <div class="mob-header">
+        <img src="/m2t_mobile_logo_dark.png" style="width:96px;height:48px;border-radius:4px;object-fit:cover;object-position:center;margin-right:8px;" alt="M2T Logo">
+        
+        <div class="mob-header-market-pill">
+            <div class="mob-market-item">
+                <span>EU</span>
+                <span id="mob-dot-eu" class="mob-market-dot"></span>
+            </div>
+            <div class="mob-market-item">
+                <span>US</span>
+                <span id="mob-dot-us" class="mob-market-dot"></span>
+            </div>
+        </div>
+
+        <div id="mob-header-var-day" class="mob-header-var-pill">--</div>
+
+        <div class="mob-header-actions">
+            <a href="/notifications" class="mob-icon-btn relative" title="Notifications">
+                <span class="material-symbols-outlined">notifications</span>
+                <span id="mob-notification-badge" class="mob-badge" style="display: none;">0</span>
+            </a>
+            <button onclick="toggleTheme()" class="mob-icon-btn" title="Toggle Dark/Light">
+                <span class="material-symbols-outlined" id="mob-theme-icon">dark_mode</span>
+            </button>
+            <button onclick="toggleMobileView()" class="mob-icon-btn" title="Desktop View">
+                <span class="material-symbols-outlined">desktop_windows</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ── Scrollable Content Area ── -->
+    <div class="mob-scroll" id="mob-admin-scroll">
+        
+        <!-- Page Title Header -->
+        <div class="px-5 pt-4 pb-2">
+            <h1 class="text-xl font-black text-slate-900 dark:text-white tracking-tight">Admin &amp; Settings</h1>
+            <p class="text-[11px] text-slate-500 font-medium">Configurazioni di sistema, preferenze e gestione dati</p>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- GROUP 1: ACCOUNT & SICUREZZA -->
+        <!-- ========================================================================= -->
+        <div class="mob-settings-group">
+            <div class="mob-settings-group-title">Account &amp; Accesso</div>
+            <div class="mob-settings-card">
+                
+                <!-- Account Profile -->
+                <div class="mob-settings-row">
+                    <div class="mob-settings-icon bg-blue-ios"><span class="material-symbols-outlined text-white">person</span></div>
+                    <div class="mob-settings-label">
+                        <div class="font-bold text-sm" id="mob-user-name">Loading...</div>
+                        <div class="text-[10px] text-slate-400" id="mob-user-email">...</div>
+                    </div>
+                    <span id="mob-user-role" class="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-black uppercase rounded"></span>
+                </div>
+
+                <!-- Change Password Accordion -->
+                <div class="mob-settings-row" onclick="toggleMobAccordion('acc-password')">
+                    <div class="mob-settings-icon bg-emerald-500"><span class="material-symbols-outlined text-white">lock</span></div>
+                    <div class="mob-settings-label">Cambia Password</div>
+                    <span id="acc-password-icon" class="material-symbols-outlined mob-settings-chevron transition-transform">expand_more</span>
+                </div>
+                <div id="acc-password" class="mob-accordion-body hidden bg-slate-50/70 dark:bg-black/30 p-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                    <input type="password" id="mob-pwd-current" placeholder="Password Corrente" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 text-xs outline-none">
+                    <input type="password" id="mob-pwd-new" placeholder="Nuova Password" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 text-xs outline-none">
+                    <button onclick="changePasswordMob()" class="w-full py-2.5 bg-primary text-white text-[11px] font-black uppercase rounded-lg shadow-sm">Aggiorna Password</button>
+                    <p id="mob-pwd-msg" class="text-[10px] font-bold text-center hidden"></p>
+                </div>
+
+                <!-- User Management Accordion -->
+                <div class="mob-settings-row" onclick="toggleMobAccordion('acc-users')">
+                    <div class="mob-settings-icon bg-indigo-500"><span class="material-symbols-outlined text-white">group</span></div>
+                    <div class="mob-settings-label">Gestione Utenti</div>
+                    <span id="acc-users-icon" class="material-symbols-outlined mob-settings-chevron transition-transform">expand_more</span>
+                </div>
+                <div id="acc-users" class="mob-accordion-body hidden bg-slate-50/70 dark:bg-black/30 p-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Account Registrati</span>
+                        <button onclick="openCreateUserModalMob()" class="px-2.5 py-1 bg-primary text-white text-[10px] font-black uppercase rounded flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs">add</span> Nuovo
+                        </button>
+                    </div>
+                    <div id="mob-users-list" class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
+                        <p class="text-xs text-slate-400 italic">Caricamento utenti...</p>
+                    </div>
+                </div>
+
+                <!-- Roles & Permissions Accordion -->
+                <div class="mob-settings-row" onclick="toggleMobAccordion('acc-roles')">
+                    <div class="mob-settings-icon bg-purple-ios"><span class="material-symbols-outlined text-white">security</span></div>
+                    <div class="mob-settings-label">Ruoli &amp; Permessi</div>
+                    <span id="acc-roles-icon" class="material-symbols-outlined mob-settings-chevron transition-transform">expand_more</span>
+                </div>
+                <div id="acc-roles" class="mob-accordion-body hidden bg-slate-50/70 dark:bg-black/30 p-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Ruolo:</span>
+                        <select id="mob-role-select" onchange="renderMobRolePermissions()" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-bold outline-none flex-1">
+                            <option value="free">Free</option>
+                            <option value="user">User</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div id="mob-permissions-container" class="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar"></div>
+                </div>
+
+                <!-- Security & Sessions Accordion -->
+                <div class="mob-settings-row" onclick="toggleMobAccordion('acc-security')">
+                    <div class="mob-settings-icon bg-rose-500"><span class="material-symbols-outlined text-white">shield_person</span></div>
+                    <div class="mob-settings-label">Sicurezza &amp; Brute-Force</div>
+                    <span id="acc-security-icon" class="material-symbols-outlined mob-settings-chevron transition-transform">expand_more</span>
+                </div>
+                <div id="acc-security" class="mob-accordion-body hidden bg-slate-50/70 dark:bg-black/30 p-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                            <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Max Tentativi</label>
+                            <input type="number" id="mob-sec-attempts" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-center font-bold">
+                        </div>
+                        <div>
+                            <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Ban Minuti</label>
+                            <input type="number" id="mob-sec-duration" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-center font-bold">
+                        </div>
+                    </div>
+                    <button onclick="saveMobSecuritySettings()" class="w-full py-2 bg-primary text-white text-[10px] font-black uppercase rounded-lg">Salva Protezione</button>
+                    
+                    <div class="pt-2 border-t border-slate-200 dark:border-slate-800">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="text-[9px] font-bold text-slate-400 uppercase">IP Bloccati</span>
+                            <button onclick="loadMobBannedIps()" class="text-primary text-[10px] font-bold">Aggiorna</button>
+                        </div>
+                        <div id="mob-banned-ips-list" class="space-y-1 max-h-24 overflow-y-auto text-xs"></div>
+                    </div>
+                </div>
+
+                <!-- Logout Row -->
+                <div class="mob-settings-row" onclick="logoutMob()">
+                    <div class="mob-settings-icon bg-rose-600"><span class="material-symbols-outlined text-white">logout</span></div>
+                    <div class="mob-settings-label text-rose-500 font-bold">Logout</div>
+                    <span class="material-symbols-outlined text-rose-500">chevron_right</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- GROUP 2: PREFERENZE & ASPETTO -->
+        <!-- ========================================================================= -->
+        <div class="mob-settings-group">
+            <div class="mob-settings-group-title">Aspetto &amp; Preferenze</div>
+            <div class="mob-settings-card">
+                
+                <!-- Dark Mode Toggle -->
+                <div class="mob-settings-row" onclick="document.getElementById('mob-theme-toggle').click()">
+                    <div class="mob-settings-icon bg-gray-ios"><span class="material-symbols-outlined text-white">dark_mode</span></div>
+                    <div class="mob-settings-label">Dark Mode</div>
+                    <div class="mob-toggle">
+                        <input type="checkbox" id="mob-theme-toggle" onclick="event.stopPropagation()">
+                        <div class="mob-toggle-slider"></div>
+                    </div>
+                </div>
+
+                <!-- Privacy Mode Toggle -->
+                <div class="mob-settings-row" onclick="document.getElementById('mob-privacy-toggle').click()">
+                    <div class="mob-settings-icon bg-purple-ios"><span class="material-symbols-outlined text-white">visibility_off</span></div>
+                    <div class="mob-settings-label">Modalità Privacy</div>
+                    <div class="mob-toggle">
+                        <input type="checkbox" id="mob-privacy-toggle" onclick="event.stopPropagation()">
+                        <div class="mob-toggle-slider"></div>
+                    </div>
+                </div>
+
+                <!-- Font Family -->
+                <div class="mob-settings-row">
+                    <div class="mob-settings-icon bg-indigo-ios"><span class="material-symbols-outlined text-white">font_download</span></div>
+                    <div class="mob-settings-label">Font</div>
+                    <select id="mob-font-select" class="mob-settings-select">
+                        <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
+                        <option value="'Fira Code', monospace">Fira Code</option>
+                        <option value="'Roboto Mono', monospace">Roboto Mono</option>
+                        <option value="'Inter', sans-serif">Inter</option>
+                    </select>
+                </div>
+
+                <!-- Font Size -->
+                <div class="mob-settings-row">
+                    <div class="mob-settings-icon bg-pink-ios"><span class="material-symbols-outlined text-white">format_size</span></div>
+                    <div class="mob-settings-label">Dimensione Font</div>
+                    <select id="mob-font-size-select" class="mob-settings-select">
+                        <option value="12">12px</option>
+                        <option value="14">14px</option>
+                        <option value="16">16px</option>
+                        <option value="18">18px</option>
+                    </select>
+                </div>
+
+                <!-- Update Frequency -->
+                <div class="mob-settings-row">
+                    <div class="mob-settings-icon bg-blue-ios"><span class="material-symbols-outlined text-white">sync</span></div>
+                    <div class="mob-settings-label">Aggiornamento Quote</div>
+                    <select id="mob-freq-select" class="mob-settings-select">
+                        <option value="1">1 Min</option>
+                        <option value="5">5 Min</option>
+                        <option value="15">15 Min</option>
+                        <option value="60">1 Ora</option>
+                        <option value="0">Manuale</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- GROUP 3: INTELLIGENZA ARTIFICIALE & NOTIFICHE -->
+        <!-- ========================================================================= -->
+        <div class="mob-settings-group">
+            <div class="mob-settings-group-title">AI &amp; Comunicazioni</div>
+            <div class="mob-settings-card">
+                
+                <!-- AI Engine Accordion -->
+                <div class="mob-settings-row" onclick="toggleMobAccordion('acc-ai')">
+                    <div class="mob-settings-icon bg-indigo-600"><span class="material-symbols-outlined text-white">auto_awesome</span></div>
+                    <div class="mob-settings-label">Intelligenza Artificiale</div>
+                    <span id="acc-ai-icon" class="material-symbols-outlined mob-settings-chevron transition-transform">expand_more</span>
+                </div>
+                <div id="acc-ai" class="mob-accordion-body hidden bg-slate-50/70 dark:bg-black/30 p-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                    <div>
+                        <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Motore AI di Default</label>
+                        <select id="mob-ai-engine" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs font-bold">
+                            <option value="Gemini_Free">Gemini (Free)</option>
+                            <option value="Gemini_Pay">Gemini (Pay)</option>
+                            <option value="OR1">OpenRouter (OR1)</option>
+                            <option value="OR2">OpenRouter (OR2)</option>
+                            <option value="REQ1">Requesty (REQ1)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Gemini Key (Free)</label>
+                        <input type="password" id="mob-ai-gemini-free" placeholder="AIzaSy..." class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">OpenRouter Key</label>
+                        <input type="password" id="mob-ai-openrouter" placeholder="sk-or-v1-..." class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Requesty Key</label>
+                        <input type="password" id="mob-ai-requesty" placeholder="req-..." class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Tavily Web Search Key</label>
+                        <input type="password" id="mob-ai-tavily" placeholder="tvly-..." class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs">
+                    </div>
+                    <button onclick="saveMobAiSettings()" class="w-full py-2 bg-indigo-600 text-white text-[10px] font-black uppercase rounded-lg">Salva Impostazioni AI</button>
+                    
+                    <div class="pt-2 border-t border-slate-200 dark:border-slate-800 flex gap-2">
+                        <button onclick="resetAssetAiFields()" class="flex-1 py-1.5 bg-amber-500/10 text-amber-500 text-[9px] font-black uppercase rounded border border-amber-500/20">Azzera Dati AI</button>
+                        <button onclick="clearAiHistory()" class="flex-1 py-1.5 bg-rose-500/10 text-rose-500 text-[9px] font-black uppercase rounded border border-rose-500/20">Elimina Storico AI</button>
+                    </div>
+                </div>
+
+                <!-- Notifications Matrix Accordion -->
+                <div class="mob-settings-row" onclick="toggleMobAccordion('acc-notifications')">
+                    <div class="mob-settings-icon bg-emerald-500"><span class="material-symbols-outlined text-white">notifications_active</span></div>
+                    <div class="mob-settings-label">Centro Notifiche &amp; Matrice</div>
+                    <span id="acc-notifications-icon" class="material-symbols-outlined mob-settings-chevron transition-transform">expand_more</span>
+                </div>
+                <div id="acc-notifications" class="mob-accordion-body hidden bg-slate-50/70 dark:bg-black/30 p-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                    <div class="space-y-2 text-xs" id="mob-notification-matrix-list">
+                        <!-- Populated by JS -->
+                    </div>
+                    <div class="pt-2 border-t border-slate-200 dark:border-slate-800">
+                        <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Soglia Volatilità (%)</label>
+                        <div class="flex gap-2">
+                            <input type="number" step="0.1" id="mob-vol-threshold" placeholder="5.0" class="w-24 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs font-bold text-center">
+                            <button onclick="saveMobNotificationParams()" class="flex-1 py-2 bg-emerald-500 text-white text-[10px] font-black uppercase rounded-lg">Salva Parametri</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Telegram Config Accordion -->
+                <div class="mob-settings-row" onclick="toggleMobAccordion('acc-telegram')">
+                    <div class="mob-settings-icon bg-[#0088cc]"><span class="material-symbols-outlined text-white">send</span></div>
+                    <div class="mob-settings-label">Configurazione Telegram</div>
+                    <span id="acc-telegram-icon" class="material-symbols-outlined mob-settings-chevron transition-transform">expand_more</span>
+                </div>
+                <div id="acc-telegram" class="mob-accordion-body hidden bg-slate-50/70 dark:bg-black/30 p-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                    <div>
+                        <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Bot Token</label>
+                        <input type="password" id="mob-tg-token" placeholder="123456789:ABC..." class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Chat ID</label>
+                        <input type="text" id="mob-tg-chat" placeholder="123456789" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs">
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold">Abilita Bot Telegram</span>
+                        <div class="mob-toggle">
+                            <input type="checkbox" id="mob-tg-enable">
+                            <div class="mob-toggle-slider"></div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 pt-2">
+                        <button onclick="sendTestTelegram('status')" class="py-2 bg-slate-200 dark:bg-slate-800 text-[9px] font-bold uppercase rounded">Test Stato</button>
+                        <button onclick="sendTestTelegram('tp')" class="py-2 bg-slate-200 dark:bg-slate-800 text-[9px] font-bold uppercase rounded">Test TP</button>
+                        <button onclick="sendTestTelegram('sl')" class="py-2 bg-slate-200 dark:bg-slate-800 text-[9px] font-bold uppercase rounded">Test SL</button>
+                    </div>
+                </div>
+
+                <!-- Web Push Accordion -->
+                <div class="mob-settings-row" onclick="toggleMobAccordion('acc-push')">
+                    <div class="mob-settings-icon bg-blue-500"><span class="material-symbols-outlined text-white">cell_tower</span></div>
+                    <div class="mob-settings-label">Notifiche Web Push</div>
+                    <span id="acc-push-icon" class="material-symbols-outlined mob-settings-chevron transition-transform">expand_more</span>
+                </div>
+                <div id="acc-push" class="mob-accordion-body hidden bg-slate-50/70 dark:bg-black/30 p-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold">Ricevi Notifiche Web Push</span>
+                        <div class="mob-toggle">
+                            <input type="checkbox" id="mob-push-enable" onchange="togglePushNotifications()">
+                            <div class="mob-toggle-slider"></div>
+                        </div>
+                    </div>
+                    <button onclick="sendTestPush()" class="w-full py-2 bg-blue-500 text-white text-[10px] font-black uppercase rounded-lg">Invia Push di Test</button>
+                </div>
+
+                <!-- SMTP Server Accordion -->
+                <div class="mob-settings-row" onclick="toggleMobAccordion('acc-smtp')">
+                    <div class="mob-settings-icon bg-amber-500"><span class="material-symbols-outlined text-white">mail</span></div>
+                    <div class="mob-settings-label">Configurazione SMTP Email</div>
+                    <span id="acc-smtp-icon" class="material-symbols-outlined mob-settings-chevron transition-transform">expand_more</span>
+                </div>
+                <div id="acc-smtp" class="mob-accordion-body hidden bg-slate-50/70 dark:bg-black/30 p-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                    <div>
+                        <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Host SMTP</label>
+                        <input type="text" id="mob-smtp-host" placeholder="smtp.gmail.com" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Porta</label>
+                            <input type="number" id="mob-smtp-port" placeholder="587" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs">
+                        </div>
+                        <div>
+                            <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Mittente (From)</label>
+                            <input type="email" id="mob-smtp-from" placeholder="noreply@..." class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs">
+                        </div>
+                    </div>
+                    <button onclick="saveMobSmtpSettings()" class="w-full py-2 bg-amber-500 text-white text-[10px] font-black uppercase rounded-lg">Salva SMTP</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- GROUP 4: DATI PORTAFOGLI & FINANZA -->
+        <!-- ========================================================================= -->
+        <div class="mob-settings-group">
+            <div class="mob-settings-group-title">Operatività &amp; Dati</div>
+            <div class="mob-settings-card">
+                
+                <!-- Manage Transactions (CSV) -->
+                <div class="mob-settings-row" onclick="toggleMobAccordion('acc-transactions')">
+                    <div class="mob-settings-icon bg-amber-600"><span class="material-symbols-outlined text-white">swap_horiz</span></div>
+                    <div class="mob-settings-label">Gestione Transazioni (CSV)</div>
+                    <span id="acc-transactions-icon" class="material-symbols-outlined mob-settings-chevron transition-transform">expand_more</span>
+                </div>
+                <div id="acc-transactions" class="mob-accordion-body hidden bg-slate-50/70 dark:bg-black/30 p-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                    <div class="flex items-center justify-between gap-2">
+                        <select id="mob-mgmt-portfolio-select" onchange="loadMgmtTransactions()" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-bold flex-1">
+                            <option value="all">Tutti i Portafogli</option>
+                        </select>
+                        <button onclick="exportMgmtTransactions()" class="px-3 py-1.5 bg-amber-500 text-white rounded text-[10px] font-bold">Esporta</button>
+                    </div>
+                    <div id="mob-mgmt-transactions-list" class="space-y-1.5 max-h-56 overflow-y-auto custom-scrollbar">
+                        <p class="text-xs text-slate-400 italic">Caricamento transazioni...</p>
+                    </div>
+                </div>
+
+                <!-- Stop Loss, TP & Volatility -->
+                <div class="mob-settings-row" onclick="toggleMobAccordion('acc-sltp')">
+                    <div class="mob-settings-icon bg-emerald-600"><span class="material-symbols-outlined text-white">trending_up</span></div>
+                    <div class="mob-settings-label">Stop Loss / TP / Volatilità</div>
+                    <span id="acc-sltp-icon" class="material-symbols-outlined mob-settings-chevron transition-transform">expand_more</span>
+                </div>
+                <div id="acc-sltp" class="mob-accordion-body hidden bg-slate-50/70 dark:bg-black/30 p-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Parametri Asset</span>
+                        <button onclick="loadSltpData()" class="text-[10px] text-primary font-bold">Aggiorna</button>
+                    </div>
+                    <div id="mob-sltp-list" class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
+                        <p class="text-xs text-slate-400 italic">Caricamento parametri...</p>
+                    </div>
+                </div>
+
+                <!-- History Management (Net Worth Time Points) -->
+                <div class="mob-settings-row" onclick="toggleMobAccordion('acc-history')">
+                    <div class="mob-settings-icon bg-blue-600"><span class="material-symbols-outlined text-white">history</span></div>
+                    <div class="mob-settings-label">Storico Patrimonio</div>
+                    <span id="acc-history-icon" class="material-symbols-outlined mob-settings-chevron transition-transform">expand_more</span>
+                </div>
+                <div id="acc-history" class="mob-accordion-body hidden bg-slate-50/70 dark:bg-black/30 p-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Punti Storici</span>
+                        <button onclick="addHistoryEntry()" class="px-2 py-1 bg-primary text-white text-[10px] font-bold rounded flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs">add</span> Aggiungi
+                        </button>
+                    </div>
+                    <div id="mob-history-list" class="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
+                        <p class="text-xs text-slate-400 italic">Caricamento storico...</p>
+                    </div>
+                </div>
+
+                <!-- Tax Rates -->
+                <div class="mob-settings-row" onclick="toggleMobAccordion('acc-tax')">
+                    <div class="mob-settings-icon bg-emerald-700"><span class="material-symbols-outlined text-white">request_quote</span></div>
+                    <div class="mob-settings-label">Aliquote Fiscali</div>
+                    <span id="acc-tax-icon" class="material-symbols-outlined mob-settings-chevron transition-transform">expand_more</span>
+                </div>
+                <div id="acc-tax" class="mob-accordion-body hidden bg-slate-50/70 dark:bg-black/30 p-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                    <div id="mob-tax-rates-list" class="space-y-2"></div>
+                    <button onclick="saveTaxRates()" class="w-full py-2 bg-emerald-600 text-white text-[10px] font-black uppercase rounded-lg">Salva Aliquote</button>
+                </div>
+
+                <!-- News Feeds & Diagnostics -->
+                <div class="mob-settings-row" onclick="toggleMobAccordion('acc-news-diag')">
+                    <div class="mob-settings-icon bg-cyan-600"><span class="material-symbols-outlined text-white">search_check</span></div>
+                    <div class="mob-settings-label">Feed RSS &amp; Diagnostica</div>
+                    <span id="acc-news-diag-icon" class="material-symbols-outlined mob-settings-chevron transition-transform">expand_more</span>
+                </div>
+                <div id="acc-news-diag" class="mob-accordion-body hidden bg-slate-50/70 dark:bg-black/30 p-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                    <!-- News RSS Form -->
+                    <span class="text-[9px] font-bold text-slate-400 uppercase block">Aggiungi Feed RSS Notizie</span>
+                    <form id="mob-add-news-form" class="space-y-2">
+                        <input type="text" id="mob-new-source-name" placeholder="Nome Feed" required class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs">
+                        <input type="url" id="mob-new-source-url" placeholder="URL Feed RSS" required class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs">
+                        <button type="submit" class="w-full py-1.5 bg-blue-500 text-white rounded text-[10px] font-bold">Aggiungi Feed</button>
+                    </form>
+                    
+                    <!-- Diagnostic ISIN -->
+                    <div class="pt-2 border-t border-slate-200 dark:border-slate-800">
+                        <span class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Test Scraper Borsa Italiana</span>
+                        <div class="flex gap-2">
+                            <input type="text" id="mob-debug-isin" placeholder="ISIN (es. IT0005534141)" class="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs font-bold uppercase">
+                            <button onclick="runMobScraperTest()" class="px-3 py-2 bg-amber-500 text-white rounded text-[10px] font-bold">Test</button>
+                        </div>
+                        <div id="mob-scraper-result" class="hidden mt-2 p-2 bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800 text-xs"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- GROUP 5: BACKUP & MANUTENZIONE SISTEMA -->
+        <!-- ========================================================================= -->
+        <div class="mob-settings-group">
+            <div class="mob-settings-group-title">Backup &amp; Manutenzione</div>
+            <div class="mob-settings-card">
+                
+                <!-- Backup & Google Drive -->
+                <div class="mob-settings-row" onclick="toggleMobAccordion('acc-backup')">
+                    <div class="mob-settings-icon bg-indigo-500"><span class="material-symbols-outlined text-white">cloud_sync</span></div>
+                    <div class="mob-settings-label">Backup &amp; Google Drive</div>
+                    <span id="acc-backup-icon" class="material-symbols-outlined mob-settings-chevron transition-transform">expand_more</span>
+                </div>
+                <div id="acc-backup" class="mob-accordion-body hidden bg-slate-50/70 dark:bg-black/30 p-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                    <button onclick="runManualBackup()" class="w-full py-2.5 bg-indigo-600 text-white text-[10px] font-black uppercase rounded-lg shadow-sm flex items-center justify-center gap-1.5">
+                        <span class="material-symbols-outlined text-sm">backup</span> Crea Backup Locale Ora
+                    </button>
+                    <button onclick="runGDriveBackupManual()" class="w-full py-2.5 bg-emerald-600 text-white text-[10px] font-black uppercase rounded-lg shadow-sm flex items-center justify-center gap-1.5">
+                        <span class="material-symbols-outlined text-sm">cloud_upload</span> Backup su Google Drive (.zip)
+                    </button>
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                        <button onclick="window.location.href='/api/backups/export'" class="py-2 bg-slate-200 dark:bg-slate-800 text-xs font-bold rounded-lg text-center">Export JSON</button>
+                        <label class="py-2 bg-slate-200 dark:bg-slate-800 text-xs font-bold rounded-lg text-center cursor-pointer">
+                            Import JSON
+                            <input type="file" id="mob-import-json" class="hidden" accept=".json" onchange="handleMobJsonImport(event)">
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Server Logs Accordion -->
+                <div class="mob-settings-row" onclick="toggleMobAccordion('acc-logs')">
+                    <div class="mob-settings-icon bg-slate-700"><span class="material-symbols-outlined text-white">terminal</span></div>
+                    <div class="mob-settings-label">Server Logs</div>
+                    <span id="acc-logs-icon" class="material-symbols-outlined mob-settings-chevron transition-transform">expand_more</span>
+                </div>
+                <div id="acc-logs" class="mob-accordion-body hidden bg-slate-50/70 dark:bg-black/30 p-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                    <div class="flex items-center justify-between gap-2">
+                        <select id="mob-log-type" onchange="loadMobLogs()" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-bold flex-1">
+                            <option value="app">App Log</option>
+                            <option value="ai">AI Log</option>
+                        </select>
+                        <button onclick="loadMobLogs()" class="p-1.5 bg-slate-200 dark:bg-slate-800 rounded text-slate-400 hover:text-white">
+                            <span class="material-symbols-outlined text-sm">refresh</span>
+                        </button>
+                    </div>
+                    <pre id="mob-log-output" class="bg-slate-900 text-emerald-400 p-2.5 rounded-lg text-[9px] font-mono max-h-48 overflow-y-auto custom-scrollbar whitespace-pre-wrap">Caricamento log...</pre>
+                </div>
+
+                <!-- System Stats Accordion -->
+                <div class="mob-settings-row" onclick="toggleMobAccordion('acc-stats')">
+                    <div class="mob-settings-icon bg-teal-600"><span class="material-symbols-outlined text-white">dashboard</span></div>
+                    <div class="mob-settings-label">Statistiche di Sistema</div>
+                    <span id="acc-stats-icon" class="material-symbols-outlined mob-settings-chevron transition-transform">expand_more</span>
+                </div>
+                <div id="acc-stats" class="mob-accordion-body hidden bg-slate-50/70 dark:bg-black/30 p-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                    <div id="mob-stats-grid" class="grid grid-cols-2 gap-2 text-center text-xs"></div>
+                </div>
+
+                <!-- Danger Zone Accordion -->
+                <div class="mob-settings-row" onclick="toggleMobAccordion('acc-danger')">
+                    <div class="mob-settings-icon bg-rose-600"><span class="material-symbols-outlined text-white">warning</span></div>
+                    <div class="mob-settings-label text-rose-500 font-bold">Danger Zone &amp; Reset</div>
+                    <span id="acc-danger-icon" class="material-symbols-outlined text-rose-500 mob-settings-chevron transition-transform">expand_more</span>
+                </div>
+                <div id="acc-danger" class="mob-accordion-body hidden bg-rose-500/5 p-4 border-t border-rose-500/20 space-y-2.5">
+                    <button onclick="rebuildPerformanceHistory()" class="w-full py-2 bg-amber-500/20 border border-amber-500/30 text-amber-500 text-[10px] font-black uppercase rounded-lg">Ricalcola Indici Storici</button>
+                    <button onclick="purgeGlobalPerformance()" class="w-full py-2 bg-rose-500/20 border border-rose-500/30 text-rose-500 text-[10px] font-black uppercase rounded-lg">Svuota Dati Performance</button>
+                    <button onclick="fullSystemReset()" class="w-full py-2 bg-rose-600 text-white text-[10px] font-black uppercase rounded-lg shadow-sm">Full System Reset</button>
+                </div>
+            </div>
+        </div>
+
+        <div style="height: 32px;"></div>
+    </div>
+
+    <!-- ── Mobile Bottom Navigation Bar ── -->
+    <div class="mob-tab-bar">
+        <a href="/dashboard" class="mob-tab-item">
+            <span class="material-symbols-outlined">dashboard</span>
+        </a>
+        <a href="/market" class="mob-tab-item">
+            <span class="material-symbols-outlined">trending_up</span>
+        </a>
+        <a href="/watchlist" class="mob-tab-item">
+            <span class="material-symbols-outlined">visibility</span>
+        </a>
+        <a href="/history" class="mob-tab-item">
+            <span class="material-symbols-outlined">history</span>
+        </a>
+        <a href="/dividend" class="mob-tab-item">
+            <span class="material-symbols-outlined">payments</span>
+        </a>
+        <a href="/reports" class="mob-tab-item">
+            <span class="material-symbols-outlined">pie_chart</span>
+        </a>
+        <a href="/notes" class="mob-tab-item">
+            <span class="material-symbols-outlined">note_stack</span>
+        </a>
+        <a href="/settings" class="mob-tab-item active">
+            <span class="material-symbols-outlined">settings</span>
+        </a>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- JAVASCRIPT LOGIC FOR MOBILE -->
+<!-- ========================================================================= -->
+<script>
+    // --- Mobile Accordion Toggle Function ---
+    window.toggleMobAccordion = function(id) {
+        const el = document.getElementById(id);
+        const icon = document.getElementById(id + '-icon');
+        if (!el) return;
+        
+        const isHidden = el.classList.contains('hidden');
+        if (isHidden) {
+            el.classList.remove('hidden');
+            if (icon) icon.style.transform = 'rotate(180deg)';
+            
+            // Lazy loaders for sections
+            if (id === 'acc-users') loadMobUsers();
+            if (id === 'acc-roles') loadMobRoles();
+            if (id === 'acc-security') { loadMobSecurity(); loadMobBannedIps(); }
+            if (id === 'acc-ai') loadMobAi();
+            if (id === 'acc-notifications') loadMobNotifications();
+            if (id === 'acc-telegram') loadMobTelegram();
+            if (id === 'acc-smtp') loadMobSmtp();
+            if (id === 'acc-transactions') loadMgmtTransactions();
+            if (id === 'acc-sltp') loadSltpData();
+            if (id === 'acc-history') loadHistoryData();
+            if (id === 'acc-tax') loadTaxRates();
+            if (id === 'acc-logs') loadMobLogs();
+            if (id === 'acc-stats') loadMobStats();
+        } else {
+            el.classList.add('hidden');
+            if (icon) icon.style.transform = 'rotate(0deg)';
+        }
+    };
+
+    // --- Helper Fetch ---
+    async function fetchAdminMob(endpoint, options = {}) {
+        const config = { ...options, credentials: 'same-origin' };
+        const res = await fetch(endpoint, config);
+        if (res.status === 401 || res.status === 403) {
+            if (typeof ftAuth !== 'undefined' && ftAuth.logout) ftAuth.logout();
+            return null;
+        }
+        const text = await res.text();
+        if (!res.ok) {
+            let errorMsg = `Server error ${res.status}`;
+            try { const data = JSON.parse(text); errorMsg = data.error || errorMsg; } catch(e) {}
+            throw new Error(errorMsg);
+        }
+        try { return JSON.parse(text); } catch(e) { return text; }
+    }
+
+    // --- Initial Mobile Load ---
+    async function loadMobInitialData() {
+        const user = (typeof ftAuth !== 'undefined' && ftAuth.getUser) ? ftAuth.getUser() : null;
+        if (user) {
+            if (document.getElementById('mob-user-name')) document.getElementById('mob-user-name').textContent = user.username || 'User';
+            if (document.getElementById('mob-user-email')) document.getElementById('mob-user-email').textContent = user.email || 'Admin';
+            if (document.getElementById('mob-user-role')) document.getElementById('mob-user-role').textContent = user.role || 'admin';
+        }
+
+        try {
+            const s = await fetchAdminMob('/api/settings');
+            if (s) {
+                if (document.getElementById('mob-font-select') && s.mobFont) document.getElementById('mob-font-select').value = s.mobFont;
+                else if (document.getElementById('mob-font-select') && s.fontFamily) document.getElementById('mob-font-select').value = s.fontFamily;
+                
+                if (document.getElementById('mob-font-size-select') && s.mobSize) document.getElementById('mob-font-size-select').value = s.mobSize;
+                else if (document.getElementById('mob-font-size-select') && s.fontSize) document.getElementById('mob-font-size-select').value = s.fontSize;
+                
+                if (document.getElementById('mob-freq-select') && s.updateFrequency) document.getElementById('mob-freq-select').value = s.updateFrequency;
+            }
+        } catch(e) {}
+    }
+
+    // --- Settings & Appearance Handlers ---
+    const saveMobAppearance = () => {
+        if (window.updateAppSettings) {
+            window.updateAppSettings({
+                mobFont: document.getElementById('mob-font-select')?.value,
+                mobSize: document.getElementById('mob-font-size-select')?.value,
+                updateFrequency: document.getElementById('mob-freq-select')?.value
+            });
+        }
+    };
+    document.getElementById('mob-font-select')?.addEventListener('change', saveMobAppearance);
+    document.getElementById('mob-font-size-select')?.addEventListener('change', saveMobAppearance);
+    document.getElementById('mob-freq-select')?.addEventListener('change', saveMobAppearance);
+
+    // --- Account & Password Handlers ---
+    window.changePasswordMob = async () => {
+        const cur = document.getElementById('mob-pwd-current')?.value;
+        const newP = document.getElementById('mob-pwd-new')?.value;
+        const msg = document.getElementById('mob-pwd-msg');
+        if (!cur || !newP) return alert('Compila entrambi i campi');
+
+        try {
+            await fetchAdminMob('/api/auth/change-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ currentPassword: cur, newPassword: newP })
+            });
+            if (msg) {
+                msg.className = 'text-[10px] font-bold text-center text-emerald-500 block';
+                msg.textContent = 'Password aggiornata!';
+                setTimeout(() => msg.classList.add('hidden'), 3000);
+            }
+            document.getElementById('mob-pwd-current').value = '';
+            document.getElementById('mob-pwd-new').value = '';
+        } catch(e) {
+            if (msg) {
+                msg.className = 'text-[10px] font-bold text-center text-rose-500 block';
+                msg.textContent = 'Errore: ' + e.message;
+            }
+        }
+    };
+
+    window.logoutMob = async () => {
+        if (await ftConfirm('Sei sicuro di voler effettuare il logout?')) {
+            await fetch('/api/auth/logout', { method: 'POST' });
+            window.location.href = '/login';
+        }
+    };
+
+    // --- Users & Roles ---
+    async function loadMobUsers() {
+        try {
+            const users = await fetchAdminMob('/api/admin/users');
+            const cont = document.getElementById('mob-users-list');
+            if (!cont || !Array.isArray(users)) return;
+            cont.innerHTML = users.map(u => `
+                <div class="flex items-center justify-between p-2.5 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 text-xs">
+                    <div>
+                        <div class="font-bold">${u.username}</div>
+                        <div class="text-[10px] text-slate-400">${u.role} • ${u.email || 'No email'}</div>
+                    </div>
+                    <button onclick="deleteMobUser(${u.id})" class="text-rose-500 p-1"><span class="material-symbols-outlined text-sm">delete</span></button>
+                </div>
+            `).join('');
+        } catch(e) {}
+    }
+
+    window.deleteMobUser = async (id) => {
+        if (!(await ftConfirm('Eliminare questo utente?'))) return;
+        try {
+            await fetchAdminMob(`/api/admin/users/${id}`, { method: 'DELETE' });
+            loadMobUsers();
+        } catch(e) { alert('Errore: ' + e.message); }
+    };
+
+    window.openCreateUserModalMob = async () => {
+        const username = prompt('Nome utente:');
+        if (!username) return;
+        const password = prompt('Password iniziale:');
+        if (!password) return;
+        const role = prompt('Ruolo (admin / user / free):', 'user') || 'user';
+        try {
+            await fetchAdminMob('/api/admin/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password, role })
+            });
+            loadMobUsers();
+        } catch(e) { alert('Errore: ' + e.message); }
+    };
+
+    let mobRolePerms = {};
+    async function loadMobRoles() {
+        try {
+            mobRolePerms = await fetchAdminMob('/api/admin/roles');
+            renderMobRolePermissions();
+        } catch(e) {}
+    }
+
+    function renderMobRolePermissions() {
+        const role = document.getElementById('mob-role-select')?.value || 'free';
+        const cont = document.getElementById('mob-permissions-container');
+        if (!cont || !mobRolePerms[role]) return;
+        const perms = mobRolePerms[role];
+        cont.innerHTML = Object.keys(perms).map(k => `
+            <div class="flex items-center justify-between p-2 bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800 text-xs">
+                <span class="capitalize text-[11px]">${k.replace(/_/g, ' ')}</span>
+                <input type="checkbox" ${perms[k] ? 'checked' : ''} onchange="toggleMobPerm('${role}', '${k}', this.checked)" class="rounded text-primary">
+            </div>
+        `).join('');
+    }
+
+    window.toggleMobPerm = async (role, k, val) => {
+        if (!mobRolePerms[role]) mobRolePerms[role] = {};
+        mobRolePerms[role][k] = val;
+        try {
+            await fetchAdminMob('/api/admin/roles', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role, permissions: mobRolePerms[role] })
+            });
+        } catch(e) {}
+    };
+
+    // --- Security ---
+    async function loadMobSecurity() {
+        try {
+            const s = await fetchAdminMob('/api/admin/security-settings');
+            if (s) {
+                if (document.getElementById('mob-sec-attempts')) document.getElementById('mob-sec-attempts').value = s.max_attempts || 5;
+                if (document.getElementById('mob-sec-duration')) document.getElementById('mob-sec-duration').value = s.ban_duration_minutes || 15;
+            }
+        } catch(e) {}
+    }
+
+    window.saveMobSecuritySettings = async () => {
+        const max_attempts = parseInt(document.getElementById('mob-sec-attempts')?.value) || 5;
+        const ban_duration_minutes = parseInt(document.getElementById('mob-sec-duration')?.value) || 15;
+        try {
+            await fetchAdminMob('/api/admin/security-settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ max_attempts, ban_duration_minutes })
+            });
+            alert('Protezione salvata!');
+        } catch(e) { alert('Errore: ' + e.message); }
+    };
+
+    async function loadMobBannedIps() {
+        try {
+            const ips = await fetchAdminMob('/api/admin/banned-ips');
+            const cont = document.getElementById('mob-banned-ips-list');
+            if (!cont) return;
+            if (!Array.isArray(ips) || ips.length === 0) {
+                cont.innerHTML = '<p class="text-slate-500 italic">Nessun IP bloccato.</p>';
+                return;
+            }
+            cont.innerHTML = ips.map(i => `
+                <div class="flex items-center justify-between p-1.5 bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800">
+                    <span class="font-mono text-rose-500">${i.ip}</span>
+                    <button onclick="unbanMobIp('${i.ip}')" class="text-primary font-bold text-[10px]">Sblocca</button>
+                </div>
+            `).join('');
+        } catch(e) {}
+    }
+
+    window.unbanMobIp = async (ip) => {
+        try {
+            await fetchAdminMob(`/api/admin/banned-ips/${encodeURIComponent(ip)}`, { method: 'DELETE' });
+            loadMobBannedIps();
+        } catch(e) {}
+    };
+
+    // --- AI Engine ---
+    async function loadMobAi() {
+        try {
+            const s = await fetchAdminMob('/api/admin/ai-settings');
+            if (!s) return;
+            if (document.getElementById('mob-ai-engine')) document.getElementById('mob-ai-engine').value = s.aiEngine || 'Gemini_Free';
+            if (document.getElementById('mob-ai-gemini-free')) document.getElementById('mob-ai-gemini-free').value = s.geminiApiKeyFree || '';
+            if (document.getElementById('mob-ai-openrouter')) document.getElementById('mob-ai-openrouter').value = s.openrouterApiKey || '';
+            if (document.getElementById('mob-ai-requesty')) document.getElementById('mob-ai-requesty').value = s.requestyApiKey || '';
+            if (document.getElementById('mob-ai-tavily')) document.getElementById('mob-ai-tavily').value = s.tavilyApiKey || '';
+        } catch(e) {}
+    }
+
+    window.saveMobAiSettings = async () => {
+        const payload = {
+            aiEngine: document.getElementById('mob-ai-engine')?.value,
+            geminiApiKeyFree: document.getElementById('mob-ai-gemini-free')?.value,
+            openrouterApiKey: document.getElementById('mob-ai-openrouter')?.value,
+            requestyApiKey: document.getElementById('mob-ai-requesty')?.value,
+            tavilyApiKey: document.getElementById('mob-ai-tavily')?.value
+        };
+        try {
+            await fetchAdminMob('/api/admin/ai-settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            alert('Impostazioni AI salvate!');
+        } catch(e) { alert('Errore: ' + e.message); }
+    };
+
+    window.resetAssetAiFields = async () => {
+        if (!(await ftConfirm('Vuoi azzerare i parametri AI sugli asset?'))) return;
+        try {
+            await fetchAdminMob('/api/admin/ai-history/reset-assets', { method: 'POST' });
+            alert('Parametri AI azzerati!');
+        } catch(e) { alert('Errore: ' + e.message); }
+    };
+
+    window.clearAiHistory = async () => {
+        if (!(await ftConfirm('Vuoi eliminare TUTTO lo storico delle analisi AI?'))) return;
+        try {
+            await fetchAdminMob('/api/admin/ai-history/clear-all', { method: 'DELETE' });
+            alert('Storico AI eliminato!');
+        } catch(e) { alert('Errore: ' + e.message); }
+    };
+
+    // --- Notifications Matrix ---
+    async function loadMobNotifications() {
+        try {
+            const notifs = await fetchAdminMob('/api/settings/notifications');
+            const s = await fetchAdminMob('/api/settings');
+            if (s && document.getElementById('mob-vol-threshold')) {
+                document.getElementById('mob-vol-threshold').value = s.volatilityThreshold || 5.0;
+            }
+            const cont = document.getElementById('mob-notification-matrix-list');
+            if (!cont || !notifs) return;
+            
+            const events = [
+                { id: 'tp', name: 'Target Profit (TP)' },
+                { id: 'sl', name: 'Stop Loss (SL)' },
+                { id: 'vol', name: 'Volatilità Alert' },
+                { id: 'daily', name: 'Daily Report' },
+                { id: 'status', name: 'Stato Mercato' },
+                { id: 'dividend', name: 'Dividendi' },
+                { id: 'news', name: 'News Alert' }
+            ];
+
+            cont.innerHTML = events.map(ev => `
+                <div class="flex items-center justify-between p-2 bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800">
+                    <span class="font-bold text-xs">${ev.name}</span>
+                    <div class="flex items-center gap-3">
+                        <label class="flex items-center gap-1 text-[10px] font-bold text-[#0088cc]">
+                            TG <input type="checkbox" id="mob-notif-${ev.id}-tg" ${notifs[ev.id + '_telegram'] ? 'checked' : ''} onchange="saveMobNotifMatrix()" class="rounded text-[#0088cc]">
+                        </label>
+                        <label class="flex items-center gap-1 text-[10px] font-bold text-blue-500">
+                            Push <input type="checkbox" id="mob-notif-${ev.id}-ps" ${notifs[ev.id + '_push'] ? 'checked' : ''} onchange="saveMobNotifMatrix()" class="rounded text-blue-500">
+                        </label>
+                    </div>
+                </div>
+            `).join('');
+        } catch(e) {}
+    }
+
+    window.saveMobNotifMatrix = async () => {
+        const events = ['tp', 'sl', 'vol', 'daily', 'status', 'dividend', 'news'];
+        const payload = {};
+        events.forEach(ev => {
+            payload[ev + '_telegram'] = document.getElementById(`mob-notif-${ev}-tg`)?.checked ? 1 : 0;
+            payload[ev + '_push'] = document.getElementById(`mob-notif-${ev}-ps`)?.checked ? 1 : 0;
+        });
+        try {
+            await fetchAdminMob('/api/settings/notifications', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        } catch(e) {}
+    };
+
+    window.saveMobNotificationParams = async () => {
+        const volatilityThreshold = document.getElementById('mob-vol-threshold')?.value;
+        try {
+            await fetchAdminMob('/api/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ volatilityThreshold })
+            });
+            alert('Parametri notifiche salvati!');
+        } catch(e) { alert('Errore: ' + e.message); }
+    };
+
+    // --- Telegram ---
+    async function loadMobTelegram() {
+        try {
+            const s = await fetchAdminMob('/api/settings');
+            if (s) {
+                if (document.getElementById('mob-tg-token')) document.getElementById('mob-tg-token').value = s.telegramBotToken || '';
+                if (document.getElementById('mob-tg-chat')) document.getElementById('mob-tg-chat').value = s.telegramChatId || '';
+                if (document.getElementById('mob-tg-enable')) document.getElementById('mob-tg-enable').checked = s.telegramEnabled === 'true';
+            }
+        } catch(e) {}
+    }
+
+    const saveMobTelegram = () => {
+        if (window.updateAppSettings) {
+            window.updateAppSettings({
+                telegramBotToken: document.getElementById('mob-tg-token')?.value.trim(),
+                telegramChatId: document.getElementById('mob-tg-chat')?.value.trim(),
+                telegramEnabled: document.getElementById('mob-tg-enable')?.checked ? 'true' : 'false'
+            });
+        }
+    };
+    document.getElementById('mob-tg-token')?.addEventListener('change', saveMobTelegram);
+    document.getElementById('mob-tg-chat')?.addEventListener('change', saveMobTelegram);
+    document.getElementById('mob-tg-enable')?.addEventListener('change', saveMobTelegram);
+
+    window.sendTestTelegram = async (type) => {
+        try {
+            const res = await fetchAdminMob(`/api/settings/telegram/test-${type}`, { method: 'POST' });
+            if (res?.success) alert('Test inviato!');
+            else alert('Errore: ' + (res?.error || 'Fallito'));
+        } catch(e) { alert('Errore: ' + e.message); }
+    };
+
+    // --- Push ---
+    window.togglePushNotifications = async () => {
+        alert('Stato notifiche push aggiornato.');
+    };
+    window.sendTestPush = async () => {
+        try {
+            const res = await fetchAdminMob('/api/settings/push/test', { method: 'POST' });
+            if (res?.success) alert('Push di prova inviato!');
+            else alert('Errore: ' + (res?.error || 'Verifica permessi'));
+        } catch(e) { alert('Errore: ' + e.message); }
+    };
+
+    // --- SMTP ---
+    async function loadMobSmtp() {
+        try {
+            const s = await fetchAdminMob('/api/admin/smtp-settings');
+            if (s) {
+                if (document.getElementById('mob-smtp-host')) document.getElementById('mob-smtp-host').value = s.host || '';
+                if (document.getElementById('mob-smtp-port')) document.getElementById('mob-smtp-port').value = s.port || 587;
+                if (document.getElementById('mob-smtp-from')) document.getElementById('mob-smtp-from').value = s.from || '';
+            }
+        } catch(e) {}
+    }
+
+    window.saveMobSmtpSettings = async () => {
+        const payload = {
+            host: document.getElementById('mob-smtp-host')?.value.trim(),
+            port: parseInt(document.getElementById('mob-smtp-port')?.value) || 587,
+            from: document.getElementById('mob-smtp-from')?.value.trim()
+        };
+        try {
+            await fetchAdminMob('/api/admin/smtp-settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            alert('SMTP salvato!');
+        } catch(e) { alert('Errore: ' + e.message); }
+    };
+
+    // --- Manage Transactions ---
+    async function loadMgmtTransactions() {
+        try {
+            const portSel = document.getElementById('mob-mgmt-portfolio-select');
+            const portId = portSel?.value || 'all';
+
+            if (portSel && portSel.options.length <= 1) {
+                const ports = await fetchAdminMob('/api/portfolios');
+                if (Array.isArray(ports)) {
+                    ports.forEach(p => {
+                        const opt = document.createElement('option');
+                        opt.value = p.id;
+                        opt.textContent = p.name;
+                        portSel.appendChild(opt);
+                    });
+                }
+            }
+
+            let url = '/api/transactions';
+            if (portId !== 'all') url += `?portfolioId=${portId}`;
+
+            const data = await fetchAdminMob(url);
+            const txs = Array.isArray(data) ? data : (data.transactions || []);
+            const cont = document.getElementById('mob-mgmt-transactions-list');
+            if (!cont) return;
+
+            if (txs.length === 0) {
+                cont.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-4">Nessuna transazione trovata.</p>';
+                return;
+            }
+
+            cont.innerHTML = txs.slice(0, 30).map(t => `
+                <div class="flex items-center justify-between p-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 text-xs">
+                    <div>
+                        <div class="font-bold">${t.ticker || '-'} <span class="${t.type === 'BUY' ? 'text-emerald-500' : 'text-rose-500'} font-black text-[10px] ml-1">${t.type}</span></div>
+                        <div class="text-[10px] text-slate-400">${t.date} • ${t.shares} pz @ € ${Number(t.price || 0).toFixed(2)}</div>
+                    </div>
+                    <button onclick="deleteMobTx(${t.id})" class="text-rose-500 p-1"><span class="material-symbols-outlined text-sm">delete</span></button>
+                </div>
+            `).join('');
+        } catch(e) {}
+    }
+
+    window.deleteMobTx = async (id) => {
+        if (!(await ftConfirm('Eliminare questa transazione?'))) return;
+        try {
+            await fetchAdminMob(`/api/transactions/${id}`, { method: 'DELETE' });
+            loadMgmtTransactions();
+        } catch(e) { alert('Errore: ' + e.message); }
+    };
+
+    window.exportMgmtTransactions = () => {
+        const portId = document.getElementById('mob-mgmt-portfolio-select')?.value || 'all';
+        window.location.href = `/api/transactions/export?portfolioId=${portId}`;
+    };
+
+    // --- SL / TP ---
+    async function loadSltpData() {
+        try {
+            const data = await fetchAdminMob('/api/assets/all-sltp');
+            const cont = document.getElementById('mob-sltp-list');
+            if (!cont || !Array.isArray(data)) return;
+            cont.innerHTML = data.map(a => `
+                <div class="p-2.5 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 text-xs space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold">${a.ticker}</span>
+                        <span class="font-mono text-[11px]">€ ${Number(a.current_price || 0).toFixed(2)}</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <label class="text-[8px] text-slate-400 uppercase block">Stop Loss</label>
+                            <input type="number" step="any" value="${a.stop_loss || ''}" id="mob-sl-${a.id}" class="w-full bg-slate-50 dark:bg-slate-800 rounded p-1 text-center font-bold text-xs">
+                        </div>
+                        <div>
+                            <label class="text-[8px] text-slate-400 uppercase block">Target</label>
+                            <input type="number" step="any" value="${a.target_profit || ''}" id="mob-tp-${a.id}" class="w-full bg-slate-50 dark:bg-slate-800 rounded p-1 text-center font-bold text-xs">
+                        </div>
+                        <div>
+                            <label class="text-[8px] text-slate-400 uppercase block">Vol %</label>
+                            <input type="number" step="0.1" value="${a.volatility_threshold || ''}" id="mob-vol-${a.id}" placeholder="5.0" class="w-full bg-slate-50 dark:bg-slate-800 rounded p-1 text-center font-bold text-xs">
+                        </div>
+                    </div>
+                    <button onclick="saveMobSltp(${a.id}, this)" class="w-full py-1 bg-amber-500 text-white rounded text-[10px] font-bold">Salva Parametri</button>
+                </div>
+            `).join('');
+        } catch(e) {}
+    }
+
+    window.saveMobSltp = async (id, btn) => {
+        const stopLoss = parseFloat(document.getElementById(`mob-sl-${id}`)?.value) || null;
+        const targetProfit = parseFloat(document.getElementById(`mob-tp-${id}`)?.value) || null;
+        const volatilityThreshold = parseFloat(document.getElementById(`mob-vol-${id}`)?.value) || null;
+        try {
+            await fetchAdminMob(`/api/assets/${id}/sltp`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ stopLoss, targetProfit, volatilityThreshold })
+            });
+            btn.textContent = 'Salvato!';
+            setTimeout(() => btn.textContent = 'Salva Parametri', 1500);
+        } catch(e) { alert('Errore: ' + e.message); }
+    };
+
+    // --- History ---
+    async function loadHistoryData() {
+        try {
+            const data = await fetchAdminMob('/api/history/entries');
+            const cont = document.getElementById('mob-history-list');
+            if (!cont || !Array.isArray(data)) return;
+            cont.innerHTML = data.slice(0, 20).map(h => `
+                <div class="flex items-center justify-between p-2 bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800 text-xs">
+                    <div>
+                        <div class="font-mono font-bold">${h.date}</div>
+                        <div class="text-[10px] text-slate-400">Tot: € ${Number(h.total_value || 0).toLocaleString()} • Cash: € ${Number(h.cash || 0).toLocaleString()}</div>
+                    </div>
+                    <button onclick="deleteMobHistory(${h.id})" class="text-rose-500 p-1"><span class="material-symbols-outlined text-sm">delete</span></button>
+                </div>
+            `).join('');
+        } catch(e) {}
+    }
+
+    window.addHistoryEntry = async () => {
+        const date = prompt('Data (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
+        if (!date) return;
+        const totalValue = parseFloat(prompt('Valore Totale (€):', '10000'));
+        if (isNaN(totalValue)) return;
+        const cash = parseFloat(prompt('Liquidità Cash (€):', '0')) || 0;
+        try {
+            await fetchAdminMob('/api/history/entries', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ date, totalValue, cash, portfolioId: null })
+            });
+            loadHistoryData();
+        } catch(e) { alert('Errore: ' + e.message); }
+    };
+
+    window.deleteMobHistory = async (id) => {
+        if (!(await ftConfirm('Eliminare questo punto storico?'))) return;
+        try {
+            await fetchAdminMob(`/api/history/entries/${id}`, { method: 'DELETE' });
+            loadHistoryData();
+        } catch(e) { alert('Errore: ' + e.message); }
+    };
+
+    // --- Tax Rates ---
+    async function loadTaxRates() {
+        try {
+            const rates = await fetchAdminMob('/api/settings/tax-rates');
+            const cont = document.getElementById('mob-tax-rates-list');
+            if (!cont || !Array.isArray(rates)) return;
+            cont.innerHTML = rates.map(r => `
+                <div class="flex items-center justify-between p-2 bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800 text-xs">
+                    <span class="font-bold">${r.asset_type}</span>
+                    <span class="font-mono text-emerald-500 font-bold">${r.rate_pct}%</span>
+                </div>
+            `).join('');
+        } catch(e) {}
+    }
+
+    // --- Diagnostics ---
+    window.runMobScraperTest = async () => {
+        const isin = document.getElementById('mob-debug-isin')?.value.trim().toUpperCase();
+        if (!isin) return alert('Inserisci un codice ISIN');
+        const resDiv = document.getElementById('mob-scraper-result');
+        try {
+            const data = await fetchAdminMob(`/api/market/scrape-test?isin=${isin}&type=obbligazioni`);
+            if (resDiv) {
+                resDiv.classList.remove('hidden');
+                resDiv.innerHTML = data.success ? `<span class="text-emerald-500 font-bold">SUCCESS</span>: Prezzo € ${data.price || 'N/D'} (${data.variation || '0%'})` : `<span class="text-rose-500 font-bold">FALLITO</span>`;
+            }
+        } catch(e) { alert('Errore: ' + e.message); }
+    };
+
+    // --- Backup & Maintenance ---
+    window.runManualBackup = async () => {
+        try {
+            await fetchAdminMob('/api/backups/run', { method: 'POST' });
+            alert('Backup locale creato con successo!');
+        } catch(e) { alert('Errore: ' + e.message); }
+    };
+
+    window.runGDriveBackupManual = async () => {
+        try {
+            const res = await fetchAdminMob('/api/backups/gdrive/run', { method: 'POST' });
+            alert(`Backup caricato su Google Drive (${res?.zipName || 'completato'})!`);
+        } catch(e) { alert('Errore: ' + e.message); }
+    };
+
+    window.handleMobJsonImport = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async (ev) => {
+            try {
+                const data = JSON.parse(ev.target.result);
+                if (!(await ftConfirm('Importare i dati da JSON?'))) return;
+                await fetchAdminMob('/api/backups/import', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                alert('Dati importati con successo!');
+                window.location.reload();
+            } catch(err) { alert('Errore: ' + err.message); }
+        };
+        reader.readAsText(file);
+    };
+
+    // --- Logs ---
+    async function loadMobLogs() {
+        const type = document.getElementById('mob-log-type')?.value || 'app';
+        const out = document.getElementById('mob-log-output');
+        if (!out) return;
+        try {
+            const data = await fetchAdminMob(`/api/admin/logs?type=${type}&lines=100`);
+            out.textContent = data.logs || 'Nessun log disponibile.';
+        } catch(e) { out.textContent = 'Errore caricamento log.'; }
+    }
+
+    // --- Stats ---
+    async function loadMobStats() {
+        try {
+            const stats = await fetchAdminMob('/api/admin/stats');
+            const cont = document.getElementById('mob-stats-grid');
+            if (!cont || !stats) return;
+            cont.innerHTML = `
+                <div class="p-3 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800">
+                    <div class="text-[9px] text-slate-400 uppercase font-bold">Versione</div>
+                    <div class="text-base font-black text-primary">${stats.version || 'v3.0'}</div>
+                </div>
+                <div class="p-3 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800">
+                    <div class="text-[9px] text-slate-400 uppercase font-bold">Portafogli</div>
+                    <div class="text-base font-black">${stats.portfolioCount || 0}</div>
+                </div>
+                <div class="p-3 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800">
+                    <div class="text-[9px] text-slate-400 uppercase font-bold">Transazioni</div>
+                    <div class="text-base font-black text-amber-500">${stats.txCount || 0}</div>
+                </div>
+                <div class="p-3 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800">
+                    <div class="text-[9px] text-slate-400 uppercase font-bold">Utenti</div>
+                    <div class="text-base font-black text-emerald-500">${stats.userCount || 1}</div>
+                </div>
+            `;
+        } catch(e) {}
+    }
+
+    // --- Danger Actions ---
+    window.rebuildPerformanceHistory = async () => {
+        if (!(await ftConfirm('Ricalcolare tutti gli indici di rendimento storici?'))) return;
+        try {
+            await fetchAdminMob('/api/admin/rebuild-history', { method: 'POST' });
+            alert('Ricalcolo completato!');
+        } catch(e) { alert('Errore: ' + e.message); }
+    };
+
+    window.purgeGlobalPerformance = async () => {
+        if (!(await ftConfirm('ATTENZIONE: Eliminare i dati storici di tracking dei grafici?'))) return;
+        try {
+            await fetchAdminMob('/api/admin/purge-performance', { method: 'POST' });
+            alert('Dati svuotati!');
+        } catch(e) { alert('Errore: ' + e.message); }
+    };
+
+    window.fullSystemReset = async () => {
+        const code = prompt('ATTENZIONE: Digita RESET per confermare il ripristino totale del database:');
+        if (code !== 'RESET') return;
+        try {
+            await fetchAdminMob('/api/admin/system-reset', { method: 'POST' });
+            alert('Database ripristinato.');
+            window.location.href = '/login';
+        } catch(e) { alert('Errore: ' + e.message); }
+    };
+</script>
+</body>
+</html>

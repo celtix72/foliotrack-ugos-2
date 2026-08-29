@@ -2708,7 +2708,8 @@ app.get('/login', (req, res) => {
 
 // Admin panel (requires auth + admin role)
 app.get('/admin', requireAuth, requireAdmin, (req, res) => {
-    serveWithSidebar(req, res, 'admin.html');
+    const file = isMobile(req) ? 'admin_mobile.html' : 'admin.html';
+    serveWithSidebar(req, res, file);
 });
 
 
@@ -2773,7 +2774,8 @@ app.get('/dividend', requireAuth, (req, res) => {
 
 app.get('/settings', requireAuth, (req, res) => {
     if (req.user && req.user.role === 'admin') {
-        return res.redirect('/admin');
+        const file = isMobile(req) ? 'admin_mobile.html' : 'admin.html';
+        return serveWithSidebar(req, res, file);
     }
     const file = isMobile(req) ? 'settings_mobile.html' : 'settings.html';
     serveWithSidebar(req, res, file);
