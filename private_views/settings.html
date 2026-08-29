@@ -35,76 +35,7 @@
 </head>
 <body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex">
 <!-- Sidebar -->
-<aside class="w-72 border-r border-slate-200 dark:border-slate-800 flex flex-col h-screen sticky top-0 bg-white dark:bg-surface-dark">
-<div class="p-6 flex items-center gap-3">
-<div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white">
-<span class="material-symbols-outlined">query_stats</span>
-</div>
-<div>
-<h1 class="text-lg font-bold tracking-tight">M2T</h1>
-<p class="text-xs text-slate-500 dark:text-slate-400">M2T</p>
-</div>
-</div>
-<nav class="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
-<div class="pb-4">
-<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors font-medium" href="/dashboard">
-<span class="material-symbols-outlined text-[20px]">dashboard</span>
-<span>Dashboard</span>
-</a>
-
-<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/market">
-<span class="material-symbols-outlined text-[20px]">trending_up</span>
-<span>Market</span>
-</a>
-<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/watchlist">
-<span class="material-symbols-outlined text-[20px]">visibility</span>
-<span>Watchlist</span>
-</a>
-<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/reports">
-<span class="material-symbols-outlined text-[20px]">pie_chart</span>
-<span>Reports</span>
-</a>
-<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/history">
-<span class="material-symbols-outlined text-[20px]">history</span>
-<span>History</span>
-</a>
-            <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/dividend">
-                <span class="material-symbols-outlined text-[20px]">payments</span>
-                <span>Dividend</span>
-            </a>
-                        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/notes">
-                <span class="material-symbols-outlined text-[20px]">note_stack</span>
-                <span>Appunti</span>
-            </a>
-<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary font-medium" href="/settings">
-                <span class="material-symbols-outlined text-[20px]">settings</span>
-                <span>Settings</span>
-            </a>
-            <a id="sidebar-admin-link" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="/admin" style="display: none;">
-                <span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
-                <span>Admin Panel</span>
-            </a>
-</div>
-<div class="pt-4 border-t border-slate-200 dark:border-slate-800">
-<!-- Portfolio List -->
-<div class="space-y-1" id="sidebar-portfolios">
-    <div class="px-3 py-2 text-xs text-slate-400 italic"> Loading...</div>
-</div>
-</div>
-</nav>
-<div class="p-4 border-t border-slate-200 dark:border-slate-800">
-<div class="flex items-center gap-3 p-2 rounded-xl bg-slate-100 dark:bg-slate-900">
-<div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-400 font-bold text-xs" id="sidebar-user-initials">
-    UN
-</div>
-<div class="flex-1 overflow-hidden">
-<p class="text-sm font-bold truncate" id="sidebar-user-name">User</p>
-<p class="text-xs text-slate-500 truncate" id="sidebar-user-role">User</p>
-</div>
-<span class="material-symbols-outlined text-slate-400 text-sm cursor-pointer" id="sidebar-logout-btn">logout</span>
-</div>
-</div>
-</aside>
+<aside id="app-sidebar"></aside>
 <!-- Main Content -->
 <main class="flex-1 flex flex-col h-screen overflow-y-auto">
 <!-- Header Row -->

@@ -1203,19 +1203,95 @@ window.ftConfirm = function(message) {
     });
 };
 
-// ─── Active Menu Link Highlighting ────────────────────────────────────────
+// ─── Global Sidebar Management ────────────────────────────────────────────
+window.renderSidebarPortfolios = function(portfolios) {
+    const sidebar = document.getElementById('sidebar-portfolios');
+    if (!sidebar) return;
+    if (!portfolios || portfolios.length === 0) {
+        sidebar.innerHTML = '<div class="px-3 py-2 text-xs text-slate-400 italic">Nessun portafoglio</div>';
+        return;
+    }
+    window._cachedPortfolios = portfolios;
+    const selectedPortfolioIds = JSON.parse(localStorage.getItem('selectedPortfolioIds') || '[]');
+    const isPrivate = window.privacyState && window.privacyState.enabled;
+
+    sidebar.innerHTML = portfolios.map(p => {
+        const val = p.totalValueEUR !== undefined ? p.totalValueEUR : (p.totalValue !== undefined ? p.totalValue : 0);
+        const displayVal = isPrivate ? '****' : formatCurrency(val, p.currency || 'EUR', 0);
+        const isSelected = selectedPortfolioIds.includes(p.id);
+        const bgColor = isSelected ? 'bg-slate-200 dark:bg-slate-800' : 'hover:bg-slate-100 dark:hover:bg-slate-800';
+        
+        return `
+            <div class="flex items-center justify-between px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 transition-colors group cursor-pointer ${bgColor}" onclick="window.togglePortfolioFilter(${p.id})">
+                <div class="flex items-center gap-3 overflow-hidden">
+                    <div class="flex items-center justify-center w-3 h-3 rounded-sm border ${isSelected ? 'border-transparent' : 'border-slate-300 dark:border-slate-600'}" style="${isSelected ? 'background-color:' + (p.color || '#6366f1') : ''}">
+                        <span class="material-symbols-outlined text-[10px] text-white ${isSelected ? '' : 'hidden'}">check</span>
+                    </div>
+                    <div class="flex flex-col min-w-0">
+                        <span class="text-xs font-medium truncate ${isSelected ? 'text-slate-900 dark:text-white font-bold' : ''}">${p.name}</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">${displayVal}</span>
+                    <a href="/portfolio?id=${p.id}" onclick="event.stopPropagation()" class="text-slate-400 hover:text-primary transition-colors" title="Dettagli Portafoglio">
+                        <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+                    </a>
+                </div>
+            </div>
+        `;
+    }).join('');
+};
+
+window.togglePortfolioFilter = function(pId) {
+    let selectedPortfolioIds = JSON.parse(localStorage.getItem('selectedPortfolioIds') || '[]');
+    const idx = selectedPortfolioIds.indexOf(pId);
+    if (idx > -1) {
+        selectedPortfolioIds.splice(idx, 1);
+    } else {
+        selectedPortfolioIds.push(pId);
+    }
+    localStorage.setItem('selectedPortfolioIds', JSON.stringify(selectedPortfolioIds));
+    
+    if (window._cachedPortfolios) {
+        window.renderSidebarPortfolios(window._cachedPortfolios);
+    }
+    
+    if (typeof window.onPortfolioFilterChanged === 'function') {
+        window.onPortfolioFilterChanged(selectedPortfolioIds);
+    }
+};
+
+window.loadGlobalSidebarPortfolios = async function() {
+    const sidebar = document.getElementById('sidebar-portfolios');
+    if (!sidebar) return;
+    try {
+        const res = await fetch('/api/portfolios?t=' + Date.now());
+        const data = await res.json();
+        const portfolios = data.portfolios || [];
+        window.renderSidebarPortfolios(portfolios);
+    } catch (e) {
+        console.error("Error loading sidebar portfolios:", e);
+    }
+};
+
+window.addEventListener('privacy-changed', () => {
+    if (window._cachedPortfolios) {
+        window.renderSidebarPortfolios(window._cachedPortfolios);
+    }
+});
+
+// ─── Active Menu Link Highlighting & Sidebar Init ─────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     const currentPath = window.location.pathname;
     const navLinks = document.querySelectorAll('#sidebar-nav-links .nav-link');
     
     navLinks.forEach(link => {
         const href = link.getAttribute('href');
-        // Check if the current path starts with the href (for sub-routes) or matches exactly
         if (href && (currentPath === href || (href !== '/' && currentPath.startsWith(href)))) {
-            // Remove inactive classes
             link.classList.remove('text-slate-600', 'dark:text-slate-400', 'hover:bg-slate-100', 'dark:hover:bg-slate-800');
-            // Add active classes
             link.classList.add('bg-primary/10', 'text-primary', 'font-medium');
         }
     });
+
+    window.loadGlobalSidebarPortfolios();
 });

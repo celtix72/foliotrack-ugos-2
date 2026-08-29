@@ -422,58 +422,22 @@
 
     let selectedPortfolioIds = JSON.parse(localStorage.getItem('selectedPortfolioIds') || '[]');
 
+    window.onPortfolioFilterChanged = function() {
+        selectedPortfolioIds = JSON.parse(localStorage.getItem('selectedPortfolioIds') || '[]');
+        loadReportData();
+    };
+
     async function loadPortfolios() {
         try {
             const res = await fetch('/api/portfolios');
             const data = await res.json();
             window._allPortfolios = data.portfolios || [];
-            renderPortfolioFilters();
+            if (window.renderSidebarPortfolios) {
+                window.renderSidebarPortfolios(window._allPortfolios);
+            }
         } catch (err) {
             console.error('Failed to load portfolios:', err);
         }
-    }
-
-    function renderPortfolioFilters() {
-        const sidebar = document.getElementById('sidebar-portfolios');
-        if (!sidebar || !window._allPortfolios) return;
-        
-        sidebar.innerHTML = window._allPortfolios.map(p => {
-            const isPrivate = window.privacyState && window.privacyState.enabled;
-            const displayVal = isPrivate ? '****' : formatCurrency(p.totalValue, p.currency, 0);
-            const isSelected = selectedPortfolioIds.includes(p.id);
-            const bgColor = isSelected ? 'bg-slate-200 dark:bg-slate-800' : 'hover:bg-slate-100 dark:hover:bg-slate-800';
-            
-            return `
-                <div class="flex items-center justify-between px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 transition-colors group cursor-pointer ${bgColor}" onclick="togglePortfolioFilter(${p.id})">
-                    <div class="flex items-center gap-3 overflow-hidden">
-                        <div class="flex items-center justify-center w-3 h-3 rounded-sm border ${isSelected ? 'border-transparent' : 'border-slate-300 dark:border-slate-600'}" style="${isSelected ? 'background-color:' + (p.color || '#6366f1') : ''}">
-                            <span class="material-symbols-outlined text-[10px] text-white ${isSelected ? '' : 'hidden'}">check</span>
-                        </div>
-                        <div class="flex flex-col min-w-0">
-                            <span class="text-xs font-medium truncate ${isSelected ? 'text-slate-900 dark:text-white font-bold' : ''}">${p.name}</span>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">${displayVal}</span>
-                        <a href="/portfolio?id=${p.id}" onclick="event.stopPropagation()" class="text-slate-400 hover:text-primary transition-colors" title="Dettagli Portafoglio">
-                            <span class="material-symbols-outlined text-[14px]">open_in_new</span>
-                        </a>
-                    </div>
-                </div>
-            `;
-        }).join('') || '<div class="px-3 py-2 text-xs text-slate-400 italic">Nessun portafoglio</div>';
-    }
-
-    function togglePortfolioFilter(pId) {
-        const idx = selectedPortfolioIds.indexOf(pId);
-        if (idx > -1) {
-            selectedPortfolioIds.splice(idx, 1);
-        } else {
-            selectedPortfolioIds.push(pId);
-        }
-        localStorage.setItem('selectedPortfolioIds', JSON.stringify(selectedPortfolioIds));
-        renderPortfolioFilters();
-        loadReportData();
     }
 
     async function loadReportData() {

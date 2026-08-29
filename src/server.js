@@ -2694,7 +2694,7 @@ app.get('/login', (req, res) => {
 
 // Admin panel (requires auth + admin role)
 app.get('/admin', requireAuth, requireAdmin, (req, res) => {
-    res.sendFile(path.join(__dirname, '../private_views', 'admin.html'));
+    serveWithSidebar(req, res, 'admin.html');
 });
 
 

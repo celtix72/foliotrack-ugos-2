@@ -531,17 +531,8 @@
 
     let selectedPortfolioIds = JSON.parse(localStorage.getItem('selectedPortfolioIds') || '[]');
 
-
-    window.togglePortfolioFilter = function(pId) {
-        const idx = selectedPortfolioIds.indexOf(pId);
-        if (idx > -1) {
-            selectedPortfolioIds.splice(idx, 1);
-        } else {
-            selectedPortfolioIds.push(pId);
-        }
-        localStorage.setItem('selectedPortfolioIds', JSON.stringify(selectedPortfolioIds));
-        renderSidebarPortfolios(window._dashboardData ? window._dashboardData.portfolios : []);
-        
+    window.onPortfolioFilterChanged = function() {
+        selectedPortfolioIds = JSON.parse(localStorage.getItem('selectedPortfolioIds') || '[]');
         if (window._dashboardData) {
             updateDashboardUI(window._dashboardData);
             updateDashboardChart();
@@ -631,7 +622,9 @@
             pContainer.innerHTML = portfolios.map(p => createPortfolioCard(p)).join('') || '<tr><td colspan="8" class="py-12 text-center text-slate-500 italic">No portfolios found.</td></tr>';
         }
 
-        renderSidebarPortfolios(portfolios);
+        if (window.renderSidebarPortfolios) {
+            window.renderSidebarPortfolios(portfolios);
+        }
 
         const winnersContainer = document.getElementById('top-winners');
         const losersContainer = document.getElementById('top-losers');
@@ -639,38 +632,7 @@
             winnersContainer.innerHTML = (data.global.topWinners || []).map(w => createMiniAssetCard(w, true)).join('') || '<p class="text-xs text-slate-400 italic">Nessun dato disponibile</p>';
             losersContainer.innerHTML = (data.global.topLosers || []).map(l => createMiniAssetCard(l, false)).join('') || '<p class="text-xs text-slate-400 italic">Nessun dato disponibile</p>';
         }
-        loadNews(); // Injected
-    }
-
-    function renderSidebarPortfolios(portfolios) {
-        const sidebar = document.getElementById('sidebar-portfolios');
-        if (!sidebar) return;
-        
-        sidebar.innerHTML = portfolios.map(p => {
-            const isPrivate = window.privacyState && window.privacyState.enabled;
-            const displayVal = isPrivate ? '****' : formatCurrency(p.totalValue, p.currency, 0);
-            const isSelected = selectedPortfolioIds.includes(p.id);
-            const bgColor = isSelected ? 'bg-slate-200 dark:bg-slate-800' : 'hover:bg-slate-100 dark:hover:bg-slate-800';
-            
-            return `
-                <div class="flex items-center justify-between px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 transition-colors group cursor-pointer ${bgColor}" onclick="togglePortfolioFilter(${p.id})">
-                    <div class="flex items-center gap-3 overflow-hidden">
-                        <div class="flex items-center justify-center w-3 h-3 rounded-sm border ${isSelected ? 'border-transparent' : 'border-slate-300 dark:border-slate-600'}" style="${isSelected ? 'background-color:' + (p.color || '#6366f1') : ''}">
-                            <span class="material-symbols-outlined text-[10px] text-white ${isSelected ? '' : 'hidden'}">check</span>
-                        </div>
-                        <div class="flex flex-col min-w-0">
-                            <span class="text-xs font-medium truncate ${isSelected ? 'text-slate-900 dark:text-white font-bold' : ''}">${p.name}</span>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">${displayVal}</span>
-                        <a href="/portfolio?id=${p.id}" onclick="event.stopPropagation()" class="text-slate-400 hover:text-primary transition-colors" title="Dettagli Portafoglio">
-                            <span class="material-symbols-outlined text-[14px]">open_in_new</span>
-                        </a>
-                    </div>
-                </div>
-            `;
-        }).join('') || '<div class="px-3 py-2 text-xs text-slate-400 italic">Nessun portafoglio</div>';
+        if (typeof loadNews === 'function') loadNews();
     }
 
     function createPortfolioCard(p) {

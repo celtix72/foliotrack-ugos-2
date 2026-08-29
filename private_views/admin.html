@@ -741,23 +741,6 @@
     </div> <!-- Close Main Content Area -->
 
     <script>
-        async function loadSidebarPortfolios() {
-            try {
-                const res = await fetch('/api/portfolios');
-                const data = await res.json();
-                const p = data.portfolios || [];
-                document.getElementById('sidebar-portfolios').innerHTML = p.map(port => `
-                    <a href="/portfolio?id=${port.id}" class="flex items-center justify-between px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                        <div class="flex items-center gap-2">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                            <span class="text-xs font-medium">${port.name}</span>
-                        </div>
-                        <span class="text-[10px] font-bold uppercase text-slate-400">${port.currency}</span>
-                    </a>
-                `).join('') || '<div class="px-3 py-2 text-xs text-slate-500 italic">No portfolios.</div>';
-            } catch (err) { console.error(err); }
-        }
-
         document.addEventListener('DOMContentLoaded', async () => {
             const user = await ftAuth.initAuthGuard();
             // Optional: double check if admin here
@@ -775,7 +758,6 @@
             loadSecuritySettings();
             loadBannedIps();
             loadAiSettings();
-            loadSidebarPortfolios();
         });
 
         async function loadLogDates() {
