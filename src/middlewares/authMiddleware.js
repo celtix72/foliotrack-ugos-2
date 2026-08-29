@@ -75,7 +75,8 @@ const PUBLIC_API_PATHS = new Set([
     '/api/auth/register',
     '/api/auth/forgot-password',
     '/api/auth/reset-password',
-    '/api/app-version'
+    '/api/app-version',
+    '/api/csp-report'
 ]);
 
 // Minimal set of public GET endpoints:
