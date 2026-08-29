@@ -602,7 +602,21 @@ async function fetchAssetMetadata(ticker) {
             ticker: ticker,
             currentPrice: 0, 
             changePercent: 0,
-            type: 'Deposito Vincolato', 
+            type: 'Conto Deposito', 
+            longName: ticker,
+            shortName: ticker,
+            currency: 'EUR',
+            exchange: 'MANUAL',
+            country: 'Italy',
+            dataSource: 'MANUAL'
+        };
+    }
+    if (ticker && ticker.startsWith('BP_')) {
+        return {
+            ticker: ticker,
+            currentPrice: 0, 
+            changePercent: 0,
+            type: 'Buono Postale', 
             longName: ticker,
             shortName: ticker,
             currency: 'EUR',
@@ -1424,8 +1438,8 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
             
             const aiData = database.db.prepare(`SELECT ai_action as action, ai_reasoning as reasoning, ai_updated_at as updated_at FROM assets WHERE ticker = ?`).get(ticker);
 
-            // For CD_ assets, current price strictly follows cost basis per share (zero unrealized gain)
-            if (ticker && ticker.startsWith('CD_')) {
+            // For CD_ and BP_ assets, current price strictly follows cost basis per share (zero unrealized gain)
+            if (ticker && (ticker.startsWith('CD_') || ticker.startsWith('BP_') || (asset && ['Conto Deposito', 'Buono Postale'].includes(asset.type)))) {
                 curPx = avgCostAsset;
             }
 
@@ -1908,8 +1922,8 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
         // Ensure historicalPrices entry exists to avoid "Cannot read properties of undefined"
         if (!historicalPrices[ticker]) historicalPrices[ticker] = {};
 
-        // Special handling for Savings Accounts (CD_) - completely fall back to transaction history prices
-        if (ticker.startsWith('CD_')) {
+        // Special handling for Savings Accounts & Postal Bonds (CD_ and BP_) - completely fall back to transaction history prices
+        if (ticker.startsWith('CD_') || ticker.startsWith('BP_')) {
             return;
         }
 
@@ -2391,8 +2405,8 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                             price = assetMeta.currentPrice;
                         }
 
-                        // Priority 2: CD_ (Certificate of Deposit) - always use last purchase price (fixed value)
-                        if (ticker.startsWith('CD_')) {
+                        // Priority 2: CD_ and BP_ (Conto Deposito / Buono Postale) - always use last purchase price (fixed value)
+                        if (ticker.startsWith('CD_') || ticker.startsWith('BP_') || (assetMeta && ['Conto Deposito', 'Buono Postale'].includes(assetMeta.type))) {
                             // Valuation for Savings Account: Price is essentially PMC
                             const currentQty = state.holdings[ticker] || 0;
                             const currentCost = state.holdingsTotalCost[ticker] || 0;
@@ -2826,8 +2840,9 @@ async function updateMarketData(force = false) {
     logger.info(`Updating market data for ${assets.length} assets...`);
 
     for (const asset of assets) {
-        if (!asset.ticker || asset.ticker === 'CASH') continue;
-        if (asset.ticker.startsWith('CD_') || (asset.dataSource && asset.dataSource.toUpperCase() === 'MANUAL')) continue; // Skip constant-value or manual assets
+        if (!asset.ticker || asset.ticker === 'CASH' || asset.ticker.startsWith('CASH_')) continue;
+        if (asset.ticker.startsWith('CD_') || asset.ticker.startsWith('BP_') || (asset.dataSource && asset.dataSource.toUpperCase() === 'MANUAL')) continue; // Skip constant-value or manual assets
+        if (['Conto Deposito', 'Buono Postale', 'Liquidità'].includes(asset.type)) continue;
         if (asset.isManual === 1 && (!asset.dataSource || asset.dataSource === 'YF')) continue;
         
         // If markets are closed, only update assets with 0 price (unless forced)

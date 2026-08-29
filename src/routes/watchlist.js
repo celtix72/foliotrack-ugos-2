@@ -285,8 +285,9 @@ module.exports = function(dependencies) {
                 JOIN user_watchlist uw ON a.ticker = uw.ticker
                 WHERE uw.user_id = ? 
                   AND a.ticker != 'CASH' 
-                  AND IFNULL(a.type, '') != 'Liquidità' 
+                  AND IFNULL(a.type, '') NOT IN ('Liquidità', 'Conto Deposito', 'Buono Postale')
                   AND a.ticker NOT LIKE 'CD_%'
+                  AND a.ticker NOT LIKE 'BP_%'
             `).all(req.user.id);
             const results = {};
             

@@ -60,7 +60,24 @@ module.exports = function(dependencies) {
  */
 async function getAssetFundamentals(ticker) {
     if (!ticker) throw new Error('Ticker mancante');
-    ticker = ticker.toUpperCase();
+    // Skip non-equity / manual cash / deposit assets immediately
+    if (ticker.startsWith('CD_') || ticker.startsWith('BP_') || ticker === 'CASH' || ticker.startsWith('CASH_')) {
+        return {
+            ticker,
+            fetchedAt: new Date().toISOString(),
+            isCashOrFixed: true,
+            pegRatio: null,
+            pegRatioTrend: [],
+            pegHistorical: null,
+            fcfTTM: null,
+            operatingCFTTM: null,
+            fcfAnnual: [],
+            fcfQuarterly: [],
+            financialData: null,
+            earningsHistory: [],
+            errors: []
+        };
+    }
 
     // Check cache (in-memory)
     const cached = fundamentalsCache.get(ticker);
@@ -1356,12 +1373,24 @@ router.get('/assets/:ticker/ai-analysis', requireAuth, async (req, res) => {
         };
 
         const ticker = req.params.ticker;
+        if (ticker.startsWith('CD_') || ticker.startsWith('BP_') || ticker === 'CASH' || ticker.startsWith('CASH_')) {
+            sendEvent('error', { error: 'L\'analisi IA non è disponibile per Conti Deposito, Buoni Postali o Liquidità.' });
+            res.end();
+            return;
+        }
+
         sendEvent('progress', { message: 'Recupero informazioni asset...' });
 
         // Fetch asset info
         const assetRow = database.db.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(ticker);
         if (!assetRow) {
             throw new Error('Asset non trovato.');
+        }
+
+        if (['Conto Deposito', 'Buono Postale', 'Liquidità'].includes(assetRow.type)) {
+            sendEvent('error', { error: 'L\'analisi IA non è disponibile per Conti Deposito, Buoni Postali o Liquidità.' });
+            res.end();
+            return;
         }
 
         // Fetch recent news via Tavily (multi-query, type-aware)
@@ -2187,7 +2216,7 @@ router.delete('/assets/ai-history/:id', requireAuth, (req, res) => {
 
             for (const ticker of tickers) {
                 try {
-                    if (ticker.startsWith('CD_')) continue;
+                    if (ticker.startsWith('CD_') || ticker.startsWith('BP_') || ticker === 'CASH' || ticker.startsWith('CASH_')) continue;
                     
                     if (force) {
                         fundamentalsCache.delete(ticker);

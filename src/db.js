@@ -1211,8 +1211,8 @@ function recalculatePortfolio(portfolioId, liveEurUsdRate = null, variationOverr
         let price = (asset && asset.currentPrice > 0) ? asset.currentPrice : 0;
         const aCurr = (asset && asset.currency) ? asset.currency : 'EUR';
         
-        // Special logic for CD_ assets: Price is strictly cost-basis based (no market fluctuate)
-        if (ticker && ticker.startsWith('CD_')) {
+        // Special logic for CD_ and BP_ assets: Price is strictly cost-basis based (no market fluctuate)
+        if (ticker && (ticker.startsWith('CD_') || ticker.startsWith('BP_') || (asset && ['Conto Deposito', 'Buono Postale'].includes(asset.type)))) {
             price = h.shares > 0 ? h.totalCostAssetCurr / h.shares : 0;
         } else if (price <= 0) {
             // Fallback for missing prices for other tickers

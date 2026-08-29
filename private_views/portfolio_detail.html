@@ -1285,10 +1285,20 @@
                 ${errorTag}
             `;
 
-            const sourceClass = h.dataSource === 'B_ITA'
+            let sourceLabel = h.dataSource === 'B_ITA' ? 'BI' : (h.dataSource === 'MANUAL' ? 'MANUAL' : 'YF');
+            let sourceClass = h.dataSource === 'B_ITA'
                 ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400'
-                : 'bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400';
-            const sourceLabel = h.dataSource === 'B_ITA' ? 'BI' : 'YF';
+                : (h.dataSource === 'MANUAL' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400');
+
+            const isFixedCash = (h.ticker || '').startsWith('CD_') || (h.ticker || '').startsWith('BP_') || h.ticker === 'CASH' || (h.ticker || '').startsWith('CASH_') || ['Conto Deposito', 'Buono Postale', 'Liquidità'].includes(h.type);
+            let typeBadgeHtml = '';
+            if ((h.ticker || '').startsWith('CD_') || h.type === 'Conto Deposito') {
+                typeBadgeHtml = '<span class="px-1.5 py-0.5 rounded text-[8px] font-black leading-none bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">CONTO DEPOSITO</span>';
+            } else if ((h.ticker || '').startsWith('BP_') || h.type === 'Buono Postale') {
+                typeBadgeHtml = '<span class="px-1.5 py-0.5 rounded text-[8px] font-black leading-none bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">BUONO POSTALE</span>';
+            } else if (h.ticker === 'CASH' || (h.ticker || '').startsWith('CASH_') || h.type === 'Liquidità') {
+                typeBadgeHtml = '<span class="px-1.5 py-0.5 rounded text-[8px] font-black leading-none bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">LIQUIDITÀ</span>';
+            }
 
             return `
             <tr class="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors cursor-pointer group/row" onclick="toggleAssetTransactions('${h.ticker}')">
@@ -1303,7 +1313,7 @@
                             <!-- Name row -->
                             <div class="flex items-center gap-2 flex-wrap">
                                 <p class="font-black text-sm text-slate-900 dark:text-white leading-tight flex items-center">${h.name}
-                                    ${h.aiAction ? (() => {
+                                    ${(!isFixedCash && h.aiAction) ? (() => {
                                         const act = (h.aiAction || '').toUpperCase();
                                         let badgeStyle = '';
                                         if (act === 'BUY' || act === 'INCREASE') {
@@ -1331,6 +1341,7 @@
                                 <span>${h.ticker}</span>
                                 <span class="text-slate-300 dark:text-slate-700">•</span>
                                 <span>${h.currency}</span>
+                                ${typeBadgeHtml}
                                 <span class="px-1.5 py-0.5 rounded text-[8px] font-black leading-none ${sourceClass}">${sourceLabel}</span>
                             </p>
                         </div>

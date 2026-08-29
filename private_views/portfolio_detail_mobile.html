@@ -1143,7 +1143,9 @@
         const getAssetTag = (type, ticker) => {
             const t = (type || '').toUpperCase();
             const tk = (ticker || '').toUpperCase();
-            if (tk.startsWith('CD_')) return 'CD';
+            if (tk.startsWith('CD_') || t.includes('CONTO DEPOSITO') || t.includes('DEPOSITO VINCOLATO')) return 'CD';
+            if (tk.startsWith('BP_') || t.includes('BUONO POSTALE') || t.includes('BUONO FRUTTIFERO')) return 'BP';
+            if (tk === 'CASH' || tk.startsWith('CASH_') || t.includes('LIQUIDIT')) return 'Cash';
             if (t.includes('ETF')) return 'ETF';
             if (t.includes('BOND') || t.includes('FIXED INCOME') || tk.startsWith('BTP')) return 'Bond';
             return 'Az';

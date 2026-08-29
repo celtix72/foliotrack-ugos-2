@@ -430,8 +430,14 @@ function updateDisplayModeUI() {
 function getAssetCategory(a) {
     const t = (a.asset_type || a.type || '').toUpperCase();
     const tk = (a.ticker || '').toUpperCase();
-    if (t.includes('DEPOSITO') || t.includes('CONTO DEPOSITO') || t === 'CD' || t.includes('DEPOSITO VINCOLATO')) {
+    if (tk.startsWith('CD_') || t.includes('DEPOSITO') || t.includes('CONTO DEPOSITO') || t === 'CD' || t.includes('DEPOSITO VINCOLATO')) {
         return 'CD';
+    }
+    if (tk.startsWith('BP_') || t.includes('POSTALE') || t.includes('BUONO POSTALE') || t.includes('BUONO FRUTTIFERO')) {
+        return 'BP';
+    }
+    if (tk === 'CASH' || tk.startsWith('CASH_') || t.includes('LIQUIDIT')) {
+        return 'Cash';
     }
     if (t.includes('ETF') || t.includes('EXCHANGE TRADED FUND')) {
         return 'ETF';
@@ -501,6 +507,9 @@ function updateSortHeaders() {
 }
 
 function renderAiBadges(a) {
+    if (!a.ticker || a.ticker.startsWith('CD_') || a.ticker.startsWith('BP_') || a.ticker === 'CASH' || a.ticker.startsWith('CASH_') || ['Conto Deposito', 'Buono Postale', 'Liquidità'].includes(a.type)) {
+        return '';
+    }
     const count = a.aiHistoryCount || 0;
     if (a.aiBadges && a.aiBadges.length > 0) {
         return a.aiBadges.map(badge => {

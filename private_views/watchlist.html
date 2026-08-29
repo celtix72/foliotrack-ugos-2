@@ -299,8 +299,14 @@
     function getAssetCategory(item) {
         const t = (item.type || '').toUpperCase();
         const tk = (item.ticker || '').toUpperCase();
-        if (t.includes('DEPOSITO') || t.includes('CONTO DEPOSITO') || t === 'CD' || t.includes('DEPOSITO VINCOLATO')) {
+        if (tk.startsWith('CD_') || t.includes('DEPOSITO') || t.includes('CONTO DEPOSITO') || t === 'CD' || t.includes('DEPOSITO VINCOLATO')) {
             return 'CD';
+        }
+        if (tk.startsWith('BP_') || t.includes('POSTALE') || t.includes('BUONO POSTALE') || t.includes('BUONO FRUTTIFERO')) {
+            return 'BP';
+        }
+        if (tk === 'CASH' || tk.startsWith('CASH_') || t.includes('LIQUIDIT')) {
+            return 'Cash';
         }
         if (t.includes('ETF') || t.includes('EXCHANGE TRADED FUND')) {
             return 'ETF';
@@ -366,19 +372,23 @@
                     // Standardize Type Label for display
                     let typeLabel = item.type || 'Other';
                     const t = typeLabel.toUpperCase();
-                    if (t === 'AZIONI' || t === 'EQUITY' || t === 'STOCK' || t === 'COMMON STOCK') typeLabel = 'Equity';
+                    const tk = (item.ticker || '').toUpperCase();
+                    if (tk.startsWith('CD_') || t.includes('CONTO DEPOSITO') || t.includes('DEPOSITO VINCOLATO')) typeLabel = 'CONTO DEPOSITO';
+                    else if (tk.startsWith('BP_') || t.includes('BUONO POSTALE') || t.includes('BUONO FRUTTIFERO')) typeLabel = 'BUONO POSTALE';
+                    else if (tk === 'CASH' || tk.startsWith('CASH_') || t.includes('LIQUIDIT')) typeLabel = 'LIQUIDITÀ';
+                    else if (t === 'AZIONI' || t === 'EQUITY' || t === 'STOCK' || t === 'COMMON STOCK') typeLabel = 'Equity';
                     else if (t.includes('ETF') || t.includes('EXCHANGE TRADED FUND')) typeLabel = 'ETF';
                     else if (t.includes('MUTUAL FUND')) typeLabel = 'Fund';
 
-                    const typeColor = typeLabel === 'Equity' ? 'bg-primary/10 text-primary border-primary/20' : 
+                    const typeColor = (typeLabel === 'CONTO DEPOSITO' || typeLabel === 'BUONO POSTALE') ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
+                                    typeLabel === 'Equity' ? 'bg-primary/10 text-primary border-primary/20' : 
                                     typeLabel === 'ETF' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 
                                     'bg-slate-500/10 text-slate-500 border-slate-500/20';
 
-                    
-
-                    const count = item.aiHistoryCount || 0;
+                    const isFixedCash = tk.startsWith('CD_') || tk.startsWith('BP_') || tk === 'CASH' || tk.startsWith('CASH_') || ['CONTO DEPOSITO', 'BUONO POSTALE', 'LIQUIDITÀ'].includes(typeLabel);
+                    const count = isFixedCash ? 0 : (item.aiHistoryCount || 0);
                     let aiBadge = '';
-                    if (item.aiBadges && item.aiBadges.length > 0) {
+                    if (!isFixedCash && item.aiBadges && item.aiBadges.length > 0) {
                         aiBadge = item.aiBadges.map(badge => {
                             const engine = badge.engine || 'X';
                             let icon = 'smart_toy';

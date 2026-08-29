@@ -1080,6 +1080,11 @@
     let _aiModalName = null;
 
     window.openAssetAiHistoryModal = function (ticker, name, currency) {
+        if (!ticker || ticker.startsWith('CD_') || ticker.startsWith('BP_') || ticker === 'CASH' || ticker.startsWith('CASH_')) {
+            if (window.showNotification) window.showNotification("L'analisi IA non è disponibile per Conti Deposito, Buoni Postali o Liquidità.", 'warning');
+            else alert("L'analisi IA non è disponibile per Conti Deposito, Buoni Postali o Liquidità.");
+            return;
+        }
         _aiModalTicker = ticker;
         _aiModalName = name;
 

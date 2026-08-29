@@ -201,8 +201,8 @@ module.exports = function(dependencies) {
         let finalPrice = parseFloat(price || 0);
         let finalExRate = parseFloat(exchangeRate || 1);
 
-        // Enforcement for CD_ assets: Quantity is always 1, Currency is always EUR
-        if (sanitizedTicker && sanitizedTicker.startsWith('CD_')) {
+        // Enforcement for CD_ and BP_ assets: Quantity is always 1, Currency is always EUR
+        if (sanitizedTicker && (sanitizedTicker.startsWith('CD_') || sanitizedTicker.startsWith('BP_'))) {
             finalQty = 1.0;
             finalExRate = 1.0;
         }
@@ -598,6 +598,11 @@ module.exports = function(dependencies) {
                                        t.assetName || null, t.assetName || null, t.assetName || null, 
                                        sanitizedTicker);
                             } else {
+                                const isCD = sanitizedTicker.startsWith('CD_');
+                                const isBP = sanitizedTicker.startsWith('BP_');
+                                const isFixedManual = isCD || isBP;
+                                const derivedType = isCD ? 'Conto Deposito' : (isBP ? 'Buono Postale' : (t.assetType || (newSource === 'B_ITA' ? 'Bond' : 'Stock')));
+
                                 database.db.prepare(`
                                     INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, forwardPE, dividendYield, eps, beta, pegRatio, nextDividendDate, country, isManual, dataSource, isin, updatedAt)
                                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
@@ -605,16 +610,16 @@ module.exports = function(dependencies) {
                                     t.assetId || sanitizedTicker, 
                                     sanitizedTicker, 
                                     t.assetName || sanitizedTicker, 
-                                    sanitizedTicker.startsWith('CD_') ? 'Deposito Vincolato' : (t.assetType || (newSource === 'B_ITA' ? 'Bond' : 'Stock')), 
-                                    sanitizedTicker.startsWith('CD_') ? 'MANUAL' : (t.assetExchange || (newSource === 'B_ITA' ? 'XMIL' : 'N/A')), 
-                                    sanitizedTicker.startsWith('CD_') ? 'EUR' : (t.assetCurrency || (newSource === 'B_ITA' ? 'EUR' : 'USD')), 
+                                    derivedType, 
+                                    isFixedManual ? 'MANUAL' : (t.assetExchange || (newSource === 'B_ITA' ? 'XMIL' : 'N/A')), 
+                                    isFixedManual ? 'EUR' : (t.assetCurrency || (newSource === 'B_ITA' ? 'EUR' : 'USD')), 
                                     parseFloat(t.assetPrice || 0) || 0,
                                     0, 
                                     t.assetPe || null,
                                     null, null, null, null, null, null, // forwardPE, dividendYield, eps, beta, pegRatio, nextDividendDate
-                                    sanitizedTicker.startsWith('CD_') ? 'Italy' : (t.assetCountry || (newSource === 'B_ITA' ? 'Italy' : 'N/A')),
+                                    isFixedManual ? 'Italy' : (t.assetCountry || (newSource === 'B_ITA' ? 'Italy' : 'N/A')),
                                     0,
-                                    sanitizedTicker.startsWith('CD_') ? 'MANUAL' : newSource,
+                                    isFixedManual ? 'MANUAL' : newSource,
                                     newIsin
                                 );
                             }
@@ -632,7 +637,7 @@ module.exports = function(dependencies) {
 
                         let finalQty = cleanNum(t.quantity);
                         let finalExRate = cleanNum(t.exchangeRate, 1);
-                        if (sanitizedTicker && sanitizedTicker.startsWith('CD_')) {
+                        if (sanitizedTicker && (sanitizedTicker.startsWith('CD_') || sanitizedTicker.startsWith('BP_'))) {
                             finalQty = 1.0;
                             finalExRate = 1.0;
                         }

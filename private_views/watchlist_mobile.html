@@ -459,7 +459,7 @@
         const type = (a.type || '').toUpperCase();
         const yfType = (a.yfType || '').toUpperCase();
 
-        if (type === 'CONTO_DEPOSITO' || yfType === 'CONTO_DEPOSITO' || ticker.startsWith('CD_')) {
+        if (type === 'CONTO_DEPOSITO' || yfType === 'CONTO_DEPOSITO' || ticker.startsWith('CD_') || ticker.startsWith('BP_') || ticker === 'CASH' || ticker.startsWith('CASH_')) {
             return false;
         }
 
@@ -567,6 +567,9 @@
     }
 
     function renderAiBadge(a) {
+        if (!a || !a.ticker || a.ticker.startsWith('CD_') || a.ticker.startsWith('BP_') || a.ticker === 'CASH' || a.ticker.startsWith('CASH_') || ['Conto Deposito', 'Buono Postale', 'Liquidità'].includes(a.type)) {
+            return '';
+        }
         const tickerEsc = a.ticker.replace(/'/g, "\\'");
         const nameEsc = (a.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
         const cur = a.currency || 'EUR';
@@ -767,7 +770,9 @@
         const getAssetCategoryMob = (a) => {
             const t = (a.type || a.yfType || '').toUpperCase();
             const tk = (a.ticker || '').toUpperCase();
-            if (t.includes('DEPOSITO') || t.includes('CONTO DEPOSITO') || t === 'CD' || t.includes('DEPOSITO VINCOLATO')) return 'CD';
+            if (tk.startsWith('CD_') || t.includes('DEPOSITO') || t.includes('CONTO DEPOSITO') || t === 'CD' || t.includes('DEPOSITO VINCOLATO')) return 'CD';
+            if (tk.startsWith('BP_') || t.includes('POSTALE') || t.includes('BUONO POSTALE') || t.includes('BUONO FRUTTIFERO')) return 'BP';
+            if (tk === 'CASH' || tk.startsWith('CASH_') || t.includes('LIQUIDIT')) return 'Cash';
             if (t.includes('ETF') || t.includes('EXCHANGE TRADED FUND')) return 'ETF';
             if (t.includes('BOND') || t.includes('OBBLIGAZION') || t === 'OBBLIGAZIONI' || t === 'OBBLIGAZIONE' || tk.startsWith('BTP')) return 'Obbligazioni';
             return 'Azioni';
@@ -780,7 +785,7 @@
             const type = (x.type || '').toUpperCase();
             const yfType = (x.yfType || '').toUpperCase();
             
-            if (type === 'CONTO_DEPOSITO' || yfType === 'CONTO_DEPOSITO' || ticker.startsWith('CD_')) {
+            if (type === 'CONTO_DEPOSITO' || yfType === 'CONTO_DEPOSITO' || ticker.startsWith('CD_') || ticker.startsWith('BP_') || ticker === 'CASH' || ticker.startsWith('CASH_')) {
                 return 0;
             }
             

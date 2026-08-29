@@ -81,7 +81,7 @@ module.exports = function (dependencies) {
 
             const projectionPromises = openPositions.map(async (pos) => {
                 const ticker = pos.ticker;
-                const isBond = BOND_TYPES.includes(pos.assetType) || ticker.startsWith('CD_') || ticker === 'Sconosciuto';
+                const isBond = BOND_TYPES.includes(pos.assetType) || ticker.startsWith('CD_') || ticker.startsWith('BP_') || ticker === 'Sconosciuto';
                 
                 if (isBond) {
                     const lastYearDivs = allDivTx.filter(d => d.ticker === ticker && d.date.startsWith(lastYear.toString()));
@@ -101,7 +101,7 @@ module.exports = function (dependencies) {
                             }
                         }
                     });
-                } else if (ticker && !ticker.startsWith('CD_') && ticker !== 'Sconosciuto') {
+                } else if (ticker && !ticker.startsWith('CD_') && !ticker.startsWith('BP_') && ticker !== 'Sconosciuto') {
                     try {
                         const summary = await yahooFinance.quoteSummary(ticker, { modules: ['summaryDetail', 'calendarEvents'] }).catch(() => null);
                         if (summary && summary.summaryDetail && summary.summaryDetail.dividendRate > 0) {
@@ -1131,7 +1131,7 @@ module.exports = function (dependencies) {
                     const lastExRate = pTxs.filter(tx => tx.assetTicker === ticker && tx.exchangeRate).at(-1)?.exchangeRate || 1;
                     
                     let curPx = a.currentPrice;
-                    if (ticker.startsWith('CD_')) {
+                    if (ticker.startsWith('CD_') || ticker.startsWith('BP_') || ['Conto Deposito', 'Buono Postale'].includes(a.type)) {
                         curPx = shares > 0 ? (holdingsCost[ticker] || 0) / shares : 0;
                     }
                     
@@ -1139,7 +1139,7 @@ module.exports = function (dependencies) {
 
                     const geo = a.country || 'Unknown';
                     let type = a.type || 'Other';
-                    if (ticker.startsWith('CD_') || ticker.startsWith('CASH')) type = 'Liquidità';
+                    if (ticker.startsWith('CD_') || ticker.startsWith('BP_') || ticker.startsWith('CASH')) type = 'Liquidità';
                     const currency = a.currency || p.currency || 'EUR';
                     diversification.geography[geo] = (diversification.geography[geo] || 0) + value;
                     diversification.assetType[type] = (diversification.assetType[type] || 0) + value;
@@ -1336,7 +1336,7 @@ module.exports = function (dependencies) {
                 const gainPct = totalInvested > 0 ? (totalGain / totalInvested) * 100 : 0;
 
                 let assetType = a.type || 'Stock';
-                if (ticker.startsWith('CD_') || ticker.startsWith('CASH')) assetType = 'Liquidità';
+                if (ticker.startsWith('CD_') || ticker.startsWith('BP_') || ticker.startsWith('CASH')) assetType = 'Liquidità';
 
                 assetGainsMap[ticker] = {
                     ticker,

@@ -104,8 +104,8 @@ async function parseBrokerSpecific(broker) {
             const key  = tk + (isin ? '|' + isin : '');
 
             if (!tk || tk === 'CASH') { tickerCache[key] = { valid: true, ticker: 'CASH' }; continue; }
-            if (tk.startsWith('BTP')) { tickerCache[key] = { valid: true, isBTP: true }; continue; }
-            if (tk.startsWith('CD_')) { tickerCache[key] = { valid: true, ticker: tk, name: tk, type: 'Deposito Vincolato', currency: 'EUR', exchange: 'MANUAL', country: 'Italy' }; continue; }
+            if (tk.startsWith('CD_')) { tickerCache[key] = { valid: true, ticker: tk, name: tk, type: 'Conto Deposito', currency: 'EUR', exchange: 'MANUAL', country: 'Italy' }; continue; }
+            if (tk.startsWith('BP_')) { tickerCache[key] = { valid: true, ticker: tk, name: tk, type: 'Buono Postale', currency: 'EUR', exchange: 'MANUAL', country: 'Italy' }; continue; }
 
             document.getElementById('import-progress-label').textContent = `Validazione ${tk} (${i+1}/${uniqueKeys.length})...`;
             try {
@@ -201,9 +201,9 @@ window.parseImportData = async function() {
         const isWithdrawLike = ['PRELIEVO', 'MINUS', 'ADDEBITO', 'WITHDRAWAL', 'PRELIMINARE'].includes(type);
 
         if (isDepositLike) {
-            type = rawTicker.startsWith('CD_') ? 'BUY' : 'DEPOSIT';
+            type = (rawTicker.startsWith('CD_') || rawTicker.startsWith('BP_')) ? 'BUY' : 'DEPOSIT';
         } else if (isWithdrawLike) {
-            type = rawTicker.startsWith('CD_') ? 'SELL' : 'WITHDRAWAL';
+            type = (rawTicker.startsWith('CD_') || rawTicker.startsWith('BP_')) ? 'SELL' : 'WITHDRAWAL';
         }
 
         if (rawTicker === 'CASH' || !rawTicker) {
@@ -285,9 +285,22 @@ window.parseImportData = async function() {
                 valid: true, 
                 ticker: tk, 
                 name: tk, 
-                type: 'Deposito Vincolato', 
+                type: 'Conto Deposito', 
                 currency: 'EUR', 
-                exchange: 'N/A', 
+                exchange: 'MANUAL', 
+                country: 'Italy' 
+            };
+            continue;
+        }
+
+        if (tk.toUpperCase().startsWith('BP_')) {
+            tickerCache[cacheKey] = { 
+                valid: true, 
+                ticker: tk, 
+                name: tk, 
+                type: 'Buono Postale', 
+                currency: 'EUR', 
+                exchange: 'MANUAL', 
                 country: 'Italy' 
             };
             continue;

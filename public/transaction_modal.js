@@ -425,9 +425,10 @@
             if (ticker && !ticker.value) ticker.value = 'CASH';
         }
 
-        // Auto-select MANUAL for CD_ tickers
+        // Auto-select MANUAL for CD_ and BP_ tickers
         const assetSearch = document.getElementById('tm-asset-search')?.value || '';
-        if (assetSearch.toUpperCase().startsWith('CD_') && source !== 'MANUAL') {
+        const searchUpper = assetSearch.toUpperCase();
+        if ((searchUpper.startsWith('CD_') || searchUpper.startsWith('BP_')) && source !== 'MANUAL') {
             document.getElementById('tm-source').value = 'MANUAL';
             toggleTransactionFields();
             return;
@@ -608,8 +609,31 @@
         const type = document.getElementById('tm-type')?.value;
 
         if (source === 'MANUAL' || source === 'B_ITA') {
-            document.getElementById('tm-asset-ticker').value = query.trim().toUpperCase();
+            const rawTicker = query.trim().toUpperCase();
+            document.getElementById('tm-asset-ticker').value = rawTicker;
             _hideSearchResults();
+
+            // Auto-update manual meta info for CD_ and BP_
+            const meta = document.getElementById('tm-asset-meta');
+            if (rawTicker.startsWith('CD_')) {
+                if (meta) {
+                    meta.classList.remove('hidden');
+                    document.getElementById('tm-meta-exchange').innerText = 'MANUAL';
+                    document.getElementById('tm-meta-type').innerText = 'CONTO DEPOSITO';
+                    document.getElementById('tm-meta-price').innerText = '1.00 €';
+                }
+                const nameInput = document.getElementById('tm-asset-name');
+                if (nameInput && !nameInput.value) nameInput.value = rawTicker;
+            } else if (rawTicker.startsWith('BP_')) {
+                if (meta) {
+                    meta.classList.remove('hidden');
+                    document.getElementById('tm-meta-exchange').innerText = 'MANUAL';
+                    document.getElementById('tm-meta-type').innerText = 'BUONO POSTALE';
+                    document.getElementById('tm-meta-price').innerText = '1.00 €';
+                }
+                const nameInput = document.getElementById('tm-asset-name');
+                if (nameInput && !nameInput.value) nameInput.value = rawTicker;
+            }
             return;
         }
 
@@ -744,8 +768,13 @@
             const data = await res.json();
             if (data && data.valid) {
                 if (meta) {
+                    let displayType = data.type || 'N/A';
+                    if (ticker.startsWith('CD_') || displayType === 'Conto Deposito') displayType = 'CONTO DEPOSITO';
+                    else if (ticker.startsWith('BP_') || displayType === 'Buono Postale') displayType = 'BUONO POSTALE';
+                    else if (ticker === 'CASH' || ticker.startsWith('CASH_') || displayType === 'Liquidità') displayType = 'LIQUIDITÀ';
+
                     document.getElementById('tm-meta-exchange').innerText = data.exchange || 'N/A';
-                    document.getElementById('tm-meta-type').innerText = data.type || 'N/A';
+                    document.getElementById('tm-meta-type').innerText = displayType;
                     document.getElementById('tm-meta-price').innerText = data.currentPrice ? `${data.currentPrice} ${data.currency || ''}` : '—';
                 }
                 if (data.currency) {

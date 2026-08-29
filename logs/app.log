@@ -49024,3 +49024,55 @@ Test
 2026-08-29T12:14:27.815Z [INFO] FolioTrack server running on port 3000
 2026-08-29T12:14:27.824Z [INFO] Database: /Users/mauro/Documents/Progetti_Sviluppo/FolioTrack3/foliotrack.db
 2026-08-29T12:14:27.841Z [INFO] Startup notification sent to 2 users.
+2026-08-29T12:14:32.792Z [INFO] Starting RSS News Sync (isFirstSync: true)...
+2026-08-29T12:14:33.478Z [INFO] News Sync completed. Saved 0 new articles.
+2026-08-29T12:14:42.793Z [INFO] [Sync Fundamentals] Starting fundamentals synchronization...
+2026-08-29T12:14:42.809Z [INFO] [Sync Fundamentals] Found 1 tickers to sync.
+2026-08-29T12:14:42.820Z [INFO] [Sync Fundamentals] Syncing ticker: AAPL
+2026-08-29T12:14:42.836Z [INFO] [Fundamentals] Cache hit (DB): AAPL (age: 280 mins)
+2026-08-29T12:14:44.354Z [INFO] [Sync Fundamentals] Completed sync. Success: 1, Failed: 0
+2026-08-29T12:15:21.281Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T12:15:21.595Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T12:16:08.619Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T12:16:12.633Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T12:34:45.738Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T13:07:28.085Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T13:07:28.105Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-08-29T13:07:28.729Z [INFO] News Sync completed. Saved 0 new articles.
+2026-08-29T13:07:32.037Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T13:07:32.067Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-08-29T13:15:26.079Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T13:15:26.118Z [ERROR] Failed to fetch RSS for https://it.investing.com/rss/news_25.rss:  - Request timed out after 60000ms
+2026-08-29T13:15:26.284Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T13:15:26.821Z [INFO] News Sync completed. Saved 0 new articles.
+2026-08-29T13:15:31.464Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T13:15:31.515Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-08-29T13:15:32.079Z [INFO] News Sync completed. Saved 0 new articles.
+2026-08-29T13:15:34.175Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T13:15:34.216Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-08-29T13:15:34.447Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T13:15:34.471Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-08-29T13:15:34.636Z [INFO] News Sync completed. Saved 0 new articles.
+2026-08-29T13:15:35.023Z [INFO] News Sync completed. Saved 0 new articles.
+2026-08-29T13:15:40.629Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T13:15:40.653Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-08-29T13:15:41.172Z [INFO] News Sync completed. Saved 0 new articles.
+2026-08-29T13:21:26.081Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T13:21:26.284Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T13:21:31.423Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T13:21:34.173Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T13:21:34.443Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T13:21:40.630Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T13:27:26.091Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T13:27:26.293Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T13:27:31.434Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T13:27:34.184Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T13:27:34.452Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T13:27:40.645Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T13:31:21.149Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-08-29T13:31:21.171Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-08-29T13:31:21.302Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T13:31:21.314Z [INFO] FolioTrack server running on port 3000
+2026-08-29T13:31:21.324Z [INFO] Database: /Users/mauro/Documents/Progetti_Sviluppo/FolioTrack3/foliotrack.db
+2026-08-29T13:31:21.341Z [INFO] Startup notification sent to 2 users.
+2026-08-29T13:31:23.517Z [INFO] [REQ] GET /api/health

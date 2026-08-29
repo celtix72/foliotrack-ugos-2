@@ -103,8 +103,9 @@ router.get('/market/movers', requireAuth, async (req, res) => {
                 HAVING balance > 0.0001
             ) t ON a.ticker = t.assetTicker
             WHERE a.ticker != 'CASH' 
-              AND IFNULL(a.type, '') != 'Liquidità' 
+              AND IFNULL(a.type, '') NOT IN ('Liquidità', 'Conto Deposito', 'Buono Postale')
               AND a.ticker NOT LIKE 'CD_%'
+              AND a.ticker NOT LIKE 'BP_%'
         `).all(userId);
 
         rows = rows.filter(a => {
@@ -138,17 +139,47 @@ router.get('/validate-ticker', requireAuth, async (req, res) => {
     const isin = (req.query.isin || "").trim().toUpperCase();
     if (!ticker && !isin) return res.status(400).send('Ticker or ISIN required');
 
-    if (ticker === 'CASH') {
+    if (ticker === 'CASH' || ticker.startsWith('CASH_')) {
         return res.json({
             valid: true,
-            ticker: 'CASH',
-            name: 'Asset Cash',
+            ticker,
+            name: 'Liquidità',
             currency: 'EUR',
             exchange: 'CASH',
-            type: 'Cash',
+            type: 'Liquidità',
             currentPrice: 1,
             pe: null,
-            country: 'Global'
+            country: 'Italy'
+        });
+    }
+
+    if (ticker.startsWith('CD_')) {
+        return res.json({
+            valid: true,
+            ticker,
+            name: ticker,
+            currency: 'EUR',
+            exchange: 'MANUAL',
+            type: 'Conto Deposito',
+            currentPrice: 1,
+            pe: null,
+            country: 'Italy',
+            dataSource: 'MANUAL'
+        });
+    }
+
+    if (ticker.startsWith('BP_')) {
+        return res.json({
+            valid: true,
+            ticker,
+            name: ticker,
+            currency: 'EUR',
+            exchange: 'MANUAL',
+            type: 'Buono Postale',
+            currentPrice: 1,
+            pe: null,
+            country: 'Italy',
+            dataSource: 'MANUAL'
         });
     }
 
