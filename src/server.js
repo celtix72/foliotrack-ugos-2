@@ -2714,15 +2714,26 @@ app.get('/admin', requireAuth, requireAdmin, (req, res) => {
 
 
 // Helper per iniettare la sidebar nelle viste desktop
+// NOTA: usare sempre fs.readFile + res.send() per ENTRAMBI mobile e desktop.
+// res.sendFile() in Express 5 può bypassare gli header impostati dai middleware (es. Helmet CSP),
+// mentre res.send() li rispetta correttamente → questo era la causa del "script-src 'none'" sulla mobile dashboard.
 function serveWithSidebar(req, res, file) {
     const isMobileView = file.includes('_mobile.html');
     const viewPath = path.join(__dirname, '../private_views', file);
-    
+    const fs = require('fs');
+
     if (isMobileView) {
-        return res.sendFile(viewPath);
+        // Per le viste mobile: leggi e invia con res.send() per preservare gli header CSP di Helmet
+        return fs.readFile(viewPath, 'utf8', (err, viewData) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).send('Error loading mobile view');
+            }
+            res.set('Content-Type', 'text/html; charset=utf-8');
+            res.send(viewData);
+        });
     }
     
-    const fs = require('fs');
     const sidebarPath = path.join(__dirname, '../private_views/partials', 'sidebar_partial.html');
     
     fs.readFile(viewPath, 'utf8', (err, viewData) => {
