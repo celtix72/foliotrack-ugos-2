@@ -1075,6 +1075,7 @@
           const etfs = openPos.filter(a => getAssetCategoryMob(a) === 'ETF');
           const obbligazioni = openPos.filter(a => getAssetCategoryMob(a) === 'Obbligazioni');
           const cd = openPos.filter(a => getAssetCategoryMob(a) === 'CD');
+          const bp = openPos.filter(a => getAssetCategoryMob(a) === 'BP');
 
           const renderSectionMob = (items, title) => {
             if (items.length === 0) return '';
@@ -1127,7 +1128,8 @@
           posContainer.innerHTML = renderSectionMob(azioni, 'Azioni') +
                                    renderSectionMob(etfs, 'ETF') +
                                    renderSectionMob(obbligazioni, 'Obbligazioni') +
-                                   renderSectionMob(cd, 'CD');
+                                   renderSectionMob(cd, 'CD') +
+                                   renderSectionMob(bp, 'BP');
         } else {
           posContainer.innerHTML = '<div class="mob-empty">Nessuna posizione</div>';
         }

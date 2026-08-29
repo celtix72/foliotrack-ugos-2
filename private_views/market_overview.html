@@ -306,6 +306,8 @@
                             <option value="ETF Azionario">ETF Azionario</option>
                             <option value="ETF Monetario">ETF Monetario</option>
                             <option value="ETF Obblig">ETF Obblig</option>
+                            <option value="Conto Deposito">Conto Deposito</option>
+                            <option value="Buono Postale">Buono Postale</option>
                             <option value="Deposito Vincolato">Deposito Vincolato</option>
                             <option value="Cash">Cash</option>
                         </select>
@@ -788,6 +790,7 @@ function renderAssets(filter = '') {
             const etfs = openPositions.filter(a => getAssetCategory(a) === 'ETF');
             const obbligazioni = openPositions.filter(a => getAssetCategory(a) === 'Obbligazioni');
             const cd = openPositions.filter(a => getAssetCategory(a) === 'CD');
+            const bp = openPositions.filter(a => getAssetCategory(a) === 'BP');
 
             const renderSection = (items, title) => {
                 if (items.length === 0) return '';
@@ -847,7 +850,8 @@ function renderAssets(filter = '') {
             listPos.innerHTML = renderSection(azioni, 'Azioni') +
                                 renderSection(etfs, 'ETF') +
                                 renderSection(obbligazioni, 'Obbligazioni') +
-                                renderSection(cd, 'CD');
+                                renderSection(cd, 'CD') +
+                                renderSection(bp, 'BP');
         } else {
             listPos.innerHTML = `<tr><td colspan="8" class="px-6 py-12 text-center text-slate-500 italic bg-white dark:bg-surface-dark">No open positions.</td></tr>`;
         }
