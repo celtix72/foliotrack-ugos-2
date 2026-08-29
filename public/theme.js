@@ -1202,3 +1202,20 @@ window.ftConfirm = function(message) {
         btnCancel.onclick = () => cleanup(false);
     });
 };
+
+// ─── Active Menu Link Highlighting ────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    const currentPath = window.location.pathname;
+    const navLinks = document.querySelectorAll('#sidebar-nav-links .nav-link');
+    
+    navLinks.forEach(link => {
+        const href = link.getAttribute('href');
+        // Check if the current path starts with the href (for sub-routes) or matches exactly
+        if (href && (currentPath === href || (href !== '/' && currentPath.startsWith(href)))) {
+            // Remove inactive classes
+            link.classList.remove('text-slate-600', 'dark:text-slate-400', 'hover:bg-slate-100', 'dark:hover:bg-slate-800');
+            // Add active classes
+            link.classList.add('bg-primary/10', 'text-primary', 'font-medium');
+        }
+    });
+});

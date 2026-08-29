@@ -48973,3 +48973,27 @@ Test
 2026-08-29T11:40:09.234Z [INFO] News Sync completed. Saved 0 new articles.
 2026-08-29T11:40:12.551Z [INFO] Skipping automatic market update: all markets are closed.
 2026-08-29T11:40:21.199Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T11:46:08.555Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T11:46:12.562Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T11:46:21.206Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T11:52:08.558Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T11:52:12.574Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T11:52:21.214Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T11:56:29.804Z [INFO] Starting RSS News Sync (isFirstSync: false)...
+2026-08-29T11:56:30.422Z [INFO] News Sync completed. Saved 0 new articles.
+2026-08-29T11:58:08.579Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T11:58:12.590Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T11:58:21.229Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T12:03:18.359Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-08-29T12:03:18.376Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
+2026-08-29T12:03:18.500Z [INFO] Skipping automatic market update: all markets are closed.
+2026-08-29T12:03:18.512Z [INFO] FolioTrack server running on port 3000
+2026-08-29T12:03:18.521Z [INFO] Database: /Users/mauro/Documents/Progetti_Sviluppo/FolioTrack3/foliotrack.db
+2026-08-29T12:03:18.536Z [INFO] Startup notification sent to 2 users.
+2026-08-29T12:03:23.473Z [INFO] Starting RSS News Sync (isFirstSync: true)...
+2026-08-29T12:03:24.052Z [INFO] News Sync completed. Saved 0 new articles.
+2026-08-29T12:03:33.476Z [INFO] [Sync Fundamentals] Starting fundamentals synchronization...
+2026-08-29T12:03:33.509Z [INFO] [Sync Fundamentals] Found 1 tickers to sync.
+2026-08-29T12:03:33.522Z [INFO] [Sync Fundamentals] Syncing ticker: AAPL
+2026-08-29T12:03:33.537Z [INFO] [Fundamentals] Cache hit (DB): AAPL (age: 269 mins)
+2026-08-29T12:03:35.052Z [INFO] [Sync Fundamentals] Completed sync. Success: 1, Failed: 0

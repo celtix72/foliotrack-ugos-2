@@ -2697,55 +2697,84 @@ app.get('/admin', requireAuth, requireAdmin, (req, res) => {
     res.sendFile(path.join(__dirname, '../private_views', 'admin.html'));
 });
 
+
+// Helper per iniettare la sidebar nelle viste desktop
+function serveWithSidebar(req, res, file) {
+    const isMobileView = file.includes('_mobile.html');
+    const viewPath = path.join(__dirname, '../private_views', file);
+    
+    if (isMobileView) {
+        return res.sendFile(viewPath);
+    }
+    
+    const fs = require('fs');
+    const sidebarPath = path.join(__dirname, '../private_views/partials', 'sidebar_partial.html');
+    
+    fs.readFile(viewPath, 'utf8', (err, viewData) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Error loading view');
+        }
+        fs.readFile(sidebarPath, 'utf8', (err, sidebarData) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).send('Error loading sidebar partial');
+            }
+            const finalHtml = viewData.replace(/<aside\s+id="app-sidebar"[^>]*>[\s\S]*?<\/aside>/, sidebarData);
+            res.send(finalHtml);
+        });
+    });
+}
+
 // Protected app pages
 app.get('/dashboard', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'dashboard_mobile.html' : 'dashboard.html';
-    res.sendFile(path.join(__dirname, '../private_views', file));
+    serveWithSidebar(req, res, file);
 });
 
 app.get('/portfolio', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'portfolio_detail_mobile.html' : 'portfolio_detail.html';
-    res.sendFile(path.join(__dirname, '../private_views', file));
+    serveWithSidebar(req, res, file);
 });
 
 app.get('/market', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'market_mobile.html' : 'market_overview.html';
-    res.sendFile(path.join(__dirname, '../private_views', file));
+    serveWithSidebar(req, res, file);
 });
 
 app.get('/reports', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'reports_mobile.html' : 'reports.html';
-    res.sendFile(path.join(__dirname, '../private_views', file));
+    serveWithSidebar(req, res, file);
 });
 
 app.get('/history', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'history_mobile.html' : 'history.html';
-    res.sendFile(path.join(__dirname, '../private_views', file));
+    serveWithSidebar(req, res, file);
 });
 
 app.get('/dividend', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'dividend_mobile.html' : 'dividend.html';
-    res.sendFile(path.join(__dirname, '../private_views', file));
+    serveWithSidebar(req, res, file);
 });
 
 app.get('/settings', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'settings_mobile.html' : 'settings.html';
-    res.sendFile(path.join(__dirname, '../private_views', file));
+    serveWithSidebar(req, res, file);
 });
 
 app.get('/notifications', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'notifications_mobile.html' : 'notifications.html';
-    res.sendFile(path.join(__dirname, '../private_views', file));
+    serveWithSidebar(req, res, file);
 });
 
 app.get('/watchlist', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'watchlist_mobile.html' : 'watchlist.html';
-    res.sendFile(path.join(__dirname, '../private_views', file));
+    serveWithSidebar(req, res, file);
 });
 
 app.get('/notes', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'notes_mobile.html' : 'notes.html';
-    res.sendFile(path.join(__dirname, '../private_views', file));
+    serveWithSidebar(req, res, file);
 });
 
 
