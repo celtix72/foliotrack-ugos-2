@@ -1714,10 +1714,112 @@ app.post('/api/admin/rebuild-history', requireAuth, requireAdmin, async (req, re
 // ANALYTICS & GLOBAL DATA
 // ══════════════════════════════════════════════════════════════════════════════
 
+function matchAssetType(assetType, ticker, filter) {
+    if (!filter || filter === 'all') return true;
+    const t = (assetType || '').toLowerCase();
+    const tick = (ticker || '').toUpperCase();
+    const f = filter.toLowerCase().trim();
+    if (f === 'azioni' || f === 'stock' || f === 'azione') {
+        return t === 'azioni' || t === 'stock' || t === 'azione';
+    }
+    if (f === 'etf_az' || f === 'etf azionari' || f === 'etf azionario' || f === 'etf') {
+        return (t.includes('etf') && !t.includes('monet') && !t.includes('obblig')) || t === 'etf azionario' || t === 'etf azionari' || t === 'etf';
+    }
+    if (f === 'etf_mon' || f === 'etf monetario' || f === 'etf monetari') {
+        return t.includes('monet') || ['XEON.DE', 'C3M.PA', 'SMART.MI'].includes(tick);
+    }
+    return true;
+}
+
+function processTxForSimulation(p, t, state, dateStr, getUsdRate, hasAssetTypeFilter) {
+    const qty = t.quantity || 0, price = t.price || 0, comm = t.commission || 0, tax = t.tax || 0, fx = t.exchangeRate || 1, amount = t.amount || 0;
+    const effectAmt = amount ? Math.abs(amount) : (qty * price) / fx;
+    if (t.type === 'BUY' && t.assetTicker && price > 0) {
+        state.lastBuyPrices[t.assetTicker] = price;
+    }
+    const rateOnDate = (p.currency === 'USD') ? getUsdRate(dateStr) : 1;
+
+    if (hasAssetTypeFilter) {
+        if (t.type === 'BUY') {
+            const cost = amount ? Math.abs(amount) : (qty * price + comm + tax) / fx;
+            if (t.assetTicker && t.assetTicker !== 'CASH') {
+                state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) + qty;
+                state.holdingsTotalCost[t.assetTicker] = (state.holdingsTotalCost[t.assetTicker] || 0) + cost;
+                state.netDeposits += cost;
+                state.netDepositsEUR += cost / rateOnDate;
+            }
+        } else if (t.type === 'SELL') {
+            const proceeds = amount ? Math.abs(amount) : (qty * price - comm - tax) / fx;
+            if (t.assetTicker && t.assetTicker !== 'CASH') {
+                const oldQty = state.holdings[t.assetTicker] || 0;
+                const oldCost = state.holdingsTotalCost[t.assetTicker] || 0;
+                const avgCost = oldQty > 0 ? oldCost / oldQty : 0;
+                state.holdings[t.assetTicker] = oldQty - qty;
+                state.holdingsTotalCost[t.assetTicker] = Math.max(0, oldCost - (qty * avgCost));
+                state.netDeposits -= proceeds;
+                state.netDepositsEUR -= proceeds / rateOnDate;
+            }
+        } else if (t.type === 'DIVIDEND') {
+            const divAmt = amount ? amount : (Math.abs(amount || (qty * price - comm - tax))) / fx;
+            state.cash += divAmt;
+            state.dividends += divAmt;
+        }
+    } else {
+        switch (t.type) {
+            case 'DEPOSIT': {
+                state.cash += effectAmt; 
+                state.netDeposits += effectAmt; 
+                state.netDepositsEUR += effectAmt / rateOnDate;
+                break;
+            }
+            case 'WITHDRAWAL': {
+                state.cash -= effectAmt; 
+                state.netDeposits -= effectAmt; 
+                state.netDepositsEUR += effectAmt / rateOnDate;
+                break;
+            }
+            case 'TAX':        state.cash -= effectAmt; break;
+            case 'TRANSFER': {
+                state.cash -= effectAmt; 
+                state.netDeposits -= effectAmt; 
+                state.netDepositsEUR += effectAmt / rateOnDate;
+                break;
+            }
+            case 'DIVIDEND': {
+                const divAmt = amount ? amount : (Math.abs(amount || (qty * price - comm - tax))) / fx;
+                state.cash += divAmt; 
+                state.dividends += divAmt;
+                break;
+            }
+            case 'BUY': {
+                const cost = amount ? Math.abs(amount) : (qty * price + comm + tax) / fx;
+                state.cash -= cost;
+                if (t.assetTicker && t.assetTicker !== 'CASH') {
+                    state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) + qty;
+                    state.holdingsTotalCost[t.assetTicker] = (state.holdingsTotalCost[t.assetTicker] || 0) + cost;
+                }
+                break;
+            }
+            case 'SELL': {
+                const proceeds = amount ? Math.abs(amount) : (qty * price - comm - tax) / fx;
+                state.cash += proceeds;
+                if (t.assetTicker && t.assetTicker !== 'CASH') {
+                    const oldQty = state.holdings[t.assetTicker] || 0;
+                    const oldCost = state.holdingsTotalCost[t.assetTicker] || 0;
+                    const avgCost = oldQty > 0 ? oldCost / oldQty : 0;
+                    state.holdings[t.assetTicker] = oldQty - qty;
+                    state.holdingsTotalCost[t.assetTicker] = Math.max(0, oldCost - (qty * avgCost));
+                }
+                break;
+            }
+        }
+    }
+}
+
 /**
  * Shared helper to calculate performance data points for one or more portfolios.
  */
-async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefresh = false, includeIndividual = false, benchmarkTicker = null, userId = null, tagIds = null, includeDefaults = false) {
+async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefresh = false, includeIndividual = false, benchmarkTicker = null, userId = null, tagIds = null, includeDefaults = false, assetType = null) {
     const pIdsInput = portfolioIds === null ? null : (Array.isArray(portfolioIds) ? portfolioIds : [portfolioIds]);
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
@@ -1725,7 +1827,8 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
     const overrides = calculateVariationOverrides(marketStatus);
     const liveRate = await getEurUsdRate().catch(() => 1.08) || 1.08;
     const rangeKey = range || 'ALL';
-    const cacheKey = `history_${pIdsInput ? pIdsInput.sort().join(',') : 'global'}_${userId || 'none'}_${rangeKey}_${includeIndividual}_${benchmarkTicker || 'none'}_${tagIds ? tagIds.sort().join(',') : 'all'}`;
+    const hasAssetTypeFilter = assetType && assetType !== 'all';
+    const cacheKey = `history_${pIdsInput ? pIdsInput.sort().join(',') : 'global'}_${userId || 'none'}_${rangeKey}_${includeIndividual}_${benchmarkTicker || 'none'}_${tagIds ? tagIds.sort().join(',') : 'all'}_${assetType || 'all'}`;
 
     // 1. Check Cache (1 minute TTL for dashboard-level history)
     const CACHE_SHORT_TTL = 60 * 1000; 
@@ -1777,7 +1880,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
     }
 
     const pIds = portfolios.map(p => p.id);
-    const allTransactions = pIds.length > 0 ? database.db.prepare(`
+    let allTransactions = pIds.length > 0 ? database.db.prepare(`
         SELECT * FROM transactions 
         WHERE portfolioId IN (${pIds.join(',')}) 
         ORDER BY date ASC
@@ -1787,11 +1890,18 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
     const allAssets = database.db.prepare('SELECT ticker, currency, currentPrice, type, isin, dataSource FROM assets').all();
     for (const a of allAssets) assetMetadataCache[a.ticker] = a;
 
+    if (hasAssetTypeFilter) {
+        allTransactions = allTransactions.filter(t => t.assetTicker && t.assetTicker !== 'CASH' && matchAssetType(assetMetadataCache[t.assetTicker]?.type, t.assetTicker, assetType));
+    }
+
     const portfolioTickers = allTransactions.map(t => t.assetTicker);
     const watchlistTickers = userId 
         ? database.db.prepare('SELECT ticker FROM user_watchlist WHERE user_id = ?').all(userId).map(a => a.ticker)
         : (isGlobal ? database.db.prepare('SELECT ticker FROM assets WHERE isMonitored = 1').all().map(a => a.ticker) : []);
-    const rawTickers = [...new Set([...portfolioTickers, ...watchlistTickers].filter(t => t && t !== 'CASH'))];
+    let rawTickers = [...new Set([...portfolioTickers, ...watchlistTickers].filter(t => t && t !== 'CASH'))];
+    if (hasAssetTypeFilter) {
+        rawTickers = rawTickers.filter(t => matchAssetType(assetMetadataCache[t]?.type, t, assetType));
+    }
     
     logger.info(`Performance history sync: processing ${rawTickers.length} tickers (Portfolios: ${portfolioTickers.length}, Watchlist: ${watchlistTickers.length})`);
 
@@ -2105,10 +2215,11 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
         if (uniqueTickers.length > 10 || (range !== '1W' && range !== '1M')) {
             logger.info(`Calculating history for ${p.name}...`);
         }
+        const initCash = hasAssetTypeFilter ? 0 : (p.initialCash || 0);
         portfolioStates[p.id] = {
-            cash: p.initialCash || 0,
-            netDeposits: p.initialCash || 0,
-            netDepositsEUR: (p.initialCash || 0) / (p.currency === 'USD' ? getUsdRate(p.startDate || startDateStr) : 1), // Track invested capital in base currency
+            cash: initCash,
+            netDeposits: initCash,
+            netDepositsEUR: (initCash) / (p.currency === 'USD' ? getUsdRate(p.startDate || startDateStr) : 1), // Track invested capital in base currency
             dividends: 0,
             holdings: {},
             holdingsTotalCost: {}, // Added fix for PMC tracking in simulation
@@ -2118,62 +2229,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
         // Fast-forward initial state to startDate
         const initialTx = allTransactions.filter(t => t.portfolioId === p.id && t.date < startDateStr);
         for (const t of initialTx) {
-            const qty = t.quantity || 0, price = t.price || 0, comm = t.commission || 0, tax = t.tax || 0, fx = t.exchangeRate || 1, amount = t.amount || 0;
-            const effectAmt = amount ? Math.abs(amount) : (qty * price) / fx;
-            if (t.type === 'BUY' && t.assetTicker && price > 0) {
-                portfolioStates[p.id].lastBuyPrices[t.assetTicker] = price;
-            }
-            switch (t.type) {
-                case 'DEPOSIT': {
-                    portfolioStates[p.id].cash += effectAmt; 
-                    portfolioStates[p.id].netDeposits += effectAmt; 
-                    const rateOnDate = (p.currency === 'USD') ? getUsdRate(t.date) : 1;
-                    portfolioStates[p.id].netDepositsEUR += effectAmt / rateOnDate;
-                    break;
-                }
-                case 'WITHDRAWAL': {
-                    portfolioStates[p.id].cash -= effectAmt; 
-                    portfolioStates[p.id].netDeposits -= effectAmt; 
-                    const rateOnDate = (p.currency === 'USD') ? getUsdRate(t.date) : 1;
-                    portfolioStates[p.id].netDepositsEUR -= effectAmt / rateOnDate;
-                    break;
-                }
-                case 'TAX':        portfolioStates[p.id].cash -= effectAmt; break;
-                case 'TRANSFER': {
-                    portfolioStates[p.id].cash -= effectAmt;
-                    portfolioStates[p.id].netDeposits -= effectAmt;
-                    const rateOnDate = (p.currency === 'USD') ? getUsdRate(t.date) : 1;
-                    portfolioStates[p.id].netDepositsEUR -= effectAmt / rateOnDate;
-                    break;
-                }
-                case 'DIVIDEND': {
-                    const divAmt = amount ? amount : (Math.abs(amount || (qty * price - comm - tax))) / fx;
-                    portfolioStates[p.id].cash += divAmt; 
-                    portfolioStates[p.id].dividends += divAmt;
-                    break;
-                }
-                case 'BUY': {
-                    const cost = amount ? Math.abs(amount) : (qty * price + comm + tax) / fx;
-                    portfolioStates[p.id].cash -= cost;
-                    if (t.assetTicker && t.assetTicker !== 'CASH') {
-                        portfolioStates[p.id].holdings[t.assetTicker] = (portfolioStates[p.id].holdings[t.assetTicker] || 0) + qty;
-                        portfolioStates[p.id].holdingsTotalCost[t.assetTicker] = (portfolioStates[p.id].holdingsTotalCost[t.assetTicker] || 0) + cost;
-                    }
-                    break;
-                }
-                case 'SELL': {
-                    const proceeds = amount ? Math.abs(amount) : (qty * price - comm - tax) / fx;
-                    portfolioStates[p.id].cash += proceeds;
-                    if (t.assetTicker && t.assetTicker !== 'CASH') {
-                        const oldQty = portfolioStates[p.id].holdings[t.assetTicker] || 0;
-                        const oldCost = portfolioStates[p.id].holdingsTotalCost[t.assetTicker] || 0;
-                        const avgCost = oldQty > 0 ? oldCost / oldQty : 0;
-                        portfolioStates[p.id].holdings[t.assetTicker] = oldQty - qty;
-                        portfolioStates[p.id].holdingsTotalCost[t.assetTicker] = Math.max(0, oldCost - (qty * avgCost));
-                    }
-                    break;
-                }
-            }
+            processTxForSimulation(p, t, portfolioStates[p.id], t.date, getUsdRate, hasAssetTypeFilter);
         }
     }
 
@@ -2189,7 +2245,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
         // CRITICAL FIX: For the CURRENT day, we skip the snapshot and use live calculation 
         // to avoid discrepancies between outdated snapshots and new transactions.
         // ALSO: for aggregate history (multiple pIds), we only use snapshots if we have them for ALL portfolios to avoid jumps.
-        const historyRecords = !isToday ? database.db.prepare(`SELECT portfolioId, totalValue, cashValue, assetValue FROM portfolio_history WHERE portfolioId IN (${pIds.join(',')}) AND date = ?`).all(dateStr) : [];
+        const historyRecords = (!isToday && !hasAssetTypeFilter) ? database.db.prepare(`SELECT portfolioId, totalValue, cashValue, assetValue FROM portfolio_history WHERE portfolioId IN (${pIds.join(',')}) AND date = ?`).all(dateStr) : [];
         
         if (!isToday && historyRecords.length > 0 && historyRecords.length === pIds.length) {
             // Correctly aggregate snapshots with currency conversion
@@ -2216,73 +2272,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                 const state = portfolioStates[p.id];
                 const dayTx = allTransactions.filter(t => t.portfolioId === p.id && t.date === dateStr);
                 for (const t of dayTx) {
-                    const amount = t.amount || 0;
-                    
-                    if (['BUY', 'SELL', 'DIVIDEND', 'DEPOSIT', 'WITHDRAWAL', 'TRANSFER'].includes(t.type)) {
-                        const ticker = t.assetTicker || 'CASH';
-                        const assetMeta = assetMetadataCache[ticker] || { name: ticker };
-                        dayEvents.push({ 
-                            type: t.type, 
-                            ticker: ticker, 
-                            assetName: assetMeta.name,
-                            portfolioName: p.name, 
-                            amount: t.amount || ((t.quantity || 0) * (t.price || 0)) 
-                        });
-                    }
-                    // We still need to update holdings state to keep it consistent if manual record missing for next day
-                    const qty = t.quantity || 0, price = t.price || 0, comm = t.commission || 0, tax = t.tax || 0, fx = t.exchangeRate || 1;
-                    const effectAmt = amount ? Math.abs(amount) : (qty * price) / fx;
-                    switch (t.type) {
-                        case 'DEPOSIT': {
-                            state.cash += effectAmt; 
-                            state.netDeposits += effectAmt; 
-                            const rateOnDate = (p.currency === 'USD') ? getUsdRate(dateStr) : 1;
-                            state.netDepositsEUR += effectAmt / rateOnDate;
-                            break;
-                        }
-                        case 'WITHDRAWAL': {
-                            state.cash -= effectAmt; 
-                            state.netDeposits -= effectAmt; 
-                            const rateOnDate = (p.currency === 'USD') ? getUsdRate(dateStr) : 1;
-                            state.netDepositsEUR -= effectAmt / rateOnDate;
-                            break;
-                        }
-                        case 'TAX':        state.cash -= effectAmt; break;
-                        case 'TRANSFER': {
-                            state.cash -= effectAmt; 
-                            state.netDeposits -= effectAmt; 
-                            const rateOnDate = (p.currency === 'USD') ? getUsdRate(dateStr) : 1;
-                            state.netDepositsEUR -= effectAmt / rateOnDate;
-                            break;
-                        }
-                        case 'DIVIDEND': {
-                            const divAmt = amount ? amount : (Math.abs(amount || (qty * price - comm - tax))) / fx;
-                            state.cash += divAmt; 
-                            state.dividends += divAmt;
-                            break;
-                        }
-                        case 'BUY': {
-                            const cost = amount ? Math.abs(amount) : (qty * price + comm + tax) / fx;
-                            state.cash -= cost;
-                            if (t.assetTicker !== 'CASH') {
-                                state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) + qty;
-                                state.holdingsTotalCost[t.assetTicker] = (state.holdingsTotalCost[t.assetTicker] || 0) + cost;
-                            }
-                            break;
-                        }
-                        case 'SELL': {
-                            const proceeds = amount ? Math.abs(amount) : (qty * price - comm - tax) / fx;
-                            state.cash += proceeds;
-                            if (t.assetTicker !== 'CASH') {
-                                const oldQty = state.holdings[t.assetTicker] || 0;
-                                const oldCost = state.holdingsTotalCost[t.assetTicker] || 0;
-                                const avgCost = oldQty > 0 ? oldCost / oldQty : 0;
-                                state.holdings[t.assetTicker] = oldQty - qty;
-                                state.holdingsTotalCost[t.assetTicker] = Math.max(0, oldCost - (qty * avgCost));
-                            }
-                            break;
-                        }
-                    }
+                    processTxForSimulation(p, t, state, dateStr, getUsdRate, hasAssetTypeFilter);
                 }
             }
             let totalNetDeps = 0;
@@ -2318,11 +2308,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                 const dayTx = allTransactions.filter(t => t.portfolioId === p.id && t.date === dateStr);
 
                 for (const t of dayTx) {
-                    const qty = t.quantity || 0, price = t.price || 0, comm = t.commission || 0, tax = t.tax || 0, fx = t.exchangeRate || 1, amount = t.amount || 0;
-                    const effectAmt = amount ? Math.abs(amount) : (qty * price) / fx;
-                    if (t.type === 'BUY' && t.assetTicker && price > 0) {
-                        state.lastBuyPrices[t.assetTicker] = price;
-                    }
+                    const qty = t.quantity || 0, price = t.price || 0;
                     if (['BUY', 'SELL', 'DIVIDEND', 'DEPOSIT', 'WITHDRAWAL', 'TRANSFER'].includes(t.type)) {
                         const tickerForEvent = t.assetTicker || 'CASH';
                         const assetMeta = assetMetadataCache[tickerForEvent] || { name: tickerForEvent };
@@ -2334,57 +2320,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                             amount: t.amount || (qty * price) 
                         });
                     }
-                    switch (t.type) {
-                        case 'DEPOSIT': {
-                            state.cash += effectAmt; 
-                            state.netDeposits += effectAmt; 
-                            const rateOnDate = (p.currency === 'USD') ? getUsdRate(dateStr) : 1;
-                            state.netDepositsEUR += effectAmt / rateOnDate;
-                            break;
-                        }
-                        case 'WITHDRAWAL': {
-                            state.cash -= effectAmt; 
-                            state.netDeposits -= effectAmt; 
-                            const rateOnDate = (p.currency === 'USD') ? getUsdRate(dateStr) : 1;
-                            state.netDepositsEUR -= effectAmt / rateOnDate;
-                            break;
-                        }
-                        case 'TAX':        state.cash -= effectAmt; break;
-                        case 'TRANSFER': {
-                            state.cash -= effectAmt; 
-                            state.netDeposits -= effectAmt; 
-                            const rateOnDate = (p.currency === 'USD') ? getUsdRate(dateStr) : 1;
-                            state.netDepositsEUR -= effectAmt / rateOnDate;
-                            break;
-                        }
-                        case 'DIVIDEND': {
-                            const divAmt = amount ? amount : (Math.abs(amount || (qty * price - comm - tax))) / fx;
-                            state.cash += divAmt; 
-                            state.dividends += divAmt;
-                            break;
-                        }
-                        case 'BUY': {
-                            const cost = amount ? Math.abs(amount) : (qty * price + comm + tax) / fx;
-                            state.cash -= cost;
-                            if (t.assetTicker && t.assetTicker !== 'CASH') {
-                                state.holdings[t.assetTicker] = (state.holdings[t.assetTicker] || 0) + qty;
-                                state.holdingsTotalCost[t.assetTicker] = (state.holdingsTotalCost[t.assetTicker] || 0) + cost;
-                            }
-                            break;
-                        }
-                        case 'SELL': {
-                            const proceeds = amount ? Math.abs(amount) : (qty * price - comm - tax) / fx;
-                            state.cash += proceeds;
-                            if (t.assetTicker && t.assetTicker !== 'CASH') {
-                                const oldQty = state.holdings[t.assetTicker] || 0;
-                                const oldCost = state.holdingsTotalCost[t.assetTicker] || 0;
-                                const avgCost = oldQty > 0 ? oldCost / oldQty : 0;
-                                state.holdings[t.assetTicker] = oldQty - qty;
-                                state.holdingsTotalCost[t.assetTicker] = Math.max(0, oldCost - (qty * avgCost));
-                            }
-                            break;
-                        }
-                    }
+                    processTxForSimulation(p, t, state, dateStr, getUsdRate, hasAssetTypeFilter);
                 }
 
                 let pAssets = 0;
@@ -2468,13 +2404,13 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                     pAssets += shares * (effectivePrice / rate);
                 }
 
-                let pValue = (state.cash + pAssets);
+                let pValue = hasAssetTypeFilter ? pAssets : (state.cash + pAssets);
                 // PROFIT CALCULATION: Total Wealth Change in base currency (EUR)
                 // If it's EUR portfolio, rate is 1. If USD, we convert current total value to EUR 
                 // and subtract the total invested capital expressed in EUR (historical).
                 const pValueEUR = p.currency === 'USD' ? pValue / getUsdRate(dateStr) : pValue;
                 let pProfit = pValueEUR - state.netDepositsEUR;
-                let pCash = state.cash;
+                let pCash = hasAssetTypeFilter ? 0 : state.cash;
                 let pAssetsVal = pAssets;
 
                 if (p.currency === 'USD') {

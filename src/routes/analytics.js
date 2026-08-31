@@ -865,7 +865,24 @@ module.exports = function (dependencies) {
     // GET /api/analytics/reports
     router.get('/analytics/reports', requireAuth, async (req, res) => {
         try {
-            const { range = '1Y', portfolioIds } = req.query;
+            const { range = '1Y', portfolioIds, assetType = 'all' } = req.query;
+
+            const matchAssetType = (aType, ticker, filter) => {
+                if (!filter || filter === 'all') return true;
+                const t = (aType || '').toLowerCase();
+                const tick = (ticker || '').toUpperCase();
+                const f = filter.toLowerCase().trim();
+                if (f === 'azioni' || f === 'stock' || f === 'azione') {
+                    return t === 'azioni' || t === 'stock' || t === 'azione';
+                }
+                if (f === 'etf_az' || f === 'etf azionari' || f === 'etf azionario' || f === 'etf') {
+                    return (t.includes('etf') && !t.includes('monet') && !t.includes('obblig')) || t === 'etf azionario' || t === 'etf azionari' || t === 'etf';
+                }
+                if (f === 'etf_mon' || f === 'etf monetario' || f === 'etf monetari') {
+                    return t.includes('monet') || ['XEON.DE', 'C3M.PA', 'SMART.MI'].includes(tick);
+                }
+                return true;
+            };
             const selectedPIds = (portfolioIds && portfolioIds.trim() !== '')
                 ? portfolioIds.split(',').map(Number).filter(n => !isNaN(n))
                 : null;
@@ -939,23 +956,25 @@ module.exports = function (dependencies) {
 
             const portfolioData = await calculatePerformanceHistory(
                 selectedPIds && selectedPIds.length > 0 ? selectedPIds : pIdsForQuery,
-                range, false, true, null, req.user.id
+                range, false, true, null, req.user.id, null, false, assetType
             );
             if (!portfolioData || !portfolioData.dataPoints || portfolioData.dataPoints.length === 0) {
                  return res.json({ error: 'No performance data' });
             }
+
+            const isShortRange = range === '1M' || range === '1W' || range === '1D';
 
             const fetchBenchmark = async (ticker) => {
                 try {
                     const chart = await yahooFinance.chart(ticker, {
                         period1: dateStrStart,
                         period2: dateStrEnd,
-                        interval: '1mo'
+                        interval: isShortRange ? '1d' : '1mo'
                     });
                     if (chart && chart.quotes && chart.quotes.length > 0) {
                         const firstPrice = chart.quotes[0].adjclose || chart.quotes[0].close;
                         return chart.quotes.map(h => ({
-                            date: new Date(h.date).toISOString().split('T')[0].substring(0, 7),
+                            date: new Date(h.date).toISOString().split('T')[0].substring(0, isShortRange ? 10 : 7),
                             value: ((h.adjclose || h.close) / (firstPrice || 1)) * 100
                         }));
                     }
@@ -988,14 +1007,25 @@ module.exports = function (dependencies) {
                 return monthly;
             };
 
-            const monthlyGlobal = downsampleToMonthly(portfolioData.dataPoints);
+            const samplePoints = (daily) => {
+                if (isShortRange) {
+                    return (daily || []).map(d => ({
+                        ...d,
+                        date: d.date.substring(0, 10),
+                        events: d.events || []
+                    }));
+                }
+                return downsampleToMonthly(daily);
+            };
+
+            const monthlyGlobal = samplePoints(portfolioData.dataPoints);
             const monthlyIndividual = {};
             for (const pid in portfolioData.individual) {
                 const p = portfolios.find(port => port.id == pid);
                 monthlyIndividual[pid] = {
                     id: pid,
                     name: p ? p.name : pid,
-                    history: downsampleToMonthly(portfolioData.individual[pid]),
+                    history: samplePoints(portfolioData.individual[pid]),
                     metrics: {}
                 };
             }
@@ -1021,7 +1051,7 @@ module.exports = function (dependencies) {
                         prevNet = p.netDeposits;
                     }
                     return {
-                        date: p.date.substring(0, 7),
+                        date: isShortRange ? p.date.substring(0, 10) : p.date.substring(0, 7),
                         value: parseFloat(twr.toFixed(2)),
                         absoluteValue: Math.round(p.value),
                         profit: Math.round(p.profit),
@@ -1217,6 +1247,7 @@ module.exports = function (dependencies) {
             let bestAsset = { ticker: '-', profit: -Infinity };
             for (const [ticker, a] of Object.entries(assetMap)) {
                 if (ticker === 'CASH') continue;
+                if (assetType && assetType !== 'all' && !matchAssetType(a.type, ticker, assetType)) continue;
                 let unrealized = 0;
                 let realized = 0;
                 let qty = 0;
@@ -1252,18 +1283,23 @@ module.exports = function (dependencies) {
                     const rate = (p.currency === 'USD') ? liveRateValReports : 1;
                     
                     for (const pos of details.closedPositions) {
+                        if (assetType && assetType !== 'all' && !matchAssetType(pos.type || pos.assetType, pos.ticker, assetType)) continue;
                         const y = pos.year;
                         if (!annualGainsMap[y]) annualGainsMap[y] = { year: y, realized: 0, dividends: 0, unrealized: 0 };
                         annualGainsMap[y].realized += pos.realizedGain / rate;
                     }
                     
                     for (const group of details.dividendGroups) {
+                        if (assetType && assetType !== 'all' && !matchAssetType(group.type || group.assetType, group.ticker, assetType)) continue;
                         const y = group.year;
                         if (!annualGainsMap[y]) annualGainsMap[y] = { year: y, realized: 0, dividends: 0, unrealized: 0 };
                         annualGainsMap[y].dividends += group.total / rate;
                     }
                     
-                    const pUnrealized = details.holdings.reduce((sum, h) => sum + (h.unrealizedGain || 0), 0);
+                    const filteredHoldings = (assetType && assetType !== 'all')
+                        ? details.holdings.filter(h => matchAssetType(h.type || h.assetType, h.ticker, assetType))
+                        : details.holdings;
+                    const pUnrealized = filteredHoldings.reduce((sum, h) => sum + (h.unrealizedGain || 0), 0);
                     if (!annualGainsMap[currentYearString]) annualGainsMap[currentYearString] = { year: currentYearString, realized: 0, dividends: 0, unrealized: 0 };
                     annualGainsMap[currentYearString].unrealized += pUnrealized / rate;
                     
@@ -1280,6 +1316,7 @@ module.exports = function (dependencies) {
 
             for (const [ticker, a] of Object.entries(assetMap)) {
                 if (ticker === 'CASH' || ticker.startsWith('CASH')) continue;
+                if (assetType && assetType !== 'all' && !matchAssetType(a.type, ticker, assetType)) continue;
                 const tks = allTransactions.filter(t => t.assetTicker === ticker);
                 if (tks.length === 0) continue;
 
