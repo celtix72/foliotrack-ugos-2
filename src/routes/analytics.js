@@ -1099,9 +1099,9 @@ module.exports = function (dependencies) {
                 
                 const roi = calculateROI(currentVal, periodStartValue + periodNetFlow, periodProfit);
                 
-                const indHistory = portfolioData.individual[pid];
+                const indHistory = portfolioData.individual ? portfolioData.individual[pid] : null;
                 let indTwr = 0;
-                if (indHistory.length >= 2) {
+                if (indHistory && indHistory.length >= 2) {
                     const subPeriods = [];
                     for (let i = 1; i < indHistory.length; i++) {
                         const prev = indHistory[i-1];
@@ -1444,8 +1444,10 @@ module.exports = function (dependencies) {
             });
 
         } catch (err) {
-            console.error(err);
-            res.status(500).json({ error: err.message });
+            console.error('[reports 500] range=%s assetType=%s portfolioIds=%s — %s', 
+                req.query.range, req.query.assetType, req.query.portfolioIds, err.message);
+            console.error(err.stack || err);
+            res.status(500).json({ error: err.message, stack: process.env.NODE_ENV !== 'production' ? err.stack : undefined });
         }
     });
 
