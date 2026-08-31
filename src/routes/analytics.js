@@ -866,6 +866,7 @@ module.exports = function (dependencies) {
     router.get('/analytics/reports', requireAuth, async (req, res) => {
         try {
             const { range = '1Y', portfolioIds, assetType = 'all' } = req.query;
+            const hasAssetTypeFilter = assetType && assetType !== 'all';
 
             const matchAssetType = (aType, ticker, filter) => {
                 if (!filter || filter === 'all') return true;
