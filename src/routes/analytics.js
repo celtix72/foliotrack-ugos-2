@@ -881,6 +881,9 @@ module.exports = function (dependencies) {
                 if (f === 'etf_mon' || f === 'etf monetario' || f === 'etf monetari') {
                     return t.includes('monet') || ['XEON.DE', 'C3M.PA', 'SMART.MI'].includes(tick);
                 }
+                if (f === 'obbl' || f === 'obbligazionario' || f === 'obbligazioni' || f === 'bond') {
+                    return t.includes('obblig') || t.includes('bond') || t === 'etf obbligazionario' || t === 'etf obbligazionari';
+                }
                 return true;
             };
             const selectedPIds = (portfolioIds && portfolioIds.trim() !== '')
