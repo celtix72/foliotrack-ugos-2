@@ -2245,7 +2245,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
         // CRITICAL FIX: For the CURRENT day, we skip the snapshot and use live calculation 
         // to avoid discrepancies between outdated snapshots and new transactions.
         // ALSO: for aggregate history (multiple pIds), we only use snapshots if we have them for ALL portfolios to avoid jumps.
-        const historyRecords = (!isToday && !hasAssetTypeFilter) ? database.db.prepare(`SELECT portfolioId, totalValue, cashValue, assetValue FROM portfolio_history WHERE portfolioId IN (${pIds.join(',')}) AND date = ?`).all(dateStr) : [];
+        const historyRecords = (!isToday && !hasAssetTypeFilter && pIds.length > 0) ? database.db.prepare(`SELECT portfolioId, totalValue, cashValue, assetValue FROM portfolio_history WHERE portfolioId IN (${pIds.join(',')}) AND date = ?`).all(dateStr) : [];
         
         if (!isToday && historyRecords.length > 0 && historyRecords.length === pIds.length) {
             // Correctly aggregate snapshots with currency conversion

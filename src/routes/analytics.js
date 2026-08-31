@@ -895,20 +895,28 @@ module.exports = function (dependencies) {
                 params = [...params, ...selectedPIds];
             }
 
-            const portfolios = database.db.prepare(`
+            let portfolios = database.db.prepare(`
                 SELECT p.* FROM portfolios p
                 JOIN portfolio_users pu ON p.id = pu.portfolio_id
                 WHERE pu.user_id = ? ${portfolioFilter}
             `).all(...params);
+
+            if (portfolios.length === 0 && selectedPIds && selectedPIds.length > 0) {
+                portfolios = database.db.prepare(`
+                    SELECT p.* FROM portfolios p
+                    JOIN portfolio_users pu ON p.id = pu.portfolio_id
+                    WHERE pu.user_id = ?
+                `).all(req.user.id);
+            }
             if (portfolios.length === 0) return res.json({ error: 'No portfolios found' });
 
             const pIdsForQuery = portfolios.map(p => p.id);
             const txPlaceholders = pIdsForQuery.map(() => '?').join(',');
-            const allTransactions = database.db.prepare(`
+            const allTransactions = pIdsForQuery.length > 0 ? database.db.prepare(`
                 SELECT t.* FROM transactions t
                 WHERE t.portfolioId IN (${txPlaceholders})
                 ORDER BY t.date ASC
-            `).all(...pIdsForQuery);
+            `).all(...pIdsForQuery) : [];
             const assets = database.db.prepare('SELECT * FROM assets').all();
             const assetMap = Object.fromEntries(assets.map(a => [a.ticker, a]));
 
@@ -955,7 +963,7 @@ module.exports = function (dependencies) {
             const dateStrEnd = today.toISOString().split('T')[0];
 
             const portfolioData = await calculatePerformanceHistory(
-                selectedPIds && selectedPIds.length > 0 ? selectedPIds : pIdsForQuery,
+                pIdsForQuery,
                 range, false, true, null, req.user.id, null, false, assetType
             );
             if (!portfolioData || !portfolioData.dataPoints || portfolioData.dataPoints.length === 0) {
@@ -1242,7 +1250,7 @@ module.exports = function (dependencies) {
                 return calculateTWR(subPeriods);
             })();
 
-            const monthlyTwr = downsampleToMonthly(twrSeries);
+            const monthlyTwr = samplePoints(twrSeries);
 
             let bestAsset = { ticker: '-', profit: -Infinity };
             for (const [ticker, a] of Object.entries(assetMap)) {
