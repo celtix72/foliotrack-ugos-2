@@ -980,10 +980,12 @@ module.exports = function (dependencies) {
                         interval: isShortRange ? '1d' : '1mo'
                     });
                     if (chart && chart.quotes && chart.quotes.length > 0) {
-                        const firstPrice = chart.quotes[0].adjclose || chart.quotes[0].close;
-                        return chart.quotes.map(h => ({
+                        const validQuotes = chart.quotes.filter(h => h && h.date && (h.adjclose != null || h.close != null));
+                        if (validQuotes.length === 0) return [];
+                        const firstPrice = validQuotes[0].adjclose ?? validQuotes[0].close ?? 1;
+                        return validQuotes.map(h => ({
                             date: new Date(h.date).toISOString().split('T')[0].substring(0, isShortRange ? 10 : 7),
-                            value: ((h.adjclose || h.close) / (firstPrice || 1)) * 100
+                            value: (((h.adjclose ?? h.close) || 0) / (firstPrice || 1)) * 100
                         }));
                     }
                 } catch (e) {
@@ -995,15 +997,17 @@ module.exports = function (dependencies) {
             const [sp500, msci] = await Promise.all([fetchBenchmark('^GSPC'), fetchBenchmark('URTH')]);
 
             const downsampleToMonthly = (daily) => {
+                if (!daily || !Array.isArray(daily)) return [];
                 const monthly = [];
                 let currentMonthEvents = [];
                 for (let i = 0; i < daily.length; i++) {
                     const day = daily[i];
+                    if (!day || !day.date) continue;
                     const mStr = day.date.substring(0, 7);
                     if (day.events) currentMonthEvents.push(...day.events);
                     
                     const next = daily[i+1];
-                    if (!next || next.date.substring(0, 7) !== mStr) {
+                    if (!next || !next.date || next.date.substring(0, 7) !== mStr) {
                         monthly.push({
                             ...day,
                             date: mStr,
@@ -1016,11 +1020,12 @@ module.exports = function (dependencies) {
             };
 
             const samplePoints = (daily) => {
+                if (!daily || !Array.isArray(daily)) return [];
                 if (isShortRange) {
-                    return (daily || []).map(d => ({
+                    return daily.map(d => ({
                         ...d,
-                        date: d.date.substring(0, 10),
-                        events: d.events || []
+                        date: (d && d.date) ? d.date.substring(0, 10) : '',
+                        events: (d && d.events) || []
                     }));
                 }
                 return downsampleToMonthly(daily);
@@ -1028,14 +1033,16 @@ module.exports = function (dependencies) {
 
             const monthlyGlobal = samplePoints(portfolioData.dataPoints);
             const monthlyIndividual = {};
-            for (const pid in portfolioData.individual) {
-                const p = portfolios.find(port => port.id == pid);
-                monthlyIndividual[pid] = {
-                    id: pid,
-                    name: p ? p.name : pid,
-                    history: samplePoints(portfolioData.individual[pid]),
-                    metrics: {}
-                };
+            if (portfolioData.individual) {
+                for (const pid in portfolioData.individual) {
+                    const p = portfolios.find(port => port.id == pid);
+                    monthlyIndividual[pid] = {
+                        id: pid,
+                        name: p ? p.name : pid,
+                        history: samplePoints(portfolioData.individual[pid]),
+                        metrics: {}
+                    };
+                }
             }
 
             const normalizeRelative = (history) => {
@@ -1288,25 +1295,26 @@ module.exports = function (dependencies) {
             for (const p of portfolios) {
                 try {
                     const details = await getPortfolioDetails(p.id, liveRateValReports);
+                    if (!details) continue;
                     const rate = (p.currency === 'USD') ? liveRateValReports : 1;
                     
-                    for (const pos of details.closedPositions) {
+                    for (const pos of (details.closedPositions || [])) {
                         if (assetType && assetType !== 'all' && !matchAssetType(pos.type || pos.assetType, pos.ticker, assetType)) continue;
                         const y = pos.year;
                         if (!annualGainsMap[y]) annualGainsMap[y] = { year: y, realized: 0, dividends: 0, unrealized: 0 };
-                        annualGainsMap[y].realized += pos.realizedGain / rate;
+                        annualGainsMap[y].realized += (pos.realizedGain || 0) / rate;
                     }
                     
-                    for (const group of details.dividendGroups) {
+                    for (const group of (details.dividendGroups || [])) {
                         if (assetType && assetType !== 'all' && !matchAssetType(group.type || group.assetType, group.ticker, assetType)) continue;
                         const y = group.year;
                         if (!annualGainsMap[y]) annualGainsMap[y] = { year: y, realized: 0, dividends: 0, unrealized: 0 };
-                        annualGainsMap[y].dividends += group.total / rate;
+                        annualGainsMap[y].dividends += (group.total || 0) / rate;
                     }
                     
                     const filteredHoldings = (assetType && assetType !== 'all')
-                        ? details.holdings.filter(h => matchAssetType(h.type || h.assetType, h.ticker, assetType))
-                        : details.holdings;
+                        ? (details.holdings || []).filter(h => matchAssetType(h.type || h.assetType, h.ticker, assetType))
+                        : (details.holdings || []);
                     const pUnrealized = filteredHoldings.reduce((sum, h) => sum + (h.unrealizedGain || 0), 0);
                     if (!annualGainsMap[currentYearString]) annualGainsMap[currentYearString] = { year: currentYearString, realized: 0, dividends: 0, unrealized: 0 };
                     annualGainsMap[currentYearString].unrealized += pUnrealized / rate;
@@ -1415,10 +1423,10 @@ module.exports = function (dependencies) {
                 metrics: {
                     totalROI,
                     totalGain: currentProfit,
-                    annualizedROI: Math.pow(1 + totalROI, 1 / (Math.max(1, monthlyGlobal.length) / 12)) - 1,
-                    xirr: xirrValue,
-                    twr: twrValue,
-                    bestAsset: bestAsset.ticker === '-' ? '-' : `${bestAsset.name} (${bestAsset.ticker})`,
+                    annualizedROI: (totalROI > -1 && monthlyGlobal.length > 0) ? (Math.pow(1 + totalROI, 1 / (Math.max(1, monthlyGlobal.length) / 12)) - 1) : totalROI,
+                    xirr: xirrValue || 0,
+                    twr: twrValue || 0,
+                    bestAsset: (bestAsset && bestAsset.ticker && bestAsset.ticker !== '-') ? `${bestAsset.name || bestAsset.ticker} (${bestAsset.ticker})` : '-',
                     sharpeRatio: (() => {
                         const returns = [];
                         for (let i = 1; i < normalizedGlobal.length; i++) {
