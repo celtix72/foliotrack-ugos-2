@@ -1409,7 +1409,13 @@ module.exports = function (dependencies) {
                 };
             }
             const assetGains = Object.values(assetGainsMap).sort((a,b) => b.totalGain - a.totalGain);
+            const trueAllTimeGain = assetGains.reduce((sum, a) => sum + a.totalGain, 0);
 
+            // Use trueAllTimeGain for allTimeGain to be immune to cash/deposit errors
+            // Use gPeriodProfit for totalGain for specific ranges (1M, 6M, 1Y)
+            // If the range is ALL/MAX, gPeriodProfit is effectively all-time, so we use trueAllTimeGain for bulletproof accuracy
+            const isAllTime = !isShortRange && (!range || range === 'MAX' || range === 'ALL');
+            const bulletproofPeriodGain = isAllTime ? trueAllTimeGain : gPeriodProfit;
 
             res.json({
                 performance: {
@@ -1425,8 +1431,8 @@ module.exports = function (dependencies) {
                 assetGains,
                 metrics: {
                     totalROI,
-                    totalGain: gPeriodProfit,
-                    allTimeGain: currentProfit,
+                    totalGain: bulletproofPeriodGain,
+                    allTimeGain: trueAllTimeGain,
                     annualizedROI: (totalROI > -1 && monthlyGlobal.length > 0) ? (Math.pow(1 + totalROI, 1 / (Math.max(1, monthlyGlobal.length) / 12)) - 1) : totalROI,
                     xirr: xirrValue || 0,
                     twr: twrValue || 0,
