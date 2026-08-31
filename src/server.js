@@ -2413,40 +2413,39 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                 // On today, use actual portfolio cash if available to prevent negative simulation drift from causing a crash
                 const effectiveCash = hasAssetTypeFilter ? 0 : (isTodayNow && p.currentCash !== undefined && p.currentCash !== null ? p.currentCash : state.cash);
                 let pValue = hasAssetTypeFilter ? pAssets : (effectiveCash + pAssets);
-                // PROFIT CALCULATION: Total Wealth Change in base currency (EUR)
-                // If it's EUR portfolio, rate is 1. If USD, we convert current total value to EUR 
-                // and subtract the total invested capital expressed in EUR (historical).
-                const pValueEUR = p.currency === 'USD' ? pValue / getUsdRate(dateStr) : pValue;
-                let pProfit = pValueEUR - state.netDepositsEUR;
                 let pCash = hasAssetTypeFilter ? 0 : effectiveCash;
                 let pAssetsVal = pAssets;
+                let pNetDeposits = portfolioStates[p.id].netDeposits;
 
+                // If USD portfolio, convert to base EUR
                 if (p.currency === 'USD') {
                     const rate = getUsdRate(dateStr);
                     pValue /= rate;
-                    pProfit /= rate;
                     pCash /= rate;
                     pAssetsVal /= rate;
+                    pNetDeposits /= rate;
                 }
 
                 if (portfolios.length === 1 || p.include_in_totals !== 0) {
                     dayValue += pValue;
-                    dayProfit += pProfit;
                     dayCash += pCash;
                     dayAssets += pAssetsVal;
-                    dayNetDeposits += (portfolioStates[p.id].netDeposits / (p.currency === 'USD' ? getUsdRate(dateStr) : 1));
+                    dayNetDeposits += pNetDeposits;
                 }
 
                 if (includeIndividual) {
                     const rateForP = p.currency === 'USD' ? getUsdRate(dateStr) : 1;
+                    const indVal = Math.round(pValue);
+                    const indNet = Math.round(portfolioStates[p.id].netDeposits / rateForP);
                     individualHistories[p.id].push({
                         date: dateStr,
-                        value: Math.round(pValue),
-                        profit: Math.round(pProfit),
-                        netDeposits: Math.round(portfolioStates[p.id].netDeposits / rateForP)
+                        value: indVal,
+                        profit: indVal - indNet,
+                        netDeposits: indNet
                     });
                 }
             }
+            dayProfit = dayValue - dayNetDeposits;
         }
 
 
