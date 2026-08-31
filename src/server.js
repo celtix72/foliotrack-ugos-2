@@ -2324,56 +2324,62 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                 }
 
                 let pAssets = 0;
+                const isTodayNow = dateStr === today.toISOString().split('T')[0];
+
                 for (const [ticker, shares] of Object.entries(state.holdings)) {
-                        if (shares <= 0.0001) continue;
+                    if (shares <= 0.0001) continue;
                     
-                    const dayBuyTx = dayTx.filter(t => t.assetTicker === ticker && t.type === 'BUY' && t.price > 0);
-                    let price = dayBuyTx.length > 0 ? dayBuyTx.at(-1).price : historicalPrices[ticker]?.[dateStr];
-                    
-                    const isTodayNow = dateStr === today.toISOString().split('T')[0];
+                    const assetMeta = (assetMetadataCache && assetMetadataCache[ticker]) || { currency: 'EUR' };
+                    let price = 0;
 
-                    // If price is missing (undefined, null, or 0), try to find a fallback
+                    // Priority 1: If today, use live currentPrice from assetMetadataCache if available
+                    if (isTodayNow && assetMeta && assetMeta.currentPrice > 0) {
+                        price = assetMeta.currentPrice;
+                    }
+
+                    // Priority 2: If day has a BUY transaction with price, use it
                     if (!price || price === 0) {
-                        const assetMeta = assetMetadataCache[ticker];
-
-                        // Priority 1: If it's today right now, try live price from cache
-                        if (isTodayNow && assetMeta && assetMeta.currentPrice > 0) {
-                            price = assetMeta.currentPrice;
-                        }
-
-                        // Priority 2: CD_ and BP_ (Conto Deposito / Buono Postale) - always use last purchase price (fixed value)
-                        if (ticker.startsWith('CD_') || ticker.startsWith('BP_') || (assetMeta && ['Conto Deposito', 'Buono Postale'].includes(assetMeta.type))) {
-                            // Valuation for Savings Account: Price is essentially PMC
-                            const currentQty = state.holdings[ticker] || 0;
-                            const currentCost = state.holdingsTotalCost[ticker] || 0;
-                            price = currentQty > 0 ? (currentCost / currentQty) : (state.lastBuyPrices[ticker] || 1);
-                        }
-
-                        // Priority 3: Try most recent historical price (critical for weekends/holidays)
-                        if (!price || price === 0) {
-                            const availableDates = Object.keys(historicalPrices[ticker] || {}).sort();
-                            const pastDates = availableDates.filter(d => d < dateStr);
-                            if (pastDates.length > 0) {
-                                price = historicalPrices[ticker][pastDates.at(-1)];
-                            } else if (availableDates.length > 0) {
-                                price = historicalPrices[ticker][availableDates[0]];
-                            }
-                        }
-
-                        // Priority 3: Try most recent transaction price from this portfolio
-                        if (!price || price === 0) {
-                            price = state.lastBuyPrices[ticker];
-                        }
-
-                        // Priority 4: Final fallback to current asset price ONLY if no historical data at all
-                        if (!price || price === 0) {
-                            if (assetMeta && assetMeta.currentPrice > 0) price = assetMeta.currentPrice;
-                            else if (assetMeta && assetMeta.type === 'Bond') price = 100.0;
-                            else price = 0;
+                        const dayBuyTx = dayTx.filter(t => t.assetTicker === ticker && t.type === 'BUY' && t.price > 0);
+                        if (dayBuyTx.length > 0) {
+                            price = dayBuyTx.at(-1).price;
                         }
                     }
 
-                    const assetMeta = (assetMetadataCache && assetMetadataCache[ticker]) || { currency: 'EUR' };
+                    // Priority 3: Historical price from pricesMap for dateStr
+                    if (!price || price === 0) {
+                        price = historicalPrices[ticker]?.[dateStr];
+                    }
+
+                    // Priority 4: CD_ and BP_ (Conto Deposito / Buono Postale) - always use last purchase price / PMC
+                    if (ticker.startsWith('CD_') || ticker.startsWith('BP_') || (assetMeta && ['Conto Deposito', 'Buono Postale'].includes(assetMeta.type))) {
+                        const currentQty = state.holdings[ticker] || 0;
+                        const currentCost = state.holdingsTotalCost[ticker] || 0;
+                        price = currentQty > 0 ? (currentCost / currentQty) : (state.lastBuyPrices[ticker] || 1);
+                    }
+
+                    // Priority 5: Most recent historical price (critical for weekends/holidays or missing today quote)
+                    if (!price || price === 0 || isNaN(price)) {
+                        const availableDates = Object.keys(historicalPrices[ticker] || {}).sort();
+                        const pastDates = availableDates.filter(d => d < dateStr);
+                        if (pastDates.length > 0) {
+                            price = historicalPrices[ticker][pastDates.at(-1)];
+                        } else if (availableDates.length > 0) {
+                            price = historicalPrices[ticker][availableDates[0]];
+                        }
+                    }
+
+                    // Priority 6: Last buy price from transactions
+                    if (!price || price === 0 || isNaN(price)) {
+                        price = state.lastBuyPrices[ticker];
+                    }
+
+                    // Priority 7: Final fallback to assetMeta currentPrice or bond standard 100
+                    if (!price || price === 0 || isNaN(price)) {
+                        if (assetMeta && assetMeta.currentPrice > 0) price = assetMeta.currentPrice;
+                        else if (assetMeta && assetMeta.type === 'Bond') price = 100.0;
+                        else price = 0;
+                    }
+
                     const aCurr = assetMeta.currency || 'EUR';
                     let rate = 1;
                     if (aCurr === 'USD' && p.currency === 'EUR') {
@@ -2404,13 +2410,15 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                     pAssets += shares * (effectivePrice / rate);
                 }
 
-                let pValue = hasAssetTypeFilter ? pAssets : (state.cash + pAssets);
+                // On today, use actual portfolio cash if available to prevent negative simulation drift from causing a crash
+                const effectiveCash = hasAssetTypeFilter ? 0 : (isTodayNow && p.currentCash !== undefined && p.currentCash !== null ? p.currentCash : state.cash);
+                let pValue = hasAssetTypeFilter ? pAssets : (effectiveCash + pAssets);
                 // PROFIT CALCULATION: Total Wealth Change in base currency (EUR)
                 // If it's EUR portfolio, rate is 1. If USD, we convert current total value to EUR 
                 // and subtract the total invested capital expressed in EUR (historical).
                 const pValueEUR = p.currency === 'USD' ? pValue / getUsdRate(dateStr) : pValue;
                 let pProfit = pValueEUR - state.netDepositsEUR;
-                let pCash = hasAssetTypeFilter ? 0 : state.cash;
+                let pCash = hasAssetTypeFilter ? 0 : effectiveCash;
                 let pAssetsVal = pAssets;
 
                 if (p.currency === 'USD') {
