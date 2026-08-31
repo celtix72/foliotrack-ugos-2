@@ -1388,13 +1388,13 @@ module.exports = function (dependencies) {
                 if (totalInvested < 0.01 && totalGain === 0) continue;
                 const gainPct = totalInvested > 0 ? (totalGain / totalInvested) * 100 : 0;
 
-                let assetType = a.type || 'Stock';
-                if (ticker.startsWith('CD_') || ticker.startsWith('BP_') || ticker.startsWith('CASH')) assetType = 'Liquidità';
+                let assetTypeProp = a.type || 'Stock';
+                if (ticker.startsWith('CD_') || ticker.startsWith('BP_') || ticker.startsWith('CASH')) assetTypeProp = 'Liquidità';
 
                 assetGainsMap[ticker] = {
                     ticker,
                     name: a.name || ticker,
-                    type: assetType,
+                    type: assetTypeProp,
                     currency: a.currency || 'EUR',
                     realizedGain: Math.round(realizedGain * 100) / 100,
                     dividends: Math.round(dividends * 100) / 100,
