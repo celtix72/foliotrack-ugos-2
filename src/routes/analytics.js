@@ -1092,6 +1092,8 @@ module.exports = function (dependencies) {
                 const p = monthlyIndividual[pid];
                 const portfolioObj = portfolios.find(port => port.id == pid);
                 p.history = normalizeRelative(p.history);
+                const last = p.history.length > 0 ? p.history[p.history.length - 1] : null;
+                const first = p.history.length > 0 ? p.history[0] : null;
                 const periodStartValue = first ? first.absoluteValue : 0;
                 const currentVal = last ? last.absoluteValue : 0;
                 const periodNetFlow = (first && last) ? last.netDeposits - first.netDeposits : (last ? last.netDeposits : 0);
