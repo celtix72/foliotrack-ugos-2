@@ -190,6 +190,32 @@
       </div>
     </div>
 
+    <!-- ── Global Filters Bar ────────────────────────────────── -->
+    <div class="mx-3 mt-3 mb-1 p-3 bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+      <!-- Period Row -->
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 shrink-0 w-16">Periodo</span>
+        <div id="mob-reports-range-bar" class="mob-chart-range-bar flex-1" style="margin:0;border-radius:10px;">
+          <div class="mob-range-btn" onclick="mobChangeRange('1M')" data-range="1M">1M</div>
+          <div class="mob-range-btn" onclick="mobChangeRange('6M')" data-range="6M">6M</div>
+          <div class="mob-range-btn active" onclick="mobChangeRange('1Y')" data-range="1Y">1Y</div>
+          <div class="mob-range-btn" onclick="mobChangeRange('2Y')" data-range="2Y">2Y</div>
+          <div class="mob-range-btn" onclick="mobChangeRange('3Y')" data-range="3Y">3Y</div>
+          <div class="mob-range-btn" onclick="mobChangeRange('5Y')" data-range="5Y">5Y</div>
+        </div>
+      </div>
+      <!-- Asset Type Row -->
+      <div class="flex items-center gap-2">
+        <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 shrink-0 w-16">Categoria</span>
+        <div class="mob-asset-filter-bar flex items-center gap-1 flex-1 p-1 bg-slate-100 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800 font-mono text-[10px]" style="margin:0">
+          <button type="button" class="mob-asset-type-btn flex-1 py-1 px-1 text-center font-bold uppercase tracking-wider rounded-lg transition-all bg-white dark:bg-slate-700 shadow-sm text-primary" onclick="mobChangeAssetType('all')" data-asset-type="all">TUTTI</button>
+          <button type="button" class="mob-asset-type-btn flex-1 py-1 px-1 text-center font-bold uppercase tracking-wider rounded-lg transition-all text-slate-500" onclick="mobChangeAssetType('azioni')" data-asset-type="azioni">AZIONI</button>
+          <button type="button" class="mob-asset-type-btn flex-1 py-1 px-1 text-center font-bold uppercase tracking-wider rounded-lg transition-all text-slate-500 whitespace-nowrap" onclick="mobChangeAssetType('etf_az')" data-asset-type="etf_az">ETF AZ</button>
+          <button type="button" class="mob-asset-type-btn flex-1 py-1 px-1 text-center font-bold uppercase tracking-wider rounded-lg transition-all text-slate-500 whitespace-nowrap" onclick="mobChangeAssetType('etf_mon')" data-asset-type="etf_mon">ETF MON</button>
+        </div>
+      </div>
+    </div>
+
     <!-- VIEW: PORTAFOGLI -->
     <div id="view-portafogli" class="hidden">
         <div class="mob-section-header">
@@ -257,24 +283,6 @@
           <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">MSCI</span>
         </div>
       </div>
-      <!-- Range Selector -->
-      <div class="mob-chart-range-bar" id="mob-reports-range-bar">
-        <div class="mob-range-btn" onclick="mobChangeRange('1M')" data-range="1M">1M</div>
-        <div class="mob-range-btn" onclick="mobChangeRange('6M')" data-range="6M">6M</div>
-        <div class="mob-range-btn active" onclick="mobChangeRange('1Y')" data-range="1Y">1Y</div>
-        <div class="mob-range-btn" onclick="mobChangeRange('2Y')" data-range="2Y">2Y</div>
-        <div class="mob-range-btn" onclick="mobChangeRange('3Y')" data-range="3Y">3Y</div>
-        <div class="mob-range-btn" onclick="mobChangeRange('5Y')" data-range="5Y">5Y</div>
-      </div>
-
-      <!-- Asset Type Filter TAGs -->
-      <div class="mob-asset-filter-bar flex items-center gap-1 mt-2 mb-1 p-1 bg-slate-100 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800 font-mono text-[10px]">
-        <button type="button" class="mob-asset-type-btn flex-1 py-1 px-1 text-center font-bold uppercase tracking-wider rounded-lg transition-all bg-white dark:bg-slate-700 shadow-sm text-primary" onclick="mobChangeAssetType('all')" data-asset-type="all">TUTTI</button>
-        <button type="button" class="mob-asset-type-btn flex-1 py-1 px-1 text-center font-bold uppercase tracking-wider rounded-lg transition-all text-slate-500 hover:text-slate-700 dark:hover:text-slate-300" onclick="mobChangeAssetType('azioni')" data-asset-type="azioni">AZIONI</button>
-        <button type="button" class="mob-asset-type-btn flex-1 py-1 px-1 text-center font-bold uppercase tracking-wider rounded-lg transition-all text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 whitespace-nowrap" onclick="mobChangeAssetType('etf_az')" data-asset-type="etf_az">ETF AZ</button>
-        <button type="button" class="mob-asset-type-btn flex-1 py-1 px-1 text-center font-bold uppercase tracking-wider rounded-lg transition-all text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 whitespace-nowrap" onclick="mobChangeAssetType('etf_mon')" data-asset-type="etf_mon">ETF MON</button>
-      </div>
-
       <div class="mob-chart-canvas-wrapper" style="height: 190px; margin-top: 8px;">
         <canvas id="mob-perf-chart"></canvas>
       </div>

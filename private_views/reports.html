@@ -103,11 +103,10 @@
     </div>
 </header>
 <!-- Reports Scrollable Area -->
-<main class="flex-1 overflow-y-auto custom-scrollbar px-0 pt-6 pb-4 bg-background-light dark:bg-background-dark">
-<!-- Reports Header Section -->
-<div class="flex flex-wrap items-end justify-between mb-8 gap-4">
+<main class="flex-1 overflow-y-auto custom-scrollbar px-0 pt-6 pb-4 bg-background-light dark:bg-background-dark"><!-- Reports Header Section -->
+<div class="flex flex-wrap items-end justify-between mb-6 gap-4 px-4">
     <div>
-        <h2 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Reports & Analytics</h2>
+        <h2 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Reports &amp; Analytics</h2>
         <p class="text-sm font-bold text-slate-500 mt-1 flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
             Analisi portafoglio live
@@ -135,16 +134,38 @@
         <button class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 transition-all shadow-lg shadow-emerald-500/20" onclick="window.location.href='/api/export-all-transactions'">
             <span class="material-symbols-outlined text-sm">csv</span>Export CSV
         </button>
-        <!-- Period Range Selector -->
-        <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-900/50 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
-            <button onclick="changeRange('1M')" data-range="1M" class="range-btn px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all hover:bg-white dark:hover:bg-slate-800">1M</button>
-            <button onclick="changeRange('6M')" data-range="6M" class="range-btn px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all hover:bg-white dark:hover:bg-slate-800">6M</button>
-            <button onclick="changeRange('1Y')" data-range="1Y" class="range-btn px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all hover:bg-white dark:hover:bg-slate-800 bg-white dark:bg-slate-700 shadow-sm text-primary">1Y</button>
-            <button onclick="changeRange('2Y')" data-range="2Y" class="range-btn px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all hover:bg-white dark:hover:bg-slate-800">2Y</button>
-            <button onclick="changeRange('3Y')" data-range="3Y" class="range-btn px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all hover:bg-white dark:hover:bg-slate-800">3Y</button>
-            <button onclick="changeRange('5Y')" data-range="5Y" class="range-btn px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all hover:bg-white dark:hover:bg-slate-800">5Y</button>
+    </div>
+</div>
+
+<!-- ── Global Filters Bar ──────────────────────────────────────────────── -->
+<div class="flex flex-wrap items-center gap-3 mb-8 mx-4 px-4 py-3 bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+    <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 shrink-0">Filtri</span>
+    <div class="h-4 w-px bg-slate-200 dark:bg-slate-700 shrink-0"></div>
+    <!-- Period Range -->
+    <div class="flex items-center gap-2">
+        <span class="text-[9px] font-bold uppercase tracking-widest text-slate-400 shrink-0">Periodo</span>
+        <div class="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-900/50 p-0.5 rounded-lg border border-slate-200 dark:border-slate-800">
+            <button onclick="changeRange('1M')" data-range="1M" class="range-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all hover:bg-white dark:hover:bg-slate-800">1M</button>
+            <button onclick="changeRange('6M')" data-range="6M" class="range-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all hover:bg-white dark:hover:bg-slate-800">6M</button>
+            <button onclick="changeRange('1Y')" data-range="1Y" class="range-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all bg-white dark:bg-slate-700 shadow-sm text-primary">1Y</button>
+            <button onclick="changeRange('2Y')" data-range="2Y" class="range-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all hover:bg-white dark:hover:bg-slate-800">2Y</button>
+            <button onclick="changeRange('3Y')" data-range="3Y" class="range-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all hover:bg-white dark:hover:bg-slate-800">3Y</button>
+            <button onclick="changeRange('5Y')" data-range="5Y" class="range-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all hover:bg-white dark:hover:bg-slate-800">5Y</button>
         </div>
     </div>
+    <div class="h-4 w-px bg-slate-200 dark:bg-slate-700 shrink-0"></div>
+    <!-- Asset Type -->
+    <div class="flex items-center gap-2">
+        <span class="text-[9px] font-bold uppercase tracking-widest text-slate-400 shrink-0">Categoria</span>
+        <div class="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-900/50 p-0.5 rounded-lg border border-slate-200 dark:border-slate-800 font-mono">
+            <button onclick="changeAssetType('all')" data-asset-type="all" class="asset-type-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all bg-white dark:bg-slate-700 shadow-sm text-primary">TUTTI</button>
+            <button onclick="changeAssetType('azioni')" data-asset-type="azioni" class="asset-type-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">AZIONI</button>
+            <button onclick="changeAssetType('etf_az')" data-asset-type="etf_az" class="asset-type-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">ETF AZ</button>
+            <button onclick="changeAssetType('etf_mon')" data-asset-type="etf_mon" class="asset-type-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">ETF MON</button>
+        </div>
+    </div>
+    <div class="flex-1"></div>
+    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Periodo attivo: <span id="chart-range-label" class="text-primary font-black">1Y</span></span>
 </div>
 <div class="space-y-8 max-w-7xl mx-auto">
 <!-- Key Metrics Grid -->
@@ -190,16 +211,8 @@
         <p class="text-sm text-slate-500">Portfolio vs Benchmark (normalizzati a 100)</p>
     </div>
     <div class="flex flex-wrap items-center gap-3">
-        <!-- Asset Type Filter TAGs -->
-        <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-900/50 p-1 rounded-xl border border-slate-200 dark:border-slate-800 font-mono">
-            <button onclick="changeAssetType('all')" data-asset-type="all" class="asset-type-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all bg-white dark:bg-slate-700 shadow-sm text-primary">TUTTI</button>
-            <button onclick="changeAssetType('azioni')" data-asset-type="azioni" class="asset-type-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">AZIONI</button>
-            <button onclick="changeAssetType('etf_az')" data-asset-type="etf_az" class="asset-type-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">ETF AZIONARI</button>
-            <button onclick="changeAssetType('etf_mon')" data-asset-type="etf_mon" class="asset-type-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">ETF MONETARIO</button>
-        </div>
         <div id="rep-chart-legend" class="flex flex-wrap items-center gap-4 mr-2"></div>
         <button id="toggle-individual-btn" onclick="toggleIndividualPortfolios()" class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:border-primary hover:text-primary transition-all">Show Portfolios</button>
-        <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Range: <span id="chart-range-label" class="text-primary">1Y</span></p>
     </div>
 </div>
 <!-- KPI bar -->
