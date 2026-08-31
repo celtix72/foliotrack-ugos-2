@@ -500,7 +500,8 @@
             
             const gainEl = document.getElementById('mob-total-gain');
             if (gainEl) {
-                gainEl.textContent = formatCurrency(m.totalGain, 'EUR', 0);
+                const sgn = m.totalGain > 0 ? '+' : '';
+                gainEl.textContent = sgn + formatCurrency(m.totalGain, 'EUR', 0);
                 gainEl.style.color = m.totalGain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
             }
 

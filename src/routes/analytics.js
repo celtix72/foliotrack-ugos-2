@@ -1425,7 +1425,8 @@ module.exports = function (dependencies) {
                 assetGains,
                 metrics: {
                     totalROI,
-                    totalGain: currentProfit,
+                    totalGain: gPeriodProfit,
+                    allTimeGain: currentProfit,
                     annualizedROI: (totalROI > -1 && monthlyGlobal.length > 0) ? (Math.pow(1 + totalROI, 1 / (Math.max(1, monthlyGlobal.length) / 12)) - 1) : totalROI,
                     xirr: xirrValue || 0,
                     twr: twrValue || 0,
