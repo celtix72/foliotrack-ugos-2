@@ -1092,15 +1092,12 @@ module.exports = function (dependencies) {
                 const p = monthlyIndividual[pid];
                 const portfolioObj = portfolios.find(port => port.id == pid);
                 p.history = normalizeRelative(p.history);
-                const last = p.history.length > 0 ? p.history[p.history.length - 1] : null;
-                const first = p.history.length > 0 ? p.history[0] : null;
-                
-                const periodProfit = (first && last) ? last.profit - first.profit : (last ? last.profit : 0);
-                const periodNetFlow = (first && last) ? last.netDeposits - first.netDeposits : (last ? last.netDeposits : 0);
                 const periodStartValue = first ? first.absoluteValue : 0;
                 const currentVal = last ? last.absoluteValue : 0;
+                const periodNetFlow = (first && last) ? last.netDeposits - first.netDeposits : (last ? last.netDeposits : 0);
+                const periodProfit = currentVal - periodStartValue - periodNetFlow;
                 
-                const roi = calculateROI(currentVal, periodStartValue + periodNetFlow, periodProfit);
+                let roi = calculateROI(currentVal, periodStartValue + periodNetFlow, periodProfit);
                 
                 const indHistory = portfolioData.individual ? portfolioData.individual[pid] : null;
                 let indTwr = 0;
@@ -1116,6 +1113,10 @@ module.exports = function (dependencies) {
                         });
                     }
                     indTwr = calculateTWR(subPeriods);
+                }
+
+                if (hasAssetTypeFilter || (periodStartValue + periodNetFlow <= 0) || roi > 5.0 || roi < -0.99) {
+                    roi = indTwr;
                 }
 
                 const pTxs = allTransactions.filter(t => t.portfolioId == pid && ['DEPOSIT', 'WITHDRAWAL'].includes(t.type));
@@ -1206,14 +1207,11 @@ module.exports = function (dependencies) {
             }
 
             const currentTotalValue = lastGlobal ? lastGlobal.absoluteValue : 0;
-            const currentProfit = lastGlobal ? lastGlobal.profit : 0;
-            const currentNetDeposits = lastGlobal ? lastGlobal.netDeposits : 0;
-
-            const gPeriodNetFlow = (firstGlobal && lastGlobal) ? lastGlobal.netDeposits - firstGlobal.netDeposits : (lastGlobal ? lastGlobal.netDeposits : 0);
             const gPeriodStartValue = firstGlobal ? firstGlobal.absoluteValue : 0;
-            const gPeriodProfit = (firstGlobal && lastGlobal) ? lastGlobal.profit - firstGlobal.profit : (lastGlobal ? lastGlobal.profit : 0);
+            const gPeriodNetFlow = (firstGlobal && lastGlobal) ? (lastGlobal.netDeposits - firstGlobal.netDeposits) : (lastGlobal ? lastGlobal.netDeposits : 0);
             
-            const totalROI = calculateROI(currentTotalValue, gPeriodStartValue + gPeriodNetFlow, gPeriodProfit);
+            // Period economic profit: End Value - Start Value - Net External Inflows
+            const rawPeriodProfit = currentTotalValue - gPeriodStartValue - gPeriodNetFlow;
 
             const externalTxs = allTransactions.filter(t => ['DEPOSIT', 'WITHDRAWAL'].includes(t.type));
             const flows = [];
@@ -1412,10 +1410,21 @@ module.exports = function (dependencies) {
             const trueAllTimeGain = assetGains.reduce((sum, a) => sum + a.totalGain, 0);
 
             // Use trueAllTimeGain for allTimeGain to be immune to cash/deposit errors
-            // Use gPeriodProfit for totalGain for specific ranges (1M, 6M, 1Y)
-            // If the range is ALL/MAX, gPeriodProfit is effectively all-time, so we use trueAllTimeGain for bulletproof accuracy
+            // Use rawPeriodProfit for totalGain for specific ranges (1M, 6M, 1Y, etc.)
+            // If the range is ALL/MAX, rawPeriodProfit is all-time, so we use trueAllTimeGain for bulletproof accuracy
             const isAllTime = !isShortRange && (!range || range === 'MAX' || range === 'ALL');
-            const bulletproofPeriodGain = isAllTime ? trueAllTimeGain : gPeriodProfit;
+            const bulletproofPeriodGain = isAllTime ? trueAllTimeGain : rawPeriodProfit;
+
+            // When assetType is filtered (e.g. AZIONI, ETF, OBBL), intermediate buy/sell flows
+            // severely corrupt simple Dietz ROI (causing extreme ratios like +234.8%).
+            // For category views, or when simple ROI denominator is distorted, we use Time-Weighted Return (twrValue).
+            let totalROI = twrValue;
+            if (!hasAssetTypeFilter && (gPeriodStartValue + gPeriodNetFlow) > 0) {
+                const simpleROI = (currentTotalValue / (gPeriodStartValue + gPeriodNetFlow)) - 1;
+                if (simpleROI > -0.99 && simpleROI < 5.0 && Math.abs(simpleROI - twrValue) < 0.5) {
+                    totalROI = simpleROI;
+                }
+            }
 
             res.json({
                 performance: {
