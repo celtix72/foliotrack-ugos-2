@@ -10,7 +10,9 @@
 <link rel="manifest" href="/manifest.json">
 <link rel="stylesheet" href="/dist/output.css">
 <link rel="stylesheet" href="/mobile.css?v=1780588387899">
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <style>
         .custom-scrollbar::-webkit-scrollbar {
             width: 4px;
@@ -21,6 +23,85 @@
         .custom-scrollbar::-webkit-scrollbar-thumb {
             background: #1e293b;
             border-radius: 10px;
+        }
+
+        /* ─── Compact Terminal Tabs (Reports Mobile) ─── */
+        .mob-rep-tabs-wrap {
+            padding: 8px 14px 4px 14px;
+            flex-shrink: 0;
+        }
+        .mob-rep-terminal-tabs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            padding: 3px;
+            background: rgba(15, 23, 42, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
+        }
+        :root:not(.dark) .mob-rep-terminal-tabs {
+            background: rgba(226, 232, 240, 0.75);
+            border-color: rgba(0, 0, 0, 0.07);
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+        }
+        .mob-rep-tab {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 6.5px 2px;
+            border-radius: 7px;
+            font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Roboto Mono', 'Menlo', monospace;
+            font-size: calc(11px * var(--mob-scale, 1));
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            color: #64748b;
+            background: transparent;
+            border: 1px solid transparent;
+            cursor: pointer;
+            white-space: nowrap;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+        }
+        .mob-tab-prompt {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: calc(10px * var(--mob-scale, 1));
+            font-weight: 800;
+            opacity: 0.35;
+            color: currentColor;
+            transition: transform 0.2s, opacity 0.2s, color 0.2s;
+            display: inline-block;
+            line-height: 1;
+        }
+        .mob-rep-tab.active {
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            color: #38bdf8;
+            border-color: rgba(56, 189, 248, 0.35);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4), 0 0 10px rgba(56, 189, 248, 0.12);
+        }
+        .mob-rep-tab.active .mob-tab-prompt {
+            opacity: 1;
+            color: #38bdf8;
+            transform: translateX(1px);
+            text-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+        }
+        :root:not(.dark) .mob-rep-tab.active {
+            background: #ffffff;
+            color: #0284c7;
+            border-color: rgba(2, 132, 199, 0.25);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+        :root:not(.dark) .mob-rep-tab.active .mob-tab-prompt {
+            opacity: 1;
+            color: #0284c7;
+            text-shadow: none;
+        }
+        .mob-rep-tab:active {
+            transform: scale(0.96);
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -92,10 +173,21 @@
   <!-- Mobile Scrollable Content -->
   <div class="mob-scroll" id="mob-reports-scroll">
     <!-- TABS -->
-    <div class="mob-tabs" style="margin-bottom: 12px; padding: 16px 16px 4px 16px;">
-        <div class="mob-tab-pill active" onclick="switchRepTab('performance')" id="tab-performance">Performance</div>
-        <div class="mob-tab-pill" onclick="switchRepTab('allocazione')" id="tab-allocazione">Allocazione</div>
-        <div class="mob-tab-pill" onclick="switchRepTab('portafogli')" id="tab-portafogli">Portafogli</div>
+    <div class="mob-rep-tabs-wrap">
+      <div class="mob-rep-terminal-tabs" role="tablist" aria-label="Sezioni Report">
+        <button type="button" class="mob-rep-tab active" onclick="switchRepTab('performance')" id="tab-performance" role="tab" aria-selected="true" aria-controls="view-performance">
+          <span class="mob-tab-prompt">&gt;</span>
+          <span class="mob-tab-text">Performance</span>
+        </button>
+        <button type="button" class="mob-rep-tab" onclick="switchRepTab('allocazione')" id="tab-allocazione" role="tab" aria-selected="false" aria-controls="view-allocazione">
+          <span class="mob-tab-prompt">&gt;</span>
+          <span class="mob-tab-text">Allocazione</span>
+        </button>
+        <button type="button" class="mob-rep-tab" onclick="switchRepTab('portafogli')" id="tab-portafogli" role="tab" aria-selected="false" aria-controls="view-portafogli">
+          <span class="mob-tab-prompt">&gt;</span>
+          <span class="mob-tab-text">Portafogli</span>
+        </button>
+      </div>
     </div>
 
     <!-- VIEW: PORTAFOGLI -->
@@ -307,15 +399,21 @@
     let mobLastData = null;
 
     window.switchRepTab = function(tab) {
-        document.getElementById('tab-portafogli').classList.remove('active');
-        document.getElementById('tab-performance').classList.remove('active');
-        document.getElementById('tab-allocazione').classList.remove('active');
-        document.getElementById('view-portafogli').classList.add('hidden');
-        document.getElementById('view-performance').classList.add('hidden');
-        document.getElementById('view-allocazione').classList.add('hidden');
+        document.getElementById('tab-portafogli')?.classList.remove('active');
+        document.getElementById('tab-performance')?.classList.remove('active');
+        document.getElementById('tab-allocazione')?.classList.remove('active');
+        document.getElementById('view-portafogli')?.classList.add('hidden');
+        document.getElementById('view-performance')?.classList.add('hidden');
+        document.getElementById('view-allocazione')?.classList.add('hidden');
         
-        document.getElementById('tab-' + tab).classList.add('active');
-        document.getElementById('view-' + tab).classList.remove('hidden');
+        const activeTab = document.getElementById('tab-' + tab);
+        if (activeTab) activeTab.classList.add('active');
+        document.getElementById('view-' + tab)?.classList.remove('hidden');
+
+        ['performance', 'allocazione', 'portafogli'].forEach(t => {
+            const el = document.getElementById('tab-' + t);
+            if (el) el.setAttribute('aria-selected', t === tab ? 'true' : 'false');
+        });
         
         if (tab === 'performance' && mobPerfChart) mobPerfChart.resize();
         if (tab === 'performance' && mobDivChart) mobDivChart.resize();
