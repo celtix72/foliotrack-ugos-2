@@ -1437,8 +1437,10 @@ module.exports = function (dependencies) {
             // Use trueAllTimeGain for allTimeGain to be immune to cash/deposit errors
             // Use rawPeriodProfit for totalGain for specific ranges (1M, 6M, 1Y, etc.)
             // If the range is ALL/MAX, rawPeriodProfit is all-time, so we use trueAllTimeGain for bulletproof accuracy
+            // When assetType is filtered (e.g. AZIONI, ETF, OBBL), rawPeriodProfit reflects the ENTIRE portfolio,
+            // not the filtered category. Use trueAllTimeGain (sum of filtered asset gains) instead for consistency.
             const isAllTime = !isShortRange && (!range || range === 'MAX' || range === 'ALL');
-            const bulletproofPeriodGain = isAllTime ? trueAllTimeGain : rawPeriodProfit;
+            const bulletproofPeriodGain = (isAllTime || hasAssetTypeFilter) ? trueAllTimeGain : rawPeriodProfit;
 
             // When assetType is filtered (e.g. AZIONI, ETF, OBBL), intermediate buy/sell flows
             // severely corrupt simple Dietz ROI (causing extreme ratios like +234.8%).
