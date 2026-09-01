@@ -210,10 +210,10 @@
                         <!-- Range buttons -->
                         <div class="flex gap-1 bg-slate-50 dark:bg-slate-900/50 p-1 rounded-lg border border-slate-100 dark:border-slate-800" id="chart-range-buttons">
                             <button data-range="1W" onclick="setChartRange('1W')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">1W</button>
-                            <button data-range="1M" onclick="setChartRange('1M')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">1M</button>
+                            <button data-range="1M" onclick="setChartRange('1M')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md bg-primary text-white shadow-md transition-all">1M</button>
                             <button data-range="3M" onclick="setChartRange('3M')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">3M</button>
                             <button data-range="YTD" onclick="setChartRange('YTD')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">YTD</button>
-                            <button data-range="1Y" onclick="setChartRange('1Y')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md bg-primary text-white shadow-md transition-all">1Y</button>
+                            <button data-range="1Y" onclick="setChartRange('1Y')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">1Y</button>
                             <button data-range="2Y" onclick="setChartRange('2Y')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">2Y</button>
                             <button data-range="3Y" onclick="setChartRange('3Y')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">3Y</button>
                             <button data-range="5Y" onclick="setChartRange('5Y')" class="range-btn px-2 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-primary transition-all">5Y</button>
@@ -961,7 +961,7 @@
 
     let dashboardChart = null;
     let allocationChart = null;
-    let currentChartRange = '1Y';
+    let currentChartRange = '1M';
     let currentChartMode = 'pnl'; // 'eur' | 'pnl' | 'pct'
 
     // Helper: abbrevia valori numerici per i tick asse Y

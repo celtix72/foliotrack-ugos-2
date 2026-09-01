@@ -145,12 +145,12 @@
     <div class="flex items-center gap-2">
         <span class="text-[9px] font-bold uppercase tracking-widest text-slate-400 shrink-0">Periodo</span>
         <div class="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-900/50 p-0.5 rounded-lg border border-slate-200 dark:border-slate-800">
-            <button onclick="changeRange('1M')" data-range="1M" class="range-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all hover:bg-white dark:hover:bg-slate-800">1M</button>
-            <button onclick="changeRange('6M')" data-range="6M" class="range-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all hover:bg-white dark:hover:bg-slate-800">6M</button>
-            <button onclick="changeRange('1Y')" data-range="1Y" class="range-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all bg-white dark:bg-slate-700 shadow-sm text-primary">1Y</button>
-            <button onclick="changeRange('2Y')" data-range="2Y" class="range-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all hover:bg-white dark:hover:bg-slate-800">2Y</button>
-            <button onclick="changeRange('3Y')" data-range="3Y" class="range-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all hover:bg-white dark:hover:bg-slate-800">3Y</button>
-            <button onclick="changeRange('5Y')" data-range="5Y" class="range-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all hover:bg-white dark:hover:bg-slate-800">5Y</button>
+            <button onclick="changeRange('1M')" data-range="1M" class="range-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all bg-white dark:bg-slate-700 shadow-sm text-primary">1M</button>
+            <button onclick="changeRange('6M')" data-range="6M" class="range-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">6M</button>
+            <button onclick="changeRange('1Y')" data-range="1Y" class="range-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">1Y</button>
+            <button onclick="changeRange('2Y')" data-range="2Y" class="range-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">2Y</button>
+            <button onclick="changeRange('3Y')" data-range="3Y" class="range-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">3Y</button>
+            <button onclick="changeRange('5Y')" data-range="5Y" class="range-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">5Y</button>
         </div>
     </div>
     <div class="h-4 w-px bg-slate-200 dark:bg-slate-700 shrink-0"></div>
@@ -158,15 +158,15 @@
     <div class="flex items-center gap-2">
         <span class="text-[9px] font-bold uppercase tracking-widest text-slate-400 shrink-0">Categoria</span>
         <div class="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-900/50 p-0.5 rounded-lg border border-slate-200 dark:border-slate-800 font-mono">
-            <button onclick="changeAssetType('all')" data-asset-type="all" class="asset-type-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all bg-white dark:bg-slate-700 shadow-sm text-primary">TUTTI</button>
-            <button onclick="changeAssetType('azioni')" data-asset-type="azioni" class="asset-type-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">AZIONI</button>
+            <button onclick="changeAssetType('all')" data-asset-type="all" class="asset-type-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">TUTTI</button>
+            <button onclick="changeAssetType('azioni')" data-asset-type="azioni" class="asset-type-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all bg-white dark:bg-slate-700 shadow-sm text-primary">AZIONI</button>
             <button onclick="changeAssetType('etf_az')" data-asset-type="etf_az" class="asset-type-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">ETF AZ</button>
             <button onclick="changeAssetType('etf_mon')" data-asset-type="etf_mon" class="asset-type-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">ETF MON</button>
             <button onclick="changeAssetType('obbl')" data-asset-type="obbl" class="asset-type-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">OBBL</button>
         </div>
     </div>
     <div class="flex-1"></div>
-    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Periodo attivo: <span id="chart-range-label" class="text-primary font-black">1Y</span></span>
+    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Periodo attivo: <span id="chart-range-label" class="text-primary font-black">1M</span></span>
 </div>
 <div class="space-y-8 max-w-7xl mx-auto">
 <!-- Key Metrics Grid -->
@@ -177,7 +177,7 @@
 <span class="material-symbols-outlined text-primary">trending_up</span>
 </div>
 <h3 class="text-3xl font-black" id="metric-roi">--%</h3>
-<p class="text-xs text-slate-500 font-bold mt-2">Simple Return · <span id="kpi-period-label" class="text-primary">1Y</span></p>
+<p class="text-xs text-slate-500 font-bold mt-2">Simple Return · <span id="kpi-period-label" class="text-primary">1M</span></p>
 </div>
 <div class="bg-white dark:bg-surface-dark p-5 sm:p-6 flex flex-col rounded-none sm:rounded-xl border-y sm:border-x border-slate-200 dark:border-slate-800 shadow-sm">
 <div class="flex justify-between items-start mb-4 text-slate-500">
@@ -185,7 +185,7 @@
 <span class="material-symbols-outlined text-primary">analytics</span>
 </div>
 <h3 class="text-3xl font-black" id="metric-twr">--%</h3>
-<p class="text-xs text-slate-500 font-bold mt-2">Geometric Return · <span class="text-primary kpi-period-sub">1Y</span></p>
+<p class="text-xs text-slate-500 font-bold mt-2">Geometric Return · <span class="text-primary kpi-period-sub">1M</span></p>
 </div>
 <div class="bg-white dark:bg-surface-dark p-5 sm:p-6 flex flex-col rounded-none sm:rounded-xl border-y sm:border-x border-slate-200 dark:border-slate-800 shadow-sm">
 <div class="flex justify-between items-start mb-4 text-slate-500">
@@ -193,7 +193,7 @@
 <span class="material-symbols-outlined text-primary">monitoring</span>
 </div>
 <h3 class="text-3xl font-black" id="metric-xirr">--%</h3>
-<p class="text-xs text-slate-500 font-bold mt-2">Annualized Return · <span class="text-primary kpi-period-sub">1Y</span></p>
+<p class="text-xs text-slate-500 font-bold mt-2">Annualized Return · <span class="text-primary kpi-period-sub">1M</span></p>
 </div>
 <div class="bg-white dark:bg-surface-dark p-5 sm:p-6 flex flex-col rounded-none sm:rounded-xl border-y sm:border-x border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
 <div class="flex justify-between items-start mb-4 text-slate-500">
@@ -201,7 +201,7 @@
 <span class="material-symbols-outlined text-primary">workspace_premium</span>
 </div>
 <h3 class="text-xl font-black truncate" id="metric-sharpe">-</h3>
-<p class="text-xs text-slate-500 font-bold mt-2">Risk-adjusted · <span class="text-primary kpi-period-sub">1Y</span></p>
+<p class="text-xs text-slate-500 font-bold mt-2">Risk-adjusted · <span class="text-primary kpi-period-sub">1M</span></p>
 </div>
 </section>
 <!-- Performance Chart Section -->
@@ -410,8 +410,8 @@
 <!-- Mobile GUI Root -->
 
 <script>
-    let currentRange = '1Y';
-    let currentAssetType = 'all';
+    let currentRange = '1M';
+    let currentAssetType = 'azioni';
     let perfChart, assetChart, geoChart, currencyChart, divChart;
 
     const RANGE_LABELS = { '1M': '1 Month', '6M': '6 Months', '1Y': '12 Months', '2Y': '2 Years', '3Y': '3 Years', '5Y': '5 Years' };
