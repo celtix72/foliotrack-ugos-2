@@ -3232,16 +3232,26 @@
 
         // =========================================================================
         // 19. MAINTENANCE & DANGER ZONE
-        // =========================================================================
         window.rebuildPerformanceHistory = async () => {
-            if (!(await ftConfirm('Ricalcolare da zero tutti gli indici di rendimento e le serie storiche dei portafogli?'))) return;
+            if (!(await ftConfirm('Ricalcolare da zero tutti gli indici di rendimento e le serie storiche dei portafogli?\n\nQuesta operazione richiede da 30 a 60 secondi.'))) return;
             const btn = document.getElementById('rebuild-history-btn');
-            if (btn) btn.disabled = true;
+            const originalHTML = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">sync</span> Ricalcolo in corso...';
+                btn.classList.add('opacity-75', 'cursor-not-allowed');
+            }
             try {
-                await fetchAdmin('/api/admin/rebuild-history', { method: 'POST' });
+                const res = await fetchAdmin('/api/admin/rebuild-history', { method: 'POST' });
                 alert('Ricalcolo indici completato con successo!');
             } catch (e) { alert('Errore: ' + e.message); }
-            finally { if (btn) btn.disabled = false; }
+            finally { 
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
+                    btn.classList.remove('opacity-75', 'cursor-not-allowed');
+                }
+            }
         };
 
         window.purgeGlobalPerformance = async () => {

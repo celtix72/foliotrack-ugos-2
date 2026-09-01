@@ -546,7 +546,7 @@
                     <span id="acc-danger-icon" class="material-symbols-outlined text-rose-500 mob-settings-chevron transition-transform">expand_more</span>
                 </div>
                 <div id="acc-danger" class="mob-accordion-body hidden bg-rose-500/5 p-4 border-t border-rose-500/20 space-y-2.5">
-                    <button onclick="rebuildPerformanceHistory()" class="w-full py-2 bg-amber-500/20 border border-amber-500/30 text-amber-500 text-[10px] font-black uppercase rounded-lg">Ricalcola Indici Storici</button>
+                    <button id="mob-rebuild-history-btn" onclick="rebuildPerformanceHistory()" class="w-full py-2 bg-amber-500/20 border border-amber-500/30 text-amber-500 text-[10px] font-black uppercase rounded-lg">Ricalcola Indici Storici</button>
                     <button onclick="purgeGlobalPerformance()" class="w-full py-2 bg-rose-500/20 border border-rose-500/30 text-rose-500 text-[10px] font-black uppercase rounded-lg">Svuota Dati Performance</button>
                     <button onclick="fullSystemReset()" class="w-full py-2 bg-rose-600 text-white text-[10px] font-black uppercase rounded-lg shadow-sm">Full System Reset</button>
                 </div>
@@ -1267,11 +1267,23 @@
 
     // --- Danger Actions ---
     window.rebuildPerformanceHistory = async () => {
-        if (!(await ftConfirm('Ricalcolare tutti gli indici di rendimento storici?'))) return;
+        if (!(await ftConfirm('Ricalcolare tutti gli indici di rendimento storici?\n\nQuesta operazione richiede da 30 a 60 secondi.'))) return;
+        const btn = document.getElementById('mob-rebuild-history-btn');
+        const orig = btn ? btn.textContent : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Ricalcolo in corso...';
+        }
         try {
             await fetchAdminMob('/api/admin/rebuild-history', { method: 'POST' });
-            alert('Ricalcolo completato!');
+            alert('Ricalcolo completato con successo!');
         } catch(e) { alert('Errore: ' + e.message); }
+        finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = orig;
+            }
+        }
     };
 
     window.purgeGlobalPerformance = async () => {

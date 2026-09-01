@@ -1643,9 +1643,12 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
 
 
 app.post('/api/admin/rebuild-history', requireAuth, requireAdmin, async (req, res) => {
-    try {
         logger.info('Rebuilding performance history: Step 1/4 - Updating market quotes...');
-        await updateMarketData();
+        try {
+            await updateMarketData();
+        } catch (mErr) {
+            logger.warn('Market quotes update during rebuild encountered non-fatal error: ' + mErr.message);
+        }
         
         logger.info('Rebuilding performance history: Step 2/4 - Clearing history tables...');
         database.db.prepare('DELETE FROM portfolio_history').run();
