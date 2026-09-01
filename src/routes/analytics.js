@@ -822,23 +822,26 @@ module.exports = function (dependencies) {
             const hasAssetTypeFilter = assetType && assetType !== 'all';
 
             const matchAssetType = (aType, ticker, filter) => {
-                if (!filter || filter === 'all') return true;
-                const t = (aType || '').toLowerCase();
-                const tick = (ticker || '').toUpperCase();
+                if (!filter || filter === 'all' || filter === 'tutti') return true;
+                const t = (aType || '').toLowerCase().trim();
+                const tick = (ticker || '').toUpperCase().trim();
                 const f = filter.toLowerCase().trim();
-                if (f === 'azioni' || f === 'stock' || f === 'azione') {
-                    return t === 'azioni' || t === 'stock' || t === 'azione';
+                if (f === 'azioni' || f === 'stock' || f === 'azione' || f === 'equity') {
+                    return (t === 'azioni' || t === 'stock' || t === 'azione' || t === 'equity' || t.includes('azion')) && !t.includes('etf');
                 }
-                if (f === 'etf_az' || f === 'etf azionari' || f === 'etf azionario' || f === 'etf') {
-                    return (t.includes('etf') && !t.includes('monet') && !t.includes('obblig')) || t === 'etf azionario' || t === 'etf azionari' || t === 'etf';
+                if (f === 'etf_az' || f === 'etf azionari' || f === 'etf azionario') {
+                    return t.includes('etf') && !t.includes('monet') && !t.includes('obblig') && !t.includes('bond');
                 }
                 if (f === 'etf_mon' || f === 'etf monetario' || f === 'etf monetari') {
                     return t.includes('monet') || ['XEON.DE', 'C3M.PA', 'SMART.MI'].includes(tick);
                 }
                 if (f === 'obbl' || f === 'obbligazionario' || f === 'obbligazioni' || f === 'bond') {
-                    return t.includes('obblig') || t.includes('bond') || t === 'etf obbligazionario' || t === 'etf obbligazionari';
+                    return t.includes('obblig') || t.includes('bond') || t.includes('btp') || tick.startsWith('IT000') || tick.startsWith('ROM');
                 }
-                return true;
+                if (f === 'liquidity' || f === 'liquidità' || f === 'liquidita' || f === 'depositi vincolati') {
+                    return t.includes('liquid') || t.includes('deposito') || t.includes('conto') || t.includes('buono') || tick.startsWith('CD_') || tick.startsWith('BP_') || tick === 'CASH';
+                }
+                return t.includes(f);
             };
             const selectedPIds = (portfolioIds && portfolioIds.trim() !== '')
                 ? portfolioIds.split(',').map(Number).filter(n => !isNaN(n))
@@ -1211,6 +1214,7 @@ module.exports = function (dependencies) {
             const annualGainsMap = {};
             const currentYearString = today.getFullYear().toString();
             const liveRateValReports = await getEurUsdRate();
+            const assetGainsMap = {};
 
             for (const p of portfolios) {
                 try {
@@ -1218,153 +1222,136 @@ module.exports = function (dependencies) {
                     if (!details) continue;
                     const rate = (p.currency === 'USD') ? liveRateValReports : 1;
                     
+                    // 1. Closed positions (Realized Gains & Cost Basis)
                     for (const pos of (details.closedPositions || [])) {
-                        if (assetType && assetType !== 'all' && !matchAssetType(pos.type || pos.assetType, pos.ticker, assetType)) continue;
+                        const aMeta = assetMap[pos.ticker] || {};
+                        const posType = pos.type || aMeta.type || 'Stock';
+                        if (hasAssetTypeFilter && !matchAssetType(posType, pos.ticker, assetType)) continue;
+                        
                         const y = pos.year;
                         if (!annualGainsMap[y]) annualGainsMap[y] = { year: y, realized: 0, dividends: 0, unrealized: 0 };
-                        annualGainsMap[y].realized += (pos.realizedGain || 0) / rate;
+                        const rGainEur = (pos.realizedGain || 0) / rate;
+                        const costBasisEur = (pos.totalCostBasis || 0) / rate;
+                        annualGainsMap[y].realized += rGainEur;
+
+                        if (!assetGainsMap[pos.ticker]) {
+                            assetGainsMap[pos.ticker] = {
+                                ticker: pos.ticker,
+                                name: pos.name || aMeta.name || pos.ticker,
+                                type: posType,
+                                currency: aMeta.currency || p.currency || 'EUR',
+                                realizedGain: 0,
+                                dividends: 0,
+                                unrealizedGain: 0,
+                                totalGain: 0,
+                                totalInvested: 0,
+                                hasOpenPosition: false
+                            };
+                        }
+                        assetGainsMap[pos.ticker].realizedGain += rGainEur;
+                        assetGainsMap[pos.ticker].totalInvested += costBasisEur;
                     }
                     
-                    for (const group of (details.dividendGroups || [])) {
-                        if (assetType && assetType !== 'all' && !matchAssetType(group.type || group.assetType, group.ticker, assetType)) continue;
-                        const y = group.year;
-                        if (!annualGainsMap[y]) annualGainsMap[y] = { year: y, realized: 0, dividends: 0, unrealized: 0 };
-                        annualGainsMap[y].dividends += (group.total || 0) / rate;
+                    // 2. Dividends
+                    const divsList = details.dividends || [];
+                    if (divsList.length > 0) {
+                        for (const d of divsList) {
+                            const aMeta = assetMap[d.ticker] || {};
+                            const dType = aMeta.type || 'Stock';
+                            if (hasAssetTypeFilter && !matchAssetType(dType, d.ticker, assetType)) continue;
+                            
+                            const y = d.year;
+                            if (!annualGainsMap[y]) annualGainsMap[y] = { year: y, realized: 0, dividends: 0, unrealized: 0 };
+                            const divAmtEur = (d.amount || 0) / rate;
+                            annualGainsMap[y].dividends += divAmtEur;
+
+                            if (!assetGainsMap[d.ticker]) {
+                                assetGainsMap[d.ticker] = {
+                                    ticker: d.ticker,
+                                    name: aMeta.name || d.ticker,
+                                    type: dType,
+                                    currency: aMeta.currency || p.currency || 'EUR',
+                                    realizedGain: 0,
+                                    dividends: 0,
+                                    unrealizedGain: 0,
+                                    totalGain: 0,
+                                    totalInvested: 0,
+                                    hasOpenPosition: false
+                                };
+                            }
+                            assetGainsMap[d.ticker].dividends += divAmtEur;
+                        }
+                    } else {
+                        for (const group of (details.dividendGroups || [])) {
+                            const aMeta = assetMap[group.ticker] || {};
+                            const dType = group.type || group.assetType || aMeta.type || 'Stock';
+                            if (hasAssetTypeFilter && !matchAssetType(dType, group.ticker, assetType)) continue;
+                            const y = group.year;
+                            if (!annualGainsMap[y]) annualGainsMap[y] = { year: y, realized: 0, dividends: 0, unrealized: 0 };
+                            const divAmtEur = (group.total || 0) / rate;
+                            annualGainsMap[y].dividends += divAmtEur;
+                        }
                     }
                     
-                    const filteredHoldings = (assetType && assetType !== 'all')
-                        ? (details.holdings || []).filter(h => matchAssetType(h.type || h.assetType, h.ticker, assetType))
-                        : (details.holdings || []);
-                    const pUnrealized = filteredHoldings.reduce((sum, h) => sum + (h.unrealizedGain || 0), 0);
-                    if (!annualGainsMap[currentYearString]) annualGainsMap[currentYearString] = { year: currentYearString, realized: 0, dividends: 0, unrealized: 0 };
-                    annualGainsMap[currentYearString].unrealized += pUnrealized / rate;
+                    // 3. Open Holdings (Unrealized Gains & Cost Basis)
+                    for (const h of (details.holdings || [])) {
+                        const hType = h.type || assetMap[h.ticker]?.type || 'Stock';
+                        if (hasAssetTypeFilter && !matchAssetType(hType, h.ticker, assetType)) continue;
+
+                        const uGainEur = (h.unrealizedGain || 0) / rate;
+                        const costInEur = (h.totalCostInPCurr || 0) / rate;
+                        
+                        if (!annualGainsMap[currentYearString]) annualGainsMap[currentYearString] = { year: currentYearString, realized: 0, dividends: 0, unrealized: 0 };
+                        annualGainsMap[currentYearString].unrealized += uGainEur;
+
+                        if (!assetGainsMap[h.ticker]) {
+                            assetGainsMap[h.ticker] = {
+                                ticker: h.ticker,
+                                name: h.name || assetMap[h.ticker]?.name || h.ticker,
+                                type: hType,
+                                currency: h.currency || p.currency || 'EUR',
+                                realizedGain: 0,
+                                dividends: 0,
+                                unrealizedGain: 0,
+                                totalGain: 0,
+                                totalInvested: 0,
+                                hasOpenPosition: false
+                            };
+                        }
+                        assetGainsMap[h.ticker].unrealizedGain += uGainEur;
+                        assetGainsMap[h.ticker].totalInvested += costInEur;
+                        if (h.shares > 0.0001) {
+                            assetGainsMap[h.ticker].hasOpenPosition = true;
+                        }
+                    }
                     
                 } catch (e) {
-                    console.error(`Error aggregating annual gains for portfolio ${p.id}:`, e);
+                    console.error(`Error aggregating annual and asset gains for portfolio ${p.id}:`, e);
                 }
             }
 
-            const annualGains = Object.values(annualGainsMap).sort((a,b) => b.year - a.year);
+            const annualGains = Object.values(annualGainsMap).map(ag => ({
+                ...ag,
+                realized: Math.round(ag.realized * 100) / 100,
+                dividends: Math.round(ag.dividends * 100) / 100,
+                unrealized: Math.round(ag.unrealized * 100) / 100
+            })).sort((a,b) => b.year - a.year);
 
-            // ── Per-Asset Cumulative Gains ────────────────────────────────────────
-            const assetGainsMap = {};
-            const liveRate = await getEurUsdRate();
-
-            for (const [ticker, a] of Object.entries(assetMap)) {
-                if (ticker === 'CASH' || ticker.startsWith('CASH')) continue;
-                if (assetType && assetType !== 'all' && !matchAssetType(a.type, ticker, assetType)) continue;
-                const tks = allTransactions.filter(t => t.assetTicker === ticker);
-                if (tks.length === 0) continue;
-
-                const fx = (t) => t.exchangeRate || 1;
-                let qty = 0;
-                let totalCostAsset = 0;   // asset currency
-                let realizedGain = 0;     // EUR
-                let dividends = 0;        // EUR
-                let totalInvested = 0;    // EUR (all-time sum of BUYs)
-
-                const periodStartDate = new Date(dateStrStart);
-                let periodDividends = 0;
-                let periodRealized = 0;
-                let qtyAtStart = 0;
-                let totalCostAtStart = 0;
-                let recordedStart = false;
-
-                const sortedTks = [...tks].sort((a,b) => new Date(a.date) - new Date(b.date));
-                for (const t of sortedTks) {
-                    const tDate = new Date(t.date);
-                    if (!recordedStart && tDate >= periodStartDate) {
-                        qtyAtStart = qty;
-                        totalCostAtStart = totalCostAsset;
-                        recordedStart = true;
-                    }
-                    const q = Math.abs(t.quantity || 0);
-                    const p = t.price || 0;
-                    const comm = t.commission || 0;
-                    const tax = t.tax || 0;
-                    const fxRate = fx(t);
-
-                    if (t.type === 'BUY') {
-                        const costAsset = t.amount ? (Math.abs(t.amount) * fxRate) : (q * p + comm + tax);
-                        const costEur = costAsset / fxRate;
-                        totalCostAsset += costAsset;
-                        qty += q;
-                        totalInvested += costEur;
-                    } else if (t.type === 'SELL' && qty > 0) {
-                        const avgCostAsset = totalCostAsset / qty;
-                        const proceeds = t.amount ? Math.abs(t.amount) : ((q * p - comm - tax) / fxRate);
-                        const costBasisEur = (q * avgCostAsset) / fxRate;
-                        const rGain = proceeds - costBasisEur;
-                        realizedGain += rGain;
-                        totalCostAsset -= q * avgCostAsset;
-                        qty -= q;
-                        if (Math.abs(qty) < 0.00001) { qty = 0; totalCostAsset = 0; }
-                        if (tDate >= periodStartDate) {
-                            periodRealized += rGain;
-                        }
-                    } else if (t.type === 'DIVIDEND') {
-                        const net = t.amount ? Math.abs(t.amount) : ((q * p - comm - tax) / fxRate);
-                        dividends += net;
-                        if (tDate >= periodStartDate) {
-                            periodDividends += net;
-                        }
-                    }
-                }
-                if (!recordedStart) {
-                    qtyAtStart = qty;
-                    totalCostAtStart = totalCostAsset;
-                }
-
-                // Unrealized on currently open position
-                let unrealizedGain = 0;
-                let periodUnrealized = 0;
-                if (qty > 0.0001 && a.currentPrice > 0) {
-                    const lastFx = tks.filter(t => t.exchangeRate).at(-1)?.exchangeRate || 1;
-                    const curValEur = (qty * a.currentPrice) / lastFx;
-                    const curCostEur = totalCostAsset / lastFx;
-                    unrealizedGain = curValEur - curCostEur;
-
-                    if (qtyAtStart <= 0.0001) {
-                        periodUnrealized = unrealizedGain;
-                    } else {
-                        const startQuote = database.db.prepare(`
-                            SELECT price FROM asset_quotes 
-                            WHERE ticker = ? AND date <= ? 
-                            ORDER BY date DESC LIMIT 1
-                        `).get(ticker, dateStrStart);
-                        
-                        const startPx = (startQuote && startQuote.price > 0) ? startQuote.price : (totalCostAtStart / qtyAtStart);
-                        const startValEur = (qtyAtStart * startPx) / lastFx;
-                        const startCostEur = totalCostAtStart / lastFx;
-                        const startUnrealized = startValEur - startCostEur;
-                        periodUnrealized = unrealizedGain - startUnrealized;
-                    }
-                }
-
-                const totalGain = realizedGain + dividends + unrealizedGain;
-                const periodGain = (periodDividends + periodRealized + periodUnrealized);
-                if (totalInvested < 0.01 && totalGain === 0) continue;
-                const gainPct = totalInvested > 0 ? (totalGain / totalInvested) * 100 : 0;
-
-                let assetTypeProp = a.type || 'Stock';
-                if (ticker.startsWith('CD_') || ticker.startsWith('BP_') || ticker.startsWith('CASH')) assetTypeProp = 'Liquidità';
-
-                assetGainsMap[ticker] = {
-                    ticker,
-                    name: a.name || ticker,
-                    type: assetTypeProp,
-                    currency: a.currency || 'EUR',
-                    realizedGain: Math.round(realizedGain * 100) / 100,
-                    dividends: Math.round(dividends * 100) / 100,
-                    unrealizedGain: Math.round(unrealizedGain * 100) / 100,
+            // Finalize assetGains
+            const assetGains = Object.values(assetGainsMap).map(ag => {
+                const totalGain = ag.realizedGain + ag.dividends + ag.unrealizedGain;
+                const gainPct = ag.totalInvested > 0 ? (totalGain / ag.totalInvested) * 100 : 0;
+                return {
+                    ...ag,
+                    realizedGain: Math.round(ag.realizedGain * 100) / 100,
+                    dividends: Math.round(ag.dividends * 100) / 100,
+                    unrealizedGain: Math.round(ag.unrealizedGain * 100) / 100,
                     totalGain: Math.round(totalGain * 100) / 100,
-                    periodGain: Math.round(periodGain * 100) / 100,
-                    totalInvested: Math.round(totalInvested * 100) / 100,
-                    gainPct: Math.round(gainPct * 100) / 100,
-                    hasOpenPosition: qty > 0.0001
+                    totalInvested: Math.round(ag.totalInvested * 100) / 100,
+                    gainPct: Math.round(gainPct * 100) / 100
                 };
-            }
-            const assetGains = Object.values(assetGainsMap).sort((a,b) => b.totalGain - a.totalGain);
+            }).sort((a,b) => b.totalGain - a.totalGain);
+
             const trueAllTimeGain = assetGains.reduce((sum, a) => sum + a.totalGain, 0);
             const isAllTime = !isShortRange && (!range || range === 'MAX' || range === 'ALL');
             const totalGain = isAllTime ? trueAllTimeGain : rawPeriodProfit;

@@ -1556,9 +1556,9 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
 
     // Closed positions
     const closedPositions = Object.values(closedByKey).map(c => {
-        const asset = database.db.prepare(`SELECT name FROM assets WHERE ticker = ?`).get(c.ticker);
+        const asset = database.db.prepare(`SELECT name, type FROM assets WHERE ticker = ?`).get(c.ticker);
         const gPct = c.totalCostBasis > 0 ? (c.realizedGain / c.totalCostBasis) * 100 : 0;
-        return { ...c, name: asset ? asset.name : c.ticker, gainPct: gPct };
+        return { ...c, name: asset ? asset.name : c.ticker, type: asset ? asset.type : 'Stock', gainPct: gPct };
     }).sort((a, b) => parseInt(b.year) - parseInt(a.year) || b.realizedGain - a.realizedGain);
 
     const divYearMap = {};
@@ -1624,6 +1624,7 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
             type, value, percent: totalGrossValueForAllocation > 0 ? (value / totalGrossValueForAllocation) * 100 : 0 
         })),
         closedPositions,
+        dividends,
         dividendGroups: Object.values(divYearMap).sort((a, b) => b.year - a.year),
         totalDividends,
         totalGrossLatentGain: Math.round(totalGrossLatentGain * 100) / 100,
@@ -1638,9 +1639,35 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
 // --- Gemini Model Resolver ---
 // Moved to src/services/aiService.js
 
+// ══════════════════════════════════════════════════════════════════════════════
+// ASSET SEARCH
 
+// ══════════════════════════════════════════════════════════════════════════════
+// ANALYTICS & GLOBAL DATA
+// ══════════════════════════════════════════════════════════════════════════════
 
-
+function matchAssetType(assetType, ticker, filter) {
+    if (!filter || filter === 'all' || filter === 'tutti') return true;
+    const t = (assetType || '').toLowerCase().trim();
+    const tick = (ticker || '').toUpperCase().trim();
+    const f = filter.toLowerCase().trim();
+    if (f === 'azioni' || f === 'stock' || f === 'azione' || f === 'equity') {
+        return (t === 'azioni' || t === 'stock' || t === 'azione' || t === 'equity' || t.includes('azion')) && !t.includes('etf');
+    }
+    if (f === 'etf_az' || f === 'etf azionari' || f === 'etf azionario') {
+        return t.includes('etf') && !t.includes('monet') && !t.includes('obblig') && !t.includes('bond');
+    }
+    if (f === 'etf_mon' || f === 'etf monetario' || f === 'etf monetari') {
+        return t.includes('monet') || ['XEON.DE', 'C3M.PA', 'SMART.MI'].includes(tick);
+    }
+    if (f === 'obbl' || f === 'obbligazionario' || f === 'obbligazioni' || f === 'bond') {
+        return t.includes('obblig') || t.includes('bond') || t.includes('btp') || tick.startsWith('IT000') || tick.startsWith('ROM');
+    }
+    if (f === 'liquidity' || f === 'liquidità' || f === 'liquidita' || f === 'depositi vincolati') {
+        return t.includes('liquid') || t.includes('deposito') || t.includes('conto') || t.includes('buono') || tick.startsWith('CD_') || tick.startsWith('BP_') || tick === 'CASH';
+    }
+    return t.includes(f);
+}
 
 app.post('/api/admin/rebuild-history', requireAuth, requireAdmin, async (req, res) => {
     try {
