@@ -998,7 +998,29 @@ module.exports = function (dependencies) {
                 return [];
             };
 
-            const [sp500, msci] = await Promise.all([fetchBenchmark('^GSPC'), fetchBenchmark('URTH')]);
+            const [sp500, msci, ftsemib, nasdaq, btc] = await Promise.all([
+                fetchBenchmark('^GSPC'),
+                fetchBenchmark('URTH'),
+                fetchBenchmark('FTSEMIB.MI'),
+                fetchBenchmark('^IXIC'),
+                fetchBenchmark('BTC-USD')
+            ]);
+
+            const calcBenchmarkReturn = (pts) => {
+                if (!pts || pts.length < 2) return null;
+                const first = pts[0].value;
+                const last = pts[pts.length - 1].value;
+                if (!first || first <= 0) return null;
+                return ((last - first) / first) * 100;
+            };
+
+            const benchmarkReturns = {
+                sp500: calcBenchmarkReturn(sp500),
+                msci: calcBenchmarkReturn(msci),
+                ftsemib: calcBenchmarkReturn(ftsemib),
+                nasdaq: calcBenchmarkReturn(nasdaq),
+                btc: calcBenchmarkReturn(btc)
+            };
 
             const downsampleToMonthly = (daily) => {
                 if (!daily || !Array.isArray(daily)) return [];
@@ -1435,7 +1457,11 @@ module.exports = function (dependencies) {
                     twr: monthlyTwr,
                     individual: monthlyIndividual,
                     sp500,
-                    msci
+                    msci,
+                    ftsemib,
+                    nasdaq,
+                    btc,
+                    benchmarks: benchmarkReturns
                 },
                 diversification,
                 dividends,

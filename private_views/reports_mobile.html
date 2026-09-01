@@ -234,8 +234,35 @@
         
         <!-- Hero metrics (Performance summary) -->
         <div class="mob-hero" style="margin-top: 0;">
-          <div class="mob-hero-label">TOTAL ROI</div>
-          <div class="mob-hero-value" id="mob-total-roi">--%</div>
+          <div style="display: flex; justify-content: space-between; align-items: stretch; gap: 8px; margin-bottom: 14px;">
+            <div style="display: flex; flex-direction: column; justify-content: space-between; min-width: 0;">
+              <div class="mob-hero-label" style="margin-bottom: 0;">TOTAL ROI</div>
+              <div class="mob-hero-value" id="mob-total-roi" style="margin-bottom: 0; line-height: 1.1;">--%</div>
+            </div>
+            <!-- 4 Benchmark Tags: 2 sopra, 2 sotto -->
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; flex-shrink: 0;">
+              <!-- FTSE MIB -->
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 5px; padding: 4px 7px; border-radius: 8px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--mob-border); min-width: 82px;" class="dark:bg-slate-800/60">
+                <span style="font-size: 8px; font-weight: 900; text-transform: uppercase; color: var(--mob-text-muted); letter-spacing: 0.02em;">FTSE MIB</span>
+                <span id="mob-bench-ftsemib" style="font-size: 11px; font-weight: 900; color: var(--mob-text-muted);">--%</span>
+              </div>
+              <!-- NASDAQ -->
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 5px; padding: 4px 7px; border-radius: 8px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--mob-border); min-width: 82px;" class="dark:bg-slate-800/60">
+                <span style="font-size: 8px; font-weight: 900; text-transform: uppercase; color: var(--mob-text-muted); letter-spacing: 0.02em;">NASDAQ</span>
+                <span id="mob-bench-nasdaq" style="font-size: 11px; font-weight: 900; color: var(--mob-text-muted);">--%</span>
+              </div>
+              <!-- S&P 500 -->
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 5px; padding: 4px 7px; border-radius: 8px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--mob-border); min-width: 82px;" class="dark:bg-slate-800/60">
+                <span style="font-size: 8px; font-weight: 900; text-transform: uppercase; color: var(--mob-text-muted); letter-spacing: 0.02em;">S&P 500</span>
+                <span id="mob-bench-sp500" style="font-size: 11px; font-weight: 900; color: var(--mob-text-muted);">--%</span>
+              </div>
+              <!-- BTC -->
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 5px; padding: 4px 7px; border-radius: 8px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--mob-border); min-width: 82px;" class="dark:bg-slate-800/60">
+                <span style="font-size: 8px; font-weight: 900; text-transform: uppercase; color: var(--mob-text-muted); letter-spacing: 0.02em;">BTC</span>
+                <span id="mob-bench-btc" style="font-size: 11px; font-weight: 900; color: var(--mob-text-muted);">--%</span>
+              </div>
+            </div>
+          </div>
           <div class="mob-hero-stats">
             <div class="mob-hero-stat-item">
               <span class="mob-hero-stat-label">GAIN TOTALE</span>
@@ -508,6 +535,37 @@
             document.getElementById('mob-sharpe').textContent = m.sharpeRatio.toFixed(1);
             if (document.getElementById('mob-best')) document.getElementById('mob-best').textContent = m.bestAsset;
             
+            // Benchmark Tags
+            const updateBenchTag = (elId, val) => {
+                const el = document.getElementById(elId);
+                if (!el) return;
+                if (val === null || val === undefined || isNaN(val)) {
+                    el.textContent = '—';
+                    el.style.color = 'var(--mob-text-muted)';
+                    return;
+                }
+                const isPos = val >= 0;
+                el.textContent = (val < 0 ? '-' : '') + Math.abs(val).toFixed(1) + '%';
+                el.style.color = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+            };
+
+            const bench = data.performance?.benchmarks || {};
+            const getBenchVal = (key) => {
+                if (bench[key] !== undefined && bench[key] !== null) return bench[key];
+                const pts = data.performance?.[key];
+                if (pts && pts.length >= 2) {
+                    const first = pts[0].value;
+                    const last = pts[pts.length - 1].value;
+                    if (first > 0) return ((last - first) / first) * 100;
+                }
+                return null;
+            };
+
+            updateBenchTag('mob-bench-ftsemib', getBenchVal('ftsemib'));
+            updateBenchTag('mob-bench-nasdaq', getBenchVal('nasdaq'));
+            updateBenchTag('mob-bench-sp500', getBenchVal('sp500'));
+            updateBenchTag('mob-bench-btc', getBenchVal('btc'));
+
             // Yield
             const yieldBox = document.getElementById('mob-yield-box');
             const yieldVal = document.getElementById('mob-yield-percent');
