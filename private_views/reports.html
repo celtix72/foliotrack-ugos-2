@@ -317,16 +317,6 @@
             <button onclick="sortAssetGains('totalGain')" data-sort="totalGain" class="asset-sort-btn active px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg bg-primary text-white transition-all">Gain €</button>
             <button onclick="sortAssetGains('gainPct')" data-sort="gainPct" class="asset-sort-btn px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:border-primary hover:text-primary transition-all">Gain %</button>
             <button onclick="sortAssetGains('name')" data-sort="name" class="asset-sort-btn px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:border-primary hover:text-primary transition-all">Nome</button>
-        </div>
-    </div>
-    <!-- Filters Row -->
-    <div class="flex flex-wrap items-center gap-2 mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
-        <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 mr-2">Filtra per Tipo</span>
-        <button onclick="filterAssetGainsType('all')" data-gfilter="all" class="asset-gfilter-btn active px-3 py-1 text-xs font-semibold rounded-full bg-primary/10 text-primary border border-primary/20 transition-all">Tutti</button>
-        <button onclick="filterAssetGainsType('azioni')" data-gfilter="azioni" class="asset-gfilter-btn px-3 py-1 text-xs font-semibold rounded-full bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:border-primary hover:text-primary transition-all">Azioni</button>
-        <button onclick="filterAssetGainsType('bond')" data-gfilter="bond" class="asset-gfilter-btn px-3 py-1 text-xs font-semibold rounded-full bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:border-primary hover:text-primary transition-all">Bond</button>
-        <button onclick="filterAssetGainsType('etf')" data-gfilter="etf" class="asset-gfilter-btn px-3 py-1 text-xs font-semibold rounded-full bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:border-primary hover:text-primary transition-all">ETF</button>
-        <button onclick="filterAssetGainsType('depositi vincolati')" data-gfilter="depositi vincolati" class="asset-gfilter-btn px-3 py-1 text-xs font-semibold rounded-full bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:border-primary hover:text-primary transition-all">Depositi Vincolati</button>
     </div>
     <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
@@ -872,53 +862,22 @@
         if (window._assetGainsData) renderAssetGains(window._assetGainsData, key);
     }
 
-    window.filterAssetGainsType = function(type) {
-        window._assetGainsTypeFilter = type;
-        document.querySelectorAll('.asset-gfilter-btn').forEach(btn => {
-            const isActive = btn.dataset.gfilter === type;
-            if (isActive) {
-                btn.className = 'asset-gfilter-btn active px-3 py-1 text-xs font-semibold rounded-full bg-primary/10 text-primary border border-primary/20 transition-all';
-            } else {
-                btn.className = 'asset-gfilter-btn px-3 py-1 text-xs font-semibold rounded-full bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:border-primary hover:text-primary transition-all';
-            }
-        });
-        if (window._assetGainsData) {
-            renderAssetGains(window._assetGainsData, window._assetGainsSortKey || 'totalGain');
-        }
-    };
-
     function renderAssetGains(gains, sortKey = 'totalGain') {
         const body = document.getElementById('asset-gains-body');
         if (!body) return;
 
-        let filtered = gains;
-        if (window._assetGainsTypeFilter && window._assetGainsTypeFilter !== 'all') {
-            const filter = window._assetGainsTypeFilter.toLowerCase();
-            filtered = gains.filter(g => {
-                const type = (g.type || '').toLowerCase();
-                if (filter === 'azioni') {
-                    return type.includes('azioni') || type.includes('stock') || type.includes('equity');
-                }
-                if (filter === 'bond') {
-                    return type.includes('bond') || type.includes('obblig');
-                }
-                if (filter === 'etf') {
-                    return type.includes('etf');
-                }
-                if (filter === 'depositi vincolati') {
-                    return type.includes('deposito') || type.includes('conto');
-                }
-                return type.includes(filter);
-            });
+        if (!gains || gains.length === 0) {
+            body.innerHTML = '<tr><td colspan="8" class="py-8 text-center text-slate-400 text-sm">Nessun asset presente per la categoria selezionata</td></tr>';
+            return;
         }
 
         let sorted;
         if (sortKey === 'name') {
-            sorted = [...filtered].sort((a,b) => a.name.localeCompare(b.name));
+            sorted = [...gains].sort((a,b) => a.name.localeCompare(b.name));
         } else if (sortKey === 'gainPct') {
-            sorted = [...filtered].sort((a,b) => b.gainPct - a.gainPct);
+            sorted = [...gains].sort((a,b) => b.gainPct - a.gainPct);
         } else {
-            sorted = [...filtered].sort((a,b) => b.totalGain - a.totalGain);
+            sorted = [...gains].sort((a,b) => b.totalGain - a.totalGain);
         }
 
         body.innerHTML = sorted.map((g, i) => {
