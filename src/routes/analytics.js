@@ -1434,13 +1434,39 @@ module.exports = function (dependencies) {
             const assetGains = Object.values(assetGainsMap).sort((a,b) => b.totalGain - a.totalGain);
             const trueAllTimeGain = assetGains.reduce((sum, a) => sum + a.totalGain, 0);
 
-            // Use trueAllTimeGain for allTimeGain to be immune to cash/deposit errors
-            // Use rawPeriodProfit for totalGain for specific ranges (1M, 6M, 1Y, etc.)
-            // If the range is ALL/MAX, rawPeriodProfit is all-time, so we use trueAllTimeGain for bulletproof accuracy
-            // When assetType is filtered (e.g. AZIONI, ETF, OBBL), rawPeriodProfit reflects the ENTIRE portfolio,
-            // not the filtered category. Use trueAllTimeGain (sum of filtered asset gains) instead for consistency.
+            // Compute the correct period gain depending on the context:
+            // - ALL/MAX range: use trueAllTimeGain (sum of all filtered asset gains, immune to deposit errors)
+            // - No assetType filter: use rawPeriodProfit (end_value - start_value - net_deposits, period-specific)
+            // - assetType filter active: compute an accurate period-specific gain for the filtered category.
+            //   rawPeriodProfit is wrong here because netDeposits is portfolio-wide (not category-specific).
+            //   Instead: gain = (current value of category assets) - (value at period start) - (net new capital into that category in the period)
             const isAllTime = !isShortRange && (!range || range === 'MAX' || range === 'ALL');
-            const bulletproofPeriodGain = (isAllTime || hasAssetTypeFilter) ? trueAllTimeGain : rawPeriodProfit;
+
+            let bulletproofPeriodGain;
+            if (isAllTime) {
+                bulletproofPeriodGain = trueAllTimeGain;
+            } else if (hasAssetTypeFilter) {
+                // Compute net new investment in the filtered category during the period
+                const periodStartDate = new Date(dateStrStart);
+                let netNewInvestmentInPeriod = 0;
+                for (const t of allTransactions) {
+                    if (!t.date || new Date(t.date) < periodStartDate) continue;
+                    const a = assetMap[t.assetTicker];
+                    if (!a || !matchAssetType(a.type, t.assetTicker, assetType)) continue;
+                    const fx = t.exchangeRate || 1;
+                    if (t.type === 'BUY') {
+                        const cost = t.amount ? Math.abs(t.amount) : (t.quantity * t.price + t.commission + t.tax);
+                        netNewInvestmentInPeriod += cost / fx;
+                    } else if (t.type === 'SELL') {
+                        const proceeds = t.amount ? Math.abs(t.amount) : (t.quantity * t.price - t.commission - t.tax);
+                        netNewInvestmentInPeriod -= proceeds / fx;
+                    }
+                }
+                // Period gain = current filtered value - filtered value at period start - new money put in (or out) during period
+                bulletproofPeriodGain = currentTotalValue - gPeriodStartValue - netNewInvestmentInPeriod;
+            } else {
+                bulletproofPeriodGain = rawPeriodProfit;
+            }
 
             // When assetType is filtered (e.g. AZIONI, ETF, OBBL), intermediate buy/sell flows
             // severely corrupt simple Dietz ROI (causing extreme ratios like +234.8%).
