@@ -1643,6 +1643,7 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
 
 
 app.post('/api/admin/rebuild-history', requireAuth, requireAdmin, async (req, res) => {
+    try {
         logger.info('Rebuilding performance history: Step 1/4 - Updating market quotes...');
         try {
             await updateMarketData();
