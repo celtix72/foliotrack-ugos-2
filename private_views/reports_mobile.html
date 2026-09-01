@@ -500,8 +500,7 @@
             
             const gainEl = document.getElementById('mob-total-gain');
             if (gainEl) {
-                const sgn = m.totalGain > 0 ? '+' : '';
-                gainEl.textContent = sgn + formatCurrency(m.totalGain, 'EUR', 0);
+                gainEl.textContent = formatCurrency(m.totalGain, 'EUR', 0);
                 gainEl.style.color = m.totalGain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
             }
 
@@ -581,7 +580,7 @@
                     const alpha = twrDelta - spDelta;
                     const alphaEl = document.getElementById('mob-rep-kpi-alpha');
                     if (alphaEl) {
-                        alphaEl.textContent = (alpha >= 0 ? '+' : '') + alpha.toFixed(1) + ' pts Alpha';
+                        alphaEl.textContent = alpha.toFixed(1) + ' pts Alpha';
                         alphaEl.style.color = alpha >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
                     }
                 }
@@ -747,7 +746,6 @@
             const totalRealized = g.realized + g.dividends;
             const isPos = totalRealized >= 0;
             const gainColor = isPos ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-            const sign = isPos ? '+' : '';
             return `
                 <div class="mob-holding-swipe-container">
                     <div class="mob-holding-item" style="flex-direction: column; align-items: stretch; gap: 6px; padding-top: 10px; padding-bottom: 10px;">
@@ -756,7 +754,7 @@
                                 ${g.year}
                                 ${isCurr ? '<span style="font-size:9px; font-weight:900; color:var(--mob-primary); text-transform:uppercase; letter-spacing:0.08em;">NOW</span>' : ''}
                             </div>
-                            <div class="mob-holding-value" style="color: ${gainColor};">${sign}${formatCurrency(totalRealized, 'EUR', 0)}</div>
+                            <div class="mob-holding-value" style="color: ${gainColor};">${formatCurrency(totalRealized, 'EUR', 0)}</div>
                         </div>
                         <div style="display:flex; justify-content:space-between;">
                             <span class="mob-holding-name">Sales: <span style="color:${g.realized >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)'}">${formatCurrency(g.realized, 'EUR', 0)}</span></span>
@@ -803,12 +801,12 @@
             const medal = MEDALS_MOB[i] || '';
             const openDot = g.hasOpenPosition ? '<span style="width:6px;height:6px;border-radius:50%;background:var(--mob-primary);display:inline-block;margin-left:5px;vertical-align:middle;"></span>' : '';
             const fmtG = (v) => {
-                const s = v >= 0 ? '+' : '';
+                if (v === null || v === undefined || isNaN(v)) return '—';
+                const s = v < 0 ? '-' : '';
                 const abs = Math.abs(v);
-                if (abs >= 1000) return s + new Intl.NumberFormat('it-IT', {maximumFractionDigits:0}).format(v) + '\u20ac';
-                return s + v.toFixed(0) + '\u20ac';
+                return s + new Intl.NumberFormat('it-IT', { maximumFractionDigits: 0 }).format(abs) + '€';
             };
-            const divStr = g.dividends > 0 ? ('+' + (g.dividends >= 1000 ? new Intl.NumberFormat('it-IT', {maximumFractionDigits:0}).format(g.dividends) : g.dividends.toFixed(0)) + '€') : '—';
+            const divStr = g.dividends > 0 ? (new Intl.NumberFormat('it-IT', { maximumFractionDigits: 0 }).format(g.dividends) + '€') : '—';
             return `<div class="mob-holding-swipe-container">
                 <div class="mob-holding-item" style="padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px;">
                     <div style="display:flex;align-items:center;gap:7px;min-width:0;flex:1;">
@@ -822,7 +820,7 @@
                         <div style="font-size:15px;font-weight:900;color:${gainColor};">${fmtG(g.totalGain)}</div>
                         <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:1px;">
                             <span style="font-size:10px;font-weight:700;color:var(--mob-text-muted);">Div: <span style="color:var(--mob-emerald)">${divStr}</span></span>
-                            <span style="font-size:11px;font-weight:700;color:${pctColor};">${g.gainPct >= 0 ? '+' : ''}${g.gainPct.toFixed(1)}%</span>
+                            <span style="font-size:11px;font-weight:700;color:${pctColor};">${g.gainPct.toFixed(1)}%</span>
                         </div>
                     </div>
                 </div>
@@ -871,13 +869,12 @@
 
         // KPI pill
         const delta = lastVal - firstVal;
-        const sign  = delta >= 0 ? '+' : '';
         const kpiPct = document.getElementById('mob-rep-kpi-pct');
         const kpiAbs = document.getElementById('mob-rep-kpi-abs');
         const startLbl = document.getElementById('mob-rep-start-lbl');
         const endLbl   = document.getElementById('mob-rep-end-lbl');
-        if (kpiPct) { kpiPct.textContent = sign + delta.toFixed(2) + '%'; kpiPct.style.color = lineColor; }
-        if (kpiAbs) { kpiAbs.textContent = sign + delta.toFixed(2) + ' pts'; kpiAbs.style.color = lineColor; }
+        if (kpiPct) { kpiPct.textContent = delta.toFixed(2) + '%'; kpiPct.style.color = lineColor; }
+        if (kpiAbs) { kpiAbs.textContent = delta.toFixed(2) + ' pts'; kpiAbs.style.color = lineColor; }
         const fmtD = (iso) => new Date(iso).toLocaleDateString('it-IT', { day:'2-digit', month:'short' });
         if (portfolioData[0] && startLbl) startLbl.textContent = fmtD(portfolioData[0].date);
         if (portfolioData[portfolioData.length-1] && endLbl) endLbl.textContent = fmtD(portfolioData[portfolioData.length-1].date);
@@ -964,8 +961,7 @@
                             label: (context) => {
                                 if (context.dataset.hidden) return null;
                                 const val = context.parsed.y;
-                                const s = val >= 100 ? '+' : '';
-                                return ` ${context.dataset.label}: ${val.toFixed(1)} (${s}${(val-100).toFixed(1)}%)`;
+                                return ` ${context.dataset.label}: ${val.toFixed(1)} (${(val-100).toFixed(1)}%)`;
                             }
                         }
                     },
