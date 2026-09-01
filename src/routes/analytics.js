@@ -1472,14 +1472,6 @@ module.exports = function (dependencies) {
             }
             const assetGains = Object.values(assetGainsMap).sort((a,b) => b.totalGain - a.totalGain);
             const trueAllTimeGain = assetGains.reduce((sum, a) => sum + a.totalGain, 0);
-            const truePeriodGain = assetGains.reduce((sum, a) => sum + (a.periodGain != null ? a.periodGain : a.totalGain), 0);
-
-            // Use trueAllTimeGain for ALL/MAX ranges
-            // For filtered asset categories (e.g. OBBL, AZIONI, ETF), use truePeriodGain
-            // to accurately sum the period P&L of the constituent assets without drift
-            const isAllTime = !isShortRange && (!range || range === 'MAX' || range === 'ALL');
-            const bulletproofPeriodGain = isAllTime ? trueAllTimeGain : (hasAssetTypeFilter ? truePeriodGain : rawPeriodProfit);
-
             // When assetType is filtered (e.g. AZIONI, ETF, OBBL), intermediate buy/sell flows
             // severely corrupt simple Dietz ROI (causing extreme ratios like +234.8%).
             // For category views, or when simple ROI denominator is distorted, we use Time-Weighted Return (twrValue).
@@ -1489,6 +1481,31 @@ module.exports = function (dependencies) {
                 if (simpleROI > -0.99 && simpleROI < 5.0 && Math.abs(simpleROI - twrValue) < 0.5) {
                     totalROI = simpleROI;
                 }
+            }
+
+            // Compute Total Gain (€):
+            // - For ALL / MAX: use trueAllTimeGain (sum of all constituents)
+            // - For filtered category: if the positions were started within the period (e.g. 3Y/5Y when bonds were bought in 2024),
+            //   gain is the entire historical gain (trueAllTimeGain). For intermediate periods (1M, 6M, 1Y),
+            //   derive gain from effective capital * totalROI to be 100% mathematically coherent with the ROI sign and magnitude.
+            // - For unfiltered portfolio: use rawPeriodProfit (end - start - net inflows)
+            const isAllTime = !isShortRange && (!range || range === 'MAX' || range === 'ALL');
+            let bulletproofPeriodGain;
+            if (isAllTime) {
+                bulletproofPeriodGain = trueAllTimeGain;
+            } else if (hasAssetTypeFilter) {
+                if (gPeriodStartValue <= 100 || (firstGlobal && firstGlobal.date > dateStrStart)) {
+                    bulletproofPeriodGain = trueAllTimeGain;
+                } else {
+                    const effectiveCapital = (gPeriodStartValue > 0) ? (gPeriodStartValue + Math.max(0, gPeriodNetFlow / 2)) : currentTotalValue;
+                    bulletproofPeriodGain = Math.round(effectiveCapital * totalROI);
+                    // Cap at trueAllTimeGain if all positions are newer than all-time
+                    if (trueAllTimeGain > 0 && bulletproofPeriodGain > trueAllTimeGain) {
+                        bulletproofPeriodGain = trueAllTimeGain;
+                    }
+                }
+            } else {
+                bulletproofPeriodGain = rawPeriodProfit;
             }
 
             res.json({
