@@ -3501,6 +3501,7 @@ if (require.main === module) {
 
 module.exports = {
     app,
+    getPortfolioDetails,
     calculatePerformanceHistory,
     updateMarketData,
     getEurUsdRate,

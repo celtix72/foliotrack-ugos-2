@@ -207,12 +207,13 @@
       <!-- Asset Type Row -->
       <div class="flex items-center gap-2">
         <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 shrink-0 w-16">Categoria</span>
-        <div class="mob-asset-filter-bar flex items-center gap-1 flex-1 p-1 bg-slate-100 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800 font-mono text-[10px]" style="margin:0">
-          <button type="button" class="mob-asset-type-btn flex-1 py-1 px-1 text-center font-bold uppercase tracking-wider rounded-lg transition-all text-slate-500" onclick="mobChangeAssetType('all')" data-asset-type="all">TUTTI</button>
-          <button type="button" class="mob-asset-type-btn flex-1 py-1 px-1 text-center font-bold uppercase tracking-wider rounded-lg transition-all bg-white dark:bg-slate-700 shadow-sm text-primary" onclick="mobChangeAssetType('azioni')" data-asset-type="azioni">AZIONI</button>
-          <button type="button" class="mob-asset-type-btn flex-1 py-1 px-1 text-center font-bold uppercase tracking-wider rounded-lg transition-all text-slate-500 whitespace-nowrap" onclick="mobChangeAssetType('etf_az')" data-asset-type="etf_az">ETF AZ</button>
-          <button type="button" class="mob-asset-type-btn flex-1 py-1 px-1 text-center font-bold uppercase tracking-wider rounded-lg transition-all text-slate-500 whitespace-nowrap" onclick="mobChangeAssetType('etf_mon')" data-asset-type="etf_mon">ETF MON</button>
-          <button type="button" class="mob-asset-type-btn flex-1 py-1 px-1 text-center font-bold uppercase tracking-wider rounded-lg transition-all text-slate-500 whitespace-nowrap" onclick="mobChangeAssetType('obbl')" data-asset-type="obbl">OBBL</button>
+        <div class="mob-asset-filter-bar flex items-center gap-1 flex-1 p-1 bg-slate-100 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800 font-mono text-[10px] overflow-x-auto no-scrollbar" style="margin:0">
+          <button type="button" class="mob-asset-type-btn flex-1 py-1 px-1.5 text-center font-bold uppercase tracking-wider rounded-lg transition-all bg-white dark:bg-slate-700 shadow-sm text-primary whitespace-nowrap" onclick="mobChangeAssetType('all')" data-asset-type="all">TUTTI</button>
+          <button type="button" class="mob-asset-type-btn flex-1 py-1 px-1.5 text-center font-bold uppercase tracking-wider rounded-lg transition-all text-slate-500 whitespace-nowrap" onclick="mobChangeAssetType('azioni')" data-asset-type="azioni">AZIONI</button>
+          <button type="button" class="mob-asset-type-btn flex-1 py-1 px-1.5 text-center font-bold uppercase tracking-wider rounded-lg transition-all text-slate-500 whitespace-nowrap" onclick="mobChangeAssetType('etf_az')" data-asset-type="etf_az">ETF AZ</button>
+          <button type="button" class="mob-asset-type-btn flex-1 py-1 px-1.5 text-center font-bold uppercase tracking-wider rounded-lg transition-all text-slate-500 whitespace-nowrap" onclick="mobChangeAssetType('etf_mon')" data-asset-type="etf_mon">ETF MON</button>
+          <button type="button" class="mob-asset-type-btn flex-1 py-1 px-1.5 text-center font-bold uppercase tracking-wider rounded-lg transition-all text-slate-500 whitespace-nowrap" onclick="mobChangeAssetType('obbl')" data-asset-type="obbl">OBBL</button>
+          <button type="button" class="mob-asset-type-btn flex-1 py-1 px-1.5 text-center font-bold uppercase tracking-wider rounded-lg transition-all text-slate-500 whitespace-nowrap" onclick="mobChangeAssetType('liquidity')" data-asset-type="liquidity">DEPOSITI</button>
         </div>
       </div>
     </div>
@@ -441,7 +442,7 @@
     // ─── Mobile Reports Logic ────────────────────────────────────────────────
     let mobPerfChart, mobAssetChart, mobGeoChart, mobCurrencyChart, mobDivChart;
     let mobCurrentRange = '1M';
-    let mobCurrentAssetType = 'azioni';
+    let mobCurrentAssetType = 'all';
     let mobLastData = null;
 
     window.switchRepTab = function(tab) {

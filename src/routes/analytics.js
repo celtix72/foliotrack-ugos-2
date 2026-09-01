@@ -1216,6 +1216,27 @@ module.exports = function (dependencies) {
             const liveRateValReports = await getEurUsdRate();
             const assetGainsMap = {};
 
+            const resolveAssetTypeAndName = (ticker, rawType, rawName, aMeta) => {
+                let name = rawName || aMeta?.name || ticker;
+                let type = rawType || aMeta?.type;
+                const tick = (ticker || '').toUpperCase();
+                if (!type || type === 'Stock' || type === 'Manual' || type === 'Azioni') {
+                    if (tick.startsWith('CD_') || tick.startsWith('BP_') || (aMeta && ['Conto Deposito', 'Buono Postale', 'Liquidità'].includes(aMeta.type)) || tick === 'CASH') {
+                        type = 'Conto Deposito';
+                        if (name === ticker) {
+                            name = tick.startsWith('CD_') ? 'Conto Deposito ' + ticker.replace('CD_', '').replace(/_/g, ' ') : (tick.startsWith('BP_') ? 'Buono Postale ' + ticker.replace('BP_', '').replace(/_/g, ' ') : ticker);
+                        }
+                    } else if (tick.startsWith('IT000') || tick.startsWith('BTP') || tick.startsWith('BOT') || tick.startsWith('CCT') || tick.startsWith('ROM') || (aMeta && ['Bond', 'Obbligazioni', 'Obbligazione'].includes(aMeta.type))) {
+                        type = 'Bond';
+                    } else if (tick.includes('ETF') || tick.endsWith('.MI') && (tick.startsWith('SWDA') || tick.startsWith('VWCE') || tick.startsWith('XEON') || tick.startsWith('C3M') || tick.startsWith('X25'))) {
+                        type = (tick.startsWith('XEON') || tick.startsWith('C3M')) ? 'ETF Monetario' : (tick.startsWith('X25') ? 'ETF Obblig' : 'ETF Azionario');
+                    } else {
+                        type = type || 'Azioni';
+                    }
+                }
+                return { name, type };
+            };
+
             for (const p of portfolios) {
                 try {
                     const details = await getPortfolioDetails(p.id, liveRateValReports);
@@ -1225,7 +1246,7 @@ module.exports = function (dependencies) {
                     // 1. Closed positions (Realized Gains & Cost Basis)
                     for (const pos of (details.closedPositions || [])) {
                         const aMeta = assetMap[pos.ticker] || {};
-                        const posType = pos.type || aMeta.type || 'Stock';
+                        const { name: resName, type: posType } = resolveAssetTypeAndName(pos.ticker, pos.type, pos.name, aMeta);
                         if (hasAssetTypeFilter && !matchAssetType(posType, pos.ticker, assetType)) continue;
                         
                         const y = pos.year;
@@ -1237,7 +1258,7 @@ module.exports = function (dependencies) {
                         if (!assetGainsMap[pos.ticker]) {
                             assetGainsMap[pos.ticker] = {
                                 ticker: pos.ticker,
-                                name: pos.name || aMeta.name || pos.ticker,
+                                name: resName,
                                 type: posType,
                                 currency: aMeta.currency || p.currency || 'EUR',
                                 realizedGain: 0,
@@ -1252,12 +1273,12 @@ module.exports = function (dependencies) {
                         assetGainsMap[pos.ticker].totalInvested += costBasisEur;
                     }
                     
-                    // 2. Dividends
+                    // 2. Dividends & Interest
                     const divsList = details.dividends || [];
                     if (divsList.length > 0) {
                         for (const d of divsList) {
                             const aMeta = assetMap[d.ticker] || {};
-                            const dType = aMeta.type || 'Stock';
+                            const { name: resName, type: dType } = resolveAssetTypeAndName(d.ticker, null, null, aMeta);
                             if (hasAssetTypeFilter && !matchAssetType(dType, d.ticker, assetType)) continue;
                             
                             const y = d.year;
@@ -1268,7 +1289,7 @@ module.exports = function (dependencies) {
                             if (!assetGainsMap[d.ticker]) {
                                 assetGainsMap[d.ticker] = {
                                     ticker: d.ticker,
-                                    name: aMeta.name || d.ticker,
+                                    name: resName,
                                     type: dType,
                                     currency: aMeta.currency || p.currency || 'EUR',
                                     realizedGain: 0,
@@ -1284,7 +1305,7 @@ module.exports = function (dependencies) {
                     } else {
                         for (const group of (details.dividendGroups || [])) {
                             const aMeta = assetMap[group.ticker] || {};
-                            const dType = group.type || group.assetType || aMeta.type || 'Stock';
+                            const { name: resName, type: dType } = resolveAssetTypeAndName(group.ticker, group.type || group.assetType, null, aMeta);
                             if (hasAssetTypeFilter && !matchAssetType(dType, group.ticker, assetType)) continue;
                             const y = group.year;
                             if (!annualGainsMap[y]) annualGainsMap[y] = { year: y, realized: 0, dividends: 0, unrealized: 0 };
@@ -1295,7 +1316,8 @@ module.exports = function (dependencies) {
                     
                     // 3. Open Holdings (Unrealized Gains & Cost Basis)
                     for (const h of (details.holdings || [])) {
-                        const hType = h.type || assetMap[h.ticker]?.type || 'Stock';
+                        const aMeta = assetMap[h.ticker] || {};
+                        const { name: resName, type: hType } = resolveAssetTypeAndName(h.ticker, h.type, h.name, aMeta);
                         if (hasAssetTypeFilter && !matchAssetType(hType, h.ticker, assetType)) continue;
 
                         const uGainEur = (h.unrealizedGain || 0) / rate;
@@ -1307,7 +1329,7 @@ module.exports = function (dependencies) {
                         if (!assetGainsMap[h.ticker]) {
                             assetGainsMap[h.ticker] = {
                                 ticker: h.ticker,
-                                name: h.name || assetMap[h.ticker]?.name || h.ticker,
+                                name: resName,
                                 type: hType,
                                 currency: h.currency || p.currency || 'EUR',
                                 realizedGain: 0,

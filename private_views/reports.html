@@ -158,11 +158,12 @@
     <div class="flex items-center gap-2">
         <span class="text-[9px] font-bold uppercase tracking-widest text-slate-400 shrink-0">Categoria</span>
         <div class="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-900/50 p-0.5 rounded-lg border border-slate-200 dark:border-slate-800 font-mono">
-            <button onclick="changeAssetType('all')" data-asset-type="all" class="asset-type-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">TUTTI</button>
-            <button onclick="changeAssetType('azioni')" data-asset-type="azioni" class="asset-type-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all bg-white dark:bg-slate-700 shadow-sm text-primary">AZIONI</button>
+            <button onclick="changeAssetType('all')" data-asset-type="all" class="asset-type-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all bg-white dark:bg-slate-700 shadow-sm text-primary">TUTTI</button>
+            <button onclick="changeAssetType('azioni')" data-asset-type="azioni" class="asset-type-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">AZIONI</button>
             <button onclick="changeAssetType('etf_az')" data-asset-type="etf_az" class="asset-type-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">ETF AZ</button>
             <button onclick="changeAssetType('etf_mon')" data-asset-type="etf_mon" class="asset-type-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">ETF MON</button>
             <button onclick="changeAssetType('obbl')" data-asset-type="obbl" class="asset-type-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">OBBL</button>
+            <button onclick="changeAssetType('liquidity')" data-asset-type="liquidity" class="asset-type-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">DEPOSITI</button>
         </div>
     </div>
     <div class="flex-1"></div>
@@ -411,7 +412,7 @@
 
 <script>
     let currentRange = '1M';
-    let currentAssetType = 'azioni';
+    let currentAssetType = 'all';
     let perfChart, assetChart, geoChart, currencyChart, divChart;
 
     const RANGE_LABELS = { '1M': '1 Month', '6M': '6 Months', '1Y': '12 Months', '2Y': '2 Years', '3Y': '3 Years', '5Y': '5 Years' };
