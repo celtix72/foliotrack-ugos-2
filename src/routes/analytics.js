@@ -1369,8 +1369,21 @@ module.exports = function (dependencies) {
                 let dividends = 0;        // EUR
                 let totalInvested = 0;    // EUR (all-time sum of BUYs)
 
+                const periodStartDate = new Date(dateStrStart);
+                let periodDividends = 0;
+                let periodRealized = 0;
+                let qtyAtStart = 0;
+                let totalCostAtStart = 0;
+                let recordedStart = false;
+
                 const sortedTks = [...tks].sort((a,b) => new Date(a.date) - new Date(b.date));
                 for (const t of sortedTks) {
+                    const tDate = new Date(t.date);
+                    if (!recordedStart && tDate >= periodStartDate) {
+                        qtyAtStart = qty;
+                        totalCostAtStart = totalCostAsset;
+                        recordedStart = true;
+                    }
                     const q = Math.abs(t.quantity || 0);
                     const p = t.price || 0;
                     const comm = t.commission || 0;
@@ -1387,30 +1400,55 @@ module.exports = function (dependencies) {
                         const avgCostAsset = totalCostAsset / qty;
                         const proceeds = t.amount ? Math.abs(t.amount) : ((q * p - comm - tax) / fxRate);
                         const costBasisEur = (q * avgCostAsset) / fxRate;
-                        realizedGain += proceeds - costBasisEur;
+                        const rGain = proceeds - costBasisEur;
+                        realizedGain += rGain;
                         totalCostAsset -= q * avgCostAsset;
                         qty -= q;
                         if (Math.abs(qty) < 0.00001) { qty = 0; totalCostAsset = 0; }
+                        if (tDate >= periodStartDate) {
+                            periodRealized += rGain;
+                        }
                     } else if (t.type === 'DIVIDEND') {
                         const net = t.amount ? Math.abs(t.amount) : ((q * p - comm - tax) / fxRate);
                         dividends += net;
+                        if (tDate >= periodStartDate) {
+                            periodDividends += net;
+                        }
                     }
-                    // NOTE: SPLIT transactions are audit markers only.
-                    // The split route already retroactively adjusts all historical
-                    // BUY/SELL quantities and prices in the DB, so we must NOT
-                    // re-apply the ratio here.
+                }
+                if (!recordedStart) {
+                    qtyAtStart = qty;
+                    totalCostAtStart = totalCostAsset;
                 }
 
                 // Unrealized on currently open position
                 let unrealizedGain = 0;
+                let periodUnrealized = 0;
                 if (qty > 0.0001 && a.currentPrice > 0) {
                     const lastFx = tks.filter(t => t.exchangeRate).at(-1)?.exchangeRate || 1;
                     const curValEur = (qty * a.currentPrice) / lastFx;
                     const curCostEur = totalCostAsset / lastFx;
                     unrealizedGain = curValEur - curCostEur;
+
+                    if (qtyAtStart <= 0.0001) {
+                        periodUnrealized = unrealizedGain;
+                    } else {
+                        const startQuote = database.db.prepare(`
+                            SELECT price FROM asset_quotes 
+                            WHERE ticker = ? AND date <= ? 
+                            ORDER BY date DESC LIMIT 1
+                        `).get(ticker, dateStrStart);
+                        
+                        const startPx = (startQuote && startQuote.price > 0) ? startQuote.price : (totalCostAtStart / qtyAtStart);
+                        const startValEur = (qtyAtStart * startPx) / lastFx;
+                        const startCostEur = totalCostAtStart / lastFx;
+                        const startUnrealized = startValEur - startCostEur;
+                        periodUnrealized = unrealizedGain - startUnrealized;
+                    }
                 }
 
                 const totalGain = realizedGain + dividends + unrealizedGain;
+                const periodGain = (periodDividends + periodRealized + periodUnrealized);
                 if (totalInvested < 0.01 && totalGain === 0) continue;
                 const gainPct = totalInvested > 0 ? (totalGain / totalInvested) * 100 : 0;
 
@@ -1426,6 +1464,7 @@ module.exports = function (dependencies) {
                     dividends: Math.round(dividends * 100) / 100,
                     unrealizedGain: Math.round(unrealizedGain * 100) / 100,
                     totalGain: Math.round(totalGain * 100) / 100,
+                    periodGain: Math.round(periodGain * 100) / 100,
                     totalInvested: Math.round(totalInvested * 100) / 100,
                     gainPct: Math.round(gainPct * 100) / 100,
                     hasOpenPosition: qty > 0.0001
@@ -1433,12 +1472,13 @@ module.exports = function (dependencies) {
             }
             const assetGains = Object.values(assetGainsMap).sort((a,b) => b.totalGain - a.totalGain);
             const trueAllTimeGain = assetGains.reduce((sum, a) => sum + a.totalGain, 0);
+            const truePeriodGain = assetGains.reduce((sum, a) => sum + (a.periodGain != null ? a.periodGain : a.totalGain), 0);
 
-            // Use trueAllTimeGain for ALL/MAX ranges to be immune to cash/deposit errors
-            // Use rawPeriodProfit for specific ranges (1M, 6M, 1Y, 2Y, 3Y, 5Y, etc.)
-            // which calculates (EndValue - StartValue - NetDepositsInPeriod) from the exact simulation history
+            // Use trueAllTimeGain for ALL/MAX ranges
+            // For filtered asset categories (e.g. OBBL, AZIONI, ETF), use truePeriodGain
+            // to accurately sum the period P&L of the constituent assets without drift
             const isAllTime = !isShortRange && (!range || range === 'MAX' || range === 'ALL');
-            const bulletproofPeriodGain = isAllTime ? trueAllTimeGain : rawPeriodProfit;
+            const bulletproofPeriodGain = isAllTime ? trueAllTimeGain : (hasAssetTypeFilter ? truePeriodGain : rawPeriodProfit);
 
             // When assetType is filtered (e.g. AZIONI, ETF, OBBL), intermediate buy/sell flows
             // severely corrupt simple Dietz ROI (causing extreme ratios like +234.8%).
