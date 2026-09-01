@@ -838,38 +838,41 @@ function initDb() {
         console.error("Migration error ai_portfolio_reports:", e);
     }
 
-    // Data Migration for user 1 (mauro)
+    // Data Migration for admin user
     try {
-        const adminId = 1;
+        const adminUser = dbConnection.prepare(`SELECT id FROM users WHERE username = 'mauro' OR role = 'admin' ORDER BY id ASC LIMIT 1`).get();
+        const adminId = adminUser ? adminUser.id : null;
         
-        // 1. Portfolio associations
-        dbConnection.prepare(`
-            INSERT OR IGNORE INTO portfolio_users (portfolio_id, user_id)
-            SELECT id, ? FROM portfolios
-        `).run(adminId);
+        if (adminId) {
+            // 1. Portfolio associations
+            dbConnection.prepare(`
+                INSERT OR IGNORE INTO portfolio_users (portfolio_id, user_id)
+                SELECT id, ? FROM portfolios
+            `).run(adminId);
 
-        // 2. Watchlist & Alerts migration
-        dbConnection.prepare(`
-            INSERT OR IGNORE INTO user_watchlist (user_id, ticker, targetPrice, stopLoss, volatilityAlert)
-            SELECT ?, ticker, targetPrice, stopLoss, volatilityAlert 
-            FROM assets 
-            WHERE inWatchlist = 1 OR targetPrice > 0 OR stopLoss > 0
-        `).run(adminId);
+            // 2. Watchlist & Alerts migration
+            dbConnection.prepare(`
+                INSERT OR IGNORE INTO user_watchlist (user_id, ticker, targetPrice, stopLoss, volatilityAlert)
+                SELECT ?, ticker, targetPrice, stopLoss, volatilityAlert 
+                FROM assets 
+                WHERE inWatchlist = 1 OR targetPrice > 0 OR stopLoss > 0
+            `).run(adminId);
 
-        // 3. Notifications migration
-        dbConnection.prepare(`UPDATE notifications SET user_id = ? WHERE user_id IS NULL`).run(adminId);
+            // 3. Notifications migration
+            dbConnection.prepare(`UPDATE notifications SET user_id = ? WHERE user_id IS NULL`).run(adminId);
 
-        // 4. Settings migration
-        try {
-            dbConnection.prepare(`ALTER TABLE settings ADD COLUMN user_id INTEGER`).run();
-        } catch (e) {}
-        dbConnection.prepare(`UPDATE settings SET user_id = ? WHERE user_id IS NULL`).run(adminId);
+            // 4. Settings migration
+            try {
+                dbConnection.prepare(`ALTER TABLE settings ADD COLUMN user_id INTEGER`).run();
+            } catch (e) {}
+            dbConnection.prepare(`UPDATE settings SET user_id = ? WHERE user_id IS NULL`).run(adminId);
 
-        // 5. Tax Rates migration
-        try {
-            dbConnection.prepare(`ALTER TABLE tax_rates ADD COLUMN user_id INTEGER`).run();
-        } catch (e) {}
-        dbConnection.prepare(`UPDATE tax_rates SET user_id = ? WHERE user_id IS NULL`).run(adminId);
+            // 5. Tax Rates migration
+            try {
+                dbConnection.prepare(`ALTER TABLE tax_rates ADD COLUMN user_id INTEGER`).run();
+            } catch (e) {}
+            dbConnection.prepare(`UPDATE tax_rates SET user_id = ? WHERE user_id IS NULL`).run(adminId);
+        }
 
         // 6. Dividend Projections migration
         try {

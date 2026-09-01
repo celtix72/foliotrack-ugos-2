@@ -1057,53 +1057,38 @@ module.exports = function (dependencies) {
                 return downsampleToMonthly(daily);
             };
 
-            const monthlyGlobal = samplePoints(portfolioData.dataPoints);
-            const monthlyIndividual = {};
-            if (portfolioData.individual) {
-                for (const pid in portfolioData.individual) {
-                    const p = portfolios.find(port => port.id == pid);
-                    monthlyIndividual[pid] = {
-                        id: pid,
-                        name: p ? p.name : pid,
-                        history: samplePoints(portfolioData.individual[pid]),
-                        metrics: {}
-                    };
-                }
-            }
+            const rawPoints = portfolioData.dataPoints || [];
+            const firstPt = rawPoints[0] || {};
+            const lastPt = rawPoints[rawPoints.length - 1] || {};
 
-            const normalizeRelative = (history) => {
-                if (history.length === 0) return [];
-                let prevVal = null;
-                let prevNet = null;
-                let twr = 100;
-                
-                return history.map((p, idx) => {
-                    if (idx === 0) {
-                        prevVal = p.value;
-                        prevNet = p.netDeposits;
-                        twr = 100;
-                    } else {
-                        const netFlow = (p.netDeposits || 0) - (prevNet || 0);
-                        const denominator = (prevVal || 0) + netFlow;
-                        if (denominator > 0) {
-                            twr = twr * (p.value / denominator);
-                        }
-                        prevVal = p.value;
-                        prevNet = p.netDeposits;
-                    }
-                    return {
-                        date: isShortRange ? p.date.substring(0, 10) : p.date.substring(0, 7),
-                        value: parseFloat(twr.toFixed(2)),
-                        absoluteValue: Math.round(p.value),
-                        profit: Math.round(p.profit),
-                        netDeposits: p.netDeposits || 0
-                    };
-                });
-            };
+            // 1. Total ROI (TWR): exactly matching Dashboard Performance (%) mode
+            const startNorm = (firstPt.normalized !== undefined && firstPt.normalized > 0) ? firstPt.normalized : 100;
+            const endNorm = (lastPt.normalized !== undefined) ? lastPt.normalized : 100;
+            const totalROI = startNorm > 0 ? ((endNorm - startNorm) / startNorm) : 0;
+            const twrValue = totalROI;
 
-            const normalizedGlobal = normalizeRelative(monthlyGlobal);
+            // 2. Total Gain (€): exactly matching Dashboard P&L Netto mode (end profit - start profit)
+            const startProfit = firstPt.profit !== undefined ? firstPt.profit : 0;
+            const endProfit = lastPt.profit !== undefined ? lastPt.profit : 0;
+            const rawPeriodProfit = endProfit - startProfit;
+
+            // 3. Current & Start Values
+            const currentTotalValue = lastPt.value || 0;
+            const gPeriodStartValue = firstPt.value || 0;
+            const gPeriodNetFlow = (lastPt.netDeposits || 0) - (firstPt.netDeposits || 0);
+
+            // 4. Sampled normalized chart series directly using simulated TWR and values
+            const normalizedGlobal = samplePoints(rawPoints).map(p => ({
+                date: isShortRange ? (p.date || '').substring(0, 10) : (p.date || '').substring(0, 7),
+                value: parseFloat((p.normalized !== undefined ? p.normalized : 100).toFixed(2)),
+                absoluteValue: Math.round(p.value || 0),
+                profit: Math.round(p.profit || 0),
+                netDeposits: Math.round(p.netDeposits || 0),
+                events: p.events || []
+            }));
             const lastGlobal = normalizedGlobal.length > 0 ? normalizedGlobal[normalizedGlobal.length - 1] : null;
             const firstGlobal = normalizedGlobal.length > 0 ? normalizedGlobal[0] : null;
+            const monthlyTwr = normalizedGlobal;
             const riskFreeMonthly = 0.002;
 
             const fxRates = {};
@@ -1111,69 +1096,64 @@ module.exports = function (dependencies) {
             const usdMap = Object.fromEntries(usdRates.map(r => [r.date, r.price]));
             fxRates['USD'] = usdMap;
 
-            for (const pid in monthlyIndividual) {
-                const p = monthlyIndividual[pid];
-                const portfolioObj = portfolios.find(port => port.id == pid);
-                p.history = normalizeRelative(p.history);
-                const last = p.history.length > 0 ? p.history[p.history.length - 1] : null;
-                const first = p.history.length > 0 ? p.history[0] : null;
-                const periodStartValue = first ? first.absoluteValue : 0;
-                const currentVal = last ? last.absoluteValue : 0;
-                const periodNetFlow = (first && last) ? last.netDeposits - first.netDeposits : (last ? last.netDeposits : 0);
-                const periodProfit = currentVal - periodStartValue - periodNetFlow;
-                
-                let roi = calculateROI(currentVal, periodStartValue + periodNetFlow, periodProfit);
-                
-                const indHistory = portfolioData.individual ? portfolioData.individual[pid] : null;
-                let indTwr = 0;
-                if (indHistory && indHistory.length >= 2) {
-                    const subPeriods = [];
-                    for (let i = 1; i < indHistory.length; i++) {
-                        const prev = indHistory[i-1];
-                        const curr = indHistory[i];
-                        subPeriods.push({
-                            startingValue: prev.value,
-                            endingValue: curr.value,
-                            netCashFlow: curr.netDeposits - prev.netDeposits
-                        });
-                    }
-                    indTwr = calculateTWR(subPeriods);
-                }
+            // 5. Individual Portfolios
+            const monthlyIndividual = {};
+            if (portfolioData.individual) {
+                for (const pid in portfolioData.individual) {
+                    const p = portfolios.find(port => port.id == pid);
+                    const indDaily = portfolioData.individual[pid] || [];
+                    const indFirst = indDaily[0] || {};
+                    const indLast = indDaily[indDaily.length - 1] || {};
+                    const indStartNorm = (indFirst.normalized !== undefined && indFirst.normalized > 0) ? indFirst.normalized : 100;
+                    const indEndNorm = (indLast.normalized !== undefined) ? indLast.normalized : 100;
+                    const indROI = indStartNorm > 0 ? ((indEndNorm - indStartNorm) / indStartNorm) : 0;
+                    const indProfit = (indLast.profit !== undefined ? indLast.profit : 0) - (indFirst.profit !== undefined ? indFirst.profit : 0);
+                    const indCurVal = indLast.value || 0;
 
-                if (hasAssetTypeFilter || (periodStartValue + periodNetFlow <= 0) || roi > 5.0 || roi < -0.99) {
-                    roi = indTwr;
-                }
+                    const indHistory = samplePoints(indDaily).map(pt => ({
+                        date: isShortRange ? (pt.date || '').substring(0, 10) : (pt.date || '').substring(0, 7),
+                        value: parseFloat((pt.normalized !== undefined ? pt.normalized : 100).toFixed(2)),
+                        absoluteValue: Math.round(pt.value || 0),
+                        profit: Math.round(pt.profit || 0),
+                        netDeposits: Math.round(pt.netDeposits || 0)
+                    }));
 
-                const pTxs = allTransactions.filter(t => t.portfolioId == pid && ['DEPOSIT', 'WITHDRAWAL'].includes(t.type));
-                const pFlows = pTxs.map(t => {
-                    const rate = (portfolioObj && portfolioObj.currency === 'USD') ? (fxRates['USD']?.[t.date] || 1) : 1;
-                    const amt = (t.amount || (t.quantity * t.price)) / rate;
-                    return { date: new Date(t.date), amount: t.type === 'DEPOSIT' ? -amt : amt };
-                });
-                pFlows.push({ date: new Date(), amount: currentVal });
-                pFlows.sort((a,b) => a.date - b.date);
-                const indXirr = pFlows.length >= 2 ? (xirr(pFlows) || 0) : 0;
+                    const pTxs = allTransactions.filter(t => t.portfolioId == pid && ['DEPOSIT', 'WITHDRAWAL'].includes(t.type));
+                    const pFlows = pTxs.map(t => {
+                        const rate = (p && p.currency === 'USD') ? (fxRates['USD']?.[t.date] || 1) : 1;
+                        const amt = (t.amount || (t.quantity * t.price)) / rate;
+                        return { date: new Date(t.date), amount: t.type === 'DEPOSIT' ? -amt : amt };
+                    });
+                    pFlows.push({ date: new Date(), amount: indCurVal });
+                    pFlows.sort((a,b) => a.date - b.date);
+                    const indXirr = pFlows.length >= 2 ? (xirr(pFlows) || 0) : 0;
 
-                p.metrics = {
-                    totalROI: roi,
-                    twr: indTwr,
-                    xirr: indXirr,
-                    currentValue: currentVal,
-                    contribution: (lastGlobal && lastGlobal.absoluteValue > 0) ? 
-                        (currentVal / lastGlobal.absoluteValue) : 0,
-                    sharpeRatio: (() => {
-                        const returns = [];
-                        for (let i = 1; i < p.history.length; i++) {
-                            const prev = p.history[i-1].value;
-                            const curr = p.history[i].value;
-                            if (prev > 0) returns.push((curr / prev) - 1);
+                    monthlyIndividual[pid] = {
+                        id: pid,
+                        name: p ? p.name : pid,
+                        history: indHistory,
+                        metrics: {
+                            totalROI: indROI,
+                            twr: indROI,
+                            totalGain: indProfit,
+                            xirr: indXirr,
+                            currentValue: indCurVal,
+                            contribution: (currentTotalValue > 0) ? (indCurVal / currentTotalValue) : 0,
+                            sharpeRatio: (() => {
+                                const returns = [];
+                                for (let i = 1; i < indHistory.length; i++) {
+                                    const prev = indHistory[i-1].value;
+                                    const curr = indHistory[i].value;
+                                    if (prev > 0) returns.push((curr / prev) - 1);
+                                }
+                                if (returns.length < 2) return 0;
+                                const m = returns.reduce((a, b) => a + b, 0) / returns.length;
+                                const s = Math.sqrt(returns.map(x => Math.pow(x - m, 2)).reduce((a, b) => a + b, 0) / returns.length);
+                                return s > 0 ? (m - riskFreeMonthly) / s : 0;
+                            })()
                         }
-                        if (returns.length < 2) return 0;
-                        const m = returns.reduce((a, b) => a + b, 0) / returns.length;
-                        const s = Math.sqrt(returns.map(x => Math.pow(x - m, 2)).reduce((a, b) => a + b, 0) / returns.length);
-                        return s > 0 ? (m - riskFreeMonthly) / s : 0;
-                    })()
-                };
+                    };
+                }
             }
 
             const diversification = {
@@ -1231,13 +1211,6 @@ module.exports = function (dependencies) {
                 dividends.push({ date: mStr, amount: monthlyDiv });
             }
 
-            const currentTotalValue = lastGlobal ? lastGlobal.absoluteValue : 0;
-            const gPeriodStartValue = firstGlobal ? firstGlobal.absoluteValue : 0;
-            const gPeriodNetFlow = (firstGlobal && lastGlobal) ? (lastGlobal.netDeposits - firstGlobal.netDeposits) : (lastGlobal ? lastGlobal.netDeposits : 0);
-            
-            // Period economic profit: End Value - Start Value - Net External Inflows
-            const rawPeriodProfit = currentTotalValue - gPeriodStartValue - gPeriodNetFlow;
-
             const externalTxs = allTransactions.filter(t => ['DEPOSIT', 'WITHDRAWAL'].includes(t.type));
             const flows = [];
             for (const t of externalTxs) {
@@ -1252,38 +1225,6 @@ module.exports = function (dependencies) {
             flows.push({ date: new Date(), amount: currentTotalValue });
             flows.sort((a,b) => a.date - b.date);
             const xirrValue = flows.length >= 2 ? (xirr(flows) || 0) : 0;
-
-            let twrSeries = [];
-            const twrValue = (() => {
-                const data = portfolioData.dataPoints;
-                if (data.length < 2) return 0;
-                const subPeriods = [];
-                let cumulativeTwr = 1;
-                twrSeries.push({ date: data[0].date, value: 100, events: data[0].events });
-
-                for (let i = 1; i < data.length; i++) {
-                    const prev = data[i-1];
-                    const curr = data[i];
-                    const netFlow = curr.netDeposits - prev.netDeposits;
-                    const hpr = prev.value > 0.01 ? (curr.value - netFlow - prev.value) / prev.value : 0;
-                    cumulativeTwr *= Math.max(0, 1 + hpr);
-                    
-                    twrSeries.push({
-                        date: curr.date,
-                        value: Math.max(0, cumulativeTwr * 100),
-                        events: curr.events
-                    });
-
-                    subPeriods.push({
-                        startingValue: prev.value,
-                        endingValue: curr.value,
-                        netCashFlow: netFlow
-                    });
-                }
-                return calculateTWR(subPeriods);
-            })();
-
-            const monthlyTwr = samplePoints(twrSeries);
 
             let bestAsset = { ticker: '-', profit: -Infinity };
             for (const [ticker, a] of Object.entries(assetMap)) {
@@ -1472,41 +1413,8 @@ module.exports = function (dependencies) {
             }
             const assetGains = Object.values(assetGainsMap).sort((a,b) => b.totalGain - a.totalGain);
             const trueAllTimeGain = assetGains.reduce((sum, a) => sum + a.totalGain, 0);
-            // When assetType is filtered (e.g. AZIONI, ETF, OBBL), intermediate buy/sell flows
-            // severely corrupt simple Dietz ROI (causing extreme ratios like +234.8%).
-            // For category views, or when simple ROI denominator is distorted, we use Time-Weighted Return (twrValue).
-            let totalROI = twrValue;
-            if (!hasAssetTypeFilter && (gPeriodStartValue + gPeriodNetFlow) > 0) {
-                const simpleROI = (currentTotalValue / (gPeriodStartValue + gPeriodNetFlow)) - 1;
-                if (simpleROI > -0.99 && simpleROI < 5.0 && Math.abs(simpleROI - twrValue) < 0.5) {
-                    totalROI = simpleROI;
-                }
-            }
-
-            // Compute Total Gain (€):
-            // - For ALL / MAX: use trueAllTimeGain (sum of all constituents)
-            // - For filtered category: if the positions were started within the period (e.g. 3Y/5Y when bonds were bought in 2024),
-            //   gain is the entire historical gain (trueAllTimeGain). For intermediate periods (1M, 6M, 1Y),
-            //   derive gain from effective capital * totalROI to be 100% mathematically coherent with the ROI sign and magnitude.
-            // - For unfiltered portfolio: use rawPeriodProfit (end - start - net inflows)
             const isAllTime = !isShortRange && (!range || range === 'MAX' || range === 'ALL');
-            let bulletproofPeriodGain;
-            if (isAllTime) {
-                bulletproofPeriodGain = trueAllTimeGain;
-            } else if (hasAssetTypeFilter) {
-                if (gPeriodStartValue <= 100 || (firstGlobal && firstGlobal.date > dateStrStart)) {
-                    bulletproofPeriodGain = trueAllTimeGain;
-                } else {
-                    const effectiveCapital = (gPeriodStartValue > 0) ? (gPeriodStartValue + Math.max(0, gPeriodNetFlow / 2)) : currentTotalValue;
-                    bulletproofPeriodGain = Math.round(effectiveCapital * totalROI);
-                    // Cap at trueAllTimeGain if all positions are newer than all-time
-                    if (trueAllTimeGain > 0 && bulletproofPeriodGain > trueAllTimeGain) {
-                        bulletproofPeriodGain = trueAllTimeGain;
-                    }
-                }
-            } else {
-                bulletproofPeriodGain = rawPeriodProfit;
-            }
+            const totalGain = isAllTime ? trueAllTimeGain : rawPeriodProfit;
 
             res.json({
                 performance: {
@@ -1526,9 +1434,9 @@ module.exports = function (dependencies) {
                 assetGains,
                 metrics: {
                     totalROI,
-                    totalGain: bulletproofPeriodGain,
+                    totalGain,
                     allTimeGain: trueAllTimeGain,
-                    annualizedROI: (totalROI > -1 && monthlyGlobal.length > 0) ? (Math.pow(1 + totalROI, 1 / (Math.max(1, monthlyGlobal.length) / 12)) - 1) : totalROI,
+                    annualizedROI: (totalROI > -1 && normalizedGlobal.length > 0) ? (Math.pow(1 + totalROI, 1 / (Math.max(1, normalizedGlobal.length) / 12)) - 1) : totalROI,
                     xirr: xirrValue || 0,
                     twr: twrValue || 0,
                     bestAsset: (bestAsset && bestAsset.ticker && bestAsset.ticker !== '-') ? `${bestAsset.name || bestAsset.ticker} (${bestAsset.ticker})` : '-',

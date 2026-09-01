@@ -2441,11 +2441,27 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                     const rateForP = p.currency === 'USD' ? getUsdRate(dateStr) : 1;
                     const indVal = Math.round(pValue);
                     const indNet = Math.round(portfolioStates[p.id].netDeposits / rateForP);
+
+                    if (portfolioStates[p.id].prevVal === null || portfolioStates[p.id].prevVal === undefined) {
+                        portfolioStates[p.id].prevVal = pValue;
+                        portfolioStates[p.id].prevNet = portfolioStates[p.id].netDeposits;
+                        portfolioStates[p.id].compoundedTWR = 100;
+                    } else {
+                        const netFlow = portfolioStates[p.id].netDeposits - portfolioStates[p.id].prevNet;
+                        const denom = portfolioStates[p.id].prevVal + netFlow;
+                        if (denom > 0) {
+                            portfolioStates[p.id].compoundedTWR *= (pValue / denom);
+                        }
+                        portfolioStates[p.id].prevVal = pValue;
+                        portfolioStates[p.id].prevNet = portfolioStates[p.id].netDeposits;
+                    }
+
                     individualHistories[p.id].push({
                         date: dateStr,
                         value: indVal,
                         profit: indVal - indNet,
-                        netDeposits: indNet
+                        netDeposits: indNet,
+                        normalized: parseFloat(portfolioStates[p.id].compoundedTWR.toFixed(2))
                     });
                 }
             }
