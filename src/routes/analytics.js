@@ -1446,18 +1446,27 @@ module.exports = function (dependencies) {
             if (isAllTime) {
                 bulletproofPeriodGain = trueAllTimeGain;
             } else if (hasAssetTypeFilter) {
-                // IMPORTANT: use the actual first data point date, not dateStrStart.
-                // gPeriodStartValue = firstGlobal.absoluteValue which is the value at normalizedGlobal[0].date.
-                // If the history doesn't go back to dateStrStart, using dateStrStart as cutoff for transactions
-                // would double-count buys in the gap (they'd be implicit in gPeriodStartValue AND explicit
-                // as netNewInvestment), causing inflated gains.
+                // gPeriodStartValue = firstGlobal.absoluteValue = the value at the END of the first data-point
+                // period (monthly or daily). Transactions within that same period are already embedded in
+                // gPeriodStartValue, so we must NOT re-count them in netNewInvestmentInPeriod.
+                // Solution: start counting new investment from the BEGINNING OF THE NEXT period.
                 const actualPeriodStartStr = normalizedGlobal.length > 0 ? normalizedGlobal[0].date : dateStrStart;
-                // Dates in normalizedGlobal can be 'YYYY-MM' (monthly) — parse to first day of month
-                const actualPeriodStartDate = new Date(actualPeriodStartStr.length === 7 ? actualPeriodStartStr + '-01' : actualPeriodStartStr);
+
+                // Build the "first period after the anchor" cutoff date
+                let txCutoffDate;
+                if (actualPeriodStartStr.length === 7) {
+                    // Monthly format 'YYYY-MM' — advance by 1 month
+                    const [y, mo] = actualPeriodStartStr.split('-').map(Number);
+                    txCutoffDate = new Date(y, mo, 1); // JS months are 0-indexed, so mo = next month
+                } else {
+                    // Daily format 'YYYY-MM-DD' — advance by 1 day
+                    txCutoffDate = new Date(actualPeriodStartStr);
+                    txCutoffDate.setDate(txCutoffDate.getDate() + 1);
+                }
 
                 let netNewInvestmentInPeriod = 0;
                 for (const t of allTransactions) {
-                    if (!t.date || new Date(t.date) < actualPeriodStartDate) continue;
+                    if (!t.date || new Date(t.date) < txCutoffDate) continue;
                     const a = assetMap[t.assetTicker];
                     if (!a || !matchAssetType(a.type, t.assetTicker, assetType)) continue;
                     const fx = t.exchangeRate || 1;
@@ -1469,7 +1478,7 @@ module.exports = function (dependencies) {
                         netNewInvestmentInPeriod -= proceeds / fx;
                     }
                 }
-                // Period gain = current filtered value - filtered value at period start - net new capital invested in the category
+                // Period gain = current filtered value − filtered value at anchor date − net new capital added after anchor
                 bulletproofPeriodGain = currentTotalValue - gPeriodStartValue - netNewInvestmentInPeriod;
             } else {
                 bulletproofPeriodGain = rawPeriodProfit;
