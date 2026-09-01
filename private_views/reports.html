@@ -189,11 +189,11 @@
 </div>
 <div class="bg-white dark:bg-surface-dark p-5 sm:p-6 flex flex-col rounded-none sm:rounded-xl border-y sm:border-x border-slate-200 dark:border-slate-800 shadow-sm">
 <div class="flex justify-between items-start mb-4 text-slate-500">
-<p class="text-xs font-bold uppercase tracking-widest">Internal Rate (XIRR)</p>
-<span class="material-symbols-outlined text-primary">monitoring</span>
+<p class="text-xs font-bold uppercase tracking-widest">Total Gain</p>
+<span class="material-symbols-outlined text-primary">payments</span>
 </div>
-<h3 class="text-3xl font-black" id="metric-xirr">--%</h3>
-<p class="text-xs text-slate-500 font-bold mt-2">Annualized Return · <span class="text-primary kpi-period-sub">1M</span></p>
+<h3 class="text-3xl font-black" id="metric-total-gain">-- €</h3>
+<p class="text-xs text-slate-500 font-bold mt-2">P&amp;L del periodo · <span class="text-primary kpi-period-sub">1M</span></p>
 </div>
 <div class="bg-white dark:bg-surface-dark p-5 sm:p-6 flex flex-col rounded-none sm:rounded-xl border-y sm:border-x border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
 <div class="flex justify-between items-start mb-4 text-slate-500">
@@ -553,7 +553,7 @@
     function renderMetrics(m) {
         const roiEl = document.getElementById('metric-roi');
         const twrEl = document.getElementById('metric-twr');
-        const xirrEl = document.getElementById('metric-xirr');
+        const gainEl = document.getElementById('metric-total-gain');
         const sharpeEl = document.getElementById('metric-sharpe');
 
         if (roiEl) {
@@ -562,7 +562,16 @@
             roiEl.classList.toggle('text-rose-500', m.totalROI < 0);
         }
         if (twrEl) twrEl.textContent = formatNumber(m.twr * 100, 2) + '%';
-        if (xirrEl) xirrEl.textContent = formatNumber(m.xirr * 100, 2) + '%';
+        if (gainEl) {
+            const gain = m.totalGain || 0;
+            const abs = Math.abs(gain);
+            const fmt = abs >= 1000
+                ? (gain < 0 ? '-' : '') + new Intl.NumberFormat('it-IT', { maximumFractionDigits: 0 }).format(abs) + ' €'
+                : (gain < 0 ? '-' : '') + abs.toFixed(0) + ' €';
+            gainEl.textContent = fmt;
+            gainEl.classList.toggle('text-emerald-500', gain >= 0);
+            gainEl.classList.toggle('text-rose-500', gain < 0);
+        }
         if (sharpeEl) sharpeEl.textContent = formatNumber(m.sharpeRatio, 2);
     }
 
