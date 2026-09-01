@@ -1434,55 +1434,11 @@ module.exports = function (dependencies) {
             const assetGains = Object.values(assetGainsMap).sort((a,b) => b.totalGain - a.totalGain);
             const trueAllTimeGain = assetGains.reduce((sum, a) => sum + a.totalGain, 0);
 
-            // Compute the correct period gain depending on the context:
-            // - ALL/MAX range: use trueAllTimeGain (sum of all filtered asset gains, immune to deposit errors)
-            // - No assetType filter: use rawPeriodProfit (end_value - start_value - net_deposits, period-specific)
-            // - assetType filter active: compute an accurate period-specific gain for the filtered category.
-            //   rawPeriodProfit is wrong here because netDeposits is portfolio-wide (not category-specific).
-            //   Instead: gain = (current value of category assets) - (value at period start) - (net new capital into that category in the period)
+            // Use trueAllTimeGain for ALL/MAX ranges to be immune to cash/deposit errors
+            // Use rawPeriodProfit for specific ranges (1M, 6M, 1Y, 2Y, 3Y, 5Y, etc.)
+            // which calculates (EndValue - StartValue - NetDepositsInPeriod) from the exact simulation history
             const isAllTime = !isShortRange && (!range || range === 'MAX' || range === 'ALL');
-
-            let bulletproofPeriodGain;
-            if (isAllTime) {
-                bulletproofPeriodGain = trueAllTimeGain;
-            } else if (hasAssetTypeFilter) {
-                // gPeriodStartValue = firstGlobal.absoluteValue = the value at the END of the first data-point
-                // period (monthly or daily). Transactions within that same period are already embedded in
-                // gPeriodStartValue, so we must NOT re-count them in netNewInvestmentInPeriod.
-                // Solution: start counting new investment from the BEGINNING OF THE NEXT period.
-                const actualPeriodStartStr = normalizedGlobal.length > 0 ? normalizedGlobal[0].date : dateStrStart;
-
-                // Build the "first period after the anchor" cutoff date
-                let txCutoffDate;
-                if (actualPeriodStartStr.length === 7) {
-                    // Monthly format 'YYYY-MM' — advance by 1 month
-                    const [y, mo] = actualPeriodStartStr.split('-').map(Number);
-                    txCutoffDate = new Date(y, mo, 1); // JS months are 0-indexed, so mo = next month
-                } else {
-                    // Daily format 'YYYY-MM-DD' — advance by 1 day
-                    txCutoffDate = new Date(actualPeriodStartStr);
-                    txCutoffDate.setDate(txCutoffDate.getDate() + 1);
-                }
-
-                let netNewInvestmentInPeriod = 0;
-                for (const t of allTransactions) {
-                    if (!t.date || new Date(t.date) < txCutoffDate) continue;
-                    const a = assetMap[t.assetTicker];
-                    if (!a || !matchAssetType(a.type, t.assetTicker, assetType)) continue;
-                    const fx = t.exchangeRate || 1;
-                    if (t.type === 'BUY') {
-                        const cost = t.amount ? Math.abs(t.amount) : (t.quantity * t.price + t.commission + t.tax);
-                        netNewInvestmentInPeriod += cost / fx;
-                    } else if (t.type === 'SELL') {
-                        const proceeds = t.amount ? Math.abs(t.amount) : (t.quantity * t.price - t.commission - t.tax);
-                        netNewInvestmentInPeriod -= proceeds / fx;
-                    }
-                }
-                // Period gain = current filtered value − filtered value at anchor date − net new capital added after anchor
-                bulletproofPeriodGain = currentTotalValue - gPeriodStartValue - netNewInvestmentInPeriod;
-            } else {
-                bulletproofPeriodGain = rawPeriodProfit;
-            }
+            const bulletproofPeriodGain = isAllTime ? trueAllTimeGain : rawPeriodProfit;
 
             // When assetType is filtered (e.g. AZIONI, ETF, OBBL), intermediate buy/sell flows
             // severely corrupt simple Dietz ROI (causing extreme ratios like +234.8%).
