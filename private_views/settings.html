@@ -3005,12 +3005,52 @@
         tbody.innerHTML = html;
     }
 
-    function exportMgmtTransactions() {
-        const pid = document.getElementById('mgmt-portfolio-select').value;
-        if (pid === 'all') {
-            window.location.href = '/api/export-all-transactions';
-        } else {
-            window.location.href = `/api/portfolios/${pid}/export`;
+    async function exportMgmtTransactions() {
+        const pid = document.getElementById('mgmt-portfolio-select')?.value || 'all';
+        const url = pid === 'all' ? '/api/transactions/export' : `/api/transactions/export?portfolioId=${pid}`;
+        
+        const btn = document.querySelector('button[onclick="exportMgmtTransactions()"]');
+        const origHTML = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">sync</span> Exporting...';
+        }
+
+        try {
+            const res = await fetch(url);
+            if (!res.ok) {
+                const errText = await res.text();
+                alert('Errore durante l\'esportazione: ' + errText);
+                return;
+            }
+
+            const blob = await res.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = downloadUrl;
+
+            const disposition = res.headers.get('Content-Disposition');
+            let filename = `transactions_export_${pid}_${new Date().toISOString().split('T')[0]}.csv`;
+            if (disposition && disposition.includes('filename=')) {
+                const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                if (match && match[1]) filename = match[1].replace(/['"]/g, '');
+            }
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                window.URL.revokeObjectURL(downloadUrl);
+                document.body.removeChild(a);
+            }, 150);
+        } catch (err) {
+            console.error('Export error:', err);
+            window.location.href = url;
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origHTML;
+            }
         }
     }
 
@@ -3019,7 +3059,7 @@
         if (!file) return;
         const pid = document.getElementById('mgmt-portfolio-select').value;
         if (pid === 'all') {
-            alert('Please select a specific portfolio to import into, instead of "All Portfolios".');
+            alert('Seleziona un portafoglio specifico in cui importare le transazioni (non "All Portfolios").');
             event.target.value = '';
             return;
         }
@@ -3029,32 +3069,47 @@
             const text = e.target.result;
             const lines = text.split('\n').map(l => l.trim()).filter(l => l);
             if (lines.length < 2) {
-                alert('File is empty or invalid.');
+                alert('File vuoto o non valido.');
                 return;
             }
-            const headers = lines[0].split(',').map(h => h.trim());
+            const rawHeaders = lines[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, '').toLowerCase());
+            
+            const headerMap = {
+                'portfolioname': 'portfolioName', 'portfolio': 'portfolioName', 'portafoglio': 'portfolioName',
+                'type': 'type', 'tipo': 'type',
+                'assetticker': 'assetTicker', 'ticker': 'assetTicker', 'asset': 'assetTicker', 'simbolo': 'assetTicker',
+                'date': 'date', 'data': 'date',
+                'quantity': 'quantity', 'qty': 'quantity', 'quantità': 'quantity', 'quantita': 'quantity',
+                'price': 'price', 'prezzo': 'price',
+                'commission': 'commission', 'comm': 'commission', 'commissione': 'commission', 'commissioni': 'commission',
+                'tax': 'tax', 'tassa': 'tax', 'tasse': 'tax', 'ritenuta': 'tax',
+                'exchangerate': 'exchangeRate', 'fx rate': 'exchangeRate', 'fxrate': 'exchangeRate', 'cambio': 'exchangeRate', 'fx': 'exchangeRate',
+                'amount': 'amount', 'importo': 'amount', 'totale': 'amount',
+                'notes': 'notes', 'note': 'notes'
+            };
+
             const txs = [];
             for (let i = 1; i < lines.length; i++) {
                 const row = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || lines[i].split(',');
                 const t = {};
-                for (let j = 0; j < headers.length; j++) {
-                    let val = row[j] || '';
-                    if (val.startsWith('"') && val.endsWith('"')) val = val.substring(1, val.length - 1);
-                    const h = headers[j];
-                    if (h === 'portfolioName') t.portfolioName = val;
-                    if (h === 'type') t.type = val;
-                    if (h === 'assetTicker') t.assetTicker = val;
-                    if (h === 'date') t.date = val;
-                    if (h === 'quantity') t.quantity = val;
-                    if (h === 'price') t.price = val;
-                    if (h === 'commission') t.commission = val;
-                    if (h === 'tax') t.tax = val;
-                    if (h === 'exchangeRate') t.exchangeRate = val;
-                    if (h === 'amount') t.amount = val;
+                for (let j = 0; j < rawHeaders.length; j++) {
+                    let val = (row[j] || '').trim();
+                    if (val.startsWith('"') && val.endsWith('"')) val = val.substring(1, val.length - 1).trim();
+                    const targetProp = headerMap[rawHeaders[j]];
+                    if (targetProp) {
+                        t[targetProp] = val;
+                    }
                 }
-                txs.push(t);
+                if (t.type && (t.assetTicker || ['DEPOSIT', 'WITHDRAWAL', 'DEPOSITO', 'PRELIEVO'].includes((t.type || '').toUpperCase()))) {
+                    txs.push(t);
+                }
             }
             
+            if (txs.length === 0) {
+                alert('Nessuna transazione valida trovata nel file.');
+                return;
+            }
+
             try {
                 const res = await fetch('/api/transactions/bulk', {
                     method: 'POST',
@@ -3063,13 +3118,13 @@
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    alert('Imported successfully.');
+                    alert(`Importazione completata con successo (${txs.length} transazioni importate).`);
                     loadMgmtTransactions();
                 } else {
-                    alert('Error importing: ' + data.error);
+                    alert('Errore durante l\'importazione: ' + (data.error || res.statusText));
                 }
             } catch (err) {
-                alert('Network error during import.');
+                alert('Errore di rete durante l\'importazione.');
             }
         };
         reader.readAsText(file);

@@ -695,44 +695,63 @@ module.exports = function(dependencies) {
     });
 
     // ─── EXPORT TRANSACTIONS ─────────────────────────────────────────────────
-    // Each user exports only their own transactions; admin exports all.
-    router.get('/export-all-transactions', requireAuth, (req, res) => {
+    const handleTransactionsExport = (req, res) => {
         try {
+            const { portfolioId, format } = req.query;
             let transactions;
-            if (req.user.role === 'admin') {
+
+            if (portfolioId && portfolioId !== 'all') {
+                const pid = parseInt(portfolioId);
+                const hasAccess = req.user.role === 'admin' || database.db.prepare('SELECT 1 FROM portfolio_users WHERE portfolio_id = ? AND user_id = ?').get(pid, req.user.id);
+                if (!hasAccess) {
+                    return res.status(403).json({ error: 'Access denied to portfolio' });
+                }
                 transactions = database.db.prepare(`
                     SELECT t.*, p.name as portfolioName 
                     FROM transactions t
                     JOIN portfolios p ON t.portfolioId = p.id
-                    ORDER BY t.date ASC, t.id ASC
-                `).all();
+                    WHERE t.portfolioId = ?
+                    ORDER BY t.date DESC, t.id DESC
+                `).all(pid);
             } else {
-                transactions = database.db.prepare(`
-                    SELECT t.*, p.name as portfolioName 
-                    FROM transactions t
-                    JOIN portfolios p ON t.portfolioId = p.id
-                    JOIN portfolio_users pu ON p.id = pu.portfolio_id
-                    WHERE pu.user_id = ?
-                    ORDER BY t.date ASC, t.id ASC
-                `).all(req.user.id);
+                if (req.user.role === 'admin') {
+                    transactions = database.db.prepare(`
+                        SELECT t.*, p.name as portfolioName 
+                        FROM transactions t
+                        JOIN portfolios p ON t.portfolioId = p.id
+                        ORDER BY t.date DESC, t.id DESC
+                    `).all();
+                } else {
+                    transactions = database.db.prepare(`
+                        SELECT t.*, p.name as portfolioName 
+                        FROM transactions t
+                        JOIN portfolios p ON t.portfolioId = p.id
+                        JOIN portfolio_users pu ON p.id = pu.portfolio_id
+                        WHERE pu.user_id = ?
+                        ORDER BY t.date DESC, t.id DESC
+                    `).all(req.user.id);
+                }
             }
 
-            if (transactions.length === 0) {
-                return res.status(400).send('No transactions to export');
+            if (format === 'json') {
+                res.setHeader('Content-Type', 'application/json');
+                res.setHeader('Content-Disposition', `attachment; filename=transactions_export_${new Date().toISOString().split('T')[0]}.json`);
+                return res.json(transactions);
             }
 
-            const headers = ['Portfolio', 'Type', 'Asset', 'Date', 'Quantity', 'Price', 'Commission', 'Tax', 'FX Rate', 'Amount'];
-            const rows = transactions.map(t => [
-                t.portfolioName,
-                t.type,
+            const headers = ['portfolioName', 'type', 'assetTicker', 'date', 'quantity', 'price', 'commission', 'tax', 'exchangeRate', 'amount', 'notes'];
+            const rows = (transactions || []).map(t => [
+                t.portfolioName || '',
+                t.type || '',
                 t.assetTicker || '',
-                t.date,
-                t.quantity,
-                t.price,
-                t.commission,
-                t.tax,
-                t.exchangeRate,
-                t.amount
+                t.date || '',
+                t.quantity !== undefined && t.quantity !== null ? t.quantity : '',
+                t.price !== undefined && t.price !== null ? t.price : '',
+                t.commission || 0,
+                t.tax || 0,
+                t.exchangeRate || 1,
+                t.amount !== undefined && t.amount !== null ? t.amount : '',
+                t.notes || ''
             ]);
 
             let csvContent = headers.join(',') + '\n';
@@ -745,14 +764,21 @@ module.exports = function(dependencies) {
                 }).join(',') + '\n';
             });
 
-            res.setHeader('Content-Type', 'text/csv');
-            res.setHeader('Content-Disposition', `attachment; filename=all_transactions_export_${new Date().toISOString().split('T')[0]}.csv`);
+            const filename = portfolioId && portfolioId !== 'all' 
+                ? `portfolio_${portfolioId}_transactions_${new Date().toISOString().split('T')[0]}.csv`
+                : `all_transactions_export_${new Date().toISOString().split('T')[0]}.csv`;
+
+            res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+            res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
             res.status(200).send(csvContent);
         } catch (err) {
-            console.error('Export all error:', err);
+            console.error('Export error:', err);
             res.status(500).send('Export error: ' + err.message);
         }
-    });
+    };
+
+    router.get('/export-all-transactions', requireAuth, handleTransactionsExport);
+    router.get('/transactions/export', requireAuth, handleTransactionsExport);
 
     // ─── PARSE BROKER CSV ─────────────────────────────────────────────────────────────
     // POST /api/transactions/parse-broker

@@ -279,53 +279,6 @@ module.exports = function (dependencies) {
         }
     });
 
-    // GET /api/export-all-transactions
-    router.get('/export-all-transactions', requireAuth, (req, res) => {
-        try {
-            const transactions = database.db.prepare(`
-                SELECT t.*, p.name as portfolioName 
-                FROM transactions t
-                JOIN portfolios p ON t.portfolioId = p.id
-                ORDER BY t.date ASC, t.id ASC
-            `).all();
-
-            if (transactions.length === 0) {
-                return res.status(400).send('No transactions to export');
-            }
-
-            const headers = ['Portfolio', 'Type', 'Asset', 'Date', 'Quantity', 'Price', 'Commission', 'Tax', 'FX Rate', 'Amount'];
-            const rows = transactions.map(t => [
-                t.portfolioName,
-                t.type,
-                t.assetTicker || '',
-                t.date,
-                t.quantity,
-                t.price,
-                t.commission,
-                t.tax,
-                t.exchangeRate,
-                t.amount
-            ]);
-
-            let csvContent = headers.join(',') + '\n';
-            rows.forEach(row => {
-                csvContent += row.map(value => {
-                    if (typeof value === 'string') {
-                        return `"${value.replace(/"/g, '""')}"`;
-                    }
-                    return value;
-                }).join(',') + '\n';
-            });
-
-            res.setHeader('Content-Type', 'text/csv');
-            res.setHeader('Content-Disposition', `attachment; filename=all_transactions_export_${new Date().toISOString().split('T')[0]}.csv`);
-            res.status(200).send(csvContent);
-        } catch (err) {
-            console.error('Export all error:', err);
-            res.status(500).send('Export error: ' + err.message);
-        }
-    });
-
     // GET /api/analytics/portfolio-performance/:id
     router.get('/analytics/portfolio-performance/:id', requireAuth, requirePortfolioAccess, async (req, res) => {
         try {
