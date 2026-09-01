@@ -1446,11 +1446,18 @@ module.exports = function (dependencies) {
             if (isAllTime) {
                 bulletproofPeriodGain = trueAllTimeGain;
             } else if (hasAssetTypeFilter) {
-                // Compute net new investment in the filtered category during the period
-                const periodStartDate = new Date(dateStrStart);
+                // IMPORTANT: use the actual first data point date, not dateStrStart.
+                // gPeriodStartValue = firstGlobal.absoluteValue which is the value at normalizedGlobal[0].date.
+                // If the history doesn't go back to dateStrStart, using dateStrStart as cutoff for transactions
+                // would double-count buys in the gap (they'd be implicit in gPeriodStartValue AND explicit
+                // as netNewInvestment), causing inflated gains.
+                const actualPeriodStartStr = normalizedGlobal.length > 0 ? normalizedGlobal[0].date : dateStrStart;
+                // Dates in normalizedGlobal can be 'YYYY-MM' (monthly) — parse to first day of month
+                const actualPeriodStartDate = new Date(actualPeriodStartStr.length === 7 ? actualPeriodStartStr + '-01' : actualPeriodStartStr);
+
                 let netNewInvestmentInPeriod = 0;
                 for (const t of allTransactions) {
-                    if (!t.date || new Date(t.date) < periodStartDate) continue;
+                    if (!t.date || new Date(t.date) < actualPeriodStartDate) continue;
                     const a = assetMap[t.assetTicker];
                     if (!a || !matchAssetType(a.type, t.assetTicker, assetType)) continue;
                     const fx = t.exchangeRate || 1;
@@ -1462,7 +1469,7 @@ module.exports = function (dependencies) {
                         netNewInvestmentInPeriod -= proceeds / fx;
                     }
                 }
-                // Period gain = current filtered value - filtered value at period start - new money put in (or out) during period
+                // Period gain = current filtered value - filtered value at period start - net new capital invested in the category
                 bulletproofPeriodGain = currentTotalValue - gPeriodStartValue - netNewInvestmentInPeriod;
             } else {
                 bulletproofPeriodGain = rawPeriodProfit;
