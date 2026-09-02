@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Push Notification Manager for M2T
+ * Push Notification Manager for FolioTrack
  */
 const ftPush = {
     swRegistration: null,
@@ -9,17 +9,16 @@ const ftPush = {
 
     async init() {
         if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-            console.warn('Push Notifications require HTTPS');
-            // We don't alert here yet, but we'll return false
+            console.warn('Push Notifications require HTTPS or localhost');
         }
 
         if (!('serviceWorker' in navigator)) {
-            console.warn('Service Workers are not supported');
+            console.warn('Service Workers are not supported in this browser');
             return false;
         }
 
         if (!('PushManager' in window)) {
-            console.warn('Push Manager is not supported');
+            console.warn('Push Manager is not supported in this browser');
             return false;
         }
 
@@ -43,11 +42,23 @@ const ftPush = {
             if (!this.swRegistration) {
                 const supported = await this.init();
                 if (!supported || !this.swRegistration) {
-                    let msg = 'Push non supportato su questo browser o connessione non sicura (richiede HTTPS).';
-                    if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-                        msg += ' ATTENZIONE: Stai usando HTTP, le notifiche richiedono HTTPS.';
+                    let msg = 'Push non supportato su questo browser o connessione non sicura (richiede HTTPS o localhost).';
+                    if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                        msg += ' ATTENZIONE: Stai usando HTTP, le notifiche push dei browser richiedono HTTPS.';
                     }
                     throw new Error(msg);
+                }
+            }
+
+            if ('Notification' in window) {
+                if (Notification.permission === 'denied') {
+                    throw new Error('Permesso di notifica bloccato nel browser. Abilita i permessi nelle impostazioni del sito nel tuo browser.');
+                }
+                if (Notification.permission !== 'granted') {
+                    const permission = await Notification.requestPermission();
+                    if (permission !== 'granted') {
+                        throw new Error('Permesso di notifica non concesso.');
+                    }
                 }
             }
 
@@ -57,10 +68,20 @@ const ftPush = {
                 throw new Error(`Server API Error: ${response.status} ${errData.error || ''}`);
             }
             const { publicKey } = await response.json();
-            if (!publicKey) throw new Error('VAPID Public Key missing from server response');
+            if (!publicKey) throw new Error('VAPID Public Key mancante dalla risposta del server');
             
             const applicationServerKey = this.urlB64ToUint8Array(publicKey);
             
+            // Clean up existing subscription if any to re-bind cleanly
+            try {
+                const existingSub = await this.swRegistration.pushManager.getSubscription();
+                if (existingSub) {
+                    await existingSub.unsubscribe();
+                }
+            } catch (unsubErr) {
+                console.warn('Could not unsubscribe old sub:', unsubErr);
+            }
+
             const subscription = await this.swRegistration.pushManager.subscribe({
                 userVisibleOnly: true,
                 applicationServerKey: applicationServerKey
@@ -68,7 +89,10 @@ const ftPush = {
 
             console.log('User is subscribed:', subscription);
             const saveRes = await this.updateSubscriptionOnServer(subscription);
-            if (!saveRes.ok) throw new Error('Failed to save subscription on server');
+            if (!saveRes.ok) {
+                const saveErr = await saveRes.json().catch(() => ({}));
+                throw new Error(saveErr.error || 'Errore salvataggio sottoscrizione sul server');
+            }
             
             this.isSubscribed = true;
             return { success: true };
@@ -80,10 +104,13 @@ const ftPush = {
 
     async unsubscribeUser() {
         try {
-            const subscription = await this.swRegistration.pushManager.getSubscription();
-            if (subscription) {
-                await subscription.unsubscribe();
-                await this.removeSubscriptionFromServer(subscription);
+            if (!this.swRegistration) await this.init();
+            if (this.swRegistration) {
+                const subscription = await this.swRegistration.pushManager.getSubscription();
+                if (subscription) {
+                    await subscription.unsubscribe();
+                    await this.removeSubscriptionFromServer(subscription);
+                }
             }
             this.isSubscribed = false;
             return true;
@@ -94,18 +121,23 @@ const ftPush = {
     },
 
     async updateSubscriptionOnServer(subscription) {
+        const subData = subscription.toJSON ? subscription.toJSON() : subscription;
         return fetch('/api/push/subscribe', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ subscription })
+            body: JSON.stringify({ 
+                subscription: subData,
+                device_name: navigator.userAgent
+            })
         });
     },
 
     async removeSubscriptionFromServer(subscription) {
+        const subData = subscription.toJSON ? subscription.toJSON() : subscription;
         return fetch('/api/push/unsubscribe', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ subscription })
+            body: JSON.stringify({ subscription: subData })
         });
     },
 
