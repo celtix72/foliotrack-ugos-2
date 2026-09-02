@@ -144,13 +144,16 @@
     <!-- Period Range -->
     <div class="flex items-center gap-2">
         <span class="text-[9px] font-bold uppercase tracking-widest text-slate-400 shrink-0">Periodo</span>
-        <div class="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-900/50 p-0.5 rounded-lg border border-slate-200 dark:border-slate-800">
-            <button onclick="changeRange('1M')" data-range="1M" class="range-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all bg-white dark:bg-slate-700 shadow-sm text-primary">1M</button>
-            <button onclick="changeRange('6M')" data-range="6M" class="range-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">6M</button>
-            <button onclick="changeRange('1Y')" data-range="1Y" class="range-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">1Y</button>
-            <button onclick="changeRange('2Y')" data-range="2Y" class="range-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">2Y</button>
-            <button onclick="changeRange('3Y')" data-range="3Y" class="range-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">3Y</button>
-            <button onclick="changeRange('5Y')" data-range="5Y" class="range-btn px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">5Y</button>
+        <div class="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-900/50 p-0.5 rounded-lg border border-slate-200 dark:border-slate-800 font-mono">
+            <button onclick="changeRange('1W')" data-range="1W" class="range-btn px-2 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">1W</button>
+            <button onclick="changeRange('1M')" data-range="1M" class="range-btn px-2 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all bg-white dark:bg-slate-700 shadow-sm text-primary">1M</button>
+            <button onclick="changeRange('3M')" data-range="3M" class="range-btn px-2 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">3M</button>
+            <button onclick="changeRange('YTD')" data-range="YTD" class="range-btn px-2 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">YTD</button>
+            <button onclick="changeRange('1Y')" data-range="1Y" class="range-btn px-2 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">1Y</button>
+            <button onclick="changeRange('2Y')" data-range="2Y" class="range-btn px-2 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">2Y</button>
+            <button onclick="changeRange('3Y')" data-range="3Y" class="range-btn px-2 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">3Y</button>
+            <button onclick="changeRange('5Y')" data-range="5Y" class="range-btn px-2 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">5Y</button>
+            <button onclick="changeRange('ALL')" data-range="ALL" class="range-btn px-2 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all hover:bg-white dark:hover:bg-slate-800 text-slate-500">ALL</button>
         </div>
     </div>
     <div class="h-4 w-px bg-slate-200 dark:bg-slate-700 shrink-0"></div>
@@ -415,7 +418,18 @@
     let currentAssetType = 'all';
     let perfChart, assetChart, geoChart, currencyChart, divChart;
 
-    const RANGE_LABELS = { '1M': '1 Month', '6M': '6 Months', '1Y': '12 Months', '2Y': '2 Years', '3Y': '3 Years', '5Y': '5 Years' };
+    const RANGE_LABELS = { 
+        '1W': '1 Week', 
+        '1M': '1 Month', 
+        '3M': '3 Months', 
+        '6M': '6 Months', 
+        'YTD': 'YTD', 
+        '1Y': '12 Months', 
+        '2Y': '2 Years', 
+        '3Y': '3 Years', 
+        '5Y': '5 Years', 
+        'ALL': 'All Time' 
+    };
 
     async function changeRange(range) {
         currentRange = range;

@@ -884,9 +884,17 @@ module.exports = function (dependencies) {
 
             let startDate;
             switch (range) {
+                case '1W':
+                    startDate = new Date(today);
+                    startDate.setDate(today.getDate() - 7);
+                    break;
                 case '1M':
                     startDate = new Date(today);
                     startDate.setMonth(today.getMonth() - 1);
+                    break;
+                case '3M':
+                    startDate = new Date(today);
+                    startDate.setMonth(today.getMonth() - 3);
                     break;
                 case '6M':
                     startDate = new Date(today);
@@ -912,6 +920,7 @@ module.exports = function (dependencies) {
                     startDate = new Date(today.getFullYear(), 0, 1);
                     break;
                 case 'ALL':
+                case 'MAX':
                     startDate = allTransactions.length > 0 ? new Date(allTransactions[0].date) : new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
                     break;
                 default:
@@ -930,7 +939,7 @@ module.exports = function (dependencies) {
                  return res.json({ error: 'No performance data' });
             }
 
-            const isShortRange = range === '1M' || range === '1W' || range === '1D';
+            const isShortRange = range === '1W' || range === '1M' || range === '3M' || range === '1D';
 
             const fetchBenchmark = async (ticker) => {
                 try {

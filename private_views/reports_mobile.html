@@ -195,13 +195,16 @@
       <!-- Period Row -->
       <div class="flex items-center gap-2 mb-2">
         <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 shrink-0 w-16">Periodo</span>
-        <div id="mob-reports-range-bar" class="mob-chart-range-bar flex-1" style="margin:0;border-radius:10px;">
+        <div id="mob-reports-range-bar" class="mob-chart-range-bar flex-1 overflow-x-auto no-scrollbar" style="margin:0;border-radius:10px;">
+          <div class="mob-range-btn" onclick="mobChangeRange('1W')" data-range="1W">1W</div>
           <div class="mob-range-btn active" onclick="mobChangeRange('1M')" data-range="1M">1M</div>
-          <div class="mob-range-btn" onclick="mobChangeRange('6M')" data-range="6M">6M</div>
+          <div class="mob-range-btn" onclick="mobChangeRange('3M')" data-range="3M">3M</div>
+          <div class="mob-range-btn" onclick="mobChangeRange('YTD')" data-range="YTD">YTD</div>
           <div class="mob-range-btn" onclick="mobChangeRange('1Y')" data-range="1Y">1Y</div>
           <div class="mob-range-btn" onclick="mobChangeRange('2Y')" data-range="2Y">2Y</div>
           <div class="mob-range-btn" onclick="mobChangeRange('3Y')" data-range="3Y">3Y</div>
           <div class="mob-range-btn" onclick="mobChangeRange('5Y')" data-range="5Y">5Y</div>
+          <div class="mob-range-btn" onclick="mobChangeRange('ALL')" data-range="ALL">ALL</div>
         </div>
       </div>
       <!-- Asset Type Row -->
