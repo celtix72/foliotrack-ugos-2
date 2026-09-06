@@ -208,9 +208,15 @@
         <h3 class="text-xl font-bold">Performance Comparison</h3>
         <p class="text-sm text-slate-500">Portfolio vs Benchmark (normalizzati a 100)</p>
     </div>
-    <div class="flex flex-wrap items-center gap-3">
-        <div id="rep-chart-legend" class="flex flex-wrap items-center gap-4 mr-2"></div>
-        <button id="toggle-individual-btn" onclick="toggleIndividualPortfolios()" class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:border-primary hover:text-primary transition-all">Show Portfolios</button>
+    <div class="flex flex-wrap items-center gap-2 sm:gap-2.5">
+        <!-- Portfolio indicator -->
+        <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider select-none">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span>Portfolio</span>
+        </div>
+        <!-- Benchmark mini tags -->
+        <div id="rep-benchmarks-tags" class="flex flex-wrap items-center gap-1.5"></div>
+        <button id="toggle-individual-btn" onclick="toggleIndividualPortfolios()" class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:border-primary hover:text-primary transition-all">Show Portfolios</button>
     </div>
 </div>
 <!-- KPI bar -->
@@ -618,19 +624,72 @@
         return g;
     }
 
-    function repRenderLegend(datasets) {
-        const el = document.getElementById('rep-chart-legend');
-        if (!el) return;
-        el.innerHTML = datasets.filter(ds => !ds.hidden).map(ds => {
-            const hasDash = ds.borderDash && ds.borderDash.length;
-            const lineStyle = hasDash
-                ? `background:repeating-linear-gradient(to right,${ds.borderColor} 0,${ds.borderColor} 6px,transparent 6px,transparent 10px);background-size:100% 2px;background-repeat:no-repeat;background-position:0 50%;`
-                : `background-color:${ds.borderColor};height:3px;border-radius:2px;`;
-            return `<div class="flex items-center gap-1.5">
-                <div style="width:22px;${lineStyle}"></div>
-                <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">${ds.label}</span>
-            </div>`;
+    const BENCHMARKS_LIST = [
+        { key: 'ftsemib', label: 'FTSE MIB', color: '#0284c7' },
+        { key: 'sp500',   label: 'S&P 500',  color: '#f59e0b' },
+        { key: 'msci',    label: 'MSCI World', color: '#8b5cf6' }
+    ];
+
+    let _activeBenchmarks = (() => {
+        try {
+            const saved = localStorage.getItem('rep_active_benchmarks');
+            return saved ? JSON.parse(saved) : { ftsemib: true, sp500: true, msci: true };
+        } catch (e) {
+            return { ftsemib: true, sp500: true, msci: true };
+        }
+    })();
+
+    let _lastBenchmarkReturns = {};
+
+    function renderBenchmarkTags() {
+        const container = document.getElementById('rep-benchmarks-tags');
+        if (!container) return;
+
+        container.innerHTML = BENCHMARKS_LIST.map(b => {
+            const isActive = _activeBenchmarks[b.key] !== false;
+            const ret = _lastBenchmarkReturns[b.key];
+            const hasRet = ret !== null && ret !== undefined && !isNaN(ret);
+            const retSign = (ret >= 0) ? '+' : '';
+            const retStr = hasRet ? `(${retSign}${ret.toFixed(1)}%)` : '';
+
+            if (isActive) {
+                return `
+                    <button type="button" onclick="toggleBenchmark('${b.key}')" 
+                        title="Clicca per nascondere ${b.label}"
+                        class="benchmark-tag-btn flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black transition-all shadow-xs cursor-pointer border select-none hover:opacity-90 active:scale-95"
+                        style="background-color: ${b.color}15; border-color: ${b.color}55; color: ${b.color};">
+                        <span style="display:inline-block; width:10px; height:2.5px; border-radius:1px; background-color:${b.color};"></span>
+                        <span class="tracking-wider">${b.label}</span>
+                        ${hasRet ? `<span class="opacity-80 font-mono text-[9px] font-bold">${retStr}</span>` : ''}
+                    </button>
+                `;
+            } else {
+                return `
+                    <button type="button" onclick="toggleBenchmark('${b.key}')" 
+                        title="Clicca per visualizzare ${b.label}"
+                        class="benchmark-tag-btn flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all cursor-pointer border border-dashed border-slate-300 dark:border-slate-700/80 text-slate-400 dark:text-slate-500 opacity-60 hover:opacity-100 active:scale-95 select-none bg-slate-100/40 dark:bg-slate-800/30 line-through">
+                        <span style="display:inline-block; width:10px; height:2px; background-color: #94a3b8;"></span>
+                        <span class="tracking-wider">${b.label}</span>
+                    </button>
+                `;
+            }
         }).join('');
+    }
+
+    function toggleBenchmark(key) {
+        _activeBenchmarks[key] = !_activeBenchmarks[key];
+        try {
+            localStorage.setItem('rep_active_benchmarks', JSON.stringify(_activeBenchmarks));
+        } catch (e) {}
+
+        if (perfChart) {
+            const ds = perfChart.data.datasets.find(d => d.benchmarkKey === key);
+            if (ds) {
+                ds.hidden = !_activeBenchmarks[key];
+                perfChart.update();
+            }
+        }
+        renderBenchmarkTags();
     }
 
     function repUpdateKPI(twrData, sp500Data) {
@@ -738,7 +797,27 @@
                 pointHoverBorderWidth: 2
             },
             {
+                label: 'FTSE MIB',
+                benchmarkKey: 'ftsemib',
+                data: (() => {
+                    const series = (p.ftsemib || []).map(d => ({ x: d.date, y: d.value }));
+                    if (series.length > 0 && labels.length > 0 && series[series.length - 1].x !== labels[labels.length - 1]) {
+                        series.push({ x: labels[labels.length - 1], y: series[series.length - 1].y });
+                    }
+                    return series;
+                })(),
+                borderColor: '#0284c7',
+                borderDash: [5, 4],
+                borderWidth: 1.5,
+                pointRadius: 0,
+                fill: false,
+                tension: 0.35,
+                spanGaps: true,
+                hidden: _activeBenchmarks['ftsemib'] === false
+            },
+            {
                 label: 'S&P 500',
+                benchmarkKey: 'sp500',
                 data: (() => {
                     const series = (p.sp500 || []).map(d => ({ x: d.date, y: d.value }));
                     if (series.length > 0 && labels.length > 0 && series[series.length - 1].x !== labels[labels.length - 1]) {
@@ -752,10 +831,12 @@
                 pointRadius: 0,
                 fill: false,
                 tension: 0.35,
-                spanGaps: true
+                spanGaps: true,
+                hidden: _activeBenchmarks['sp500'] === false
             },
             {
                 label: 'MSCI World',
+                benchmarkKey: 'msci',
                 data: (() => {
                     const series = (p.msci || []).map(d => ({ x: d.date, y: d.value }));
                     if (series.length > 0 && labels.length > 0 && series[series.length - 1].x !== labels[labels.length - 1]) {
@@ -769,7 +850,8 @@
                 pointRadius: 0,
                 fill: false,
                 tension: 0.35,
-                spanGaps: true
+                spanGaps: true,
+                hidden: _activeBenchmarks['msci'] === false
             }
         ];
 
@@ -780,13 +862,14 @@
             const port = p.individual[pid];
             datasets.push({
                 label: port.name,
+                isIndividual: true,
                 data: port.history.map(h => ({ x: h.date, y: h.value, events: h.events })),
                 borderColor: pColors[colorIdx % pColors.length],
                 borderWidth: 1.5,
                 pointRadius: 0,
                 fill: false,
                 tension: 0.35,
-                hidden: true
+                hidden: !_individualPortfoliosVisible
             });
             colorIdx++;
         }
@@ -872,9 +955,12 @@
             }
         });
 
-        // Aggiorna KPI e legenda
+        // Aggiorna KPI e mini tag benchmark
+        if (p.benchmarks) {
+            _lastBenchmarkReturns = p.benchmarks;
+        }
+        renderBenchmarkTags();
         repUpdateKPI(twrData, p.sp500 || []);
-        repRenderLegend(datasets);
     }
 
     // ── Toggle individual portfolios visibility ───────────────────────────
@@ -883,8 +969,8 @@
         _individualPortfoliosVisible = !_individualPortfoliosVisible;
         const btn = document.getElementById('toggle-individual-btn');
         if (!perfChart) return;
-        perfChart.data.datasets.forEach((ds, idx) => {
-            if (idx >= 3) { // first 3 are Portfolio, S&P500, MSCI
+        perfChart.data.datasets.forEach((ds) => {
+            if (ds.isIndividual) {
                 ds.hidden = !_individualPortfoliosVisible;
             }
         });
