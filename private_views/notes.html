@@ -588,10 +588,6 @@
                 if (nm) nm.textContent = user.username || 'User';
                 const rl = $('sidebar-user-role');
                 if (rl) rl.textContent = user.role || 'user';
-                if (user.role === 'admin') {
-                    const adminLink = $('sidebar-admin-link');
-                    if (adminLink) adminLink.style.display = 'flex';
-                }
             }
         }
 

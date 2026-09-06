@@ -81,15 +81,11 @@
         const sidebarNameEl     = document.getElementById('sidebar-user-name');
         const sidebarRoleEl     = document.getElementById('sidebar-user-role');
         const sidebarLogoutBtn  = document.getElementById('sidebar-logout-btn');
-        const sidebarAdminLink  = document.getElementById('sidebar-admin-link');
 
         if (sidebarInitialsEl) sidebarInitialsEl.textContent = initials;
         if (sidebarNameEl)     sidebarNameEl.textContent = displayName;
         if (sidebarRoleEl)     sidebarRoleEl.textContent = isAdmin ? 'Admin' : 'Utente';
         if (sidebarLogoutBtn)  sidebarLogoutBtn.onclick = logout;
-        if (sidebarAdminLink) {
-            sidebarAdminLink.style.display = isAdmin ? '' : 'none';
-        }
 
         // ── Header user info (desktop) ─────────────────────────────────────
         const headerUserName = document.getElementById('header-user-name');
@@ -107,16 +103,6 @@
         if (mobileUserRole) mobileUserRole.textContent = isAdmin ? 'Admin' : (user.role || 'User');
         if (mobileLogoutBtn) mobileLogoutBtn.onclick = logout;
 
-        // ── Admin Links Visibility ──────────────────────────────────────────
-        const adminLinks = [
-            document.getElementById('sidebar-admin-link'),
-            document.getElementById('mobile-admin-link'),
-            document.getElementById('mobile-admin-link-header')
-        ];
-        adminLinks.forEach(link => {
-            if (link) link.style.display = isAdmin ? '' : 'none';
-        });
-        
         // Support for class-based toggling if used elsewhere
         document.querySelectorAll('.admin-only').forEach(el => {
             el.style.display = isAdmin ? '' : 'none';

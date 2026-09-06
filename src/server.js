@@ -2757,11 +2757,8 @@ app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, '../public', 'login.html'));
 });
 
-// Admin panel (requires auth + admin role)
-app.get('/admin', requireAuth, requireAdmin, (req, res) => {
-    const file = isMobile(req) ? 'admin_mobile.html' : 'admin.html';
-    serveWithSidebar(req, res, file);
-});
+// Admin panel route → redirects to /settings (integrated)
+app.get('/admin', requireAuth, (req, res) => res.redirect('/settings'));
 
 
 // Helper per iniettare la sidebar nelle viste desktop
