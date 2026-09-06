@@ -1,5 +1,6 @@
 const express = require('express');
 const axios   = require('axios');
+const { isValidQuotePrice } = require('../utils/finance');
 
 /**
  * Assets & Fundamentals Router
@@ -990,23 +991,27 @@ router.post('/assets/import-history', requireAuth, (req, res) => {
 
     try {
         const insert = database.db.prepare('INSERT OR REPLACE INTO asset_quotes (ticker, date, price) VALUES (?, ?, ?)');
+        const assetMeta = database.db.prepare('SELECT type, isin, dataSource, ticker FROM assets WHERE ticker = ?').get(ticker) || { ticker };
+        let validCount = 0;
         database.db.transaction(() => {
             for (const entry of history) {
                 // Handle different date formats (YYYYMMDD from Bitaly or YYYY-MM-DD)
                 let dateStr = entry.dt || entry.date;
-                if (dateStr.length === 8 && !dateStr.includes('-')) {
-                    dateStr = `${dateStr.substring(0,4)}-${dateStr.substring(4,6)}-${dateStr.substring(6,8)}`;
+                if (dateStr && String(dateStr).length === 8 && !String(dateStr).includes('-')) {
+                    const s = String(dateStr);
+                    dateStr = `${s.substring(0,4)}-${s.substring(4,6)}-${s.substring(6,8)}`;
                 }
                 const price = parseFloat(entry.closePx || entry.price);
-                if (dateStr && !isNaN(price)) {
+                if (dateStr && isValidQuotePrice(price, assetMeta).valid) {
                     insert.run(ticker, dateStr, price);
+                    validCount++;
                 }
             }
         })();
         
-        logger.info(`Imported ${history.length} historical quotes for ${ticker}`);
+        logger.info(`Imported ${validCount} valid historical quotes for ${ticker} (out of ${history.length} submitted)`);
         clearPerformanceCache();
-        res.json({ success: true, count: history.length });
+        res.json({ success: true, count: validCount });
     } catch (err) {
         logger.error(`Failed to import history for ${ticker}`, err);
         res.status(500).json({ error: err.message });

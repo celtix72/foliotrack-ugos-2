@@ -1,4 +1,5 @@
 const express = require('express');
+const { isValidQuotePrice } = require('../utils/finance');
 
 /**
  * Market Router (search, indices, news, market status/sync)
@@ -210,11 +211,12 @@ router.get('/validate-ticker', requireAuth, async (req, res) => {
             if (isItIsin) {
                 const bResult = await B_ITA(isin);
                 if (bResult.success) {
+                    const priceValid = isValidQuotePrice(bResult.price, { ticker, isin, type: 'Bond', dataSource: 'B_ITA' }).valid;
                     metadata = {
                         ticker: ticker || isin,
                         name: bResult.name || ticker || isin,
-                        currentPrice: bResult.price,
-                        changePercent: bResult.variation,
+                        currentPrice: priceValid ? bResult.price : 0,
+                        changePercent: priceValid ? bResult.variation : 0,
                         quoteType: 'Bond',
                         exchange: 'XMIL',
                         currency: 'EUR',

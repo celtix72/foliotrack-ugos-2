@@ -10,7 +10,7 @@ const fs           = require('fs');
 const jwt          = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const webpush      = require('web-push');
-const { xirr, calculateTWR } = require('./utils/finance');
+const { xirr, calculateTWR, isBondAsset, isValidQuotePrice, sanitizeQuotePrice } = require('./utils/finance');
 const Parser = require('rss-parser');
 const rssParser = new Parser();
 const { callAIModel, parseAIResponse, checkNewGeminiModels } = require('./services/aiService');
@@ -1060,22 +1060,37 @@ function clearPerformanceCache() {
 
             if (resp.data && resp.data.history && resp.data.history.historyDt && resp.data.history.historyDt.length > 0) {
                 const dtArr = resp.data.history.historyDt;
-                const price = dtArr[dtArr.length - 1].closePx;
-                let variation = null;
-
-                if (dtArr.length > 1) {
-                    const prevPrice = dtArr[dtArr.length - 2].closePx;
-                    if (price && prevPrice) {
-                        variation = ((price - prevPrice) / prevPrice) * 100;
+                // Find last valid entry scanning backwards from the end
+                let validEntry = null;
+                let validIdx = -1;
+                for (let i = dtArr.length - 1; i >= 0; i--) {
+                    const candidate = dtArr[i];
+                    if (candidate && candidate.closePx) {
+                        const check = isValidQuotePrice(candidate.closePx, { isin, type: assetType || 'Bond', dataSource: 'B_ITA' });
+                        if (check.valid) {
+                            validEntry = candidate;
+                            validIdx = i;
+                            break;
+                        } else {
+                            logger.warn(`B_ITA [${isin}]: Ignored invalid/inconsistent closePx ${candidate.closePx} on dt=${candidate.dt} (${check.reason})`);
+                        }
                     }
                 }
 
-                if (price !== undefined && price !== null) {
-                    const rawDt = dtArr[dtArr.length - 1].dt; // e.g. "20260608"
-                    const parsedDate = rawDt ? `${rawDt.substring(0,4)}-${rawDt.substring(4,6)}-${rawDt.substring(6,8)}` : null;
+                if (validEntry) {
+                    const price = parseFloat(validEntry.closePx);
+                    let variation = null;
+                    if (validIdx > 0 && dtArr[validIdx - 1]?.closePx) {
+                        const prevPrice = parseFloat(dtArr[validIdx - 1].closePx);
+                        if (prevPrice > 0) {
+                            variation = ((price - prevPrice) / prevPrice) * 100;
+                        }
+                    }
+                    const rawDt = validEntry.dt ? String(validEntry.dt) : '';
+                    const parsedDate = rawDt.length === 8 ? `${rawDt.substring(0,4)}-${rawDt.substring(4,6)}-${rawDt.substring(6,8)}` : null;
                     return {
                         success: true,
-                        price: parseFloat(price),
+                        price: price,
                         variation: variation !== null ? parseFloat(variation) : null,
                         url: finalUrl,
                         quoteDate: parsedDate,
@@ -2030,9 +2045,12 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                     const map = {};
                     resp.data.history.historyDt.forEach(h => {
                         if (h.dt && h.closePx) {
-                            const d = h.dt.toString();
-                            const dateStr = `${d.substring(0, 4)}-${d.substring(4, 6)}-${d.substring(6, 8)}`;
-                            map[dateStr] = h.closePx;
+                            const valCheck = isValidQuotePrice(h.closePx, { ticker, isin, type: 'Bond', dataSource: 'B_ITA' });
+                            if (valCheck.valid) {
+                                const d = h.dt.toString();
+                                const dateStr = `${d.substring(0, 4)}-${d.substring(4, 6)}-${d.substring(6, 8)}`;
+                                map[dateStr] = parseFloat(h.closePx);
+                            }
                         }
                     });
                     logger.info(`Successfully scraped B_ITA history for ${ticker}: ${Object.keys(map).length} points`);
@@ -2123,7 +2141,19 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
         // 4. Forward-filling & Sanitization
         if (pricesMap && Object.keys(pricesMap).length > 0) {
             const dates = Object.keys(pricesMap).sort();
-            let lastValid = pricesMap[dates[0]];
+            let lastValid = null;
+            for (const d of dates) {
+                if (isValidQuotePrice(pricesMap[d], assetMeta).valid) {
+                    lastValid = pricesMap[d];
+                    break;
+                }
+            }
+            if (lastValid === null) {
+                lastValid = (assetMeta && isValidQuotePrice(assetMeta.currentPrice, assetMeta).valid)
+                    ? assetMeta.currentPrice
+                    : (isBondAsset(assetMeta) ? 100.0 : pricesMap[dates[0]]);
+            }
+
             const fullMap = {};
             const startDateObj = new Date(dates[0]);
             
@@ -2131,7 +2161,8 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
             for (let d = new Date(startDateObj); d <= today; d.setDate(d.getDate() + 1)) {
                 const ds = d.toISOString().split('T')[0];
                 let p = pricesMap[ds];
-                if (!p || p <= 0) { 
+                const pCheck = isValidQuotePrice(p, assetMeta, lastValid);
+                if (!pCheck.valid) { 
                     p = lastValid;
                     if (d.getDay() !== 0 && d.getDay() !== 6) isInconsistent = 1;
                 } else {
@@ -2147,7 +2178,9 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
             const insertQuote = database.db.prepare(`INSERT OR REPLACE INTO asset_quotes (ticker, date, price) VALUES (?, ?, ?)`);
             database.db.transaction(() => {
                 for (const [date, price] of Object.entries(pricesMap)) {
-                    insertQuote.run(ticker, date, price);
+                    if (isValidQuotePrice(price, assetMeta).valid) {
+                        insertQuote.run(ticker, date, price);
+                    }
                 }
             })();
 
@@ -2156,7 +2189,7 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
             const latestHistoryDate = sortedDates[sortedDates.length - 1];
             const latestHistoryPrice = pricesMap[latestHistoryDate];
 
-            if (latestHistoryPrice > 0) {
+            if (isValidQuotePrice(latestHistoryPrice, assetMeta).valid) {
                 database.db.prepare(`
                     UPDATE assets 
                     SET currentPrice = ?, quoteDate = ?, isVirtualHistory = ?, hasHistoryInconsistency = ?, updatedAt = datetime('now') 
@@ -2357,13 +2390,13 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                     let price = 0;
 
                     // Priority 1: If today, use live currentPrice from assetMetadataCache if available
-                    if (isTodayNow && assetMeta && assetMeta.currentPrice > 0) {
+                    if (isTodayNow && assetMeta && isValidQuotePrice(assetMeta.currentPrice, assetMeta).valid) {
                         price = assetMeta.currentPrice;
                     }
 
                     // Priority 2: If day has a BUY transaction with price, use it
                     if (!price || price === 0) {
-                        const dayBuyTx = dayTx.filter(t => t.assetTicker === ticker && t.type === 'BUY' && t.price > 0);
+                        const dayBuyTx = dayTx.filter(t => t.assetTicker === ticker && t.type === 'BUY' && t.price > 0 && isValidQuotePrice(t.price, assetMeta).valid);
                         if (dayBuyTx.length > 0) {
                             price = dayBuyTx.at(-1).price;
                         }
@@ -2371,7 +2404,10 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
 
                     // Priority 3: Historical price from pricesMap for dateStr
                     if (!price || price === 0) {
-                        price = historicalPrices[ticker]?.[dateStr];
+                        const candidate = historicalPrices[ticker]?.[dateStr];
+                        if (candidate && isValidQuotePrice(candidate, assetMeta).valid) {
+                            price = candidate;
+                        }
                     }
 
                     // Priority 4: CD_ and BP_ (Conto Deposito / Buono Postale) - always use last purchase price / PMC
@@ -2386,21 +2422,36 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                         const availableDates = Object.keys(historicalPrices[ticker] || {}).sort();
                         const pastDates = availableDates.filter(d => d < dateStr);
                         if (pastDates.length > 0) {
-                            price = historicalPrices[ticker][pastDates.at(-1)];
-                        } else if (availableDates.length > 0) {
-                            price = historicalPrices[ticker][availableDates[0]];
+                            for (let idx = pastDates.length - 1; idx >= 0; idx--) {
+                                const cand = historicalPrices[ticker][pastDates[idx]];
+                                if (cand && isValidQuotePrice(cand, assetMeta).valid) {
+                                    price = cand;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!price && availableDates.length > 0) {
+                            for (let idx = 0; idx < availableDates.length; idx++) {
+                                const cand = historicalPrices[ticker][availableDates[idx]];
+                                if (cand && isValidQuotePrice(cand, assetMeta).valid) {
+                                    price = cand;
+                                    break;
+                                }
+                            }
                         }
                     }
 
                     // Priority 6: Last buy price from transactions
                     if (!price || price === 0 || isNaN(price)) {
-                        price = state.lastBuyPrices[ticker];
+                        if (state.lastBuyPrices[ticker] && isValidQuotePrice(state.lastBuyPrices[ticker], assetMeta).valid) {
+                            price = state.lastBuyPrices[ticker];
+                        }
                     }
 
                     // Priority 7: Final fallback to assetMeta currentPrice or bond standard 100
                     if (!price || price === 0 || isNaN(price)) {
-                        if (assetMeta && assetMeta.currentPrice > 0) price = assetMeta.currentPrice;
-                        else if (assetMeta && assetMeta.type === 'Bond') price = 100.0;
+                        if (assetMeta && isValidQuotePrice(assetMeta.currentPrice, assetMeta).valid) price = assetMeta.currentPrice;
+                        else if (isBondAsset(assetMeta)) price = 100.0;
                         else price = 0;
                     }
 
@@ -2876,19 +2927,31 @@ async function updateMarketData(force = false) {
             let updateData = null;
 
             if (asset.dataSource === 'B_ITA' && asset.isin) {
-                const result = await B_ITA(asset.isin);
+                const result = await B_ITA(asset.isin, asset.type);
                 if (result.success) {
-                    const changeVal = result.variation !== null ? (result.price * (result.variation / (100 + result.variation))) : 0;
+                    const priceCheck = isValidQuotePrice(result.price, asset, asset.currentPrice);
+                    let finalPrice = asset.currentPrice;
+                    let finalVariation = asset.changePercent;
+                    let changeVal = asset.changeValue || 0;
+
+                    if (priceCheck.valid) {
+                        finalPrice = result.price;
+                        finalVariation = result.variation !== null ? result.variation : asset.changePercent;
+                        changeVal = result.variation !== null ? (finalPrice * (result.variation / (100 + result.variation))) : (asset.changeValue || 0);
+                    } else {
+                        logger.warn(`B_ITA [${asset.ticker}]: Price ${result.price} is invalid/inconsistent (${priceCheck.reason}). Retaining last valid price: ${asset.currentPrice}`);
+                    }
+
                     updateData = {
-                        price: result.price || asset.currentPrice,
-                        change: result.variation !== null ? result.variation : asset.changePercent,
+                        price: finalPrice,
+                        change: finalVariation,
                         changeValue: changeVal,
                         pe: asset.pe,
                         name: asset.name,
                         currency: asset.currency || 'EUR',
                         exchange: asset.exchange,
                         country: asset.country,
-                        quoteDate: result.quoteDate || new Date().toISOString().split('T')[0]
+                        quoteDate: (priceCheck.valid && result.quoteDate) ? result.quoteDate : (asset.quoteDate || new Date().toISOString().split('T')[0])
                     };
                 } else {
                     logger.warn(`B_ITA scraping failed for ${asset.ticker} (${asset.isin})`);
@@ -2899,13 +2962,23 @@ async function updateMarketData(force = false) {
                 if (!metadata) {
                     throw new Error(`YF: no quote data returned for '${asset.ticker}' (check ticker spelling or try manual update)`);
                 }
-                if (!metadata.currentPrice || metadata.currentPrice === 0) {
-                    logger.warn(`YF: price is 0 for ${asset.ticker} — data may be stale or market closed`);
+                const priceCheck = isValidQuotePrice(metadata.currentPrice, asset, asset.currentPrice);
+                let finalPrice = asset.currentPrice;
+                let finalChange = asset.changePercent;
+                let finalChangeVal = asset.changeValue;
+
+                if (priceCheck.valid) {
+                    finalPrice = metadata.currentPrice;
+                    finalChange = metadata.changePercent !== undefined && metadata.changePercent !== null ? metadata.changePercent : asset.changePercent;
+                    finalChangeVal = metadata.changeValue !== undefined && metadata.changeValue !== null ? metadata.changeValue : 0;
+                } else {
+                    logger.warn(`YF [${asset.ticker}]: Price ${metadata.currentPrice} is invalid/inconsistent (${priceCheck.reason}). Retaining last valid price: ${asset.currentPrice}`);
                 }
+
                 updateData = {
-                    price: metadata.currentPrice || asset.currentPrice,
-                    change: metadata.changePercent !== undefined && metadata.changePercent !== null ? metadata.changePercent : asset.changePercent,
-                    changeValue: metadata.changeValue !== undefined && metadata.changeValue !== null ? metadata.changeValue : 0,
+                    price: finalPrice,
+                    change: finalChange,
+                    changeValue: finalChangeVal,
                     pe: metadata.pe || asset.pe,
                     forwardPE: metadata.forwardPE || asset.forwardPE,
                     pegRatio: metadata.pegRatio || asset.pegRatio,
@@ -2921,7 +2994,7 @@ async function updateMarketData(force = false) {
                     currency: metadata.currency || asset.currency,
                     exchange: metadata.exchange || asset.exchange,
                     country: metadata.country || asset.country,
-                    quoteDate: metadata.quoteDate || new Date().toISOString().split('T')[0]
+                    quoteDate: (priceCheck.valid && metadata.quoteDate) ? metadata.quoteDate : (asset.quoteDate || new Date().toISOString().split('T')[0])
                 };
                 logger.info(`YF ✓ ${asset.ticker}: price=${updateData.price} ${updateData.currency} chg=${updateData.change?.toFixed ? updateData.change.toFixed(2) : updateData.change}%`);
             }
@@ -3452,8 +3525,111 @@ setInterval(async () => {
     }
 }, 60_000);
 
+// ─── Automated Repair of Inconsistent Asset Quotes/Prices ──────────────────────
+async function repairInconsistentAssetQuotesAndPrices() {
+    try {
+        logger.info('Auditing assets for corrupted/inconsistent prices...');
+        const assets = database.db.prepare('SELECT * FROM assets').all();
+        let repairedAny = false;
+
+        for (const a of assets) {
+            if (!a.ticker || a.ticker === 'CASH' || a.ticker.startsWith('CASH_')) continue;
+            if (['Conto Deposito', 'Buono Postale', 'Liquidità'].includes(a.type)) continue;
+
+            const check = isValidQuotePrice(a.currentPrice, a);
+            if (!check.valid && a.currentPrice !== null && a.currentPrice !== undefined && a.currentPrice > 0) {
+                logger.warn(`[REPAIR] Detected corrupted currentPrice ${a.currentPrice} for ${a.ticker} (${check.reason}). Attempting recovery...`);
+                
+                // 1. Delete corrupted quotes from asset_quotes
+                if (isBondAsset(a)) {
+                    const deleted = database.db.prepare('DELETE FROM asset_quotes WHERE ticker = ? AND price < 20').run(a.ticker);
+                    if (deleted.changes > 0) logger.info(`[REPAIR] Purged ${deleted.changes} corrupted quotes (< 20) for bond ${a.ticker}`);
+                }
+                database.db.prepare('DELETE FROM asset_quotes WHERE ticker = ? AND (price <= 0 OR price IS NULL)').run(a.ticker);
+
+                // 2. If it's a B_ITA asset with ISIN, try live scrape first
+                let restoredPrice = null;
+                let restoredDate = null;
+                if (a.dataSource === 'B_ITA' && a.isin) {
+                    try {
+                        const bRes = await B_ITA(a.isin, a.type);
+                        if (bRes && bRes.success && isValidQuotePrice(bRes.price, a).valid) {
+                            restoredPrice = bRes.price;
+                            restoredDate = bRes.quoteDate;
+                            logger.info(`[REPAIR] Live scrape recovered valid price ${restoredPrice} for ${a.ticker} (${a.isin})`);
+                        }
+                    } catch(e) {
+                        logger.warn(`[REPAIR] Live scrape recovery failed for ${a.ticker}: ${e.message}`);
+                    }
+                }
+
+                // 3. If live scrape didn't recover, find latest valid historical quote
+                if (!restoredPrice) {
+                    const quotes = database.db.prepare('SELECT date, price FROM asset_quotes WHERE ticker = ? ORDER BY date DESC').all(a.ticker);
+                    for (const q of quotes) {
+                        if (isValidQuotePrice(q.price, a).valid) {
+                            restoredPrice = q.price;
+                            restoredDate = q.date;
+                            break;
+                        }
+                    }
+                }
+
+                // 4. Fallback: last BUY transaction
+                if (!restoredPrice) {
+                    const lastBuy = database.db.prepare("SELECT price, date FROM transactions WHERE assetTicker = ? AND type = 'BUY' AND price > 0 ORDER BY date DESC LIMIT 1").get(a.ticker);
+                    if (lastBuy && isValidQuotePrice(lastBuy.price, a).valid) {
+                        restoredPrice = lastBuy.price;
+                        restoredDate = lastBuy.date;
+                    }
+                }
+
+                // 5. Final bond fallback to 100
+                if (!restoredPrice && isBondAsset(a)) {
+                    restoredPrice = 100.0;
+                    restoredDate = new Date().toISOString().split('T')[0];
+                }
+
+                if (restoredPrice) {
+                    database.db.prepare(`
+                        UPDATE assets 
+                        SET currentPrice = ?, quoteDate = IFNULL(?, quoteDate), changePercent = 0, changeValue = 0, updatedAt = datetime('now')
+                        WHERE ticker = ?
+                    `).run(restoredPrice, restoredDate, a.ticker);
+                    logger.info(`[REPAIR] Successfully restored ${a.ticker} currentPrice from ${a.currentPrice} to ${restoredPrice}`);
+                    repairedAny = true;
+                }
+            }
+        }
+
+        // Also clean up any orphan corrupted bond quotes in asset_quotes
+        const bondAssets = database.db.prepare("SELECT ticker FROM assets WHERE type IN ('Bond', 'Obbligazioni') OR ticker LIKE 'BTP%' OR isin LIKE 'IT%'").all();
+        for (const b of bondAssets) {
+            const del = database.db.prepare('DELETE FROM asset_quotes WHERE ticker = ? AND price < 20').run(b.ticker);
+            if (del.changes > 0) {
+                logger.info(`[REPAIR] Purged ${del.changes} corrupted quotes (< 20) for ${b.ticker}`);
+                repairedAny = true;
+            }
+        }
+
+        if (repairedAny) {
+            clearPerformanceCache();
+            const liveRate = await getEurUsdRate();
+            await recalculateAllPortfoliosWithOverrides(liveRate);
+            logger.info('[REPAIR] Recalculated all portfolios after price repairs.');
+        } else {
+            logger.info('Asset quotes audit complete: no corrupted prices found.');
+        }
+    } catch (err) {
+        logger.error('Error during repairInconsistentAssetQuotesAndPrices:', err);
+    }
+}
+
 // Run once at startup
-updateMarketData();
+(async () => {
+    await repairInconsistentAssetQuotesAndPrices();
+    await updateMarketData();
+})();
 
 // ─── Start ──────────────────────────────────────────────────────────────────
 

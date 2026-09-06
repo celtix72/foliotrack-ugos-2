@@ -984,7 +984,13 @@
             
             const data = await response.json();
             if (data && data.history && data.history.historyDt) {
-                const history = data.history.historyDt;
+                const isBond = (ticker && ticker.toUpperCase().startsWith('BTP')) || (isin && isin.toUpperCase().startsWith('IT'));
+                const history = data.history.historyDt.filter(h => {
+                    const px = parseFloat(h.closePx || h.price || 0);
+                    if (px <= 0.0001) return false;
+                    if (isBond && px < 20.0) return false;
+                    return true;
+                });
                 
                 const importRes = await fetch('/api/assets/import-history', {
                     method: 'POST',
