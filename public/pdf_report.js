@@ -1203,7 +1203,7 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
         }
 
         // Save
-        let fileName = `FolioTrack_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+        let fileName = `Patrimonio_PDF_${new Date().toISOString().split('T')[0]}.pdf`;
         if (mode === 'balance_sheet') {
             fileName = `stato_patrimoniale_${new Date().toISOString().split('T')[0]}.pdf`;
         }
