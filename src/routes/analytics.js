@@ -943,19 +943,29 @@ module.exports = function (dependencies) {
 
             const fetchBenchmark = async (ticker) => {
                 try {
+                    // Margin before startDate to capture prior closing price
+                    const qStart = new Date(startDate);
+                    qStart.setDate(qStart.getDate() - (isShortRange ? 7 : 45));
+                    const qStartStr = qStart.toISOString().split('T')[0];
+
+                    // Query up to tomorrow to ensure today's quote is included if available
+                    const qEnd = new Date(today);
+                    qEnd.setDate(qEnd.getDate() + 1);
+                    const qEndStr = qEnd.toISOString().split('T')[0];
+
                     const chart = await yahooFinance.chart(ticker, {
-                        period1: dateStrStart,
-                        period2: dateStrEnd,
+                        period1: qStartStr,
+                        period2: qEndStr,
                         interval: isShortRange ? '1d' : '1mo'
                     });
                     if (chart && chart.quotes && chart.quotes.length > 0) {
-                        const validQuotes = chart.quotes.filter(h => h && h.date && (h.adjclose != null || h.close != null));
-                        if (validQuotes.length === 0) return [];
-                        const firstPrice = validQuotes[0].adjclose ?? validQuotes[0].close ?? 1;
-                        return validQuotes.map(h => ({
-                            date: new Date(h.date).toISOString().split('T')[0].substring(0, isShortRange ? 10 : 7),
-                            value: (((h.adjclose ?? h.close) || 0) / (firstPrice || 1)) * 100
-                        }));
+                        return chart.quotes
+                            .filter(h => h && h.date && (h.adjclose != null || h.close != null))
+                            .map(h => ({
+                                date: new Date(h.date).toISOString().split('T')[0].substring(0, isShortRange ? 10 : 7),
+                                price: (h.adjclose ?? h.close) || 0
+                            }))
+                            .filter(q => q.price > 0);
                     }
                 } catch (e) {
                     console.warn(`Failed benchmark fetch for ${ticker}:`, e.message);
@@ -963,29 +973,13 @@ module.exports = function (dependencies) {
                 return [];
             };
 
-            const [sp500, msci, ftsemib, nasdaq, btc] = await Promise.all([
+            const [sp500Quotes, msciQuotes, ftsemibQuotes, nasdaqQuotes, btcQuotes] = await Promise.all([
                 fetchBenchmark('^GSPC'),
                 fetchBenchmark('URTH'),
                 fetchBenchmark('FTSEMIB.MI'),
                 fetchBenchmark('^IXIC'),
                 fetchBenchmark('BTC-USD')
             ]);
-
-            const calcBenchmarkReturn = (pts) => {
-                if (!pts || pts.length < 2) return null;
-                const first = pts[0].value;
-                const last = pts[pts.length - 1].value;
-                if (!first || first <= 0) return null;
-                return ((last - first) / first) * 100;
-            };
-
-            const benchmarkReturns = {
-                sp500: calcBenchmarkReturn(sp500),
-                msci: calcBenchmarkReturn(msci),
-                ftsemib: calcBenchmarkReturn(ftsemib),
-                nasdaq: calcBenchmarkReturn(nasdaq),
-                btc: calcBenchmarkReturn(btc)
-            };
 
             const downsampleToMonthly = (daily) => {
                 if (!daily || !Array.isArray(daily)) return [];
@@ -1055,6 +1049,57 @@ module.exports = function (dependencies) {
             const firstGlobal = normalizedGlobal.length > 0 ? normalizedGlobal[0] : null;
             const monthlyTwr = normalizedGlobal;
             const riskFreeMonthly = 0.002;
+
+            // Align benchmarks strictly to the portfolio timeline so they reach the end of the X axis
+            const targetDates = normalizedGlobal.map(p => p.date);
+            const alignBenchmarkToTimeline = (quotes, tDates) => {
+                if (!quotes || quotes.length === 0 || !tDates || tDates.length === 0) return [];
+                const sortedQuotes = [...quotes].sort((a, b) => a.date.localeCompare(b.date));
+                let firstPrice = sortedQuotes[0].price;
+                const startMatch = sortedQuotes.filter(q => q.date <= tDates[0]);
+                if (startMatch.length > 0) {
+                    firstPrice = startMatch[startMatch.length - 1].price;
+                }
+                if (!firstPrice || firstPrice <= 0) firstPrice = 1;
+
+                let lastKnownPrice = firstPrice;
+                let quoteIdx = 0;
+
+                return tDates.map(tDate => {
+                    while (quoteIdx < sortedQuotes.length && sortedQuotes[quoteIdx].date <= tDate) {
+                        if (sortedQuotes[quoteIdx].price && sortedQuotes[quoteIdx].price > 0) {
+                            lastKnownPrice = sortedQuotes[quoteIdx].price;
+                        }
+                        quoteIdx++;
+                    }
+                    return {
+                        date: tDate,
+                        value: parseFloat(((lastKnownPrice / firstPrice) * 100).toFixed(2))
+                    };
+                });
+            };
+
+            const sp500 = alignBenchmarkToTimeline(sp500Quotes, targetDates);
+            const msci = alignBenchmarkToTimeline(msciQuotes, targetDates);
+            const ftsemib = alignBenchmarkToTimeline(ftsemibQuotes, targetDates);
+            const nasdaq = alignBenchmarkToTimeline(nasdaqQuotes, targetDates);
+            const btc = alignBenchmarkToTimeline(btcQuotes, targetDates);
+
+            const calcBenchmarkReturn = (pts) => {
+                if (!pts || pts.length < 2) return null;
+                const first = pts[0].value;
+                const last = pts[pts.length - 1].value;
+                if (!first || first <= 0) return null;
+                return ((last - first) / first) * 100;
+            };
+
+            const benchmarkReturns = {
+                sp500: calcBenchmarkReturn(sp500),
+                msci: calcBenchmarkReturn(msci),
+                ftsemib: calcBenchmarkReturn(ftsemib),
+                nasdaq: calcBenchmarkReturn(nasdaq),
+                btc: calcBenchmarkReturn(btc)
+            };
 
             const fxRates = {};
             const usdRates = database.db.prepare("SELECT date, price FROM asset_quotes WHERE ticker='EURUSD=X'").all();

@@ -1056,6 +1056,7 @@
                     borderDash: [4, 3],
                     pointRadius: 0,
                     hidden: true,
+                    spanGaps: true,
                     yAxisID: 'y1'
                 }, {
                     label: 'S&P 500',
@@ -1067,6 +1068,7 @@
                     fill: false,
                     tension: 0.35,
                     hidden: true,
+                    spanGaps: true,
                     yAxisID: 'y'
                 }, {
                     label: 'FTSE MIB',
@@ -1078,6 +1080,7 @@
                     fill: false,
                     tension: 0.35,
                     hidden: true,
+                    spanGaps: true,
                     yAxisID: 'y'
                 }]
             },
@@ -1318,25 +1321,36 @@
                     return buildChartGradient(c, chartArea, isPos);
                 };
 
+                const forwardFill = (arr) => {
+                    let last = null;
+                    return arr.map(v => {
+                        if (v != null && !isNaN(v) && v !== '') {
+                            last = v;
+                            return v;
+                        }
+                        return last;
+                    });
+                };
+
                 dashboardChart.data.datasets[1].hidden = true;
 
                 if (benchmark && dataPoints[0]?.benchmarkNormalized !== undefined) {
                     dashboardChart.data.datasets[2].label = benchmark;
-                    dashboardChart.data.datasets[2].data = dataPoints.map(d => d.benchmarkNormalized);
+                    dashboardChart.data.datasets[2].data = forwardFill(dataPoints.map(d => d.benchmarkNormalized));
                     dashboardChart.data.datasets[2].hidden = false;
                     dashboardChart.data.datasets[2].yAxisID = 'y';
                 } else {
                     dashboardChart.data.datasets[2].hidden = true;
                 }
 
-                const sp500Data = dataPoints.map(d => d.sp500Normalized);
+                const sp500Data = forwardFill(dataPoints.map(d => d.sp500Normalized));
                 const hasSp500 = sp500Data.some(v => v != null && v !== 0);
                 dashboardChart.data.datasets[3].label = 'S&P 500';
                 dashboardChart.data.datasets[3].data = sp500Data;
                 dashboardChart.data.datasets[3].hidden = !hasSp500;
                 dashboardChart.data.datasets[3].yAxisID = 'y';
 
-                const ftseData = dataPoints.map(d => d.ftsemibNormalized);
+                const ftseData = forwardFill(dataPoints.map(d => d.ftsemibNormalized));
                 const hasFtse = ftseData.some(v => v != null && v !== 0);
                 dashboardChart.data.datasets[4].label = 'FTSE MIB';
                 dashboardChart.data.datasets[4].data = ftseData;
@@ -1354,6 +1368,17 @@
 
             // --- Modalità P&L ---
             } else if (mode === 'pnl') {
+                const forwardFill = (arr) => {
+                    let last = null;
+                    return arr.map(v => {
+                        if (v != null && !isNaN(v) && v !== '') {
+                            last = v;
+                            return v;
+                        }
+                        return last;
+                    });
+                };
+
                 const pnlData = dataPoints.map(d => d.profit ?? 0);
                 const lastPnl = pnlData[pnlData.length - 1] ?? 0;
                 const isPos   = lastPnl >= 0;
@@ -1373,21 +1398,21 @@
 
                 if (benchmark && dataPoints[0]?.benchmarkProfit !== undefined) {
                     dashboardChart.data.datasets[2].label = benchmark;
-                    dashboardChart.data.datasets[2].data = dataPoints.map(d => d.benchmarkProfit);
+                    dashboardChart.data.datasets[2].data = forwardFill(dataPoints.map(d => d.benchmarkProfit));
                     dashboardChart.data.datasets[2].hidden = false;
                     dashboardChart.data.datasets[2].yAxisID = 'y1';
                 } else {
                     dashboardChart.data.datasets[2].hidden = true;
                 }
 
-                const sp500Data = dataPoints.map(d => d.sp500Profit);
+                const sp500Data = forwardFill(dataPoints.map(d => d.sp500Profit));
                 const hasSp500 = sp500Data.some(v => v != null && v !== 0);
                 dashboardChart.data.datasets[3].label = 'S&P 500';
                 dashboardChart.data.datasets[3].data = sp500Data;
                 dashboardChart.data.datasets[3].hidden = !hasSp500;
                 dashboardChart.data.datasets[3].yAxisID = 'y1';
 
-                const ftseData = dataPoints.map(d => d.ftsemibProfit);
+                const ftseData = forwardFill(dataPoints.map(d => d.ftsemibProfit));
                 const hasFtse = ftseData.some(v => v != null && v !== 0);
                 dashboardChart.data.datasets[4].label = 'FTSE MIB';
                 dashboardChart.data.datasets[4].data = ftseData;

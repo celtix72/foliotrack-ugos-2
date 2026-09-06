@@ -1014,22 +1014,40 @@
                     },
                     {
                         label: 'S&P 500',
-                        data: (data.performance.sp500 || []).map(d => d.value),
+                        data: (() => {
+                            const vals = (data.performance.sp500 || []).map(d => d.value);
+                            const targetLen = portfolioData.length;
+                            if (vals.length > 0 && vals.length < targetLen) {
+                                const lastVal = vals[vals.length - 1];
+                                while (vals.length < targetLen) vals.push(lastVal);
+                            }
+                            return vals;
+                        })(),
                         borderColor: '#f59e0b',
                         borderWidth: 1.5,
                         borderDash: [5, 5],
                         fill: false,
                         tension: 0.35,
+                        spanGaps: true,
                         pointRadius: 0
                     },
                     {
                         label: 'MSCI World',
-                        data: (data.performance.msci || []).map(d => d.value),
+                        data: (() => {
+                            const vals = (data.performance.msci || []).map(d => d.value);
+                            const targetLen = portfolioData.length;
+                            if (vals.length > 0 && vals.length < targetLen) {
+                                const lastVal = vals[vals.length - 1];
+                                while (vals.length < targetLen) vals.push(lastVal);
+                            }
+                            return vals;
+                        })(),
                         borderColor: '#8b5cf6',
                         borderWidth: 1.5,
                         borderDash: [5, 5],
                         fill: false,
                         tension: 0.35,
+                        spanGaps: true,
                         pointRadius: 0
                     }
                 ]

@@ -727,23 +727,37 @@
             },
             {
                 label: 'S&P 500',
-                data: (p.sp500 || []).map(d => ({ x: d.date, y: d.value })),
+                data: (() => {
+                    const series = (p.sp500 || []).map(d => ({ x: d.date, y: d.value }));
+                    if (series.length > 0 && labels.length > 0 && series[series.length - 1].x !== labels[labels.length - 1]) {
+                        series.push({ x: labels[labels.length - 1], y: series[series.length - 1].y });
+                    }
+                    return series;
+                })(),
                 borderColor: '#f59e0b',
                 borderDash: [5, 4],
                 borderWidth: 1.5,
                 pointRadius: 0,
                 fill: false,
-                tension: 0.35
+                tension: 0.35,
+                spanGaps: true
             },
             {
                 label: 'MSCI World',
-                data: (p.msci || []).map(d => ({ x: d.date, y: d.value })),
+                data: (() => {
+                    const series = (p.msci || []).map(d => ({ x: d.date, y: d.value }));
+                    if (series.length > 0 && labels.length > 0 && series[series.length - 1].x !== labels[labels.length - 1]) {
+                        series.push({ x: labels[labels.length - 1], y: series[series.length - 1].y });
+                    }
+                    return series;
+                })(),
                 borderColor: '#8b5cf6',
                 borderDash: [5, 4],
                 borderWidth: 1.5,
                 pointRadius: 0,
                 fill: false,
-                tension: 0.35
+                tension: 0.35,
+                spanGaps: true
             }
         ];
 

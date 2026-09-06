@@ -2544,15 +2544,32 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
         // Benchmarks Calculation
         const benchmarksResult = {};
         for (const bState of benchmarkStates) {
-            if (bState.data && bState.data[dateStr]) {
-                const currentPrice = bState.data[dateStr];
-                
+            let currentPrice = bState.data && bState.data[dateStr];
+            if (!currentPrice || currentPrice <= 0 || isNaN(currentPrice)) {
+                // If price not found for dateStr (weekend, holiday, or today before close)
+                if (dateStr === todayStr && assetMetadataCache[bState.ticker]?.currentPrice && assetMetadataCache[bState.ticker].currentPrice > 0) {
+                    currentPrice = assetMetadataCache[bState.ticker].currentPrice;
+                } else if (bState.lastPrice && bState.lastPrice > 0) {
+                    currentPrice = bState.lastPrice;
+                } else if (bState.data) {
+                    // Find most recent price on or before dateStr, or first available price
+                    const availableDates = Object.keys(bState.data).sort();
+                    const pastDates = availableDates.filter(d => d <= dateStr);
+                    if (pastDates.length > 0) {
+                        currentPrice = bState.data[pastDates[pastDates.length - 1]];
+                    } else if (availableDates.length > 0) {
+                        currentPrice = bState.data[availableDates[0]];
+                    }
+                }
+            }
+
+            if (currentPrice && currentPrice > 0) {
                 // Shadow Portfolio Calculation (Absolute comparison)
                 if (bState.shadowValue === null) {
                     bState.shadowValue = dayValue;
                     bState.firstPrice = currentPrice;
                 } else {
-                    const dayNetFlow = dayNetDeposits - (previousDayNetDeposits || dayNetDeposits);
+                    const dayNetFlow = dayNetDeposits - (previousDayNetDeposits !== null ? previousDayNetDeposits : dayNetDeposits);
                     if (bState.lastPrice && bState.lastPrice > 0) {
                         bState.shadowValue = (bState.shadowValue * (currentPrice / bState.lastPrice)) + dayNetFlow;
                     } else {

@@ -693,6 +693,7 @@
                       fill: false,
                       tension: 0.35,
                       hidden: true,
+                      spanGaps: true,
                       yAxisID: 'y'
                   }, {
                       label: 'FTSE MIB',
@@ -704,6 +705,7 @@
                       fill: false,
                       tension: 0.35,
                       hidden: true,
+                      spanGaps: true,
                       yAxisID: 'y'
                   }]
               },
@@ -840,6 +842,17 @@
       mobPerfChart.data.labels = points.map(p => new Date(p.date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }));
 
       if (mode === 'pct') {
+          const forwardFill = (arr) => {
+              let last = null;
+              return arr.map(v => {
+                  if (v != null && !isNaN(v) && v !== '') {
+                      last = v;
+                      return v;
+                  }
+                  return last;
+              });
+          };
+
           const pData = points.map(d => d.normalized ?? 100);
           const lastP = pData[pData.length - 1] ?? 100;
           const isPos = lastP >= (pData[0] ?? 100);
@@ -858,13 +871,13 @@
 
           mobPerfChart.data.datasets[1].hidden = true;
 
-          const sp500Data = points.map(d => d.sp500Normalized);
+          const sp500Data = forwardFill(points.map(d => d.sp500Normalized));
           const hasSp500 = sp500Data.some(v => v != null && v !== 0);
           mobPerfChart.data.datasets[2].data = sp500Data;
           mobPerfChart.data.datasets[2].hidden = !hasSp500;
           mobPerfChart.data.datasets[2].yAxisID = 'y';
 
-          const ftseData = points.map(d => d.ftsemibNormalized);
+          const ftseData = forwardFill(points.map(d => d.ftsemibNormalized));
           const hasFtse = ftseData.some(v => v != null && v !== 0);
           mobPerfChart.data.datasets[3].data = ftseData;
           mobPerfChart.data.datasets[3].hidden = !hasFtse;
@@ -879,6 +892,17 @@
           mobPerfChart.options.plugins.annotation.annotations.baseline.scaleID = 'y';
 
       } else if (mode === 'pnl') {
+          const forwardFill = (arr) => {
+              let last = null;
+              return arr.map(v => {
+                  if (v != null && !isNaN(v) && v !== '') {
+                      last = v;
+                      return v;
+                  }
+                  return last;
+              });
+          };
+
           const pnlData = points.map(d => d.profit ?? 0);
           const lastPnl = pnlData[pnlData.length - 1] ?? 0;
           const isPos   = lastPnl >= 0;
@@ -895,13 +919,13 @@
               return mobBuildGradient(c, chartArea, isPos);
           };
 
-          const sp500Data = points.map(d => d.sp500Profit);
+          const sp500Data = forwardFill(points.map(d => d.sp500Profit));
           const hasSp500 = sp500Data.some(v => v != null && v !== 0);
           mobPerfChart.data.datasets[2].data = sp500Data;
           mobPerfChart.data.datasets[2].hidden = !hasSp500;
           mobPerfChart.data.datasets[2].yAxisID = 'y1';
 
-          const ftseData = points.map(d => d.ftsemibProfit);
+          const ftseData = forwardFill(points.map(d => d.ftsemibProfit));
           const hasFtse = ftseData.some(v => v != null && v !== 0);
           mobPerfChart.data.datasets[3].data = ftseData;
           mobPerfChart.data.datasets[3].hidden = !hasFtse;
