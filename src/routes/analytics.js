@@ -1291,6 +1291,8 @@ module.exports = function (dependencies) {
                 return { name, type };
             };
 
+            let totalEstimatedDividendsEUR = 0;
+
             for (const p of portfolios) {
                 try {
                     const details = await getPortfolioDetails(p.id, liveRateValReports);
@@ -1377,6 +1379,11 @@ module.exports = function (dependencies) {
                         const uGainEur = (h.unrealizedGain || 0) / rate;
                         const costInEur = (h.totalCostInPCurr || 0) / rate;
                         
+                        if (h.shares > 0.0001 && h.currentPrice && h.dividendYield) {
+                            const annualDivEUR = ((h.currentPrice * h.dividendYield * h.shares) / rate) || 0;
+                            totalEstimatedDividendsEUR += annualDivEUR;
+                        }
+
                         if (!annualGainsMap[currentYearString]) annualGainsMap[currentYearString] = { year: currentYearString, realized: 0, dividends: 0, unrealized: 0 };
                         annualGainsMap[currentYearString].unrealized += uGainEur;
 
@@ -1406,11 +1413,17 @@ module.exports = function (dependencies) {
                 }
             }
 
+            const totalDividendsAllTime = Object.values(annualGainsMap).reduce((s, ag) => s + (ag.dividends || 0), 0);
+            const totalDividendsCurrentYear = annualGainsMap[currentYearString]?.dividends || 0;
+            const totalDividends12M = dividends.reduce((s, x) => s + (x.amount || 0), 0);
+            const estimatedDividendYield = currentTotalValue > 0 ? (totalEstimatedDividendsEUR / currentTotalValue) : 0;
+
             const annualGains = Object.values(annualGainsMap).map(ag => ({
                 ...ag,
                 realized: Math.round(ag.realized * 100) / 100,
                 dividends: Math.round(ag.dividends * 100) / 100,
-                unrealized: Math.round(ag.unrealized * 100) / 100
+                unrealized: Math.round(ag.unrealized * 100) / 100,
+                projectedDividends: ag.year === currentYearString ? Math.round(totalEstimatedDividendsEUR * 100) / 100 : undefined
             })).sort((a,b) => b.year - a.year);
 
             // Finalize assetGains
@@ -1468,7 +1481,12 @@ module.exports = function (dependencies) {
                         const stdDevValue = Math.sqrt(returns.map(x => Math.pow(x - meanValue, 2)).reduce((a, b) => a + b, 0) / returns.length);
                         return stdDevValue > 0 ? (meanValue - riskFreeMonthly) / stdDevValue : 0;
                     })(),
-                    dividendYield: currentTotalValue > 0 ? dividends.reduce((s, x) => s + x.amount, 0) / currentTotalValue : 0
+                    estimatedDividends: Math.round(totalEstimatedDividendsEUR * 100) / 100,
+                    estimatedDividendYield: Math.round(estimatedDividendYield * 10000) / 10000,
+                    totalDividendsCurrentYear: Math.round(totalDividendsCurrentYear * 100) / 100,
+                    totalDividendsAllTime: Math.round(totalDividendsAllTime * 100) / 100,
+                    totalDividends12M: Math.round(totalDividends12M * 100) / 100,
+                    dividendYield: estimatedDividendYield > 0 ? estimatedDividendYield : (currentTotalValue > 0 ? totalDividends12M / currentTotalValue : 0)
                 }
             });
 

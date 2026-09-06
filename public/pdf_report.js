@@ -275,11 +275,13 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
                 }
             };
 
+            const totalDividendsAllTime = reportsData?.metrics?.totalDividendsAllTime || (reportsData?.assetGains ? reportsData.assetGains.reduce((s, a) => s + (a.dividends || 0), 0) : 0);
+
             const gainColor = totalGainEUR >= 0 ? [16, 185, 129] : [239, 68, 68];
             drawKpiCard(marginLeft, startY, kpiCardWidth, kpiCardHeight, 'Patrimonio Netto', formatCurrencyShort(totalCurrentValEUR), `Valuta Base: EUR`, [100, 116, 139]);
             drawKpiCard(marginLeft + kpiCardWidth + 10, startY, kpiCardWidth, kpiCardHeight, 'Capitale Investito', formatCurrencyShort(totalInvestedEUR), `Costo di Carico`, [100, 116, 139]);
             drawKpiCard(marginLeft + (kpiCardWidth * 2) + 20, startY, kpiCardWidth, kpiCardHeight, 'Gain / Loss Totale', formatCurrencyShort(totalGainEUR), formatPercent(totalGainPct), gainColor);
-            drawKpiCard(marginLeft + (kpiCardWidth * 3) + 30, startY, kpiCardWidth, kpiCardHeight, 'Dividendi Stimati', formatCurrencyShort(totalEstimatedDividends), `Proiezione Annua`, [16, 185, 129]);
+            drawKpiCard(marginLeft + (kpiCardWidth * 3) + 30, startY, kpiCardWidth, kpiCardHeight, 'Dividendi Previsti', formatCurrencyShort(totalEstimatedDividends), `Proiezione Annua`, [16, 185, 129]);
 
             startY += kpiCardHeight + 18;
 
@@ -555,7 +557,7 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
             const sgn = totalGainEUR >= 0 ? '+' : '';
             doc.setFontSize(9);
             doc.setTextColor(203, 213, 225); // slate-300
-            doc.text(`Capitale Investito: ${formatCurrency(totalInvestedEUR)}   |   Gain Totale: ${sgn}${formatCurrency(totalGainEUR)} (${sgn}${formatPercent(totalGainPct, 1, false)})`, marginLeft + 14, startY + 42);
+            doc.text(`Capitale Investito: ${formatCurrency(totalInvestedEUR)}   |   Gain Totale: ${sgn}${formatCurrency(totalGainEUR)} (${sgn}${formatPercent(totalGainPct, 1, false)})   |   Dividendi Incassati: ${formatCurrency(totalDividendsAllTime)}`, marginLeft + 14, startY + 42);
 
             doc.setFontSize(8);
             doc.setTextColor(148, 163, 184); // slate-400

@@ -382,21 +382,37 @@
 </section>
 <!-- Dividends -->
 <section class="bg-white dark:bg-surface-dark p-5 sm:p-6 flex flex-col rounded-none sm:rounded-xl border-y sm:border-x border-slate-200 dark:border-slate-800 shadow-sm">
-<div class="flex justify-between items-start mb-8">
-<div>
-<h3 class="text-xl font-bold">Dividends</h3>
-<p class="text-sm text-slate-500">12-Month Historical Bar</p>
-</div>
-<div class="text-right">
-<p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Income</p>
-<p class="text-2xl font-black text-emerald-500" id="dividend-total-income">$0.00</p>
-</div>
+<div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+        <h3 class="text-xl font-bold">Dividendi &amp; Cedole</h3>
+        <p class="text-sm text-slate-500">Proiezione stimata e storico dividendi</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-3">
+        <!-- Card 1: Dividendi Previsti Annui -->
+        <div class="p-3 px-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-right min-w-[155px]">
+            <p class="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Dividendi Previsti</p>
+            <p class="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono" id="dividend-projected-annual">-- €</p>
+            <p class="text-[10px] text-slate-500 dark:text-slate-400 font-bold" id="dividend-projected-yield">Proiezione Annua</p>
+        </div>
+        <!-- Card 2: Totali Annui Incassati -->
+        <div class="p-3 px-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 text-right min-w-[155px]">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Totale Incassato (12M)</p>
+            <p class="text-xl font-black text-slate-800 dark:text-slate-100 font-mono" id="dividend-total-income">0 €</p>
+            <p class="text-[10px] text-slate-500 dark:text-slate-400 font-bold" id="dividend-total-sub">Anno Corrente: 0 €</p>
+        </div>
+    </div>
 </div>
 <div class="h-48 w-full">
     <canvas id="dividendChart"></canvas>
 </div>
-<div id="dividend-projection" class="mt-6 p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10 hidden">
-    <p class="text-xs text-emerald-600 font-bold">Estimated Annual Yield is approx <span id="yield-percent">--%</span> of total value.</p>
+<div id="dividend-projection" class="mt-6 p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/15 flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-emerald-500 text-lg">payments</span>
+        <p class="text-xs text-slate-600 dark:text-slate-300 font-medium">
+            Proiezione sui 12 mesi futuri: <strong class="text-emerald-600 dark:text-emerald-400 font-bold" id="dividend-banner-amount">-- €</strong> stimati sui titoli in portafoglio (Yield atteso: <span id="yield-percent" class="font-bold">--%</span>).
+        </p>
+    </div>
+    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Totale Storico Dividendi: <span id="dividend-banner-alltime" class="text-slate-700 dark:text-slate-200 font-black">-- €</span></span>
 </div>
 </section>
 </div>
@@ -537,8 +553,11 @@
                 <td class="py-4 text-right font-black text-sm ${g.realized >= 0 ? 'text-emerald-500' : 'text-rose-500'}">
                     ${formatCurrency(g.realized, 'EUR', 0)}
                 </td>
-                <td class="py-4 text-right font-black text-sm text-emerald-500">
-                    ${formatCurrency(g.dividends, 'EUR', 0)}
+                <td class="py-4 text-right">
+                    <span class="font-black text-sm text-emerald-500">${formatCurrency(g.dividends, 'EUR', 0)}</span>
+                    ${(isCurrentYear && g.projectedDividends !== undefined && g.projectedDividends > 0) ? `
+                        <div class="text-[9px] text-slate-400 font-bold uppercase tracking-tight">Previsti: ${formatCurrency(g.projectedDividends, 'EUR', 0)}</div>
+                    ` : ''}
                 </td>
                 <td class="py-4 text-right font-black text-sm">
                     ${formatCurrency(totalRealized, 'EUR', 0)}
@@ -1142,21 +1161,39 @@
     }
 
     function renderDividendChart(divs, metrics) {
-        const ctx = document.getElementById('dividendChart').getContext('2d');
+        const ctx = document.getElementById('dividendChart')?.getContext('2d');
+        if (!ctx) return;
         if (divChart) divChart.destroy();
 
-        const totalIncome = divs.reduce((s, x) => s + x.amount, 0);
-        document.getElementById('dividend-total-income').textContent = formatCurrency(totalIncome, 'EUR', 0);
+        const total12M = (divs || []).reduce((s, x) => s + (x.amount || 0), 0);
+        const estAnnual = metrics?.estimatedDividends || 0;
+        const estYield = metrics?.estimatedDividendYield || metrics?.dividendYield || 0;
+        const totYear = metrics?.totalDividendsCurrentYear || 0;
+        const totAllTime = metrics?.totalDividendsAllTime || total12M;
 
-        // Projected Yield
-        if (metrics && metrics.dividendYield !== undefined) {
-            const yieldEl  = document.getElementById('yield-percent');
-            const yieldBox = document.getElementById('dividend-projection');
-            if (yieldEl && yieldBox) {
-                yieldEl.textContent = (metrics.dividendYield * 100).toFixed(1) + '%';
-                yieldBox.classList.remove('hidden');
-            }
-        }
+        const incomeEl = document.getElementById('dividend-total-income');
+        if (incomeEl) incomeEl.textContent = formatCurrency(total12M, 'EUR', 0);
+
+        const subEl = document.getElementById('dividend-total-sub');
+        if (subEl) subEl.textContent = `Anno Corrente: ${formatCurrency(totYear, 'EUR', 0)}`;
+
+        const projEl = document.getElementById('dividend-projected-annual');
+        if (projEl) projEl.textContent = formatCurrency(estAnnual, 'EUR', 0);
+
+        const projYieldEl = document.getElementById('dividend-projected-yield');
+        if (projYieldEl) projYieldEl.textContent = `Yield: ${(estYield * 100).toFixed(1)}% Proiezione`;
+
+        const bannerAmtEl = document.getElementById('dividend-banner-amount');
+        if (bannerAmtEl) bannerAmtEl.textContent = formatCurrency(estAnnual, 'EUR', 0);
+
+        const yieldEl = document.getElementById('yield-percent');
+        if (yieldEl) yieldEl.textContent = (estYield * 100).toFixed(1) + '%';
+
+        const allTimeEl = document.getElementById('dividend-banner-alltime');
+        if (allTimeEl) allTimeEl.textContent = formatCurrency(totAllTime, 'EUR', 0);
+
+        const yieldBox = document.getElementById('dividend-projection');
+        if (yieldBox) yieldBox.classList.remove('hidden');
 
         const isDark = document.documentElement.classList.contains('dark');
         const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
