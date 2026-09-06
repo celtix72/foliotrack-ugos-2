@@ -123,15 +123,12 @@
 </head>
 <body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display min-h-screen flex mobile-view-active">
 <div id="mobile-ui">
-  <!-- ── Top Header ── -->
   <!-- ── Mobile Header ── -->
   <div class="mob-header">
-    <img src="/m2t_mobile_logo_dark.png" style="width:96px;height:48px;border-radius:4px;object-fit:cover;object-position:center;margin-right:8px;" alt="M2T Logo">
+    <a href="/dashboard" class="mob-header-logo-link" title="Dashboard">
+      <img src="/m2t_mobile_logo_dark.png" class="mob-header-logo-img" alt="M2T Logo">
+    </a>
     
-
-    <!-- Page Title (RP) -->
-    <div class="mob-header-title" style="display:none">RP</div>
-
     <div class="mob-header-market-pill">
       <div class="mob-market-item">
         <span>EU</span>
@@ -143,25 +140,16 @@
       </div>
     </div>
 
-    <!-- Day Variation Pill -->
+    <div style="flex:1"></div>
+
     <div id="mob-header-var-day" class="mob-header-var-pill">--</div>
 
-    <!-- Action Buttons -->
     <div class="mob-header-actions">
-      <button onclick="openAiReportsHistory()" class="mob-icon-btn text-emerald-500" title="Storico Report IA">
-        <span class="material-symbols-outlined">auto_awesome</span>
-      </button>
-      <button onclick="window.generateDetailedPDFReport(this, 'classic')" id="mob-pdf-btn" class="mob-icon-btn text-indigo-500" title="Download PDF Report">
-        <span class="material-symbols-outlined">picture_as_pdf</span>
-      </button>
-      <button onclick="window.generateDetailedPDFReport(this, 'balance_sheet')" id="mob-pdf-bs-btn" class="mob-icon-btn text-blue-500" title="Download Stato Patrimoniale">
-        <span class="material-symbols-outlined">account_balance</span>
-      </button>
-      <a href="/notifications" class="mob-icon-btn relative" title="Notifications">
+      <a href="/notifications" class="mob-icon-btn relative" title="Notifiche">
         <span class="material-symbols-outlined">notifications</span>
         <span id="mob-notification-badge" class="mob-badge" style="display: none;">0</span>
       </a>
-      <a href="/settings" class="mob-icon-btn" title="Settings">
+      <a href="/settings" class="mob-icon-btn" title="Impostazioni">
         <span class="material-symbols-outlined">settings</span>
       </a>
     </div>
@@ -185,6 +173,22 @@
           <span class="mob-tab-text">Portafogli</span>
         </button>
       </div>
+    </div>
+
+    <!-- Quick Report Actions Bar -->
+    <div class="mx-3 mt-2 flex items-center justify-between gap-2 p-1.5 bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+      <button onclick="openAiReportsHistory()" class="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-xs hover:opacity-90 active:scale-95 transition-all" title="Storico Report IA">
+        <span class="material-symbols-outlined text-[16px]">auto_awesome</span>
+        <span>Report IA</span>
+      </button>
+      <button onclick="window.generateDetailedPDFReport(this, 'classic')" id="mob-pdf-btn" class="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold text-xs hover:opacity-90 active:scale-95 transition-all" title="Download PDF Report">
+        <span class="material-symbols-outlined text-[16px]">picture_as_pdf</span>
+        <span>PDF</span>
+      </button>
+      <button onclick="window.generateDetailedPDFReport(this, 'balance_sheet')" id="mob-pdf-bs-btn" class="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold text-xs hover:opacity-90 active:scale-95 transition-all" title="Download Stato Patrimoniale">
+        <span class="material-symbols-outlined text-[16px]">account_balance</span>
+        <span>Patrimonio</span>
+      </button>
     </div>
 
     <!-- ── Global Filters Bar ────────────────────────────────── -->

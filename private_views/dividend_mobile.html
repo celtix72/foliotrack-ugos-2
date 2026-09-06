@@ -24,10 +24,12 @@
 </head>
 <body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex mobile-view-active">
     <div id="mobile-ui">
+        <!-- ── Mobile Header ── -->
         <div class="mob-header">
-    <img src="/m2t_mobile_logo_dark.png" style="width:96px;height:48px;border-radius:4px;object-fit:cover;object-position:center;margin-right:8px;" alt="M2T Logo">
+            <a href="/dashboard" class="mob-header-logo-link" title="Dashboard">
+                <img src="/m2t_mobile_logo_dark.png" class="mob-header-logo-img" alt="M2T Logo">
+            </a>
             
-
             <div class="mob-header-market-pill">
                 <div class="mob-market-item">
                     <span>EU</span>
@@ -39,15 +41,16 @@
                 </div>
             </div>
 
-            <!-- Day Variation Pill -->
+            <div style="flex:1"></div>
+
             <div id="mob-header-var-day" class="mob-header-var-pill">--</div>
 
             <div class="mob-header-actions">
-                <a href="/notifications" class="mob-icon-btn relative" title="Notifications">
+                <a href="/notifications" class="mob-icon-btn relative" title="Notifiche">
                     <span class="material-symbols-outlined">notifications</span>
                     <span id="mob-notification-badge" class="mob-badge" style="display: none;">0</span>
                 </a>
-                <a href="/settings" class="mob-icon-btn" title="Settings">
+                <a href="/settings" class="mob-icon-btn" title="Impostazioni">
                     <span class="material-symbols-outlined">settings</span>
                 </a>
             </div>

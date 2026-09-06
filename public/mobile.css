@@ -129,10 +129,26 @@ body.mobile-view-active #mobile-ui {
   display: flex;
   align-items: center;
   padding-left: 0;
-  padding-right: 0;
-  gap: 12px;
+  padding-right: 12px;
+  gap: 8px;
   position: relative;
   z-index: 100;
+}
+
+.mob-header-logo-link {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.mob-header-logo-img {
+  width: 96px;
+  height: 48px;
+  border-radius: 4px;
+  object-fit: cover;
+  object-position: center;
+  flex-shrink: 0;
 }
 
 .mob-header-logo {
@@ -173,7 +189,8 @@ body.mobile-view-active #mobile-ui {
 .mob-header-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 /* Redesigned Logo */
@@ -210,9 +227,10 @@ body.mobile-view-active #mobile-ui {
   align-items: center;
   gap: 8px;
   background: var(--mob-surface-2);
-  padding: 6px 10px;
+  padding: 5px 9px;
   border-radius: 12px;
   border: 1px solid var(--mob-border);
+  flex-shrink: 0;
 }
 
 .mob-market-item {
@@ -235,15 +253,16 @@ body.mobile-view-active #mobile-ui {
 
 /* Variation Pill */
 .mob-header-var-pill {
-  padding: 6px 12px;
+  padding: 5px 10px;
   border-radius: 12px;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 900;
   letter-spacing: -0.3px;
-  min-width: 65px;
+  min-width: 60px;
   text-align: center;
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.10);
+  flex-shrink: 0;
 }
 
 /* Notification Badge */
