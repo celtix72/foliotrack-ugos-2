@@ -218,6 +218,12 @@
                     </select>
                 </div>
 
+                <!-- Note (Particolarmente utile per Prelievi e Versamenti) -->
+                <div id="tm-notes-wrap">
+                    <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Nota</label>
+                    <input id="tm-notes" type="text" placeholder="es. Stipendio, Giroconto, Ricarica, Spese..." class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-primary/20 outline-none" />
+                </div>
+
             </div>
 
             <!-- Footer -->
@@ -278,7 +284,7 @@
             if (tmId) tmId.value = '';
             
             // ... reset other fields safely ...
-            ['tm-asset-ticker', 'tm-amount', 'tm-comm', 'tm-tax'].forEach(id => {
+            ['tm-asset-ticker', 'tm-amount', 'tm-comm', 'tm-tax', 'tm-notes'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.value = (id === 'tm-comm' || id === 'tm-tax') ? '0' : '';
             });
@@ -305,6 +311,11 @@
         document.getElementById('tm-title').innerText = type === 'SELL' ? 'Vendi Asset' : 'Nuova Transazione';
         document.getElementById('tm-submit-label').innerText = type === 'SELL' ? 'Conferma Vendita' : 'Conferma';
         document.getElementById('tm-submit-icon').innerText = type === 'SELL' ? 'sell' : 'check_circle';
+
+        if (options.notes !== undefined) {
+            const nEl = document.getElementById('tm-notes');
+            if (nEl) nEl.value = options.notes;
+        }
 
         // Pre-fill ticker & currency BEFORE toggleTransactionFields
         if (options.ticker) {
@@ -439,6 +450,20 @@
         if (isCashOnly) {
             const ticker = document.getElementById('tm-asset-ticker');
             if (ticker && !ticker.value) ticker.value = 'CASH';
+        }
+
+        // Note field placeholder per tipo transazione
+        const notesInput = document.getElementById('tm-notes');
+        if (notesInput) {
+            if (type === 'DEPOSIT') {
+                notesInput.placeholder = 'es. Versamento, Stipendio, Bonifico in entrata...';
+            } else if (type === 'WITHDRAWAL') {
+                notesInput.placeholder = 'es. Prelievo, Spese personali, Bonifico in uscita...';
+            } else if (type === 'TRANSFER') {
+                notesInput.placeholder = 'es. Giroconto tra conti, Trasferimento liquidità...';
+            } else {
+                notesInput.placeholder = 'es. Note opzionali per la transazione...';
+            }
         }
 
         // Auto-select MANUAL for CD_ and BP_ tickers
@@ -859,7 +884,8 @@
             assetCurrency: source === 'MANUAL'
                 ? (document.getElementById('tm-asset-currency-manual')?.value || 'EUR')
                 : (document.getElementById('tm-asset-currency')?.value || 'EUR'),
-            createWithdrawal: (type === 'DIVIDEND' && !id && document.getElementById('tm-create-withdrawal')?.checked) || false
+            createWithdrawal: (type === 'DIVIDEND' && !id && document.getElementById('tm-create-withdrawal')?.checked) || false,
+            notes: document.getElementById('tm-notes')?.value?.trim() || null
         };
 
         const method = id ? 'PUT' : 'POST';
@@ -964,6 +990,7 @@
         document.getElementById('tm-tax').value = t.tax || 0;
         document.getElementById('tm-fx').value = t.exchangeRate || t.fxRate || 1;
         document.getElementById('tm-amount').value = t.amount || 0;
+        document.getElementById('tm-notes').value = t.notes || '';
         document.getElementById('tm-asset-ticker').value = t.assetTicker || t.ticker || '';
         document.getElementById('tm-asset-search').value = t.assetTicker || t.ticker || '';
 

@@ -1246,7 +1246,7 @@
         const name = holding ? holding.name : '';
 
         return `
-          <div class="mob-holding-swipe-container mob-transaction-item" data-ticker="${t.assetTicker || ''}" data-search="${(t.assetTicker || '').toLowerCase()} ${(name || '').toLowerCase()}"
+          <div class="mob-holding-swipe-container mob-transaction-item" data-ticker="${t.assetTicker || ''}" data-search="${(t.assetTicker || '').toLowerCase()} ${(name || '').toLowerCase()} ${(t.notes || '').toLowerCase()}"
                ontouchstart="handleTouchStart(event, this)" 
                ontouchmove="handleTouchMove(event, this)" 
                ontouchend="handleTouchEnd(event, this)">
@@ -1279,6 +1279,7 @@
                   <div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter ${badgeStyle}">${t.type}</div>
                 </div>
                 <div class="mob-holding-name">${date}${t.quantity ? ' • ' + formatNumber(t.quantity, 0) + ' qta' : ''}</div>
+                ${t.notes ? `<div class="text-[9px] text-slate-400 dark:text-slate-400 flex items-center gap-1 mt-0.5"><span class="material-symbols-outlined text-[11px] text-slate-400">notes</span><span class="truncate max-w-[140px]">${t.notes.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span></div>` : ''}
               </div>
               <div class="mob-holding-values">
                 <div class="mob-holding-value" style="color:${valColor}">${tSign}${formatPrivacy(total || 0, currency, 'mob-tx-'+t.id, 0)}</div>

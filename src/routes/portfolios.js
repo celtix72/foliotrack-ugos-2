@@ -401,12 +401,13 @@ Rispondi in JSON: { "riskScore": 7, "diversification": "...", "actions": ["...",
         const amount = Math.abs(diff);
 
         database.db.prepare(`
-            INSERT INTO transactions (portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO transactions (portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
             parseInt(portfolioId), type, 'CASH',
             date || new Date().toISOString().split('T')[0],
-            0, 0, 0, 0, 1, amount
+            0, 0, 0, 0, 1, amount,
+            'Riconciliazione liquidità'
         );
 
         const reconciliationDate = date || new Date().toISOString().split('T')[0];

@@ -2445,6 +2445,7 @@
                                     ${t.hasHistoryInconsistency ? '<span class="px-1 py-0.5 rounded text-[7px] bg-rose-500/10 text-rose-500 border border-rose-500/20 font-black tracking-tighter" title="Missing data points were forward-filled">GAPS</span>' : ''}
                                 </div>
                                 <div class="text-[8px] text-slate-400 truncate max-w-[120px]">${t.assetName || ''}</div>
+                                ${t.notes ? `<div class="text-[8px] text-slate-400 italic flex items-center gap-1 mt-0.5 truncate max-w-[140px]" title="${t.notes.replace(/"/g, '&quot;')}"><span class="material-symbols-outlined text-[10px]">notes</span>${t.notes.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>` : ''}
                             </td>
                             <td class="py-2.5 px-3 text-right font-mono">${t.quantity ? t.quantity.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 4}) : '—'}</td>
                             <td class="py-2.5 px-3 text-right font-mono">${t.price ? t.price.toLocaleString(undefined, {minimumFractionDigits: 2}) : '—'} <span class="text-[8px] text-slate-500">${t.assetCurrency || ''}</span></td>

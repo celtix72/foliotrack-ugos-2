@@ -2611,7 +2611,10 @@
                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
                     <td class="py-2.5 px-4 font-mono text-[10px]">${t.date}</td>
                     <td class="py-2.5 px-4 font-bold ${t.type === 'BUY' ? 'text-emerald-500' : (t.type === 'SELL' ? 'text-rose-500' : 'text-indigo-500')}">${t.type}</td>
-                    <td class="py-2.5 px-4 font-bold font-mono">${t.ticker || '-'}</td>
+                    <td class="py-2.5 px-4 font-bold font-mono">
+                        <div>${t.ticker || t.assetTicker || '-'}</div>
+                        ${t.notes ? `<div class="text-[9px] text-slate-400 font-normal truncate max-w-[140px]" title="${t.notes.replace(/"/g, '&quot;')}">${t.notes.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>` : ''}
+                    </td>
                     <td class="py-2.5 px-4 text-right">${t.shares || 0}</td>
                     <td class="py-2.5 px-4 text-right font-mono">€ ${Number(t.price || 0).toFixed(2)}</td>
                     <td class="py-2.5 px-4 text-right font-mono font-bold">€ ${Number(t.amount || (t.shares * t.price) || 0).toFixed(2)}</td>

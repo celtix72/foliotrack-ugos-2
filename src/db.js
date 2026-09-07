@@ -150,6 +150,7 @@ function initDb() {
         tax          REAL    NOT NULL DEFAULT 0,
         exchangeRate REAL    NOT NULL DEFAULT 1,
         amount       REAL    NOT NULL DEFAULT 0,
+        notes        TEXT,
         linkedTransactionId INTEGER REFERENCES transactions(id) ON DELETE SET NULL,
         createdAt    TEXT    NOT NULL DEFAULT (datetime('now'))
       );
@@ -317,6 +318,11 @@ function initDb() {
     // Migration: Add linkedTransactionId to transactions
     try {
         dbConnection.prepare(`ALTER TABLE transactions ADD COLUMN linkedTransactionId INTEGER REFERENCES transactions(id) ON DELETE SET NULL`).run();
+    } catch(e) {}
+
+    // Migration: Add notes to transactions
+    try {
+        dbConnection.prepare(`ALTER TABLE transactions ADD COLUMN notes TEXT`).run();
     } catch(e) {}
 
     // Robust Migration: Fix portfolio_history NOT NULL constraint and ensure user_id exists

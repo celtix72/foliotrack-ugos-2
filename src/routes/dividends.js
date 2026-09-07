@@ -84,9 +84,9 @@ module.exports = function(dependencies) {
 
             if (createWithdrawal && netVal > 0) {
                 const wRes = database.db.prepare(`
-                    INSERT INTO transactions (portfolioId, type, assetTicker, date, amount, quantity, price, commission, tax, exchangeRate, linkedTransactionId)
-                    VALUES (?, 'WITHDRAWAL', 'CASH', ?, ?, 0, 0, 0, 0, 1, ?)
-                `).run(portfolioId, date, netVal, divTxId);
+                    INSERT INTO transactions (portfolioId, type, assetTicker, date, amount, quantity, price, commission, tax, exchangeRate, notes, linkedTransactionId)
+                    VALUES (?, 'WITHDRAWAL', 'CASH', ?, ?, 0, 0, 0, 0, 1, ?, ?)
+                `).run(portfolioId, date, netVal, `Storno liquidità dividendo ${ticker}`, divTxId);
                 const wTxId = wRes.lastInsertRowid;
 
                 database.db.prepare(`

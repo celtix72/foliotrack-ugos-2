@@ -148,7 +148,8 @@ module.exports = function(dependencies) {
         const { 
             portfolioId, type, assetTicker, date, quantity, price, 
             commission, tax, exchangeRate, amount, destinationPortfolioId, createWithdrawal,
-            isin, dataSource, assetName, assetCurrency, assetType, assetExchange, assetCountry 
+            isin, dataSource, assetName, assetCurrency, assetType, assetExchange, assetCountry,
+            notes 
         } = req.body;
         
         if (!portfolioId) return res.status(400).send('portfolioId is required');
@@ -208,14 +209,15 @@ module.exports = function(dependencies) {
         }
 
         const result = database.db.prepare(`
-            INSERT INTO transactions (portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO transactions (portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
             parseInt(portfolioId), type, sanitizedTicker || '',
             date || new Date().toISOString().split('T')[0],
             finalQty, finalPrice,
             parseFloat(commission || 0), parseFloat(tax || 0),
-            finalExRate, parseFloat(amount || 0)
+            finalExRate, parseFloat(amount || 0),
+            notes ? notes.trim() : null
         );
 
         const divTxId = result.lastInsertRowid;
@@ -228,9 +230,9 @@ module.exports = function(dependencies) {
 
             if (netAmount > 0) {
                 const wRes = database.db.prepare(`
-                    INSERT INTO transactions (portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount, linkedTransactionId)
-                    VALUES (?, 'WITHDRAWAL', 'CASH', ?, 0, 0, 0, 0, 1, ?, ?)
-                `).run(parseInt(portfolioId), date || new Date().toISOString().split('T')[0], netAmount, divTxId);
+                    INSERT INTO transactions (portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount, notes, linkedTransactionId)
+                    VALUES (?, 'WITHDRAWAL', 'CASH', ?, 0, 0, 0, 0, 1, ?, ?, ?)
+                `).run(parseInt(portfolioId), date || new Date().toISOString().split('T')[0], netAmount, `Storno liquidità dividendo ${sanitizedTicker || ''}`.trim(), divTxId);
                 const wTxId = wRes.lastInsertRowid;
 
                 database.db.prepare(`
@@ -377,7 +379,7 @@ module.exports = function(dependencies) {
 
     // ─── UPDATE TRANSACTION ──────────────────────────────────────────────────
     router.put('/transactions/:id', requireAuth, async (req, res) => {
-        const { type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount } = req.body;
+        const { type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount, notes } = req.body;
         
         // Check ownership
         const existing = database.db.prepare(`
@@ -468,7 +470,7 @@ module.exports = function(dependencies) {
 
         database.db.prepare(`
             UPDATE transactions 
-            SET type = ?, assetTicker = ?, date = ?, quantity = ?, price = ?, commission = ?, tax = ?, exchangeRate = ?, amount = ?
+            SET type = ?, assetTicker = ?, date = ?, quantity = ?, price = ?, commission = ?, tax = ?, exchangeRate = ?, amount = ?, notes = ?
             WHERE id = ?
         `).run(
             newType,
@@ -480,6 +482,7 @@ module.exports = function(dependencies) {
             parseFloat(tax || 0),
             parseFloat(exchangeRate || 1),
             parseFloat(amount || 0),
+            notes !== undefined ? (notes ? notes.trim() : null) : finalExisting.notes,
             req.params.id
         );
 

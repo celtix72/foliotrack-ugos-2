@@ -1506,7 +1506,10 @@
             return `
                 <tr class="text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                     <td class="px-4 py-2 font-mono text-[10px]">${t.date}</td>
-                    <td class="px-4 py-2 font-bold text-slate-900 dark:text-white text-xs">${t.assetTicker || 'Cash'}</td>
+                    <td class="px-4 py-2">
+                        <div class="font-bold text-slate-900 dark:text-white text-xs">${t.assetTicker || 'Cash'}</div>
+                        ${t.notes ? `<div class="text-[10px] text-slate-400 dark:text-slate-400 font-normal flex items-center gap-1 mt-0.5" title="${t.notes.replace(/"/g, '&quot;')}"><span class="material-symbols-outlined text-[12px] text-slate-400">notes</span><span class="truncate max-w-[180px]">${t.notes.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span></div>` : ''}
+                    </td>
                     <td class="px-4 py-2">
                         <span class="px-1.5 py-0.5 rounded-[4px] font-black text-[8px] bg-${tColor}-500/10 text-${tColor}-500 border border-${tColor}-500/20">${t.type}</span>
                     </td>
