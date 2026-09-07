@@ -374,6 +374,23 @@
                       <p class="p-5 text-center text-xs text-slate-400 italic">No backups found.</p>
                   </div>
               </div>
+              <div class="mob-settings-row" onclick="toggleMobSection('mob-export-area')">
+                  <div class="mob-settings-icon bg-emerald-ios"><span class="material-symbols-outlined text-white">download</span></div>
+                  <div class="mob-settings-label">Portabilità Dati (JSON)</div>
+                  <div class="mob-settings-value"><span id="mob-export-area-icon" class="material-symbols-outlined text-[14px] transition-transform">expand_more</span></div>
+              </div>
+              <div id="mob-export-area" class="hidden bg-slate-50/50 dark:bg-black/20 border-t border-slate-100 dark:border-slate-800 p-4 space-y-3">
+                  <p class="text-[11px] text-slate-500 leading-relaxed">Esporta o importa tutti i dati dell'account (portafogli, transazioni, note, tag, minusvalenze, dividendi, watchlist e impostazioni) in formato JSON indipendente dal database.</p>
+                  <button id="mob-export-json-btn" onclick="exportDataJson()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg shadow-sm flex items-center justify-center gap-1.5 transition-colors">
+                      <span class="material-symbols-outlined text-sm">download</span> Scarica Backup Dati (JSON)
+                  </button>
+                  <div>
+                      <input type="file" id="mob-import-json-input" accept=".json" class="hidden">
+                      <button id="mob-import-json-btn" onclick="document.getElementById('mob-import-json-input').click()" class="w-full py-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-bold rounded-lg shadow-sm flex items-center justify-center gap-1.5 transition-colors">
+                          <span class="material-symbols-outlined text-sm">upload</span> Importa Dati da JSON
+                      </button>
+                  </div>
+              </div>
               <div class="mob-settings-row" onclick="toggleMobSection('mob-advanced-tools')">
                   <div class="mob-settings-icon bg-amber-ios"><span class="material-symbols-outlined text-white">build</span></div>
                   <div class="mob-settings-label">Advanced Tools</div>
@@ -672,13 +689,88 @@
                             <p class="text-[13px] font-bold truncate">${b.filename}</p>
                             <p class="text-[10px] text-slate-400 font-medium">${new Date(b.timestamp).toLocaleString()} • ${(b.size / 1024).toFixed(1)} KB</p>
                         </div>
-                        <div class="flex items-center gap-3">
-                             <button onclick="confirmRestore('${b.filename}')" class="text-primary text-xs font-black uppercase">Restore</button>
-                             <button onclick="deleteBackup('${b.filename}')" class="text-rose-500 text-xs font-black uppercase">Del</button>
+                        <div class="flex items-center gap-2.5">
+                             <a href="/api/backups/download/${encodeURIComponent(b.filename)}" download class="text-emerald-500 text-xs font-black uppercase flex items-center gap-0.5">Scarica</a>
+                             <button onclick="confirmRestore('${b.filename}')" class="text-primary text-xs font-black uppercase">Ripristina</button>
+                             <button onclick="deleteBackup('${b.filename}')" class="text-rose-500 text-xs font-black uppercase">Elimina</button>
                         </div>
                     </div>
                 `).join('');
             } catch (err) { console.error(err); }
+        }
+
+        // Mobile JSON Portability
+        async function exportDataJson() {
+            const btn = document.getElementById('mob-export-json-btn');
+            const origHtml = btn ? btn.innerHTML : '';
+            try {
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">sync</span> Esportazione...';
+                }
+                const res = await fetch('/api/backups/export');
+                if (!res.ok) throw new Error('Esportazione fallita: ' + res.statusText);
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                const d = new Date().toISOString().slice(0, 10);
+                a.download = `foliotrack_export_${d}.json`;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                }, 1000);
+            } catch (err) {
+                alert('Errore durante il download del backup JSON: ' + err.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                }
+            }
+        }
+
+        const mobImportJsonInput = document.getElementById('mob-import-json-input');
+        if (mobImportJsonInput) {
+            mobImportJsonInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        if (!(await ftConfirm('Importare i dati dal file JSON? I dati verranno aggiunti all\'account corrente.'))) return;
+                        
+                        const importBtn = document.getElementById('mob-import-json-btn');
+                        if (importBtn) {
+                            importBtn.disabled = true;
+                            importBtn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">sync</span> Importazione...';
+                        }
+
+                        const res = await fetch('/api/backups/import', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(data)
+                        });
+                        if (!res.ok) throw new Error(await res.text());
+                        
+                        alert('Dati importati con successo!');
+                        window.location.reload();
+                    } catch (err) {
+                        alert('Import fallito: ' + err.message);
+                        const importBtn = document.getElementById('mob-import-json-btn');
+                        if (importBtn) {
+                            importBtn.disabled = false;
+                            importBtn.innerHTML = '<span class="material-symbols-outlined text-sm">upload</span> Importa Dati da JSON';
+                        }
+                    }
+                };
+                reader.readAsText(file);
+            });
         }
 
         if (runBackupBtn) {

@@ -1,4 +1,6 @@
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
 
 module.exports = function (dependencies) {
     const router = express.Router();
@@ -24,6 +26,25 @@ module.exports = function (dependencies) {
         try {
             const metadata = await backupManager.createBackup(false);
             res.json(metadata);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // GET /api/backups/download/:filename (Admin Only) - Download .db or .zip backup file
+    router.get('/download/:filename', requireAuth, requireAdmin, (req, res) => {
+        try {
+            const filename = req.params.filename;
+            const safeName = path.basename(filename);
+            if (!safeName.match(/^(?:backup-[\w.-]+-(?:auto|manual)\.db|foliotrack_backup_[\w.-]+\.zip)$/)) {
+                return res.status(400).json({ error: 'Nome file di backup non valido' });
+            }
+            const BACKUP_DIR = path.join(__dirname, '..', '..', 'backups');
+            const filePath = path.join(BACKUP_DIR, safeName);
+            if (!fs.existsSync(filePath)) {
+                return res.status(404).json({ error: 'File di backup non trovato' });
+            }
+            res.download(filePath, safeName);
         } catch (err) {
             res.status(500).json({ error: err.message });
         }
@@ -98,13 +119,14 @@ module.exports = function (dependencies) {
         }
     });
 
-    // GET /api/backups/export (User Export - JSON)
+    // GET /api/backups/export (User Export - JSON: all data and settings)
     router.get('/export', requireAuth, async (req, res) => {
         try {
             const userId = req.user.id;
             const data = {
-                version: '2.0',
+                version: '2.1',
                 exportedAt: new Date().toISOString(),
+                user: { id: userId, username: req.user.username },
                 portfolios: [],
                 transactions: [],
                 settings: [],
@@ -112,7 +134,14 @@ module.exports = function (dependencies) {
                 user_watchlist: [],
                 notifications: [],
                 dividend_projections: [],
-                portfolio_history: []
+                portfolio_history: [],
+                notes: [],
+                tags: [],
+                portfolio_tags: [],
+                asset_tags: [],
+                portfolio_losses: [],
+                assets: [],
+                ai_portfolio_reports: []
             };
 
             const portfolios = database.db.prepare(`
@@ -125,11 +154,14 @@ module.exports = function (dependencies) {
             const pIds = portfolios.map(p => p.id);
             if (pIds.length > 0) {
                 const placeholders = pIds.map(() => '?').join(',');
-                data.transactions = database.db.prepare(`SELECT * FROM transactions WHERE portfolioId IN (${placeholders})`).all(...pIds);
-                data.portfolio_history = database.db.prepare(`SELECT * FROM portfolio_history WHERE portfolioId IN (${placeholders})`).all(...pIds);
+                data.transactions = database.db.prepare(`SELECT * FROM transactions WHERE portfolioId IN (${placeholders}) ORDER BY date ASC`).all(...pIds);
+                data.portfolio_history = database.db.prepare(`SELECT * FROM portfolio_history WHERE portfolioId IN (${placeholders}) ORDER BY date ASC`).all(...pIds);
+                data.portfolio_losses = database.db.prepare(`SELECT * FROM portfolio_losses WHERE portfolioId IN (${placeholders})`).all(...pIds);
+                data.portfolio_tags = database.db.prepare(`SELECT * FROM portfolio_tags WHERE portfolio_id IN (${placeholders})`).all(...pIds);
+                data.asset_tags = database.db.prepare(`SELECT * FROM asset_tags WHERE portfolio_id IN (${placeholders})`).all(...pIds);
             }
             
-            const globalHistory = database.db.prepare(`SELECT * FROM portfolio_history WHERE portfolioId IS NULL AND user_id = ?`).all(userId);
+            const globalHistory = database.db.prepare(`SELECT * FROM portfolio_history WHERE portfolioId IS NULL AND user_id = ? ORDER BY date ASC`).all(userId);
             data.portfolio_history.push(...globalHistory);
 
             data.settings = database.db.prepare(`SELECT * FROM settings WHERE user_id = ?`).all(userId);
@@ -137,11 +169,25 @@ module.exports = function (dependencies) {
             data.user_watchlist = database.db.prepare(`SELECT * FROM user_watchlist WHERE user_id = ?`).all(userId);
             data.notifications = database.db.prepare(`SELECT * FROM notifications WHERE user_id = ?`).all(userId);
             data.dividend_projections = database.db.prepare(`SELECT * FROM dividend_projections WHERE user_id = ?`).all(userId);
+            data.notes = database.db.prepare(`SELECT * FROM notes WHERE user_id = ?`).all(userId);
+            data.tags = database.db.prepare(`SELECT * FROM tags WHERE user_id = ?`).all(userId);
+            data.ai_portfolio_reports = database.db.prepare(`SELECT * FROM ai_portfolio_reports WHERE user_id = ?`).all(userId);
+
+            // Assets associated with user's portfolios, watchlist, or projections
+            const assetTickers = new Set([
+                ...data.transactions.map(t => t.assetTicker).filter(t => t && t !== 'CASH'),
+                ...data.user_watchlist.map(w => w.ticker).filter(Boolean),
+                ...data.dividend_projections.map(d => d.ticker).filter(Boolean)
+            ]);
+            if (assetTickers.size > 0) {
+                const aPlaceholders = Array.from(assetTickers).map(() => '?').join(',');
+                data.assets = database.db.prepare(`SELECT * FROM assets WHERE ticker IN (${aPlaceholders})`).all(...Array.from(assetTickers));
+            }
 
             res.setHeader('Content-disposition', `attachment; filename=foliotracker_export_${new Date().toISOString().split('T')[0]}.json`);
             res.setHeader('Content-type', 'application/json');
             
-            logAudit(userId, 'DATA_EXPORT', { count: data.portfolios.length }, req);
+            logAudit(userId, 'DATA_EXPORT', { count: data.portfolios.length, txCount: data.transactions.length }, req);
             
             res.send(JSON.stringify(data, null, 2));
         } catch (err) {
@@ -150,18 +196,35 @@ module.exports = function (dependencies) {
         }
     });
 
-    // POST /api/backups/import (User Import - JSON)
+    // POST /api/backups/import (User Import - JSON: restores all data and settings)
     router.post('/import', requireAuth, express.json({ limit: '50mb' }), async (req, res) => {
         try {
             const userId = req.user.id;
             const data = req.body;
-            if (!data || !data.portfolios) return res.status(400).json({ error: 'Invalid backup format' });
+            if (!data || !data.portfolios) return res.status(400).json({ error: 'Formato backup non valido' });
 
             database.db.transaction(() => {
+                // 1. Assets
+                if (Array.isArray(data.assets)) {
+                    for (const a of data.assets) {
+                        database.db.prepare(`
+                            INSERT OR REPLACE INTO assets (
+                                id, ticker, name, type, exchange, currency, currentPrice, changePercent,
+                                pe, country, targetPrice, stopLoss, isManual, dataSource, isin, updatedAt
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        `).run(
+                            a.id || a.ticker, a.ticker, a.name, a.type || 'Stock', a.exchange || 'N/A',
+                            a.currency || 'EUR', a.currentPrice || 0, a.changePercent || 0,
+                            a.pe || null, a.country || 'N/A', a.targetPrice || null, a.stopLoss || null,
+                            a.isManual || 0, a.dataSource || 'YF', a.isin || null, a.updatedAt || new Date().toISOString()
+                        );
+                    }
+                }
+
+                // 2. Portfolios
                 const pIdMap = {};
                 for (const p of data.portfolios) {
                     const oldId = p.id;
-                    delete p.id;
                     const result = database.db.prepare(`
                         INSERT INTO portfolios (name, type, currency, startDate, initialCash, currentCash, totalValue, performance1D, performance1DPrePost, totalDividends, investedCapital, assetCount, color)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -172,39 +235,115 @@ module.exports = function (dependencies) {
                     database.db.prepare(`INSERT INTO portfolio_users (portfolio_id, user_id) VALUES (?, ?)`).run(newId, userId);
                 }
 
-                for (const t of data.transactions) {
-                    const newPId = pIdMap[t.portfolioId];
-                    if (!newPId) continue;
-                    database.db.prepare(`
-                        INSERT INTO transactions (portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    `).run(newPId, t.type, t.assetTicker, t.date, t.quantity, t.price, t.commission, t.tax, t.exchangeRate, t.amount);
+                // 3. Transactions
+                if (Array.isArray(data.transactions)) {
+                    for (const t of data.transactions) {
+                        const newPId = pIdMap[t.portfolioId];
+                        if (!newPId) continue;
+                        database.db.prepare(`
+                            INSERT INTO transactions (portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount, notes)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        `).run(newPId, t.type, t.assetTicker, t.date, t.quantity, t.price, t.commission, t.tax, t.exchangeRate, t.amount, t.notes || null);
+                    }
                 }
 
-                for (const s of data.settings) {
-                    database.db.prepare(`INSERT OR REPLACE INTO settings (user_id, key, value) VALUES (?, ?, ?)`).run(userId, s.key, s.value);
+                // 4. Settings
+                if (Array.isArray(data.settings)) {
+                    for (const s of data.settings) {
+                        database.db.prepare(`INSERT OR REPLACE INTO settings (user_id, key, value) VALUES (?, ?, ?)`).run(userId, s.key, s.value);
+                    }
                 }
 
-                for (const tr of data.tax_rates) {
-                    database.db.prepare(`INSERT OR REPLACE INTO tax_rates (user_id, asset_type, rate) VALUES (?, ?, ?)`).run(userId, tr.asset_type, tr.rate);
+                // 5. Tax Rates
+                if (Array.isArray(data.tax_rates)) {
+                    for (const tr of data.tax_rates) {
+                        database.db.prepare(`INSERT OR REPLACE INTO tax_rates (user_id, asset_type, rate) VALUES (?, ?, ?)`).run(userId, tr.asset_type, tr.rate);
+                    }
                 }
 
-                for (const w of data.user_watchlist) {
-                    database.db.prepare(`INSERT OR REPLACE INTO user_watchlist (user_id, ticker, targetPrice, stopLoss, volatilityAlert) VALUES (?, ?, ?, ?, ?)`).run(userId, w.ticker, w.targetPrice, w.stopLoss, w.volatilityAlert);
+                // 6. User Watchlist
+                if (Array.isArray(data.user_watchlist)) {
+                    for (const w of data.user_watchlist) {
+                        database.db.prepare(`INSERT OR REPLACE INTO user_watchlist (user_id, ticker, targetPrice, stopLoss, volatilityAlert) VALUES (?, ?, ?, ?, ?)`).run(userId, w.ticker, w.targetPrice, w.stopLoss, w.volatilityAlert);
+                    }
                 }
 
-                for (const dp of data.dividend_projections) {
-                    database.db.prepare(`INSERT INTO dividend_projections (user_id, ticker, name, exDate, amount, totalAmount, yield, tag, year, isCustom) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(userId, dp.ticker, dp.name, dp.exDate, dp.amount, dp.totalAmount, dp.yield, dp.tag, dp.year, dp.isCustom);
+                // 7. Dividend Projections
+                if (Array.isArray(data.dividend_projections)) {
+                    for (const dp of data.dividend_projections) {
+                        database.db.prepare(`INSERT INTO dividend_projections (user_id, ticker, name, exDate, amount, totalAmount, yield, tag, year, isCustom) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(userId, dp.ticker, dp.name, dp.exDate, dp.amount, dp.totalAmount, dp.yield, dp.tag, dp.year, dp.isCustom);
+                    }
                 }
 
-                for (const ph of data.portfolio_history) {
-                    const newPId = ph.portfolioId ? pIdMap[ph.portfolioId] : null;
-                    if (ph.portfolioId && !newPId) continue; 
-                    database.db.prepare(`INSERT INTO portfolio_history (portfolioId, user_id, date, totalValue, cashValue, assetValue, netDeposits) VALUES (?, ?, ?, ?, ?, ?, ?)`).run(newPId, userId, ph.date, ph.totalValue, ph.cashValue, ph.assetValue, ph.netDeposits);
+                // 8. Portfolio History
+                if (Array.isArray(data.portfolio_history)) {
+                    for (const ph of data.portfolio_history) {
+                        const newPId = ph.portfolioId ? pIdMap[ph.portfolioId] : null;
+                        if (ph.portfolioId && !newPId) continue; 
+                        database.db.prepare(`INSERT INTO portfolio_history (portfolioId, user_id, date, totalValue, cashValue, assetValue, netDeposits) VALUES (?, ?, ?, ?, ?, ?, ?)`).run(newPId, userId, ph.date, ph.totalValue, ph.cashValue, ph.assetValue, ph.netDeposits);
+                    }
+                }
+
+                // 9. Notes
+                if (Array.isArray(data.notes)) {
+                    for (const n of data.notes) {
+                        database.db.prepare(`
+                            INSERT INTO notes (user_id, title, content, color, pinned, asset_symbol, created_at, updated_at)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        `).run(userId, n.title || '', n.content || '', n.color || '#3b82f6', n.pinned || 0, n.asset_symbol || null, n.created_at || new Date().toISOString(), n.updated_at || new Date().toISOString());
+                    }
+                }
+
+                // 10. Tags & Associations
+                if (Array.isArray(data.tags)) {
+                    const tagIdMap = {};
+                    for (const tag of data.tags) {
+                        const oldTagId = tag.id;
+                        const res = database.db.prepare(`INSERT INTO tags (user_id, name, color) VALUES (?, ?, ?)`).run(userId, tag.name, tag.color || '#3b82f6');
+                        tagIdMap[oldTagId] = res.lastInsertRowid;
+                    }
+                    if (Array.isArray(data.portfolio_tags)) {
+                        for (const pt of data.portfolio_tags) {
+                            const newPId = pIdMap[pt.portfolio_id];
+                            const newTagId = tagIdMap[pt.tag_id];
+                            if (newPId && newTagId) {
+                                try { database.db.prepare(`INSERT OR IGNORE INTO portfolio_tags (portfolio_id, tag_id) VALUES (?, ?)`).run(newPId, newTagId); } catch(e) {}
+                            }
+                        }
+                    }
+                    if (Array.isArray(data.asset_tags)) {
+                        for (const at of data.asset_tags) {
+                            const newPId = pIdMap[at.portfolio_id];
+                            const newTagId = tagIdMap[at.tag_id];
+                            if (newPId && newTagId) {
+                                try { database.db.prepare(`INSERT OR IGNORE INTO asset_tags (portfolio_id, ticker, tag_id) VALUES (?, ?, ?)`).run(newPId, at.ticker, newTagId); } catch(e) {}
+                            }
+                        }
+                    }
+                }
+
+                // 11. Portfolio Losses
+                if (Array.isArray(data.portfolio_losses)) {
+                    for (const pl of data.portfolio_losses) {
+                        const newPId = pIdMap[pl.portfolioId];
+                        if (newPId) {
+                            database.db.prepare(`INSERT INTO portfolio_losses (portfolioId, asset_type, amount) VALUES (?, ?, ?)`).run(newPId, pl.asset_type, pl.amount);
+                        }
+                    }
+                }
+
+                // 12. AI Portfolio Reports
+                if (Array.isArray(data.ai_portfolio_reports)) {
+                    for (const r of data.ai_portfolio_reports) {
+                        database.db.prepare(`
+                            INSERT INTO ai_portfolio_reports (user_id, date, risk_score, diversification_score, allocation_score, quality_score, pe_value, markdown_content, raw_context, created_at)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        `).run(userId, r.date, r.risk_score, r.diversification_score, r.allocation_score, r.quality_score, r.pe_value, r.markdown_content, r.raw_context, r.created_at);
+                    }
                 }
             })();
 
-            res.json({ success: true, message: 'Data imported successfully' });
+            res.json({ success: true, message: 'Dati e impostazioni importati con successo' });
         } catch (err) {
             logger.error('Import failed:', err);
             res.status(500).json({ error: err.message });

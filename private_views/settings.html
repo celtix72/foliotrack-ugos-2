@@ -1535,6 +1535,9 @@
                             </div>
                         </div>
                         <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <a href="/api/backups/download/${encodeURIComponent(b.filename)}" download class="p-1.5 rounded-lg text-emerald-500 hover:bg-emerald-500/10 transition-colors flex items-center justify-center" title="Scarica Backup">
+                                <span class="material-symbols-outlined text-lg">download</span>
+                            </a>
                             <button onclick="confirmRestore('${b.filename}')" class="p-1.5 rounded-lg text-indigo-500 hover:bg-indigo-500/10 transition-colors" title="Restore">
                                 <span class="material-symbols-outlined text-lg">settings_backup_restore</span>
                             </button>
@@ -1551,7 +1554,8 @@
                             <p class="text-[13px] font-bold truncate">${b.filename}</p>
                             <p class="text-[10px] text-slate-400 font-medium">${new Date(b.timestamp).toLocaleString()} • ${(b.size / 1024).toFixed(1)} KB</p>
                         </div>
-                        <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-2">
+                             <a href="/api/backups/download/${encodeURIComponent(b.filename)}" download class="text-emerald-500 text-xs font-black uppercase tracking-wider flex items-center gap-0.5">Scarica</a>
                              <button onclick="confirmRestore('${b.filename}')" class="text-primary text-xs font-black uppercase tracking-wider">Restore</button>
                              <button onclick="deleteBackup('${b.filename}')" class="text-rose-500 text-xs font-black uppercase tracking-wider">Del</button>
                         </div>
@@ -1564,11 +1568,42 @@
         }
 
         // JSON Export/Import logic
+        async function exportDataJson() {
+            const exportBtn = document.getElementById('export-json-btn');
+            const origHtml = exportBtn ? exportBtn.innerHTML : '';
+            try {
+                if (exportBtn) {
+                    exportBtn.disabled = true;
+                    exportBtn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">sync</span> Esportazione...';
+                }
+                const res = await fetch('/api/backups/export');
+                if (!res.ok) throw new Error('Esportazione fallita: ' + res.statusText);
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                const d = new Date().toISOString().slice(0, 10);
+                a.download = `foliotrack_export_${d}.json`;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                }, 1000);
+            } catch (err) {
+                alert('Errore durante il download del backup JSON: ' + err.message);
+            } finally {
+                if (exportBtn) {
+                    exportBtn.disabled = false;
+                    exportBtn.innerHTML = origHtml;
+                }
+            }
+        }
+
         const exportJsonBtn = document.getElementById('export-json-btn');
         if (exportJsonBtn) {
-            exportJsonBtn.addEventListener('click', () => {
-                window.location.href = '/api/backups/export';
-            });
+            exportJsonBtn.addEventListener('click', exportDataJson);
         }
 
         const importJsonInput = document.getElementById('import-json-input');

@@ -3112,6 +3112,7 @@
                             </div>
                         </div>
                         <div class="flex items-center gap-1">
+                            <a href="/api/backups/download/${encodeURIComponent(b.filename)}" download class="p-1.5 text-emerald-500 hover:bg-emerald-500/10 rounded flex items-center justify-center" title="Scarica"><span class="material-symbols-outlined text-sm">download</span></a>
                             <button onclick="restoreBackup('${b.filename}')" class="p-1.5 text-indigo-500 hover:bg-indigo-500/10 rounded" title="Ripristina"><span class="material-symbols-outlined text-sm">settings_backup_restore</span></button>
                             <button onclick="deleteBackup('${b.filename}')" class="p-1.5 text-rose-500 hover:bg-rose-500/10 rounded" title="Elimina"><span class="material-symbols-outlined text-sm">delete</span></button>
                         </div>
@@ -3250,8 +3251,37 @@
         };
 
         // JSON Portability
-        document.getElementById('export-json-btn')?.addEventListener('click', () => {
-            window.location.href = '/api/backups/export';
+        document.getElementById('export-json-btn')?.addEventListener('click', async () => {
+            const btn = document.getElementById('export-json-btn');
+            const origHtml = btn ? btn.innerHTML : '';
+            try {
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">sync</span> Esportazione...';
+                }
+                const res = await fetch('/api/backups/export');
+                if (!res.ok) throw new Error('Esportazione fallita: ' + res.statusText);
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                const d = new Date().toISOString().slice(0, 10);
+                a.download = `foliotrack_export_${d}.json`;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                }, 1000);
+            } catch (err) {
+                alert('Errore esportazione JSON: ' + err.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                }
+            }
         });
 
         document.getElementById('import-json-input')?.addEventListener('change', async (e) => {

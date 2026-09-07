@@ -59,7 +59,7 @@ function listBackups() {
     if (!fs.existsSync(BACKUP_DIR)) return [];
     
     return fs.readdirSync(BACKUP_DIR)
-        .filter(f => f.endsWith('.db.json'))
+        .filter(f => f.endsWith('.db.json') || f.endsWith('.zip.json'))
         .map(f => {
             try {
                 return JSON.parse(fs.readFileSync(path.join(BACKUP_DIR, f), 'utf8'));
@@ -77,7 +77,7 @@ function listBackups() {
 function deleteBackup(filename) {
     // Sanitize: accept only the basename, no directory traversal
     const safeName = path.basename(filename);
-    if (!safeName.match(/^backup-[\w.-]+-(?:auto|manual)\.db$/)) {
+    if (!safeName.match(/^(?:backup-[\w.-]+-(?:auto|manual)\.db|foliotrack_backup_[\w.-]+\.zip)$/)) {
         throw new Error('Nome backup non valido');
     }
     const dbPath = path.join(BACKUP_DIR, safeName);
