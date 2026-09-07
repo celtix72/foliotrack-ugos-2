@@ -1295,18 +1295,18 @@
                                 <table class="w-full text-left text-[11px] border-collapse" id="audit-table">
                                     <thead>
                                         <tr class="bg-slate-50 dark:bg-slate-900/50 font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 sticky top-0">
-                                            <th class="py-2.5 px-3 cursor-pointer" onclick="sortAuditTable(0)">Data</th>
-                                            <th class="py-2.5 px-3 cursor-pointer" onclick="sortAuditTable(1)">Portafoglio</th>
-                                            <th class="py-2.5 px-3 cursor-pointer" onclick="sortAuditTable(2)">Tipo</th>
-                                            <th class="py-2.5 px-3 cursor-pointer" onclick="sortAuditTable(3)">Asset</th>
-                                            <th class="py-2.5 px-3 text-right">Qtà</th>
-                                            <th class="py-2.5 px-3 text-right">Prezzo</th>
-                                            <th class="py-2.5 px-3 text-right">Lordo</th>
-                                            <th class="py-2.5 px-3 text-right text-rose-500">Tax</th>
-                                            <th class="py-2.5 px-3 text-right text-emerald-500">Netto</th>
-                                            <th class="py-2.5 px-2 text-right text-indigo-500 bg-indigo-500/5" title="Calcolato con conversione diretta EUR">Calc (EUR)</th>
-                                            <th class="py-2.5 px-2 text-right text-amber-500 bg-amber-500/5" title="Prezzo Medio di Carico storico prima della vendita">PMC (EUR)</th>
-                                            <th class="py-2.5 px-3 text-right text-emerald-500 bg-emerald-500/5">Gain (EUR)</th>
+                                            <th class="py-2.5 px-3 cursor-pointer hover:text-primary transition-colors" onclick="sortAuditTable(0)">Data</th>
+                                            <th class="py-2.5 px-3 cursor-pointer hover:text-primary transition-colors" onclick="sortAuditTable(1)">Portafoglio</th>
+                                            <th class="py-2.5 px-3 cursor-pointer hover:text-primary transition-colors" onclick="sortAuditTable(2)">Tipo</th>
+                                            <th class="py-2.5 px-3 cursor-pointer hover:text-primary transition-colors" onclick="sortAuditTable(3)">Asset</th>
+                                            <th class="py-2.5 px-3 text-right cursor-pointer hover:text-primary transition-colors" onclick="sortAuditTable(4)">Qtà</th>
+                                            <th class="py-2.5 px-3 text-right cursor-pointer hover:text-primary transition-colors" onclick="sortAuditTable(5)">Prezzo</th>
+                                            <th class="py-2.5 px-3 text-right cursor-pointer hover:text-primary transition-colors" onclick="sortAuditTable(6)">Lordo</th>
+                                            <th class="py-2.5 px-3 text-right text-rose-500 cursor-pointer hover:text-rose-400 transition-colors" onclick="sortAuditTable(7)">Tax</th>
+                                            <th class="py-2.5 px-3 text-right text-emerald-500 cursor-pointer hover:text-emerald-400 transition-colors" onclick="sortAuditTable(8)">Netto</th>
+                                            <th class="py-2.5 px-2 text-right text-indigo-500 bg-indigo-500/5 cursor-pointer hover:text-indigo-400 transition-colors" onclick="sortAuditTable(9)" title="Calcolato con conversione diretta EUR">Calc (EUR)</th>
+                                            <th class="py-2.5 px-2 text-right text-amber-500 bg-amber-500/5 cursor-pointer hover:text-amber-400 transition-colors" onclick="sortAuditTable(10)" title="Prezzo Medio di Carico storico prima della vendita">PMC (EUR)</th>
+                                            <th class="py-2.5 px-3 text-right text-emerald-500 bg-emerald-500/5 cursor-pointer hover:text-emerald-400 transition-colors" onclick="sortAuditTable(11)">Gain (EUR)</th>
                                             <th class="py-2.5 px-3 text-right">Azioni</th>
                                         </tr>
                                     </thead>
@@ -2957,6 +2957,54 @@
 
             const gainBadge = document.getElementById('audit-total-gain');
             if (gainBadge) gainBadge.textContent = `€ ${totalGain.toFixed(2)}`;
+        };
+
+        let auditSortCol = null;
+        let auditSortAsc = true;
+
+        window.sortAuditTable = (n) => {
+            if (auditSortCol === n) {
+                auditSortAsc = !auditSortAsc;
+            } else {
+                auditSortCol = n;
+                auditSortAsc = true;
+            }
+
+            const keyMap = {
+                0: 'date',
+                1: 'portfolio_name',
+                2: 'type',
+                3: 'ticker',
+                4: 'shares',
+                5: 'price',
+                6: 'gross_amount',
+                7: 'tax',
+                8: 'net_amount',
+                9: 'calc_eur',
+                10: 'pmc_eur',
+                11: 'realized_gain'
+            };
+            const key = keyMap[n];
+            if (!key) return;
+
+            auditData.sort((a, b) => {
+                let valA = a[key];
+                let valB = b[key];
+                
+                if (['shares', 'price', 'gross_amount', 'tax', 'net_amount', 'calc_eur', 'pmc_eur', 'realized_gain'].includes(key)) {
+                    valA = parseFloat(valA) || 0;
+                    valB = parseFloat(valB) || 0;
+                    return auditSortAsc ? (valA - valB) : (valB - valA);
+                }
+
+                valA = (valA || '').toString().toLowerCase();
+                valB = (valB || '').toString().toLowerCase();
+                if (valA < valB) return auditSortAsc ? -1 : 1;
+                if (valA > valB) return auditSortAsc ? 1 : -1;
+                return 0;
+            });
+
+            filterAuditTable();
         };
 
         window.openEditAuditModal = (id) => {
