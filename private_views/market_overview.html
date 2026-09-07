@@ -797,7 +797,8 @@ function renderAssets(filter = '') {
 
     if (listPos) {
         if (openPositions.length) {
-            const azioni = openPositions.filter(a => getAssetCategory(a) === 'Azioni');
+            const azioniEur = openPositions.filter(a => getAssetCategory(a) === 'Azioni' && (a.currency || '').toUpperCase() !== 'USD');
+            const azioniUsd = openPositions.filter(a => getAssetCategory(a) === 'Azioni' && (a.currency || '').toUpperCase() === 'USD');
             const etfs = openPositions.filter(a => getAssetCategory(a) === 'ETF');
             const obbligazioni = openPositions.filter(a => getAssetCategory(a) === 'Obbligazioni');
             const cd = openPositions.filter(a => getAssetCategory(a) === 'CD');
@@ -806,6 +807,7 @@ function renderAssets(filter = '') {
             const renderSection = (items, title) => {
                 if (items.length === 0) return '';
                 
+                const secCurrency = (title.includes('USD')) ? 'USD' : 'EUR';
                 let totalInvested = 0;
                 let totalCumulated = 0;
                 let totalDailyGain = 0;
@@ -842,13 +844,13 @@ function renderAssets(filter = '') {
                             </div>
                         </td>
                         <td class="px-4 py-2 bg-yellow-100 dark:bg-yellow-900/20 border-y-2 border-yellow-300 dark:border-yellow-700/50 font-mono">
-                            <p class="text-xs font-black ${dailyClr} leading-tight">${dailySgn}${formatCurrency(totalDailyGain, 'EUR', 0)}</p>
+                            <p class="text-xs font-black ${dailyClr} leading-tight">${dailySgn}${formatCurrency(totalDailyGain, secCurrency, 0)}</p>
                             <p class="text-[8px] font-bold text-yellow-700 dark:text-yellow-500 mt-0.5 uppercase tracking-tighter">Daily</p>
                         </td>
                         <td colspan="2" class="px-4 py-2 bg-yellow-100 dark:bg-yellow-900/20 border-y-2 border-yellow-300 dark:border-yellow-700/50">
                         </td>
                         <td class="px-4 py-2 bg-yellow-100 dark:bg-yellow-900/20 border-y-2 border-yellow-300 dark:border-yellow-700/50 font-mono">
-                            <p class="text-xs font-black ${clr} leading-tight">${sgn}${formatCurrency(sectionGain, 'EUR', 0)}</p>
+                            <p class="text-xs font-black ${clr} leading-tight">${sgn}${formatCurrency(sectionGain, secCurrency, 0)}</p>
                             <p class="text-[8px] font-bold ${clr} mt-0.5">${sgn}${formatNumber(sectionGainPct, 1)}%</p>
                         </td>
                         <td class="px-4 py-2 bg-yellow-100 dark:bg-yellow-900/20 border-y-2 border-yellow-300 dark:border-yellow-700/50 text-right">
@@ -858,7 +860,8 @@ function renderAssets(filter = '') {
                 `;
             };
 
-            listPos.innerHTML = renderSection(azioni, 'Azioni') +
+            listPos.innerHTML = renderSection(azioniEur, 'Azioni EUR') +
+                                renderSection(azioniUsd, 'Azioni USD') +
                                 renderSection(etfs, 'ETF') +
                                 renderSection(obbligazioni, 'Obbligazioni') +
                                 renderSection(cd, 'CD') +
