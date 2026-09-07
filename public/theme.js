@@ -684,188 +684,195 @@
     setInterval(updateMarketStatusUI, 60000); // 60s market status sync
     updateMarketStatusUI(); // Call immediately on load
     
-    window.addEventListener('portfolios-updated', () => {
+    window.addEventListener('portfolios-updated', (e) => {
         console.log("[Theme] portfolios-updated event received, refreshing UI...");
         updateSidebarContents();
+        if (e && e.detail && e.detail.global && window.updateHeaderPortfolioVar) {
+            window.updateHeaderPortfolioVar(e.detail);
+        }
     });
 
     window.refreshSidebarPortfolios = () => { _sidebarLoading = false; updateSidebarContents(); };
 
     window._lastMarketUpdate = 0;
+    window._lastKnownMarketStatus = null;
+
+    function applyMarketMicrotag(el, isOpen, isPrePost, marketName) {
+        if (!el) return;
+        el.classList.remove('status-open', 'status-prepost', 'status-closed');
+        if (isOpen) {
+            el.classList.add('status-open');
+            el.setAttribute('title', `${marketName}: Aperto`);
+        } else if (isPrePost) {
+            el.classList.add('status-prepost');
+            el.setAttribute('title', `${marketName}: Pre/Post-Market`);
+        } else {
+            el.classList.add('status-closed');
+            el.setAttribute('title', `${marketName}: Chiuso`);
+        }
+    }
+
+    window.updateMarketTagsUI = function(customStatus) {
+        const s = customStatus || window._lastKnownMarketStatus;
+        if (!s) return;
+        window._lastKnownMarketStatus = s;
+        const eO = !!s.EU;
+        const eP = !eO && (!!s.EU_preMarketActive || !!s.EU_afterHoursActive);
+        const uO = !!s.US;
+        const uP = !uO && (!!s.US_preMarketActive || !!s.US_afterHoursActive);
+        document.querySelectorAll('.market-microtag-eu, #market-tag-eu, #mob-tag-eu').forEach(el => applyMarketMicrotag(el, eO, eP, 'Borsa Italiana / XETRA'));
+        document.querySelectorAll('.market-microtag-us, #market-tag-us, #mob-tag-us').forEach(el => applyMarketMicrotag(el, uO, uP, 'NYSE / NASDAQ'));
+    };
+
+    window.updateHeaderPortfolioVar = function(pData) {
+        if (!pData || !pData.global) return;
+        const changeReg = pData.global.changeValue || 0;
+        const changePP = pData.global.changeValuePrePost || 0;
+        const totalMove = changeReg + changePP;
+        const isPos = totalMove >= 0;
+
+        const formatSafe = (val, dec = 0) => {
+            if (typeof window.formatCurrency === 'function') {
+                return window.formatCurrency(val, 'EUR', dec);
+            }
+            const num = Math.round(val);
+            return `${num.toLocaleString('de-DE')} €`;
+        };
+
+        const formatted = formatSafe(totalMove, 0);
+        const sign = totalMove > 0 ? '+' : '';
+
+        // Desktop
+        const portfolioVar = document.getElementById('header-portfolio-var');
+        if (portfolioVar) {
+            const signReg = changeReg > 0 ? '+' : '';
+            const formattedReg = formatSafe(changeReg, 0);
+            const hasPP = changePP !== 0;
+            const signPP = changePP > 0 ? '+' : '';
+            const formattedPP = hasPP ? formatSafe(changePP, 0) : '';
+
+            const pillClass = isPos
+                ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/25'
+                : 'bg-rose-500/10 text-rose-500 border-rose-500/25';
+
+            portfolioVar.innerHTML = `
+                <span class="flex items-center gap-1.5 ${pillClass} font-bold px-3 py-1 rounded-full border">
+                    <span class="material-symbols-outlined text-[16px]">${isPos ? 'trending_up' : 'trending_down'}</span>
+                    <span class="text-[13px] font-black">${signReg}${formattedReg}</span>
+                    ${hasPP ? `<span class="text-[10px] opacity-75 font-bold">(${signPP}${formattedPP})</span>` : ''}
+                </span>
+            `;
+        }
+
+        // Mobile
+        const mobVar = document.getElementById('mob-header-var-day');
+        if (mobVar) {
+            const bg = isPos ? 'rgba(16,185,129,0.22)' : 'rgba(244,63,94,0.22)';
+            const color = isPos ? '#34d399' : '#fb7185';
+            const border = isPos ? 'rgba(16,185,129,0.45)' : 'rgba(244,63,94,0.45)';
+            mobVar.style.backgroundColor = bg;
+            mobVar.style.color = color;
+            mobVar.style.border = `1px solid ${border}`;
+            mobVar.innerHTML = `<span>${sign}${formatted}</span>`;
+        }
+    };
 
     async function updateMarketStatusUI() {
-        const liveIndicator = document.getElementById('header-live-indicator');
-        const updateLabel   = document.getElementById('header-last-update');
-        const marketStatus  = document.getElementById('header-market-status');
-        const portfolioVar  = document.getElementById('header-portfolio-var');
-        const mobDotEU = document.getElementById('mob-dot-eu');
-        const mobDotUS = document.getElementById('mob-dot-us');
+        const liveIndicator   = document.getElementById('header-live-indicator');
+        const updateLabel     = document.getElementById('header-last-update');
+        const marketStatus    = document.getElementById('header-market-status');
+        const portfolioVar    = document.getElementById('header-portfolio-var');
+        const headerTagEU     = document.getElementById('market-tag-eu');
+        const headerTagUS     = document.getElementById('market-tag-us');
+
+        const mobVar          = document.getElementById('mob-header-var-day');
+        const mobTagEU        = document.getElementById('mob-tag-eu');
+        const mobTagUS        = document.getElementById('mob-tag-us');
+        const anyMicrotag     = document.querySelector('.market-microtag');
+        const mobMarketPill   = document.querySelector('.mob-header-market-pill');
+
+        const mobDotEU        = document.getElementById('mob-dot-eu');
+        const mobDotUS        = document.getElementById('mob-dot-us');
         const mobMarketStatus = document.getElementById('mob-market-status');
-        const headerDotEU = document.getElementById('market-dot-eu');
-        const headerDotUS = document.getElementById('market-dot-us');
-        
-        if (!liveIndicator && !updateLabel && !marketStatus && !portfolioVar && !mobDotEU && !mobMarketStatus && !headerDotEU && !headerDotUS) return;
+        const headerDotEU     = document.getElementById('market-dot-eu');
+        const headerDotUS     = document.getElementById('market-dot-us');
 
+        const hasHeaderElements = liveIndicator || updateLabel || marketStatus || portfolioVar || headerTagEU || headerTagUS
+                               || mobVar || mobTagEU || mobTagUS || anyMicrotag || mobMarketPill
+                               || mobDotEU || mobDotUS || mobMarketStatus || headerDotEU || headerDotUS;
+
+        if (!hasHeaderElements) return;
+
+        // 1. Market Status Fetch & Update
         try {
-            // 1. Market Status
             const statusRes = await fetch('/api/market-status');
-            if (!statusRes.ok) throw new Error("Connection Error");
-            const data = await statusRes.json();
+            if (statusRes.ok) {
+                const status = await statusRes.json();
+                window._lastKnownMarketStatus = status;
 
-            // Auto-refresh logic: check if server has newer data
-            if (data.lastUpdate && data.lastUpdate > window._lastMarketUpdate) {
-                const isInitial = window._lastMarketUpdate === 0;
-                window._lastMarketUpdate = data.lastUpdate;
-                
-                if (!isInitial) {
-                    console.log("[Theme] Market data update detected, dispatching refresh event...");
-                    // Clear SWR cache for portfolios and analytics to ensure fresh data
-                    for (let i = 0; i < sessionStorage.length; i++) {
-                        const key = sessionStorage.key(i);
-                        if (key && (key.startsWith('ft_cache_/api/portfolios') || key.startsWith('ft_cache_/api/analytics'))) {
-                            sessionStorage.removeItem(key);
-                            i--;
+                // Auto-refresh logic: check if server has newer data
+                if (status.lastUpdate && status.lastUpdate > window._lastMarketUpdate) {
+                    const isInitial = window._lastMarketUpdate === 0;
+                    window._lastMarketUpdate = status.lastUpdate;
+                    
+                    if (!isInitial) {
+                        console.log("[Theme] Market data update detected, dispatching refresh event...");
+                        for (let i = 0; i < sessionStorage.length; i++) {
+                            const key = sessionStorage.key(i);
+                            if (key && (key.startsWith('ft_cache_/api/portfolios') || key.startsWith('ft_cache_/api/analytics'))) {
+                                sessionStorage.removeItem(key);
+                                i--;
+                            }
                         }
+                        window.dispatchEvent(new CustomEvent('market-data-updated', { detail: { lastUpdate: status.lastUpdate } }));
                     }
-                    window.dispatchEvent(new CustomEvent('market-data-updated', { detail: { lastUpdate: data.lastUpdate } }));
+                }
+
+                // Set global mobile market open flag for page-level components
+                window._mobMarketOpen = status.anyOpen;
+
+                if (liveIndicator) {
+                    const dot = liveIndicator.querySelector('.header-live-dot');
+                    const text = liveIndicator.querySelector('.header-live-text');
+                    if (status.anyOpen) {
+                        dot?.classList.add('bg-emerald-500', 'animate-pulse');
+                        dot?.classList.remove('bg-slate-400', 'bg-rose-500');
+                        if (text) text.textContent = 'Live';
+                    } else {
+                        dot?.classList.remove('bg-emerald-500', 'animate-pulse', 'bg-rose-500');
+                        dot?.classList.add('bg-slate-400');
+                        if (text) text.textContent = 'Closed';
+                    }
+                }
+
+                if (updateLabel) {
+                    const now = new Date();
+                    const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+                    updateLabel.textContent = `Upd: ${timeStr}`;
+                }
+
+                window.updateMarketTagsUI(status);
+
+                const euOpen = !!status.EU;
+                const euPrePost = !euOpen && (!!status.EU_preMarketActive || !!status.EU_afterHoursActive);
+                const usOpen = !!status.US;
+                const usPrePost = !usOpen && (!!status.US_preMarketActive || !!status.US_afterHoursActive);
+
+                // Legacy dot fallbacks
+                if (headerDotEU && headerDotUS) {
+                    headerDotEU.className = `w-1.5 h-1.5 rounded-full ${euOpen ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : (euPrePost ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]' : 'bg-slate-300 dark:bg-slate-700')}`;
+                    headerDotUS.className = `w-1.5 h-1.5 rounded-full ${usOpen ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : (usPrePost ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]' : 'bg-slate-300 dark:bg-slate-700')}`;
+                }
+
+                if (mobDotEU && mobDotUS) {
+                    mobDotEU.style.backgroundColor = euOpen ? 'var(--mob-emerald)' : (euPrePost ? '#f59e0b' : 'var(--mob-text-caption)');
+                    mobDotUS.style.backgroundColor = usOpen ? 'var(--mob-emerald)' : (usPrePost ? '#f59e0b' : 'var(--mob-text-caption)');
+                    if (euOpen) mobDotEU.classList.add('animate-pulse'); else mobDotEU.classList.remove('animate-pulse');
+                    if (usOpen) mobDotUS.classList.add('animate-pulse'); else mobDotUS.classList.remove('animate-pulse');
                 }
             }
-
-            const status = data;
-            
-            // Set global mobile market open flag for page-level components
-            window._mobMarketOpen = status.anyOpen;
-
-            if (liveIndicator) {
-                const dot = liveIndicator.querySelector('.header-live-dot');
-                const text = liveIndicator.querySelector('.header-live-text');
-                if (status.anyOpen) {
-                    dot?.classList.add('bg-emerald-500', 'animate-pulse');
-                    dot?.classList.remove('bg-slate-400', 'bg-rose-500');
-                    if (text) text.textContent = 'Live';
-                } else {
-                    dot?.classList.remove('bg-emerald-500', 'animate-pulse', 'bg-rose-500');
-                    dot?.classList.add('bg-slate-400');
-                    if (text) text.textContent = 'Closed';
-                }
-            }
-
-            if (updateLabel) {
-                const now = new Date();
-                const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-                updateLabel.textContent = `Upd: ${timeStr}`;
-            }
-
-            const euOpen = !!status.EU;
-            const euPrePost = !euOpen && (!!status.EU_preMarketActive || !!status.EU_afterHoursActive);
-            const usOpen = !!status.US;
-            const usPrePost = !usOpen && (!!status.US_preMarketActive || !!status.US_afterHoursActive);
-
-            // Update connected microtags (Desktop & Mobile)
-            const applyMicrotag = (el, isOpen, isPrePost, marketName) => {
-                if (!el) return;
-                el.classList.remove('status-open', 'status-prepost', 'status-closed');
-                if (isOpen) {
-                    el.classList.add('status-open');
-                    el.setAttribute('title', `${marketName}: Aperto`);
-                } else if (isPrePost) {
-                    el.classList.add('status-prepost');
-                    el.setAttribute('title', `${marketName}: Pre/Post-Market`);
-                } else {
-                    el.classList.add('status-closed');
-                    el.setAttribute('title', `${marketName}: Chiuso`);
-                }
-            };
-
-            document.querySelectorAll('.market-microtag-eu, #market-tag-eu, #mob-tag-eu').forEach(el => {
-                applyMicrotag(el, euOpen, euPrePost, 'Borsa Italiana / XETRA');
-            });
-
-            document.querySelectorAll('.market-microtag-us, #market-tag-us, #mob-tag-us').forEach(el => {
-                applyMicrotag(el, usOpen, usPrePost, 'NYSE / NASDAQ');
-            });
-
-            window.updateMarketTagsUI = function(customStatus) {
-                const s = customStatus || status;
-                const eO = !!s.EU;
-                const eP = !eO && (!!s.EU_preMarketActive || !!s.EU_afterHoursActive);
-                const uO = !!s.US;
-                const uP = !uO && (!!s.US_preMarketActive || !!s.US_afterHoursActive);
-                document.querySelectorAll('.market-microtag-eu, #market-tag-eu, #mob-tag-eu').forEach(el => applyMicrotag(el, eO, eP, 'Borsa Italiana / XETRA'));
-                document.querySelectorAll('.market-microtag-us, #market-tag-us, #mob-tag-us').forEach(el => applyMicrotag(el, uO, uP, 'NYSE / NASDAQ'));
-            };
-
-            // Legacy dot fallbacks
-            if (headerDotEU && headerDotUS) {
-                headerDotEU.className = `w-1.5 h-1.5 rounded-full ${euOpen ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : (euPrePost ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]' : 'bg-slate-300 dark:bg-slate-700')}`;
-                headerDotUS.className = `w-1.5 h-1.5 rounded-full ${usOpen ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : (usPrePost ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]' : 'bg-slate-300 dark:bg-slate-700')}`;
-            }
-
-            if (mobDotEU && mobDotUS) {
-                mobDotEU.style.backgroundColor = euOpen ? 'var(--mob-emerald)' : (euPrePost ? '#f59e0b' : 'var(--mob-text-caption)');
-                mobDotUS.style.backgroundColor = usOpen ? 'var(--mob-emerald)' : (usPrePost ? '#f59e0b' : 'var(--mob-text-caption)');
-                if (euOpen) mobDotEU.classList.add('animate-pulse'); else mobDotEU.classList.remove('animate-pulse');
-                if (usOpen) mobDotUS.classList.add('animate-pulse'); else mobDotUS.classList.remove('animate-pulse');
-            }
-
-            // 2. Portfolio Variation
-            const pRes = await fetch('/api/portfolios');
-            const pData = await pRes.json();
-            
-            if (!pData.global) {
-                console.warn("[Theme] No global stats found in portfolio response");
-                return;
-            }
-
-            const changeReg = pData.global.changeValue || 0;
-            const changePP = pData.global.changeValuePrePost || 0;
-            const totalMove = changeReg + changePP;
-            const isPos = totalMove >= 0;
-            
-            // Format only the leading regular value for the header to keep it compact, 
-            // but use the total sum for the color/sign.
-            // La variazione giornaliera NON è soggetta alla modalità privacy nella top bar
-            const formatted = window.formatCurrency(totalMove, 'EUR', 0);
-            const sign = totalMove >= 0 ? '+' : '';
-
-            if (portfolioVar) {
-                const signReg = changeReg >= 0 ? '+' : '';
-                const formattedReg = window.formatCurrency(changeReg, 'EUR', 0);
-                const hasPP = changePP !== 0;
-                const signPP = changePP >= 0 ? '+' : '';
-                const formattedPP = hasPP ? window.formatCurrency(changePP, 'EUR', 0) : '';
-
-                const pillClass = isPos
-                    ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/25'
-                    : 'bg-rose-500/10 text-rose-500 border-rose-500/25';
-
-                portfolioVar.innerHTML = `
-                    <span class="flex items-center gap-1.5 ${pillClass} font-bold px-3 py-1 rounded-full border">
-                        <span class="material-symbols-outlined text-[16px]">${isPos ? 'trending_up' : 'trending_down'}</span>
-                        <span class="text-[13px] font-black">${signReg}${formattedReg}</span>
-                        ${hasPP ? `<span class="text-[10px] opacity-75 font-bold">(${signPP}${formattedPP})</span>` : ''}
-                    </span>
-                 `;
-            }
-
-            // --- Mobile Var Pill Redesign ---
-            let mobVar = document.getElementById('mob-header-var-day');
-            if (mobVar) {
-                const bg = isPos ? 'rgba(16,185,129,0.22)' : 'rgba(244,63,94,0.22)';
-                const color = isPos ? '#34d399' : '#fb7185';
-                const border = isPos ? 'rgba(16,185,129,0.45)' : 'rgba(244,63,94,0.45)';
-                mobVar.style.backgroundColor = bg;
-                mobVar.style.color = color;
-                mobVar.style.border = `1px solid ${border}`;
-                mobVar.innerHTML = `<span>${sign}${formatted}</span>`;
-            }
-
-            // Emit event so dashboard.html can refresh its hero section
-            window.dispatchEvent(new CustomEvent('portfolios-updated', { detail: pData }));
-
-        } catch (err) { 
-            console.error("Header update error:", err); 
-            // Show Error State (Blinking Red)
+        } catch (statusErr) {
+            console.error("[Theme] Market status fetch error:", statusErr);
             if (liveIndicator) {
                 const dot = liveIndicator.querySelector('.header-live-dot');
                 const text = liveIndicator.querySelector('.header-live-text');
@@ -890,6 +897,19 @@
             if (mobMarketStatus) {
                 mobMarketStatus.innerHTML = `<span style="color:var(--mob-rose); font-weight:bold; white-space:nowrap;" class="animate-pulse">ERROR</span>`;
             }
+        }
+
+        // 2. Portfolio Variation Fetch & Update
+        try {
+            const pRes = await fetch('/api/portfolios');
+            if (pRes.ok) {
+                const pData = await pRes.json();
+                window.updateHeaderPortfolioVar(pData);
+                // Emit event so dashboard.html can refresh its hero section
+                window.dispatchEvent(new CustomEvent('portfolios-updated', { detail: pData }));
+            }
+        } catch (pErr) {
+            console.error("[Theme] Portfolio header update error:", pErr);
         }
     }
 
