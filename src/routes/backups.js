@@ -56,28 +56,43 @@ module.exports = function (dependencies) {
     // POST /api/backups/gdrive/test (Admin Only)
     router.post('/gdrive/test', requireAuth, requireAdmin, async (req, res) => {
         try {
-            const result = await gdriveService.testGDriveConnection();
+            const userSettings = database.getSettings ? database.getSettings(req.user.id) : null;
+            const result = await gdriveService.testGDriveConnection(userSettings);
             res.json(result);
         } catch (err) {
-            res.status(500).json({ success: false, error: err.message });
+            res.json({ success: false, error: err.response?.data?.error?.message || err.message });
         }
     });
 
     // POST /api/backups/gdrive/run (Admin Only) - Manual Zip Backup to Google Drive
     router.post('/gdrive/run', requireAuth, requireAdmin, async (req, res) => {
         try {
-            const result = await gdriveService.runGDriveBackup(false);
+            const userSettings = database.getSettings ? database.getSettings(req.user.id) : null;
+            const result = await gdriveService.runGDriveBackup(false, userSettings);
             if (logAudit) logAudit(req.user.id, 'GDRIVE_BACKUP_MANUAL', { zipName: result.zipName, size: result.size }, req);
             res.json(result);
         } catch (err) {
-            res.status(500).json({ error: err.message });
+            res.status(400).json({ error: err.response?.data?.error?.message || err.message });
         }
     });
 
     // GET /api/backups/gdrive/files (Admin Only) - List files on Google Drive
     router.get('/gdrive/files', requireAuth, requireAdmin, async (req, res) => {
         try {
-            const files = await gdriveService.listRemoteBackups();
+            const userSettings = database.getSettings ? database.getSettings(req.user.id) : null;
+            const folderId = userSettings ? (userSettings.gdrive_folder_id || '').trim() : '';
+            const clientEmail = userSettings ? (userSettings.gdrive_client_email || '').trim() : '';
+            const privateKey = userSettings ? (userSettings.gdrive_private_key || '').trim() : '';
+            const clientId = userSettings ? (userSettings.gdrive_client_id || '').trim() : '';
+            const clientSecret = userSettings ? (userSettings.gdrive_client_secret || '').trim() : '';
+            const refreshToken = userSettings ? (userSettings.gdrive_refresh_token || '').trim() : '';
+
+            const isConfigured = folderId && ((clientEmail && privateKey) || (clientId && clientSecret && refreshToken));
+            if (!isConfigured) {
+                return res.json({ configured: false, files: [], message: 'Google Drive non configurato' });
+            }
+
+            const files = await gdriveService.listRemoteBackups(userSettings);
             const gdriveFiles = files.filter(f => f.name.startsWith('foliotrack_backup_') && f.name.endsWith('.zip'));
             const { keepers, toDelete } = gdriveService.evaluateRetentionPolicy(gdriveFiles);
             
@@ -91,9 +106,10 @@ module.exports = function (dependencies) {
                     status: isKeeper ? 'Conservato (Retention)' : 'In eliminazione'
                 };
             });
-            res.json({ files: result });
+            res.json({ configured: true, files: result });
         } catch (err) {
-            res.status(500).json({ error: err.message });
+            if (logger) logger.warn(`[GDrive] Impossibile recuperare lista file remoti: ${err.message}`);
+            res.json({ configured: false, files: [], error: err.response?.data?.error?.message || err.message });
         }
     });
 

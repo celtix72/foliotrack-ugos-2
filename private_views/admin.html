@@ -3232,10 +3232,15 @@
         };
 
         window.loadGDriveFileList = async () => {
+            const cont = document.getElementById('gdrive-files-list');
+            if (!cont) return;
             try {
                 const data = await fetchAdmin('/api/backups/gdrive/files');
-                const cont = document.getElementById('gdrive-files-list');
-                if (!cont) return;
+                if (!data) return;
+                if (data.configured === false) {
+                    cont.innerHTML = `<p class="text-xs text-slate-400 italic">${data.error ? ('Google Drive: ' + data.error) : 'Google Drive non ancora configurato.'}</p>`;
+                    return;
+                }
                 const files = data?.files || [];
                 if (files.length === 0) {
                     cont.innerHTML = '<p class="text-xs text-slate-400 italic">Nessun file trovato su Google Drive.</p>';
@@ -3247,7 +3252,9 @@
                         <span class="text-[10px] text-slate-400">${new Date(f.createdTime).toLocaleDateString()} • ${(f.size / 1024).toFixed(0)} KB</span>
                     </div>
                 `).join('');
-            } catch (e) {}
+            } catch (e) {
+                if (cont) cont.innerHTML = '<p class="text-xs text-slate-400 italic">Google Drive non configurato o non raggiungibile.</p>';
+            }
         };
 
         // JSON Portability

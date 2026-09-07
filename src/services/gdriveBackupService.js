@@ -23,10 +23,26 @@ function base64url(input) {
 }
 
 /**
+ * Resolve settings for GDrive, falling back to the first available admin or user.
+ */
+function resolveSettings(userSettings = null) {
+    if (userSettings && typeof userSettings === 'object' && Object.keys(userSettings).length > 0) {
+        return userSettings;
+    }
+    try {
+        const admin = db.prepare("SELECT id FROM users WHERE role = 'admin' ORDER BY id ASC LIMIT 1").get();
+        if (admin) return getSettings(admin.id);
+        const firstUser = db.prepare("SELECT id FROM users ORDER BY id ASC LIMIT 1").get();
+        if (firstUser) return getSettings(firstUser.id);
+    } catch (e) {}
+    return getSettings(1);
+}
+
+/**
  * Obtain Google OAuth2 Access Token via Service Account JWT or Refresh Token.
  */
 async function getAccessToken(userSettings = null) {
-    const settings = userSettings || getSettings(1);
+    const settings = resolveSettings(userSettings);
 
     const clientEmail = (settings.gdrive_client_email || '').trim();
     let privateKey    = (settings.gdrive_private_key || '').trim();
@@ -84,7 +100,7 @@ async function getAccessToken(userSettings = null) {
  * List files in the configured Google Drive folder.
  */
 async function listRemoteBackups(userSettings = null) {
-    const settings = userSettings || getSettings(1);
+    const settings = resolveSettings(userSettings);
     const folderId = (settings.gdrive_folder_id || '').trim();
     if (!folderId) throw new Error('ID cartella Google Drive non specificato.');
 
@@ -100,7 +116,7 @@ async function listRemoteBackups(userSettings = null) {
  * Upload a zip buffer to Google Drive.
  */
 async function uploadToDrive(zipBuffer, filename, userSettings = null) {
-    const settings = userSettings || getSettings(1);
+    const settings = resolveSettings(userSettings);
     const folderId = (settings.gdrive_folder_id || '').trim();
     if (!folderId) throw new Error('ID cartella Google Drive non specificato.');
 
@@ -145,7 +161,7 @@ async function uploadToDrive(zipBuffer, filename, userSettings = null) {
  * Delete a file from Google Drive by file ID.
  */
 async function deleteRemoteFile(fileId, userSettings = null) {
-    const settings = userSettings || getSettings(1);
+    const settings = resolveSettings(userSettings);
     const token = await getAccessToken(settings);
     await axios.delete(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -239,7 +255,7 @@ function evaluateRetentionPolicy(fileList) {
  * Apply retention policy on Google Drive and local backups.
  */
 async function applySmartRetention(userSettings = null) {
-    const settings = userSettings || getSettings(1);
+    const settings = resolveSettings(userSettings);
 
     // Remote retention
     try {
@@ -285,7 +301,7 @@ async function applySmartRetention(userSettings = null) {
  * Execute a complete zipped backup (local + Google Drive upload + smart retention).
  */
 async function runGDriveBackup(isScheduled = false, userSettings = null) {
-    const settings = userSettings || getSettings(1);
+    const settings = resolveSettings(userSettings);
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const zipName = `foliotrack_backup_${timestamp}${isScheduled ? '-auto' : '-manual'}.zip`;
     const tempDbPath = path.join(BACKUP_DIR, `temp_${Date.now()}.db`);
@@ -357,9 +373,10 @@ async function runGDriveBackup(isScheduled = false, userSettings = null) {
 /**
  * Test Google Drive connection and folder access.
  */
-async function testGDriveConnection(userSettings) {
+async function testGDriveConnection(userSettings = null) {
     try {
-        const files = await listRemoteBackups(userSettings);
+        const settings = resolveSettings(userSettings);
+        const files = await listRemoteBackups(settings);
         return {
             success: true,
             fileCount: files.length,

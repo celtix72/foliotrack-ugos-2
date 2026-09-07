@@ -1749,6 +1749,10 @@
                     return;
                 }
                 const data = await res.json();
+                if (data.configured === false) {
+                    container.innerHTML = `<p class="text-xs text-slate-400 italic">${data.error ? ('Google Drive: ' + data.error) : 'Google Drive non ancora configurato.'}</p>`;
+                    return;
+                }
                 const files = data.files || [];
                 if (files.length === 0) {
                     container.innerHTML = '<p class="text-xs text-slate-400 italic">Nessun backup trovato su Google Drive.</p>';
