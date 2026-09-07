@@ -92,15 +92,9 @@
             <img src="/m2t_mobile_logo_dark.png" class="mob-header-logo-img" alt="M2T Logo">
         </a>
         
-        <div class="mob-header-market-pill">
-            <div class="mob-market-item">
-                <span>EU</span>
-                <span id="mob-dot-eu" class="mob-market-dot"></span>
-            </div>
-            <div class="mob-market-item">
-                <span>US</span>
-                <span id="mob-dot-us" class="mob-market-dot"></span>
-            </div>
+        <div class="mob-header-market-pill market-status-group" title="Stato Mercati (EU / US)">
+            <span id="mob-tag-eu" class="market-microtag market-microtag-eu status-closed" title="Borsa Italiana / XETRA">EU</span>
+            <span id="mob-tag-us" class="market-microtag market-microtag-us status-closed" title="NYSE / NASDAQ">US</span>
         </div>
 
         <div style="flex:1"></div>
@@ -983,11 +977,7 @@
                 const res = await fetch('/api/market-status?t=' + Date.now());
                 const s = await res.json();
                 window._mobMarketOpen = s.anyOpen;
-                
-                const dotEu = document.getElementById('mob-dot-eu');
-                const dotUs = document.getElementById('mob-dot-us');
-                if (dotEu) { dotEu.className = 'mob-market-dot' + (s.EU ? ' live' : ''); }
-                if (dotUs) { dotUs.className = 'mob-market-dot' + (s.US ? ' live' : ''); }
+                if (window.updateMarketTagsUI) window.updateMarketTagsUI(s);
                 
                 // Refresh list to update pre/post market visibility
                 if (window.watchlist && window.watchlist.length > 0) renderWatchlist();

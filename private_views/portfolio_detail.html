@@ -61,16 +61,10 @@
             <span class="header-live-dot w-2 h-2 rounded-full bg-slate-400"></span>
             <span class="header-live-text text-[9px] font-black uppercase tracking-widest text-slate-500 hidden sm:inline">Live</span>
         </div>
-        <!-- EU/US market dots -->
-        <div class="flex items-center gap-2 shrink-0">
-            <div class="flex items-center gap-1.5">
-                <span class="text-[9px] font-bold text-slate-400 uppercase">EU</span>
-                <span id="market-dot-eu" class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
-            </div>
-            <div class="flex items-center gap-1.5">
-                <span class="text-[9px] font-bold text-slate-400 uppercase">US</span>
-                <span id="market-dot-us" class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
-            </div>
+        <!-- EU/US market microtags -->
+        <div class="market-status-group shrink-0" title="Stato Mercati (EU / US)">
+            <span id="market-tag-eu" class="market-microtag market-microtag-eu status-closed" title="Borsa Italiana / XETRA">EU</span>
+            <span id="market-tag-us" class="market-microtag market-microtag-us status-closed" title="NYSE / NASDAQ">US</span>
         </div>
     </div>
 

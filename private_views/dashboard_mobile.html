@@ -55,15 +55,9 @@
       <img src="/m2t_mobile_logo_dark.png" class="mob-header-logo-img" alt="M2T Logo">
     </a>
     
-    <div class="mob-header-market-pill">
-      <div class="mob-market-item">
-        <span>EU</span>
-        <span id="mob-dot-eu" class="mob-market-dot"></span>
-      </div>
-      <div class="mob-market-item">
-        <span>US</span>
-        <span id="mob-dot-us" class="mob-market-dot"></span>
-      </div>
+    <div class="mob-header-market-pill market-status-group" title="Stato Mercati (EU / US)">
+      <span id="mob-tag-eu" class="market-microtag market-microtag-eu status-closed" title="Borsa Italiana / XETRA">EU</span>
+      <span id="mob-tag-us" class="market-microtag market-microtag-us status-closed" title="NYSE / NASDAQ">US</span>
     </div>
 
     <div style="flex:1"></div>
@@ -1008,8 +1002,7 @@
       try {
           const res = await fetch('/api/market-status');
           const s = await res.json();
-          document.getElementById('mob-dot-eu').className = 'mob-market-dot' + (s.EU ? ' open' : '');
-          document.getElementById('mob-dot-us').className = 'mob-market-dot' + (s.US ? ' open' : '');
+          if (window.updateMarketTagsUI) window.updateMarketTagsUI(s);
       } catch(e) {}
   }
 

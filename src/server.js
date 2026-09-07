@@ -897,6 +897,8 @@ function getMarketStatus() {
         US: usOpen,
         EU_openedToday: !isEUHoliday && cetNow >= milHrs.open,
         US_openedToday: !isUSHoliday && cetNow >= usHrs.open,
+        EU_preMarketActive: !isEUHoliday && cetNow >= '08:00' && cetNow < milHrs.open,
+        EU_afterHoursActive: !isEUHoliday && cetNow >= '18:00' && cetNow <= '20:30',
         US_preMarketActive: !isUSHoliday && cetNow >= '10:00' && cetNow < usHrs.open,
         US_afterHoursActive: !isUSHoliday && (cetNow > usHrs.close || cetNow < '02:05'),
         isWeekend,

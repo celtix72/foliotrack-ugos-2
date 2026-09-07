@@ -192,6 +192,72 @@
             #mobile-ui .mob-tab-bar .material-symbols-outlined {
                 font-family: 'Material Symbols Outlined' !important;
             }
+
+            /* Market Status Connected Microtags */
+            .market-status-group {
+                display: inline-flex !important;
+                align-items: center !important;
+                gap: 0 !important;
+                padding: 0 !important;
+                border-radius: 6px !important;
+                line-height: 1 !important;
+                vertical-align: middle !important;
+                overflow: hidden !important;
+                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+                flex-shrink: 0 !important;
+                border: 1px solid rgba(0, 0, 0, 0.08);
+            }
+            .dark .market-status-group {
+                border-color: rgba(255, 255, 255, 0.1);
+            }
+
+            .market-microtag {
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                font-size: 9.5px !important;
+                font-weight: 900 !important;
+                letter-spacing: 0.4px !important;
+                padding: 2.5px 7px !important;
+                text-transform: uppercase !important;
+                transition: background-color 0.25s ease, color 0.25s ease !important;
+                user-select: none !important;
+                line-height: 1 !important;
+                cursor: default;
+            }
+
+            /* Extremities only: Left tag (EU) rounded on left only, Right tag (US) rounded on right only */
+            .market-microtag-eu {
+                border-radius: 5px 0 0 5px !important;
+                border-right: 1px solid rgba(0, 0, 0, 0.12) !important;
+            }
+            .dark .market-microtag-eu {
+                border-right: 1px solid rgba(255, 255, 255, 0.14) !important;
+            }
+
+            .market-microtag-us {
+                border-radius: 0 5px 5px 0 !important;
+            }
+
+            /* States: Open (Green), Pre/Post-Market (Orange), Closed (Gray) */
+            .market-microtag.status-open {
+                background-color: #10b981 !important; /* emerald-500 */
+                color: #ffffff !important;
+            }
+
+            .market-microtag.status-prepost {
+                background-color: #f59e0b !important; /* amber-500 / orange */
+                color: #ffffff !important;
+            }
+
+            .market-microtag.status-closed {
+                background-color: #e2e8f0 !important; /* slate-200 */
+                color: #64748b !important; /* slate-500 */
+            }
+            .dark .market-microtag.status-closed {
+                background-color: #334155 !important; /* slate-700 */
+                color: #94a3b8 !important; /* slate-400 */
+            }
         `;
 
         if (theme === 'light') {
@@ -690,46 +756,56 @@
                 updateLabel.textContent = `Upd: ${timeStr}`;
             }
 
-            if (marketStatus) {
-                const euOpen = status.EU;
-                const usOpen = status.US;
-                marketStatus.innerHTML = `
-                    <div class="flex items-center gap-1.5 ${euOpen ? 'text-emerald-500' : 'text-slate-400'}">
-                        <span class="w-2 h-2 rounded-full ${euOpen ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-500'}"></span>
-                        <span class="font-black">EU</span>
-                    </div>
-                    <span class="text-slate-300 dark:text-slate-700 font-light mx-1">|</span>
-                    <div class="flex items-center gap-1.5 ${usOpen ? 'text-emerald-500' : 'text-slate-400'}">
-                        <span class="w-2 h-2 rounded-full ${usOpen ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-500'}"></span>
-                        <span class="font-black">US</span>
-                    </div>
-                `;
-            }
+            const euOpen = !!status.EU;
+            const euPrePost = !euOpen && (!!status.EU_preMarketActive || !!status.EU_afterHoursActive);
+            const usOpen = !!status.US;
+            const usPrePost = !usOpen && (!!status.US_preMarketActive || !!status.US_afterHoursActive);
 
+            // Update connected microtags (Desktop & Mobile)
+            const applyMicrotag = (el, isOpen, isPrePost, marketName) => {
+                if (!el) return;
+                el.classList.remove('status-open', 'status-prepost', 'status-closed');
+                if (isOpen) {
+                    el.classList.add('status-open');
+                    el.setAttribute('title', `${marketName}: Aperto`);
+                } else if (isPrePost) {
+                    el.classList.add('status-prepost');
+                    el.setAttribute('title', `${marketName}: Pre/Post-Market`);
+                } else {
+                    el.classList.add('status-closed');
+                    el.setAttribute('title', `${marketName}: Chiuso`);
+                }
+            };
+
+            document.querySelectorAll('.market-microtag-eu, #market-tag-eu, #mob-tag-eu').forEach(el => {
+                applyMicrotag(el, euOpen, euPrePost, 'Borsa Italiana / XETRA');
+            });
+
+            document.querySelectorAll('.market-microtag-us, #market-tag-us, #mob-tag-us').forEach(el => {
+                applyMicrotag(el, usOpen, usPrePost, 'NYSE / NASDAQ');
+            });
+
+            window.updateMarketTagsUI = function(customStatus) {
+                const s = customStatus || status;
+                const eO = !!s.EU;
+                const eP = !eO && (!!s.EU_preMarketActive || !!s.EU_afterHoursActive);
+                const uO = !!s.US;
+                const uP = !uO && (!!s.US_preMarketActive || !!s.US_afterHoursActive);
+                document.querySelectorAll('.market-microtag-eu, #market-tag-eu, #mob-tag-eu').forEach(el => applyMicrotag(el, eO, eP, 'Borsa Italiana / XETRA'));
+                document.querySelectorAll('.market-microtag-us, #market-tag-us, #mob-tag-us').forEach(el => applyMicrotag(el, uO, uP, 'NYSE / NASDAQ'));
+            };
+
+            // Legacy dot fallbacks
             if (headerDotEU && headerDotUS) {
-                const euOpen = status.EU;
-                const usOpen = status.US;
-                headerDotEU.className = `w-1.5 h-1.5 rounded-full ${euOpen ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-300 dark:bg-slate-700'}`;
-                headerDotUS.className = `w-1.5 h-1.5 rounded-full ${usOpen ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-300 dark:bg-slate-700'}`;
+                headerDotEU.className = `w-1.5 h-1.5 rounded-full ${euOpen ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : (euPrePost ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]' : 'bg-slate-300 dark:bg-slate-700')}`;
+                headerDotUS.className = `w-1.5 h-1.5 rounded-full ${usOpen ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : (usPrePost ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]' : 'bg-slate-300 dark:bg-slate-700')}`;
             }
 
-            // --- Mobile Market Dots & Pillars Injection ---
             if (mobDotEU && mobDotUS) {
-                const euOpen = status.EU;
-                const usOpen = status.US;
-                mobDotEU.style.backgroundColor = euOpen ? 'var(--mob-emerald)' : 'var(--mob-text-caption)';
-                mobDotUS.style.backgroundColor = usOpen ? 'var(--mob-emerald)' : 'var(--mob-text-caption)';
+                mobDotEU.style.backgroundColor = euOpen ? 'var(--mob-emerald)' : (euPrePost ? '#f59e0b' : 'var(--mob-text-caption)');
+                mobDotUS.style.backgroundColor = usOpen ? 'var(--mob-emerald)' : (usPrePost ? '#f59e0b' : 'var(--mob-text-caption)');
                 if (euOpen) mobDotEU.classList.add('animate-pulse'); else mobDotEU.classList.remove('animate-pulse');
                 if (usOpen) mobDotUS.classList.add('animate-pulse'); else mobDotUS.classList.remove('animate-pulse');
-            }
-
-            if (mobMarketStatus) {
-                const euOpen = status.EU;
-                const usOpen = status.US;
-                mobMarketStatus.innerHTML = `
-                    <span style="color:${euOpen ? 'var(--mob-emerald)' : 'var(--mob-text-muted)'}">EU</span> | 
-                    <span style="color:${usOpen ? 'var(--mob-emerald)' : 'var(--mob-text-muted)'}">US</span>
-                `;
             }
 
             // 2. Portfolio Variation
