@@ -1571,7 +1571,9 @@ function createNote(userId, { title = '', content = '', color = '#3b82f6', pinne
     const result = dbConnection.prepare(
         `INSERT INTO notes (user_id, title, content, color, pinned, asset_symbol) VALUES (?, ?, ?, ?, ?, ?)`
     ).run(userId, title, content, color, pinned ? 1 : 0, asset_symbol);
-    return dbConnection.prepare(`SELECT * FROM notes WHERE id = ?`).get(result.lastInsertRowid);
+    const note = dbConnection.prepare(`SELECT * FROM notes WHERE id = ?`).get(result.lastInsertRowid);
+    if (note) note.attachments = [];
+    return note;
 }
 
 function updateNote(id, userId, { title, content, color, pinned, asset_symbol } = {}) {
@@ -1585,7 +1587,9 @@ function updateNote(id, userId, { title, content, color, pinned, asset_symbol } 
     dbConnection.prepare(
         `UPDATE notes SET title = ?, content = ?, color = ?, pinned = ?, asset_symbol = ?, updated_at = datetime('now') WHERE id = ? AND user_id = ?`
     ).run(newTitle, newContent, newColor, newPinned, newAssetSymbol, id, userId);
-    return dbConnection.prepare(`SELECT * FROM notes WHERE id = ?`).get(id);
+    const updated = dbConnection.prepare(`SELECT * FROM notes WHERE id = ?`).get(id);
+    if (updated) updated.attachments = getNoteAttachments(id);
+    return updated;
 }
 
 function deleteNote(id, userId) {

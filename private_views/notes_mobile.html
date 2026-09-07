@@ -294,6 +294,25 @@
 
     <!-- Textarea -->
     <textarea id="mob-editor-textarea" placeholder="Scrivi qui i tuoi appunti..."></textarea>
+
+    <!-- Attachments Section (Mobile Editor) -->
+    <div id="mob-editor-attachments-section" style="padding:10px 14px 14px; border-top:1px solid var(--mob-border); background:var(--mob-surface); flex-shrink:0; max-height:160px; overflow-y:auto;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:#64748b;">Allegati</span>
+            <label style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--mob-primary,#2563eb);">
+                <span class="material-symbols-outlined" style="font-size:16px;">attach_file</span>
+                <span>Aggiungi file</span>
+                <input type="file" id="mob-attachment-input" style="display:none;" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.txt" multiple onchange="handleMobFileUpload(event)">
+            </label>
+        </div>
+        <div id="mob-attachments-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+        <div id="mob-attachment-progress" style="display:none;margin-top:8px;">
+            <div style="width:100%;height:3px;background:rgba(100,116,139,0.2);border-radius:2px;overflow:hidden;">
+                <div style="width:100%;height:100%;background:var(--mob-primary,#2563eb);"></div>
+            </div>
+            <span style="font-size:9px;color:#64748b;margin-top:2px;display:block;">Caricamento in corso...</span>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -331,6 +350,30 @@
         list.innerHTML = filtered.map(note => {
             const preview = (note.content || '').replace(/\n/g, ' ').substring(0, 90);
             const pinIcon = note.pinned ? `<span class="note-pin-icon material-symbols-outlined">keep</span>` : '';
+
+            const attachmentsHtml = (note.attachments && note.attachments.length > 0)
+                ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;padding-top:4px;border-top:1px dashed var(--mob-border);" onclick="event.stopPropagation()">
+                    ${note.attachments.map(att => {
+                        const isImg = (att.file_type || '').includes('image');
+                        const isPdf = (att.file_type || '').includes('pdf');
+                        const icon = isPdf ? 'picture_as_pdf' : (isImg ? 'image' : 'description');
+                        const iconColor = isPdf ? '#f43f5e' : (isImg ? '#0ea5e9' : 'var(--mob-primary, #2563eb)');
+                        const sizeKb = Math.round((att.file_size || 0) / 1024);
+                        return `
+                            <a href="/uploads/notes/${att.stored_name}" target="_blank"
+                               style="display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:6px;background:rgba(100,116,139,0.15);border:1px solid var(--mob-border);color:var(--mob-text,#e2e8f0);text-decoration:none;font-size:10px;font-weight:700;max-width:160px;-webkit-tap-highlight-color:transparent;"
+                               title="${att.original_name} (${sizeKb} KB)">
+                                ${isImg
+                                    ? `<img src="/uploads/notes/${att.stored_name}" style="width:13px;height:13px;border-radius:2px;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none';">`
+                                    : `<span class="material-symbols-outlined" style="font-size:13px;color:${iconColor};flex-shrink:0;">${icon}</span>`
+                                }
+                                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${att.original_name}</span>
+                            </a>
+                        `;
+                    }).join('')}
+                   </div>`
+                : '';
+
             return `
             <div class="note-mob-card" onclick="openNote(${note.id})" data-id="${note.id}">
                 <div class="note-color-bar" style="background:${note.color || '#3b82f6'}"></div>
@@ -341,6 +384,7 @@
                     <div style="font-size:11px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;">
                         ${preview || '<em style="font-style:italic;">Nota vuota</em>'}
                     </div>
+                    ${attachmentsHtml}
                     <div style="font-size:9px;color:#475569;font-weight:700;margin-top:4px;text-transform:uppercase;letter-spacing:0.05em;">
                         ${fmtDate(note.updated_at)}
                     </div>
@@ -416,6 +460,8 @@
             d.classList.toggle('selected', d.dataset.color === (note.color || '#3b82f6'));
         });
 
+        renderMobAttachments(note.attachments || []);
+
         document.getElementById('note-editor-panel').classList.add('open');
     }
 
@@ -447,6 +493,7 @@
             });
             if (!res.ok) throw new Error('Save failed');
             const saved = await res.json();
+            saved.attachments = saved.attachments || currentNote.attachments || [];
             currentNote = saved;
             const idx = notes.findIndex(n => n.id === saved.id);
             if (idx !== -1) notes[idx] = saved;
@@ -472,6 +519,7 @@
             const res = await fetch(`/api/notes/${currentNote.id}/pin`, { method: 'PATCH' });
             if (!res.ok) throw new Error('Pin failed');
             const updated = await res.json();
+            updated.attachments = updated.attachments || currentNote.attachments || [];
             currentNote = updated;
             const idx = notes.findIndex(n => n.id === updated.id);
             if (idx !== -1) notes[idx] = updated;
@@ -505,6 +553,109 @@
         await saveCurrentNote();
         renderList(document.getElementById('mob-notes-search').value);
     }
+
+    // ── Attachments Handling (Mobile) ──────────────────────────────────────────
+    function renderMobAttachments(attachments) {
+        const list = document.getElementById('mob-attachments-list');
+        if (!list) return;
+        list.innerHTML = '';
+        if (!attachments || attachments.length === 0) {
+            list.innerHTML = '<span style="font-size:10px;color:#64748b;font-style:italic;">Nessun allegato</span>';
+            return;
+        }
+        attachments.forEach(att => {
+            const el = document.createElement('div');
+            el.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-radius:8px;background:var(--mob-bg);border:1px solid var(--mob-border);';
+            const isImg = (att.file_type || '').includes('image');
+            const isPdf = (att.file_type || '').includes('pdf');
+            const icon = isPdf ? 'picture_as_pdf' : (isImg ? 'image' : 'description');
+            const iconColor = isPdf ? '#f43f5e' : (isImg ? '#0ea5e9' : 'var(--mob-primary,#2563eb)');
+            const sizeKb = Math.round((att.file_size || 0) / 1024);
+            el.innerHTML = `
+                <a href="/uploads/notes/${att.stored_name}" target="_blank" style="display:flex;align-items:center;gap:6px;overflow:hidden;text-decoration:none;flex:1;min-width:0;">
+                    ${isImg
+                        ? `<img src="/uploads/notes/${att.stored_name}" style="width:18px;height:18px;border-radius:4px;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none';">`
+                        : `<span class="material-symbols-outlined" style="font-size:18px;color:${iconColor};flex-shrink:0;">${icon}</span>`
+                    }
+                    <div style="overflow:hidden;min-width:0;">
+                        <div style="font-size:11px;font-weight:700;color:var(--mob-text,#e2e8f0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${att.original_name}</div>
+                        <div style="font-size:8px;color:#64748b;font-weight:700;">${sizeKb} KB</div>
+                    </div>
+                </a>
+                <button onclick="deleteMobAttachment(${att.id})" style="background:none;border:none;color:#ef4444;padding:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-left:8px;" title="Elimina allegato">
+                    <span class="material-symbols-outlined" style="font-size:16px;">close</span>
+                </button>
+            `;
+            list.appendChild(el);
+        });
+    }
+
+    async function handleMobFileUpload(event) {
+        if (!currentNote) return;
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+
+        const progress = document.getElementById('mob-attachment-progress');
+        if (progress) progress.style.display = 'block';
+
+        try {
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (file.size > 10 * 1024 * 1024) {
+                    alert(`Il file ${file.name} supera il limite di 10MB.`);
+                    continue;
+                }
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const res = await fetch(`/api/notes/${currentNote.id}/attachments`, {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    alert(`Errore caricamento ${file.name}: ` + (err.error || 'Sconosciuto'));
+                    continue;
+                }
+                const newAtt = await res.json();
+                if (!currentNote.attachments) currentNote.attachments = [];
+                currentNote.attachments.push(newAtt);
+
+                const idx = notes.findIndex(n => n.id === currentNote.id);
+                if (idx !== -1) notes[idx] = currentNote;
+            }
+            renderMobAttachments(currentNote.attachments || []);
+            renderList(document.getElementById('mob-notes-search').value);
+        } catch (e) {
+            console.error('Upload error:', e);
+            alert('Errore durante il caricamento del file');
+        } finally {
+            if (progress) progress.style.display = 'none';
+            document.getElementById('mob-attachment-input').value = '';
+        }
+    }
+
+    window.deleteMobAttachment = async function(attId) {
+        if (!currentNote) return;
+        if (!confirm('Sei sicuro di voler eliminare questo allegato?')) return;
+
+        try {
+            const res = await fetch(`/api/notes/${currentNote.id}/attachments/${attId}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error('Delete failed');
+
+            if (currentNote.attachments) {
+                currentNote.attachments = currentNote.attachments.filter(a => a.id !== attId);
+            }
+            const idx = notes.findIndex(n => n.id === currentNote.id);
+            if (idx !== -1) notes[idx] = currentNote;
+
+            renderMobAttachments(currentNote.attachments || []);
+            renderList(document.getElementById('mob-notes-search').value);
+        } catch (e) {
+            console.error('Delete attachment error:', e);
+            alert('Errore durante l\'eliminazione dell\'allegato');
+        }
+    };
 
     // ── Event listeners ───────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
