@@ -67,12 +67,12 @@
     }
     .mkcard-row {
         display: grid;
-        grid-template-columns: 1fr 90px 55px 75px;
+        grid-template-columns: 1fr auto 54px 72px;
         align-items: center;
         background: var(--mob-surface);
         border-bottom: 1px solid var(--mob-border);
-        padding: 6px 8px;
-        gap: 8px;
+        padding: 5px 8px;
+        gap: 6px;
         cursor: pointer;
         transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
         position: relative;
@@ -95,6 +95,46 @@
     }
     .mkcard-row.closed-market > *, .mob-holding-item.closed-market > * {
         opacity: 0.7;
+    }
+
+    /* ── Layout V2 (New: Compact spacing, optimized columns) ── */
+    .layout-v2 #mob-movers-section {
+        margin-bottom: 0px;
+    }
+    .layout-v2 #mob-movers-carousel {
+        padding-bottom: 2px !important;
+    }
+    .layout-v2 .mob-movers-spacer {
+        display: none !important;
+    }
+    .layout-v2 #mob-open-asset-header {
+        padding: 6px 16px 2px !important;
+    }
+    .layout-v2 .mkcard-row {
+        grid-template-columns: 1fr auto 54px 72px;
+        gap: 6px;
+        padding: 5px 8px;
+    }
+
+    /* ── Layout V1 (Legacy: Original spacing and 90px AI column) ── */
+    .layout-v1 #mob-movers-section {
+        margin-bottom: 0;
+    }
+    .layout-v1 #mob-movers-carousel {
+        padding-bottom: 1rem !important;
+    }
+    .layout-v1 .mob-movers-spacer {
+        display: block !important;
+        flex: 1 !important;
+        height: 16px !important;
+    }
+    .layout-v1 #mob-open-asset-header {
+        padding: 14px 16px 6px !important;
+    }
+    .layout-v1 .mkcard-row {
+        grid-template-columns: 1fr 90px 55px 75px;
+        gap: 8px;
+        padding: 6px 8px;
     }
 </style>
 <script src="/theme.js"></script>
@@ -172,16 +212,29 @@
         </div>
       </div>
     </div>
-    <div style="flex:1"></div>
+    <div id="mob-movers-spacer" class="mob-movers-spacer" style="display: none;"></div>
 
     <!-- Section 1: Open Positions -->
-    <div class="mob-section-header pb-1">
+    <div class="mob-section-header pb-1" id="mob-open-asset-header">
       <span class="mob-section-title">Open ASSET</span>
-      <div class="flex items-center gap-2">
-        <span id="mob-pos-count" class="mob-header-subtitle">0 Assets</span>
+      <div class="flex items-center gap-1.5">
+        <span id="mob-pos-count" class="mob-header-subtitle text-[11px] font-bold">0 Assets</span>
+
+        <!-- Layout Version Switcher: V2 (Nuovo) / V1 (Vecchio) -->
+        <div class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 gap-0.5 border border-slate-200 dark:border-slate-700" title="Passa tra Layout Nuovo (V2) e Layout Precedente (V1)">
+          <button id="btn-layout-new" onclick="setMarketLayoutVersion('new')" title="Layout Nuovo (V2: compatto + icone colorate)"
+                  class="text-[9px] font-black uppercase px-2 py-0.5 rounded-md transition-all">
+            V2
+          </button>
+          <button id="btn-layout-legacy" onclick="setMarketLayoutVersion('legacy')" title="Layout Precedente (V1: originale)"
+                  class="text-[9px] font-black uppercase px-2 py-0.5 rounded-md transition-all">
+            V1
+          </button>
+        </div>
+
         <!-- View mode toggle -->
         <div class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 gap-0.5">
-          <button id="btn-view-card" onclick="setMarketView('card')" title="Vista card (nuova)"  
+          <button id="btn-view-card" onclick="setMarketView('card')" title="Vista card"  
                   class="p-1 rounded-md transition-all">
             <span class="material-symbols-outlined" style="font-size:15px">table_rows</span>
           </button>
@@ -345,6 +398,62 @@
       if (item) item.style.transform = 'translateX(0)';
     });
     currentSwipeEl = null;
+  }
+
+  // ── Layout Version Mode (V2 New vs V1 Legacy) ──────────────────────────────────
+  let _marketLayoutVersion = localStorage.getItem('market_layout_version') || 'new';
+
+  window.setMarketLayoutVersion = function(ver) {
+    _marketLayoutVersion = ver;
+    localStorage.setItem('market_layout_version', ver);
+    updateLayoutVersionUI();
+    applyMarketLayoutVersion();
+    mobLoadAssets();
+  };
+
+  function updateLayoutVersionUI() {
+    const btnNew = document.getElementById('btn-layout-new');
+    const btnLegacy = document.getElementById('btn-layout-legacy');
+    if (btnNew && btnLegacy) {
+      if (_marketLayoutVersion === 'new') {
+        btnNew.className = 'text-[9px] font-black uppercase px-2 py-0.5 rounded-md transition-all bg-primary text-white shadow-sm';
+        btnLegacy.className = 'text-[9px] font-black uppercase px-2 py-0.5 rounded-md transition-all text-slate-400 hover:text-slate-200';
+      } else {
+        btnNew.className = 'text-[9px] font-black uppercase px-2 py-0.5 rounded-md transition-all text-slate-400 hover:text-slate-200';
+        btnLegacy.className = 'text-[9px] font-black uppercase px-2 py-0.5 rounded-md transition-all bg-amber-600 text-white shadow-sm';
+      }
+    }
+  }
+
+  function applyMarketLayoutVersion() {
+    const scrollEl = document.getElementById('mob-market-scroll');
+    const spacerEl = document.getElementById('mob-movers-spacer');
+    const moversCarousel = document.getElementById('mob-movers-carousel');
+    const openSectionHeader = document.getElementById('mob-open-asset-header');
+
+    if (_marketLayoutVersion === 'new') {
+      scrollEl?.classList.add('layout-v2');
+      scrollEl?.classList.remove('layout-v1');
+      if (spacerEl) spacerEl.style.display = 'none';
+      if (moversCarousel) {
+        moversCarousel.classList.remove('pb-4');
+        moversCarousel.style.paddingBottom = '2px';
+      }
+      if (openSectionHeader) {
+        openSectionHeader.style.padding = '6px 16px 2px';
+      }
+    } else {
+      scrollEl?.classList.add('layout-v1');
+      scrollEl?.classList.remove('layout-v2');
+      if (spacerEl) spacerEl.style.display = 'block';
+      if (moversCarousel) {
+        moversCarousel.classList.add('pb-4');
+        moversCarousel.style.paddingBottom = '';
+      }
+      if (openSectionHeader) {
+        openSectionHeader.style.padding = '14px 16px 6px';
+      }
+    }
   }
 
   // ── View Mode (Card / Normal / Compact) ────────────────────────────────────────
@@ -734,7 +843,108 @@
         return { bg, text, border };
       };
 
-      function renderAiBadgeMob(a) {
+      // ==========================================================================
+      // [NEW LAYOUT V2] AI TARGET PRICE BADGES (Compact TP, Colorful Diverse Icons)
+      // ==========================================================================
+      function renderAiBadgeMobNew(a) {
+        if (!a || !a.ticker || a.ticker.startsWith('CD_') || a.ticker.startsWith('BP_') || a.ticker === 'CASH' || a.ticker.startsWith('CASH_') || ['Conto Deposito', 'Buono Postale', 'Liquidità'].includes(a.type)) {
+          return '';
+        }
+        const tickerEsc = a.ticker.replace(/'/g, "\\'");
+        const nameEsc = (a.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        const cur = a.currency || 'EUR';
+
+        if (a.aiBadges && a.aiBadges.length > 0) {
+          const badgesHtml = a.aiBadges.map(badge => {
+            const engine = badge.engine || 'X';
+            let icon = 'smart_toy';
+            let iconColor = '#94a3b8'; // fallback slate
+
+            // Diversified vibrant icon colors
+            if (badge.prompt_type === 'graham') {
+              icon = 'shield';
+              iconColor = '#38bdf8'; // Sky blue (Graham/Value)
+            } else if (badge.prompt_type === 'garp') {
+              icon = 'trending_up';
+              iconColor = '#4ade80'; // Bright emerald (GARP/Growth)
+            } else if (badge.prompt_type === 'disruptive') {
+              icon = 'rocket_launch';
+              iconColor = '#f472b6'; // Neon pink (Disruptive)
+            } else if (badge.prompt_type === 'tech') {
+              icon = 'cloud';
+              iconColor = '#818cf8'; // Tech indigo (Tech/Cloud)
+            } else if (badge.prompt_type === 'fin') {
+              icon = 'account_balance';
+              iconColor = '#fbbf24'; // Golden amber (Financials)
+            } else if (badge.prompt_type === 'capital') {
+              icon = 'factory';
+              iconColor = '#fb923c'; // Vivid orange (Capital Goods)
+            } else {
+              if (engine === 'Gemini') { icon = 'auto_awesome'; iconColor = '#60a5fa'; }
+              else if (engine === 'Qwen') { icon = 'chat_spark'; iconColor = '#c084fc'; }
+              else if (engine === 'Agnes') { icon = 'psychiatry'; iconColor = '#f43f5e'; }
+              else if (engine === 'OpenAI') { icon = 'data_exploration'; iconColor = '#2dd4bf'; }
+              else if (engine === 'Aimlapi') { icon = 'api'; iconColor = '#a78bfa'; }
+              else if (engine === 'OpenRouter') { icon = 'hub'; iconColor = '#38bdf8'; }
+            }
+
+            const act = (badge.aiAction || '').toUpperCase();
+            let badgeStyle = '';
+            if (act === 'BUY' || act === 'INCREASE' || act === 'INC') {
+              badgeStyle = 'background-color: #10b981 !important; color: #ffffff !important; border-color: #10b981 !important;';
+            } else if (act === 'SELL' || act === 'DECREASE') {
+              badgeStyle = 'background-color: #ef4444 !important; color: #ffffff !important; border-color: #ef4444 !important;';
+            } else if (act === 'AVOID') {
+              badgeStyle = 'background-color: #78350f !important; color: #ffffff !important; border-color: #78350f !important;';
+            } else if (act === 'WATCHLIST') {
+              badgeStyle = 'background-color: #8b5cf6 !important; color: #ffffff !important; border-color: #8b5cf6 !important;';
+            } else if (act === 'NO DATA') {
+              badgeStyle = 'background-color: #f59e0b !important; color: #ffffff !important; border-color: #f59e0b !important;';
+            } else {
+              badgeStyle = 'background-color: #64748b !important; color: #ffffff !important; border-color: #64748b !important;';
+            }
+
+            if (badge.is_best) {
+              badgeStyle = badgeStyle.replace(/border-color: [^!]+!important;/, 'border-color: #22c55e !important; border-width: 2px !important;');
+            } else if (badge.isOutdated) {
+              badgeStyle = badgeStyle.replace(/border-color: [^!]+!important;/, 'border-color: #eab308 !important; border-width: 2px !important;');
+            }
+
+            // Compact TP value: NO (Val), (Gro), (Dis), (Tec), etc.
+            let fvStr = badge.aiAction;
+            if (badge.aiTargetPrice) {
+              const num = parseFloat(badge.aiTargetPrice);
+              let dec = 2;
+              if (num > 30) dec = 0;
+              else if (num > 10) dec = 1;
+              fvStr = num.toLocaleString('it-IT', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+            }
+
+            const promptName = (badge.prompt_type || engine || '').toUpperCase();
+            const tooltip = `${promptName}: ${badge.aiAction}${badge.aiTargetPrice ? ' TP ' + badge.aiTargetPrice : ''}`;
+
+            return `<span onclick="event.stopPropagation();window.openAssetAiHistoryModal('${tickerEsc}','${nameEsc}','${cur}')" 
+                          class="px-1 py-0.5 rounded font-black uppercase tracking-tighter flex items-center gap-1 border cursor-pointer whitespace-nowrap shadow-sm" 
+                          style="${badgeStyle} font-size: calc(9.5px * var(--mkcard-scale, 1)); padding: 1.5px 4.5px;"
+                          title="${tooltip}">
+              <span class="material-symbols-outlined" style="font-size: calc(11px * var(--mkcard-scale, 1)); color: ${iconColor}; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.4)); font-weight: 900;">${icon}</span>
+              <span style="letter-spacing: -0.2px;">${fvStr}</span>
+            </span>`;
+          }).join('');
+          return `<div style="display: flex; flex-direction: column; gap: 2px; align-items: flex-end;">${badgesHtml}</div>`;
+        } else if ((a.aiHistoryCount || 0) > 0) {
+          return `<span onclick="event.stopPropagation();window.openAssetAiHistoryModal('${tickerEsc}','${nameEsc}','${cur}')" class="px-1.5 py-0.5 rounded font-black uppercase tracking-tighter flex items-center gap-1 border border-slate-500/30 text-slate-500 bg-slate-500/10 cursor-pointer" style="font-size: calc(9.5px * var(--mkcard-scale, 1)); padding: 1.5px 4.5px;">
+            <span class="material-symbols-outlined" style="font-size: calc(11px * var(--mkcard-scale, 1)); color: #60a5fa;">smart_toy</span> ${a.aiHistoryCount}</span>`;
+        }
+        return `<span onclick="event.stopPropagation();window.openAssetAiHistoryModal('${tickerEsc}','${nameEsc}','${cur}')" class="px-1.5 py-0.5 rounded font-black uppercase tracking-tighter flex items-center gap-1 border border-slate-400/30 text-slate-400 bg-slate-400/10 cursor-pointer" style="font-size: calc(9.5px * var(--mkcard-scale, 1)); padding: 1.5px 4.5px;">
+          <span class="material-symbols-outlined" style="font-size: calc(11px * var(--mkcard-scale, 1)); color: #94a3b8;">smart_toy</span></span>`;
+      }
+
+      // ==========================================================================
+      // [LEGACY LAYOUT V1] AI TARGET PRICE BADGES (Original Format with (Val), (Gro), etc.)
+      // (Easily removable when V2 is confirmed)
+      // ==========================================================================
+      function renderAiBadgeMobLegacy(a) {
         if (!a || !a.ticker || a.ticker.startsWith('CD_') || a.ticker.startsWith('BP_') || a.ticker === 'CASH' || a.ticker.startsWith('CASH_') || ['Conto Deposito', 'Buono Postale', 'Liquidità'].includes(a.type)) {
           return '';
         }
@@ -812,6 +1022,13 @@
         }
         return `<span onclick="event.stopPropagation();window.openAssetAiHistoryModal('${tickerEsc}','${nameEsc}','${cur}')" class="px-1.5 py-0.5 rounded font-black uppercase tracking-tighter flex items-center gap-1 border border-slate-400/30 text-slate-400 bg-slate-400/10 cursor-pointer" style="font-size: calc(10px * var(--mkcard-scale, 1))">
           <span class="material-symbols-outlined" style="font-size: calc(12px * var(--mkcard-scale, 1))">smart_toy</span></span>`;
+      }
+
+      function renderAiBadgeMob(a) {
+        if (_marketLayoutVersion === 'legacy') {
+          return renderAiBadgeMobLegacy(a);
+        }
+        return renderAiBadgeMobNew(a);
       }
 
       function renderNoteBadgeMob(ticker) {
@@ -1196,6 +1413,8 @@
 
   function mobInit() {
     if (!window._mobileViewActive) return;
+    updateLayoutVersionUI();
+    applyMarketLayoutVersion();
     mobSyncPrivacyIcon();
     mobSyncMarketStatus();
     mobLoadIndices();
