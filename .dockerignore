@@ -6,3 +6,5 @@ foliotrack.db-wal
 .gitignore
 .DS_Store
 .env
+backups
+data

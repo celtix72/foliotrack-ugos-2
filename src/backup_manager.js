@@ -4,8 +4,11 @@ const fs = require('fs');
 const path = require('path');
 const { db } = require('./db');
 
-const BACKUP_DIR = path.join(__dirname, '..', 'backups');
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'foliotrack.db');
+const DEFAULT_BACKUP_DIR = process.env.DB_PATH 
+    ? path.join(path.dirname(process.env.DB_PATH), 'backups')
+    : path.join(__dirname, '..', 'backups');
+const BACKUP_DIR = process.env.BACKUP_DIR || DEFAULT_BACKUP_DIR;
 
 // Ensure backup directory exists
 if (!fs.existsSync(BACKUP_DIR)) {
@@ -56,41 +59,48 @@ async function createBackup(isScheduled = false) {
  * Lists all available backups.
  */
 function listBackups() {
-    if (!fs.existsSync(BACKUP_DIR)) return [];
+    const dirsToCheck = [BACKUP_DIR];
+    const legacyDir = path.join(__dirname, '..', 'backups');
+    if (legacyDir !== BACKUP_DIR && fs.existsSync(legacyDir)) {
+        dirsToCheck.push(legacyDir);
+    }
     
-    const allFiles = fs.readdirSync(BACKUP_DIR);
-    const backupFiles = allFiles.filter(f => f.match(/^(?:backup-[\w.-]+-(?:auto|manual)\.db|foliotrack_backup_[\w.-]+\.zip)$/));
-    
-    const results = [];
-    for (const filename of backupFiles) {
-        const fullPath = path.join(BACKUP_DIR, filename);
-        const metaPath = fullPath + '.json';
-        let meta = null;
-        if (fs.existsSync(metaPath)) {
-            try {
-                meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
-            } catch (e) {}
+    const resultsMap = new Map();
+    for (const dir of dirsToCheck) {
+        if (!fs.existsSync(dir)) continue;
+        const allFiles = fs.readdirSync(dir);
+        const backupFiles = allFiles.filter(f => f.match(/^(?:backup-[\w.-]+-(?:auto|manual)\.db|foliotrack_backup_[\w.-]+\.zip)$/));
+        for (const filename of backupFiles) {
+            if (resultsMap.has(filename)) continue;
+            const fullPath = path.join(dir, filename);
+            const metaPath = fullPath + '.json';
+            let meta = null;
+            if (fs.existsSync(metaPath)) {
+                try {
+                    meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+                } catch (e) {}
+            }
+            if (!meta) {
+                try {
+                    const stat = fs.statSync(fullPath);
+                    meta = {
+                        filename,
+                        timestamp: stat.mtime.toISOString(),
+                        isScheduled: filename.includes('-auto'),
+                        schemaVersion: '1.0',
+                        size: stat.size
+                    };
+                } catch (e) {}
+            }
+            if (meta) resultsMap.set(filename, meta);
         }
-        if (!meta) {
-            try {
-                const stat = fs.statSync(fullPath);
-                meta = {
-                    filename,
-                    timestamp: stat.mtime.toISOString(),
-                    isScheduled: filename.includes('-auto'),
-                    schemaVersion: '1.0',
-                    size: stat.size
-                };
-            } catch (e) {}
-        }
-        if (meta) results.push(meta);
     }
 
-    return results.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    return Array.from(resultsMap.values()).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 }
 
 /**
- * Deletes a backup by filename.
+ * Deletes a backup by filename across configured and legacy backup directories.
  */
 function deleteBackup(filename) {
     // Sanitize: accept only the basename, no directory traversal
@@ -98,11 +108,25 @@ function deleteBackup(filename) {
     if (!safeName.match(/^(?:backup-[\w.-]+-(?:auto|manual)\.db|foliotrack_backup_[\w.-]+\.zip)$/)) {
         throw new Error('Nome backup non valido');
     }
-    const dbPath = path.join(BACKUP_DIR, safeName);
-    const metaPath = dbPath + '.json';
-    
-    if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath);
-    if (fs.existsSync(metaPath)) fs.unlinkSync(metaPath);
+
+    const dirsToCheck = [BACKUP_DIR];
+    const legacyDir = path.join(__dirname, '..', 'backups');
+    if (legacyDir !== BACKUP_DIR && fs.existsSync(legacyDir)) {
+        dirsToCheck.push(legacyDir);
+    }
+
+    for (const dir of dirsToCheck) {
+        if (!fs.existsSync(dir)) continue;
+        const dbPath = path.join(dir, safeName);
+        const metaPath = dbPath + '.json';
+        const shmPath = dbPath + '-shm';
+        const walPath = dbPath + '-wal';
+        
+        if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath);
+        if (fs.existsSync(metaPath)) fs.unlinkSync(metaPath);
+        if (fs.existsSync(shmPath)) fs.unlinkSync(shmPath);
+        if (fs.existsSync(walPath)) fs.unlinkSync(walPath);
+    }
 }
 
 /**
@@ -134,23 +158,35 @@ async function restoreBackup(filename) {
     if (!safeName.match(/^backup-[\w.-]+-(?:auto|manual)\.db$/)) {
         throw new Error('Nome backup non valido');
     }
-    const backupPath = path.join(BACKUP_DIR, safeName);
-    const metaPath = backupPath + '.json';
 
-    if (!fs.existsSync(backupPath) || !fs.existsSync(metaPath)) {
-        throw new Error('Backup file not found');
+    let backupPath = path.join(BACKUP_DIR, safeName);
+    if (!fs.existsSync(backupPath)) {
+        const legacyPath = path.join(__dirname, '..', 'backups', safeName);
+        if (fs.existsSync(legacyPath)) {
+            backupPath = legacyPath;
+        } else {
+            throw new Error('Backup file not found');
+        }
     }
 
-    const metadata = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+    const metaPath = backupPath + '.json';
+    let schemaVersion = '1.0';
+    if (fs.existsSync(metaPath)) {
+        try {
+            const metadata = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+            schemaVersion = metadata.schemaVersion || '1.0';
+        } catch (e) {}
+    }
+
     const currentVersionRow = db.prepare("SELECT value FROM settings WHERE key = 'schemaVersion'").get();
     const currentVersion = currentVersionRow ? currentVersionRow.value : '1.0';
 
     // Basic compatibility check (major version match)
-    const backupMajor = metadata.schemaVersion.split('.')[0];
+    const backupMajor = schemaVersion.split('.')[0];
     const currentMajor = currentVersion.split('.')[0];
 
     if (backupMajor !== currentMajor) {
-        throw new Error(`Incompatible backup version: ${metadata.schemaVersion} (Current: ${currentVersion})`);
+        throw new Error(`Incompatible backup version: ${schemaVersion} (Current: ${currentVersion})`);
     }
 
     console.log(`Restoring from ${filename}...`);
@@ -158,7 +194,6 @@ async function restoreBackup(filename) {
     const dbStore = require('./db');
     
     // 1. Close current connection via dbStore.initDb (it handles closing)
-    // Actually, we must close it first to release the file lock on Windows/Mac
     dbStore.db.close();
     
     try {
@@ -179,6 +214,7 @@ async function restoreBackup(filename) {
 }
 
 module.exports = {
+    BACKUP_DIR,
     createBackup,
     listBackups,
     deleteBackup,

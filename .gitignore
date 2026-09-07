@@ -11,3 +11,7 @@ node_modules
 # Log files and developer scratch files
 logs/
 scratch/
+
+# Backups and runtime database storage
+backups/
+data/

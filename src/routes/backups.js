@@ -40,10 +40,15 @@ module.exports = function (dependencies) {
             if (!safeName.match(/^(?:backup-[\w.-]+-(?:auto|manual)\.db|foliotrack_backup_[\w.-]+\.zip)$/)) {
                 return res.status(400).json({ error: 'Nome file di backup non valido' });
             }
-            const BACKUP_DIR = path.join(__dirname, '..', '..', 'backups');
-            const filePath = path.join(BACKUP_DIR, safeName);
+            const targetDir = backupManager.BACKUP_DIR || path.join(__dirname, '..', '..', 'backups');
+            let filePath = path.join(targetDir, safeName);
             if (!fs.existsSync(filePath)) {
-                return res.status(404).json({ error: 'File di backup non trovato' });
+                const legacyPath = path.join(__dirname, '..', '..', 'backups', safeName);
+                if (fs.existsSync(legacyPath)) {
+                    filePath = legacyPath;
+                } else {
+                    return res.status(404).json({ error: 'File di backup non trovato' });
+                }
             }
             res.download(filePath, safeName);
         } catch (err) {

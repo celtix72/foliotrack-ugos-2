@@ -6,8 +6,7 @@ const crypto = require('crypto');
 const axios = require('axios');
 const { db, getSettings } = require('../db');
 const { createZipBuffer } = require('../utils/zip');
-
-const BACKUP_DIR = path.join(__dirname, '..', '..', 'backups');
+const { BACKUP_DIR } = require('../backup_manager');
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', '..', 'foliotrack.db');
 
 if (!fs.existsSync(BACKUP_DIR)) {
