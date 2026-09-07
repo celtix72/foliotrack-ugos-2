@@ -14,6 +14,8 @@ const GEMINI_MODELS_CACHE_MS = 60 * 60 * 1000; // 1 hour
 // Questi vengono usati se la fetch da OpenRouter API fallisce
 let _cachedOpenRouterModels = [
     // --- FREE ---
+    { id: 'google/gemini-2.8-flash:free', name: 'Google: Gemini 2.8 Flash', priceLabel: 'Free', isFree: true, recommended: true },
+    { id: 'google/gemini-2.7-flash:free', name: 'Google: Gemini 2.7 Flash', priceLabel: 'Free', isFree: true, recommended: true },
     { id: 'deepseek/deepseek-r1:free', name: 'DeepSeek: R1 Reasoning', priceLabel: 'Free', isFree: true, recommended: true },
     { id: 'google/gemini-2.0-flash-exp:free', name: 'Google: Gemini 2.0 Flash', priceLabel: 'Free', isFree: true, recommended: true },
     { id: 'meta-llama/llama-3.3-70b-instruct:free', name: 'Meta: Llama 3.3 70B Instruct', priceLabel: 'Free', isFree: true, recommended: true },
@@ -230,9 +232,13 @@ function getRequestyModels() {
     return _cachedRequestyModels;
 }
 const DEFAULT_GEMINI_MODEL_PREFERENCE = [
+    'gemini-2.8-flash',
+    'gemini-2.7-flash',
     'gemini-2.5-flash',
     'gemini-2.0-flash',
     'gemini-1.5-flash',
+    'gemini-2.8-pro',
+    'gemini-2.7-pro',
     'gemini-2.5-flash-lite',
     'gemini-2.0-flash-lite',
     'gemini-2.5-pro',
@@ -243,6 +249,10 @@ const DEFAULT_GEMINI_MODEL_PREFERENCE = [
  * Fallback statico: modelli Gemini free — usato se l'API non è raggiungibile
  */
 const STATIC_GEMINI_FREE_MODELS = [
+    { id: 'gemini-2.8-flash',      name: 'Gemini 2.8 Flash',       isFree: true },
+    { id: 'gemini-2.8-pro',        name: 'Gemini 2.8 Pro',         isFree: false },
+    { id: 'gemini-2.7-flash',      name: 'Gemini 2.7 Flash',       isFree: true },
+    { id: 'gemini-2.7-pro',        name: 'Gemini 2.7 Pro',         isFree: false },
     { id: 'gemini-2.5-flash',      name: 'Gemini 2.5 Flash',       isFree: true },
     { id: 'gemini-2.0-flash',      name: 'Gemini 2.0 Flash',       isFree: true },
     { id: 'gemini-1.5-flash',      name: 'Gemini 1.5 Flash',       isFree: true },
@@ -355,9 +365,13 @@ async function getGeminiCandidateModels(apiKey) {
     }
 
     const defaultFallbacks = [
+        'gemini-2.8-flash',
+        'gemini-2.7-flash',
         'gemini-2.5-flash',
         'gemini-2.0-flash',
         'gemini-1.5-flash',
+        'gemini-2.8-pro',
+        'gemini-2.7-pro',
         'gemini-2.5-flash-lite',
         'gemini-2.0-flash-lite',
         'gemini-2.5-pro',
@@ -634,7 +648,12 @@ async function callAIModel(engine, prompt, keys) {
             throw new Error(`Gemini API Key mancante e nessuna altra chiave IA trovata nelle impostazioni.`);
         }
 
-        const candidateModels = await getGeminiCandidateModels(apiKey);
+        let candidateModels = await getGeminiCandidateModels(apiKey);
+        if (engine.includes('2.8')) {
+            candidateModels = ['gemini-2.8-flash', 'gemini-2.8-pro', ...candidateModels.filter(m => !m.includes('2.8'))];
+        } else if (engine.includes('2.7')) {
+            candidateModels = ['gemini-2.7-flash', 'gemini-2.7-pro', ...candidateModels.filter(m => !m.includes('2.7'))];
+        }
         let res = null;
         let lastError = null;
         let modelUsed = null;
@@ -727,6 +746,8 @@ const RECOMMENDED_REQUESTY_FREE = [
     { id: 'qwen/qwq-32b', name: 'Qwen: QwQ 32B', priceLabel: 'Best Value', isFree: true, recommended: true },
 ];
 const RECOMMENDED_REQUESTY_PAY = [
+    { id: 'google/gemini-2.8-pro', name: 'Google: Gemini 2.8 Pro', priceLabel: 'Pay', isFree: false, recommended: true },
+    { id: 'google/gemini-2.7-pro', name: 'Google: Gemini 2.7 Pro', priceLabel: 'Pay', isFree: false, recommended: true },
     { id: 'anthropic/claude-3-5-sonnet-20241022', name: 'Anthropic: Claude 3.5 Sonnet', priceLabel: 'Pay', isFree: false, recommended: true },
     { id: 'openai/gpt-4o-2024-11-20', name: 'OpenAI: GPT-4o (Nov 2024)', priceLabel: 'Pay', isFree: false, recommended: true },
     { id: 'google/gemini-2.5-pro', name: 'Google: Gemini 2.5 Pro', priceLabel: 'Pay', isFree: false, recommended: true },
@@ -734,14 +755,16 @@ const RECOMMENDED_REQUESTY_PAY = [
 
 // Modelli Gemini consigliati (statici)
 const RECOMMENDED_GEMINI_FREE = [
+    { id: 'gemini-2.8-flash', name: 'Gemini 2.8 Flash', priceLabel: 'Free', isFree: true, recommended: true },
+    { id: 'gemini-2.7-flash', name: 'Gemini 2.7 Flash', priceLabel: 'Free', isFree: true, recommended: true },
     { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', priceLabel: 'Free', isFree: true, recommended: true },
-    { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite', priceLabel: 'Free', isFree: true, recommended: true },
     { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', priceLabel: 'Free', isFree: true, recommended: true },
 ];
 const RECOMMENDED_GEMINI_PAY = [
+    { id: 'gemini-2.8-pro', name: 'Gemini 2.8 Pro', priceLabel: 'Pay', isFree: false, recommended: true },
+    { id: 'gemini-2.7-pro', name: 'Gemini 2.7 Pro', priceLabel: 'Pay', isFree: false, recommended: true },
     { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', priceLabel: 'Pay', isFree: false, recommended: true },
     { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', priceLabel: 'Pay', isFree: false, recommended: true },
-    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (avanzato)', priceLabel: 'Pay', isFree: false, recommended: true },
 ];
 
 /**

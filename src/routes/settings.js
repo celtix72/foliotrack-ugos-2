@@ -59,6 +59,8 @@ module.exports = function (dependencies) {
             const available = [];
             
             if (settings.geminiApiKeyFree || settings.geminiApiKeyPay || settings.geminiApiKey || process.env.GEMINI_API_KEY) {
+                available.push('Gemini_2.8');
+                available.push('Gemini_2.7');
                 available.push('Gemini_Free');
             }
             
@@ -98,7 +100,11 @@ module.exports = function (dependencies) {
                     return base.length > 30 ? base.slice(0, 28) + '…' : base;
                 }
 
-                if (e === 'Gemini_Free') {
+                if (e === 'Gemini_2.8') {
+                    label = 'Gemini 2.8';
+                } else if (e === 'Gemini_2.7') {
+                    label = 'Gemini 2.7';
+                } else if (e === 'Gemini_Free') {
                     label = `Gemini · ${geminiModelName || 'auto-detect'}`;
                 } else if (e === 'OR1') {
                     const m = orModels.find(x => x.id === settings.openrouterModel1);

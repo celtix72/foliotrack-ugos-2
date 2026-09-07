@@ -521,7 +521,7 @@ function renderAiBadges(a) {
             } else if (badge.prompt_type === 'capital') {
                 icon = 'factory';
             } else {
-                if (engine === 'Gemini') icon = 'auto_awesome';
+                if (engine.toLowerCase().includes('gemini')) icon = 'auto_awesome';
                 else if (engine === 'Qwen') icon = 'chat_spark';
                 else if (engine === 'Agnes') icon = 'psychiatry';
                 else if (engine === 'OpenAI') icon = 'data_exploration';

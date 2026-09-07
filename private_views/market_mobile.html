@@ -885,7 +885,7 @@
               icon = 'factory';
               iconColor = '#fb923c'; // Vivid orange (Capital Goods)
             } else {
-              if (engine === 'Gemini') { icon = 'auto_awesome'; iconColor = '#60a5fa'; }
+              if (engine.toLowerCase().includes('gemini')) { icon = 'auto_awesome'; iconColor = '#60a5fa'; }
               else if (engine === 'Qwen') { icon = 'chat_spark'; iconColor = '#c084fc'; }
               else if (engine === 'Agnes') { icon = 'psychiatry'; iconColor = '#f43f5e'; }
               else if (engine === 'OpenAI') { icon = 'data_exploration'; iconColor = '#2dd4bf'; }
@@ -973,7 +973,7 @@
             } else if (badge.prompt_type === 'capital') {
               icon = 'factory';
             } else {
-              if (engine === 'Gemini') icon = 'auto_awesome';
+              if (engine.toLowerCase().includes('gemini')) icon = 'auto_awesome';
               else if (engine === 'Qwen') icon = 'chat_spark';
               else if (engine === 'Agnes') icon = 'psychiatry';
               else if (engine === 'OpenAI') icon = 'data_exploration';
