@@ -497,14 +497,28 @@
                     if (groupBy === 'year') key = d.date.split('-')[0];
                     
                     if (!groups[key]) {
-                        groups[key] = { items: [], total: 0 };
+                        groups[key] = {
+                            items: [],
+                            actualNet: 0,
+                            projectedNet: 0,
+                            totalNet: 0,
+                            actualGross: 0,
+                            projectedGross: 0,
+                            totalGross: 0
+                        };
                     }
                     groups[key].items.push(d);
+                    const net = Number(d.amount) || 0;
+                    const gross = Number(d.gross || d.amount) || 0;
                     if (!d.isProjection || d.tag === 'REGISTRATO') {
-                        groups[key].total += d.amount; // solo confermati nel totale gruppo
+                        groups[key].actualNet += net;
+                        groups[key].actualGross += gross;
                     } else {
-                        groups[key].total += d.amount; // o includiamo anche le proiezioni nel totale del gruppo per l'anno in corso
+                        groups[key].projectedNet += net;
+                        groups[key].projectedGross += gross;
                     }
+                    groups[key].totalNet += net;
+                    groups[key].totalGross += gross;
                 });
 
                 const keys = Object.keys(groups).sort((a, b) => {
@@ -512,11 +526,14 @@
                     return a.localeCompare(b);
                 });
 
+                const currentYearStr = (window.globalProjData?.year?.toString()) || (new Date().getFullYear().toString());
+
                 let html = '';
                 keys.forEach(key => {
                     const group = groups[key];
                     const isCollapsed = collapsedGroups.has(key);
                     const icon = isCollapsed ? 'chevron_right' : 'expand_more';
+                    const isCurrentYear = (groupBy === 'year' && key === currentYearStr);
 
                     html += `
                         <tr class="bg-slate-50/80 dark:bg-slate-900/60 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" onclick="toggleGroup('${key}')">
@@ -527,10 +544,20 @@
                                     <span class="text-[10px] text-slate-500 font-bold ml-1">(${group.items.length} records)</span>
                                 </div>
                             </td>
-                            <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800 text-right font-mono text-xs font-black text-emerald-500">
-                                ${formatCurrency(group.total, 'EUR')}
+                            <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800 text-right">
+                                <div class="font-mono text-xs font-black text-emerald-500">
+                                    ${formatCurrency(group.totalNet, 'EUR')}
+                                </div>
+                                ${isCurrentYear ? `
+                                    <div class="text-[9px] font-normal text-slate-400 dark:text-slate-500 tracking-tight">
+                                        YTD: ${formatCurrency(group.actualNet, 'EUR')} • Attesi: ${formatCurrency(group.projectedNet, 'EUR')}
+                                    </div>
+                                ` : ''}
                             </td>
-                            <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800" colspan="2"></td>
+                            <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800 text-right font-mono text-xs font-bold text-slate-600 dark:text-slate-400">
+                                ${formatCurrency(group.totalGross, 'EUR')}
+                            </td>
+                            <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800"></td>
                         </tr>
                     `;
                     

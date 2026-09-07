@@ -534,8 +534,15 @@ module.exports = function (dependencies) {
     });
 
     // GET /api/analytics/dividends
-    router.get('/analytics/dividends', requireAuth, (req, res) => {
+    router.get('/analytics/dividends', requireAuth, async (req, res) => {
         try {
+            const liveRate = await getEurUsdRate();
+            const toEUR = (amount, currency, exchangeRate) => {
+                if (currency === 'USD' && liveRate > 0) return amount / liveRate;
+                if (exchangeRate && exchangeRate !== 1) return amount / exchangeRate;
+                return amount;
+            };
+
             const portfolios = database.db.prepare(`
                 SELECT p.id, p.name, p.currency FROM portfolios p
                 JOIN portfolio_users pu ON p.id = pu.portfolio_id
@@ -551,19 +558,28 @@ module.exports = function (dependencies) {
                     WHERE t.portfolioId = ? AND t.type = 'DIVIDEND'
                     ORDER BY t.date DESC
                 `).all(p.id);
-                allDividends = allDividends.concat(divs.map(d => ({
-                    id:          d.id,
-                    assetTicker: d.assetTicker,
-                    name:        d.name,
-                    isin:        d.isin,
-                    assetType:   d.assetType,
-                    date:        d.date,
-                    amount:      d.amount,          // Netto
-                    tax:         d.tax || 0,        // Tassazione
-                    gross:       (d.amount || 0) + (d.tax || 0), // Lordo calcolato
-                    portfolioId: d.portfolioId,
-                    portfolioName: p.name
-                })));
+                allDividends = allDividends.concat(divs.map(d => {
+                    const rawNet = (d.amount !== null && d.amount !== undefined && d.amount !== 0)
+                        ? d.amount 
+                        : (d.quantity * d.price - (d.tax || 0));
+                    const netEUR = toEUR(rawNet, p.currency, d.exchangeRate);
+                    const taxEUR = toEUR(d.tax || 0, p.currency, d.exchangeRate);
+                    const grossEUR = netEUR + taxEUR;
+
+                    return {
+                        id:          d.id,
+                        assetTicker: d.assetTicker,
+                        name:        d.name,
+                        isin:        d.isin,
+                        assetType:   d.assetType,
+                        date:        d.date,
+                        amount:      netEUR,          // Netto in EUR
+                        tax:         taxEUR,          // Tassazione in EUR
+                        gross:       grossEUR,        // Lordo calcolato in EUR
+                        portfolioId: d.portfolioId,
+                        portfolioName: p.name
+                    };
+                }));
             }
             allDividends.sort((a, b) => new Date(b.date) - new Date(a.date));
             res.json(allDividends);
@@ -620,15 +636,34 @@ module.exports = function (dependencies) {
 
         allDivTx.forEach(d => {
             const pos = openPositions.find(p => p.ticker === d.ticker);
-            if (!pos) return;
+            let assetName = pos ? pos.name : null;
+            let assetIsin = pos ? pos.isin : null;
+            let assetType = pos ? pos.assetType : null;
+            
+            if (!assetName || !assetType) {
+                const a = database.db.prepare(`SELECT name, isin, type FROM assets WHERE ticker = ?`).get(d.ticker);
+                if (a) {
+                    assetName = assetName || a.name;
+                    assetIsin = assetIsin || a.isin;
+                    assetType = assetType || a.type;
+                }
+            }
+            if (!assetName) assetName = d.ticker;
+            if (!assetType) assetType = 'Azioni';
 
             const m = parseInt(d.date.split('-')[1]) - 1;
-            const amtEUR = toEUR(d.amount || (d.quantity * d.price - (d.tax || 0)), d.portCurrency, d.exchangeRate);
-            actualByMonth[m] += amtEUR;
+            const rawNet = (d.amount !== null && d.amount !== undefined && d.amount !== 0)
+                ? d.amount 
+                : (d.quantity * d.price - (d.tax || 0));
+            const amtEUR = toEUR(rawNet, d.portCurrency, d.exchangeRate);
+            if (m >= 0 && m < 12) {
+                actualByMonth[m] += amtEUR;
+                tickersByMonth[m].add(d.ticker);
+            }
             totalReceived += amtEUR;
-            tickersByMonth[m].add(d.ticker);
             
-            const gross = amtEUR + toEUR(d.tax || 0, d.portCurrency, d.exchangeRate);
+            const taxEUR = toEUR(d.tax || 0, d.portCurrency, d.exchangeRate);
+            const gross = amtEUR + taxEUR;
             
             let realYield = 0;
             if (pos && pos.currentPrice > 0 && pos.balance > 0) {
@@ -640,8 +675,8 @@ module.exports = function (dependencies) {
             }
 
             listItems.push({
-                id: null, txId: d.txId, ticker: d.ticker, name: pos.name, isin: pos.isin, assetType: pos.assetType, date: d.date, tag: 'REGISTRATO',
-                amount: null, totalAmount: amtEUR, gross, tax: d.tax || 0, annualProjected: 0, yield: 0, realYield
+                id: null, txId: d.txId, ticker: d.ticker, name: assetName, isin: assetIsin, assetType, date: d.date, tag: 'REGISTRATO',
+                amount: null, totalAmount: amtEUR, gross, tax: taxEUR, annualProjected: 0, yield: 0, realYield
             });
         });
 

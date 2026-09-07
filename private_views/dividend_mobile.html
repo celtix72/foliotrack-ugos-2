@@ -1065,13 +1065,29 @@
                     filtered.forEach(d => {
                         let key = d[groupBy] || 'N/A';
                         if (groupBy === 'year') key = d.date.split('-')[0];
-                        if (!groups[key]) groups[key] = { items: [], total: 0 };
-                        groups[key].items.push(d);
-                        if (!d.isProjection || d.tag === 'REGISTRATO') {
-                            groups[key].total += d.amount;
-                        } else {
-                            groups[key].total += d.amount;
+                        if (!groups[key]) {
+                            groups[key] = {
+                                items: [],
+                                actualNet: 0,
+                                projectedNet: 0,
+                                totalNet: 0,
+                                actualGross: 0,
+                                projectedGross: 0,
+                                totalGross: 0
+                            };
                         }
+                        groups[key].items.push(d);
+                        const net = Number(d.amount) || 0;
+                        const gross = Number(d.gross || d.amount) || 0;
+                        if (!d.isProjection || d.tag === 'REGISTRATO') {
+                            groups[key].actualNet += net;
+                            groups[key].actualGross += gross;
+                        } else {
+                            groups[key].projectedNet += net;
+                            groups[key].projectedGross += gross;
+                        }
+                        groups[key].totalNet += net;
+                        groups[key].totalGross += gross;
                     });
 
                     const keys = Object.keys(groups).sort((a, b) => {
@@ -1079,18 +1095,39 @@
                         return a.localeCompare(b);
                     });
 
+                    const currentYearStr = (window.globalProjData?.year?.toString()) || (new Date().getFullYear().toString());
+
                     container.innerHTML = keys.map(key => {
                         const group = groups[key];
                         const isCollapsed = collapsedGroups.has(key);
-                        const sign = group.total >= 0 ? '+' : '';
+                        const sign = group.totalNet >= 0 ? '+' : '';
+                        const isCurrentYear = (groupBy === 'year' && key === currentYearStr);
+
                         return `
-                            <div class="mob-section-header" style="cursor:pointer" onclick="toggleMobGroup('${key}')">
+                            <div class="mob-section-header" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; padding: 12px 16px;" onclick="toggleMobGroup('${key}')">
                                 <div class="mob-section-title flex items-center gap-2">
                                     <span class="material-symbols-outlined" style="font-size:20px">${isCollapsed ? 'chevron_right' : 'expand_more'}</span>
-                                    ${key.toUpperCase()} <span style="font-size:11px; color:var(--mob-text-muted); font-weight:normal;">(${group.items.length})</span>
+                                    <div>
+                                        <div class="flex items-center gap-1.5">
+                                            <span style="font-weight: 900; font-size: 14px;">${key.toUpperCase()}</span>
+                                            <span style="font-size:11px; color:var(--mob-text-muted); font-weight:normal;">(${group.items.length})</span>
+                                        </div>
+                                        ${isCurrentYear ? `
+                                            <div style="font-size: 10px; color: var(--mob-text-muted); font-weight: normal; margin-top: 2px;">
+                                                Incassati: ${formatCurrency(group.actualNet, 'EUR', 0)} • Attesi: ${formatCurrency(group.projectedNet, 'EUR', 0)}
+                                            </div>
+                                        ` : ''}
+                                    </div>
                                 </div>
-                                <div class="mob-section-link" style="color: var(--mob-emerald); font-size: 18px; font-weight: 900;">
-                                    ${sign}${formatCurrency(group.total, 'EUR', 0)}
+                                <div style="text-align: right;">
+                                    <div class="mob-section-link" style="color: var(--mob-emerald); font-size: 16px; font-weight: 900;">
+                                        ${sign}${formatCurrency(group.totalNet, 'EUR', 0)}
+                                    </div>
+                                    ${group.totalGross ? `
+                                        <div style="font-size: 10px; color: var(--mob-text-muted); font-weight: normal;">
+                                            Lordo: ${formatCurrency(group.totalGross, 'EUR', 0)}
+                                        </div>
+                                    ` : ''}
                                 </div>
                             </div>
                             <div class="mob-list-edge" style="${isCollapsed ? 'display:none' : ''}">
