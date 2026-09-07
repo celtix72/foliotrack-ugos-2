@@ -154,7 +154,7 @@ module.exports = function(dependencies) {
         
         if (!portfolioId) return res.status(400).send('portfolioId is required');
 
-        const sanitizedTicker = sanitizeTicker(assetTicker);
+        const sanitizedTicker = sanitizeTicker(assetTicker || req.body.ticker);
 
         // Auto-create/update asset with ISIN and Data Source
         if (sanitizedTicker && sanitizedTicker !== 'CASH') {

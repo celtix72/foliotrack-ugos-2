@@ -126,8 +126,10 @@
                     <form id="manual-div-form" onsubmit="submitConfirmDividend(event)" class="space-y-3">
                         <input type="hidden" id="confirm-id">
                         <input type="hidden" id="confirm-tx-id">
+                        <input type="hidden" id="confirm-is-duplicate">
                         <div id="confirm-ticker-group">
                             <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Ticker</label>
+                            <input type="text" id="confirm-ticker-input" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs font-bold uppercase outline-none hidden">
                             <div id="confirm-ticker-display" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs font-black hidden"></div>
                             <select id="confirm-ticker-select" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs font-bold outline-none">
                                 <option value="" disabled selected>Seleziona asset...</option>
@@ -359,10 +361,86 @@
                 }
             };
 
+            window.openDuplicateDividendModal = async (id, isProj = false) => {
+                let item;
+                if (!isProj) {
+                    item = rawDivData.find(d => d.id == id);
+                } else {
+                    const proj = window.globalProjData?.assets?.find(a => a.id == id);
+                    if (proj) {
+                        item = {
+                            id: proj.id,
+                            assetTicker: proj.ticker,
+                            ticker: proj.ticker,
+                            name: proj.name,
+                            date: proj.date,
+                            amount: proj.totalAmount,
+                            tax: proj.tax || 0,
+                            gross: proj.gross || (proj.totalAmount + (proj.tax || 0)),
+                            portfolioId: proj.portfolioId
+                        };
+                    }
+                }
+                if (!item) return;
+
+                const ticker = (item.assetTicker || item.ticker || '').toUpperCase().trim();
+
+                document.getElementById('manual-modal-title').innerText = 'Duplica Dividendo';
+                document.getElementById('confirm-id').value = '';
+                document.getElementById('confirm-tx-id').value = '';
+                document.getElementById('confirm-is-duplicate').value = 'true';
+
+                const tickerInput = document.getElementById('confirm-ticker-input');
+                if (tickerInput) {
+                    tickerInput.value = ticker;
+                    tickerInput.classList.remove('hidden');
+                }
+                document.getElementById('confirm-ticker-display').classList.add('hidden');
+                document.getElementById('confirm-ticker-select').classList.add('hidden');
+
+                // Default date to today, freely editable
+                document.getElementById('confirm-date').value = new Date().toISOString().split('T')[0];
+
+                const grossVal = parseFloat(item.gross || ((item.amount || 0) + (item.tax || 0)) || 0);
+                const taxVal = parseFloat(item.tax || 0);
+                document.getElementById('confirm-gross').value = grossVal.toFixed(2);
+                document.getElementById('confirm-tax').value = taxVal.toFixed(2);
+                document.getElementById('confirm-net').value = (grossVal - taxVal).toFixed(2);
+
+                document.getElementById('confirm-portfolio-group').classList.remove('hidden');
+                document.getElementById('confirm-portfolio').required = true;
+
+                const isConfWrap = document.getElementById('confirm-is-confirmed-wrap');
+                if (isConfWrap) isConfWrap.classList.add('hidden');
+
+                const withWrap = document.getElementById('confirm-withdrawal-group');
+                if (withWrap) withWrap.classList.remove('hidden');
+                const withChk = document.getElementById('confirm-create-withdrawal');
+                if (withChk) withChk.checked = false;
+
+                document.getElementById('confirm-submit-btn').innerText = 'Duplica e Salva';
+
+                try {
+                    const res = await fetch('/api/portfolios');
+                    const pData = await res.json();
+                    const sel = document.getElementById('confirm-portfolio');
+                    sel.innerHTML = '<option value="" disabled selected>Seleziona...</option>' + 
+                                    (pData.portfolios || []).map(p => `<option value="${p.id}" ${item.portfolioId && item.portfolioId == p.id ? 'selected' : ''}>${p.name}</option>`).join('');
+                    if (!sel.value && pData.portfolios?.length > 0) {
+                        sel.value = pData.portfolios[0].id;
+                    }
+                } catch(e) { console.error(e); }
+
+                updateNetPreview();
+                document.getElementById('manual-modal').classList.remove('hidden');
+            };
+
             window.openManualModal = () => {
                 document.getElementById('manual-modal-title').innerText = 'Nuova Previsione';
                 document.getElementById('confirm-id').value = '';
                 document.getElementById('confirm-tx-id').value = '';
+                document.getElementById('confirm-is-duplicate').value = '';
+                document.getElementById('confirm-ticker-input')?.classList.add('hidden');
                 document.getElementById('confirm-ticker-display').classList.add('hidden');
                 const tSel = document.getElementById('confirm-ticker-select');
                 tSel.classList.remove('hidden');
@@ -402,6 +480,8 @@
                 document.getElementById('manual-modal-title').innerText = 'Conferma Dividendo';
                 document.getElementById('confirm-id').value = proj.id;
                 document.getElementById('confirm-tx-id').value = '';
+                document.getElementById('confirm-is-duplicate').value = '';
+                document.getElementById('confirm-ticker-input')?.classList.add('hidden');
                 document.getElementById('confirm-ticker-display').innerText = proj.ticker;
                 document.getElementById('confirm-ticker-display').classList.remove('hidden');
                 document.getElementById('confirm-ticker-select').classList.add('hidden');
@@ -438,6 +518,8 @@
                 document.getElementById('manual-modal-title').innerText = 'Modifica Transazione';
                 document.getElementById('confirm-id').value = '';
                 document.getElementById('confirm-tx-id').value = item.txId;
+                document.getElementById('confirm-is-duplicate').value = '';
+                document.getElementById('confirm-ticker-input')?.classList.add('hidden');
                 document.getElementById('confirm-ticker-display').innerText = item.ticker;
                 document.getElementById('confirm-ticker-display').classList.remove('hidden');
                 document.getElementById('confirm-ticker-select').classList.add('hidden');
@@ -486,13 +568,24 @@
 
             window.closeManualModal = () => {
                 document.getElementById('manual-modal').classList.add('hidden');
+                const isDup = document.getElementById('confirm-is-duplicate');
+                if (isDup) isDup.value = '';
+                document.getElementById('confirm-ticker-input')?.classList.add('hidden');
             };
 
             window.submitConfirmDividend = async (e) => {
                 e.preventDefault();
                 const id = document.getElementById('confirm-id').value;
                 const txId = document.getElementById('confirm-tx-id').value;
-                const ticker = id || txId ? document.getElementById('confirm-ticker-display').innerText : document.getElementById('confirm-ticker-select').value;
+                const isDuplicate = document.getElementById('confirm-is-duplicate')?.value === 'true';
+                let ticker = '';
+                if (isDuplicate) {
+                    ticker = (document.getElementById('confirm-ticker-input')?.value || '').trim().toUpperCase();
+                } else if (id || txId) {
+                    ticker = document.getElementById('confirm-ticker-display').innerText.split(' - ')[0].trim().toUpperCase();
+                } else {
+                    ticker = document.getElementById('confirm-ticker-select').value;
+                }
                 const portfolioId = document.getElementById('confirm-portfolio').value;
                 const date = document.getElementById('confirm-date').value;
                 const grossAmount = document.getElementById('confirm-gross').value;
@@ -503,7 +596,27 @@
                 try {
                     let url, method, body;
                     
-                    if (txId) {
+                    if (isDuplicate) {
+                        const grossVal = parseFloat(grossAmount) || 0;
+                        const taxVal = parseFloat(tax) || 0;
+                        const netVal = grossVal - taxVal;
+                        url = '/api/transactions';
+                        method = 'POST';
+                        body = JSON.stringify({
+                            portfolioId: parseInt(portfolioId, 10),
+                            type: 'DIVIDEND',
+                            assetTicker: ticker ? ticker.toUpperCase().trim() : '',
+                            ticker: ticker ? ticker.toUpperCase().trim() : '',
+                            date,
+                            grossAmount: grossVal,
+                            tax: taxVal,
+                            amount: netVal,
+                            price: 0,
+                            shares: 0,
+                            notes: 'Dividendo duplicato',
+                            createWithdrawal
+                        });
+                    } else if (txId) {
                         // Modifica transazione esistente
                         url = `/api/dividends/transactions/${txId}`;
                         method = 'PUT';
@@ -523,6 +636,7 @@
                         body = JSON.stringify({
                             portfolioId: parseInt(portfolioId, 10),
                             type: 'DIVIDEND',
+                            assetTicker: ticker ? ticker.toUpperCase().trim() : '',
                             ticker: ticker ? ticker.toUpperCase().trim() : '',
                             date,
                             grossAmount: grossVal,
@@ -550,8 +664,8 @@
                         window.closeManualModal();
                         loadMobData();
                     } else {
-                        const err = await res.json();
-                        alert('Errore: ' + (err.error || 'Invio fallito'));
+                        const err = await res.json().catch(() => ({}));
+                        alert('Errore: ' + (err.error || 'Operazione fallita'));
                     }
                 } catch (err) {
                     console.error('Error saving dividend:', err);
@@ -810,6 +924,10 @@
                         clickAction = `openEditConfirmedModal(${a.txId})`;
                         actions = `
                             <div class="mob-holding-actions">
+                                <div class="mob-action-btn bg-blue-500" onclick="event.stopPropagation(); openDuplicateDividendModal(${a.txId}, false)">
+                                    <span class="material-symbols-outlined">content_copy</span>
+                                    <span>Duplica</span>
+                                </div>
                                 <div class="mob-action-btn bg-orange-ios" onclick="event.stopPropagation(); openEditConfirmedModal(${a.txId})">
                                     <span class="material-symbols-outlined">edit</span>
                                     <span>Modifica</span>
@@ -824,6 +942,10 @@
                         clickAction = `openConfirmModal(${a.id})`;
                         actions = `
                             <div class="mob-holding-actions">
+                                <div class="mob-action-btn bg-blue-500" onclick="event.stopPropagation(); openDuplicateDividendModal(${a.id}, true)">
+                                    <span class="material-symbols-outlined">content_copy</span>
+                                    <span>Duplica</span>
+                                </div>
                                 <div class="mob-action-btn bg-emerald-500" onclick="event.stopPropagation(); openConfirmModal(${a.id})">
                                     <span class="material-symbols-outlined">check_circle</span>
                                     <span>Conferma</span>
@@ -1073,6 +1195,11 @@
                 if (!isProj || tag === 'REGISTRATO') {
                     actionsHtml = `
                         <div class="mob-holding-actions">
+                            <div class="mob-action-btn bg-blue-500" 
+                                 onclick="event.stopPropagation(); openDuplicateDividendModal('${d.id}', false)">
+                                <span class="material-symbols-outlined">content_copy</span>
+                                <span>Duplica</span>
+                            </div>
                             <div class="mob-action-btn bg-orange-ios" 
                                  onclick="event.stopPropagation(); editTransaction('${d.id}')">
                                 <span class="material-symbols-outlined">edit</span>
@@ -1088,6 +1215,11 @@
                 } else {
                     actionsHtml = `
                         <div class="mob-holding-actions">
+                            <div class="mob-action-btn bg-blue-500" 
+                                 onclick="event.stopPropagation(); openDuplicateDividendModal('${d.id}', true)">
+                                <span class="material-symbols-outlined">content_copy</span>
+                                <span>Duplica</span>
+                            </div>
                             <div class="mob-action-btn bg-emerald-500" 
                                  onclick="event.stopPropagation(); openConfirmModal(${d.id})">
                                 <span class="material-symbols-outlined">check_circle</span>

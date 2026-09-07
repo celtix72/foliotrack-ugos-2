@@ -317,17 +317,21 @@
         <div class="bg-white dark:bg-surface-dark w-full max-w-sm rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6">
             <div class="flex justify-between items-center mb-6">
                 <div>
-                    <h3 class="text-sm font-black tracking-tight uppercase tracking-widest text-emerald-500">Conferma Dividendo</h3>
+                    <h3 id="confirm-modal-title" class="text-sm font-black tracking-tight uppercase tracking-widest text-emerald-500">Conferma Dividendo</h3>
                     <p id="confirm-asset-label" class="text-[10px] text-slate-500 font-bold mt-1"></p>
                 </div>
-                <button onclick="closeConfirmModal()" class="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                <button type="button" onclick="closeConfirmModal()" class="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
                     <span class="material-symbols-outlined text-sm">close</span>
                 </button>
             </div>
             <form id="confirm-div-form" onsubmit="submitConfirmDividend(event)" class="space-y-3">
                 <input type="hidden" id="confirm-id">
                 <input type="hidden" id="confirm-tx-id">
-                <input type="hidden" id="confirm-ticker">
+                <input type="hidden" id="confirm-is-duplicate">
+                <div id="confirm-ticker-group">
+                    <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Ticker Asset</label>
+                    <input type="text" id="confirm-ticker" required class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs font-bold outline-none uppercase">
+                </div>
                 <div id="confirm-portfolio-group">
                     <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Accredita su Portafoglio</label>
                     <select id="confirm-portfolio" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-emerald-500/20 font-bold outline-none">
@@ -581,6 +585,7 @@
             if (!isProj || tag === 'REGISTRATO') {
                 actionsHtml = `
                     <div class="flex items-center justify-end gap-1.5">
+                        <button onclick="openDuplicateDividendModal('${d.id}', false)" class="text-slate-400 hover:text-blue-500 transition-colors cursor-pointer" title="Duplica"><span class="material-symbols-outlined text-sm">content_copy</span></button>
                         <button onclick="openEditConfirmedModal(${d.id}, true)" class="text-slate-400 hover:text-primary transition-colors cursor-pointer" title="Modifica"><span class="material-symbols-outlined text-sm">edit</span></button>
                         <button onclick="deleteConfirmedDividend(${d.id})" class="text-slate-400 hover:text-red-500 transition-colors cursor-pointer" title="Elimina"><span class="material-symbols-outlined text-sm">delete</span></button>
                     </div>
@@ -588,6 +593,7 @@
             } else {
                 actionsHtml = `
                     <div class="flex items-center justify-end gap-1.5">
+                        <button onclick="openDuplicateDividendModal('${d.id}', true)" class="text-slate-400 hover:text-blue-500 transition-colors cursor-pointer" title="Duplica"><span class="material-symbols-outlined text-sm">content_copy</span></button>
                         <button onclick="openConfirmModal(${d.id})" class="text-emerald-500 hover:text-emerald-600 transition-colors cursor-pointer" title="Conferma Dividendo"><span class="material-symbols-outlined text-sm">check_circle</span></button>
                         <button onclick="deleteProjection(${d.id})" class="text-slate-400 hover:text-red-500 transition-colors cursor-pointer" title="Elimina"><span class="material-symbols-outlined text-sm">delete</span></button>
                     </div>
@@ -828,6 +834,92 @@
             document.getElementById('manual-modal').classList.remove('hidden');
         };
 
+        window.openDuplicateDividendModal = async (id, isProj = false) => {
+            let item;
+            if (!isProj) {
+                const raw = rawDivData.find(d => d.id == id);
+                if (raw) {
+                    item = {
+                        ticker: raw.assetTicker || raw.ticker,
+                        name: raw.name,
+                        date: raw.date,
+                        gross: raw.gross || ((raw.amount || 0) + (raw.tax || 0)),
+                        tax: raw.tax || 0,
+                        amount: raw.amount,
+                        portfolioId: raw.portfolioId
+                    };
+                }
+            } else {
+                const proj = window.globalProjData?.assets?.find(a => a.id == id);
+                if (proj) {
+                    item = {
+                        ticker: proj.ticker,
+                        name: proj.name,
+                        date: proj.date,
+                        gross: proj.gross || proj.totalAmount || 0,
+                        tax: proj.tax || 0,
+                        amount: proj.totalAmount,
+                        portfolioId: proj.portfolioId
+                    };
+                }
+            }
+            if (!item) return;
+
+            document.getElementById('manual-modal').classList.add('hidden');
+            document.getElementById('confirm-id').value = '';
+            document.getElementById('confirm-tx-id').value = '';
+            document.getElementById('confirm-is-duplicate').value = 'true';
+            
+            const titleEl = document.getElementById('confirm-modal-title');
+            if (titleEl) {
+                titleEl.innerText = 'Duplica Dividendo';
+                titleEl.className = 'text-sm font-black tracking-tight uppercase tracking-widest text-blue-500';
+            }
+            document.getElementById('confirm-asset-label').innerText = `DUPLICA: ${item.ticker}${item.name && item.name !== 'null' ? ' - ' + item.name : ''}`;
+            
+            const tickerInput = document.getElementById('confirm-ticker');
+            if (tickerInput) {
+                tickerInput.value = item.ticker;
+                tickerInput.readOnly = false;
+            }
+
+            // Set default date to today, freely editable by user for duplication in another date
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('confirm-date').value = today;
+
+            const grossVal = parseFloat(item.gross || 0);
+            const taxVal = parseFloat(item.tax || 0);
+            document.getElementById('confirm-gross').value = grossVal.toFixed(2);
+            document.getElementById('confirm-tax').value = taxVal.toFixed(2);
+            document.getElementById('confirm-net').value = (grossVal - taxVal).toFixed(2);
+
+            document.getElementById('confirm-portfolio-group').classList.remove('hidden');
+            document.getElementById('confirm-portfolio').required = true;
+            document.getElementById('confirm-withdrawal-group').classList.remove('hidden');
+            const wCb = document.getElementById('confirm-create-withdrawal');
+            if (wCb) wCb.checked = false;
+
+            const submitBtn = document.getElementById('confirm-submit-btn');
+            if (submitBtn) {
+                submitBtn.innerText = 'Duplica e Salva';
+                submitBtn.className = 'w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg text-xs transition-colors shadow-sm';
+            }
+
+            try {
+                const res = await fetch('/api/portfolios');
+                const pData = await res.json();
+                const sel = document.getElementById('confirm-portfolio');
+                sel.innerHTML = '<option value="" disabled selected>Seleziona portafoglio...</option>' + 
+                                (pData.portfolios || []).map(p => `<option value="${p.id}" ${item.portfolioId && item.portfolioId == p.id ? 'selected' : ''}>${p.name} (${p.currency})</option>`).join('');
+                if (!sel.value && pData.portfolios?.length > 0) {
+                    sel.value = pData.portfolios[0].id;
+                }
+            } catch(e) { console.error(e); }
+
+            updateNetPreview();
+            document.getElementById('confirm-modal').classList.remove('hidden');
+        };
+
         window.openConfirmModal = async (id) => {
             const proj = window.globalProjData.assets.find(a => a.id === id);
             if (!proj) return;
@@ -835,7 +927,18 @@
             document.getElementById('manual-modal').classList.add('hidden');
             document.getElementById('confirm-id').value = proj.id;
             document.getElementById('confirm-tx-id').value = '';
-            document.getElementById('confirm-ticker').value = proj.ticker;
+            document.getElementById('confirm-is-duplicate').value = '';
+            
+            const titleEl = document.getElementById('confirm-modal-title');
+            if (titleEl) {
+                titleEl.innerText = 'Conferma Dividendo';
+                titleEl.className = 'text-sm font-black tracking-tight uppercase tracking-widest text-emerald-500';
+            }
+            const tickerInput = document.getElementById('confirm-ticker');
+            if (tickerInput) {
+                tickerInput.value = proj.ticker;
+                tickerInput.readOnly = true;
+            }
             document.getElementById('confirm-asset-label').innerText = `${proj.ticker} - ${(proj.name && proj.name !== 'null') ? proj.name : ''}`;
             document.getElementById('confirm-date').value = proj.date;
             document.getElementById('confirm-gross').value = (proj.totalAmount || 0).toFixed(2);
@@ -845,7 +948,12 @@
             document.getElementById('confirm-withdrawal-group').classList.remove('hidden');
             const wCb = document.getElementById('confirm-create-withdrawal');
             if (wCb) wCb.checked = false;
-            document.getElementById('confirm-submit-btn').innerText = 'Conferma e Salva';
+            
+            const submitBtn = document.getElementById('confirm-submit-btn');
+            if (submitBtn) {
+                submitBtn.innerText = 'Conferma e Salva';
+                submitBtn.className = 'w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg text-xs transition-colors shadow-sm';
+            }
             
             try {
                 const res = await fetch('/api/portfolios');
@@ -882,7 +990,18 @@
 
             document.getElementById('confirm-id').value = '';
             document.getElementById('confirm-tx-id').value = item.txId;
-            document.getElementById('confirm-ticker').value = item.ticker;
+            document.getElementById('confirm-is-duplicate').value = '';
+            
+            const titleEl = document.getElementById('confirm-modal-title');
+            if (titleEl) {
+                titleEl.innerText = 'Modifica Dividendo';
+                titleEl.className = 'text-sm font-black tracking-tight uppercase tracking-widest text-primary';
+            }
+            const tickerInput = document.getElementById('confirm-ticker');
+            if (tickerInput) {
+                tickerInput.value = item.ticker;
+                tickerInput.readOnly = true;
+            }
             document.getElementById('confirm-asset-label').innerText = `MODIFICA: ${item.ticker} - ${(item.name && item.name !== 'null') ? item.name : ''}`;
             document.getElementById('confirm-date').value = item.date;
             document.getElementById('confirm-gross').value = (item.gross || (item.totalAmount + (item.tax || 0)) || 0).toFixed(2);
@@ -890,7 +1009,12 @@
             document.getElementById('confirm-portfolio-group').classList.add('hidden');
             document.getElementById('confirm-portfolio').required = false;
             document.getElementById('confirm-withdrawal-group').classList.add('hidden');
-            document.getElementById('confirm-submit-btn').innerText = 'Aggiorna Transazione';
+            
+            const submitBtn = document.getElementById('confirm-submit-btn');
+            if (submitBtn) {
+                submitBtn.innerText = 'Aggiorna Transazione';
+                submitBtn.className = 'w-full py-2.5 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg text-xs transition-colors shadow-sm';
+            }
 
             updateNetPreview();
             document.getElementById('confirm-modal').classList.remove('hidden');
@@ -924,7 +1048,8 @@
             e.preventDefault();
             const id = document.getElementById('confirm-id').value;
             const txId = document.getElementById('confirm-tx-id').value;
-            const ticker = document.getElementById('confirm-ticker').value;
+            const isDuplicate = document.getElementById('confirm-is-duplicate')?.value === 'true';
+            const ticker = document.getElementById('confirm-ticker').value.trim().toUpperCase();
             const portfolioId = document.getElementById('confirm-portfolio').value;
             const date = document.getElementById('confirm-date').value;
             const grossAmount = document.getElementById('confirm-gross').value;
@@ -932,6 +1057,39 @@
             const createWithdrawal = document.getElementById('confirm-create-withdrawal')?.checked || false;
 
             try {
+                if (isDuplicate) {
+                    const grossVal = parseFloat(grossAmount) || 0;
+                    const taxVal = parseFloat(tax) || 0;
+                    const netVal = grossVal - taxVal;
+                    const res = await fetch('/api/transactions', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            portfolioId: parseInt(portfolioId, 10),
+                            type: 'DIVIDEND',
+                            assetTicker: ticker,
+                            ticker,
+                            date,
+                            grossAmount: grossVal,
+                            tax: taxVal,
+                            amount: netVal,
+                            price: 0,
+                            quantity: 0,
+                            notes: 'Dividendo duplicato',
+                            createWithdrawal
+                        })
+                    });
+                    if (res.ok) {
+                        window.closeConfirmModal();
+                        loadProjections();
+                        loadDividends();
+                    } else {
+                        const err = await res.json().catch(() => ({}));
+                        alert('Errore: ' + (err.error || 'Duplicazione fallita'));
+                    }
+                    return;
+                }
+
                 let url, method;
                 if (txId) {
                     url = `/api/dividends/transactions/${txId}`;
@@ -951,7 +1109,7 @@
                     loadProjections();
                     loadDividends();
                 } else {
-                    const err = await res.json();
+                    const err = await res.json().catch(() => ({}));
                     alert('Errore: ' + (err.error || 'Invio fallito'));
                 }
             } catch (err) {
@@ -973,6 +1131,18 @@
         window.closeConfirmModal = () => {
             document.getElementById('confirm-modal').classList.add('hidden');
             document.getElementById('confirm-div-form').reset();
+            const isDup = document.getElementById('confirm-is-duplicate');
+            if (isDup) isDup.value = '';
+            const titleEl = document.getElementById('confirm-modal-title');
+            if (titleEl) {
+                titleEl.innerText = 'Conferma Dividendo';
+                titleEl.className = 'text-sm font-black tracking-tight uppercase tracking-widest text-emerald-500';
+            }
+            const submitBtn = document.getElementById('confirm-submit-btn');
+            if (submitBtn) {
+                submitBtn.innerText = 'Conferma e Salva';
+                submitBtn.className = 'w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg text-xs transition-colors shadow-sm';
+            }
             const wCb = document.getElementById('confirm-create-withdrawal');
             if (wCb) wCb.checked = false;
         };
