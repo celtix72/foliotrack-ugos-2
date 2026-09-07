@@ -167,6 +167,15 @@
                     </div>
                 </div>
 
+                <!-- Row 7.5: Dividend Withdrawal Option -->
+                <div id="tm-withdrawal-wrap" class="hidden flex items-start gap-2.5 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                    <input type="checkbox" id="tm-create-withdrawal" class="mt-0.5 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500/20 cursor-pointer">
+                    <label for="tm-create-withdrawal" class="text-[11px] font-bold text-slate-700 dark:text-slate-200 select-none cursor-pointer">
+                        Crea prelievo di liquidità equivalente
+                        <span class="block text-[9px] font-normal text-slate-400">Non incrementa la liquidità del portafoglio (crea automaticamente un prelievo pari al netto nella stessa data).</span>
+                    </label>
+                </div>
+
                 <!-- Sell Gain Projection Panel -->
                 <div id="tm-sell-gain-panel" class="hidden rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800">
                     <div class="px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2">
@@ -414,6 +423,13 @@
         if (amountLabel) amountLabel.innerText = isDividend ? 'Netto Dividendo (€)' : 'Importo';
         if (amountInput) amountInput.readOnly = false;
         if (amountHint) amountHint.innerText = isDividend ? 'Inserisci il Totale Netto o le Tasse per auto-calcolare il Dividendo Unitario.' : '';
+
+        // Dividend Withdrawal Option
+        _toggleField('tm-withdrawal-wrap', isDividend);
+        if (!isDividend) {
+            const wCb = document.getElementById('tm-create-withdrawal');
+            if (wCb) wCb.checked = false;
+        }
 
         // Portafoglio destinazione: solo TRANSFER
         _toggleField('tm-dest-wrap', isTransfer);
@@ -842,7 +858,8 @@
             assetName: source === 'MANUAL' ? (document.getElementById('tm-asset-name')?.value || null) : null,
             assetCurrency: source === 'MANUAL'
                 ? (document.getElementById('tm-asset-currency-manual')?.value || 'EUR')
-                : (document.getElementById('tm-asset-currency')?.value || 'EUR')
+                : (document.getElementById('tm-asset-currency')?.value || 'EUR'),
+            createWithdrawal: (type === 'DIVIDEND' && !id && document.getElementById('tm-create-withdrawal')?.checked) || false
         };
 
         const method = id ? 'PUT' : 'POST';

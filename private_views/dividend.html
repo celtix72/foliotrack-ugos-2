@@ -272,11 +272,39 @@
                     <label class="block text-[9px] font-bold text-emerald-500 uppercase tracking-wider mb-1">Importo Stimato (€)</label>
                     <input type="number" step="0.01" id="manual-amount" required placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-xs focus:ring-2 focus:ring-emerald-500/20 font-mono font-black outline-none">
                 </div>
+
+                <div class="pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <label class="flex items-center gap-2 cursor-pointer select-none">
+                        <input type="checkbox" id="manual-is-confirmed" onchange="toggleManualConfirmedFields()" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500/20 cursor-pointer">
+                        <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300">Registra subito come incassato</span>
+                    </label>
+                </div>
+
+                <div id="manual-confirmed-fields" class="hidden space-y-3 pt-1">
+                    <div>
+                        <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Accredita su Portafoglio</label>
+                        <select id="manual-portfolio" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs font-bold outline-none">
+                            <option value="" disabled selected>Seleziona portafoglio...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Tasse trattenute (€)</label>
+                        <input type="number" step="0.01" id="manual-tax" value="0.00" placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs font-mono outline-none">
+                    </div>
+                    <div class="flex items-start gap-2.5 p-2.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                        <input type="checkbox" id="manual-create-withdrawal" class="mt-0.5 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500/20 cursor-pointer">
+                        <label for="manual-create-withdrawal" class="text-[11px] font-bold text-slate-700 dark:text-slate-300 select-none cursor-pointer">
+                            Crea prelievo di liquidità equivalente
+                            <span class="block text-[9px] font-normal text-slate-400">Non incrementa la liquidità del portafoglio (preleva il netto nella stessa data).</span>
+                        </label>
+                    </div>
+                </div>
+
                 <div class="pt-2 flex gap-3">
                     <button type="button" onclick="closeManualModal()" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
                         Annulla
                     </button>
-                    <button type="submit" class="flex-1 py-2.5 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg text-xs transition-colors shadow-sm shadow-primary/20">
+                    <button type="submit" id="manual-submit-btn" class="flex-1 py-2.5 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg text-xs transition-colors shadow-sm shadow-primary/20">
                         Salva Previsione
                     </button>
                 </div>
@@ -323,6 +351,13 @@
                         <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Netto Stimato (€)</label>
                         <input type="number" step="0.01" id="confirm-net" required placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 text-xs focus:ring-2 focus:ring-emerald-500/20 font-mono font-black outline-none">
                     </div>
+                </div>
+                <div id="confirm-withdrawal-group" class="pt-1 flex items-start gap-2.5 p-2.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                    <input type="checkbox" id="confirm-create-withdrawal" class="mt-0.5 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500/20 cursor-pointer">
+                    <label for="confirm-create-withdrawal" class="text-[11px] font-bold text-slate-700 dark:text-slate-300 select-none cursor-pointer">
+                        Crea prelievo di liquidità equivalente
+                        <span class="block text-[9px] font-normal text-slate-400">Non incrementa la liquidità del portafoglio (preleva il netto nella stessa data).</span>
+                    </label>
                 </div>
                 <div class="pt-2">
                     <button type="submit" id="confirm-submit-btn" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg text-xs transition-colors shadow-sm">
@@ -807,6 +842,9 @@
             document.getElementById('confirm-tax').value = (proj.tax || 0).toFixed(2);
             document.getElementById('confirm-portfolio-group').classList.remove('hidden');
             document.getElementById('confirm-portfolio').required = true;
+            document.getElementById('confirm-withdrawal-group').classList.remove('hidden');
+            const wCb = document.getElementById('confirm-create-withdrawal');
+            if (wCb) wCb.checked = false;
             document.getElementById('confirm-submit-btn').innerText = 'Conferma e Salva';
             
             try {
@@ -851,6 +889,7 @@
             document.getElementById('confirm-tax').value = (item.tax || 0).toFixed(2);
             document.getElementById('confirm-portfolio-group').classList.add('hidden');
             document.getElementById('confirm-portfolio').required = false;
+            document.getElementById('confirm-withdrawal-group').classList.add('hidden');
             document.getElementById('confirm-submit-btn').innerText = 'Aggiorna Transazione';
 
             updateNetPreview();
@@ -890,6 +929,7 @@
             const date = document.getElementById('confirm-date').value;
             const grossAmount = document.getElementById('confirm-gross').value;
             const tax = document.getElementById('confirm-tax').value;
+            const createWithdrawal = document.getElementById('confirm-create-withdrawal')?.checked || false;
 
             try {
                 let url, method;
@@ -904,7 +944,7 @@
                 const res = await fetch(url, {
                     method,
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ portfolioId, ticker, date, grossAmount, tax })
+                    body: JSON.stringify({ portfolioId, ticker, date, grossAmount, tax, createWithdrawal })
                 });
                 if (res.ok) {
                     window.closeConfirmModal();
@@ -933,11 +973,53 @@
         window.closeConfirmModal = () => {
             document.getElementById('confirm-modal').classList.add('hidden');
             document.getElementById('confirm-div-form').reset();
+            const wCb = document.getElementById('confirm-create-withdrawal');
+            if (wCb) wCb.checked = false;
         };
 
         window.closeManualModal = () => {
             document.getElementById('manual-modal').classList.add('hidden');
             document.getElementById('manual-div-form').reset();
+            const confCheck = document.getElementById('manual-is-confirmed');
+            if (confCheck) confCheck.checked = false;
+            const wrap = document.getElementById('manual-confirmed-fields');
+            if (wrap) wrap.classList.add('hidden');
+            const submitBtn = document.getElementById('manual-submit-btn');
+            if (submitBtn) {
+                submitBtn.innerText = 'Salva Previsione';
+                submitBtn.className = 'flex-1 py-2.5 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg text-xs transition-colors shadow-sm shadow-primary/20';
+            }
+        };
+
+        window.toggleManualConfirmedFields = async () => {
+            const isConf = document.getElementById('manual-is-confirmed').checked;
+            const wrap = document.getElementById('manual-confirmed-fields');
+            const submitBtn = document.getElementById('manual-submit-btn');
+            const title = document.getElementById('manual-modal-title');
+            if (isConf) {
+                wrap.classList.remove('hidden');
+                document.getElementById('manual-portfolio').required = true;
+                if (title) title.innerText = 'Nuovo Dividendo Incassato';
+                if (submitBtn) {
+                    submitBtn.innerText = 'Salva e Registra';
+                    submitBtn.className = 'flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg text-xs transition-colors shadow-sm';
+                }
+                try {
+                    const res = await fetch('/api/portfolios');
+                    const pData = await res.json();
+                    const sel = document.getElementById('manual-portfolio');
+                    sel.innerHTML = '<option value="" disabled selected>Seleziona portafoglio...</option>' + 
+                                    pData.portfolios.map(p => `<option value="${p.id}">${p.name} (${p.currency})</option>`).join('');
+                } catch(e) { console.error(e); }
+            } else {
+                wrap.classList.add('hidden');
+                document.getElementById('manual-portfolio').required = false;
+                if (title) title.innerText = 'Nuova Previsione';
+                if (submitBtn) {
+                    submitBtn.innerText = 'Salva Previsione';
+                    submitBtn.className = 'flex-1 py-2.5 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg text-xs transition-colors shadow-sm shadow-primary/20';
+                }
+            }
         };
         
         window.deleteProjection = async (id) => {
@@ -964,11 +1046,41 @@
         window.submitManualDividend = async (e) => {
             e.preventDefault();
             const id = document.getElementById('manual-id').value;
-            const ticker = document.getElementById('manual-ticker').value;
+            const ticker = document.getElementById('manual-ticker').value.trim().toUpperCase();
             const exDate = document.getElementById('manual-date').value;
-            const amount = document.getElementById('manual-amount').value;
+            const amount = parseFloat(document.getElementById('manual-amount').value) || 0;
+            const isConfirmed = document.getElementById('manual-is-confirmed')?.checked;
 
             try {
+                if (isConfirmed && !id) {
+                    const portfolioId = document.getElementById('manual-portfolio').value;
+                    const tax = parseFloat(document.getElementById('manual-tax').value) || 0;
+                    const createWithdrawal = document.getElementById('manual-create-withdrawal')?.checked || false;
+                    const res = await fetch('/api/transactions', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            portfolioId,
+                            type: 'DIVIDEND',
+                            assetTicker: ticker,
+                            date: exDate,
+                            amount,
+                            tax,
+                            createWithdrawal
+                        })
+                    });
+                    if (res.ok) {
+                        window.closeManualModal();
+                        loadProjections();
+                        loadDividends();
+                        return;
+                    } else {
+                        const err = await res.json();
+                        alert('Errore: ' + (err.error || 'Salvataggio fallito'));
+                        return;
+                    }
+                }
+
                 const url = id ? `/api/dividends/projections/${id}` : '/api/dividends/projections';
                 const method = id ? 'PUT' : 'POST';
                 const res = await fetch(url, {

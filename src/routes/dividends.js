@@ -12,7 +12,9 @@ module.exports = function(dependencies) {
         database,
         logger,
         getEurUsdRate,
-        refreshDividendProjections
+        refreshDividendProjections,
+        triggerHistoryRebuild,
+        clearPerformanceCache
     } = dependencies;
 
     // ─── DIVIDENDS PROJECTIONS & CONFIRMATION ───────────────────────────────
@@ -65,7 +67,7 @@ module.exports = function(dependencies) {
 
     router.post('/dividends/projections/:id/confirm', requireAuth, requirePortfolioAccess, async (req, res) => {
         try {
-            const { portfolioId, ticker, grossAmount, tax, date } = req.body;
+            const { portfolioId, ticker, grossAmount, tax, date, createWithdrawal } = req.body;
             if (!portfolioId || !ticker || !date) {
                 return res.status(400).json({ error: 'Missing fields' });
             }
@@ -74,15 +76,31 @@ module.exports = function(dependencies) {
             // Net amount (what hits the portfolio cash) = gross - tax
             const netVal   = grossVal - taxVal;
             
-            database.db.prepare(`
+            const divRes = database.db.prepare(`
                 INSERT INTO transactions (portfolioId, type, assetTicker, date, amount, quantity, price, commission, tax, exchangeRate)
                 VALUES (?, 'DIVIDEND', ?, ?, ?, 0, 0, 0, ?, 1)
             `).run(portfolioId, ticker, date, netVal, taxVal);
+            const divTxId = divRes.lastInsertRowid;
+
+            if (createWithdrawal && netVal > 0) {
+                const wRes = database.db.prepare(`
+                    INSERT INTO transactions (portfolioId, type, assetTicker, date, amount, quantity, price, commission, tax, exchangeRate, linkedTransactionId)
+                    VALUES (?, 'WITHDRAWAL', 'CASH', ?, ?, 0, 0, 0, 0, 1, ?)
+                `).run(portfolioId, date, netVal, divTxId);
+                const wTxId = wRes.lastInsertRowid;
+
+                database.db.prepare(`
+                    UPDATE transactions SET linkedTransactionId = ? WHERE id = ?
+                `).run(wTxId, divTxId);
+            }
             
             database.db.prepare(`DELETE FROM dividend_projections WHERE id = ? AND user_id = ?`).run(req.params.id, req.user.id);
-            database.recalculatePortfolio(portfolioId);
+            const liveRate = await getEurUsdRate();
+            database.recalculatePortfolio(portfolioId, liveRate);
+            if (triggerHistoryRebuild) triggerHistoryRebuild(portfolioId);
+            if (clearPerformanceCache) clearPerformanceCache();
             
-            res.json({ success: true });
+            res.json({ success: true, divTxId });
         } catch (err) { res.status(500).json({ error: err.message }); }
     });
 
@@ -99,7 +117,7 @@ module.exports = function(dependencies) {
 
             // Verifica che la transazione appartenga a un portfolio dell'utente
             const tx = database.db.prepare(`
-                SELECT t.id, t.portfolioId FROM transactions t
+                SELECT t.id, t.portfolioId, t.linkedTransactionId FROM transactions t
                 JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
                 WHERE t.id = ? AND pu.user_id = ? AND t.type = 'DIVIDEND'
             `).get(req.params.id, req.user.id);
@@ -110,7 +128,16 @@ module.exports = function(dependencies) {
                 UPDATE transactions SET date = ?, amount = ?, tax = ? WHERE id = ?
             `).run(date, netVal, taxVal, tx.id);
 
-            database.recalculatePortfolio(tx.portfolioId);
+            if (tx.linkedTransactionId) {
+                database.db.prepare(`
+                    UPDATE transactions SET date = ?, amount = ? WHERE id = ? AND type = 'WITHDRAWAL'
+                `).run(date, netVal, tx.linkedTransactionId);
+            }
+
+            const liveRate = await getEurUsdRate();
+            database.recalculatePortfolio(tx.portfolioId, liveRate);
+            if (triggerHistoryRebuild) triggerHistoryRebuild(tx.portfolioId);
+            if (clearPerformanceCache) clearPerformanceCache();
             res.json({ success: true });
         } catch (err) { res.status(500).json({ error: err.message }); }
     });
@@ -122,15 +149,21 @@ module.exports = function(dependencies) {
     router.delete('/dividends/transactions/:id', requireAuth, async (req, res) => {
         try {
             const tx = database.db.prepare(`
-                SELECT t.id, t.portfolioId FROM transactions t
+                SELECT t.id, t.portfolioId, t.linkedTransactionId FROM transactions t
                 JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
                 WHERE t.id = ? AND pu.user_id = ? AND t.type = 'DIVIDEND'
             `).get(req.params.id, req.user.id);
 
             if (!tx) return res.status(404).json({ error: 'Transazione non trovata' });
 
+            if (tx.linkedTransactionId) {
+                database.db.prepare(`DELETE FROM transactions WHERE id = ?`).run(tx.linkedTransactionId);
+            }
             database.db.prepare(`DELETE FROM transactions WHERE id = ?`).run(tx.id);
-            database.recalculatePortfolio(tx.portfolioId);
+            const liveRate = await getEurUsdRate();
+            database.recalculatePortfolio(tx.portfolioId, liveRate);
+            if (triggerHistoryRebuild) triggerHistoryRebuild(tx.portfolioId);
+            if (clearPerformanceCache) clearPerformanceCache();
             res.json({ success: true });
         } catch (err) { res.status(500).json({ error: err.message }); }
     });

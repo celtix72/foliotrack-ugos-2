@@ -14,6 +14,17 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
         const reportsRes = await fetch('/api/analytics/reports?range=1Y');
         const reportsData = await reportsRes.json();
 
+        // Fetch Dividend Projections
+        let divProjData = null;
+        try {
+            const divProjRes = await fetch('/api/analytics/dividend-projections');
+            if (divProjRes.ok) {
+                divProjData = await divProjRes.json();
+            }
+        } catch (e) {
+            console.warn('[PDF Report] Unable to fetch dividend projections:', e);
+        }
+
         // Fetch Portfolios
         const portfoliosRes = await fetch('/api/portfolios');
         const portfoliosData = await portfoliosRes.json();
@@ -268,7 +279,7 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
                 doc.text(mainText, x + 8, y + 31);
 
                 if (subText) {
-                    doc.setFontSize(8);
+                    doc.setFontSize(subText.length > 20 ? 6.8 : 8);
                     doc.setFont("helvetica", "bold");
                     doc.setTextColor(subColor[0], subColor[1], subColor[2]);
                     doc.text(subText, x + 8, y + 44);
@@ -277,11 +288,20 @@ window.generateDetailedPDFReport = async function(buttonEl, mode = 'classic') {
 
             const totalDividendsAllTime = reportsData?.metrics?.totalDividendsAllTime || (reportsData?.assetGains ? reportsData.assetGains.reduce((s, a) => s + (a.dividends || 0), 0) : 0);
 
+            const projYear = divProjData?.year || new Date().getFullYear();
+            const projTotal = (divProjData && typeof divProjData.totalExpected === 'number' && divProjData.totalExpected > 0)
+                ? divProjData.totalExpected
+                : (reportsData?.metrics?.estimatedDividends || totalEstimatedDividends);
+
+            const divSubText = (divProjData && typeof divProjData.totalReceived === 'number')
+                ? `Stima ${projYear} (YTD: ${formatCurrencyShort(divProjData.totalReceived)})`
+                : `Proiezione ${projYear}`;
+
             const gainColor = totalGainEUR >= 0 ? [16, 185, 129] : [239, 68, 68];
             drawKpiCard(marginLeft, startY, kpiCardWidth, kpiCardHeight, 'Patrimonio Netto', formatCurrencyShort(totalCurrentValEUR), `Valuta Base: EUR`, [100, 116, 139]);
             drawKpiCard(marginLeft + kpiCardWidth + 10, startY, kpiCardWidth, kpiCardHeight, 'Capitale Investito', formatCurrencyShort(totalInvestedEUR), `Costo di Carico`, [100, 116, 139]);
             drawKpiCard(marginLeft + (kpiCardWidth * 2) + 20, startY, kpiCardWidth, kpiCardHeight, 'Gain / Loss Totale', formatCurrencyShort(totalGainEUR), formatPercent(totalGainPct), gainColor);
-            drawKpiCard(marginLeft + (kpiCardWidth * 3) + 30, startY, kpiCardWidth, kpiCardHeight, 'Dividendi Previsti', formatCurrencyShort(totalEstimatedDividends), `Proiezione Annua`, [16, 185, 129]);
+            drawKpiCard(marginLeft + (kpiCardWidth * 3) + 30, startY, kpiCardWidth, kpiCardHeight, 'Dividendi Previsti', formatCurrencyShort(projTotal), divSubText, [16, 185, 129]);
 
             startY += kpiCardHeight + 18;
 

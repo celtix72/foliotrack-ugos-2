@@ -159,6 +159,21 @@
                             </div>
                         </div>
 
+                        <div id="confirm-is-confirmed-wrap" class="hidden pt-2 border-t border-slate-100 dark:border-slate-800">
+                            <label class="flex items-center gap-2 cursor-pointer select-none">
+                                <input type="checkbox" id="confirm-is-confirmed" onchange="toggleMobManualConfirmed()" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500/20 cursor-pointer">
+                                <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300">Registra subito come incassato</span>
+                            </label>
+                        </div>
+
+                        <div id="confirm-withdrawal-group" class="hidden pt-1 flex items-start gap-2.5 p-2.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                            <input type="checkbox" id="confirm-create-withdrawal" class="mt-0.5 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500/20 cursor-pointer">
+                            <label for="confirm-create-withdrawal" class="text-[11px] font-bold text-slate-700 dark:text-slate-300 select-none cursor-pointer">
+                                Crea prelievo di liquidità equivalente
+                                <span class="block text-[9px] font-normal text-slate-400">Non incrementa la liquidità del portafoglio (preleva il netto nella stessa data).</span>
+                            </label>
+                        </div>
+
                         <div class="pt-1">
                             <button type="submit" id="confirm-submit-btn" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg text-xs transition-colors shadow-sm">
                                 Conferma e Salva
@@ -316,6 +331,34 @@
                 }
             }
 
+            window.toggleMobManualConfirmed = async () => {
+                const isConf = document.getElementById('confirm-is-confirmed')?.checked;
+                const pGroup = document.getElementById('confirm-portfolio-group');
+                const wGroup = document.getElementById('confirm-withdrawal-group');
+                const pSel = document.getElementById('confirm-portfolio');
+                const submitBtn = document.getElementById('confirm-submit-btn');
+
+                if (isConf) {
+                    pGroup.classList.remove('hidden');
+                    pSel.required = true;
+                    wGroup.classList.remove('hidden');
+                    submitBtn.innerText = 'Registra Dividendo Incassato';
+                    if (pSel.options.length <= 1) {
+                        try {
+                            const res = await fetch('/api/portfolios');
+                            const pData = await res.json();
+                            pSel.innerHTML = '<option value="" disabled selected>Seleziona portafoglio...</option>' + 
+                                            (pData.portfolios || []).map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+                        } catch(e) { console.error(e); }
+                    }
+                } else {
+                    pGroup.classList.add('hidden');
+                    pSel.required = false;
+                    wGroup.classList.add('hidden');
+                    submitBtn.innerText = 'Salva Previsione';
+                }
+            };
+
             window.openManualModal = () => {
                 document.getElementById('manual-modal-title').innerText = 'Nuova Previsione';
                 document.getElementById('confirm-id').value = '';
@@ -336,8 +379,19 @@
                 document.getElementById('confirm-tax').value = '0.00';
                 document.getElementById('confirm-portfolio-group').classList.add('hidden');
                 document.getElementById('confirm-portfolio').required = false;
+
+                const isConfWrap = document.getElementById('confirm-is-confirmed-wrap');
+                if (isConfWrap) isConfWrap.classList.remove('hidden');
+                const isConfChk = document.getElementById('confirm-is-confirmed');
+                if (isConfChk) isConfChk.checked = false;
+
+                const withWrap = document.getElementById('confirm-withdrawal-group');
+                if (withWrap) withWrap.classList.add('hidden');
+                const withChk = document.getElementById('confirm-create-withdrawal');
+                if (withChk) withChk.checked = false;
+
                 document.getElementById('confirm-submit-btn').innerText = 'Salva Previsione';
-                document.getElementById('confirm-net-preview').innerText = '€ 0.00';
+                document.getElementById('confirm-net').value = '0.00';
                 document.getElementById('manual-modal').classList.remove('hidden');
             };
 
@@ -358,6 +412,13 @@
                 document.getElementById('confirm-portfolio').required = true;
                 document.getElementById('confirm-submit-btn').innerText = 'Conferma e Salva';
                 
+                const isConfWrap = document.getElementById('confirm-is-confirmed-wrap');
+                if (isConfWrap) isConfWrap.classList.add('hidden');
+                const withWrap = document.getElementById('confirm-withdrawal-group');
+                if (withWrap) withWrap.classList.remove('hidden');
+                const withChk = document.getElementById('confirm-create-withdrawal');
+                if (withChk) withChk.checked = false;
+
                 try {
                     const res = await fetch('/api/portfolios');
                     const pData = await res.json();
@@ -385,6 +446,14 @@
                 document.getElementById('confirm-tax').value = (item.tax || 0).toFixed(2);
                 document.getElementById('confirm-portfolio-group').classList.add('hidden');
                 document.getElementById('confirm-portfolio').required = false;
+
+                const isConfWrap = document.getElementById('confirm-is-confirmed-wrap');
+                if (isConfWrap) isConfWrap.classList.add('hidden');
+                const withWrap = document.getElementById('confirm-withdrawal-group');
+                if (withWrap) withWrap.classList.add('hidden');
+                const withChk = document.getElementById('confirm-create-withdrawal');
+                if (withChk) withChk.checked = false;
+
                 document.getElementById('confirm-submit-btn').innerText = 'Aggiorna Transazione';
 
                 updateNetPreview();
@@ -428,6 +497,8 @@
                 const date = document.getElementById('confirm-date').value;
                 const grossAmount = document.getElementById('confirm-gross').value;
                 const tax = document.getElementById('confirm-tax').value;
+                const createWithdrawal = document.getElementById('confirm-create-withdrawal')?.checked || false;
+                const isConfirmed = document.getElementById('confirm-is-confirmed')?.checked || false;
 
                 try {
                     let url, method, body;
@@ -441,15 +512,31 @@
                         // Conferma proiezione esistente
                         url = `/api/dividends/projections/${id}/confirm`;
                         method = 'POST';
-                        body = JSON.stringify({ portfolioId, ticker, date, grossAmount, tax });
+                        body = JSON.stringify({ portfolioId, ticker, date, grossAmount, tax, createWithdrawal });
+                    } else if (isConfirmed) {
+                        // Nuovo dividendo manuale registrato subito come incassato
+                        const grossVal = parseFloat(grossAmount) || 0;
+                        const taxVal = parseFloat(tax) || 0;
+                        const netVal = grossVal - taxVal;
+                        url = '/api/transactions';
+                        method = 'POST';
+                        body = JSON.stringify({
+                            portfolioId: parseInt(portfolioId, 10),
+                            type: 'DIVIDEND',
+                            ticker: ticker ? ticker.toUpperCase().trim() : '',
+                            date,
+                            grossAmount: grossVal,
+                            tax: taxVal,
+                            amount: netVal,
+                            price: 0,
+                            shares: 0,
+                            notes: 'Dividendo manuale',
+                            createWithdrawal
+                        });
                     } else {
                         // Nuova proiezione manuale
                         url = '/api/dividends/projections';
                         method = 'POST';
-                        // Per le proiezioni manuali il backend si aspetta 'exDate' e 'amount' (unitario o totale?)
-                        // Vedendo il server.js: amount è l'importo unitario.
-                        // Ma noi qui abbiamo il lordo totale.
-                        // Restauro la logica originale per il manuale se necessario, o adatto.
                         // In server.js POST /api/dividends/projections prende { ticker, exDate, amount }
                         body = JSON.stringify({ ticker: document.getElementById('confirm-ticker-select')?.value, exDate: date, amount: grossAmount });
                     }

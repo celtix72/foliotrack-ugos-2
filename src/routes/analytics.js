@@ -573,143 +573,148 @@ module.exports = function (dependencies) {
         }
     });
 
+    async function calculateDividendProjections(userId) {
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const liveRate = await getEurUsdRate();
+
+        const openPositions = database.db.prepare(`
+            SELECT COALESCE(NULLIF(NULLIF(t.assetTicker, 'null'), ''), 'Sconosciuto') as ticker,
+                   a.name as name, a.isin as isin, a.type as assetType,
+                   a.currentPrice,
+                   a.currency as assetCurrency,
+                   SUM(CASE WHEN t.type = 'BUY' THEN t.quantity WHEN t.type = 'SELL' THEN -t.quantity ELSE 0 END) as balance
+            FROM transactions t 
+            JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
+            LEFT JOIN assets a ON t.assetTicker = a.ticker
+            WHERE pu.user_id = ?
+            GROUP BY ticker HAVING balance > 0.0001
+        `).all(userId);
+
+        const allDivTx = database.db.prepare(`
+            SELECT t.id as txId,
+                   COALESCE(NULLIF(NULLIF(t.assetTicker, 'null'), ''), 'Sconosciuto') as ticker,
+                   t.date, t.amount, t.quantity, t.price, t.tax, t.exchangeRate, p.currency as portCurrency
+            FROM transactions t 
+            JOIN portfolios p ON t.portfolioId = p.id 
+            JOIN portfolio_users pu ON p.id = pu.portfolio_id
+            WHERE t.type = 'DIVIDEND' AND t.date LIKE ? AND pu.user_id = ?
+        `).all(currentYear + '-%', userId);
+
+        const savedProjections = database.db.prepare(`SELECT * FROM dividend_projections WHERE year = ? AND user_id = ?`).all(currentYear, userId);
+        const taxRatesRaw = database.db.prepare(`SELECT asset_type, rate FROM tax_rates WHERE user_id = ?`).all(userId);
+        const taxMap = Object.fromEntries(taxRatesRaw.map(tr => [tr.asset_type, tr.rate]));
+
+        const listItems = [];
+        const actualByMonth = Array(12).fill(0);
+        const projectedByMonth = Array(12).fill(0);
+        const tickersByMonth = Array.from({length: 12}, () => new Set());
+        let totalExpected = 0;
+        let totalReceived = 0;
+
+        const toEUR = (amount, currency, exchangeRate) => {
+            if (currency === 'USD' && liveRate > 0) return amount / liveRate;
+            if (exchangeRate && exchangeRate !== 1) return amount / exchangeRate;
+            return amount;
+        };
+
+        allDivTx.forEach(d => {
+            const pos = openPositions.find(p => p.ticker === d.ticker);
+            if (!pos) return;
+
+            const m = parseInt(d.date.split('-')[1]) - 1;
+            const amtEUR = toEUR(d.amount || (d.quantity * d.price - (d.tax || 0)), d.portCurrency, d.exchangeRate);
+            actualByMonth[m] += amtEUR;
+            totalReceived += amtEUR;
+            tickersByMonth[m].add(d.ticker);
+            
+            const gross = amtEUR + toEUR(d.tax || 0, d.portCurrency, d.exchangeRate);
+            
+            let realYield = 0;
+            if (pos && pos.currentPrice > 0 && pos.balance > 0) {
+                const priceInEUR = (pos.assetCurrency === 'USD' && liveRate > 0) ? pos.currentPrice / liveRate : pos.currentPrice;
+                const positionValueEUR = pos.balance * priceInEUR;
+                if (positionValueEUR > 0) {
+                    realYield = gross / positionValueEUR;
+                }
+            }
+
+            listItems.push({
+                id: null, txId: d.txId, ticker: d.ticker, name: pos.name, isin: pos.isin, assetType: pos.assetType, date: d.date, tag: 'REGISTRATO',
+                amount: null, totalAmount: amtEUR, gross, tax: d.tax || 0, annualProjected: 0, yield: 0, realYield
+            });
+        });
+
+        savedProjections.forEach(p => {
+            const m = parseInt(p.exDate.split('-')[1]) - 1;
+            
+            let grossEUR = p.gross;
+            let taxEUR = p.tax;
+            let netEUR = p.totalAmount;
+
+            if (grossEUR === 0 && netEUR > 0 && p.tag !== 'STORICO' && p.tag !== 'SIMULATO') {
+                grossEUR = p.totalAmount;
+                const asset = openPositions.find(op => op.ticker === p.ticker);
+                const assetType = asset ? asset.assetType : 'Azioni';
+                let taxRate = taxMap[assetType];
+                if (taxRate === undefined) taxRate = 26.0;
+                taxEUR = grossEUR * (taxRate / 100);
+                netEUR = grossEUR - taxEUR;
+            }
+
+            if (p.tag === 'MANUALE') {
+                if (p.tax !== undefined && p.tax > 0) {
+                    taxEUR = p.tax;
+                    grossEUR = p.gross > 0 ? p.gross : p.totalAmount + p.tax;
+                    netEUR = p.totalAmount;
+                }
+            }
+
+            projectedByMonth[m] += netEUR;
+            totalExpected += netEUR;
+            tickersByMonth[m].add(p.ticker);
+            const asset = openPositions.find(op => op.ticker === p.ticker);
+            listItems.push({
+                id: p.id, ticker: p.ticker, name: p.name, isin: asset ? asset.isin : null, assetType: asset ? asset.assetType : null, date: p.exDate, tag: p.tag,
+                amount: p.amount, 
+                totalAmount: netEUR, 
+                gross: grossEUR, 
+                tax: taxEUR, 
+                annualProjected: 0, yield: p.yield, isCustom: p.isCustom
+            });
+        });
+
+        const distinctTickers = [...new Set(listItems.map(l => l.ticker))];
+        for (const t of distinctTickers) {
+            const tot = listItems.filter(l => l.ticker === t).reduce((sum, l) => sum + l.totalAmount, 0);
+            listItems.filter(l => l.ticker === t).forEach(l => l.annualProjected = tot);
+        }
+
+        const months = [];
+        const MONTH_NAMES = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+        for (let i = 0; i < 12; i++) {
+            months.push({
+                month: i + 1, name: MONTH_NAMES[i], actual: actualByMonth[i], projected: projectedByMonth[i],
+                display: projectedByMonth[i], tickers: Array.from(tickersByMonth[i])
+            });
+        }
+
+        return {
+            year: currentYear,
+            totalExpected: totalReceived + totalExpected,
+            totalReceived,
+            totalRemaining: totalExpected,
+            months,
+            assets: listItems.sort((a,b) => new Date(b.date) - new Date(a.date)),
+            openTickers: openPositions.map(p => ({ ticker: p.ticker, name: p.name }))
+        };
+    }
+
     // GET /api/analytics/dividend-projections
     router.get('/analytics/dividend-projections', requireAuth, async (req, res) => {
         try {
-            const now = new Date();
-            const currentYear = now.getFullYear();
-            const liveRate = await getEurUsdRate();
-
-            const openPositions = database.db.prepare(`
-                SELECT COALESCE(NULLIF(NULLIF(t.assetTicker, 'null'), ''), 'Sconosciuto') as ticker,
-                       a.name as name, a.isin as isin, a.type as assetType,
-                       a.currentPrice,
-                       a.currency as assetCurrency,
-                       SUM(CASE WHEN t.type = 'BUY' THEN t.quantity WHEN t.type = 'SELL' THEN -t.quantity ELSE 0 END) as balance
-                FROM transactions t 
-                JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
-                LEFT JOIN assets a ON t.assetTicker = a.ticker
-                WHERE pu.user_id = ?
-                GROUP BY ticker HAVING balance > 0.0001
-            `).all(req.user.id);
-
-            const allDivTx = database.db.prepare(`
-                SELECT t.id as txId,
-                       COALESCE(NULLIF(NULLIF(t.assetTicker, 'null'), ''), 'Sconosciuto') as ticker,
-                       t.date, t.amount, t.quantity, t.price, t.tax, t.exchangeRate, p.currency as portCurrency
-                FROM transactions t 
-                JOIN portfolios p ON t.portfolioId = p.id 
-                JOIN portfolio_users pu ON p.id = pu.portfolio_id
-                WHERE t.type = 'DIVIDEND' AND t.date LIKE ? AND pu.user_id = ?
-            `).all(currentYear + '-%', req.user.id);
-
-            const savedProjections = database.db.prepare(`SELECT * FROM dividend_projections WHERE year = ? AND user_id = ?`).all(currentYear, req.user.id);
-            const taxRatesRaw = database.db.prepare(`SELECT asset_type, rate FROM tax_rates WHERE user_id = ?`).all(req.user.id);
-            const taxMap = Object.fromEntries(taxRatesRaw.map(tr => [tr.asset_type, tr.rate]));
-
-            const listItems = [];
-            const actualByMonth = Array(12).fill(0);
-            const projectedByMonth = Array(12).fill(0);
-            const tickersByMonth = Array.from({length: 12}, () => new Set());
-            let totalExpected = 0;
-            let totalReceived = 0;
-
-            const toEUR = (amount, currency, exchangeRate) => {
-                if (currency === 'USD' && liveRate > 0) return amount / liveRate;
-                if (exchangeRate && exchangeRate !== 1) return amount / exchangeRate;
-                return amount;
-            };
-
-            allDivTx.forEach(d => {
-                const pos = openPositions.find(p => p.ticker === d.ticker);
-                if (!pos) return;
-
-                const m = parseInt(d.date.split('-')[1]) - 1;
-                const amtEUR = toEUR(d.amount || (d.quantity * d.price - (d.tax || 0)), d.portCurrency, d.exchangeRate);
-                actualByMonth[m] += amtEUR;
-                totalReceived += amtEUR;
-                tickersByMonth[m].add(d.ticker);
-                
-                const gross = amtEUR + toEUR(d.tax || 0, d.portCurrency, d.exchangeRate);
-                
-                let realYield = 0;
-                if (pos && pos.currentPrice > 0 && pos.balance > 0) {
-                    const priceInEUR = (pos.assetCurrency === 'USD' && liveRate > 0) ? pos.currentPrice / liveRate : pos.currentPrice;
-                    const positionValueEUR = pos.balance * priceInEUR;
-                    if (positionValueEUR > 0) {
-                        realYield = gross / positionValueEUR;
-                    }
-                }
-
-                listItems.push({
-                    id: null, txId: d.txId, ticker: d.ticker, name: pos.name, isin: pos.isin, assetType: pos.assetType, date: d.date, tag: 'REGISTRATO',
-                    amount: null, totalAmount: amtEUR, gross, tax: d.tax || 0, annualProjected: 0, yield: 0, realYield
-                });
-            });
-
-            savedProjections.forEach(p => {
-                const m = parseInt(p.exDate.split('-')[1]) - 1;
-                
-                let grossEUR = p.gross;
-                let taxEUR = p.tax;
-                let netEUR = p.totalAmount;
-
-                if (grossEUR === 0 && netEUR > 0 && p.tag !== 'STORICO' && p.tag !== 'SIMULATO') {
-                    grossEUR = p.totalAmount;
-                    const asset = openPositions.find(op => op.ticker === p.ticker);
-                    const assetType = asset ? asset.assetType : 'Azioni';
-                    let taxRate = taxMap[assetType];
-                    if (taxRate === undefined) taxRate = 26.0;
-                    taxEUR = grossEUR * (taxRate / 100);
-                    netEUR = grossEUR - taxEUR;
-                }
-
-                if (p.tag === 'MANUALE') {
-                    if (p.tax !== undefined && p.tax > 0) {
-                        taxEUR = p.tax;
-                        grossEUR = p.gross > 0 ? p.gross : p.totalAmount + p.tax;
-                        netEUR = p.totalAmount;
-                    }
-                }
-
-                projectedByMonth[m] += netEUR;
-                totalExpected += netEUR;
-                tickersByMonth[m].add(p.ticker);
-                const asset = openPositions.find(op => op.ticker === p.ticker);
-                listItems.push({
-                    id: p.id, ticker: p.ticker, name: p.name, isin: asset ? asset.isin : null, assetType: asset ? asset.assetType : null, date: p.exDate, tag: p.tag,
-                    amount: p.amount, 
-                    totalAmount: netEUR, 
-                    gross: grossEUR, 
-                    tax: taxEUR, 
-                    annualProjected: 0, yield: p.yield, isCustom: p.isCustom
-                });
-            });
-
-            const distinctTickers = [...new Set(listItems.map(l => l.ticker))];
-            for (const t of distinctTickers) {
-                const tot = listItems.filter(l => l.ticker === t).reduce((sum, l) => sum + l.totalAmount, 0);
-                listItems.filter(l => l.ticker === t).forEach(l => l.annualProjected = tot);
-            }
-
-            const months = [];
-            const MONTH_NAMES = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
-            for (let i = 0; i < 12; i++) {
-                months.push({
-                    month: i + 1, name: MONTH_NAMES[i], actual: actualByMonth[i], projected: projectedByMonth[i],
-                    display: projectedByMonth[i], tickers: Array.from(tickersByMonth[i])
-                });
-            }
-
-            res.json({
-                year: currentYear,
-                totalExpected: totalReceived + totalExpected,
-                totalReceived,
-                totalRemaining: totalExpected,
-                months,
-                assets: listItems.sort((a,b) => new Date(b.date) - new Date(a.date)),
-                openTickers: openPositions.map(p => ({ ticker: p.ticker, name: p.name }))
-            });
+            const data = await calculateDividendProjections(req.user.id);
+            res.json(data);
         } catch (err) {
             logger.error('Dividend projections error', err);
             res.status(500).json({ error: err.message });
@@ -1416,14 +1421,26 @@ module.exports = function (dependencies) {
             const totalDividendsAllTime = Object.values(annualGainsMap).reduce((s, ag) => s + (ag.dividends || 0), 0);
             const totalDividendsCurrentYear = annualGainsMap[currentYearString]?.dividends || 0;
             const totalDividends12M = dividends.reduce((s, x) => s + (x.amount || 0), 0);
-            const estimatedDividendYield = currentTotalValue > 0 ? (totalEstimatedDividendsEUR / currentTotalValue) : 0;
+
+            // Use the comprehensive dividend projections engine if available for the user
+            let totalProjectedAnnualDividendsEUR = totalEstimatedDividendsEUR;
+            try {
+                const divProj = await calculateDividendProjections(req.user.id);
+                if (divProj && typeof divProj.totalExpected === 'number' && divProj.totalExpected > 0) {
+                    totalProjectedAnnualDividendsEUR = divProj.totalExpected;
+                }
+            } catch (projErr) {
+                console.warn('Could not integrate dividend projections into reports:', projErr.message);
+            }
+
+            const estimatedDividendYield = currentTotalValue > 0 ? (totalProjectedAnnualDividendsEUR / currentTotalValue) : 0;
 
             const annualGains = Object.values(annualGainsMap).map(ag => ({
                 ...ag,
                 realized: Math.round(ag.realized * 100) / 100,
                 dividends: Math.round(ag.dividends * 100) / 100,
                 unrealized: Math.round(ag.unrealized * 100) / 100,
-                projectedDividends: ag.year === currentYearString ? Math.round(totalEstimatedDividendsEUR * 100) / 100 : undefined
+                projectedDividends: ag.year === currentYearString ? Math.round(totalProjectedAnnualDividendsEUR * 100) / 100 : undefined
             })).sort((a,b) => b.year - a.year);
 
             // Finalize assetGains
@@ -1481,7 +1498,7 @@ module.exports = function (dependencies) {
                         const stdDevValue = Math.sqrt(returns.map(x => Math.pow(x - meanValue, 2)).reduce((a, b) => a + b, 0) / returns.length);
                         return stdDevValue > 0 ? (meanValue - riskFreeMonthly) / stdDevValue : 0;
                     })(),
-                    estimatedDividends: Math.round(totalEstimatedDividendsEUR * 100) / 100,
+                    estimatedDividends: Math.round(totalProjectedAnnualDividendsEUR * 100) / 100,
                     estimatedDividendYield: Math.round(estimatedDividendYield * 10000) / 10000,
                     totalDividendsCurrentYear: Math.round(totalDividendsCurrentYear * 100) / 100,
                     totalDividendsAllTime: Math.round(totalDividendsAllTime * 100) / 100,

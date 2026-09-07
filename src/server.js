@@ -545,7 +545,7 @@ app.use('/api', require('./routes/transactions')({
 // ─── Dividends Routes ─────────────────────────────────────────────────────────
 app.use('/api', require('./routes/dividends')({
     requireAuth, requirePortfolioAccess, database, logger, getEurUsdRate,
-    refreshDividendProjections
+    refreshDividendProjections, triggerHistoryRebuild, clearPerformanceCache
 }));
 
 // ─── Watchlist Routes ─────────────────────────────────────────────────────────

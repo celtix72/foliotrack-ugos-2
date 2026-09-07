@@ -147,7 +147,7 @@ module.exports = function(dependencies) {
     router.post('/transactions', requireAuth, requirePortfolioAccess, async (req, res) => {
         const { 
             portfolioId, type, assetTicker, date, quantity, price, 
-            commission, tax, exchangeRate, amount, destinationPortfolioId, 
+            commission, tax, exchangeRate, amount, destinationPortfolioId, createWithdrawal,
             isin, dataSource, assetName, assetCurrency, assetType, assetExchange, assetCountry 
         } = req.body;
         
@@ -217,6 +217,27 @@ module.exports = function(dependencies) {
             parseFloat(commission || 0), parseFloat(tax || 0),
             finalExRate, parseFloat(amount || 0)
         );
+
+        const divTxId = result.lastInsertRowid;
+
+        // Automation for DIVIDEND: Create an equivalent WITHDRAWAL on the same date if requested
+        if (type === 'DIVIDEND' && createWithdrawal) {
+            const netAmount = parseFloat(amount || 0) > 0 
+                ? parseFloat(amount || 0) 
+                : ((finalQty * finalPrice - parseFloat(commission || 0) - parseFloat(tax || 0)) / finalExRate);
+
+            if (netAmount > 0) {
+                const wRes = database.db.prepare(`
+                    INSERT INTO transactions (portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount, linkedTransactionId)
+                    VALUES (?, 'WITHDRAWAL', 'CASH', ?, 0, 0, 0, 0, 1, ?, ?)
+                `).run(parseInt(portfolioId), date || new Date().toISOString().split('T')[0], netAmount, divTxId);
+                const wTxId = wRes.lastInsertRowid;
+
+                database.db.prepare(`
+                    UPDATE transactions SET linkedTransactionId = ? WHERE id = ?
+                `).run(wTxId, divTxId);
+            }
+        }
 
         // Dividend Notification
         if (type === 'DIVIDEND' && sanitizedTicker) {
