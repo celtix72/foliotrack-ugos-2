@@ -855,7 +855,9 @@
         const cur = a.currency || 'EUR';
 
         if (a.aiBadges && a.aiBadges.length > 0) {
-          const badgesHtml = a.aiBadges.map(badge => {
+          // Keep at most 2 most recent AI target price badges in V2
+          const badgesToRender = a.aiBadges.slice(0, 2);
+          const badgesHtml = badgesToRender.map(badge => {
             const engine = badge.engine || 'X';
             let icon = 'smart_toy';
             let iconColor = '#94a3b8'; // fallback slate
@@ -1153,6 +1155,14 @@
         const absVarPct = hasTotalGain ? `${_absPct >= 0 ? '+' : ''}${_absPct.toFixed(1)}%` : '—';
         const absVarValStr = hasTotalGain ? `${_totGainSign}${fmtPriceCompact(_totalGain, _totGainCur, 0)}` : '—';
 
+        const noteBadge = renderNoteBadgeMob(a.ticker);
+        const noteInCol1 = (_marketLayoutVersion === 'new')
+          ? (noteBadge ? `<span style="margin-left:3px; display:inline-block; vertical-align:middle;">${noteBadge}</span>` : '')
+          : '';
+        const noteInCol2 = (_marketLayoutVersion === 'legacy')
+          ? noteBadge
+          : '';
+
         return `
           <div class="mob-holding-swipe-container"
                ontouchstart="handleTouchStart(event,this)"
@@ -1171,13 +1181,13 @@
                     <span class="material-symbols-outlined" style="font-size: calc(11px * var(--mkcard-scale, 1)); font-weight: bold;">query_stats</span>
                   </span>
                 </div>
-                <span style="font-size:calc(13px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${priceFmt}&nbsp;${todayVarBadge}&nbsp;<span style="background:rgba(100,116,139,0.1); color:var(--mob-text-muted); border-radius:3px; padding:1px 4px; font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; margin-left:2px; display:inline-block; vertical-align:middle">${exchangeLabel}</span></span>
+                <span style="font-size:calc(13px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${priceFmt}&nbsp;${todayVarBadge}&nbsp;<span style="background:rgba(100,116,139,0.1); color:var(--mob-text-muted); border-radius:3px; padding:1px 4px; font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; margin-left:2px; display:inline-block; vertical-align:middle">${exchangeLabel}</span>${noteInCol1}</span>
               </div>
 
               <!-- Col 2: AI Target Price TAG -->
               <div style="display:flex; flex-direction:row; align-items:center; gap:3px; min-width:0; height:100%">
                 ${renderAiBadgeMob(a)}
-                ${renderNoteBadgeMob(a.ticker)}
+                ${noteInCol2}
               </div>
 
               <!-- Col 3: Today Var % & Absolute Var % -->
@@ -1298,8 +1308,9 @@
           const bp = openPos.filter(a => getAssetCategoryMob(a) === 'BP');
 
           const renderSectionMob = (items, title) => {
-            if (items.length === 0) return '';
+            if (!items || items.length === 0) return '';
             
+            const secCurrency = (title.includes('USD')) ? 'USD' : 'EUR';
             let totalInvested = 0;
             let totalCumulated = 0;
             let totalDailyGain = 0;
@@ -1330,11 +1341,11 @@
                 </div>
                 <div class="flex items-center gap-3">
                     <div class="text-right font-mono">
-                        <p class="${dailyClr} leading-tight">${dailySgn}${formatCurrency(totalDailyGain, 'EUR', 0)}</p>
+                        <p class="${dailyClr} leading-tight">${dailySgn}${formatCurrency(totalDailyGain, secCurrency, 0)}</p>
                         <p class="text-[8px] font-bold text-yellow-700 dark:text-yellow-500 mt-0.5 uppercase tracking-tighter">Daily</p>
                     </div>
                     <div class="text-right font-mono border-l border-yellow-400/30 dark:border-yellow-700/50 pl-3">
-                        <p class="${clr} leading-tight">${sgn}${formatCurrency(sectionGain, 'EUR', 0)}</p>
+                        <p class="${clr} leading-tight">${sgn}${formatCurrency(sectionGain, secCurrency, 0)}</p>
                         <p class="text-[8px] ${clr} mt-0.5">${sgn}${formatNumber(sectionGainPct, 1)}%</p>
                     </div>
                 </div>
@@ -1345,7 +1356,18 @@
             `;
           };
 
-          posContainer.innerHTML = renderSectionMob(azioni, 'Azioni') +
+          let azHtml = '';
+          if (_marketLayoutVersion === 'new') {
+            const azioniEur = openPos.filter(a => getAssetCategoryMob(a) === 'Azioni' && (a.currency || '').toUpperCase() !== 'USD');
+            const azioniUsd = openPos.filter(a => getAssetCategoryMob(a) === 'Azioni' && (a.currency || '').toUpperCase() === 'USD');
+            azHtml = renderSectionMob(azioniEur, 'Azioni EUR') +
+                     renderSectionMob(azioniUsd, 'Azioni USD');
+          } else {
+            const azioni = openPos.filter(a => getAssetCategoryMob(a) === 'Azioni');
+            azHtml = renderSectionMob(azioni, 'Azioni');
+          }
+
+          posContainer.innerHTML = azHtml +
                                    renderSectionMob(etfs, 'ETF') +
                                    renderSectionMob(obbligazioni, 'Obbligazioni') +
                                    renderSectionMob(cd, 'CD') +
