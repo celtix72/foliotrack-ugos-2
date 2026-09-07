@@ -795,7 +795,21 @@ router.get('/assets', requireAuth, async (req, res) => {
         const isToday = a.quoteDate === today;
         const isUS = isUSMarket(a);
         const openedToday = isUS ? marketStatus.US_openedToday : marketStatus.EU_openedToday;
-        const showVariation = isToday && openedToday;
+        const isMarketOpenNow = isUS ? marketStatus.US : marketStatus.EU;
+        const isManual = a.ticker === 'CASH' || (a.ticker && a.ticker.startsWith('CASH_')) || (a.ticker && (a.ticker.startsWith('CD_') || a.ticker.startsWith('BP_'))) || ['Liquidità', 'Conto Deposito', 'Buono Postale'].includes(a.type) || a.dataSource === 'MANUAL';
+
+        let marketState = 'OPEN';
+        if (isManual) {
+            marketState = 'MANUAL';
+        } else if (!openedToday) {
+            marketState = 'CLOSED';
+        } else if (!isToday) {
+            marketState = 'WAITING_QUOTE';
+        } else if (!isMarketOpenNow) {
+            marketState = 'CLOSED_TODAY';
+        }
+
+        const showVariation = (marketState === 'OPEN' || marketState === 'CLOSED_TODAY');
 
         let totalGainEUR = 0;
         
@@ -833,6 +847,7 @@ router.get('/assets', requireAuth, async (req, res) => {
 
         return { 
             ...a, 
+            marketState,
             totalQuantity: actualTotalQuantity > 0.0001 ? actualTotalQuantity : 0,
             totalCostAssetCurr: actualTotalCostAssetCurr,
             sparkline,

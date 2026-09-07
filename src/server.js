@@ -581,8 +581,8 @@ app.use('/api/history', require('./routes/history')({
 
 // ─── MARKET STATUS LOGIC ─────────────────────────────────────────────────────
 const MARKET_HOURS = {
-    MIL: { open: '09:05', close: '17:30', name: 'Borsa Italiana' },
-    GER: { open: '09:05', close: '17:30', name: 'XETRA' },
+    MIL: { open: '09:00', close: '17:30', name: 'Borsa Italiana' },
+    GER: { open: '09:00', close: '17:30', name: 'XETRA' },
     USA: { open: '15:30', close: '22:00', name: 'NYSE/NASDAQ' }
 };
 
@@ -2927,19 +2927,24 @@ async function updateMarketData(force = false) {
     if (assets.length === 0) return;
     logger.info(`Updating market data for ${assets.length} assets...`);
 
-    for (const asset of assets) {
-        if (!asset.ticker || asset.ticker === 'CASH' || asset.ticker.startsWith('CASH_')) continue;
-        if (asset.ticker.startsWith('CD_') || asset.ticker.startsWith('BP_') || (asset.dataSource && asset.dataSource.toUpperCase() === 'MANUAL')) continue; // Skip constant-value or manual assets
-        if (['Conto Deposito', 'Buono Postale', 'Liquidità'].includes(asset.type)) continue;
-        if (asset.isManual === 1 && (!asset.dataSource || asset.dataSource === 'YF')) continue;
+    const targetAssets = assets.filter(asset => {
+        if (!asset.ticker || asset.ticker === 'CASH' || asset.ticker.startsWith('CASH_')) return false;
+        if (asset.ticker.startsWith('CD_') || asset.ticker.startsWith('BP_') || (asset.dataSource && asset.dataSource.toUpperCase() === 'MANUAL')) return false; // Skip constant-value or manual assets
+        if (['Conto Deposito', 'Buono Postale', 'Liquidità'].includes(asset.type)) return false;
+        if (asset.isManual === 1 && (!asset.dataSource || asset.dataSource === 'YF')) return false;
         
         // If markets are closed, only update assets with 0 price (unless forced)
-        if (!force && !status.anyOpen && asset.currentPrice > 0) continue;
+        if (!force && !status.anyOpen && asset.currentPrice > 0) return false;
+        return true;
+    });
 
+    if (targetAssets.length === 0) return;
+    logger.info(`Updating market data for ${targetAssets.length} assets (concurrency batch size 6)...`);
+
+    async function updateSingleAsset(asset) {
         logger.info(`Updating [${asset.ticker}] using [${asset.dataSource || 'YF'}]...`);
+        let updateData = null;
         try {
-            let updateData = null;
-
             if (asset.dataSource === 'B_ITA' && asset.isin) {
                 const result = await B_ITA(asset.isin, asset.type);
                 if (result.success) {
@@ -3086,8 +3091,6 @@ async function updateMarketData(force = false) {
                 `).all(asset.ticker);
 
                 for (const ua of userAlerts) {
-                    const tsFormatted = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-                    
                     // 1. TARGET PROFIT
                     if (ua.targetPrice > 0 && newPrice >= ua.targetPrice) {
                         const existing = database.db.prepare(`
@@ -3179,12 +3182,11 @@ async function updateMarketData(force = false) {
             }
         } catch (err) {
             if (err.message === 'YF_RATE_LIMIT') {
-                logger.warn('Yahoo Finance API Rate Limit Reached. Suspending current update batch to avoid further blocks.');
-                return; // BREAK the loop and stop the entire update batch
+                throw err;
             }
             if (err.message.includes('bind') || err.message.includes('SQLite3')) {
                 console.log("=== DB BIND ERROR DIAGNOSTIC ===");
-                if (typeof updateData !== 'undefined') {
+                if (typeof updateData !== 'undefined' && updateData) {
                     const params = [
                         updateData.price ?? null,
                         updateData.change ?? null,
@@ -3217,6 +3219,26 @@ async function updateMarketData(force = false) {
             if (asset.dataSource === 'YF' && (err.message.includes('Not Found') || err.message.includes('404'))) {
                 database.db.prepare(`UPDATE assets SET isManual=1 WHERE ticker=?`).run(asset.ticker);
             }
+        }
+    }
+
+    const BATCH_SIZE = 6;
+    let rateLimitHit = false;
+
+    for (let i = 0; i < targetAssets.length; i += BATCH_SIZE) {
+        if (rateLimitHit) break;
+        const batch = targetAssets.slice(i, i + BATCH_SIZE);
+        const results = await Promise.allSettled(batch.map(asset => updateSingleAsset(asset)));
+
+        for (const res of results) {
+            if (res.status === 'rejected' && res.reason && res.reason.message === 'YF_RATE_LIMIT') {
+                logger.warn('Yahoo Finance API Rate Limit Reached. Suspending current update batch to avoid further blocks.');
+                rateLimitHit = true;
+                break;
+            }
+        }
+        if (!rateLimitHit && i + BATCH_SIZE < targetAssets.length) {
+            await new Promise(r => setTimeout(r, 100));
         }
     }
     const liveRate = await getEurUsdRate();
