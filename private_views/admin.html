@@ -3123,19 +3123,33 @@
 
         window.runManualBackup = async () => {
             const btn = document.getElementById('run-backup-btn');
-            if (btn) btn.disabled = true;
+            const origHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">sync</span> Creazione in corso...';
+            }
             try {
-                await fetchAdmin('/api/backups/run', { method: 'POST' });
-                alert('Backup locale creato con successo!');
-                loadBackups();
-            } catch (e) { alert('Errore backup: ' + e.message); }
-            finally { if (btn) btn.disabled = false; }
+                const res = await fetchAdmin('/api/backups/manual', { method: 'POST' });
+                alert(`Backup locale creato con successo!\n(${res?.filename || 'Database salvato'})`);
+                await loadBackups();
+            } catch (e) {
+                alert('Errore backup: ' + e.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                }
+            }
         };
 
         window.restoreBackup = async (filename) => {
             if (!(await ftConfirm(`ATTENZIONE: Ripristinare il database dal backup '${filename}' sovrascriverà tutti i dati attuali. Continuare?`))) return;
             try {
-                await fetchAdmin(`/api/backups/restore/${encodeURIComponent(filename)}`, { method: 'POST' });
+                await fetchAdmin('/api/backups/restore', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename })
+                });
                 alert('Database ripristinato! La pagina verrà ricaricata.');
                 window.location.reload();
             } catch (e) { alert('Errore ripristino: ' + e.message); }
@@ -3145,7 +3159,7 @@
             if (!(await ftConfirm(`Eliminare definitivamente il backup '${filename}'?`))) return;
             try {
                 await fetchAdmin(`/api/backups/${encodeURIComponent(filename)}`, { method: 'DELETE' });
-                loadBackups();
+                await loadBackups();
             } catch (e) { alert('Errore: ' + e.message); }
         };
 

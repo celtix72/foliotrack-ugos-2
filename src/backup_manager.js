@@ -58,17 +58,35 @@ async function createBackup(isScheduled = false) {
 function listBackups() {
     if (!fs.existsSync(BACKUP_DIR)) return [];
     
-    return fs.readdirSync(BACKUP_DIR)
-        .filter(f => f.endsWith('.db.json') || f.endsWith('.zip.json'))
-        .map(f => {
+    const allFiles = fs.readdirSync(BACKUP_DIR);
+    const backupFiles = allFiles.filter(f => f.match(/^(?:backup-[\w.-]+-(?:auto|manual)\.db|foliotrack_backup_[\w.-]+\.zip)$/));
+    
+    const results = [];
+    for (const filename of backupFiles) {
+        const fullPath = path.join(BACKUP_DIR, filename);
+        const metaPath = fullPath + '.json';
+        let meta = null;
+        if (fs.existsSync(metaPath)) {
             try {
-                return JSON.parse(fs.readFileSync(path.join(BACKUP_DIR, f), 'utf8'));
-            } catch (e) {
-                return null;
-            }
-        })
-        .filter(b => b !== null)
-        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+            } catch (e) {}
+        }
+        if (!meta) {
+            try {
+                const stat = fs.statSync(fullPath);
+                meta = {
+                    filename,
+                    timestamp: stat.mtime.toISOString(),
+                    isScheduled: filename.includes('-auto'),
+                    schemaVersion: '1.0',
+                    size: stat.size
+                };
+            } catch (e) {}
+        }
+        if (meta) results.push(meta);
+    }
+
+    return results.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 }
 
 /**

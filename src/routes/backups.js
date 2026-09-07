@@ -21,10 +21,11 @@ module.exports = function (dependencies) {
         res.json(backupManager.listBackups());
     });
 
-    // POST /api/backups/manual (Admin Only)
-    router.post('/manual', requireAuth, requireAdmin, async (req, res) => {
+    // POST /api/backups/manual or /api/backups/run (Admin Only)
+    router.post(['/manual', '/run'], requireAuth, requireAdmin, async (req, res) => {
         try {
             const metadata = await backupManager.createBackup(false);
+            if (logAudit) logAudit(req.user.id, 'BACKUP_CREATE_MANUAL', { filename: metadata.filename }, req);
             res.json(metadata);
         } catch (err) {
             res.status(500).json({ error: err.message });
@@ -113,12 +114,13 @@ module.exports = function (dependencies) {
         }
     });
 
-    // POST /api/backups/restore (Admin Only)
-    router.post('/restore', requireAuth, requireAdmin, async (req, res) => {
+    // POST /api/backups/restore or /api/backups/restore/:filename (Admin Only)
+    router.post(['/restore', '/restore/:filename'], requireAuth, requireAdmin, async (req, res) => {
         try {
-            const { filename } = req.body;
-            if (!filename) return res.status(400).send('Filename required');
+            const filename = req.params.filename || req.body.filename;
+            if (!filename) return res.status(400).json({ error: 'Filename required' });
             await backupManager.restoreBackup(filename);
+            if (logAudit) logAudit(req.user.id, 'BACKUP_RESTORE', { filename }, req);
             res.json({ success: true });
         } catch (err) {
             res.status(500).json({ error: err.message });
