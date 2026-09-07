@@ -619,10 +619,13 @@
         const sign = isPos ? '+' : '';
         const price = (idx.price || 0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
         const change = (idx.changePercent || 0).toFixed(1);
+        const isBtc = (idx.symbol || '').toUpperCase().includes('BTC') || (idx.name || '').toUpperCase().includes('BTC') || (idx.name || '').toUpperCase().includes('BITCOIN');
+        const displayName = isBtc ? 'BTC' : (idx.name || idx.symbol);
+        const priceHtml = isBtc ? `<span class="ticker-price">${price}</span>` : '';
         return `
           <div class="ticker-item">
-            <span class="ticker-name">${idx.name}</span>
-            <span class="ticker-price">${price}</span>
+            <span class="ticker-name">${displayName}</span>
+            ${priceHtml}
             <span style="color:${color}; font-weight:900">${sign}${change}%</span>
           </div>
         `;

@@ -56,9 +56,9 @@ router.get('/market/indices', requireAuth, async (req, res) => {
     const symbols = ['FTSEMIB.MI', 'BTC-USD', '^GSPC', '^IXIC'];
     const names = {
         'FTSEMIB.MI': 'FTSE MIB',
-        'BTC-USD': 'Bitcoin',
+        'BTC-USD': 'BTC',
         '^GSPC': 'S&P 500',
-        '^IXIC': 'Nasdaq'
+        '^IXIC': 'NASDAQ'
     };
     try {
         const quotes = await Promise.all(symbols.map(s => 
