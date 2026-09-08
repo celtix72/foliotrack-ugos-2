@@ -866,17 +866,32 @@
         const tickerSearch = document.getElementById('tm-asset-search')?.value?.trim().toUpperCase();
         const resolvedTicker = tickerHidden || tickerSearch || 'CASH';
 
+        let finalAmount = parseFloat(document.getElementById('tm-amount')?.value) || 0;
+        const qty = parseFloat(document.getElementById('tm-qty')?.value) || 0;
+        const prc = parseFloat(document.getElementById('tm-price')?.value) || 0;
+        const comm = parseFloat(document.getElementById('tm-comm')?.value) || 0;
+        const tax = parseFloat(document.getElementById('tm-tax')?.value) || 0;
+        const fx = parseFloat(document.getElementById('tm-fx')?.value) || 1;
+
+        if ((!finalAmount || finalAmount === 0) && qty > 0 && prc > 0) {
+            if (type === 'BUY') {
+                finalAmount = parseFloat(((qty * prc + comm + tax) / fx).toFixed(2));
+            } else if (type === 'SELL') {
+                finalAmount = parseFloat(((qty * prc - comm - tax) / fx).toFixed(2));
+            }
+        }
+
         const payload = {
             portfolioId: parseInt(portfolioId),
             type,
             date: document.getElementById('tm-date')?.value,
             assetTicker: resolvedTicker,
-            quantity: parseFloat(document.getElementById('tm-qty')?.value) || 0,
-            price: parseFloat(document.getElementById('tm-price')?.value) || 0,
-            commission: parseFloat(document.getElementById('tm-comm')?.value) || 0,
-            tax: parseFloat(document.getElementById('tm-tax')?.value) || 0,
-            exchangeRate: parseFloat(document.getElementById('tm-fx')?.value) || 1,
-            amount: parseFloat(document.getElementById('tm-amount')?.value) || 0,
+            quantity: qty,
+            price: prc,
+            commission: comm,
+            tax: tax,
+            exchangeRate: fx,
+            amount: finalAmount,
             isin: document.getElementById('tm-isin')?.value || null,
             dataSource: source,
             destinationPortfolioId: document.getElementById('tm-dest-portfolio')?.value || null,

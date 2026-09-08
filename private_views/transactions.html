@@ -17,6 +17,17 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
         .sortable-header { cursor: pointer; user-select: none; }
         .sortable-header:hover { color: #6366f1; }
+        .filter-field {
+            font-size: 8.5px !important;
+            font-family: inherit !important;
+            line-height: 1.2 !important;
+        }
+        .filter-field::placeholder {
+            font-size: 8.5px !important;
+        }
+        .filter-field option {
+            font-size: 8.5px !important;
+        }
         .filter-date-input {
             font-size: 8.5px !important;
             line-height: 1.2 !important;
@@ -202,16 +213,16 @@
 
                     <!-- Text Search -->
                     <div class="relative min-w-[130px] max-w-[170px] flex-1 shrink-0">
-                        <span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-[13px]">search</span>
+                        <span class="material-symbols-outlined absolute left-1.5 top-1/2 -translate-y-1/2 text-slate-400 text-[12px]">search</span>
                         <input type="text" id="filter-search" placeholder="Cerca asset, note..." 
-                            class="w-full pl-6 pr-2 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded text-[10px] outline-none focus:border-primary transition-colors h-6.5 leading-none"
+                            class="filter-field w-full pl-5 pr-2 py-0.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded outline-none focus:border-primary transition-colors h-6 leading-none"
                             oninput="applyFilters()"/>
                     </div>
 
                     <!-- Portfolio Select -->
                     <div class="shrink-0 min-w-[110px] max-w-[140px]">
                         <select id="filter-portfolio" onchange="applyFilters()" 
-                            class="w-full px-1.5 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded text-[10px] outline-none focus:border-primary transition-colors font-medium h-6.5">
+                            class="filter-field w-full px-1.5 py-0.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded outline-none focus:border-primary transition-colors font-medium h-6">
                             <option value="all">Tutti i Portafogli</option>
                         </select>
                     </div>
@@ -219,7 +230,7 @@
                     <!-- Type Select -->
                     <div class="shrink-0 min-w-[95px] max-w-[115px]">
                         <select id="filter-type" onchange="applyFilters()" 
-                            class="w-full px-1.5 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded text-[10px] outline-none focus:border-primary transition-colors font-medium h-6.5">
+                            class="filter-field w-full px-1.5 py-0.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded outline-none focus:border-primary transition-colors font-medium h-6">
                             <option value="all">Tutti i Tipi</option>
                             <option value="BUY">BUY - Acquisto</option>
                             <option value="SELL">SELL - Vendita</option>
@@ -242,16 +253,16 @@
 
                     <!-- Quick Date Presets -->
                     <div class="flex items-center gap-0.5 shrink-0 pl-1.5 border-l border-slate-200 dark:border-slate-800">
-                        <button type="button" onclick="setDatePreset('all')" class="preset-btn px-1.5 py-0.5 rounded text-[9px] font-bold bg-primary text-white transition-colors cursor-pointer" data-preset="all">Tutto</button>
-                        <button type="button" onclick="setDatePreset('30d')" class="preset-btn px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer" data-preset="30d">30gg</button>
-                        <button type="button" onclick="setDatePreset('90d')" class="preset-btn px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer" data-preset="90d">90gg</button>
-                        <button type="button" onclick="setDatePreset('ytd')" class="preset-btn px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer" data-preset="ytd">YTD</button>
-                        <button type="button" onclick="setDatePreset('last_year')" class="preset-btn px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer" data-preset="last_year">1 Anno</button>
+                        <button type="button" onclick="setDatePreset('all')" class="preset-btn px-1.5 py-0.5 rounded text-[8.5px] font-bold bg-primary text-white transition-colors cursor-pointer h-6 flex items-center" data-preset="all">Tutto</button>
+                        <button type="button" onclick="setDatePreset('30d')" class="preset-btn px-1.5 py-0.5 rounded text-[8.5px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer h-6 flex items-center" data-preset="30d">30gg</button>
+                        <button type="button" onclick="setDatePreset('90d')" class="preset-btn px-1.5 py-0.5 rounded text-[8.5px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer h-6 flex items-center" data-preset="90d">90gg</button>
+                        <button type="button" onclick="setDatePreset('ytd')" class="preset-btn px-1.5 py-0.5 rounded text-[8.5px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer h-6 flex items-center" data-preset="ytd">YTD</button>
+                        <button type="button" onclick="setDatePreset('last_year')" class="preset-btn px-1.5 py-0.5 rounded text-[8.5px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer h-6 flex items-center" data-preset="last_year">1 Anno</button>
                     </div>
 
                     <!-- Reset Button -->
-                    <button onclick="resetFilters()" class="shrink-0 text-[9.5px] font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center gap-0.5 pl-1.5 border-l border-slate-200 dark:border-slate-800 transition-colors cursor-pointer ml-auto" title="Reimposta filtri">
-                        <span class="material-symbols-outlined text-[13px]">clear_all</span>
+                    <button onclick="resetFilters()" class="shrink-0 text-[8.5px] font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center gap-0.5 pl-1.5 border-l border-slate-200 dark:border-slate-800 transition-colors cursor-pointer ml-auto h-6" title="Reimposta filtri">
+                        <span class="material-symbols-outlined text-[12px]">clear_all</span>
                         <span>Azzera</span>
                     </button>
                 </div>
@@ -579,6 +590,25 @@
             renderTable();
         }
 
+        function getTxAmount(t) {
+            let amt = parseFloat(t.amount || 0);
+            if (!amt && t.quantity && t.price) {
+                const qty = parseFloat(t.quantity) || 0;
+                const price = parseFloat(t.price) || 0;
+                const comm = parseFloat(t.commission) || 0;
+                const tax = parseFloat(t.tax) || 0;
+                const fx = parseFloat(t.exchangeRate) || 1;
+                if (t.type === 'BUY') {
+                    amt = (qty * price + comm + tax) / fx;
+                } else if (t.type === 'SELL' || t.type === 'DIVIDEND') {
+                    amt = (qty * price - comm - tax) / fx;
+                } else {
+                    amt = (qty * price) / fx;
+                }
+            }
+            return amt;
+        }
+
         function sortTransactions() {
             filteredTransactions.sort((a, b) => {
                 let valA = a[sortField];
@@ -587,7 +617,10 @@
                 if (sortField === 'date') {
                     valA = new Date(valA || 0).getTime();
                     valB = new Date(valB || 0).getTime();
-                } else if (['quantity', 'price', 'amount', 'commission', 'tax'].includes(sortField)) {
+                } else if (sortField === 'amount') {
+                    valA = getTxAmount(a);
+                    valB = getTxAmount(b);
+                } else if (['quantity', 'price', 'commission', 'tax'].includes(sortField)) {
                     valA = parseFloat(valA || 0);
                     valB = parseFloat(valB || 0);
                 } else {
@@ -607,7 +640,7 @@
             let dividends = 0;
 
             filteredTransactions.forEach(t => {
-                const amt = parseFloat(t.amount || 0);
+                const amt = getTxAmount(t);
                 if (t.type === 'DIVIDEND') {
                     dividends += amt;
                     inflow += amt;
@@ -694,7 +727,7 @@
                 }
 
                 // Amount
-                const amt = parseFloat(t.amount || 0);
+                const amt = getTxAmount(t);
                 const isPos = t.type === 'SELL' || t.type === 'DIVIDEND' || t.type === 'DEPOSIT';
                 const amtColor = isPos ? 'text-emerald-500 font-bold' : (t.type === 'BUY' || t.type === 'WITHDRAWAL' ? 'text-rose-500 font-bold' : 'text-slate-700 dark:text-slate-300 font-bold');
                 const amtStr = amt ? `${isPos ? '+' : ''}€ ${amt.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-';

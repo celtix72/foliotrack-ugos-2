@@ -124,7 +124,16 @@ module.exports = function(dependencies) {
         
         if (req.user.role === 'admin') {
             query = `
-                SELECT t.*, 
+                SELECT t.id, t.portfolioId, t.type, t.assetTicker, t.date, t.quantity, t.price, t.commission, t.tax, t.exchangeRate,
+                       CASE 
+                           WHEN (t.amount IS NOT NULL AND t.amount != 0) THEN t.amount
+                           WHEN t.type = 'BUY' AND t.quantity > 0 AND t.price > 0 
+                               THEN ROUND((t.quantity * t.price + COALESCE(t.commission, 0) + COALESCE(t.tax, 0)) / COALESCE(NULLIF(t.exchangeRate, 0), 1), 2)
+                           WHEN t.type = 'SELL' AND t.quantity > 0 AND t.price > 0 
+                               THEN ROUND((t.quantity * t.price - COALESCE(t.commission, 0) - COALESCE(t.tax, 0)) / COALESCE(NULLIF(t.exchangeRate, 0), 1), 2)
+                           ELSE COALESCE(t.amount, 0)
+                       END AS amount,
+                       t.notes, t.linkedTransactionId,
                        p.name AS portfolioName, 
                        p.currency AS portfolioCurrency, 
                        a.name AS assetName, 
@@ -138,7 +147,16 @@ module.exports = function(dependencies) {
             `;
         } else {
             query = `
-                SELECT t.*, 
+                SELECT t.id, t.portfolioId, t.type, t.assetTicker, t.date, t.quantity, t.price, t.commission, t.tax, t.exchangeRate,
+                       CASE 
+                           WHEN (t.amount IS NOT NULL AND t.amount != 0) THEN t.amount
+                           WHEN t.type = 'BUY' AND t.quantity > 0 AND t.price > 0 
+                               THEN ROUND((t.quantity * t.price + COALESCE(t.commission, 0) + COALESCE(t.tax, 0)) / COALESCE(NULLIF(t.exchangeRate, 0), 1), 2)
+                           WHEN t.type = 'SELL' AND t.quantity > 0 AND t.price > 0 
+                               THEN ROUND((t.quantity * t.price - COALESCE(t.commission, 0) - COALESCE(t.tax, 0)) / COALESCE(NULLIF(t.exchangeRate, 0), 1), 2)
+                           ELSE COALESCE(t.amount, 0)
+                       END AS amount,
+                       t.notes, t.linkedTransactionId,
                        p.name AS portfolioName, 
                        p.currency AS portfolioCurrency, 
                        a.name AS assetName, 
@@ -229,11 +247,22 @@ module.exports = function(dependencies) {
         let finalQty = parseFloat(quantity || 0);
         let finalPrice = parseFloat(price || 0);
         let finalExRate = parseFloat(exchangeRate || 1);
+        let finalComm = parseFloat(commission || 0);
+        let finalTax = parseFloat(tax || 0);
+        let finalAmount = parseFloat(amount || 0);
 
         // Enforcement for CD_ and BP_ assets: Quantity is always 1, Currency is always EUR
         if (sanitizedTicker && (sanitizedTicker.startsWith('CD_') || sanitizedTicker.startsWith('BP_'))) {
             finalQty = 1.0;
             finalExRate = 1.0;
+        }
+
+        if ((!finalAmount || finalAmount === 0) && finalQty > 0 && finalPrice > 0) {
+            if (type === 'BUY') {
+                finalAmount = parseFloat(((finalQty * finalPrice + finalComm + finalTax) / finalExRate).toFixed(2));
+            } else if (type === 'SELL') {
+                finalAmount = parseFloat(((finalQty * finalPrice - finalComm - finalTax) / finalExRate).toFixed(2));
+            }
         }
 
         const result = database.db.prepare(`
@@ -243,8 +272,8 @@ module.exports = function(dependencies) {
             parseInt(portfolioId), type, sanitizedTicker || '',
             date || new Date().toISOString().split('T')[0],
             finalQty, finalPrice,
-            parseFloat(commission || 0), parseFloat(tax || 0),
-            finalExRate, parseFloat(amount || 0),
+            finalComm, finalTax,
+            finalExRate, finalAmount,
             notes ? notes.trim() : null
         );
 
@@ -579,6 +608,21 @@ module.exports = function(dependencies) {
             }
         }
 
+        let finalQty = parseFloat(quantity !== undefined ? quantity : finalExisting.quantity) || 0;
+        let finalPrice = parseFloat(price !== undefined ? price : finalExisting.price) || 0;
+        let finalComm = parseFloat(commission !== undefined ? commission : finalExisting.commission) || 0;
+        let finalTax = parseFloat(tax !== undefined ? tax : finalExisting.tax) || 0;
+        let finalExRate = parseFloat(exchangeRate !== undefined ? exchangeRate : finalExisting.exchangeRate) || 1;
+        let finalAmount = parseFloat(amount !== undefined ? amount : finalExisting.amount) || 0;
+
+        if ((!finalAmount || finalAmount === 0) && finalQty > 0 && finalPrice > 0) {
+            if (newType === 'BUY') {
+                finalAmount = parseFloat(((finalQty * finalPrice + finalComm + finalTax) / finalExRate).toFixed(2));
+            } else if (newType === 'SELL') {
+                finalAmount = parseFloat(((finalQty * finalPrice - finalComm - finalTax) / finalExRate).toFixed(2));
+            }
+        }
+
         database.db.prepare(`
             UPDATE transactions 
             SET portfolioId = ?, type = ?, assetTicker = ?, date = ?, quantity = ?, price = ?, commission = ?, tax = ?, exchangeRate = ?, amount = ?, notes = ?
@@ -588,12 +632,12 @@ module.exports = function(dependencies) {
             newType,
             sanitizeTicker(assetTicker) || finalExisting.assetTicker,
             date || finalExisting.date,
-            parseFloat(quantity || 0),
-            parseFloat(price || 0),
-            parseFloat(commission || 0),
-            parseFloat(tax || 0),
-            parseFloat(exchangeRate || 1),
-            parseFloat(amount || 0),
+            finalQty,
+            finalPrice,
+            finalComm,
+            finalTax,
+            finalExRate,
+            finalAmount,
             notes !== undefined ? (notes ? notes.trim() : null) : finalExisting.notes,
             req.params.id
         );
@@ -786,6 +830,17 @@ module.exports = function(dependencies) {
                         if (typeMapping[finalType]) finalType = typeMapping[finalType];
 
                         let finalDate = parseItalianDate(t.date);
+                        let finalPrice = cleanNum(t.price);
+                        let finalComm = cleanNum(t.commission);
+                        let finalTax = cleanNum(t.tax);
+                        let txAmount = cleanNum(t.amount);
+                        if ((!txAmount || txAmount === 0) && finalQty > 0 && finalPrice > 0) {
+                            if (finalType === 'BUY') {
+                                txAmount = parseFloat(((finalQty * finalPrice + finalComm + finalTax) / finalExRate).toFixed(2));
+                            } else if (finalType === 'SELL') {
+                                txAmount = parseFloat(((finalQty * finalPrice - finalComm - finalTax) / finalExRate).toFixed(2));
+                            }
+                        }
 
                         insertTx.run(
                             targetId,
@@ -793,11 +848,11 @@ module.exports = function(dependencies) {
                             sanitizedTicker || null,
                             finalDate,
                             finalQty,
-                            cleanNum(t.price),
-                            cleanNum(t.commission),
-                            cleanNum(t.tax),
+                            finalPrice,
+                            finalComm,
+                            finalTax,
                             finalExRate,
-                            cleanNum(t.amount)
+                            txAmount
                         );
 
                         results.push({ ok: true, ticker: t.assetTicker, date: t.date, portfolioId: targetId });
@@ -880,19 +935,29 @@ module.exports = function(dependencies) {
             }
 
             const headers = ['portfolioName', 'type', 'assetTicker', 'date', 'quantity', 'price', 'commission', 'tax', 'exchangeRate', 'amount', 'notes'];
-            const rows = (transactions || []).map(t => [
-                t.portfolioName || '',
-                t.type || '',
-                t.assetTicker || '',
-                t.date || '',
-                t.quantity !== undefined && t.quantity !== null ? t.quantity : '',
-                t.price !== undefined && t.price !== null ? t.price : '',
-                t.commission || 0,
-                t.tax || 0,
-                t.exchangeRate || 1,
-                t.amount !== undefined && t.amount !== null ? t.amount : '',
-                t.notes || ''
-            ]);
+            const rows = (transactions || []).map(t => {
+                let amtVal = t.amount !== undefined && t.amount !== null && t.amount !== '' ? t.amount : '';
+                if ((!amtVal || amtVal === 0) && t.quantity > 0 && t.price > 0) {
+                    if (t.type === 'BUY') {
+                        amtVal = parseFloat(((t.quantity * t.price + (t.commission || 0) + (t.tax || 0)) / (t.exchangeRate || 1)).toFixed(2));
+                    } else if (t.type === 'SELL') {
+                        amtVal = parseFloat(((t.quantity * t.price - (t.commission || 0) - (t.tax || 0)) / (t.exchangeRate || 1)).toFixed(2));
+                    }
+                }
+                return [
+                    t.portfolioName || '',
+                    t.type || '',
+                    t.assetTicker || '',
+                    t.date || '',
+                    t.quantity !== undefined && t.quantity !== null ? t.quantity : '',
+                    t.price !== undefined && t.price !== null ? t.price : '',
+                    t.commission || 0,
+                    t.tax || 0,
+                    t.exchangeRate || 1,
+                    amtVal !== undefined && amtVal !== null ? amtVal : '',
+                    t.notes || ''
+                ];
+            });
 
             let csvContent = headers.join(',') + '\n';
             rows.forEach(row => {

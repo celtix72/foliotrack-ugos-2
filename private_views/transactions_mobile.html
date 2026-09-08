@@ -234,6 +234,25 @@
         }
     }
 
+    function getMobTxAmount(t) {
+        let amt = parseFloat(t.amount || 0);
+        if (!amt && t.quantity && t.price) {
+            const qty = parseFloat(t.quantity) || 0;
+            const price = parseFloat(t.price) || 0;
+            const comm = parseFloat(t.commission) || 0;
+            const tax = parseFloat(t.tax) || 0;
+            const fx = parseFloat(t.exchangeRate) || 1;
+            if (t.type === 'BUY') {
+                amt = (qty * price + comm + tax) / fx;
+            } else if (t.type === 'SELL' || t.type === 'DIVIDEND') {
+                amt = (qty * price - comm - tax) / fx;
+            } else {
+                amt = (qty * price) / fx;
+            }
+        }
+        return amt;
+    }
+
     function applyMobFilters() {
         const search = (document.getElementById('mob-search')?.value || '').trim().toLowerCase();
         const pid = document.getElementById('mob-filter-portfolio')?.value || 'all';
@@ -259,7 +278,7 @@
         // Update KPIs
         let inflow = 0, outflow = 0, divs = 0;
         mobFilteredTransactions.forEach(t => {
-            const amt = parseFloat(t.amount || 0);
+            const amt = getMobTxAmount(t);
             if (t.type === 'DIVIDEND') { divs += amt; inflow += amt; }
             else if (t.type === 'SELL' || t.type === 'DEPOSIT') { inflow += amt; }
             else if (t.type === 'BUY' || t.type === 'WITHDRAWAL') { outflow += amt; }
@@ -299,7 +318,7 @@
 
         const html = itemsToShow.map(t => {
             const dateStr = (t.date || '').split('T')[0];
-            const amt = parseFloat(t.amount || 0);
+            const amt = getMobTxAmount(t);
             const isPos = t.type === 'SELL' || t.type === 'DIVIDEND' || t.type === 'DEPOSIT';
             const amtColor = isPos ? 'text-emerald-500' : (t.type === 'BUY' || t.type === 'WITHDRAWAL' ? 'text-rose-500' : 'text-slate-300');
             const amtSign = isPos ? '+' : '';

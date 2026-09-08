@@ -325,6 +325,23 @@ function initDb() {
         dbConnection.prepare(`ALTER TABLE transactions ADD COLUMN notes TEXT`).run();
     } catch(e) {}
 
+    // Migration: Backfill amount for transactions where amount is 0 or null
+    try {
+        dbConnection.prepare(`
+            UPDATE transactions 
+            SET amount = ROUND(
+                CASE 
+                    WHEN type = 'BUY' THEN (quantity * price + COALESCE(commission, 0) + COALESCE(tax, 0)) / COALESCE(NULLIF(exchangeRate, 0), 1)
+                    WHEN type = 'SELL' THEN (quantity * price - COALESCE(commission, 0) - COALESCE(tax, 0)) / COALESCE(NULLIF(exchangeRate, 0), 1)
+                    ELSE (quantity * price) / COALESCE(NULLIF(exchangeRate, 0), 1)
+                END, 2)
+            WHERE (amount IS NULL OR amount = 0)
+              AND quantity > 0
+              AND price > 0
+              AND type IN ('BUY', 'SELL')
+        `).run();
+    } catch(e) {}
+
     // Robust Migration: Fix portfolio_history NOT NULL constraint and ensure user_id exists
     try {
         const tableInfo = dbConnection.prepare("PRAGMA table_info(portfolio_history)").all();
