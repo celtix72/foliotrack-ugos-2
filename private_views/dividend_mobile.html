@@ -686,8 +686,8 @@
                     if(btn) btn.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">refresh</span>';
                     try {
                         const res = await fetch('/api/dividends/projections/reset', { method: 'POST' });
-                        if(res.ok) loadMobData();
-                        else alert('Errore ricalcolo prevesioni.');
+                        if(res.ok) await loadMobData();
+                        else alert('Errore ricalcolo previsioni.');
                     } catch(e) { console.error(e); }
                     if(btn) btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">refresh</span>';
                 }
