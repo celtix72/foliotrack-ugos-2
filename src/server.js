@@ -1427,9 +1427,16 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
         // NOTE: SPLIT is an audit marker — DB already retroactively adjusts all
         // historical BUY/SELL prices & quantities, so do NOT re-apply ratio here.
 
-        if (t.type === 'DIVIDEND' && t.assetTicker) {
-            const net = (qty && price && t.type !== 'DIVIDEND_MANUAL') ? ((qty * price - comm - tax) / fx) : (amount ? Math.abs(amount) : 0);
-            dividends.push({ ticker: t.assetTicker, date: t.date, year, amount: net, tax: tax / fx });
+        if (t.type === 'DIVIDEND') {
+            const ticker = t.assetTicker || 'CASH';
+            const hasAmount = (amount !== null && amount !== undefined && amount !== 0);
+            const net = hasAmount
+                ? Math.abs(amount)
+                : ((qty * price - comm - tax) / fx);
+            const netTax = (tax > 0)
+                ? (hasAmount ? tax : (tax / fx))
+                : 0;
+            dividends.push({ ticker, date: t.date, year, amount: net, tax: netTax });
         }
     }
 

@@ -1377,13 +1377,13 @@
                                 </div>
                                 <div style="text-align: right;">
                                     <div class="mob-section-link" style="color: var(--mob-emerald); font-size: 16px; font-weight: 900;">
-                                        ${sign}${formatCurrency(group.totalNet, 'EUR', 0)}
+                                        ${sign}${formatCurrency(isCurrentYear && group.projectedNet > 0 ? group.actualNet : group.totalNet, 'EUR', 0)}
                                     </div>
-                                    ${group.totalGross ? `
-                                        <div style="font-size: 10px; color: var(--mob-text-muted); font-weight: normal;">
-                                            Lordo: ${formatCurrency(group.totalGross, 'EUR', 0)}
-                                        </div>
-                                    ` : ''}
+                                    <div style="font-size: 10px; color: var(--mob-text-muted); font-weight: normal;">
+                                        ${isCurrentYear && group.projectedNet > 0 
+                                            ? `Incassati • Previsti: ${formatCurrency(group.totalNet, 'EUR', 0)}` 
+                                            : (group.totalGross ? `Lordo: ${formatCurrency(group.totalGross, 'EUR', 0)}` : '')}
+                                    </div>
                                 </div>
                             </div>
                             <div class="mob-list-edge" style="${isCollapsed ? 'display:none' : ''}">

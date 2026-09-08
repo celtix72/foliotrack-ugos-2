@@ -26,6 +26,23 @@ module.exports = function (dependencies) {
         ANALYTICS_CACHE_TTL
     } = dependencies;
 
+    // Helper to calculate exact net, tax and gross in EUR for a dividend transaction
+    function parseDividendToEUR(d, portCurrency, liveRate) {
+        const hasAmount = (d.amount !== null && d.amount !== undefined && d.amount !== 0);
+        const fx = d.exchangeRate || 1;
+        const rawNet = hasAmount
+            ? Math.abs(d.amount)
+            : ((d.quantity * d.price - (d.tax || 0)) / fx);
+        const netEUR = (portCurrency === 'USD' && liveRate > 0) ? (rawNet / liveRate) : rawNet;
+
+        const rawTax = d.tax || 0;
+        const taxInPCurr = hasAmount ? rawTax : (rawTax / fx);
+        const taxEUR = (portCurrency === 'USD' && liveRate > 0) ? (taxInPCurr / liveRate) : taxInPCurr;
+        const grossEUR = netEUR + taxEUR;
+
+        return { netEUR, taxEUR, grossEUR };
+    }
+
     // Core function to recalculate and refresh dividend projections in the database
     async function refreshDividendProjections(userId) {
         if (!userId) return 0;
@@ -237,12 +254,7 @@ module.exports = function (dependencies) {
                         let taxRate = defaultTaxRate;
 
                         if (refDiv) {
-                            const rawHistNet = (refDiv.amount !== null && refDiv.amount !== undefined && refDiv.amount !== 0)
-                                ? refDiv.amount
-                                : (refDiv.quantity * refDiv.price - (refDiv.tax || 0));
-                            const histNet = toEUR(rawHistNet, refDiv.portCurrency, refDiv.exchangeRate);
-                            const histTax = toEUR(refDiv.tax || 0, refDiv.portCurrency, refDiv.exchangeRate);
-                            const histGross = histNet + histTax;
+                            const { netEUR: histNet, taxEUR: histTax, grossEUR: histGross } = parseDividendToEUR(refDiv, refDiv.portCurrency, liveRate);
 
                             // Find historical quantity when refDiv was paid
                             let histBal = 0;
@@ -441,12 +453,7 @@ module.exports = function (dependencies) {
                                                 || sourceDivs[0] 
                                                 || histDivs.find(d => parseInt(d.date.split('-')[1], 10) === schedM) 
                                                 || histDivs[0];
-                                    const rawNet = (refDiv.amount !== null && refDiv.amount !== undefined && refDiv.amount !== 0)
-                                        ? refDiv.amount
-                                        : (refDiv.quantity * refDiv.price - (refDiv.tax || 0));
-                                    const histNet = toEUR(rawNet, refDiv.portCurrency, refDiv.exchangeRate);
-                                    const histTax = toEUR(refDiv.tax || 0, refDiv.portCurrency, refDiv.exchangeRate);
-                                    const histGross = histNet + histTax;
+                                    const { netEUR: histNet, taxEUR: histTax, grossEUR: histGross } = parseDividendToEUR(refDiv, refDiv.portCurrency, liveRate);
 
                                     let histBal = 0;
                                     if (refDiv.quantity > 0) {
@@ -839,11 +846,6 @@ module.exports = function (dependencies) {
     router.get('/analytics/dividends', requireAuth, async (req, res) => {
         try {
             const liveRate = await getEurUsdRate();
-            const toEUR = (amount, currency, exchangeRate) => {
-                if (currency === 'USD' && liveRate > 0) return amount / liveRate;
-                if (exchangeRate && exchangeRate !== 1) return amount / exchangeRate;
-                return amount;
-            };
 
             const portfolios = database.db.prepare(`
                 SELECT p.id, p.name, p.currency FROM portfolios p
@@ -861,16 +863,11 @@ module.exports = function (dependencies) {
                     ORDER BY t.date DESC
                 `).all(p.id);
                 allDividends = allDividends.concat(divs.map(d => {
-                    const rawNet = (d.amount !== null && d.amount !== undefined && d.amount !== 0)
-                        ? d.amount 
-                        : (d.quantity * d.price - (d.tax || 0));
-                    const netEUR = toEUR(rawNet, p.currency, d.exchangeRate);
-                    const taxEUR = toEUR(d.tax || 0, p.currency, d.exchangeRate);
-                    const grossEUR = netEUR + taxEUR;
+                    const { netEUR, taxEUR, grossEUR } = parseDividendToEUR(d, p.currency, liveRate);
 
                     return {
                         id:          d.id,
-                        assetTicker: d.assetTicker,
+                        assetTicker: d.assetTicker || 'CASH',
                         name:        d.name,
                         isin:        d.isin,
                         assetType:   d.assetType,
@@ -992,18 +989,12 @@ module.exports = function (dependencies) {
             if (!assetType) assetType = 'Azioni';
 
             const m = parseInt(d.date.split('-')[1]) - 1;
-            const rawNet = (d.amount !== null && d.amount !== undefined && d.amount !== 0)
-                ? d.amount 
-                : (d.quantity * d.price - (d.tax || 0));
-            const amtEUR = toEUR(rawNet, d.portCurrency, d.exchangeRate);
+            const { netEUR: amtEUR, taxEUR, grossEUR: gross } = parseDividendToEUR(d, d.portCurrency, liveRate);
             if (m >= 0 && m < 12) {
                 actualByMonth[m] += amtEUR;
                 tickersByMonth[m].add(d.ticker);
             }
             totalReceived += amtEUR;
-            
-            const taxEUR = toEUR(d.tax || 0, d.portCurrency, d.exchangeRate);
-            const gross = amtEUR + taxEUR;
             
             let realYield = 0;
             if (pos && pos.currentPrice > 0 && pos.balance > 0) {
