@@ -17,6 +17,31 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
         .sortable-header { cursor: pointer; user-select: none; }
         .sortable-header:hover { color: #6366f1; }
+        .filter-date-input {
+            font-size: 8.5px !important;
+            line-height: 1.2 !important;
+            font-family: inherit !important;
+        }
+        .filter-date-input::-webkit-datetime-edit,
+        .filter-date-input::-webkit-datetime-edit-fields-wrapper,
+        .filter-date-input::-webkit-datetime-edit-text,
+        .filter-date-input::-webkit-datetime-edit-month-field,
+        .filter-date-input::-webkit-datetime-edit-day-field,
+        .filter-date-input::-webkit-datetime-edit-year-field {
+            font-size: 8.5px !important;
+            padding: 0 !important;
+        }
+        .filter-date-input::-webkit-calendar-picker-indicator {
+            width: 10px !important;
+            height: 10px !important;
+            margin-left: 2px !important;
+            padding: 0 !important;
+            cursor: pointer;
+            opacity: 0.55;
+        }
+        .filter-date-input::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+        }
     </style>
     <script src="/theme.js"></script>
     <script src="/header_indices.js"></script>
@@ -207,12 +232,12 @@
 
                     <!-- Date Range: From / To -->
                     <div class="flex items-center gap-1 shrink-0 pl-1 border-l border-slate-200 dark:border-slate-800">
-                        <span class="text-[8.5px] font-black text-slate-400 uppercase">Da</span>
+                        <span class="text-[8px] font-black text-slate-400 uppercase">Da</span>
                         <input type="date" id="filter-date-from" onchange="applyFilters()" 
-                            class="px-1 py-0.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded text-[9.5px] outline-none focus:border-primary transition-colors font-mono h-6.5 w-[108px]"/>
-                        <span class="text-[8.5px] font-black text-slate-400 uppercase">A</span>
+                            class="filter-date-input px-1 py-0.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded outline-none focus:border-primary transition-colors h-6 w-[96px] text-slate-700 dark:text-slate-200"/>
+                        <span class="text-[8px] font-black text-slate-400 uppercase">A</span>
                         <input type="date" id="filter-date-to" onchange="applyFilters()" 
-                            class="px-1 py-0.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded text-[9.5px] outline-none focus:border-primary transition-colors font-mono h-6.5 w-[108px]"/>
+                            class="filter-date-input px-1 py-0.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded outline-none focus:border-primary transition-colors h-6 w-[96px] text-slate-700 dark:text-slate-200"/>
                     </div>
 
                     <!-- Quick Date Presets -->
