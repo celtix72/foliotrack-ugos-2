@@ -175,8 +175,9 @@
             }
 
             // 1. Filter
+            const cashTypes = ['DEPOSIT', 'DEPOSITO', 'WITHDRAWAL', 'PRELIEVO', 'TAX', 'TASSE', 'TRANSFER'];
             let filtered = rawHistoryData.filter(pos => {
-                if (pos.type === 'WITHDRAWAL' || pos.type === 'PRELIEVO') return false;
+                if (cashTypes.includes(pos.type)) return false;
                 return (pos.name || '').toLowerCase().includes(searchTerm) || 
                        (pos.ticker || '').toLowerCase().includes(searchTerm);
             });

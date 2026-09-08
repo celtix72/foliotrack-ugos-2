@@ -822,23 +822,6 @@ module.exports = function (dependencies) {
                             holdingsMap[t.assetTicker].costBasis -= sellCostBasis;
                             if (holdingsMap[t.assetTicker].shares <= 0.0001) delete holdingsMap[t.assetTicker];
                         }
-                    } else if (['DEPOSIT', 'TAX', 'TRANSFER'].includes(t.type)) {
-                        closed.push({
-                            id: t.id,
-                            ticker: t.assetTicker || 'CASH',
-                            name: t.type === 'TAX' ? 'Tasse' : (t.type === 'TRANSFER' ? 'Trasferimento' : 'Movimento Cassa'),
-                            type: t.type,
-                            assetType: 'Cash',
-                            year,
-                            quantity: 0,
-                            pmc: 0,
-                            totalProceeds: Math.abs(t.amount),
-                            totalCostBasis: 0,
-                            realizedGain: 0,
-                            gainPct: 0,
-                            portfolioName: p.name,
-                            date: t.date
-                        });
                     }
                 }
                 allClosed = allClosed.concat(closed);
