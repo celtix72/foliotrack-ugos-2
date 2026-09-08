@@ -407,7 +407,7 @@ module.exports = function(dependencies) {
 
     // ─── UPDATE TRANSACTION ──────────────────────────────────────────────────
     router.put('/transactions/:id', requireAuth, async (req, res) => {
-        const { portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount, notes } = req.body;
+        const { portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount, notes, createWithdrawal } = req.body;
         
         // Check ownership
         const existing = database.db.prepare(`
@@ -449,10 +449,79 @@ module.exports = function(dependencies) {
                 database.recalculatePortfolio(linkedTx.portfolioId);
                 triggerHistoryRebuild(linkedTx.portfolioId);
             }
+            finalExisting.linkedTransactionId = null;
         }
 
-        // If transaction is linked and type is unchanged, synchronize values to the paired transaction
-        if (finalExisting.linkedTransactionId && !typeChanged) {
+        // Handle DIVIDEND: create, update or remove linked WITHDRAWAL
+        if (newType === 'DIVIDEND' && createWithdrawal !== undefined) {
+            const finalQty = parseFloat(quantity !== undefined ? quantity : finalExisting.quantity) || 0;
+            const finalPrice = parseFloat(price !== undefined ? price : finalExisting.price) || 0;
+            const finalComm = parseFloat(commission !== undefined ? commission : finalExisting.commission) || 0;
+            const finalTax = parseFloat(tax !== undefined ? tax : finalExisting.tax) || 0;
+            const finalExRate = parseFloat(exchangeRate !== undefined ? exchangeRate : finalExisting.exchangeRate) || 1;
+            const finalAmount = parseFloat(amount !== undefined ? amount : finalExisting.amount) || 0;
+            const txDate = date || finalExisting.date || new Date().toISOString().split('T')[0];
+            const tickerStr = sanitizeTicker(assetTicker) || finalExisting.assetTicker;
+
+            const netAmount = finalAmount > 0 
+                ? finalAmount 
+                : ((finalQty * finalPrice - finalComm - finalTax) / finalExRate);
+
+            let existingWithdrawal = null;
+            if (finalExisting.linkedTransactionId) {
+                existingWithdrawal = database.db.prepare(`
+                    SELECT * FROM transactions WHERE id = ? AND type = 'WITHDRAWAL'
+                `).get(finalExisting.linkedTransactionId);
+            }
+
+            if (createWithdrawal) {
+                if (existingWithdrawal) {
+                    // Update existing linked withdrawal
+                    database.db.prepare(`
+                        UPDATE transactions 
+                        SET portfolioId = ?, date = ?, amount = ?, notes = ?
+                        WHERE id = ?
+                    `).run(
+                        targetPortfolioId,
+                        txDate,
+                        netAmount,
+                        `Storno liquidità dividendo ${tickerStr || ''}`.trim(),
+                        existingWithdrawal.id
+                    );
+                    if (existingWithdrawal.portfolioId !== targetPortfolioId) {
+                        database.recalculatePortfolio(existingWithdrawal.portfolioId);
+                        triggerHistoryRebuild(existingWithdrawal.portfolioId);
+                    }
+                } else if (netAmount > 0) {
+                    // Create new linked withdrawal
+                    const wRes = database.db.prepare(`
+                        INSERT INTO transactions (portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount, notes, linkedTransactionId)
+                        VALUES (?, 'WITHDRAWAL', 'CASH', ?, 0, 0, 0, 0, 1, ?, ?, ?)
+                    `).run(
+                        targetPortfolioId,
+                        txDate,
+                        netAmount,
+                        `Storno liquidità dividendo ${tickerStr || ''}`.trim(),
+                        finalExisting.id
+                    );
+                    const wTxId = wRes.lastInsertRowid;
+                    database.db.prepare(`
+                        UPDATE transactions SET linkedTransactionId = ? WHERE id = ?
+                    `).run(wTxId, finalExisting.id);
+                    finalExisting.linkedTransactionId = wTxId;
+                }
+            } else if (existingWithdrawal) {
+                // User explicitly unchecked createWithdrawal: remove the linked withdrawal
+                database.db.prepare(`DELETE FROM transactions WHERE id = ?`).run(existingWithdrawal.id);
+                database.db.prepare(`UPDATE transactions SET linkedTransactionId = NULL WHERE id = ?`).run(finalExisting.id);
+                finalExisting.linkedTransactionId = null;
+                database.recalculatePortfolio(existingWithdrawal.portfolioId);
+                triggerHistoryRebuild(existingWithdrawal.portfolioId);
+            }
+        }
+
+        // If transaction is linked and type is unchanged (and NOT already handled by DIVIDEND), synchronize values to the paired transaction
+        if (finalExisting.linkedTransactionId && !typeChanged && finalExisting.type !== 'DIVIDEND') {
             const linkedTx = database.db.prepare(`SELECT * FROM transactions WHERE id = ?`).get(finalExisting.linkedTransactionId);
             if (linkedTx) {
                 const srcPort = database.db.prepare("SELECT currency FROM portfolios WHERE id = ?").get(finalExisting.portfolioId);

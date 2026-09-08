@@ -181,54 +181,54 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                <div class="grid grid-cols-12 gap-2 items-end">
                     <!-- Text Search -->
-                    <div class="relative">
-                        <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Cerca (Ticker / Nome / Note)</label>
+                    <div class="col-span-3 min-w-0">
+                        <label class="block text-[9.5px] font-black uppercase tracking-wider text-slate-400 mb-1 truncate">Cerca</label>
                         <div class="relative">
-                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
-                            <input type="text" id="filter-search" placeholder="Es. BTP, AAPL, cedola..." 
-                                class="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs outline-none focus:border-primary transition-colors"
+                            <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+                            <input type="text" id="filter-search" placeholder="Es. BTP, AAPL, note..." 
+                                class="w-full pl-8 pr-2.5 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs outline-none focus:border-primary transition-colors h-8 leading-none"
                                 oninput="applyFilters()"/>
                         </div>
                     </div>
 
                     <!-- Portfolio Select -->
-                    <div>
-                        <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Portafoglio</label>
+                    <div class="col-span-3 min-w-0">
+                        <label class="block text-[9.5px] font-black uppercase tracking-wider text-slate-400 mb-1 truncate">Portafoglio</label>
                         <select id="filter-portfolio" onchange="applyFilters()" 
-                            class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs outline-none focus:border-primary transition-colors font-medium">
+                            class="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs outline-none focus:border-primary transition-colors font-medium h-8">
                             <option value="all">Tutti i Portafogli</option>
                         </select>
                     </div>
 
                     <!-- Type Select -->
-                    <div>
-                        <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Tipo Movimento</label>
+                    <div class="col-span-2 min-w-0">
+                        <label class="block text-[9.5px] font-black uppercase tracking-wider text-slate-400 mb-1 truncate">Tipo Movimento</label>
                         <select id="filter-type" onchange="applyFilters()" 
-                            class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs outline-none focus:border-primary transition-colors font-medium">
+                            class="w-full px-2 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs outline-none focus:border-primary transition-colors font-medium h-8">
                             <option value="all">Tutti i Tipi</option>
                             <option value="BUY">BUY - Acquisto</option>
                             <option value="SELL">SELL - Vendita</option>
-                            <option value="DIVIDEND">DIVIDEND - Dividendo/Cedola</option>
-                            <option value="DEPOSIT">DEPOSIT - Deposito Liquidità</option>
-                            <option value="WITHDRAWAL">WITHDRAWAL - Prelievo Liquidità</option>
+                            <option value="DIVIDEND">DIVIDEND - Cedola/Div.</option>
+                            <option value="DEPOSIT">DEPOSIT - Deposito</option>
+                            <option value="WITHDRAWAL">WITHDRAWAL - Prelievo</option>
                             <option value="TRANSFER">TRANSFER - Giroconto</option>
                         </select>
                     </div>
 
                     <!-- Date Range: From -->
-                    <div>
-                        <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Da Data</label>
+                    <div class="col-span-2 min-w-0">
+                        <label class="block text-[9.5px] font-black uppercase tracking-wider text-slate-400 mb-1 truncate">Da Data</label>
                         <input type="date" id="filter-date-from" onchange="applyFilters()" 
-                            class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs outline-none focus:border-primary transition-colors font-mono"/>
+                            class="w-full px-2 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs outline-none focus:border-primary transition-colors font-mono h-8"/>
                     </div>
 
                     <!-- Date Range: To -->
-                    <div>
-                        <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">A Data</label>
+                    <div class="col-span-2 min-w-0">
+                        <label class="block text-[9.5px] font-black uppercase tracking-wider text-slate-400 mb-1 truncate">A Data</label>
                         <input type="date" id="filter-date-to" onchange="applyFilters()" 
-                            class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs outline-none focus:border-primary transition-colors font-mono"/>
+                            class="w-full px-2 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs outline-none focus:border-primary transition-colors font-mono h-8"/>
                     </div>
                 </div>
 

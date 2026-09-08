@@ -884,7 +884,7 @@
             assetCurrency: source === 'MANUAL'
                 ? (document.getElementById('tm-asset-currency-manual')?.value || 'EUR')
                 : (document.getElementById('tm-asset-currency')?.value || 'EUR'),
-            createWithdrawal: (type === 'DIVIDEND' && !id && document.getElementById('tm-create-withdrawal')?.checked) || false,
+            createWithdrawal: (type === 'DIVIDEND' && document.getElementById('tm-create-withdrawal')?.checked) || false,
             notes: document.getElementById('tm-notes')?.value?.trim() || null
         };
 
@@ -1034,6 +1034,14 @@
         if (amountValue && t.type === 'DIVIDEND') {
             document.getElementById('tm-amount').value = amountValue;
         }
+
+        // Initialize createWithdrawal checkbox based on existing link
+        if (t.type === 'DIVIDEND') {
+            const wCb = document.getElementById('tm-create-withdrawal');
+            if (wCb) {
+                wCb.checked = Boolean(t.linkedTransactionId);
+            }
+        }
     }
 
     // ─── Portfolio Selectors ─────────────────────────────────────────────────────
@@ -1101,6 +1109,7 @@
         if (typeof mobUpdateDashboard === 'function') mobUpdateDashboard();
         if (typeof loadHistory === 'function') loadHistory();
         if (typeof loadTransactionsPage === 'function') loadTransactionsPage();
+        if (typeof loadMobTransactions === 'function') loadMobTransactions();
     }
 
     // ─── Utilities ───────────────────────────────────────────────────────────────
