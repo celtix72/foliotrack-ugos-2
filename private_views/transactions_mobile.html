@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html class="dark" lang="it">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>M2T - Movimenti</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="M2T">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="stylesheet" href="/dist/output.css">
+    <link rel="stylesheet" href="/mobile.css?v=1780588387886">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 3px; height: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        .mob-tx-card {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 14px;
+            padding: 12px 14px;
+            margin-bottom: 8px;
+            backdrop-filter: blur(8px);
+        }
+        .light .mob-tx-card {
+            background: #ffffff;
+            border-color: rgba(0, 0, 0, 0.08);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+    </style>
+    <script src="/theme.js"></script>
+    <script src="/transaction_modal.js"></script>
+    <script src="/mobile_transactions.js"></script>
+    <script src="/auth.js"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            if (window.ftAuth) ftAuth.initAuthGuard();
+        });
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex mobile-view-active">
+<div id="mobile-ui">
+    <!-- ── Mobile Header ── -->
+    <div class="mob-header">
+        <a href="/dashboard" class="mob-header-logo-link" title="Dashboard">
+            <img src="/m2t_mobile_logo_dark.png" class="mob-header-logo-img" alt="M2T Logo">
+        </a>
+        
+        <div class="mob-header-market-pill market-status-group" title="Stato Mercati (EU / US)">
+            <span id="mob-tag-eu" class="market-microtag market-microtag-eu status-closed" title="Borsa Italiana / XETRA">EU</span>
+            <span id="mob-tag-us" class="market-microtag market-microtag-us status-closed" title="NYSE / NASDAQ">US</span>
+        </div>
+
+        <div style="flex:1"></div>
+
+        <div id="mob-header-var-day" class="mob-header-var-pill">--</div>
+
+        <div class="mob-header-actions">
+            <a href="/notifications" class="mob-icon-btn relative" title="Notifiche">
+                <span class="material-symbols-outlined">notifications</span>
+                <span id="mob-notification-badge" class="mob-badge" style="display: none;">0</span>
+            </a>
+            <a href="/settings" class="mob-icon-btn" title="Impostazioni">
+                <span class="material-symbols-outlined">settings</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Page Title & Top Actions -->
+    <div class="px-4 pt-3 pb-2 flex items-center justify-between">
+        <div>
+            <div class="text-[10px] font-black uppercase tracking-widest text-slate-500 opacity-70">Registro Globale</div>
+            <div class="text-xl font-black flex items-center gap-1.5" style="font-family: 'Space Grotesk', sans-serif;">
+                <span>Movimenti</span>
+                <span id="mob-tx-count-badge" class="text-[11px] font-black px-2 py-0.5 rounded-full bg-primary/10 text-primary">0</span>
+            </div>
+        </div>
+
+        <!-- Add + Import/Export buttons -->
+        <div class="flex items-center gap-2">
+            <input type="file" id="mob-csv-input" accept=".csv" class="hidden" onchange="handleMobCsvImport(event)"/>
+            <button onclick="document.getElementById('mob-csv-input').click()" class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300" title="Importa CSV">
+                <span class="material-symbols-outlined text-[17px]">upload_file</span>
+            </button>
+            <button onclick="exportMobCsv()" class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300" title="Esporta CSV">
+                <span class="material-symbols-outlined text-[17px]">download</span>
+            </button>
+            <button onclick="openNewMobTx()" class="h-8 px-3 bg-primary text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-md shadow-primary/20">
+                <span class="material-symbols-outlined text-[16px]">add</span>
+                <span>Nuova</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ── Filter & Search Section ── -->
+    <div class="px-4 py-2 space-y-2">
+        <!-- Search bar -->
+        <div class="relative">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+            <input type="text" id="mob-search" placeholder="Cerca ticker, nome o note..." 
+                class="w-full pl-9 pr-8 py-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs outline-none focus:border-primary"
+                oninput="applyMobFilters()"/>
+            <button onclick="clearMobSearch()" id="mob-search-clear" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hidden">
+                <span class="material-symbols-outlined text-sm">close</span>
+            </button>
+        </div>
+
+        <!-- Filters Row: Portfolio + Type -->
+        <div class="grid grid-cols-2 gap-2">
+            <select id="mob-filter-portfolio" onchange="applyMobFilters()" class="w-full px-2.5 py-1.5 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-[11px] font-bold outline-none">
+                <option value="all">Tutti i Portafogli</option>
+            </select>
+            <select id="mob-filter-type" onchange="applyMobFilters()" class="w-full px-2.5 py-1.5 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-[11px] font-bold outline-none">
+                <option value="all">Tutti i Tipi</option>
+                <option value="BUY">BUY</option>
+                <option value="SELL">SELL</option>
+                <option value="DIVIDEND">DIVIDEND</option>
+                <option value="DEPOSIT">DEPOSIT</option>
+                <option value="WITHDRAWAL">WITHDRAWAL</option>
+                <option value="TRANSFER">TRANSFER</option>
+            </select>
+        </div>
+
+        <!-- KPI Mini Cards -->
+        <div class="grid grid-cols-3 gap-2 pt-1">
+            <div class="bg-slate-100/80 dark:bg-slate-900/60 p-2 rounded-xl border border-slate-200/60 dark:border-slate-800/60 text-center">
+                <div class="text-[8px] font-black uppercase text-slate-400">Uscite</div>
+                <div id="mob-kpi-out" class="text-xs font-black text-rose-500 font-mono mt-0.5">€ 0</div>
+            </div>
+            <div class="bg-slate-100/80 dark:bg-slate-900/60 p-2 rounded-xl border border-slate-200/60 dark:border-slate-800/60 text-center">
+                <div class="text-[8px] font-black uppercase text-slate-400">Entrate</div>
+                <div id="mob-kpi-in" class="text-xs font-black text-emerald-500 font-mono mt-0.5">€ 0</div>
+            </div>
+            <div class="bg-slate-100/80 dark:bg-slate-900/60 p-2 rounded-xl border border-slate-200/60 dark:border-slate-800/60 text-center">
+                <div class="text-[8px] font-black uppercase text-slate-400">Dividendi</div>
+                <div id="mob-kpi-div" class="text-xs font-black text-amber-500 font-mono mt-0.5">€ 0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Scrollable Transactions List ── -->
+    <div class="mob-scroll flex-1 px-4 py-2" id="mob-tx-scroll">
+        <div id="mob-tx-container">
+            <div class="text-center py-12">
+                <div class="mob-spinner mx-auto"></div>
+                <p class="text-xs text-slate-400 mt-2">Caricamento movimenti...</p>
+            </div>
+        </div>
+
+        <!-- Load More Button -->
+        <div id="mob-load-more-wrap" class="py-4 text-center hidden">
+            <button onclick="loadMoreMobTx()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl shadow-sm">
+                Mostra altri movimenti
+            </button>
+        </div>
+        <div style="height: 40px"></div>
+    </div>
+
+    <!-- ── Bottom Tab Bar ── -->
+    <div class="mob-tab-bar">
+        <a href="/dashboard" class="mob-tab-item">
+            <span class="material-symbols-outlined">dashboard</span>
+        </a>
+        <a href="/market" class="mob-tab-item">
+            <span class="material-symbols-outlined">trending_up</span>
+        </a>
+        <a href="/watchlist" class="mob-tab-item">
+            <span class="material-symbols-outlined">visibility</span>
+        </a>
+        <a href="/history" class="mob-tab-item">
+            <span class="material-symbols-outlined">history</span>
+        </a>
+        <a href="/transactions" class="mob-tab-item active">
+            <span class="material-symbols-outlined">receipt_long</span>
+        </a>
+        <a href="/dividend" class="mob-tab-item">
+            <span class="material-symbols-outlined">payments</span>
+        </a>
+        <a href="/reports" class="mob-tab-item">
+            <span class="material-symbols-outlined">pie_chart</span>
+        </a>
+        <a href="/notes" class="mob-tab-item">
+            <span class="material-symbols-outlined">note_stack</span>
+        </a>
+        <a href="/settings" class="mob-tab-item">
+            <span class="material-symbols-outlined">settings</span>
+        </a>
+    </div>
+</div>
+
+<script>
+    let mobAllTransactions = [];
+    let mobFilteredTransactions = [];
+    let mobPortfolios = [];
+    let mobRenderLimit = 30;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadMobPortfolios();
+        await loadMobTransactions();
+
+        window.addEventListener('portfolios-updated', () => loadMobTransactions());
+    });
+
+    async function loadMobPortfolios() {
+        try {
+            const res = await fetch('/api/portfolios');
+            const data = await res.json();
+            mobPortfolios = Array.isArray(data) ? data : (data.portfolios || []);
+            const sel = document.getElementById('mob-filter-portfolio');
+            if (sel) {
+                let html = '<option value="all">Tutti i Portafogli</option>';
+                mobPortfolios.forEach(p => {
+                    html += `<option value="${p.id}">${p.name}</option>`;
+                });
+                sel.innerHTML = html;
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    async function loadMobTransactions() {
+        try {
+            const res = await fetch('/api/transactions?order=DESC');
+            const data = await res.json();
+            mobAllTransactions = Array.isArray(data) ? data : [];
+            window.currentTransactions = mobAllTransactions;
+            applyMobFilters();
+        } catch(e) {
+            console.error(e);
+            const container = document.getElementById('mob-tx-container');
+            if (container) {
+                container.innerHTML = '<p class="text-xs text-rose-500 text-center py-8">Errore caricamento movimenti</p>';
+            }
+        }
+    }
+
+    function applyMobFilters() {
+        const search = (document.getElementById('mob-search')?.value || '').trim().toLowerCase();
+        const pid = document.getElementById('mob-filter-portfolio')?.value || 'all';
+        const type = document.getElementById('mob-filter-type')?.value || 'all';
+
+        const clearBtn = document.getElementById('mob-search-clear');
+        if (clearBtn) clearBtn.style.display = search ? 'block' : 'none';
+
+        mobFilteredTransactions = mobAllTransactions.filter(t => {
+            if (pid !== 'all' && String(t.portfolioId) !== String(pid)) return false;
+            if (type !== 'all' && t.type !== type) return false;
+            if (search) {
+                const matchTicker = (t.assetTicker || '').toLowerCase().includes(search);
+                const matchName = (t.assetName || '').toLowerCase().includes(search);
+                const matchIsin = (t.isin || '').toLowerCase().includes(search);
+                const matchNotes = (t.notes || '').toLowerCase().includes(search);
+                const matchPort = (t.portfolioName || '').toLowerCase().includes(search);
+                if (!matchTicker && !matchName && !matchIsin && !matchNotes && !matchPort) return false;
+            }
+            return true;
+        });
+
+        // Update KPIs
+        let inflow = 0, outflow = 0, divs = 0;
+        mobFilteredTransactions.forEach(t => {
+            const amt = parseFloat(t.amount || 0);
+            if (t.type === 'DIVIDEND') { divs += amt; inflow += amt; }
+            else if (t.type === 'SELL' || t.type === 'DEPOSIT') { inflow += amt; }
+            else if (t.type === 'BUY' || t.type === 'WITHDRAWAL') { outflow += amt; }
+        });
+
+        document.getElementById('mob-tx-count-badge').textContent = mobFilteredTransactions.length;
+        document.getElementById('mob-kpi-out').textContent = '€ ' + Math.round(outflow).toLocaleString('it-IT');
+        document.getElementById('mob-kpi-in').textContent = '€ ' + Math.round(inflow).toLocaleString('it-IT');
+        document.getElementById('mob-kpi-div').textContent = '€ ' + Math.round(divs).toLocaleString('it-IT');
+
+        mobRenderLimit = 30;
+        renderMobTransactions();
+    }
+
+    function clearMobSearch() {
+        const input = document.getElementById('mob-search');
+        if (input) input.value = '';
+        applyMobFilters();
+    }
+
+    function renderMobTransactions() {
+        const container = document.getElementById('mob-tx-container');
+        if (!container) return;
+
+        if (mobFilteredTransactions.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-12 text-slate-400">
+                    <span class="material-symbols-outlined text-3xl mb-1 text-slate-500">receipt_long</span>
+                    <p class="text-xs font-bold">Nessun movimento trovato</p>
+                </div>
+            `;
+            document.getElementById('mob-load-more-wrap').classList.add('hidden');
+            return;
+        }
+
+        const itemsToShow = mobFilteredTransactions.slice(0, mobRenderLimit);
+
+        const html = itemsToShow.map(t => {
+            const dateStr = (t.date || '').split('T')[0];
+            const amt = parseFloat(t.amount || 0);
+            const isPos = t.type === 'SELL' || t.type === 'DIVIDEND' || t.type === 'DEPOSIT';
+            const amtColor = isPos ? 'text-emerald-500' : (t.type === 'BUY' || t.type === 'WITHDRAWAL' ? 'text-rose-500' : 'text-slate-300');
+            const amtSign = isPos ? '+' : '';
+
+            let badgeColor = 'bg-slate-700 text-slate-300';
+            if (t.type === 'BUY') badgeColor = 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+            else if (t.type === 'SELL') badgeColor = 'bg-rose-500/20 text-rose-400 border border-rose-500/30';
+            else if (t.type === 'DIVIDEND') badgeColor = 'bg-amber-500/20 text-amber-400 border border-amber-500/30';
+            else if (t.type === 'DEPOSIT') badgeColor = 'bg-sky-500/20 text-sky-400 border border-sky-500/30';
+            else if (t.type === 'WITHDRAWAL') badgeColor = 'bg-purple-500/20 text-purple-400 border border-purple-500/30';
+            else if (t.type === 'TRANSFER') badgeColor = 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30';
+
+            const ticker = t.assetTicker || (t.type === 'DEPOSIT' || t.type === 'WITHDRAWAL' ? 'LIQUIDITÀ' : '-');
+            const qtyPriceStr = t.quantity ? `${Number(t.quantity).toLocaleString('it-IT')} pz @ €${parseFloat(t.price || 0).toFixed(2)}` : '';
+
+            return `
+                <div class="mob-tx-card">
+                    <div class="flex items-center justify-between gap-2 mb-1.5">
+                        <div class="flex items-center gap-1.5 min-w-0">
+                            <span class="text-[9px] font-black px-1.5 py-0.5 rounded ${badgeColor}">${t.type}</span>
+                            <span class="text-[10px] font-bold text-slate-400 truncate">${t.portfolioName || 'Portafoglio'}</span>
+                        </div>
+                        <span class="text-[10px] font-mono text-slate-400 shrink-0">${dateStr}</span>
+                    </div>
+
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0">
+                            <div class="font-black text-sm text-primary tracking-tight truncate">${ticker}</div>
+                            ${t.assetName && t.assetName !== t.assetTicker ? `<div class="text-[10px] text-slate-400 truncate">${t.assetName}</div>` : ''}
+                            ${qtyPriceStr ? `<div class="text-[10px] font-mono text-slate-500 mt-0.5">${qtyPriceStr}</div>` : ''}
+                        </div>
+                        <div class="text-right shrink-0">
+                            <div class="font-black text-sm font-mono ${amtColor}">${amtSign}€ ${amt.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                            ${(t.commission > 0 || t.tax > 0) ? `<div class="text-[9px] text-slate-500 font-mono">c: €${parseFloat(t.commission||0).toFixed(2)} | t: €${parseFloat(t.tax||0).toFixed(2)}</div>` : ''}
+                        </div>
+                    </div>
+
+                    ${t.notes ? `<div class="text-[10px] text-slate-400 mt-2 pt-1.5 border-t border-white/5 italic truncate">📝 ${t.notes}</div>` : ''}
+
+                    <div class="flex items-center justify-end gap-3 mt-2 pt-1.5 border-t border-white/5">
+                        <button onclick="window.editTransaction(${t.id})" class="text-[11px] font-bold text-slate-400 hover:text-amber-500 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">edit</span> Modifica
+                        </button>
+                        <button onclick="window.duplicateTransaction(${t.id})" class="text-[11px] font-bold text-slate-400 hover:text-sky-500 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">content_copy</span> Duplica
+                        </button>
+                        <button onclick="deleteMobTx(${t.id})" class="text-[11px] font-bold text-slate-400 hover:text-rose-500 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">delete</span> Elimina
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        container.innerHTML = html;
+
+        const loadMoreWrap = document.getElementById('mob-load-more-wrap');
+        if (mobFilteredTransactions.length > mobRenderLimit) {
+            loadMoreWrap.classList.remove('hidden');
+        } else {
+            loadMoreWrap.classList.add('hidden');
+        }
+    }
+
+    function loadMoreMobTx() {
+        mobRenderLimit += 30;
+        renderMobTransactions();
+    }
+
+    function openNewMobTx() {
+        const pid = document.getElementById('mob-filter-portfolio')?.value;
+        const defaultPid = (pid && pid !== 'all') ? parseInt(pid) : (mobPortfolios[0]?.id || null);
+        if (window.openTransactionModal) {
+            window.openTransactionModal({ portfolioId: defaultPid });
+        }
+    }
+
+    async function deleteMobTx(id) {
+        if (!confirm('Eliminare definitivamente questo movimento?')) return;
+        try {
+            const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                await loadMobTransactions();
+            } else {
+                alert('Errore eliminazione transazione');
+            }
+        } catch(e) { alert(e.message); }
+    }
+
+    function exportMobCsv() {
+        const pid = document.getElementById('mob-filter-portfolio')?.value || 'all';
+        window.location.href = pid === 'all' ? '/api/transactions/export' : `/api/transactions/export?portfolioId=${pid}`;
+    }
+
+    async function handleMobCsvImport(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const res = await fetch('/api/transactions/import', { method: 'POST', body: formData });
+            if (res.ok) {
+                alert('Transazioni importate con successo!');
+                await loadMobTransactions();
+            } else {
+                const data = await res.json().catch(() => ({}));
+                alert('Errore: ' + (data.error || 'Import fallito'));
+            }
+        } catch(e) { alert('Errore: ' + e.message); }
+        finally { event.target.value = ''; }
+    }
+</script>
+</body>
+</html>

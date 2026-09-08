@@ -391,46 +391,36 @@
 <!-- Manage Transactions -->
 <section class="space-y-2">
     <div class="flex items-center justify-between cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-900/50 p-2 -mx-2 rounded-xl transition-colors" onclick="toggleSection('manage-transactions-content')">
-        <h2 class="text-lg font-bold border-l-4 border-amber-500 pl-3">Manage Transactions</h2>
+        <div class="flex items-center gap-2">
+            <h2 class="text-lg font-bold border-l-4 border-amber-500 pl-3">Manage Transactions (CSV)</h2>
+            <span class="text-[9px] font-black bg-primary/10 text-primary px-2 py-0.5 rounded-full">INTEGRATO IN MOVIMENTI</span>
+        </div>
         <span id="manage-transactions-content-icon" class="material-symbols-outlined text-slate-400 group-hover:text-amber-500 transition-transform">expand_more</span>
     </div>
     <div id="manage-transactions-content" class="hidden">
-        <div class="bg-white dark:bg-surface-dark border-y sm:border-x border-slate-200 dark:border-slate-800 rounded-none sm:rounded-xl p-6 space-y-6">
-            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
-                <div class="w-full md:w-1/3">
-                    <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1.5">Select Portfolio</label>
-                    <select id="mgmt-portfolio-select" onchange="loadMgmtTransactions()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/30">
-                        <option value="all">All Portfolios</option>
-                    </select>
+        <div class="bg-white dark:bg-surface-dark border-y sm:border-x border-slate-200 dark:border-slate-800 rounded-none sm:rounded-xl p-6 space-y-4">
+            <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div class="space-y-1">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-xl">receipt_long</span>
+                        <span class="text-sm font-black">Registro Completo &amp; Tabella Movimenti</span>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 max-w-xl">
+                        La gestione delle transazioni è ora integrata e potenziata nel nuovo menu dedicato <strong>Movimenti</strong>, completo di filtri analitici, modifica diretta, duplicazione, paginazione e statistiche.
+                    </p>
                 </div>
-                <div class="flex items-center gap-3 w-full md:w-auto">
+                <div class="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+                    <a href="/transactions" class="flex-1 md:flex-none px-4 py-2 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary/90 transition-all shadow-md shadow-primary/25 flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-sm">open_in_new</span> Vai a Movimenti
+                    </a>
                     <input type="file" id="mgmt-import-file" accept=".csv" class="hidden" onchange="handleImportCSV(event)">
-                    <button onclick="document.getElementById('mgmt-import-file').click()" class="flex-1 md:flex-none px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2">
-                        <span class="material-symbols-outlined text-sm">upload_file</span> Import CSV
+                    <button onclick="document.getElementById('mgmt-import-file').click()" class="flex-1 md:flex-none px-3.5 py-2 bg-white dark:bg-surface-dark text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-all border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-1.5">
+                        <span class="material-symbols-outlined text-sm text-sky-500">upload_file</span> Importa CSV
                     </button>
-                    <button onclick="exportMgmtTransactions()" class="flex-1 md:flex-none px-4 py-2 bg-amber-500 text-white rounded-lg text-xs font-bold hover:bg-amber-600 transition-all shadow-sm shadow-amber-500/20 flex items-center justify-center gap-2">
-                        <span class="material-symbols-outlined text-sm">download</span> Export CSV
+                    <button onclick="exportMgmtTransactions()" class="flex-1 md:flex-none px-3.5 py-2 bg-white dark:bg-surface-dark text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-all border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-1.5">
+                        <span class="material-symbols-outlined text-sm text-amber-500">download</span> Esporta CSV
                     </button>
                 </div>
-            </div>
-            
-            <div class="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-lg max-h-96 custom-scrollbar">
-                <table class="w-full text-left relative">
-                    <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 shadow-sm">
-                        <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-200 dark:border-slate-800">
-                            <th class="py-3 px-4">Date</th>
-                            <th class="py-3 px-4">Type</th>
-                            <th class="py-3 px-4">Ticker</th>
-                            <th class="py-3 px-4 text-right">Qty</th>
-                            <th class="py-3 px-4 text-right">Price</th>
-                            <th class="py-3 px-4 text-right">Amount</th>
-                            <th class="py-3 px-4 text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="mgmt-transactions-tbody" class="divide-y divide-slate-100 dark:divide-slate-800/50 text-sm">
-                        <tr><td colspan="7" class="py-4 text-center text-slate-500 italic">No transactions loaded.</td></tr>
-                    </tbody>
-                </table>
             </div>
         </div>
     </div>

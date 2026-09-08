@@ -116,30 +116,58 @@ module.exports = function(dependencies) {
 
     // ─── GET TRANSACTIONS ────────────────────────────────────────────────────
     router.get('/transactions', requireAuth, (req, res) => {
-        const { portfolioId, assetTicker, id } = req.query;
+        const { portfolioId, assetTicker, id, order } = req.query;
+        const sortOrder = order && order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
         
-        // Isolation: Filter by portfolios user has access to
-        let query = `
-            SELECT t.* FROM transactions t
-            JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
-            WHERE pu.user_id = ?
-        `;
-        let params = [req.user.id];
+        let query;
+        let params = [];
+        
+        if (req.user.role === 'admin') {
+            query = `
+                SELECT t.*, 
+                       p.name AS portfolioName, 
+                       p.currency AS portfolioCurrency, 
+                       a.name AS assetName, 
+                       a.type AS assetType, 
+                       a.isin AS isin, 
+                       a.currency AS assetCurrency
+                FROM transactions t
+                JOIN portfolios p ON t.portfolioId = p.id
+                LEFT JOIN assets a ON t.assetTicker = a.ticker
+                WHERE 1=1 
+            `;
+        } else {
+            query = `
+                SELECT t.*, 
+                       p.name AS portfolioName, 
+                       p.currency AS portfolioCurrency, 
+                       a.name AS assetName, 
+                       a.type AS assetType, 
+                       a.isin AS isin, 
+                       a.currency AS assetCurrency
+                FROM transactions t
+                JOIN portfolio_users pu ON t.portfolioId = pu.portfolio_id
+                JOIN portfolios p ON t.portfolioId = p.id
+                LEFT JOIN assets a ON t.assetTicker = a.ticker
+                WHERE pu.user_id = ? 
+            `;
+            params.push(req.user.id);
+        }
         
         if (id) {
             query += `AND t.id = ? `;
             params.push(id);
         }
-        if (portfolioId) {
+        if (portfolioId && portfolioId !== 'all') {
             query += `AND t.portfolioId = ? `;
             params.push(portfolioId);
         }
         if (assetTicker) {
-            query += `AND assetTicker = ? `;
+            query += `AND t.assetTicker = ? `;
             params.push(assetTicker);
         }
         
-        query += `ORDER BY date ASC`;
+        query += `ORDER BY t.date ${sortOrder}, t.id ${sortOrder}`;
         res.json(database.db.prepare(query).all(...params));
     });
 
@@ -379,7 +407,7 @@ module.exports = function(dependencies) {
 
     // ─── UPDATE TRANSACTION ──────────────────────────────────────────────────
     router.put('/transactions/:id', requireAuth, async (req, res) => {
-        const { type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount, notes } = req.body;
+        const { portfolioId, type, assetTicker, date, quantity, price, commission, tax, exchangeRate, amount, notes } = req.body;
         
         // Check ownership
         const existing = database.db.prepare(`
@@ -392,6 +420,20 @@ module.exports = function(dependencies) {
         
         const finalExisting = existing || database.db.prepare(`SELECT * FROM transactions WHERE id = ?`).get(req.params.id);
         if (!finalExisting) return res.status(404).send('Transaction not found');
+
+        let targetPortfolioId = finalExisting.portfolioId;
+        if (portfolioId && parseInt(portfolioId) !== finalExisting.portfolioId) {
+            if (req.user.role === 'admin') {
+                targetPortfolioId = parseInt(portfolioId);
+            } else {
+                const hasAccess = database.db.prepare(`
+                    SELECT 1 FROM portfolio_users WHERE portfolio_id = ? AND user_id = ?
+                `).get(portfolioId, req.user.id);
+                if (hasAccess) {
+                    targetPortfolioId = parseInt(portfolioId);
+                }
+            }
+        }
 
         const newType = type || finalExisting.type;
         const typeChanged = finalExisting.type !== newType;
@@ -470,9 +512,10 @@ module.exports = function(dependencies) {
 
         database.db.prepare(`
             UPDATE transactions 
-            SET type = ?, assetTicker = ?, date = ?, quantity = ?, price = ?, commission = ?, tax = ?, exchangeRate = ?, amount = ?, notes = ?
+            SET portfolioId = ?, type = ?, assetTicker = ?, date = ?, quantity = ?, price = ?, commission = ?, tax = ?, exchangeRate = ?, amount = ?, notes = ?
             WHERE id = ?
         `).run(
+            targetPortfolioId,
             newType,
             sanitizeTicker(assetTicker) || finalExisting.assetTicker,
             date || finalExisting.date,
@@ -487,9 +530,13 @@ module.exports = function(dependencies) {
         );
 
         database.recalculatePortfolio(finalExisting.portfolioId);
+        triggerHistoryRebuild(finalExisting.portfolioId);
+        if (targetPortfolioId !== finalExisting.portfolioId) {
+            database.recalculatePortfolio(targetPortfolioId);
+            triggerHistoryRebuild(targetPortfolioId);
+        }
         clearPerformanceCache();
 
-        triggerHistoryRebuild(finalExisting.portfolioId);
         refreshDividendProjections(req.user.id).catch(e => logger.error("Background Dividend Refresh Error:", e));
 
         res.json({ success: true });

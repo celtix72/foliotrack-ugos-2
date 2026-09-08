@@ -133,23 +133,41 @@ module.exports = function (dependencies) {
                     const isGovt = isBtp || (pos.ticker || '').toUpperCase().startsWith('BOT') || (pos.name || '').toUpperCase().includes('BOT');
                     let defaultTaxRate = isGovt ? 12.5 : (taxMap[pos.assetType] !== undefined ? taxMap[pos.assetType] : 26.0);
 
-                    // Collect coupon dates: map each coupon month (1..12) to the most recent historical day ('01'..'31')
+                    // Determine reference year: based on the last year (currentYear - 1).
+                    // If no dividends in lastYear, take the most recent year with dividend data.
+                    const histYears = Array.from(new Set(histDivs.map(d => parseInt(d.date.split('-')[0], 10)))).sort((a, b) => b - a);
+                    const refYear = histYears.find(y => y === lastYear) || histYears.find(y => y < currentYear) || histYears[0] || lastYear;
+                    const refYearDivs = histDivs.filter(d => parseInt(d.date.split('-')[0], 10) === refYear);
+                    const sourceDivs = refYearDivs.length > 0 ? refYearDivs : histDivs;
+
+                    // Collect coupon dates based on the reference year: map each coupon month (1..12) to the day ('01'..'31')
                     const monthSchedule = new Map();
-                    
-                    histDivs.forEach(d => {
+                    sourceDivs.forEach(d => {
                         const parts = d.date.split('-');
                         if (parts.length >= 3) {
                             const m = parseInt(parts[1], 10);
                             const day = parts[2];
-                            // Keep the day from the most recent dividend in this month
                             if (!monthSchedule.has(m)) {
                                 monthSchedule.set(m, day);
                             }
                         }
                     });
 
-                    // For BTPs or semi-annual bonds with only 1 known month, add the 6-month paired coupon date
+                    // For BTPs or semi-annual bonds with only 1 known month, check older history or add 6-month paired coupon date
                     if (isBtp || (!pos.ticker.startsWith('CD_') && !pos.ticker.startsWith('BP_') && monthSchedule.size === 1)) {
+                        for (const d of histDivs) {
+                            const parts = d.date.split('-');
+                            if (parts.length >= 3) {
+                                const m = parseInt(parts[1], 10);
+                                const day = parts[2];
+                                for (const [knownM] of Array.from(monthSchedule.entries())) {
+                                    const targetPair = ((knownM + 6 - 1) % 12 + 1);
+                                    if (m === targetPair && !monthSchedule.has(targetPair)) {
+                                        monthSchedule.set(targetPair, day);
+                                    }
+                                }
+                            }
+                        }
                         for (const [m, day] of Array.from(monthSchedule.entries())) {
                             const pairedM = ((m + 6 - 1) % 12 + 1);
                             if (!monthSchedule.has(pairedM)) {
@@ -206,8 +224,11 @@ module.exports = function (dependencies) {
                         const balanceAtDate = (bObj && bObj.balance > 0.0001) ? bObj.balance : pos.balance;
                         if (balanceAtDate <= 0.0001) continue;
 
-                        // Find reference historical dividend (prefer same month, else most recent)
-                        const refDiv = histDivs.find(d => parseInt(d.date.split('-')[1], 10) === schedM) || histDivs[0];
+                        // Find reference historical dividend from reference year (prefer same month, else first in reference year, fallback to histDivs)
+                        const refDiv = sourceDivs.find(d => parseInt(d.date.split('-')[1], 10) === schedM) 
+                                    || sourceDivs[0] 
+                                    || histDivs.find(d => parseInt(d.date.split('-')[1], 10) === schedM) 
+                                    || histDivs[0];
 
                         let projGross = 0;
                         let projTax = 0;
@@ -355,10 +376,15 @@ module.exports = function (dependencies) {
                             }
                         }
 
-                        // 2. Also project any remaining historical payment months for the current year
+                        // 2. Also project any remaining historical payment months for the current year based on reference year (last year)
                         if (histDivs.length > 0) {
+                            const histYears = Array.from(new Set(histDivs.map(d => parseInt(d.date.split('-')[0], 10)))).sort((a, b) => b - a);
+                            const refYear = histYears.find(y => y === lastYear) || histYears.find(y => y < currentYear) || histYears[0] || lastYear;
+                            const refYearDivs = histDivs.filter(d => parseInt(d.date.split('-')[0], 10) === refYear);
+                            const sourceDivs = refYearDivs.length > 0 ? refYearDivs : histDivs;
+
                             const monthSchedule = new Map();
-                            histDivs.forEach(d => {
+                            sourceDivs.forEach(d => {
                                 const parts = d.date.split('-');
                                 if (parts.length >= 3) {
                                     const m = parseInt(parts[1], 10);
@@ -410,8 +436,11 @@ module.exports = function (dependencies) {
                                     taxEUR = grossEUR * (taxRate / 100);
                                     netEUR = grossEUR - taxEUR;
                                 } else {
-                                    // PRIORITY 2: Use historical dividend directly without multiplying by share count
-                                    const refDiv = histDivs.find(d => parseInt(d.date.split('-')[1], 10) === schedM) || histDivs[0];
+                                    // PRIORITY 2: Use historical dividend from the reference year
+                                    const refDiv = sourceDivs.find(d => parseInt(d.date.split('-')[1], 10) === schedM) 
+                                                || sourceDivs[0] 
+                                                || histDivs.find(d => parseInt(d.date.split('-')[1], 10) === schedM) 
+                                                || histDivs[0];
                                     const rawNet = (refDiv.amount !== null && refDiv.amount !== undefined && refDiv.amount !== 0)
                                         ? refDiv.amount
                                         : (refDiv.quantity * refDiv.price - (refDiv.tax || 0));
@@ -419,9 +448,29 @@ module.exports = function (dependencies) {
                                     const histTax = toEUR(refDiv.tax || 0, refDiv.portCurrency, refDiv.exchangeRate);
                                     const histGross = histNet + histTax;
 
-                                    grossEUR = histGross;
-                                    taxEUR = histTax > 0 ? histTax : grossEUR * (taxRate / 100);
-                                    netEUR = histNet > 0 ? histNet : grossEUR - taxEUR;
+                                    let histBal = 0;
+                                    if (refDiv.quantity > 0) {
+                                        histBal = refDiv.quantity;
+                                    } else {
+                                        const b = balanceOnExDateQuery.get(userId, pos.ticker, pos.isin || '', pos.isin || '', refDiv.date);
+                                        if (b && b.balance > 0.0001) histBal = b.balance;
+                                    }
+
+                                    if (histBal > 0 && histGross > 0 && balanceOnExDate > 0) {
+                                        const ratio = balanceOnExDate / histBal;
+                                        if (ratio >= 0.1 && ratio <= 10) {
+                                            grossEUR = histGross * ratio;
+                                            taxEUR = histTax > 0 ? histTax * ratio : grossEUR * (taxRate / 100);
+                                        } else {
+                                            grossEUR = histGross;
+                                            taxEUR = histTax > 0 ? histTax : grossEUR * (taxRate / 100);
+                                        }
+                                    } else {
+                                        grossEUR = histGross;
+                                        taxEUR = histTax > 0 ? histTax : grossEUR * (taxRate / 100);
+                                    }
+
+                                    netEUR = grossEUR - taxEUR;
                                     unitAmt = balanceOnExDate > 0 ? grossEUR / balanceOnExDate : 0;
                                 }
 

@@ -389,19 +389,21 @@
                 
                 <!-- Manage Transactions (CSV) -->
                 <div class="mob-settings-row" onclick="toggleMobAccordion('acc-transactions')">
-                    <div class="mob-settings-icon bg-amber-600"><span class="material-symbols-outlined text-white">swap_horiz</span></div>
+                    <div class="mob-settings-icon bg-amber-600"><span class="material-symbols-outlined text-white">receipt_long</span></div>
                     <div class="mob-settings-label">Gestione Transazioni (CSV)</div>
                     <span id="acc-transactions-icon" class="material-symbols-outlined mob-settings-chevron transition-transform">expand_more</span>
                 </div>
                 <div id="acc-transactions" class="mob-accordion-body hidden bg-slate-50/70 dark:bg-black/30 p-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
-                    <div class="flex items-center justify-between gap-2">
-                        <select id="mob-mgmt-portfolio-select" onchange="loadMgmtTransactions()" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-bold flex-1">
-                            <option value="all">Tutti i Portafogli</option>
-                        </select>
-                        <button onclick="exportMgmtTransactions()" class="px-3 py-1.5 bg-amber-500 text-white rounded text-[10px] font-bold">Esporta</button>
-                    </div>
-                    <div id="mob-mgmt-transactions-list" class="space-y-1.5 max-h-56 overflow-y-auto custom-scrollbar">
-                        <p class="text-xs text-slate-400 italic">Caricamento transazioni...</p>
+                    <p class="text-xs text-slate-400">
+                        La gestione completa dei movimenti è ora disponibile nella nuova sezione dedicata <strong class="text-white">Movimenti</strong>.
+                    </p>
+                    <div class="flex items-center gap-2">
+                        <a href="/transactions" class="flex-1 py-2 bg-primary text-white text-xs font-bold rounded-lg text-center shadow-md shadow-primary/20 flex items-center justify-center gap-1.5">
+                            <span class="material-symbols-outlined text-[15px]">receipt_long</span> Apri Movimenti
+                        </a>
+                        <button onclick="exportMgmtTransactions()" class="px-3 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-bold flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[15px]">download</span> CSV
+                        </button>
                     </div>
                 </div>
 

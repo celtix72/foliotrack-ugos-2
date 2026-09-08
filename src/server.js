@@ -2857,6 +2857,13 @@ app.get('/dividend', requireAuth, (req, res) => {
     serveWithSidebar(req, res, file);
 });
 
+app.get('/transactions', requireAuth, (req, res) => {
+    const file = isMobile(req) ? 'transactions_mobile.html' : 'transactions.html';
+    serveWithSidebar(req, res, file);
+});
+
+app.get('/movimenti', requireAuth, (req, res) => res.redirect('/transactions'));
+
 app.get('/settings', requireAuth, (req, res) => {
     if (req.user && req.user.role === 'admin') {
         const file = isMobile(req) ? 'admin_mobile.html' : 'admin.html';

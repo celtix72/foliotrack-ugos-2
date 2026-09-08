@@ -1061,52 +1061,40 @@
                 </div>
 
                 <!-- ========================================================================= -->
-                <!-- 15. MANAGE TRANSACTIONS (CSV Import / Export / Edit) -->
+                <!-- 15. MANAGE TRANSACTIONS (Moved to Movimenti page) -->
                 <!-- ========================================================================= -->
                 <div class="bg-white dark:bg-surface-dark rounded-none sm:rounded-xl border-y sm:border-x border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
                     <button onclick="toggleAdminSection('section-transactions')" class="w-full flex items-center justify-between px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
-                        <h2 class="text-sm font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                            <span class="material-symbols-outlined text-amber-500 text-lg">swap_horiz</span> Gestione Transazioni (Import / Export CSV)
-                        </h2>
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-sm font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-amber-500 text-lg">swap_horiz</span> Gestione Transazioni (Import / Export CSV)
+                            </h2>
+                            <span class="text-[9px] font-black bg-primary/10 text-primary px-2 py-0.5 rounded-full">INTEGRATO IN MOVIMENTI</span>
+                        </div>
                         <span id="section-transactions-arrow" class="material-symbols-outlined transition-transform">expand_more</span>
                     </button>
                     <div id="section-transactions" class="collapsible-content px-6 pb-6 border-t border-slate-100 dark:border-slate-800 pt-6">
-                        <div class="space-y-4">
-                            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
-                                <div class="w-full md:w-1/3">
-                                    <label class="block font-bold text-xs text-slate-500 uppercase tracking-widest mb-1.5">Filtra per Portafoglio</label>
-                                    <select id="mgmt-portfolio-select" onchange="loadMgmtTransactions()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2 text-sm font-medium outline-none">
-                                        <option value="all">Tutti i Portafogli</option>
-                                    </select>
+                        <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-primary text-xl">receipt_long</span>
+                                    <span class="text-sm font-black">Registro Completo &amp; Tabella Movimenti</span>
                                 </div>
-                                <div class="flex items-center gap-3 w-full md:w-auto">
-                                    <input type="file" id="mgmt-import-file" accept=".csv" class="hidden" onchange="handleImportCSV(event)">
-                                    <button onclick="document.getElementById('mgmt-import-file').click()" class="flex-1 md:flex-none px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2">
-                                        <span class="material-symbols-outlined text-sm">upload_file</span> Importa CSV
-                                    </button>
-                                    <button onclick="exportMgmtTransactions()" class="flex-1 md:flex-none px-4 py-2 bg-amber-500 text-white rounded-lg text-xs font-bold hover:bg-amber-600 transition-all shadow-sm flex items-center justify-center gap-2">
-                                        <span class="material-symbols-outlined text-sm">download</span> Esporta CSV
-                                    </button>
-                                </div>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 max-w-xl">
+                                    La gestione delle transazioni è ora integrata e potenziata nel nuovo menu dedicato <strong>Movimenti</strong>, completo di filtri analitici, modifica diretta, duplicazione, paginazione e statistiche.
+                                </p>
                             </div>
-                            
-                            <div class="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl max-h-96 custom-scrollbar">
-                                <table class="w-full text-left relative text-xs">
-                                    <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 shadow-sm">
-                                        <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-200 dark:border-slate-800">
-                                            <th class="py-3 px-4">Data</th>
-                                            <th class="py-3 px-4">Tipo</th>
-                                            <th class="py-3 px-4">Ticker</th>
-                                            <th class="py-3 px-4 text-right">Qtà</th>
-                                            <th class="py-3 px-4 text-right">Prezzo</th>
-                                            <th class="py-3 px-4 text-right">Importo</th>
-                                            <th class="py-3 px-4 text-center">Azioni</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="mgmt-transactions-tbody" class="divide-y divide-slate-100 dark:divide-slate-800/50 text-sm">
-                                        <tr><td colspan="7" class="py-4 text-center text-slate-500 italic">Nessuna transazione caricata.</td></tr>
-                                    </tbody>
-                                </table>
+                            <div class="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+                                <a href="/transactions" class="flex-1 md:flex-none px-4 py-2 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary/90 transition-all shadow-md shadow-primary/25 flex items-center justify-center gap-2">
+                                    <span class="material-symbols-outlined text-sm">open_in_new</span> Vai a Movimenti
+                                </a>
+                                <input type="file" id="mgmt-import-file" accept=".csv" class="hidden" onchange="handleImportCSV(event)">
+                                <button onclick="document.getElementById('mgmt-import-file').click()" class="flex-1 md:flex-none px-3.5 py-2 bg-white dark:bg-surface-dark text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-all border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-1.5">
+                                    <span class="material-symbols-outlined text-sm text-sky-500">upload_file</span> Importa CSV
+                                </button>
+                                <button onclick="exportMgmtTransactions()" class="flex-1 md:flex-none px-3.5 py-2 bg-white dark:bg-surface-dark text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-all border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-1.5">
+                                    <span class="material-symbols-outlined text-sm text-amber-500">download</span> Esporta CSV
+                                </button>
                             </div>
                         </div>
                     </div>

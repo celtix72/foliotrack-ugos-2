@@ -1100,6 +1100,7 @@
         if (typeof mobLoadPortfolioDetail === 'function' && portfolioId) mobLoadPortfolioDetail(portfolioId);
         if (typeof mobUpdateDashboard === 'function') mobUpdateDashboard();
         if (typeof loadHistory === 'function') loadHistory();
+        if (typeof loadTransactionsPage === 'function') loadTransactionsPage();
     }
 
     // ─── Utilities ───────────────────────────────────────────────────────────────

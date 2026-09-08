@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html class="dark" lang="it">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>M2T - Movimenti</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="M2T">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="stylesheet" href="/dist/output.css">
+    <link rel="stylesheet" href="/mobile.css?v=1780588387885">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        .sortable-header { cursor: pointer; user-select: none; }
+        .sortable-header:hover { color: #6366f1; }
+    </style>
+    <script src="/theme.js"></script>
+    <script src="/header_indices.js"></script>
+    <script src="/auth.js"></script>
+    <script src="/transaction_modal.js"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            if (window.ftAuth) ftAuth.initAuthGuard();
+        });
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex">
+    <!-- Sidebar -->
+    <aside id="app-sidebar"></aside>
+
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+        <!-- Top App Header -->
+        <header class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-surface-dark px-6 flex items-center justify-between shrink-0 sticky top-0 z-50">
+            <!-- LEFT: date · live · EU/US -->
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="flex items-center gap-2 text-slate-400 shrink-0">
+                    <span class="material-symbols-outlined text-[18px]">calendar_today</span>
+                    <span class="text-[10px] font-bold uppercase tracking-widest" id="header-date">--</span>
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1" id="header-last-update">Upd: --:--</span>
+                </div>
+                <div class="h-4 w-px bg-slate-200 dark:bg-slate-700 shrink-0"></div>
+                <div id="header-live-indicator" class="flex items-center gap-1.5 shrink-0">
+                    <span class="header-live-dot w-2 h-2 rounded-full bg-slate-400"></span>
+                    <span class="header-live-text text-[9px] font-black uppercase tracking-widest text-slate-500 hidden sm:inline">Live</span>
+                </div>
+                <div class="market-status-group shrink-0" title="Stato Mercati (EU / US)">
+                    <span id="market-tag-eu" class="market-microtag market-microtag-eu status-closed" title="Borsa Italiana / XETRA">EU</span>
+                    <span id="market-tag-us" class="market-microtag market-microtag-us status-closed" title="NYSE / NASDAQ">US</span>
+                </div>
+            </div>
+
+            <!-- CENTER: Portfolio Gain Info -->
+            <div id="header-portfolio-var" class="flex items-center"></div>
+
+            <!-- RIGHT: actions + user -->
+            <div class="flex items-center gap-3 shrink-0">
+                <a href="/notifications" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all shadow-sm relative" title="Notifiche">
+                    <span class="material-symbols-outlined text-sm">notifications</span>
+                    <span id="header-notif-badge" class="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900" style="display: none;">0</span>
+                </a>
+                <button onclick="togglePrivacy()" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all shadow-sm" title="Privacy Toggle">
+                    <span class="material-symbols-outlined text-sm" id="header-privacy-icon">visibility</span>
+                </button>
+                <button onclick="toggleTheme()" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all shadow-sm" title="Tema Toggle">
+                    <span class="material-symbols-outlined text-sm" id="header-theme-icon">dark_mode</span>
+                </button>
+                <div class="text-right hidden sm:block">
+                    <p class="text-xs font-bold" id="header-user-name">User</p>
+                    <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter" id="header-user-role">M2T</p>
+                </div>
+                <div class="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-400">
+                    <span class="material-symbols-outlined text-sm">person</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 overflow-y-auto px-6 py-6 space-y-6 custom-scrollbar">
+            
+            <!-- Page Header + Actions Toolbar -->
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div>
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+                            <span class="material-symbols-outlined text-xl">receipt_long</span>
+                        </div>
+                        <div>
+                            <h1 class="text-2xl font-black tracking-tight" style="font-family: 'Space Grotesk', sans-serif;">Movimenti &amp; Transazioni</h1>
+                            <p class="text-xs text-slate-400">Registro globale di tutte le transazioni con filtri analitici, modifica diretta e import/export CSV.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <!-- Hidden File Input for CSV Import -->
+                    <input type="file" id="csv-file-input" accept=".csv" class="hidden" onchange="handleCsvImport(event)"/>
+                    
+                    <button onclick="document.getElementById('csv-file-input').click()" class="px-3.5 py-2 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[17px] text-sky-500">upload_file</span>
+                        <span>Importa CSV</span>
+                    </button>
+                    
+                    <button onclick="exportTransactionsCsv()" class="px-3.5 py-2 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[17px] text-amber-500">download</span>
+                        <span>Esporta CSV</span>
+                    </button>
+                    
+                    <button onclick="loadTransactionsPage()" class="p-2 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-500 rounded-xl text-xs transition-all shadow-sm flex items-center justify-center" title="Ricarica Dati">
+                        <span class="material-symbols-outlined text-[18px]" id="refresh-icon">refresh</span>
+                    </button>
+
+                    <button onclick="openNewTx()" class="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-primary/25 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px]">add_circle</span>
+                        <span>Nuova Transazione</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- KPI Cards Row -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-black uppercase tracking-wider text-slate-400">Movimenti Filtrati</span>
+                        <span class="material-symbols-outlined text-slate-400 text-sm">filter_list</span>
+                    </div>
+                    <div class="mt-2 flex items-baseline gap-2">
+                        <span id="kpi-count" class="text-2xl font-black tracking-tight" style="font-family: 'Doto', monospace;">0</span>
+                        <span id="kpi-total-badge" class="text-[10px] font-bold text-slate-400">su 0 totali</span>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-black uppercase tracking-wider text-slate-400">Volume Acquisti / Prelievi</span>
+                        <span class="material-symbols-outlined text-rose-500 text-sm">trending_down</span>
+                    </div>
+                    <div class="mt-2">
+                        <span id="kpi-outflow" class="text-2xl font-black text-rose-500 tracking-tight" style="font-family: 'Doto', monospace;">€ 0,00</span>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-black uppercase tracking-wider text-slate-400">Volume Vendite / Entrate</span>
+                        <span class="material-symbols-outlined text-emerald-500 text-sm">trending_up</span>
+                    </div>
+                    <div class="mt-2">
+                        <span id="kpi-inflow" class="text-2xl font-black text-emerald-500 tracking-tight" style="font-family: 'Doto', monospace;">€ 0,00</span>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-black uppercase tracking-wider text-slate-400">Totale Dividendi &amp; Cedole</span>
+                        <span class="material-symbols-outlined text-amber-500 text-sm">payments</span>
+                    </div>
+                    <div class="mt-2">
+                        <span id="kpi-dividends" class="text-2xl font-black text-amber-500 tracking-tight" style="font-family: 'Doto', monospace;">€ 0,00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Filters Container -->
+            <div class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-sm">tune</span>
+                        <span class="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">Filtri di Ricerca</span>
+                        <span id="active-filters-badge" class="ml-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-primary/10 text-primary hidden">0 attivi</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="resetFilters()" class="text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center gap-1 transition-colors">
+                            <span class="material-symbols-outlined text-[15px]">clear_all</span>
+                            <span>Azzera Filtri</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                    <!-- Text Search -->
+                    <div class="relative">
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Cerca (Ticker / Nome / Note)</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+                            <input type="text" id="filter-search" placeholder="Es. BTP, AAPL, cedola..." 
+                                class="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs outline-none focus:border-primary transition-colors"
+                                oninput="applyFilters()"/>
+                        </div>
+                    </div>
+
+                    <!-- Portfolio Select -->
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Portafoglio</label>
+                        <select id="filter-portfolio" onchange="applyFilters()" 
+                            class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs outline-none focus:border-primary transition-colors font-medium">
+                            <option value="all">Tutti i Portafogli</option>
+                        </select>
+                    </div>
+
+                    <!-- Type Select -->
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Tipo Movimento</label>
+                        <select id="filter-type" onchange="applyFilters()" 
+                            class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs outline-none focus:border-primary transition-colors font-medium">
+                            <option value="all">Tutti i Tipi</option>
+                            <option value="BUY">BUY - Acquisto</option>
+                            <option value="SELL">SELL - Vendita</option>
+                            <option value="DIVIDEND">DIVIDEND - Dividendo/Cedola</option>
+                            <option value="DEPOSIT">DEPOSIT - Deposito Liquidità</option>
+                            <option value="WITHDRAWAL">WITHDRAWAL - Prelievo Liquidità</option>
+                            <option value="TRANSFER">TRANSFER - Giroconto</option>
+                        </select>
+                    </div>
+
+                    <!-- Date Range: From -->
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Da Data</label>
+                        <input type="date" id="filter-date-from" onchange="applyFilters()" 
+                            class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs outline-none focus:border-primary transition-colors font-mono"/>
+                    </div>
+
+                    <!-- Date Range: To -->
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">A Data</label>
+                        <input type="date" id="filter-date-to" onchange="applyFilters()" 
+                            class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs outline-none focus:border-primary transition-colors font-mono"/>
+                    </div>
+                </div>
+
+                <!-- Quick Date Presets -->
+                <div class="flex flex-wrap items-center gap-1.5 pt-1">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-1">Periodo Rapido:</span>
+                    <button type="button" onclick="setDatePreset('all')" class="preset-btn px-2.5 py-1 rounded-md text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" data-preset="all">Tutto</button>
+                    <button type="button" onclick="setDatePreset('30d')" class="preset-btn px-2.5 py-1 rounded-md text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" data-preset="30d">Ultimi 30gg</button>
+                    <button type="button" onclick="setDatePreset('90d')" class="preset-btn px-2.5 py-1 rounded-md text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" data-preset="90d">Ultimi 90gg</button>
+                    <button type="button" onclick="setDatePreset('ytd')" class="preset-btn px-2.5 py-1 rounded-md text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" data-preset="ytd">Quest'Anno (YTD)</button>
+                    <button type="button" onclick="setDatePreset('last_year')" class="preset-btn px-2.5 py-1 rounded-md text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" data-preset="last_year">Anno Scorso</button>
+                </div>
+            </div>
+
+            <!-- Transactions Table Card -->
+            <div class="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden flex flex-col">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="text-[10px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/50 select-none">
+                                <th class="px-4 py-3.5 sortable-header" onclick="toggleSort('date')">
+                                    <div class="flex items-center gap-1">
+                                        <span>Data</span>
+                                        <span class="material-symbols-outlined text-[13px] text-slate-400" id="sort-icon-date">unfold_more</span>
+                                    </div>
+                                </th>
+                                <th class="px-4 py-3.5 sortable-header" onclick="toggleSort('type')">
+                                    <div class="flex items-center gap-1">
+                                        <span>Tipo</span>
+                                        <span class="material-symbols-outlined text-[13px] text-slate-400" id="sort-icon-type">unfold_more</span>
+                                    </div>
+                                </th>
+                                <th class="px-4 py-3.5 sortable-header" onclick="toggleSort('portfolioName')">
+                                    <div class="flex items-center gap-1">
+                                        <span>Portafoglio</span>
+                                        <span class="material-symbols-outlined text-[13px] text-slate-400" id="sort-icon-portfolioName">unfold_more</span>
+                                    </div>
+                                </th>
+                                <th class="px-4 py-3.5 sortable-header" onclick="toggleSort('assetTicker')">
+                                    <div class="flex items-center gap-1">
+                                        <span>Asset / Ticker</span>
+                                        <span class="material-symbols-outlined text-[13px] text-slate-400" id="sort-icon-assetTicker">unfold_more</span>
+                                    </div>
+                                </th>
+                                <th class="px-4 py-3.5 text-right sortable-header" onclick="toggleSort('quantity')">
+                                    <div class="flex items-center justify-end gap-1">
+                                        <span>Quantità</span>
+                                        <span class="material-symbols-outlined text-[13px] text-slate-400" id="sort-icon-quantity">unfold_more</span>
+                                    </div>
+                                </th>
+                                <th class="px-4 py-3.5 text-right sortable-header" onclick="toggleSort('price')">
+                                    <div class="flex items-center justify-end gap-1">
+                                        <span>Prezzo</span>
+                                        <span class="material-symbols-outlined text-[13px] text-slate-400" id="sort-icon-price">unfold_more</span>
+                                    </div>
+                                </th>
+                                <th class="px-4 py-3.5 text-right">
+                                    <span>Comm. / Tasse</span>
+                                </th>
+                                <th class="px-4 py-3.5 text-right sortable-header" onclick="toggleSort('amount')">
+                                    <div class="flex items-center justify-end gap-1">
+                                        <span>Controvalore</span>
+                                        <span class="material-symbols-outlined text-[13px] text-slate-400" id="sort-icon-amount">unfold_more</span>
+                                    </div>
+                                </th>
+                                <th class="px-4 py-3.5">
+                                    <span>Note</span>
+                                </th>
+                                <th class="px-4 py-3.5 text-center">
+                                    <span>Azioni</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactions-tbody" class="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
+                            <tr>
+                                <td colspan="10" class="py-12 text-center text-slate-400 italic">
+                                    <div class="flex flex-col items-center justify-center gap-2">
+                                        <span class="material-symbols-outlined text-2xl animate-spin text-primary">sync</span>
+                                        <span>Caricamento movimenti in corso...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Table Footer & Pagination -->
+                <div class="px-4 py-3 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 bg-slate-50/50 dark:bg-slate-900/30">
+                    <div class="flex items-center gap-3">
+                        <span id="pagination-info">Visualizzati 0 di 0</span>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[10px] uppercase font-bold text-slate-400">Mostra:</span>
+                            <select id="page-size" onchange="changePageSize(this.value)" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 py-0.5 text-xs font-bold outline-none">
+                                <option value="25">25</option>
+                                <option value="50" selected>50</option>
+                                <option value="100">100</option>
+                                <option value="all">Tutti</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-1" id="pagination-controls">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Page Logic Script -->
+    <script>
+        let allTransactions = [];
+        let filteredTransactions = [];
+        let allPortfolios = [];
+        
+        let sortField = 'date';
+        let sortDirection = 'DESC'; // 'ASC' or 'DESC'
+        
+        let currentPage = 1;
+        let pageSize = 50;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadPortfolios();
+            await loadTransactionsPage();
+
+            // Listen for changes triggered by transaction_modal.js
+            window.addEventListener('portfolios-updated', () => loadTransactionsPage(true));
+        });
+
+        async function loadPortfolios() {
+            try {
+                const res = await fetch('/api/portfolios');
+                const data = await res.json();
+                allPortfolios = Array.isArray(data) ? data : (data.portfolios || []);
+                
+                const select = document.getElementById('filter-portfolio');
+                if (select) {
+                    const currentVal = select.value;
+                    let html = '<option value="all">Tutti i Portafogli</option>';
+                    allPortfolios.forEach(p => {
+                        html += `<option value="${p.id}">${p.name} (${p.currency})</option>`;
+                    });
+                    select.innerHTML = html;
+                    if (currentVal) select.value = currentVal;
+                }
+            } catch (err) {
+                console.error('Errore caricamento portafogli:', err);
+            }
+        }
+
+        async function loadTransactionsPage(silent = false) {
+            const refreshIcon = document.getElementById('refresh-icon');
+            if (refreshIcon) refreshIcon.classList.add('animate-spin');
+
+            try {
+                const res = await fetch('/api/transactions?order=DESC');
+                if (!res.ok) throw new Error('Errore HTTP ' + res.status);
+                
+                const data = await res.json();
+                allTransactions = Array.isArray(data) ? data : [];
+                applyFilters();
+            } catch (err) {
+                console.error('Errore caricamento transazioni:', err);
+                const tbody = document.getElementById('transactions-tbody');
+                if (tbody) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="10" class="py-8 text-center text-rose-500">
+                                <span class="material-symbols-outlined text-2xl mb-1">error</span>
+                                <p class="text-xs font-bold">Impossibile caricare i movimenti: ${err.message}</p>
+                            </td>
+                        </tr>
+                    `;
+                }
+            } finally {
+                if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+            }
+        }
+
+        function setDatePreset(preset) {
+            const fromInput = document.getElementById('filter-date-from');
+            const toInput = document.getElementById('filter-date-to');
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+
+            // Highlight active preset button
+            document.querySelectorAll('.preset-btn').forEach(b => {
+                if (b.getAttribute('data-preset') === preset) {
+                    b.classList.add('bg-primary', 'text-white');
+                    b.classList.remove('bg-slate-100', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-300');
+                } else {
+                    b.classList.remove('bg-primary', 'text-white');
+                    b.classList.add('bg-slate-100', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-300');
+                }
+            });
+
+            if (preset === 'all') {
+                fromInput.value = '';
+                toInput.value = '';
+            } else if (preset === '30d') {
+                const d = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                fromInput.value = d.toISOString().split('T')[0];
+                toInput.value = todayStr;
+            } else if (preset === '90d') {
+                const d = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+                fromInput.value = d.toISOString().split('T')[0];
+                toInput.value = todayStr;
+            } else if (preset === 'ytd') {
+                fromInput.value = `${now.getFullYear()}-01-01`;
+                toInput.value = todayStr;
+            } else if (preset === 'last_year') {
+                fromInput.value = `${now.getFullYear() - 1}-01-01`;
+                toInput.value = `${now.getFullYear() - 1}-12-31`;
+            }
+
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const search = (document.getElementById('filter-search')?.value || '').trim().toLowerCase();
+            const portfolio = document.getElementById('filter-portfolio')?.value || 'all';
+            const type = document.getElementById('filter-type')?.value || 'all';
+            const fromDate = document.getElementById('filter-date-from')?.value;
+            const toDate = document.getElementById('filter-date-to')?.value;
+
+            // Count active filters
+            let activeCount = 0;
+            if (search) activeCount++;
+            if (portfolio !== 'all') activeCount++;
+            if (type !== 'all') activeCount++;
+            if (fromDate) activeCount++;
+            if (toDate) activeCount++;
+
+            const badge = document.getElementById('active-filters-badge');
+            if (badge) {
+                if (activeCount > 0) {
+                    badge.textContent = `${activeCount} attivi`;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+
+            filteredTransactions = allTransactions.filter(t => {
+                // Portfolio filter
+                if (portfolio !== 'all' && String(t.portfolioId) !== String(portfolio)) {
+                    return false;
+                }
+                
+                // Type filter
+                if (type !== 'all' && t.type !== type) {
+                    return false;
+                }
+
+                // Date filter
+                const tDate = (t.date || '').split('T')[0];
+                if (fromDate && tDate < fromDate) return false;
+                if (toDate && tDate > toDate) return false;
+
+                // Text Search filter (ticker, asset name, isin, notes, id)
+                if (search) {
+                    const matchTicker = (t.assetTicker || '').toLowerCase().includes(search);
+                    const matchName = (t.assetName || '').toLowerCase().includes(search);
+                    const matchIsin = (t.isin || '').toLowerCase().includes(search);
+                    const matchNotes = (t.notes || '').toLowerCase().includes(search);
+                    const matchPort = (t.portfolioName || '').toLowerCase().includes(search);
+                    const matchId = String(t.id || '') === search;
+                    if (!matchTicker && !matchName && !matchIsin && !matchNotes && !matchPort && !matchId) {
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
+            // Sort
+            sortTransactions();
+            
+            // Update KPIs
+            updateKPIs();
+
+            // Reset to page 1 on filter change
+            currentPage = 1;
+            renderTable();
+        }
+
+        function resetFilters() {
+            if (document.getElementById('filter-search')) document.getElementById('filter-search').value = '';
+            if (document.getElementById('filter-portfolio')) document.getElementById('filter-portfolio').value = 'all';
+            if (document.getElementById('filter-type')) document.getElementById('filter-type').value = 'all';
+            if (document.getElementById('filter-date-from')) document.getElementById('filter-date-from').value = '';
+            if (document.getElementById('filter-date-to')) document.getElementById('filter-date-to').value = '';
+
+            document.querySelectorAll('.preset-btn').forEach(b => {
+                b.classList.remove('bg-primary', 'text-white');
+                b.classList.add('bg-slate-100', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-300');
+            });
+            const allBtn = document.querySelector('.preset-btn[data-preset="all"]');
+            if (allBtn) {
+                allBtn.classList.add('bg-primary', 'text-white');
+                allBtn.classList.remove('bg-slate-100', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-300');
+            }
+
+            applyFilters();
+        }
+
+        function toggleSort(field) {
+            if (sortField === field) {
+                sortDirection = sortDirection === 'ASC' ? 'DESC' : 'ASC';
+            } else {
+                sortField = field;
+                sortDirection = (field === 'date' || field === 'amount') ? 'DESC' : 'ASC';
+            }
+
+            // Update icons
+            const headers = ['date', 'type', 'portfolioName', 'assetTicker', 'quantity', 'price', 'amount'];
+            headers.forEach(h => {
+                const icon = document.getElementById(`sort-icon-${h}`);
+                if (icon) {
+                    if (h === sortField) {
+                        icon.textContent = sortDirection === 'ASC' ? 'expand_less' : 'expand_more';
+                        icon.classList.add('text-primary');
+                        icon.classList.remove('text-slate-400');
+                    } else {
+                        icon.textContent = 'unfold_more';
+                        icon.classList.remove('text-primary');
+                        icon.classList.add('text-slate-400');
+                    }
+                }
+            });
+
+            sortTransactions();
+            renderTable();
+        }
+
+        function sortTransactions() {
+            filteredTransactions.sort((a, b) => {
+                let valA = a[sortField];
+                let valB = b[sortField];
+
+                if (sortField === 'date') {
+                    valA = new Date(valA || 0).getTime();
+                    valB = new Date(valB || 0).getTime();
+                } else if (['quantity', 'price', 'amount', 'commission', 'tax'].includes(sortField)) {
+                    valA = parseFloat(valA || 0);
+                    valB = parseFloat(valB || 0);
+                } else {
+                    valA = String(valA || '').toLowerCase();
+                    valB = String(valB || '').toLowerCase();
+                }
+
+                if (valA < valB) return sortDirection === 'ASC' ? -1 : 1;
+                if (valA > valB) return sortDirection === 'ASC' ? 1 : -1;
+                return (b.id || 0) - (a.id || 0);
+            });
+        }
+
+        function updateKPIs() {
+            let inflow = 0;
+            let outflow = 0;
+            let dividends = 0;
+
+            filteredTransactions.forEach(t => {
+                const amt = parseFloat(t.amount || 0);
+                if (t.type === 'DIVIDEND') {
+                    dividends += amt;
+                    inflow += amt;
+                } else if (t.type === 'SELL' || t.type === 'DEPOSIT') {
+                    inflow += amt;
+                } else if (t.type === 'BUY' || t.type === 'WITHDRAWAL') {
+                    outflow += amt;
+                }
+            });
+
+            const countEl = document.getElementById('kpi-count');
+            const totalBadgeEl = document.getElementById('kpi-total-badge');
+            const inflowEl = document.getElementById('kpi-inflow');
+            const outflowEl = document.getElementById('kpi-outflow');
+            const divEl = document.getElementById('kpi-dividends');
+
+            if (countEl) countEl.textContent = filteredTransactions.length.toLocaleString('it-IT');
+            if (totalBadgeEl) totalBadgeEl.textContent = `su ${allTransactions.length.toLocaleString('it-IT')} totali`;
+            if (inflowEl) inflowEl.textContent = '€ ' + inflow.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            if (outflowEl) outflowEl.textContent = '€ ' + outflow.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            if (divEl) divEl.textContent = '€ ' + dividends.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('transactions-tbody');
+            if (!tbody) return;
+
+            if (filteredTransactions.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="py-12 text-center text-slate-400">
+                            <span class="material-symbols-outlined text-3xl mb-1 text-slate-300 dark:text-slate-600">search_off</span>
+                            <p class="text-xs font-bold">Nessun movimento trovato per i filtri selezionati</p>
+                            <button onclick="resetFilters()" class="mt-2 px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary/20 transition-all">
+                                Reimposta filtri
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                renderPagination();
+                return;
+            }
+
+            const totalItems = filteredTransactions.length;
+            const effectivePageSize = pageSize === 'all' ? totalItems : parseInt(pageSize);
+            const totalPages = Math.ceil(totalItems / effectivePageSize);
+            
+            if (currentPage > totalPages) currentPage = totalPages || 1;
+            
+            const startIdx = (currentPage - 1) * effectivePageSize;
+            const endIdx = pageSize === 'all' ? totalItems : Math.min(startIdx + effectivePageSize, totalItems);
+            const pageData = filteredTransactions.slice(startIdx, endIdx);
+
+            const rowsHtml = pageData.map(t => {
+                const dateStr = (t.date || '').split('T')[0];
+                
+                // Badge Tipo
+                let typeBadgeClass = 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700';
+                if (t.type === 'BUY') typeBadgeClass = 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/60';
+                else if (t.type === 'SELL') typeBadgeClass = 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800/60';
+                else if (t.type === 'DIVIDEND') typeBadgeClass = 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800/60';
+                else if (t.type === 'DEPOSIT') typeBadgeClass = 'bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border-sky-200 dark:border-sky-800/60';
+                else if (t.type === 'WITHDRAWAL') typeBadgeClass = 'bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800/60';
+                else if (t.type === 'TRANSFER') typeBadgeClass = 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800/60';
+
+                // Ticker & Name
+                const tickerDisplay = t.assetTicker || (t.type === 'DEPOSIT' || t.type === 'WITHDRAWAL' ? 'LIQUIDITÀ' : '-');
+                const assetNameDisplay = t.assetName && t.assetName !== t.assetTicker ? t.assetName : '';
+                const isinBadge = t.isin ? `<span class="text-[9px] font-mono text-slate-400">${t.isin}</span>` : '';
+
+                // Numbers formatting
+                const qtyStr = t.quantity ? Number(t.quantity).toLocaleString('it-IT', { maximumFractionDigits: 6 }) : '-';
+                const priceStr = t.price ? `${Number(t.price).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} ${t.assetCurrency || ''}` : '-';
+                
+                // Comm / Tax
+                const commVal = parseFloat(t.commission || 0);
+                const taxVal = parseFloat(t.tax || 0);
+                let commTaxHtml = '-';
+                if (commVal > 0 || taxVal > 0) {
+                    commTaxHtml = `<div class="font-mono text-[10px] text-slate-500">`;
+                    if (commVal > 0) commTaxHtml += `<span>C: €${commVal.toFixed(2)}</span> `;
+                    if (taxVal > 0) commTaxHtml += `<span class="text-rose-400">T: €${taxVal.toFixed(2)}</span>`;
+                    commTaxHtml += `</div>`;
+                }
+
+                // Amount
+                const amt = parseFloat(t.amount || 0);
+                const isPos = t.type === 'SELL' || t.type === 'DIVIDEND' || t.type === 'DEPOSIT';
+                const amtColor = isPos ? 'text-emerald-500 font-bold' : (t.type === 'BUY' || t.type === 'WITHDRAWAL' ? 'text-rose-500 font-bold' : 'text-slate-700 dark:text-slate-300 font-bold');
+                const amtStr = amt ? `${isPos ? '+' : ''}€ ${amt.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-';
+
+                // Notes
+                const notesStr = t.notes ? `<span class="text-[11px] text-slate-400 truncate max-w-[150px] inline-block" title="${t.notes.replace(/"/g, '&quot;')}">${t.notes}</span>` : '<span class="text-slate-300 dark:text-slate-600">-</span>';
+
+                // Link indicator (e.g. transfer pair or dividend withdrawal)
+                const linkBadge = t.linkedTransactionId ? `<span class="material-symbols-outlined text-[12px] text-indigo-400 align-middle ml-1" title="Collegata a transazione #${t.linkedTransactionId}">link</span>` : '';
+
+                return `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors border-b border-slate-100 dark:border-slate-800/40">
+                        <td class="px-4 py-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">
+                            ${dateStr}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span class="inline-flex items-center gap-1 text-[9px] font-black uppercase px-2 py-0.5 rounded-md border ${typeBadgeClass}">
+                                ${t.type}
+                            </span>
+                            ${linkBadge}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                                ${t.portfolioName || 'P #' + t.portfolioId}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="flex flex-col">
+                                <span class="font-black text-xs text-primary">${tickerDisplay}</span>
+                                ${assetNameDisplay ? `<span class="text-[10px] text-slate-400 truncate max-w-[200px]">${assetNameDisplay}</span>` : ''}
+                                ${isinBadge}
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-right font-mono text-xs whitespace-nowrap text-slate-600 dark:text-slate-300">
+                            ${qtyStr}
+                        </td>
+                        <td class="px-4 py-3 text-right font-mono text-xs whitespace-nowrap text-slate-600 dark:text-slate-300">
+                            ${priceStr}
+                        </td>
+                        <td class="px-4 py-3 text-right whitespace-nowrap">
+                            ${commTaxHtml}
+                        </td>
+                        <td class="px-4 py-3 text-right font-mono text-xs whitespace-nowrap ${amtColor}">
+                            ${amtStr}
+                        </td>
+                        <td class="px-4 py-3 max-w-[160px]">
+                            ${notesStr}
+                        </td>
+                        <td class="px-4 py-3 text-center whitespace-nowrap">
+                            <div class="inline-flex items-center gap-1">
+                                <button onclick="editTx(${t.id})" class="p-1 rounded text-slate-400 hover:text-amber-500 hover:bg-amber-500/10 transition-colors" title="Modifica transazione">
+                                    <span class="material-symbols-outlined text-[16px]">edit</span>
+                                </button>
+                                <button onclick="duplicateTx(${t.id})" class="p-1 rounded text-slate-400 hover:text-sky-500 hover:bg-sky-500/10 transition-colors" title="Duplica transazione">
+                                    <span class="material-symbols-outlined text-[16px]">content_copy</span>
+                                </button>
+                                <button onclick="deleteTx(${t.id})" class="p-1 rounded text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors" title="Elimina transazione">
+                                    <span class="material-symbols-outlined text-[16px]">delete</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            tbody.innerHTML = rowsHtml;
+            renderPagination();
+        }
+
+        function renderPagination() {
+            const infoEl = document.getElementById('pagination-info');
+            const controlsEl = document.getElementById('pagination-controls');
+            if (!infoEl || !controlsEl) return;
+
+            const total = filteredTransactions.length;
+            if (total === 0) {
+                infoEl.textContent = 'Visualizzati 0 di 0';
+                controlsEl.innerHTML = '';
+                return;
+            }
+
+            const effectivePageSize = pageSize === 'all' ? total : parseInt(pageSize);
+            const totalPages = Math.ceil(total / effectivePageSize);
+            const startIdx = (currentPage - 1) * effectivePageSize + 1;
+            const endIdx = pageSize === 'all' ? total : Math.min(startIdx + effectivePageSize - 1, total);
+
+            infoEl.textContent = `Visualizzati ${startIdx}-${endIdx} di ${total} movimenti`;
+
+            if (pageSize === 'all' || totalPages <= 1) {
+                controlsEl.innerHTML = '';
+                return;
+            }
+
+            let btnsHtml = `
+                <button onclick="goToPage(1)" ${currentPage === 1 ? 'disabled class="p-1 text-slate-300 dark:text-slate-700 cursor-not-allowed"' : 'class="p-1 text-slate-500 hover:text-primary"'}>
+                    <span class="material-symbols-outlined text-sm">first_page</span>
+                </button>
+                <button onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled class="p-1 text-slate-300 dark:text-slate-700 cursor-not-allowed"' : 'class="p-1 text-slate-500 hover:text-primary"'}>
+                    <span class="material-symbols-outlined text-sm">chevron_left</span>
+                </button>
+            `;
+
+            // Max 5 page numbers
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, startPage + 4);
+            if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
+
+            for (let i = startPage; i <= endPage; i++) {
+                if (i === currentPage) {
+                    btnsHtml += `<span class="w-6 h-6 rounded bg-primary text-white font-bold flex items-center justify-center text-[11px]">${i}</span>`;
+                } else {
+                    btnsHtml += `<button onclick="goToPage(${i})" class="w-6 h-6 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold flex items-center justify-center text-[11px] transition-colors">${i}</button>`;
+                }
+            }
+
+            btnsHtml += `
+                <button onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled class="p-1 text-slate-300 dark:text-slate-700 cursor-not-allowed"' : 'class="p-1 text-slate-500 hover:text-primary"'}>
+                    <span class="material-symbols-outlined text-sm">chevron_right</span>
+                </button>
+                <button onclick="goToPage(${totalPages})" ${currentPage === totalPages ? 'disabled class="p-1 text-slate-300 dark:text-slate-700 cursor-not-allowed"' : 'class="p-1 text-slate-500 hover:text-primary"'}>
+                    <span class="material-symbols-outlined text-sm">last_page</span>
+                </button>
+            `;
+
+            controlsEl.innerHTML = btnsHtml;
+        }
+
+        function changePageSize(val) {
+            pageSize = val;
+            currentPage = 1;
+            renderTable();
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            renderTable();
+        }
+
+        // Action Handlers
+        window.openNewTx = function() {
+            const pSelect = document.getElementById('filter-portfolio')?.value;
+            const defaultPid = (pSelect && pSelect !== 'all') ? parseInt(pSelect) : (allPortfolios[0]?.id || null);
+            if (window.openTransactionModal) {
+                window.openTransactionModal({ portfolioId: defaultPid });
+            }
+        };
+
+        window.editTx = function(id) {
+            // Keep window.currentTransactions in sync for transaction_modal.js
+            window.currentTransactions = allTransactions;
+            if (window.editTransaction) {
+                window.editTransaction(id);
+            }
+        };
+
+        window.duplicateTx = function(id) {
+            window.currentTransactions = allTransactions;
+            if (window.duplicateTransaction) {
+                window.duplicateTransaction(id);
+            }
+        };
+
+        window.deleteTx = async function(id) {
+            const tx = allTransactions.find(t => t.id === id);
+            const promptMsg = tx 
+                ? `Eliminare definitivamente la transazione #${id} (${tx.type} ${tx.assetTicker || ''} del ${tx.date})?`
+                : `Eliminare definitivamente la transazione #${id}?`;
+                
+            if (!confirm(promptMsg)) return;
+
+            try {
+                const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    await loadTransactionsPage(true);
+                } else {
+                    const err = await res.text();
+                    alert('Errore eliminazione transazione: ' + err);
+                }
+            } catch (err) {
+                alert('Errore di rete: ' + err.message);
+            }
+        };
+
+        // CSV Export
+        window.exportTransactionsCsv = function() {
+            const pid = document.getElementById('filter-portfolio')?.value || 'all';
+            const url = pid === 'all' ? '/api/transactions/export' : `/api/transactions/export?portfolioId=${pid}`;
+            window.location.href = url;
+        };
+
+        // CSV Import
+        window.handleCsvImport = async function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const res = await fetch('/api/transactions/import', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (res.ok) {
+                    alert('Transazioni importate con successo!');
+                    await loadTransactionsPage();
+                } else {
+                    const data = await res.json().catch(() => ({}));
+                    alert('Errore durante l\'importazione: ' + (data.error || 'File CSV non valido'));
+                }
+            } catch (err) {
+                alert('Errore di connessione durante l\'importazione: ' + err.message);
+            } finally {
+                event.target.value = '';
+            }
+        };
+    </script>
+</body>
+</html>
