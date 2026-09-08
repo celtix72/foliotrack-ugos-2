@@ -176,6 +176,7 @@
 
             // 1. Filter
             let filtered = rawHistoryData.filter(pos => {
+                if (pos.type === 'WITHDRAWAL' || pos.type === 'PRELIEVO') return false;
                 return (pos.name || '').toLowerCase().includes(searchTerm) || 
                        (pos.ticker || '').toLowerCase().includes(searchTerm);
             });
@@ -263,7 +264,7 @@
             const sign = pos.realizedGain >= 0 ? '+' : '';
             
             // For non-trades, we show the amount in proceeds
-            const isCashDebit = ['WITHDRAWAL', 'TAX', 'TRANSFER'].includes(pos.type);
+            const isCashDebit = ['TAX', 'TRANSFER'].includes(pos.type);
             const cashColor = isCashDebit ? 'rose' : 'emerald';
             const cashSign = isCashDebit ? '-' : '+';
 

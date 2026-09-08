@@ -135,7 +135,7 @@
         try {
             const res = await fetch('/api/analytics/history');
             const data = await res.json();
-            rawHistoryData = Array.isArray(data) ? data : [];
+            rawHistoryData = (Array.isArray(data) ? data : []).filter(d => d.type !== 'WITHDRAWAL' && d.type !== 'PRELIEVO');
             
             const currentYear = new Date().getFullYear().toString();
             const years = [...new Set(rawHistoryData.map(d => d.year))];

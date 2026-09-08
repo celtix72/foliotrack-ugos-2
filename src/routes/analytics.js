@@ -822,7 +822,7 @@ module.exports = function (dependencies) {
                             holdingsMap[t.assetTicker].costBasis -= sellCostBasis;
                             if (holdingsMap[t.assetTicker].shares <= 0.0001) delete holdingsMap[t.assetTicker];
                         }
-                    } else if (['DEPOSIT', 'WITHDRAWAL', 'TAX', 'TRANSFER'].includes(t.type)) {
+                    } else if (['DEPOSIT', 'TAX', 'TRANSFER'].includes(t.type)) {
                         closed.push({
                             id: t.id,
                             ticker: t.assetTicker || 'CASH',
