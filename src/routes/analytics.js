@@ -133,41 +133,49 @@ module.exports = function (dependencies) {
                     const isGovt = isBtp || (pos.ticker || '').toUpperCase().startsWith('BOT') || (pos.name || '').toUpperCase().includes('BOT');
                     let defaultTaxRate = isGovt ? 12.5 : (taxMap[pos.assetType] !== undefined ? taxMap[pos.assetType] : 26.0);
 
-                    // Collect coupon dates (month and day: MM-DD)
-                    const schedMonthDays = new Set();
+                    // Collect coupon dates: map each coupon month (1..12) to the most recent historical day ('01'..'31')
+                    const monthSchedule = new Map();
                     
                     histDivs.forEach(d => {
                         const parts = d.date.split('-');
                         if (parts.length >= 3) {
                             const m = parseInt(parts[1], 10);
                             const day = parts[2];
-                            schedMonthDays.add(`${parts[1]}-${day}`);
-                            
-                            // For BTP or semi-annual bonds, also add the 6-month paired coupon date
-                            if (isBtp || histDivs.length <= 2) {
-                                const pairedM = ((m + 6 - 1) % 12 + 1);
-                                const pairedMStr = pairedM.toString().padStart(2, '0');
-                                schedMonthDays.add(`${pairedMStr}-${day}`);
+                            // Keep the day from the most recent dividend in this month
+                            if (!monthSchedule.has(m)) {
+                                monthSchedule.set(m, day);
                             }
                         }
                     });
+
+                    // For BTPs or semi-annual bonds with only 1 known month, add the 6-month paired coupon date
+                    if (isBtp || (!pos.ticker.startsWith('CD_') && !pos.ticker.startsWith('BP_') && monthSchedule.size === 1)) {
+                        for (const [m, day] of Array.from(monthSchedule.entries())) {
+                            const pairedM = ((m + 6 - 1) % 12 + 1);
+                            if (!monthSchedule.has(pairedM)) {
+                                monthSchedule.set(pairedM, day);
+                            }
+                        }
+                    }
 
                     // If no history found, try to extract coupon dates and rate from name or ticker
                     const rateMatch = (pos.name + ' ' + pos.ticker).match(/(\d+[.,]?\d*)\s*%/);
                     const parsedAnnualRate = rateMatch ? parseFloat(rateMatch[1].replace(',', '.')) : 0;
 
-                    if (schedMonthDays.size === 0 && (isBtp || isBond)) {
+                    if (monthSchedule.size === 0 && (isBtp || isBond)) {
                         const monthMatch = (pos.name + ' ' + pos.ticker).match(/(?:^|\s|-)(\d{1,2})?\s*(GE|GEN|FB|FEB|MZ|MAR|MR|AP|APR|MG|MAG|GI|GIU|LG|LUG|AG|AGO|ST|SET|SEP|OT|OTT|OCT|NV|NOV|DC|DIC|DEC)\s*(\d{2,4})?/i);
                         if (monthMatch) {
                             const day = monthMatch[1] ? parseInt(monthMatch[1], 10).toString().padStart(2, '0') : '15';
                             const mCode = monthMatch[2].toUpperCase();
                             const m = monthCodes[mCode];
                             if (m) {
-                                const mStr = m.toString().padStart(2, '0');
-                                schedMonthDays.add(`${mStr}-${day}`);
-                                const pairedM = ((m + 6 - 1) % 12 + 1);
-                                const pairedMStr = pairedM.toString().padStart(2, '0');
-                                schedMonthDays.add(`${pairedMStr}-${day}`);
+                                monthSchedule.set(m, day);
+                                if (isBtp || (!pos.ticker.startsWith('CD_') && !pos.ticker.startsWith('BP_'))) {
+                                    const pairedM = ((m + 6 - 1) % 12 + 1);
+                                    if (!monthSchedule.has(pairedM)) {
+                                        monthSchedule.set(pairedM, day);
+                                    }
+                                }
                             }
                         }
                     }
@@ -175,9 +183,11 @@ module.exports = function (dependencies) {
                     const curMonthIdx = now.getMonth(); // 0-indexed
                     const todayStr = now.toISOString().split('T')[0];
 
-                    [...schedMonthDays].sort().forEach(md => {
-                        const schedDate = `${currentYear}-${md}`;
-                        const schedM = parseInt(md.split('-')[0], 10);
+                    const sortedMonths = Array.from(monthSchedule.keys()).sort((a, b) => a - b);
+                    for (const schedM of sortedMonths) {
+                        const day = monthSchedule.get(schedM);
+                        const mStr = schedM.toString().padStart(2, '0');
+                        const schedDate = `${currentYear}-${mStr}-${day}`;
                         const mIdx = schedM - 1;
 
                         // Check if already confirmed in currentYear
@@ -187,14 +197,14 @@ module.exports = function (dependencies) {
                             parseInt(tx.date.split('-')[1], 10) === schedM
                         );
 
-                        if (alreadyConfirmed) return;
+                        if (alreadyConfirmed) continue;
 
                         // Projected if in future month, or current month (even if schedDate earlier in this month)
-                        if (mIdx < curMonthIdx) return;
+                        if (mIdx < curMonthIdx) continue;
 
                         const bObj = balanceOnExDateQuery.get(userId, pos.ticker, pos.isin || '', pos.isin || '', schedDate);
                         const balanceAtDate = (bObj && bObj.balance > 0.0001) ? bObj.balance : pos.balance;
-                        if (balanceAtDate <= 0.0001) return;
+                        if (balanceAtDate <= 0.0001) continue;
 
                         // Find reference historical dividend (prefer same month, else most recent)
                         const refDiv = histDivs.find(d => parseInt(d.date.split('-')[1], 10) === schedM) || histDivs[0];
@@ -253,9 +263,14 @@ module.exports = function (dependencies) {
 
                         if (projGross > 0 || projNet > 0) {
                             const projDate = schedDate >= todayStr ? schedDate : todayStr;
-                            if (!newProjections.some(p => p.ticker === pos.ticker && p.date === projDate)) {
+                            const projMonthStr = projDate.substring(0, 7);
+                            const alreadyProjected = newProjections.some(p => 
+                                matchesAsset(p, pos) && p.date.substring(0, 7) === projMonthStr
+                            );
+                            if (!alreadyProjected) {
                                 newProjections.push({
                                     ticker: pos.ticker,
+                                    isin: pos.isin,
                                     name: pos.name,
                                     date: projDate,
                                     tag: 'STORICO',
@@ -263,11 +278,11 @@ module.exports = function (dependencies) {
                                     totalAmount: projNet,
                                     gross: projGross,
                                     tax: projTax,
-                                    yield: (pos.currentPrice > 0 && balanceAtDate > 0) ? ((projGross * 2) / (pos.currentPrice * balanceAtDate)) : 0
+                                    yield: (pos.currentPrice > 0 && balanceAtDate > 0) ? ((projGross * (isBtp ? 2 : 1)) / (pos.currentPrice * balanceAtDate)) : 0
                                 });
                             }
                         }
-                    });
+                    }
                 } else if (ticker && !ticker.startsWith('CD_') && !ticker.startsWith('BP_') && ticker !== 'Sconosciuto') {
                     try {
                         const summary = await yahooFinance.quoteSummary(ticker, { modules: ['summaryDetail', 'calendarEvents', 'price'] }).catch(() => null);
@@ -305,8 +320,13 @@ module.exports = function (dependencies) {
 
                         // 1. If Yahoo Finance has upcoming dividend date >= today:
                         if (annualRate > 0 && nextDateStr && nextDateStr >= todayStr) {
-                            const month = nextDateStr.split('-')[1];
-                            const alreadyConfirmed = allDivTx.some(tx => matchesAsset(tx, pos) && tx.date.split('-')[1] === month && tx.date.startsWith(currentYear.toString()));
+                            const yfMonthStr = nextDateStr.substring(0, 7);
+                            const yfMonth = parseInt(nextDateStr.split('-')[1], 10);
+                            const alreadyConfirmed = allDivTx.some(tx => 
+                                matchesAsset(tx, pos) && 
+                                parseInt(tx.date.split('-')[1], 10) === yfMonth && 
+                                tx.date.startsWith(currentYear.toString())
+                            );
                             if (!alreadyConfirmed) {
                                 const bObj = balanceOnExDateQuery.get(userId, pos.ticker, pos.isin || '', pos.isin || '', nextDateStr);
                                 const balanceOnExDate = (bObj && bObj.balance > 0.0001) ? bObj.balance : pos.balance;
@@ -317,28 +337,43 @@ module.exports = function (dependencies) {
                                     const taxEUR = amtGrossEUR * (taxRate / 100);
                                     const netEUR = amtGrossEUR - taxEUR;
 
-                                    newProjections.push({
-                                        ticker: pos.ticker,
-                                        name: pos.name,
-                                        date: nextDateStr,
-                                        tag: 'YF',
-                                        amount: unitAmount,
-                                        totalAmount: netEUR,
-                                        gross: amtGrossEUR,
-                                        tax: taxEUR,
-                                        yield: assetYield
-                                    });
-                                    yfProjected = true;
+                                    if (!newProjections.some(p => matchesAsset(p, pos) && p.date.substring(0, 7) === yfMonthStr)) {
+                                        newProjections.push({
+                                            ticker: pos.ticker,
+                                            isin: pos.isin,
+                                            name: pos.name,
+                                            date: nextDateStr,
+                                            tag: 'YF',
+                                            amount: unitAmount,
+                                            totalAmount: netEUR,
+                                            gross: amtGrossEUR,
+                                            tax: taxEUR,
+                                            yield: assetYield
+                                        });
+                                    }
                                 }
                             }
                         }
 
-                        // 2. If not projected via Yahoo Finance calendar, use historical payments
-                        if (!yfProjected && histDivs.length > 0) {
-                            const schedMonthDays = new Set(histDivs.map(d => d.date.substring(5)));
-                            schedMonthDays.forEach(md => {
-                                const schedDate = `${currentYear}-${md}`;
-                                const schedM = parseInt(md.split('-')[0], 10);
+                        // 2. Also project any remaining historical payment months for the current year
+                        if (histDivs.length > 0) {
+                            const monthSchedule = new Map();
+                            histDivs.forEach(d => {
+                                const parts = d.date.split('-');
+                                if (parts.length >= 3) {
+                                    const m = parseInt(parts[1], 10);
+                                    const day = parts[2];
+                                    if (!monthSchedule.has(m)) {
+                                        monthSchedule.set(m, day);
+                                    }
+                                }
+                            });
+
+                            const sortedMonths = Array.from(monthSchedule.keys()).sort((a, b) => a - b);
+                            for (const schedM of sortedMonths) {
+                                const day = monthSchedule.get(schedM);
+                                const mStr = schedM.toString().padStart(2, '0');
+                                const schedDate = `${currentYear}-${mStr}-${day}`;
                                 const mIdx = schedM - 1;
 
                                 const alreadyConfirmed = allDivTx.some(tx => 
@@ -346,12 +381,21 @@ module.exports = function (dependencies) {
                                     tx.date.startsWith(currentYear.toString()) && 
                                     parseInt(tx.date.split('-')[1], 10) === schedM
                                 );
-                                if (alreadyConfirmed) return;
-                                if (mIdx < curMonthIdx) return;
+                                if (alreadyConfirmed) continue;
+                                if (mIdx < curMonthIdx) continue;
+
+                                const projDate = schedDate >= todayStr ? schedDate : todayStr;
+                                const projMonthStr = projDate.substring(0, 7);
+
+                                // Check if this month is already projected (e.g. by YF above)
+                                const alreadyProjected = newProjections.some(p => 
+                                    matchesAsset(p, pos) && p.date.substring(0, 7) === projMonthStr
+                                );
+                                if (alreadyProjected) continue;
 
                                 const bObj = balanceOnExDateQuery.get(userId, pos.ticker, pos.isin || '', pos.isin || '', schedDate);
                                 const balanceOnExDate = (bObj && bObj.balance > 0.0001) ? bObj.balance : pos.balance;
-                                if (balanceOnExDate <= 0.0001) return;
+                                if (balanceOnExDate <= 0.0001) continue;
 
                                 let grossEUR = 0;
                                 let taxEUR = 0;
@@ -381,10 +425,10 @@ module.exports = function (dependencies) {
                                     unitAmt = balanceOnExDate > 0 ? grossEUR / balanceOnExDate : 0;
                                 }
 
-                                const projDate = schedDate >= todayStr ? schedDate : todayStr;
-                                if (!newProjections.some(p => p.ticker === pos.ticker && p.date === projDate)) {
+                                if (grossEUR > 0 || netEUR > 0) {
                                     newProjections.push({
                                         ticker: pos.ticker,
+                                        isin: pos.isin,
                                         name: pos.name,
                                         date: projDate,
                                         tag: 'SIMULATO',
@@ -395,7 +439,7 @@ module.exports = function (dependencies) {
                                         yield: assetYield || ((currentPrice > 0 && balanceOnExDate > 0) ? (grossEUR * (freq || 1) / (currentPrice * balanceOnExDate)) : 0)
                                     });
                                 }
-                            });
+                            }
                         }
                     } catch(e) {
                         logger.error(`Error fetching YF/history projection for ${ticker}:`, e.message);
@@ -845,7 +889,43 @@ module.exports = function (dependencies) {
             WHERE t.type = 'DIVIDEND' AND t.date LIKE ? AND pu.user_id = ?
         `).all(currentYear + '-%', userId);
 
-        const savedProjections = database.db.prepare(`SELECT * FROM dividend_projections WHERE year = ? AND user_id = ?`).all(currentYear, userId);
+        let savedProjections = database.db.prepare(`SELECT * FROM dividend_projections WHERE year = ? AND user_id = ?`).all(currentYear, userId);
+        
+        // Clean up duplicate non-manual projections from DB and in-memory list if any exist
+        if (savedProjections.length > 0) {
+            savedProjections.sort((a, b) => new Date(b.exDate) - new Date(a.exDate));
+            const seenKeys = new Set();
+            const duplicateIds = [];
+            const filteredProjections = [];
+
+            for (const p of savedProjections) {
+                if (p.tag === 'MANUALE') {
+                    filteredProjections.push(p);
+                    continue;
+                }
+                const asset = openPositions.find(op => op.ticker === p.ticker || (op.isin && op.isin === p.ticker));
+                const assetKey = ((asset && (asset.isin || asset.ticker)) || p.ticker).trim().toUpperCase();
+                const key = `${assetKey}_${p.exDate.substring(0, 7)}`;
+                if (seenKeys.has(key)) {
+                    duplicateIds.push(p.id);
+                } else {
+                    seenKeys.add(key);
+                    filteredProjections.push(p);
+                }
+            }
+
+            if (duplicateIds.length > 0) {
+                try {
+                    const deleteStmt = database.db.prepare(`DELETE FROM dividend_projections WHERE id = ?`);
+                    for (const id of duplicateIds) {
+                        deleteStmt.run(id);
+                    }
+                } catch (e) {
+                    logger.error('Error cleaning duplicate projections:', e.message);
+                }
+                savedProjections = filteredProjections;
+            }
+        }
         const taxRatesRaw = database.db.prepare(`SELECT asset_type, rate FROM tax_rates WHERE user_id = ?`).all(userId);
         const taxMap = Object.fromEntries(taxRatesRaw.map(tr => [tr.asset_type, tr.rate]));
 
