@@ -148,16 +148,31 @@
                                 <input type="date" id="confirm-date" required class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs outline-none">
                             </div>
                             <div>
-                                <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Lordo (€)</label>
-                                <input type="number" step="0.01" id="confirm-gross" required placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs font-mono outline-none">
+                                <div class="flex justify-between items-center mb-1">
+                                    <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Lordo (€)</label>
+                                    <button type="button" onclick="calcConfirmField('gross')" title="Calcola Lordo da Netto + Tasse" class="text-[9px] font-black text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 flex items-center gap-0.5 cursor-pointer select-none transition-colors">
+                                        <span class="material-symbols-outlined text-[12px]">calculate</span>Calcola
+                                    </button>
+                                </div>
+                                <input type="number" step="0.01" id="confirm-gross" required placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs font-mono outline-none transition-all">
                             </div>
                             <div>
-                                <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Tasse (€)</label>
-                                <input type="number" step="0.01" id="confirm-tax" required placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs font-mono outline-none">
+                                <div class="flex justify-between items-center mb-1">
+                                    <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Tasse (€)</label>
+                                    <button type="button" onclick="calcConfirmField('tax')" title="Calcola Tasse da Lordo - Netto" class="text-[9px] font-black text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 flex items-center gap-0.5 cursor-pointer select-none transition-colors">
+                                        <span class="material-symbols-outlined text-[12px]">calculate</span>Calcola
+                                    </button>
+                                </div>
+                                <input type="number" step="0.01" id="confirm-tax" required placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs font-mono outline-none transition-all">
                             </div>
                             <div class="col-span-2">
-                                <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Netto Stimato (€)</label>
-                                <input type="number" step="0.01" id="confirm-net" required placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 text-xs font-mono outline-none">
+                                <div class="flex justify-between items-center mb-1">
+                                    <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Netto Stimato (€)</label>
+                                    <button type="button" onclick="calcConfirmField('net')" title="Calcola Netto da Lordo - Tasse" class="text-[9px] font-black text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 flex items-center gap-0.5 cursor-pointer select-none transition-colors">
+                                        <span class="material-symbols-outlined text-[12px]">calculate</span>Calcola
+                                    </button>
+                                </div>
+                                <input type="number" step="0.01" id="confirm-net" required placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 text-xs font-mono outline-none transition-all">
                             </div>
                         </div>
 
@@ -486,8 +501,13 @@
                 document.getElementById('confirm-ticker-display').classList.remove('hidden');
                 document.getElementById('confirm-ticker-select').classList.add('hidden');
                 document.getElementById('confirm-date').value = proj.date;
-                document.getElementById('confirm-gross').value = (proj.totalAmount || 0).toFixed(2);
-                document.getElementById('confirm-tax').value = '0.00';
+                const grossVal = (proj.gross && proj.gross > 0) ? proj.gross : ((proj.totalAmount || 0) + (proj.tax || 0));
+                const taxVal = (proj.tax !== undefined && proj.tax !== null) ? proj.tax : 0;
+                const netVal = proj.totalAmount !== undefined ? proj.totalAmount : (grossVal - taxVal);
+                document.getElementById('confirm-gross').value = grossVal.toFixed(2);
+                document.getElementById('confirm-tax').value = taxVal.toFixed(2);
+                document.getElementById('confirm-net').value = netVal.toFixed(2);
+                if (window.resetConfirmCalcTracking) window.resetConfirmCalcTracking();
                 document.getElementById('confirm-portfolio-group').classList.remove('hidden');
                 document.getElementById('confirm-portfolio').required = true;
                 document.getElementById('confirm-submit-btn').innerText = 'Conferma e Salva';
@@ -507,7 +527,6 @@
                                     pData.portfolios.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
                 } catch(e) { console.error(e); }
 
-                updateNetPreview();
                 document.getElementById('manual-modal').classList.remove('hidden');
             };
 
@@ -524,8 +543,13 @@
                 document.getElementById('confirm-ticker-display').classList.remove('hidden');
                 document.getElementById('confirm-ticker-select').classList.add('hidden');
                 document.getElementById('confirm-date').value = item.date;
-                document.getElementById('confirm-gross').value = (item.gross || item.totalAmount || 0).toFixed(2);
-                document.getElementById('confirm-tax').value = (item.tax || 0).toFixed(2);
+                const editGross = (item.gross || ((item.totalAmount || 0) + (item.tax || 0)) || 0);
+                const editTax = (item.tax || 0);
+                const editNet = item.totalAmount !== undefined ? item.totalAmount : (editGross - editTax);
+                document.getElementById('confirm-gross').value = editGross.toFixed(2);
+                document.getElementById('confirm-tax').value = editTax.toFixed(2);
+                document.getElementById('confirm-net').value = editNet.toFixed(2);
+                if (window.resetConfirmCalcTracking) window.resetConfirmCalcTracking();
                 document.getElementById('confirm-portfolio-group').classList.add('hidden');
                 document.getElementById('confirm-portfolio').required = false;
 
@@ -538,33 +562,114 @@
 
                 document.getElementById('confirm-submit-btn').innerText = 'Aggiorna Transazione';
 
-                updateNetPreview();
                 document.getElementById('manual-modal').classList.remove('hidden');
             };
 
-            function updateNetPreview() {
-                const gross = parseFloat(document.getElementById('confirm-gross').value) || 0;
-                const tax = parseFloat(document.getElementById('confirm-tax').value) || 0;
-                document.getElementById('confirm-net').value = (gross - tax).toFixed(2);
-            }
+            // ─── 3-WAY DIVIDEND CALCULATION (LORDO, TASSE, NETTO) ───────────────────
+            (function setupConfirm3Way() {
+                let lastEdited = 'gross';
+                let secondLastEdited = 'tax';
+                let isCalculating = false;
 
-            document.getElementById('confirm-gross').addEventListener('input', () => {
-                const gross = parseFloat(document.getElementById('confirm-gross').value) || 0;
-                const tax = parseFloat(document.getElementById('confirm-tax').value) || 0;
-                document.getElementById('confirm-net').value = (gross - tax).toFixed(2);
-            });
+                const grossEl = document.getElementById('confirm-gross');
+                const taxEl = document.getElementById('confirm-tax');
+                const netEl = document.getElementById('confirm-net');
 
-            document.getElementById('confirm-tax').addEventListener('input', () => {
-                const gross = parseFloat(document.getElementById('confirm-gross').value) || 0;
-                const tax = parseFloat(document.getElementById('confirm-tax').value) || 0;
-                document.getElementById('confirm-net').value = (gross - tax).toFixed(2);
-            });
+                window.resetConfirmCalcTracking = function() {
+                    lastEdited = 'gross';
+                    secondLastEdited = 'tax';
+                };
 
-            document.getElementById('confirm-net').addEventListener('input', () => {
-                const net = parseFloat(document.getElementById('confirm-net').value) || 0;
-                const tax = parseFloat(document.getElementById('confirm-tax').value) || 0;
-                document.getElementById('confirm-gross').value = (net + tax).toFixed(2);
-            });
+                window.updateNetPreview = function() {
+                    const g = parseFloat(grossEl.value) || 0;
+                    const t = parseFloat(taxEl.value) || 0;
+                    netEl.value = (g - t).toFixed(2);
+                };
+
+                window.calcConfirmField = function(target) {
+                    const g = parseFloat(grossEl.value);
+                    const t = parseFloat(taxEl.value);
+                    const n = parseFloat(netEl.value);
+                    let targetEl = null;
+
+                    if (target === 'gross') {
+                        const valN = isNaN(n) ? 0 : n;
+                        const valT = isNaN(t) ? 0 : t;
+                        grossEl.value = (valN + valT).toFixed(2);
+                        targetEl = grossEl;
+                        secondLastEdited = 'net';
+                        lastEdited = 'tax';
+                    } else if (target === 'tax') {
+                        const valG = isNaN(g) ? 0 : g;
+                        const valN = isNaN(n) ? 0 : n;
+                        taxEl.value = Math.max(0, valG - valN).toFixed(2);
+                        targetEl = taxEl;
+                        secondLastEdited = 'gross';
+                        lastEdited = 'net';
+                    } else if (target === 'net') {
+                        const valG = isNaN(g) ? 0 : g;
+                        const valT = isNaN(t) ? 0 : t;
+                        netEl.value = (valG - valT).toFixed(2);
+                        targetEl = netEl;
+                        secondLastEdited = 'gross';
+                        lastEdited = 'tax';
+                    }
+
+                    if (targetEl) {
+                        targetEl.classList.add('ring-2', 'ring-emerald-500', 'bg-emerald-50', 'dark:bg-emerald-950/40');
+                        setTimeout(() => {
+                            targetEl.classList.remove('ring-2', 'ring-emerald-500', 'bg-emerald-50', 'dark:bg-emerald-950/40');
+                        }, 500);
+                    }
+                };
+
+                function onInput(field) {
+                    if (isCalculating) return;
+
+                    if (field !== lastEdited) {
+                        secondLastEdited = lastEdited;
+                        lastEdited = field;
+                    }
+
+                    const gStr = grossEl.value.trim();
+                    const tStr = taxEl.value.trim();
+                    const nStr = netEl.value.trim();
+
+                    // Target field to compute:
+                    let target = null;
+                    if (field !== 'gross' && gStr === '') target = 'gross';
+                    else if (field !== 'tax' && tStr === '') target = 'tax';
+                    else if (field !== 'net' && nStr === '') target = 'net';
+                    else {
+                        const fields = ['gross', 'tax', 'net'];
+                        target = fields.find(f => f !== lastEdited && f !== secondLastEdited);
+                        if (!target) target = (field === 'net' ? 'gross' : (field === 'gross' ? 'net' : 'net'));
+                    }
+
+                    const g = parseFloat(gStr);
+                    const t = parseFloat(tStr);
+                    const n = parseFloat(nStr);
+
+                    isCalculating = true;
+                    try {
+                        if (target === 'gross' && !isNaN(n) && !isNaN(t)) {
+                            grossEl.value = (n + t).toFixed(2);
+                        } else if (target === 'tax' && !isNaN(g) && !isNaN(n)) {
+                            taxEl.value = Math.max(0, g - n).toFixed(2);
+                        } else if (target === 'net' && !isNaN(g) && !isNaN(t)) {
+                            netEl.value = (g - t).toFixed(2);
+                        }
+                    } finally {
+                        isCalculating = false;
+                    }
+                }
+
+                if (grossEl && taxEl && netEl) {
+                    grossEl.addEventListener('input', () => onInput('gross'));
+                    taxEl.addEventListener('input', () => onInput('tax'));
+                    netEl.addEventListener('input', () => onInput('net'));
+                }
+            })();
 
             window.closeManualModal = () => {
                 document.getElementById('manual-modal').classList.add('hidden');
