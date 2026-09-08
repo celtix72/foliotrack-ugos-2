@@ -248,56 +248,56 @@
                 <div class="overflow-x-auto custom-scrollbar">
                     <table class="w-full text-left border-collapse text-xs">
                         <thead>
-                            <tr class="text-[10px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/50 select-none">
-                                <th class="px-4 py-3.5 sortable-header" onclick="toggleSort('date')">
+                            <tr class="text-[9px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/50 select-none">
+                                <th class="px-3 py-2 sortable-header" onclick="toggleSort('date')">
                                     <div class="flex items-center gap-1">
                                         <span>Data</span>
-                                        <span class="material-symbols-outlined text-[13px] text-slate-400" id="sort-icon-date">unfold_more</span>
+                                        <span class="material-symbols-outlined text-[12px] text-slate-400" id="sort-icon-date">unfold_more</span>
                                     </div>
                                 </th>
-                                <th class="px-4 py-3.5 sortable-header" onclick="toggleSort('type')">
+                                <th class="px-3 py-2 sortable-header" onclick="toggleSort('type')">
                                     <div class="flex items-center gap-1">
                                         <span>Tipo</span>
-                                        <span class="material-symbols-outlined text-[13px] text-slate-400" id="sort-icon-type">unfold_more</span>
+                                        <span class="material-symbols-outlined text-[12px] text-slate-400" id="sort-icon-type">unfold_more</span>
                                     </div>
                                 </th>
-                                <th class="px-4 py-3.5 sortable-header" onclick="toggleSort('portfolioName')">
+                                <th class="px-3 py-2 sortable-header" onclick="toggleSort('portfolioName')">
                                     <div class="flex items-center gap-1">
                                         <span>Portafoglio</span>
-                                        <span class="material-symbols-outlined text-[13px] text-slate-400" id="sort-icon-portfolioName">unfold_more</span>
+                                        <span class="material-symbols-outlined text-[12px] text-slate-400" id="sort-icon-portfolioName">unfold_more</span>
                                     </div>
                                 </th>
-                                <th class="px-4 py-3.5 sortable-header" onclick="toggleSort('assetTicker')">
+                                <th class="px-3 py-2 sortable-header" onclick="toggleSort('assetTicker')">
                                     <div class="flex items-center gap-1">
                                         <span>Asset / Ticker</span>
-                                        <span class="material-symbols-outlined text-[13px] text-slate-400" id="sort-icon-assetTicker">unfold_more</span>
+                                        <span class="material-symbols-outlined text-[12px] text-slate-400" id="sort-icon-assetTicker">unfold_more</span>
                                     </div>
                                 </th>
-                                <th class="px-4 py-3.5 text-right sortable-header" onclick="toggleSort('quantity')">
+                                <th class="px-3 py-2 text-right sortable-header" onclick="toggleSort('quantity')">
                                     <div class="flex items-center justify-end gap-1">
                                         <span>Quantità</span>
-                                        <span class="material-symbols-outlined text-[13px] text-slate-400" id="sort-icon-quantity">unfold_more</span>
+                                        <span class="material-symbols-outlined text-[12px] text-slate-400" id="sort-icon-quantity">unfold_more</span>
                                     </div>
                                 </th>
-                                <th class="px-4 py-3.5 text-right sortable-header" onclick="toggleSort('price')">
+                                <th class="px-3 py-2 text-right sortable-header" onclick="toggleSort('price')">
                                     <div class="flex items-center justify-end gap-1">
                                         <span>Prezzo</span>
-                                        <span class="material-symbols-outlined text-[13px] text-slate-400" id="sort-icon-price">unfold_more</span>
+                                        <span class="material-symbols-outlined text-[12px] text-slate-400" id="sort-icon-price">unfold_more</span>
                                     </div>
                                 </th>
-                                <th class="px-4 py-3.5 text-right">
+                                <th class="px-3 py-2 text-right">
                                     <span>Comm. / Tasse</span>
                                 </th>
-                                <th class="px-4 py-3.5 text-right sortable-header" onclick="toggleSort('amount')">
+                                <th class="px-3 py-2 text-right sortable-header" onclick="toggleSort('amount')">
                                     <div class="flex items-center justify-end gap-1">
                                         <span>Controvalore</span>
-                                        <span class="material-symbols-outlined text-[13px] text-slate-400" id="sort-icon-amount">unfold_more</span>
+                                        <span class="material-symbols-outlined text-[12px] text-slate-400" id="sort-icon-amount">unfold_more</span>
                                     </div>
                                 </th>
-                                <th class="px-4 py-3.5">
+                                <th class="px-3 py-2">
                                     <span>Note</span>
                                 </th>
-                                <th class="px-4 py-3.5 text-center">
+                                <th class="px-3 py-2 text-center">
                                     <span>Azioni</span>
                                 </th>
                             </tr>
@@ -662,7 +662,7 @@
                 // Ticker & Name
                 const tickerDisplay = t.assetTicker || (t.type === 'DEPOSIT' || t.type === 'WITHDRAWAL' ? 'LIQUIDITÀ' : '-');
                 const assetNameDisplay = t.assetName && t.assetName !== t.assetTicker ? t.assetName : '';
-                const isinBadge = t.isin ? `<span class="text-[9px] font-mono text-slate-400">${t.isin}</span>` : '';
+                const isinBadge = t.isin ? `<span class="text-[8.5px] font-mono text-slate-400 leading-none">${t.isin}</span>` : '';
 
                 // Numbers formatting
                 const qtyStr = t.quantity ? Number(t.quantity).toLocaleString('it-IT', { maximumFractionDigits: 6 }) : '-';
@@ -671,9 +671,9 @@
                 // Comm / Tax
                 const commVal = parseFloat(t.commission || 0);
                 const taxVal = parseFloat(t.tax || 0);
-                let commTaxHtml = '-';
+                let commTaxHtml = '<span class="text-slate-300 dark:text-slate-600">-</span>';
                 if (commVal > 0 || taxVal > 0) {
-                    commTaxHtml = `<div class="font-mono text-[10px] text-slate-500">`;
+                    commTaxHtml = `<div class="font-mono text-[9px] text-slate-500 leading-none">`;
                     if (commVal > 0) commTaxHtml += `<span>C: €${commVal.toFixed(2)}</span> `;
                     if (taxVal > 0) commTaxHtml += `<span class="text-rose-400">T: €${taxVal.toFixed(2)}</span>`;
                     commTaxHtml += `</div>`;
@@ -686,59 +686,59 @@
                 const amtStr = amt ? `${isPos ? '+' : ''}€ ${amt.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-';
 
                 // Notes
-                const notesStr = t.notes ? `<span class="text-[11px] text-slate-400 truncate max-w-[150px] inline-block" title="${t.notes.replace(/"/g, '&quot;')}">${t.notes}</span>` : '<span class="text-slate-300 dark:text-slate-600">-</span>';
+                const notesStr = t.notes ? `<span class="text-[10px] text-slate-400 truncate max-w-[140px] inline-block leading-tight" title="${t.notes.replace(/"/g, '&quot;')}">${t.notes}</span>` : '<span class="text-slate-300 dark:text-slate-600">-</span>';
 
                 // Link indicator (e.g. transfer pair or dividend withdrawal)
-                const linkBadge = t.linkedTransactionId ? `<span class="material-symbols-outlined text-[12px] text-indigo-400 align-middle ml-1" title="Collegata a transazione #${t.linkedTransactionId}">link</span>` : '';
+                const linkBadge = t.linkedTransactionId ? `<span class="material-symbols-outlined text-[11px] text-indigo-400 align-middle ml-0.5" title="Collegata a transazione #${t.linkedTransactionId}">link</span>` : '';
 
                 return `
                     <tr class="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors border-b border-slate-100 dark:border-slate-800/40">
-                        <td class="px-4 py-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">
+                        <td class="px-3 py-1 font-mono text-[10px] text-slate-500 whitespace-nowrap">
                             ${dateStr}
                         </td>
-                        <td class="px-4 py-3 whitespace-nowrap">
-                            <span class="inline-flex items-center gap-1 text-[9px] font-black uppercase px-2 py-0.5 rounded-md border ${typeBadgeClass}">
+                        <td class="px-3 py-1 whitespace-nowrap">
+                            <span class="inline-flex items-center gap-0.5 text-[8px] font-black uppercase px-1.5 py-0.5 rounded border ${typeBadgeClass}">
                                 ${t.type}
                             </span>
                             ${linkBadge}
                         </td>
-                        <td class="px-4 py-3 whitespace-nowrap">
-                            <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                        <td class="px-3 py-1 whitespace-nowrap">
+                            <span class="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                                 ${t.portfolioName || 'P #' + t.portfolioId}
                             </span>
                         </td>
-                        <td class="px-4 py-3">
-                            <div class="flex flex-col">
-                                <span class="font-black text-xs text-primary">${tickerDisplay}</span>
-                                ${assetNameDisplay ? `<span class="text-[10px] text-slate-400 truncate max-w-[200px]">${assetNameDisplay}</span>` : ''}
+                        <td class="px-3 py-1">
+                            <div class="flex flex-col leading-none">
+                                <span class="font-black text-[11px] text-primary">${tickerDisplay}</span>
+                                ${assetNameDisplay ? `<span class="text-[9px] text-slate-400 truncate max-w-[180px] leading-tight mt-0.5">${assetNameDisplay}</span>` : ''}
                                 ${isinBadge}
                             </div>
                         </td>
-                        <td class="px-4 py-3 text-right font-mono text-xs whitespace-nowrap text-slate-600 dark:text-slate-300">
+                        <td class="px-3 py-1 text-right font-mono text-[11px] whitespace-nowrap text-slate-600 dark:text-slate-300">
                             ${qtyStr}
                         </td>
-                        <td class="px-4 py-3 text-right font-mono text-xs whitespace-nowrap text-slate-600 dark:text-slate-300">
+                        <td class="px-3 py-1 text-right font-mono text-[11px] whitespace-nowrap text-slate-600 dark:text-slate-300">
                             ${priceStr}
                         </td>
-                        <td class="px-4 py-3 text-right whitespace-nowrap">
+                        <td class="px-3 py-1 text-right whitespace-nowrap">
                             ${commTaxHtml}
                         </td>
-                        <td class="px-4 py-3 text-right font-mono text-xs whitespace-nowrap ${amtColor}">
+                        <td class="px-3 py-1 text-right font-mono text-[11px] whitespace-nowrap ${amtColor}">
                             ${amtStr}
                         </td>
-                        <td class="px-4 py-3 max-w-[160px]">
+                        <td class="px-3 py-1 max-w-[150px]">
                             ${notesStr}
                         </td>
-                        <td class="px-4 py-3 text-center whitespace-nowrap">
-                            <div class="inline-flex items-center gap-1">
-                                <button onclick="editTx(${t.id})" class="p-1 rounded text-slate-400 hover:text-amber-500 hover:bg-amber-500/10 transition-colors" title="Modifica transazione">
-                                    <span class="material-symbols-outlined text-[16px]">edit</span>
+                        <td class="px-3 py-1 text-center whitespace-nowrap">
+                            <div class="inline-flex items-center gap-0.5">
+                                <button onclick="editTx(${t.id})" class="p-0.5 rounded text-slate-400 hover:text-amber-500 hover:bg-amber-500/10 transition-colors" title="Modifica transazione">
+                                    <span class="material-symbols-outlined text-[14px]">edit</span>
                                 </button>
-                                <button onclick="duplicateTx(${t.id})" class="p-1 rounded text-slate-400 hover:text-sky-500 hover:bg-sky-500/10 transition-colors" title="Duplica transazione">
-                                    <span class="material-symbols-outlined text-[16px]">content_copy</span>
+                                <button onclick="duplicateTx(${t.id})" class="p-0.5 rounded text-slate-400 hover:text-sky-500 hover:bg-sky-500/10 transition-colors" title="Duplica transazione">
+                                    <span class="material-symbols-outlined text-[14px]">content_copy</span>
                                 </button>
-                                <button onclick="deleteTx(${t.id})" class="p-1 rounded text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors" title="Elimina transazione">
-                                    <span class="material-symbols-outlined text-[16px]">delete</span>
+                                <button onclick="deleteTx(${t.id})" class="p-0.5 rounded text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors" title="Elimina transazione">
+                                    <span class="material-symbols-outlined text-[14px]">delete</span>
                                 </button>
                             </div>
                         </td>
