@@ -337,17 +337,17 @@
                         </div>
                     </div>
 
-                    ${t.notes ? `<div class="text-[8.5px] text-slate-400 mt-0.5 pt-0.5 border-t border-white/5 italic truncate">📝 ${t.notes}</div>` : ''}
+                    ${t.notes ? `<div class="text-[7.5px] text-slate-400 dark:text-slate-500 mt-0.5 pt-0.5 border-t border-white/5 italic truncate leading-tight">📝 ${t.notes}</div>` : ''}
 
-                    <div class="flex items-center justify-end gap-2 mt-0.5 pt-0.5 border-t border-white/5">
-                        <button onclick="window.editTransaction(${t.id})" class="text-[9px] font-bold text-slate-400 hover:text-amber-500 flex items-center gap-0.5">
-                            <span class="material-symbols-outlined text-[11px]">edit</span> Modifica
+                    <div class="flex items-center justify-end gap-1.5 mt-0.5 pt-0.5 border-t border-white/5">
+                        <button onclick="window.editTransaction(${t.id})" class="px-1.5 py-0.5 rounded text-[8px] font-bold text-slate-400 hover:text-amber-400 bg-slate-800/60 hover:bg-amber-500/10 border border-slate-700/60 flex items-center gap-0.5 transition-all">
+                            <span class="material-symbols-outlined text-[10px]">edit</span> Modifica
                         </button>
-                        <button onclick="window.duplicateTransaction(${t.id})" class="text-[9px] font-bold text-slate-400 hover:text-sky-500 flex items-center gap-0.5">
-                            <span class="material-symbols-outlined text-[11px]">content_copy</span> Duplica
+                        <button onclick="window.duplicateTransaction(${t.id})" class="px-1.5 py-0.5 rounded text-[8px] font-bold text-slate-400 hover:text-sky-400 bg-slate-800/60 hover:bg-sky-500/10 border border-slate-700/60 flex items-center gap-0.5 transition-all">
+                            <span class="material-symbols-outlined text-[10px]">content_copy</span> Duplica
                         </button>
-                        <button onclick="deleteMobTx(${t.id})" class="text-[9px] font-bold text-slate-400 hover:text-rose-500 flex items-center gap-0.5">
-                            <span class="material-symbols-outlined text-[11px]">delete</span> Elimina
+                        <button onclick="deleteMobTx(${t.id})" class="px-1.5 py-0.5 rounded text-[8px] font-bold text-slate-400 hover:text-rose-400 bg-slate-800/60 hover:bg-rose-500/10 border border-slate-700/60 flex items-center gap-0.5 transition-all">
+                            <span class="material-symbols-outlined text-[10px]">delete</span> Elimina
                         </button>
                     </div>
                 </div>

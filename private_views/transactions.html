@@ -267,7 +267,7 @@
                                         <span class="material-symbols-outlined text-[11px] text-slate-400" id="sort-icon-portfolioName">unfold_more</span>
                                     </div>
                                 </th>
-                                <th class="px-2 py-1.5 sortable-header" onclick="toggleSort('assetTicker')">
+                                <th class="px-1.5 py-1.5 sortable-header max-w-[95px] w-[95px]" onclick="toggleSort('assetTicker')">
                                     <div class="flex items-center gap-0.5">
                                         <span>Asset</span>
                                         <span class="material-symbols-outlined text-[11px] text-slate-400" id="sort-icon-assetTicker">unfold_more</span>
@@ -294,10 +294,10 @@
                                         <span class="material-symbols-outlined text-[11px] text-slate-400" id="sort-icon-amount">unfold_more</span>
                                     </div>
                                 </th>
-                                <th class="px-2 py-1.5">
+                                <th class="px-2 py-1.5 max-w-[110px]">
                                     <span>Note</span>
                                 </th>
-                                <th class="px-2 py-1.5 text-center">
+                                <th class="px-1.5 py-1.5 text-center w-[72px]">
                                     <span>Az.</span>
                                 </th>
                             </tr>
@@ -685,11 +685,11 @@
                 const amtColor = isPos ? 'text-emerald-500 font-bold' : (t.type === 'BUY' || t.type === 'WITHDRAWAL' ? 'text-rose-500 font-bold' : 'text-slate-700 dark:text-slate-300 font-bold');
                 const amtStr = amt ? `${isPos ? '+' : ''}€ ${amt.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-';
 
-                // Notes
-                const notesStr = t.notes ? `<span class="text-[10px] text-slate-400 truncate max-w-[140px] inline-block leading-tight" title="${t.notes.replace(/"/g, '&quot;')}">${t.notes}</span>` : '<span class="text-slate-300 dark:text-slate-600">-</span>';
+                // Notes - Sensibilmente ridotto font e stile compatto
+                const notesStr = t.notes ? `<span class="text-[7.5px] text-slate-400 dark:text-slate-500 italic truncate max-w-[110px] inline-block leading-tight select-all" title="${t.notes.replace(/"/g, '&quot;')}">${t.notes}</span>` : '<span class="text-slate-300 dark:text-slate-600 text-[8px]">-</span>';
 
                 // Link indicator (e.g. transfer pair or dividend withdrawal)
-                const linkBadge = t.linkedTransactionId ? `<span class="material-symbols-outlined text-[11px] text-indigo-400 align-middle ml-0.5" title="Collegata a transazione #${t.linkedTransactionId}">link</span>` : '';
+                const linkBadge = t.linkedTransactionId ? `<span class="material-symbols-outlined text-[10px] text-indigo-400 align-middle ml-0.5" title="Collegata a transazione #${t.linkedTransactionId}">link</span>` : '';
 
                 return `
                     <tr class="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors border-b border-slate-100 dark:border-slate-800/40">
@@ -703,21 +703,21 @@
                             ${linkBadge}
                         </td>
                         <td class="px-2 py-0.5 whitespace-nowrap">
-                            <span class="inline-block text-[8.5px] font-bold px-1 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 max-w-[85px] truncate">
+                            <span class="inline-block text-[8.5px] font-bold px-1 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 max-w-[80px] truncate">
                                 ${t.portfolioName || 'P #' + t.portfolioId}
                             </span>
                         </td>
-                        <td class="px-2 py-0.5">
-                            <div class="flex flex-col leading-none">
-                                <span class="font-black text-[10.5px] text-primary">${tickerDisplay}</span>
-                                ${assetNameDisplay ? `<span class="text-[8.5px] text-slate-400 truncate max-w-[140px] leading-tight mt-0.5">${assetNameDisplay}</span>` : ''}
+                        <td class="px-1.5 py-0.5 max-w-[95px]">
+                            <div class="flex flex-col leading-none overflow-hidden">
+                                <span class="font-black text-[10px] text-primary truncate">${tickerDisplay}</span>
+                                ${assetNameDisplay ? `<span class="text-[7.5px] text-slate-400 truncate max-w-[90px] leading-tight mt-0.5">${assetNameDisplay}</span>` : ''}
                                 ${isinBadge}
                             </div>
                         </td>
-                        <td class="px-2 py-0.5 text-right font-mono text-[10.5px] whitespace-nowrap text-slate-600 dark:text-slate-300">
+                        <td class="px-2 py-0.5 text-right font-mono text-[10px] whitespace-nowrap text-slate-600 dark:text-slate-300">
                             ${qtyStr}
                         </td>
-                        <td class="px-2 py-0.5 text-right font-mono text-[10.5px] whitespace-nowrap text-slate-600 dark:text-slate-300">
+                        <td class="px-2 py-0.5 text-right font-mono text-[10px] whitespace-nowrap text-slate-600 dark:text-slate-300">
                             ${priceStr}
                         </td>
                         <td class="px-2 py-0.5 text-right whitespace-nowrap">
@@ -726,19 +726,19 @@
                         <td class="px-2 py-0.5 text-right font-mono text-[10.5px] whitespace-nowrap ${amtColor}">
                             ${amtStr}
                         </td>
-                        <td class="px-2 py-0.5 max-w-[120px]">
+                        <td class="px-2 py-0.5 max-w-[110px]">
                             ${notesStr}
                         </td>
-                        <td class="px-2 py-0.5 text-center whitespace-nowrap">
-                            <div class="inline-flex items-center gap-0.5">
-                                <button onclick="editTx(${t.id})" class="p-0.5 rounded text-slate-400 hover:text-amber-500 hover:bg-amber-500/10 transition-colors" title="Modifica transazione">
-                                    <span class="material-symbols-outlined text-[13px]">edit</span>
+                        <td class="px-1.5 py-0.5 text-center whitespace-nowrap">
+                            <div class="inline-flex items-center justify-center gap-1">
+                                <button onclick="editTx(${t.id})" class="w-[18px] h-[18px] rounded flex items-center justify-center bg-slate-100 dark:bg-slate-800/80 text-slate-400 hover:text-amber-500 hover:bg-amber-500/15 border border-slate-200/70 dark:border-slate-700/70 hover:border-amber-500/30 transition-all cursor-pointer" title="Modifica transazione">
+                                    <span class="material-symbols-outlined text-[10px] leading-none">edit</span>
                                 </button>
-                                <button onclick="duplicateTx(${t.id})" class="p-0.5 rounded text-slate-400 hover:text-sky-500 hover:bg-sky-500/10 transition-colors" title="Duplica transazione">
-                                    <span class="material-symbols-outlined text-[13px]">content_copy</span>
+                                <button onclick="duplicateTx(${t.id})" class="w-[18px] h-[18px] rounded flex items-center justify-center bg-slate-100 dark:bg-slate-800/80 text-slate-400 hover:text-sky-500 hover:bg-sky-500/15 border border-slate-200/70 dark:border-slate-700/70 hover:border-sky-500/30 transition-all cursor-pointer" title="Duplica transazione">
+                                    <span class="material-symbols-outlined text-[10px] leading-none">content_copy</span>
                                 </button>
-                                <button onclick="deleteTx(${t.id})" class="p-0.5 rounded text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors" title="Elimina transazione">
-                                    <span class="material-symbols-outlined text-[13px]">delete</span>
+                                <button onclick="deleteTx(${t.id})" class="w-[18px] h-[18px] rounded flex items-center justify-center bg-slate-100 dark:bg-slate-800/80 text-slate-400 hover:text-rose-500 hover:bg-rose-500/15 border border-slate-200/70 dark:border-slate-700/70 hover:border-rose-500/30 transition-all cursor-pointer" title="Elimina transazione">
+                                    <span class="material-symbols-outlined text-[10px] leading-none">delete</span>
                                 </button>
                             </div>
                         </td>
