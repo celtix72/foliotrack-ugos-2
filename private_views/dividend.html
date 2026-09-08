@@ -354,12 +354,28 @@
                     </div>
                     <div>
                         <div class="flex justify-between items-center mb-1">
-                            <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Tasse (€)</label>
-                            <button type="button" onclick="calcConfirmField('tax')" title="Calcola Tasse da Lordo - Netto" class="text-[9px] font-black text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 flex items-center gap-0.5 cursor-pointer select-none transition-colors">
-                                <span class="material-symbols-outlined text-[12px]">calculate</span>Calcola
-                            </button>
+                            <div class="flex items-center gap-1">
+                                <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Tasse</label>
+                                <span id="confirm-tax-unit" class="text-[9px] font-bold text-slate-400">(€)</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <button type="button" id="confirm-tax-toggle" onclick="toggleConfirmTaxMode()" title="Cambia modalità € / %" class="text-[9px] font-black px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-emerald-500 border border-slate-200 dark:border-slate-700 transition-colors">
+                                    %
+                                </button>
+                                <button type="button" onclick="calcConfirmField('tax')" title="Calcola Tasse da Lordo - Netto" class="text-[9px] font-black text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 flex items-center gap-0.5 cursor-pointer select-none transition-colors">
+                                    <span class="material-symbols-outlined text-[12px]">calculate</span>Calcola
+                                </button>
+                            </div>
                         </div>
-                        <input type="number" step="0.01" id="confirm-tax" required placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-emerald-500/20 font-mono font-black outline-none transition-all">
+                        <input type="number" step="any" id="confirm-tax" required placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-emerald-500/20 font-mono font-black outline-none transition-all">
+                        <input type="hidden" id="confirm-tax-mode" value="eur">
+                        <div class="flex items-center justify-between mt-1 text-[8px] font-bold text-slate-400 select-none">
+                            <span id="confirm-tax-hint">Eq. 0.0%</span>
+                            <div class="flex gap-1.5">
+                                <button type="button" onclick="applyTaxRate(26)" class="hover:text-emerald-500 cursor-pointer transition-colors" title="Imposta 26% (Azioni/ETF)">26%</button>
+                                <button type="button" onclick="applyTaxRate(12.5)" class="hover:text-emerald-500 cursor-pointer transition-colors" title="Imposta 12.5% (Titoli di Stato)">12.5%</button>
+                            </div>
+                        </div>
                     </div>
                     <div class="col-span-2">
                         <div class="flex justify-between items-center mb-1">
@@ -1070,26 +1086,117 @@
             document.getElementById('confirm-modal').classList.remove('hidden');
         };
 
-        // ─── 3-WAY DIVIDEND CALCULATION (LORDO, TASSE, NETTO) ───────────────────
+        // ─── 3-WAY DIVIDEND CALCULATION (LORDO, TASSE, NETTO) CON SUPPORTO € / % ───
         (function setupConfirm3Way() {
             let lastEdited = 'gross';
             let secondLastEdited = 'tax';
             let isCalculating = false;
+            let taxMode = 'eur'; // 'eur' or 'pct'
 
             const grossEl = document.getElementById('confirm-gross');
             const taxEl = document.getElementById('confirm-tax');
             const netEl = document.getElementById('confirm-net');
+            const modeInput = document.getElementById('confirm-tax-mode');
+            const unitEl = document.getElementById('confirm-tax-unit');
+            const toggleBtn = document.getElementById('confirm-tax-toggle');
+            const hintEl = document.getElementById('confirm-tax-hint');
+
+            function updateTaxHint() {
+                if (!hintEl) return;
+                const g = parseFloat(grossEl.value) || 0;
+                const t = parseFloat(taxEl.value) || 0;
+                if (taxMode === 'eur') {
+                    const pct = g > 0 ? ((t / g) * 100) : 0;
+                    hintEl.innerText = `Eq. ${pct.toFixed(1)}%`;
+                } else {
+                    const eqEUR = (g * (t / 100));
+                    hintEl.innerText = `Eq. ${eqEUR.toFixed(2)} €`;
+                }
+            }
+
+            window.toggleConfirmTaxMode = function() {
+                const g = parseFloat(grossEl.value) || 0;
+                const t = parseFloat(taxEl.value) || 0;
+                
+                if (taxMode === 'eur') {
+                    taxMode = 'pct';
+                    if (modeInput) modeInput.value = 'pct';
+                    if (unitEl) unitEl.innerText = '(%)';
+                    if (toggleBtn) toggleBtn.innerText = '€';
+                    // Convert euro to percentage
+                    const pct = g > 0 ? ((t / g) * 100) : 26.0;
+                    taxEl.value = pct.toFixed(1);
+                } else {
+                    taxMode = 'eur';
+                    if (modeInput) modeInput.value = 'eur';
+                    if (unitEl) unitEl.innerText = '(€)';
+                    if (toggleBtn) toggleBtn.innerText = '%';
+                    // Convert percentage to euro
+                    const eqEUR = (g * (t / 100));
+                    taxEl.value = eqEUR.toFixed(2);
+                }
+                updateTaxHint();
+                flashCalculatedField(taxEl);
+            };
+
+            window.applyTaxRate = function(rate) {
+                const g = parseFloat(grossEl.value) || 0;
+                const n = parseFloat(netEl.value) || 0;
+
+                isCalculating = true;
+                try {
+                    if (g > 0) {
+                        const taxEUR = g * (rate / 100);
+                        netEl.value = (g - taxEUR).toFixed(2);
+                        if (taxMode === 'pct') {
+                            taxEl.value = rate.toString();
+                        } else {
+                            taxEl.value = taxEUR.toFixed(2);
+                        }
+                    } else if (n > 0) {
+                        const newGross = n / (1 - rate / 100);
+                        const taxEUR = newGross - n;
+                        grossEl.value = newGross.toFixed(2);
+                        if (taxMode === 'pct') {
+                            taxEl.value = rate.toString();
+                        } else {
+                            taxEl.value = taxEUR.toFixed(2);
+                        }
+                    } else {
+                        if (taxMode === 'pct') {
+                            taxEl.value = rate.toString();
+                        } else {
+                            taxEl.value = '0.00';
+                        }
+                    }
+                } finally {
+                    isCalculating = false;
+                }
+                updateTaxHint();
+                flashCalculatedField(taxEl);
+            };
 
             window.resetConfirmCalcTracking = function() {
                 lastEdited = 'gross';
                 secondLastEdited = 'tax';
+                taxMode = 'eur';
+                if (modeInput) modeInput.value = 'eur';
+                if (unitEl) unitEl.innerText = '(€)';
+                if (toggleBtn) toggleBtn.innerText = '%';
+                updateTaxHint();
             };
 
             window.updateNetPreview = function() {
-                const g = parseFloat(grossEl.value) || 0;
-                const t = parseFloat(taxEl.value) || 0;
-                netEl.value = (g - t).toFixed(2);
+                updateTaxHint();
             };
+
+            function flashCalculatedField(el) {
+                if (!el) return;
+                el.classList.add('ring-2', 'ring-emerald-500', 'bg-emerald-50', 'dark:bg-emerald-950/40');
+                setTimeout(() => {
+                    el.classList.remove('ring-2', 'ring-emerald-500', 'bg-emerald-50', 'dark:bg-emerald-950/40');
+                }, 500);
+            }
 
             window.calcConfirmField = function(target) {
                 const g = parseFloat(grossEl.value);
@@ -1099,32 +1206,48 @@
 
                 if (target === 'gross') {
                     const valN = isNaN(n) ? 0 : n;
-                    const valT = isNaN(t) ? 0 : t;
-                    grossEl.value = (valN + valT).toFixed(2);
+                    if (taxMode === 'pct') {
+                        const rate = isNaN(t) ? 26 : t;
+                        if (rate < 100) {
+                            grossEl.value = (valN / (1 - rate / 100)).toFixed(2);
+                        }
+                    } else {
+                        const valT = isNaN(t) ? 0 : t;
+                        grossEl.value = (valN + valT).toFixed(2);
+                    }
                     targetEl = grossEl;
                     secondLastEdited = 'net';
                     lastEdited = 'tax';
                 } else if (target === 'tax') {
                     const valG = isNaN(g) ? 0 : g;
                     const valN = isNaN(n) ? 0 : n;
-                    taxEl.value = Math.max(0, valG - valN).toFixed(2);
+                    if (taxMode === 'pct') {
+                        const rate = valG > 0 ? (((valG - valN) / valG) * 100) : 26;
+                        taxEl.value = Math.max(0, rate).toFixed(1);
+                    } else {
+                        taxEl.value = Math.max(0, valG - valN).toFixed(2);
+                    }
                     targetEl = taxEl;
                     secondLastEdited = 'gross';
                     lastEdited = 'net';
                 } else if (target === 'net') {
                     const valG = isNaN(g) ? 0 : g;
-                    const valT = isNaN(t) ? 0 : t;
-                    netEl.value = (valG - valT).toFixed(2);
+                    if (taxMode === 'pct') {
+                        const rate = isNaN(t) ? 26 : t;
+                        const taxEUR = valG * (rate / 100);
+                        netEl.value = (valG - taxEUR).toFixed(2);
+                    } else {
+                        const valT = isNaN(t) ? 0 : t;
+                        netEl.value = (valG - valT).toFixed(2);
+                    }
                     targetEl = netEl;
                     secondLastEdited = 'gross';
                     lastEdited = 'tax';
                 }
 
                 if (targetEl) {
-                    targetEl.classList.add('ring-2', 'ring-emerald-500', 'bg-emerald-50', 'dark:bg-emerald-950/40');
-                    setTimeout(() => {
-                        targetEl.classList.remove('ring-2', 'ring-emerald-500', 'bg-emerald-50', 'dark:bg-emerald-950/40');
-                    }, 500);
+                    flashCalculatedField(targetEl);
+                    updateTaxHint();
                 }
             };
 
@@ -1140,33 +1263,55 @@
                 const tStr = taxEl.value.trim();
                 const nStr = netEl.value.trim();
 
-                // Target field to compute:
-                let target = null;
-                if (field !== 'gross' && gStr === '') target = 'gross';
-                else if (field !== 'tax' && tStr === '') target = 'tax';
-                else if (field !== 'net' && nStr === '') target = 'net';
-                else {
-                    const fields = ['gross', 'tax', 'net'];
-                    target = fields.find(f => f !== lastEdited && f !== secondLastEdited);
-                    if (!target) target = (field === 'net' ? 'gross' : (field === 'gross' ? 'net' : 'net'));
-                }
-
                 const g = parseFloat(gStr);
                 const t = parseFloat(tStr);
                 const n = parseFloat(nStr);
 
                 isCalculating = true;
                 try {
-                    if (target === 'gross' && !isNaN(n) && !isNaN(t)) {
-                        grossEl.value = (n + t).toFixed(2);
-                    } else if (target === 'tax' && !isNaN(g) && !isNaN(n)) {
-                        taxEl.value = Math.max(0, g - n).toFixed(2);
-                    } else if (target === 'net' && !isNaN(g) && !isNaN(t)) {
-                        netEl.value = (g - t).toFixed(2);
+                    if (taxMode === 'pct') {
+                        const rate = isNaN(t) ? 0 : t;
+                        if (field === 'tax') {
+                            if (!isNaN(g) && g > 0) {
+                                const taxEUR = g * (rate / 100);
+                                netEl.value = (g - taxEUR).toFixed(2);
+                            } else if (!isNaN(n) && n > 0 && rate < 100) {
+                                grossEl.value = (n / (1 - rate / 100)).toFixed(2);
+                            }
+                        } else if (field === 'gross') {
+                            if (!isNaN(g) && !isNaN(rate)) {
+                                const taxEUR = g * (rate / 100);
+                                netEl.value = (g - taxEUR).toFixed(2);
+                            }
+                        } else if (field === 'net') {
+                            if (!isNaN(n) && !isNaN(rate) && rate < 100) {
+                                grossEl.value = (n / (1 - rate / 100)).toFixed(2);
+                            }
+                        }
+                    } else {
+                        // EUR mode
+                        let target = null;
+                        if (field !== 'gross' && gStr === '') target = 'gross';
+                        else if (field !== 'tax' && tStr === '') target = 'tax';
+                        else if (field !== 'net' && nStr === '') target = 'net';
+                        else {
+                            const fields = ['gross', 'tax', 'net'];
+                            target = fields.find(f => f !== lastEdited && f !== secondLastEdited);
+                            if (!target) target = (field === 'net' ? 'gross' : (field === 'gross' ? 'net' : 'net'));
+                        }
+
+                        if (target === 'gross' && !isNaN(n) && !isNaN(t)) {
+                            grossEl.value = (n + t).toFixed(2);
+                        } else if (target === 'tax' && !isNaN(g) && !isNaN(n)) {
+                            taxEl.value = Math.max(0, g - n).toFixed(2);
+                        } else if (target === 'net' && !isNaN(g) && !isNaN(t)) {
+                            netEl.value = (g - t).toFixed(2);
+                        }
                     }
                 } finally {
                     isCalculating = false;
                 }
+                updateTaxHint();
             }
 
             if (grossEl && taxEl && netEl) {
@@ -1185,7 +1330,13 @@
             const portfolioId = document.getElementById('confirm-portfolio').value;
             const date = document.getElementById('confirm-date').value;
             const grossAmount = document.getElementById('confirm-gross').value;
-            const tax = document.getElementById('confirm-tax').value;
+            const taxMode = document.getElementById('confirm-tax-mode')?.value || 'eur';
+            let rawTax = parseFloat(document.getElementById('confirm-tax').value) || 0;
+            const grossVal = parseFloat(grossAmount) || 0;
+            if (taxMode === 'pct') {
+                rawTax = grossVal * (rawTax / 100);
+            }
+            const tax = rawTax.toFixed(2);
             const createWithdrawal = document.getElementById('confirm-create-withdrawal')?.checked || false;
 
             try {
