@@ -215,26 +215,28 @@ module.exports = function (dependencies) {
 
                             // Find historical quantity when refDiv was paid
                             let histBal = 0;
-                            if (refDiv.quantity > 0) {
+                            if (refDiv.quantity > 1) {
                                 histBal = refDiv.quantity;
                             } else {
                                 const b = balanceOnExDateQuery.get(userId, pos.ticker, pos.isin || '', pos.isin || '', refDiv.date);
-                                if (b && b.balance > 0.0001) histBal = b.balance;
+                                if (b && b.balance > 1) histBal = b.balance;
                             }
 
-                            if (histBal > 0 && histGross > 0) {
+                            if (parsedAnnualRate > 0 && parsedAnnualRate <= 15) {
+                                const semiAnnualRate = (parsedAnnualRate / 100) / 2;
+                                projGross = balanceAtDate * semiAnnualRate;
+                                if (histTax > 0 && histGross > 0) taxRate = (histTax / histGross) * 100;
+                                projTax = projGross * (taxRate / 100);
+                                projNet = projGross - projTax;
+                                unitAmount = semiAnnualRate;
+                            } else if (histBal > 1 && histGross > 0) {
                                 const ratio = balanceAtDate / histBal;
-                                projGross = histGross * ratio;
+                                const safeRatio = (ratio >= 0.01 && ratio <= 100) ? ratio : 1;
+                                projGross = histGross * safeRatio;
                                 if (histTax > 0) taxRate = (histTax / histGross) * 100;
                                 projTax = projGross * (taxRate / 100);
                                 projNet = projGross - projTax;
                                 unitAmount = projGross / balanceAtDate;
-                            } else if (parsedAnnualRate > 0) {
-                                const semiAnnualRate = (parsedAnnualRate / 100) / 2;
-                                projGross = balanceAtDate * semiAnnualRate;
-                                projTax = projGross * (taxRate / 100);
-                                projNet = projGross - projTax;
-                                unitAmount = semiAnnualRate;
                             } else {
                                 projGross = histGross;
                                 projTax = histTax > 0 ? histTax : projGross * (taxRate / 100);
@@ -268,10 +270,18 @@ module.exports = function (dependencies) {
                     });
                 } else if (ticker && !ticker.startsWith('CD_') && !ticker.startsWith('BP_') && ticker !== 'Sconosciuto') {
                     try {
-                        const summary = await yahooFinance.quoteSummary(ticker, { modules: ['summaryDetail', 'calendarEvents'] }).catch(() => null);
-                        const annualRate = summary?.summaryDetail?.dividendRate || 0;
-                        const assetYield = summary?.summaryDetail?.dividendYield || 0;
-                        const currencyYF = summary?.summaryDetail?.currency || pos.currency;
+                        const summary = await yahooFinance.quoteSummary(ticker, { modules: ['summaryDetail', 'calendarEvents', 'price'] }).catch(() => null);
+                        
+                        let annualRate = summary?.summaryDetail?.dividendRate || 0;
+                        const assetYield = summary?.summaryDetail?.dividendYield || summary?.summaryDetail?.yield || 0;
+                        const currencyYF = summary?.summaryDetail?.currency || pos.currency || 'EUR';
+                        const currentPrice = summary?.price?.regularMarketPrice || pos.currentPrice || 0;
+
+                        // If annualRate is 0 but yield is available and price > 0, calculate annualRate:
+                        if (annualRate <= 0 && assetYield > 0 && currentPrice > 0) {
+                            const yFraction = assetYield > 1 ? (assetYield / 100) : assetYield;
+                            annualRate = currentPrice * yFraction;
+                        }
 
                         const histDivs = allDivTx.filter(d => matchesAsset(d, pos)).sort((a, b) => new Date(b.date) - new Date(a.date));
                         let freq = summary?.summaryDetail?.dividendFrequency;
@@ -290,6 +300,10 @@ module.exports = function (dependencies) {
                         const todayStr = now.toISOString().split('T')[0];
                         const curMonthIdx = now.getMonth();
 
+                        let taxRate = taxMap[pos.assetType];
+                        if (taxRate === undefined) taxRate = 26.0;
+
+                        // 1. If Yahoo Finance has upcoming dividend date >= today:
                         if (annualRate > 0 && nextDateStr && nextDateStr >= todayStr) {
                             const month = nextDateStr.split('-')[1];
                             const alreadyConfirmed = allDivTx.some(tx => matchesAsset(tx, pos) && tx.date.split('-')[1] === month && tx.date.startsWith(currentYear.toString()));
@@ -300,19 +314,26 @@ module.exports = function (dependencies) {
                                     const perPayment = (annualRate * balanceOnExDate) / freq;
                                     const amtGrossEUR = toEUR(perPayment, currencyYF, null);
                                     const unitAmount = toEUR(annualRate / freq, currencyYF, null);
-
-                                    let taxRate = taxMap[pos.assetType];
-                                    if (taxRate === undefined) taxRate = 26.0;
                                     const taxEUR = amtGrossEUR * (taxRate / 100);
                                     const netEUR = amtGrossEUR - taxEUR;
 
-                                    newProjections.push({ ticker, name: pos.name, date: nextDateStr, tag: 'YF', amount: unitAmount, totalAmount: netEUR, gross: amtGrossEUR, tax: taxEUR, yield: assetYield });
+                                    newProjections.push({
+                                        ticker: pos.ticker,
+                                        name: pos.name,
+                                        date: nextDateStr,
+                                        tag: 'YF',
+                                        amount: unitAmount,
+                                        totalAmount: netEUR,
+                                        gross: amtGrossEUR,
+                                        tax: taxEUR,
+                                        yield: assetYield
+                                    });
                                     yfProjected = true;
                                 }
                             }
                         }
 
-                        // If not projected via Yahoo Finance calendar, use historical payments
+                        // 2. If not projected via Yahoo Finance calendar, use historical payments
                         if (!yfProjected && histDivs.length > 0) {
                             const schedMonthDays = new Set(histDivs.map(d => d.date.substring(5)));
                             schedMonthDays.forEach(md => {
@@ -332,27 +353,33 @@ module.exports = function (dependencies) {
                                 const balanceOnExDate = (bObj && bObj.balance > 0.0001) ? bObj.balance : pos.balance;
                                 if (balanceOnExDate <= 0.0001) return;
 
-                                const refDiv = histDivs.find(d => parseInt(d.date.split('-')[1], 10) === schedM) || histDivs[0];
-                                const rawNet = (refDiv.amount !== null && refDiv.amount !== undefined && refDiv.amount !== 0)
-                                    ? refDiv.amount
-                                    : (refDiv.quantity * refDiv.price - (refDiv.tax || 0));
-                                const histNet = toEUR(rawNet, refDiv.portCurrency, refDiv.exchangeRate);
-                                const histTax = toEUR(refDiv.tax || 0, refDiv.portCurrency, refDiv.exchangeRate);
-                                const histGross = histNet + histTax;
+                                let grossEUR = 0;
+                                let taxEUR = 0;
+                                let netEUR = 0;
+                                let unitAmt = 0;
 
-                                let histBal = 0;
-                                if (refDiv.quantity > 0) {
-                                    histBal = refDiv.quantity;
+                                // PRIORITY 1: If Yahoo Finance has annualRate > 0, USE IT!
+                                if (annualRate > 0) {
+                                    const perPayment = (annualRate * balanceOnExDate) / freq;
+                                    grossEUR = toEUR(perPayment, currencyYF, null);
+                                    unitAmt = toEUR(annualRate / freq, currencyYF, null);
+                                    taxEUR = grossEUR * (taxRate / 100);
+                                    netEUR = grossEUR - taxEUR;
                                 } else {
-                                    const b = balanceOnExDateQuery.get(userId, pos.ticker, pos.isin || '', pos.isin || '', refDiv.date);
-                                    if (b && b.balance > 0.0001) histBal = b.balance;
-                                }
+                                    // PRIORITY 2: Use historical dividend directly without multiplying by share count
+                                    const refDiv = histDivs.find(d => parseInt(d.date.split('-')[1], 10) === schedM) || histDivs[0];
+                                    const rawNet = (refDiv.amount !== null && refDiv.amount !== undefined && refDiv.amount !== 0)
+                                        ? refDiv.amount
+                                        : (refDiv.quantity * refDiv.price - (refDiv.tax || 0));
+                                    const histNet = toEUR(rawNet, refDiv.portCurrency, refDiv.exchangeRate);
+                                    const histTax = toEUR(refDiv.tax || 0, refDiv.portCurrency, refDiv.exchangeRate);
+                                    const histGross = histNet + histTax;
 
-                                const ratio = histBal > 0 ? (balanceOnExDate / histBal) : 1;
-                                const grossEUR = histGross * ratio;
-                                const taxEUR = histTax * ratio;
-                                const netEUR = histNet * ratio;
-                                const unitAmt = balanceOnExDate > 0 ? grossEUR / balanceOnExDate : 0;
+                                    grossEUR = histGross;
+                                    taxEUR = histTax > 0 ? histTax : grossEUR * (taxRate / 100);
+                                    netEUR = histNet > 0 ? histNet : grossEUR - taxEUR;
+                                    unitAmt = balanceOnExDate > 0 ? grossEUR / balanceOnExDate : 0;
+                                }
 
                                 const projDate = schedDate >= todayStr ? schedDate : todayStr;
                                 if (!newProjections.some(p => p.ticker === pos.ticker && p.date === projDate)) {
@@ -365,7 +392,7 @@ module.exports = function (dependencies) {
                                         totalAmount: netEUR,
                                         gross: grossEUR,
                                         tax: taxEUR,
-                                        yield: assetYield || ((pos.currentPrice > 0 && balanceOnExDate > 0) ? (grossEUR * (freq || 1) / (pos.currentPrice * balanceOnExDate)) : 0)
+                                        yield: assetYield || ((currentPrice > 0 && balanceOnExDate > 0) ? (grossEUR * (freq || 1) / (currentPrice * balanceOnExDate)) : 0)
                                     });
                                 }
                             });
