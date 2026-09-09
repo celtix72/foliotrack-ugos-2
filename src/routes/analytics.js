@@ -1332,8 +1332,9 @@ module.exports = function (dependencies) {
                         period2: qEndStr,
                         interval: isShortRange ? '1d' : '1mo'
                     });
+                    let quotes = [];
                     if (chart && chart.quotes && chart.quotes.length > 0) {
-                        return chart.quotes
+                        quotes = chart.quotes
                             .filter(h => h && h.date && (h.adjclose != null || h.close != null))
                             .map(h => ({
                                 date: new Date(h.date).toISOString().split('T')[0].substring(0, isShortRange ? 10 : 7),
@@ -1341,6 +1342,20 @@ module.exports = function (dependencies) {
                             }))
                             .filter(q => q.price > 0);
                     }
+
+                    // Always ensure today's live price is included and up-to-date
+                    const todayKey = isShortRange ? today.toISOString().split('T')[0] : today.toISOString().split('T')[0].substring(0, 7);
+                    const liveQ = await yahooFinance.quote(ticker).catch(() => null);
+                    if (liveQ && liveQ.regularMarketPrice && liveQ.regularMarketPrice > 0) {
+                        const existingIdx = quotes.findIndex(q => q.date === todayKey);
+                        if (existingIdx >= 0) {
+                            quotes[existingIdx].price = liveQ.regularMarketPrice;
+                        } else {
+                            quotes.push({ date: todayKey, price: liveQ.regularMarketPrice });
+                        }
+                    }
+
+                    return quotes;
                 } catch (e) {
                     console.warn(`Failed benchmark fetch for ${ticker}:`, e.message);
                 }

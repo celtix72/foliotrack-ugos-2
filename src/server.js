@@ -2077,6 +2077,21 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
         return null;
     };
 
+    const isWeekend = today.getDay() === 0 || today.getDay() === 6;
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+    const isBenchmarkTicker = (t) => t && (
+        t.startsWith('^') || 
+        t === 'FTSEMIB.MI' || 
+        t === 'URTH' || 
+        t === 'IWDA.AS' || 
+        t === 'CSPX.AS' || 
+        t === 'BTC-USD' || 
+        (benchmarkTicker && t === benchmarkTicker)
+    );
+
     const fetchTickerData = async (ticker) => {
         const reqStart = startDate.toISOString().split('T')[0];
         
@@ -2089,14 +2104,26 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
         }
 
         const assetMeta = assetMetadataCache[ticker];
+        const isBenchmark = isBenchmarkTicker(ticker);
         
         // 1. Check DB Cache unless forced
         const dbQuotes = !forceRefresh ? database.db.prepare(`SELECT date, price FROM asset_quotes WHERE ticker = ? ORDER BY date ASC`).all(ticker) : [];
         if (!forceRefresh && dbQuotes.length > 0) {
             const latestDate = dbQuotes.at(-1).date;
-            const firstTxDate = allTransactions.find(t => t.assetTicker === ticker)?.date || reqStart;
-            // Check if we have data up to today (or last business day approx)
-            if (latestDate >= todayStr || (new Date(latestDate) >= new Date(today.getTime() - 3*24*60*60*1000))) {
+            
+            // On weekends, if we have recent data from Friday (within 3 days), forward fill through weekend
+            if (isWeekend && new Date(latestDate) >= new Date(today.getTime() - 3*24*60*60*1000)) {
+                const map = Object.fromEntries(dbQuotes.map(q => [q.date, q.price]));
+                const lastPrice = dbQuotes.at(-1).price;
+                for (let d = new Date(latestDate); d <= today; d.setDate(d.getDate() + 1)) {
+                    map[d.toISOString().split('T')[0]] = lastPrice;
+                }
+                historicalPrices[ticker] = map;
+                return;
+            }
+
+            // On weekdays, if DB has data up to today (and it's not a benchmark needing fresh intraday check)
+            if (latestDate >= todayStr && !isBenchmark) {
                 historicalPrices[ticker] = Object.fromEntries(dbQuotes.map(q => [q.date, q.price]));
                 return;
             }
@@ -2119,13 +2146,27 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
             const fiveYearsAgoStr = fiveYearsAgo.toISOString().split('T')[0];
             const qStart = [firstTxDate, fiveYearsAgoStr, reqStart].filter(Boolean).sort()[0];
             
-            const chartResult = await yahooFinance.chart(ticker, { period1: qStart, period2: todayStr, interval: '1d' }).catch(() => null);
+            // Pass tomorrowStr as period2 to ensure today's session is included by Yahoo Finance
+            const chartResult = await yahooFinance.chart(ticker, { period1: qStart, period2: tomorrowStr, interval: '1d' }).catch(() => null);
             if (chartResult && chartResult.quotes) {
                 pricesMap = Object.fromEntries(
                     chartResult.quotes
-                        .filter(h => h.date && (h.adjclose || h.close))
-                        .map(h => [new Date(h.date).toISOString().split('T')[0], h.adjclose || h.close])
+                        .filter(h => h.date && (h.adjclose != null || h.close != null))
+                        .map(h => [new Date(h.date).toISOString().split('T')[0], (h.adjclose ?? h.close)])
                 );
+            }
+
+            // For benchmarks, or if today's quote is missing from chart on weekdays, fetch real-time live quote
+            if (isBenchmark || !pricesMap || !pricesMap[todayStr]) {
+                try {
+                    const liveQ = await yahooFinance.quote(ticker).catch(() => null);
+                    if (liveQ && liveQ.regularMarketPrice && liveQ.regularMarketPrice > 0) {
+                        if (!pricesMap) pricesMap = {};
+                        pricesMap[todayStr] = liveQ.regularMarketPrice;
+                    }
+                } catch (e) {
+                    // Ignore live quote fetch error, fallback will handle
+                }
             }
         }
 
@@ -2556,8 +2597,8 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
             let currentPrice = bState.data && bState.data[dateStr];
             if (!currentPrice || currentPrice <= 0 || isNaN(currentPrice)) {
                 // If price not found for dateStr (weekend, holiday, or today before close)
-                if (dateStr === todayStr && assetMetadataCache[bState.ticker]?.currentPrice && assetMetadataCache[bState.ticker].currentPrice > 0) {
-                    currentPrice = assetMetadataCache[bState.ticker].currentPrice;
+                if (dateStr === todayStr && (assetMetadataCache[bState.ticker]?.currentPrice > 0 || historicalPrices[bState.ticker]?.[todayStr] > 0)) {
+                    currentPrice = assetMetadataCache[bState.ticker]?.currentPrice || historicalPrices[bState.ticker]?.[todayStr];
                 } else if (bState.lastPrice && bState.lastPrice > 0) {
                     currentPrice = bState.lastPrice;
                 } else if (bState.data) {
