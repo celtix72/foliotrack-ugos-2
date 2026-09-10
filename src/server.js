@@ -1985,6 +1985,16 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
             case '1D':  startDate = new Date(today); startDate.setDate(today.getDate() - 1); break;
             case '1W':  startDate = new Date(today); startDate.setDate(today.getDate() - 7); break;
             case '1M':  startDate = new Date(today); startDate.setMonth(today.getMonth() - 1); break;
+            case 'CURR_M':
+            case 'MTD':
+                startDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
+                endSimulationDate = new Date(today);
+                break;
+            case 'PREV_M':
+            case 'M-1':
+                startDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - 1, 1));
+                endSimulationDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 0));
+                break;
             case '3M':  startDate = new Date(today); startDate.setMonth(today.getMonth() - 3); break;
             case '6M':  startDate = new Date(today); startDate.setMonth(today.getMonth() - 6); break;
             case '1Y':  startDate = new Date(today); startDate.setFullYear(today.getFullYear() - 1); break;

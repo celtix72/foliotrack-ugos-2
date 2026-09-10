@@ -188,6 +188,8 @@
         <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 shrink-0 w-16">Periodo</span>
         <div id="mob-reports-range-bar" class="mob-chart-range-bar flex-1 overflow-x-auto no-scrollbar" style="margin:0;border-radius:10px;">
           <div class="mob-range-btn" onclick="mobChangeRange('1W')" data-range="1W">1W</div>
+          <div class="mob-range-btn" onclick="mobChangeRange('CURR_M')" data-range="CURR_M">Mese Corr.</div>
+          <div class="mob-range-btn" onclick="mobChangeRange('PREV_M')" data-range="PREV_M">Mese -1</div>
           <div class="mob-range-btn active" onclick="mobChangeRange('1M')" data-range="1M">1M</div>
           <div class="mob-range-btn" onclick="mobChangeRange('3M')" data-range="3M">3M</div>
           <div class="mob-range-btn" onclick="mobChangeRange('YTD')" data-range="YTD">YTD</div>
@@ -970,7 +972,7 @@
             data: {
                 labels: portfolioData.map(d => {
                     const dt = new Date(d.date);
-                    if (mobCurrentRange === '1M') {
+                    if (['1M', 'CURR_M', 'PREV_M', '1W'].includes(mobCurrentRange)) {
                         return dt.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
                     }
                     return dt.toLocaleDateString('it-IT', { month: 'short', year: '2-digit' });

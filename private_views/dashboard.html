@@ -926,10 +926,13 @@
                 const liveIndicator = isCurrentMonth
                     ? `<div style="position:absolute;top:-5px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:${barColor}" class="animate-pulse"></div>`
                     : '';
+                const monthNames = ['', 'Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+                const monthShort = `${monthNames[d.monthNum]} '${barYear.slice(-2)}`;
+                const tooltipText = `${monthShort}: ${gainStr}${isCurrentMonth ? ' ●' : ''}`;
                 html += `
                 <div class="flex flex-col items-center gap-0.5 group relative" style="width:18px">
-                    <div class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[8px] font-black px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none"
-                         style="background:${barColor}; color:white">${gainStr}${isCurrentMonth ? ' ●' : ''}</div>
+                    <div class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[8px] font-black px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none shadow-sm"
+                         style="background:${barColor}; color:white">${tooltipText}</div>
                     <div style="position:relative;width:100%">
                         ${liveIndicator}
                         <div class="w-full rounded-sm transition-all duration-300"

@@ -1257,6 +1257,7 @@ module.exports = function (dependencies) {
             const today = new Date();
 
             let startDate;
+            let endSimulationDate = new Date(today);
             switch (range) {
                 case '1W':
                     startDate = new Date(today);
@@ -1265,6 +1266,16 @@ module.exports = function (dependencies) {
                 case '1M':
                     startDate = new Date(today);
                     startDate.setMonth(today.getMonth() - 1);
+                    break;
+                case 'CURR_M':
+                case 'MTD':
+                    startDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
+                    endSimulationDate = new Date(today);
+                    break;
+                case 'PREV_M':
+                case 'M-1':
+                    startDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - 1, 1));
+                    endSimulationDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 0));
                     break;
                 case '3M':
                     startDate = new Date(today);
@@ -1303,7 +1314,7 @@ module.exports = function (dependencies) {
             }
 
             const dateStrStart = startDate.toISOString().split('T')[0];
-            const dateStrEnd = today.toISOString().split('T')[0];
+            const dateStrEnd = (endSimulationDate || today).toISOString().split('T')[0];
 
             const portfolioData = await calculatePerformanceHistory(
                 pIdsForQuery,
@@ -1313,7 +1324,7 @@ module.exports = function (dependencies) {
                  return res.json({ error: 'No performance data' });
             }
 
-            const isShortRange = range === '1W' || range === '1M' || range === '3M' || range === '1D';
+            const isShortRange = range === '1W' || range === '1M' || range === '3M' || range === '1D' || range === 'CURR_M' || range === 'PREV_M' || range === 'MTD' || range === 'M-1';
 
             const fetchBenchmark = async (ticker) => {
                 try {
@@ -1322,8 +1333,8 @@ module.exports = function (dependencies) {
                     qStart.setDate(qStart.getDate() - (isShortRange ? 7 : 45));
                     const qStartStr = qStart.toISOString().split('T')[0];
 
-                    // Query up to tomorrow to ensure today's quote is included if available
-                    const qEnd = new Date(today);
+                    // Query up to tomorrow or endSimulationDate to ensure quote is included
+                    const qEnd = new Date(endSimulationDate || today);
                     qEnd.setDate(qEnd.getDate() + 1);
                     const qEndStr = qEnd.toISOString().split('T')[0];
 
