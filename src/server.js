@@ -2811,6 +2811,79 @@ app.get('/login', (req, res) => {
 app.get('/admin', requireAuth, (req, res) => res.redirect('/settings'));
 
 
+let _cachedLastCodeModTime = null;
+let _lastCodeModCheckTs = 0;
+
+function getLastCodeModTime() {
+    const now = Date.now();
+    if (_cachedLastCodeModTime && (now - _lastCodeModCheckTs < 15000)) {
+        return _cachedLastCodeModTime;
+    }
+
+    try {
+        const { execSync } = require('child_process');
+        const projectRoot = path.join(__dirname, '..');
+
+        const gitDateStr = execSync('git log -1 --format="%cd" --date=format:"%d/%m/%y %H:%M"', {
+            cwd: projectRoot,
+            encoding: 'utf8',
+            timeout: 2000
+        }).trim();
+
+        const gitStatus = execSync('git status --porcelain', {
+            cwd: projectRoot,
+            encoding: 'utf8',
+            timeout: 2000
+        }).trim();
+
+        if (!gitStatus && gitDateStr) {
+            _cachedLastCodeModTime = gitDateStr;
+            _lastCodeModCheckTs = now;
+            return _cachedLastCodeModTime;
+        }
+
+        const fs = require('fs');
+        let maxMtime = 0;
+        const scanDirs = [
+            path.join(projectRoot, 'src'),
+            path.join(projectRoot, 'public'),
+            path.join(projectRoot, 'private_views')
+        ];
+
+        for (const dir of scanDirs) {
+            if (!fs.existsSync(dir)) continue;
+            const files = fs.readdirSync(dir, { recursive: true });
+            for (const f of files) {
+                try {
+                    const fullPath = path.join(dir, f.toString());
+                    const stat = fs.statSync(fullPath);
+                    if (stat.isFile() && stat.mtimeMs > maxMtime) {
+                        maxMtime = stat.mtimeMs;
+                    }
+                } catch (e) {}
+            }
+        }
+
+        if (maxMtime > 0) {
+            const d = new Date(maxMtime);
+            const pad = n => String(n).padStart(2, '0');
+            const day = pad(d.getDate());
+            const month = pad(d.getMonth() + 1);
+            const year = String(d.getFullYear()).slice(-2);
+            const hours = pad(d.getHours());
+            const minutes = pad(d.getMinutes());
+            _cachedLastCodeModTime = `${day}/${month}/${year} ${hours}:${minutes}`;
+        } else {
+            _cachedLastCodeModTime = gitDateStr || 'N/A';
+        }
+    } catch (e) {
+        _cachedLastCodeModTime = _cachedLastCodeModTime || 'N/A';
+    }
+
+    _lastCodeModCheckTs = now;
+    return _cachedLastCodeModTime;
+}
+
 // Helper per iniettare la sidebar nelle viste desktop
 // NOTA: usare sempre fs.readFile + res.send() per ENTRAMBI mobile e desktop.
 // res.sendFile() in Express 5 può bypassare gli header impostati dai middleware (es. Helmet CSP),
@@ -2844,7 +2917,9 @@ function serveWithSidebar(req, res, file) {
                 console.error(err);
                 return res.status(500).send('Error loading sidebar partial');
             }
-            const finalHtml = viewData.replace(/<aside\s+id="app-sidebar"[^>]*>[\s\S]*?<\/aside>/, sidebarData);
+            const codeTime = getLastCodeModTime();
+            const populatedSidebar = sidebarData.replace('{{CODE_BUILD_TIME}}', codeTime);
+            const finalHtml = viewData.replace(/<aside\s+id="app-sidebar"[^>]*>[\s\S]*?<\/aside>/, populatedSidebar);
             res.send(finalHtml);
         });
     });
