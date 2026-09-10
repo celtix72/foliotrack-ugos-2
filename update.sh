@@ -21,6 +21,20 @@ elif [ $LOCAL = $BASE ]; then
     # 3. Pull changes
     git pull
     
+    # Update build_info.json with latest git commit timestamp
+    if command -v git >/dev/null 2>&1; then
+        GIT_DATE=$(git log -1 --format="%cd" --date=format:"%d/%m/%y %H:%M")
+        GIT_COMMIT=$(git log -1 --format="%h")
+        GIT_TS=$(git log -1 --format="%ct")
+        cat <<EOF > build_info.json
+{
+  "lastModified": "$GIT_DATE",
+  "commit": "$GIT_COMMIT",
+  "timestamp": ${GIT_TS}000
+}
+EOF
+    fi
+    
     # 4. Determine docker command (docker compose vs docker-compose)
     if docker compose version >/dev/null 2>&1; then
         DOCKER_CMD="docker compose"

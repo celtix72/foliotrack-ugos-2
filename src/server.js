@@ -2820,29 +2820,54 @@ function getLastCodeModTime() {
         return _cachedLastCodeModTime;
     }
 
+    const fs = require('fs');
+    const projectRoot = path.join(__dirname, '..');
+    let resolvedTime = null;
+
+    // 1. Try reading build_info.json (committed in repo & copied into Docker image)
+    try {
+        const buildInfoPath = path.join(projectRoot, 'build_info.json');
+        if (fs.existsSync(buildInfoPath)) {
+            const data = JSON.parse(fs.readFileSync(buildInfoPath, 'utf8'));
+            if (data && data.lastModified) {
+                resolvedTime = data.lastModified;
+            }
+        }
+    } catch (e) {}
+
+    // 2. If git is available (e.g. host or dev environment), check latest commit
     try {
         const { execSync } = require('child_process');
-        const projectRoot = path.join(__dirname, '..');
-
         const gitDateStr = execSync('git log -1 --format="%cd" --date=format:"%d/%m/%y %H:%M"', {
             cwd: projectRoot,
             encoding: 'utf8',
-            timeout: 2000
+            timeout: 2000,
+            stdio: ['ignore', 'pipe', 'ignore']
         }).trim();
+
+        if (gitDateStr) {
+            resolvedTime = gitDateStr;
+        }
 
         const gitStatus = execSync('git status --porcelain', {
             cwd: projectRoot,
             encoding: 'utf8',
-            timeout: 2000
+            timeout: 2000,
+            stdio: ['ignore', 'pipe', 'ignore']
         }).trim();
 
+        // If working tree is clean, git commit time is the exact truth
         if (!gitStatus && gitDateStr) {
             _cachedLastCodeModTime = gitDateStr;
             _lastCodeModCheckTs = now;
             return _cachedLastCodeModTime;
         }
+    } catch (e) {
+        // Git not available (e.g. inside Docker alpine container) - continue with filesystem check
+    }
 
-        const fs = require('fs');
+    // 3. Check filesystem mtimes of key application folders
+    try {
         let maxMtime = 0;
         const scanDirs = [
             path.join(projectRoot, 'src'),
@@ -2872,14 +2897,28 @@ function getLastCodeModTime() {
             const year = String(d.getFullYear()).slice(-2);
             const hours = pad(d.getHours());
             const minutes = pad(d.getMinutes());
-            _cachedLastCodeModTime = `${day}/${month}/${year} ${hours}:${minutes}`;
-        } else {
-            _cachedLastCodeModTime = gitDateStr || 'N/A';
+            const fsDateStr = `${day}/${month}/${year} ${hours}:${minutes}`;
+
+            // Use fs date if we didn't have one or if it's dirty/newer
+            if (!resolvedTime || maxMtime > (Date.now() - 365 * 86400 * 1000)) {
+                resolvedTime = fsDateStr;
+            }
         }
-    } catch (e) {
-        _cachedLastCodeModTime = _cachedLastCodeModTime || 'N/A';
+    } catch (e) {}
+
+    // Fallback: mtime of current server file
+    if (!resolvedTime) {
+        try {
+            const stat = fs.statSync(__filename);
+            const d = new Date(stat.mtimeMs);
+            const pad = n => String(n).padStart(2, '0');
+            resolvedTime = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${String(d.getFullYear()).slice(-2)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        } catch (e) {
+            resolvedTime = 'N/A';
+        }
     }
 
+    _cachedLastCodeModTime = resolvedTime;
     _lastCodeModCheckTs = now;
     return _cachedLastCodeModTime;
 }
