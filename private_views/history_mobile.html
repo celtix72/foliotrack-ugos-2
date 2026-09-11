@@ -1,21 +1,193 @@
 <!DOCTYPE html>
-<html class="dark" lang="en">
+<html class="dark" lang="it">
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>M2T - History</title>
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="M2T">
-<link rel="manifest" href="/manifest.json">
+    <title>M2T - Storico & Dividendi</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="M2T">
+    <link rel="manifest" href="/manifest.json">
     <link rel="stylesheet" href="/dist/output.css">
-    <link rel="stylesheet" href="/mobile.css?v=1780588387886">
+    <link rel="stylesheet" href="/mobile.css?v=1780588387890">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <style>
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+
+        /* Segmented switcher between Posizioni Chiuse & Dividendi */
+        .mob-view-tabs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+            padding: 4px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
+        }
+        :root:not(.dark) .mob-view-tabs {
+            background: rgba(226, 232, 240, 0.7);
+            border-color: rgba(0, 0, 0, 0.07);
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+        }
+        .mob-view-tab-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+            color: #64748b;
+            background: transparent;
+            border: 1px solid transparent;
+            cursor: pointer;
+            white-space: nowrap;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+        }
+        .mob-view-tab-btn .material-symbols-outlined {
+            font-size: 16px;
+        }
+        .mob-view-tab-btn.active {
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            color: #38bdf8;
+            border-color: rgba(56, 189, 248, 0.35);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4), 0 0 10px rgba(56, 189, 248, 0.12);
+        }
+        :root:not(.dark) .mob-view-tab-btn.active {
+            background: #ffffff;
+            color: #0284c7;
+            border-color: rgba(2, 132, 199, 0.25);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+        .mob-view-tab-btn:active {
+            transform: scale(0.97);
+        }
+
+        /* Subtabs within Dividends (Proiezioni vs Storico) */
+        .mob-sub-tabs {
+            display: inline-flex;
+            gap: 4px;
+            padding: 3px;
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+        }
+        :root:not(.dark) .mob-sub-tabs {
+            background: rgba(241, 245, 249, 0.8);
+            border-color: rgba(0, 0, 0, 0.05);
+        }
+        .mob-sub-tab-btn {
+            padding: 5px 12px;
+            border-radius: 7px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #64748b;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.18s ease;
+        }
+        .mob-sub-tab-btn.active {
+            background: var(--mob-surface-2);
+            color: var(--mob-text);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        :root:not(.dark) .mob-sub-tab-btn.active {
+            background: #ffffff;
+            color: #0f172a;
+        }
+
+        /* Uniform Filter Bar */
+        .mob-filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: var(--mob-surface);
+            border: 1px solid var(--mob-border);
+            border-radius: 14px;
+            margin: 0 14px 8px 14px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .mob-filter-input {
+            flex: 1;
+            min-width: 0;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--mob-text);
+        }
+        .mob-filter-input::placeholder {
+            color: var(--mob-text-muted);
+            opacity: 0.7;
+        }
+        .mob-filter-select {
+            background: var(--mob-surface-2);
+            border: 1px solid var(--mob-border);
+            border-radius: 8px;
+            padding: 4px 8px;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--mob-text);
+            outline: none;
+            cursor: pointer;
+        }
+
+        /* Uniform Section Header */
+        .mob-acc-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: var(--mob-surface);
+            border-top: 1px solid var(--mob-border);
+            border-bottom: 1px solid var(--mob-border);
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.15s ease;
+        }
+        .mob-acc-header:active {
+            background: var(--mob-surface-2);
+        }
+        .mob-acc-title {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: 0.03em;
+            color: var(--mob-text);
+        }
+        .mob-acc-badge {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--mob-text-muted);
+        }
+        .mob-acc-val {
+            text-align: right;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 900;
+        }
+        .mob-acc-subval {
+            font-size: 9px;
+            font-weight: 600;
+            color: var(--mob-text-muted);
+        }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/theme.js"></script>
     <script src="/transaction_modal.js"></script>
     <script src="/mobile_transactions.js"></script>
@@ -26,80 +198,352 @@
         });
     </script>
 </head>
-<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex mobile-view-active">
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display min-h-screen flex mobile-view-active">
 <div id="mobile-ui">
-  <!-- ── Mobile Header ── -->
-  <div class="mob-header">
-    <a href="/dashboard" class="mob-header-logo-link" title="Dashboard">
-      <img src="/m2t_mobile_logo_dark.png" class="mob-header-logo-img" alt="M2T Logo">
-    </a>
-    
-    <div class="mob-header-market-pill market-status-group" title="Stato Mercati (EU / US)">
-      <span id="mob-tag-eu" class="market-microtag market-microtag-eu status-closed" title="Borsa Italiana / XETRA">EU</span>
-      <span id="mob-tag-us" class="market-microtag market-microtag-us status-closed" title="NYSE / NASDAQ">US</span>
+    <!-- ── Mobile Header ── -->
+    <div class="mob-header">
+        <a href="/dashboard" class="mob-header-logo-link" title="Dashboard">
+            <img src="/m2t_mobile_logo_dark.png" class="mob-header-logo-img" alt="M2T Logo">
+        </a>
+        
+        <div class="mob-header-market-pill market-status-group" title="Stato Mercati (EU / US)">
+            <span id="mob-tag-eu" class="market-microtag market-microtag-eu status-closed" title="Borsa Italiana / XETRA">EU</span>
+            <span id="mob-tag-us" class="market-microtag market-microtag-us status-closed" title="NYSE / NASDAQ">US</span>
+        </div>
+
+        <div style="flex:1"></div>
+
+        <div id="mob-header-var-day" class="mob-header-var-pill">--</div>
+
+        <div class="mob-header-actions">
+            <a href="/notifications" class="mob-icon-btn relative" title="Notifiche">
+                <span class="material-symbols-outlined">notifications</span>
+                <span id="mob-notification-badge" class="mob-badge" style="display: none;">0</span>
+            </a>
+            <a href="/settings" class="mob-icon-btn" title="Impostazioni">
+                <span class="material-symbols-outlined">settings</span>
+            </a>
+        </div>
     </div>
 
-    <div style="flex:1"></div>
+    <!-- ── Page Title & Main Tabs ── -->
+    <div class="px-4 pt-2.5 pb-1">
+        <div class="flex items-center justify-between mb-2">
+            <div>
+                <div class="text-[9px] font-black uppercase tracking-widest text-slate-400">Rendimento Realizzato</div>
+                <div class="text-xl font-black text-slate-900 dark:text-white">Storico & Dividendi</div>
+            </div>
+            <div class="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                <span class="material-symbols-outlined text-lg">history_edu</span>
+            </div>
+        </div>
 
-    <div id="mob-header-var-day" class="mob-header-var-pill">--</div>
-
-    <div class="mob-header-actions">
-      <a href="/notifications" class="mob-icon-btn relative" title="Notifiche">
-        <span class="material-symbols-outlined">notifications</span>
-        <span id="mob-notification-badge" class="mob-badge" style="display: none;">0</span>
-      </a>
-      <a href="/settings" class="mob-icon-btn" title="Impostazioni">
-        <span class="material-symbols-outlined">settings</span>
-      </a>
+        <!-- ── Main Segmented Tabs: Closed Positions vs Dividends ── -->
+        <div class="mob-view-tabs" role="tablist">
+            <button type="button" class="mob-view-tab-btn active" id="main-tab-closed" onclick="switchMainTab('closed')" role="tab" aria-selected="true">
+                <span class="material-symbols-outlined">receipt_long</span>
+                <span>Posizioni Chiuse</span>
+            </button>
+            <button type="button" class="mob-view-tab-btn" id="main-tab-dividends" onclick="switchMainTab('dividends')" role="tab" aria-selected="false">
+                <span class="material-symbols-outlined">payments</span>
+                <span>Dividendi & Cedole</span>
+            </button>
+        </div>
     </div>
-  </div>
 
-  <!-- Page Title -->
-  <div class="mob-header-title-container px-4 py-2">
-    <div class="text-[10px] font-black uppercase tracking-widest text-slate-500 opacity-70">Trading History</div>
-    <div class="text-xl font-black">Closed Positions</div>
-  </div>
+    <!-- ── Scrollable Content ── -->
+    <div class="mob-scroll" id="mob-main-scroll">
 
-  <!-- ── Scrollable Content ── -->
-  <div class="mob-scroll" id="mob-history-scroll">
-    <div class="mob-portfolio-list" id="mob-history-list">
-      <div style="text-align:center;padding:24px">
-        <div class="mob-spinner" style="margin:0 auto"></div>
-      </div>
+        <!-- ── Unified Hero Summary Card (Realized Total Return) ── -->
+        <div class="mx-3.5 mt-2.5 mb-3 bg-white dark:bg-surface-dark p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div class="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-800/80">
+                <div>
+                    <div class="text-[9px] font-black uppercase tracking-widest text-primary flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-[13px]">price_check</span>
+                        Ritorno Totale Realizzato
+                    </div>
+                    <div id="hero-total-return" class="text-2xl font-black font-mono mt-0.5 text-slate-400">€ 0.00</div>
+                    <div class="text-[9px] text-slate-400 font-medium">Plusvalenze + Dividendi incassati all-time</div>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                    <span class="material-symbols-outlined text-xl">savings</span>
+                </div>
+            </div>
+
+            <!-- Breakdown 2 columns -->
+            <div class="grid grid-cols-2 gap-3 pt-2.5">
+                <div class="p-2 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/60">
+                    <div class="text-[8px] font-black uppercase tracking-widest text-blue-500 flex items-center gap-1 mb-0.5">
+                        <span class="material-symbols-outlined text-[11px]">sell</span>
+                        Plusvalenze
+                    </div>
+                    <div id="hero-realized-gain" class="text-sm font-black font-mono text-slate-400">€ 0.00</div>
+                    <div id="hero-realized-sub" class="text-[8px] text-slate-400 font-medium truncate">-- chiuse</div>
+                </div>
+                <div class="p-2 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/60">
+                    <div class="text-[8px] font-black uppercase tracking-widest text-emerald-500 flex items-center gap-1 mb-0.5">
+                        <span class="material-symbols-outlined text-[11px]">account_balance_wallet</span>
+                        Dividendi Incassati
+                    </div>
+                    <div id="hero-dividends-total" class="text-sm font-black font-mono text-emerald-500">€ 0.00</div>
+                    <div class="text-[8px] text-slate-400 font-medium truncate">Totale netto all-time</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════════════════════════════ -->
+        <!-- SEZIONE 1: POSIZIONI CHIUSE                                         -->
+        <!-- ════════════════════════════════════════════════════════════════════ -->
+        <div id="view-closed-section">
+            <!-- Filter Bar -->
+            <div class="mob-filter-bar">
+                <span class="material-symbols-outlined text-slate-400 text-sm">search</span>
+                <input type="text" id="closed-search" placeholder="Filtra per asset, ticker..." class="mob-filter-input" oninput="renderClosedPositions()">
+                <select id="closed-group-by" class="mob-filter-select" onchange="renderClosedPositions()">
+                    <option value="year">Per Anno</option>
+                    <option value="portfolioName">Portafoglio</option>
+                    <option value="none">Lista</option>
+                </select>
+            </div>
+
+            <!-- Closed Positions List Container -->
+            <div id="mob-history-list" class="mob-portfolio-list">
+                <div style="text-align:center;padding:32px">
+                    <div class="mob-spinner" style="margin:0 auto"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════════════════════════════ -->
+        <!-- SEZIONE 2: DIVIDENDI & CEDOLE                                      -->
+        <!-- ════════════════════════════════════════════════════════════════════ -->
+        <div id="view-dividends-section" class="hidden">
+            <!-- Sub-tabs bar & Quick Actions -->
+            <div class="mx-3.5 mb-2.5 flex items-center justify-between gap-2">
+                <!-- Proiezioni vs Storico Switcher -->
+                <div class="mob-sub-tabs">
+                    <button type="button" id="div-sub-proj" class="mob-sub-tab-btn active" onclick="switchDivSubTab('proj')">
+                        Proiezioni <span id="div-proj-year">2026</span>
+                    </button>
+                    <button type="button" id="div-sub-hist" class="mob-sub-tab-btn" onclick="switchDivSubTab('hist')">
+                        Storico & Transazioni
+                    </button>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <button id="btn-recalc" onclick="resetProjections()" class="p-1.5 rounded-lg bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-primary active:scale-95 transition-all shadow-sm" title="Ricalcola Proiezioni">
+                        <span class="material-symbols-outlined text-sm">refresh</span>
+                    </button>
+                    <button onclick="openManualModal()" class="flex items-center gap-1 py-1.5 px-2.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black text-[10px] uppercase tracking-wider hover:bg-emerald-500/20 active:scale-95 transition-all shadow-sm">
+                        <span class="material-symbols-outlined text-xs">add</span>
+                        <span>Manuale</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SUB-VIEW: PROIEZIONI ANNO CORRENTE -->
+            <div id="div-view-proj">
+                <!-- Projections KPI Cards -->
+                <div class="grid grid-cols-3 gap-2 mx-3.5 mb-3">
+                    <div class="bg-white dark:bg-surface-dark p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm text-center">
+                        <div class="text-[8px] font-black uppercase text-emerald-500 tracking-wider mb-0.5">Ricevuto YTD</div>
+                        <div id="mob-total-actual" class="text-sm font-black font-mono text-emerald-500">€ 0</div>
+                    </div>
+                    <div class="bg-white dark:bg-surface-dark p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm text-center">
+                        <div class="text-[8px] font-black uppercase text-amber-500 tracking-wider mb-0.5">Residuo Atteso</div>
+                        <div id="mob-total-remaining" class="text-sm font-black font-mono text-amber-500">€ 0</div>
+                    </div>
+                    <div class="bg-white dark:bg-surface-dark p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm text-center">
+                        <div class="text-[8px] font-black uppercase text-blue-500 tracking-wider mb-0.5">Totale Previsto</div>
+                        <div id="mob-total-projected" class="text-sm font-black font-mono text-blue-500">€ 0</div>
+                    </div>
+                </div>
+
+                <!-- Monthly Projections Chart Card -->
+                <div class="mob-chart-card mb-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <div class="mob-chart-title" style="margin-bottom:0">Distribuzione Mensile</div>
+                            <div class="mob-chart-subtitle" style="margin-bottom:0">Stime e incassi per mese</div>
+                        </div>
+                    </div>
+                    <div class="relative h-56">
+                        <canvas id="mob-projection-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUB-VIEW: STORICO ANNUALE & TRANSAZIONI -->
+            <div id="div-view-hist" class="hidden">
+                <!-- Historical Dividends Chart Card -->
+                <div class="mob-chart-card mb-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <div class="mob-chart-title" style="margin-bottom:0">Storico Annuale</div>
+                            <div class="mob-chart-subtitle" style="margin-bottom:0">Dividendi percepiti per anno</div>
+                        </div>
+                    </div>
+                    <div class="relative h-44">
+                        <canvas id="mob-historical-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dividends Filter Bar (Always visible in Dividends view) -->
+            <div class="mob-filter-bar">
+                <span class="material-symbols-outlined text-slate-400 text-sm">search</span>
+                <input type="text" id="div-filter-ticker" placeholder="Filtra ticker, asset..." class="mob-filter-input" oninput="renderMobDividends()">
+                <select id="div-group-by" class="mob-filter-select" onchange="renderMobDividends()">
+                    <option value="year">Per Anno</option>
+                    <option value="portfolioName">Portafoglio</option>
+                    <option value="none">Lista</option>
+                </select>
+            </div>
+
+            <!-- Dividends & Projections List Container -->
+            <div id="mob-dividends-list" class="mob-portfolio-list">
+                <div style="text-align:center;padding:32px">
+                    <div class="mob-spinner" style="margin:0 auto"></div>
+                </div>
+            </div>
+        </div>
+
+        <div style="height: 40px"></div>
     </div>
-    <div style="height: 20px"></div>
-  </div>
 
-  <!-- ── Bottom Tab Bar ── -->
-  <div class="mob-tab-bar">
-    <a href="/dashboard" class="mob-tab-item">
-      <span class="material-symbols-outlined">dashboard</span>
-    </a>
-    <a href="/market" class="mob-tab-item">
-      <span class="material-symbols-outlined">trending_up</span>
-    </a>
-    <a href="/watchlist" class="mob-tab-item">
-      <span class="material-symbols-outlined">visibility</span>
-    </a>
-    <a href="/history" class="mob-tab-item active">
-      <span class="material-symbols-outlined">history</span>
-    </a>
-    <a href="/dividend" class="mob-tab-item">
-      <span class="material-symbols-outlined">payments</span>
-    </a>
-    <a href="/reports" class="mob-tab-item">
-      <span class="material-symbols-outlined">pie_chart</span>
-    </a>
-    <a href="/notes" class="mob-tab-item">
-      <span class="material-symbols-outlined">note_stack</span>
-    </a>
-    <a href="/settings" class="mob-tab-item">
-      <span class="material-symbols-outlined">settings</span>
-    </a>
-  </div>
+    <!-- ── Manual / Confirm Dividend Modal ── -->
+    <div id="manual-modal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm hidden z-[100] flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-surface-dark w-full max-w-sm rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-5">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">
+                <h3 class="text-sm font-black tracking-tight text-slate-900 dark:text-white" id="manual-modal-title">Conferma Dividendo</h3>
+                <button onclick="closeManualModal()" class="text-slate-400 hover:text-slate-200 p-1">
+                    <span class="material-symbols-outlined text-base">close</span>
+                </button>
+            </div>
+            <form id="manual-div-form" onsubmit="submitConfirmDividend(event)" class="space-y-3">
+                <input type="hidden" id="confirm-id">
+                <input type="hidden" id="confirm-tx-id">
+                <input type="hidden" id="confirm-is-duplicate">
+                
+                <div id="confirm-ticker-group">
+                    <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Ticker</label>
+                    <input type="text" id="confirm-ticker-input" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs font-bold uppercase outline-none hidden">
+                    <div id="confirm-ticker-display" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs font-black hidden"></div>
+                    <select id="confirm-ticker-select" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs font-bold outline-none">
+                        <option value="" disabled selected>Seleziona asset...</option>
+                    </select>
+                </div>
+
+                <div id="confirm-portfolio-group">
+                    <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Portafoglio</label>
+                    <select id="confirm-portfolio" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs font-bold outline-none">
+                        <option value="" disabled selected>Seleziona...</option>
+                    </select>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="col-span-2">
+                        <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Data</label>
+                        <input type="date" id="confirm-date" required class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs outline-none">
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Lordo (€)</label>
+                            <button type="button" onclick="calcConfirmField('gross')" title="Calcola Lordo da Netto + Tasse" class="text-[9px] font-black text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-0.5 cursor-pointer">
+                                <span class="material-symbols-outlined text-[12px]">calculate</span>Calcola
+                            </button>
+                        </div>
+                        <input type="number" step="0.01" id="confirm-gross" required placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs font-mono outline-none">
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <div class="flex items-center gap-1">
+                                <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Tasse</label>
+                                <span id="confirm-tax-unit" class="text-[9px] font-bold text-slate-400">(€)</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <button type="button" id="confirm-tax-toggle" onclick="toggleConfirmTaxMode()" title="Cambia modalità € / %" class="text-[9px] font-black px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                                    %
+                                </button>
+                                <button type="button" onclick="calcConfirmField('tax')" title="Calcola Tasse" class="text-[9px] font-black text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-0.5 cursor-pointer">
+                                    <span class="material-symbols-outlined text-[12px]">calculate</span>Calcola
+                                </button>
+                            </div>
+                        </div>
+                        <input type="number" step="any" id="confirm-tax" required placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs font-mono outline-none">
+                        <input type="hidden" id="confirm-tax-mode" value="eur">
+                        <div class="flex items-center justify-between mt-1 text-[8px] font-bold text-slate-400 select-none">
+                            <span id="confirm-tax-hint">Eq. 0.0%</span>
+                            <div class="flex gap-1.5">
+                                <button type="button" onclick="applyTaxRate(26)" class="hover:text-emerald-500 cursor-pointer">26%</button>
+                                <button type="button" onclick="applyTaxRate(12.5)" class="hover:text-emerald-500 cursor-pointer">12.5%</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-span-2">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Netto Stimato (€)</label>
+                            <button type="button" onclick="calcConfirmField('net')" title="Calcola Netto da Lordo - Tasse" class="text-[9px] font-black text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-0.5 cursor-pointer">
+                                <span class="material-symbols-outlined text-[12px]">calculate</span>Calcola
+                            </button>
+                        </div>
+                        <input type="number" step="0.01" id="confirm-net" required placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 text-xs font-mono outline-none">
+                    </div>
+                </div>
+
+                <div id="confirm-is-confirmed-wrap" class="hidden pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <label class="flex items-center gap-2 cursor-pointer select-none">
+                        <input type="checkbox" id="confirm-is-confirmed" onchange="toggleMobManualConfirmed()" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500/20 cursor-pointer">
+                        <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300">Registra subito come incassato</span>
+                    </label>
+                </div>
+
+                <div id="confirm-withdrawal-group" class="hidden pt-1 flex items-start gap-2 p-2 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                    <input type="checkbox" id="confirm-create-withdrawal" class="mt-0.5 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500/20 cursor-pointer">
+                    <label for="confirm-create-withdrawal" class="text-[10px] font-bold text-slate-700 dark:text-slate-300 select-none cursor-pointer">
+                        Crea prelievo di liquidità equivalente
+                        <span class="block text-[8px] font-normal text-slate-400">Non incrementa la liquidità del portafoglio (preleva il netto).</span>
+                    </label>
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" id="confirm-submit-btn" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl text-xs transition-colors shadow-sm">
+                        Conferma e Salva
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ── Bottom Tab Bar (7 Unified Items) ── -->
+    <div class="mob-tab-bar">
+        <a href="/dashboard" class="mob-tab-item" title="Dashboard">
+            <span class="material-symbols-outlined">dashboard</span>
+        </a>
+        <a href="/market" class="mob-tab-item" title="Mercati">
+            <span class="material-symbols-outlined">trending_up</span>
+        </a>
+        <a href="/watchlist" class="mob-tab-item" title="Watchlist">
+            <span class="material-symbols-outlined">visibility</span>
+        </a>
+        <a href="/history" class="mob-tab-item active" title="Storico & Dividendi">
+            <span class="material-symbols-outlined">history_edu</span>
+        </a>
+        <a href="/reports" class="mob-tab-item" title="Reports">
+            <span class="material-symbols-outlined">pie_chart</span>
+        </a>
+        <a href="/notes" class="mob-tab-item" title="Appunti">
+            <span class="material-symbols-outlined">note_stack</span>
+        </a>
+        <a href="/settings" class="mob-tab-item" title="Impostazioni">
+            <span class="material-symbols-outlined">settings</span>
+        </a>
+    </div>
 </div>
 
 <script>
+    // Asset Category Badge Colors
     const getAssetTypeColors = (type, ticker) => {
         const t = (type || '').toUpperCase();
         const tk = (ticker || '').toUpperCase();
@@ -109,60 +553,44 @@
         let border = 'rgba(239, 68, 68, 0.3)';
         
         if (t.includes('LIQUID') || t.includes('CASH') || tk.includes('CASH')) {
-            bg = 'rgba(22, 101, 52, 0.15)'; text = '#166534'; border = 'rgba(22, 101, 52, 0.3)'; // Verde Scuro
+            bg = 'rgba(22, 101, 52, 0.15)'; text = '#166534'; border = 'rgba(22, 101, 52, 0.3)';
         } else if (t.includes('DEPOSITO') || t.includes('CONTO')) {
-            bg = 'rgba(21, 128, 61, 0.15)'; text = '#15803d'; border = 'rgba(21, 128, 61, 0.3)'; // Verde Medio
+            bg = 'rgba(21, 128, 61, 0.15)'; text = '#15803d'; border = 'rgba(21, 128, 61, 0.3)';
         } else if (t.includes('MONETARIO') || tk.includes('XEON') || tk.includes('LEON') || tk.includes('C3M') || tk.includes('SMART')) {
-            bg = 'rgba(74, 222, 128, 0.15)'; text = '#4ade80'; border = 'rgba(74, 222, 128, 0.3)'; // Verde Chiaro
+            bg = 'rgba(74, 222, 128, 0.15)'; text = '#4ade80'; border = 'rgba(74, 222, 128, 0.3)';
         } else if (t.includes('BOND') || t.includes('OBBLIG') || tk.startsWith('BTP') || t.includes('FIXED INCOME')) {
-            bg = 'rgba(234, 179, 8, 0.15)'; text = '#eab308'; border = 'rgba(234, 179, 8, 0.3)'; // Giallo
+            bg = 'rgba(234, 179, 8, 0.15)'; text = '#eab308'; border = 'rgba(234, 179, 8, 0.3)';
         } else if (t.includes('ETF AZION') || t.includes('ETF')) {
-            bg = 'rgba(249, 115, 22, 0.15)'; text = '#f97316'; border = 'rgba(249, 115, 22, 0.3)'; // Arancio
+            bg = 'rgba(249, 115, 22, 0.15)'; text = '#f97316'; border = 'rgba(249, 115, 22, 0.3)';
         } else if (t.includes('CRYPTO') || t.includes('VALUTA')) {
-            bg = 'rgba(139, 92, 246, 0.15)'; text = '#8b5cf6'; border = 'rgba(139, 92, 246, 0.3)'; // Viola
+            bg = 'rgba(139, 92, 246, 0.15)'; text = '#8b5cf6'; border = 'rgba(139, 92, 246, 0.3)';
         } else if (t.includes('AZION') || t.includes('STOCK') || t.includes('EQUITY')) {
-            bg = 'rgba(239, 68, 68, 0.15)'; text = '#ef4444'; border = 'rgba(239, 68, 68, 0.3)'; // Rosso
+            bg = 'rgba(239, 68, 68, 0.15)'; text = '#ef4444'; border = 'rgba(239, 68, 68, 0.3)';
         }
         
         return { bg, text, border };
     };
 
+    // ── Global State ──────────────────────────────────────────────────────────
     let rawHistoryData = [];
-    let isMobDataLoaded = false;
-    let mobCollapsedGroups = new Set();
+    let isHistoryLoaded = false;
+    let closedCollapsedGroups = new Set();
+    let totalClosedGain = 0;
 
-    async function loadHistoryData() {
-        try {
-            const res = await fetch('/api/analytics/history');
-            const data = await res.json();
-            const cashTypes = ['DEPOSIT', 'DEPOSITO', 'WITHDRAWAL', 'PRELIEVO', 'TAX', 'TASSE', 'TRANSFER'];
-            rawHistoryData = (Array.isArray(data) ? data : []).filter(d => !cashTypes.includes(d.type));
-            
-            const currentYear = new Date().getFullYear().toString();
-            const years = [...new Set(rawHistoryData.map(d => d.year))];
-            
-            // Auto-collapse past years
-            years.forEach(y => {
-                if (y.toString() !== currentYear) {
-                    mobCollapsedGroups.add('hist_' + y);
-                }
-            });
-            
-            isMobDataLoaded = true;
-            renderMobileView();
-        } catch (err) {
-            console.error('Error loading history:', err);
-            isMobDataLoaded = true; // Set true to remove spinner even on error
-            renderMobileView();
-        }
-    }
+    let rawDivData = [];
+    let isDivLoaded = false;
+    let divCollapsedGroups = new Set();
+    let currentDivGroupBy = 'year';
+    let totalDividendsSum = 0;
+    let mobProjChart = null;
+    let mobHistChartInstance = null;
+    window.globalProjData = null;
 
-    // ── Swipe Logic ──────────────────────────────────
+    // ── Touch Swipe Handling ──────────────────────────────────────────────────
     let touchStartX = 0;
     let touchMoveX = 0;
     let currentSwipeEl = null;
     const SWIPE_THRESHOLD = 50;
-    const ACTION_WIDTH = 130; // 2 buttons * 65px
 
     window.handleTouchStart = function(e, container) {
         touchStartX = e.touches[0].clientX;
@@ -178,7 +606,8 @@
         touchMoveX = e.touches[0].clientX;
         let diff = touchMoveX - touchStartX;
         if (diff > 0) diff = 0;
-        if (diff < -ACTION_WIDTH - 20) diff = -ACTION_WIDTH - 20;
+        const actionWidth = container.querySelector('.mob-holding-actions')?.offsetWidth || 130;
+        if (diff < -actionWidth - 20) diff = -actionWidth - 20;
         item.style.transition = 'none';
         item.style.transform = `translateX(${diff}px)`;
     };
@@ -187,9 +616,10 @@
         const item = container.querySelector('.mob-holding-item');
         if (!item) return;
         const diff = touchMoveX - touchStartX;
+        const actionWidth = container.querySelector('.mob-holding-actions')?.offsetWidth || 130;
         item.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
         if (touchMoveX !== 0 && diff < -SWIPE_THRESHOLD) {
-            item.style.transform = `translateX(-${ACTION_WIDTH}px)`;
+            item.style.transform = `translateX(-${actionWidth}px)`;
             currentSwipeEl = container;
         } else {
             item.style.transform = 'translateX(0)';
@@ -206,120 +636,1272 @@
         currentSwipeEl = null;
     }
 
-    function mobToggleGroup(key) {
-        if (mobCollapsedGroups.has(key)) {
-            mobCollapsedGroups.delete(key);
+    // ── Tab Switching ─────────────────────────────────────────────────────────
+    window.switchMainTab = function(tab) {
+        const btnClosed = document.getElementById('main-tab-closed');
+        const btnDividends = document.getElementById('main-tab-dividends');
+        const viewClosed = document.getElementById('view-closed-section');
+        const viewDividends = document.getElementById('view-dividends-section');
+
+        if (tab === 'dividends') {
+            btnClosed.classList.remove('active');
+            btnDividends.classList.add('active');
+            btnClosed.setAttribute('aria-selected', 'false');
+            btnDividends.setAttribute('aria-selected', 'true');
+
+            viewClosed.classList.add('hidden');
+            viewDividends.classList.remove('hidden');
+
+            const url = new URL(window.location);
+            url.searchParams.set('tab', 'dividends');
+            window.history.replaceState({}, '', url);
+
+            setTimeout(() => {
+                if (mobProjChart) mobProjChart.resize();
+                if (mobHistChartInstance) mobHistChartInstance.resize();
+            }, 60);
         } else {
-            mobCollapsedGroups.add(key);
+            btnDividends.classList.remove('active');
+            btnClosed.classList.add('active');
+            btnDividends.setAttribute('aria-selected', 'false');
+            btnClosed.setAttribute('aria-selected', 'true');
+
+            viewDividends.classList.add('hidden');
+            viewClosed.classList.remove('hidden');
+
+            const url = new URL(window.location);
+            url.searchParams.delete('tab');
+            window.history.replaceState({}, '', url);
         }
-        renderMobileView();
+    };
+
+    window.switchDivSubTab = function(subTab) {
+        const btnProj = document.getElementById('div-sub-proj');
+        const btnHist = document.getElementById('div-sub-hist');
+        const viewProj = document.getElementById('div-view-proj');
+        const viewHist = document.getElementById('div-view-hist');
+
+        if (subTab === 'hist') {
+            btnProj.classList.remove('active');
+            btnHist.classList.add('active');
+            viewProj.classList.add('hidden');
+            viewHist.classList.remove('hidden');
+            setTimeout(() => {
+                if (mobHistChartInstance) mobHistChartInstance.resize();
+            }, 60);
+        } else {
+            btnHist.classList.remove('active');
+            btnProj.classList.add('active');
+            viewHist.classList.add('hidden');
+            viewProj.classList.remove('hidden');
+            setTimeout(() => {
+                if (mobProjChart) mobProjChart.resize();
+            }, 60);
+        }
+    };
+
+    // ── Update Unified Hero Summary ───────────────────────────────────────────
+    function updateHeroSummary() {
+        const elGain = document.getElementById('hero-realized-gain');
+        const elGainSub = document.getElementById('hero-realized-sub');
+        const elDivs = document.getElementById('hero-dividends-total');
+        const elReturn = document.getElementById('hero-total-return');
+
+        const gainColor = totalClosedGain >= 0 ? 'text-emerald-500' : 'text-rose-500';
+        const gainSign = totalClosedGain >= 0 ? '+' : '';
+        if (elGain) {
+            elGain.className = `text-sm font-black font-mono ${gainColor}`;
+            elGain.innerText = gainSign + formatCurrency(totalClosedGain, 'EUR', 0);
+        }
+
+        const tradeCount = rawHistoryData.filter(pos => ['BUY', 'SELL'].includes(pos.type)).length;
+        if (elGainSub) {
+            elGainSub.innerText = `${tradeCount} operazioni`;
+        }
+
+        if (elDivs) {
+            elDivs.innerText = formatCurrency(totalDividendsSum, 'EUR', 0);
+        }
+
+        const totalRealized = totalClosedGain + totalDividendsSum;
+        const retColor = totalRealized >= 0 ? 'text-emerald-500' : 'text-rose-500';
+        const retSign = totalRealized >= 0 ? '+' : '';
+        if (elReturn) {
+            elReturn.className = `text-2xl font-black font-mono mt-0.5 ${retColor}`;
+            elReturn.innerText = retSign + formatCurrency(totalRealized, 'EUR', 0);
+        }
     }
 
-    function renderMobileView() {
-        if (!isMobDataLoaded) return;
+    // ── Closed Positions Logic ────────────────────────────────────────────────
+    async function loadClosedPositions() {
+        try {
+            const res = await fetch('/api/analytics/history');
+            const data = await res.json();
+            const cashTypes = ['DEPOSIT', 'DEPOSITO', 'WITHDRAWAL', 'PRELIEVO', 'TAX', 'TASSE', 'TRANSFER'];
+            rawHistoryData = (Array.isArray(data) ? data : []).filter(d => !cashTypes.includes(d.type));
+            
+            totalClosedGain = rawHistoryData.reduce((sum, pos) => sum + (pos.realizedGain || 0), 0);
+
+            const currentYear = new Date().getFullYear().toString();
+            const years = [...new Set(rawHistoryData.map(d => d.year))];
+            years.forEach(y => {
+                if (y.toString() !== currentYear) {
+                    closedCollapsedGroups.add('c_' + y);
+                }
+            });
+
+            isHistoryLoaded = true;
+            updateHeroSummary();
+            renderClosedPositions();
+        } catch (err) {
+            console.error('Error loading history:', err);
+            isHistoryLoaded = true;
+            renderClosedPositions();
+        }
+    }
+
+    function toggleClosedGroup(key) {
+        if (closedCollapsedGroups.has(key)) {
+            closedCollapsedGroups.delete(key);
+        } else {
+            closedCollapsedGroups.add(key);
+        }
+        renderClosedPositions();
+    }
+
+    function renderClosedPositions() {
+        if (!isHistoryLoaded) return;
         const container = document.getElementById('mob-history-list');
         if (!container) return;
 
-        // Group rawHistoryData by year
-        const groups = {};
-        rawHistoryData.forEach(pos => {
-            const y = pos.year || 'Unknown';
-            if (!groups[y]) groups[y] = { items: [], totalGain: 0, count: 0 };
-            groups[y].items.push(pos);
-            groups[y].totalGain += pos.realizedGain || 0;
-            groups[y].count++;
+        const searchTerm = (document.getElementById('closed-search')?.value || '').toLowerCase();
+        const groupBy = document.getElementById('closed-group-by')?.value || 'year';
+
+        let filtered = rawHistoryData.filter(pos => {
+            return (pos.name || '').toLowerCase().includes(searchTerm) || 
+                   (pos.ticker || '').toLowerCase().includes(searchTerm);
         });
-        
-        const sortedYears = Object.keys(groups).sort((a,b) => b - a);
+
+        if (filtered.length === 0) {
+            container.innerHTML = '<div class="mob-empty" style="padding:48px 16px"><span class="material-symbols-outlined">inbox</span><div class="mob-empty-title">Nessuna posizione trovata</div></div>';
+            return;
+        }
+
+        if (groupBy === 'none') {
+            container.innerHTML = `<div class="mob-list-edge">` + 
+                filtered.sort((a,b) => new Date(b.date) - new Date(a.date)).map(pos => renderClosedRow(pos)).join('') + 
+                `</div>`;
+            return;
+        }
+
+        const groups = {};
+        filtered.forEach(pos => {
+            const key = pos[groupBy] || 'Altro';
+            if (!groups[key]) groups[key] = { items: [], totalGain: 0, totalProceeds: 0, count: 0 };
+            groups[key].items.push(pos);
+            groups[key].totalGain += pos.realizedGain || 0;
+            groups[key].totalProceeds += pos.totalProceeds || 0;
+            groups[key].count++;
+        });
+
+        const sortedKeys = Object.keys(groups).sort((a, b) => {
+            if (groupBy === 'year') return b - a;
+            return a.localeCompare(b);
+        });
+
         let html = '';
-        
-        sortedYears.forEach(year => {
-            const g = groups[year];
-            const key = 'hist_' + year;
-            const isCollapsed = mobCollapsedGroups.has(key);
+        sortedKeys.forEach(k => {
+            const g = groups[k];
+            const groupKey = 'c_' + k;
+            const isCollapsed = closedCollapsedGroups.has(groupKey);
             const colorRaw = g.totalGain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
             const sign = g.totalGain >= 0 ? '+' : '';
-            
+
             html += `
-                <div class="mob-section-header" onclick="mobToggleGroup('${key}')" style="cursor:pointer">
-                    <div class="mob-section-title flex items-center gap-2">
-                        <span class="material-symbols-outlined" style="font-size: 20px;">${isCollapsed ? 'chevron_right' : 'expand_more'}</span>
-                        ${year} <span style="font-size:11px; color:var(--mob-text-muted); font-weight:normal;">(${g.count})</span>
+                <div class="mob-acc-header" onclick="toggleClosedGroup('${groupKey}')">
+                    <div class="mob-acc-title">
+                        <span class="material-symbols-outlined text-slate-400 text-lg" style="transition:transform 0.2s; ${isCollapsed ? '' : 'transform:rotate(90deg)'}">chevron_right</span>
+                        <span>${k.toUpperCase()}</span>
+                        <span class="mob-acc-badge">(${g.count})</span>
                     </div>
-                    <div class="mob-section-link" style="color: ${colorRaw}; font-size: 18px; font-weight: 900;">
-                        ${sign}${formatCurrency(g.totalGain, 'EUR', 0)}
+                    <div>
+                        <div class="mob-acc-val" style="color:${colorRaw}">
+                            ${sign}${formatCurrency(g.totalGain, 'EUR', 0)}
+                        </div>
+                        <div class="mob-acc-subval text-right">
+                            Incasso: ${formatCurrency(g.totalProceeds, 'EUR', 0)}
+                        </div>
                     </div>
                 </div>
             `;
-            
+
             if (!isCollapsed) {
                 html += `<div class="mob-list-edge">`;
                 g.items.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(pos => {
-                    const isTrade = ['BUY', 'SELL'].includes(pos.type);
-                    const gainColor = pos.realizedGain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
-                    const gainSign = pos.realizedGain >= 0 ? '+' : '';
-                    const colors = getAssetTypeColors(pos.assetType, pos.ticker);
-                    
-                    html += `
-                        <div class="mob-holding-swipe-container" 
-                                ontouchstart="handleTouchStart(event, this)" 
-                                ontouchmove="handleTouchMove(event, this)" 
-                                ontouchend="handleTouchEnd(event, this)">
-                            <div class="mob-holding-actions">
-                                <div class="mob-action-btn bg-orange-ios" onclick="event.stopPropagation(); editTransaction('${pos.id}')">
-                                    <span class="material-symbols-outlined">edit</span>
-                                    <span>Modifica</span>
-                                </div>
-                                <div class="mob-action-btn bg-red-ios" onclick="event.stopPropagation(); confirmDeleteTransaction('${pos.id}')">
-                                    <span class="material-symbols-outlined">delete</span>
-                                    <span>Elimina</span>
-                                </div>
-                            </div>
-                            <div class="mob-holding-item">
-                                <div class="mob-holding-info">
-                                    <div class="flex items-center gap-2">
-                                        <div class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border" style="background: ${colors.bg}; color: #000000; border-color: ${colors.border}; display: inline-block;">${pos.ticker || pos.name}</div>
-                                        <div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter ${pos.realizedGain >= 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'}">${isTrade ? pos.type : 'CLOSED'}</div>
-                                    </div>
-                                    <div class="mob-holding-name" style="margin-top:2px;">${pos.portfolioName || 'N/A'} • ${isTrade ? formatNumber(pos.quantity, 0) + ' qta • PMC ' + formatCurrency(pos.pmc, 'EUR') + ' / ' + formatCurrency(pos.sellPrice, 'EUR') : pos.type}</div>
-                                </div>
-                                <div class="mob-holding-values">
-                                    <div class="mob-holding-value" style="color: ${isTrade ? gainColor : 'inherit'}">
-                                        ${isTrade ? gainSign + formatCurrency(pos.realizedGain, 'EUR', 0) : formatCurrency(pos.totalProceeds, 'EUR', 0)}
-                                    </div>
-                                    <div class="mob-holding-gain" style="color: var(--mob-text-muted); font-size: 11px;">
-                                        Proceeds: ${formatCurrency(pos.totalProceeds, 'EUR', 0)}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
+                    html += renderClosedRow(pos);
                 });
                 html += `</div>`;
             }
         });
-        container.innerHTML = html || '<div class="mob-empty"><span class="material-symbols-outlined">inbox</span><div class="mob-empty-title">No Closed Positions</div></div>';
+
+        container.innerHTML = html;
     }
 
+    function renderClosedRow(pos) {
+        const isTrade = ['BUY', 'SELL'].includes(pos.type);
+        const gainColor = pos.realizedGain >= 0 ? 'var(--mob-emerald)' : 'var(--mob-rose)';
+        const gainSign = pos.realizedGain >= 0 ? '+' : '';
+        const colors = getAssetTypeColors(pos.assetType, pos.ticker);
+        const gainPct = pos.gainPct !== undefined ? ` (${gainSign}${formatNumber(pos.gainPct, 1)}%)` : '';
+
+        return `
+            <div class="mob-holding-swipe-container" 
+                 ontouchstart="handleTouchStart(event, this)" 
+                 ontouchmove="handleTouchMove(event, this)" 
+                 ontouchend="handleTouchEnd(event, this)">
+                <div class="mob-holding-actions">
+                    <div class="mob-action-btn bg-orange-ios" onclick="event.stopPropagation(); editTransaction('${pos.id}')">
+                        <span class="material-symbols-outlined">edit</span>
+                        <span>Modifica</span>
+                    </div>
+                    <div class="mob-action-btn bg-red-ios" onclick="event.stopPropagation(); confirmDeleteTransaction('${pos.id}')">
+                        <span class="material-symbols-outlined">delete</span>
+                        <span>Elimina</span>
+                    </div>
+                </div>
+                <div class="mob-holding-item">
+                    <div class="mob-holding-info">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <div class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border" style="background: ${colors.bg}; color: ${colors.text}; border-color: ${colors.border}; display: inline-block;">
+                                ${pos.ticker || pos.name}
+                            </div>
+                            <div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter ${pos.realizedGain >= 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'}">
+                                ${isTrade ? pos.type : 'CLOSED'}
+                            </div>
+                        </div>
+                        <div class="mob-holding-name" style="margin-top:3px;">
+                            ${pos.portfolioName || 'N/A'} • ${isTrade ? formatNumber(pos.quantity, 0) + ' qta • PMC ' + formatCurrency(pos.pmc, 'EUR') + ' / ' + formatCurrency(pos.sellPrice, 'EUR') : pos.type} • ${pos.date || ''}
+                        </div>
+                    </div>
+                    <div class="mob-holding-values">
+                        <div class="mob-holding-value" style="color: ${isTrade ? gainColor : 'inherit'}; font-family:'JetBrains Mono',monospace;">
+                            ${isTrade ? gainSign + formatCurrency(pos.realizedGain, 'EUR', 0) : formatCurrency(pos.totalProceeds, 'EUR', 0)}
+                        </div>
+                        <div class="mob-holding-gain" style="color: var(--mob-text-muted); font-size: 10px; font-family:'JetBrains Mono',monospace;">
+                            ${isTrade ? `Incasso: ${formatCurrency(pos.totalProceeds, 'EUR', 0)}${gainPct}` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // ── Dividends Logic ───────────────────────────────────────────────────────
+    async function loadDividendsData() {
+        try {
+            // 1. Projections
+            const projRes = await fetch('/api/analytics/dividend-projections');
+            const projData = await projRes.json();
+            window.globalProjData = projData || { assets: [], months: [] };
+
+            const currentYear = projData.year || new Date().getFullYear();
+            const projYearEl = document.getElementById('div-proj-year');
+            if (projYearEl) projYearEl.innerText = currentYear;
+
+            const elActual = document.getElementById('mob-total-actual');
+            const elProj = document.getElementById('mob-total-projected');
+            const elRem = document.getElementById('mob-total-remaining');
+            if (elActual) elActual.innerText = formatCurrency(projData.totalReceived || 0, 'EUR', 0);
+            if (elProj) elProj.innerText = formatCurrency(projData.totalExpected || 0, 'EUR', 0);
+            if (elRem) elRem.innerText = formatCurrency(projData.totalRemaining || 0, 'EUR', 0);
+
+            renderMobProjectionChart(projData.months || []);
+
+            // 2. Historical Dividends
+            const histRes = await fetch('/api/analytics/dividends');
+            const histData = await histRes.json();
+            rawDivData = Array.isArray(histData) ? histData : [];
+
+            totalDividendsSum = rawDivData.reduce((sum, d) => sum + (d.amount || 0), 0);
+            const currentYearStr = new Date().getFullYear().toString();
+            const years = [...new Set(rawDivData.map(d => d.date.split('-')[0]))];
+            divCollapsedGroups = new Set(years.filter(y => y !== currentYearStr));
+
+            isDivLoaded = true;
+            updateHeroSummary();
+            renderMobHistoricalChart();
+            renderMobDividends();
+        } catch (err) {
+            console.error('Error loading dividends data:', err);
+            isDivLoaded = true;
+            renderMobDividends();
+        }
+    }
+
+    function renderMobProjectionChart(months) {
+        const canvas = document.getElementById('mob-projection-chart');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (mobProjChart) mobProjChart.destroy();
+
+        const isDark = document.documentElement.classList.contains('dark');
+        const textColor = isDark ? '#64748b' : '#94a3b8';
+        const gridColor = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)';
+        const tickersData = months.map(m => (m.tickers || []).join(', '));
+
+        mobProjChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: months.map(m => m.name),
+                datasets: [
+                    {
+                        label: 'Ricevuto',
+                        data: months.map(m => m.actual),
+                        backgroundColor: (ctx2) => {
+                            const chart = ctx2.chart;
+                            const {ctx: c, chartArea} = chart;
+                            if (!chartArea) return 'rgba(16,185,129,0.55)';
+                            const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                            g.addColorStop(0, 'rgba(16,185,129,0.85)');
+                            g.addColorStop(1, 'rgba(16,185,129,0.20)');
+                            return g;
+                        },
+                        hoverBackgroundColor: '#10b981',
+                        borderRadius: 5,
+                        borderSkipped: false
+                    },
+                    {
+                        label: 'Proiettato',
+                        data: months.map(m => m.display),
+                        backgroundColor: 'rgba(6,182,212,0.40)',
+                        borderColor: 'rgba(6,182,212,0.85)',
+                        borderWidth: 1.5,
+                        borderRadius: 5,
+                        borderSkipped: false,
+                        hoverBackgroundColor: 'rgba(6,182,212,0.65)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: { padding: { top: 22, bottom: 18 } },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { 
+                        intersect: false, 
+                        mode: 'index',
+                        backgroundColor: isDark ? 'rgba(15,23,42,0.95)' : 'rgba(255,255,255,0.97)',
+                        titleColor: isDark ? '#f1f5f9' : '#0f172a',
+                        bodyColor: isDark ? '#cbd5e1' : '#334155',
+                        borderColor: isDark ? '#334155' : '#e2e8f0',
+                        borderWidth: 1,
+                        padding: 8,
+                        cornerRadius: 8,
+                        callbacks: {
+                            afterBody: (context) => {
+                                const idx = context[0].dataIndex;
+                                if (tickersData[idx]) return ['', '• ' + tickersData[idx]];
+                                return '';
+                            },
+                            label: ctx => ` ${ctx.dataset.label}: ${formatCurrency(ctx.raw, 'EUR', 0)}`
+                        }
+                    }
+                },
+                scales: {
+                    x: { 
+                        stacked: true, 
+                        grid: { display: false },
+                        border: { display: false },
+                        ticks: { color: textColor, font: { size: 9, weight: '700' } } 
+                    },
+                    y: { 
+                        stacked: true, 
+                        grid: { color: gridColor, drawTicks: false },
+                        border: { display: false },
+                        ticks: {
+                            color: textColor,
+                            font: { size: 8, weight: '700' },
+                            maxTicksLimit: 3,
+                            padding: 4,
+                            callback: v => v >= 1000 ? (v/1000).toFixed(0)+'K' : v.toFixed(0)
+                        } 
+                    }
+                }
+            },
+            plugins: [{
+                id: 'barLabelsAndTickers',
+                afterDatasetsDraw(chart) {
+                    const {ctx: c} = chart;
+                    c.save();
+                    c.textAlign = 'center';
+                    c.textBaseline = 'bottom';
+                    c.font = 'bold 8px sans-serif';
+                    c.fillStyle = textColor;
+
+                    const chartData = chart.data;
+                    const meta0 = chart.getDatasetMeta(0);
+                    const meta1 = chart.getDatasetMeta(1);
+                    const xAxis = chart.scales.x;
+
+                    chartData.labels.forEach((label, i) => {
+                        const val0 = chartData.datasets[0].data[i] || 0;
+                        const val1 = chartData.datasets[1].data[i] || 0;
+                        const total = val0 + val1;
+                        const xPos = xAxis.getPixelForTick(i);
+
+                        if (total > 0) {
+                            const topY = Math.min(meta0.data[i].y, meta1.data[i].y);
+                            c.fillText('€' + Math.round(total), xPos, topY - 5);
+                        }
+                    });
+                    c.restore();
+                }
+            }]
+        });
+    }
+
+    function renderMobHistoricalChart() {
+        const canvas = document.getElementById('mob-historical-chart');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (mobHistChartInstance) mobHistChartInstance.destroy();
+
+        const grouped = {};
+        rawDivData.forEach(d => {
+            const year = d.date.split('-')[0];
+            grouped[year] = (grouped[year] || 0) + d.amount;
+        });
+        const labels = Object.keys(grouped).sort();
+        const data = labels.map(y => grouped[y]);
+
+        const isDark = document.documentElement.classList.contains('dark');
+        const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
+        const textColor = isDark ? '#64748b' : '#94a3b8';
+
+        mobHistChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Incassato',
+                    data: data,
+                    backgroundColor: (ctx2) => {
+                        const chart = ctx2.chart;
+                        const {ctx: c, chartArea} = chart;
+                        if (!chartArea) return 'rgba(16,185,129,0.4)';
+                        const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                        g.addColorStop(0, 'rgba(16,185,129,0.75)');
+                        g.addColorStop(1, 'rgba(16,185,129,0.10)');
+                        return g;
+                    },
+                    hoverBackgroundColor: '#10b981',
+                    borderRadius: 5,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: isDark ? 'rgba(15,23,42,0.95)' : 'rgba(255,255,255,0.97)',
+                        titleColor: isDark ? '#f1f5f9' : '#0f172a',
+                        bodyColor: isDark ? '#cbd5e1' : '#334155',
+                        borderColor: isDark ? '#334155' : '#e2e8f0',
+                        borderWidth: 1,
+                        padding: 8,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: (context) => ` ${formatCurrency(context.parsed.y, 'EUR', 0)}`
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        border: { display: false },
+                        ticks: { color: textColor, font: { size: 9, weight: '700' } }
+                    },
+                    y: {
+                        grid: { color: gridColor, drawTicks: false },
+                        border: { display: false },
+                        ticks: {
+                            color: textColor,
+                            font: { size: 8, weight: '700' },
+                            maxTicksLimit: 3,
+                            padding: 4,
+                            callback: v => v >= 1000 ? (v/1000).toFixed(0)+'K' : v.toFixed(0)
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function getMobUnifiedDividendData() {
+        let combined = [...rawDivData];
+        if (window.globalProjData && window.globalProjData.assets) {
+            const projections = window.globalProjData.assets.filter(a => a.tag !== 'REGISTRATO');
+            projections.forEach(p => {
+                combined.push({
+                    isProjection: true,
+                    id: p.id,
+                    assetTicker: p.ticker,
+                    ticker: p.ticker,
+                    name: p.name,
+                    isin: p.isin,
+                    assetType: p.assetType,
+                    portfolioName: 'N/A',
+                    date: p.date,
+                    amount: p.totalAmount,
+                    gross: p.gross || p.totalAmount,
+                    tax: p.tax || 0,
+                    tag: p.tag
+                });
+            });
+        }
+        return combined;
+    }
+
+    function toggleDivGroup(key) {
+        if (divCollapsedGroups.has(key)) divCollapsedGroups.delete(key);
+        else divCollapsedGroups.add(key);
+        renderMobDividends();
+    }
+
+    function renderMobDividends() {
+        if (!isDivLoaded) return;
+        const container = document.getElementById('mob-dividends-list');
+        const groupByEl = document.getElementById('div-group-by');
+        if (!container || !groupByEl) return;
+
+        const groupBy = groupByEl.value;
+        const filterText = (document.getElementById('div-filter-ticker')?.value || '').toLowerCase();
+
+        let filtered = getMobUnifiedDividendData();
+
+        if (filterText) {
+            filtered = filtered.filter(d => 
+                (d.assetTicker || d.ticker || '').toLowerCase().includes(filterText) ||
+                (d.name && d.name !== 'null' ? d.name : '').toLowerCase().includes(filterText)
+            );
+        }
+
+        if (groupBy !== currentDivGroupBy) {
+            divCollapsedGroups = new Set();
+            currentDivGroupBy = groupBy;
+            if (groupBy === 'year') {
+                const years = [...new Set(filtered.map(d => d.date.split('-')[0]))];
+                divCollapsedGroups = new Set(years);
+            }
+        }
+
+        if (filtered.length === 0) {
+            container.innerHTML = '<div class="mob-empty" style="padding:48px 16px"><span class="material-symbols-outlined">inbox</span><div class="mob-empty-title">Nessun dividendo trovato</div></div>';
+            return;
+        }
+
+        if (groupBy === 'none') {
+            container.innerHTML = `<div class="mob-list-edge">` + 
+                filtered.sort((a,b) => new Date(b.date) - new Date(a.date)).map(d => renderDivRow(d)).join('') + 
+                `</div>`;
+            return;
+        }
+
+        const groups = {};
+        filtered.forEach(d => {
+            let key = d[groupBy] || 'Altro';
+            if (groupBy === 'year') key = d.date.split('-')[0];
+            if (!groups[key]) {
+                groups[key] = {
+                    items: [],
+                    actualNet: 0,
+                    projectedNet: 0,
+                    totalNet: 0,
+                    actualGross: 0,
+                    projectedGross: 0,
+                    totalGross: 0
+                };
+            }
+            groups[key].items.push(d);
+            const net = Number(d.amount) || 0;
+            const gross = Number(d.gross || d.amount) || 0;
+            if (!d.isProjection || d.tag === 'REGISTRATO') {
+                groups[key].actualNet += net;
+                groups[key].actualGross += gross;
+            } else {
+                groups[key].projectedNet += net;
+                groups[key].projectedGross += gross;
+            }
+            groups[key].totalNet += net;
+            groups[key].totalGross += gross;
+        });
+
+        const keys = Object.keys(groups).sort((a, b) => {
+            if (groupBy === 'year') return b - a;
+            return a.localeCompare(b);
+        });
+
+        const currentYearStr = (window.globalProjData?.year?.toString()) || (new Date().getFullYear().toString());
+
+        let html = '';
+        keys.forEach(key => {
+            const group = groups[key];
+            const isCollapsed = divCollapsedGroups.has(key);
+            const sign = group.totalNet >= 0 ? '+' : '';
+            const isCurrentYear = (groupBy === 'year' && key === currentYearStr);
+
+            html += `
+                <div class="mob-acc-header" onclick="toggleDivGroup('${key}')">
+                    <div class="mob-acc-title">
+                        <span class="material-symbols-outlined text-slate-400 text-lg" style="transition:transform 0.2s; ${isCollapsed ? '' : 'transform:rotate(90deg)'}">chevron_right</span>
+                        <span>${key.toUpperCase()}</span>
+                        <span class="mob-acc-badge">(${group.items.length})</span>
+                    </div>
+                    <div>
+                        <div class="mob-acc-val" style="color:var(--mob-emerald)">
+                            ${sign}${formatCurrency(isCurrentYear && group.projectedNet > 0 ? group.actualNet : group.totalNet, 'EUR', 0)}
+                        </div>
+                        <div class="mob-acc-subval text-right">
+                            ${isCurrentYear && group.projectedNet > 0 
+                                ? `Incassati • Previsti: ${formatCurrency(group.totalNet, 'EUR', 0)}` 
+                                : (group.totalGross ? `Lordo: ${formatCurrency(group.totalGross, 'EUR', 0)}` : '')}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            if (!isCollapsed) {
+                html += `<div class="mob-list-edge">`;
+                group.items.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(d => {
+                    html += renderDivRow(d);
+                });
+                html += `</div>`;
+            }
+        });
+
+        container.innerHTML = html;
+    }
+
+    function renderDivRow(d) {
+        const isProj = d.isProjection;
+        let ticker = d.assetTicker || d.ticker || '???';
+        let name = d.name && d.name !== 'null' ? d.name : ticker;
+        
+        const isinMatch = name.match(/\(([A-Z0-9]{12})\)/) || name.match(/([A-Z0-9]{12})/);
+        let isin = d.isin || (isinMatch ? isinMatch[1] : null);
+
+        const isBond = d.assetType && ['Bond', 'ETF Obblig', 'Deposito Vincolato', 'ETF Monetario'].includes(d.assetType) 
+                       || ticker.toUpperCase().startsWith('BTP') 
+                       || ticker.toUpperCase().startsWith('BOT');
+
+        if (isBond && isin) {
+            if (!ticker.includes(isin)) ticker = `${ticker} (${isin})`;
+            name = name.replace(`(${isin})`, '').replace(isin, '').trim();
+            if (name === '' || name === '()') name = ticker;
+        }
+
+        const divNetto = d.amount || 0;
+        const divLordo = d.gross || (divNetto + (d.tax || 0));
+        const tag = isProj ? d.tag : 'STORICO';
+
+        let badge = '';
+        if (!isProj || tag === 'REGISTRATO') badge = '<div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">Ricevuto</div>';
+        else if (tag === 'YF') badge = '<div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20">YF</div>';
+        else if (tag === 'SIMULATO') badge = '<div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-amber-500/10 text-amber-600 border-amber-500/20">Simulato</div>';
+        else if (tag === 'MANUALE') badge = '<div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20">Manuale</div>';
+        else if (tag === 'STORICO') badge = '<div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-slate-500/10 text-slate-500 border-slate-500/20">Storico</div>';
+
+        let actionsHtml = '';
+        if (!isProj || tag === 'REGISTRATO') {
+            actionsHtml = `
+                <div class="mob-holding-actions">
+                    <div class="mob-action-btn bg-blue-500" onclick="event.stopPropagation(); openDuplicateDividendModal('${d.id}', false)">
+                        <span class="material-symbols-outlined">content_copy</span>
+                        <span>Duplica</span>
+                    </div>
+                    <div class="mob-action-btn bg-orange-ios" onclick="event.stopPropagation(); editTransaction('${d.id}')">
+                        <span class="material-symbols-outlined">edit</span>
+                        <span>Modifica</span>
+                    </div>
+                    <div class="mob-action-btn bg-red-ios" onclick="event.stopPropagation(); confirmDeleteTransaction('${d.id}')">
+                        <span class="material-symbols-outlined">delete</span>
+                        <span>Elimina</span>
+                    </div>
+                </div>
+            `;
+        } else {
+            actionsHtml = `
+                <div class="mob-holding-actions">
+                    <div class="mob-action-btn bg-blue-500" onclick="event.stopPropagation(); openDuplicateDividendModal('${d.id}', true)">
+                        <span class="material-symbols-outlined">content_copy</span>
+                        <span>Duplica</span>
+                    </div>
+                    <div class="mob-action-btn bg-emerald-500" onclick="event.stopPropagation(); openConfirmModal(${d.id})">
+                        <span class="material-symbols-outlined">check_circle</span>
+                        <span>Conferma</span>
+                    </div>
+                    <div class="mob-action-btn bg-red-ios" onclick="event.stopPropagation(); deleteProjection(${d.id})">
+                        <span class="material-symbols-outlined">delete</span>
+                        <span>Elimina</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        const colors = getAssetTypeColors(d.assetType, ticker);
+
+        return `
+            <div class="mob-holding-swipe-container" 
+                 ontouchstart="handleTouchStart(event, this)" 
+                 ontouchmove="handleTouchMove(event, this)" 
+                 ontouchend="handleTouchEnd(event, this)">
+                ${actionsHtml}
+                <div class="mob-holding-item">
+                    <div class="mob-holding-info">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <div class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border" style="background: ${colors.bg}; color: ${colors.text}; border-color: ${colors.border}; display: inline-block;">
+                                ${ticker}
+                            </div>
+                            ${badge}
+                        </div>
+                        <div class="mob-holding-name" style="margin-top:3px;">
+                            ${name} • ${d.portfolioName || 'N/A'} • ${d.date || ''}
+                        </div>
+                    </div>
+                    <div class="mob-holding-values">
+                        <div class="mob-holding-value" style="color: ${isProj ? 'var(--mob-amber)' : 'var(--mob-emerald)'}; font-family:'JetBrains Mono',monospace;">
+                            ${divNetto > 0 ? '+' + formatCurrency(divNetto, 'EUR', 0) : formatCurrency(divNetto, 'EUR', 0)}
+                        </div>
+                        <div class="mob-holding-gain" style="color: var(--mob-text-muted); font-size: 10px; font-family:'JetBrains Mono',monospace;">
+                            Lordo: ${formatCurrency(divLordo, 'EUR', 0)}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // ── Manual & Confirm Dividend Modal Logic ─────────────────────────────────
+    window.openManualModal = () => {
+        document.getElementById('manual-modal-title').innerText = 'Nuova Previsione';
+        document.getElementById('confirm-id').value = '';
+        document.getElementById('confirm-tx-id').value = '';
+        document.getElementById('confirm-is-duplicate').value = '';
+        document.getElementById('confirm-ticker-input')?.classList.add('hidden');
+        document.getElementById('confirm-ticker-display').classList.add('hidden');
+        const tSel = document.getElementById('confirm-ticker-select');
+        tSel.classList.remove('hidden');
+        tSel.value = '';
+        
+        if (window.globalProjData && window.globalProjData.openTickers) {
+            tSel.innerHTML = '<option value="" disabled selected>Seleziona asset...</option>' + 
+                             window.globalProjData.openTickers.map(t => `<option value="${t.ticker}">${t.ticker} - ${t.name}</option>`).join('');
+        }
+
+        document.getElementById('confirm-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('confirm-gross').value = '';
+        document.getElementById('confirm-tax').value = '0.00';
+        if (window.resetConfirmCalcTracking) window.resetConfirmCalcTracking();
+        document.getElementById('confirm-portfolio-group').classList.add('hidden');
+        document.getElementById('confirm-portfolio').required = false;
+
+        const isConfWrap = document.getElementById('confirm-is-confirmed-wrap');
+        if (isConfWrap) isConfWrap.classList.remove('hidden');
+        const isConfChk = document.getElementById('confirm-is-confirmed');
+        if (isConfChk) isConfChk.checked = false;
+
+        const withWrap = document.getElementById('confirm-withdrawal-group');
+        if (withWrap) withWrap.classList.add('hidden');
+        const withChk = document.getElementById('confirm-create-withdrawal');
+        if (withChk) withChk.checked = false;
+
+        document.getElementById('confirm-submit-btn').innerText = 'Salva Previsione';
+        document.getElementById('confirm-net').value = '0.00';
+        document.getElementById('manual-modal').classList.remove('hidden');
+    };
+
+    window.openConfirmModal = async (id) => {
+        const proj = window.globalProjData?.assets?.find(a => a.id === id);
+        if (!proj) return;
+        
+        document.getElementById('manual-modal-title').innerText = 'Conferma Dividendo';
+        document.getElementById('confirm-id').value = proj.id;
+        document.getElementById('confirm-tx-id').value = '';
+        document.getElementById('confirm-is-duplicate').value = '';
+        document.getElementById('confirm-ticker-input')?.classList.add('hidden');
+        document.getElementById('confirm-ticker-display').innerText = proj.ticker;
+        document.getElementById('confirm-ticker-display').classList.remove('hidden');
+        document.getElementById('confirm-ticker-select').classList.add('hidden');
+        document.getElementById('confirm-date').value = proj.date;
+        const grossVal = (proj.gross && proj.gross > 0) ? proj.gross : ((proj.totalAmount || 0) + (proj.tax || 0));
+        const taxVal = (proj.tax !== undefined && proj.tax !== null) ? proj.tax : 0;
+        const netVal = proj.totalAmount !== undefined ? proj.totalAmount : (grossVal - taxVal);
+        document.getElementById('confirm-gross').value = grossVal.toFixed(2);
+        document.getElementById('confirm-tax').value = taxVal.toFixed(2);
+        document.getElementById('confirm-net').value = netVal.toFixed(2);
+        if (window.resetConfirmCalcTracking) window.resetConfirmCalcTracking();
+        document.getElementById('confirm-portfolio-group').classList.remove('hidden');
+        document.getElementById('confirm-portfolio').required = true;
+        document.getElementById('confirm-submit-btn').innerText = 'Conferma e Salva';
+        
+        const isConfWrap = document.getElementById('confirm-is-confirmed-wrap');
+        if (isConfWrap) isConfWrap.classList.add('hidden');
+        const withWrap = document.getElementById('confirm-withdrawal-group');
+        if (withWrap) withWrap.classList.remove('hidden');
+        const withChk = document.getElementById('confirm-create-withdrawal');
+        if (withChk) withChk.checked = false;
+
+        try {
+            const res = await fetch('/api/portfolios');
+            const pData = await res.json();
+            const sel = document.getElementById('confirm-portfolio');
+            sel.innerHTML = '<option value="" disabled selected>Seleziona...</option>' + 
+                            pData.portfolios.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+        } catch(e) { console.error(e); }
+
+        document.getElementById('manual-modal').classList.remove('hidden');
+    };
+
+    window.openDuplicateDividendModal = async (id, isProj = false) => {
+        let item;
+        if (!isProj) {
+            item = rawDivData.find(d => d.id == id);
+        } else {
+            const proj = window.globalProjData?.assets?.find(a => a.id == id);
+            if (proj) {
+                item = {
+                    id: proj.id,
+                    assetTicker: proj.ticker,
+                    ticker: proj.ticker,
+                    name: proj.name,
+                    date: proj.date,
+                    amount: proj.totalAmount,
+                    tax: proj.tax || 0,
+                    gross: proj.gross || (proj.totalAmount + (proj.tax || 0)),
+                    portfolioId: proj.portfolioId
+                };
+            }
+        }
+        if (!item) return;
+
+        const ticker = (item.assetTicker || item.ticker || '').toUpperCase().trim();
+
+        document.getElementById('manual-modal-title').innerText = 'Duplica Dividendo';
+        document.getElementById('confirm-id').value = '';
+        document.getElementById('confirm-tx-id').value = '';
+        document.getElementById('confirm-is-duplicate').value = 'true';
+
+        const tickerInput = document.getElementById('confirm-ticker-input');
+        if (tickerInput) {
+            tickerInput.value = ticker;
+            tickerInput.classList.remove('hidden');
+        }
+        document.getElementById('confirm-ticker-display').classList.add('hidden');
+        document.getElementById('confirm-ticker-select').classList.add('hidden');
+
+        document.getElementById('confirm-date').value = new Date().toISOString().split('T')[0];
+
+        const grossVal = parseFloat(item.gross || ((item.amount || 0) + (item.tax || 0)) || 0);
+        const taxVal = parseFloat(item.tax || 0);
+        document.getElementById('confirm-gross').value = grossVal.toFixed(2);
+        document.getElementById('confirm-tax').value = taxVal.toFixed(2);
+        document.getElementById('confirm-net').value = (grossVal - taxVal).toFixed(2);
+        if (window.resetConfirmCalcTracking) window.resetConfirmCalcTracking();
+
+        document.getElementById('confirm-portfolio-group').classList.remove('hidden');
+        document.getElementById('confirm-portfolio').required = true;
+
+        const isConfWrap = document.getElementById('confirm-is-confirmed-wrap');
+        if (isConfWrap) isConfWrap.classList.add('hidden');
+
+        const withWrap = document.getElementById('confirm-withdrawal-group');
+        if (withWrap) withWrap.classList.remove('hidden');
+        const withChk = document.getElementById('confirm-create-withdrawal');
+        if (withChk) withChk.checked = false;
+
+        document.getElementById('confirm-submit-btn').innerText = 'Duplica e Salva';
+
+        try {
+            const res = await fetch('/api/portfolios');
+            const pData = await res.json();
+            const sel = document.getElementById('confirm-portfolio');
+            sel.innerHTML = '<option value="" disabled selected>Seleziona...</option>' + 
+                            (pData.portfolios || []).map(p => `<option value="${p.id}" ${item.portfolioId && item.portfolioId == p.id ? 'selected' : ''}>${p.name}</option>`).join('');
+            if (!sel.value && pData.portfolios?.length > 0) {
+                sel.value = pData.portfolios[0].id;
+            }
+        } catch(e) { console.error(e); }
+
+        document.getElementById('manual-modal').classList.remove('hidden');
+    };
+
+    window.toggleMobManualConfirmed = async () => {
+        const isConf = document.getElementById('confirm-is-confirmed')?.checked;
+        const pGroup = document.getElementById('confirm-portfolio-group');
+        const wGroup = document.getElementById('confirm-withdrawal-group');
+        const pSel = document.getElementById('confirm-portfolio');
+        const submitBtn = document.getElementById('confirm-submit-btn');
+
+        if (isConf) {
+            pGroup.classList.remove('hidden');
+            pSel.required = true;
+            wGroup.classList.remove('hidden');
+            submitBtn.innerText = 'Registra Dividendo Incassato';
+            if (pSel.options.length <= 1) {
+                try {
+                    const res = await fetch('/api/portfolios');
+                    const pData = await res.json();
+                    pSel.innerHTML = '<option value="" disabled selected>Seleziona portafoglio...</option>' + 
+                                    (pData.portfolios || []).map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+                } catch(e) { console.error(e); }
+            }
+        } else {
+            pGroup.classList.add('hidden');
+            pSel.required = false;
+            wGroup.classList.add('hidden');
+            submitBtn.innerText = 'Salva Previsione';
+        }
+    };
+
+    window.closeManualModal = () => {
+        document.getElementById('manual-modal').classList.add('hidden');
+        const isDup = document.getElementById('confirm-is-duplicate');
+        if (isDup) isDup.value = '';
+        document.getElementById('confirm-ticker-input')?.classList.add('hidden');
+    };
+
+    window.submitConfirmDividend = async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('confirm-id').value;
+        const txId = document.getElementById('confirm-tx-id').value;
+        const isDuplicate = document.getElementById('confirm-is-duplicate')?.value === 'true';
+        let ticker = '';
+        if (isDuplicate) {
+            ticker = (document.getElementById('confirm-ticker-input')?.value || '').trim().toUpperCase();
+        } else if (id || txId) {
+            ticker = document.getElementById('confirm-ticker-display').innerText.split(' - ')[0].trim().toUpperCase();
+        } else {
+            ticker = document.getElementById('confirm-ticker-select').value;
+        }
+        const portfolioId = document.getElementById('confirm-portfolio').value;
+        const date = document.getElementById('confirm-date').value;
+        const grossAmount = document.getElementById('confirm-gross').value;
+        
+        const taxMode = document.getElementById('confirm-tax-mode')?.value || 'eur';
+        let rawTax = parseFloat(document.getElementById('confirm-tax').value) || 0;
+        const grossVal = parseFloat(grossAmount) || 0;
+        if (taxMode === 'pct') {
+            rawTax = grossVal * (rawTax / 100);
+        }
+        const taxVal = rawTax;
+        const netVal = grossVal - taxVal;
+
+        const createWithdrawal = document.getElementById('confirm-create-withdrawal')?.checked || false;
+        const isConfirmed = document.getElementById('confirm-is-confirmed')?.checked || false;
+
+        try {
+            let url, method, body;
+            
+            if (isDuplicate) {
+                url = '/api/transactions';
+                method = 'POST';
+                body = JSON.stringify({
+                    portfolioId: parseInt(portfolioId, 10),
+                    type: 'DIVIDEND',
+                    assetTicker: ticker ? ticker.toUpperCase().trim() : '',
+                    ticker: ticker ? ticker.toUpperCase().trim() : '',
+                    date,
+                    grossAmount: grossVal,
+                    tax: taxVal,
+                    amount: netVal,
+                    price: 0,
+                    shares: 0,
+                    notes: 'Dividendo duplicato',
+                    createWithdrawal
+                });
+            } else if (txId) {
+                url = `/api/dividends/transactions/${txId}`;
+                method = 'PUT';
+                body = JSON.stringify({ ticker, date, grossAmount, tax: taxVal.toFixed(2) });
+            } else if (id) {
+                url = `/api/dividends/projections/${id}/confirm`;
+                method = 'POST';
+                body = JSON.stringify({ portfolioId, ticker, date, grossAmount, tax: taxVal.toFixed(2), createWithdrawal });
+            } else if (isConfirmed) {
+                url = '/api/transactions';
+                method = 'POST';
+                body = JSON.stringify({
+                    portfolioId: parseInt(portfolioId, 10),
+                    type: 'DIVIDEND',
+                    assetTicker: ticker ? ticker.toUpperCase().trim() : '',
+                    ticker: ticker ? ticker.toUpperCase().trim() : '',
+                    date,
+                    grossAmount: grossVal,
+                    tax: taxVal,
+                    amount: netVal,
+                    price: 0,
+                    shares: 0,
+                    notes: 'Dividendo manuale',
+                    createWithdrawal
+                });
+            } else {
+                url = '/api/dividends/projections';
+                method = 'POST';
+                body = JSON.stringify({ ticker: document.getElementById('confirm-ticker-select')?.value, exDate: date, amount: grossAmount });
+            }
+
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body
+            });
+            if (res.ok) {
+                window.closeManualModal();
+                loadDividendsData();
+            } else {
+                const err = await res.json().catch(() => ({}));
+                alert('Errore: ' + (err.error || 'Operazione fallita'));
+            }
+        } catch (err) {
+            console.error('Error saving dividend:', err);
+        }
+    };
+
+    window.deleteProjection = async (id) => {
+        if(!(await ftConfirm('Cancellare questa proiezione?\nSe era automatica, sparirà fino al prossimo "Ricalcolo".'))) return;
+        try {
+            const res = await fetch('/api/dividends/projections/' + id, { method: 'DELETE' });
+            if(res.ok) loadDividendsData();
+        } catch(e) { console.error(e); }
+    };
+
+    window.resetProjections = async (skipConfirm = false) => {
+        if(skipConfirm || await ftConfirm('Le stime verranno rigenerate cancellando le attuali (tranne quelle "Manuali"). Procedere?')) {
+            const btn = document.getElementById('btn-recalc');
+            if(btn) btn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">refresh</span>';
+            try {
+                const res = await fetch('/api/dividends/projections/reset', { method: 'POST' });
+                if(res.ok) await loadDividendsData();
+                else alert('Errore ricalcolo previsioni.');
+            } catch(e) { console.error(e); }
+            if(btn) btn.innerHTML = '<span class="material-symbols-outlined text-sm">refresh</span>';
+        }
+    };
+
+    // ── 3-Way Dividend Calculation ────────────────────────────────────────────
+    (function setupConfirm3Way() {
+        let lastEdited = 'gross';
+        let secondLastEdited = 'tax';
+        let isCalculating = false;
+        let taxMode = 'eur';
+
+        const grossEl = document.getElementById('confirm-gross');
+        const taxEl = document.getElementById('confirm-tax');
+        const netEl = document.getElementById('confirm-net');
+        const modeInput = document.getElementById('confirm-tax-mode');
+        const unitEl = document.getElementById('confirm-tax-unit');
+        const toggleBtn = document.getElementById('confirm-tax-toggle');
+        const hintEl = document.getElementById('confirm-tax-hint');
+
+        function updateTaxHint() {
+            if (!hintEl) return;
+            const g = parseFloat(grossEl.value) || 0;
+            const t = parseFloat(taxEl.value) || 0;
+            if (taxMode === 'eur') {
+                const pct = g > 0 ? ((t / g) * 100) : 0;
+                hintEl.innerText = `Eq. ${pct.toFixed(1)}%`;
+            } else {
+                const eqEUR = (g * (t / 100));
+                hintEl.innerText = `Eq. ${eqEUR.toFixed(2)} €`;
+            }
+        }
+
+        window.toggleConfirmTaxMode = function() {
+            const g = parseFloat(grossEl.value) || 0;
+            const t = parseFloat(taxEl.value) || 0;
+            
+            if (taxMode === 'eur') {
+                taxMode = 'pct';
+                if (modeInput) modeInput.value = 'pct';
+                if (unitEl) unitEl.innerText = '(%)';
+                if (toggleBtn) toggleBtn.innerText = '€';
+                const pct = g > 0 ? ((t / g) * 100) : 26.0;
+                taxEl.value = pct.toFixed(1);
+            } else {
+                taxMode = 'eur';
+                if (modeInput) modeInput.value = 'eur';
+                if (unitEl) unitEl.innerText = '(€)';
+                if (toggleBtn) toggleBtn.innerText = '%';
+                const eqEUR = (g * (t / 100));
+                taxEl.value = eqEUR.toFixed(2);
+            }
+            updateTaxHint();
+        };
+
+        window.applyTaxRate = function(rate) {
+            const g = parseFloat(grossEl.value) || 0;
+            const n = parseFloat(netEl.value) || 0;
+
+            isCalculating = true;
+            try {
+                if (g > 0) {
+                    const taxEUR = g * (rate / 100);
+                    netEl.value = (g - taxEUR).toFixed(2);
+                    taxEl.value = taxMode === 'pct' ? rate.toString() : taxEUR.toFixed(2);
+                } else if (n > 0) {
+                    const newGross = n / (1 - rate / 100);
+                    const taxEUR = newGross - n;
+                    grossEl.value = newGross.toFixed(2);
+                    taxEl.value = taxMode === 'pct' ? rate.toString() : taxEUR.toFixed(2);
+                } else {
+                    taxEl.value = taxMode === 'pct' ? rate.toString() : '0.00';
+                }
+            } finally {
+                isCalculating = false;
+            }
+            updateTaxHint();
+        };
+
+        window.resetConfirmCalcTracking = function() {
+            lastEdited = 'gross';
+            secondLastEdited = 'tax';
+            taxMode = 'eur';
+            if (modeInput) modeInput.value = 'eur';
+            if (unitEl) unitEl.innerText = '(€)';
+            if (toggleBtn) toggleBtn.innerText = '%';
+            updateTaxHint();
+        };
+
+        window.calcConfirmField = function(target) {
+            const g = parseFloat(grossEl.value);
+            const t = parseFloat(taxEl.value);
+            const n = parseFloat(netEl.value);
+
+            if (target === 'gross') {
+                const valN = isNaN(n) ? 0 : n;
+                if (taxMode === 'pct') {
+                    const rate = isNaN(t) ? 26 : t;
+                    if (rate < 100) grossEl.value = (valN / (1 - rate / 100)).toFixed(2);
+                } else {
+                    const valT = isNaN(t) ? 0 : t;
+                    grossEl.value = (valN + valT).toFixed(2);
+                }
+                secondLastEdited = 'net';
+                lastEdited = 'tax';
+            } else if (target === 'tax') {
+                const valG = isNaN(g) ? 0 : g;
+                const valN = isNaN(n) ? 0 : n;
+                if (taxMode === 'pct') {
+                    const rate = valG > 0 ? (((valG - valN) / valG) * 100) : 26;
+                    taxEl.value = Math.max(0, rate).toFixed(1);
+                } else {
+                    taxEl.value = Math.max(0, valG - valN).toFixed(2);
+                }
+                secondLastEdited = 'gross';
+                lastEdited = 'net';
+            } else if (target === 'net') {
+                const valG = isNaN(g) ? 0 : g;
+                if (taxMode === 'pct') {
+                    const rate = isNaN(t) ? 26 : t;
+                    const taxEUR = valG * (rate / 100);
+                    netEl.value = (valG - taxEUR).toFixed(2);
+                } else {
+                    const valT = isNaN(t) ? 0 : t;
+                    netEl.value = (valG - valT).toFixed(2);
+                }
+                secondLastEdited = 'gross';
+                lastEdited = 'tax';
+            }
+            updateTaxHint();
+        };
+
+        function onInput(field) {
+            if (isCalculating) return;
+            if (field !== lastEdited) {
+                secondLastEdited = lastEdited;
+                lastEdited = field;
+            }
+
+            const gStr = grossEl.value.trim();
+            const tStr = taxEl.value.trim();
+            const nStr = netEl.value.trim();
+            const g = parseFloat(gStr);
+            const t = parseFloat(tStr);
+            const n = parseFloat(nStr);
+
+            isCalculating = true;
+            try {
+                if (taxMode === 'pct') {
+                    const rate = isNaN(t) ? 0 : t;
+                    if (field === 'tax') {
+                        if (!isNaN(g) && g > 0) netEl.value = (g - (g * (rate / 100))).toFixed(2);
+                        else if (!isNaN(n) && n > 0 && rate < 100) grossEl.value = (n / (1 - rate / 100)).toFixed(2);
+                    } else if (field === 'gross') {
+                        if (!isNaN(g) && !isNaN(rate)) netEl.value = (g - (g * (rate / 100))).toFixed(2);
+                    } else if (field === 'net') {
+                        if (!isNaN(n) && !isNaN(rate) && rate < 100) grossEl.value = (n / (1 - rate / 100)).toFixed(2);
+                    }
+                } else {
+                    let target = null;
+                    if (field !== 'gross' && gStr === '') target = 'gross';
+                    else if (field !== 'tax' && tStr === '') target = 'tax';
+                    else if (field !== 'net' && nStr === '') target = 'net';
+                    else {
+                        const fields = ['gross', 'tax', 'net'];
+                        target = fields.find(f => f !== lastEdited && f !== secondLastEdited);
+                        if (!target) target = (field === 'net' ? 'gross' : 'net');
+                    }
+
+                    if (target === 'gross' && !isNaN(n) && !isNaN(t)) grossEl.value = (n + t).toFixed(2);
+                    else if (target === 'tax' && !isNaN(g) && !isNaN(n)) taxEl.value = Math.max(0, g - n).toFixed(2);
+                    else if (target === 'net' && !isNaN(g) && !isNaN(t)) netEl.value = (g - t).toFixed(2);
+                }
+            } finally {
+                isCalculating = false;
+            }
+            updateTaxHint();
+        }
+
+        if (grossEl && taxEl && netEl) {
+            grossEl.addEventListener('input', () => onInput('gross'));
+            taxEl.addEventListener('input', () => onInput('tax'));
+            netEl.addEventListener('input', () => onInput('net'));
+        }
+    })();
+
+    // ── Shared Transaction Modals ─────────────────────────────────────────────
     window.editTransaction = function(id) {
-        const t = rawHistoryData.find(tx => tx.id == id);
+        let t = rawHistoryData.find(tx => tx.id == id);
+        if (!t) t = rawDivData.find(tx => tx.id == id);
         if (t) mobileEditTransaction(t);
     };
     window.duplicateTransaction = function(id) {
-        const t = rawHistoryData.find(tx => tx.id == id);
+        let t = rawHistoryData.find(tx => tx.id == id);
+        if (!t) t = rawDivData.find(tx => tx.id == id);
         if (t) mobileDuplicateTransaction(t);
     };
     window.confirmDeleteTransaction = function(id) {
         mobileDeleteTransaction(id);
     };
 
-    window.addEventListener('privacy-changed', renderMobileView);
+    // ── Initial Load & Deep Link Handling ─────────────────────────────────────
     document.addEventListener("DOMContentLoaded", () => {
-        loadHistoryData();
-        if (window.ftAuth && ftAuth.getUser()?.role === 'admin') {
-            const adminLink = document.getElementById('mob-admin-link');
-            if (adminLink) adminLink.style.display = 'flex';
+        loadClosedPositions();
+        loadDividendsData();
+
+        // Check URL query parameters for ?tab=dividends
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('tab') === 'dividends') {
+            switchMainTab('dividends');
         }
+    });
+
+    window.addEventListener('privacy-changed', () => {
+        renderClosedPositions();
+        renderMobDividends();
     });
 </script>
 </body>
