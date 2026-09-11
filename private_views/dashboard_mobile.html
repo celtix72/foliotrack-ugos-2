@@ -124,124 +124,66 @@
         <div class="mob-hero-value cursor-pointer select-none" id="mob-total-net" onclick="window.togglePrivacy()" style="font-size: 30px; font-weight: 900; line-height: 1.1; margin-bottom: 0;" title="Clicca per modalità privata">€ 0</div>
         <div id="mob-day-var" class="ml-auto px-2.5 py-1 rounded-lg text-[13px] font-black shadow-sm hidden"></div>
       </div>
-      <div class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">
+      <div class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
         Lordo: <span id="mob-total-gross" class="text-slate-500 dark:text-slate-400 font-bold">€ 0</span>
       </div>
-      <div class="flex justify-between items-center mb-2 mt-4">
-        <span class="text-[11px] font-black uppercase text-slate-500 tracking-widest opacity-0">Rank</span>
-        <div class="flex bg-slate-200 dark:bg-slate-800 rounded-md p-0.5">
-          <button onclick="mobSetRankingBasis('pct')" id="btn-rank-pct" class="px-2 py-0.5 text-[10px] font-bold rounded-sm bg-white dark:bg-slate-600 shadow-sm text-slate-800 dark:text-slate-100">%</button>
-          <button onclick="mobSetRankingBasis('abs')" id="btn-rank-abs" class="px-2 py-0.5 text-[10px] font-bold rounded-sm text-slate-500 dark:text-slate-400">Valore</button>
-        </div>
-      </div>
-      <div class="grid grid-cols-2 gap-4">
-        <div class="mob-hero-stat-item !p-0 !bg-transparent">
-          <span class="mob-hero-stat-label">Migliori (1D)</span>
-          <div id="mob-top-winners" class="space-y-1.5 mt-2">--</div>
-        </div>
-        <div class="mob-hero-stat-item !p-0 !bg-transparent">
-          <span class="mob-hero-stat-label">Peggiori (1D)</span>
-          <div id="mob-top-losers" class="space-y-1.5 mt-2">--</div>
-        </div>
-      </div>
-    </div>
-    
-
-
-    <!-- Chart -->
-    <div class="mob-chart-card">
-      <!-- Chart header: title -->
-      <div class="flex items-center justify-between mb-3">
-        <div>
-          <div class="mob-chart-title">Performance</div>
-          <div class="mob-chart-subtitle">Patrimonio aggregato</div>
-        </div>
-      </div>
-      
-      <!-- Mode Selector & Legend Row -->
-      <div class="flex items-center justify-between mb-3 mt-1">
-        <!-- Inline Legend -->
-        <div id="mob-chart-legend-inline" class="flex flex-wrap items-center gap-3 px-1"></div>
-        
-        <!-- Mode Selector -->
-        <div class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 gap-0.5">
-            <button id="mob-mode-btn-eur" onclick="mobSetChartMode('eur')" title="€ EUR" class="mob-mode-btn p-1 rounded-md transition-all text-slate-400 dark:text-slate-500">
-                <span class="material-symbols-outlined" style="font-size:15px">euro</span>
-            </button>
-            <button id="mob-mode-btn-pnl" onclick="mobSetChartMode('pnl')" title="P&L" class="mob-mode-btn p-1 rounded-md transition-all bg-white dark:bg-slate-700 text-primary shadow-sm">
-                <span class="material-symbols-outlined" style="font-size:15px">show_chart</span>
-            </button>
-            <button id="mob-mode-btn-pct" onclick="mobSetChartMode('pct')" title="% P&L" class="mob-mode-btn p-1 rounded-md transition-all text-slate-400 dark:text-slate-500">
-                <span class="material-symbols-outlined" style="font-size:15px">percent</span>
-            </button>
-        </div>
-      </div>
-
-      <!-- Range bar -->
-      <div class="mob-chart-range-bar mb-3" id="mob-range-bar">
-        <div class="mob-range-btn" onclick="mobSetRange('1W')" data-range="1W">1W</div>
-        <div class="mob-range-btn active" onclick="mobSetRange('1M')" data-range="1M">1M</div>
-        <div class="mob-range-btn" onclick="mobSetRange('3M')" data-range="3M">3M</div>
-        <div class="mob-range-btn" onclick="mobSetRange('YTD')" data-range="YTD">YTD</div>
-        <div class="mob-range-btn" onclick="mobSetRange('1Y')" data-range="1Y">1Y</div>
-        <div class="mob-range-btn" onclick="mobSetRange('ALL')" data-range="ALL">ALL</div>
-      </div>
-      
-      <!-- KPI Bar (Desktop-like) -->
-      <div id="mob-chart-kpi-bar" class="flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 mb-3">
-          <div class="flex flex-col gap-0.5">
-              <span class="text-[8px] font-black uppercase tracking-widest text-slate-400">Inizio</span>
-              <span id="mob-kpi-start-val" class="text-[12px] font-black text-slate-700 dark:text-slate-200">—</span>
-          </div>
-          <div class="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-2"></div>
-          <div class="flex flex-col gap-0.5">
-              <span class="text-[8px] font-black uppercase tracking-widest text-slate-400">Attuale</span>
-              <span id="mob-kpi-end-val" class="text-[12px] font-black text-slate-700 dark:text-slate-200">—</span>
-          </div>
-          <div class="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-2"></div>
-          <div class="flex flex-col gap-0.5 items-end">
-              <span class="text-[8px] font-black uppercase tracking-widest text-slate-400">Variazione</span>
-              <div class="flex items-baseline gap-1">
-                 <span id="mob-kpi-delta-pct" class="text-[12px] font-black">—</span>
-                 <span id="mob-kpi-delta-abs" class="text-[9px] font-bold text-slate-400">—</span>
-              </div>
-          </div>
-      </div>
-
-      <!-- Chart canvas -->
-      <div class="mob-chart-canvas-wrapper" style="position:relative; height: 180px;">
-        <canvas id="mob-perf-chart"></canvas>
-      </div>
     </div>
 
-    <!-- Mini Charts Row: 7gg + 12M -->
+    <!-- 1. TREND 7gg - TREND Mensile -->
     <div class="grid grid-cols-2 gap-3 px-4 pb-2">
-
       <!-- 7 GIORNI -->
       <div class="mob-chart-card !p-4">
         <div class="flex items-center justify-between mb-2">
-          <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">GAIN 7 GIORNI</span>
+          <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">TREND 7gg</span>
           <span class="text-[9px] font-bold" id="mob-daily-gains-total" style="color:#10b981"></span>
         </div>
-        <div class="flex items-end gap-1" id="mob-daily-gains-bars" style="height:40px">
+        <div class="flex items-end gap-1" id="mob-daily-gains-bars" style="height:44px">
           <span class="text-[9px] text-slate-500 italic">...</span>
         </div>
       </div>
 
-      <!-- 12 MESI -->
+      <!-- TREND MENSILE (12 MESI) -->
       <div class="mob-chart-card !p-4">
         <div class="flex items-center justify-between mb-2">
-          <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">TREND 12 MESI</span>
+          <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">TREND MENSILE</span>
           <span class="text-[9px] font-bold" id="mob-sixm-sparkline-total" style="color:#10b981"></span>
         </div>
-        <div class="flex items-end gap-1" id="mob-sixm-sparkline-bars" style="height:40px">
+        <div class="flex items-end gap-1" id="mob-sixm-sparkline-bars" style="height:44px">
           <span class="text-[9px] text-slate-500 italic">...</span>
         </div>
       </div>
-
     </div>
 
-    <!-- Portfolio List -->
+    <!-- 2. TOP WINNER / LOSER -->
+    <div class="px-4 pb-2">
+      <div class="mob-chart-card !p-4">
+        <div class="flex justify-between items-center mb-3">
+          <span class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Top Winner / Loser (1D)</span>
+          <div class="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5">
+            <button onclick="mobSetRankingBasis('pct')" id="btn-rank-pct" class="px-2.5 py-0.5 text-[10px] font-bold rounded-md bg-white dark:bg-slate-600 shadow-sm text-slate-800 dark:text-slate-100 transition-all">%</button>
+            <button onclick="mobSetRankingBasis('abs')" id="btn-rank-abs" class="px-2.5 py-0.5 text-[10px] font-bold rounded-md text-slate-500 dark:text-slate-400 transition-all">Valore</button>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="mob-hero-stat-item !p-0 !bg-transparent">
+            <span class="mob-hero-stat-label flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              Migliori (1D)
+            </span>
+            <div id="mob-top-winners" class="space-y-1.5 mt-2">--</div>
+          </div>
+          <div class="mob-hero-stat-item !p-0 !bg-transparent">
+            <span class="mob-hero-stat-label flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+              Peggiori (1D)
+            </span>
+            <div id="mob-top-losers" class="space-y-1.5 mt-2">--</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Portafogli - ALLOCATION -->
     <div class="mob-section-header">
       <span class="mob-section-title">Portafogli</span>
       <div class="flex gap-4">
@@ -251,9 +193,25 @@
     </div>
     <div class="mob-portfolio-list" id="mob-portfolio-list"></div>
 
-    
-    <!-- Financial News (Live Feed) -->
-    <div class="mob-section-header mt-8">
+    <!-- Asset Allocation Card -->
+    <div class="px-4 pt-3 pb-2">
+      <div class="mob-chart-card !p-4">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Allocation ByType</span>
+        </div>
+        <div class="flex items-center gap-4">
+          <div class="w-28 h-28 relative shrink-0 flex items-center justify-center">
+            <canvas id="mob-allocation-chart"></canvas>
+          </div>
+          <div id="mob-allocation-legend" class="flex-1 space-y-1.5 custom-scrollbar overflow-y-auto max-h-[120px] pr-1">
+            <!-- JS filled -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Financial News (Live Feed) -->
+    <div class="mob-section-header mt-6">
       <span class="mob-section-title">Live Feed</span>
       <div class="flex items-center gap-2">
         <!-- Filter Toggle -->
@@ -388,6 +346,7 @@
       mobUpdateChart();
       mobLoadDailyGains();
       mobLoadSixMonthSparkline();
+      mobLoadAllocation();
   };
 
   window.mobRenderPortfolioFilters = function() {
@@ -491,6 +450,7 @@
           mobRenderPortfolioFilters();
           mobUpdateWinnersLosers(data.global);
           mobSyncMarketStatus();
+          mobLoadAllocation();
       } catch(e) { console.error(e); }
   }
 
@@ -1040,6 +1000,7 @@
       mobUpdateChart();
       mobLoadDailyGains();
       mobLoadSixMonthSparkline();
+      mobLoadAllocation();
       loadDividendAlert();
       loadEarningsAlert();
       mobSetNewsFilter(_mobNewsFilter); // inits buttons + calls loadMobNews()
@@ -1243,6 +1204,60 @@
               totalEl.textContent = (isPos ? '+' : '') + formatCurrency(sixMTotal, 'EUR', 0);
           }
       } catch(e) { console.error('mob 12M sparkline:', e); }
+  }
+
+  let mobAllocationChart = null;
+  async function mobLoadAllocation() {
+      if (mobAllocationChart) {
+          mobAllocationChart.destroy();
+          mobAllocationChart = null;
+      }
+      const ctx = document.getElementById('mob-allocation-chart')?.getContext('2d');
+      if (!ctx) return;
+
+      try {
+          let url = '/api/analytics/global-allocation';
+          if (selectedPortfolioIds.length > 0) url += `?portfolioIds=${selectedPortfolioIds.join(',')}`;
+
+          const res = await fetch(url);
+          const data = await res.json();
+
+          mobAllocationChart = new Chart(ctx, {
+              type: 'doughnut',
+              data: {
+                  labels: data.map(d => d.type),
+                  datasets: [{
+                      data: data.map(d => d.value),
+                      backgroundColor: data.map(d => d.color || '#cbd5e1'),
+                      borderWidth: 0,
+                      hoverOffset: 6
+                  }]
+              },
+              options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  cutout: '72%',
+                  plugins: { legend: { display: false } }
+              }
+          });
+
+          const legend = document.getElementById('mob-allocation-legend');
+          if (legend) {
+              const total = data.reduce((sum, d) => sum + d.value, 0);
+              legend.innerHTML = data.map(d => {
+                  const pct = total > 0 ? ((d.value / total) * 100).toFixed(1) : 0;
+                  return `
+                      <div class="flex items-center justify-between group py-0.5">
+                          <div class="flex items-center gap-1.5 overflow-hidden">
+                              <span class="w-2 h-2 rounded-full shrink-0" style="background-color: ${d.color}"></span>
+                              <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase truncate">${d.type}</span>
+                          </div>
+                          <span class="text-[10px] font-black text-slate-500 shrink-0 ml-1">${pct}%</span>
+                      </div>
+                  `;
+              }).join('');
+          }
+      } catch(e) { console.error('mob allocation error:', e); }
   }
 
   const SOURCE_COLORS = {
