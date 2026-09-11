@@ -135,27 +135,17 @@ elif [ "$LOCAL" = "$BASE" ]; then
     echo "📋 Commit da applicare:"
     git log --oneline --color=never "$LOCAL..$REMOTE"
     
-    # Discard any local uncommitted changes to tracked files (e.g. locally generated build_info.json)
-    echo "🧹 Ripristino file locali tracciati..."
-    git restore . 2>/dev/null || git checkout -- . 2>/dev/null || true
+    # Discard any local uncommitted changes to tracked files (e.g. build_info.json) to prevent "cannot pull with rebase: unstaged changes"
+    echo "🧹 Pulizia file locali tracciati..."
+    git reset --hard HEAD >/dev/null 2>&1 || true
     
-    # Pull changes
-    echo "📥 Esecuzione 'git pull origin $CURRENT_BRANCH'..."
-    PULL_OUTPUT=$(git pull origin "$CURRENT_BRANCH" 2>&1)
-    PULL_STATUS=$?
-    
-    if [ $PULL_STATUS -ne 0 ]; then
-        echo "⚠️ 'git pull' standard ha riscontrato un conflitto/errore:"
-        echo "$PULL_OUTPUT"
-        echo "🔧 Tentativo di allineamento pulito con 'git reset --hard origin/$CURRENT_BRANCH'..."
-        git reset --hard "origin/$CURRENT_BRANCH"
-        if [ $? -ne 0 ]; then
-            echo "❌ Allineamento fallito. Intervento manuale richiesto."
-            exit 1
-        fi
-        echo "✅ Allineamento forzato riuscito con successo."
+    # Apply changes reliably using reset --hard to remote ref (already fetched)
+    echo "📥 Applicazione modifiche da GitHub (origin/$CURRENT_BRANCH)..."
+    if git reset --hard "origin/$CURRENT_BRANCH"; then
+        echo "✅ File aggiornati scaricati e applicati con successo."
     else
-        echo "✅ File aggiornati scaricati con successo."
+        echo "❌ Errore critico durante l'aggiornamento. Intervento manuale richiesto."
+        exit 1
     fi
     SHOULD_REBUILD=true
 else
