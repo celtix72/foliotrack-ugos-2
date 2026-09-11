@@ -740,16 +740,24 @@
             return `${num.toLocaleString('de-DE')} €`;
         };
 
-        const formatGainPart = (num) => {
+        const formatGainPart = (num, includeCurrency = true) => {
             const rounded = Math.round(Number(num) || 0);
             const sign = rounded > 0 ? '+' : (rounded < 0 ? '-' : '');
-            const valStr = formatSafe(Math.abs(rounded), 0);
-            return `${sign}${valStr}`;
+            if (includeCurrency) {
+                const valStr = formatSafe(Math.abs(rounded), 0);
+                return `${sign}${valStr}`;
+            } else {
+                const valStr = (typeof window.formatNumber === 'function')
+                    ? window.formatNumber(Math.abs(rounded), 0)
+                    : Math.abs(rounded).toLocaleString('de-DE');
+                return `${sign}${valStr}`;
+            }
         };
 
-        const strTot = formatGainPart(totalMove);
-        const strReg = formatGainPart(changeReg);
-        const strPP  = formatGainPart(changePP);
+        // Currency symbol only on total gain
+        const strTot = formatGainPart(totalMove, true);
+        const strReg = formatGainPart(changeReg, false);
+        const strPP  = formatGainPart(changePP, false);
 
         const isRegPos = changeReg >= 0;
         const isPPPos = changePP >= 0;
@@ -761,24 +769,29 @@
                 ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/25'
                 : 'bg-rose-500/10 text-rose-500 border-rose-500/25';
 
-            // Mercato aperto: verde / rosso più scuro
-            const regColorClass = isRegPos
-                ? 'text-emerald-700 dark:text-emerald-500'
-                : 'text-rose-700 dark:text-rose-500';
+            // Totale GAIN: verde / rosso chiaro in BOLD
+            const totColorClass = isPos
+                ? 'text-emerald-400 dark:text-emerald-300 font-black'
+                : 'text-rose-400 dark:text-rose-300 font-black';
 
-            // Pre-market: verde / rosso più chiaro
+            // Mercati aperti: verde / rosso chiaro
+            const regColorClass = isRegPos
+                ? 'text-emerald-500 dark:text-emerald-300 font-bold'
+                : 'text-rose-500 dark:text-rose-300 font-bold';
+
+            // Mercati chiusi (pre/post-market): verde / rosso scuro
             const ppColorClass = isPPPos
-                ? 'text-emerald-500 dark:text-emerald-300'
-                : 'text-rose-500 dark:text-rose-300';
+                ? 'text-emerald-700 dark:text-emerald-500 font-bold'
+                : 'text-rose-700 dark:text-rose-500 font-bold';
 
             portfolioVar.innerHTML = `
-                <span class="flex items-center gap-1 ${pillClass} font-bold px-2.5 py-1 rounded-full border shadow-sm select-none" title="Variazione Giornaliera - Complessivo: ${strTot} | Mercati Aperti: ${strReg} | Pre/Post-Market: ${strPP}">
-                    <span class="material-symbols-outlined text-[15px]">${isPos ? 'trending_up' : 'trending_down'}</span>
-                    <span class="text-[12px] font-black tracking-tight">${strTot}</span>
+                <span class="flex items-center gap-1 ${pillClass} font-bold px-2.5 py-1 rounded-full border shadow-sm select-none" title="Variazione Giornaliera - Totale: ${strTot} | Mercati Aperti: ${strReg} | Mercati Chiusi: ${strPP}">
+                    <span class="material-symbols-outlined text-[15px] ${isPos ? 'text-emerald-400 dark:text-emerald-300' : 'text-rose-400 dark:text-rose-300'}">${isPos ? 'trending_up' : 'trending_down'}</span>
+                    <span class="text-[12px] tracking-tight ${totColorClass}">${strTot}</span>
                     <span class="text-[11px] opacity-40 font-bold mx-0.5">:</span>
-                    <span class="text-[11px] font-bold ${regColorClass}">${strReg}</span>
+                    <span class="text-[11px] ${regColorClass}">${strReg}</span>
                     <span class="text-[11px] opacity-40 font-bold mx-0.5">/</span>
-                    <span class="text-[11px] font-bold ${ppColorClass}">${strPP}</span>
+                    <span class="text-[11px] ${ppColorClass}">${strPP}</span>
                 </span>
             `;
         }
@@ -787,20 +800,21 @@
         const mobVar = document.getElementById('mob-header-var-day');
         if (mobVar) {
             const bg = isPos ? 'rgba(16,185,129,0.18)' : 'rgba(244,63,94,0.18)';
-            const color = isPos ? '#34d399' : '#fb7185';
             const border = isPos ? 'rgba(16,185,129,0.40)' : 'rgba(244,63,94,0.40)';
             
             const isDark = document.documentElement.classList.contains('dark');
-            // Mercato aperto: verde / rosso più scuro
-            const regCol = isRegPos ? (isDark ? '#059669' : '#047857') : (isDark ? '#be123c' : '#b91c1c');
-            // Pre-market: verde / rosso più chiaro
-            const ppCol  = isPPPos  ? (isDark ? '#6ee7b7' : '#10b981') : (isDark ? '#fca5a5' : '#f43f5e');
+            // Totale GAIN: verde / rosso chiaro in BOLD
+            const totCol = isPos ? (isDark ? '#4ade80' : '#10b981') : (isDark ? '#f87171' : '#ef4444');
+            // Mercati aperti: verde / rosso chiaro
+            const regCol = isRegPos ? (isDark ? '#34d399' : '#059669') : (isDark ? '#fb7185' : '#e11d48');
+            // Mercati chiusi (pre/post-market): verde / rosso scuro
+            const ppCol  = isPPPos  ? (isDark ? '#059669' : '#047857') : (isDark ? '#be123c' : '#b91c1c');
 
             mobVar.style.backgroundColor = bg;
-            mobVar.style.color = color;
+            mobVar.style.color = totCol;
             mobVar.style.border = `1px solid ${border}`;
-            mobVar.setAttribute('title', `Complessivo: ${strTot} | Mercati aperti: ${strReg} | Pre/Post-Market: ${strPP}`);
-            mobVar.innerHTML = `<span style="font-size:11px; font-weight:900; letter-spacing:-0.2px; white-space:nowrap;"><span style="color:${color};">${strTot}</span><span style="opacity:0.4; margin:0 1px;">:</span><span style="color:${regCol}; font-weight:800;">${strReg}</span><span style="opacity:0.4; margin:0 1px;">/</span><span style="color:${ppCol}; font-weight:700;">${strPP}</span></span>`;
+            mobVar.setAttribute('title', `Totale: ${strTot} | Mercati aperti: ${strReg} | Mercati chiusi: ${strPP}`);
+            mobVar.innerHTML = `<span style="font-size:11px; letter-spacing:-0.2px; white-space:nowrap;"><span style="color:${totCol}; font-weight:900;">${strTot}</span><span style="opacity:0.4; margin:0 1px;">:</span><span style="color:${regCol}; font-weight:700;">${strReg}</span><span style="opacity:0.4; margin:0 1px;">/</span><span style="color:${ppCol}; font-weight:800;">${strPP}</span></span>`;
         }
     };
 
