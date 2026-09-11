@@ -15,6 +15,7 @@ const Parser = require('rss-parser');
 const rssParser = new Parser();
 const { callAIModel, parseAIResponse, checkNewGeminiModels } = require('./services/aiService');
 const { notifyUser } = require('./services/notificationService');
+const { enrichWithGoogleFinanceIfDelayed } = require('./services/googleFinance');
 
 
 // ─── Application Version ─────────────────────────────────────────────────────
@@ -589,7 +590,7 @@ const MARKET_HOURS = {
 /**
  * Fetches robust metadata from Yahoo Finance, including Country/Area and Type improvements.
  */
-async function fetchAssetMetadata(ticker) {
+async function fetchAssetMetadata(ticker, customGoogleTicker = null) {
     if (ticker && ticker.startsWith('CD_')) {
         return {
             ticker: ticker,
@@ -601,7 +602,9 @@ async function fetchAssetMetadata(ticker) {
             currency: 'EUR',
             exchange: 'MANUAL',
             country: 'Italy',
-            dataSource: 'MANUAL'
+            dataSource: 'MANUAL',
+            isRealtime: 0,
+            realtimeSource: 'MANUAL'
         };
     }
     if (ticker && ticker.startsWith('BP_')) {
@@ -615,7 +618,9 @@ async function fetchAssetMetadata(ticker) {
             currency: 'EUR',
             exchange: 'MANUAL',
             country: 'Italy',
-            dataSource: 'MANUAL'
+            dataSource: 'MANUAL',
+            isRealtime: 0,
+            realtimeSource: 'MANUAL'
         };
     }
     try {
@@ -626,6 +631,18 @@ async function fetchAssetMetadata(ticker) {
             return null;
         });
         if (!quote) return null;
+
+        // If Yahoo Finance provides delayed data (exchangeDataDelayedBy > 0), try to enrich with Google Finance real-time data
+        let gfEnrichment = {
+            enriched: false,
+            realtimeSource: (quote.exchangeDataDelayedBy === 0) ? 'YF' : 'YF_DELAYED',
+            isRealtime: (quote.exchangeDataDelayedBy === 0) ? 1 : 0
+        };
+        try {
+            gfEnrichment = await enrichWithGoogleFinanceIfDelayed(ticker, quote, customGoogleTicker);
+        } catch (gfErr) {
+            logger.warn(`Google Finance enrichment check error for ${ticker}: ${gfErr.message}`);
+        }
 
         let country = 'N/A';
         // Remap EQUITY to Azioni
@@ -686,6 +703,21 @@ async function fetchAssetMetadata(ticker) {
             }
         }
 
+        const rawChangePercent = quote.regularMarketChangePercent !== undefined && quote.regularMarketChangePercent !== null 
+            ? quote.regularMarketChangePercent 
+            : (summary.price ? summary.price.regularMarketChangePercent : null);
+        const rawChangeValue = quote.regularMarketChange !== undefined && quote.regularMarketChange !== null 
+            ? quote.regularMarketChange 
+            : (summary.price ? summary.price.regularMarketChange : null);
+
+        const calculatedChangePercent = (gfEnrichment.enriched)
+            ? (quote.regularMarketChangePercent ?? 0)
+            : (quote.regularMarketVolume === 0 ? 0 : rawChangePercent);
+            
+        const calculatedChangeValue = (gfEnrichment.enriched)
+            ? (quote.regularMarketChange ?? 0)
+            : (quote.regularMarketVolume === 0 ? 0 : rawChangeValue);
+
         return {
             ticker: ticker,
             name: quote.shortName || quote.longName || ticker,
@@ -694,14 +726,15 @@ async function fetchAssetMetadata(ticker) {
             type: detailedType,
             country: country,
             currentPrice: quote.regularMarketPrice || 0,
-            changePercent: quote.regularMarketChangePercent || 0,
-            changeValue: quote.regularMarketChange || 0,
+            changePercent: calculatedChangePercent ?? 0,
+            changeValue: calculatedChangeValue ?? 0,
             preMarketChangePercent: quote.preMarketChangePercent || 0,
             postMarketChangePercent: quote.postMarketChangePercent || 0,
             pe: quote.trailingPE || (summary.summaryDetail ? summary.summaryDetail.trailingPE : null),
             forwardPE: quote.forwardPE || (summary.summaryDetail ? summary.summaryDetail.forwardPE : null),
-            changePercent: quote.regularMarketVolume === 0 ? 0 : (quote.regularMarketChangePercent !== undefined && quote.regularMarketChangePercent !== null ? quote.regularMarketChangePercent : (summary.price ? summary.price.regularMarketChangePercent : null)),
-            changeValue: quote.regularMarketVolume === 0 ? 0 : (quote.regularMarketChange !== undefined && quote.regularMarketChange !== null ? quote.regularMarketChange : (summary.price ? summary.price.regularMarketChange : null)),
+            realtimeSource: gfEnrichment.realtimeSource,
+            isRealtime: gfEnrichment.isRealtime ? 1 : 0,
+            exchangeDataDelayedBy: quote.exchangeDataDelayedBy ?? 0,
             dividendYield: (function() {
                 let y = quote.dividendYield || (summary.summaryDetail ? summary.summaryDetail.dividendYield : null);
                 if (y === null || y === undefined) return null;
@@ -3148,14 +3181,16 @@ async function updateMarketData(force = false) {
                         currency: asset.currency || 'EUR',
                         exchange: asset.exchange,
                         country: asset.country,
+                        realtimeSource: 'B_ITA',
+                        isRealtime: 1,
                         quoteDate: (priceCheck.valid && result.quoteDate) ? result.quoteDate : (asset.quoteDate || new Date().toISOString().split('T')[0])
                     };
                 } else {
                     logger.warn(`B_ITA scraping failed for ${asset.ticker} (${asset.isin})`);
                 }
             } else {
-                // Default Yahoo Finance
-                const metadata = await fetchAssetMetadata(asset.ticker);
+                // Default Yahoo Finance (with Google Finance real-time fallback for delayed quotes)
+                const metadata = await fetchAssetMetadata(asset.ticker, asset.googleTicker);
                 if (!metadata) {
                     throw new Error(`YF: no quote data returned for '${asset.ticker}' (check ticker spelling or try manual update)`);
                 }
@@ -3169,13 +3204,15 @@ async function updateMarketData(force = false) {
                     finalChange = metadata.changePercent !== undefined && metadata.changePercent !== null ? metadata.changePercent : asset.changePercent;
                     finalChangeVal = metadata.changeValue !== undefined && metadata.changeValue !== null ? metadata.changeValue : 0;
                 } else {
-                    logger.warn(`YF [${asset.ticker}]: Price ${metadata.currentPrice} is invalid/inconsistent (${priceCheck.reason}). Retaining last valid price: ${asset.currentPrice}`);
+                    logger.warn(`YF/GF [${asset.ticker}]: Price ${metadata.currentPrice} is invalid/inconsistent (${priceCheck.reason}). Retaining last valid price: ${asset.currentPrice}`);
                 }
 
                 updateData = {
                     price: finalPrice,
                     change: finalChange,
                     changeValue: finalChangeVal,
+                    realtimeSource: metadata.realtimeSource || (metadata.isRealtime ? 'YF' : 'YF_DELAYED'),
+                    isRealtime: metadata.isRealtime ? 1 : 0,
                     pe: metadata.pe || asset.pe,
                     forwardPE: metadata.forwardPE || asset.forwardPE,
                     pegRatio: metadata.pegRatio || asset.pegRatio,
@@ -3193,7 +3230,8 @@ async function updateMarketData(force = false) {
                     country: metadata.country || asset.country,
                     quoteDate: (priceCheck.valid && metadata.quoteDate) ? metadata.quoteDate : (asset.quoteDate || new Date().toISOString().split('T')[0])
                 };
-                logger.info(`YF ✓ ${asset.ticker}: price=${updateData.price} ${updateData.currency} chg=${updateData.change?.toFixed ? updateData.change.toFixed(2) : updateData.change}%`);
+                const rtTag = updateData.realtimeSource ? `[${updateData.realtimeSource}${updateData.isRealtime ? ' ⚡RT' : ' ⏱DL'}]` : '';
+                logger.info(`${updateData.realtimeSource === 'GF' ? 'GF' : 'YF'} ✓ ${asset.ticker}: price=${updateData.price} ${updateData.currency} chg=${updateData.change?.toFixed ? updateData.change.toFixed(2) : updateData.change}% ${rtTag}`);
             }
 
             if (updateData) {
@@ -3216,12 +3254,14 @@ async function updateMarketData(force = false) {
                     updateData.exchange ?? null,
                     updateData.country ?? null,
                     updateData.quoteDate ?? null,
+                    updateData.realtimeSource ?? null,
+                    updateData.isRealtime ?? 0,
                     asset.ticker
                 ];
 
                 database.db.prepare(`
                     UPDATE assets
-                    SET currentPrice=?, changePercent=?, changeValue=?, preMarketChangePercent=?, postMarketChangePercent=?, pe=?, forwardPE=?, dividendYield=?, eps=?, beta=?, pegRatio=?, nextDividendDate=?, nextEarningsDate=?, name=?, currency=?, exchange=?, country=?, quoteDate=?, lastUpdateError=NULL, updatedAt=datetime('now')
+                    SET currentPrice=?, changePercent=?, changeValue=?, preMarketChangePercent=?, postMarketChangePercent=?, pe=?, forwardPE=?, dividendYield=?, eps=?, beta=?, pegRatio=?, nextDividendDate=?, nextEarningsDate=?, name=?, currency=?, exchange=?, country=?, quoteDate=?, realtimeSource=?, isRealtime=?, lastUpdateError=NULL, updatedAt=datetime('now')
                     WHERE ticker=?
                 `).run(...params);
                 

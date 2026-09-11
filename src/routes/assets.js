@@ -653,7 +653,8 @@ router.get('/assets', requireAuth, async (req, res) => {
     const rows = database.db.prepare(`
         SELECT a.id, a.ticker, a.name, a.type, a.exchange, a.currency, a.currentPrice, 
                a.changePercent, a.changeValue, a.pe, a.country, a.isManual, a.updatedAt, 
-               a.dataSource, a.isin, a.lastUpdateError, a.quoteDate, a.forwardPE, 
+               a.dataSource, a.isin, a.googleTicker, a.realtimeSource, a.isRealtime,
+               a.lastUpdateError, a.quoteDate, a.forwardPE, 
                a.dividendYield, a.eps, a.beta, a.nextDividendDate, 
                a.preMarketChangePercent, a.postMarketChangePercent, a.isMonitored,
                CASE WHEN t.balance IS NOT NULL AND t.balance > 0.0001 THEN 1 ELSE 0 END as hasPosition,
@@ -1051,11 +1052,14 @@ router.post('/assets', requireAuth, async (req, res) => {
             changePercent:parseFloat(changePercent || 0),
             pe:           pe ? parseFloat(pe) : null,
             dataSource:   req.body.dataSource || 'YF',
-            isin:         req.body.isin || null
+            isin:         req.body.isin || null,
+            googleTicker: req.body.googleTicker || null,
+            realtimeSource: null,
+            isRealtime: 0
         };
 
         if (ticker) {
-            const metadata = await fetchAssetMetadata(ticker);
+            const metadata = await fetchAssetMetadata(ticker, req.body.googleTicker);
             if (metadata) {
                 assetData = {
                     id:           ticker,
@@ -1074,7 +1078,10 @@ router.post('/assets', requireAuth, async (req, res) => {
                     nextDividendDate: metadata.nextDividendDate,
                     country:      metadata.country,
                     dataSource:   dataSource || 'YF',
-                    isin:         isin || metadata.isin || null
+                    isin:         isin || metadata.isin || null,
+                    googleTicker: req.body.googleTicker || null,
+                    realtimeSource: metadata.realtimeSource || null,
+                    isRealtime:   metadata.isRealtime ?? 0
                 };
             }
         }
@@ -1083,15 +1090,16 @@ router.post('/assets', requireAuth, async (req, res) => {
         if (existing && assetData.ticker) return res.status(400).send('Asset already in monitoring list');
 
         database.db.prepare(`
-            INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, forwardPE, dividendYield, eps, beta, pegRatio, nextDividendDate, country, dataSource, isin, updatedAt)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, forwardPE, dividendYield, eps, beta, pegRatio, nextDividendDate, country, dataSource, isin, googleTicker, realtimeSource, isRealtime, updatedAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
         `).run(
             assetData.id, assetData.ticker, assetData.name, assetData.type,
             assetData.exchange, assetData.currency, assetData.currentPrice,
             assetData.changePercent, assetData.pe, assetData.forwardPE || null,
             assetData.dividendYield || null, assetData.eps || null, assetData.beta || null,
             assetData.pegRatio || null, assetData.nextDividendDate || null, assetData.country,
-            assetData.dataSource || 'YF', assetData.isin || null
+            assetData.dataSource || 'YF', assetData.isin || null,
+            assetData.googleTicker || null, assetData.realtimeSource || null, assetData.isRealtime ?? 0
         );
 
         res.status(201).json(assetData);
@@ -1102,7 +1110,7 @@ router.post('/assets', requireAuth, async (req, res) => {
 });
 
 router.put('/assets/:id', requireAuth, (req, res) => {
-    const { targetPrice, stopLoss, volatilityAlert, isMonitored, dataSource, isin, name, type, exchange, currency, currentPrice, changePercent, pe } = req.body;
+    const { targetPrice, stopLoss, volatilityAlert, isMonitored, dataSource, isin, name, type, exchange, currency, currentPrice, changePercent, pe, googleTicker } = req.body;
     
     // 1. Update Asset Metadata (Global)
     const updates = [];
@@ -1117,6 +1125,7 @@ router.put('/assets/:id', requireAuth, (req, res) => {
     if (isMonitored !== undefined) { updates.push("isMonitored = ?"); params.push(isMonitored); }
     if (dataSource !== undefined) { updates.push("dataSource = ?"); params.push(dataSource); }
     if (isin !== undefined) { updates.push("isin = ?"); params.push(isin); }
+    if (googleTicker !== undefined) { updates.push("googleTicker = ?"); params.push(googleTicker || null); }
     
     if (updates.length > 0) {
         params.push(req.params.id);

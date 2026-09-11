@@ -632,6 +632,18 @@ function initDb() {
     } catch (e) {}
 
     try {
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN googleTicker TEXT`).run();
+    } catch (e) {}
+
+    try {
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN realtimeSource TEXT`).run();
+    } catch (e) {}
+
+    try {
+        dbConnection.prepare(`ALTER TABLE assets ADD COLUMN isRealtime INTEGER DEFAULT 0`).run();
+    } catch (e) {}
+
+    try {
         dbConnection.prepare(`ALTER TABLE portfolio_history ADD COLUMN netDeposits REAL NOT NULL DEFAULT 0`).run();
     } catch (e) {}
 
