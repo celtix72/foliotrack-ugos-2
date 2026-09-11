@@ -3055,9 +3055,13 @@ app.get('/history', requireAuth, (req, res) => {
 });
 
 app.get('/dividend', requireAuth, (req, res) => {
-    const file = isMobile(req) ? 'dividend_mobile.html' : 'dividend.html';
-    serveWithSidebar(req, res, file);
+    if (isMobile(req)) {
+        return serveWithSidebar(req, res, 'dividend_mobile.html');
+    }
+    res.redirect('/history?tab=dividends');
 });
+
+app.get('/dividends', requireAuth, (req, res) => res.redirect('/dividend'));
 
 app.get('/transactions', requireAuth, (req, res) => {
     const file = isMobile(req) ? 'transactions_mobile.html' : 'transactions.html';

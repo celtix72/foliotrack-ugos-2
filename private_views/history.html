@@ -3,11 +3,11 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>M2T - History</title>
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="M2T">
-<link rel="manifest" href="/manifest.json">
+    <title>M2T - Storico & Dividendi</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="M2T">
+    <link rel="manifest" href="/manifest.json">
     <link rel="stylesheet" href="/dist/output.css">
     <link rel="stylesheet" href="/mobile.css?v=1780588387885">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -18,6 +18,7 @@
     </style>
     <script src="/theme.js"></script>
     <script src="/header_indices.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="/auth.js"></script>
     <script>
         window.addEventListener('DOMContentLoaded', () => {
@@ -30,151 +31,622 @@
     <aside id="app-sidebar"></aside>
 
     <main class="flex-1 flex flex-col h-screen overflow-hidden">
-            <header class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-surface-dark px-6 flex items-center justify-between shrink-0 sticky top-0 z-50">
-    <!-- LEFT: date · live · EU/US · separator -->
-    <div class="flex items-center gap-3 min-w-0">
-        <!-- Date -->
-        <div class="flex items-center gap-2 text-slate-400 shrink-0">
-            <span class="material-symbols-outlined text-[18px]">calendar_today</span>
-            <span class="text-[10px] font-bold uppercase tracking-widest" id="header-date">--</span>
-            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1" id="header-last-update">Upd: --:--</span>
-        </div>
-        <div class="h-4 w-px bg-slate-200 dark:bg-slate-700 shrink-0"></div>
-        <!-- Live indicator -->
-        <div id="header-live-indicator" class="flex items-center gap-1.5 shrink-0">
-            <span class="header-live-dot w-2 h-2 rounded-full bg-slate-400"></span>
-            <span class="header-live-text text-[9px] font-black uppercase tracking-widest text-slate-500 hidden sm:inline">Live</span>
-        </div>
-        <!-- EU/US market microtags -->
-        <div class="market-status-group shrink-0" title="Stato Mercati (EU / US)">
-            <span id="market-tag-eu" class="market-microtag market-microtag-eu status-closed" title="Borsa Italiana / XETRA">EU</span>
-            <span id="market-tag-us" class="market-microtag market-microtag-us status-closed" title="NYSE / NASDAQ">US</span>
-        </div>
-    </div>
-
-    <!-- CENTER: Portfolio Daily Gain -->
-    <div id="header-portfolio-var" class="flex items-center"></div>
-
-    <!-- RIGHT: actions + user -->
-    <div class="flex items-center gap-3 shrink-0">
-        <!-- Notifications Bell -->
-        <a href="/notifications" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all shadow-sm relative" title="Notifications">
-            <span class="material-symbols-outlined text-sm">notifications</span>
-            <span id="header-notif-badge" class="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900" style="display: none;">0</span>
-        </a>
-        <!-- Privacy Toggle -->
-        <button onclick="togglePrivacy()" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all shadow-sm" title="Toggle Privacy">
-            <span class="material-symbols-outlined text-sm" id="header-privacy-icon">visibility</span>
-        </button>
-        <!-- Theme Toggle -->
-        <button onclick="toggleTheme()" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all shadow-sm" title="Toggle Theme">
-            <span class="material-symbols-outlined text-sm" id="header-theme-icon">dark_mode</span>
-        </button>
-
-        <div class="text-right hidden sm:block">
-            <p class="text-xs font-bold" id="header-user-name">User</p>
-            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter" id="header-user-role">M2T</p>
-        </div>
-        <div class="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-400">
-            <span class="material-symbols-outlined text-sm">person</span>
-        </div>
-    </div>
-</header>
-
-        <div class="flex-1 overflow-y-auto px-0 pt-6 pb-4 space-y-8">
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div>
-                    <h1 class="text-3xl font-black tracking-tight">Closed Positions</h1>
-                    <p class="text-slate-500 dark:text-slate-400 text-sm">Historical performance and realized gains across all portolios.</p>
+        <!-- Top App Header -->
+        <header class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-surface-dark px-6 flex items-center justify-between shrink-0 sticky top-0 z-50">
+            <!-- LEFT: date · live · EU/US · separator -->
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="flex items-center gap-2 text-slate-400 shrink-0">
+                    <span class="material-symbols-outlined text-[18px]">calendar_today</span>
+                    <span class="text-[10px] font-bold uppercase tracking-widest" id="header-date">--</span>
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1" id="header-last-update">Upd: --:--</span>
                 </div>
-                <!-- Filters & Grouping -->
-                <div class="flex flex-wrap items-center gap-4 bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <div class="relative">
+                <div class="h-4 w-px bg-slate-200 dark:bg-slate-700 shrink-0"></div>
+                <div id="header-live-indicator" class="flex items-center gap-1.5 shrink-0">
+                    <span class="header-live-dot w-2 h-2 rounded-full bg-slate-400"></span>
+                    <span class="header-live-text text-[9px] font-black uppercase tracking-widest text-slate-500 hidden sm:inline">Live</span>
+                </div>
+                <div class="market-status-group shrink-0" title="Stato Mercati (EU / US)">
+                    <span id="market-tag-eu" class="market-microtag market-microtag-eu status-closed" title="Borsa Italiana / XETRA">EU</span>
+                    <span id="market-tag-us" class="market-microtag market-microtag-us status-closed" title="NYSE / NASDAQ">US</span>
+                </div>
+            </div>
+
+            <!-- CENTER: Portfolio Daily Gain -->
+            <div id="header-portfolio-var" class="flex items-center"></div>
+
+            <!-- RIGHT: actions + user -->
+            <div class="flex items-center gap-3 shrink-0">
+                <a href="/notifications" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all shadow-sm relative" title="Notifications">
+                    <span class="material-symbols-outlined text-sm">notifications</span>
+                    <span id="header-notif-badge" class="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900" style="display: none;">0</span>
+                </a>
+                <button onclick="togglePrivacy()" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all shadow-sm" title="Toggle Privacy">
+                    <span class="material-symbols-outlined text-sm" id="header-privacy-icon">visibility</span>
+                </button>
+                <button onclick="toggleTheme()" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all shadow-sm" title="Toggle Theme">
+                    <span class="material-symbols-outlined text-sm" id="header-theme-icon">dark_mode</span>
+                </button>
+
+                <div class="text-right hidden sm:block">
+                    <p class="text-xs font-bold" id="header-user-name">User</p>
+                    <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter" id="header-user-role">M2T</p>
+                </div>
+                <div class="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-400">
+                    <span class="material-symbols-outlined text-sm">person</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Scrollable Area -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar px-6 pt-6 pb-12 space-y-6">
+            <!-- Unified Page Header & Pill Switcher -->
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
+                <div>
+                    <div class="flex items-center gap-2.5">
+                        <span class="material-symbols-outlined text-2xl text-primary">history_edu</span>
+                        <h1 class="text-2xl lg:text-3xl font-black tracking-tight text-slate-900 dark:text-white">Storico & Dividendi</h1>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Rendimento complessivo realizzato: posizioni concluse, dividendi percepiti e flussi stimati.</p>
+                </div>
+
+                <!-- Segmented Tabs Switcher -->
+                <div class="inline-flex p-1 rounded-xl bg-slate-100 dark:bg-surface-dark border border-slate-200 dark:border-slate-800 shadow-sm shrink-0 self-start lg:self-center">
+                    <button id="tab-btn-closed" onclick="switchTab('closed')" 
+                        class="px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 bg-primary text-white shadow-sm shadow-primary/20">
+                        <span class="material-symbols-outlined text-[16px]">receipt_long</span>
+                        <span>Posizioni Chiuse</span>
+                    </button>
+                    <button id="tab-btn-dividends" onclick="switchTab('dividends')" 
+                        class="px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-800/60">
+                        <span class="material-symbols-outlined text-[16px]">payments</span>
+                        <span>Dividendi & Cedole</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Unified Hero KPI Cards (Capital Gain + Dividends + Total Return) -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- KPI 1: Realized Capital Gain -->
+                <div class="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1 flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-[13px] text-blue-500">sell</span>
+                            Plusvalenze Posizioni Chiuse
+                        </p>
+                        <div id="hero-realized-gain" class="text-xl md:text-2xl font-black font-mono text-slate-400">€ 0.00</div>
+                        <p id="hero-realized-sub" class="text-[10px] text-slate-400 font-medium mt-0.5">-- operazioni concluse</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500 shrink-0">
+                        <span class="material-symbols-outlined text-xl">trending_up</span>
+                    </div>
+                </div>
+
+                <!-- KPI 2: All-Time Dividends -->
+                <div class="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1 flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-[13px] text-emerald-500">account_balance_wallet</span>
+                            Dividendi & Cedole Incassati
+                        </p>
+                        <div id="hero-dividends-total" class="text-xl md:text-2xl font-black font-mono text-emerald-500">€ 0.00</div>
+                        <p id="hero-dividends-sub" class="text-[10px] text-slate-400 font-medium mt-0.5">Totale netto all-time</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
+                        <span class="material-symbols-outlined text-xl">payments</span>
+                    </div>
+                </div>
+
+                <!-- KPI 3: Combined Realized Return -->
+                <div class="bg-white dark:bg-surface-dark p-4 rounded-xl border border-primary/25 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] font-black uppercase text-primary tracking-widest mb-1 flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-[13px]">savings</span>
+                            Ritorno Totale Realizzato
+                        </p>
+                        <div id="hero-total-return" class="text-xl md:text-2xl font-black font-mono text-primary">€ 0.00</div>
+                        <p class="text-[10px] text-slate-400 font-medium mt-0.5">Plusvalenze + Dividendi incassati</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                        <span class="material-symbols-outlined text-xl">price_check</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ════════════════════════════════════════════════════════════════════ -->
+            <!-- TAB PANEL 1: POSIZIONI CHIUSE (CLOSED POSITIONS)                    -->
+            <!-- ════════════════════════════════════════════════════════════════════ -->
+            <section id="panel-closed" class="space-y-4">
+                <!-- Filters & Search Bar -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-surface-dark p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="relative flex-1 max-w-sm">
                         <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
-                        <input type="text" id="history-search" placeholder="Filter by asset..." 
-                            class="pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-900/50 border-none rounded-lg text-xs w-48 focus:ring-2 focus:ring-primary/20 transition-all"
+                        <input type="text" id="history-search" placeholder="Filtra per asset, ticker..." 
+                            class="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-900/60 border-none rounded-lg text-xs focus:ring-2 focus:ring-primary/20 transition-all font-medium"
                             oninput="renderHistory()">
                     </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Group By</span>
+                    <div class="flex items-center gap-2 self-end sm:self-center">
+                        <span class="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Raggruppa</span>
                         <select id="history-group-by" onchange="renderHistory()" 
-                            class="bg-slate-50 dark:bg-slate-900/50 border-none rounded-lg text-xs py-2 pl-3 pr-8 focus:ring-2 focus:ring-primary/20 transition-all font-bold">
-                            <option value="year">Year</option>
-                            <option value="portfolioName">Portfolio</option>
-                            <option value="none">None (Linear List)</option>
+                            class="bg-slate-50 dark:bg-slate-900/60 border-none rounded-lg text-xs py-2 pl-3 pr-8 focus:ring-2 focus:ring-primary/20 transition-all font-bold">
+                            <option value="year">Per Anno</option>
+                            <option value="portfolioName">Per Portafoglio</option>
+                            <option value="none">Nessuno (Lista Lineare)</option>
                         </select>
                     </div>
                 </div>
-            </div>
 
-            <div class="overflow-hidden bg-white dark:bg-surface-dark border-y sm:border-x border-slate-200 dark:border-slate-800 rounded-none sm:rounded-xl shadow-sm">
-                <table class="w-full text-left border-collapse text-sm">
-                    <thead>
-                        <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
-                            <th class="px-6 py-4">Asset</th>
-                            <th class="px-6 py-4">Portfolio</th>
-                            <th class="px-6 py-4">Year</th>
-                            <th class="px-6 py-4">Qty</th>
-                            <th class="px-6 py-4 font-mono">PMC</th>
-                            <th class="px-6 py-4 font-mono text-slate-400">Sell Price</th>
-                            <th class="px-6 py-4">Proceeds</th>
-                            <th class="px-6 py-4">Cost Basis</th>
-                            <th class="px-6 py-4 text-right">Realized Gain</th>
-                        </tr>
-                    </thead>
-                    <tbody id="history-table-body" class="divide-y divide-slate-100 dark:divide-slate-800">
-                        <!-- Content injected by JS -->
-                    </tbody>
-                </table>
-            </div>
+                <!-- Table of Closed Positions -->
+                <div class="overflow-hidden bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="text-[10px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40">
+                                    <th class="px-5 py-3.5">Asset</th>
+                                    <th class="px-5 py-3.5">Portafoglio</th>
+                                    <th class="px-5 py-3.5">Anno</th>
+                                    <th class="px-5 py-3.5">Qty</th>
+                                    <th class="px-5 py-3.5 font-mono">PMC</th>
+                                    <th class="px-5 py-3.5 font-mono text-slate-400">Prezzo Vendita</th>
+                                    <th class="px-5 py-3.5 font-mono">Incasso</th>
+                                    <th class="px-5 py-3.5 font-mono">Costo Base</th>
+                                    <th class="px-5 py-3.5 text-right font-mono">Plusvalenza</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-table-body" class="divide-y divide-slate-100 dark:divide-slate-800">
+                                <tr>
+                                    <td colspan="9" class="px-6 py-12 text-center text-slate-400 italic">Caricamento storico posizioni...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ════════════════════════════════════════════════════════════════════ -->
+            <!-- TAB PANEL 2: DIVIDENDI & CEDOLE (DIVIDENDS & PROJECTIONS)           -->
+            <!-- ════════════════════════════════════════════════════════════════════ -->
+            <section id="panel-dividends" class="space-y-6 hidden">
+                <!-- 1. Annual Projections Section -->
+                <div class="space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <h2 class="text-lg font-black tracking-tight text-slate-900 dark:text-white">Proiezioni <span id="proj-year" class="text-primary"></span></h2>
+                            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Stime dividendi e cedole anno in corso</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button id="btn-recalc" onclick="resetProjections()" class="text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-primary transition-colors flex items-center gap-1.5 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-lg shadow-sm">
+                                <span class="material-symbols-outlined text-[16px]">refresh</span> Ricalcola
+                            </button>
+                            <button onclick="openManualModal()" class="text-xs font-bold text-white bg-primary hover:bg-primary/90 transition-colors px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[16px]">add</span> Manuale
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Compact Projections KPIs -->
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="bg-white dark:bg-surface-dark p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">YTD Incassati</p>
+                                <div id="proj-actual" class="text-lg md:text-xl font-black text-emerald-500 font-mono">€ 0</div>
+                            </div>
+                            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
+                                <span class="material-symbols-outlined text-base">check_circle</span>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-surface-dark p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Attesi</p>
+                                <div id="proj-remaining" class="text-lg md:text-xl font-black text-amber-500 font-mono">€ 0</div>
+                            </div>
+                            <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500 shrink-0">
+                                <span class="material-symbols-outlined text-base">hourglass_empty</span>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-surface-dark p-3.5 rounded-xl border border-primary/20 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-[9px] font-black uppercase text-primary tracking-widest mb-1">Totale Anno</p>
+                                <div id="proj-total" class="text-lg md:text-xl font-black text-primary font-mono">€ 0</div>
+                            </div>
+                            <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                                <span class="material-symbols-outlined text-base">query_stats</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bar Chart: Projections -->
+                    <div class="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <div class="relative h-60">
+                            <canvas id="projectionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Historical Dividends Section -->
+                <div class="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-lg font-black tracking-tight text-slate-900 dark:text-white">Storico Annuale</h2>
+                            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Evoluzione dividendi incassati negli anni</p>
+                        </div>
+                    </div>
+
+                    <!-- Historical Bar Chart -->
+                    <div class="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <div class="relative h-60">
+                            <canvas id="historicalChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Dividends Transactions Table Accordion -->
+                    <details open class="group bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                        <summary class="flex items-center justify-between px-5 py-4 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors outline-none">
+                            <span class="text-[11px] font-black uppercase tracking-widest text-slate-500 flex flex-wrap items-center gap-2.5">
+                                <span class="material-symbols-outlined text-[17px] text-emerald-500">list_alt</span>
+                                Elenco Transazioni & Proiezioni
+                                <input type="text" id="div-filter-ticker" placeholder="Filtra ticker/nome..." 
+                                    class="bg-white/60 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] py-1 px-2 focus:ring-1 focus:ring-emerald-500 outline-none w-32 font-medium" 
+                                    oninput="renderDividends()" onclick="event.stopPropagation()">
+                                <select id="div-group-by" onchange="renderDividends()" onclick="event.stopPropagation()" 
+                                    class="bg-white/60 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] py-1 pl-2 pr-6 focus:ring-0 cursor-pointer font-bold">
+                                    <option value="year">Per Anno</option>
+                                    <option value="portfolioName">Per Portafoglio</option>
+                                    <option value="none">Lista Lineare</option>
+                                </select>
+                            </span>
+                            <div class="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-slate-500 text-sm group-open:rotate-180 transition-transform">expand_more</span>
+                            </div>
+                        </summary>
+                        <div class="overflow-x-auto border-t border-slate-200 dark:border-slate-800">
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead>
+                                    <tr class="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                                        <th class="px-5 py-3">Asset</th>
+                                        <th class="px-5 py-3 text-center">Data</th>
+                                        <th class="px-5 py-3 text-center">Stato / Fonte</th>
+                                        <th class="px-5 py-3 text-right">Netto</th>
+                                        <th class="px-5 py-3 text-right">Lordo Tot.</th>
+                                        <th class="px-5 py-3 text-right">Azioni</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dividends-table-body" class="divide-y divide-slate-100 dark:divide-slate-800">
+                                    <tr><td colspan="6" class="px-6 py-8 text-center text-slate-400 italic">Caricamento dividendi...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </details>
+
+                    <!-- Asset Yield & Tax Analysis Accordion -->
+                    <details class="group bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden" ontoggle="if(this.open) renderAssetYearYields()">
+                        <summary class="flex items-center justify-between px-5 py-4 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors outline-none">
+                            <span class="text-[11px] font-black uppercase tracking-widest text-indigo-500 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[17px]">analytics</span>
+                                Rendimento & Fiscalità per Asset x Anno
+                            </span>
+                            <div class="flex items-center gap-3">
+                                <select id="asset-yield-year-filter" onchange="renderAssetYearYields()" onclick="event.stopPropagation()" 
+                                    class="bg-white/60 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-[10px] py-1 pl-2 pr-6 focus:ring-0 cursor-pointer text-slate-600 dark:text-slate-300 font-bold">
+                                    <option value="all">Tutti gli Anni</option>
+                                </select>
+                                <div class="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-slate-500 text-sm group-open:rotate-180 transition-transform">expand_more</span>
+                                </div>
+                            </div>
+                        </summary>
+                        <div class="overflow-x-auto border-t border-slate-200 dark:border-slate-800">
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead>
+                                    <tr class="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                                        <th class="px-5 py-3">Asset</th>
+                                        <th class="px-5 py-3 text-right">Yield Lordo</th>
+                                        <th class="px-5 py-3 text-right">Tax Pagate</th>
+                                        <th class="px-5 py-3 text-right text-emerald-500">Netto Incassato</th>
+                                        <th class="px-5 py-3 text-right text-rose-500">% Tax Applicata</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="asset-yields-table-body" class="divide-y divide-slate-100 dark:divide-slate-800">
+                                    <tr><td colspan="5" class="px-6 py-8 text-center text-slate-400 italic">Caricamento dati fiscali...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </details>
+                </div>
+            </section>
         </div>
     </main>
 
+    <!-- ════════════════════════════════════════════════════════════════════════ -->
+    <!-- MODALS                                                                   -->
+    <!-- ════════════════════════════════════════════════════════════════════════ -->
+
+    <!-- Manual Dividend Modal -->
+    <div id="manual-modal" class="fixed inset-0 bg-slate-900/50 dark:bg-black/60 backdrop-blur-sm hidden z-[100] flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-surface-dark w-full max-w-sm rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 id="manual-modal-title" class="text-sm font-black uppercase tracking-widest text-primary">Nuova Previsione</h3>
+                    <p class="text-[10px] text-slate-500 font-bold mt-1">Proiezione dividendo manuale</p>
+                </div>
+                <button onclick="closeManualModal()" class="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                    <span class="material-symbols-outlined text-sm">close</span>
+                </button>
+            </div>
+            <form id="manual-div-form" onsubmit="submitManualDividend(event)" class="space-y-3">
+                <input type="hidden" id="manual-id">
+                <div>
+                    <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Ticker</label>
+                    <input type="text" id="manual-ticker" required placeholder="es. AAPL" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-primary/20 outline-none font-mono uppercase">
+                </div>
+                <div>
+                    <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Data Prevista</label>
+                    <input type="date" id="manual-date" required class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-primary/20 outline-none">
+                </div>
+                <div>
+                    <label class="block text-[9px] font-bold text-emerald-500 uppercase tracking-wider mb-1">Importo Stimato (€)</label>
+                    <input type="number" step="0.01" id="manual-amount" required placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-xs focus:ring-2 focus:ring-emerald-500/20 font-mono font-black outline-none">
+                </div>
+
+                <div class="pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <label class="flex items-center gap-2 cursor-pointer select-none">
+                        <input type="checkbox" id="manual-is-confirmed" onchange="toggleManualConfirmedFields()" class="rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500/20 cursor-pointer">
+                        <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300">Registra subito come incassato</span>
+                    </label>
+                </div>
+
+                <div id="manual-confirmed-fields" class="hidden space-y-3 pt-1">
+                    <div>
+                        <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Accredita su Portafoglio</label>
+                        <select id="manual-portfolio" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs font-bold outline-none">
+                            <option value="" disabled selected>Seleziona portafoglio...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Tasse trattenute (€)</label>
+                        <input type="number" step="0.01" id="manual-tax" value="0.00" placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs font-mono outline-none">
+                    </div>
+                    <div class="flex items-start gap-2.5 p-2.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                        <input type="checkbox" id="manual-create-withdrawal" class="mt-0.5 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500/20 cursor-pointer">
+                        <label for="manual-create-withdrawal" class="text-[11px] font-bold text-slate-700 dark:text-slate-300 select-none cursor-pointer">
+                            Crea prelievo di liquidità equivalente
+                            <span class="block text-[9px] font-normal text-slate-400">Non incrementa la liquidità del portafoglio (preleva il netto nella stessa data).</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="pt-2 flex gap-3">
+                    <button type="button" onclick="closeManualModal()" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                        Annulla
+                    </button>
+                    <button type="submit" id="manual-submit-btn" class="flex-1 py-2.5 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg text-xs transition-colors shadow-sm shadow-primary/20">
+                        Salva Previsione
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirm Dividend Modal -->
+    <div id="confirm-modal" class="fixed inset-0 bg-slate-900/50 dark:bg-black/60 backdrop-blur-sm hidden z-[100] flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-surface-dark w-full max-w-sm rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 id="confirm-modal-title" class="text-sm font-black tracking-tight uppercase tracking-widest text-emerald-500">Conferma Dividendo</h3>
+                    <p id="confirm-asset-label" class="text-[10px] text-slate-500 font-bold mt-1"></p>
+                </div>
+                <button type="button" onclick="closeConfirmModal()" class="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                    <span class="material-symbols-outlined text-sm">close</span>
+                </button>
+            </div>
+            <form id="confirm-div-form" onsubmit="submitConfirmDividend(event)" class="space-y-3">
+                <input type="hidden" id="confirm-id">
+                <input type="hidden" id="confirm-tx-id">
+                <input type="hidden" id="confirm-is-duplicate">
+                <div id="confirm-ticker-group">
+                    <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Ticker Asset</label>
+                    <input type="text" id="confirm-ticker" required class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs font-bold outline-none uppercase">
+                </div>
+                <div id="confirm-portfolio-group">
+                    <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Accredita su Portafoglio</label>
+                    <select id="confirm-portfolio" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-emerald-500/20 font-bold outline-none">
+                        <option value="" disabled selected>Seleziona portafoglio...</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="col-span-2">
+                        <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">Data Incasso</label>
+                        <input type="date" id="confirm-date" required class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-emerald-500/20 outline-none">
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Lordo (€)</label>
+                            <button type="button" onclick="calcConfirmField('gross')" title="Calcola Lordo da Netto + Tasse" class="text-[9px] font-black text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 flex items-center gap-0.5 cursor-pointer select-none transition-colors">
+                                <span class="material-symbols-outlined text-[12px]">calculate</span>Calcola
+                            </button>
+                        </div>
+                        <input type="number" step="0.01" id="confirm-gross" required placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-emerald-500/20 font-mono font-black outline-none transition-all">
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <div class="flex items-center gap-1">
+                                <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Tasse</label>
+                                <span id="confirm-tax-unit" class="text-[9px] font-bold text-slate-400">(€)</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <button type="button" id="confirm-tax-toggle" onclick="toggleConfirmTaxMode()" title="Cambia modalità € / %" class="text-[9px] font-black px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-emerald-500 border border-slate-200 dark:border-slate-700 transition-colors">
+                                    %
+                                </button>
+                                <button type="button" onclick="calcConfirmField('tax')" title="Calcola Tasse da Lordo - Netto" class="text-[9px] font-black text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 flex items-center gap-0.5 cursor-pointer select-none transition-colors">
+                                    <span class="material-symbols-outlined text-[12px]">calculate</span>Calcola
+                                </button>
+                            </div>
+                        </div>
+                        <input type="number" step="any" id="confirm-tax" required placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs focus:ring-2 focus:ring-emerald-500/20 font-mono font-black outline-none transition-all">
+                        <input type="hidden" id="confirm-tax-mode" value="eur">
+                        <div class="flex items-center justify-between mt-1 text-[8px] font-bold text-slate-400 select-none">
+                            <span id="confirm-tax-hint">Eq. 0.0%</span>
+                            <div class="flex gap-1.5">
+                                <button type="button" onclick="applyTaxRate(26)" class="hover:text-emerald-500 cursor-pointer transition-colors" title="Imposta 26% (Azioni/ETF)">26%</button>
+                                <button type="button" onclick="applyTaxRate(12.5)" class="hover:text-emerald-500 cursor-pointer transition-colors" title="Imposta 12.5% (Titoli di Stato)">12.5%</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-span-2">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Netto Incassato (€)</label>
+                            <button type="button" onclick="calcConfirmField('net')" title="Calcola Netto da Lordo - Tasse" class="text-[9px] font-black text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 flex items-center gap-0.5 cursor-pointer select-none transition-colors">
+                                <span class="material-symbols-outlined text-[12px]">calculate</span>Calcola
+                            </button>
+                        </div>
+                        <input type="number" step="0.01" id="confirm-net" required placeholder="0.00" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 text-xs focus:ring-2 focus:ring-emerald-500/20 font-mono font-black outline-none transition-all">
+                    </div>
+                </div>
+                <div id="confirm-withdrawal-group" class="pt-1 flex items-start gap-2.5 p-2.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                    <input type="checkbox" id="confirm-create-withdrawal" class="mt-0.5 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500/20 cursor-pointer">
+                    <label for="confirm-create-withdrawal" class="text-[11px] font-bold text-slate-700 dark:text-slate-300 select-none cursor-pointer">
+                        Crea prelievo di liquidità equivalente
+                        <span class="block text-[9px] font-normal text-slate-400">Non incrementa la liquidità del portafoglio (preleva il netto nella stessa data).</span>
+                    </label>
+                </div>
+                <div class="pt-2">
+                    <button type="submit" id="confirm-submit-btn" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg text-xs transition-colors shadow-sm">
+                        Conferma e Salva
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════════════════ -->
+    <!-- JAVASCRIPT LOGIC                                                         -->
+    <!-- ════════════════════════════════════════════════════════════════════════ -->
     <script>
+        // State
         let rawHistoryData = [];
-        let collapsedGroups = new Set();
-        let currentGroupBy = 'year';
+        let rawDivData = [];
+        let historyCollapsedGroups = new Set();
+        let divCollapsedGroups = new Set();
+        let historyCurrentGroupBy = 'year';
+        let divCurrentGroupBy = 'year';
+        let globalHoldings = {};
+        window.globalProjData = null;
+        window.hasTriedReset = false;
 
-        // Global formatting from theme.js
+        let totalClosedGain = 0;
+        let totalDividendsSum = 0;
 
+        // ─── TAB SWITCHING & ROUTING ──────────────────────────────────────────
+        function switchTab(tabId) {
+            const btnClosed = document.getElementById('tab-btn-closed');
+            const btnDividends = document.getElementById('tab-btn-dividends');
+            const panelClosed = document.getElementById('panel-closed');
+            const panelDividends = document.getElementById('panel-dividends');
+
+            if (tabId === 'dividends') {
+                panelClosed.classList.add('hidden');
+                panelDividends.classList.remove('hidden');
+
+                btnDividends.className = 'px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 bg-primary text-white shadow-sm shadow-primary/20';
+                btnClosed.className = 'px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-800/60';
+
+                const url = new URL(window.location);
+                url.searchParams.set('tab', 'dividends');
+                window.history.replaceState({}, '', url);
+
+                // Re-render / resize Chart.js when unhidden
+                setTimeout(() => {
+                    if (projectionChart) projectionChart.resize();
+                    if (histChartInstance) histChartInstance.resize();
+                }, 50);
+            } else {
+                panelDividends.classList.add('hidden');
+                panelClosed.classList.remove('hidden');
+
+                btnClosed.className = 'px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 bg-primary text-white shadow-sm shadow-primary/20';
+                btnDividends.className = 'px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-800/60';
+
+                const url = new URL(window.location);
+                url.searchParams.delete('tab');
+                window.history.replaceState({}, '', url);
+            }
+        }
+
+        function updateHeroSummary() {
+            const elGain = document.getElementById('hero-realized-gain');
+            const elGainSub = document.getElementById('hero-realized-sub');
+            const elDivs = document.getElementById('hero-dividends-total');
+            const elReturn = document.getElementById('hero-total-return');
+
+            const gainColor = totalClosedGain >= 0 ? 'text-emerald-500' : 'text-rose-500';
+            const gainSign = totalClosedGain >= 0 ? '+' : '';
+            if (elGain) {
+                elGain.className = `text-xl md:text-2xl font-black font-mono ${gainColor}`;
+                elGain.innerText = gainSign + formatCurrency(totalClosedGain, 'EUR', 0);
+            }
+
+            const tradeCount = rawHistoryData.filter(pos => ['BUY', 'SELL'].includes(pos.type)).length;
+            if (elGainSub) {
+                elGainSub.innerText = `${tradeCount} posizioni concluse`;
+            }
+
+            if (elDivs) {
+                elDivs.innerText = formatCurrency(totalDividendsSum, 'EUR', 0);
+            }
+
+            const totalRealized = totalClosedGain + totalDividendsSum;
+            const retColor = totalRealized >= 0 ? 'text-emerald-500' : 'text-rose-500';
+            const retSign = totalRealized >= 0 ? '+' : '';
+            if (elReturn) {
+                elReturn.className = `text-xl md:text-2xl font-black font-mono ${retColor}`;
+                elReturn.innerText = retSign + formatCurrency(totalRealized, 'EUR', 0);
+            }
+        }
+
+        // ─── CLOSED POSITIONS LOGIC ───────────────────────────────────────────
         async function loadHistory() {
             try {
                 const res = await fetch('/api/analytics/history');
                 rawHistoryData = await res.json();
                 
-                // Set default collapsed state: collapse all initial years
                 const years = [...new Set(rawHistoryData.map(d => d.year))];
-                collapsedGroups = new Set(years);
-                
+                historyCollapsedGroups = new Set(years);
+
+                // Compute realized gain
+                const cashTypes = ['DEPOSIT', 'DEPOSITO', 'WITHDRAWAL', 'PRELIEVO', 'TAX', 'TASSE', 'TRANSFER'];
+                totalClosedGain = rawHistoryData
+                    .filter(pos => !cashTypes.includes(pos.type))
+                    .reduce((sum, pos) => sum + (pos.realizedGain || 0), 0);
+
+                updateHeroSummary();
                 renderHistory();
-            } catch (err) { console.error('Error loading history:', err); }
+            } catch (err) {
+                console.error('Error loading history:', err);
+            }
         }
 
-        function toggleGroup(key) {
-            if (collapsedGroups.has(key)) {
-                collapsedGroups.delete(key);
+        function toggleHistoryGroup(key) {
+            if (historyCollapsedGroups.has(key)) {
+                historyCollapsedGroups.delete(key);
             } else {
-                collapsedGroups.add(key);
+                historyCollapsedGroups.add(key);
             }
             renderHistory();
         }
 
         function renderHistory() {
             const body = document.getElementById('history-table-body');
-            const searchTerm = document.getElementById('history-search').value.toLowerCase();
-            const groupBy = document.getElementById('history-group-by').value;
+            const searchTerm = (document.getElementById('history-search')?.value || '').toLowerCase();
+            const groupBy = document.getElementById('history-group-by')?.value || 'year';
 
-            // Reset collapsed if group type changes
-            if (groupBy !== currentGroupBy) {
-                collapsedGroups = new Set();
-                currentGroupBy = groupBy;
+            if (groupBy !== historyCurrentGroupBy) {
+                historyCollapsedGroups = new Set();
+                historyCurrentGroupBy = groupBy;
                 if (groupBy === 'year') {
                     const years = [...new Set(rawHistoryData.map(d => d.year))];
-                    collapsedGroups = new Set(years);
+                    historyCollapsedGroups = new Set(years);
                 }
             }
 
-            // 1. Filter
             const cashTypes = ['DEPOSIT', 'DEPOSITO', 'WITHDRAWAL', 'PRELIEVO', 'TAX', 'TASSE', 'TRANSFER'];
             let filtered = rawHistoryData.filter(pos => {
                 if (cashTypes.includes(pos.type)) return false;
@@ -183,15 +655,13 @@
             });
 
             if (filtered.length === 0) {
-                body.innerHTML = '<tr><td colspan="8" class="px-6 py-12 text-center text-slate-500 italic">No historical data matching filters.</td></tr>';
+                body.innerHTML = '<tr><td colspan="9" class="px-6 py-12 text-center text-slate-500 italic">Nessuna posizione storica corrispondente ai filtri.</td></tr>';
                 return;
             }
 
-            // 2. Grouping & Sorting
             if (groupBy === 'none') {
-                body.innerHTML = filtered.sort((a,b) => new Date(b.date) - new Date(a.date)).map(pos => renderRow(pos)).join('');
+                body.innerHTML = filtered.sort((a,b) => new Date(b.date) - new Date(a.date)).map(pos => renderHistoryRow(pos)).join('');
             } else {
-                // Group the data
                 const groups = {};
                 filtered.forEach(pos => {
                     const key = pos[groupBy];
@@ -209,41 +679,40 @@
                     groups[key].totalGain += pos.realizedGain;
                 });
 
-                // Sort keys (desc if year, asc if portfolio)
                 const keys = Object.keys(groups).sort((a, b) => {
-                    if (groupBy === 'year') return b - a; // Desc year
-                    return a.localeCompare(b); // Asc portfolio
+                    if (groupBy === 'year') return b - a;
+                    return a.localeCompare(b);
                 });
 
                 let html = '';
                 keys.forEach(key => {
                     const group = groups[key];
-                    const isCollapsed = collapsedGroups.has(key);
+                    const isCollapsed = historyCollapsedGroups.has(key);
                     const icon = isCollapsed ? 'chevron_right' : 'expand_more';
                     const gainColor = group.totalGain >= 0 ? 'emerald' : 'rose';
                     const sign = group.totalGain >= 0 ? '+' : '';
 
                     html += `
-                        <tr class="bg-slate-50/80 dark:bg-slate-900/60 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" onclick="toggleGroup('${key}')">
-                            <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800">
+                        <tr class="bg-slate-50/80 dark:bg-slate-900/60 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors select-none" onclick="toggleHistoryGroup('${key}')">
+                            <td class="px-5 py-3 border-y border-slate-200 dark:border-slate-800">
                                 <div class="flex items-center gap-2">
                                     <span class="material-symbols-outlined text-slate-400 text-lg">${icon}</span>
                                     <span class="text-xs font-black uppercase tracking-widest text-primary">${key}</span>
                                     <span class="text-[10px] text-slate-500 font-bold ml-1 whitespace-nowrap">(${group.items.length})</span>
                                 </div>
                             </td>
-                            <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800"></td>
-                            <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800"></td>
-                            <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800"></td>
-                            <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800"></td>
-                            <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800"></td>
-                            <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800 font-mono text-[11px] font-bold text-slate-500">
+                            <td class="px-5 py-3 border-y border-slate-200 dark:border-slate-800"></td>
+                            <td class="px-5 py-3 border-y border-slate-200 dark:border-slate-800"></td>
+                            <td class="px-5 py-3 border-y border-slate-200 dark:border-slate-800"></td>
+                            <td class="px-5 py-3 border-y border-slate-200 dark:border-slate-800"></td>
+                            <td class="px-5 py-3 border-y border-slate-200 dark:border-slate-800"></td>
+                            <td class="px-5 py-3 border-y border-slate-200 dark:border-slate-800 font-mono text-[11px] font-bold text-slate-500">
                                 ${formatCurrency(group.totalProceeds, 'EUR', 0)}
                             </td>
-                            <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800 font-mono text-[11px] font-bold text-slate-400">
+                            <td class="px-5 py-3 border-y border-slate-200 dark:border-slate-800 font-mono text-[11px] font-bold text-slate-400">
                                 ${formatCurrency(group.totalCostBasis, 'EUR', 0)}
                             </td>
-                            <td class="px-6 py-3 border-y border-slate-200 dark:border-slate-800 text-right font-mono text-xs font-black text-${gainColor}-500">
+                            <td class="px-5 py-3 border-y border-slate-200 dark:border-slate-800 text-right font-mono text-xs font-black text-${gainColor}-500">
                                 ${group.totalGain !== 0 ? sign + formatCurrency(group.totalGain, 'EUR', 0) : '—'}
                             </td>
                         </tr>
@@ -251,7 +720,7 @@
                     
                     if (!isCollapsed) {
                         group.items.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(pos => {
-                            html += renderRow(pos);
+                            html += renderHistoryRow(pos);
                         });
                     }
                 });
@@ -259,34 +728,33 @@
             }
         }
 
-        function renderRow(pos) {
+        function renderHistoryRow(pos) {
             const isTrade = ['BUY', 'SELL'].includes(pos.type);
             const color = pos.realizedGain >= 0 ? 'emerald' : 'rose';
             const sign = pos.realizedGain >= 0 ? '+' : '';
             
-            // For non-trades, we show the amount in proceeds
             const isCashDebit = ['TAX', 'TRANSFER'].includes(pos.type);
             const cashColor = isCashDebit ? 'rose' : 'emerald';
             const cashSign = isCashDebit ? '-' : '+';
 
             return `
             <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                <td class="px-6 py-4 pl-12">
-                    <p class="font-bold text-xs">${pos.name}</p>
+                <td class="px-5 py-3.5 pl-10">
+                    <p class="font-bold text-xs text-slate-900 dark:text-white">${pos.name}</p>
                     <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tight">${pos.ticker || 'CASH'}</p>
                 </td>
-                <td class="px-6 py-4">
+                <td class="px-5 py-3.5">
                     <span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-bold">${pos.portfolioName}</span>
                 </td>
-                <td class="px-6 py-4 font-bold text-slate-400 text-xs">${pos.year}</td>
-                <td class="px-6 py-4 font-bold text-xs">${isTrade ? formatNumber(pos.quantity, 0) : '—'}</td>
-                <td class="px-6 py-4 font-mono text-[11px] text-slate-500">${isTrade ? formatCurrency(pos.pmc, 'EUR') : '—'}</td>
-                <td class="px-6 py-4 font-mono text-[11px] text-slate-500">${isTrade ? formatCurrency(pos.sellPrice, 'EUR') : '—'}</td>
-                <td class="px-6 py-4 font-mono text-xs ${!isTrade ? 'text-' + cashColor + '-600 font-bold' : ''}">
+                <td class="px-5 py-3.5 font-bold text-slate-400 text-xs">${pos.year}</td>
+                <td class="px-5 py-3.5 font-bold text-xs">${isTrade ? formatNumber(pos.quantity, 0) : '—'}</td>
+                <td class="px-5 py-3.5 font-mono text-[11px] text-slate-500">${isTrade ? formatCurrency(pos.pmc, 'EUR') : '—'}</td>
+                <td class="px-5 py-3.5 font-mono text-[11px] text-slate-500">${isTrade ? formatCurrency(pos.sellPrice, 'EUR') : '—'}</td>
+                <td class="px-5 py-3.5 font-mono text-xs ${!isTrade ? 'text-' + cashColor + '-600 font-bold' : ''}">
                     ${!isTrade ? cashSign : ''}${formatCurrency(pos.totalProceeds, 'EUR', 0)}
                 </td>
-                <td class="px-6 py-4 font-mono text-xs">${isTrade ? formatCurrency(pos.totalCostBasis, 'EUR', 0) : '—'}</td>
-                <td class="px-6 py-4 text-right">
+                <td class="px-5 py-3.5 font-mono text-xs">${isTrade ? formatCurrency(pos.totalCostBasis, 'EUR', 0) : '—'}</td>
+                <td class="px-5 py-3.5 text-right">
                     ${isTrade ? `
                         <p class="font-bold text-${color}-500 font-mono text-xs">${sign}${formatCurrency(pos.realizedGain, 'EUR', 0)}</p>
                         <p class="text-[9px] font-bold text-${color}-500/80 font-mono">${sign}${formatNumber(pos.gainPct, 1)}%</p>
@@ -298,10 +766,1325 @@
             `;
         }
 
+        // ─── DIVIDENDS & PROJECTIONS LOGIC ────────────────────────────────────
+        async function loadHoldings() {
+            try {
+                const res = await fetch('/api/portfolios');
+                if (!res.ok) return;
+                const pData = await res.json();
+                for (const p of (pData.portfolios || [])) {
+                    const dRes = await fetch('/api/portfolios/' + p.id);
+                    if (!dRes.ok) continue;
+                    const details = await dRes.json();
+                    if (details.holdings) {
+                        details.holdings.forEach(h => {
+                            if (!globalHoldings[h.ticker]) globalHoldings[h.ticker] = { cost: 0, currentValue: 0 };
+                            globalHoldings[h.ticker].cost += (h.totalCostInPCurr || 0);
+                            globalHoldings[h.ticker].currentValue += (h.currentValue || 0);
+                        });
+                    }
+                }
+                if (document.getElementById('asset-yield-year-filter')) {
+                    renderAssetYearYields();
+                }
+            } catch (err) { console.error('Error loading holdings:', err); }
+        }
+
+        async function loadDividends() {
+            try {
+                const res = await fetch('/api/analytics/dividends');
+                rawDivData = await res.json();
+                
+                totalDividendsSum = rawDivData.reduce((sum, d) => sum + d.amount, 0);
+                updateHeroSummary();
+
+                const currentYear = new Date().getFullYear().toString();
+                const years = [...new Set(rawDivData.map(d => d.date.split('-')[0]))].sort((a,b) => b - a);
+                divCollapsedGroups = new Set(years.filter(y => y !== currentYear));
+
+                const yearFilter = document.getElementById('asset-yield-year-filter');
+                if (yearFilter) {
+                    yearFilter.innerHTML = '<option value="all">Tutti gli Anni</option>' + years.map(y => `<option value="${y}">${y}</option>`).join('');
+                    yearFilter.value = currentYear;
+                }
+
+                renderDividends();
+                renderHistoricalChart();
+            } catch (err) { console.error('Error loading dividends:', err); }
+        }
+
+        function toggleDivGroup(key) {
+            if (divCollapsedGroups.has(key)) {
+                divCollapsedGroups.delete(key);
+            } else {
+                divCollapsedGroups.add(key);
+            }
+            renderDividends();
+        }
+
+        function getUnifiedDividendData() {
+            let combined = [...rawDivData];
+            if (window.globalProjData && window.globalProjData.assets) {
+                const projections = window.globalProjData.assets.filter(a => a.tag !== 'REGISTRATO');
+                projections.forEach(p => {
+                    combined.push({
+                        isProjection: true,
+                        id: p.id,
+                        assetTicker: p.ticker,
+                        name: p.name,
+                        isin: p.isin,
+                        assetType: p.assetType,
+                        portfolioName: 'N/A',
+                        date: p.date,
+                        amount: p.totalAmount, // net
+                        gross: p.gross || p.totalAmount,
+                        tax: p.tax || 0,
+                        tag: p.tag
+                    });
+                });
+            }
+            return combined;
+        }
+
+        function renderDividends() {
+            const body = document.getElementById('dividends-table-body');
+            const groupBy = document.getElementById('div-group-by')?.value || 'year';
+            const filterText = (document.getElementById('div-filter-ticker')?.value || '').toLowerCase();
+
+            let filtered = getUnifiedDividendData();
+
+            if (filterText) {
+                filtered = filtered.filter(d => 
+                    (d.assetTicker || d.ticker || '').toLowerCase().includes(filterText) ||
+                    (d.name && d.name !== 'null' ? d.name : '').toLowerCase().includes(filterText)
+                );
+            }
+
+            if (groupBy !== divCurrentGroupBy) {
+                divCollapsedGroups = new Set();
+                divCurrentGroupBy = groupBy;
+                if (groupBy === 'year') {
+                    const years = [...new Set(filtered.map(d => d.date.split('-')[0]))];
+                    divCollapsedGroups = new Set(years);
+                }
+            }
+
+            if (filtered.length === 0) {
+                body.innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-slate-500 italic">Nessun dividendo o proiezione corrispondente ai filtri.</td></tr>';
+                return;
+            }
+
+            if (groupBy === 'none') {
+                body.innerHTML = filtered.sort((a,b) => new Date(b.date) - new Date(a.date)).map(d => renderDivRow(d)).join('');
+            } else {
+                const groups = {};
+                filtered.forEach(d => {
+                    let key = d[groupBy] || 'N/A';
+                    if (groupBy === 'year') key = d.date.split('-')[0];
+                    
+                    if (!groups[key]) {
+                        groups[key] = {
+                            items: [],
+                            actualNet: 0,
+                            projectedNet: 0,
+                            totalNet: 0,
+                            actualGross: 0,
+                            projectedGross: 0,
+                            totalGross: 0
+                        };
+                    }
+                    groups[key].items.push(d);
+                    const net = Number(d.amount) || 0;
+                    const gross = Number(d.gross || d.amount) || 0;
+                    if (!d.isProjection || d.tag === 'REGISTRATO') {
+                        groups[key].actualNet += net;
+                        groups[key].actualGross += gross;
+                    } else {
+                        groups[key].projectedNet += net;
+                        groups[key].projectedGross += gross;
+                    }
+                    groups[key].totalNet += net;
+                    groups[key].totalGross += gross;
+                });
+
+                const keys = Object.keys(groups).sort((a, b) => {
+                    if (groupBy === 'year') return b - a;
+                    return a.localeCompare(b);
+                });
+
+                const currentYearStr = (window.globalProjData?.year?.toString()) || (new Date().getFullYear().toString());
+
+                let html = '';
+                keys.forEach(key => {
+                    const group = groups[key];
+                    const isCollapsed = divCollapsedGroups.has(key);
+                    const icon = isCollapsed ? 'chevron_right' : 'expand_more';
+                    const isCurrentYear = (groupBy === 'year' && key === currentYearStr);
+
+                    html += `
+                        <tr class="bg-slate-50/80 dark:bg-slate-900/60 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors select-none" onclick="toggleDivGroup('${key}')">
+                            <td class="px-5 py-3 border-y border-slate-200 dark:border-slate-800" colspan="3">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-slate-400 text-lg">${icon}</span>
+                                    <span class="text-xs font-black uppercase tracking-widest text-primary">${key}</span>
+                                    <span class="text-[10px] text-slate-500 font-bold ml-1">(${group.items.length} record)</span>
+                                </div>
+                            </td>
+                            <td class="px-5 py-3 border-y border-slate-200 dark:border-slate-800 text-right">
+                                <div class="font-mono text-xs font-black text-emerald-500">
+                                    ${isCurrentYear && group.projectedNet > 0 
+                                        ? `${formatCurrency(group.actualNet, 'EUR')} <span class="text-[10px] font-bold text-slate-400 font-sans tracking-normal">Incassati</span>` 
+                                        : formatCurrency(group.totalNet, 'EUR')}
+                                </div>
+                                ${isCurrentYear && group.projectedNet > 0 ? `
+                                    <div class="text-[9px] font-normal text-slate-400 dark:text-slate-500 tracking-tight">
+                                        Totale Previsto: <strong class="text-slate-600 dark:text-slate-300 font-semibold">${formatCurrency(group.totalNet, 'EUR')}</strong> (Attesi: ${formatCurrency(group.projectedNet, 'EUR')})
+                                    </div>
+                                ` : ''}
+                            </td>
+                            <td class="px-5 py-3 border-y border-slate-200 dark:border-slate-800 text-right font-mono text-xs font-bold text-slate-600 dark:text-slate-400">
+                                ${formatCurrency(group.totalGross, 'EUR')}
+                            </td>
+                            <td class="px-5 py-3 border-y border-slate-200 dark:border-slate-800"></td>
+                        </tr>
+                    `;
+                    
+                    if (!isCollapsed) {
+                        group.items.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(d => {
+                            html += renderDivRow(d);
+                        });
+                    }
+                });
+                body.innerHTML = html;
+            }
+        }
+
+        function renderDivRow(d) {
+            const isProj = d.isProjection;
+            let ticker = d.assetTicker || d.ticker || '???';
+            let name = d.name && d.name !== 'null' ? d.name : ticker;
+            
+            const isinMatch = name.match(/\(([A-Z0-9]{12})\)/) || name.match(/([A-Z0-9]{12})/);
+            let isin = d.isin || (isinMatch ? isinMatch[1] : null);
+
+            const isBond = d.assetType && ['Bond', 'ETF Obblig', 'Deposito Vincolato', 'ETF Monetario'].includes(d.assetType) 
+                           || ticker.toUpperCase().startsWith('BTP') 
+                           || ticker.toUpperCase().startsWith('BOT');
+
+            if (isBond && isin) {
+                if (!ticker.includes(isin)) ticker = `${ticker} (${isin})`;
+                name = name.replace(`(${isin})`, '').replace(isin, '').trim();
+                if (name === '' || name === '()') name = ticker;
+            }
+            const letters = ticker.substring(0, 4).toUpperCase();
+            const portName = d.portfolioName || 'N/A';
+            const date = d.date;
+            
+            const divNetto = d.amount || 0;
+            const divLordo = d.gross || (divNetto + (d.tax || 0));
+
+            const tag = isProj ? d.tag : 'STORICO';
+
+            let badge = '';
+            if (!isProj || tag === 'REGISTRATO') badge = '<span class="px-1.5 py-0.5 rounded inline-block text-[9px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">Ricevuto</span>';
+            else if (tag === 'YF') badge = '<span class="px-1.5 py-0.5 rounded inline-block text-[9px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">YF</span>';
+            else if (tag === 'SIMULATO') badge = '<span class="px-1.5 py-0.5 rounded inline-block text-[9px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20">Sim</span>';
+            else if (tag === 'MANUALE') badge = '<span class="px-1.5 py-0.5 rounded inline-block text-[9px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">Man</span>';
+            else if (tag === 'STORICO') badge = '<span class="px-1.5 py-0.5 rounded inline-block text-[9px] font-bold bg-slate-500/10 text-slate-500 border border-slate-500/20">Hist</span>';
+
+            let actionsHtml = '';
+            if (!isProj || tag === 'REGISTRATO') {
+                actionsHtml = `
+                    <div class="flex items-center justify-end gap-1.5">
+                        <button onclick="openDuplicateDividendModal('${d.id}', false)" class="text-slate-400 hover:text-blue-500 transition-colors cursor-pointer" title="Duplica"><span class="material-symbols-outlined text-sm">content_copy</span></button>
+                        <button onclick="openEditConfirmedModal(${d.id}, true)" class="text-slate-400 hover:text-primary transition-colors cursor-pointer" title="Modifica"><span class="material-symbols-outlined text-sm">edit</span></button>
+                        <button onclick="deleteConfirmedDividend(${d.id})" class="text-slate-400 hover:text-red-500 transition-colors cursor-pointer" title="Elimina"><span class="material-symbols-outlined text-sm">delete</span></button>
+                    </div>
+                `;
+            } else {
+                actionsHtml = `
+                    <div class="flex items-center justify-end gap-1.5">
+                        <button onclick="openDuplicateDividendModal('${d.id}', true)" class="text-slate-400 hover:text-blue-500 transition-colors cursor-pointer" title="Duplica"><span class="material-symbols-outlined text-sm">content_copy</span></button>
+                        <button onclick="openConfirmModal(${d.id})" class="text-emerald-500 hover:text-emerald-600 transition-colors cursor-pointer" title="Conferma Dividendo"><span class="material-symbols-outlined text-sm">check_circle</span></button>
+                        <button onclick="deleteProjection(${d.id})" class="text-slate-400 hover:text-red-500 transition-colors cursor-pointer" title="Elimina"><span class="material-symbols-outlined text-sm">delete</span></button>
+                    </div>
+                `;
+            }
+
+            const now = new Date();
+            const currentMonthStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+            const isCurrentMonth = date.startsWith(currentMonthStr);
+            const rowClass = isCurrentMonth ? 'bg-emerald-500/10 dark:bg-emerald-500/5' : '';
+
+            return `
+            <tr class="group hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors ${rowClass}">
+                <td class="px-5 py-2">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-black text-[9px] shrink-0 uppercase border border-primary/20">
+                            ${letters}
+                        </div>
+                        <div class="overflow-hidden">
+                            <p class="font-bold text-sm text-slate-900 dark:text-white leading-none truncate">${name}</p>
+                            <p class="text-[8px] text-slate-400 uppercase font-black tracking-widest mt-0.5">${ticker} ${portName !== 'N/A' ? '• ' + portName : ''}</p>
+                        </div>
+                    </div>
+                </td>
+                <td class="px-5 py-2 text-center font-mono text-[10px] font-bold text-slate-500">${date}</td>
+                <td class="px-5 py-2 text-center">${badge}</td>
+                <td class="px-5 py-2 text-right font-black font-mono text-sm ${isProj ? 'text-amber-500' : 'text-emerald-500'}">${divNetto > 0 ? '+'+formatCurrency(divNetto, 'EUR') : formatCurrency(divNetto, 'EUR')}</td>
+                <td class="px-5 py-2 text-right font-bold font-mono text-[10px] text-slate-500">${formatCurrency(divLordo, 'EUR')}</td>
+                <td class="px-5 py-2 text-right">${actionsHtml}</td>
+            </tr>
+            `;
+        }
+
+        window.renderAssetYearYields = function() {
+            const body = document.getElementById('asset-yields-table-body');
+            if (!body) return;
+            
+            const selectedYear = document.getElementById('asset-yield-year-filter')?.value || 'all';
+            let data = rawDivData.filter(d => !d.isProjection || d.tag === 'REGISTRATO');
+            
+            if (selectedYear !== 'all') {
+                data = data.filter(d => d.date.startsWith(selectedYear));
+            }
+            
+            const groups = {};
+            data.forEach(d => {
+                const ticker = d.assetTicker || d.ticker || 'CASH';
+                if (!groups[ticker]) {
+                    let name = d.name && d.name !== 'null' ? d.name : ticker;
+                    const isinMatch = name.match(/\(([A-Z0-9]{12})\)/) || name.match(/([A-Z0-9]{12})/);
+                    let isin = d.isin || (isinMatch ? isinMatch[1] : null);
+                    
+                    const isBond = d.assetType && ['Bond', 'ETF Obblig', 'Deposito Vincolato', 'ETF Monetario'].includes(d.assetType) 
+                                || ticker.toUpperCase().startsWith('BTP') 
+                                || ticker.toUpperCase().startsWith('BOT');
+
+                    if (isBond && isin) {
+                        if (!ticker.includes(isin)) name = `${ticker} (${isin})`;
+                        name = name.replace(`(${isin})`, '').replace(isin, '').trim();
+                        if (name === '' || name === '()') name = ticker;
+                    }
+
+                    groups[ticker] = {
+                        ticker: ticker,
+                        name: name,
+                        gross: 0,
+                        tax: 0,
+                        net: 0
+                    };
+                }
+                groups[ticker].gross += (d.gross || (d.amount + (d.tax || 0)) || 0);
+                groups[ticker].tax += (d.tax || 0);
+                groups[ticker].net += (d.amount || 0);
+            });
+            
+            const sortedKeys = Object.keys(groups).sort((a,b) => groups[b].gross - groups[a].gross);
+            
+            if (sortedKeys.length === 0) {
+                body.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-slate-500 italic">Nessun dato fiscale trovato per questo periodo.</td></tr>';
+                return;
+            }
+            
+            body.innerHTML = sortedKeys.map(key => {
+                const g = groups[key];
+                const taxPercent = g.gross > 0 ? (g.tax / g.gross) * 100 : 0;
+                const letters = g.ticker.substring(0, 4).toUpperCase();
+                
+                let yieldOnCost = 0;
+                if (globalHoldings[g.ticker] && globalHoldings[g.ticker].cost > 0) {
+                    yieldOnCost = (g.gross / globalHoldings[g.ticker].cost) * 100;
+                }
+                let yieldBadge = yieldOnCost > 0 ? `<div class="text-[9px] text-slate-400 font-bold mt-0.5" title="Yield on Cost (Rendimento sul Prezzo Medio di Carico)">YOC: <span class="text-indigo-500 font-black">${yieldOnCost.toFixed(2)}%</span></div>` : '';
+                
+                return `
+                <tr class="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
+                    <td class="px-5 py-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center font-black text-[9px] shrink-0 uppercase border border-indigo-500/20">
+                                ${letters}
+                            </div>
+                            <div class="overflow-hidden">
+                                <p class="font-bold text-sm text-slate-900 dark:text-white leading-none truncate">${g.name}</p>
+                                <p class="text-[8px] text-slate-400 uppercase font-black tracking-widest mt-0.5">${g.ticker}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-5 py-3 text-right">
+                        <div class="font-black font-mono text-sm text-slate-700 dark:text-slate-300">${formatCurrency(g.gross, 'EUR')}</div>
+                        ${yieldBadge}
+                    </td>
+                    <td class="px-5 py-3 text-right font-mono text-sm text-slate-500">
+                        ${formatCurrency(g.tax, 'EUR')}
+                    </td>
+                    <td class="px-5 py-3 text-right font-black font-mono text-sm text-emerald-500">
+                        ${formatCurrency(g.net, 'EUR')}
+                    </td>
+                    <td class="px-5 py-3 text-right">
+                        <span class="inline-flex items-center justify-center px-2 py-1 rounded bg-rose-500/10 text-rose-500 border border-rose-500/20 font-black font-mono text-xs">
+                            ${taxPercent.toFixed(1)}%
+                        </span>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        };
+
+        // Charts Instances
+        let projectionChart = null;
+        let histChartInstance = null;
+
+        function fmt(v) {
+            return '€ ' + (v || 0).toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        }
+
+        function renderHistoricalChart() {
+            if (histChartInstance) histChartInstance.destroy();
+            const canvasEl = document.getElementById('historicalChart');
+            if (!canvasEl) return;
+            const ctx = canvasEl.getContext('2d');
+            
+            const grouped = {};
+            rawDivData.forEach(d => {
+                const year = d.date.split('-')[0];
+                grouped[year] = (grouped[year] || 0) + d.amount;
+            });
+            const labels = Object.keys(grouped).sort();
+            const data = labels.map(y => grouped[y]);
+
+            const isDark = document.documentElement.classList.contains('dark');
+            const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
+            const textColor = isDark ? '#94a3b8' : '#64748b';
+
+            histChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Incassato',
+                        data: data,
+                        backgroundColor: (ctx2) => {
+                            const chart = ctx2.chart;
+                            const {ctx: c, chartArea} = chart;
+                            if (!chartArea) return 'rgba(16,185,129,0.4)';
+                            const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                            g.addColorStop(0, 'rgba(16,185,129,0.75)');
+                            g.addColorStop(1, 'rgba(16,185,129,0.12)');
+                            return g;
+                        },
+                        hoverBackgroundColor: '#10b981',
+                        borderRadius: 6,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: isDark ? 'rgba(15,23,42,0.96)' : 'rgba(255,255,255,0.97)',
+                            titleColor: isDark ? '#f1f5f9' : '#0f172a',
+                            bodyColor: isDark ? '#cbd5e1' : '#334155',
+                            borderColor: isDark ? '#334155' : '#e2e8f0',
+                            borderWidth: 1,
+                            padding: 10,
+                            cornerRadius: 8,
+                            boxPadding: 4,
+                            callbacks: {
+                                label: (context) => ` ${formatCurrency(context.parsed.y, 'EUR', 2)}`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            border: { display: false },
+                            ticks: { color: textColor, font: { size: 10, weight: '700' } }
+                        },
+                        y: {
+                            grid: { color: gridColor, drawTicks: false },
+                            border: { display: false },
+                            ticks: {
+                                color: textColor,
+                                font: { size: 10 },
+                                maxTicksLimit: 4,
+                                padding: 6,
+                                callback: v => {
+                                    if (v >= 1000) return (v/1000).toFixed(1) + 'K€';
+                                    return v.toFixed(0) + '€';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function loadProjections() {
+            try {
+                const res = await fetch('/api/analytics/dividend-projections');
+                if (!res.ok) throw new Error('API error');
+                const data = await res.json();
+                window.globalProjData = data;
+
+                if (data.assets && data.assets.filter(a => a.tag !== 'REGISTRATO').length === 0 && !window.hasTriedReset) {
+                    window.hasTriedReset = true;
+                    window.resetProjections();
+                    return;
+                }
+
+                document.querySelectorAll('#proj-year, .proj-year-lbl').forEach(el => el.textContent = data.year);
+
+                const elActual = document.getElementById('proj-actual');
+                const elTotal = document.getElementById('proj-total');
+                const elRemaining = document.getElementById('proj-remaining');
+                if (elActual) elActual.textContent = fmt(data.totalReceived || 0);
+                if (elTotal) elTotal.textContent = fmt(data.totalExpected || 0);
+                if (elRemaining) elRemaining.textContent = fmt(data.totalRemaining || 0);
+
+                const labels = data.months.map(m => m.name);
+                const actualData = data.months.map(m => m.actual);
+                const displayData = data.months.map(m => m.display);
+                const tickersData = data.months.map(m => m.tickers.join(', '));
+
+                const isDark = document.documentElement.classList.contains('dark');
+                const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+                const textColor = isDark ? '#94a3b8' : '#64748b';
+
+                if (projectionChart) projectionChart.destroy();
+                const chartCanvas = document.getElementById('projectionChart');
+                if (chartCanvas) {
+                    const ctx = chartCanvas.getContext('2d');
+                    projectionChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels,
+                            datasets: [
+                                {
+                                    label: 'Ricevuto',
+                                    data: actualData,
+                                    backgroundColor: (ctx2) => {
+                                        const chart = ctx2.chart;
+                                        const {ctx: c, chartArea} = chart;
+                                        if (!chartArea) return 'rgba(16,185,129,0.65)';
+                                        const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                                        g.addColorStop(0, 'rgba(16,185,129,0.85)');
+                                        g.addColorStop(1, 'rgba(16,185,129,0.25)');
+                                        return g;
+                                    },
+                                    hoverBackgroundColor: '#10b981',
+                                    borderRadius: 6,
+                                    borderSkipped: false
+                                },
+                                {
+                                    label: 'Proiettato',
+                                    data: displayData,
+                                    backgroundColor: 'rgba(6,182,212,0.45)',
+                                    borderColor: 'rgba(6,182,212,0.9)',
+                                    borderWidth: 1.5,
+                                    borderRadius: 6,
+                                    borderSkipped: false,
+                                    hoverBackgroundColor: 'rgba(6,182,212,0.7)'
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            layout: { padding: { top: 25, bottom: 20 } },
+                            interaction: { mode: 'index', intersect: false },
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    backgroundColor: isDark ? 'rgba(15,23,42,0.96)' : 'rgba(255,255,255,0.97)',
+                                    titleColor: isDark ? '#f1f5f9' : '#0f172a',
+                                    bodyColor: isDark ? '#cbd5e1' : '#334155',
+                                    borderColor: isDark ? '#334155' : '#e2e8f0',
+                                    borderWidth: 1,
+                                    padding: 12,
+                                    cornerRadius: 10,
+                                    boxPadding: 4,
+                                    usePointStyle: true,
+                                    callbacks: {
+                                        afterBody: (context) => {
+                                            const idx = context[0].dataIndex;
+                                            if (tickersData[idx]) return ['', '• Asset: ' + tickersData[idx]];
+                                            return '';
+                                        },
+                                        label: ctx => ` ${ctx.dataset.label}: ${formatCurrency(ctx.raw, 'EUR', 0)}`
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    stacked: true,
+                                    grid: { display: false },
+                                    border: { display: false },
+                                    ticks: { color: textColor, font: { size: 10, weight: '700' } }
+                                },
+                                y: {
+                                    stacked: true,
+                                    grid: { color: gridColor, drawTicks: false },
+                                    border: { display: false },
+                                    ticks: {
+                                        color: textColor,
+                                        font: { size: 10 },
+                                        maxTicksLimit: 4,
+                                        padding: 6,
+                                        callback: v => {
+                                            if (v >= 1000) return (v/1000).toFixed(1) + 'K€';
+                                            return v.toFixed(0) + '€';
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        plugins: [{
+                            id: 'barLabelsAndTickers',
+                            afterDatasetsDraw(chart) {
+                                const {ctx} = chart;
+                                ctx.save();
+                                ctx.textAlign = 'center';
+                                ctx.font = 'bold 9px ' + (getComputedStyle(document.documentElement).getPropertyValue('--app-font-family') || 'sans-serif');
+                                ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
+
+                                const chartData = chart.data;
+                                const meta0 = chart.getDatasetMeta(0);
+                                const meta1 = chart.getDatasetMeta(1);
+                                const xAxis = chart.scales.x;
+
+                                chartData.labels.forEach((label, i) => {
+                                    const val0 = chartData.datasets[0].data[i] || 0;
+                                    const val1 = chartData.datasets[1].data[i] || 0;
+                                    const total = val0 + val1;
+                                    
+                                    const xPos = xAxis.getPixelForTick(i);
+                                    
+                                    if (total > 0) {
+                                        ctx.textBaseline = 'bottom';
+                                        const topY = Math.min(meta0.data[i].y, meta1.data[i].y);
+                                        ctx.fillText('€' + Math.round(total), xPos, topY - 8);
+                                    }
+                                });
+                                ctx.restore();
+                            }
+                        }]
+                    });
+                }
+
+                const manualSelect = document.getElementById('manual-ticker');
+                if (manualSelect && data.openTickers) {
+                    const currentVal = manualSelect.value;
+                    const options = data.openTickers.map(t => `<option value="${t.ticker}">${t.ticker} - ${t.name}</option>`).join('');
+                    manualSelect.innerHTML = `<option value="" disabled selected>Seleziona un asset...</option>` + options;
+                    if (currentVal && data.openTickers.find(t => t.ticker === currentVal)) {
+                        manualSelect.value = currentVal;
+                    }
+                }
+
+                renderDividends();
+            } catch (err) {
+                console.error('Error loading projections:', err);
+            }
+        }
+
+        // ─── MODAL CONTROLLERS & ACTIONS ──────────────────────────────────────
+        window.openManualModal = () => {
+            document.getElementById('manual-modal-title').innerText = 'Nuova Previsione';
+            document.getElementById('manual-id').value = '';
+            document.getElementById('manual-modal').classList.remove('hidden');
+        };
+
+        window.openEditModal = (id) => {
+            const proj = window.globalProjData?.assets?.find(a => a.id === id);
+            if (!proj) return;
+            document.getElementById('manual-modal-title').innerText = 'Modifica Previsione';
+            document.getElementById('manual-id').value = proj.id;
+            document.getElementById('manual-ticker').value = proj.ticker;
+            document.getElementById('manual-date').value = proj.date;
+            document.getElementById('manual-amount').value = proj.amount || (proj.totalAmount / (proj.yield > 0 ? proj.totalAmount / proj.amount : 1));
+            document.getElementById('manual-modal').classList.remove('hidden');
+        };
+
+        window.openDuplicateDividendModal = async (id, isProj = false) => {
+            let item;
+            if (!isProj) {
+                const raw = rawDivData.find(d => d.id == id);
+                if (raw) {
+                    item = {
+                        ticker: raw.assetTicker || raw.ticker,
+                        name: raw.name,
+                        date: raw.date,
+                        gross: raw.gross || ((raw.amount || 0) + (raw.tax || 0)),
+                        tax: raw.tax || 0,
+                        amount: raw.amount,
+                        portfolioId: raw.portfolioId
+                    };
+                }
+            } else {
+                const proj = window.globalProjData?.assets?.find(a => a.id == id);
+                if (proj) {
+                    item = {
+                        ticker: proj.ticker,
+                        name: proj.name,
+                        date: proj.date,
+                        gross: proj.gross || proj.totalAmount || 0,
+                        tax: proj.tax || 0,
+                        amount: proj.totalAmount,
+                        portfolioId: proj.portfolioId
+                    };
+                }
+            }
+            if (!item) return;
+
+            document.getElementById('manual-modal').classList.add('hidden');
+            document.getElementById('confirm-id').value = '';
+            document.getElementById('confirm-tx-id').value = '';
+            document.getElementById('confirm-is-duplicate').value = 'true';
+            
+            const titleEl = document.getElementById('confirm-modal-title');
+            if (titleEl) {
+                titleEl.innerText = 'Duplica Dividendo';
+                titleEl.className = 'text-sm font-black tracking-tight uppercase tracking-widest text-blue-500';
+            }
+            document.getElementById('confirm-asset-label').innerText = `DUPLICA: ${item.ticker}${item.name && item.name !== 'null' ? ' - ' + item.name : ''}`;
+            
+            const tickerInput = document.getElementById('confirm-ticker');
+            if (tickerInput) {
+                tickerInput.value = item.ticker;
+                tickerInput.readOnly = false;
+            }
+
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('confirm-date').value = today;
+
+            const grossVal = parseFloat(item.gross || 0);
+            const taxVal = parseFloat(item.tax || 0);
+            document.getElementById('confirm-gross').value = grossVal.toFixed(2);
+            document.getElementById('confirm-tax').value = taxVal.toFixed(2);
+            document.getElementById('confirm-net').value = (grossVal - taxVal).toFixed(2);
+
+            document.getElementById('confirm-portfolio-group').classList.remove('hidden');
+            document.getElementById('confirm-portfolio').required = true;
+            document.getElementById('confirm-withdrawal-group').classList.remove('hidden');
+            const wCb = document.getElementById('confirm-create-withdrawal');
+            if (wCb) wCb.checked = false;
+
+            const submitBtn = document.getElementById('confirm-submit-btn');
+            if (submitBtn) {
+                submitBtn.innerText = 'Duplica e Salva';
+                submitBtn.className = 'w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg text-xs transition-colors shadow-sm';
+            }
+
+            try {
+                const res = await fetch('/api/portfolios');
+                const pData = await res.json();
+                const sel = document.getElementById('confirm-portfolio');
+                sel.innerHTML = '<option value="" disabled selected>Seleziona portafoglio...</option>' + 
+                                (pData.portfolios || []).map(p => `<option value="${p.id}" ${item.portfolioId && item.portfolioId == p.id ? 'selected' : ''}>${p.name} (${p.currency})</option>`).join('');
+                if (!sel.value && pData.portfolios?.length > 0) {
+                    sel.value = pData.portfolios[0].id;
+                }
+            } catch(e) { console.error(e); }
+
+            updateNetPreview();
+            document.getElementById('confirm-modal').classList.remove('hidden');
+        };
+
+        window.openConfirmModal = async (id) => {
+            const proj = window.globalProjData?.assets?.find(a => a.id === id);
+            if (!proj) return;
+            
+            document.getElementById('manual-modal').classList.add('hidden');
+            document.getElementById('confirm-id').value = proj.id;
+            document.getElementById('confirm-tx-id').value = '';
+            document.getElementById('confirm-is-duplicate').value = '';
+            
+            const titleEl = document.getElementById('confirm-modal-title');
+            if (titleEl) {
+                titleEl.innerText = 'Conferma Dividendo';
+                titleEl.className = 'text-sm font-black tracking-tight uppercase tracking-widest text-emerald-500';
+            }
+            const tickerInput = document.getElementById('confirm-ticker');
+            if (tickerInput) {
+                tickerInput.value = proj.ticker;
+                tickerInput.readOnly = true;
+            }
+            document.getElementById('confirm-asset-label').innerText = `${proj.ticker} - ${(proj.name && proj.name !== 'null') ? proj.name : ''}`;
+            document.getElementById('confirm-date').value = proj.date;
+            const grossVal = (proj.gross && proj.gross > 0) ? proj.gross : ((proj.totalAmount || 0) + (proj.tax || 0));
+            const taxVal = (proj.tax !== undefined && proj.tax !== null) ? proj.tax : 0;
+            const netVal = proj.totalAmount !== undefined ? proj.totalAmount : (grossVal - taxVal);
+            document.getElementById('confirm-gross').value = grossVal.toFixed(2);
+            document.getElementById('confirm-tax').value = taxVal.toFixed(2);
+            document.getElementById('confirm-net').value = netVal.toFixed(2);
+            if (window.resetConfirmCalcTracking) window.resetConfirmCalcTracking();
+            document.getElementById('confirm-portfolio-group').classList.remove('hidden');
+            document.getElementById('confirm-portfolio').required = true;
+            document.getElementById('confirm-withdrawal-group').classList.remove('hidden');
+            const wCb = document.getElementById('confirm-create-withdrawal');
+            if (wCb) wCb.checked = false;
+            
+            const submitBtn = document.getElementById('confirm-submit-btn');
+            if (submitBtn) {
+                submitBtn.innerText = 'Conferma e Salva';
+                submitBtn.className = 'w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg text-xs transition-colors shadow-sm';
+            }
+            
+            try {
+                const res = await fetch('/api/portfolios');
+                const pData = await res.json();
+                const sel = document.getElementById('confirm-portfolio');
+                sel.innerHTML = '<option value="" disabled selected>Seleziona portafoglio...</option>' + 
+                                pData.portfolios.map(p => `<option value="${p.id}">${p.name} (${p.currency})</option>`).join('');
+            } catch(e) { console.error(e); }
+
+            document.getElementById('confirm-modal').classList.remove('hidden');
+        };
+
+        window.openEditConfirmedModal = (txId, fromHistorical = false) => {
+            let item;
+            if (fromHistorical) {
+                const raw = rawDivData.find(d => d.id === txId);
+                if (raw) {
+                    item = {
+                        txId: raw.id,
+                        ticker: raw.assetTicker,
+                        name: raw.assetTicker,
+                        date: raw.date,
+                        totalAmount: raw.amount,
+                        tax: raw.tax,
+                        gross: raw.gross
+                    };
+                }
+            } else {
+                item = window.globalProjData?.assets?.find(a => a.txId === txId);
+            }
+
+            if (!item) return;
+
+            document.getElementById('confirm-id').value = '';
+            document.getElementById('confirm-tx-id').value = item.txId;
+            document.getElementById('confirm-is-duplicate').value = '';
+            
+            const titleEl = document.getElementById('confirm-modal-title');
+            if (titleEl) {
+                titleEl.innerText = 'Modifica Dividendo';
+                titleEl.className = 'text-sm font-black tracking-tight uppercase tracking-widest text-primary';
+            }
+            const tickerInput = document.getElementById('confirm-ticker');
+            if (tickerInput) {
+                tickerInput.value = item.ticker;
+                tickerInput.readOnly = true;
+            }
+            document.getElementById('confirm-asset-label').innerText = `MODIFICA: ${item.ticker} - ${(item.name && item.name !== 'null') ? item.name : ''}`;
+            document.getElementById('confirm-date').value = item.date;
+            const editGross = (item.gross || (item.totalAmount + (item.tax || 0)) || 0);
+            const editTax = (item.tax || 0);
+            const editNet = item.totalAmount !== undefined ? item.totalAmount : (editGross - editTax);
+            document.getElementById('confirm-gross').value = editGross.toFixed(2);
+            document.getElementById('confirm-tax').value = editTax.toFixed(2);
+            document.getElementById('confirm-net').value = editNet.toFixed(2);
+            if (window.resetConfirmCalcTracking) window.resetConfirmCalcTracking();
+            document.getElementById('confirm-portfolio-group').classList.add('hidden');
+            document.getElementById('confirm-portfolio').required = false;
+            document.getElementById('confirm-withdrawal-group').classList.add('hidden');
+            
+            const submitBtn = document.getElementById('confirm-submit-btn');
+            if (submitBtn) {
+                submitBtn.innerText = 'Aggiorna Transazione';
+                submitBtn.className = 'w-full py-2.5 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg text-xs transition-colors shadow-sm';
+            }
+
+            document.getElementById('confirm-modal').classList.remove('hidden');
+        };
+
+        // ─── 3-WAY CALCULATION SETUP ───────────────────────────────────────────
+        (function setupConfirm3Way() {
+            let lastEdited = 'gross';
+            let secondLastEdited = 'tax';
+            let isCalculating = false;
+            let taxMode = 'eur';
+
+            const grossEl = document.getElementById('confirm-gross');
+            const taxEl = document.getElementById('confirm-tax');
+            const netEl = document.getElementById('confirm-net');
+            const modeInput = document.getElementById('confirm-tax-mode');
+            const unitEl = document.getElementById('confirm-tax-unit');
+            const toggleBtn = document.getElementById('confirm-tax-toggle');
+            const hintEl = document.getElementById('confirm-tax-hint');
+
+            function updateTaxHint() {
+                if (!hintEl) return;
+                const g = parseFloat(grossEl.value) || 0;
+                const t = parseFloat(taxEl.value) || 0;
+                if (taxMode === 'eur') {
+                    const pct = g > 0 ? ((t / g) * 100) : 0;
+                    hintEl.innerText = `Eq. ${pct.toFixed(1)}%`;
+                } else {
+                    const eqEUR = (g * (t / 100));
+                    hintEl.innerText = `Eq. ${eqEUR.toFixed(2)} €`;
+                }
+            }
+
+            window.toggleConfirmTaxMode = function() {
+                const g = parseFloat(grossEl.value) || 0;
+                const t = parseFloat(taxEl.value) || 0;
+                
+                if (taxMode === 'eur') {
+                    taxMode = 'pct';
+                    if (modeInput) modeInput.value = 'pct';
+                    if (unitEl) unitEl.innerText = '(%)';
+                    if (toggleBtn) toggleBtn.innerText = '€';
+                    const pct = g > 0 ? ((t / g) * 100) : 26.0;
+                    taxEl.value = pct.toFixed(1);
+                } else {
+                    taxMode = 'eur';
+                    if (modeInput) modeInput.value = 'eur';
+                    if (unitEl) unitEl.innerText = '(€)';
+                    if (toggleBtn) toggleBtn.innerText = '%';
+                    const eqEUR = (g * (t / 100));
+                    taxEl.value = eqEUR.toFixed(2);
+                }
+                updateTaxHint();
+                flashCalculatedField(taxEl);
+            };
+
+            window.applyTaxRate = function(rate) {
+                const g = parseFloat(grossEl.value) || 0;
+                const n = parseFloat(netEl.value) || 0;
+
+                isCalculating = true;
+                try {
+                    if (g > 0) {
+                        const taxEUR = g * (rate / 100);
+                        netEl.value = (g - taxEUR).toFixed(2);
+                        if (taxMode === 'pct') {
+                            taxEl.value = rate.toString();
+                        } else {
+                            taxEl.value = taxEUR.toFixed(2);
+                        }
+                    } else if (n > 0) {
+                        const newGross = n / (1 - rate / 100);
+                        const taxEUR = newGross - n;
+                        grossEl.value = newGross.toFixed(2);
+                        if (taxMode === 'pct') {
+                            taxEl.value = rate.toString();
+                        } else {
+                            taxEl.value = taxEUR.toFixed(2);
+                        }
+                    } else {
+                        if (taxMode === 'pct') {
+                            taxEl.value = rate.toString();
+                        } else {
+                            taxEl.value = '0.00';
+                        }
+                    }
+                } finally {
+                    isCalculating = false;
+                }
+                updateTaxHint();
+                flashCalculatedField(taxEl);
+            };
+
+            window.resetConfirmCalcTracking = function() {
+                lastEdited = 'gross';
+                secondLastEdited = 'tax';
+                taxMode = 'eur';
+                if (modeInput) modeInput.value = 'eur';
+                if (unitEl) unitEl.innerText = '(€)';
+                if (toggleBtn) toggleBtn.innerText = '%';
+                updateTaxHint();
+            };
+
+            window.updateNetPreview = function() {
+                updateTaxHint();
+            };
+
+            function flashCalculatedField(el) {
+                if (!el) return;
+                el.classList.add('ring-2', 'ring-emerald-500', 'bg-emerald-50', 'dark:bg-emerald-950/40');
+                setTimeout(() => {
+                    el.classList.remove('ring-2', 'ring-emerald-500', 'bg-emerald-50', 'dark:bg-emerald-950/40');
+                }, 500);
+            }
+
+            window.calcConfirmField = function(target) {
+                const g = parseFloat(grossEl.value);
+                const t = parseFloat(taxEl.value);
+                const n = parseFloat(netEl.value);
+                let targetEl = null;
+
+                if (target === 'gross') {
+                    const valN = isNaN(n) ? 0 : n;
+                    if (taxMode === 'pct') {
+                        const rate = isNaN(t) ? 26 : t;
+                        if (rate < 100) {
+                            grossEl.value = (valN / (1 - rate / 100)).toFixed(2);
+                        }
+                    } else {
+                        const valT = isNaN(t) ? 0 : t;
+                        grossEl.value = (valN + valT).toFixed(2);
+                    }
+                    targetEl = grossEl;
+                    secondLastEdited = 'net';
+                    lastEdited = 'tax';
+                } else if (target === 'tax') {
+                    const valG = isNaN(g) ? 0 : g;
+                    const valN = isNaN(n) ? 0 : n;
+                    if (taxMode === 'pct') {
+                        const rate = valG > 0 ? (((valG - valN) / valG) * 100) : 26;
+                        taxEl.value = Math.max(0, rate).toFixed(1);
+                    } else {
+                        taxEl.value = Math.max(0, valG - valN).toFixed(2);
+                    }
+                    targetEl = taxEl;
+                    secondLastEdited = 'gross';
+                    lastEdited = 'net';
+                } else if (target === 'net') {
+                    const valG = isNaN(g) ? 0 : g;
+                    if (taxMode === 'pct') {
+                        const rate = isNaN(t) ? 26 : t;
+                        const taxEUR = valG * (rate / 100);
+                        netEl.value = (valG - taxEUR).toFixed(2);
+                    } else {
+                        const valT = isNaN(t) ? 0 : t;
+                        netEl.value = (valG - valT).toFixed(2);
+                    }
+                    targetEl = netEl;
+                    secondLastEdited = 'gross';
+                    lastEdited = 'tax';
+                }
+
+                if (targetEl) {
+                    flashCalculatedField(targetEl);
+                    updateTaxHint();
+                }
+            };
+
+            function onInput(field) {
+                if (isCalculating) return;
+
+                if (field !== lastEdited) {
+                    secondLastEdited = lastEdited;
+                    lastEdited = field;
+                }
+
+                const gStr = grossEl.value.trim();
+                const tStr = taxEl.value.trim();
+                const nStr = netEl.value.trim();
+
+                const g = parseFloat(gStr);
+                const t = parseFloat(tStr);
+                const n = parseFloat(nStr);
+
+                isCalculating = true;
+                try {
+                    if (taxMode === 'pct') {
+                        const rate = isNaN(t) ? 0 : t;
+                        if (field === 'tax') {
+                            if (!isNaN(g) && g > 0) {
+                                const taxEUR = g * (rate / 100);
+                                netEl.value = (g - taxEUR).toFixed(2);
+                            } else if (!isNaN(n) && n > 0 && rate < 100) {
+                                grossEl.value = (n / (1 - rate / 100)).toFixed(2);
+                            }
+                        } else if (field === 'gross') {
+                            if (!isNaN(g) && !isNaN(rate)) {
+                                const taxEUR = g * (rate / 100);
+                                netEl.value = (g - taxEUR).toFixed(2);
+                            }
+                        } else if (field === 'net') {
+                            if (!isNaN(n) && !isNaN(rate) && rate < 100) {
+                                grossEl.value = (n / (1 - rate / 100)).toFixed(2);
+                            }
+                        }
+                    } else {
+                        let target = null;
+                        if (field !== 'gross' && gStr === '') target = 'gross';
+                        else if (field !== 'tax' && tStr === '') target = 'tax';
+                        else if (field !== 'net' && nStr === '') target = 'net';
+                        else {
+                            const fields = ['gross', 'tax', 'net'];
+                            target = fields.find(f => f !== lastEdited && f !== secondLastEdited);
+                            if (!target) target = (field === 'net' ? 'gross' : (field === 'gross' ? 'net' : 'net'));
+                        }
+
+                        if (target === 'gross' && !isNaN(n) && !isNaN(t)) {
+                            grossEl.value = (n + t).toFixed(2);
+                        } else if (target === 'tax' && !isNaN(g) && !isNaN(n)) {
+                            taxEl.value = Math.max(0, g - n).toFixed(2);
+                        } else if (target === 'net' && !isNaN(g) && !isNaN(t)) {
+                            netEl.value = (g - t).toFixed(2);
+                        }
+                    }
+                } finally {
+                    isCalculating = false;
+                }
+                updateTaxHint();
+            }
+
+            if (grossEl && taxEl && netEl) {
+                grossEl.addEventListener('input', () => onInput('gross'));
+                taxEl.addEventListener('input', () => onInput('tax'));
+                netEl.addEventListener('input', () => onInput('net'));
+            }
+        })();
+
+        window.submitConfirmDividend = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('confirm-id').value;
+            const txId = document.getElementById('confirm-tx-id').value;
+            const isDuplicate = document.getElementById('confirm-is-duplicate')?.value === 'true';
+            const ticker = document.getElementById('confirm-ticker').value.trim().toUpperCase();
+            const portfolioId = document.getElementById('confirm-portfolio').value;
+            const date = document.getElementById('confirm-date').value;
+            const grossAmount = document.getElementById('confirm-gross').value;
+            const taxMode = document.getElementById('confirm-tax-mode')?.value || 'eur';
+            let rawTax = parseFloat(document.getElementById('confirm-tax').value) || 0;
+            const grossVal = parseFloat(grossAmount) || 0;
+            if (taxMode === 'pct') {
+                rawTax = grossVal * (rawTax / 100);
+            }
+            const tax = rawTax.toFixed(2);
+            const createWithdrawal = document.getElementById('confirm-create-withdrawal')?.checked || false;
+
+            try {
+                if (isDuplicate) {
+                    const grossVal = parseFloat(grossAmount) || 0;
+                    const taxVal = parseFloat(tax) || 0;
+                    const netVal = grossVal - taxVal;
+                    const res = await fetch('/api/transactions', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            portfolioId: parseInt(portfolioId, 10),
+                            type: 'DIVIDEND',
+                            assetTicker: ticker,
+                            ticker,
+                            date,
+                            grossAmount: grossVal,
+                            tax: taxVal,
+                            amount: netVal,
+                            price: 0,
+                            quantity: 0,
+                            notes: 'Dividendo duplicato',
+                            createWithdrawal
+                        })
+                    });
+                    if (res.ok) {
+                        window.closeConfirmModal();
+                        loadProjections();
+                        loadDividends();
+                    } else {
+                        const err = await res.json().catch(() => ({}));
+                        alert('Errore: ' + (err.error || 'Duplicazione fallita'));
+                    }
+                    return;
+                }
+
+                let url, method;
+                if (txId) {
+                    url = `/api/dividends/transactions/${txId}`;
+                    method = 'PUT';
+                } else {
+                    url = `/api/dividends/projections/${id}/confirm`;
+                    method = 'POST';
+                }
+
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ portfolioId, ticker, date, grossAmount, tax, createWithdrawal })
+                });
+                if (res.ok) {
+                    window.closeConfirmModal();
+                    loadProjections();
+                    loadDividends();
+                } else {
+                    const err = await res.json().catch(() => ({}));
+                    alert('Errore: ' + (err.error || 'Invio fallito'));
+                }
+            } catch (err) {
+                console.error('Error saving dividend:', err);
+            }
+        };
+
+        window.deleteConfirmedDividend = async (txId) => {
+            if (!(await ftConfirm('Eliminare definitivamente questa transazione di dividendo?'))) return;
+            try {
+                const res = await fetch(`/api/dividends/transactions/${txId}`, { method: 'DELETE' });
+                if (res.ok) {
+                    loadProjections();
+                    loadDividends();
+                }
+            } catch(e) { console.error(e); }
+        };
+
+        window.closeConfirmModal = () => {
+            document.getElementById('confirm-modal').classList.add('hidden');
+            document.getElementById('confirm-div-form').reset();
+            const isDup = document.getElementById('confirm-is-duplicate');
+            if (isDup) isDup.value = '';
+            const titleEl = document.getElementById('confirm-modal-title');
+            if (titleEl) {
+                titleEl.innerText = 'Conferma Dividendo';
+                titleEl.className = 'text-sm font-black tracking-tight uppercase tracking-widest text-emerald-500';
+            }
+            const submitBtn = document.getElementById('confirm-submit-btn');
+            if (submitBtn) {
+                submitBtn.innerText = 'Conferma e Salva';
+                submitBtn.className = 'w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg text-xs transition-colors shadow-sm';
+            }
+            const wCb = document.getElementById('confirm-create-withdrawal');
+            if (wCb) wCb.checked = false;
+        };
+
+        window.closeManualModal = () => {
+            document.getElementById('manual-modal').classList.add('hidden');
+            document.getElementById('manual-div-form').reset();
+            const confCheck = document.getElementById('manual-is-confirmed');
+            if (confCheck) confCheck.checked = false;
+            const wrap = document.getElementById('manual-confirmed-fields');
+            if (wrap) wrap.classList.add('hidden');
+            const submitBtn = document.getElementById('manual-submit-btn');
+            if (submitBtn) {
+                submitBtn.innerText = 'Salva Previsione';
+                submitBtn.className = 'flex-1 py-2.5 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg text-xs transition-colors shadow-sm shadow-primary/20';
+            }
+        };
+
+        window.toggleManualConfirmedFields = async () => {
+            const isConf = document.getElementById('manual-is-confirmed').checked;
+            const wrap = document.getElementById('manual-confirmed-fields');
+            const submitBtn = document.getElementById('manual-submit-btn');
+            const title = document.getElementById('manual-modal-title');
+            if (isConf) {
+                wrap.classList.remove('hidden');
+                document.getElementById('manual-portfolio').required = true;
+                if (title) title.innerText = 'Nuovo Dividendo Incassato';
+                if (submitBtn) {
+                    submitBtn.innerText = 'Salva e Registra';
+                    submitBtn.className = 'flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg text-xs transition-colors shadow-sm';
+                }
+                try {
+                    const res = await fetch('/api/portfolios');
+                    const pData = await res.json();
+                    const sel = document.getElementById('manual-portfolio');
+                    sel.innerHTML = '<option value="" disabled selected>Seleziona portafoglio...</option>' + 
+                                    pData.portfolios.map(p => `<option value="${p.id}">${p.name} (${p.currency})</option>`).join('');
+                } catch(e) { console.error(e); }
+            } else {
+                wrap.classList.add('hidden');
+                document.getElementById('manual-portfolio').required = false;
+                if (title) title.innerText = 'Nuova Previsione';
+                if (submitBtn) {
+                    submitBtn.innerText = 'Salva Previsione';
+                    submitBtn.className = 'flex-1 py-2.5 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg text-xs transition-colors shadow-sm shadow-primary/20';
+                }
+            }
+        };
+        
+        window.deleteProjection = async (id) => {
+            if(!(await ftConfirm('Vuoi davvero rimuovere questa proiezione? Se rimuovi una previsione generata automaticamente, il sistema non la riproporrà più a meno che tu non prema "Ricalcola".'))) return;
+            try {
+                const res = await fetch('/api/dividends/projections/' + id, { method: 'DELETE' });
+                if(res.ok) loadProjections();
+            } catch(e) { console.error(e); }
+        };
+
+        window.resetProjections = async () => {
+            if(window.hasTriedReset || await ftConfirm('Verranno cancellate tutte le proiezioni automatiche attuali e ricalcolate da zero basandosi sul portafoglio. Le tue aggiunte/modifiche testuali ("Manuale") verranno conservate.\nProcedere?')) {
+                const btn = document.getElementById('btn-recalc');
+                if(btn) btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">refresh</span> Calcolo...';
+                try {
+                    const res = await fetch('/api/dividends/projections/reset', { method: 'POST' });
+                    if(res.ok) {
+                        await loadProjections();
+                        await loadDividends();
+                    } else {
+                        alert('Errore ricalcolo previsioni.');
+                    }
+                } catch(e) { console.error(e); }
+                if(btn) btn.innerHTML = '<span class="material-symbols-outlined text-sm">refresh</span> Ricalcola Previsioni';
+            }
+        };
+
+        window.submitManualDividend = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('manual-id').value;
+            const ticker = document.getElementById('manual-ticker').value.trim().toUpperCase();
+            const exDate = document.getElementById('manual-date').value;
+            const amount = parseFloat(document.getElementById('manual-amount').value) || 0;
+            const isConfirmed = document.getElementById('manual-is-confirmed')?.checked;
+
+            try {
+                if (isConfirmed && !id) {
+                    const portfolioId = document.getElementById('manual-portfolio').value;
+                    const tax = parseFloat(document.getElementById('manual-tax').value) || 0;
+                    const createWithdrawal = document.getElementById('manual-create-withdrawal')?.checked || false;
+                    const res = await fetch('/api/transactions', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            portfolioId,
+                            type: 'DIVIDEND',
+                            assetTicker: ticker,
+                            date: exDate,
+                            amount,
+                            tax,
+                            createWithdrawal
+                        })
+                    });
+                    if (res.ok) {
+                        window.closeManualModal();
+                        loadProjections();
+                        loadDividends();
+                        return;
+                    } else {
+                        const err = await res.json();
+                        alert('Errore: ' + (err.error || 'Salvataggio fallito'));
+                        return;
+                    }
+                }
+
+                const url = id ? `/api/dividends/projections/${id}` : '/api/dividends/projections';
+                const method = id ? 'PUT' : 'POST';
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ticker, exDate, amount })
+                });
+                if (res.ok) {
+                    window.closeManualModal();
+                    loadProjections();
+                } else {
+                    alert('Errore salvataggio dividendo manuale.');
+                }
+            } catch (err) {
+                console.error('Error saving manual dividend:', err);
+            }
+        };
+
+        // ─── INITIALIZATION ───────────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', () => {
+            // Check query param for default tab
+            const urlParams = new URLSearchParams(window.location.search);
+            const activeTab = urlParams.get('tab');
+            if (activeTab === 'dividends') {
+                switchTab('dividends');
+            } else {
+                switchTab('closed');
+            }
+
+            // Load all required datasets in parallel
             loadHistory();
+            loadDividends();
+            loadProjections();
+            loadHoldings();
         });
     </script>
 </body>
 </html>
-</body></html>
