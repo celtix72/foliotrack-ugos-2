@@ -319,15 +319,16 @@
             }
             /* Variation Pill */
             .mob-header-var-pill {
-              padding: 6px 12px;
+              padding: 4px 8px;
               border-radius: 12px;
-              font-size: 15px;
+              font-size: 11px;
               font-weight: 900;
-              letter-spacing: -0.3px;
-              min-width: 65px;
+              letter-spacing: -0.2px;
+              min-width: 50px;
               text-align: center;
               background: rgba(255,255,255,0.06);
               border: 1px solid rgba(255,255,255,0.10);
+              white-space: nowrap;
             }
         `;
     }
@@ -739,27 +740,32 @@
             return `${num.toLocaleString('de-DE')} €`;
         };
 
-        const formatted = formatSafe(totalMove, 0);
-        const sign = totalMove > 0 ? '+' : '';
+        const formatGainPart = (num) => {
+            const rounded = Math.round(Number(num) || 0);
+            const sign = rounded > 0 ? '+' : (rounded < 0 ? '-' : '');
+            const valStr = formatSafe(Math.abs(rounded), 0);
+            return `${sign}${valStr}`;
+        };
+
+        const strTot = formatGainPart(totalMove);
+        const strReg = formatGainPart(changeReg);
+        const strPP  = formatGainPart(changePP);
 
         // Desktop
         const portfolioVar = document.getElementById('header-portfolio-var');
         if (portfolioVar) {
-            const signReg = changeReg > 0 ? '+' : '';
-            const formattedReg = formatSafe(changeReg, 0);
-            const hasPP = changePP !== 0;
-            const signPP = changePP > 0 ? '+' : '';
-            const formattedPP = hasPP ? formatSafe(changePP, 0) : '';
-
             const pillClass = isPos
                 ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/25'
                 : 'bg-rose-500/10 text-rose-500 border-rose-500/25';
 
             portfolioVar.innerHTML = `
-                <span class="flex items-center gap-1.5 ${pillClass} font-bold px-3 py-1 rounded-full border">
-                    <span class="material-symbols-outlined text-[16px]">${isPos ? 'trending_up' : 'trending_down'}</span>
-                    <span class="text-[13px] font-black">${signReg}${formattedReg}</span>
-                    ${hasPP ? `<span class="text-[10px] opacity-75 font-bold">(${signPP}${formattedPP})</span>` : ''}
+                <span class="flex items-center gap-1 ${pillClass} font-bold px-3 py-1 rounded-full border shadow-sm select-none" title="Variazione Giornaliera - Complessivo: ${strTot} | Mercati Aperti: ${strReg} | Pre/Post-Market: ${strPP}">
+                    <span class="material-symbols-outlined text-[15px]">${isPos ? 'trending_up' : 'trending_down'}</span>
+                    <span class="text-[12px] font-black tracking-tight">(${strTot})</span>
+                    <span class="text-[11px] opacity-60 font-bold mx-0.5">:</span>
+                    <span class="text-[11px] font-bold opacity-90">(${strReg})</span>
+                    <span class="text-[11px] opacity-60 font-bold mx-0.5">/</span>
+                    <span class="text-[11px] font-bold opacity-90">(${strPP})</span>
                 </span>
             `;
         }
@@ -767,13 +773,14 @@
         // Mobile
         const mobVar = document.getElementById('mob-header-var-day');
         if (mobVar) {
-            const bg = isPos ? 'rgba(16,185,129,0.22)' : 'rgba(244,63,94,0.22)';
+            const bg = isPos ? 'rgba(16,185,129,0.18)' : 'rgba(244,63,94,0.18)';
             const color = isPos ? '#34d399' : '#fb7185';
-            const border = isPos ? 'rgba(16,185,129,0.45)' : 'rgba(244,63,94,0.45)';
+            const border = isPos ? 'rgba(16,185,129,0.40)' : 'rgba(244,63,94,0.40)';
             mobVar.style.backgroundColor = bg;
             mobVar.style.color = color;
             mobVar.style.border = `1px solid ${border}`;
-            mobVar.innerHTML = `<span>${sign}${formatted}</span>`;
+            mobVar.setAttribute('title', `Complessivo: ${strTot} | Mercati aperti: ${strReg} | Pre/Post-Market: ${strPP}`);
+            mobVar.innerHTML = `<span style="font-size:11px; font-weight:900; letter-spacing:-0.2px; white-space:nowrap;">(${strTot}):(${strReg})/(${strPP})</span>`;
         }
     };
 
