@@ -18,7 +18,8 @@ if [ $LOCAL = $REMOTE ]; then
 elif [ $LOCAL = $BASE ]; then
     echo "🚀 New updates found! Pulling changes..."
     
-    # 3. Pull changes
+    # 3. Discard local modifications to tracked files (e.g. build_info.json) and pull changes
+    git checkout -- . 2>/dev/null || true
     git pull
     
     # Update build_info.json with latest git commit timestamp

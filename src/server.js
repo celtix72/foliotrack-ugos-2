@@ -2876,45 +2876,42 @@ function getLastCodeModTime() {
         // Git not available (e.g. inside Docker alpine container) - continue with filesystem check
     }
 
-    // 3. Check filesystem mtimes of key application folders
-    try {
-        let maxMtime = 0;
-        const scanDirs = [
-            path.join(projectRoot, 'src'),
-            path.join(projectRoot, 'public'),
-            path.join(projectRoot, 'private_views')
-        ];
+    // 3. Check filesystem mtimes of key application folders (only as fallback if neither build_info nor git available)
+    if (!resolvedTime) {
+        try {
+            let maxMtime = 0;
+            const scanDirs = [
+                path.join(projectRoot, 'src'),
+                path.join(projectRoot, 'public'),
+                path.join(projectRoot, 'private_views')
+            ];
 
-        for (const dir of scanDirs) {
-            if (!fs.existsSync(dir)) continue;
-            const files = fs.readdirSync(dir, { recursive: true });
-            for (const f of files) {
-                try {
-                    const fullPath = path.join(dir, f.toString());
-                    const stat = fs.statSync(fullPath);
-                    if (stat.isFile() && stat.mtimeMs > maxMtime) {
-                        maxMtime = stat.mtimeMs;
-                    }
-                } catch (e) {}
+            for (const dir of scanDirs) {
+                if (!fs.existsSync(dir)) continue;
+                const files = fs.readdirSync(dir, { recursive: true });
+                for (const f of files) {
+                    try {
+                        const fullPath = path.join(dir, f.toString());
+                        const stat = fs.statSync(fullPath);
+                        if (stat.isFile() && stat.mtimeMs > maxMtime) {
+                            maxMtime = stat.mtimeMs;
+                        }
+                    } catch (e) {}
+                }
             }
-        }
 
-        if (maxMtime > 0) {
-            const d = new Date(maxMtime);
-            const pad = n => String(n).padStart(2, '0');
-            const day = pad(d.getDate());
-            const month = pad(d.getMonth() + 1);
-            const year = String(d.getFullYear()).slice(-2);
-            const hours = pad(d.getHours());
-            const minutes = pad(d.getMinutes());
-            const fsDateStr = `${day}/${month}/${year} ${hours}:${minutes}`;
-
-            // Use fs date if we didn't have one or if it's dirty/newer
-            if (!resolvedTime || maxMtime > (Date.now() - 365 * 86400 * 1000)) {
-                resolvedTime = fsDateStr;
+            if (maxMtime > 0) {
+                const d = new Date(maxMtime);
+                const pad = n => String(n).padStart(2, '0');
+                const day = pad(d.getDate());
+                const month = pad(d.getMonth() + 1);
+                const year = String(d.getFullYear()).slice(-2);
+                const hours = pad(d.getHours());
+                const minutes = pad(d.getMinutes());
+                resolvedTime = `${day}/${month}/${year} ${hours}:${minutes}`;
             }
-        }
-    } catch (e) {}
+        } catch (e) {}
+    }
 
     // Fallback: mtime of current server file
     if (!resolvedTime) {
