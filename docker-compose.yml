@@ -1,10 +1,13 @@
 services:
   foliotrack:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: foliotrack:latest
     container_name: foliotrack
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:3000"
     volumes:
       - ./data:/app/data
     environment:
@@ -12,7 +15,26 @@ services:
       - PORT=3000
       - DB_PATH=/app/data/foliotrack.db
       - BACKUP_DIR=/app/data/backups
+      - TZ=Europe/Rome
       - JWT_SECRET=${JWT_SECRET}
-      - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY}
-      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}
-      - VAPID_SUBJECT=${VAPID_SUBJECT}
+      - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY:-}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-}
+      - VAPID_SUBJECT=${VAPID_SUBJECT:-}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-}
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/api/app-version', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)}).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - foliotrack-net
+
+networks:
+  foliotrack-net:
+    driver: bridge

@@ -1,7 +1,0 @@
-2026-06-19T19:53:29.561Z [WARN] Web Push VAPID keys not fully configured. Push notifications will not work.
-2026-06-19T19:53:29.680Z [INFO] FolioTrack server running on port 3000
-2026-06-19T19:53:29.688Z [INFO] Database: /Users/mauro/Documents/FolioTrack3/foliotrack.db
-2026-06-19T19:53:34.635Z [INFO] Starting RSS News Sync...
-2026-06-19T19:53:35.100Z [INFO] News Sync completed. Saved 20 new articles.
-2026-06-19T19:53:35.637Z [INFO] [AUTH] Login: mauro (admin)
-2026-06-19T19:53:35.653Z [INFO] [ADMIN] AI settings updated by mauro
