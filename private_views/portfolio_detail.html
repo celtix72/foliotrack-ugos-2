@@ -658,13 +658,19 @@
                 <div class="space-y-2">
                     <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Data Source</label>
                     <select id="manual-source" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold" onchange="toggleManualISIN()">
-                        <option value="YF">Yahoo Finance</option>
-                        <option value="B_ITA">Borsa Italiana</option>
+                        <option value="YF">Yahoo Finance (YF)</option>
+                        <option value="GF">Google Finance (GF)</option>
+                        <option value="B_ITA">Borsa Italiana (BI)</option>
+                        <option value="MANUAL">Manuale</option>
                     </select>
                 </div>
                 <div id="manual-isin-field" class="space-y-2 hidden">
                     <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">ISIN</label>
                     <input id="manual-isin" type="text" placeholder="e.g. IT000..." class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold"/>
+                </div>
+                <div id="manual-google-field" class="space-y-2 hidden">
+                    <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Google Ticker</label>
+                    <input id="manual-google-ticker" type="text" placeholder="es. TDIV:AMS, ENI:BIT" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold"/>
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
@@ -1263,7 +1269,7 @@
 
             const manualBtn = `
                 ${sellBtn}
-                <button onclick="event.stopPropagation(); openManualModal('${h.ticker}', '${h.currency}', ${h.currentPrice}, '${h.type || ''}', '${h.country || ''}', '${h.dataSource || 'YF'}', '${h.isin || ''}')" class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center hover:bg-amber-500/20 transition-colors" title="Update Price / Source">
+                <button onclick="event.stopPropagation(); openManualModal('${h.ticker}', '${h.currency}', ${h.currentPrice}, '${h.type || ''}', '${h.country || ''}', '${h.dataSource || 'YF'}', '${h.isin || ''}', '${h.googleTicker || ''}')" class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center hover:bg-amber-500/20 transition-colors" title="Update Price / Source">
                     <span class="material-symbols-outlined text-[15px]">edit_note</span>
                 </button>
                 <button onclick="event.stopPropagation(); openAssetChartModal('${h.ticker}', '${h.name}', '${h.currency}')" class="w-7 h-7 rounded-lg bg-violet-500/10 text-violet-500 flex items-center justify-center hover:bg-violet-500/20 transition-colors" title="Historical Chart">
@@ -1276,10 +1282,12 @@
                 ${errorTag}
             `;
 
-            let sourceLabel = h.dataSource === 'B_ITA' ? 'BI' : (h.dataSource === 'MANUAL' ? 'MANUAL' : 'YF');
+            let sourceLabel = h.dataSource === 'B_ITA' ? 'BI' : (h.dataSource === 'GF' ? 'GF' : (h.dataSource === 'MANUAL' ? 'MANUAL' : 'YF'));
             let sourceClass = h.dataSource === 'B_ITA'
                 ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400'
-                : (h.dataSource === 'MANUAL' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400');
+                : (h.dataSource === 'GF'
+                    ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 font-black'
+                    : (h.dataSource === 'MANUAL' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400'));
 
             const isFixedCash = (h.ticker || '').startsWith('CD_') || (h.ticker || '').startsWith('BP_') || h.ticker === 'CASH' || (h.ticker || '').startsWith('CASH_') || ['Conto Deposito', 'Buono Postale', 'Liquidità'].includes(h.type);
             let typeBadgeHtml = '';
@@ -2857,7 +2865,7 @@
         }
     }
 
-    window.openManualModal = function(ticker, currency, currentPrice, type = '', country = '', dataSource = 'YF', isin = '') {
+    window.openManualModal = function(ticker, currency, currentPrice, type = '', country = '', dataSource = 'YF', isin = '', googleTicker = '') {
         const modal = document.getElementById('manual-update-modal');
         document.getElementById('manual-ticker').value = ticker;
         document.getElementById('manual-currency-label').innerText = currency;
@@ -2870,6 +2878,7 @@
         sourceEl.value = dataSource || 'YF';
         
         document.getElementById('manual-isin').value = isin || '';
+        document.getElementById('manual-google-ticker').value = googleTicker || '';
         
         toggleManualISIN();
         modal.classList.remove('hidden');
@@ -2877,11 +2886,17 @@
 
     window.toggleManualISIN = function() {
         const source = document.getElementById('manual-source').value;
-        const field = document.getElementById('manual-isin-field');
+        const isinField = document.getElementById('manual-isin-field');
+        const googleField = document.getElementById('manual-google-field');
         if (source === 'B_ITA') {
-            field.classList.remove('hidden');
+            isinField?.classList.remove('hidden');
+            googleField?.classList.add('hidden');
+        } else if (source === 'GF' || source === 'YF') {
+            isinField?.classList.add('hidden');
+            googleField?.classList.remove('hidden');
         } else {
-            field.classList.add('hidden');
+            isinField?.classList.add('hidden');
+            googleField?.classList.add('hidden');
         }
     }
 
@@ -2897,12 +2912,13 @@
         const country = document.getElementById('manual-country').value;
         const dataSource = document.getElementById('manual-source').value;
         const isin = document.getElementById('manual-isin').value;
+        const googleTicker = document.getElementById('manual-google-ticker')?.value || null;
 
         try {
             const res = await fetch('/api/assets/manual-update', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ticker, price, date, type, country, dataSource, isin })
+                body: JSON.stringify({ ticker, price, date, type, country, dataSource, isin, googleTicker })
             });
             if (res.ok) {
                 closeManualModal();

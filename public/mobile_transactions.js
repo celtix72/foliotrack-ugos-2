@@ -79,14 +79,19 @@
                         <div class="mob-input-group">
                             <label class="mob-input-label">Sorgente</label>
                             <select id="manual-source" class="mob-input-field" onchange="toggleManualISIN()">
-                                <option value="YF">Yahoo Finance</option>
-                                <option value="B_ITA">Borsa Italiana</option>
+                                <option value="YF">Yahoo Finance (YF)</option>
+                                <option value="GF">Google Finance (GF)</option>
+                                <option value="B_ITA">Borsa Italiana (BI)</option>
                                 <option value="MANUAL">Manuale</option>
                             </select>
                         </div>
                         <div id="manual-isin-field" class="mob-input-group hidden">
                             <label class="mob-input-label">ISIN</label>
                             <input id="manual-isin" type="text" placeholder="e.g. IT000..." class="mob-input-field"/>
+                        </div>
+                        <div id="manual-google-field" class="mob-input-group hidden">
+                            <label class="mob-input-label">Google Ticker</label>
+                            <input id="manual-google-ticker" type="text" placeholder="es. TDIV:AMS, ENI:BIT" class="mob-input-field"/>
                         </div>
                     </div>
                     <div class="mob-grid-2">
@@ -120,7 +125,7 @@
         document.body.appendChild(div.firstElementChild);
     };
 
-    window.openManualModal = function(ticker, currency, currentPrice, type, country, dataSource, isin) {
+    window.openManualModal = function(ticker, currency, currentPrice, type, country, dataSource, isin, googleTicker = '') {
         injectManualUpdateModal();
         const modal = document.getElementById('manual-update-modal');
         if (!modal) return;
@@ -133,6 +138,8 @@
         const sourceEl = document.getElementById('manual-source');
         if (sourceEl) sourceEl.value = dataSource || 'YF';
         document.getElementById('manual-isin').value = isin || '';
+        const gEl = document.getElementById('manual-google-ticker');
+        if (gEl) gEl.value = googleTicker || '';
         
         toggleManualISIN();
         modal.classList.add('active');
@@ -141,10 +148,15 @@
 
     window.toggleManualISIN = function() {
         const source = document.getElementById('manual-source')?.value;
-        const field = document.getElementById('manual-isin-field');
-        if (field) {
-            if (source === 'B_ITA') field.classList.remove('hidden');
-            else field.classList.add('hidden');
+        const isinField = document.getElementById('manual-isin-field');
+        const googleField = document.getElementById('manual-google-field');
+        if (isinField) {
+            if (source === 'B_ITA') isinField.classList.remove('hidden');
+            else isinField.classList.add('hidden');
+        }
+        if (googleField) {
+            if (source === 'GF' || source === 'YF') googleField.classList.remove('hidden');
+            else googleField.classList.add('hidden');
         }
     };
 
@@ -162,12 +174,13 @@
         const country = document.getElementById('manual-country').value;
         const dataSource = document.getElementById('manual-source').value;
         const isin = document.getElementById('manual-isin').value;
+        const googleTicker = document.getElementById('manual-google-ticker')?.value || null;
 
         try {
             const res = await fetch('/api/assets/manual-update', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ticker, price, date, type, country, dataSource, isin })
+                body: JSON.stringify({ ticker, price, date, type, country, dataSource, isin, googleTicker })
             });
             if (res.ok) {
                 closeManualModal();

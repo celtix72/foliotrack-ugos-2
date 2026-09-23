@@ -203,7 +203,7 @@ router.get('/validate-ticker', requireAuth, async (req, res) => {
     }
 
     try {
-        let metadata = await fetchAssetMetadata(ticker);
+        let metadata = await fetchAssetMetadata(ticker, req.query.googleTicker);
         
         // Fallback to ISIN if ticker fails or is just a label (like ROM39)
         if ((!metadata || ticker.length < 3) && isin && isin.length >= 10) {
