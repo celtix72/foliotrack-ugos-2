@@ -15,7 +15,7 @@ const Parser = require('rss-parser');
 const rssParser = new Parser();
 const { callAIModel, parseAIResponse, checkNewGeminiModels } = require('./services/aiService');
 const { notifyUser } = require('./services/notificationService');
-const { enrichWithGoogleFinanceIfDelayed } = require('./services/googleFinance');
+const { enrichWithGoogleFinanceIfDelayed, fetchGoogleFinanceAsset, mapYahooToGoogleTicker } = require('./services/googleFinance');
 
 
 // ─── Application Version ─────────────────────────────────────────────────────
@@ -624,15 +624,28 @@ async function fetchAssetMetadata(ticker, customGoogleTicker = null) {
         };
     }
     try {
-        const quote = await yahooFinance.quote(ticker).catch(err => {
-            if (err.message.includes('429') || err.message.includes('Too Many Requests')) {
-                throw new Error('YF_RATE_LIMIT');
+        const quote = await yahooFinance.quote(ticker).catch(async err => {
+            if (err.message && (err.message.includes('429') || err.message.includes('Too Many Requests'))) {
+                logger.warn(`Yahoo Finance rate limited for ${ticker}. Trying Google Finance fallback...`);
             }
             return null;
         });
-        if (!quote) return null;
 
-        // If Yahoo Finance provides delayed data (exchangeDataDelayedBy > 0), try to enrich with Google Finance real-time data
+        // If Yahoo Finance returned nothing or an empty/zero price, try Google Finance
+        if (!quote || !quote.regularMarketPrice || quote.regularMarketPrice <= 0) {
+            try {
+                const gfFallback = await fetchGoogleFinanceAsset(ticker, customGoogleTicker);
+                if (gfFallback && gfFallback.currentPrice > 0) {
+                    logger.info(`[GF-FALLBACK] Successfully fetched ${ticker} via Google Finance: ${gfFallback.currentPrice} ${gfFallback.currency}`);
+                    return gfFallback;
+                }
+            } catch (gfErr) {
+                logger.warn(`[GF-FALLBACK] Google Finance failed for ${ticker}: ${gfErr.message}`);
+            }
+            if (!quote) return null;
+        }
+
+        // If Yahoo Finance provides delayed data or missing price, enrich/override with Google Finance data
         let gfEnrichment = {
             enriched: false,
             realtimeSource: (quote.exchangeDataDelayedBy === 0) ? 'YF' : 'YF_DELAYED',
@@ -1520,6 +1533,7 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
                 changeValuePortfolio: changeValue / rate,
                 isin: asset ? asset.isin : null,
                 dataSource: asset ? asset.dataSource : 'YF',
+                googleTicker: asset ? asset.googleTicker : null,
                 country: asset ? asset.country : 'Global',
                 lastUpdateError: asset ? asset.lastUpdateError : null,
                 targetPrice: asset ? asset.targetPrice : 0,
@@ -3157,7 +3171,40 @@ async function updateMarketData(force = false) {
         logger.info(`Updating [${asset.ticker}] using [${asset.dataSource || 'YF'}]...`);
         let updateData = null;
         try {
-            if (asset.dataSource === 'B_ITA' && asset.isin) {
+            if (asset.dataSource === 'GF') {
+                const gfMeta = await fetchGoogleFinanceAsset(asset.ticker, asset.googleTicker);
+                if (gfMeta && gfMeta.currentPrice > 0) {
+                    const priceCheck = isValidQuotePrice(gfMeta.currentPrice, asset, asset.currentPrice);
+                    let finalPrice = asset.currentPrice;
+                    let finalChange = asset.changePercent;
+                    let finalChangeVal = asset.changeValue;
+
+                    if (priceCheck.valid) {
+                        finalPrice = gfMeta.currentPrice;
+                        finalChange = gfMeta.changePercent;
+                        finalChangeVal = gfMeta.changeValue;
+                    } else {
+                        logger.warn(`GF [${asset.ticker}]: Price ${gfMeta.currentPrice} is invalid/inconsistent (${priceCheck.reason}). Retaining last valid price: ${asset.currentPrice}`);
+                    }
+
+                    updateData = {
+                        price: finalPrice,
+                        change: finalChange,
+                        changeValue: finalChangeVal,
+                        realtimeSource: gfMeta.realtimeSource,
+                        isRealtime: gfMeta.isRealtime,
+                        pe: asset.pe,
+                        forwardPE: asset.forwardPE,
+                        name: gfMeta.name || asset.name,
+                        currency: gfMeta.currency || asset.currency,
+                        exchange: gfMeta.exchange || asset.exchange,
+                        country: asset.country || 'Global',
+                        quoteDate: (priceCheck.valid && gfMeta.quoteDate) ? gfMeta.quoteDate : (asset.quoteDate || new Date().toISOString().split('T')[0])
+                    };
+                } else {
+                    logger.warn(`Google Finance quote failed for ${asset.ticker} (${asset.googleTicker || ''})`);
+                }
+            } else if (asset.dataSource === 'B_ITA' && asset.isin) {
                 const result = await B_ITA(asset.isin, asset.type);
                 if (result.success) {
                     const priceCheck = isValidQuotePrice(result.price, asset, asset.currentPrice);
@@ -3190,10 +3237,17 @@ async function updateMarketData(force = false) {
                     logger.warn(`B_ITA scraping failed for ${asset.ticker} (${asset.isin})`);
                 }
             } else {
-                // Default Yahoo Finance (with Google Finance real-time fallback for delayed quotes)
-                const metadata = await fetchAssetMetadata(asset.ticker, asset.googleTicker);
+                // Default Yahoo Finance (with Google Finance real-time fallback for delayed quotes or missing prices)
+                let metadata = await fetchAssetMetadata(asset.ticker, asset.googleTicker);
+                if (!metadata || !metadata.currentPrice || metadata.currentPrice <= 0) {
+                    const gfRescue = await fetchGoogleFinanceAsset(asset.ticker, asset.googleTicker);
+                    if (gfRescue && gfRescue.currentPrice > 0) {
+                        logger.info(`[GF-FALLBACK] Rescued quote for ${asset.ticker} via Google Finance: ${gfRescue.currentPrice} ${gfRescue.currency}`);
+                        metadata = gfRescue;
+                    }
+                }
                 if (!metadata) {
-                    throw new Error(`YF: no quote data returned for '${asset.ticker}' (check ticker spelling or try manual update)`);
+                    throw new Error(`YF/GF: no quote data returned for '${asset.ticker}' (check ticker spelling or try manual update)`);
                 }
                 const priceCheck = isValidQuotePrice(metadata.currentPrice, asset, asset.currentPrice);
                 let finalPrice = asset.currentPrice;
@@ -3792,8 +3846,18 @@ async function repairInconsistentAssetQuotesAndPrices() {
             if (['Conto Deposito', 'Buono Postale', 'Liquidità'].includes(a.type)) continue;
 
             const check = isValidQuotePrice(a.currentPrice, a);
-            if (!check.valid && a.currentPrice !== null && a.currentPrice !== undefined && a.currentPrice > 0) {
-                logger.warn(`[REPAIR] Detected corrupted currentPrice ${a.currentPrice} for ${a.ticker} (${check.reason}). Attempting recovery...`);
+            let isStuckDummy = false;
+            let buyRef = null;
+            if (a.currentPrice !== null && a.currentPrice !== undefined && a.currentPrice <= 1.05 && a.currentPrice > 0) {
+                buyRef = database.db.prepare("SELECT price, date FROM transactions WHERE assetTicker = ? AND type = 'BUY' AND price > 5.0 ORDER BY date DESC LIMIT 1").get(a.ticker);
+                if (buyRef && buyRef.price > 5.0) {
+                    isStuckDummy = true;
+                    logger.warn(`[REPAIR] Detected stuck dummy price ${a.currentPrice} for ${a.ticker} (BUY transaction was ${buyRef.price}). Flagging for repair.`);
+                }
+            }
+
+            if ((!check.valid || isStuckDummy) && a.currentPrice !== null && a.currentPrice !== undefined && a.currentPrice > 0) {
+                logger.warn(`[REPAIR] Detected corrupted currentPrice ${a.currentPrice} for ${a.ticker} (${check.reason || 'stuck_dummy_baseline'}). Attempting recovery...`);
                 
                 // 1. Delete corrupted quotes from asset_quotes
                 if (isBondAsset(a)) {
@@ -3801,8 +3865,11 @@ async function repairInconsistentAssetQuotesAndPrices() {
                     if (deleted.changes > 0) logger.info(`[REPAIR] Purged ${deleted.changes} corrupted quotes (< 20) for bond ${a.ticker}`);
                 }
                 database.db.prepare('DELETE FROM asset_quotes WHERE ticker = ? AND (price <= 0 OR price IS NULL)').run(a.ticker);
+                if (isStuckDummy) {
+                    database.db.prepare('DELETE FROM asset_quotes WHERE ticker = ? AND price <= 1.05').run(a.ticker);
+                }
 
-                // 2. If it's a B_ITA asset with ISIN, try live scrape first
+                // 2. Try live scrape or quote API first
                 let restoredPrice = null;
                 let restoredDate = null;
                 if (a.dataSource === 'B_ITA' && a.isin) {
@@ -3815,6 +3882,39 @@ async function repairInconsistentAssetQuotesAndPrices() {
                         }
                     } catch(e) {
                         logger.warn(`[REPAIR] Live scrape recovery failed for ${a.ticker}: ${e.message}`);
+                    }
+                } else if (a.dataSource === 'GF') {
+                    try {
+                        const gfRes = await fetchGoogleFinanceAsset(a.ticker, a.googleTicker);
+                        if (gfRes && gfRes.currentPrice > 1.05) {
+                            restoredPrice = gfRes.currentPrice;
+                            restoredDate = gfRes.quoteDate;
+                            logger.info(`[REPAIR] Google Finance recovered valid price ${restoredPrice} for ${a.ticker}`);
+                        }
+                    } catch(e) {
+                        logger.warn(`[REPAIR] GF recovery failed for ${a.ticker}: ${e.message}`);
+                    }
+                } else {
+                    // Try YF live fetch first, then GF fallback
+                    try {
+                        const m = await fetchAssetMetadata(a.ticker, a.googleTicker);
+                        if (m && m.currentPrice > 1.05) {
+                            restoredPrice = m.currentPrice;
+                            restoredDate = m.quoteDate || new Date().toISOString().split('T')[0];
+                            logger.info(`[REPAIR] Live quote recovered valid price ${restoredPrice} for ${a.ticker}`);
+                        }
+                    } catch(e) {
+                        logger.warn(`[REPAIR] Live quote recovery failed for ${a.ticker}: ${e.message}`);
+                    }
+                    if (!restoredPrice) {
+                        try {
+                            const gfRes = await fetchGoogleFinanceAsset(a.ticker, a.googleTicker);
+                            if (gfRes && gfRes.currentPrice > 1.05) {
+                                restoredPrice = gfRes.currentPrice;
+                                restoredDate = gfRes.quoteDate;
+                                logger.info(`[REPAIR] Google Finance fallback recovered valid price ${restoredPrice} for ${a.ticker}`);
+                            }
+                        } catch(e) {}
                     }
                 }
 

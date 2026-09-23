@@ -950,25 +950,32 @@ router.get('/asset-quotes/:ticker', requireAuth, (req, res) => {
 
 
 router.post('/assets/manual-update', requireAuth, async (req, res) => {
-    const { ticker, price, date, type, country, dataSource, isin } = req.body;
+    const { ticker, price, date, type, country, dataSource, isin, googleTicker } = req.body;
     if (!ticker) return res.status(400).send('Ticker is required');
     const sanitizedTicker = sanitizeTicker(ticker);
     if (!isValidISIN(isin)) return res.status(400).send('Invalid ISIN format (must be 12 chars e.g. IT000...)');
 
+    const cleanDs = (dataSource || 'YF').toUpperCase();
+    const isMan = cleanDs === 'MANUAL' ? 1 : 0;
+    const gTicker = googleTicker ? googleTicker.trim() : null;
+
     database.db.prepare(`
         UPDATE assets 
-        SET currentPrice = ?, updatedAt = ?, isManual = 1, changePercent = 0,
+        SET currentPrice = ?, updatedAt = ?, isManual = ?, changePercent = 0,
             type = COALESCE(?, type), country = COALESCE(?, country),
-            dataSource = COALESCE(?, dataSource), isin = COALESCE(?, isin),
+            dataSource = ?, isin = COALESCE(?, isin),
+            googleTicker = COALESCE(?, googleTicker),
             lastUpdateError = NULL
         WHERE ticker = ?
     `).run(
         parseFloat(price), 
         date || new Date().toISOString().split('T')[0], 
+        isMan,
         type || null,
         country || null,
-        dataSource || 'YF',
+        cleanDs,
         isin ? isin.toUpperCase().trim() : null,
+        gTicker,
         sanitizedTicker
     );
     

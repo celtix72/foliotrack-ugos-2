@@ -247,17 +247,23 @@
                 <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Effective Date</label>
                 <input id="manual-date" type="date" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold"/>
             </div>
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-3 gap-4">
                 <div class="space-y-2">
                     <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Data Source</label>
                     <select id="manual-source" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold" onchange="toggleManualISIN()">
-                        <option value="YF">Yahoo Finance</option>
-                        <option value="B_ITA">Borsa Italiana</option>
+                        <option value="YF">Yahoo Finance (YF)</option>
+                        <option value="GF">Google Finance (GF)</option>
+                        <option value="B_ITA">Borsa Italiana (BI)</option>
+                        <option value="MANUAL">Manuale</option>
                     </select>
                 </div>
                 <div id="manual-isin-field" class="space-y-2">
                     <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">ISIN Code</label>
                     <input id="manual-isin" type="text" placeholder="e.g. IT000..." class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold"/>
+                </div>
+                <div id="manual-google-field" class="space-y-2">
+                    <label class="text-sm font-bold text-slate-500 uppercase tracking-widest">Google Ticker</label>
+                    <input id="manual-google-ticker" type="text" placeholder="es. TDIV:AMS, ENI:BIT" class="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl py-3 px-4 font-bold"/>
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
@@ -385,7 +391,7 @@
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center justify-center gap-2">
-                                <button class="w-8 h-8 flex items-center justify-center rounded-lg text-amber-500 bg-amber-500/10 hover:bg-amber-500/20 transition-colors" title="Edit Source/Price" onclick="openManualModal('${a.ticker}', '${a.currency}', ${a.currentPrice}, '${a.type || ''}', '${a.country || ''}', '${a.dataSource || 'YF'}', '${a.isin || ''}')">
+                                <button class="w-8 h-8 flex items-center justify-center rounded-lg text-amber-500 bg-amber-500/10 hover:bg-amber-500/20 transition-colors" title="Edit Source/Price" onclick="openManualModal('${a.ticker}', '${a.currency}', ${a.currentPrice}, '${a.type || ''}', '${a.country || ''}', '${a.dataSource || 'YF'}', '${a.isin || ''}', '${a.googleTicker || ''}')">
                                     <span class="material-symbols-outlined text-xl">edit_note</span>
                                 </button>
                                 <button class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-colors" onclick="deleteAsset('${a.id}')">
@@ -537,7 +543,7 @@
         // No longer needed - ISIN always visible
     }
 
-    window.openManualModal = function(ticker, currency, currentPrice, type = '', country = '', dataSource = 'YF', isin = '') {
+    window.openManualModal = function(ticker, currency, currentPrice, type = '', country = '', dataSource = 'YF', isin = '', googleTicker = '') {
         const modal = document.getElementById('manual-update-modal');
         document.getElementById('manual-ticker').value = ticker;
         document.getElementById('manual-currency-label').innerText = currency;
@@ -550,13 +556,14 @@
         sourceEl.value = dataSource || 'YF';
         
         document.getElementById('manual-isin').value = isin || '';
+        document.getElementById('manual-google-ticker').value = googleTicker || '';
         
         toggleManualISIN();
         modal.classList.remove('hidden');
     }
 
     window.toggleManualISIN = function() {
-        // Always visible now
+        // Handled via field visibility
     }
 
     window.closeManualModal = function() {
@@ -571,12 +578,13 @@
         const country = document.getElementById('manual-country').value;
         const dataSource = document.getElementById('manual-source').value;
         const isin = document.getElementById('manual-isin').value;
+        const googleTicker = document.getElementById('manual-google-ticker')?.value || null;
 
         try {
             const res = await fetch('/api/assets/manual-update', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ticker, price, date, type, country, dataSource, isin })
+                body: JSON.stringify({ ticker, price, date, type, country, dataSource, isin, googleTicker })
             });
             if (res.ok) {
                 closeManualModal();

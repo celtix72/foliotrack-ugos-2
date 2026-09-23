@@ -27,6 +27,9 @@ function mapYahooToGoogleTicker(ticker, customGoogleTicker = null) {
 
     const t = ticker.trim().toUpperCase();
 
+    // Already in Google Finance format (e.g. TDIV:AMS, ENI:BIT)
+    if (t.includes(':')) return t;
+
     // Specific Index mappings
     if (t === 'FTSEMIB.MI' || t === '^FTSEMIB') return 'FTSEMIB:INDEXBIT';
     if (t === '^GSPC') return '.INX:INDEXSP';
@@ -43,9 +46,9 @@ function mapYahooToGoogleTicker(ticker, customGoogleTicker = null) {
     if (t.endsWith('.BR')) return `${t.slice(0, -3)}:EBR`;
     if (t.endsWith('.LS')) return `${t.slice(0, -3)}:ELI`;
     if (t.endsWith('.VI')) return `${t.slice(0, -3)}:VIE`;
+    if (t.endsWith('.SW')) return `${t.slice(0, -3)}:SWX`;
+    if (t.endsWith('.F'))  return `${t.slice(0, -2)}:FRA`;
 
-    // US Equities without suffix (if needed)
-    // Note: US stocks are typically already real-time on Yahoo Finance
     return null;
 }
 
@@ -92,7 +95,7 @@ async function fetchGoogleFinanceQuote(googleTicker) {
                 // Cookies to bypass EU Google Consent redirect walls
                 'Cookie': 'CONSENT=PENDING+999; SOCS=CAESHAgBEhJnd3NfMjAyNDA0MTUtMF9SQzIaAmVuIAEaBgiA_L-wBg;'
             },
-            timeout: 4500,
+            timeout: 5000,
             maxRedirects: 3
         });
 
@@ -119,7 +122,7 @@ async function fetchGoogleFinanceQuote(googleTicker) {
             return { success: false, reason: 'No numeric price found in Google Finance item' };
         }
 
-        // item[3]: 0 = Real-Time; > 0 = Delayed (e.g. 15 minutes)
+        // item[3]: 0 = Real-Time; > 0 = Delayed (e.g. 5, 15 minutes)
         const delayMinutes = typeof item[3] === 'number' ? item[3] : 0;
         const isRealtime = delayMinutes === 0;
         const changeValue = item[5]?.[1] ?? 0;
@@ -148,7 +151,7 @@ async function fetchGoogleFinanceQuote(googleTicker) {
 }
 
 /**
- * Checks if a Yahoo Finance quote is delayed and, if so, attempts to enrich it with real-time data from Google Finance.
+ * Checks if a Yahoo Finance quote is delayed or missing, and attempts to enrich/replace with data from Google Finance.
  *
  * @param {string} yahooTicker
  * @param {object} yfQuote - Raw quote or metadata from Yahoo Finance
@@ -159,7 +162,7 @@ async function fetchGoogleFinanceQuote(googleTicker) {
  *   price: number,
  *   changeValue: number,
  *   changePercent: number,
- *   realtimeSource: 'GF' | 'YF' | 'YF_DELAYED'
+ *   realtimeSource: 'GF' | 'GF_DELAYED' | 'YF' | 'YF_DELAYED'
  * }>}
  */
 async function enrichWithGoogleFinanceIfDelayed(yahooTicker, yfQuote, customGoogleTicker = null) {
@@ -168,25 +171,14 @@ async function enrichWithGoogleFinanceIfDelayed(yahooTicker, yfQuote, customGoog
     const baseChange = yfQuote?.changePercent ?? yfQuote?.regularMarketChangePercent ?? 0;
     const baseChangeVal = yfQuote?.changeValue ?? yfQuote?.regularMarketChange ?? 0;
 
-    // If Yahoo Finance is already real-time (e.g. US market), use it directly
-    if (!isYfDelayed) {
-        return {
-            usedGoogleFinance: false,
-            enriched: false,
-            isRealtime: 1,
-            price: basePrice,
-            changeValue: baseChangeVal,
-            changePercent: baseChange,
-            realtimeSource: 'YF'
-        };
-    }
+    // Try Google Finance if YF is delayed OR if YF price is 0/missing/unrealistic
+    const needsGF = isYfDelayed || basePrice <= 0.0001;
 
-    // Yahoo is delayed, try Google Finance
     const gTicker = mapYahooToGoogleTicker(yahooTicker, customGoogleTicker);
-    if (gTicker) {
+    if (gTicker && needsGF) {
         try {
             const gf = await fetchGoogleFinanceQuote(gTicker);
-            if (gf && gf.success && gf.isRealtime && gf.price > 0) {
+            if (gf && gf.success && gf.price > 0) {
                 if (yfQuote && typeof yfQuote === 'object') {
                     yfQuote.regularMarketPrice = gf.price;
                     yfQuote.regularMarketChange = gf.changeValue;
@@ -195,11 +187,11 @@ async function enrichWithGoogleFinanceIfDelayed(yahooTicker, yfQuote, customGoog
                 return {
                     usedGoogleFinance: true,
                     enriched: true,
-                    isRealtime: 1,
+                    isRealtime: gf.isRealtime ? 1 : 0,
                     price: gf.price,
                     changeValue: gf.changeValue,
                     changePercent: gf.changePercent,
-                    realtimeSource: 'GF',
+                    realtimeSource: gf.isRealtime ? 'GF' : 'GF_DELAYED',
                     googleTicker: gTicker
                 };
             }
@@ -208,20 +200,71 @@ async function enrichWithGoogleFinanceIfDelayed(yahooTicker, yfQuote, customGoog
         }
     }
 
-    // Fallback: keep Yahoo Finance delayed data
     return {
         usedGoogleFinance: false,
         enriched: false,
-        isRealtime: 0,
+        isRealtime: isYfDelayed ? 0 : 1,
         price: basePrice,
         changeValue: baseChangeVal,
         changePercent: baseChange,
-        realtimeSource: 'YF_DELAYED'
+        realtimeSource: isYfDelayed ? 'YF_DELAYED' : 'YF'
+    };
+}
+
+/**
+ * Fetches standalone asset metadata directly from Google Finance.
+ * Used when dataSource is 'GF' or when Yahoo Finance fails completely.
+ *
+ * @param {string} ticker - Yahoo ticker or Google ticker
+ * @param {string} [customGoogleTicker] - Optional explicit Google ticker override
+ * @returns {Promise<object|null>}
+ */
+async function fetchGoogleFinanceAsset(ticker, customGoogleTicker = null) {
+    const gTicker = mapYahooToGoogleTicker(ticker, customGoogleTicker);
+    if (!gTicker) return null;
+
+    const gf = await fetchGoogleFinanceQuote(gTicker);
+    if (!gf || !gf.success || gf.price <= 0) return null;
+
+    const nameLower = (gf.name || '').toLowerCase();
+    let detailedType = 'Stock';
+    if (nameLower.includes('etf') || nameLower.includes('ucits')) {
+        if (nameLower.includes('bond') || nameLower.includes('obblig') || nameLower.includes('treasury')) {
+            detailedType = 'ETF Obblig';
+        } else if (nameLower.includes('money') || nameLower.includes('monetario') || nameLower.includes('cash')) {
+            detailedType = 'ETF Monetario';
+        } else {
+            detailedType = 'ETF Azionario';
+        }
+    }
+
+    const exchangePart = gTicker.includes(':') ? gTicker.split(':')[1] : 'GF';
+
+    return {
+        ticker: ticker,
+        name: gf.name || ticker,
+        currency: gf.currency || 'EUR',
+        exchange: exchangePart,
+        type: detailedType,
+        country: 'Global',
+        currentPrice: gf.price,
+        changePercent: gf.changePercent || 0,
+        changeValue: gf.changeValue || 0,
+        preMarketChangePercent: 0,
+        postMarketChangePercent: 0,
+        pe: null,
+        forwardPE: null,
+        realtimeSource: gf.isRealtime ? 'GF' : 'GF_DELAYED',
+        isRealtime: gf.isRealtime ? 1 : 0,
+        googleTicker: gTicker,
+        dataSource: 'GF',
+        quoteDate: new Date().toISOString().split('T')[0]
     };
 }
 
 module.exports = {
     mapYahooToGoogleTicker,
     fetchGoogleFinanceQuote,
-    enrichWithGoogleFinanceIfDelayed
+    enrichWithGoogleFinanceIfDelayed,
+    fetchGoogleFinanceAsset
 };

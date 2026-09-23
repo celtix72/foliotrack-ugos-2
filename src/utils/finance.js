@@ -151,14 +151,20 @@ function isValidQuotePrice(price, assetMeta = null, lastValidPrice = null) {
 
     // General asset (Stocks, ETFs, Crypto, etc.) checks against last known price:
     if (lastValidPrice && lastValidPrice > 0.0001) {
-        const ratio = p / lastValidPrice;
-        // Sudden crash of > 75% without split
-        if (ratio < 0.25) {
-            return { valid: false, reason: `extreme_price_drop_${lastValidPrice}_to_${p}` };
-        }
-        // Sudden spike of > 500%
-        if (ratio > 5.0) {
-            return { valid: false, reason: `extreme_price_spike_${lastValidPrice}_to_${p}` };
+        // If lastValidPrice is <= 1.05 and candidate price is > 1.05,
+        // it indicates recovery from a dummy/corrupted placeholder price (e.g. 1.00 € default),
+        // NOT a genuine 500% spike. Allow recovery.
+        const isLikelyDummyBaseline = lastValidPrice <= 1.05 && p > 1.05;
+        if (!isLikelyDummyBaseline) {
+            const ratio = p / lastValidPrice;
+            // Sudden crash of > 75% without split
+            if (ratio < 0.25) {
+                return { valid: false, reason: `extreme_price_drop_${lastValidPrice}_to_${p}` };
+            }
+            // Sudden spike of > 500%
+            if (ratio > 5.0) {
+                return { valid: false, reason: `extreme_price_spike_${lastValidPrice}_to_${p}` };
+            }
         }
     }
 

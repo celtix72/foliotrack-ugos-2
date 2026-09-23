@@ -1155,7 +1155,7 @@
                 <span>Grafico</span>
               </div>
               <div class="mob-action-btn bg-orange-ios" 
-                   onclick="event.stopPropagation(); openManualModal('${h.ticker}', '${currency}', ${h.currentPrice}, '${type}', '${(country || '').replace(/'/g, "\\'")}', '${dataSource}', '${isin}')">
+                   onclick="event.stopPropagation(); openManualModal('${h.ticker}', '${currency}', ${h.currentPrice}, '${type}', '${(country || '').replace(/'/g, "\\'")}', '${dataSource}', '${isin}', '${(h.googleTicker || '').replace(/'/g, "\\'")}')">
                 <span class="material-symbols-outlined">edit_note</span>
                 <span>Modifica</span>
               </div>
