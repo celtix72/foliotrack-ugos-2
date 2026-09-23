@@ -1,19 +1,16 @@
 services:
   foliotrack:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: foliotrack:latest
+    # ─── Modalità produzione: scarica l'immagine pre-compilata da GitHub ─────────
+    # L'immagine viene costruita automaticamente da GitHub Actions ad ogni push.
+    image: ghcr.io/celtix72/foliotrack:latest
     container_name: foliotrack
     restart: unless-stopped
     ports:
       - "${PORT:-3000}:3000"
     volumes:
+      # Solo i dati persistenti vengono montati dall'host.
+      # Il codice è già nell'immagine scaricata da ghcr.io.
       - ./data:/app/data
-      - ./src:/app/src
-      - ./public:/app/public
-      - ./private_views:/app/private_views
-      - ./build_info.json:/app/build_info.json
     environment:
       - NODE_ENV=production
       - PORT=3000

@@ -1,0 +1,85 @@
+name: Build & Publish Docker Image
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:   # permette lancio manuale dalla UI di GitHub
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}   # → ghcr.io/celtix72/foliotrack
+
+jobs:
+  build-and-push:
+    name: Build & Push to GHCR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write   # permesso per scrivere su ghcr.io
+
+    steps:
+      # 1. Checkout del codice
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Genera il file build_info.json con i metadati del commit corrente
+      - name: Generate build_info.json
+        run: |
+          GIT_DATE=$(git log -1 --format="%cd" --date=format:"%d/%m/%y %H:%M")
+          GIT_COMMIT=$(git log -1 --format="%h")
+          GIT_TS=$(git log -1 --format="%ct")
+          cat > build_info.json << EOF
+          {
+            "lastModified": "$GIT_DATE",
+            "commit": "$GIT_COMMIT",
+            "timestamp": ${GIT_TS}000
+          }
+          EOF
+          echo "✅ build_info.json generato: $GIT_DATE [$GIT_COMMIT]"
+          cat build_info.json
+
+      # 3. Configura QEMU per build multi-arch (amd64 + arm64 per NAS)
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      # 4. Configura Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 5. Login su GitHub Container Registry
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # 6. Estrae i metadati (tag e label) per l'immagine Docker
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=,format=short
+
+      # 7. Build e push dell'immagine (multi-arch: amd64 + arm64)
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # 8. Riepilogo finale
+      - name: Print image info
+        run: |
+          echo "🎉 Immagine pubblicata su:"
+          echo "   ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+          echo "   ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
