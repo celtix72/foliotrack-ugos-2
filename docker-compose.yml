@@ -10,6 +10,10 @@ services:
       - "${PORT:-3000}:3000"
     volumes:
       - ./data:/app/data
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./private_views:/app/private_views
+      - ./build_info.json:/app/build_info.json
     environment:
       - NODE_ENV=production
       - PORT=3000
