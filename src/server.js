@@ -405,7 +405,13 @@ async function sendTelegramDailyReport() {
     await sendMarketStatusTelegram(); // Unify with the new requested format
 }
 
-const yahooFinance = new YahooFinance({ suppressNotices: ['ripHistorical'] });
+const yahooFinance = new YahooFinance({ 
+    suppressNotices: ['ripHistorical', 'yahooSurvey'],
+    validation: {
+        logErrors: false,
+        logOptionsErrors: false
+    }
+});
 const database = require('./db');
 const backupManager = require('./backup_manager');
 const { getTransporter, resetTransporter } = require('./utils/mailer');
@@ -665,8 +671,8 @@ async function fetchAssetMetadata(ticker, customGoogleTicker = null) {
 
         const summary = await yahooFinance.quoteSummary(ticker, { 
             modules: ["summaryProfile", "assetProfile", "fundProfile", "summaryDetail", "defaultKeyStatistics", "calendarEvents", "earningsHistory"] 
-        }).catch(err => {
-            if (err.message.includes('429') || err.message.includes('Too Many Requests')) {
+        }, { validateResult: false }).catch(err => {
+            if (err.message && (err.message.includes('429') || err.message.includes('Too Many Requests'))) {
                 throw new Error('YF_RATE_LIMIT');
             }
             return {};

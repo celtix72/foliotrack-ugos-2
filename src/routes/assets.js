@@ -142,7 +142,7 @@ async function getAssetFundamentals(ticker) {
     try {
         const ks = await yahooFinance.quoteSummary(ticker, {
             modules: ['defaultKeyStatistics', 'summaryDetail', 'calendarEvents', 'assetProfile', 'fundProfile', 'quoteType']
-        });
+        }, { validateResult: false });
         const s = ks.defaultKeyStatistics || {};
         result.pegRatio        = s.pegRatio       ?? null;
         result.fcfTTM          = s.freeCashflow   ?? null;
@@ -195,7 +195,7 @@ async function getAssetFundamentals(ticker) {
     try {
         const fd = await yahooFinance.quoteSummary(ticker, {
             modules: ['financialData']
-        });
+        }, { validateResult: false });
         const f = fd.financialData || {};
         result.fcfTTM         = result.fcfTTM ?? f.freeCashflow ?? null;
         result.operatingCFTTM = result.operatingCFTTM ?? f.operatingCashflow ?? null;
@@ -234,7 +234,7 @@ async function getAssetFundamentals(ticker) {
     try {
         const et = await yahooFinance.quoteSummary(ticker, {
             modules: ['earningsTrend']
-        });
+        }, { validateResult: false });
         const trend = et.earningsTrend?.trend || [];
         result.pegRatioTrend = trend.map(t => ({
             period:          t.period,
@@ -255,7 +255,7 @@ async function getAssetFundamentals(ticker) {
     try {
         const eh = await yahooFinance.quoteSummary(ticker, {
             modules: ['earningsHistory']
-        });
+        }, { validateResult: false });
         const history = eh.earningsHistory?.history || [];
         result.earningsHistory = history.map(h => ({
             period:          h.period,
@@ -506,7 +506,7 @@ async function getAssetFundamentals(ticker) {
     try {
         const extra = await yahooFinance.quoteSummary(ticker, {
             modules: ['insiderTransactions', 'recommendationTrend']
-        });
+        }, { validateResult: false });
         
         let buys = 0;
         let sells = 0;
@@ -1333,7 +1333,7 @@ router.get('/assets/:ticker/details', requireAuth, async (req, res) => {
     try {
         const summary = await yahooFinance.quoteSummary(ticker, {
             modules: ['summaryDetail', 'financialData', 'defaultKeyStatistics', 'assetProfile', 'calendarEvents', 'fundProfile']
-        });
+        }, { validateResult: false });
         
         // Enrich with ISIN from DB
         const asset = database.db.prepare(`SELECT isin FROM assets WHERE ticker = ?`).get(ticker);

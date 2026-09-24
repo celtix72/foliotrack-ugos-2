@@ -318,7 +318,7 @@ module.exports = function (dependencies) {
                     }
                 } else if (ticker && !ticker.startsWith('CD_') && !ticker.startsWith('BP_') && ticker !== 'Sconosciuto') {
                     try {
-                        const summary = await yahooFinance.quoteSummary(ticker, { modules: ['summaryDetail', 'calendarEvents', 'price'] }).catch(() => null);
+                        const summary = await yahooFinance.quoteSummary(ticker, { modules: ['summaryDetail', 'calendarEvents', 'price'] }, { validateResult: false }).catch(() => null);
                         
                         let annualRate = summary?.summaryDetail?.dividendRate || 0;
                         const assetYield = summary?.summaryDetail?.dividendYield || summary?.summaryDetail?.yield || 0;

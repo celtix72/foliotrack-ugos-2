@@ -664,7 +664,7 @@ module.exports = function(dependencies) {
             const quote = await yahooFinance.quote(ticker).catch(() => null);
             const summary = await yahooFinance.quoteSummary(ticker, {
                 modules: ['summaryDetail', 'assetProfile', 'financialData', 'defaultKeyStatistics', 'calendarEvents', 'price', "majorDirectHolders", "majorHoldersBreakdown", "insiderTransactions"]
-            }).catch(() => null);
+            }, { validateResult: false }).catch(() => null);
 
             if (!quote && !summary) {
                 return res.status(404).json({ error: 'Ticker not found on Yahoo Finance' });
