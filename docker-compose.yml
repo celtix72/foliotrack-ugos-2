@@ -5,15 +5,16 @@ services:
     image: ghcr.io/celtix72/foliotrack:latest
     container_name: foliotrack
     restart: unless-stopped
-    ports:
-      - "${PORT:-3000}:3000"
+    networks:
+      lan_static:
+        ipv4_address: 192.168.178.210
     volumes:
       # Solo i dati persistenti vengono montati dall'host.
       # Il codice è già nell'immagine scaricata da ghcr.io.
       - ./data:/app/data
     environment:
       - NODE_ENV=production
-      - PORT=3000
+      - PORT=${PORT:-3000}
       - DB_PATH=/app/data/foliotrack.db
       - BACKUP_DIR=/app/data/backups
       - TZ=Europe/Rome
@@ -23,7 +24,7 @@ services:
       - VAPID_SUBJECT=${VAPID_SUBJECT:-}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-}
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/api/app-version', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)}).on('error', () => process.exit(1))"]
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:' + (process.env.PORT || 3000) + '/api/app-version', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)}).on('error', () => process.exit(1))"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -33,9 +34,13 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    networks:
-      - foliotrack-net
 
 networks:
-  foliotrack-net:
-    driver: bridge
+  lan_static:
+    driver: macvlan
+    driver_opts:
+      parent: eth0
+    ipam:
+      config:
+        - subnet: 192.168.178.0/24
+          gateway: 192.168.178.1
