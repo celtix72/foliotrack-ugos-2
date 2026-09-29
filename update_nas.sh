@@ -52,6 +52,12 @@ else
     exit 1
 fi
 
+# ─── 0. Aggiornamento file di configurazione da Git (se repository presente) ──
+if [ -d "$SCRIPT_DIR/.git" ]; then
+    echo "📥 Aggiornamento file di configurazione da Git..."
+    git pull origin main || true
+fi
+
 # ─── 1. Login su ghcr.io ───────────────────────────────────────────────────
 echo "🔑 Autenticazione su GitHub Container Registry (ghcr.io)..."
 if echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_USERNAME" --password-stdin; then
