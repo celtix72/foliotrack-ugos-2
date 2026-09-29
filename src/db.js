@@ -644,6 +644,25 @@ function initDb() {
     } catch (e) {}
 
     try {
+        const { mapYahooToGoogleTicker } = require('./services/googleFinance');
+        const unmapped = dbConnection.prepare(`
+            SELECT id, ticker, exchange, type, dataSource FROM assets 
+            WHERE (googleTicker IS NULL OR googleTicker = '') 
+              AND IFNULL(type, '') NOT IN ('Bond', 'Conto Deposito', 'Buono Postale', 'Liquidità')
+              AND IFNULL(dataSource, '') NOT IN ('B_ITA', 'MANUAL')
+              AND ticker NOT LIKE 'BTP%' AND ticker NOT LIKE 'BOT%' AND ticker NOT LIKE 'CD_%' AND ticker NOT LIKE 'BP_%' AND ticker != 'CASH'
+        `).all();
+        const updateG = dbConnection.prepare(`UPDATE assets SET googleTicker = ? WHERE id = ?`);
+        for (const row of unmapped) {
+            const mapped = mapYahooToGoogleTicker(row.ticker, null, row.exchange);
+            if (mapped) {
+                updateG.run(mapped, row.id);
+            }
+        }
+    } catch (e) {}
+
+
+    try {
         dbConnection.prepare(`ALTER TABLE portfolio_history ADD COLUMN netDeposits REAL NOT NULL DEFAULT 0`).run();
     } catch (e) {}
 

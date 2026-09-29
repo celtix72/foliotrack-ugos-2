@@ -676,33 +676,39 @@
             suggestionsBox.classList.add('hidden');
             return;
         }
-        suggestionsBox.innerHTML = list.map(s => `
+        suggestionsBox.innerHTML = list.map(s => {
+            const sym = s.ticker || s.symbol || '';
+            const gTicker = s.googleTicker || '';
+            const gBadge = gTicker ? `<span class="text-[9px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold px-1 py-0.5 rounded ml-1.5">GF: ${gTicker}</span>` : '';
+            return `
             <div class="px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer border-b border-slate-50 dark:border-slate-800/50 last:border-0" 
-                 onclick="addToWatchlist('${s.ticker}')">
+                 onclick="addToWatchlist('${sym}', '${gTicker}')">
                 <div class="flex items-center justify-between">
-                    <span class="font-black text-sm text-primary">${s.ticker}</span>
+                    <span class="font-black text-sm text-primary flex items-center gap-1">${sym} ${gBadge}</span>
                     <span class="text-[9px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-slate-500">${s.type}</span>
                 </div>
                 <div class="text-[11px] font-bold text-slate-500 truncate mt-0.5">${s.name}</div>
             </div>
-        `).join('');
+            `;
+        }).join('');
         suggestionsBox.classList.remove('hidden');
     }
 
-    async function addToWatchlist(ticker) {
+    async function addToWatchlist(ticker, googleTicker = '') {
         if (suggestionsBox) suggestionsBox.classList.add('hidden');
         if (searchInput) searchInput.value = '';
         try {
             await fetch('/api/watchlist', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ticker })
+                body: JSON.stringify({ ticker, googleTicker: googleTicker || null })
             });
             loadWatchlist();
         } catch (err) {
             alert('Failed to add: ' + err.message);
         }
     }
+
 
     document.addEventListener('click', (e) => {
         if (searchInput && suggestionsBox) {

@@ -44,6 +44,17 @@ if [[ -n $(git status -s) ]]; then
         COMMIT_MSG="Aggiornamento automatico locale - $(date '+%Y-%m-%d %H:%M:%S')"
     fi
     
+    NOW_DATE=$(date '+%d/%m/%y %H:%M')
+    NOW_TS=$(date +%s)
+    cat <<EOF > build_info.json
+{
+  "lastModified": "$NOW_DATE",
+  "commit": "HEAD",
+  "timestamp": ${NOW_TS}000
+}
+EOF
+    echo "📝 File build_info.json aggiornato con data: $NOW_DATE"
+    
     echo "💾 Staging and committing changes with message: \"$COMMIT_MSG\""
     git add -A
     git commit -m "$COMMIT_MSG"

@@ -1,4 +1,6 @@
 const express = require('express');
+const { mapYahooToGoogleTicker, mapGoogleToYahooTicker } = require('../services/googleFinance');
+
 
 /**
  * Watchlist Router
@@ -214,29 +216,37 @@ module.exports = function(dependencies) {
  
      // ─── WATCHLIST ADD ───────────────────────────────────────────────────────
      router.post('/watchlist', requireAuth, async (req, res) => {
-         const { ticker, targetPrice, stopLoss, volatilityAlert } = req.body;
+         const { ticker, targetPrice, stopLoss, volatilityAlert, googleTicker } = req.body;
          if (!ticker) return res.status(400).send('Ticker is required');
- 
+
          try {
-             const normalizedTicker = ticker.trim().toUpperCase();
+             let normalizedTicker = ticker.trim().toUpperCase();
+             let gTicker = googleTicker ? googleTicker.trim() : null;
+             if (normalizedTicker.includes(':')) {
+                 gTicker = normalizedTicker;
+                 normalizedTicker = mapGoogleToYahooTicker(normalizedTicker);
+             }
              
              // 1. Check if asset already exists in DB
              let asset = database.db.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(normalizedTicker);
              
              if (!asset) {
-                 // 2. Fetch robust metadata
-                 const metadata = await fetchAssetMetadata(normalizedTicker);
+                 // 2. Fetch robust metadata (Google Finance primary, Yahoo fallback)
+                 const metadata = await fetchAssetMetadata(normalizedTicker, gTicker);
                  if (metadata) {
                      database.db.prepare(`
-                         INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, changeValue, pe, country, isin, updatedAt)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                         INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, changeValue, pe, country, isin, googleTicker, realtimeSource, isRealtime, updatedAt)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
                      `).run(
-                         normalizedTicker, normalizedTicker, metadata.name, metadata.type, metadata.exchange, metadata.currency, metadata.currentPrice, metadata.changePercent, metadata.changeValue || 0, metadata.pe, metadata.country, metadata.isin || null
+                         normalizedTicker, normalizedTicker, metadata.name, metadata.type, metadata.exchange, metadata.currency, metadata.currentPrice, metadata.changePercent, metadata.changeValue || 0, metadata.pe, metadata.country, metadata.isin || null,
+                         metadata.googleTicker || gTicker || null, metadata.realtimeSource || null, metadata.isRealtime ?? 0
                      );
                      asset = database.db.prepare(`SELECT * FROM assets WHERE ticker = ?`).get(normalizedTicker);
                  } else {
-                     return res.status(404).send('Ticker not found on Yahoo Finance');
+                     return res.status(404).send('Ticker not found on Google Finance or Yahoo Finance');
                  }
+             } else if (gTicker && (!asset.googleTicker || asset.googleTicker !== gTicker)) {
+                 database.db.prepare(`UPDATE assets SET googleTicker = ? WHERE ticker = ?`).run(gTicker, normalizedTicker);
              }
  
              // 3. Add to user_watchlist

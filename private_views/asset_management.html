@@ -448,12 +448,14 @@
                             const type = (q.quoteType || '').replace(/'/g, "\\'");
                             const currency = (q.currency || '').replace(/'/g, "\\'");
                             const exchange = (q.exchange || '').replace(/'/g, "\\'");
+                            const googleTicker = (q.googleTicker || '').replace(/'/g, "\\'");
+                            const gfBadge = googleTicker ? `<span class="text-[9px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold px-1 py-0.5 rounded ml-1.5">GF: ${googleTicker}</span>` : '';
 
                             return `
                             <div class="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer border-b border-slate-100 dark:border-slate-800 last:border-0" 
-                                 onclick="selectAsset('${symbol}', '${name}', '${type}', '${currency}', '${exchange}')">
+                                 onclick="selectAsset('${symbol}', '${name}', '${type}', '${currency}', '${exchange}', '${googleTicker}')">
                                 <div class="flex justify-between items-center">
-                                    <span class="font-bold text-primary">${q.symbol}</span>
+                                    <span class="font-bold text-primary flex items-center gap-1">${q.symbol} ${gfBadge}</span>
                                     <span class="text-[10px] bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded font-bold text-slate-500">${q.quoteType || 'Asset'}</span>
                                 </div>
                                 <p class="text-xs text-slate-500 truncate">${q.shortname || q.longname || q.symbol}</p>
@@ -474,11 +476,14 @@
         }, 300);
     });
 
-    function selectAsset(symbol, name, type, currency, exchange) {
+    let _selectedGoogleTicker = null;
+
+    function selectAsset(symbol, name, type, currency, exchange, googleTicker = '') {
         document.getElementById('asset-ticker').value = symbol;
         document.getElementById('asset-name').value = name;
         document.getElementById('asset-search-input').value = symbol;
         document.getElementById('asset-exchange').value = exchange;
+        _selectedGoogleTicker = googleTicker || null;
         
         const typeSelect = document.getElementById('asset-type');
         if (type === 'EQUITY') typeSelect.value = 'Stock';
@@ -511,8 +516,10 @@
             pe: document.getElementById('asset-pe').value ? parseFloat(document.getElementById('asset-pe').value) : null,
             country: document.getElementById('asset-country').value,
             dataSource: document.getElementById('asset-data-source').value,
-            isin: document.getElementById('asset-isin').value
+            isin: document.getElementById('asset-isin').value,
+            googleTicker: _selectedGoogleTicker
         };
+
 
         if (!data.ticker) {
             alert('Please select or enter a ticker');

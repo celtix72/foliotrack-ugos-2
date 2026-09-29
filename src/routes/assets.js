@@ -1,6 +1,7 @@
 const express = require('express');
 const axios   = require('axios');
 const { isValidQuotePrice } = require('../utils/finance');
+const { mapYahooToGoogleTicker, mapGoogleToYahooTicker } = require('../services/googleFinance');
 
 /**
  * Assets & Fundamentals Router
@@ -1048,10 +1049,17 @@ router.post('/assets', requireAuth, async (req, res) => {
         if (!ticker) return res.status(400).send('Invalid Ticker');
         if (!isValidISIN(isin)) return res.status(400).send('Invalid ISIN format');
 
+        let yTicker = ticker;
+        let gTicker = req.body.googleTicker ? req.body.googleTicker.trim() : null;
+        if (ticker.includes(':')) {
+            gTicker = ticker;
+            yTicker = mapGoogleToYahooTicker(ticker);
+        }
+
         let assetData = {
-            id:           ticker || `MANUAL-${Date.now()}`,
-            ticker:       ticker || '',
-            name:         name   || ticker || 'Unknown',
+            id:           yTicker || `MANUAL-${Date.now()}`,
+            ticker:       yTicker || '',
+            name:         name   || yTicker || 'Unknown',
             type:         type   || 'Other',
             exchange:     exchange || 'Unknown',
             currency:     currency || 'USD',
@@ -1060,17 +1068,17 @@ router.post('/assets', requireAuth, async (req, res) => {
             pe:           pe ? parseFloat(pe) : null,
             dataSource:   req.body.dataSource || 'YF',
             isin:         req.body.isin || null,
-            googleTicker: req.body.googleTicker || null,
+            googleTicker: gTicker || null,
             realtimeSource: null,
             isRealtime: 0
         };
 
-        if (ticker) {
-            const metadata = await fetchAssetMetadata(ticker, req.body.googleTicker);
+        if (yTicker) {
+            const metadata = await fetchAssetMetadata(yTicker, gTicker);
             if (metadata) {
                 assetData = {
-                    id:           ticker,
-                    ticker,
+                    id:           yTicker,
+                    ticker:       yTicker,
                     name:         name || metadata.name,
                     type:         type || metadata.type,
                     exchange:     exchange || metadata.exchange,
@@ -1086,12 +1094,13 @@ router.post('/assets', requireAuth, async (req, res) => {
                     country:      metadata.country,
                     dataSource:   dataSource || 'YF',
                     isin:         isin || metadata.isin || null,
-                    googleTicker: req.body.googleTicker || null,
+                    googleTicker: metadata.googleTicker || gTicker || null,
                     realtimeSource: metadata.realtimeSource || null,
                     isRealtime:   metadata.isRealtime ?? 0
                 };
             }
         }
+
 
         const existing = database.db.prepare(`SELECT id FROM assets WHERE ticker = ?`).get(assetData.ticker);
         if (existing && assetData.ticker) return res.status(400).send('Asset already in monitoring list');

@@ -14,8 +14,14 @@ const { xirr, calculateTWR, isBondAsset, isValidQuotePrice, sanitizeQuotePrice }
 const Parser = require('rss-parser');
 const rssParser = new Parser();
 const { callAIModel, parseAIResponse, checkNewGeminiModels } = require('./services/aiService');
-const { notifyUser } = require('./services/notificationService');
-const { enrichWithGoogleFinanceIfDelayed, fetchGoogleFinanceAsset, mapYahooToGoogleTicker } = require('./services/googleFinance');
+const { 
+    enrichWithGoogleFinanceIfDelayed, 
+    fetchGoogleFinanceAsset, 
+    mapYahooToGoogleTicker,
+    mapGoogleToYahooTicker,
+    resolveGoogleTicker,
+    fetchQuotePrimaryGF
+} = require('./services/googleFinance');
 
 
 // ─── Application Version ─────────────────────────────────────────────────────
@@ -629,39 +635,116 @@ async function fetchAssetMetadata(ticker, customGoogleTicker = null) {
             realtimeSource: 'MANUAL'
         };
     }
+
+    let yTicker = ticker;
+    let gTicker = customGoogleTicker;
+    if (ticker && ticker.includes(':')) {
+        gTicker = ticker;
+        yTicker = mapGoogleToYahooTicker(ticker);
+    }
+
+    const isBond = isBondAsset({ ticker: yTicker });
+
     try {
-        const quote = await yahooFinance.quote(ticker).catch(async err => {
+        // ─── PRIMA ISTANZA: Google Finance per Azioni EUR/USD ed ETF ───────
+        let gfPrimary = null;
+        if (!isBond) {
+            try {
+                const resGF = await fetchQuotePrimaryGF(yTicker, gTicker);
+                if (resGF && resGF.success && resGF.price > 0) {
+                    gfPrimary = resGF;
+                    gTicker = resGF.googleTicker;
+                }
+            } catch (gfErr) {
+                logger.warn(`[GF-PRIMARY] Quote failed for ${yTicker}: ${gfErr.message}`);
+            }
+        }
+
+        // ─── FALLBACK / ARRICCHIMENTO: Yahoo Finance ───────────────────────
+        const quote = await yahooFinance.quote(yTicker).catch(async err => {
             if (err.message && (err.message.includes('429') || err.message.includes('Too Many Requests'))) {
-                logger.warn(`Yahoo Finance rate limited for ${ticker}. Trying Google Finance fallback...`);
+                logger.warn(`Yahoo Finance rate limited for ${yTicker}. Trying Google Finance fallback...`);
             }
             return null;
         });
 
-        // If Yahoo Finance returned nothing or an empty/zero price, try Google Finance
+        // Se Yahoo Finance fallisce o non ha prezzo, e abbiamo GF primario, usiamo GF
         if (!quote || !quote.regularMarketPrice || quote.regularMarketPrice <= 0) {
+            if (gfPrimary && gfPrimary.price > 0) {
+                return {
+                    ticker: yTicker,
+                    googleTicker: gTicker,
+                    name: gfPrimary.name || yTicker,
+                    currency: gfPrimary.currency || 'USD',
+                    exchange: gTicker ? gTicker.split(':')[1] : 'GF',
+                    type: (gfPrimary.name || '').toLowerCase().includes('etf') ? 'ETF Azionario' : 'Azioni',
+                    country: 'Global',
+                    currentPrice: gfPrimary.price,
+                    changePercent: gfPrimary.changePercent || 0,
+                    changeValue: gfPrimary.changeValue || 0,
+                    preMarketChangePercent: 0,
+                    postMarketChangePercent: 0,
+                    pe: null,
+                    forwardPE: null,
+                    realtimeSource: gfPrimary.realtimeSource || 'GF',
+                    isRealtime: gfPrimary.isRealtime ?? 1,
+                    exchangeDataDelayedBy: gfPrimary.delay || 0,
+                    dividendYield: null,
+                    eps: null,
+                    beta: null,
+                    pegRatio: null,
+                    nextDividendDate: null,
+                    nextEarningsDate: null,
+                    earningsHistory: [],
+                    quoteDate: new Date().toISOString().split('T')[0],
+                    isin: null
+                };
+            }
+
+            // Altrimenti prova il fallback generico GF rescue
             try {
-                const gfFallback = await fetchGoogleFinanceAsset(ticker, customGoogleTicker);
+                const gfFallback = await fetchGoogleFinanceAsset(yTicker, gTicker);
                 if (gfFallback && gfFallback.currentPrice > 0) {
-                    logger.info(`[GF-FALLBACK] Successfully fetched ${ticker} via Google Finance: ${gfFallback.currentPrice} ${gfFallback.currency}`);
+                    logger.info(`[GF-FALLBACK] Successfully fetched ${yTicker} via Google Finance: ${gfFallback.currentPrice} ${gfFallback.currency}`);
                     return gfFallback;
                 }
             } catch (gfErr) {
-                logger.warn(`[GF-FALLBACK] Google Finance failed for ${ticker}: ${gfErr.message}`);
+                logger.warn(`[GF-FALLBACK] Google Finance failed for ${yTicker}: ${gfErr.message}`);
             }
             if (!quote) return null;
         }
 
-        // If Yahoo Finance provides delayed data or missing price, enrich/override with Google Finance data
+        // Se abbiamo quotazione GF primaria, usiamo il prezzo in tempo reale di Google Finance!
         let gfEnrichment = {
             enriched: false,
             realtimeSource: (quote.exchangeDataDelayedBy === 0) ? 'YF' : 'YF_DELAYED',
-            isRealtime: (quote.exchangeDataDelayedBy === 0) ? 1 : 0
+            isRealtime: (quote.exchangeDataDelayedBy === 0) ? 1 : 0,
+            googleTicker: gTicker
         };
-        try {
-            gfEnrichment = await enrichWithGoogleFinanceIfDelayed(ticker, quote, customGoogleTicker);
-        } catch (gfErr) {
-            logger.warn(`Google Finance enrichment check error for ${ticker}: ${gfErr.message}`);
+
+        if (gfPrimary && gfPrimary.price > 0) {
+            quote.regularMarketPrice = gfPrimary.price;
+            quote.regularMarketChange = gfPrimary.changeValue;
+            quote.regularMarketChangePercent = gfPrimary.changePercent;
+            gfEnrichment = {
+                enriched: true,
+                realtimeSource: gfPrimary.realtimeSource || 'GF',
+                isRealtime: gfPrimary.isRealtime ?? 1,
+                googleTicker: gTicker
+            };
+        } else if (!isBond) {
+            // Se GF primario non era scattato, prova l'arricchimento if delayed
+            try {
+                const resEnrich = await enrichWithGoogleFinanceIfDelayed(yTicker, quote, gTicker);
+                if (resEnrich && resEnrich.enriched) {
+                    gfEnrichment = resEnrich;
+                    gTicker = resEnrich.googleTicker || gTicker;
+                }
+            } catch (gfErr) {
+                logger.warn(`Google Finance enrichment check error for ${yTicker}: ${gfErr.message}`);
+            }
         }
+
 
         let country = 'N/A';
         // Remap EQUITY to Azioni
@@ -738,15 +821,17 @@ async function fetchAssetMetadata(ticker, customGoogleTicker = null) {
             : (quote.regularMarketVolume === 0 ? 0 : rawChangeValue);
 
         return {
-            ticker: ticker,
-            name: quote.shortName || quote.longName || ticker,
-            currency: quote.currency || 'USD',
-            exchange: quote.fullExchangeName || quote.exchange || '',
+            ticker: yTicker,
+            googleTicker: gTicker || (gfEnrichment && gfEnrichment.googleTicker) || mapYahooToGoogleTicker(yTicker, null, quote.fullExchangeName || quote.exchange),
+            name: quote.shortName || quote.longName || (gfPrimary ? gfPrimary.name : yTicker),
+            currency: (gfPrimary && gfPrimary.currency) ? gfPrimary.currency : (quote.currency || 'USD'),
+            exchange: quote.fullExchangeName || quote.exchange || (gTicker ? gTicker.split(':')[1] : ''),
             type: detailedType,
             country: country,
             currentPrice: quote.regularMarketPrice || 0,
             changePercent: calculatedChangePercent ?? 0,
             changeValue: calculatedChangeValue ?? 0,
+
             preMarketChangePercent: quote.preMarketChangePercent || 0,
             postMarketChangePercent: quote.postMarketChangePercent || 0,
             pe: quote.trailingPE || (summary.summaryDetail ? summary.summaryDetail.trailingPE : null),
@@ -3292,6 +3377,7 @@ async function updateMarketData(force = false) {
                     currency: metadata.currency || asset.currency,
                     exchange: metadata.exchange || asset.exchange,
                     country: metadata.country || asset.country,
+                    googleTicker: metadata.googleTicker || asset.googleTicker || null,
                     quoteDate: (priceCheck.valid && metadata.quoteDate) ? metadata.quoteDate : (asset.quoteDate || new Date().toISOString().split('T')[0])
                 };
                 const rtTag = updateData.realtimeSource ? `[${updateData.realtimeSource}${updateData.isRealtime ? ' ⚡RT' : ' ⏱DL'}]` : '';
@@ -3320,14 +3406,16 @@ async function updateMarketData(force = false) {
                     updateData.quoteDate ?? null,
                     updateData.realtimeSource ?? null,
                     updateData.isRealtime ?? 0,
+                    updateData.googleTicker ?? asset.googleTicker ?? null,
                     asset.ticker
                 ];
 
                 database.db.prepare(`
                     UPDATE assets
-                    SET currentPrice=?, changePercent=?, changeValue=?, preMarketChangePercent=?, postMarketChangePercent=?, pe=?, forwardPE=?, dividendYield=?, eps=?, beta=?, pegRatio=?, nextDividendDate=?, nextEarningsDate=?, name=?, currency=?, exchange=?, country=?, quoteDate=?, realtimeSource=?, isRealtime=?, lastUpdateError=NULL, updatedAt=datetime('now')
+                    SET currentPrice=?, changePercent=?, changeValue=?, preMarketChangePercent=?, postMarketChangePercent=?, pe=?, forwardPE=?, dividendYield=?, eps=?, beta=?, pegRatio=?, nextDividendDate=?, nextEarningsDate=?, name=?, currency=?, exchange=?, country=?, quoteDate=?, realtimeSource=?, isRealtime=?, googleTicker=COALESCE(?, googleTicker), lastUpdateError=NULL, updatedAt=datetime('now')
                     WHERE ticker=?
                 `).run(...params);
+
                 
                 // Track new trimestrali / earnings releases
                 if (updateData.earningsHistory && updateData.earningsHistory.length > 0) {

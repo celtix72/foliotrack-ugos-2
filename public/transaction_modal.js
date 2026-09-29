@@ -777,10 +777,12 @@
             const name = i.shortname || i.longname || i.name || sym;
             const curr = i.currency || '';
             const exchange = i.exchange || '';
+            const gTicker = i.googleTicker || '';
+            const gBadge = gTicker ? `<span class="text-[9px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded">GF: ${gTicker}</span>` : '';
             return `<div class="px-4 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-sm transition-colors border-b border-slate-100 dark:border-slate-800/50 last:border-0"
-                onclick="selectTMAsset('${sym}', '${curr}', '${name.replace(/'/g, "\\'")}')">
+                onclick="selectTMAsset('${sym}', '${curr}', '${name.replace(/'/g, "\\'")}', '${gTicker}')">
                 <div class="flex items-center justify-between">
-                    <span class="font-black text-slate-900 dark:text-white">${sym}</span>
+                    <span class="font-black text-slate-900 dark:text-white flex items-center gap-1.5">${sym} ${gBadge}</span>
                     <span class="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">${curr}</span>
                 </div>
                 <div class="text-[11px] text-slate-400 mt-0.5 truncate">${name}${exchange ? ' • ' + exchange : ''}</div>
@@ -789,7 +791,7 @@
         container.classList.remove('hidden');
     }
 
-    window.selectTMAsset = async function (ticker, currency, name) {
+    window.selectTMAsset = async function (ticker, currency, name, googleTicker = '') {
         document.getElementById('tm-asset-search').value = ticker;
         document.getElementById('tm-asset-ticker').value = ticker;
         if (currency) document.getElementById('tm-asset-currency').value = currency;
@@ -805,8 +807,10 @@
         }
 
         try {
-            const res = await fetch(`/api/validate-ticker?ticker=${ticker}`);
+            const queryParam = googleTicker ? `?ticker=${encodeURIComponent(ticker)}&googleTicker=${encodeURIComponent(googleTicker)}` : `?ticker=${encodeURIComponent(ticker)}`;
+            const res = await fetch(`/api/validate-ticker${queryParam}`);
             const data = await res.json();
+
             if (data && data.valid) {
                 if (meta) {
                     let displayType = data.type || 'N/A';

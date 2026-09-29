@@ -1,5 +1,109 @@
 const express = require('express');
 const { isValidQuotePrice } = require('../utils/finance');
+const {
+    mapYahooToGoogleTicker,
+    mapGoogleToYahooTicker,
+    fetchGoogleFinanceQuote,
+    resolveGoogleTicker
+} = require('../services/googleFinance');
+
+/**
+ * Unified search helper querying both Google Finance and Yahoo Finance.
+ * Cross-references tickers between both services.
+ */
+async function performUnifiedSearch(query, yf) {
+    const raw = (query || '').trim();
+    if (!raw || raw.length < 2) return [];
+
+    const suggestions = [];
+    const seenSymbols = new Set();
+
+    // 1. If user typed a Google Finance ticker format (e.g. ENI:BIT, AAPL:NASDAQ, VWRL:AMS)
+    if (raw.includes(':')) {
+        try {
+            const cleanG = raw.toUpperCase();
+            const gf = await fetchGoogleFinanceQuote(cleanG);
+            if (gf && gf.success && gf.price > 0) {
+                const ySym = mapGoogleToYahooTicker(cleanG);
+                const isEtf = (gf.name || '').toLowerCase().includes('etf') || (gf.name || '').toLowerCase().includes('ucits');
+                const exchPart = cleanG.split(':')[1] || 'GF';
+                suggestions.push({
+                    symbol: ySym,
+                    ticker: ySym,
+                    googleTicker: cleanG,
+                    name: gf.name || cleanG,
+                    exchange: `${gf.currency} • ${exchPart} (Google Finance)`,
+                    exchDisp: exchPart,
+                    type: isEtf ? 'ETF' : 'Equity',
+                    quoteType: isEtf ? 'ETF' : 'EQUITY',
+                    currency: gf.currency || 'EUR',
+                    price: gf.price,
+                    isRealtime: gf.isRealtime ? 1 : 0,
+                    source: 'GF'
+                });
+                seenSymbols.add(ySym.toUpperCase());
+                seenSymbols.add(cleanG);
+            }
+        } catch (e) {}
+    }
+
+    // 2. Query Yahoo Finance in parallel
+    try {
+        const yfResults = await yf.search(raw).catch(() => ({ quotes: [] }));
+        const quotes = (yfResults.quotes || []).filter(q => q.symbol && q.symbol !== 'CASH');
+
+        for (const q of quotes) {
+            const symUpper = q.symbol.toUpperCase();
+            if (seenSymbols.has(symUpper)) continue;
+            seenSymbols.add(symUpper);
+
+            const gTicker = mapYahooToGoogleTicker(q.symbol, null, q.exchDisp || q.exch);
+
+            suggestions.push({
+                symbol: q.symbol,
+                ticker: q.symbol,
+                googleTicker: gTicker,
+                name: q.shortname || q.longname || q.symbol,
+                exchange: q.exchDisp || q.exch || '',
+                exchDisp: q.exchDisp || q.exch || '',
+                type: q.quoteType || 'Equity',
+                quoteType: q.quoteType || 'EQUITY',
+                currency: q.currency || ''
+            });
+        }
+    } catch (e) {}
+
+    // 3. Fallback: if no suggestions found yet, try candidate Google Finance resolution
+    if (suggestions.length === 0 && !raw.includes(':') && /^[A-Za-z0-9.\-_]{1,10}$/.test(raw)) {
+        try {
+            const resolvedG = await resolveGoogleTicker(raw);
+            if (resolvedG) {
+                const gf = await fetchGoogleFinanceQuote(resolvedG);
+                if (gf && gf.success && gf.price > 0) {
+                    const ySym = mapGoogleToYahooTicker(resolvedG);
+                    const isEtf = (gf.name || '').toLowerCase().includes('etf') || (gf.name || '').toLowerCase().includes('ucits');
+                    const exchPart = resolvedG.split(':')[1] || 'GF';
+                    suggestions.push({
+                        symbol: ySym,
+                        ticker: ySym,
+                        googleTicker: resolvedG,
+                        name: gf.name || resolvedG,
+                        exchange: `${gf.currency} • ${exchPart} (Google Finance)`,
+                        exchDisp: exchPart,
+                        type: isEtf ? 'ETF' : 'Equity',
+                        quoteType: isEtf ? 'ETF' : 'EQUITY',
+                        currency: gf.currency || 'USD',
+                        price: gf.price,
+                        isRealtime: gf.isRealtime ? 1 : 0,
+                        source: 'GF'
+                    });
+                }
+            }
+        } catch (e) {}
+    }
+
+    return suggestions;
+}
 
 /**
  * Market Router (search, indices, news, market status/sync)
@@ -36,21 +140,14 @@ router.get('/market/search', requireAuth, async (req, res) => {
     if (!q || q.length < 2) return res.json([]);
 
     try {
-        const results = await yahooFinance.search(q);
-        const suggestions = results.quotes
-            .filter(quote => quote.isYahooFinance)
-            .map(quote => ({
-                ticker: quote.symbol,
-                name: quote.shortname || quote.longname || quote.symbol,
-                exchange: quote.exchDisp || quote.exch,
-                type: quote.quoteType || 'Equity'
-            }));
+        const suggestions = await performUnifiedSearch(q, yahooFinance);
         res.json(suggestions);
     } catch (err) {
         console.error('Search error:', err.message);
         res.status(500).json({ error: err.message });
     }
 });
+
 
 router.get('/market/indices', requireAuth, async (req, res) => {
     const symbols = ['FTSEMIB.MI', 'BTC-USD', '^GSPC', '^IXIC'];
@@ -202,19 +299,26 @@ router.get('/validate-ticker', requireAuth, async (req, res) => {
         });
     }
 
+    let yTicker = ticker;
+    let gTicker = req.query.googleTicker;
+    if (ticker && ticker.includes(':')) {
+        gTicker = ticker;
+        yTicker = mapGoogleToYahooTicker(ticker);
+    }
+
     try {
-        let metadata = await fetchAssetMetadata(ticker, req.query.googleTicker);
+        let metadata = await fetchAssetMetadata(yTicker, gTicker);
         
         // Fallback to ISIN if ticker fails or is just a label (like ROM39)
-        if ((!metadata || ticker.length < 3) && isin && isin.length >= 10) {
+        if ((!metadata || yTicker.length < 3) && isin && isin.length >= 10) {
             const isItIsin = /^IT[0-9A-Z]{10}$/.test(isin) || /^XS[0-9]{10}$/.test(isin);
             if (isItIsin) {
                 const bResult = await B_ITA(isin);
                 if (bResult.success) {
-                    const priceValid = isValidQuotePrice(bResult.price, { ticker, isin, type: 'Bond', dataSource: 'B_ITA' }).valid;
+                    const priceValid = isValidQuotePrice(bResult.price, { ticker: yTicker, isin, type: 'Bond', dataSource: 'B_ITA' }).valid;
                     metadata = {
-                        ticker: ticker || isin,
-                        name: bResult.name || ticker || isin,
+                        ticker: yTicker || isin,
+                        name: bResult.name || yTicker || isin,
                         currentPrice: priceValid ? bResult.price : 0,
                         changePercent: priceValid ? bResult.variation : 0,
                         quoteType: 'Bond',
@@ -231,21 +335,15 @@ router.get('/validate-ticker', requireAuth, async (req, res) => {
 
         res.json({
             valid: true,
-            ...metadata
+            ...metadata,
+            ticker: metadata.ticker || yTicker,
+            googleTicker: metadata.googleTicker || gTicker
         });
     } catch {
         // Try search fallback
         try {
-            const results = await yahooFinance.search(ticker);
-            const first = results.quotes && results.quotes[0];
-            if (first) {
-                res.json({ valid: false, suggestions: results.quotes.slice(0, 5).map(q => ({
-                    symbol: q.symbol,
-                    name: q.shortname || q.longname || q.symbol,
-                    exchange: q.exchange,
-                    type: q.quoteType
-                }))});
-            }
+            const results = await performUnifiedSearch(ticker, yahooFinance);
+            res.json({ valid: false, suggestions: results.slice(0, 5) });
         } catch {
             res.json({ valid: false, suggestions: [] });
         }
@@ -274,15 +372,14 @@ router.get('/asset-search', requireAuth, async (req, res) => {
     const { query } = req.query;
     if (!query) return res.status(400).send('query is required');
     try {
-        const results = await yahooFinance.search(query);
-        // Filter out any result that has "CASH" as symbol to avoid confusion
-        const filtered = (results.quotes || []).filter(q => q.symbol !== 'CASH');
-        res.json(filtered);
+        const results = await performUnifiedSearch(query, yahooFinance);
+        res.json(results);
     } catch (err) {
         console.error('Search error:', err);
         res.status(500).json({ error: err.message });
     }
 });
+
 
 router.get('/market/exchange-rate', requireAuth, async (req, res) => {
     try {

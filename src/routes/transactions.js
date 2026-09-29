@@ -1,5 +1,6 @@
 const express = require('express');
 const { detectBroker, parseDirecta, parseIfis } = require('../utils/brokerParsers');
+const { mapYahooToGoogleTicker, mapGoogleToYahooTicker } = require('../services/googleFinance');
 
 /**
  * Transactions Router
@@ -200,7 +201,13 @@ module.exports = function(dependencies) {
         
         if (!portfolioId) return res.status(400).send('portfolioId is required');
 
-        const sanitizedTicker = sanitizeTicker(assetTicker || req.body.ticker);
+        const rawSanitized = sanitizeTicker(assetTicker || req.body.ticker);
+        let sanitizedTicker = rawSanitized;
+        let gTicker = req.body.googleTicker || null;
+        if (rawSanitized && rawSanitized.includes(':')) {
+            gTicker = rawSanitized;
+            sanitizedTicker = mapGoogleToYahooTicker(rawSanitized);
+        }
 
         // Auto-create/update asset with ISIN and Data Source
         if (sanitizedTicker && sanitizedTicker !== 'CASH') {
@@ -211,21 +218,22 @@ module.exports = function(dependencies) {
                         isin = COALESCE(?, isin), 
                         dataSource = COALESCE(?, dataSource),
                         name = COALESCE(?, name),
-                        currency = COALESCE(?, currency)
+                        currency = COALESCE(?, currency),
+                        googleTicker = COALESCE(?, googleTicker)
                     WHERE ticker = ?
-                `).run(isin || null, dataSource || null, assetName || null, assetCurrency || null, sanitizedTicker);
+                `).run(isin || null, dataSource || null, assetName || null, assetCurrency || null, gTicker, sanitizedTicker);
             } else {
                 let metadata = {};
                 // Only fetch metadata if NOT manual
                 if (dataSource !== 'MANUAL') {
                     try {
-                        metadata = await fetchAssetMetadata(sanitizedTicker) || {};
+                        metadata = await fetchAssetMetadata(sanitizedTicker, gTicker) || {};
                     } catch(e) { metadata = {}; }
                 }
                 
                 database.db.prepare(`
-                    INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, country, isManual, dataSource, isin, updatedAt)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                    INSERT INTO assets (id, ticker, name, type, exchange, currency, currentPrice, changePercent, pe, country, isManual, dataSource, isin, googleTicker, realtimeSource, isRealtime, updatedAt)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
                 `).run(
                     sanitizedTicker, 
                     sanitizedTicker, 
@@ -239,10 +247,14 @@ module.exports = function(dependencies) {
                     assetCountry || metadata.country || (dataSource === 'MANUAL' ? 'Manual' : 'N/A'), 
                     (dataSource === 'MANUAL' ? 1 : 0),
                     dataSource || 'YF', 
-                    isin || metadata.isin || null
+                    isin || metadata.isin || null,
+                    metadata.googleTicker || gTicker || null,
+                    metadata.realtimeSource || null,
+                    metadata.isRealtime ?? 0
                 );
             }
         }
+
 
         let finalQty = parseFloat(quantity || 0);
         let finalPrice = parseFloat(price || 0);

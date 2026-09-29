@@ -7,19 +7,17 @@ const CACHE_TTL_MS = 45000;
 /**
  * Maps a Yahoo Finance ticker to the equivalent Google Finance format: {TICKER}:{EXCHANGE}
  *
- * Examples:
- * - ENI.MI -> ENI:BIT
- * - ISP.MI -> ISP:BIT
- * - SAP.DE -> SAP:ETR
- * - AIR.PA -> AIR:EPA
- * - ASML.AS -> ASML:AMS
- * - IBE.MC -> IBE:BME
- * - SHEL.L -> SHEL:LON
- * - FTSEMIB.MI / ^FTSEMIB -> FTSEMIB:INDEXBIT
- * - ^GSPC -> .INX:INDEXSP
- * - ^IXIC -> .IXIC:INDEXNASDAQ
+ * Supports:
+ * - Italian stocks/ETFs: ENI.MI -> ENI:BIT, ISP.MI -> ISP:BIT
+ * - German stocks/ETFs: SAP.DE -> SAP:ETR, VWCE.DE -> VWCE:ETR
+ * - French stocks/ETFs: AIR.PA -> AIR:EPA
+ * - Dutch stocks/ETFs: ASML.AS -> ASML:AMS
+ * - Spanish stocks/ETFs: IBE.MC -> IBE:BME
+ * - UK stocks/ETFs: SHEL.L -> SHEL:LON
+ * - US stocks/ETFs: AAPL -> AAPL:NASDAQ, KO -> KO:NYSE, VOO -> VOO:NYSEARCA, BRK-B -> BRK.B:NYSE
+ * - Major Indices: FTSEMIB.MI -> FTSEMIB:INDEXBIT, ^GSPC -> .INX:INDEXSP, ^IXIC -> .IXIC:INDEXNASDAQ
  */
-function mapYahooToGoogleTicker(ticker, customGoogleTicker = null) {
+function mapYahooToGoogleTicker(ticker, customGoogleTicker = null, exchange = null) {
     if (customGoogleTicker && typeof customGoogleTicker === 'string' && customGoogleTicker.trim().length > 0) {
         return customGoogleTicker.trim();
     }
@@ -27,7 +25,7 @@ function mapYahooToGoogleTicker(ticker, customGoogleTicker = null) {
 
     const t = ticker.trim().toUpperCase();
 
-    // Already in Google Finance format (e.g. TDIV:AMS, ENI:BIT)
+    // Already in Google Finance format (e.g. TDIV:AMS, ENI:BIT, AAPL:NASDAQ)
     if (t.includes(':')) return t;
 
     // Specific Index mappings
@@ -35,6 +33,7 @@ function mapYahooToGoogleTicker(ticker, customGoogleTicker = null) {
     if (t === '^GSPC') return '.INX:INDEXSP';
     if (t === '^IXIC') return '.IXIC:INDEXNASDAQ';
     if (t === '^STOXX50E') return 'INDEXSTOXX:SX5E';
+    if (t === '^DJI') return '.DJI:INDEXDJX';
 
     // European suffix mappings
     if (t.endsWith('.MI')) return `${t.slice(0, -3)}:BIT`;
@@ -49,7 +48,206 @@ function mapYahooToGoogleTicker(ticker, customGoogleTicker = null) {
     if (t.endsWith('.SW')) return `${t.slice(0, -3)}:SWX`;
     if (t.endsWith('.F'))  return `${t.slice(0, -2)}:FRA`;
 
+    // US stock classes e.g. BRK-B -> BRK.B
+    const cleanSym = t.replace('-', '.');
+
+    // Exchange hint if provided
+    if (exchange && typeof exchange === 'string') {
+        const ex = exchange.toUpperCase();
+        if (ex.includes('NASDAQ') || ex.includes('NMS') || ex.includes('NGS') || ex.includes('NCM')) {
+            return `${cleanSym}:NASDAQ`;
+        }
+        if (ex.includes('ARCA') || ex.includes('PCX') || ex.includes('BATS') || ex.includes('ETF')) {
+            return `${cleanSym}:NYSEARCA`;
+        }
+        if (ex.includes('NYSE') || ex.includes('NYQ')) {
+            return `${cleanSym}:NYSE`;
+        }
+        if (ex.includes('AMEX') || ex.includes('ASE')) {
+            return `${cleanSym}:AMEX`;
+        }
+    }
+
+    // Known popular ETFs default to NYSEARCA or NASDAQ
+    const arcaEtfs = new Set(['VOO', 'SPY', 'IVV', 'VTI', 'IWM', 'EEM', 'GLD', 'SLV', 'VEA', 'VWO', 'BND', 'AGG', 'SCHD', 'XLK', 'XLF', 'VUG']);
+    if (arcaEtfs.has(cleanSym)) return `${cleanSym}:NYSEARCA`;
+    if (cleanSym === 'QQQ') return 'QQQ:NASDAQ';
+
+    // If pure US ticker format (e.g. AAPL, MSFT, KO)
+    if (/^[A-Z]{1,5}(\.[A-Z]{1,2})?$/.test(cleanSym)) {
+        return `${cleanSym}:NASDAQ`; // Candidate default
+    }
+
     return null;
+}
+
+/**
+ * Converts a Google Finance ticker (e.g. ENI:BIT, AAPL:NASDAQ, BRK.B:NYSE)
+ * back to the standard Yahoo Finance ticker format (e.g. ENI.MI, AAPL, BRK-B).
+ */
+function mapGoogleToYahooTicker(googleTicker) {
+    if (!googleTicker || typeof googleTicker !== 'string') return googleTicker;
+    const clean = googleTicker.trim().toUpperCase();
+    if (!clean.includes(':')) return clean;
+
+    const [sym, exch] = clean.split(':');
+    const exchMap = {
+        'BIT': '.MI',
+        'ETR': '.DE',
+        'EPA': '.PA',
+        'AMS': '.AS',
+        'BME': '.MC',
+        'LON': '.L',
+        'EBR': '.BR',
+        'ELI': '.LS',
+        'VIE': '.VI',
+        'SWX': '.SW',
+        'FRA': '.F'
+    };
+
+    if (exchMap[exch]) {
+        return `${sym}${exchMap[exch]}`;
+    }
+
+    if (['NASDAQ', 'NYSE', 'NYSEARCA', 'AMEX', 'BATS', 'INDEXNASDAQ', 'INDEXSP', 'INDEXDJX'].includes(exch)) {
+        if (exch === 'INDEXSP' && sym === '.INX') return '^GSPC';
+        if (exch === 'INDEXNASDAQ' && sym === '.IXIC') return '^IXIC';
+        if (exch === 'INDEXDJX' && sym === '.DJI') return '^DJI';
+        return sym.replace('.', '-');
+    }
+
+    if (exch === 'INDEXBIT' && sym === 'FTSEMIB') return 'FTSEMIB.MI';
+
+    return sym;
+}
+
+// In-memory cache for resolved Google tickers so candidate probes happen only once
+const _resolvedTickerCache = new Map();
+
+/**
+ * Resolves the valid, working Google Finance ticker for a given asset.
+ * Tries known exchange first, and probes candidate US exchanges if needed.
+ */
+async function resolveGoogleTicker(ticker, customGoogleTicker = null, knownExchange = null) {
+    if (customGoogleTicker && typeof customGoogleTicker === 'string' && customGoogleTicker.trim().length > 0) {
+        return customGoogleTicker.trim();
+    }
+    if (!ticker || typeof ticker !== 'string') return null;
+
+    const clean = ticker.trim().toUpperCase();
+    if (clean.includes(':')) return clean;
+
+    const cacheKey = `${clean}@${knownExchange || ''}`;
+    if (_resolvedTickerCache.has(cacheKey)) {
+        return _resolvedTickerCache.get(cacheKey);
+    }
+
+    // Direct mapping for European tickers (.MI, .DE, .PA, etc.) or indices
+    const directCandidate = mapYahooToGoogleTicker(clean, null, knownExchange);
+    if (directCandidate && (directCandidate.endsWith(':BIT') || directCandidate.endsWith(':ETR') || 
+        directCandidate.endsWith(':EPA') || directCandidate.endsWith(':AMS') || directCandidate.endsWith(':BME') || 
+        directCandidate.endsWith(':LON') || directCandidate.endsWith(':EBR') || directCandidate.endsWith(':ELI') || 
+        directCandidate.endsWith(':VIE') || directCandidate.endsWith(':SWX') || directCandidate.endsWith(':FRA') ||
+        directCandidate.includes('INDEX'))) {
+        _resolvedTickerCache.set(cacheKey, directCandidate);
+        return directCandidate;
+    }
+
+    // For US tickers without guaranteed exchange, build candidate list
+    const sym = clean.replace('-', '.');
+    let candidates = [];
+    if (knownExchange) {
+        const ex = String(knownExchange).toUpperCase();
+        if (ex.includes('NASDAQ') || ex.includes('NMS') || ex.includes('NGS')) candidates.push(`${sym}:NASDAQ`);
+        else if (ex.includes('ARCA') || ex.includes('PCX') || ex.includes('BATS') || ex.includes('ETF')) candidates.push(`${sym}:NYSEARCA`);
+        else if (ex.includes('NYSE') || ex.includes('NYQ')) candidates.push(`${sym}:NYSE`);
+        else if (ex.includes('AMEX')) candidates.push(`${sym}:AMEX`);
+    }
+
+    const arcaEtfs = new Set(['VOO', 'SPY', 'IVV', 'VTI', 'IWM', 'EEM', 'GLD', 'SLV', 'VEA', 'VWO', 'BND', 'AGG', 'SCHD', 'XLK', 'XLF', 'VUG']);
+    if (arcaEtfs.has(sym)) {
+        candidates.push(`${sym}:NYSEARCA`, `${sym}:NASDAQ`, `${sym}:NYSE`);
+    } else {
+        candidates.push(`${sym}:NASDAQ`, `${sym}:NYSE`, `${sym}:NYSEARCA`, `${sym}:AMEX`);
+    }
+    candidates = [...new Set(candidates)];
+
+    for (const cand of candidates) {
+        const q = await fetchGoogleFinanceQuote(cand);
+        if (q && q.success && q.price > 0) {
+            _resolvedTickerCache.set(cacheKey, cand);
+            return cand;
+        }
+    }
+
+    // Fallback to direct candidate if probes failed
+    if (directCandidate) {
+        _resolvedTickerCache.set(cacheKey, directCandidate);
+        return directCandidate;
+    }
+
+    return null;
+}
+
+/**
+ * Primary Google Finance Quote Fetcher for Stocks & ETFs (EUR & USD).
+ * Checks Google Finance first. Returns null / skip if asset is a bond.
+ *
+ * @param {string} ticker
+ * @param {string|null} customGoogleTicker
+ * @param {object} [assetMeta={}]
+ * @returns {Promise<{
+ *   success: boolean,
+ *   price?: number,
+ *   changePercent?: number,
+ *   changeValue?: number,
+ *   currency?: string,
+ *   name?: string,
+ *   googleTicker?: string,
+ *   realtimeSource?: string,
+ *   isRealtime?: number,
+ *   delay?: number,
+ *   reason?: string
+ * }>}
+ */
+async function fetchQuotePrimaryGF(ticker, customGoogleTicker = null, assetMeta = {}) {
+    if (!ticker) return { success: false, reason: 'Missing ticker' };
+
+    // Skip bonds and manual assets - bonds remain completely untouched
+    const type = (assetMeta.type || assetMeta.quoteType || '').toLowerCase();
+    const cleanTicker = ticker.trim().toUpperCase();
+    if (type.includes('bond') || type.includes('obblig') || type === 'btp' || 
+        cleanTicker.startsWith('BTP') || cleanTicker.startsWith('BOT') || cleanTicker.startsWith('CCT') ||
+        cleanTicker.startsWith('CD_') || cleanTicker.startsWith('BP_') || cleanTicker === 'CASH' ||
+        assetMeta.dataSource === 'B_ITA' || assetMeta.dataSource === 'MANUAL') {
+        return { success: false, isBondOrManual: true, reason: 'Bonds and manual assets are handled by their dedicated sources' };
+    }
+
+    try {
+        const gTicker = await resolveGoogleTicker(cleanTicker, customGoogleTicker, assetMeta.exchange);
+        if (!gTicker) {
+            return { success: false, reason: `Could not resolve Google Finance ticker for ${ticker}` };
+        }
+
+        const gf = await fetchGoogleFinanceQuote(gTicker);
+        if (gf && gf.success && gf.price > 0) {
+            return {
+                success: true,
+                price: gf.price,
+                changePercent: gf.changePercent,
+                changeValue: gf.changeValue,
+                currency: gf.currency || 'USD',
+                name: gf.name,
+                googleTicker: gTicker,
+                realtimeSource: gf.isRealtime ? 'GF' : 'GF_DELAYED',
+                isRealtime: gf.isRealtime ? 1 : 0,
+                delay: gf.delay
+            };
+        }
+        return { success: false, reason: gf ? gf.reason : 'Empty GF response' };
+    } catch (err) {
+        return { success: false, reason: err.message };
+    }
 }
 
 /**
@@ -264,7 +462,11 @@ async function fetchGoogleFinanceAsset(ticker, customGoogleTicker = null) {
 
 module.exports = {
     mapYahooToGoogleTicker,
+    mapGoogleToYahooTicker,
+    resolveGoogleTicker,
     fetchGoogleFinanceQuote,
+    fetchQuotePrimaryGF,
     enrichWithGoogleFinanceIfDelayed,
     fetchGoogleFinanceAsset
 };
+
