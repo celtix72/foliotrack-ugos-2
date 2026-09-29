@@ -14,6 +14,7 @@ const { xirr, calculateTWR, isBondAsset, isValidQuotePrice, sanitizeQuotePrice }
 const Parser = require('rss-parser');
 const rssParser = new Parser();
 const { callAIModel, parseAIResponse, checkNewGeminiModels } = require('./services/aiService');
+const { notifyUser } = require('./services/notificationService');
 const { 
     enrichWithGoogleFinanceIfDelayed, 
     fetchGoogleFinanceAsset, 
@@ -22,6 +23,7 @@ const {
     resolveGoogleTicker,
     fetchQuotePrimaryGF
 } = require('./services/googleFinance');
+
 
 
 // ─── Application Version ─────────────────────────────────────────────────────
