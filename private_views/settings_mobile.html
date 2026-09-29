@@ -1099,7 +1099,7 @@
         msg.classList.remove('hidden');
     };
 
-    window.confirmRestore = (filename) => {
+    window.confirmRestore = async (filename) => {
         if (await ftConfirm(`Restore backup "${filename}"? Server will restart.`)) {
             fetch('/api/backups/restore', {
                 method: 'POST',
