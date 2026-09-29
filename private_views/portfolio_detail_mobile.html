@@ -1172,6 +1172,7 @@
                 <div class="flex items-center gap-2">
                   <div class="mob-holding-ticker">${h.ticker}</div>
                   <div class="px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-tighter bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700">${tag}</div>
+                  ${typeof renderQuoteBadge === 'function' ? renderQuoteBadge(h.isRealtime, h.realtimeSource) : ''}
                 </div>
                 <div class="mob-holding-name">${h.name || ''}</div>
                 <div class="flex flex-wrap gap-1.5 mt-1">

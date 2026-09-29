@@ -1412,7 +1412,7 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
 
 
     const heldAssetsRaw = userId ? database.db.prepare(`
-        SELECT a.ticker, a.name, a.changePercent, a.currentPrice, a.currency, a.quoteDate, SUM(h.netQty) as totalNetQty
+        SELECT a.ticker, a.name, a.changePercent, a.currentPrice, a.currency, a.quoteDate, a.isRealtime, a.realtimeSource, SUM(h.netQty) as totalNetQty
         FROM assets a
         JOIN (
             SELECT t.assetTicker, 
@@ -1446,7 +1446,15 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
         
         const isValidToday = isToday || (preMktActive && a.preMarketChangePercent);
 
-        return { ticker: a.ticker, name: a.name, changePercent: changePct, absChange, isValidToday };
+        return { 
+            ticker: a.ticker, 
+            name: a.name, 
+            changePercent: changePct, 
+            absChange, 
+            isValidToday,
+            isRealtime: a.isRealtime ?? 0,
+            realtimeSource: a.realtimeSource || 'YF'
+        };
     });
     
     const validTopAssets = heldAssets.filter(a => a.isValidToday && a.changePercent !== 0 && a.absChange !== 0);
@@ -1628,6 +1636,8 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
                 dataSource: asset ? asset.dataSource : 'YF',
                 googleTicker: asset ? asset.googleTicker : null,
                 country: asset ? asset.country : 'Global',
+                isRealtime: asset ? (asset.isRealtime ?? 0) : 0,
+                realtimeSource: asset ? (asset.realtimeSource || 'YF') : 'YF',
                 lastUpdateError: asset ? asset.lastUpdateError : null,
                 targetPrice: asset ? asset.targetPrice : 0,
                 stopLoss: asset ? asset.stopLoss : 0,

@@ -382,7 +382,10 @@
                             <span class="text-xs font-bold text-slate-500">${ftFormatDate(a.nextDividendDate)}</span>
                         </td>
                         <td class="px-6 py-4 text-right">
-                            <span class="text-sm font-black text-primary">${formatCurrency(price, a.currency)}</span>
+                            <div class="flex items-center justify-end gap-1.5">
+                                <span class="text-sm font-black text-primary font-mono">${formatCurrency(price, a.currency)}</span>
+                                ${typeof renderQuoteBadge === 'function' ? renderQuoteBadge(a.isRealtime, a.realtimeSource) : ''}
+                            </div>
                         </td>
                         <td class="px-6 py-4 text-right">
                             <p class="text-sm ${change > 0 ? 'text-emerald-500' : (change < 0 ? 'text-red-500' : 'text-slate-500')} font-bold flex items-center justify-end gap-1">

@@ -1052,6 +1052,32 @@
         } catch(e) { return '—'; }
     };
 
+    /**
+     * Renders a tiny badge next to asset quotes indicating real-time (⚡RT) or delayed (⏱15m) status.
+     * @param {number|boolean} isRealtime - 1 / true for real-time, 0 / false for delayed
+     * @param {string} [realtimeSource=''] - 'GF', 'YF', 'B_ITA', 'MANUAL'
+     * @param {string} [extraClass=''] - optional extra CSS classes
+     * @returns {string} HTML markup
+     */
+    window.renderQuoteBadge = function(isRealtime, realtimeSource = '', extraClass = '') {
+        const src = (realtimeSource || '').toUpperCase();
+        
+        if (src === 'MANUAL') {
+            return `<span class="inline-flex items-center px-1 py-px rounded text-[8px] font-black font-mono tracking-tighter bg-slate-500/10 text-slate-400 border border-slate-500/20 leading-none select-none ${extraClass}" title="Prezzo inserito manualmente">MAN</span>`;
+        }
+
+        const isRT = Boolean(isRealtime === 1 || isRealtime === true || isRealtime === '1');
+
+        if (isRT) {
+            const srcLabel = src === 'GF' ? 'Google Finance' : (src === 'B_ITA' ? 'Borsa Italiana' : 'Yahoo Finance');
+            return `<span class="inline-flex items-center gap-0.5 px-1 py-px rounded text-[8px] font-black font-mono tracking-tighter bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 leading-none select-none ${extraClass}" title="Quotazione in tempo reale (${srcLabel})"><span class="w-1 h-1 rounded-full bg-emerald-500 animate-pulse inline-block"></span>⚡RT</span>`;
+        } else {
+            const srcLabel = src.includes('GF') ? 'Google Finance' : 'Yahoo Finance';
+            return `<span class="inline-flex items-center gap-0.5 px-1 py-px rounded text-[8px] font-black font-mono tracking-tighter bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 leading-none select-none ${extraClass}" title="Quotazione differita di ~15-20 min (${srcLabel})">⏱15m</span>`;
+        }
+    };
+
+
 
     window.updateAppSettings = async (payload) => {
         try {
