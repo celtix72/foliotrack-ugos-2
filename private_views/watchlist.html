@@ -554,7 +554,7 @@
                             <td class="px-4 py-0.5">
                                 <div class="flex items-center gap-1.5">
                                     <span class="text-xs font-black text-slate-900 dark:text-white font-mono leading-tight">${formatCurrency(item.currentPrice, item.currency, 2)}</span>
-                                    ${typeof renderQuoteBadge === 'function' ? renderQuoteBadge(item.isRealtime, item.realtimeSource) : ''}
+                                    ${typeof renderQuoteBadge === 'function' ? renderQuoteBadge(item.isRealtime, item.realtimeSource, item.updatedAt) : ''}
                                 </div>
                                 <div class="flex items-center gap-1 mt-0.5 flex-wrap">
                                     ${aiBadge}

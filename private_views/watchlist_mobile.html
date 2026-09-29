@@ -693,7 +693,7 @@
                 <div style="display:flex; align-items:center; gap:4px; max-width:100%; overflow:hidden; flex-wrap:nowrap;">
                   <span style="${displaySymbolStyle}">${displaySymbol}</span>
                   <span style="font-size:calc(14px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text); flex-shrink:0;">${priceFmt}</span>
-                  ${typeof renderQuoteBadge === 'function' ? renderQuoteBadge(a.isRealtime, a.realtimeSource) : ''}
+                  ${typeof renderQuoteBadge === 'function' ? renderQuoteBadge(a.isRealtime, a.realtimeSource, a.updatedAt) : ''}
                   <span style="color:${chgColor}; font-size:calc(12px * var(--mkcard-scale, 1)); font-weight:900; flex-shrink:0;">${todayVarPct}</span>
                 </div>
 

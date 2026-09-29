@@ -1638,6 +1638,7 @@ async function getPortfolioDetails(portfolioId, liveRate = null) {
                 country: asset ? asset.country : 'Global',
                 isRealtime: asset ? (asset.isRealtime ?? 0) : 0,
                 realtimeSource: asset ? (asset.realtimeSource || 'YF') : 'YF',
+                updatedAt: asset ? asset.updatedAt : null,
                 lastUpdateError: asset ? asset.lastUpdateError : null,
                 targetPrice: asset ? asset.targetPrice : 0,
                 stopLoss: asset ? asset.stopLoss : 0,

@@ -709,7 +709,10 @@ function renderAssets(filter = '') {
                 </div>
             </td>
             <td class="px-4 py-0.5">
-                <p class="text-xs font-black text-slate-900 dark:text-white font-mono leading-tight">${formatCurrency(price, a.currency)}</p>
+                <div class="flex items-center gap-1.5">
+                    <span class="text-xs font-black text-slate-900 dark:text-white font-mono leading-tight">${formatCurrency(price, a.currency)}</span>
+                    ${typeof renderQuoteBadge === 'function' ? renderQuoteBadge(a.isRealtime, a.realtimeSource, a.updatedAt) : ''}
+                </div>
                 <div class="flex items-center gap-1 mt-0.5 flex-wrap">
                     ${renderAiBadges(a)}
                     ${renderNoteBadgeDesktop(a.ticker)}

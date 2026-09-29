@@ -1357,7 +1357,7 @@
                 <td class="px-5 py-1.5">
                     <div class="flex items-center gap-1.5">
                         <span class="font-black text-slate-900 dark:text-white font-mono text-sm">${formatCurrency(h.currentPrice, h.currency, 2)}</span>
-                        ${typeof renderQuoteBadge === 'function' ? renderQuoteBadge(h.isRealtime, h.realtimeSource) : ''}
+                        ${typeof renderQuoteBadge === 'function' ? renderQuoteBadge(h.isRealtime, h.realtimeSource, h.updatedAt) : ''}
                     </div>
                     <div class="flex items-center gap-1 mt-0.5">
                         <span class="material-symbols-outlined text-[11px] text-${dayColor}-500">${(h.changeValue || 0) >= 0 ? 'trending_up' : 'trending_down'}</span>

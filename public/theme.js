@@ -1054,26 +1054,67 @@
 
     /**
      * Renders a tiny badge next to asset quotes indicating real-time (⚡RT) or delayed (⏱15m) status.
+     * Hovering / clicking shows a tooltip with the source and timestamp of the last quote update.
      * @param {number|boolean} isRealtime - 1 / true for real-time, 0 / false for delayed
      * @param {string} [realtimeSource=''] - 'GF', 'YF', 'B_ITA', 'MANUAL'
+     * @param {string|Date|number} [updatedAt=null] - last update timestamp/date string
      * @param {string} [extraClass=''] - optional extra CSS classes
      * @returns {string} HTML markup
      */
-    window.renderQuoteBadge = function(isRealtime, realtimeSource = '', extraClass = '') {
+    window.renderQuoteBadge = function(isRealtime, realtimeSource = '', updatedAt = null, extraClass = '') {
+        // If 3rd argument was passed as a CSS class instead of timestamp (backward compatibility)
+        if (typeof updatedAt === 'string' && (updatedAt.includes(' ') || updatedAt.includes('cursor') || updatedAt.includes('ml-') || updatedAt.includes('mr-')) && !updatedAt.includes('-') && !updatedAt.includes(':')) {
+            extraClass = updatedAt;
+            updatedAt = null;
+        }
+
         const src = (realtimeSource || '').toUpperCase();
         
+        let timeStr = '';
+        if (updatedAt) {
+            try {
+                let d;
+                if (typeof updatedAt === 'number') {
+                    d = new Date(updatedAt);
+                } else if (typeof updatedAt === 'string') {
+                    const clean = updatedAt.includes('T') ? updatedAt : updatedAt.replace(' ', 'T') + (updatedAt.endsWith('Z') ? '' : 'Z');
+                    d = new Date(clean);
+                    if (isNaN(d.getTime())) d = new Date(updatedAt);
+                } else if (updatedAt instanceof Date) {
+                    d = updatedAt;
+                }
+                if (d && !isNaN(d.getTime())) {
+                    const pad = n => String(n).padStart(2, '0');
+                    const hours = pad(d.getHours());
+                    const minutes = pad(d.getMinutes());
+                    const seconds = pad(d.getSeconds());
+                    const now = new Date();
+                    const isToday = d.toDateString() === now.toDateString();
+                    if (isToday) {
+                        timeStr = `alle ${hours}:${minutes}:${seconds}`;
+                    } else {
+                        const day = pad(d.getDate());
+                        const month = pad(d.getMonth() + 1);
+                        timeStr = `il ${day}/${month} alle ${hours}:${minutes}`;
+                    }
+                }
+            } catch (e) {}
+        }
+
+        const timeSuffix = timeStr ? ` • Aggiornato ${timeStr}` : '';
+        
         if (src === 'MANUAL') {
-            return `<span class="inline-flex items-center px-1 py-px rounded text-[8px] font-black font-mono tracking-tighter bg-slate-500/10 text-slate-400 border border-slate-500/20 leading-none select-none ${extraClass}" title="Prezzo inserito manualmente">MAN</span>`;
+            return `<span class="inline-flex items-center px-1 py-px rounded text-[8px] font-black font-mono tracking-tighter bg-slate-500/10 text-slate-400 border border-slate-500/20 leading-none select-none cursor-help ${extraClass}" title="Prezzo inserito manualmente${timeSuffix}">MAN</span>`;
         }
 
         const isRT = Boolean(isRealtime === 1 || isRealtime === true || isRealtime === '1');
 
         if (isRT) {
             const srcLabel = src === 'GF' ? 'Google Finance' : (src === 'B_ITA' ? 'Borsa Italiana' : 'Yahoo Finance');
-            return `<span class="inline-flex items-center gap-0.5 px-1 py-px rounded text-[8px] font-black font-mono tracking-tighter bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 leading-none select-none ${extraClass}" title="Quotazione in tempo reale (${srcLabel})"><span class="w-1 h-1 rounded-full bg-emerald-500 animate-pulse inline-block"></span>⚡RT</span>`;
+            return `<span class="inline-flex items-center gap-0.5 px-1 py-px rounded text-[8px] font-black font-mono tracking-tighter bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 leading-none select-none cursor-help ${extraClass}" title="Quotazione in tempo reale (${srcLabel})${timeSuffix}"><span class="w-1 h-1 rounded-full bg-emerald-500 animate-pulse inline-block"></span>⚡RT</span>`;
         } else {
             const srcLabel = src.includes('GF') ? 'Google Finance' : 'Yahoo Finance';
-            return `<span class="inline-flex items-center gap-0.5 px-1 py-px rounded text-[8px] font-black font-mono tracking-tighter bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 leading-none select-none ${extraClass}" title="Quotazione differita di ~15-20 min (${srcLabel})">⏱15m</span>`;
+            return `<span class="inline-flex items-center gap-0.5 px-1 py-px rounded text-[8px] font-black font-mono tracking-tighter bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 leading-none select-none cursor-help ${extraClass}" title="Quotazione differita di ~15-20 min (${srcLabel})${timeSuffix}">⏱15m</span>`;
         }
     };
 

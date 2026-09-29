@@ -1181,7 +1181,7 @@
                     <span class="material-symbols-outlined" style="font-size: calc(11px * var(--mkcard-scale, 1)); font-weight: bold;">query_stats</span>
                   </span>
                 </div>
-                <span style="font-size:calc(13px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${priceFmt}&nbsp;${todayVarBadge}&nbsp;<span style="background:rgba(100,116,139,0.1); color:var(--mob-text-muted); border-radius:3px; padding:1px 4px; font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; margin-left:2px; display:inline-block; vertical-align:middle">${exchangeLabel}</span>${noteInCol1}</span>
+                <span style="font-size:calc(13px * var(--mkcard-scale, 1)); font-weight:900; font-family:'SF Mono',monospace; color:var(--mob-text)">${priceFmt}&nbsp;${typeof renderQuoteBadge === 'function' ? renderQuoteBadge(a.isRealtime, a.realtimeSource, a.updatedAt) : ''}&nbsp;${todayVarBadge}&nbsp;<span style="background:rgba(100,116,139,0.1); color:var(--mob-text-muted); border-radius:3px; padding:1px 4px; font-size:calc(8px * var(--mkcard-scale, 1)); font-weight:900; text-transform:uppercase; margin-left:2px; display:inline-block; vertical-align:middle">${exchangeLabel}</span>${noteInCol1}</span>
               </div>
 
               <!-- Col 2: AI Target Price TAG -->
@@ -1251,7 +1251,7 @@
               </div>
               <div class="mob-holding-values">
                 ${showLogo ? `
-                  <div class="mob-holding-value">${formatCurrency(price, a.currency, price>=100?0:price>=10?1:2)}</div>
+                  <div class="mob-holding-value flex items-center justify-end gap-1">${formatCurrency(price, a.currency, price>=100?0:price>=10?1:2)} ${typeof renderQuoteBadge === 'function' ? renderQuoteBadge(a.isRealtime, a.realtimeSource, a.updatedAt) : ''}</div>
                   <div class="flex items-center justify-end gap-1.5 mt-0.5">
                     ${(a.preMarketChangePercent&&Math.abs(a.preMarketChangePercent)>0.01&&!window._mobMarketOpen)?`<span style="font-size:10px;font-weight:900;color:${a.preMarketChangePercent>=0?'var(--mob-emerald)':'var(--mob-rose)'}">(${a.preMarketChangePercent>=0?'+':''}${a.preMarketChangePercent.toFixed(1)}%)</span>`:''}
                     ${(a.postMarketChangePercent&&Math.abs(a.postMarketChangePercent)>0.01&&!window._mobMarketOpen)?`<span style="font-size:10px;font-weight:900;color:${a.postMarketChangePercent>=0?'var(--mob-emerald)':'var(--mob-rose)'}">(${a.postMarketChangePercent>=0?'+':''}${a.postMarketChangePercent.toFixed(1)}%)</span>`:''}
@@ -1261,7 +1261,7 @@
                   <div class="mob-compact-values">
                     <span class="mob-cv-gain" style="color:${_dgColor}">${_showDailyGain?_dgSign+fmtPriceCompact(_chgVal,a.currency,0):''}</span>
                     ${a.marketState === 'CLOSED' ? `<span style="font-size:9px;font-weight:800;background:rgba(100,116,139,0.15);color:var(--mob-text-muted);border-radius:3px;padding:1px 4px;text-transform:uppercase">Chiuso</span>` : (a.marketState === 'WAITING_QUOTE' ? `<span style="font-size:9px;font-weight:800;background:rgba(245,158,11,0.15);color:#d97706;border-radius:3px;padding:1px 4px;text-transform:uppercase">In attesa</span>` : (a.marketState === 'MANUAL' ? `<span style="font-size:10px;font-weight:700;color:var(--mob-text-muted)">—</span>` : `<span class="mob-holding-gain" style="color:${color};font-weight:900;margin-top:0">${isPos?'+':''}${change.toFixed(1)}%</span>`))}
-                    <span class="mob-holding-value">${fmtPriceCompact(price,a.currency,price>=100?0:price>=10?1:2)}</span>
+                    <span class="mob-holding-value">${fmtPriceCompact(price,a.currency,price>=100?0:price>=10?1:2)} ${typeof renderQuoteBadge === 'function' ? renderQuoteBadge(a.isRealtime, a.realtimeSource, a.updatedAt) : ''}</span>
                   </div>
                   ${_showTotals?`<div class="mob-compact-values" style="margin-top:2px;opacity:0.85">
                     <span style="display:inline-flex;justify-content:flex-end;padding-right:6px"><span style="background:${_totGainIsPos?'rgba(16,185,129,0.15)':'rgba(244,63,94,0.15)'};color:${_totGainColor};font-size:calc(11px * var(--mob-scale,1));font-weight:700;white-space:nowrap;border-radius:4px;padding:1px 5px;letter-spacing:-0.2px">${_totGainSign}${fmtPriceCompact(_totalGain,_totalGainCurrency,0)}</span></span>

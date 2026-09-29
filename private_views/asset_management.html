@@ -384,7 +384,7 @@
                         <td class="px-6 py-4 text-right">
                             <div class="flex items-center justify-end gap-1.5">
                                 <span class="text-sm font-black text-primary font-mono">${formatCurrency(price, a.currency)}</span>
-                                ${typeof renderQuoteBadge === 'function' ? renderQuoteBadge(a.isRealtime, a.realtimeSource) : ''}
+                                ${typeof renderQuoteBadge === 'function' ? renderQuoteBadge(a.isRealtime, a.realtimeSource, a.updatedAt) : ''}
                             </div>
                         </td>
                         <td class="px-6 py-4 text-right">
