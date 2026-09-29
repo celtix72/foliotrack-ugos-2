@@ -1054,7 +1054,7 @@
 
     /**
      * Renders a tiny badge next to asset quotes indicating real-time (⚡RT) or delayed (⏱15m) status.
-     * Hovering / clicking shows a tooltip with the source and timestamp of the last quote update.
+     * Hovering or tapping shows an instant floating tooltip with the source and timestamp of the last quote update.
      * @param {number|boolean} isRealtime - 1 / true for real-time, 0 / false for delayed
      * @param {string} [realtimeSource=''] - 'GF', 'YF', 'B_ITA', 'MANUAL'
      * @param {string|Date|number} [updatedAt=null] - last update timestamp/date string
@@ -1101,22 +1101,159 @@
             } catch (e) {}
         }
 
-        const timeSuffix = timeStr ? ` • Aggiornato ${timeStr}` : '';
-        
-        if (src === 'MANUAL') {
-            return `<span class="inline-flex items-center px-1 py-px rounded text-[8px] font-black font-mono tracking-tighter bg-slate-500/10 text-slate-400 border border-slate-500/20 leading-none select-none cursor-help ${extraClass}" title="Prezzo inserito manualmente${timeSuffix}">MAN</span>`;
-        }
-
         const isRT = Boolean(isRealtime === 1 || isRealtime === true || isRealtime === '1');
+        
+        let badgeContent = '';
+        let badgeClasses = '';
+        let tooltipData = {};
 
-        if (isRT) {
+        if (src === 'MANUAL') {
+            badgeClasses = 'bg-slate-500/10 text-slate-500 dark:text-slate-400 border-slate-500/20';
+            badgeContent = 'MAN';
+            tooltipData = {
+                title: '✏️ Prezzo Manuale',
+                source: 'Inserimento manuale utente',
+                time: timeStr ? `Aggiornato ${timeStr}` : 'Nessuna data registrata',
+                accentColor: '#94a3b8',
+                dotColor: '#94a3b8',
+                borderColor: 'rgba(100, 116, 139, 0.4)'
+            };
+        } else if (isRT) {
             const srcLabel = src === 'GF' ? 'Google Finance' : (src === 'B_ITA' ? 'Borsa Italiana' : 'Yahoo Finance');
-            return `<span class="inline-flex items-center gap-0.5 px-1 py-px rounded text-[8px] font-black font-mono tracking-tighter bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 leading-none select-none cursor-help ${extraClass}" title="Quotazione in tempo reale (${srcLabel})${timeSuffix}"><span class="w-1 h-1 rounded-full bg-emerald-500 animate-pulse inline-block"></span>⚡RT</span>`;
+            badgeClasses = 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30';
+            badgeContent = '<span class="w-1 h-1 rounded-full bg-emerald-500 animate-pulse inline-block"></span>⚡RT';
+            tooltipData = {
+                title: '⚡ Tempo Reale',
+                source: `${srcLabel} (real-time)`,
+                time: timeStr ? `Aggiornato ${timeStr}` : 'Dati in linea',
+                accentColor: '#34d399',
+                dotColor: '#10b981',
+                borderColor: 'rgba(16, 185, 129, 0.4)'
+            };
         } else {
             const srcLabel = src.includes('GF') ? 'Google Finance' : 'Yahoo Finance';
-            return `<span class="inline-flex items-center gap-0.5 px-1 py-px rounded text-[8px] font-black font-mono tracking-tighter bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 leading-none select-none cursor-help ${extraClass}" title="Quotazione differita di ~15-20 min (${srcLabel})${timeSuffix}">⏱15m</span>`;
+            badgeClasses = 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30';
+            badgeContent = '⏱15m';
+            tooltipData = {
+                title: '⏱ Differita (~15-20 min)',
+                source: `${srcLabel} (delay)`,
+                time: timeStr ? `Aggiornato ${timeStr}` : 'In attesa di scambio',
+                accentColor: '#fbbf24',
+                dotColor: '#f59e0b',
+                borderColor: 'rgba(245, 158, 11, 0.4)'
+            };
         }
+
+        const encodedData = encodeURIComponent(JSON.stringify(tooltipData));
+        const ariaText = `${tooltipData.title} - ${tooltipData.source} - ${tooltipData.time}`;
+
+        return `<span class="ft-quote-badge inline-flex items-center gap-0.5 px-1 py-px rounded text-[8px] font-black font-mono tracking-tighter border leading-none select-none cursor-pointer transition-transform hover:scale-105 active:scale-95 ${badgeClasses} ${extraClass}" data-ft-quote="${encodedData}" aria-label="${ariaText}">${badgeContent}</span>`;
     };
+
+    // ─── Instant Floating Tooltip for Quote Badges ────────────────────────────
+    let _quoteTooltipEl = null;
+    let _quoteTooltipTimeout = null;
+
+    function getQuoteTooltipEl() {
+        if (!_quoteTooltipEl) {
+            _quoteTooltipEl = document.createElement('div');
+            _quoteTooltipEl.id = 'ft-quote-tooltip';
+            _quoteTooltipEl.style.cssText = 'position:fixed; z-index:999999; pointer-events:none; opacity:0; transform:scale(0.96); transition:opacity 0.12s ease-out, transform 0.12s ease-out; display:none;';
+            document.body.appendChild(_quoteTooltipEl);
+        }
+        return _quoteTooltipEl;
+    }
+
+    function showQuoteTooltip(target) {
+        clearTimeout(_quoteTooltipTimeout);
+        const raw = target.getAttribute('data-ft-quote');
+        if (!raw) return;
+        let data;
+        try {
+            data = JSON.parse(decodeURIComponent(raw));
+        } catch(e) {
+            return;
+        }
+
+        const tooltip = getQuoteTooltipEl();
+        tooltip.innerHTML = `
+            <div style="background:rgba(15,23,42,0.96); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); color:#f8fafc; padding:7px 11px; border-radius:8px; box-shadow:0 12px 28px -4px rgba(0,0,0,0.65), 0 4px 10px -2px rgba(0,0,0,0.35); border:1px solid ${data.borderColor || 'rgba(51,65,85,0.6)'}; font-family:system-ui,-apple-system,sans-serif; font-size:11px; line-height:1.35; min-width:175px; max-width:270px;">
+                <div style="font-weight:800; display:flex; align-items:center; gap:5px; color:${data.accentColor}; font-size:11px; margin-bottom:3px;">
+                    <span>${data.title}</span>
+                </div>
+                <div style="color:#94a3b8; font-size:10px; font-weight:500;">
+                    Fonte: <strong style="color:#f1f5f9; font-weight:600;">${data.source}</strong>
+                </div>
+                <div style="color:#cbd5e1; font-size:10px; margin-top:4px; padding-top:4px; border-top:1px solid rgba(51,65,85,0.5); display:flex; align-items:center; gap:5px;">
+                    <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:${data.dotColor}; flex-shrink:0;"></span>
+                    <span style="color:#cbd5e1; font-weight:500;">${data.time}</span>
+                </div>
+            </div>
+        `;
+
+        tooltip.style.display = 'block';
+
+        const rect = target.getBoundingClientRect();
+        const tooltipRect = tooltip.getBoundingClientRect();
+
+        let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+        if (left < 10) left = 10;
+        if (left + tooltipRect.width > window.innerWidth - 10) {
+            left = window.innerWidth - tooltipRect.width - 10;
+        }
+
+        let top = rect.top - tooltipRect.height - 6;
+        if (top < 10) {
+            // Flip below badge if not enough space at top
+            top = rect.bottom + 6;
+        }
+
+        tooltip.style.left = `${Math.round(left)}px`;
+        tooltip.style.top = `${Math.round(top)}px`;
+
+        requestAnimationFrame(() => {
+            tooltip.style.opacity = '1';
+            tooltip.style.transform = 'scale(1)';
+        });
+    }
+
+    function hideQuoteTooltip() {
+        clearTimeout(_quoteTooltipTimeout);
+        _quoteTooltipTimeout = setTimeout(() => {
+            if (_quoteTooltipEl) {
+                _quoteTooltipEl.style.opacity = '0';
+                _quoteTooltipEl.style.transform = 'scale(0.96)';
+                setTimeout(() => {
+                    if (_quoteTooltipEl && _quoteTooltipEl.style.opacity === '0') {
+                        _quoteTooltipEl.style.display = 'none';
+                    }
+                }, 130);
+            }
+        }, 40);
+    }
+
+    // Attach delegated events once DOM is loaded or inline
+    document.addEventListener('mouseover', (e) => {
+        const badge = e.target.closest('.ft-quote-badge');
+        if (badge) showQuoteTooltip(badge);
+    });
+
+    document.addEventListener('mouseout', (e) => {
+        const badge = e.target.closest('.ft-quote-badge');
+        if (badge) hideQuoteTooltip();
+    });
+
+    document.addEventListener('touchstart', (e) => {
+        const badge = e.target.closest('.ft-quote-badge');
+        if (badge) {
+            showQuoteTooltip(badge);
+            clearTimeout(_quoteTooltipTimeout);
+            _quoteTooltipTimeout = setTimeout(hideQuoteTooltip, 3500);
+        } else {
+            hideQuoteTooltip();
+        }
+    }, { passive: true });
+
 
 
 
