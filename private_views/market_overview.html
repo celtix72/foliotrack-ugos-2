@@ -607,7 +607,7 @@ async function loadAssets() {
             }
         });
 
-        const res = await fetch('/api/assets');
+        const res = await fetch('/api/assets?t=' + Date.now());
         allAssets = await res.json();
         renderAssets();
         const lastUpd = document.getElementById('header-last-update') || document.getElementById('last-update-label');
@@ -1066,25 +1066,59 @@ async function fetchBorsaItalianaHistory(ticker, isin) {
 async function forceSync() {
     const btn = document.getElementById('force-sync-btn');
     const icon = document.getElementById('sync-icon');
+    const label = btn ? btn.querySelector('span:last-child') : null;
     if (!btn || !icon) return;
     
     btn.disabled = true;
+    btn.classList.add('opacity-75', 'cursor-not-allowed');
     icon.classList.add('animate-spin');
+    if (label) label.textContent = 'Sync in corso...';
     
+    // Polling progress in parallel while the request is running
+    const pollInterval = setInterval(async () => {
+        try {
+            const stRes = await fetch('/api/market-status?t=' + Date.now());
+            if (stRes.ok) {
+                const st = await stRes.json();
+                if (st.isSyncing && st.syncProgress && st.syncProgress.total > 0 && label) {
+                    label.textContent = `Sync (${st.syncProgress.current}/${st.syncProgress.total})...`;
+                }
+            }
+        } catch(e) {}
+    }, 1200);
+
     try {
         const res = await fetch('/api/market-sync', { method: 'POST' });
+        clearInterval(pollInterval);
+        
         if (res.ok) {
-            // Wait a bit for the backend update to start/progress
-            setTimeout(loadAssets, 2000);
+            if (label) label.textContent = 'Aggiornamento dati...';
+            // Reload all assets with fresh data from database
+            await loadAssets();
+            if (typeof loadMovers === 'function') await loadMovers();
+            if (typeof loadIndices === 'function') await loadIndices();
+            
+            if (label) {
+                label.textContent = 'Completato!';
+                setTimeout(() => {
+                    label.textContent = 'Force Sync';
+                }, 2500);
+            }
         } else {
-            alert('Error triggering sync');
+            const errData = await res.json().catch(() => ({}));
+            alert('Errore sincronizzazione: ' + (errData.error || res.statusText));
+            if (label) label.textContent = 'Force Sync';
         }
-    } catch (err) { console.error(err); }
-    finally {
-        setTimeout(() => {
-            btn.disabled = false;
-            icon.classList.remove('animate-spin');
-        }, 1000);
+    } catch (err) {
+        clearInterval(pollInterval);
+        console.error('Error triggering sync:', err);
+        alert('Errore di connessione durante la sincronizzazione');
+        if (label) label.textContent = 'Force Sync';
+    } finally {
+        clearInterval(pollInterval);
+        btn.disabled = false;
+        btn.classList.remove('opacity-75', 'cursor-not-allowed');
+        icon.classList.remove('animate-spin');
     }
 }
 

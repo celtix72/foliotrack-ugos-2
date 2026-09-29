@@ -492,6 +492,9 @@ performanceResultsCache = {}; // Clear cache to apply date fix immediately
 let eurUsdCache = { rate: 1.08, timestamp: 0 };
 const EUR_USD_TTL = 5 * 60 * 1000; // 5 minutes
 let globalLastMarketUpdate = Date.now();
+let isUpdatingMarketData = false;
+let marketUpdateProgress = { current: 0, total: 0, startedAt: null };
+let ongoingMarketUpdatePromise = null;
 
 // ─── Portfolios Routes ─────────────────────────────────────────────────────────
 app.use('/api/portfolios', require('./routes/portfolios')({
@@ -547,6 +550,8 @@ app.use('/api', require('./routes/market')({
     clearPerformanceCache, updateMarketData, syncNews,
     get eurUsdCache() { return eurUsdCache; },
     get globalLastMarketUpdate() { return globalLastMarketUpdate; },
+    get isUpdatingMarketData() { return isUpdatingMarketData; },
+    get marketUpdateProgress() { return marketUpdateProgress; },
     APP_VERSION, B_ITA
 }));
 
@@ -3235,6 +3240,26 @@ app.use((req, res) => res.redirect('/login'));
 // ════════════════════════════════════════════════════════════════════════════
 
 async function updateMarketData(force = false) {
+    if (ongoingMarketUpdatePromise) {
+        logger.info('Market data update already in progress, awaiting current execution...');
+        return await ongoingMarketUpdatePromise;
+    }
+
+    ongoingMarketUpdatePromise = (async () => {
+        isUpdatingMarketData = true;
+        marketUpdateProgress = { current: 0, total: 0, startedAt: Date.now() };
+        try {
+            await _internalUpdateMarketData(force);
+        } finally {
+            isUpdatingMarketData = false;
+            ongoingMarketUpdatePromise = null;
+        }
+    })();
+
+    return await ongoingMarketUpdatePromise;
+}
+
+async function _internalUpdateMarketData(force = false) {
     const settings = database.getSettings(1);
     const status = getMarketStatus();
     if (!force && !status.anyOpen) {
@@ -3272,6 +3297,8 @@ async function updateMarketData(force = false) {
     });
 
     if (targetAssets.length === 0) return;
+    marketUpdateProgress.total = targetAssets.length;
+    marketUpdateProgress.current = 0;
     logger.info(`Updating market data for ${targetAssets.length} assets (concurrency batch size 6)...`);
 
     async function updateSingleAsset(asset) {
@@ -3623,6 +3650,7 @@ async function updateMarketData(force = false) {
                 break;
             }
         }
+        marketUpdateProgress.current = Math.min(i + batch.length, targetAssets.length);
         if (!rateLimitHit && i + BATCH_SIZE < targetAssets.length) {
             await new Promise(r => setTimeout(r, 100));
         }
@@ -3630,6 +3658,7 @@ async function updateMarketData(force = false) {
     const liveRate = await getEurUsdRate();
     await recalculateAllPortfoliosWithOverrides(liveRate);
     globalLastMarketUpdate = Date.now();
+    marketUpdateProgress.current = targetAssets.length;
     logger.info(`Market data update cycle completed.`);
 }
 

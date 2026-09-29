@@ -430,18 +430,27 @@ router.get('/indices', requireAuth, async (req, res) => {
 router.get('/market-status', (req, res) => {
     res.json({
         ...getMarketStatus(),
-        lastUpdate: globalLastMarketUpdate
+        lastUpdate: dependencies.globalLastMarketUpdate || globalLastMarketUpdate,
+        isSyncing: Boolean(dependencies.isUpdatingMarketData),
+        syncProgress: dependencies.marketUpdateProgress || { current: 0, total: 0 }
     });
 });
 
-
-
-router.post('/market-sync', requireAuth, requireAdmin, async (req, res) => {
+router.post('/market-sync', requireAuth, async (req, res) => {
     try {
-        logger.info('Manual market sync triggered.');
-        updateMarketData(true); // force = true
-        res.json({ success: true, message: 'Sync started' });
+        const userId = req.user ? req.user.id : 'unknown';
+        logger.info(`Manual market sync triggered by user ${userId}.`);
+        const startTime = Date.now();
+        await updateMarketData(true);
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+        logger.info(`Manual market sync completed in ${elapsed}s.`);
+        res.json({ 
+            success: true, 
+            message: `Sincronizzazione completata in ${elapsed}s`,
+            lastUpdate: dependencies.globalLastMarketUpdate || globalLastMarketUpdate
+        });
     } catch (err) {
+        logger.error('Error during manual market sync:', err);
         res.status(500).json({ error: err.message });
     }
 });

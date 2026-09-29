@@ -170,6 +170,9 @@
     <div id="mob-header-var-day" class="mob-header-var-pill">--</div>
 
     <div class="mob-header-actions">
+      <button onclick="mobForceSync()" id="mob-force-sync-btn" class="mob-icon-btn" title="Sincronizza quotazioni">
+        <span class="material-symbols-outlined" id="mob-sync-icon" style="font-size: 20px;">sync</span>
+      </button>
       <a href="/notifications" class="mob-icon-btn relative" title="Notifiche">
         <span class="material-symbols-outlined">notifications</span>
         <span id="mob-notification-badge" class="mob-badge" style="display: none;">0</span>
@@ -1471,6 +1474,28 @@ window.toggleSectionMob = function(sectionId) {
             sectionBody.style.display = 'none';
             if (icon) icon.style.transform = 'rotate(-90deg)';
         }
+    }
+window.mobForceSync = async function() {
+    const btn = document.getElementById('mob-force-sync-btn');
+    const icon = document.getElementById('mob-sync-icon');
+    if (!btn || !icon || btn.disabled) return;
+
+    btn.disabled = true;
+    icon.classList.add('animate-spin');
+
+    try {
+        const res = await fetch('/api/market-sync', { method: 'POST' });
+        if (res.ok) {
+            await mobLoadAssets();
+            if (typeof mobLoadIndices === 'function') await mobLoadIndices();
+            if (typeof mobLoadMovers === 'function') await mobLoadMovers();
+            if (typeof mobSyncMarketStatus === 'function') await mobSyncMarketStatus();
+        }
+    } catch (e) {
+        console.error('Mobile sync error:', e);
+    } finally {
+        btn.disabled = false;
+        icon.classList.remove('animate-spin');
     }
 };
 
