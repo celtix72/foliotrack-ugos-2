@@ -8,6 +8,10 @@ services:
     networks:
       lan_static:
         ipv4_address: 192.168.178.210
+    dns:
+      - 192.168.178.1
+      - 1.1.1.1
+      - 8.8.8.8
     volumes:
       # Solo i dati persistenti vengono montati dall'host.
       # Il codice è già nell'immagine scaricata da ghcr.io.

@@ -3264,7 +3264,10 @@ async function updateMarketData(force = false) {
     logger.info(`Updating market data for ${targetAssets.length} assets (concurrency batch size 6)...`);
 
     async function updateSingleAsset(asset) {
-        logger.info(`Updating [${asset.ticker}] using [${asset.dataSource || 'YF'}]...`);
+        const sourceLabel = asset.dataSource === 'B_ITA' 
+            ? 'B_ITA' 
+            : (isBondAsset(asset) ? 'YF (Bond)' : 'GF ➔ YF');
+        logger.info(`Updating [${asset.ticker}] using [${sourceLabel}]...`);
         let updateData = null;
         try {
             if (asset.dataSource === 'GF') {
