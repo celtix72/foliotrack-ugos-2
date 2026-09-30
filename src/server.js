@@ -213,14 +213,14 @@ const isUSMarket = (a) => {
     const ticker = a.ticker || '';
     const type = a.type || '';
     const isin = a.isin || '';
-    // 1. ISIN prefix is the most reliable (US...)
-    if (isin.startsWith('US')) return true;
-    if (isin.startsWith('IT') || isin.startsWith('IE') || isin.startsWith('LU') || isin.startsWith('DE')) return false;
-    // 2. Tickers with dots (.MI, .DE, .AS, etc.) are European/Other
+    // 1. Tickers with dots (.MI, .DE, .AS, .PA, .MC, .L, .F, etc.) trade on European exchange hours!
     if (ticker.includes('.')) return false;
-    // 3. Bonds and Bond ETFs in this portfolio are primarily European/BTM
+    // 2. Bonds and Bond ETFs in this portfolio are primarily European/BTP
     if (type.includes('Bond') || type.includes('Obblig')) return false;
-    // 4. Fallback for tickers without dots (AAPL, MSFT) to US
+    // 3. ISIN prefix for direct US tickers without exchange dot (US...)
+    if (isin.startsWith('US')) return true;
+    if (isin.startsWith('IT') || isin.startsWith('IE') || isin.startsWith('LU') || isin.startsWith('DE') || isin.startsWith('FR') || isin.startsWith('ES')) return false;
+    // 4. Fallback for tickers without dots (AAPL, MSFT, KO) to US
     return true;
 };
 
@@ -733,6 +733,7 @@ async function fetchAssetMetadata(ticker, customGoogleTicker = null) {
             quote.regularMarketPrice = gfPrimary.price;
             quote.regularMarketChange = gfPrimary.changeValue;
             quote.regularMarketChangePercent = gfPrimary.changePercent;
+            quote.regularMarketTime = new Date();
             gfEnrichment = {
                 enriched: true,
                 realtimeSource: gfPrimary.realtimeSource || 'GF',
@@ -865,7 +866,7 @@ async function fetchAssetMetadata(ticker, customGoogleTicker = null) {
                 epsActual: h.epsActual?.raw ?? h.epsActual ?? null,
                 surprisePercent: h.surprisePercent?.raw ?? h.surprisePercent ?? null
             })) : [],
-            quoteDate: quote.regularMarketTime ? new Date(quote.regularMarketTime).toISOString().split('T')[0] : null,
+            quoteDate: (gfEnrichment?.enriched || (quote.regularMarketTime && !isNaN(new Date(quote.regularMarketTime).getTime()))) ? new Date(quote.regularMarketTime || Date.now()).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
             isin: (function() {
                 let i = quote.isin || (summary.summaryDetail ? summary.summaryDetail.isin : null) || (summary.defaultKeyStatistics ? summary.defaultKeyStatistics.isin : null);
                 if (!i) return null;
@@ -1059,7 +1060,7 @@ function getMarketStatus() {
 function calculateVariationOverrides(marketStatus) {
     const overrides = { regular: {}, prePost: {} };
     try {
-        const assets = database.db.prepare('SELECT ticker, type, currentPrice, changePercent, changeValue, preMarketChangePercent, postMarketChangePercent, quoteDate FROM assets').all();
+        const assets = database.db.prepare('SELECT ticker, type, currentPrice, changePercent, changeValue, preMarketChangePercent, postMarketChangePercent, quoteDate, updatedAt, isRealtime, realtimeSource FROM assets').all();
         const todayStr = new Date().toISOString().split('T')[0];
         
         assets.forEach(a => {
@@ -1068,7 +1069,19 @@ function calculateVariationOverrides(marketStatus) {
             const openedToday = isUS ? marketStatus.US_openedToday : marketStatus.EU_openedToday;
             const preMktActive = isUS ? marketStatus.US_preMarketActive : false;
             const postMktActive = isUS ? marketStatus.US_afterHoursActive : false;
-            const isToday = a.quoteDate === todayStr;
+            let isToday = a.quoteDate === todayStr;
+            if (!isToday && a.updatedAt) {
+                try {
+                    const upDate = new Date(a.updatedAt.includes('T') ? a.updatedAt : a.updatedAt.replace(' ', 'T') + 'Z');
+                    if (upDate.toDateString() === new Date().toDateString()) {
+                        const openHourUTC = isUS ? 13.5 : 7.0;
+                        const upHourUTC = upDate.getUTCHours() + (upDate.getUTCMinutes() / 60);
+                        if (upHourUTC >= openHourUTC || a.isRealtime === 1 || a.realtimeSource === 'GF' || a.realtimeSource === 'B_ITA') {
+                            isToday = true;
+                        }
+                    }
+                } catch(e) {}
+            }
 
             // 1. Regular Session Variation
             if (openedToday && isToday) {
@@ -1417,7 +1430,7 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
 
 
     const heldAssetsRaw = userId ? database.db.prepare(`
-        SELECT a.ticker, a.name, a.changePercent, a.currentPrice, a.currency, a.quoteDate, a.isRealtime, a.realtimeSource, SUM(h.netQty) as totalNetQty
+        SELECT a.ticker, a.name, a.changePercent, a.currentPrice, a.currency, a.quoteDate, a.updatedAt, a.isRealtime, a.realtimeSource, SUM(h.netQty) as totalNetQty
         FROM assets a
         JOIN (
             SELECT t.assetTicker, 
@@ -1438,7 +1451,19 @@ async function getAllPortfolioStats(userId = null, liveRateInput = null, tagIds 
         const isUS = isUSMarket(a);
         const openedToday = isUS ? marketStatus.US_openedToday : marketStatus.EU_openedToday;
         const preMktActive = isUS ? marketStatus.US_preMarketActive : false;
-        const isToday = a.quoteDate === todayStr;
+        let isToday = a.quoteDate === todayStr;
+        if (!isToday && a.updatedAt) {
+            try {
+                const upDate = new Date(a.updatedAt.includes('T') ? a.updatedAt : a.updatedAt.replace(' ', 'T') + 'Z');
+                if (upDate.toDateString() === new Date().toDateString()) {
+                    const openHourUTC = isUS ? 13.5 : 7.0;
+                    const upHourUTC = upDate.getUTCHours() + (upDate.getUTCMinutes() / 60);
+                    if (upHourUTC >= openHourUTC || a.isRealtime === 1 || a.realtimeSource === 'GF' || a.realtimeSource === 'B_ITA') {
+                        isToday = true;
+                    }
+                }
+            } catch(e) {}
+        }
 
         if (!(openedToday && isToday)) {
             if (preMktActive && a.preMarketChangePercent) {
@@ -3368,7 +3393,7 @@ async function _internalUpdateMarketData(force = false) {
                         country: asset.country,
                         realtimeSource: 'B_ITA',
                         isRealtime: 1,
-                        quoteDate: (priceCheck.valid && result.quoteDate) ? result.quoteDate : (asset.quoteDate || new Date().toISOString().split('T')[0])
+                        quoteDate: priceCheck.valid ? new Date().toISOString().split('T')[0] : (asset.quoteDate || new Date().toISOString().split('T')[0])
                     };
                 } else {
                     logger.warn(`B_ITA scraping failed for ${asset.ticker} (${asset.isin})`);
@@ -3421,7 +3446,9 @@ async function _internalUpdateMarketData(force = false) {
                     exchange: metadata.exchange || asset.exchange,
                     country: metadata.country || asset.country,
                     googleTicker: metadata.googleTicker || asset.googleTicker || null,
-                    quoteDate: (priceCheck.valid && metadata.quoteDate) ? metadata.quoteDate : (asset.quoteDate || new Date().toISOString().split('T')[0])
+                    quoteDate: (priceCheck.valid && (metadata.isRealtime || metadata.realtimeSource === 'GF' || !metadata.quoteDate || metadata.quoteDate === new Date().toISOString().split('T')[0]))
+                        ? new Date().toISOString().split('T')[0]
+                        : ((priceCheck.valid && metadata.quoteDate) ? metadata.quoteDate : (asset.quoteDate || new Date().toISOString().split('T')[0]))
                 };
                 const rtTag = updateData.realtimeSource ? `[${updateData.realtimeSource}${updateData.isRealtime ? ' ⚡RT' : ' ⏱DL'}]` : '';
                 logger.info(`${updateData.realtimeSource === 'GF' ? 'GF' : 'YF'} ✓ ${asset.ticker}: price=${updateData.price} ${updateData.currency} chg=${updateData.change?.toFixed ? updateData.change.toFixed(2) : updateData.change}% ${rtTag}`);

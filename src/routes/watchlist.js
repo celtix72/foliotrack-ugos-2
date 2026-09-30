@@ -150,9 +150,21 @@ module.exports = function(dependencies) {
                      const dates = Object.keys(history).sort();
                      sparkline = dates.slice(-7).map(d => history[d]);
                  }
-                 const isToday = a.quoteDate === today;
                  const isUS = isUSMarket(a);
                  const openedToday = isUS ? marketStatus.US_openedToday : marketStatus.EU_openedToday;
+                 let isToday = a.quoteDate === today;
+                 if (!isToday && a.updatedAt) {
+                     try {
+                         const upDate = new Date(a.updatedAt.includes('T') ? a.updatedAt : a.updatedAt.replace(' ', 'T') + 'Z');
+                         if (upDate.toDateString() === new Date().toDateString()) {
+                             const openHourUTC = isUS ? 13.5 : 7.0;
+                             const upHourUTC = upDate.getUTCHours() + (upDate.getUTCMinutes() / 60);
+                             if (upHourUTC >= openHourUTC || a.isRealtime === 1 || a.realtimeSource === 'GF' || a.realtimeSource === 'B_ITA') {
+                                 isToday = true;
+                             }
+                         }
+                     } catch(e) {}
+                 }
                  const showVariation = isToday && openedToday;
                  
                  let totalGainEUR = 0;

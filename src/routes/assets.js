@@ -794,11 +794,24 @@ router.get('/assets', requireAuth, async (req, res) => {
             const dates = Object.keys(history).sort();
             sparkline = dates.slice(-7).map(d => history[d]);
         }
-        const isToday = a.quoteDate === today;
         const isUS = isUSMarket(a);
         const openedToday = isUS ? marketStatus.US_openedToday : marketStatus.EU_openedToday;
         const isMarketOpenNow = isUS ? marketStatus.US : marketStatus.EU;
         const isManual = a.ticker === 'CASH' || (a.ticker && a.ticker.startsWith('CASH_')) || (a.ticker && (a.ticker.startsWith('CD_') || a.ticker.startsWith('BP_'))) || ['Liquidità', 'Conto Deposito', 'Buono Postale'].includes(a.type) || a.dataSource === 'MANUAL';
+
+        let isToday = a.quoteDate === today;
+        if (!isToday && a.updatedAt) {
+            try {
+                const upDate = new Date(a.updatedAt.includes('T') ? a.updatedAt : a.updatedAt.replace(' ', 'T') + 'Z');
+                if (upDate.toDateString() === new Date().toDateString()) {
+                    const openHourUTC = isUS ? 13.5 : 7.0;
+                    const upHourUTC = upDate.getUTCHours() + (upDate.getUTCMinutes() / 60);
+                    if (upHourUTC >= openHourUTC || a.isRealtime === 1 || a.realtimeSource === 'GF' || a.realtimeSource === 'B_ITA') {
+                        isToday = true;
+                    }
+                }
+            } catch(e) {}
+        }
 
         let marketState = 'OPEN';
         if (isManual) {

@@ -207,14 +207,26 @@ router.get('/market/movers', requireAuth, async (req, res) => {
         `).all(userId);
 
         rows = rows.filter(a => {
-            // Always exclude assets whose last quote is not from today
-            if (a.quoteDate !== todayStr) return false;
-            
             const isUS = isUSMarket(a);
             const openedToday = isUS ? marketStatus.US_openedToday : marketStatus.EU_openedToday;
             
-            // Also exclude if the market did not open today (stale intraday data)
+            // Exclude if the market did not open today (stale intraday data)
             if (!openedToday) return false;
+
+            let isToday = a.quoteDate === todayStr;
+            if (!isToday && a.updatedAt) {
+                try {
+                    const upDate = new Date(a.updatedAt.includes('T') ? a.updatedAt : a.updatedAt.replace(' ', 'T') + 'Z');
+                    if (upDate.toDateString() === new Date().toDateString()) {
+                        const openHourUTC = isUS ? 13.5 : 7.0;
+                        const upHourUTC = upDate.getUTCHours() + (upDate.getUTCMinutes() / 60);
+                        if (upHourUTC >= openHourUTC || a.isRealtime === 1 || a.realtimeSource === 'GF' || a.realtimeSource === 'B_ITA') {
+                            isToday = true;
+                        }
+                    }
+                } catch(e) {}
+            }
+            if (!isToday) return false;
             
             return Math.abs(a.changePercent) > 0;
         })

@@ -381,6 +381,7 @@ async function enrichWithGoogleFinanceIfDelayed(yahooTicker, yfQuote, customGoog
                     yfQuote.regularMarketPrice = gf.price;
                     yfQuote.regularMarketChange = gf.changeValue;
                     yfQuote.regularMarketChangePercent = gf.changePercent;
+                    yfQuote.regularMarketTime = new Date();
                 }
                 return {
                     usedGoogleFinance: true,
