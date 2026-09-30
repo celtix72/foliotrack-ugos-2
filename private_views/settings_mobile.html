@@ -1051,7 +1051,11 @@
         try {
             const res = await fetch('/api/push/test', { method: 'POST' });
             const data = await res.json();
-            if (!data.success) alert('Errore invio test: ' + (data.error || 'Unknown'));
+            if (data.success) {
+                alert('Notifica di test inviata con successo a ' + (data.sentCount || 1) + ' dispositivo/i!');
+            } else {
+                alert('Errore invio test: ' + (data.error || 'Nessun dispositivo registrato.'));
+            }
         } catch (e) {
             alert('Errore di rete nell\'invio del test');
         }

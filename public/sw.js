@@ -8,32 +8,45 @@ self.addEventListener('push', function(event) {
     console.log('[Service Worker] Push Received.');
     
     let data = {};
-    try {
-        data = event.data.json();
-    } catch (e) {
+    if (event && event.data) {
+        try {
+            data = event.data.json();
+        } catch (e) {
+            try {
+                data = {
+                    title: 'FolioTracker Alert',
+                    body: event.data.text()
+                };
+            } catch (err2) {
+                data = {
+                    title: 'FolioTracker Alert',
+                    body: 'Nuovo aggiornamento disponibile'
+                };
+            }
+        }
+    } else {
         data = {
             title: 'FolioTracker Alert',
-            body: event.data.text()
+            body: 'Nuovo aggiornamento disponibile'
         };
     }
 
     const title = (data.title !== undefined && data.title !== null) ? data.title : 'FolioTracker Alert';
     
-    // Dynamic tag to allow different types of alerts to coexist on Apple Watch
-    // If data.tag is provided (e.g. 'dividend', 'tp'), use it; otherwise fallback to general
-    const notificationTag = data.tag || (data.data && data.data.tag) || 'm2t-general';
+    // Dynamic tag to allow different types of alerts to coexist on Apple Watch and phone lockscreen
+    const notificationTag = data.tag || (data.data && data.data.tag) || 'foliotrack-alert';
 
     const options = {
-        body: data.body || 'New alert from FolioTracker',
+        body: data.body || 'Nuovo aggiornamento disponibile',
         icon: data.icon || '/logo.png',
         badge: data.badge || '/logo_cropped.png',
-        vibrate: [200, 100, 200, 100, 200], // More distinct vibration for Watch
+        vibrate: [200, 100, 200, 100, 200],
         silent: false,
         renotify: true,
         tag: notificationTag,
         timestamp: Date.now(),
         data: {
-            url: data.data ? data.data.url : '/dashboard'
+            url: (data.data && data.data.url) ? data.data.url : '/dashboard'
         },
         actions: [
             {
@@ -42,9 +55,6 @@ self.addEventListener('push', function(event) {
             }
         ]
     };
-
-    // Remove actions if simple notification is preferred for watchOS compatibility in some versions
-    // but usually 1-2 actions are fine.
     
     event.waitUntil(self.registration.showNotification(title, options));
 });
@@ -56,7 +66,7 @@ self.addEventListener('notificationclick', function(event) {
 
     if (event.action === 'close') return;
 
-    const urlToOpen = event.notification.data.url || '/dashboard';
+    const urlToOpen = (event.notification && event.notification.data && event.notification.data.url) || '/dashboard';
 
     event.waitUntil(
         clients.matchAll({

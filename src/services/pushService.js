@@ -104,6 +104,7 @@ async function sendPushNotification(userId, title, body, data = {}) {
         body: body || 'Nuovo aggiornamento disponibile',
         icon: '/logo.png',
         badge: '/logo_cropped.png',
+        tag: (data && data.tag) || 'foliotrack-alert',
         timestamp: Date.now(),
         data: {
             url: '/dashboard',
@@ -112,10 +113,15 @@ async function sendPushNotification(userId, title, body, data = {}) {
     });
 
     let sentCount = 0;
+    const pushOptions = {
+        TTL: 86400, // 24 hours
+        urgency: 'high'
+    };
+
     for (const sub of subscriptions) {
         try {
             const pushConfig = JSON.parse(sub.subscription);
-            await webpush.sendNotification(pushConfig, payload);
+            await webpush.sendNotification(pushConfig, payload, pushOptions);
             sentCount++;
         } catch (err) {
             if (err.statusCode === 404 || err.statusCode === 410) {

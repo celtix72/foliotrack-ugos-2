@@ -7,6 +7,16 @@ const ftPush = {
     swRegistration: null,
     isSubscribed: false,
 
+    isIOS() {
+        return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    },
+
+    isStandalone() {
+        return window.navigator.standalone === true || 
+               window.matchMedia('(display-mode: standalone)').matches;
+    },
+
     async init() {
         if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
             console.warn('Push Notifications require HTTPS or localhost');
@@ -23,8 +33,9 @@ const ftPush = {
         }
 
         try {
-            this.swRegistration = await navigator.serviceWorker.register('/sw.js');
-            console.log('Service Worker is registered', this.swRegistration);
+            await navigator.serviceWorker.register('/sw.js');
+            this.swRegistration = await navigator.serviceWorker.ready;
+            console.log('Service Worker is registered and ready', this.swRegistration);
             
             // Check if already subscribed
             const subscription = await this.swRegistration.pushManager.getSubscription();
@@ -39,20 +50,23 @@ const ftPush = {
 
     async subscribeUser() {
         try {
-            if (!this.swRegistration) {
-                const supported = await this.init();
-                if (!supported || !this.swRegistration) {
-                    let msg = 'Push non supportato su questo browser o connessione non sicura (richiede HTTPS o localhost).';
-                    if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-                        msg += ' ATTENZIONE: Stai usando HTTP, le notifiche push dei browser richiedono HTTPS.';
-                    }
-                    throw new Error(msg);
-                }
+            const isIOSDevice = this.isIOS();
+            const isPWA = this.isStandalone();
+
+            // On iOS, Push API is ONLY supported in Standalone PWA mode (added to Home Screen)
+            if (isIOSDevice && !isPWA) {
+                throw new Error("Su iPhone/iPad (iOS) le notifiche push richiedono che l'app sia aggiunta alla schermata Home. Tocca 'Condividi' (icona con freccia) e seleziona 'Aggiungi alla schermata Home', quindi apri l'app dalla Home per abilitare le notifiche.");
             }
 
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                throw new Error("Le notifiche push richiedono una connessione protetta HTTPS (o localhost).");
+            }
+
+            // 1. Request notification permission immediately in the user gesture callstack!
+            // Essential for iOS WebKit & Android to preserve user gesture activation.
             if ('Notification' in window) {
                 if (Notification.permission === 'denied') {
-                    throw new Error('Permesso di notifica bloccato nel browser. Abilita i permessi nelle impostazioni del sito nel tuo browser.');
+                    throw new Error('Permesso di notifica bloccato. Abilita le notifiche nelle impostazioni del browser/dispositivo per questo sito.');
                 }
                 if (Notification.permission !== 'granted') {
                     const permission = await Notification.requestPermission();
@@ -60,8 +74,26 @@ const ftPush = {
                         throw new Error('Permesso di notifica non concesso.');
                     }
                 }
+            } else {
+                throw new Error('L\'API Notification non è disponibile su questo browser.');
             }
 
+            // 2. Ensure Service Worker is registered and active
+            if (!this.swRegistration) {
+                const supported = await this.init();
+                if (!supported || !this.swRegistration) {
+                    throw new Error('Impossibile inizializzare il Service Worker.');
+                }
+            }
+
+            const swReg = await navigator.serviceWorker.ready;
+            this.swRegistration = swReg;
+
+            if (!swReg.pushManager) {
+                throw new Error('Push Manager non disponibile sul Service Worker.');
+            }
+
+            // 3. Fetch VAPID Public Key from server
             const response = await fetch('/api/push/vapid-public-key');
             if (!response.ok) {
                 const errData = await response.json().catch(() => ({}));
