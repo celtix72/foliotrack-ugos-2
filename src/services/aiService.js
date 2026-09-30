@@ -13,13 +13,15 @@ const GEMINI_MODELS_CACHE_MS = 60 * 60 * 1000; // 1 hour
 // Modelli statici di fallback — aggiornati agosto 2026
 // Questi vengono usati se la fetch da OpenRouter API fallisce
 let _cachedOpenRouterModels = [
-    // --- FREE ---
-    { id: 'google/gemini-2.8-flash:free', name: 'Google: Gemini 2.8 Flash', priceLabel: 'Free', isFree: true, recommended: true },
-    { id: 'google/gemini-2.7-flash:free', name: 'Google: Gemini 2.7 Flash', priceLabel: 'Free', isFree: true, recommended: true },
-    { id: 'deepseek/deepseek-r1:free', name: 'DeepSeek: R1 Reasoning', priceLabel: 'Free', isFree: true, recommended: true },
+    // --- TOP 4 RECOMMENDED FREE ---
     { id: 'google/gemini-2.0-flash-exp:free', name: 'Google: Gemini 2.0 Flash', priceLabel: 'Free', isFree: true, recommended: true },
+    { id: 'deepseek/deepseek-r1:free', name: 'DeepSeek: R1 Reasoning', priceLabel: 'Free', isFree: true, recommended: true },
     { id: 'meta-llama/llama-3.3-70b-instruct:free', name: 'Meta: Llama 3.3 70B Instruct', priceLabel: 'Free', isFree: true, recommended: true },
-    { id: 'qwen/qwq-32b:free', name: 'Qwen: QwQ 32B', priceLabel: 'Free', isFree: true, recommended: false },
+    { id: 'qwen/qwq-32b:free', name: 'Qwen: QwQ 32B Reasoning', priceLabel: 'Free', isFree: true, recommended: true },
+    // --- OTHER FREE ---
+    { id: 'google/gemini-3.8-flash:free', name: 'Google: Gemini 3.8 Flash', priceLabel: 'Free', isFree: true, recommended: false },
+    { id: 'google/gemini-2.8-flash:free', name: 'Google: Gemini 2.8 Flash', priceLabel: 'Free', isFree: true, recommended: false },
+    { id: 'google/gemini-2.7-flash:free', name: 'Google: Gemini 2.7 Flash', priceLabel: 'Free', isFree: true, recommended: false },
     { id: 'nvidia/llama-3.1-nemotron-70b-instruct:free', name: 'NVIDIA: Llama 3.1 Nemotron 70B', priceLabel: 'Free', isFree: true, recommended: false },
     { id: 'meta-llama/llama-3.1-405b-instruct:free', name: 'Meta: Llama 3.1 405B Instruct', priceLabel: 'Free', isFree: true, recommended: false },
     { id: 'qwen/qwen-2.5-72b-instruct:free', name: 'Qwen: 2.5 72B Instruct', priceLabel: 'Free', isFree: true, recommended: false },
@@ -232,34 +234,30 @@ function getRequestyModels() {
     return _cachedRequestyModels;
 }
 const DEFAULT_GEMINI_MODEL_PREFERENCE = [
-    'gemini-2.8-flash',
-    'gemini-2.7-flash',
-    'gemini-2.5-flash',
+    'gemini-3.8-flash',
     'gemini-2.0-flash',
     'gemini-1.5-flash',
-    'gemini-2.8-pro',
-    'gemini-2.7-pro',
-    'gemini-2.5-flash-lite',
     'gemini-2.0-flash-lite',
-    'gemini-2.5-pro',
     'gemini-1.5-pro',
+    'gemini-2.5-flash',
+    'gemini-2.5-pro',
+    'gemini-2.8-flash',
+    'gemini-2.7-flash',
 ];
 
 /**
  * Fallback statico: modelli Gemini free — usato se l'API non è raggiungibile
  */
 const STATIC_GEMINI_FREE_MODELS = [
-    { id: 'gemini-2.8-flash',      name: 'Gemini 2.8 Flash',       isFree: true },
-    { id: 'gemini-2.8-pro',        name: 'Gemini 2.8 Pro',         isFree: false },
-    { id: 'gemini-2.7-flash',      name: 'Gemini 2.7 Flash',       isFree: true },
-    { id: 'gemini-2.7-pro',        name: 'Gemini 2.7 Pro',         isFree: false },
-    { id: 'gemini-2.5-flash',      name: 'Gemini 2.5 Flash',       isFree: true },
+    { id: 'gemini-3.8-flash',      name: 'Gemini 3.8 Flash',       isFree: true },
     { id: 'gemini-2.0-flash',      name: 'Gemini 2.0 Flash',       isFree: true },
     { id: 'gemini-1.5-flash',      name: 'Gemini 1.5 Flash',       isFree: true },
-    { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite',  isFree: true },
     { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Flash Lite',  isFree: true },
-    { id: 'gemini-2.5-pro',        name: 'Gemini 2.5 Pro',         isFree: false },
     { id: 'gemini-1.5-pro',        name: 'Gemini 1.5 Pro',         isFree: false },
+    { id: 'gemini-2.5-flash',      name: 'Gemini 2.5 Flash',       isFree: true },
+    { id: 'gemini-2.5-pro',        name: 'Gemini 2.5 Pro',         isFree: false },
+    { id: 'gemini-2.8-flash',      name: 'Gemini 2.8 Flash',       isFree: true },
+    { id: 'gemini-2.7-flash',      name: 'Gemini 2.7 Flash',       isFree: true },
 ];
 
 /**
@@ -365,11 +363,12 @@ async function getGeminiCandidateModels(apiKey) {
     }
 
     const defaultFallbacks = [
+        'gemini-3.8-flash',
+        'gemini-2.0-flash',
+        'gemini-1.5-flash',
         'gemini-2.8-flash',
         'gemini-2.7-flash',
         'gemini-2.5-flash',
-        'gemini-2.0-flash',
-        'gemini-1.5-flash',
         'gemini-2.8-pro',
         'gemini-2.7-pro',
         'gemini-2.5-flash-lite',
@@ -418,55 +417,169 @@ async function getBestGeminiModel(apiKey) {
     return _cachedGeminiModel;
 }
 
-async function checkNewGeminiModels() {
+// Baseline modelli noti per evitare falsi allarmi alla prima esecuzione del check
+const BASELINE_KNOWN_MODELS = [
+    'gemini-3.8-flash',
+    'gemini-2.0-flash',
+    'gemini-2.0-flash-lite',
+    'gemini-1.5-flash',
+    'gemini-1.5-pro',
+    'gemini-2.5-flash',
+    'gemini-2.5-pro',
+    'gemini-2.8-flash',
+    'gemini-2.7-flash',
+    'gemini-2.0-pro-exp-02-05',
+    'gemini-2.0-flash-thinking-exp-01-21',
+    'google/gemini-3.8-flash:free',
+    'google/gemini-2.0-flash-exp:free',
+    'google/gemini-2.8-flash:free',
+    'google/gemini-2.7-flash:free',
+    'deepseek/deepseek-r1:free',
+    'deepseek/deepseek-chat:free',
+    'meta-llama/llama-3.3-70b-instruct:free',
+    'meta-llama/llama-3.1-405b-instruct:free',
+    'meta-llama/llama-3.1-70b-instruct:free',
+    'meta-llama/llama-3.1-8b-instruct:free',
+    'qwen/qwq-32b:free',
+    'qwen/qwen-2.5-72b-instruct:free',
+    'nvidia/llama-3.1-nemotron-70b-instruct:free',
+    'nvidia/nemotron-4-340b-instruct:free',
+    'mistralai/mistral-small-24b-instruct-2501:free'
+];
+
+/**
+ * Check periodico automatico per nuovi modelli gratuiti (Google Gemini & OpenRouter).
+ * Rileva nuovi modelli, aggiorna la cache e notifica l'amministratore.
+ */
+async function checkNewAIModels() {
     try {
         const database = require('../db');
         const { notifyUser } = require('./notificationService');
-        const settings = database.getSettings(1);
-        const apiKey = settings.geminiApiKeyFree || settings.geminiApiKeyPay || settings.geminiApiKey || process.env.GEMINI_API_KEY;
-        if (!apiKey) return;
-
-        const listRes = await axios.get(
-            `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}&pageSize=100`
-        );
-        const available = (listRes.data.models || [])
-            .filter(m => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
-            .map(m => m.name.replace('models/', ''));
-
-        const currentPrefs = getGeminiModelPreference();
+        const settings = database.getSettings(1) || {};
         
-        // Find Gemini models that are NOT in current preferences but seem to be new text/chat models
-        const newModels = available.filter(m => 
-            m.startsWith('gemini-') && 
-            !currentPrefs.includes(m) && 
-            !m.includes('vision') && 
-            !m.includes('embedding')
-        );
+        let knownModels = [];
+        let isFirstRun = false;
+        if (settings.knownAiModels) {
+            try {
+                knownModels = JSON.parse(settings.knownAiModels);
+            } catch (e) {
+                knownModels = [];
+            }
+        }
+        if (!Array.isArray(knownModels) || knownModels.length === 0) {
+            knownModels = [...BASELINE_KNOWN_MODELS];
+            isFirstRun = true;
+        }
 
-        if (newModels.length > 0) {
-            aiLogger.info(`[Gemini] Found ${newModels.length} new models not in preferences:`, newModels);
-            
-            const title = "Nuovi modelli Gemini disponibili";
-            const message = `Trovati nuovi modelli Gemini gratuiti:\n${newModels.join(', ')}\nVai nelle Impostazioni AI per aggiungerli alla selezione.`;
-            
-            // Check if we already notified recently to avoid spam (can check if there's an exact notification in DB)
+        const newlyDiscovered = {
+            gemini: [],
+            openrouter: []
+        };
+
+        // 1. CHECK GOOGLE GEMINI
+        const geminiKey = settings.geminiApiKeyFree || settings.geminiApiKeyPay || settings.geminiApiKey || process.env.GEMINI_API_KEY;
+        if (geminiKey) {
+            try {
+                const listRes = await axios.get(
+                    `https://generativelanguage.googleapis.com/v1beta/models?key=${geminiKey}&pageSize=100`,
+                    { timeout: 10000 }
+                );
+                const available = (listRes.data.models || [])
+                    .filter(m => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+                    .map(m => m.name.replace('models/', ''));
+
+                for (const m of available) {
+                    if (m.startsWith('gemini-') && !m.includes('vision') && !m.includes('embedding') && !m.includes('aqa')) {
+                        if (!knownModels.includes(m)) {
+                            newlyDiscovered.gemini.push(m);
+                            knownModels.push(m);
+                        }
+                    }
+                }
+            } catch (err) {
+                aiLogger.warn('[Check AI Models] Errore check Gemini:', err.message);
+            }
+        }
+
+        // 2. CHECK OPENROUTER FREE MODELS
+        try {
+            const orRes = await axios.get('https://openrouter.ai/api/v1/models', { timeout: 15000 });
+            if (orRes.data && Array.isArray(orRes.data.data)) {
+                const preferredProviders = ['openai/', 'anthropic/', 'google/', 'meta-llama/', 'mistralai/', 'deepseek/', 'qwen/', 'xiaomi/', 'nvidia/'];
+                
+                for (const m of orRes.data.data) {
+                    const id = m.id.toLowerCase();
+                    const promptPrice = parseFloat(m.pricing?.prompt || 0);
+                    const compPrice = parseFloat(m.pricing?.completion || 0);
+                    const isFree = (promptPrice === 0 && compPrice === 0) || id.endsWith(':free');
+
+                    if (!isFree) continue;
+                    if (/legacy|deprecated|vision|image|roleplay|uncensored|mythomax|nous|openchat|llama-2|gpt-3\.5|claude-2|pixtral|llava|lyria/.test(id)) continue;
+                    if (!preferredProviders.some(p => id.startsWith(p))) continue;
+
+                    if (!knownModels.includes(m.id)) {
+                        newlyDiscovered.openrouter.push(m.id);
+                        knownModels.push(m.id);
+                    }
+                }
+            }
+        } catch (err) {
+            aiLogger.warn('[Check AI Models] Errore check OpenRouter:', err.message);
+        }
+
+        // Se è la prima esecuzione (baseline non salvata), salva lo stato iniziale senza spam
+        if (isFirstRun) {
+            database.setSetting(1, 'knownAiModels', JSON.stringify(knownModels));
+            aiLogger.info(`[Check AI Models] Inizializzato baseline di ${knownModels.length} modelli IA noti.`);
+            return [];
+        }
+
+        const totalNew = [...newlyDiscovered.gemini, ...newlyDiscovered.openrouter];
+
+        if (totalNew.length > 0) {
+            database.setSetting(1, 'knownAiModels', JSON.stringify(knownModels));
+
+            // Ricarica le cache dei modelli
+            fetchOpenRouterModels().catch(() => {});
+            if (geminiKey) fetchGeminiModels(geminiKey).catch(() => {});
+
+            aiLogger.info(`[Check AI Models] Rilevati ${totalNew.length} nuovi modelli:`, newlyDiscovered);
+
+            const title = "🤖 Nuovi Modelli IA Rilevati";
+            let body = "Nuovi modelli IA gratuiti disponibili per l'analisi finanziaria:\n";
+            if (newlyDiscovered.gemini.length > 0) {
+                body += `\n• Google Gemini: ${newlyDiscovered.gemini.join(', ')}`;
+            }
+            if (newlyDiscovered.openrouter.length > 0) {
+                body += `\n• OpenRouter Free: ${newlyDiscovered.openrouter.join(', ')}`;
+            }
+            body += "\n\nPuoi abilitarli nel Pannello Admin -> Impostazioni AI.";
+
             const existing = database.db.prepare(`
                 SELECT id FROM notifications 
                 WHERE user_id = 1 AND title = ? AND message = ? 
                 ORDER BY date DESC LIMIT 1
-            `).get(title, message);
+            `).get(title, body);
 
             if (!existing) {
                 notifyUser(1, 'STATUS', {
                     title,
-                    body: message
+                    body
                 });
             }
+        } else {
+            aiLogger.info('[Check AI Models] Nessun nuovo modello rilevato.');
         }
+
+        return totalNew;
     } catch (err) {
-        aiLogger.error('[Gemini] Failed to check for new models:', err.message);
+        aiLogger.error('[Check AI Models] Errore durante il check dei modelli:', err.message);
+        return [];
     }
 }
+
+// Alias retrocompatibile
+const checkNewGeminiModels = checkNewAIModels;
 
 
 function parseAIResponse(rawText) {
@@ -649,7 +762,9 @@ async function callAIModel(engine, prompt, keys) {
         }
 
         let candidateModels = await getGeminiCandidateModels(apiKey);
-        if (engine.includes('2.8')) {
+        if (engine.includes('3.8')) {
+            candidateModels = ['gemini-3.8-flash', 'gemini-3.8-pro', ...candidateModels.filter(m => !m.includes('3.8'))];
+        } else if (engine.includes('2.8')) {
             candidateModels = ['gemini-2.8-flash', 'gemini-2.8-pro', ...candidateModels.filter(m => !m.includes('2.8'))];
         } else if (engine.includes('2.7')) {
             candidateModels = ['gemini-2.7-flash', 'gemini-2.7-pro', ...candidateModels.filter(m => !m.includes('2.7'))];
@@ -755,26 +870,24 @@ const RECOMMENDED_REQUESTY_PAY = [
 
 // Modelli Gemini consigliati (statici)
 const RECOMMENDED_GEMINI_FREE = [
-    { id: 'gemini-2.8-flash', name: 'Gemini 2.8 Flash', priceLabel: 'Free', isFree: true, recommended: true },
-    { id: 'gemini-2.7-flash', name: 'Gemini 2.7 Flash', priceLabel: 'Free', isFree: true, recommended: true },
-    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', priceLabel: 'Free', isFree: true, recommended: true },
+    { id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash', priceLabel: 'Free', isFree: true, recommended: true },
     { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', priceLabel: 'Free', isFree: true, recommended: true },
+    { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', priceLabel: 'Free', isFree: true, recommended: true },
+    { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Flash Lite', priceLabel: 'Free', isFree: true, recommended: true },
 ];
 const RECOMMENDED_GEMINI_PAY = [
-    { id: 'gemini-2.8-pro', name: 'Gemini 2.8 Pro', priceLabel: 'Pay', isFree: false, recommended: true },
-    { id: 'gemini-2.7-pro', name: 'Gemini 2.7 Pro', priceLabel: 'Pay', isFree: false, recommended: true },
-    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', priceLabel: 'Pay', isFree: false, recommended: true },
     { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', priceLabel: 'Pay', isFree: false, recommended: true },
+    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', priceLabel: 'Pay', isFree: false, recommended: true },
 ];
 
 /**
- * Restituisce i modelli consigliati (top 3 free + top 3 pay) per ogni provider.
+ * Restituisce i modelli consigliati (top free + top pay) per ogni provider.
  * Usato dall'endpoint /api/admin/recommended-models
  */
 function getRecommendedModels() {
-    // OpenRouter: prendi i primi 3 free e 3 pay dalla cache (o dal fallback statico)
+    // OpenRouter: prendi i primi 4 free e 3 pay dalla cache (o dal fallback statico)
     const orModels = _cachedOpenRouterModels;
-    const orFree = orModels.filter(m => m.isFree && m.recommended).slice(0, 3);
+    const orFree = orModels.filter(m => m.isFree && m.recommended).slice(0, 4);
     const orPay = orModels.filter(m => !m.isFree && m.recommended).slice(0, 3);
 
     // Requesty: statici aggiornati
@@ -803,6 +916,7 @@ module.exports = {
     getGeminiModels,
     getGeminiModelPreference,
     getRecommendedModels,
+    checkNewAIModels,
     checkNewGeminiModels,
     parseAIResponse,
     callAIModel

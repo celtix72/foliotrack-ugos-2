@@ -59,6 +59,7 @@ module.exports = function (dependencies) {
             const available = [];
             
             if (settings.geminiApiKeyFree || settings.geminiApiKeyPay || settings.geminiApiKey || process.env.GEMINI_API_KEY) {
+                available.push('Gemini_3.8');
                 available.push('Gemini_2.8');
                 available.push('Gemini_2.7');
                 available.push('Gemini_Free');
@@ -100,7 +101,9 @@ module.exports = function (dependencies) {
                     return base.length > 30 ? base.slice(0, 28) + '…' : base;
                 }
 
-                if (e === 'Gemini_2.8') {
+                if (e === 'Gemini_3.8') {
+                    label = 'Gemini 3.8 Flash';
+                } else if (e === 'Gemini_2.8') {
                     label = 'Gemini 2.8';
                 } else if (e === 'Gemini_2.7') {
                     label = 'Gemini 2.7';
@@ -548,7 +551,7 @@ IMPORTANTE:
     });
 
     // POST /api/admin/refresh-ai-models
-    // Forza il refresh manuale dei modelli da OpenRouter e Requesty
+    // Forza il refresh manuale dei modelli da OpenRouter, Requesty e Gemini ed esegue il check di nuovi modelli
     router.post('/admin/refresh-ai-models', requireAuth, requireAdmin, async (req, res) => {
         try {
             const settings = database.getSettings(1);
@@ -556,8 +559,14 @@ IMPORTANTE:
             const refreshPromises = [aiService.fetchOpenRouterModels(), aiService.fetchRequestyModels()];
             if (geminiKey) refreshPromises.push(aiService.fetchGeminiModels(geminiKey));
             await Promise.allSettled(refreshPromises);
+
+            const newModels = await aiService.checkNewAIModels();
             logger.info(`[ADMIN] AI models refreshed manually by ${req.user.username}`);
-            res.json({ success: true, message: 'Modelli aggiornati con successo.' });
+            res.json({ 
+                success: true, 
+                message: 'Modelli aggiornati con successo.',
+                newModels: newModels || []
+            });
         } catch (err) {
             logger.error('[Refresh AI Models Error]', err.message);
             res.status(500).json({ success: false, message: 'Errore durante il refresh.' });

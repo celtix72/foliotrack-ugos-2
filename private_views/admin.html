@@ -343,6 +343,7 @@
                             <div>
                                 <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Motore AI di Default</label>
                                 <select id="ai-engine" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-indigo-500 outline-none">
+                                    <option value="Gemini_3.8">Gemini 3.8 Flash</option>
                                     <option value="Gemini_2.8">Gemini 2.8</option>
                                     <option value="Gemini_2.7">Gemini 2.7</option>
                                     <option value="Gemini_Free">Gemini (Free)</option>
@@ -359,6 +360,52 @@
                                     <option value="REQ5">Requesty (Modello 5)</option>
                                 </select>
                                 <p class="text-[10px] text-slate-500 mt-1">Scegli quale motore usare per le analisi dei portafogli e dei singoli asset.</p>
+                            </div>
+
+                            <!-- Top 4 Recommended Free AI Models Guide -->
+                            <div class="p-4 rounded-xl border border-indigo-200 dark:border-indigo-900/40 bg-indigo-50/60 dark:bg-indigo-950/20 space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="text-xs font-black text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5 uppercase tracking-wider">
+                                        <span class="material-symbols-outlined text-sm text-indigo-600 dark:text-indigo-400">auto_awesome</span> I 4 Modelli Gratuiti Consigliati per FolioTrack
+                                    </h4>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Check 24h Attivo
+                                    </span>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                                    <div class="p-2.5 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-1">
+                                        <div class="flex items-center justify-between font-bold text-slate-800 dark:text-slate-200">
+                                            <span class="flex items-center gap-1">🥇 Google Gemini 2.0 Flash</span>
+                                            <span class="text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-500">Primario</span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Velocità estrema (&lt;1s), 1M token context, precisione perfetta formato JSON. 15 RPM gratuiti via Google AI Studio.</p>
+                                    </div>
+                                    <div class="p-2.5 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-1">
+                                        <div class="flex items-center justify-between font-bold text-slate-800 dark:text-slate-200">
+                                            <span class="flex items-center gap-1">🧠 DeepSeek R1 Reasoning</span>
+                                            <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500">OpenRouter :free</span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Catena di pensiero (CoT) da podio mondiale (pari a o1). Ideale per calcolo Stop Loss/Take Profit e rischio di mercato.</p>
+                                    </div>
+                                    <div class="p-2.5 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-1">
+                                        <div class="flex items-center justify-between font-bold text-slate-800 dark:text-slate-200">
+                                            <span class="flex items-center gap-1">🌐 Meta Llama 3.3 70B</span>
+                                            <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500">OpenRouter :free</span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Qualità generale pari a GPT-4o. Eccellente nella sintesi di bilanci, analisi news e robustezza nelle risposte strutturate.</p>
+                                    </div>
+                                    <div class="p-2.5 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-1">
+                                        <div class="flex items-center justify-between font-bold text-slate-800 dark:text-slate-200">
+                                            <span class="flex items-center gap-1">📐 Qwen QwQ 32B / Gemini 1.5</span>
+                                            <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500">OpenRouter / Google</span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Ragionamento matematico-quantitativo specialistico (QwQ) o fallback ad alta disponibilità garantita 99.9% (Gemini 1.5 Flash).</p>
+                                    </div>
+                                </div>
+                                <div class="text-[10px] text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[13px]">info</span>
+                                    <span>Il sistema verifica automaticamente ogni 24h nuovi modelli gratuiti rilasciati da Google e OpenRouter, notificandoti in tempo reale.</span>
+                                </div>
                             </div>
 
                             <!-- API Keys & Models Grid -->
@@ -2228,9 +2275,13 @@
 
         window.refreshAiModels = async () => {
             try {
-                await fetchAdmin('/api/admin/refresh-ai-models', { method: 'POST' });
+                const res = await fetchAdmin('/api/admin/refresh-ai-models', { method: 'POST' });
                 await loadAiSettings();
-                alert('Lista modelli AI aggiornata!');
+                if (res && res.newModels && res.newModels.length > 0) {
+                    alert(`Lista modelli AI aggiornata con successo!\n\nNuovi modelli rilevati:\n${res.newModels.join('\n')}`);
+                } else {
+                    alert('Lista modelli AI aggiornata con successo! Nessun nuovo modello rilevato.');
+                }
             } catch (e) { alert('Errore aggiornamento: ' + e.message); }
         };
 
