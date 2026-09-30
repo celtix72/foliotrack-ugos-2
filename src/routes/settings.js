@@ -56,114 +56,76 @@ module.exports = function (dependencies) {
     router.get('/ai/available-engines', requireAuth, async (req, res) => {
         try {
             const settings = database.getSettings(1);
-            const available = [];
-            
-            if (settings.geminiApiKeyFree || settings.geminiApiKeyPay || settings.geminiApiKey || process.env.GEMINI_API_KEY) {
-                available.push('Gemini_3.8');
-                available.push('Gemini_2.8');
-                available.push('Gemini_2.7');
-                available.push('Gemini_Free');
-            }
-            
+            const geminiKey = settings.geminiApiKeyFree || settings.geminiApiKeyPay || settings.geminiApiKey || process.env.GEMINI_API_KEY;
             const orKey = settings.openrouterApiKey || settings.openrouterApiKeyPay || process.env.OPENROUTER_API_KEY;
-            if (orKey) {
-                if (settings.openrouterModel1) available.push('OR1');
-                if (settings.openrouterModel2) available.push('OR2');
-                if (settings.openrouterModel3) available.push('OR3');
-                if (settings.openrouterModel4) available.push('OR4');
-                if (settings.openrouterModel5) available.push('OR5');
-            }
-            
             const reqKey = settings.requestyApiKey || settings.requestyApiKeyPay || settings.requestyApiKeyFree || process.env.REQUESTY_API_KEY;
-            if (reqKey) {
-                if (settings.requestyModel1) available.push('REQ1');
-                if (settings.requestyModel2) available.push('REQ2');
-                if (settings.requestyModel3) available.push('REQ3');
-                if (settings.requestyModel4) available.push('REQ4');
-                if (settings.requestyModel5) available.push('REQ5');
-            }
-            
-            let geminiModelName = '';
-            if (available.includes('Gemini_Free')) {
-                const key = settings.geminiApiKeyFree || settings.geminiApiKeyPay || settings.geminiApiKey || process.env.GEMINI_API_KEY;
-                geminiModelName = await aiService.getBestGeminiModel(key);
-            }
-            
-            const enginesWithLabels = available.map(e => {
-                let label = e;
-                const orModels = aiService.getOpenRouterModels();
-                const reqModels = aiService.getRequestyModels();
 
-                function modelShortName(modelId) {
-                    if (!modelId) return '';
-                    // Prende la parte dopo l'ultimo '/' e rimuove ':free'
-                    const base = modelId.split('/').pop().replace(':free', '').replace(/-\d{8}$/, '');
-                    return base.length > 30 ? base.slice(0, 28) + '…' : base;
-                }
-
-                if (e === 'Gemini_3.8') {
-                    label = 'Gemini 3.8 Flash';
-                } else if (e === 'Gemini_2.8') {
-                    label = 'Gemini 2.8';
-                } else if (e === 'Gemini_2.7') {
-                    label = 'Gemini 2.7';
-                } else if (e === 'Gemini_Free') {
-                    label = `Gemini · ${geminiModelName || 'auto-detect'}`;
-                } else if (e === 'OR1') {
-                    const m = orModels.find(x => x.id === settings.openrouterModel1);
-                    const mName = m ? m.name : modelShortName(settings.openrouterModel1);
-                    const free = m?.isFree ? ' (Free)' : '';
-                    label = `OpenRouter · ${mName || 'Slot 1'}${free}`;
-                } else if (e === 'OR2') {
-                    const m = orModels.find(x => x.id === settings.openrouterModel2);
-                    const mName = m ? m.name : modelShortName(settings.openrouterModel2);
-                    const free = m?.isFree ? ' (Free)' : '';
-                    label = `OpenRouter · ${mName || 'Slot 2'}${free}`;
-                } else if (e === 'OR3') {
-                    const m = orModels.find(x => x.id === settings.openrouterModel3);
-                    const mName = m ? m.name : modelShortName(settings.openrouterModel3);
-                    const free = m?.isFree ? ' (Free)' : '';
-                    label = `OpenRouter · ${mName || 'Slot 3'}${free}`;
-                } else if (e === 'OR4') {
-                    const m = orModels.find(x => x.id === settings.openrouterModel4);
-                    const mName = m ? m.name : modelShortName(settings.openrouterModel4);
-                    const free = m?.isFree ? ' (Free)' : '';
-                    label = `OpenRouter · ${mName || 'Slot 4'}${free}`;
-                } else if (e === 'OR5') {
-                    const m = orModels.find(x => x.id === settings.openrouterModel5);
-                    const mName = m ? m.name : modelShortName(settings.openrouterModel5);
-                    const free = m?.isFree ? ' (Free)' : '';
-                    label = `OpenRouter · ${mName || 'Slot 5'}${free}`;
-                } else if (e === 'REQ1') {
-                    const m = reqModels.find(x => x.id === settings.requestyModel1);
-                    const mName = m ? m.name : modelShortName(settings.requestyModel1);
-                    label = `Requesty · ${mName || 'Slot 1'}`;
-                } else if (e === 'REQ2') {
-                    const m = reqModels.find(x => x.id === settings.requestyModel2);
-                    const mName = m ? m.name : modelShortName(settings.requestyModel2);
-                    label = `Requesty · ${mName || 'Slot 2'}`;
-                } else if (e === 'REQ3') {
-                    const m = reqModels.find(x => x.id === settings.requestyModel3);
-                    const mName = m ? m.name : modelShortName(settings.requestyModel3);
-                    label = `Requesty · ${mName || 'Slot 3'}`;
-                } else if (e === 'REQ4') {
-                    const m = reqModels.find(x => x.id === settings.requestyModel4);
-                    const mName = m ? m.name : modelShortName(settings.requestyModel4);
-                    label = `Requesty · ${mName || 'Slot 4'}`;
-                } else if (e === 'REQ5') {
-                    const m = reqModels.find(x => x.id === settings.requestyModel5);
-                    const mName = m ? m.name : modelShortName(settings.requestyModel5);
-                    label = `Requesty · ${mName || 'Slot 5'}`;
-                }
-                
-                return { id: e, label };
-            });
-            
-            // Fix eventual default settings that might still reference Gemini_Pay
             let defaultEngine = settings.aiEngine || 'Gemini_Free';
             if (defaultEngine === 'Gemini_Pay') defaultEngine = 'Gemini_Free';
-            
-            res.json({ engines: enginesWithLabels, default: defaultEngine });
+
+            const engines = [];
+
+            // 1. Motore Predefinito di Sistema
+            engines.push({
+                id: defaultEngine,
+                label: `⚙️ Predefinito di Sistema (${defaultEngine.replace('_', ' ')})`,
+                group: 'Predefinito'
+            });
+
+            // 2. Modelli Google Gemini (se chiave configurata)
+            if (geminiKey) {
+                engines.push({ id: 'gemini-2.0-flash', label: '🥇 Gemini 2.0 Flash (Consigliato Free)', group: 'Google Gemini' });
+                engines.push({ id: 'gemini-3.8-flash', label: '⚡ Gemini 3.8 Flash', group: 'Google Gemini' });
+                engines.push({ id: 'gemini-1.5-flash', label: '🛡️ Gemini 1.5 Flash (Stabile Fallback)', group: 'Google Gemini' });
+                engines.push({ id: 'gemini-2.0-flash-lite', label: '🚀 Gemini 2.0 Flash Lite', group: 'Google Gemini' });
+                engines.push({ id: 'gemini-1.5-pro', label: '💎 Gemini 1.5 Pro', group: 'Google Gemini' });
+                engines.push({ id: 'Gemini_Free', label: '🔄 Gemini Waterfall Automatico', group: 'Google Gemini' });
+            }
+
+            // 3. Modelli OpenRouter Free (se chiave configurata)
+            if (orKey) {
+                engines.push({ id: 'deepseek/deepseek-r1:free', label: '🧠 DeepSeek R1 Reasoning (Free)', group: 'OpenRouter Free' });
+                engines.push({ id: 'meta-llama/llama-3.3-70b-instruct:free', label: '🌐 Meta Llama 3.3 70B (Free)', group: 'OpenRouter Free' });
+                engines.push({ id: 'qwen/qwq-32b:free', label: '📐 Qwen QwQ 32B Reasoning (Free)', group: 'OpenRouter Free' });
+                engines.push({ id: 'google/gemini-2.0-flash-exp:free', label: '✨ Gemini 2.0 Flash (OpenRouter)', group: 'OpenRouter Free' });
+            }
+
+            // 4. Slot Personalizzati OpenRouter (OR1..OR5)
+            const orModels = aiService.getOpenRouterModels();
+            if (orKey) {
+                for (let i = 1; i <= 5; i++) {
+                    const slotModel = settings[`openrouterModel${i}`];
+                    if (slotModel) {
+                        const m = orModels.find(x => x.id === slotModel);
+                        const mName = m ? m.name : slotModel.split('/').pop().replace(':free', '');
+                        const freeTag = m?.isFree ? ' (Free)' : '';
+                        engines.push({
+                            id: `OR${i}`,
+                            label: `Slot OR${i}: ${mName}${freeTag}`,
+                            group: 'Slot Personalizzati OpenRouter'
+                        });
+                    }
+                }
+            }
+
+            // 5. Slot Personalizzati Requesty (REQ1..REQ5)
+            const reqModels = aiService.getRequestyModels();
+            if (reqKey) {
+                for (let i = 1; i <= 5; i++) {
+                    const slotModel = settings[`requestyModel${i}`];
+                    if (slotModel) {
+                        const m = reqModels.find(x => x.id === slotModel);
+                        const mName = m ? m.name : slotModel.split('/').pop();
+                        engines.push({
+                            id: `REQ${i}`,
+                            label: `Slot REQ${i}: ${mName}`,
+                            group: 'Slot Personalizzati Requesty'
+                        });
+                    }
+                }
+            }
+
+            res.json({ engines, default: defaultEngine });
         } catch (e) {
             res.status(500).json({ error: e.message });
         }

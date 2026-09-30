@@ -1118,7 +1118,7 @@
                         <h4 class="text-slate-900 dark:text-white" style="font-size: 11px; font-weight: 900; display: flex; align-items: center; gap: 4px; margin: 0; flex: 0 0 auto;">
                             Storico
                         </h4>
-                        <select id="ai-modal-engine-select" style="width: 140px; text-overflow: ellipsis; font-size: 11px; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(148,163,184,0.3); background: transparent; cursor: pointer; outline: none; font-weight: 600;" class="text-slate-700 dark:text-slate-300">
+                        <select id="ai-modal-engine-select" style="min-width: 180px; max-width: 260px; font-size: 11px; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(148,163,184,0.3); background: transparent; cursor: pointer; outline: none; font-weight: 600;" class="text-slate-700 dark:text-slate-300">
                             <option value="">Default (Caricamento...)</option>
                         </select>
                         <select id="ai-modal-prompt-select" style="width: 140px; text-overflow: ellipsis; font-size: 11px; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(148,163,184,0.3); background: transparent; cursor: pointer; outline: none; font-weight: 600;" class="text-slate-700 dark:text-slate-300">
@@ -1301,17 +1301,29 @@
         fetch('/api/ai/available-engines').then(r => r.json()).then(data => {
             const select = document.getElementById('ai-modal-engine-select');
             if (select && data.engines) {
-                select.innerHTML = data.engines.map(e => {
-                    const id = typeof e === 'object' ? e.id : e;
-                    let label = typeof e === 'object' ? e.label : e;
-                    
-                    if (typeof e !== 'object') {
-                        if (e === 'Both') label = 'Gemini + Qwen';
-                        else label = e.replace(/_(Free|Pay)/, ' ($1)');
+                const groups = {};
+                data.engines.forEach(e => {
+                    const grp = (typeof e === 'object' && e.group) ? e.group : '';
+                    if (!groups[grp]) groups[grp] = [];
+                    groups[grp].push(e);
+                });
+
+                let html = '';
+                for (const grp of Object.keys(groups)) {
+                    if (grp) html += `<optgroup label="${grp}">`;
+                    for (const e of groups[grp]) {
+                        const id = typeof e === 'object' ? e.id : e;
+                        let label = typeof e === 'object' ? e.label : e;
+                        if (typeof e !== 'object') {
+                            if (e === 'Both') label = 'Gemini + Qwen';
+                            else label = e.replace(/_(Free|Pay)/, ' ($1)');
+                        }
+                        const isSel = (id === data.default) ? 'selected' : '';
+                        html += `<option value="${id}" ${isSel}>${label}</option>`;
                     }
-                    
-                    return `<option value="${id}" ${id === data.default ? 'selected' : ''}>${label}</option>`;
-                }).join('');
+                    if (grp) html += `</optgroup>`;
+                }
+                select.innerHTML = html;
             }
         }).catch(e => console.error("Error loading engines", e));
     };

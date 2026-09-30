@@ -619,18 +619,24 @@ async function callAIModel(engine, prompt, keys) {
 
     aiLogger.info(`[AI Iteration] Starting analysis with engine: ${engine}`);
     aiLogger.info(`[AI Prompt] \n${prompt}`);
-    if (baseEngine === 'OR1' || baseEngine === 'OR2' || baseEngine === 'OR3' || baseEngine === 'OR4' || baseEngine === 'OR5') {
+    const isOpenRouter = baseEngine === 'OR1' || baseEngine === 'OR2' || baseEngine === 'OR3' || baseEngine === 'OR4' || baseEngine === 'OR5' || engine.startsWith('openrouter:') || engine.startsWith('or:') || (engine.includes('/') && !engine.startsWith('gemini-'));
+    const isRequesty = baseEngine === 'REQ1' || baseEngine === 'REQ2' || baseEngine === 'REQ3' || baseEngine === 'REQ4' || baseEngine === 'REQ5' || engine.startsWith('requesty:') || engine.startsWith('req:');
+
+    if (isOpenRouter) {
         const apiKey = keys.openrouterApiKey || keys.openrouterApiKeyPay || process.env.OPENROUTER_API_KEY;
         if (!apiKey) throw new Error(`OpenRouter API Key mancante.`);
         
         let orModel = '';
         if (baseEngine === 'OR1') orModel = keys.openrouterModel1;
-        if (baseEngine === 'OR2') orModel = keys.openrouterModel2;
-        if (baseEngine === 'OR3') orModel = keys.openrouterModel3;
-        if (baseEngine === 'OR4') orModel = keys.openrouterModel4;
-        if (baseEngine === 'OR5') orModel = keys.openrouterModel5;
+        else if (baseEngine === 'OR2') orModel = keys.openrouterModel2;
+        else if (baseEngine === 'OR3') orModel = keys.openrouterModel3;
+        else if (baseEngine === 'OR4') orModel = keys.openrouterModel4;
+        else if (baseEngine === 'OR5') orModel = keys.openrouterModel5;
+        else {
+            orModel = engine.replace(/^openrouter:/, '').replace(/^or:/, '');
+        }
         
-        if (!orModel) throw new Error(`Nessun modello configurato per ${baseEngine}. Selezionalo nei Settings dell'amministratore.`);
+        if (!orModel) throw new Error(`Nessun modello configurato per ${engine}. Selezionalo nei Settings dell'amministratore.`);
         
         let res;
         let attempt = 0;
@@ -666,18 +672,21 @@ async function callAIModel(engine, prompt, keys) {
         const content = res.data.choices?.[0]?.message?.content || '{}';
         aiLogger.info(`[AI Response (${engine})] \n${content}`);
         return { text: content, usage: res.data.usage || {}, modelUsed: orModel };
-    } else if (baseEngine === 'REQ1' || baseEngine === 'REQ2' || baseEngine === 'REQ3' || baseEngine === 'REQ4' || baseEngine === 'REQ5') {
+    } else if (isRequesty) {
         const apiKey = keys.requestyApiKey || keys.requestyApiKeyPay || keys.requestyApiKeyFree || process.env.REQUESTY_API_KEY;
         if (!apiKey) throw new Error(`Requesty API Key mancante.`);
         
         let reqModel = '';
         if (baseEngine === 'REQ1') reqModel = keys.requestyModel1;
-        if (baseEngine === 'REQ2') reqModel = keys.requestyModel2;
-        if (baseEngine === 'REQ3') reqModel = keys.requestyModel3;
-        if (baseEngine === 'REQ4') reqModel = keys.requestyModel4;
-        if (baseEngine === 'REQ5') reqModel = keys.requestyModel5;
+        else if (baseEngine === 'REQ2') reqModel = keys.requestyModel2;
+        else if (baseEngine === 'REQ3') reqModel = keys.requestyModel3;
+        else if (baseEngine === 'REQ4') reqModel = keys.requestyModel4;
+        else if (baseEngine === 'REQ5') reqModel = keys.requestyModel5;
+        else {
+            reqModel = engine.replace(/^requesty:/, '').replace(/^req:/, '');
+        }
         
-        if (!reqModel) throw new Error(`Nessun modello configurato per ${baseEngine}. Selezionalo nei Settings dell'amministratore.`);
+        if (!reqModel) throw new Error(`Nessun modello configurato per ${engine}. Selezionalo nei Settings dell'amministratore.`);
         
         let res;
         let attempt = 0;
@@ -762,7 +771,9 @@ async function callAIModel(engine, prompt, keys) {
         }
 
         let candidateModels = await getGeminiCandidateModels(apiKey);
-        if (engine.includes('3.8')) {
+        if (engine.startsWith('gemini-')) {
+            candidateModels = [engine, ...candidateModels.filter(m => m !== engine)];
+        } else if (engine.includes('3.8')) {
             candidateModels = ['gemini-3.8-flash', 'gemini-3.8-pro', ...candidateModels.filter(m => !m.includes('3.8'))];
         } else if (engine.includes('2.8')) {
             candidateModels = ['gemini-2.8-flash', 'gemini-2.8-pro', ...candidateModels.filter(m => !m.includes('2.8'))];
