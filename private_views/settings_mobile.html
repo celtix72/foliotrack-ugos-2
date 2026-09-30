@@ -193,164 +193,193 @@
                       <button onclick="sendTestTelegram('tp')" class="flex-1 py-2 bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase rounded-lg">Test TP</button>
                   </div>
               </div>
-              <!-- Notification Center Row -->
+              <!-- Centro Notifiche, Matrice & Alert Asset Unified Row -->
               <div class="mob-settings-row" onclick="toggleMobSection('mob-notification-matrix')">
                   <div class="mob-settings-icon bg-emerald-500"><span class="material-symbols-outlined text-white">notifications_active</span></div>
-                  <div class="mob-settings-label">Centro Notifiche</div>
-                  <div class="mob-settings-value" id="mob-notification-status-label">Configura <span id="mob-notification-matrix-icon" class="material-symbols-outlined text-[14px] transition-transform">expand_more</span></div>
+                  <div class="mob-settings-label">Centro Notifiche, Matrice &amp; Alert</div>
+                  <div class="mob-settings-value" id="mob-notification-status-label">
+                      <span id="mob-sltp-count-badge" class="text-[9px] font-black bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full mr-1">0 Alert</span>
+                      <span id="mob-notification-matrix-icon" class="material-symbols-outlined text-[14px] transition-transform">expand_more</span>
+                  </div>
               </div>
+
+              <!-- Unified Accordion Body -->
               <div id="mob-notification-matrix" class="hidden bg-slate-50/50 dark:bg-black/20 border-t border-slate-100 dark:border-slate-800 p-4 space-y-4">
-                  <div class="space-y-4">
-                      <!-- Headers -->
-                      <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-                          <div class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tipo di Evento</div>
-                          <div class="flex gap-4">
-                              <div class="text-[9px] font-black text-slate-400 uppercase tracking-widest w-10 text-center">TG</div>
-                              <div class="text-[9px] font-black text-slate-400 uppercase tracking-widest w-10 text-center">PUSH</div>
-                              <div class="text-[9px] font-black text-slate-400 uppercase tracking-widest w-8 text-center">TEST</div>
+                  <!-- Navigation Sub-Tabs -->
+                  <div class="flex p-1 bg-slate-200/70 dark:bg-slate-800/80 rounded-xl gap-1">
+                      <button id="mob-subtab-btn-assets" onclick="switchMobHubTab('assets')" 
+                          class="flex-1 py-2 text-[10px] font-black uppercase rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-xs flex items-center justify-center gap-1.5 transition-all">
+                          <span class="material-symbols-outlined text-sm text-amber-500">trending_up</span>
+                          Alert Asset (<span id="mob-hub-alerts-count">0</span>)
+                      </button>
+                      <button id="mob-subtab-btn-matrix" onclick="switchMobHubTab('matrix')" 
+                          class="flex-1 py-2 text-[10px] font-black uppercase rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 flex items-center justify-center gap-1.5 transition-all">
+                          <span class="material-symbols-outlined text-sm text-emerald-500">grid_view</span>
+                          Matrice Canali
+                      </button>
+                  </div>
+
+                  <!-- ══════════ PANEL 1: ALERT ASSET (SL / TP / VOLATILITÀ) ══════════ -->
+                  <div id="mob-hub-panel-assets" class="space-y-3">
+                      <!-- Bulk Actions Card -->
+                      <div class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-2">
+                          <div class="flex items-center justify-between">
+                              <span class="text-[9px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                                  <span class="material-symbols-outlined text-xs text-primary">auto_fix_high</span> Azioni Massive su Tutti gli Asset
+                              </span>
+                              <span id="mob-bulk-status-badge" class="text-[8px] font-bold text-slate-400">Tutti i monitorati</span>
                           </div>
-                      </div>
-                      
-                      <!-- Row Template -->
-                      <div class="flex items-center justify-between py-1">
-                          <div class="text-xs font-bold">Target Profit</div>
-                          <div class="flex gap-4">
-                              <input type="checkbox" id="mob-notify-tp-telegram" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
-                              <input type="checkbox" id="mob-notify-tp-push" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
-                              <button onclick="sendTestNotifyMob('tp')" class="w-8 flex items-center justify-center text-slate-300 active:text-emerald-500">
-                                  <span class="material-symbols-outlined text-sm">send</span>
+                          <div class="grid grid-cols-2 gap-2">
+                              <button id="mob-bulk-clear-btn" onclick="bulkClearAllAlerts()" 
+                                  class="py-2 px-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-900/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50 rounded-lg text-[10px] font-black uppercase tracking-tight flex items-center justify-center gap-1 active:scale-95 transition-all">
+                                  <span class="material-symbols-outlined text-[14px]">delete_sweep</span> Rimuovi Tutti
+                              </button>
+                              <button id="mob-bulk-ai-btn" onclick="bulkApplyAiAlerts()" 
+                                  class="py-2 px-2.5 bg-violet-50 hover:bg-violet-100 dark:bg-violet-950/30 dark:hover:bg-violet-900/40 text-violet-600 dark:text-violet-400 border border-violet-200 dark:border-violet-900/50 rounded-lg text-[10px] font-black uppercase tracking-tight flex items-center justify-center gap-1 active:scale-95 transition-all">
+                                  <span class="material-symbols-outlined text-[14px]">smart_toy</span> Reimposta da AI
+                              </button>
+                          </div>
+                          <div class="pt-0.5">
+                              <button onclick="bulkSetVolatilityPrompt()" 
+                                  class="w-full py-1.5 bg-slate-50 hover:bg-amber-50 dark:bg-slate-800/60 dark:hover:bg-amber-950/30 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 border border-slate-200 dark:border-slate-700 rounded-lg text-[9px] font-bold flex items-center justify-center gap-1 transition-all">
+                                  <span class="material-symbols-outlined text-[13px] text-amber-500">percent</span> Imposta Volatilità Comune per Tutti...
                               </button>
                           </div>
                       </div>
-                      
-                      <div class="flex items-center justify-between py-1">
-                          <div class="text-xs font-bold text-rose-500">Stop Loss</div>
-                          <div class="flex gap-4">
-                              <input type="checkbox" id="mob-notify-sl-telegram" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
-                              <input type="checkbox" id="mob-notify-sl-push" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
-                              <button onclick="sendTestNotifyMob('sl')" class="w-8 flex items-center justify-center text-slate-300 active:text-emerald-500">
-                                  <span class="material-symbols-outlined text-sm">send</span>
+
+                      <!-- Search & Filter Controls -->
+                      <div class="space-y-2">
+                          <div class="relative">
+                              <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-sm">search</span>
+                              <input id="mob-sltp-search" type="text" placeholder="Cerca ticker o nome (es. AAPL, ENEL)..." oninput="filterMobSltp()"
+                                  class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-500" />
+                          </div>
+                          <div class="flex gap-2">
+                              <button id="mob-sltp-tab-alerts" onclick="setMobSltpTab('alerts')" class="flex-1 py-1.5 text-[10px] font-black uppercase rounded-lg bg-amber-500 text-white shadow-sm transition-all">
+                                  Con Alert (<span id="mob-sltp-alerts-count">0</span>)
+                              </button>
+                              <button id="mob-sltp-tab-all" onclick="setMobSltpTab('all')" class="flex-1 py-1.5 text-[10px] font-black uppercase rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 transition-all">
+                                  Tutti gli Asset (<span id="mob-sltp-all-count">0</span>)
                               </button>
                           </div>
                       </div>
-                      
-                      <div class="flex items-center justify-between py-1">
-                          <div class="text-xs font-bold">Volatilità</div>
-                          <div class="flex gap-4">
-                              <input type="checkbox" id="mob-notify-vol-telegram" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
-                              <input type="checkbox" id="mob-notify-vol-push" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
-                              <button onclick="sendTestNotifyMob('vol')" class="w-8 flex items-center justify-center text-slate-300 active:text-emerald-500">
-                                  <span class="material-symbols-outlined text-sm">send</span>
-                              </button>
-                          </div>
-                      </div>
-                      
-                      <div class="flex items-center justify-between py-1">
-                          <div class="text-xs font-bold">Daily Report</div>
-                          <div class="flex gap-4">
-                              <input type="checkbox" id="mob-notify-daily-telegram" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
-                              <input type="checkbox" id="mob-notify-daily-push" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
-                              <button onclick="sendTestNotifyMob('daily')" class="w-8 flex items-center justify-center text-slate-300 active:text-emerald-500">
-                                  <span class="material-symbols-outlined text-sm">send</span>
-                              </button>
-                          </div>
-                      </div>
-                      
-                      <div class="flex items-center justify-between py-1">
-                          <div class="text-xs font-bold">Stato Mercato</div>
-                          <div class="flex gap-4">
-                              <input type="checkbox" id="mob-notify-status-telegram" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
-                              <input type="checkbox" id="mob-notify-status-push" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
-                              <button onclick="sendTestNotifyMob('status')" class="w-8 flex items-center justify-center text-slate-300 active:text-emerald-500">
-                                  <span class="material-symbols-outlined text-sm">send</span>
-                              </button>
-                          </div>
-                      </div>
-                      
-                      <div class="flex items-center justify-between py-1">
-                          <div class="text-xs font-bold text-indigo-500">Dividendi</div>
-                          <div class="flex gap-4">
-                              <input type="checkbox" id="mob-notify-dividend-telegram" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
-                              <input type="checkbox" id="mob-notify-dividend-push" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
-                              <button onclick="sendTestNotifyMob('dividend')" class="w-8 flex items-center justify-center text-slate-300 active:text-emerald-500">
-                                  <span class="material-symbols-outlined text-sm">send</span>
-                              </button>
-                          </div>
+
+                      <!-- Asset Cards List -->
+                      <div id="mob-sltp-list" class="space-y-3 pt-1">
+                          <p class="text-[10px] text-slate-400 italic text-center py-4">Caricamento asset...</p>
                       </div>
                   </div>
-                  
-                  <div class="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
-                      <div>
-                          <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Soglia Volatilità (%)</label>
-                          <input id="mob-volatility-threshold" type="number" step="0.1" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3 text-xs font-bold" onchange="saveVolatilityThresholdMob()">
+
+                  <!-- ══════════ PANEL 2: MATRICE CANALI NOTIFICHE ══════════ -->
+                  <div id="mob-hub-panel-matrix" class="hidden space-y-4">
+                      <!-- Web Push Config Card inside Hub -->
+                      <div class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2.5">
+                          <div class="flex items-center justify-between">
+                              <div class="flex items-center gap-2">
+                                  <div class="w-7 h-7 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500"><span class="material-symbols-outlined text-sm">notifications</span></div>
+                                  <div>
+                                      <p class="text-xs font-bold text-slate-800 dark:text-slate-100">Notifiche Web Push (PWA)</p>
+                                      <p class="text-[9px] text-slate-400">Ricevi notifiche istantanee sul dispositivo</p>
+                                  </div>
+                              </div>
+                              <label class="mob-toggle" onclick="event.stopPropagation()">
+                                  <input type="checkbox" id="mob-push-enabled-check" onchange="togglePushNotifications()">
+                                  <div class="mob-toggle-slider"></div>
+                              </label>
+                          </div>
+                          <div id="mob-push-test-row" class="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between hidden">
+                              <span class="text-[10px] text-slate-500">Dispositivo connesso</span>
+                              <button onclick="sendTestPush()" class="px-2.5 py-1 bg-blue-500 text-white rounded-lg text-[9px] font-bold flex items-center gap-1 active:scale-95">
+                                  <span class="material-symbols-outlined text-[12px]">send</span> Invia Test Push
+                              </button>
+                          </div>
+                          <p class="text-[9px] text-slate-400 italic">
+                              * Su iPhone/iPad richiede l'aggiunta dell'app alla Schermata Home.
+                          </p>
                       </div>
-                      <div class="grid grid-cols-2 gap-3">
+
+                      <!-- Notification Matrix Grid -->
+                      <div class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
+                          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                              <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tipo di Evento</span>
+                              <div class="flex gap-4">
+                                  <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest w-10 text-center">TG</span>
+                                  <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest w-10 text-center">PUSH</span>
+                                  <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest w-8 text-center">TEST</span>
+                              </div>
+                          </div>
+
+                          <!-- Matrix Rows -->
+                          <div class="space-y-2">
+                              <div class="flex items-center justify-between py-1">
+                                  <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">Target Profit (TP)</span>
+                                  <div class="flex gap-4">
+                                      <input type="checkbox" id="mob-notify-tp-telegram" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
+                                      <input type="checkbox" id="mob-notify-tp-push" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
+                                      <button onclick="sendTestNotifyMob('tp')" class="w-8 flex items-center justify-center text-slate-400 hover:text-emerald-500"><span class="material-symbols-outlined text-sm">send</span></button>
+                                  </div>
+                              </div>
+                              <div class="flex items-center justify-between py-1">
+                                  <span class="text-xs font-bold text-rose-500">Stop Loss (SL)</span>
+                                  <div class="flex gap-4">
+                                      <input type="checkbox" id="mob-notify-sl-telegram" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
+                                      <input type="checkbox" id="mob-notify-sl-push" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
+                                      <button onclick="sendTestNotifyMob('sl')" class="w-8 flex items-center justify-center text-slate-400 hover:text-emerald-500"><span class="material-symbols-outlined text-sm">send</span></button>
+                                  </div>
+                              </div>
+                              <div class="flex items-center justify-between py-1">
+                                  <span class="text-xs font-bold text-amber-500">Volatilità</span>
+                                  <div class="flex gap-4">
+                                      <input type="checkbox" id="mob-notify-vol-telegram" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
+                                      <input type="checkbox" id="mob-notify-vol-push" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
+                                      <button onclick="sendTestNotifyMob('vol')" class="w-8 flex items-center justify-center text-slate-400 hover:text-emerald-500"><span class="material-symbols-outlined text-sm">send</span></button>
+                                  </div>
+                              </div>
+                              <div class="flex items-center justify-between py-1">
+                                  <span class="text-xs font-bold text-slate-800 dark:text-slate-100">Daily Report</span>
+                                  <div class="flex gap-4">
+                                      <input type="checkbox" id="mob-notify-daily-telegram" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
+                                      <input type="checkbox" id="mob-notify-daily-push" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
+                                      <button onclick="sendTestNotifyMob('daily')" class="w-8 flex items-center justify-center text-slate-400 hover:text-emerald-500"><span class="material-symbols-outlined text-sm">send</span></button>
+                                  </div>
+                              </div>
+                              <div class="flex items-center justify-between py-1">
+                                  <span class="text-xs font-bold text-slate-800 dark:text-slate-100">Stato Mercato</span>
+                                  <div class="flex gap-4">
+                                      <input type="checkbox" id="mob-notify-status-telegram" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
+                                      <input type="checkbox" id="mob-notify-status-push" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
+                                      <button onclick="sendTestNotifyMob('status')" class="w-8 flex items-center justify-center text-slate-400 hover:text-emerald-500"><span class="material-symbols-outlined text-sm">send</span></button>
+                                  </div>
+                              </div>
+                              <div class="flex items-center justify-between py-1">
+                                  <span class="text-xs font-bold text-indigo-500">Dividendi</span>
+                                  <div class="flex gap-4">
+                                      <input type="checkbox" id="mob-notify-dividend-telegram" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
+                                      <input type="checkbox" id="mob-notify-dividend-push" class="h-6 w-10 rounded border-slate-300 dark:border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-white dark:bg-slate-900" onchange="saveNotificationMatrixMob()">
+                                      <button onclick="sendTestNotifyMob('dividend')" class="w-8 flex items-center justify-center text-slate-400 hover:text-emerald-500"><span class="material-symbols-outlined text-sm">send</span></button>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+
+                      <!-- Global Settings / Thresholds Card -->
+                      <div class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
+                          <p class="text-[9px] font-black uppercase tracking-wider text-slate-400">Parametri Globali Notifiche</p>
                           <div>
-                              <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Intervallo Stato (Min)</label>
-                              <input id="mob-status-interval" type="number" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3 text-xs font-bold" onchange="saveStatusConfigMob()">
+                              <label class="text-[10px] font-bold text-slate-500 block mb-1">Soglia Volatilità di Default (%)</label>
+                              <input id="mob-volatility-threshold" type="number" step="0.1" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs font-bold" onchange="saveVolatilityThresholdMob()">
                           </div>
-                          <div>
-                              <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Min Variazione (€)</label>
-                              <input id="mob-status-min-variation" type="number" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3 text-xs font-bold" onchange="saveStatusConfigMob()">
+                          <div class="grid grid-cols-2 gap-2.5">
+                              <div>
+                                  <label class="text-[10px] font-bold text-slate-500 block mb-1">Intervallo Stato (Min)</label>
+                                  <input id="mob-status-interval" type="number" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs font-bold" onchange="saveStatusConfigMob()">
+                              </div>
+                              <div>
+                                  <label class="text-[10px] font-bold text-slate-500 block mb-1">Min Variazione (€)</label>
+                                  <input id="mob-status-min-variation" type="number" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs font-bold" onchange="saveStatusConfigMob()">
+                              </div>
                           </div>
                       </div>
-                  </div>
-              </div>
-              
-              <!-- Web Push Notification Row -->
-              <div class="mob-settings-row" onclick="document.getElementById('mob-push-enabled-check').click()">
-                  <div class="mob-settings-icon bg-blue-ios"><span class="material-symbols-outlined text-white">notifications</span></div>
-                  <div class="mob-settings-label">Notifiche Push (PWA)</div>
-                  <label class="mob-toggle" onclick="event.stopPropagation()">
-                      <input type="checkbox" id="mob-push-enabled-check" onchange="togglePushNotifications()">
-                      <div class="mob-toggle-slider"></div>
-                  </label>
-              </div>
-              <div id="mob-push-test-row" class="mob-settings-row border-t border-slate-50 dark:border-slate-800/50 hidden" onclick="sendTestPush()">
-                  <div class="mob-settings-icon bg-blue-500"><span class="material-symbols-outlined text-white">send_and_archive</span></div>
-                  <div class="mob-settings-label">Invia Notifica di Test</div>
-                  <div class="mob-settings-value text-blue-500">Invia <span class="material-symbols-outlined text-[14px]">chevron_right</span></div>
-              </div>
-              <div class="px-5 py-2">
-                  <p class="text-[9px] text-slate-500 leading-relaxed italic">
-                      * Le notifiche push su iOS richiedono che l'app sia aggiunta alla HOME.
-                  </p>
-              </div>
-
-              <!-- Stop Loss / TP / Volatilità Row -->
-              <div class="mob-settings-row" onclick="toggleMobSection('mob-sltp-config')">
-                  <div class="mob-settings-icon bg-amber-500"><span class="material-symbols-outlined text-white">trending_up</span></div>
-                  <div class="mob-settings-label">Stop Loss / TP / Volatilità</div>
-                  <div class="mob-settings-value">
-                      <span id="mob-sltp-count-badge" class="text-[9px] font-black bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full mr-1">0</span>
-                      <span id="mob-sltp-config-icon" class="material-symbols-outlined text-[14px] transition-transform">expand_more</span>
-                  </div>
-              </div>
-              <div id="mob-sltp-config" class="hidden bg-slate-50/50 dark:bg-black/20 px-4 py-4 space-y-3 border-t border-slate-100 dark:border-slate-800">
-                  <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                      Imposta, modifica o rimuovi <strong>Stop Loss</strong>, <strong>Take Profit (TP)</strong> e <strong>Volatilità Alert</strong> per tutti gli asset monitorati.
-                  </p>
-
-                  <!-- Filter & Search Toolbar -->
-                  <div class="space-y-2">
-                      <div class="relative">
-                          <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-sm">search</span>
-                          <input id="mob-sltp-search" type="text" placeholder="Cerca ticker o nome (es. AAPL, ENEL)..." oninput="filterMobSltp()"
-                              class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-500" />
-                      </div>
-                      <div class="flex gap-2">
-                          <button id="mob-sltp-tab-alerts" onclick="setMobSltpTab('alerts')" class="flex-1 py-1.5 text-[10px] font-black uppercase rounded-lg bg-amber-500 text-white shadow-sm transition-all">
-                              Con Alert (<span id="mob-sltp-alerts-count">0</span>)
-                          </button>
-                          <button id="mob-sltp-tab-all" onclick="setMobSltpTab('all')" class="flex-1 py-1.5 text-[10px] font-black uppercase rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 transition-all">
-                              Tutti gli Asset (<span id="mob-sltp-all-count">0</span>)
-                          </button>
-                      </div>
-                  </div>
-
-                  <!-- Asset Cards List -->
-                  <div id="mob-sltp-list" class="space-y-3 pt-1">
-                      <p class="text-[10px] text-slate-400 italic text-center py-4">Caricamento asset...</p>
                   </div>
               </div>
 
@@ -572,6 +601,7 @@
         loadBackups();
         loadNewsSources();
         loadMobSltpData();
+        loadNotificationMatrixMob();
 
         async function loadNewsSources() {
             const list = document.getElementById('mob-news-sources-list');
@@ -690,8 +720,9 @@
             el.classList.toggle('hidden');
             const icon = document.getElementById(id + '-icon');
             if (icon) icon.style.transform = el.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
-            if (id === 'mob-sltp-config' && !el.classList.contains('hidden')) {
+            if ((id === 'mob-notification-matrix' || id === 'mob-sltp-config') && !el.classList.contains('hidden')) {
                 loadMobSltpData();
+                loadNotificationMatrixMob();
             }
         };
 
@@ -1077,15 +1108,11 @@
     };
 
     function updateNotificationBadge() {
-        const statusLabel = document.getElementById('mob-notification-status-label');
-        if (!statusLabel) return;
-        // Simple logic: if any alert is active, show count
-        let count = 0;
-        const checks = document.querySelectorAll('#mob-notification-matrix input[type="checkbox"]');
-        checks.forEach(c => { if(c.checked) count++; });
-        
-        statusLabel.innerHTML = (count > 0 ? `${count} Attivi` : 'Configura') + ' <span id="mob-notification-matrix-icon" class="material-symbols-outlined text-[14px]">expand_more</span>';
-        statusLabel.className = 'mob-settings-value ' + (count > 0 ? 'text-emerald-500' : 'text-slate-400');
+        const badge = document.getElementById('mob-sltp-count-badge');
+        const count = (_mobSltpData || []).filter(a => a.hasAlert).length;
+        if (badge) {
+            badge.textContent = count + ' Alert';
+        }
     }
 
     window.sendTestPush = async () => {
@@ -1202,7 +1229,10 @@
         const allCount = _mobSltpData.length;
 
         const badge = document.getElementById('mob-sltp-count-badge');
-        if (badge) badge.textContent = alertsCount;
+        if (badge) badge.textContent = alertsCount + ' Alert';
+
+        const hubAlertsCount = document.getElementById('mob-hub-alerts-count');
+        if (hubAlertsCount) hubAlertsCount.textContent = alertsCount;
 
         const alertsCountEl = document.getElementById('mob-sltp-alerts-count');
         if (alertsCountEl) alertsCountEl.textContent = alertsCount;
@@ -1210,6 +1240,105 @@
         const allCountEl = document.getElementById('mob-sltp-all-count');
         if (allCountEl) allCountEl.textContent = allCount;
     }
+
+    window.switchMobHubTab = function(tab) {
+        const btnAssets = document.getElementById('mob-subtab-btn-assets');
+        const btnMatrix = document.getElementById('mob-subtab-btn-matrix');
+        const panelAssets = document.getElementById('mob-hub-panel-assets');
+        const panelMatrix = document.getElementById('mob-hub-panel-matrix');
+
+        if (tab === 'assets') {
+            if (panelAssets) panelAssets.classList.remove('hidden');
+            if (panelMatrix) panelMatrix.classList.add('hidden');
+            if (btnAssets) btnAssets.className = 'flex-1 py-2 text-[10px] font-black uppercase rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-xs flex items-center justify-center gap-1.5 transition-all';
+            if (btnMatrix) btnMatrix.className = 'flex-1 py-2 text-[10px] font-black uppercase rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 flex items-center justify-center gap-1.5 transition-all';
+            loadMobSltpData();
+        } else {
+            if (panelAssets) panelAssets.classList.add('hidden');
+            if (panelMatrix) panelMatrix.classList.remove('hidden');
+            if (btnMatrix) btnMatrix.className = 'flex-1 py-2 text-[10px] font-black uppercase rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-xs flex items-center justify-center gap-1.5 transition-all';
+            if (btnAssets) btnAssets.className = 'flex-1 py-2 text-[10px] font-black uppercase rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 flex items-center justify-center gap-1.5 transition-all';
+            loadNotificationMatrixMob();
+        }
+    };
+
+    window.bulkClearAllAlerts = async function() {
+        if (!(await ftConfirm('Sei sicuro di voler RIMUOVERE TUTTI gli alert (Stop Loss, Take Profit e Volatilità) per tutti gli asset monitorati?\nL\'azione è immediata su tutto il programma.'))) return;
+        const btn = document.getElementById('mob-bulk-clear-btn');
+        const origHtml = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-symbols-outlined text-[13px] animate-spin">sync</span> Azzeramento...';
+        }
+        try {
+            const res = await fetch('/api/assets/bulk-clear-alerts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            await loadMobSltpData();
+            alert('Tutti gli alert sugli asset sono stati azzerati con successo!');
+        } catch(err) {
+            console.error('bulkClearAllAlerts error:', err);
+            alert('Errore durante la rimozione massiva: ' + err.message);
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+            }
+        }
+    };
+
+    window.bulkApplyAiAlerts = async function() {
+        if (!(await ftConfirm('Applicare a tutti gli asset i valori di Stop Loss e Take Profit suggeriti dall\'Intelligenza Artificiale?\nI valori verranno aggiornati in tempo reale in tutto il sistema.'))) return;
+        const btn = document.getElementById('mob-bulk-ai-btn');
+        const origHtml = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-symbols-outlined text-[13px] animate-spin">sync</span> Applicazione...';
+        }
+        try {
+            const res = await fetch('/api/assets/bulk-apply-ai', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const data = await res.json();
+            await loadMobSltpData();
+            alert(data.message || 'Valori AI applicati con successo!');
+        } catch(err) {
+            console.error('bulkApplyAiAlerts error:', err);
+            alert('Errore durante l\'applicazione massiva AI: ' + err.message);
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+            }
+        }
+    };
+
+    window.bulkSetVolatilityPrompt = async function() {
+        const val = prompt('Inserisci la percentuale di volatilità da applicare a TUTTI gli asset (es. 5 per 5%):', '5.0');
+        if (val === null) return;
+        const num = parseFloat(val);
+        if (isNaN(num) || num <= 0) return alert('Valore di volatilità non valido.');
+
+        try {
+            const res = await fetch('/api/assets/bulk-set-volatility', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ volatility: num })
+            });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            await loadMobSltpData();
+            alert(`Soglia di volatilità impostata al ${num}% per tutti gli asset!`);
+        } catch(err) {
+            console.error('bulkSetVolatility error:', err);
+            alert('Errore durante l\'impostazione volatilità: ' + err.message);
+        }
+    };
 
     window.setMobSltpTab = function(tab) {
         _mobSltpActiveTab = tab;

@@ -441,10 +441,20 @@
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border-b border-slate-100 dark:border-slate-800">
                 <p class="text-xs text-slate-500 dark:text-slate-400">Modifica, azzera o ripristina i valori AI di <strong>Stop Loss</strong>, <strong>Target Price</strong> e <strong>Volatilità Alert</strong> per tutti gli asset monitorati.</p>
                 <div class="flex items-center gap-2 flex-wrap">
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="bulkClearAllAlertsDesktop(this)" title="Azzera e rimuovi tutti gli alert per tutti gli asset"
+                            class="flex items-center gap-1 text-[10px] font-bold bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50 px-2.5 py-1.5 rounded-lg transition-all">
+                            <span class="material-symbols-outlined text-[13px]">delete_sweep</span> Rimuovi Tutti
+                        </button>
+                        <button onclick="bulkApplyAiAlertsDesktop(this)" title="Applica a tutti gli asset i valori Stop Loss e Take Profit suggeriti dall'AI"
+                            class="flex items-center gap-1 text-[10px] font-bold bg-violet-50 hover:bg-violet-100 dark:bg-violet-950/30 dark:hover:bg-violet-900/50 text-violet-600 dark:text-violet-400 border border-violet-200 dark:border-violet-900/50 px-2.5 py-1.5 rounded-lg transition-all">
+                            <span class="material-symbols-outlined text-[13px]">smart_toy</span> Reimposta con AI
+                        </button>
+                    </div>
                     <div class="relative">
                         <span class="material-symbols-outlined absolute left-2.5 top-2 text-slate-400 text-xs">search</span>
                         <input id="sltp-search" type="text" placeholder="Cerca ticker o nome..." oninput="filterSltp()"
-                            class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pl-8 pr-3 py-1 text-xs outline-none focus:ring-1 focus:ring-amber-500 w-48" />
+                            class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pl-8 pr-3 py-1 text-xs outline-none focus:ring-1 focus:ring-amber-500 w-44" />
                     </div>
                     <div class="flex rounded-lg border border-slate-200 dark:border-slate-700 p-0.5 bg-slate-50 dark:bg-slate-900">
                         <button id="sltp-tab-alerts" onclick="setSltpTab('alerts')" class="px-2.5 py-1 text-[10px] font-bold rounded-md bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-xs">Con Alert (<span id="sltp-alerts-count">0</span>)</button>
@@ -2213,6 +2223,61 @@
             if (tpInput) tpInput.value = '';
             if (volInput) volInput.value = '';
             await window.saveSltpRow(ticker, btn);
+        };
+
+        window.bulkClearAllAlertsDesktop = async function(btn) {
+            if (!(await ftConfirm('Sei sicuro di voler RIMUOVERE TUTTI gli alert (Stop Loss, Take Profit e Volatilità) per tutti gli asset monitorati?\nL\'azione è immediata su tutto il programma.'))) return;
+            const origHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="material-symbols-outlined text-[13px] animate-spin">sync</span> Azzeramento...';
+            }
+            try {
+                const res = await fetch('/api/assets/bulk-clear-alerts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                await loadSltpData();
+                if (window.ftNotify) ftNotify('success', 'Alert Rimossi', 'Tutti gli alert sugli asset sono stati azzerati con successo.');
+            } catch(err) {
+                if (window.ftNotify) ftNotify('error', 'Errore', err.message);
+                else alert('Errore: ' + err.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                }
+            }
+        };
+
+        window.bulkApplyAiAlertsDesktop = async function(btn) {
+            if (!(await ftConfirm('Applicare a tutti gli asset i valori di Stop Loss e Take Profit suggeriti dall\'Intelligenza Artificiale?\nI valori verranno aggiornati in tempo reale in tutto il sistema.'))) return;
+            const origHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="material-symbols-outlined text-[13px] animate-spin">sync</span> Applicazione...';
+            }
+            try {
+                const res = await fetch('/api/assets/bulk-apply-ai', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                await loadSltpData();
+                if (window.ftNotify) ftNotify('success', 'AI Applicata', data.message || 'Valori AI applicati con successo!');
+            } catch(err) {
+                if (window.ftNotify) ftNotify('error', 'Errore', err.message);
+                else alert('Errore: ' + err.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                }
+            }
         };
         // ────────────────────────────────────────────────────────────────────────
         // ────────────────────────────────────────────────────────────────────────

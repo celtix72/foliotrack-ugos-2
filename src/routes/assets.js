@@ -990,6 +990,162 @@ router.get('/assets/all-sltp', requireAuth, (req, res) => {
     }
 });
 
+// ─── Bulk Alert Management (Clear all, Apply AI to all, Set Volatility) ───
+router.post('/assets/bulk-clear-alerts', requireAuth, (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { tickerList } = req.body || {};
+
+        database.db.transaction(() => {
+            if (Array.isArray(tickerList) && tickerList.length > 0) {
+                const placeholders = tickerList.map(() => '?').join(',');
+                database.db.prepare(`
+                    UPDATE user_watchlist 
+                    SET targetPrice = NULL, stopLoss = NULL, volatilityAlert = NULL 
+                    WHERE user_id = ? AND ticker IN (${placeholders})
+                `).run(userId, ...tickerList);
+
+                database.db.prepare(`
+                    UPDATE assets 
+                    SET targetPrice = NULL, stopLoss = NULL, volatilityAlert = NULL 
+                    WHERE ticker IN (${placeholders})
+                `).run(...tickerList);
+            } else {
+                database.db.prepare(`
+                    UPDATE user_watchlist 
+                    SET targetPrice = NULL, stopLoss = NULL, volatilityAlert = NULL 
+                    WHERE user_id = ?
+                `).run(userId);
+
+                database.db.prepare(`
+                    UPDATE assets 
+                    SET targetPrice = NULL, stopLoss = NULL, volatilityAlert = NULL 
+                    WHERE ticker != 'CASH' 
+                      AND ticker NOT LIKE 'CASH_%' 
+                      AND ticker NOT LIKE 'CD_%' 
+                      AND ticker NOT LIKE 'BP_%'
+                `).run();
+            }
+        })();
+
+        res.json({ success: true, message: 'Tutti gli alert sono stati azzerati con successo' });
+    } catch(e) {
+        logger.error('bulk-clear-alerts error', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+router.post('/assets/bulk-apply-ai', requireAuth, (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { tickerList } = req.body || {};
+
+        // Find non-cash assets with latest AI Stop Loss or Target Price
+        const candidateAssets = database.db.prepare(`
+            SELECT a.ticker,
+                (
+                    SELECT targetPrice FROM asset_ai_history
+                    WHERE ticker = a.ticker AND targetPrice IS NOT NULL AND targetPrice > 0
+                    ORDER BY created_at DESC LIMIT 1
+                ) as aiTP,
+                (
+                    SELECT stopLoss FROM asset_ai_history
+                    WHERE ticker = a.ticker AND stopLoss IS NOT NULL AND stopLoss > 0
+                    ORDER BY created_at DESC LIMIT 1
+                ) as aiSL
+            FROM assets a
+            WHERE a.ticker != 'CASH'
+              AND a.ticker NOT LIKE 'CASH_%'
+              AND a.ticker NOT LIKE 'CD_%'
+              AND a.ticker NOT LIKE 'BP_%'
+              AND IFNULL(a.type, '') NOT IN ('Liquidità', 'Conto Deposito', 'Buono Postale')
+        `).all();
+
+        let updatedCount = 0;
+        database.db.transaction(() => {
+            for (const c of candidateAssets) {
+                if (Array.isArray(tickerList) && tickerList.length > 0 && !tickerList.includes(c.ticker)) {
+                    continue;
+                }
+                const tp = (c.aiTP !== null && c.aiTP > 0) ? c.aiTP : null;
+                const sl = (c.aiSL !== null && c.aiSL > 0) ? c.aiSL : null;
+
+                if (tp !== null || sl !== null) {
+                    database.db.prepare(`
+                        INSERT INTO user_watchlist (user_id, ticker, targetPrice, stopLoss)
+                        VALUES (?, ?, ?, ?)
+                        ON CONFLICT(user_id, ticker) DO UPDATE SET
+                            targetPrice = CASE WHEN excluded.targetPrice IS NOT NULL THEN excluded.targetPrice ELSE user_watchlist.targetPrice END,
+                            stopLoss = CASE WHEN excluded.stopLoss IS NOT NULL THEN excluded.stopLoss ELSE user_watchlist.stopLoss END
+                    `).run(userId, c.ticker, tp, sl);
+
+                    const assetUpdates = [];
+                    const assetParams = [];
+                    if (tp !== null) { assetUpdates.push('targetPrice = ?'); assetParams.push(tp); }
+                    if (sl !== null) { assetUpdates.push('stopLoss = ?'); assetParams.push(sl); }
+                    if (assetUpdates.length > 0) {
+                        assetParams.push(c.ticker);
+                        database.db.prepare(`UPDATE assets SET ${assetUpdates.join(', ')} WHERE ticker = ?`).run(...assetParams);
+                    }
+                    updatedCount++;
+                }
+            }
+        })();
+
+        res.json({ success: true, updatedCount, message: `Suggerimenti AI applicati con successo a ${updatedCount} asset` });
+    } catch(e) {
+        logger.error('bulk-apply-ai error', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+router.post('/assets/bulk-set-volatility', requireAuth, (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { volatility, tickerList } = req.body || {};
+        const volVal = (volatility === null || volatility === '' || isNaN(parseFloat(volatility)) || parseFloat(volatility) <= 0) 
+            ? null 
+            : parseFloat(volatility);
+
+        database.db.transaction(() => {
+            if (Array.isArray(tickerList) && tickerList.length > 0) {
+                const placeholders = tickerList.map(() => '?').join(',');
+                database.db.prepare(`
+                    UPDATE user_watchlist 
+                    SET volatilityAlert = ? 
+                    WHERE user_id = ? AND ticker IN (${placeholders})
+                `).run(volVal, userId, ...tickerList);
+
+                database.db.prepare(`
+                    UPDATE assets 
+                    SET volatilityAlert = ? 
+                    WHERE ticker IN (${placeholders})
+                `).run(volVal, ...tickerList);
+            } else {
+                database.db.prepare(`
+                    UPDATE user_watchlist 
+                    SET volatilityAlert = ? 
+                    WHERE user_id = ?
+                `).run(volVal, userId);
+
+                database.db.prepare(`
+                    UPDATE assets 
+                    SET volatilityAlert = ? 
+                    WHERE ticker != 'CASH' 
+                      AND ticker NOT LIKE 'CASH_%' 
+                      AND ticker NOT LIKE 'CD_%' 
+                      AND ticker NOT LIKE 'BP_%'
+                `).run(volVal);
+            }
+        })();
+
+        res.json({ success: true, message: `Volatilità impostata a ${volVal || 0}% per tutti gli asset` });
+    } catch(e) {
+        logger.error('bulk-set-volatility error', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
 
 router.get('/asset-quotes/:ticker', requireAuth, (req, res) => {
     const { ticker } = req.params;
