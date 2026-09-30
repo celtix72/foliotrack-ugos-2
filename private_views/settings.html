@@ -438,11 +438,22 @@
     <div id="sltp-mgmt-content" class="hidden">
         <div class="bg-white dark:bg-surface-dark border-y sm:border-x border-slate-200 dark:border-slate-800 rounded-none sm:rounded-xl overflow-hidden">
             <!-- Toolbar -->
-            <div class="flex items-center justify-between gap-3 p-4 border-b border-slate-100 dark:border-slate-800">
-                <p class="text-xs text-slate-500 dark:text-slate-400">Modifica, azzera o ripristina i valori AI di <strong>Stop Loss</strong>, <strong>Target Price 1</strong> e <strong>Volatilità Alert</strong> per tutti gli asset monitorati.</p>
-                <button onclick="loadSltpData()" class="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-1.5 rounded-lg transition-all whitespace-nowrap">
-                    <span class="material-symbols-outlined text-sm">refresh</span> Aggiorna
-                </button>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border-b border-slate-100 dark:border-slate-800">
+                <p class="text-xs text-slate-500 dark:text-slate-400">Modifica, azzera o ripristina i valori AI di <strong>Stop Loss</strong>, <strong>Target Price</strong> e <strong>Volatilità Alert</strong> per tutti gli asset monitorati.</p>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-2.5 top-2 text-slate-400 text-xs">search</span>
+                        <input id="sltp-search" type="text" placeholder="Cerca ticker o nome..." oninput="filterSltp()"
+                            class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pl-8 pr-3 py-1 text-xs outline-none focus:ring-1 focus:ring-amber-500 w-48" />
+                    </div>
+                    <div class="flex rounded-lg border border-slate-200 dark:border-slate-700 p-0.5 bg-slate-50 dark:bg-slate-900">
+                        <button id="sltp-tab-alerts" onclick="setSltpTab('alerts')" class="px-2.5 py-1 text-[10px] font-bold rounded-md bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-xs">Con Alert (<span id="sltp-alerts-count">0</span>)</button>
+                        <button id="sltp-tab-all" onclick="setSltpTab('all')" class="px-2.5 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">Tutti (<span id="sltp-all-count">0</span>)</button>
+                    </div>
+                    <button onclick="loadSltpData()" class="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-1.5 rounded-lg transition-all whitespace-nowrap">
+                        <span class="material-symbols-outlined text-sm">refresh</span> Aggiorna
+                    </button>
+                </div>
             </div>
             <!-- Table -->
             <div class="overflow-x-auto">
@@ -1992,6 +2003,10 @@
 
         // ─── SL / TP / Volatility Management ───────────────────────────────────
         let _sltpData = [];
+        let _sltpActiveTab = 'alerts';
+        let _sltpFilterText = '';
+
+        const _safeSltpId = (t) => String(t || '').replace(/[^a-zA-Z0-9_-]/g, '_');
 
         window.loadSltpData = async function() {
             const tbody = document.getElementById('sltp-tbody');
@@ -2000,33 +2015,73 @@
                 <span class="material-symbols-outlined animate-spin text-xl align-middle text-primary">autorenew</span> Caricamento...
             </td></tr>`;
             try {
-                const res = await fetch('/api/assets/sl-tp-overview');
+                const res = await fetch('/api/assets/sl-tp-overview?all=true');
                 _sltpData = await res.json();
+                updateSltpCounts();
                 renderSltpTable();
             } catch(e) {
                 tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-rose-400 text-xs">Errore nel caricamento dati.</td></tr>`;
             }
         };
 
+        function updateSltpCounts() {
+            const alertsCount = _sltpData.filter(a => a.hasAlert).length;
+            const allCount = _sltpData.length;
+            const badge = document.getElementById('sltp-mgmt-count-badge');
+            if (badge) {
+                badge.textContent = alertsCount + ' con alert';
+                badge.classList.toggle('hidden', alertsCount === 0);
+            }
+            const cAlerts = document.getElementById('sltp-alerts-count');
+            if (cAlerts) cAlerts.textContent = alertsCount;
+            const cAll = document.getElementById('sltp-all-count');
+            if (cAll) cAll.textContent = allCount;
+        }
+
+        window.setSltpTab = function(tab) {
+            _sltpActiveTab = tab;
+            const bAlerts = document.getElementById('sltp-tab-alerts');
+            const bAll = document.getElementById('sltp-tab-all');
+            if (tab === 'alerts') {
+                if (bAlerts) bAlerts.className = 'px-2.5 py-1 text-[10px] font-bold rounded-md bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-xs';
+                if (bAll) bAll.className = 'px-2.5 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-slate-700 dark:hover:text-slate-300';
+            } else {
+                if (bAlerts) bAlerts.className = 'px-2.5 py-1 text-[10px] font-bold rounded-md text-slate-500 hover:text-slate-700 dark:hover:text-slate-300';
+                if (bAll) bAll.className = 'px-2.5 py-1 text-[10px] font-bold rounded-md bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-xs';
+            }
+            renderSltpTable();
+        };
+
+        window.filterSltp = function() {
+            _sltpFilterText = (document.getElementById('sltp-search')?.value || '').toLowerCase().trim();
+            renderSltpTable();
+        };
+
         function renderSltpTable() {
             const tbody = document.getElementById('sltp-tbody');
-            const badge = document.getElementById('sltp-mgmt-count-badge');
             if (!tbody) return;
 
-            if (badge) {
-                badge.textContent = _sltpData.length + ' asset';
-                badge.classList.toggle('hidden', _sltpData.length === 0);
+            let list = _sltpData;
+            if (_sltpActiveTab === 'alerts') {
+                list = list.filter(a => a.hasAlert);
+            }
+            if (_sltpFilterText) {
+                list = list.filter(a => (a.ticker && a.ticker.toLowerCase().includes(_sltpFilterText)) || (a.name && a.name.toLowerCase().includes(_sltpFilterText)));
             }
 
-            if (_sltpData.length === 0) {
+            if (list.length === 0) {
+                const msg = _sltpActiveTab === 'alerts'
+                    ? 'Nessun asset con Stop Loss, Target Price o Volatilità Alert impostati.<br><span class="text-[10px] text-slate-400">Fai clic su "Tutti" per impostare alert per qualsiasi asset.</span>'
+                    : 'Nessun asset corrispondente alla ricerca.';
                 tbody.innerHTML = `<tr><td colspan="7" class="text-center py-10 text-slate-400 text-xs italic">
                     <span class="material-symbols-outlined text-2xl block mb-2">manage_search</span>
-                    Nessun asset con Stop Loss, Target Price o Volatilità Alert impostati.
+                    ${msg}
                 </td></tr>`;
                 return;
             }
 
-            tbody.innerHTML = _sltpData.map((a, i) => {
+            tbody.innerHTML = list.map(a => {
+                const sid = _safeSltpId(a.ticker);
                 const fmt = (v, cur) => v != null ? Number(v).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + (cur || '') : '—';
                 const fmtPct = v => v != null ? Number(v).toFixed(1) + '%' : '—';
                 const chgColor = a.changePercent > 0 ? 'text-emerald-500' : a.changePercent < 0 ? 'text-rose-500' : 'text-slate-400';
@@ -2040,8 +2095,11 @@
                 return `
                 <tr class="hover:bg-amber-50/30 dark:hover:bg-amber-900/10 transition-colors">
                     <td class="px-4 py-3">
-                        <div class="font-black text-xs">${a.ticker}</div>
-                        <div class="text-[10px] text-slate-400 max-w-[120px] truncate">${a.name}</div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="font-black text-xs">${a.ticker}</span>
+                            ${a.hasAlert ? `<span class="px-1.5 py-0.2 rounded text-[8px] font-black bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/40">Attivo</span>` : ''}
+                        </div>
+                        <div class="text-[10px] text-slate-400 max-w-[140px] truncate">${a.name}</div>
                     </td>
                     <td class="px-3 py-3 text-right">
                         <div class="font-bold text-sm whitespace-nowrap">${fmt(a.currentPrice, a.currency)}</div>
@@ -2049,22 +2107,22 @@
                     </td>
                     <td class="px-3 py-3 text-center">
                         <div class="flex flex-col items-center gap-0.5">
-                            <input type="number" step="0.01" value="${a.stopLoss || ''}" placeholder="—" id="sl-input-${i}"
+                            <input type="number" step="0.01" value="${a.stopLoss || ''}" placeholder="—" id="sl-input-${sid}"
                                 class="w-24 text-center text-xs font-bold px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-rose-400/40 focus:border-rose-400 outline-none transition-all">
                             ${slVsPrice !== null ? `<span class="text-[9px] ${parseFloat(slVsPrice) < 0 ? 'text-rose-400' : 'text-amber-400'}">${slVsPrice > 0 ? '+' : ''}${slVsPrice}%</span>` : ''}
-                            ${a.aiStopLoss ? `<span class="text-[9px] text-violet-400 flex items-center gap-0.5"><span class="material-symbols-outlined text-[10px]">smart_toy</span>${fmt(a.aiStopLoss)}</span>` : ''}
+                            ${a.aiStopLoss ? `<button onclick="applyDesktopSingleAi('${a.ticker}', 'sl', ${a.aiStopLoss})" class="text-[9px] text-violet-400 hover:text-violet-500 flex items-center gap-0.5"><span class="material-symbols-outlined text-[10px]">smart_toy</span>${fmt(a.aiStopLoss)}</button>` : ''}
                         </div>
                     </td>
                     <td class="px-3 py-3 text-center">
                         <div class="flex flex-col items-center gap-0.5">
-                            <input type="number" step="0.01" value="${a.targetPrice || ''}" placeholder="—" id="tp-input-${i}"
+                            <input type="number" step="0.01" value="${a.targetPrice || ''}" placeholder="—" id="tp-input-${sid}"
                                 class="w-24 text-center text-xs font-bold px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400 outline-none transition-all">
                             ${tpVsPrice !== null ? `<span class="text-[9px] ${parseFloat(tpVsPrice) > 0 ? 'text-emerald-400' : 'text-rose-400'}">${tpVsPrice > 0 ? '+' : ''}${tpVsPrice}%</span>` : ''}
-                            ${a.aiTargetPrice ? `<span class="text-[9px] text-violet-400 flex items-center gap-0.5"><span class="material-symbols-outlined text-[10px]">smart_toy</span>${fmt(a.aiTargetPrice)}</span>` : ''}
+                            ${a.aiTargetPrice ? `<button onclick="applyDesktopSingleAi('${a.ticker}', 'tp', ${a.aiTargetPrice})" class="text-[9px] text-violet-400 hover:text-violet-500 flex items-center gap-0.5"><span class="material-symbols-outlined text-[10px]">smart_toy</span>${fmt(a.aiTargetPrice)}</button>` : ''}
                         </div>
                     </td>
                     <td class="px-3 py-3 text-center">
-                        <input type="number" step="0.1" min="0" max="100" value="${a.volatilityAlert || ''}" placeholder="—" id="vol-input-${i}"
+                        <input type="number" step="0.1" min="0" max="100" value="${a.volatilityAlert || ''}" placeholder="—" id="vol-input-${sid}"
                             class="w-20 text-center text-xs font-bold px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400 outline-none transition-all">
                     </td>
                     <td class="px-3 py-3 text-center">
@@ -2072,16 +2130,16 @@
                     </td>
                     <td class="px-3 py-3">
                         <div class="flex items-center justify-center gap-1.5 flex-wrap">
-                            <button onclick="saveSltpRow(${i})" title="Salva modifiche"
+                            <button onclick="saveSltpRow('${a.ticker}', this)" title="Salva modifiche"
                                 class="flex items-center gap-1 text-[9px] font-bold bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1.5 rounded-lg transition-all">
                                 <span class="material-symbols-outlined text-[11px]">save</span> Salva
                             </button>
                             ${hasAi ? `
-                            <button onclick="restoreAiSltpRow(${i})" title="Ripristina valori AI"
+                            <button onclick="restoreAiSltpRow('${a.ticker}')" title="Ripristina valori AI"
                                 class="flex items-center gap-1 text-[9px] font-bold bg-violet-500 hover:bg-violet-600 text-white px-2 py-1.5 rounded-lg transition-all">
                                 <span class="material-symbols-outlined text-[11px]">smart_toy</span> AI
                             </button>` : ''}
-                            <button onclick="clearSltpRow(${i})" title="Azzera tutti i valori"
+                            <button onclick="clearSltpRow('${a.ticker}', this)" title="Azzera e rimuovi tutti i valori"
                                 class="flex items-center gap-1 text-[9px] font-bold bg-slate-200 dark:bg-slate-700 hover:bg-rose-100 dark:hover:bg-rose-900/30 hover:text-rose-600 text-slate-600 dark:text-slate-300 px-2 py-1.5 rounded-lg transition-all">
                                 <span class="material-symbols-outlined text-[11px]">delete</span>
                             </button>
@@ -2091,41 +2149,72 @@
             }).join('');
         }
 
-        window.saveSltpRow = async function(i) {
-            const a = _sltpData[i];
-            const sl = parseFloat(document.getElementById('sl-input-' + i).value) || 0;
-            const tp = parseFloat(document.getElementById('tp-input-' + i).value) || 0;
-            const vol = parseFloat(document.getElementById('vol-input-' + i).value) || 0;
+        window.applyDesktopSingleAi = function(ticker, field, val) {
+            const sid = _safeSltpId(ticker);
+            const input = document.getElementById(field === 'sl' ? ('sl-input-' + sid) : ('tp-input-' + sid));
+            if (input && val != null) {
+                input.value = val;
+                input.focus();
+            }
+        };
+
+        window.saveSltpRow = async function(ticker, btn) {
+            const sid = _safeSltpId(ticker);
+            const slRaw = document.getElementById('sl-input-' + sid)?.value;
+            const tpRaw = document.getElementById('tp-input-' + sid)?.value;
+            const volRaw = document.getElementById('vol-input-' + sid)?.value;
+
+            const sl = (slRaw && slRaw.trim() !== '' && !isNaN(parseFloat(slRaw)) && parseFloat(slRaw) > 0) ? parseFloat(slRaw) : null;
+            const tp = (tpRaw && tpRaw.trim() !== '' && !isNaN(parseFloat(tpRaw)) && parseFloat(tpRaw) > 0) ? parseFloat(tpRaw) : null;
+            const vol = (volRaw && volRaw.trim() !== '' && !isNaN(parseFloat(volRaw)) && parseFloat(volRaw) > 0) ? parseFloat(volRaw) : null;
+
             try {
-                await fetch('/api/assets/' + a.ticker, {
+                await fetch('/api/assets/' + encodeURIComponent(ticker), {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ stopLoss: sl, targetPrice: tp, volatilityAlert: vol })
                 });
-                _sltpData[i].stopLoss = sl || null;
-                _sltpData[i].targetPrice = tp || null;
-                _sltpData[i].volatilityAlert = vol || null;
-                if (window.ftNotify) ftNotify('success', a.ticker + ' aggiornato', 'SL/TP/Volatilità salvati.');
+
+                const item = _sltpData.find(x => x.ticker === ticker);
+                if (item) {
+                    item.stopLoss = sl;
+                    item.targetPrice = tp;
+                    item.volatilityAlert = vol;
+                    item.hasAlert = Boolean(sl || tp || vol);
+                }
+
+                updateSltpCounts();
+                if (window.ftNotify) ftNotify('success', ticker + ' aggiornato', 'SL/TP/Volatilità salvati.');
                 renderSltpTable();
-            } catch(e) { if (window.ftNotify) ftNotify('error', 'Errore', 'Impossibile salvare.'); }
+            } catch(e) { 
+                if (window.ftNotify) ftNotify('error', 'Errore', 'Impossibile salvare.'); 
+            }
         };
 
-        window.restoreAiSltpRow = async function(i) {
-            const a = _sltpData[i];
+        window.restoreAiSltpRow = async function(ticker) {
+            const a = _sltpData.find(x => x.ticker === ticker);
+            if (!a) return;
             if (!(await ftConfirm('Ripristinare i valori suggeriti dalla AI per ' + a.ticker + '?\nSL: ' + (a.aiStopLoss || '—') + ' | TP: ' + (a.aiTargetPrice || '—')))) return;
-            if (a.aiStopLoss) document.getElementById('sl-input-' + i).value = a.aiStopLoss;
-            if (a.aiTargetPrice) document.getElementById('tp-input-' + i).value = a.aiTargetPrice;
-            await window.saveSltpRow(i);
+            const sid = _safeSltpId(ticker);
+            if (a.aiStopLoss) document.getElementById('sl-input-' + sid).value = a.aiStopLoss;
+            if (a.aiTargetPrice) document.getElementById('tp-input-' + sid).value = a.aiTargetPrice;
+            await window.saveSltpRow(ticker);
         };
 
-        window.clearSltpRow = async function(i) {
-            const a = _sltpData[i];
+        window.clearSltpRow = async function(ticker, btn) {
+            const a = _sltpData.find(x => x.ticker === ticker);
+            if (!a) return;
             if (!(await ftConfirm('Azzerare Stop Loss, Target Price e Volatilità Alert per ' + a.ticker + '?'))) return;
-            document.getElementById('sl-input-' + i).value = '';
-            document.getElementById('tp-input-' + i).value = '';
-            document.getElementById('vol-input-' + i).value = '';
-            await window.saveSltpRow(i);
+            const sid = _safeSltpId(ticker);
+            const slInput = document.getElementById('sl-input-' + sid);
+            const tpInput = document.getElementById('tp-input-' + sid);
+            const volInput = document.getElementById('vol-input-' + sid);
+            if (slInput) slInput.value = '';
+            if (tpInput) tpInput.value = '';
+            if (volInput) volInput.value = '';
+            await window.saveSltpRow(ticker, btn);
         };
+        // ────────────────────────────────────────────────────────────────────────
         // ────────────────────────────────────────────────────────────────────────
 
 

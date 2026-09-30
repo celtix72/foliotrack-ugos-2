@@ -317,6 +317,43 @@
                   </p>
               </div>
 
+              <!-- Stop Loss / TP / Volatilità Row -->
+              <div class="mob-settings-row" onclick="toggleMobSection('mob-sltp-config')">
+                  <div class="mob-settings-icon bg-amber-500"><span class="material-symbols-outlined text-white">trending_up</span></div>
+                  <div class="mob-settings-label">Stop Loss / TP / Volatilità</div>
+                  <div class="mob-settings-value">
+                      <span id="mob-sltp-count-badge" class="text-[9px] font-black bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full mr-1">0</span>
+                      <span id="mob-sltp-config-icon" class="material-symbols-outlined text-[14px] transition-transform">expand_more</span>
+                  </div>
+              </div>
+              <div id="mob-sltp-config" class="hidden bg-slate-50/50 dark:bg-black/20 px-4 py-4 space-y-3 border-t border-slate-100 dark:border-slate-800">
+                  <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                      Imposta, modifica o rimuovi <strong>Stop Loss</strong>, <strong>Take Profit (TP)</strong> e <strong>Volatilità Alert</strong> per tutti gli asset monitorati.
+                  </p>
+
+                  <!-- Filter & Search Toolbar -->
+                  <div class="space-y-2">
+                      <div class="relative">
+                          <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-sm">search</span>
+                          <input id="mob-sltp-search" type="text" placeholder="Cerca ticker o nome (es. AAPL, ENEL)..." oninput="filterMobSltp()"
+                              class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-500" />
+                      </div>
+                      <div class="flex gap-2">
+                          <button id="mob-sltp-tab-alerts" onclick="setMobSltpTab('alerts')" class="flex-1 py-1.5 text-[10px] font-black uppercase rounded-lg bg-amber-500 text-white shadow-sm transition-all">
+                              Con Alert (<span id="mob-sltp-alerts-count">0</span>)
+                          </button>
+                          <button id="mob-sltp-tab-all" onclick="setMobSltpTab('all')" class="flex-1 py-1.5 text-[10px] font-black uppercase rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 transition-all">
+                              Tutti gli Asset (<span id="mob-sltp-all-count">0</span>)
+                          </button>
+                      </div>
+                  </div>
+
+                  <!-- Asset Cards List -->
+                  <div id="mob-sltp-list" class="space-y-3 pt-1">
+                      <p class="text-[10px] text-slate-400 italic text-center py-4">Caricamento asset...</p>
+                  </div>
+              </div>
+
               <!-- News Sources Row -->
               <div class="mob-settings-row" onclick="toggleMobSection('mob-news-sources-config')">
                   <div class="mob-settings-icon bg-blue-500"><span class="material-symbols-outlined text-white">newspaper</span></div>
@@ -534,6 +571,7 @@
         
         loadBackups();
         loadNewsSources();
+        loadMobSltpData();
 
         async function loadNewsSources() {
             const list = document.getElementById('mob-news-sources-list');
@@ -652,6 +690,9 @@
             el.classList.toggle('hidden');
             const icon = document.getElementById(id + '-icon');
             if (icon) icon.style.transform = el.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+            if (id === 'mob-sltp-config' && !el.classList.contains('hidden')) {
+                loadMobSltpData();
+            }
         };
 
         window.sendTestTelegram = async (type) => {
@@ -1126,6 +1167,337 @@
     function confirmReset() {
         document.getElementById('confirm-reset-modal').classList.remove('hidden');
     }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // STOP LOSS / TAKE PROFIT / VOLATILITÀ ALERT MANAGEMENT (MOBILE)
+    // ═════════════════════════════════════════════════════════════════════════
+    let _mobSltpData = [];
+    let _mobSltpActiveTab = 'alerts'; // 'alerts' or 'all'
+    let _mobSltpFilterText = '';
+
+    const _safeTickerId = (t) => String(t || '').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const _escapeHtml = (str) => String(str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+
+    async function loadMobSltpData() {
+        const listEl = document.getElementById('mob-sltp-list');
+        if (!listEl) return;
+        
+        try {
+            const res = await fetch('/api/assets/sl-tp-overview?all=true');
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            _mobSltpData = await res.json();
+            updateMobSltpCounts();
+            renderMobSltpList();
+        } catch (err) {
+            console.error('Error loading mobile SL/TP data:', err);
+            listEl.innerHTML = `<div class="p-4 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900 rounded-xl text-center">
+                <p class="text-xs text-rose-500 font-bold">Impossibile caricare gli asset.</p>
+                <button onclick="loadMobSltpData()" class="mt-2 text-[10px] text-primary font-bold underline">Riprova</button>
+            </div>`;
+        }
+    }
+
+    function updateMobSltpCounts() {
+        const alertsCount = _mobSltpData.filter(a => a.hasAlert).length;
+        const allCount = _mobSltpData.length;
+
+        const badge = document.getElementById('mob-sltp-count-badge');
+        if (badge) badge.textContent = alertsCount;
+
+        const alertsCountEl = document.getElementById('mob-sltp-alerts-count');
+        if (alertsCountEl) alertsCountEl.textContent = alertsCount;
+
+        const allCountEl = document.getElementById('mob-sltp-all-count');
+        if (allCountEl) allCountEl.textContent = allCount;
+    }
+
+    window.setMobSltpTab = function(tab) {
+        _mobSltpActiveTab = tab;
+        const btnAlerts = document.getElementById('mob-sltp-tab-alerts');
+        const btnAll = document.getElementById('mob-sltp-tab-all');
+
+        if (tab === 'alerts') {
+            if (btnAlerts) {
+                btnAlerts.className = 'flex-1 py-1.5 text-[10px] font-black uppercase rounded-lg bg-amber-500 text-white shadow-sm transition-all';
+            }
+            if (btnAll) {
+                btnAll.className = 'flex-1 py-1.5 text-[10px] font-black uppercase rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 transition-all';
+            }
+        } else {
+            if (btnAlerts) {
+                btnAlerts.className = 'flex-1 py-1.5 text-[10px] font-black uppercase rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 transition-all';
+            }
+            if (btnAll) {
+                btnAll.className = 'flex-1 py-1.5 text-[10px] font-black uppercase rounded-lg bg-amber-500 text-white shadow-sm transition-all';
+            }
+        }
+        renderMobSltpList();
+    };
+
+    window.filterMobSltp = function() {
+        _mobSltpFilterText = (document.getElementById('mob-sltp-search')?.value || '').toLowerCase().trim();
+        renderMobSltpList();
+    };
+
+    function renderMobSltpList() {
+        const listEl = document.getElementById('mob-sltp-list');
+        if (!listEl) return;
+
+        let filtered = _mobSltpData;
+
+        if (_mobSltpActiveTab === 'alerts') {
+            filtered = filtered.filter(a => a.hasAlert);
+        }
+
+        if (_mobSltpFilterText) {
+            filtered = filtered.filter(a => 
+                (a.ticker && a.ticker.toLowerCase().includes(_mobSltpFilterText)) ||
+                (a.name && a.name.toLowerCase().includes(_mobSltpFilterText))
+            );
+        }
+
+        if (filtered.length === 0) {
+            const msg = _mobSltpActiveTab === 'alerts' 
+                ? 'Nessun asset con Stop Loss, TP o Volatilità impostati.<br><span class="text-[10px] text-slate-400">Tocca "Tutti gli Asset" sopra per impostare nuovi alert.</span>'
+                : 'Nessun asset trovato con la ricerca corrente.';
+            listEl.innerHTML = `<div class="p-6 text-center text-xs text-slate-400 italic bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">${msg}</div>`;
+            return;
+        }
+
+        listEl.innerHTML = filtered.map(a => {
+            const sid = _safeTickerId(a.ticker);
+            const cur = a.currency === 'USD' ? '$' : (a.currency || '€');
+            const priceStr = a.currentPrice != null 
+                ? Number(a.currentPrice).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + cur
+                : '—';
+            const chgPct = a.changePercent != null ? Number(a.changePercent) : null;
+            const chgClass = chgPct > 0 ? 'text-emerald-500 bg-emerald-50 dark:bg-emerald-950/30' : chgPct < 0 ? 'text-rose-500 bg-rose-50 dark:bg-rose-950/30' : 'text-slate-400 bg-slate-100 dark:bg-slate-800';
+            const chgSign = chgPct > 0 ? '+' : '';
+
+            // Differences vs current price
+            const slDiff = (a.stopLoss && a.currentPrice) ? ((a.stopLoss - a.currentPrice) / a.currentPrice * 100).toFixed(1) : null;
+            const tpDiff = (a.targetPrice && a.currentPrice) ? ((a.targetPrice - a.currentPrice) / a.currentPrice * 100).toFixed(1) : null;
+
+            return `
+            <div id="mob-card-${sid}" class="p-3.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-2.5">
+                <!-- Card Header -->
+                <div class="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800/60 pb-2">
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-1.5">
+                            <span class="font-black text-xs text-slate-800 dark:text-slate-100">${_escapeHtml(a.ticker)}</span>
+                            ${a.hasAlert 
+                                ? `<span class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50">Alert Attivo</span>`
+                                : `<span class="px-1.5 py-0.5 rounded text-[8px] font-medium uppercase bg-slate-100 dark:bg-slate-800 text-slate-400">Nessun Alert</span>`
+                            }
+                        </div>
+                        <p class="text-[10px] text-slate-400 truncate max-w-[170px]">${_escapeHtml(a.name || a.ticker)}</p>
+                    </div>
+                    <div class="text-right shrink-0">
+                        <div class="font-bold text-xs text-slate-800 dark:text-slate-100">${priceStr}</div>
+                        ${chgPct !== null ? `<span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-black ${chgClass}">${chgSign}${chgPct.toFixed(2)}%</span>` : ''}
+                    </div>
+                </div>
+
+                <!-- Parameters Grid -->
+                <div class="grid grid-cols-3 gap-2">
+                    <!-- Stop Loss Column -->
+                    <div class="space-y-1">
+                        <div class="flex items-center justify-between">
+                            <label class="text-[9px] font-black text-rose-500 uppercase tracking-tight block">Stop Loss</label>
+                            ${slDiff !== null ? `<span class="text-[8px] font-bold ${parseFloat(slDiff) < 0 ? 'text-rose-400' : 'text-amber-400'}">${slDiff > 0 ? '+' : ''}${slDiff}%</span>` : ''}
+                        </div>
+                        <input type="number" step="0.01" value="${a.stopLoss ?? ''}" placeholder="—" id="mob-sl-${sid}"
+                            class="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 rounded-lg py-1.5 px-2 text-center font-bold text-xs text-slate-800 dark:text-slate-100 outline-none transition-all">
+                        ${a.aiStopLoss ? `
+                        <button type="button" onclick="applySingleAi('${_escapeHtml(a.ticker)}', 'sl', ${a.aiStopLoss})" class="w-full text-[8px] text-violet-500 hover:text-violet-600 dark:text-violet-400 font-bold flex items-center justify-center gap-0.5 py-0.5 bg-violet-50 dark:bg-violet-950/30 rounded border border-violet-100 dark:border-violet-900/40">
+                            <span class="material-symbols-outlined text-[10px]">smart_toy</span> AI: ${Number(a.aiStopLoss).toFixed(2)}
+                        </button>` : ''}
+                    </div>
+
+                    <!-- Take Profit Column -->
+                    <div class="space-y-1">
+                        <div class="flex items-center justify-between">
+                            <label class="text-[9px] font-black text-emerald-500 uppercase tracking-tight block">Take Profit</label>
+                            ${tpDiff !== null ? `<span class="text-[8px] font-bold ${parseFloat(tpDiff) > 0 ? 'text-emerald-400' : 'text-rose-400'}">${tpDiff > 0 ? '+' : ''}${tpDiff}%</span>` : ''}
+                        </div>
+                        <input type="number" step="0.01" value="${a.targetPrice ?? ''}" placeholder="—" id="mob-tp-${sid}"
+                            class="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg py-1.5 px-2 text-center font-bold text-xs text-slate-800 dark:text-slate-100 outline-none transition-all">
+                        ${a.aiTargetPrice ? `
+                        <button type="button" onclick="applySingleAi('${_escapeHtml(a.ticker)}', 'tp', ${a.aiTargetPrice})" class="w-full text-[8px] text-violet-500 hover:text-violet-600 dark:text-violet-400 font-bold flex items-center justify-center gap-0.5 py-0.5 bg-violet-50 dark:bg-violet-950/30 rounded border border-violet-100 dark:border-violet-900/40">
+                            <span class="material-symbols-outlined text-[10px]">smart_toy</span> AI: ${Number(a.aiTargetPrice).toFixed(2)}
+                        </button>` : ''}
+                    </div>
+
+                    <!-- Volatility % Column -->
+                    <div class="space-y-1">
+                        <label class="text-[9px] font-black text-amber-500 uppercase tracking-tight block">Volatilità %</label>
+                        <input type="number" step="0.1" min="0" max="100" value="${a.volatilityAlert ?? ''}" placeholder="—" id="mob-vol-${sid}"
+                            class="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-lg py-1.5 px-2 text-center font-bold text-xs text-slate-800 dark:text-slate-100 outline-none transition-all">
+                    </div>
+                </div>
+
+                <!-- Actions Row -->
+                <div class="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/60">
+                    <button id="mob-save-btn-${sid}" onclick="saveMobSltpRow('${_escapeHtml(a.ticker)}', this)" 
+                        class="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1 shadow-sm transition-all">
+                        <span class="material-symbols-outlined text-[13px]">save</span> Salva
+                    </button>
+
+                    ${(a.aiStopLoss || a.aiTargetPrice) ? `
+                    <button onclick="applyAiMobSltp('${_escapeHtml(a.ticker)}', ${a.aiStopLoss || 'null'}, ${a.aiTargetPrice || 'null'})" 
+                        class="py-1.5 px-2.5 bg-violet-50 hover:bg-violet-100 dark:bg-violet-950/30 dark:hover:bg-violet-900/40 text-violet-600 dark:text-violet-400 active:scale-95 border border-violet-200 dark:border-violet-800 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 transition-all" title="Applica sia SL che TP suggeriti dall'AI">
+                        <span class="material-symbols-outlined text-[13px]">smart_toy</span> AI
+                    </button>` : ''}
+
+                    <button id="mob-clear-btn-${sid}" onclick="clearMobSltpRow('${_escapeHtml(a.ticker)}', this)" 
+                        class="py-1.5 px-2.5 bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/30 text-slate-600 hover:text-rose-600 dark:text-slate-300 dark:hover:text-rose-400 active:scale-95 border border-slate-200 dark:border-slate-700 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 transition-all" title="Rimuovi tutti gli alert per questo asset">
+                        <span class="material-symbols-outlined text-[13px]">delete</span> Rimuovi
+                    </button>
+                </div>
+            </div>
+            `;
+        }).join('');
+    }
+
+    window.applySingleAi = function(ticker, field, val) {
+        const sid = _safeTickerId(ticker);
+        const input = document.getElementById(field === 'sl' ? ('mob-sl-' + sid) : ('mob-tp-' + sid));
+        if (input && val != null) {
+            input.value = val;
+            input.focus();
+        }
+    };
+
+    window.applyAiMobSltp = async function(ticker, aiSl, aiTp) {
+        const sid = _safeTickerId(ticker);
+        if (aiSl != null) {
+            const slInput = document.getElementById('mob-sl-' + sid);
+            if (slInput) slInput.value = aiSl;
+        }
+        if (aiTp != null) {
+            const tpInput = document.getElementById('mob-tp-' + sid);
+            if (tpInput) tpInput.value = aiTp;
+        }
+        const saveBtn = document.getElementById('mob-save-btn-' + sid);
+        if (saveBtn) await window.saveMobSltpRow(ticker, saveBtn);
+    };
+
+    window.saveMobSltpRow = async function(ticker, btn) {
+        const sid = _safeTickerId(ticker);
+        const slEl = document.getElementById('mob-sl-' + sid);
+        const tpEl = document.getElementById('mob-tp-' + sid);
+        const volEl = document.getElementById('mob-vol-' + sid);
+
+        const sl = (slEl && slEl.value.trim() !== '' && !isNaN(parseFloat(slEl.value)) && parseFloat(slEl.value) > 0) ? parseFloat(slEl.value) : null;
+        const tp = (tpEl && tpEl.value.trim() !== '' && !isNaN(parseFloat(tpEl.value)) && parseFloat(tpEl.value) > 0) ? parseFloat(tpEl.value) : null;
+        const vol = (volEl && volEl.value.trim() !== '' && !isNaN(parseFloat(volEl.value)) && parseFloat(volEl.value) > 0) ? parseFloat(volEl.value) : null;
+
+        const origHtml = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-symbols-outlined text-[13px] animate-spin">sync</span> Salvataggio...';
+        }
+
+        try {
+            const res = await fetch('/api/assets/' + encodeURIComponent(ticker), {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ stopLoss: sl, targetPrice: tp, volatilityAlert: vol })
+            });
+
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+
+            // Update in-memory data
+            const item = _mobSltpData.find(x => x.ticker === ticker);
+            if (item) {
+                item.stopLoss = sl;
+                item.targetPrice = tp;
+                item.volatilityAlert = vol;
+                item.hasAlert = Boolean(sl || tp || vol);
+            }
+
+            updateMobSltpCounts();
+
+            if (btn) {
+                btn.innerHTML = '<span class="material-symbols-outlined text-[13px]">check_circle</span> Salvato!';
+                btn.classList.remove('bg-emerald-600');
+                btn.classList.add('bg-emerald-700');
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                    btn.classList.remove('bg-emerald-700');
+                    btn.classList.add('bg-emerald-600');
+                    renderMobSltpList();
+                }, 1200);
+            } else {
+                renderMobSltpList();
+            }
+        } catch (err) {
+            console.error('saveMobSltpRow error:', err);
+            alert('Errore nel salvataggio dei parametri per ' + ticker + ': ' + err.message);
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+            }
+        }
+    };
+
+    window.clearMobSltpRow = async function(ticker, btn) {
+        if (!(await ftConfirm('Rimuovere tutti gli alert (Stop Loss, TP, Volatilità) per ' + ticker + '?'))) return;
+
+        const sid = _safeTickerId(ticker);
+        const slEl = document.getElementById('mob-sl-' + sid);
+        const tpEl = document.getElementById('mob-tp-' + sid);
+        const volEl = document.getElementById('mob-vol-' + sid);
+
+        if (slEl) slEl.value = '';
+        if (tpEl) tpEl.value = '';
+        if (volEl) volEl.value = '';
+
+        const origHtml = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-symbols-outlined text-[13px] animate-spin">sync</span>';
+        }
+
+        try {
+            const res = await fetch('/api/assets/' + encodeURIComponent(ticker), {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ stopLoss: null, targetPrice: null, volatilityAlert: null })
+            });
+
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+
+            const item = _mobSltpData.find(x => x.ticker === ticker);
+            if (item) {
+                item.stopLoss = null;
+                item.targetPrice = null;
+                item.volatilityAlert = null;
+                item.hasAlert = false;
+            }
+
+            updateMobSltpCounts();
+
+            if (btn) {
+                btn.innerHTML = '<span class="material-symbols-outlined text-[13px] text-rose-500 font-bold">check</span>';
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                    renderMobSltpList();
+                }, 1000);
+            } else {
+                renderMobSltpList();
+            }
+        } catch (err) {
+            console.error('clearMobSltpRow error:', err);
+            alert('Errore nella rimozione alert per ' + ticker + ': ' + err.message);
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+            }
+        }
+    };
 </script>
 </body>
 </html>

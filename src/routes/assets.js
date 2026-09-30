@@ -882,62 +882,110 @@ router.get('/assets', requireAuth, async (req, res) => {
 });
 
 // ─── SL/TP/Volatility Overview (for Settings page) ─────────────────────────
-router.get('/assets/sl-tp-overview', requireAuth, (req, res) => {
-    try {
-        const userId = req.user.id;
-        const rows = database.db.prepare(`
-            SELECT 
-                a.ticker, a.name, a.currentPrice, a.currency, a.changePercent,
-                a.targetPrice as assetTP,
-                a.stopLoss as assetSL,
-                uw.targetPrice as userTP,
-                uw.stopLoss as userSL,
-                uw.volatilityAlert as userVolatility,
-                (
-                    SELECT targetPrice FROM asset_ai_history
-                    WHERE ticker = a.ticker AND targetPrice IS NOT NULL AND targetPrice > 0
-                    ORDER BY created_at DESC LIMIT 1
-                ) as aiTP,
-                (
-                    SELECT stopLoss FROM asset_ai_history
-                    WHERE ticker = a.ticker AND stopLoss IS NOT NULL AND stopLoss > 0
-                    ORDER BY created_at DESC LIMIT 1
-                ) as aiSL,
-                (
-                    SELECT created_at FROM asset_ai_history
-                    WHERE ticker = a.ticker
-                    ORDER BY created_at DESC LIMIT 1
-                ) as lastAiDate
-            FROM assets a
-            LEFT JOIN user_watchlist uw ON a.ticker = uw.ticker AND uw.user_id = ?
-            WHERE a.ticker != 'CASH'
-            AND (
-                (uw.targetPrice IS NOT NULL AND uw.targetPrice != 0) OR
-                (uw.stopLoss IS NOT NULL AND uw.stopLoss != 0) OR
-                (uw.volatilityAlert IS NOT NULL AND uw.volatilityAlert != 0) OR
-                (a.targetPrice IS NOT NULL AND a.targetPrice != 0) OR
-                (a.stopLoss IS NOT NULL AND a.stopLoss != 0)
-            )
-            ORDER BY a.name ASC
-        `).all(userId);
+function getSlTpOverviewData(userId, includeAll = false) {
+    let whereFilter = `
+        WHERE a.ticker != 'CASH'
+          AND a.ticker NOT LIKE 'CASH_%'
+          AND a.ticker NOT LIKE 'CD_%'
+          AND a.ticker NOT LIKE 'BP_%'
+          AND IFNULL(a.type, '') NOT IN ('Liquidità', 'Conto Deposito', 'Buono Postale')
+    `;
 
-        const result = rows.map(r => ({
+    if (!includeAll) {
+        whereFilter += `
+        AND (
+            (uw.targetPrice IS NOT NULL AND uw.targetPrice > 0) OR
+            (uw.stopLoss IS NOT NULL AND uw.stopLoss > 0) OR
+            (uw.volatilityAlert IS NOT NULL AND uw.volatilityAlert > 0) OR
+            (a.targetPrice IS NOT NULL AND a.targetPrice > 0) OR
+            (a.stopLoss IS NOT NULL AND a.stopLoss > 0)
+        )
+        `;
+    }
+
+    const rows = database.db.prepare(`
+        SELECT 
+            a.id, a.ticker, a.name, a.currentPrice, a.currency, a.changePercent,
+            a.targetPrice as assetTP,
+            a.stopLoss as assetSL,
+            uw.targetPrice as userTP,
+            uw.stopLoss as userSL,
+            uw.volatilityAlert as userVolatility,
+            (
+                SELECT targetPrice FROM asset_ai_history
+                WHERE ticker = a.ticker AND targetPrice IS NOT NULL AND targetPrice > 0
+                ORDER BY created_at DESC LIMIT 1
+            ) as aiTP,
+            (
+                SELECT stopLoss FROM asset_ai_history
+                WHERE ticker = a.ticker AND stopLoss IS NOT NULL AND stopLoss > 0
+                ORDER BY created_at DESC LIMIT 1
+            ) as aiSL,
+            (
+                SELECT created_at FROM asset_ai_history
+                WHERE ticker = a.ticker
+                ORDER BY created_at DESC LIMIT 1
+            ) as lastAiDate
+        FROM assets a
+        LEFT JOIN user_watchlist uw ON a.ticker = uw.ticker AND uw.user_id = ?
+        ${whereFilter}
+        ORDER BY 
+            CASE WHEN (
+                (uw.targetPrice IS NOT NULL AND uw.targetPrice > 0) OR
+                (uw.stopLoss IS NOT NULL AND uw.stopLoss > 0) OR
+                (uw.volatilityAlert IS NOT NULL AND uw.volatilityAlert > 0) OR
+                (a.targetPrice IS NOT NULL AND a.targetPrice > 0) OR
+                (a.stopLoss IS NOT NULL AND a.stopLoss > 0)
+            ) THEN 0 ELSE 1 END,
+            a.name ASC
+    `).all(userId);
+
+    return rows.map(r => {
+        const tp = r.userTP !== null ? r.userTP : (r.assetTP || null);
+        const sl = r.userSL !== null ? r.userSL : (r.assetSL || null);
+        const vol = r.userVolatility || null;
+        const hasAlert = Boolean((tp !== null && tp > 0) || (sl !== null && sl > 0) || (vol !== null && vol > 0));
+
+        return {
+            id: r.id,
             ticker: r.ticker,
             name: r.name,
             currentPrice: r.currentPrice,
             currency: r.currency,
             changePercent: r.changePercent,
-            targetPrice: r.userTP !== null ? r.userTP : (r.assetTP || null),
-            stopLoss: r.userSL !== null ? r.userSL : (r.assetSL || null),
-            volatilityAlert: r.userVolatility || null,
+            targetPrice: (tp !== null && tp > 0) ? tp : null,
+            stopLoss: (sl !== null && sl > 0) ? sl : null,
+            volatilityAlert: (vol !== null && vol > 0) ? vol : null,
             aiTargetPrice: r.aiTP || null,
             aiStopLoss: r.aiSL || null,
             lastAiDate: r.lastAiDate || null,
-        }));
+            hasAlert,
+            // Compatibility aliases for admin_mobile
+            current_price: r.currentPrice,
+            stop_loss: (sl !== null && sl > 0) ? sl : null,
+            target_profit: (tp !== null && tp > 0) ? tp : null,
+            volatility_threshold: (vol !== null && vol > 0) ? vol : null
+        };
+    });
+}
 
+router.get('/assets/sl-tp-overview', requireAuth, (req, res) => {
+    try {
+        const includeAll = req.query.all === 'true' || req.query.all === '1' || req.query.includeAll === 'true';
+        const result = getSlTpOverviewData(req.user.id, includeAll);
         res.json(result);
     } catch(e) {
         logger.error('sl-tp-overview error', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+router.get('/assets/all-sltp', requireAuth, (req, res) => {
+    try {
+        const result = getSlTpOverviewData(req.user.id, true);
+        res.json(result);
+    } catch(e) {
+        logger.error('all-sltp error', e);
         res.status(500).json({ error: e.message });
     }
 });
@@ -1162,13 +1210,34 @@ router.put('/assets/:id', requireAuth, (req, res) => {
         database.db.prepare(`UPDATE assets SET ${updates.join(', ')} WHERE id = ? OR ticker = ?`).run(...params);
     }
 
-    // 2. Update User Alerts (Private)
+    // 2. Update User Alerts (Private & Synchronized)
     const tickerParam = req.params.id; 
     const watchUpdates = [];
     const watchParams = [];
-    if (targetPrice !== undefined) { watchUpdates.push("targetPrice = ?"); watchParams.push(targetPrice); }
-    if (stopLoss !== undefined) { watchUpdates.push("stopLoss = ?"); watchParams.push(stopLoss); }
-    if (volatilityAlert !== undefined) { watchUpdates.push("volatilityAlert = ?"); watchParams.push(volatilityAlert); }
+    const globalAlertUpdates = [];
+    const globalAlertParams = [];
+
+    if (targetPrice !== undefined) {
+        const val = (targetPrice === null || targetPrice === '' || isNaN(parseFloat(targetPrice)) || parseFloat(targetPrice) <= 0) ? null : parseFloat(targetPrice);
+        watchUpdates.push("targetPrice = ?");
+        watchParams.push(val);
+        globalAlertUpdates.push("targetPrice = ?");
+        globalAlertParams.push(val);
+    }
+    if (stopLoss !== undefined) {
+        const val = (stopLoss === null || stopLoss === '' || isNaN(parseFloat(stopLoss)) || parseFloat(stopLoss) <= 0) ? null : parseFloat(stopLoss);
+        watchUpdates.push("stopLoss = ?");
+        watchParams.push(val);
+        globalAlertUpdates.push("stopLoss = ?");
+        globalAlertParams.push(val);
+    }
+    if (volatilityAlert !== undefined) {
+        const val = (volatilityAlert === null || volatilityAlert === '' || isNaN(parseFloat(volatilityAlert)) || parseFloat(volatilityAlert) <= 0) ? null : parseFloat(volatilityAlert);
+        watchUpdates.push("volatilityAlert = ?");
+        watchParams.push(val);
+        globalAlertUpdates.push("volatilityAlert = ?");
+        globalAlertParams.push(val);
+    }
     
     if (watchUpdates.length > 0) {
         try {
@@ -1182,9 +1251,82 @@ router.put('/assets/:id', requireAuth, (req, res) => {
                     SET ${watchUpdates.join(', ')} 
                     WHERE user_id = ? AND ticker = ?
                 `).run(...watchParams, req.user.id, ticker);
+
+                // Also update global assets table so alerts stay 100% in sync across the whole app
+                if (globalAlertUpdates.length > 0) {
+                    database.db.prepare(`
+                        UPDATE assets 
+                        SET ${globalAlertUpdates.join(', ')} 
+                        WHERE ticker = ?
+                    `).run(...globalAlertParams, ticker);
+                }
             }
         } catch (e) {
             logger.error('Error updating user watchlist in PUT /api/assets', e);
+        }
+    }
+
+    res.json({ success: true });
+});
+
+router.put('/assets/:id/sltp', requireAuth, (req, res) => {
+    // Delegate to PUT /assets/:id logic
+    const tickerParam = req.params.id;
+    const { stopLoss, targetProfit, targetPrice, volatilityThreshold, volatilityAlert } = req.body;
+    
+    const tp = targetPrice !== undefined ? targetPrice : targetProfit;
+    const vol = volatilityAlert !== undefined ? volatilityAlert : volatilityThreshold;
+    
+    const watchUpdates = [];
+    const watchParams = [];
+    const globalAlertUpdates = [];
+    const globalAlertParams = [];
+
+    if (tp !== undefined) {
+        const val = (tp === null || tp === '' || isNaN(parseFloat(tp)) || parseFloat(tp) <= 0) ? null : parseFloat(tp);
+        watchUpdates.push("targetPrice = ?");
+        watchParams.push(val);
+        globalAlertUpdates.push("targetPrice = ?");
+        globalAlertParams.push(val);
+    }
+    if (stopLoss !== undefined) {
+        const val = (stopLoss === null || stopLoss === '' || isNaN(parseFloat(stopLoss)) || parseFloat(stopLoss) <= 0) ? null : parseFloat(stopLoss);
+        watchUpdates.push("stopLoss = ?");
+        watchParams.push(val);
+        globalAlertUpdates.push("stopLoss = ?");
+        globalAlertParams.push(val);
+    }
+    if (vol !== undefined) {
+        const val = (vol === null || vol === '' || isNaN(parseFloat(vol)) || parseFloat(vol) <= 0) ? null : parseFloat(vol);
+        watchUpdates.push("volatilityAlert = ?");
+        watchParams.push(val);
+        globalAlertUpdates.push("volatilityAlert = ?");
+        globalAlertParams.push(val);
+    }
+
+    if (watchUpdates.length > 0) {
+        try {
+            const actualTickerRow = database.db.prepare(`SELECT ticker FROM assets WHERE id = ? OR ticker = ?`).get(tickerParam, tickerParam);
+            if (actualTickerRow) {
+                const ticker = actualTickerRow.ticker;
+                database.db.prepare(`INSERT OR IGNORE INTO user_watchlist (user_id, ticker) VALUES (?, ?)`).run(req.user.id, ticker);
+                database.db.prepare(`
+                    UPDATE user_watchlist 
+                    SET ${watchUpdates.join(', ')} 
+                    WHERE user_id = ? AND ticker = ?
+                `).run(...watchParams, req.user.id, ticker);
+
+                if (globalAlertUpdates.length > 0) {
+                    database.db.prepare(`
+                        UPDATE assets 
+                        SET ${globalAlertUpdates.join(', ')} 
+                        WHERE ticker = ?
+                    `).run(...globalAlertParams, ticker);
+                }
+            }
+        } catch (e) {
+            logger.error('Error updating user alerts in PUT /assets/:id/sltp', e);
+            return res.status(500).json({ error: e.message });
         }
     }
 
