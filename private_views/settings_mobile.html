@@ -362,23 +362,61 @@
                           </div>
                       </div>
 
-                      <!-- Global Settings / Thresholds Card -->
+                      <!-- Parametri Notifiche Intelligenti Stato Mercato Card -->
                       <div class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
-                          <p class="text-[9px] font-black uppercase tracking-wider text-slate-400">Parametri Globali Notifiche</p>
+                          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                              <span class="text-[9px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                                  <span class="material-symbols-outlined text-xs text-primary">psychology</span> Notifiche Intelligenti Stato Mercato
+                              </span>
+                          </div>
+
                           <div>
-                              <label class="text-[10px] font-bold text-slate-500 block mb-1">Soglia Volatilità di Default (%)</label>
-                              <input id="mob-volatility-threshold" type="number" step="0.1" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs font-bold" onchange="saveVolatilityThresholdMob()">
+                              <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Modalità Invio</label>
+                              <select id="mob-status-mode" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs font-bold text-slate-800 dark:text-slate-100 outline-none">
+                                  <option value="smart">🧠 Intelligente (Campane + Variazione Gain)</option>
+                                  <option value="interval">⏱️ Intervallo Periodico con Soglia Gain</option>
+                                  <option value="events_only">🔔 Solo Campane Apertura &amp; Chiusura (+5 min)</option>
+                              </select>
                           </div>
-                          <div class="grid grid-cols-2 gap-2.5">
+
+                          <div class="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-800/60 rounded-lg border border-slate-100 dark:border-slate-800">
                               <div>
-                                  <label class="text-[10px] font-bold text-slate-500 block mb-1">Intervallo Stato (Min)</label>
-                                  <input id="mob-status-interval" type="number" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs font-bold" onchange="saveStatusConfigMob()">
+                                  <span class="text-xs font-bold text-slate-800 dark:text-slate-100 block">Campane Orari Chiave (+5 min delay)</span>
+                                  <span class="text-[9px] text-slate-400">UE 09:05 e 17:35 • USA 15:35 e 22:05</span>
+                              </div>
+                              <label class="mob-toggle" onclick="event.stopPropagation()">
+                                  <input type="checkbox" id="mob-status-events" checked>
+                                  <div class="mob-toggle-slider"></div>
+                              </label>
+                          </div>
+
+                          <div class="grid grid-cols-2 gap-2">
+                              <div>
+                                  <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Min Variazione Gain (€)</label>
+                                  <input type="number" id="mob-status-min-variation" placeholder="100" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs font-bold text-center">
+                                  <span class="text-[8px] text-slate-400 block mt-0.5">Evita notifiche ripetitive</span>
                               </div>
                               <div>
-                                  <label class="text-[10px] font-bold text-slate-500 block mb-1">Min Variazione (€)</label>
-                                  <input id="mob-status-min-variation" type="number" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs font-bold" onchange="saveStatusConfigMob()">
+                                  <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Cooldown Minimo (Min)</label>
+                                  <input type="number" id="mob-status-cooldown" placeholder="30" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs font-bold text-center">
+                                  <span class="text-[8px] text-slate-400 block mt-0.5">Tempo minimo tra invii</span>
                               </div>
                           </div>
+
+                          <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+                              <div>
+                                  <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Intervallo Periodico (Min)</label>
+                                  <input type="number" id="mob-status-interval" placeholder="60" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs font-bold text-center">
+                              </div>
+                              <div>
+                                  <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Soglia Volatilità Shock (%)</label>
+                                  <input type="number" step="0.1" id="mob-volatility-threshold" placeholder="5.0" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs font-bold text-center">
+                              </div>
+                          </div>
+
+                          <button onclick="saveStatusConfigMob()" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-black uppercase rounded-lg shadow-sm flex items-center justify-center gap-1 active:scale-95 transition-all">
+                              <span class="material-symbols-outlined text-[14px]">save</span> Salva Parametri Notifiche
+                          </button>
                       </div>
                   </div>
               </div>
@@ -1036,14 +1074,12 @@
             const resS = await fetch('/api/settings');
             const settings = await resS.json();
             
-            const volInput = document.getElementById('mob-volatility-threshold');
-            if (volInput) volInput.value = settings.volatilityThreshold || 5.0;
-            
-            const statusInt = document.getElementById('mob-status-interval');
-            if (statusInt) statusInt.value = settings.marketStatusInterval || 60;
-            
-            const statusVar = document.getElementById('mob-status-min-variation');
-            if (statusVar) statusVar.value = settings.marketStatusMinVariation || 0;
+            if (document.getElementById('mob-volatility-threshold')) document.getElementById('mob-volatility-threshold').value = settings.volatilityThreshold || 5.0;
+            if (document.getElementById('mob-status-mode')) document.getElementById('mob-status-mode').value = settings.marketStatusMode || 'smart';
+            if (document.getElementById('mob-status-events')) document.getElementById('mob-status-events').checked = settings.marketStatusEventsEnabled !== 'false';
+            if (document.getElementById('mob-status-min-variation')) document.getElementById('mob-status-min-variation').value = settings.marketStatusMinVariation !== undefined ? settings.marketStatusMinVariation : 100;
+            if (document.getElementById('mob-status-cooldown')) document.getElementById('mob-status-cooldown').value = settings.marketStatusMinCooldown || 30;
+            if (document.getElementById('mob-status-interval')) document.getElementById('mob-status-interval').value = settings.marketStatusInterval || 60;
         } catch (e) { console.error(e); }
     };
 
@@ -1079,18 +1115,28 @@
     };
 
     window.saveStatusConfigMob = async function() {
-        const interval = document.getElementById('mob-status-interval').value;
-        const variation = document.getElementById('mob-status-min-variation').value;
+        const volatilityThreshold = document.getElementById('mob-volatility-threshold')?.value;
+        const marketStatusMode = document.getElementById('mob-status-mode')?.value;
+        const marketStatusEventsEnabled = document.getElementById('mob-status-events')?.checked ? 'true' : 'false';
+        const marketStatusMinVariation = document.getElementById('mob-status-min-variation')?.value;
+        const marketStatusMinCooldown = document.getElementById('mob-status-cooldown')?.value;
+        const marketStatusInterval = document.getElementById('mob-status-interval')?.value;
+
         try {
             await fetch('/api/settings', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
-                    marketStatusInterval: interval,
-                    marketStatusMinVariation: variation
+                    volatilityThreshold,
+                    marketStatusMode,
+                    marketStatusEventsEnabled,
+                    marketStatusMinVariation,
+                    marketStatusMinCooldown,
+                    marketStatusInterval
                 })
             });
-        } catch (e) { console.error(e); }
+            alert('Parametri notifiche intelligenti salvati con successo!');
+        } catch (e) { alert('Errore: ' + e.message); }
     };
 
     window.sendTestNotifyMob = async function(event) {

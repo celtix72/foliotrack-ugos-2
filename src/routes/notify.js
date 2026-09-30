@@ -100,6 +100,18 @@ module.exports = function (dependencies) {
                 body: 'Apple Inc. announces new AI features for iOS 20.',
                 telegramMessage: '📰 *News Alert: AAPL*\n\nApple Inc\\. announces new AI features for iOS 20\\.\n\n[Leggi notizia completa](https://www.apple.com)',
                 data: { url: 'https://www.apple.com' }
+            },
+            status: {
+                title: '🔔 Apertura Borsa UE (09:05) • NET: €150.0K (+€320)',
+                body: '🟢 ETF (+€180)\n🟢 AZI (+€140)\n🏆 ENEL (+€95)',
+                telegramMessage: '*🔔 APERTURA MERCATI UE (09:05)*\n\n`NET. :` `€150.000`\n\n*🟢* *`ETF AZ       +€180`*  *`(+€0)`*\n*🔵* *`AZIONI       +€140`*  *`(+€0)`*\n\n🕒 `09:05`',
+                data: { url: '/dashboard' }
+            },
+            daily: {
+                title: '📊 Daily Report • NET: €150.0K (+€450)',
+                body: 'Riepilogo giornaliero chiusura mercati',
+                telegramMessage: '*📊 DAILY REPORT*\n\n`NET. :` `€150.000` (+€450)',
+                data: { url: '/dashboard' }
             }
         };
 

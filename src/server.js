@@ -224,17 +224,19 @@ const isUSMarket = (a) => {
     return true;
 };
 
-async function sendStatusNotification(targetUserId = null, eventType = 'STATUS', preCalculatedStats = null) {
+async function sendStatusNotification(targetUserId = null, eventType = 'STATUS', preCalculatedStats = null, triggerMeta = null) {
     const users = targetUserId 
         ? database.db.prepare(`SELECT id FROM users WHERE id = ?`).all(targetUserId)
-        : database.db.prepare(`SELECT id FROM users WHERE telegram_chat_id IS NOT NULL`).all();
+        : database.db.prepare(`SELECT id FROM users WHERE telegram_chat_id IS NOT NULL OR id IN (SELECT DISTINCT user_id FROM push_subscriptions)`).all();
 
     for (const userRow of users) {
         const userId = userRow.id;
         const userSettings = database.getSettings(userId);
         
         // Skip if not forced and disabled for this user
-        if (!targetUserId && userSettings.marketStatusTelegramEnabled !== 'true') continue;
+        const statusTgEnabled = (userSettings.telegramEnabled === 'true' || userSettings.telegramBotToken) && (userSettings.marketStatusTelegramEnabled === 'true' || userSettings.notify_status_telegram === 'true');
+        const statusPushEnabled = userSettings.notify_status_push === 'true';
+        if (!targetUserId && !statusTgEnabled && !statusPushEnabled) continue;
 
         try {
             const escape = escapeV2;
@@ -301,7 +303,11 @@ async function sendStatusNotification(targetUserId = null, eventType = 'STATUS',
             const bigEmoji = getBigEmoji(marketChange + prePostChange);
             
             const tSign = marketChange >= 0 ? '+' : '';
-            let msg = `*${eventType === 'DAILY' ? '📊 DAILY REPORT' : '📈 MARKET STATUS'}*\n\n`;
+            let msgHeader = eventType === 'DAILY' ? '📊 DAILY REPORT' : '📈 MARKET STATUS';
+            if (triggerMeta && triggerMeta.label) {
+                msgHeader = `${triggerMeta.label.toUpperCase()}`;
+            }
+            let msg = `*${msgHeader}*\n\n`;
             const totalValStr = Math.round(totalVal).toLocaleString('it-IT');
             msg += `${escapeV2('NET. :')} \`${escapeCodeV2('€' + totalValStr)}\` \n\n`;
 
@@ -339,7 +345,8 @@ async function sendStatusNotification(targetUserId = null, eventType = 'STATUS',
             const abbreviatedNet = (totalVal / 1000).toFixed(1) + 'K';
 
             // First line (NET) becomes the Title for maximum compactness
-            const pushTitle = `NET: ${abbreviatedNet} (${totalVarStr})`;
+            const pushPrefix = (triggerMeta && triggerMeta.label) ? `${triggerMeta.label} • ` : '';
+            const pushTitle = `${pushPrefix}NET: ${abbreviatedNet} (${totalVarStr})`;
             
             // Portfolios for the body: those with variation > 0 (positive or negative)
             let portfoliosForPush = [];
@@ -1047,6 +1054,8 @@ function getMarketStatus() {
         US_preMarketActive: !isUSHoliday && cetNow >= '10:00' && cetNow < usHrs.open,
         US_afterHoursActive: !isUSHoliday && (cetNow > usHrs.close || cetNow < '02:05'),
         isWeekend,
+        isEUHoliday,
+        isUSHoliday,
         anyOpen: milOpen || gerOpen || usOpen
     };
 
@@ -3903,42 +3912,123 @@ setInterval(async () => {
         lastUpdateTime = Date.now();
     }
 
-    // 2. Multi-User Notifications (Status & Daily)
+    // 2. Multi-User Notifications (Smart Market Status & Daily Summary)
     const users = database.db.prepare('SELECT id FROM users').all();
+    
+    // Format current time in Europe/Rome (CET/CEST)
+    const cetTimeFormatter = new Intl.DateTimeFormat('it-IT', {
+        timeZone: 'Europe/Rome',
+        hour: '2-digit', minute: '2-digit', hour12: false
+    });
+    const cetTime = cetTimeFormatter.format(now); // e.g. "09:05", "15:35", "17:35", "22:05"
+
     for (const u of users) {
         const uSettings = database.getSettings(u.id);
-        const tgIntervalMin = parseInt(uSettings.marketStatusInterval || 60);
-        const todayStr = now.toISOString().split('T')[0];
         
-        // Status updates during market hours
-        if (status.anyOpen && tgIntervalMin > 0) {
-            const lastStatusKey = `last_status_time_${u.id}`;
-            const lastValueKey = `last_status_value_${u.id}`;
-            const lastStatusTime = global[lastStatusKey] || 0;
-            const lastStatusValue = global[lastValueKey] || 0;
-            const minVar = parseFloat(uSettings.marketStatusMinVariation || 0);
+        // Skip user if neither Telegram nor Push is enabled for status
+        const statusTgEnabled = (uSettings.telegramEnabled === 'true' || uSettings.telegramBotToken) && (uSettings.marketStatusTelegramEnabled === 'true' || uSettings.notify_status_telegram === 'true');
+        const statusPushEnabled = uSettings.notify_status_push === 'true';
+        if (!statusTgEnabled && !statusPushEnabled) continue;
 
-            if (Date.now() - lastStatusTime >= tgIntervalMin * 60 * 1000) {
-                const stats = await calculateMarketStats(u.id);
-                const currentVal = stats.totalNetValue || 0;
+        const mode = uSettings.marketStatusMode || 'smart'; // 'smart', 'interval', 'events_only'
+        const eventsEnabled = uSettings.marketStatusEventsEnabled !== 'false';
+        const gainThreshold = parseFloat(uSettings.marketStatusMinVariation !== undefined ? uSettings.marketStatusMinVariation : 100);
+        const cooldownMin = parseInt(uSettings.marketStatusMinCooldown || 30);
+        const intervalMin = parseInt(uSettings.marketStatusInterval || 60);
 
-                // Send only if variation threshold is met (or if it's the first notification)
-                if (lastStatusValue === 0 || Math.abs(currentVal - lastStatusValue) >= minVar) {
-                    sendStatusNotification(u.id, 'STATUS', stats).catch(e => logger.error('Status notify failed', e));
-                    global[lastStatusKey] = Date.now();
-                    global[lastValueKey] = currentVal;
+        const lastStatusTimeKey = `last_status_time_${u.id}`;
+        const lastStatusGainKey = `last_status_gain_${u.id}`;
+        const lastStatusDateKey = `last_status_date_${u.id}`;
+
+        // Reset baseline on new day
+        if (global[lastStatusDateKey] !== todayStr) {
+            global[lastStatusDateKey] = todayStr;
+            delete global[lastStatusGainKey];
+        }
+
+        let matchedTrigger = null;
+
+        // ── A. CRITICAL MARKET BELL EVENTS (+5 min delay for stabilized data) ──
+        if (eventsEnabled && (mode === 'smart' || mode === 'events_only')) {
+            const bellEvents = [
+                { id: 'eu_open', timeMin: '09:05', timeMax: '09:09', isHoliday: status.isEUHoliday, label: '🔔 Apertura Borsa UE (09:05)' },
+                { id: 'us_open', timeMin: '15:35', timeMax: '15:39', isHoliday: status.isUSHoliday, label: '🔔 Apertura Wall Street (15:35)' },
+                { id: 'eu_close', timeMin: '17:35', timeMax: '17:39', isHoliday: status.isEUHoliday, label: '🔔 Chiusura Borsa UE (17:35)' },
+                { id: 'us_close', timeMin: '22:05', timeMax: '22:09', isHoliday: status.isUSHoliday, label: '🔔 Chiusura Wall Street (22:05)' }
+            ];
+
+            for (const ev of bellEvents) {
+                if (!ev.isHoliday && cetTime >= ev.timeMin && cetTime <= ev.timeMax) {
+                    const trigKey = `bell_trig_${u.id}_${ev.id}_${todayStr}`;
+                    if (!global[trigKey]) {
+                        global[trigKey] = true;
+                        matchedTrigger = ev;
+                        break;
+                    }
                 }
             }
         }
 
-        // Daily Summary at 22:15 CET
-        const nowHour = now.getHours();
-        const nowMin = now.getMinutes();
-        if (nowHour === 22 && nowMin === 15) {
+        // ── B. GAIN VARIATION OR PERIODIC INTERVAL TRIGGER ──
+        if (!matchedTrigger && mode !== 'events_only' && status.anyOpen) {
+            const stats = await calculateMarketStats(u.id);
+            const currentGain = (stats.totalChange || 0) + (stats.totalChangePrePost || 0);
+            const lastGain = global[lastStatusGainKey];
+            const lastTime = global[lastStatusTimeKey] || 0;
+            const elapsedMs = Date.now() - lastTime;
+
+            if (mode === 'smart') {
+                if (lastGain === undefined) {
+                    // Set initial baseline for the day without spamming
+                    global[lastStatusGainKey] = currentGain;
+                    global[lastStatusTimeKey] = Date.now();
+                } else {
+                    const gainDelta = currentGain - lastGain;
+                    if (gainThreshold > 0 && Math.abs(gainDelta) >= gainThreshold) {
+                        if (elapsedMs >= cooldownMin * 60 * 1000) {
+                            const sign = gainDelta >= 0 ? '+' : '';
+                            matchedTrigger = {
+                                id: 'gain_change',
+                                label: `📈 Variazione Gain: ${sign}€${Math.round(gainDelta)}`,
+                                stats,
+                                currentGain
+                            };
+                        }
+                    }
+                }
+            } else if (mode === 'interval') {
+                if (intervalMin > 0 && elapsedMs >= intervalMin * 60 * 1000) {
+                    const gainDelta = lastGain !== undefined ? (currentGain - lastGain) : 0;
+                    if (gainThreshold <= 0 || lastGain === undefined || Math.abs(gainDelta) >= gainThreshold) {
+                        matchedTrigger = {
+                            id: 'interval',
+                            label: '📈 Riepilogo Mercato Periodico',
+                            stats,
+                            currentGain
+                        };
+                    }
+                }
+            }
+        }
+
+        // ── SEND STATUS NOTIFICATION ──
+        if (matchedTrigger) {
+            const stats = matchedTrigger.stats || await calculateMarketStats(u.id);
+            const currentGain = matchedTrigger.currentGain !== undefined 
+                ? matchedTrigger.currentGain 
+                : ((stats.totalChange || 0) + (stats.totalChangePrePost || 0));
+
+            sendStatusNotification(u.id, 'STATUS', stats, matchedTrigger).catch(e => logger.error(`Status notify failed for user ${u.id}`, e));
+            global[lastStatusTimeKey] = Date.now();
+            global[lastStatusGainKey] = currentGain;
+        }
+
+        // ── C. DAILY SUMMARY (22:15 CET) ──
+        if (cetTime >= '22:15' && cetTime <= '22:19') {
             const lastDailyKey = `last_daily_date_${u.id}`;
             if (global[lastDailyKey] !== todayStr) {
-                sendStatusNotification(u.id, 'DAILY').catch(e => logger.error('Daily notify failed', e));
                 global[lastDailyKey] = todayStr;
+                sendStatusNotification(u.id, 'DAILY').catch(e => logger.error('Daily notify failed', e));
             }
         }
     }

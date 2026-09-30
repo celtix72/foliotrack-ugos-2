@@ -679,33 +679,77 @@
                                     </button>
                                 </div>
 
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div class="p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-xl space-y-2">
+                                <div class="p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-xl space-y-4">
+                                    <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
                                         <div class="flex items-center gap-2">
-                                            <span class="material-symbols-outlined text-emerald-500 text-sm">show_chart</span>
-                                            <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest">Soglia Volatilità (%)</label>
+                                            <span class="material-symbols-outlined text-primary text-sm">psychology</span>
+                                            <span class="font-black text-xs uppercase tracking-wider text-slate-700 dark:text-slate-200">Notifiche Intelligenti Stato Mercato</span>
                                         </div>
-                                        <input id="volatility-threshold" type="number" min="0.1" step="0.1" placeholder="5.0" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 text-sm px-3 focus:ring-emerald-500/30 font-bold">
-                                        <p class="text-[9px] text-slate-400">Invia notifica se la variazione giornaliera supera questo valore.</p>
                                     </div>
-                                    <div class="p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-xl space-y-2">
-                                        <div class="flex items-center gap-2">
-                                            <span class="material-symbols-outlined text-emerald-500 text-sm">schedule</span>
-                                            <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest">Intervallo Stato (Min)</label>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest mb-1">Modalità Invio Notifiche</label>
+                                            <select id="status-mode" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 text-xs px-3 font-bold">
+                                                <option value="smart">🧠 Intelligente (Campane + Variazione Gain)</option>
+                                                <option value="interval">⏱️ Intervallo Periodico con Soglia Gain</option>
+                                                <option value="events_only">🔔 Solo Campane Apertura &amp; Chiusura (+5 min)</option>
+                                            </select>
                                         </div>
-                                        <input id="status-interval" type="number" min="1" placeholder="60" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 text-sm px-3 focus:ring-emerald-500/30 font-bold">
-                                        <p class="text-[9px] text-slate-400">Frequenza di aggiornamento riepilogo mercato.</p>
+                                        <div class="flex items-center justify-between p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+                                            <div>
+                                                <span class="font-bold text-xs block">Campane Orari Chiave (+5 min delay)</span>
+                                                <span class="text-[9px] text-slate-400">UE 09:05 / 17:35 • USA 15:35 / 22:05 (dati consolidati)</span>
+                                            </div>
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" id="status-events" checked class="sr-only peer">
+                                                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                                            </label>
+                                        </div>
                                     </div>
-                                    <div class="p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-xl space-y-2">
-                                        <div class="flex items-center gap-2">
-                                            <span class="material-symbols-outlined text-emerald-500 text-sm">payments</span>
-                                            <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest">Min Variazione (€)</label>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                        <div class="space-y-1">
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="material-symbols-outlined text-emerald-500 text-xs">payments</span>
+                                                <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest">Min Variazione Gain (€)</label>
+                                            </div>
+                                            <input id="status-min-variation" type="number" min="0" placeholder="100" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 text-sm px-3 focus:ring-emerald-500/30 font-bold text-center">
+                                            <p class="text-[9px] text-slate-400">Invia solo se il gain varia di almeno questo importo.</p>
                                         </div>
-                                        <input id="status-min-variation" type="number" min="0" placeholder="0" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 text-sm px-3 focus:ring-emerald-500/30 font-bold">
-                                        <p class="text-[9px] text-slate-400">Invia solo se il valore totale cambia almeno di questa cifra.</p>
+                                        <div class="space-y-1">
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="material-symbols-outlined text-amber-500 text-xs">hourglass_top</span>
+                                                <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest">Cooldown Minimo (Min)</label>
+                                            </div>
+                                            <input id="status-cooldown" type="number" min="5" placeholder="30" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 text-sm px-3 focus:ring-emerald-500/30 font-bold text-center">
+                                            <p class="text-[9px] text-slate-400">Tempo minimo tra notifiche di variazione.</p>
+                                        </div>
+                                        <div class="space-y-1">
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="material-symbols-outlined text-blue-500 text-xs">schedule</span>
+                                                <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest">Intervallo Periodico (Min)</label>
+                                            </div>
+                                            <input id="status-interval" type="number" min="1" placeholder="60" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 text-sm px-3 focus:ring-emerald-500/30 font-bold text-center">
+                                            <p class="text-[9px] text-slate-400">Usato se impostato su intervallo periodico.</p>
+                                        </div>
+                                        <div class="space-y-1">
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="material-symbols-outlined text-rose-500 text-xs">show_chart</span>
+                                                <label class="block font-bold text-[10px] text-slate-500 uppercase tracking-widest">Soglia Volatilità Shock (%)</label>
+                                            </div>
+                                            <input id="volatility-threshold" type="number" min="0.1" step="0.1" placeholder="5.0" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg py-2 text-sm px-3 focus:ring-emerald-500/30 font-bold text-center">
+                                            <p class="text-[9px] text-slate-400">Alert se un asset varia più di questa percentuale.</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-between pt-2">
+                                        <p id="params-save-msg" class="text-[10px] font-black text-emerald-500 uppercase hidden">Impostazioni salvate con successo!</p>
+                                        <div class="flex-1"></div>
+                                        <button onclick="saveNotificationParams()" class="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-lg shadow-sm flex items-center gap-1.5 transition-all">
+                                            <span class="material-symbols-outlined text-sm">save</span> Salva Parametri Notifiche
+                                        </button>
                                     </div>
                                 </div>
-                                <p id="params-save-msg" class="text-[10px] font-black text-emerald-500 uppercase mt-3 hidden text-right">Impostazioni salvate con successo!</p>
                             </div>
                         </div>
                     </div>
@@ -2227,7 +2271,10 @@
                 if (!settings) return;
                 if (document.getElementById('volatility-threshold')) document.getElementById('volatility-threshold').value = settings.volatilityThreshold || 5.0;
                 if (document.getElementById('status-interval')) document.getElementById('status-interval').value = settings.marketStatusInterval || 60;
-                if (document.getElementById('status-min-variation')) document.getElementById('status-min-variation').value = settings.marketStatusMinVariation || 0;
+                if (document.getElementById('status-min-variation')) document.getElementById('status-min-variation').value = settings.marketStatusMinVariation ?? 100;
+                if (document.getElementById('status-mode')) document.getElementById('status-mode').value = settings.marketStatusMode || 'smart';
+                if (document.getElementById('status-events')) document.getElementById('status-events').checked = settings.marketStatusEventsEnabled !== 'false' && settings.marketStatusEventsEnabled !== false;
+                if (document.getElementById('status-cooldown')) document.getElementById('status-cooldown').value = settings.marketStatusMinCooldown || 30;
 
                 const notifs = await fetchAdmin('/api/settings/notifications');
                 if (notifs) {
@@ -2262,12 +2309,22 @@
             const volatilityThreshold = document.getElementById('volatility-threshold')?.value;
             const marketStatusInterval = document.getElementById('status-interval')?.value;
             const marketStatusMinVariation = document.getElementById('status-min-variation')?.value;
+            const marketStatusMode = document.getElementById('status-mode')?.value;
+            const marketStatusEventsEnabled = document.getElementById('status-events')?.checked ? 'true' : 'false';
+            const marketStatusMinCooldown = document.getElementById('status-cooldown')?.value;
 
             try {
                 await fetchAdmin('/api/settings', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ volatilityThreshold, marketStatusInterval, marketStatusMinVariation })
+                    body: JSON.stringify({
+                        volatilityThreshold,
+                        marketStatusInterval,
+                        marketStatusMinVariation,
+                        marketStatusMode,
+                        marketStatusEventsEnabled,
+                        marketStatusMinCooldown
+                    })
                 });
                 const msg = document.getElementById('params-save-msg');
                 if (msg) {
