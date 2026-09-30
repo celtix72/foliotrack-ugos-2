@@ -1161,7 +1161,7 @@
                     <div id="section-sltp" class="collapsible-content px-6 pb-6 border-t border-slate-100 dark:border-slate-800 pt-6">
                         <div class="space-y-4">
                             <div class="flex items-center justify-between gap-3 flex-wrap">
-                                <p class="text-xs text-slate-500 dark:text-slate-400">Modifica, azzera o ripristina i valori AI di <strong>Stop Loss</strong>, <strong>Target Price</strong> e <strong>Soglia Volatilità</strong> per tutti gli asset.</p>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Modifica, azzera o ripristina i valori AI di <strong>Stop Loss</strong> e <strong>Target Price</strong> per tutti gli asset. La soglia di volatilità shock è gestita a livello globale nei parametri notifiche.</p>
                                 <div class="flex items-center gap-2">
                                     <button onclick="bulkClearAllAlertsAdmin()" class="flex items-center gap-1.5 text-[10px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-900/40 border border-rose-200 dark:border-rose-900/50 px-3 py-1.5 rounded-lg transition-all whitespace-nowrap">
                                         <span class="material-symbols-outlined text-sm">delete_sweep</span> Rimuovi Tutti
@@ -1182,13 +1182,12 @@
                                             <th class="px-3 py-3 text-right">Prezzo</th>
                                             <th class="px-3 py-3 text-center">Stop Loss</th>
                                             <th class="px-3 py-3 text-center">Target Price</th>
-                                            <th class="px-3 py-3 text-center">Volatilità %</th>
                                             <th class="px-3 py-3 text-center">Ultima AI</th>
                                             <th class="px-3 py-3 text-center">Azioni</th>
                                         </tr>
                                     </thead>
                                     <tbody id="sltp-tbody" class="divide-y divide-slate-100 dark:divide-slate-800/50">
-                                        <tr><td colspan="7" class="text-center py-8 text-slate-400 text-xs italic">Caricamento parametri...</td></tr>
+                                        <tr><td colspan="6" class="text-center py-8 text-slate-400 text-xs italic">Caricamento parametri...</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -2787,11 +2786,11 @@
             try {
                 const tbody = document.getElementById('sltp-tbody');
                 if (!tbody) return;
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-6 text-slate-400 italic">Caricamento asset...</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-6 text-slate-400 italic">Caricamento asset...</td></tr>';
 
                 const data = await fetchAdmin('/api/assets/all-sltp');
                 if (!Array.isArray(data) || data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-6 text-slate-400 italic">Nessun asset monitorato trovato.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-6 text-slate-400 italic">Nessun asset monitorato trovato.</td></tr>';
                     return;
                 }
 
@@ -2800,13 +2799,10 @@
                         <td class="px-4 py-3 font-bold">${a.ticker} <span class="text-slate-400 text-[10px] block font-normal">${a.name || ''}</span></td>
                         <td class="px-3 py-3 text-right font-mono font-bold">€ ${Number(a.current_price || 0).toFixed(2)}</td>
                         <td class="px-3 py-3 text-center">
-                            <input type="number" step="any" value="${a.stop_loss || ''}" class="w-20 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded px-2 py-1 text-xs text-center font-bold outline-none sl-input">
+                            <input type="number" step="any" value="${a.stop_loss || ''}" class="w-24 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded px-2 py-1 text-xs text-center font-bold outline-none sl-input">
                         </td>
                         <td class="px-3 py-3 text-center">
-                            <input type="number" step="any" value="${a.target_profit || ''}" class="w-20 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded px-2 py-1 text-xs text-center font-bold outline-none tp-input">
-                        </td>
-                        <td class="px-3 py-3 text-center">
-                            <input type="number" step="0.1" value="${a.volatility_threshold || ''}" placeholder="5.0" class="w-16 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded px-2 py-1 text-xs text-center font-bold outline-none vol-input">
+                            <input type="number" step="any" value="${a.target_profit || ''}" class="w-24 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded px-2 py-1 text-xs text-center font-bold outline-none tp-input">
                         </td>
                         <td class="px-3 py-3 text-center text-[10px] text-slate-400">${a.last_ai_analysis ? new Date(a.last_ai_analysis).toLocaleDateString() : 'N/D'}</td>
                         <td class="px-3 py-3 text-center">
@@ -2821,13 +2817,12 @@
             const row = btn.closest('tr');
             const stopLoss = parseFloat(row.querySelector('.sl-input')?.value) || null;
             const targetProfit = parseFloat(row.querySelector('.tp-input')?.value) || null;
-            const volatilityThreshold = parseFloat(row.querySelector('.vol-input')?.value) || null;
 
             try {
                 await fetchAdmin(`/api/assets/${assetId}/sltp`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ stopLoss, targetProfit, volatilityThreshold })
+                    body: JSON.stringify({ stopLoss, targetProfit })
                 });
                 btn.textContent = 'OK!';
                 setTimeout(() => btn.textContent = 'Salva', 1500);

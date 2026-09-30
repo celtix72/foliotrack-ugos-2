@@ -896,7 +896,6 @@ function getSlTpOverviewData(userId, includeAll = false) {
         AND (
             (uw.targetPrice IS NOT NULL AND uw.targetPrice > 0) OR
             (uw.stopLoss IS NOT NULL AND uw.stopLoss > 0) OR
-            (uw.volatilityAlert IS NOT NULL AND uw.volatilityAlert > 0) OR
             (a.targetPrice IS NOT NULL AND a.targetPrice > 0) OR
             (a.stopLoss IS NOT NULL AND a.stopLoss > 0)
         )
@@ -910,7 +909,6 @@ function getSlTpOverviewData(userId, includeAll = false) {
             a.stopLoss as assetSL,
             uw.targetPrice as userTP,
             uw.stopLoss as userSL,
-            uw.volatilityAlert as userVolatility,
             (
                 SELECT targetPrice FROM asset_ai_history
                 WHERE ticker = a.ticker AND targetPrice IS NOT NULL AND targetPrice > 0
@@ -933,7 +931,6 @@ function getSlTpOverviewData(userId, includeAll = false) {
             CASE WHEN (
                 (uw.targetPrice IS NOT NULL AND uw.targetPrice > 0) OR
                 (uw.stopLoss IS NOT NULL AND uw.stopLoss > 0) OR
-                (uw.volatilityAlert IS NOT NULL AND uw.volatilityAlert > 0) OR
                 (a.targetPrice IS NOT NULL AND a.targetPrice > 0) OR
                 (a.stopLoss IS NOT NULL AND a.stopLoss > 0)
             ) THEN 0 ELSE 1 END,
@@ -943,8 +940,7 @@ function getSlTpOverviewData(userId, includeAll = false) {
     return rows.map(r => {
         const tp = r.userTP !== null ? r.userTP : (r.assetTP || null);
         const sl = r.userSL !== null ? r.userSL : (r.assetSL || null);
-        const vol = r.userVolatility || null;
-        const hasAlert = Boolean((tp !== null && tp > 0) || (sl !== null && sl > 0) || (vol !== null && vol > 0));
+        const hasAlert = Boolean((tp !== null && tp > 0) || (sl !== null && sl > 0));
 
         return {
             id: r.id,
@@ -955,7 +951,6 @@ function getSlTpOverviewData(userId, includeAll = false) {
             changePercent: r.changePercent,
             targetPrice: (tp !== null && tp > 0) ? tp : null,
             stopLoss: (sl !== null && sl > 0) ? sl : null,
-            volatilityAlert: (vol !== null && vol > 0) ? vol : null,
             aiTargetPrice: r.aiTP || null,
             aiStopLoss: r.aiSL || null,
             lastAiDate: r.lastAiDate || null,
@@ -963,8 +958,7 @@ function getSlTpOverviewData(userId, includeAll = false) {
             // Compatibility aliases for admin_mobile
             current_price: r.currentPrice,
             stop_loss: (sl !== null && sl > 0) ? sl : null,
-            target_profit: (tp !== null && tp > 0) ? tp : null,
-            volatility_threshold: (vol !== null && vol > 0) ? vol : null
+            target_profit: (tp !== null && tp > 0) ? tp : null
         };
     });
 }

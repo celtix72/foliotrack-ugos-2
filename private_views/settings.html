@@ -439,7 +439,7 @@
         <div class="bg-white dark:bg-surface-dark border-y sm:border-x border-slate-200 dark:border-slate-800 rounded-none sm:rounded-xl overflow-hidden">
             <!-- Toolbar -->
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border-b border-slate-100 dark:border-slate-800">
-                <p class="text-xs text-slate-500 dark:text-slate-400">Modifica, azzera o ripristina i valori AI di <strong>Stop Loss</strong>, <strong>Target Price</strong> e <strong>Volatilità Alert</strong> per tutti gli asset monitorati.</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Modifica, azzera o ripristina i valori AI di <strong>Stop Loss</strong> e <strong>Target Price</strong> per tutti gli asset monitorati. La soglia di volatilità shock è configurata globalmente nei parametri notifiche.</p>
                 <div class="flex items-center gap-2 flex-wrap">
                     <div class="flex items-center gap-1.5">
                         <button onclick="bulkClearAllAlertsDesktop(this)" title="Azzera e rimuovi tutti gli alert per tutti gli asset"
@@ -474,13 +474,12 @@
                             <th class="px-3 py-3 text-right">Prezzo</th>
                             <th class="px-3 py-3 text-center">Stop Loss</th>
                             <th class="px-3 py-3 text-center">Target Price</th>
-                            <th class="px-3 py-3 text-center">Volatilità %</th>
                             <th class="px-3 py-3 text-center">Ultima AI</th>
                             <th class="px-3 py-3 text-center">Azioni</th>
                         </tr>
                     </thead>
                     <tbody id="sltp-tbody" class="divide-y divide-slate-100 dark:divide-slate-800/50">
-                        <tr><td colspan="7" class="text-center py-8 text-slate-400 text-xs italic">Caricamento...</td></tr>
+                        <tr><td colspan="6" class="text-center py-8 text-slate-400 text-xs italic">Caricamento...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -2168,10 +2167,6 @@
                         </div>
                     </td>
                     <td class="px-3 py-3 text-center">
-                        <input type="number" step="0.1" min="0" max="100" value="${a.volatilityAlert || ''}" placeholder="—" id="vol-input-${sid}"
-                            class="w-20 text-center text-xs font-bold px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400 outline-none transition-all">
-                    </td>
-                    <td class="px-3 py-3 text-center">
                         ${aiDate ? `<span class="text-[9px] text-violet-500 dark:text-violet-400 font-bold">${aiDate}</span>` : `<span class="text-[9px] text-slate-400">—</span>`}
                     </td>
                     <td class="px-3 py-3">
@@ -2208,29 +2203,26 @@
             const sid = _safeSltpId(ticker);
             const slRaw = document.getElementById('sl-input-' + sid)?.value;
             const tpRaw = document.getElementById('tp-input-' + sid)?.value;
-            const volRaw = document.getElementById('vol-input-' + sid)?.value;
 
             const sl = (slRaw && slRaw.trim() !== '' && !isNaN(parseFloat(slRaw)) && parseFloat(slRaw) > 0) ? parseFloat(slRaw) : null;
             const tp = (tpRaw && tpRaw.trim() !== '' && !isNaN(parseFloat(tpRaw)) && parseFloat(tpRaw) > 0) ? parseFloat(tpRaw) : null;
-            const vol = (volRaw && volRaw.trim() !== '' && !isNaN(parseFloat(volRaw)) && parseFloat(volRaw) > 0) ? parseFloat(volRaw) : null;
 
             try {
                 await fetch('/api/assets/' + encodeURIComponent(ticker), {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ stopLoss: sl, targetPrice: tp, volatilityAlert: vol })
+                    body: JSON.stringify({ stopLoss: sl, targetPrice: tp })
                 });
 
                 const item = _sltpData.find(x => x.ticker === ticker);
                 if (item) {
                     item.stopLoss = sl;
                     item.targetPrice = tp;
-                    item.volatilityAlert = vol;
-                    item.hasAlert = Boolean(sl || tp || vol);
+                    item.hasAlert = Boolean(sl || tp);
                 }
 
                 updateSltpCounts();
-                if (window.ftNotify) ftNotify('success', ticker + ' aggiornato', 'SL/TP/Volatilità salvati.');
+                if (window.ftNotify) ftNotify('success', ticker + ' aggiornato', 'Stop Loss e Target Price salvati.');
                 renderSltpTable();
             } catch(e) { 
                 if (window.ftNotify) ftNotify('error', 'Errore', 'Impossibile salvare.'); 

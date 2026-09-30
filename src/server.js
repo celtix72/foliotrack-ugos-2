@@ -3531,13 +3531,18 @@ async function _internalUpdateMarketData(force = false) {
                 const newPrice = updateData.price;
                 const tsFormatted = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
 
-                // Get all user alerts for this ticker
+                // Get all users monitoring this ticker (watchlist or portfolio transactions)
                 const userAlerts = database.db.prepare(`
-                    SELECT uw.*, u.telegram_chat_id 
-                    FROM user_watchlist uw
-                    JOIN users u ON uw.user_id = u.id
-                    WHERE uw.ticker = ?
-                `).all(asset.ticker);
+                    SELECT 
+                        u.id as user_id, 
+                        u.telegram_chat_id,
+                        uw.targetPrice,
+                        uw.stopLoss
+                    FROM users u
+                    LEFT JOIN user_watchlist uw ON uw.user_id = u.id AND uw.ticker = ?
+                    WHERE uw.ticker IS NOT NULL 
+                       OR u.id IN (SELECT user_id FROM transactions WHERE ticker = ?)
+                `).all(asset.ticker, asset.ticker);
 
                 for (const ua of userAlerts) {
                     // 1. TARGET PROFIT
@@ -3594,9 +3599,9 @@ async function _internalUpdateMarketData(force = false) {
                         }
                     }
 
-                    // 3. VOLATILITY ALERT
+                    // 3. VOLATILITY ALERT (Global threshold per user)
                     const userSettings = database.getSettings(ua.user_id);
-                    const threshold = parseFloat(ua.volatilityAlert || userSettings.volatilityThreshold || 5);
+                    const threshold = parseFloat(userSettings.volatilityThreshold || 5);
                     const currentChange = Math.abs(updateData.change || 0);
                     
                     if (currentChange >= threshold) {
