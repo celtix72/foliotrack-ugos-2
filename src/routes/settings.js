@@ -470,6 +470,28 @@ IMPORTANTE:
         }
     });
 
+    // POST /api/settings/push/test (alias for admin push test)
+    router.post('/settings/push/test', requireAuth, async (req, res) => {
+        try {
+            const { sendPushNotification } = require('../services/pushService');
+            const result = await sendPushNotification(
+                req.user.id,
+                'FolioTrack Push Test 🚀',
+                'Se ricevi questo messaggio, le notifiche push del tuo browser sono configurate ed attive!',
+                { url: '/dashboard' }
+            );
+            if (result.success && result.sentCount > 0) {
+                res.json({ success: true, message: 'Notifica inviata con successo!', sentCount: result.sentCount });
+            } else if (result.success && result.sentCount === 0) {
+                res.status(400).json({ error: 'Nessun dispositivo registrato per le notifiche push. Assicurati di abilitare le notifiche su questo dispositivo.' });
+            } else {
+                res.status(500).json({ error: result.error || 'Errore invio push' });
+            }
+        } catch (e) {
+            res.status(500).json({ error: e.message });
+        }
+    });
+
     // POST /api/telegram/send-report
     router.post('/telegram/send-report', requireAuth, async (req, res) => {
         try {

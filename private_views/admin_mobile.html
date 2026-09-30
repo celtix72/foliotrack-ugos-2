@@ -184,20 +184,20 @@
                 <div class="mob-settings-row" onclick="document.getElementById('mob-theme-toggle').click()">
                     <div class="mob-settings-icon bg-gray-ios"><span class="material-symbols-outlined text-white">dark_mode</span></div>
                     <div class="mob-settings-label">Dark Mode</div>
-                    <div class="mob-toggle">
-                        <input type="checkbox" id="mob-theme-toggle" onclick="event.stopPropagation()">
+                    <label class="mob-toggle" onclick="event.stopPropagation()">
+                        <input type="checkbox" id="mob-theme-toggle">
                         <div class="mob-toggle-slider"></div>
-                    </div>
+                    </label>
                 </div>
 
                 <!-- Privacy Mode Toggle -->
                 <div class="mob-settings-row" onclick="document.getElementById('mob-privacy-toggle').click()">
                     <div class="mob-settings-icon bg-purple-ios"><span class="material-symbols-outlined text-white">visibility_off</span></div>
                     <div class="mob-settings-label">Modalità Privacy</div>
-                    <div class="mob-toggle">
-                        <input type="checkbox" id="mob-privacy-toggle" onclick="event.stopPropagation()">
+                    <label class="mob-toggle" onclick="event.stopPropagation()">
+                        <input type="checkbox" id="mob-privacy-toggle">
                         <div class="mob-toggle-slider"></div>
-                    </div>
+                    </label>
                 </div>
 
                 <!-- Font Family -->
@@ -325,10 +325,10 @@
                     </div>
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold">Abilita Bot Telegram</span>
-                        <div class="mob-toggle">
+                        <label class="mob-toggle" onclick="event.stopPropagation()">
                             <input type="checkbox" id="mob-tg-enable">
                             <div class="mob-toggle-slider"></div>
-                        </div>
+                        </label>
                     </div>
                     <div class="grid grid-cols-3 gap-2 pt-2">
                         <button onclick="sendTestTelegram('status')" class="py-2 bg-slate-200 dark:bg-slate-800 text-[9px] font-bold uppercase rounded">Test Stato</button>
@@ -346,10 +346,10 @@
                 <div id="acc-push" class="mob-accordion-body hidden bg-slate-50/70 dark:bg-black/30 p-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold">Ricevi Notifiche Web Push</span>
-                        <div class="mob-toggle">
+                        <label class="mob-toggle" onclick="event.stopPropagation()">
                             <input type="checkbox" id="mob-push-enable" onchange="togglePushNotifications()">
                             <div class="mob-toggle-slider"></div>
-                        </div>
+                        </label>
                     </div>
                     <button onclick="sendTestPush()" class="w-full py-2 bg-blue-500 text-white text-[10px] font-black uppercase rounded-lg">Invia Push di Test</button>
                 </div>
@@ -654,6 +654,15 @@
                 if (document.getElementById('mob-freq-select') && s.updateFrequency) document.getElementById('mob-freq-select').value = s.updateFrequency;
             }
         } catch(e) {}
+
+        if (window.ftPush) {
+            ftPush.init().then(ready => {
+                if (ready) {
+                    const pushCheck = document.getElementById('mob-push-enable');
+                    if (pushCheck) pushCheck.checked = ftPush.isSubscribed;
+                }
+            });
+        }
     }
 
     // --- Settings & Appearance Handlers ---
@@ -976,14 +985,41 @@
 
     // --- Push ---
     window.togglePushNotifications = async () => {
-        alert('Stato notifiche push aggiornato.');
+        const pushCheck = document.getElementById('mob-push-enable');
+        const enabling = pushCheck.checked;
+        if (!window.ftPush) {
+            pushCheck.checked = false;
+            alert('Modulo Notifiche Push non disponibile');
+            return;
+        }
+        try {
+            if (enabling) {
+                const res = await ftPush.subscribeUser();
+                if (!res.success) {
+                    pushCheck.checked = false;
+                    alert('Errore attivazione: ' + res.error);
+                } else {
+                    alert('Notifiche Push abilitate con successo su questo dispositivo!');
+                }
+            } else {
+                await ftPush.unsubscribeUser();
+                alert('Notifiche Push disabilitate.');
+            }
+        } catch(e) {
+            pushCheck.checked = false;
+            alert('Errore: ' + e.message);
+        }
     };
     window.sendTestPush = async () => {
         try {
-            const res = await fetchAdminMob('/api/settings/push/test', { method: 'POST' });
-            if (res?.success) alert('Push di prova inviato!');
-            else alert('Errore: ' + (res?.error || 'Verifica permessi'));
-        } catch(e) { alert('Errore: ' + e.message); }
+            const res = await fetch('/api/push/test', { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                alert('Notifica Push di test inviata con successo a ' + (data.sentCount || 1) + ' dispositivo/i!');
+            } else {
+                alert('Errore invio push: ' + (data.error || 'Nessun dispositivo registrato'));
+            }
+        } catch(e) { alert('Errore di rete: ' + e.message); }
     };
 
     // --- SMTP ---

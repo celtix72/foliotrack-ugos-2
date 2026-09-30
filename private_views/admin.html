@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <script src="/theme.js"></script>
     <script src="/auth.js"></script>
+    <script src="/push-client.js"></script>
     <style>
         .collapsible-content {
             display: none;
@@ -1722,6 +1723,16 @@
             loadNewsSources();
             loadHistoryData();
             loadTaxRates();
+            if (window.ftPush) {
+                ftPush.init().then(ready => {
+                    if (ready) {
+                        const check = document.getElementById('push-enabled-check');
+                        if (check) check.checked = ftPush.isSubscribed;
+                        const testRow = document.getElementById('push-test-row');
+                        if (testRow && ftPush.isSubscribed) testRow.classList.remove('hidden');
+                    }
+                });
+            }
         });
 
         // --- Collapsible Toggle Function ---
@@ -2340,16 +2351,39 @@
         window.togglePushNotifications = async () => {
             const check = document.getElementById('push-enabled-check');
             const testRow = document.getElementById('push-test-row');
-            if (check && testRow) {
-                testRow.classList.toggle('hidden', !check.checked);
+            const enabling = check.checked;
+            if (!window.ftPush) {
+                check.checked = false;
+                alert('Modulo Notifiche Push non disponibile su questo browser');
+                return;
+            }
+            try {
+                if (enabling) {
+                    const res = await ftPush.subscribeUser();
+                    if (!res.success) {
+                        check.checked = false;
+                        alert('Errore attivazione: ' + res.error);
+                    } else {
+                        if (testRow) testRow.classList.remove('hidden');
+                        alert('Notifiche Push abilitate con successo su questo dispositivo!');
+                    }
+                } else {
+                    await ftPush.unsubscribeUser();
+                    if (testRow) testRow.classList.add('hidden');
+                    alert('Notifiche Push disabilitate.');
+                }
+            } catch (e) {
+                check.checked = false;
+                alert('Errore: ' + e.message);
             }
         };
 
         window.sendTestPush = async () => {
             try {
-                const res = await fetchAdmin('/api/settings/push/test', { method: 'POST' });
-                if (res?.success) alert('Notifica Push di test inviata!');
-                else alert('Errore invio push: ' + (res?.error || 'Verifica permessi browser'));
+                const res = await fetch('/api/push/test', { method: 'POST' });
+                const data = await res.json();
+                if (data?.success) alert('Notifica Push di test inviata con successo!');
+                else alert('Errore invio push: ' + (data?.error || 'Nessun dispositivo registrato'));
             } catch (e) { alert('Errore: ' + e.message); }
         };
 

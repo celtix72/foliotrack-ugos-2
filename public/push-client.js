@@ -66,7 +66,9 @@ const ftPush = {
             // Essential for iOS WebKit & Android to preserve user gesture activation.
             if ('Notification' in window) {
                 if (Notification.permission === 'denied') {
-                    throw new Error('Permesso di notifica bloccato. Abilita le notifiche nelle impostazioni del browser/dispositivo per questo sito.');
+                    throw new Error(isIOSDevice 
+                        ? 'Permesso notifiche bloccato su iOS. Vai nelle Impostazioni del tuo iPhone > Notifiche > cerca l\'app e attiva "Consenti notifiche".' 
+                        : 'Permesso di notifica bloccato. Abilita le notifiche nelle impostazioni del browser/dispositivo per questo sito.');
                 }
                 if (Notification.permission !== 'granted') {
                     const permission = await Notification.requestPermission();
