@@ -1116,11 +1116,19 @@
                     </button>
                     <div id="section-sltp" class="collapsible-content px-6 pb-6 border-t border-slate-100 dark:border-slate-800 pt-6">
                         <div class="space-y-4">
-                            <div class="flex items-center justify-between gap-3">
+                            <div class="flex items-center justify-between gap-3 flex-wrap">
                                 <p class="text-xs text-slate-500 dark:text-slate-400">Modifica, azzera o ripristina i valori AI di <strong>Stop Loss</strong>, <strong>Target Price</strong> e <strong>Soglia Volatilità</strong> per tutti gli asset.</p>
-                                <button onclick="loadSltpData()" class="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-1.5 rounded-lg transition-all whitespace-nowrap">
-                                    <span class="material-symbols-outlined text-sm">refresh</span> Aggiorna
-                                </button>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="bulkClearAllAlertsAdmin()" class="flex items-center gap-1.5 text-[10px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-900/40 border border-rose-200 dark:border-rose-900/50 px-3 py-1.5 rounded-lg transition-all whitespace-nowrap">
+                                        <span class="material-symbols-outlined text-sm">delete_sweep</span> Rimuovi Tutti
+                                    </button>
+                                    <button onclick="bulkApplyAiAdmin()" class="flex items-center gap-1.5 text-[10px] font-bold text-violet-600 dark:text-violet-400 bg-violet-50 hover:bg-violet-100 dark:bg-violet-950/30 dark:hover:bg-violet-900/40 border border-violet-200 dark:border-violet-900/50 px-3 py-1.5 rounded-lg transition-all whitespace-nowrap">
+                                        <span class="material-symbols-outlined text-sm">smart_toy</span> Reimposta con AI
+                                    </button>
+                                    <button onclick="loadSltpData()" class="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-1.5 rounded-lg transition-all whitespace-nowrap">
+                                        <span class="material-symbols-outlined text-sm">refresh</span> Aggiorna
+                                    </button>
+                                </div>
                             </div>
                             <div class="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl custom-scrollbar max-h-96">
                                 <table class="w-full text-left text-xs" id="sltp-table">
@@ -2767,6 +2775,32 @@
                 btn.textContent = 'OK!';
                 setTimeout(() => btn.textContent = 'Salva', 1500);
             } catch (e) { alert('Errore: ' + e.message); }
+        };
+
+        window.bulkClearAllAlertsAdmin = async () => {
+            if (!(await ftConfirm('Sei sicuro di voler RIMUOVERE TUTTI gli alert (Stop Loss, Take Profit e Volatilità) per tutti gli asset monitorati?\nL\'azione è immediata su tutto il programma.'))) return;
+            try {
+                await fetchAdmin('/api/assets/bulk-clear-alerts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                await loadSltpData();
+                alert('Tutti gli alert sugli asset sono stati azzerati con successo!');
+            } catch(e) { alert('Errore: ' + e.message); }
+        };
+
+        window.bulkApplyAiAdmin = async () => {
+            if (!(await ftConfirm('Applicare a tutti gli asset i valori di Stop Loss e Take Profit suggeriti dall\'Intelligenza Artificiale?\nI valori verranno aggiornati in tempo reale in tutto il sistema.'))) return;
+            try {
+                const res = await fetchAdmin('/api/assets/bulk-apply-ai', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                await loadSltpData();
+                alert((res && res.message) ? res.message : 'Valori AI applicati con successo!');
+            } catch(e) { alert('Errore: ' + e.message); }
         };
 
         // =========================================================================

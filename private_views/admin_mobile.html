@@ -289,21 +289,92 @@
                     </div>
                 </div>
 
-                <!-- Notifications Matrix Accordion -->
+                <!-- Centro Notifiche, Matrice & Alert Asset Unified Accordion -->
                 <div class="mob-settings-row" onclick="toggleMobAccordion('acc-notifications')">
                     <div class="mob-settings-icon bg-emerald-500"><span class="material-symbols-outlined text-white">notifications_active</span></div>
-                    <div class="mob-settings-label">Centro Notifiche &amp; Matrice</div>
-                    <span id="acc-notifications-icon" class="material-symbols-outlined mob-settings-chevron transition-transform">expand_more</span>
-                </div>
-                <div id="acc-notifications" class="mob-accordion-body hidden bg-slate-50/70 dark:bg-black/30 p-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
-                    <div class="space-y-2 text-xs" id="mob-notification-matrix-list">
-                        <!-- Populated by JS -->
+                    <div class="mob-settings-label">Centro Notifiche, Matrice &amp; Alert</div>
+                    <div class="flex items-center gap-1.5 ml-auto">
+                        <span id="mob-sltp-count-badge" class="text-[9px] font-black bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full">0 Alert</span>
+                        <span id="acc-notifications-icon" class="material-symbols-outlined mob-settings-chevron transition-transform">expand_more</span>
                     </div>
-                    <div class="pt-2 border-t border-slate-200 dark:border-slate-800">
-                        <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Soglia Volatilità (%)</label>
-                        <div class="flex gap-2">
-                            <input type="number" step="0.1" id="mob-vol-threshold" placeholder="5.0" class="w-24 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs font-bold text-center">
-                            <button onclick="saveMobNotificationParams()" class="flex-1 py-2 bg-emerald-500 text-white text-[10px] font-black uppercase rounded-lg">Salva Parametri</button>
+                </div>
+                <div id="acc-notifications" class="mob-accordion-body hidden bg-slate-50/70 dark:bg-black/30 p-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
+                    <!-- Navigation Sub-Tabs -->
+                    <div class="flex p-1 bg-slate-200/70 dark:bg-slate-800/80 rounded-xl gap-1">
+                        <button id="mob-admin-subtab-btn-assets" onclick="switchMobAdminHubTab('assets')" 
+                            class="flex-1 py-2 text-[10px] font-black uppercase rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-xs flex items-center justify-center gap-1.5 transition-all">
+                            <span class="material-symbols-outlined text-sm text-amber-500">trending_up</span>
+                            Alert Asset (<span id="mob-hub-alerts-count">0</span>)
+                        </button>
+                        <button id="mob-admin-subtab-btn-matrix" onclick="switchMobAdminHubTab('matrix')" 
+                            class="flex-1 py-2 text-[10px] font-black uppercase rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 flex items-center justify-center gap-1.5 transition-all">
+                            <span class="material-symbols-outlined text-sm text-emerald-500">grid_view</span>
+                            Matrice Canali
+                        </button>
+                    </div>
+
+                    <!-- ══════════ PANEL 1: ALERT ASSET (SL / TP / VOLATILITÀ) ══════════ -->
+                    <div id="mob-admin-hub-panel-assets" class="space-y-3">
+                        <!-- Bulk Actions Card -->
+                        <div class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[9px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-xs text-primary">auto_fix_high</span> Azioni Massive su Tutti gli Asset
+                                </span>
+                                <span class="text-[8px] font-bold text-slate-400">Tutti i monitorati</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button id="mob-admin-bulk-clear-btn" onclick="bulkClearAllAlerts()" 
+                                    class="py-2 px-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-900/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50 rounded-lg text-[10px] font-black uppercase tracking-tight flex items-center justify-center gap-1 active:scale-95 transition-all">
+                                    <span class="material-symbols-outlined text-[14px]">delete_sweep</span> Rimuovi Tutti
+                                </button>
+                                <button id="mob-admin-bulk-ai-btn" onclick="bulkApplyAiAlerts()" 
+                                    class="py-2 px-2.5 bg-violet-50 hover:bg-violet-100 dark:bg-violet-950/30 dark:hover:bg-violet-900/40 text-violet-600 dark:text-violet-400 border border-violet-200 dark:border-violet-900/50 rounded-lg text-[10px] font-black uppercase tracking-tight flex items-center justify-center gap-1 active:scale-95 transition-all">
+                                    <span class="material-symbols-outlined text-[14px]">smart_toy</span> Reimposta da AI
+                                </button>
+                            </div>
+                            <div class="pt-0.5">
+                                <button onclick="bulkSetVolatilityPrompt()" 
+                                    class="w-full py-1.5 bg-slate-50 hover:bg-amber-50 dark:bg-slate-800/60 dark:hover:bg-amber-950/30 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 border border-slate-200 dark:border-slate-700 rounded-lg text-[9px] font-bold flex items-center justify-center gap-1 transition-all">
+                                    <span class="material-symbols-outlined text-[13px] text-amber-500">percent</span> Imposta Volatilità Comune per Tutti...
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Search & Filter Controls -->
+                        <div class="space-y-2">
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-sm">search</span>
+                                <input id="mob-admin-sltp-search" type="text" placeholder="Cerca ticker o nome (es. AAPL, ENEL)..." oninput="filterMobAdminSltp()"
+                                    class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-500" />
+                            </div>
+                            <div class="flex gap-2">
+                                <button id="mob-admin-sltp-tab-alerts" onclick="setMobAdminSltpTab('alerts')" class="flex-1 py-1.5 text-[10px] font-black uppercase rounded-lg bg-amber-500 text-white shadow-sm transition-all">
+                                    Con Alert (<span id="mob-sltp-alerts-count">0</span>)
+                                </button>
+                                <button id="mob-admin-sltp-tab-all" onclick="setMobAdminSltpTab('all')" class="flex-1 py-1.5 text-[10px] font-black uppercase rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 transition-all">
+                                    Tutti gli Asset (<span id="mob-sltp-all-count">0</span>)
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Asset Cards List -->
+                        <div id="mob-sltp-list" class="space-y-3 pt-1">
+                            <p class="text-[10px] text-slate-400 italic text-center py-4">Caricamento asset...</p>
+                        </div>
+                    </div>
+
+                    <!-- ══════════ PANEL 2: MATRICE CANALI NOTIFICHE ══════════ -->
+                    <div id="mob-admin-hub-panel-matrix" class="hidden space-y-3">
+                        <div class="space-y-2 text-xs" id="mob-notification-matrix-list">
+                            <!-- Populated by JS -->
+                        </div>
+                        <div class="pt-2 border-t border-slate-200 dark:border-slate-800">
+                            <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Soglia Volatilità di Default (%)</label>
+                            <div class="flex gap-2">
+                                <input type="number" step="0.1" id="mob-vol-threshold" placeholder="5.0" class="w-24 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs font-bold text-center">
+                                <button onclick="saveMobNotificationParams()" class="flex-1 py-2 bg-emerald-500 text-white text-[10px] font-black uppercase rounded-lg">Salva Parametri</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -407,21 +478,6 @@
                     </div>
                 </div>
 
-                <!-- Stop Loss, TP & Volatility -->
-                <div class="mob-settings-row" onclick="toggleMobAccordion('acc-sltp')">
-                    <div class="mob-settings-icon bg-emerald-600"><span class="material-symbols-outlined text-white">trending_up</span></div>
-                    <div class="mob-settings-label">Stop Loss / TP / Volatilità</div>
-                    <span id="acc-sltp-icon" class="material-symbols-outlined mob-settings-chevron transition-transform">expand_more</span>
-                </div>
-                <div id="acc-sltp" class="mob-accordion-body hidden bg-slate-50/70 dark:bg-black/30 p-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase">Parametri Asset</span>
-                        <button onclick="loadSltpData()" class="text-[10px] text-primary font-bold">Aggiorna</button>
-                    </div>
-                    <div id="mob-sltp-list" class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
-                        <p class="text-xs text-slate-400 italic">Caricamento parametri...</p>
-                    </div>
-                </div>
 
                 <!-- History Management (Net Worth Time Points) -->
                 <div class="mob-settings-row" onclick="toggleMobAccordion('acc-history')">
@@ -601,11 +657,17 @@
             if (id === 'acc-roles') loadMobRoles();
             if (id === 'acc-security') { loadMobSecurity(); loadMobBannedIps(); }
             if (id === 'acc-ai') loadMobAi();
-            if (id === 'acc-notifications') loadMobNotifications();
+            if (id === 'acc-notifications') {
+                loadMobNotifications();
+                loadSltpData();
+            }
             if (id === 'acc-telegram') loadMobTelegram();
             if (id === 'acc-smtp') loadMobSmtp();
             if (id === 'acc-transactions') loadMgmtTransactions();
-            if (id === 'acc-sltp') loadSltpData();
+            if (id === 'acc-sltp') {
+                toggleMobAccordion('acc-notifications');
+                switchMobAdminHubTab('assets');
+            }
             if (id === 'acc-history') loadHistoryData();
             if (id === 'acc-tax') loadTaxRates();
             if (id === 'acc-logs') loadMobLogs();
@@ -654,6 +716,9 @@
                 if (document.getElementById('mob-freq-select') && s.updateFrequency) document.getElementById('mob-freq-select').value = s.updateFrequency;
             }
         } catch(e) {}
+
+        // Preload alert counts in background for badge
+        loadSltpData();
 
         if (window.ftPush) {
             ftPush.init().then(ready => {
@@ -1106,42 +1171,305 @@
         window.location.href = `/api/transactions/export?portfolioId=${portId}`;
     };
 
-    // --- SL / TP ---
+    // --- SL / TP & ALERT MANAGEMENT (UNIFIED HUB) ---
+    let _mobAdminSltpData = [];
+    let _mobAdminSltpActiveTab = 'alerts';
+    let _mobAdminSltpFilterText = '';
+
+    function _adminSafeTickerId(ticker) {
+        return String(ticker || '').replace(/[^a-zA-Z0-9_-]/g, '_');
+    }
+
+    function _adminEscapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    window.switchMobAdminHubTab = function(tab) {
+        const btnAssets = document.getElementById('mob-admin-subtab-btn-assets');
+        const btnMatrix = document.getElementById('mob-admin-subtab-btn-matrix');
+        const panelAssets = document.getElementById('mob-admin-hub-panel-assets');
+        const panelMatrix = document.getElementById('mob-admin-hub-panel-matrix');
+
+        if (tab === 'assets') {
+            if (panelAssets) panelAssets.classList.remove('hidden');
+            if (panelMatrix) panelMatrix.classList.add('hidden');
+            if (btnAssets) btnAssets.className = 'flex-1 py-2 text-[10px] font-black uppercase rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-xs flex items-center justify-center gap-1.5 transition-all';
+            if (btnMatrix) btnMatrix.className = 'flex-1 py-2 text-[10px] font-black uppercase rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 flex items-center justify-center gap-1.5 transition-all';
+            loadSltpData();
+        } else {
+            if (panelAssets) panelAssets.classList.add('hidden');
+            if (panelMatrix) panelMatrix.classList.remove('hidden');
+            if (btnMatrix) btnMatrix.className = 'flex-1 py-2 text-[10px] font-black uppercase rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-xs flex items-center justify-center gap-1.5 transition-all';
+            if (btnAssets) btnAssets.className = 'flex-1 py-2 text-[10px] font-black uppercase rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 flex items-center justify-center gap-1.5 transition-all';
+            loadMobNotifications();
+        }
+    };
+
+    window.setMobAdminSltpTab = function(tab) {
+        _mobAdminSltpActiveTab = tab;
+        const btnAlerts = document.getElementById('mob-admin-sltp-tab-alerts');
+        const btnAll = document.getElementById('mob-admin-sltp-tab-all');
+
+        if (tab === 'alerts') {
+            if (btnAlerts) btnAlerts.className = 'flex-1 py-1.5 text-[10px] font-black uppercase rounded-lg bg-amber-500 text-white shadow-sm transition-all';
+            if (btnAll) btnAll.className = 'flex-1 py-1.5 text-[10px] font-black uppercase rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 transition-all';
+        } else {
+            if (btnAlerts) btnAlerts.className = 'flex-1 py-1.5 text-[10px] font-black uppercase rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 transition-all';
+            if (btnAll) btnAll.className = 'flex-1 py-1.5 text-[10px] font-black uppercase rounded-lg bg-amber-500 text-white shadow-sm transition-all';
+        }
+        renderMobAdminSltpList();
+    };
+
+    window.filterMobAdminSltp = function() {
+        _mobAdminSltpFilterText = (document.getElementById('mob-admin-sltp-search')?.value || '').toLowerCase().trim();
+        renderMobAdminSltpList();
+    };
+
+    function updateMobAdminSltpCounts() {
+        const alertsCount = _mobAdminSltpData.filter(a => a.hasAlert).length;
+        const allCount = _mobAdminSltpData.length;
+
+        const badge = document.getElementById('mob-sltp-count-badge');
+        if (badge) badge.textContent = alertsCount + ' Alert';
+
+        const hubAlertsCount = document.getElementById('mob-hub-alerts-count');
+        if (hubAlertsCount) hubAlertsCount.textContent = alertsCount;
+
+        const alertsCountEl = document.getElementById('mob-sltp-alerts-count');
+        if (alertsCountEl) alertsCountEl.textContent = alertsCount;
+
+        const allCountEl = document.getElementById('mob-sltp-all-count');
+        if (allCountEl) allCountEl.textContent = allCount;
+    }
+
     async function loadSltpData() {
         try {
             const data = await fetchAdminMob('/api/assets/all-sltp');
-            const cont = document.getElementById('mob-sltp-list');
-            if (!cont || !Array.isArray(data)) return;
-            cont.innerHTML = data.map(a => `
-                <div class="p-2.5 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 text-xs space-y-2">
-                    <div class="flex items-center justify-between">
-                        <span class="font-bold">${a.ticker}</span>
-                        <span class="font-mono text-[11px]">€ ${Number(a.current_price || 0).toFixed(2)}</span>
+            if (!Array.isArray(data)) return;
+
+            _mobAdminSltpData = data.map(item => {
+                const sl = item.stop_loss !== null && item.stop_loss !== undefined ? parseFloat(item.stop_loss) : (item.stopLoss ? parseFloat(item.stopLoss) : null);
+                const tp = item.target_profit !== null && item.target_profit !== undefined ? parseFloat(item.target_profit) : (item.targetPrice ? parseFloat(item.targetPrice) : null);
+                const vol = item.volatility_threshold !== null && item.volatility_threshold !== undefined ? parseFloat(item.volatility_threshold) : (item.volatilityAlert ? parseFloat(item.volatilityAlert) : null);
+                const hasAlert = Boolean((sl !== null && sl > 0) || (tp !== null && tp > 0) || (vol !== null && vol > 0));
+
+                return {
+                    id: item.id,
+                    ticker: item.ticker,
+                    name: item.name,
+                    currentPrice: item.current_price !== undefined ? item.current_price : item.currentPrice,
+                    currency: item.currency || 'EUR',
+                    changePercent: item.changePercent,
+                    stopLoss: sl,
+                    targetPrice: tp,
+                    volatilityAlert: vol,
+                    aiStopLoss: item.ai_sl !== undefined ? item.ai_sl : item.aiStopLoss,
+                    aiTargetPrice: item.ai_tp !== undefined ? item.ai_tp : item.aiTargetPrice,
+                    hasAlert
+                };
+            });
+
+            updateMobAdminSltpCounts();
+            renderMobAdminSltpList();
+        } catch(e) {
+            console.error('loadSltpData error:', e);
+        }
+    }
+
+    function renderMobAdminSltpList() {
+        const cont = document.getElementById('mob-sltp-list');
+        if (!cont) return;
+
+        let filtered = _mobAdminSltpData;
+        if (_mobAdminSltpActiveTab === 'alerts') {
+            filtered = filtered.filter(a => a.hasAlert);
+        }
+
+        if (_mobAdminSltpFilterText) {
+            filtered = filtered.filter(a => 
+                (a.ticker && a.ticker.toLowerCase().includes(_mobAdminSltpFilterText)) ||
+                (a.name && a.name.toLowerCase().includes(_mobAdminSltpFilterText))
+            );
+        }
+
+        if (filtered.length === 0) {
+            const msg = _mobAdminSltpActiveTab === 'alerts' 
+                ? 'Nessun asset con Stop Loss, TP o Volatilità impostati.<br><span class="text-[10px] text-slate-400">Tocca "Tutti gli Asset" sopra per impostare nuovi alert.</span>'
+                : 'Nessun asset trovato con la ricerca corrente.';
+            cont.innerHTML = `<div class="p-6 text-center text-xs text-slate-400 italic bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">${msg}</div>`;
+            return;
+        }
+
+        cont.innerHTML = filtered.map(a => {
+            const sid = a.id;
+            const cur = a.currency === 'USD' ? '$' : (a.currency === 'EUR' ? '€' : (a.currency || '€'));
+            const priceStr = a.currentPrice != null 
+                ? Number(a.currentPrice).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + cur
+                : '—';
+            const chgPct = a.changePercent != null ? Number(a.changePercent) : null;
+            const chgClass = chgPct > 0 ? 'text-emerald-500 bg-emerald-50 dark:bg-emerald-950/30' : chgPct < 0 ? 'text-rose-500 bg-rose-50 dark:bg-rose-950/30' : 'text-slate-400 bg-slate-100 dark:bg-slate-800';
+            const chgSign = chgPct > 0 ? '+' : '';
+
+            const slDiff = (a.stopLoss && a.currentPrice) ? ((a.stopLoss - a.currentPrice) / a.currentPrice * 100).toFixed(1) : null;
+            const tpDiff = (a.targetPrice && a.currentPrice) ? ((a.targetPrice - a.currentPrice) / a.currentPrice * 100).toFixed(1) : null;
+
+            return `
+            <div id="mob-card-${sid}" class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-2.5">
+                <div class="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800/60 pb-2">
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-1.5">
+                            <span class="font-black text-xs text-slate-800 dark:text-slate-100">${_adminEscapeHtml(a.ticker)}</span>
+                            ${a.hasAlert 
+                                ? `<span class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50">Alert Attivo</span>`
+                                : `<span class="px-1.5 py-0.5 rounded text-[8px] font-medium uppercase bg-slate-100 dark:bg-slate-800 text-slate-400">Nessun Alert</span>`
+                            }
+                        </div>
+                        <p class="text-[10px] text-slate-400 truncate max-w-[170px]">${_adminEscapeHtml(a.name || a.ticker)}</p>
                     </div>
-                    <div class="grid grid-cols-3 gap-2">
-                        <div>
-                            <label class="text-[8px] text-slate-400 uppercase block">Stop Loss</label>
-                            <input type="number" step="any" value="${a.stop_loss || ''}" id="mob-sl-${a.id}" class="w-full bg-slate-50 dark:bg-slate-800 rounded p-1 text-center font-bold text-xs">
-                        </div>
-                        <div>
-                            <label class="text-[8px] text-slate-400 uppercase block">Target</label>
-                            <input type="number" step="any" value="${a.target_profit || ''}" id="mob-tp-${a.id}" class="w-full bg-slate-50 dark:bg-slate-800 rounded p-1 text-center font-bold text-xs">
-                        </div>
-                        <div>
-                            <label class="text-[8px] text-slate-400 uppercase block">Vol %</label>
-                            <input type="number" step="0.1" value="${a.volatility_threshold || ''}" id="mob-vol-${a.id}" placeholder="5.0" class="w-full bg-slate-50 dark:bg-slate-800 rounded p-1 text-center font-bold text-xs">
-                        </div>
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="saveMobSltp(${a.id}, this)" class="flex-1 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded text-[10px] font-bold">Salva Parametri</button>
-                        <button onclick="clearMobAdminSltp(${a.id}, this)" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-rose-500 hover:text-white text-slate-600 dark:text-slate-300 rounded text-[10px] font-bold flex items-center justify-center" title="Rimuovi Alert">
-                            <span class="material-symbols-outlined text-[13px]">delete</span>
-                        </button>
+                    <div class="text-right shrink-0">
+                        <div class="font-bold text-xs text-slate-800 dark:text-slate-100">${priceStr}</div>
+                        ${chgPct !== null ? `<span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-black ${chgClass}">${chgSign}${chgPct.toFixed(2)}%</span>` : ''}
                     </div>
                 </div>
-            `).join('');
-        } catch(e) {}
+
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="space-y-1">
+                        <div class="flex items-center justify-between">
+                            <label class="text-[9px] font-black text-rose-500 uppercase tracking-tight block">Stop Loss</label>
+                            ${slDiff !== null ? `<span class="text-[8px] font-bold ${parseFloat(slDiff) < 0 ? 'text-rose-400' : 'text-amber-400'}">${slDiff > 0 ? '+' : ''}${slDiff}%</span>` : ''}
+                        </div>
+                        <input type="number" step="0.01" value="${a.stopLoss ?? ''}" placeholder="—" id="mob-sl-${sid}"
+                            class="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 rounded-lg py-1 px-1.5 text-center font-bold text-xs text-slate-800 dark:text-slate-100 outline-none">
+                        ${a.aiStopLoss ? `
+                        <button type="button" onclick="applySingleAiAdmin(${sid}, 'sl', ${a.aiStopLoss})" class="w-full text-[8px] text-violet-500 hover:text-violet-600 dark:text-violet-400 font-bold flex items-center justify-center gap-0.5 py-0.5 bg-violet-50 dark:bg-violet-950/30 rounded border border-violet-100 dark:border-violet-900/40">
+                            <span class="material-symbols-outlined text-[10px]">smart_toy</span> AI: ${Number(a.aiStopLoss).toFixed(2)}
+                        </button>` : ''}
+                    </div>
+
+                    <div class="space-y-1">
+                        <div class="flex items-center justify-between">
+                            <label class="text-[9px] font-black text-emerald-500 uppercase tracking-tight block">Take Profit</label>
+                            ${tpDiff !== null ? `<span class="text-[8px] font-bold ${parseFloat(tpDiff) > 0 ? 'text-emerald-400' : 'text-rose-400'}">${tpDiff > 0 ? '+' : ''}${tpDiff}%</span>` : ''}
+                        </div>
+                        <input type="number" step="0.01" value="${a.targetPrice ?? ''}" placeholder="—" id="mob-tp-${sid}"
+                            class="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg py-1 px-1.5 text-center font-bold text-xs text-slate-800 dark:text-slate-100 outline-none">
+                        ${a.aiTargetPrice ? `
+                        <button type="button" onclick="applySingleAiAdmin(${sid}, 'tp', ${a.aiTargetPrice})" class="w-full text-[8px] text-violet-500 hover:text-violet-600 dark:text-violet-400 font-bold flex items-center justify-center gap-0.5 py-0.5 bg-violet-50 dark:bg-violet-950/30 rounded border border-violet-100 dark:border-violet-900/40">
+                            <span class="material-symbols-outlined text-[10px]">smart_toy</span> AI: ${Number(a.aiTargetPrice).toFixed(2)}
+                        </button>` : ''}
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-[9px] font-black text-amber-500 uppercase tracking-tight block">Volatilità %</label>
+                        <input type="number" step="0.1" value="${a.volatilityAlert ?? ''}" placeholder="5.0" id="mob-vol-${sid}"
+                            class="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-lg py-1 px-1.5 text-center font-bold text-xs text-slate-800 dark:text-slate-100 outline-none">
+                        <span class="text-[8px] text-slate-400 block text-center">Alert shock</span>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/50">
+                    <button id="mob-btn-save-${sid}" onclick="saveMobSltp(${sid}, this)" 
+                        class="flex-1 py-1.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-black text-[10px] uppercase rounded-lg shadow-xs flex items-center justify-center gap-1 transition-all">
+                        <span class="material-symbols-outlined text-[13px]">save</span> Salva
+                    </button>
+                    <button id="mob-btn-clear-${sid}" onclick="clearMobAdminSltp(${sid}, this)" 
+                        class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-500 hover:text-rose-500 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-[10px] flex items-center justify-center transition-all" title="Azzera alert per questo asset">
+                        <span class="material-symbols-outlined text-[13px]">delete</span>
+                    </button>
+                </div>
+            </div>
+            `;
+        }).join('');
     }
+
+    window.applySingleAiAdmin = function(id, type, val) {
+        const input = document.getElementById(type === 'sl' ? `mob-sl-${id}` : `mob-tp-${id}`);
+        if (input && val != null) {
+            input.value = Number(val).toFixed(2);
+            input.classList.add('ring-2', 'ring-violet-500');
+            setTimeout(() => input.classList.remove('ring-2', 'ring-violet-500'), 1000);
+        }
+    };
+
+    window.bulkClearAllAlerts = async function() {
+        if (!(await ftConfirm('Sei sicuro di voler RIMUOVERE TUTTI gli alert (Stop Loss, Take Profit e Volatilità) per tutti gli asset monitorati?\nL\'azione è immediata su tutto il programma.'))) return;
+        const btn = document.getElementById('mob-admin-bulk-clear-btn');
+        const origHtml = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-symbols-outlined text-[13px] animate-spin">sync</span> Azzeramento...';
+        }
+        try {
+            await fetchAdminMob('/api/assets/bulk-clear-alerts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            });
+            await loadSltpData();
+            alert('Tutti gli alert sugli asset sono stati azzerati con successo!');
+        } catch(err) {
+            console.error('bulkClearAllAlerts error:', err);
+            alert('Errore durante la rimozione massiva: ' + err.message);
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+            }
+        }
+    };
+
+    window.bulkApplyAiAlerts = async function() {
+        if (!(await ftConfirm('Applicare a tutti gli asset i valori di Stop Loss e Take Profit suggeriti dall\'Intelligenza Artificiale?\nI valori verranno aggiornati in tempo reale in tutto il sistema.'))) return;
+        const btn = document.getElementById('mob-admin-bulk-ai-btn');
+        const origHtml = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-symbols-outlined text-[13px] animate-spin">sync</span> Applicazione...';
+        }
+        try {
+            const res = await fetchAdminMob('/api/assets/bulk-apply-ai', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            });
+            await loadSltpData();
+            alert((res && res.message) ? res.message : 'Valori AI applicati con successo!');
+        } catch(err) {
+            console.error('bulkApplyAiAlerts error:', err);
+            alert('Errore durante l\'applicazione massiva AI: ' + err.message);
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+            }
+        }
+    };
+
+    window.bulkSetVolatilityPrompt = async function() {
+        const val = prompt('Inserisci la percentuale di volatilità da applicare a TUTTI gli asset (es. 5 per 5%):', '5.0');
+        if (val === null) return;
+        const num = parseFloat(val);
+        if (isNaN(num) || num <= 0) return alert('Valore di volatilità non valido.');
+
+        try {
+            await fetchAdminMob('/api/assets/bulk-set-volatility', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ volatility: num })
+            });
+            await loadSltpData();
+            alert(`Soglia di volatilità impostata al ${num}% per tutti gli asset!`);
+        } catch(err) {
+            console.error('bulkSetVolatility error:', err);
+            alert('Errore durante l\'impostazione volatilità: ' + err.message);
+        }
+    };
 
     window.saveMobSltp = async (id, btn) => {
         const stopLoss = parseFloat(document.getElementById(`mob-sl-${id}`)?.value) || null;
@@ -1153,8 +1481,19 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ stopLoss, targetProfit, volatilityThreshold })
             });
-            btn.textContent = 'Salvato!';
-            setTimeout(() => btn.textContent = 'Salva Parametri', 1500);
+            const item = _mobAdminSltpData.find(x => x.id === id);
+            if (item) {
+                item.stopLoss = stopLoss;
+                item.targetPrice = targetProfit;
+                item.volatilityAlert = volatilityThreshold;
+                item.hasAlert = Boolean((stopLoss !== null && stopLoss > 0) || (targetProfit !== null && targetProfit > 0) || (volatilityThreshold !== null && volatilityThreshold > 0));
+            }
+            updateMobAdminSltpCounts();
+            renderMobAdminSltpList();
+            btn.innerHTML = '<span class="material-symbols-outlined text-[13px]">check</span> Salvato!';
+            setTimeout(() => {
+                btn.innerHTML = '<span class="material-symbols-outlined text-[13px]">save</span> Salva';
+            }, 1200);
         } catch(e) { alert('Errore: ' + e.message); }
     };
 
@@ -1171,10 +1510,15 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ stopLoss: null, targetProfit: null, volatilityThreshold: null })
             });
-            btn.innerHTML = '<span class="material-symbols-outlined text-[13px] text-rose-500">check</span>';
-            setTimeout(() => {
-                btn.innerHTML = '<span class="material-symbols-outlined text-[13px]">delete</span>';
-            }, 1500);
+            const item = _mobAdminSltpData.find(x => x.id === id);
+            if (item) {
+                item.stopLoss = null;
+                item.targetPrice = null;
+                item.volatilityAlert = null;
+                item.hasAlert = false;
+            }
+            updateMobAdminSltpCounts();
+            renderMobAdminSltpList();
         } catch(e) { alert('Errore: ' + e.message); }
     };
 
