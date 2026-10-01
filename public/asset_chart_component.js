@@ -78,7 +78,18 @@
                 </div>
                 
                 <!-- Chart Area (Compact) -->
-                <div style="padding: 10px 0px; flex: 1; min-height: 300px; display: flex; flex-direction: column; background: var(--mob-bg); overflow: hidden;">
+                <div style="padding: 6px 0px 10px 0px; flex: 1; min-height: 300px; display: flex; flex-direction: column; background: var(--mob-bg); overflow: hidden;">
+                    <!-- Last Valid Quote Bar (directly above chart) -->
+                    <div id="chart-last-quote-bar" style="display: none; padding: 2px 20px 6px 20px; font-size: 10.5px; color: var(--mob-text-muted); justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px 12px; border-bottom: 1px solid rgba(148,163,184,0.08);">
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <span class="material-symbols-outlined" style="font-size: 13px; opacity: 0.7; vertical-align: middle;">schedule</span>
+                            <span style="opacity: 0.85;">Ultima quotazione valida:</span>
+                            <span id="chart-last-quote-time" style="font-weight: 700; color: var(--mob-text);" class="dark:text-slate-200">—</span>
+                            <span id="chart-last-quote-source-badge" style="display: none; font-size: 9px; padding: 1px 5px; border-radius: 4px; font-weight: 800; text-transform: uppercase;"></span>
+                        </div>
+                        <div id="chart-last-quote-price-tag" style="font-weight: 700; color: var(--mob-text);" class="dark:text-white"></div>
+                    </div>
+
                     <div id="chart-modal-loading" style="display: none; flex: 1; align-items: center; justify-content: center;">
                         <span class="material-symbols-outlined animate-spin" style="font-size: 24px; color: var(--mob-primary);">progress_activity</span>
                     </div>
@@ -199,6 +210,69 @@
         }
     };
 
+    function formatLastQuoteTimestamp(assetInfo, lastChartPoint) {
+        if (!assetInfo && !lastChartPoint) return '—';
+
+        let localDate = '';
+        let localTime = '';
+        let d = null;
+
+        if (assetInfo && assetInfo.updatedAt) {
+            let utcStr = String(assetInfo.updatedAt).trim();
+            if (!utcStr.includes('T') && !utcStr.endsWith('Z')) {
+                utcStr = utcStr.replace(' ', 'T') + 'Z';
+            }
+            const parsed = new Date(utcStr);
+            if (!isNaN(parsed.getTime())) {
+                d = parsed;
+                localDate = d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                localTime = d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+            }
+        }
+
+        let qDateFormatted = '';
+        let parts = [];
+        if (assetInfo && assetInfo.quoteDate) {
+            const rawQDate = String(assetInfo.quoteDate).split('T')[0].split(' ')[0];
+            parts = rawQDate.split('-');
+            if (parts.length === 3) {
+                qDateFormatted = `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
+            }
+        }
+
+        const isSameDay = d && parts.length === 3 &&
+            d.getFullYear() === parseInt(parts[0], 10) &&
+            (d.getMonth() + 1) === parseInt(parts[1], 10) &&
+            d.getDate() === parseInt(parts[2], 10);
+
+        if (qDateFormatted && localTime) {
+            if (!localDate || isSameDay) {
+                return `${qDateFormatted} ${localTime}`;
+            } else {
+                return `${qDateFormatted} (agg. ${localDate} ${localTime})`;
+            }
+        }
+
+        if (localDate && localTime) {
+            return `${localDate} ${localTime}`;
+        }
+
+        if (qDateFormatted) {
+            return qDateFormatted;
+        }
+
+        if (lastChartPoint && lastChartPoint.date) {
+            const rawDt = String(lastChartPoint.date).split('T')[0].split(' ')[0];
+            const p = rawDt.split('-');
+            if (p.length === 3) {
+                return `${p[2].padStart(2, '0')}/${p[1].padStart(2, '0')}/${p[0]}`;
+            }
+            return lastChartPoint.date;
+        }
+
+        return '—';
+    }
+
     window.openAssetChartModal = function (ticker, name, currency) {
         window.loadAssetChart(ticker, '1y');
     };
@@ -225,6 +299,8 @@
         document.getElementById('chart-modal-loading').style.display = 'flex';
         document.getElementById('chart-modal-empty').style.display = 'none';
         document.getElementById('chart-modal-content').style.display = 'none';
+        const lastQuoteBar = document.getElementById('chart-last-quote-bar');
+        if (lastQuoteBar) lastQuoteBar.style.display = 'none';
         document.getElementById('chart-modal-points').textContent = '—';
 
         try {
@@ -260,16 +336,28 @@
                 try { fundamentalsData = await fundamentalsRes.json(); } catch (e) { }
             }
 
-            const assetInfo = allAssets.find(a => a.ticker === _chartTicker);
+            let assetInfo = allAssets.find(a => a.ticker === _chartTicker);
+            if (!assetInfo) {
+                try {
+                    const singleRes = await fetch(`/api/assets/${encodeURIComponent(_chartTicker)}`);
+                    if (singleRes.ok) {
+                        assetInfo = await singleRes.json();
+                    }
+                } catch (e) {
+                    console.warn('Could not fetch single asset info:', e);
+                }
+            }
 
             // Append latest live price if valid and not already the last point
             if (assetInfo && assetInfo.currentPrice > 0) {
-                const todayStr = new Date().toISOString().split('T')[0];
+                const quoteDateStr = (assetInfo.quoteDate && assetInfo.quoteDate.length === 10) 
+                    ? assetInfo.quoteDate 
+                    : new Date().toISOString().split('T')[0];
                 const lastPoint = _allChartData[_allChartData.length - 1];
-                if (lastPoint && lastPoint.date === todayStr) {
+                if (lastPoint && lastPoint.date === quoteDateStr) {
                     lastPoint.price = assetInfo.currentPrice;
-                } else if (!lastPoint || lastPoint.date < todayStr) {
-                    _allChartData.push({ date: todayStr, price: assetInfo.currentPrice });
+                } else if (!lastPoint || lastPoint.date < quoteDateStr) {
+                    _allChartData.push({ date: quoteDateStr, price: assetInfo.currentPrice });
                 }
             }
 
@@ -389,6 +477,19 @@
             if (!_allChartData.length) {
                 document.getElementById('chart-modal-loading').style.display = 'none';
                 document.getElementById('chart-modal-empty').style.display = 'flex';
+                const lastQuoteBar = document.getElementById('chart-last-quote-bar');
+                if (lastQuoteBar && assetInfo) {
+                    lastQuoteBar.style.display = 'flex';
+                    const timeEl = document.getElementById('chart-last-quote-time');
+                    if (timeEl) {
+                        timeEl.textContent = formatLastQuoteTimestamp(assetInfo, null);
+                    }
+                    const badgeEl = document.getElementById('chart-last-quote-source-badge');
+                    if (badgeEl && assetInfo.realtimeSource) {
+                        badgeEl.textContent = assetInfo.realtimeSource;
+                        badgeEl.style.display = 'inline-block';
+                    }
+                }
                 return;
             }
 
@@ -704,6 +805,48 @@
 
             document.getElementById('chart-modal-loading').style.display = 'none';
             document.getElementById('chart-modal-content').style.display = 'block';
+            
+            // Populate and show last valid quote bar immediately above the chart
+            const lastQuoteBar = document.getElementById('chart-last-quote-bar');
+            if (lastQuoteBar) {
+                lastQuoteBar.style.display = 'flex';
+                const timeEl = document.getElementById('chart-last-quote-time');
+                if (timeEl) {
+                    timeEl.textContent = formatLastQuoteTimestamp(assetInfo, displayData[displayData.length - 1]);
+                }
+                const badgeEl = document.getElementById('chart-last-quote-source-badge');
+                if (badgeEl) {
+                    if (assetInfo?.realtimeSource) {
+                        badgeEl.textContent = assetInfo.realtimeSource;
+                        badgeEl.style.display = 'inline-block';
+                        badgeEl.style.backgroundColor = 'rgba(16, 185, 129, 0.15)';
+                        badgeEl.style.color = 'var(--mob-emerald, #10b981)';
+                        badgeEl.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+                    } else if (assetInfo?.dataSource && assetInfo.dataSource !== 'YF') {
+                        badgeEl.textContent = assetInfo.dataSource;
+                        badgeEl.style.display = 'inline-block';
+                        badgeEl.style.backgroundColor = 'rgba(148, 163, 184, 0.15)';
+                        badgeEl.style.color = '#94a3b8';
+                        badgeEl.style.border = '1px solid rgba(148, 163, 184, 0.3)';
+                    } else {
+                        badgeEl.style.display = 'none';
+                    }
+                }
+                const priceTagEl = document.getElementById('chart-last-quote-price-tag');
+                if (priceTagEl) {
+                    const lastP = (assetInfo && assetInfo.currentPrice > 0) 
+                        ? assetInfo.currentPrice 
+                        : (displayData.length > 0 ? displayData[displayData.length - 1].price : 0);
+                    if (lastP > 0) {
+                        const sym = getCurrencySymbol(_chartCurrency);
+                        priceTagEl.textContent = `${formatDynamicPrice(lastP)} ${sym}`;
+                        priceTagEl.style.display = 'inline-block';
+                    } else {
+                        priceTagEl.style.display = 'none';
+                    }
+                }
+            }
+
             document.getElementById('chart-modal-points').textContent = `${displayData.length} data points`;
             document.getElementById('chart-modal-range-label').textContent =
                 `${displayData[0]?.date} → ${displayData[displayData.length - 1]?.date}`;

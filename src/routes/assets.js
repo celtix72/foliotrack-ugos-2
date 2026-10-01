@@ -1204,7 +1204,7 @@ router.post('/assets/toggle-manual', requireAuth, (req, res) => {
 });
 
 router.get('/assets/:id', requireAuth, (req, res) => {
-    const row = database.db.prepare(`SELECT * FROM assets WHERE id = ?`).get(req.params.id);
+    const row = database.db.prepare(`SELECT * FROM assets WHERE id = ? OR UPPER(ticker) = UPPER(?)`).get(req.params.id, req.params.id);
     if (!row) return res.status(404).send('Asset not found');
     res.json(row);
 });
