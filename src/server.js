@@ -1193,71 +1193,118 @@ function clearPerformanceCache() {
 }
 
 // ─── BORSA ITALIANA SCRAPER ──────────────────────────────────────────────────
- async function B_ITA(isin, assetType = '') {
-    let attempts = 0;
-    const maxAttempts = 3;
+async function B_ITA(isin, assetType = '') {
+    if (!isin || typeof isin !== 'string') {
+        return { success: false, error: 'Invalid or missing ISIN', isin };
+    }
+    const cleanIsin = isin.trim().toUpperCase();
+    const finalUrl = `https://www.borsaitaliana.it/borsa/search/scheda.html?code=${cleanIsin}&lang=it`;
 
     const headers = {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/120.0.0.0',
         'Accept-Language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7'
     };
-    const finalUrl = `https://www.borsaitaliana.it/borsa/search/scheda.html?code=${isin}&lang=it`;
 
-    while (attempts < maxAttempts) {
-        attempts++;
+    const suffixes = ['-MOTX', '-XMOT', '-ETFX', '-MTAA'];
+    let summaryUrl = null;
+    let token = null;
+    let exchcode = 'XMIL';
+
+    // Step 1: Extract Token & ExchCode with resilient suffix fallback (-MOTX, -XMOT, -ETFX, -MTAA)
+    for (const sfx of suffixes) {
+        const u = `https://grafici.borsaitaliana.it/summary-chart/${cleanIsin}${sfx}?lang=it`;
         try {
-            // Step 1: Get the Token from the summary-chart page
-            let summaryUrl = `https://grafici.borsaitaliana.it/summary-chart/${isin}-MOTX?lang=it`;
-            let summaryResp;
-            try {
-                summaryResp = await axios.get(summaryUrl, { headers, timeout: 10000 });
-            } catch (e) {
-                // Try fallback without -MOTX suffix
-                summaryUrl = `https://grafici.borsaitaliana.it/summary-chart/${isin}?lang=it`;
-                summaryResp = await axios.get(summaryUrl, { headers, timeout: 10000 });
+            const resp = await axios.get(u, { headers, timeout: 5000 });
+            if (resp.data) {
+                const tokenMatch = resp.data.match(/token="([^"]+)"/);
+                const exchMatch = resp.data.match(/exchcode="([^"]+)"/);
+                if (tokenMatch) {
+                    token = tokenMatch[1];
+                    summaryUrl = u;
+                    if (exchMatch && exchMatch[1]) exchcode = exchMatch[1];
+                    break;
+                }
             }
+        } catch (e) {
+            // Suffix not matching, continue to next
+        }
+    }
 
-            const tokenMatch = summaryResp.data.match(/token="([^"]+)"/);
-            if (!tokenMatch) {
-                throw new Error("Token not found in B_ITA summary-chart HTML");
+    if (!token) {
+        logger.warn(`B_ITA Scraper: Token not found across any summary-chart suffix for ${cleanIsin}`);
+        return { success: false, error: 'Token not found across any summary-chart suffix', isin: cleanIsin, url: finalUrl };
+    }
+
+    const authHeaders = {
+        ...headers,
+        'Authorization': `Bearer ${token}`,
+        'Referer': summaryUrl,
+        'Accept': 'application/json, text/plain, */*'
+    };
+
+    // Step 2: Try Intraday first (Best for real-time live price after 09:00 market open)
+    try {
+        const intraUrl = `https://grafici.borsaitaliana.it/api/instruments/${cleanIsin},${exchcode},ISIN/intraday?depth=0`;
+        const intraResp = await axios.get(intraUrl, { headers: authHeaders, timeout: 8000 });
+        if (intraResp.data && intraResp.data.status === 0 && intraResp.data.intradayPoint && intraResp.data.intradayPoint.length > 0) {
+            const pts = intraResp.data.intradayPoint;
+            // Scan backwards for last trade with valid price
+            for (let i = pts.length - 1; i >= 0; i--) {
+                const pt = pts[i];
+                const price = parseFloat(pt.endPx || pt.lastPx || pt.beginPx);
+                if (price > 0) {
+                    const check = isValidQuotePrice(price, { isin: cleanIsin, type: assetType || 'Bond', dataSource: 'B_ITA' });
+                    if (check.valid) {
+                        let variation = null;
+                        const prevClose = parseFloat(pt.previousClosingPx);
+                        if (prevClose > 0) {
+                            variation = ((price - prevClose) / prevClose) * 100;
+                        }
+                        const rawTime = pt.time ? String(pt.time) : '';
+                        const qDate = rawTime.length >= 8 
+                            ? `${rawTime.substring(0,4)}-${rawTime.substring(4,6)}-${rawTime.substring(6,8)}` 
+                            : new Date().toISOString().split('T')[0];
+                        return {
+                            success: true,
+                            price,
+                            variation: variation !== null ? parseFloat(variation.toFixed(3)) : 0,
+                            source: 'INTRADAY',
+                            quoteDate: qDate,
+                            isin: cleanIsin,
+                            url: finalUrl
+                        };
+                    }
+                }
             }
-            const token = tokenMatch[1];
+        }
+    } catch (e) {
+        // Intraday not available or no trades today, fallback to history
+    }
 
-            // Step 2: Get Current Price using the dynamic token API
-            const apiUrl = `https://grafici.borsaitaliana.it/api/instruments/${isin},XMIL,ISIN/history/period?period=1M&adjustment=true&add-last-price=true`;
-            
-            const resp = await axios.get(apiUrl, {
-                headers: {
-                    ...headers,
-                    'Authorization': `Bearer ${token}`,
-                    'Referer': summaryUrl,
-                    'Accept': 'application/json, text/plain, */*'
-                },
-                timeout: 15000
-            });
-
-            if (resp.data && resp.data.history && resp.data.history.historyDt && resp.data.history.historyDt.length > 0) {
-                const dtArr = resp.data.history.historyDt;
-                // Find last valid entry scanning backwards from the end
+    // Step 3: Fallback to Historical Periods (1M -> 1Y -> 5Y) to handle illiquid bonds or pre-trade hours
+    for (const period of ['1M', '1Y', '5Y']) {
+        try {
+            const histUrl = `https://grafici.borsaitaliana.it/api/instruments/${cleanIsin},${exchcode},ISIN/history/period?period=${period}&adjustment=true&add-last-price=true`;
+            const histResp = await axios.get(histUrl, { headers: authHeaders, timeout: 8000 });
+            if (histResp.data && histResp.data.history && histResp.data.history.historyDt && histResp.data.history.historyDt.length > 0) {
+                const dtArr = histResp.data.history.historyDt;
                 let validEntry = null;
                 let validIdx = -1;
                 for (let i = dtArr.length - 1; i >= 0; i--) {
                     const candidate = dtArr[i];
                     if (candidate && candidate.closePx) {
-                        const check = isValidQuotePrice(candidate.closePx, { isin, type: assetType || 'Bond', dataSource: 'B_ITA' });
+                        const check = isValidQuotePrice(candidate.closePx, { isin: cleanIsin, type: assetType || 'Bond', dataSource: 'B_ITA' });
                         if (check.valid) {
                             validEntry = candidate;
                             validIdx = i;
                             break;
-                        } else {
-                            logger.warn(`B_ITA [${isin}]: Ignored invalid/inconsistent closePx ${candidate.closePx} on dt=${candidate.dt} (${check.reason})`);
                         }
                     }
                 }
 
                 if (validEntry) {
-                    const price = parseFloat(validEntry.closePx);
-                    let variation = null;
+                    const price = parseFloat(validEntry.closePx || validEntry.lastPx);
+                    let variation = 0;
                     if (validIdx > 0 && dtArr[validIdx - 1]?.closePx) {
                         const prevPrice = parseFloat(dtArr[validIdx - 1].closePx);
                         if (prevPrice > 0) {
@@ -1268,33 +1315,22 @@ function clearPerformanceCache() {
                     const parsedDate = rawDt.length === 8 ? `${rawDt.substring(0,4)}-${rawDt.substring(4,6)}-${rawDt.substring(6,8)}` : null;
                     return {
                         success: true,
-                        price: price,
-                        variation: variation !== null ? parseFloat(variation) : null,
-                        url: finalUrl,
+                        price,
+                        variation: parseFloat(variation.toFixed(3)),
+                        source: `HISTORY_${period}`,
                         quoteDate: parsedDate,
-                        isin
+                        isin: cleanIsin,
+                        url: finalUrl
                     };
                 }
             }
-
-            if (attempts < maxAttempts) {
-                logger.warn(`B_ITA Scraper: No price found for ${isin} on attempt ${attempts}. Retrying...`);
-                await new Promise(r => setTimeout(r, 2000));
-                continue;
-            }
-
-            return { success: false, error: 'Price not found in API response', url: finalUrl, isin };
-
-        } catch (err) {
-            if (attempts < maxAttempts) {
-                logger.warn(`B_ITA Scraper attempt ${attempts} failed for ${isin}: ${err.message}. Retrying...`);
-                await new Promise(r => setTimeout(r, 2000 * attempts));
-                continue;
-            }
-            console.error(`B_ITA Scraper error for ${isin} after ${maxAttempts} attempts:`, err.message);
-            return { success: false, error: err.message, url: finalUrl, isin };
+        } catch (e) {
+            // Try next period
         }
     }
+
+    logger.warn(`B_ITA Scraper: No price found for ${cleanIsin} across intraday and all history periods`);
+    return { success: false, error: 'Price not found in API response', url: finalUrl, isin: cleanIsin };
 }
 // ─── VALIDATION HELPERS ───────────────────────────────────────────────────
 function isValidISIN(isin) {
@@ -2215,41 +2251,43 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
 
     // 2. Fetch historical data for all involved tickers (with parallelization and DB cache)
     const fetchBorsaItalianaHistory = async (ticker, isin) => {
-        let attempts = 0;
-        const maxAttempts = 2;
-        
-        // Dynamic Token Extraction Strategy
-        // We fetch the summary-chart component which contains the JWT token for the session
-        // Suffix -MOTX is common for bonds on MOT, while -MTAI or similar is for stocks.
-        // We'll try with and without suffix if needed, but for now we'll stick to a robust derivation.
-        let summaryUrl = `https://grafici.borsaitaliana.it/summary-chart/${isin}-MOTX?lang=it`;
-        const apiUrl = `https://grafici.borsaitaliana.it/api/instruments/${isin},XMIL,ISIN/history/period?period=5Y&adjustment=true&add-last-price=true`;
-        
+        if (!isin || typeof isin !== 'string') return null;
+        const cleanIsin = isin.trim().toUpperCase();
+        const suffixes = ['-MOTX', '-XMOT', '-ETFX', '-MTAA'];
         const headers = {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/120.0.0.0',
             'Accept-Language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7'
         };
 
-        while (attempts < maxAttempts) {
-            attempts++;
+        let summaryUrl = null;
+        let token = null;
+        let exchcode = 'XMIL';
+
+        for (const sfx of suffixes) {
+            const u = `https://grafici.borsaitaliana.it/summary-chart/${cleanIsin}${sfx}?lang=it`;
             try {
-                // Step 1: Get the Token from the summary-chart page
-                let summaryResp;
-                try {
-                    summaryResp = await axios.get(summaryUrl, { headers, timeout: 10000 });
-                } catch (e) {
-                    // Try fallback without -MOTX suffix
-                    summaryUrl = `https://grafici.borsaitaliana.it/summary-chart/${isin}?lang=it`;
-                    summaryResp = await axios.get(summaryUrl, { headers, timeout: 10000 });
+                const resp = await axios.get(u, { headers, timeout: 5000 });
+                if (resp.data) {
+                    const tokenMatch = resp.data.match(/token="([^"]+)"/);
+                    const exchMatch = resp.data.match(/exchcode="([^"]+)"/);
+                    if (tokenMatch) {
+                        token = tokenMatch[1];
+                        summaryUrl = u;
+                        if (exchMatch && exchMatch[1]) exchcode = exchMatch[1];
+                        break;
+                    }
                 }
+            } catch (e) {}
+        }
 
-                const tokenMatch = summaryResp.data.match(/token="([^"]+)"/);
-                if (!tokenMatch) {
-                    throw new Error("Token not found in B_ITA summary-chart HTML");
-                }
-                const token = tokenMatch[1];
+        if (!token) {
+            logger.warn(`B_ITA history fetch: Token not found for ${ticker} (${cleanIsin}) across suffixes`);
+            return null;
+        }
 
-                // Step 2: Get History using the dynamic token
+        for (const period of ['5Y', '1Y']) {
+            try {
+                const apiUrl = `https://grafici.borsaitaliana.it/api/instruments/${cleanIsin},${exchcode},ISIN/history/period?period=${period}&adjustment=true&add-last-price=true`;
                 const resp = await axios.get(apiUrl, {
                     headers: {
                         ...headers,
@@ -2260,11 +2298,11 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                     timeout: 15000
                 });
 
-                if (resp.data && resp.data.history && resp.data.history.historyDt) {
+                if (resp.data && resp.data.history && resp.data.history.historyDt && resp.data.history.historyDt.length > 0) {
                     const map = {};
                     resp.data.history.historyDt.forEach(h => {
                         if (h.dt && h.closePx) {
-                            const valCheck = isValidQuotePrice(h.closePx, { ticker, isin, type: 'Bond', dataSource: 'B_ITA' });
+                            const valCheck = isValidQuotePrice(h.closePx, { ticker, isin: cleanIsin, type: 'Bond', dataSource: 'B_ITA' });
                             if (valCheck.valid) {
                                 const d = h.dt.toString();
                                 const dateStr = `${d.substring(0, 4)}-${d.substring(4, 6)}-${d.substring(6, 8)}`;
@@ -2272,16 +2310,13 @@ async function calculatePerformanceHistory(portfolioIds, range = '1Y', forceRefr
                             }
                         }
                     });
-                    logger.info(`Successfully scraped B_ITA history for ${ticker}: ${Object.keys(map).length} points`);
-                    return map;
+                    if (Object.keys(map).length > 0) {
+                        logger.info(`Successfully scraped B_ITA history for ${ticker}: ${Object.keys(map).length} points`);
+                        return map;
+                    }
                 }
             } catch (err) {
-                if (attempts < maxAttempts) {
-                    logger.warn(`B_ITA history fetch attempt ${attempts} failed for ${isin}: ${err.message}. Retrying...`);
-                    await new Promise(r => setTimeout(r, 2000));
-                    continue;
-                }
-                logger.error(`B_ITA history fetch failed for ${ticker} (${isin}) after ${maxAttempts} attempts: ${err.message}`);
+                // Try next period
             }
         }
         return null;
@@ -3385,37 +3420,43 @@ async function _internalUpdateMarketData(force = false) {
                 } else {
                     logger.warn(`Google Finance quote failed for ${asset.ticker} (${asset.googleTicker || ''})`);
                 }
-            } else if (asset.dataSource === 'B_ITA' && asset.isin) {
-                const result = await B_ITA(asset.isin, asset.type);
-                if (result.success) {
-                    const priceCheck = isValidQuotePrice(result.price, asset, asset.currentPrice);
-                    let finalPrice = asset.currentPrice;
-                    let finalVariation = asset.changePercent;
-                    let changeVal = asset.changeValue || 0;
+            } else if (asset.dataSource === 'B_ITA' || isBondAsset(asset)) {
+                const isinToUse = (asset.isin && asset.isin.trim()) || (isValidISIN(asset.ticker) ? asset.ticker.trim() : null);
+                if (isinToUse) {
+                    const result = await B_ITA(isinToUse, asset.type);
+                    if (result.success) {
+                        const priceCheck = isValidQuotePrice(result.price, asset, asset.currentPrice);
+                        let finalPrice = asset.currentPrice;
+                        let finalVariation = asset.changePercent;
+                        let changeVal = asset.changeValue || 0;
 
-                    if (priceCheck.valid) {
-                        finalPrice = result.price;
-                        finalVariation = result.variation !== null ? result.variation : asset.changePercent;
-                        changeVal = result.variation !== null ? (finalPrice * (result.variation / (100 + result.variation))) : (asset.changeValue || 0);
+                        if (priceCheck.valid) {
+                            finalPrice = result.price;
+                            finalVariation = result.variation !== null ? result.variation : asset.changePercent;
+                            changeVal = result.variation !== null ? (finalPrice * (result.variation / (100 + result.variation))) : (asset.changeValue || 0);
+                        } else {
+                            logger.warn(`B_ITA [${asset.ticker}]: Price ${result.price} is invalid/inconsistent (${priceCheck.reason}). Retaining last valid price: ${asset.currentPrice}`);
+                        }
+
+                        const todayStr = new Date().toISOString().split('T')[0];
+                        const isRealtime = (result.source === 'INTRADAY' || result.quoteDate === todayStr) ? 1 : 0;
+
+                        updateData = {
+                            price: finalPrice,
+                            change: finalVariation,
+                            changeValue: changeVal,
+                            pe: asset.pe,
+                            name: asset.name,
+                            currency: asset.currency || 'EUR',
+                            exchange: asset.exchange || 'XMIL',
+                            country: asset.country || 'Italy',
+                            realtimeSource: 'B_ITA',
+                            isRealtime,
+                            quoteDate: priceCheck.valid ? (result.quoteDate || todayStr) : (asset.quoteDate || todayStr)
+                        };
                     } else {
-                        logger.warn(`B_ITA [${asset.ticker}]: Price ${result.price} is invalid/inconsistent (${priceCheck.reason}). Retaining last valid price: ${asset.currentPrice}`);
+                        logger.warn(`B_ITA scraping failed for ${asset.ticker} (${isinToUse}): ${result.error}`);
                     }
-
-                    updateData = {
-                        price: finalPrice,
-                        change: finalVariation,
-                        changeValue: changeVal,
-                        pe: asset.pe,
-                        name: asset.name,
-                        currency: asset.currency || 'EUR',
-                        exchange: asset.exchange,
-                        country: asset.country,
-                        realtimeSource: 'B_ITA',
-                        isRealtime: 1,
-                        quoteDate: priceCheck.valid ? new Date().toISOString().split('T')[0] : (asset.quoteDate || new Date().toISOString().split('T')[0])
-                    };
-                } else {
-                    logger.warn(`B_ITA scraping failed for ${asset.ticker} (${asset.isin})`);
                 }
             } else {
                 // Default Yahoo Finance (with Google Finance real-time fallback for delayed quotes or missing prices)
@@ -4309,5 +4350,6 @@ module.exports = {
     updateMarketData,
     getEurUsdRate,
     syncNews,
-    sendStatusNotification
+    sendStatusNotification,
+    B_ITA
 };
