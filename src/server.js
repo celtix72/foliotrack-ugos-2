@@ -345,14 +345,13 @@ async function sendStatusNotification(targetUserId = null, eventType = 'STATUS',
             }
             const abbreviatedNet = '€' + (totalVal / 1000).toFixed(1) + 'K';
 
-            // First line (NET) becomes the Title for maximum compactness
-            let pushPrefix = '';
+            // Title: Event Label (Line 1 for lockscreen/watch banners)
+            let pushTitle = '📈 Market';
             if (triggerMeta && triggerMeta.label) {
-                pushPrefix = `${triggerMeta.label} • `;
+                pushTitle = triggerMeta.label;
             } else if (eventType === 'DAILY') {
-                pushPrefix = '📊 Daily • ';
+                pushTitle = '📊 Daily';
             }
-            const pushTitle = `${pushPrefix}NET ${abbreviatedNet} ${totalVarStr}`.trim();
             
             // Portfolios for the body: those with variation != 0 (positive or negative)
             let portfoliosForPush = [];
@@ -372,6 +371,8 @@ async function sendStatusNotification(targetUserId = null, eventType = 'STATUS',
             }
 
             const pushLines = [];
+            // Line 2: Net Worth & Day Variation (plus pre-market if active)
+            pushLines.push(`NET ${abbreviatedNet} ${totalVarStr}`);
             portfoliosForPush.forEach(p => {
                 const pReg = p.changeValueEUR || 0;
                 const pPM = p.changeValuePrePostEUR || 0;

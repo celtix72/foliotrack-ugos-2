@@ -102,14 +102,14 @@ module.exports = function (dependencies) {
                 data: { url: 'https://www.apple.com' }
             },
             status: {
-                title: '🔔 OpenUE • NET €150.0K +€320',
-                body: '🟢 ETF +€180\n🟢 AZI +€140\n🏆 ENEL +€95',
+                title: '🔔 OpenUE',
+                body: 'NET €150.0K +€320\n🟢 ETF +€180\n🟢 AZI +€140\n🏆 ENEL +€95',
                 telegramMessage: '*🔔 OPENUE*\n\n`NET. :` `€150.000`\n\n*🟢* *`ETF AZ       +€180`*  *`(+€0)`*\n*🔵* *`AZIONI       +€140`*  *`(+€0)`*\n\n🕒 `09:05`',
                 data: { url: '/dashboard' }
             },
             daily: {
-                title: '📊 Daily • NET €150.0K +€450',
-                body: '🟢 ETF +€250\n🟢 AZI +€200\n🏆 ENEL +€120',
+                title: '📊 Daily',
+                body: 'NET €150.0K +€450\n🟢 ETF +€250\n🟢 AZI +€200\n🏆 ENEL +€120',
                 telegramMessage: '*📊 DAILY REPORT*\n\n`NET. :` `€150.000` (+€450)',
                 data: { url: '/dashboard' }
             }
